@@ -100,7 +100,7 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
 ## Boundaries
 
 - Depends on: `website-graphics-engine` (optional, from the `world` tier up); `serde`,
-  `serde_json`, `thiserror`, `libm`, `yrs`, `png`, `rkyv`, `flate2`, `bytemuck` and `earcutr`; on
+  `serde_json`, `thiserror`, `libm`, `yrs`, `png`, `rkyv`, `flate2` and `bytemuck`; on
   wasm32, `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `gloo-net`,
   `futures` and `console_error_panic_hook`; `contracts_v2/rules/kit-aliases.json`; and at run
   time the terrain assets of `assets_v2/terrains/`, which the API serves under `/map-assets`.

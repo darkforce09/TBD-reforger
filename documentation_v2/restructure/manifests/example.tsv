@@ -1,0 +1,22 @@
+# Relocation manifest: the format sample. `cargo xtask refactor relocate` reads tab-separated rows;
+# blank lines and lines starting with `#` are skipped, and the first other line is the header.
+# This file is the sample the relocation tests run on a throwaway checkout; `--verify` with no
+# `--manifest` judges every other `.tsv` in this folder and never this one.
+#
+# Columns: kind, from, to, scope. Paths are repository-relative and name the tree before the moves.
+kind	from	to	scope
+#
+# path: git mv one tracked file or folder, then rewrite every reference to it in every tracked text
+# file: repository-root and /-root spellings, and ../ literals re-relativised against their anchor.
+# A path row takes no scope.
+path	example_tree/src/widgets_v1	example_tree/src/widgets
+#
+# rust_path: rewrite a Rust path prefix (ending in ::) in the .rs files below the scope folder:
+# use trees, paths in code, doc links, comments and string literals; self:: and super:: chains that
+# cross the edge of the moved module become absolute crate:: paths first.
+rust_path	crate::widgets_v1::	crate::widgets::	example_tree
+#
+# text: rewrite an identifier-like token on word boundaries (letters, digits, _ and - are word
+# characters), such as a package name. An empty scope means every live tracked text file; a scope
+# holding * or ? is a glob over repository paths.
+text	widgets-v1	widgets

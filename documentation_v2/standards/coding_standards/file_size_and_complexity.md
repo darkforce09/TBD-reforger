@@ -39,17 +39,14 @@ files included, since it reads the working tree, and prints
 
 | Root | Holds |
 |---|---|
-| `tools_v2/xtask`, `tools_v2/verification-core`, `tools_v2/ticket-engine`, `tools_v2/developer-tools` | the tooling crates, their tests included |
-| `apps/ticketboard/src` | the ticketboard |
-| `apps/fleet_host_agent/src`, `apps/fleet_host_agent/tests` | the fleet host agent |
-| `apps/website/api_v2/src`, `apps/website/frontend/src` | the API and the app |
-| every `src/` and `tests/` folder directly under `apps/website/` | the engines, and any crate added there |
+| the folder of every workspace member the root `Cargo.toml` names | every crate, its tests, benches and build script included; a crate is walked from the commit that makes it a member |
 | `apps/mod/tbd-framework/Scripts` | the shipping game mod's EnfScript |
 | `apps/mod/tbd-emcp/Scripts` | the Enfusion MCP bridge's Workbench handlers |
 
-A pinned root that is missing, an unreadable file or a walk that finds no source file is a check
-that did not run (exit 2 or 1), never a pass. Generated Rust is not excluded: the contract types
-under `apps/website/api_v2/src/missions/contract/generated/` are held to the same limit.
+A pinned root or an explicit member folder that is missing, an unreadable file or a walk that
+finds no source file is a check that did not run (exit 2 or 1), never a pass. Generated Rust is
+not excluded: the contract types under `apps/website/api_v2/src/missions/contract/generated/` are
+held to the same limit.
 
 Outside the walk, and so unenforced by this gate:
 
@@ -61,6 +58,8 @@ Outside the walk, and so unenforced by this gate:
   are pinned, and `apps/mod/tbd-export/Scripts` follows at P6-C. The gitignored
   references `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are never pinned; a
   compile-time assertion rejects any `apps/mod` pin outside the three roots.
+- Rust files outside every member folder: `apps/website/shared/is_http_url_cases.rs`, a shared
+  case table that member crates include, is the one such file.
 - Markdown. Live documents under `documentation_v2/` have their own 500-line limit, checked by
   `cargo xtask verify markdown-placement`.
 

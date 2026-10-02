@@ -69,8 +69,9 @@ RULES
    builds into a private folder, and compare the `--list` count with the run count every time:
    a mismatch means the binary is not yours. `website-map-engine` needs `--all-features`.
 6. A binary you launch (an API instance, a CLI you exercise) builds into its own
-   CARGO_TARGET_DIR=<repo>/target-<ticket id>-api; before trusting an HTTP or CLI result, find a
-   string unique to your change inside the binary.
+   CARGO_TARGET_DIR=<repo>/target/slice-<ticket id>-api, a purpose subfolder of the build output
+   folder with its own cargo lock; before trusting an HTTP or CLI result, find a string unique to
+   your change inside the binary.
 7. Gate before reporting, from the worktree:
      cargo xtask platform wave gate --slice <ticket id>
    It must end `SLICE GATE: PASS`. Export

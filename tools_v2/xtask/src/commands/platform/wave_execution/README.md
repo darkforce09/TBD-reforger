@@ -61,7 +61,13 @@ verified <sha> ─▶ wave --close ─▶ marker commit ─▶ next wave
   same private folders at once.
 - Per-slice landing: `land` merges each slice the moment it is committed, clean, gate-green and
   receipted; `land --wave` waits for the whole wave.
-- Private target folders: `test --slice <id>` builds into `$HOME/.cache/tbd-target-<id>`. `run`
+- Private target folders: each gate step that builds gets its own `CARGO_TARGET_DIR` (or trunk
+  dist folder) under `<main checkout>/target/` — `gate-check`, `gate-schema`, `gate-trunk`,
+  `gate-dist-frontend`, `gate-api`, `gate-map-engine`, `gate-frontend`, `gate-tools`, and
+  `gate-slice-frontend-<slice>` per slice — named in `tools_v2/xtask/src/core/cargo_target_directory.rs`;
+  `TBD_GATE_CHECK_TARGET`, `TBD_GATE_SCHEMA_TARGET`, `TBD_GATE_TRUNK_TARGET` and
+  `TBD_GATE_TRUNK_DIST` override the first four. `test --slice <id>` builds into
+  `$HOME/.cache/tbd-target-<id>`. `run`
   builds into `run-main`, writes a `tbd-built-from` stamp (`<sha> <checkout>`) beside the
   binaries, and refuses to run from a worktree. `cargo xtask platform preflight` blocks on a
   missing or stale stamp.

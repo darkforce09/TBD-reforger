@@ -81,12 +81,8 @@ jobs:
         working-directory: .
         run: cargo xtask mk rust-fmt
       - name: clippy (GO-2..8 analog)
-        env:
-          SQLX_OFFLINE: "true"
         run: cargo xtask mk rust-clippy
       - name: build
-        env:
-          SQLX_OFFLINE: "true"
         run: cargo xtask mk rust-build
       # The developer-tools library suite. The mod gate scopes itself to
       # `--lib enfusion_tooling::` and the wave gate's `test xtask+developer-tools` step is
@@ -108,7 +104,6 @@ jobs:
       - name: test (TEST-1 analog)
         env:
           TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/rust_it?sslmode=disable
-          SQLX_OFFLINE: "true"
         run: cargo xtask ci website-api-test
 
   # --- map-engine: website-map-engine + website-graphics-engine (`cargo xtask mk wasm-ci`) ---
@@ -261,6 +256,19 @@ jobs:
       # the working tree, needs no DB/LFS/wasm target, and takes seconds.
       - name: verify-engine-layers (documentation_v2/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6, 7)
         run: cargo xtask verify engine-layers
+      # The workspace laws of documentation_v2/restructure/laws_and_gates.md, judged by
+      # tools_v2/verification-core/src/repository_laws/workspace_laws/ over the members the root
+      # manifest names; seconds-long reads of the working tree, like the engine-layer walls.
+      - name: verify-crate-tiers (workspace membership, layout, tiers, category matrix, firewalls)
+        run: cargo xtask verify crate-tiers
+      - name: verify-crate-anatomy (library crate shape)
+        run: cargo xtask verify crate-anatomy
+      - name: verify-strangler (no new crate depends on legacy; no shim)
+        run: cargo xtask verify strangler
+      - name: verify-frontend-layering (ratchet ceiling)
+        run: cargo xtask verify frontend-layering
+      - name: verify-tailwind-sources (an @source line per leptos crate)
+        run: cargo xtask verify tailwind-sources
       # The ticket registry is the source of truth for the whole ticket pipeline, so a malformed
       # or duplicate-id registry that reaches main surfaces only when the next agent tries to read
       # it. Lives in this job because it is the same shape as the language gates — seconds long,

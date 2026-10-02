@@ -72,6 +72,53 @@ fn exempt_folders_lie_outside_the_readme_span() {
 }
 
 #[test]
+fn generated_folder_exemption_matches_the_lowercase_and_capitalised_spellings() {
+    let generated_below_documentation = format!("{DOCUMENTATION_ROOT}/topic/Generated");
+    for exempt in [
+        "apps/x/generated",
+        "apps/x/generated/models",
+        "apps/mod/x/Policy/Generated",
+        "apps/mod/x/Policy/Generated/weapon",
+        &generated_below_documentation,
+    ] {
+        assert!(below_exempt_folder(exempt), "{exempt} is exempt");
+        assert!(
+            !in_readme_span(exempt),
+            "{exempt} lies outside the README span"
+        );
+    }
+}
+
+#[test]
+fn generated_folder_exemption_ignores_other_casings_and_longer_names() {
+    for judged in [
+        "apps/x/GENERATED",
+        "apps/x/GENERATED/models",
+        "apps/x/generated_data",
+        "apps/x/Generated_data",
+        "apps/x/regenerated",
+    ] {
+        assert!(!below_exempt_folder(judged), "{judged} is judged");
+        assert!(
+            in_readme_span(judged),
+            "{judged} lies inside the README span"
+        );
+    }
+}
+
+#[test]
+fn generated_folder_exemption_leaves_the_test_folder_match_exact() {
+    assert!(below_exempt_folder("apps/x/tests"));
+    for judged in ["apps/x/Tests", "apps/x/TESTS", "apps/x/tests_data"] {
+        assert!(!below_exempt_folder(judged), "{judged} is judged");
+        assert!(
+            in_readme_span(judged),
+            "{judged} lies inside the README span"
+        );
+    }
+}
+
+#[test]
 fn markdown_is_any_letter_case_of_the_md_extension() {
     assert!(is_markdown("apps/a/NOTES.md"));
     assert!(is_markdown("apps/a/NOTES.MD"));

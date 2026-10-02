@@ -76,7 +76,7 @@ fn attributes_parse_as_cfg_predicates() {
 
 #[test]
 fn the_scan_reads_production_files_and_skips_the_sibling_test_files() {
-    let checkout = TemporaryCheckout::with_pinned_roots("placement");
+    let checkout = TemporaryCheckout::with_law_roots("placement");
     let inline = "//! Header.\n#[cfg(test)]\nmod tests {}\n";
     checkout.write("apps/website/api_v2/src/core/clock.rs", inline);
     checkout.write("apps/website/api_v2/src/core/tests/clock.rs", inline);

@@ -55,7 +55,7 @@ comment, and one that is in neither was not recorded and is re-derived from the 
    cargo xtask mk rust-api
    ```
 
-   Expected: cargo builds the `api` binary into `target-dev-api/`, then the API logs
+   Expected: cargo builds the `api` binary into `target/dev-api/`, then the API logs
    `migrations applied` and `listening on 0.0.0.0:8080`.
 
 3. In a third terminal, serve the single-page app in debug mode for the length of the wave; the
@@ -66,8 +66,8 @@ comment, and one that is in neither was not recorded and is re-derived from the 
    ```
 
    Expected: `trunk serve` in `apps/website/frontend`, listening on `127.0.0.1:3000`. Leave it
-   running during gates: the wave gate builds into its own `dist-gate-frontend` and
-   `target-gate-trunk` folders and never touches the served `dist/`.
+   running during gates: the wave gate builds into its own `target/gate-dist-frontend` and
+   `target/gate-trunk` folders and never touches the served `dist/`.
 
 4. Sweep build caches that finished slices left behind.
 

@@ -148,6 +148,9 @@ mod rules;
 mod scanning;
 mod ui_framework_ban;
 
+/// Rule 2's map-noun declaration matcher, which the graphics-category firewall of the workspace
+/// laws reuses so both judge a declared name the same way.
+pub(in crate::repository_laws) use rules::DECL_RE as MAP_NOUN_DECLARATION_PATTERN;
 pub use ui_framework_ban::{
     UI_FRAMEWORK_IMPORT_RE, UI_FRAMEWORK_PACKAGE_RE, UiFrameworkScan,
     map_engine_ui_framework_findings,

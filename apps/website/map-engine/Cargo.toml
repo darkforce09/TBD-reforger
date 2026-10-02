@@ -1,36 +1,32 @@
 [package]
 name = "website-map-engine"
 version = "0.1.0"
-edition = "2024"
-rust-version = "1.95"
-license = "UNLICENSED"
-publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
 description = "Map graphics, spatial computation, terrain formats, and asset streaming."
 
 [lib]
 crate-type = ["rlib"]
 
-# T-0xx Phase 2A. `terrain` -> `world`, `formats` -> `io`; `scenario` / `store` / `editing` are new
-# and carry the folded `website-mission-core`. The chain direction is unchanged: the on-disk format
-# code depends on the terrain types, not the reverse. `streaming` stays its OWN axis on top of `io`
-# because real consumers (frontend:27, tools_v2/developer-tools) want the world/io pair without the
-# scheduler. `default` is now `scenario` alone so `website-api` links the compiler and nothing else.
+# Feature tiers, lowest first. `scenario` is the headless mission domain (`data/scenario`) and the
+# crate default, so `website-api` links the mission compiler and nothing else; `store` adds the
+# yrs CRDT document. `world` adds terrain and buildings, `io` the on-disk formats over those types
+# (the format code depends on the terrain types, never the reverse), `streaming` the served-data
+# loaders and scheduler on top of `io`, and `render` the GPU frame builder. `streaming` is its own
+# tier above `io`, so the on-disk formats compile without the loaders, the scheduler and flate2.
 [features]
 default = ["scenario"]
 scenario = ["dep:serde", "dep:serde_json", "dep:thiserror", "dep:libm"]
 store = ["scenario", "dep:yrs"]
 bvh = []
-# `dep:website-graphics-engine` sits HERE and not on `render` alone. Measured, not guessed: the
-# frontend's NATIVE build (`frontend/Cargo.toml:27`, world+io, no render) calls
-# `renderers::primitives::triangulate::triangulate_simple` from `v2/apps/debug/building_viewer.rs`,
-# and that path IS `website_graphics_engine::draw::triangulate`. The streaming layer needs it too
-# (`core::culling::lod` re-exports `text::scale::REF_ZOOM`, which every `streaming/buffers/*` belt
-# reaches through `symbology/labels/glyph_math`). This is §2C.1 Kind B — POD layout and
-# bit-packing imported directly by the belts that sit next to their data — so the honest edge is
-# "everything above `scenario`". `scenario` is the one tier without it, and `website-api` takes
-# exactly that tier: `cargo tree -p website-api` carries no graphics crate, no png, no rkyv, no
-# flate2. Moving the edge up to `render` instead would have meant rewriting those belts, and a
-# feature rename must not become a code change.
+# `dep:website-graphics-engine` sits on `world`, the first tier above `scenario`, because code
+# from `world` upward speaks the renderer's vocabulary: `world::mesh` re-exports
+# `website_graphics_engine::draw::triangulate`, which the frontend's native building viewer calls,
+# and `overlay::lod` re-exports `text::scale::REF_ZOOM` for the label glyph math the streaming
+# belts reach. `scenario` is the one tier without it, so `cargo tree -p website-api` carries no
+# graphics crate, no png, no rkyv and no flate2.
 world = ["bvh", "dep:png", "dep:website-graphics-engine"]
 io = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv"]
 streaming = ["io", "dep:flate2"]
@@ -43,44 +39,43 @@ render = ["streaming", "dep:website-graphics-engine"]
 editing = ["store", "world", "streaming"]
 
 [dependencies]
-# The pure renderer this crate was carved out of (T-0xx Phase 1). The arrow points ONE way:
-# map-engine speaks graphics' frame vocabulary; graphics never learns a map noun.
+# The pure renderer. The arrow points one way: the map engine speaks the renderer's frame
+# vocabulary; the renderer never learns a map noun.
 website-graphics-engine = { path = "../graphics-engine", optional = true }
-bytemuck = { version = "1", features = ["derive", "min_const_generics"] }
-earcutr = "0.5.0"
-png = { version = "0.17", optional = true }
-serde = { version = "1", features = ["derive"], optional = true }
-serde_json = { version = "1", optional = true, features = ["preserve_order"] }
+bytemuck = { workspace = true, features = ["derive", "min_const_generics"] }
+png = { workspace = true, optional = true }
+serde = { workspace = true, features = ["derive"], optional = true }
+serde_json = { workspace = true, optional = true, features = ["preserve_order"] }
 thiserror = { version = "2", optional = true }
 # Pure-Rust transcendentals for the shell flight model: the same bits on native and wasm32.
 libm = { version = "0.2", optional = true }
-# The CRDT layer behind `store` (folded in from `website-mission-core` at T-0xx Phase 2A).
+# The CRDT layer behind `store`.
 yrs = { version = "0.27", optional = true }
-flate2 = { version = "1", optional = true }
+flate2 = { workspace = true, optional = true }
 # Validation and endian settings are part of the shared on-disk format.
 rkyv = { version = "0.8.18", optional = true, default-features = false, features = ["std", "bytecheck", "little_endian"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-wgpu = { version = "29", default-features = false, features = ["webgpu", "webgl", "wgsl"] }
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
-js-sys = "0.3"
-web-sys = { version = "0.3", features = [
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true, features = [
     "HtmlCanvasElement", "Window", "ImageBitmap", "Performance", "console",
     "ImageBitmapOptions", "ColorSpaceConversion", "OffscreenCanvas",
     "OffscreenCanvasRenderingContext2d", "ImageData", "Blob", "BlobPropertyBag",
     "Response", "Headers", "ReadableStream", "ReadableStreamDefaultReader",
     "Location", "UrlSearchParams",
 ] }
-console_error_panic_hook = "0.1"
-futures = "0.3"
-gloo-net = "0.6"
+console_error_panic_hook = { workspace = true }
+futures = { workspace = true }
+gloo-net = { workspace = true }
 
 [dev-dependencies]
-serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
 # The editing layer hands a host-supplied async read to `editing::persist::merge_policy`, so a
 # native test of that ordering needs an executor to drive the future to completion.
-futures = "0.3"
+futures = { workspace = true }
 # The catalog tests validate their sample against `contracts_v2/definitions/ballistics-catalog.schema.json`
 # with the same validator the xtask schema checks use.
-jsonschema = { version = "0.46.10", default-features = false }
+jsonschema = { workspace = true }

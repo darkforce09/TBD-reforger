@@ -40,6 +40,54 @@ pub const DEV_SERVER_PROFILE: &str =
 /// `cargo xtask mcp consume` to pin the exit code of every response shape without a Workbench.
 pub const MCP_TRANSCRIPT_FIXTURES_DIR: &str = "tools_v2/xtask/fixtures/mcp";
 
+/// The locations the workspace laws (`cargo xtask verify crate-tiers` and its siblings) read.
+///
+/// The laws themselves live in `verification_core::repository_laws::workspace_laws` and know no
+/// path that moves with the tree; a stage that moves a folder rewrites these constants.
+pub mod workspace_laws {
+    use verification_core::repository_laws::workspace_laws::frontend_layering::{
+        FrontendCrateLayers, FrontendLayer, FrontendLayerRow,
+    };
+
+    /// Folders whose every `Cargo.toml` (outside test trees, fixtures and build output) must be a
+    /// workspace member. A folder that does not exist yet holds no manifest.
+    pub const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "tools", "tools_v2", "legacy"];
+
+    /// The app stylesheet whose `@source` lines must cover every leptos crate.
+    pub const TAILWIND_STYLESHEET: &str = "apps/website/frontend/style/aegis.css";
+
+    /// The frontend crate's layer table: `src/v2/core` is the foundation, `src/v2/pages` the
+    /// pages (one area per section), `src/v2/apps` the workspaces, and the entry point, the route
+    /// table, the platform frame and the crate-level tests the shell.
+    pub const FRONTEND_LAYERS: &[FrontendCrateLayers] = &[FrontendCrateLayers {
+        crate_path: "apps/website/frontend",
+        rows: &[
+            shell("src/main.rs"),
+            shell("src/router.rs"),
+            shell("src/app_routes.rs"),
+            shell("src/tests"),
+            shell("src/v2/mod.rs"),
+            shell("src/v2/tests"),
+            shell("src/v2/pages/navigation"),
+            row("src/v2/core", FrontendLayer::Foundation, false),
+            row("src/v2/pages", FrontendLayer::Pages, true),
+            row("src/v2/apps", FrontendLayer::Workspaces, true),
+        ],
+    }];
+
+    const fn shell(path: &'static str) -> FrontendLayerRow {
+        row(path, FrontendLayer::Shell, false)
+    }
+
+    const fn row(path: &'static str, layer: FrontendLayer, has_areas: bool) -> FrontendLayerRow {
+        FrontendLayerRow {
+            path,
+            layer,
+            has_areas,
+        }
+    }
+}
+
 /* ───────────────────────── the ticket domain's own locations ───────────────────────── */
 
 // The registry, the wave lock and the artifact tree belong to the ticket domain, which spells

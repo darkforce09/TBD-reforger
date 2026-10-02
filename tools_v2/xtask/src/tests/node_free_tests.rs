@@ -10,15 +10,52 @@ fn this_repo() -> PathBuf {
         .to_path_buf()
 }
 
+/// The member folders a [`TmpRepo`] workspace declares: the folders the repository's own members
+/// sit in.
+const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
+    "apps/fleet_host_agent",
+    "apps/ticketboard",
+    "apps/website/api_v2",
+    "apps/website/frontend",
+    "apps/website/map-engine",
+    "apps/website/graphics-engine",
+    "apps/website/offline-service-worker",
+    "tools_v2/verification-core",
+    "tools_v2/ticket-engine",
+    "tools_v2/xtask",
+    "tools_v2/developer-tools",
+];
+
+/// A temporary checkout holding every law root: a workspace of [`FIXTURE_WORKSPACE_MEMBERS`],
+/// each with a `Cargo.toml` and a one-line `src/lib.rs`, and every pinned script root, empty.
 struct TmpRepo(PathBuf);
 impl TmpRepo {
     fn new(name: &str) -> TmpRepo {
         let mut p = std::env::temp_dir();
         p.push(format!("xtask-file-length-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&p);
-        for rel in FILE_LENGTH_PINS {
-            std::fs::create_dir_all(p.join(rel)).unwrap();
-            std::fs::write(p.join(rel).join("lib.rs"), "fn placeholder() {}\n").unwrap();
+        std::fs::create_dir_all(&p).unwrap();
+        let listed: String = FIXTURE_WORKSPACE_MEMBERS
+            .iter()
+            .map(|member| format!("    \"{member}\",\n"))
+            .collect();
+        std::fs::write(
+            p.join("Cargo.toml"),
+            format!("[workspace]\nmembers = [\n{listed}]\n"),
+        )
+        .unwrap();
+        for member in FIXTURE_WORKSPACE_MEMBERS {
+            let package = member.rsplit('/').next().unwrap_or(member);
+            std::fs::create_dir_all(p.join(member).join("src")).unwrap();
+            std::fs::write(
+                p.join(member).join("Cargo.toml"),
+                format!("[package]\nname = \"{package}\"\n"),
+            )
+            .unwrap();
+            std::fs::write(p.join(member).join("src/lib.rs"), "fn placeholder() {}\n").unwrap();
+        }
+        for root in PINNED_SCRIPT_ROOTS {
+            std::fs::create_dir_all(p.join(root)).unwrap();
         }
         TmpRepo(p)
     }
@@ -67,7 +104,7 @@ fn walk_is_nonempty_anti_vacuity() {
 
 #[test]
 fn missing_walk_root_is_did_not_run() {
-    for missing in FILE_LENGTH_PINS {
+    for missing in FIXTURE_WORKSPACE_MEMBERS.iter().chain(PINNED_SCRIPT_ROOTS) {
         let d = TmpRepo::new("missing");
         std::fs::remove_dir_all(d.0.join(missing)).unwrap();
         let code = verify_file_length_in(&d.0);
@@ -174,7 +211,7 @@ fn summary_reports_the_mixed_extension_count() {
     write_lines(&d.0.join("tools_v2/xtask/fixtures/TBD_ScriptPlant.c"), 3);
     write_lines(&d.0.join("tools_v2/xtask/fixtures/notes.txt"), 3);
     let files = walk_length_gated_sources(&d.0).unwrap();
-    let rust_count = FILE_LENGTH_PINS.len();
+    let rust_count = FIXTURE_WORKSPACE_MEMBERS.len();
     assert_eq!(files.len(), rust_count + 1, "the .txt is not walked");
     assert_eq!(
         length_scan_summary(&files, 0),
@@ -268,8 +305,8 @@ fn size3_has_zero_exemptions_even_if_allowlist_is_attempted() {
 #[test]
 fn empty_walk_is_not_ok() {
     let d = TmpRepo::new("vacuous");
-    for rel in FILE_LENGTH_PINS {
-        std::fs::remove_file(d.0.join(rel).join("lib.rs")).unwrap();
+    for member in FIXTURE_WORKSPACE_MEMBERS {
+        std::fs::remove_file(d.0.join(member).join("src/lib.rs")).unwrap();
     }
     let code = verify_file_length_in(&d.0);
     assert_ne!(code, 0, "zero .rs files must not print 0/0 OK");

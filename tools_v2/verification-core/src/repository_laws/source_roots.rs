@@ -1,41 +1,37 @@
 //! The source trees the structural laws read, and the one rule that tells a test file apart.
 //!
-//! **Role:** names the directories the file-length, sibling-test and exemption rules walk, walks
-//! them fail-closed, and classifies a repository-relative path as a test file or a production
-//! file.
+//! **Role:** names the directories the file-length, sibling-test and exemption rules walk — every
+//! workspace member folder the root manifest names, plus the pinned Enfusion script roots —
+//! walks them fail-closed, and classifies a repository-relative path as a test file or a
+//! production file.
 //! **Position:** the shared input of [`super::file_length`], [`super::sibling_test_placement`]
-//! and [`super::exemption_mechanisms`]; built on [`crate::scan::walk_files`].
-//! **Signals & state:** none; constants and pure functions.
-//! **Invariants:** a pinned root that is missing is [`NotRun::TargetMissing`], never an empty
-//! walk. Only the three shipped addon script roots may be pinned under `apps/mod`, which a
-//! compile-time assertion holds.
+//! and [`super::exemption_mechanisms`]; built on [`super::workspace_members`] and
+//! [`crate::scan::walk_files`].
+//! **Signals & state:** none; constants and pure functions over the checkout.
+//! **Invariants:** the Rust roots are the workspace members and nothing else, so a crate is judged
+//! from the commit that makes it a member. A missing root manifest, a workspace that names no
+//! member, an explicit member folder that is missing and a missing script root are each
+//! [`NotRun::TargetMissing`], never a smaller walk. A member nested inside another member is
+//! walked once, as part of the outer one. Only the shipped addon script roots may be pinned, which
+//! a compile-time assertion holds.
 
 use std::path::{Path, PathBuf};
 
+use super::workspace_members::read_workspace_members;
 use crate::scan;
 use crate::verdict::NotRun;
 
-/// Directories every structural law examines. A missing pin is [`NotRun::TargetMissing`], never
-/// an empty pass. Each `apps/website/<crate>/src` and `tests` folder that exists joins the walk
-/// as well ([`law_source_roots`]).
-pub const FILE_LENGTH_PINS: &[&str] = &[
-    "tools_v2/xtask",
-    "tools_v2/verification-core",
-    "tools_v2/ticket-engine",
-    "tools_v2/developer-tools",
-    "apps/ticketboard/src",
-    "apps/website/api_v2/src",
-    "apps/website/frontend/src",
-    "apps/fleet_host_agent/src",
-    "apps/fleet_host_agent/tests",
+/// Enfusion script roots every structural law walks beside the workspace members. A missing root
+/// is [`NotRun::TargetMissing`], never an empty pass.
+pub const PINNED_SCRIPT_ROOTS: &[&str] = &[
     "apps/mod/tbd-framework/Scripts",
     "apps/mod/tbd-emcp/Scripts",
 ];
 
 /// Enfusion script roots of the three shipped addons, the only `apps/mod` trees the laws may pin.
 /// `apps/mod/crf_framework` and `apps/mod/vanilla_reference` are gitignored upstream references
-/// and never enter [`FILE_LENGTH_PINS`]. Each root joins the pins once its addon's scripts sit at
-/// or under the ceilings.
+/// and never enter [`PINNED_SCRIPT_ROOTS`]. Each root joins the pins once its addon's scripts sit
+/// at or under the ceilings.
 pub const MOD_SCRIPT_ROOTS: &[&str] = &[
     "apps/mod/tbd-framework/Scripts",
     "apps/mod/tbd-export/Scripts",
@@ -46,8 +42,8 @@ pub const MOD_SCRIPT_ROOTS: &[&str] = &[
 pub const LENGTH_GATED_EXTENSIONS: &[&str] = &["rs", "c"];
 
 const _: () = assert!(
-    mod_pins_are_script_roots(FILE_LENGTH_PINS, MOD_SCRIPT_ROOTS),
-    "an apps/mod pin in FILE_LENGTH_PINS must be one of MOD_SCRIPT_ROOTS"
+    mod_pins_are_script_roots(PINNED_SCRIPT_ROOTS, MOD_SCRIPT_ROOTS),
+    "an apps/mod pin in PINNED_SCRIPT_ROOTS must be one of MOD_SCRIPT_ROOTS"
 );
 
 /// Compile-time guard: every `apps/mod/` entry of `pins` is exactly one of `script_roots`, so a
@@ -92,42 +88,45 @@ const fn bytes_equal(left: &[u8], right: &[u8]) -> bool {
     left.len() == right.len() && bytes_start_with(left, right)
 }
 
-/// The absolute roots the structural laws walk: [`FILE_LENGTH_PINS`], then every `src` and
-/// `tests` folder directly under `apps/website/<crate>/`, in directory-listing order.
+/// The absolute roots the structural laws walk: the folder of every workspace member that no other
+/// member folder contains, sorted by path, then [`PINNED_SCRIPT_ROOTS`].
 pub fn law_source_roots(repo_root: &Path) -> Result<Vec<PathBuf>, NotRun> {
-    let mut out: Vec<PathBuf> = FILE_LENGTH_PINS.iter().map(|r| repo_root.join(r)).collect();
-    let website = repo_root.join("apps/website");
-    if website.is_dir() {
-        let entries = std::fs::read_dir(&website).map_err(|source| NotRun::Unreadable {
-            path: website.clone(),
-            source,
-        })?;
-        for entry in entries {
-            let entry = entry.map_err(|source| NotRun::Unreadable {
-                path: website.clone(),
-                source,
-            })?;
-            let src = entry.path().join("src");
-            if src.is_dir() && !out.iter().any(|p| p == &src) {
-                out.push(src);
-            }
-            let tests = entry.path().join("tests");
-            if tests.is_dir() {
-                out.push(tests);
-            }
-        }
+    let members = read_workspace_members(repo_root)?;
+    if members.is_empty() {
+        return Err(NotRun::TargetMissing(repo_root.join("Cargo.toml")));
     }
-    Ok(out)
+    let member_folders: Vec<&str> = members.iter().map(|member| member.path.as_str()).collect();
+    let mut roots: Vec<PathBuf> = outermost_folders(&member_folders)
+        .into_iter()
+        .map(|folder| repo_root.join(folder))
+        .collect();
+    roots.extend(PINNED_SCRIPT_ROOTS.iter().map(|root| repo_root.join(root)));
+    Ok(roots)
 }
 
-/// Every file under [`law_source_roots`] that `keep` accepts, sorted.
+/// The repository-relative `folders` that no other entry of `folders` contains, in input order.
+pub fn outermost_folders<'a>(folders: &[&'a str]) -> Vec<&'a str> {
+    folders
+        .iter()
+        .copied()
+        .filter(|folder| {
+            !folders
+                .iter()
+                .any(|outer| folder.len() > outer.len() && folder.starts_with(&format!("{outer}/")))
+        })
+        .collect()
+}
+
+/// Every file under [`law_source_roots`] that `keep` accepts, sorted, each once.
 pub fn walk_law_sources(
     repo_root: &Path,
     keep: impl Fn(&Path) -> bool,
 ) -> Result<Vec<PathBuf>, NotRun> {
     let roots = law_source_roots(repo_root)?;
     let refs: Vec<&Path> = roots.iter().map(PathBuf::as_path).collect();
-    scan::walk_files(&refs, keep)
+    let mut files = scan::walk_files(&refs, keep)?;
+    files.dedup();
+    Ok(files)
 }
 
 /// Every file under the law roots whose extension is in [`LENGTH_GATED_EXTENSIONS`].

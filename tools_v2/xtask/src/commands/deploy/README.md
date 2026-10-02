@@ -42,8 +42,9 @@ host is whatever `TBD_SSH_HOST` names, and the remote folders default under its 
 `TBD_SSH_IDENTITY_FILE` is, always with `StrictHostKeyChecking=no`.
 
 Both rsyncs append the patterns of `development_machine_only_paths.rs` to their own exclusions:
-anchored at the checkout root, they name what only a development machine holds, namely the cargo
-target folders beside `target/` (also those beside the app), the gates' and the debug app builds,
+anchored at the checkout root, they name what only a development machine holds, namely the
+retired and hand-set cargo target folders beside `target/` (also those beside the app), the
+retired gate app builds and the debug app build,
 the vanilla compile baseline, slice and ticket worktrees, the wave gate's receipts, and the local
 files of Claude Code, Codex and the MCP configuration. None of them is tracked, and the host needs
 none of them.

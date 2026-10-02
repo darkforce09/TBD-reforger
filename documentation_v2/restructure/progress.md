@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `claude/compassionate-cannon-nz3hts` (the operator merges to `main`) |
-| Current stage | S0 Tooling — closing work (T4b, G0) |
+| Current stage | S1 Global renames |
 | Last green commit | 74735b80c (P0; readme-coverage red only on F-001) |
-| Next action | T4b and G0 running; then the S0 gate, commit, and straight on into S1 (operator: continue without pausing) |
+| Next action | Launch R1 (scripted renames) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -34,10 +34,10 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] T3 (M) build output under target, `rust-sqlx-prepare` removed, Chromium discovery — done, awaiting the stage commit — ran over budget (about 310k); dev-api, ci and gate-* folders now under `target/`; Chromium found with `CHROME_HEADLESS_SHELL` unset
 - [x] T4 (L) new laws (crate-tiers, crate-anatomy, strangler, frontend-layering, tailwind-sources) and their wiring — done, awaiting the stage commit — five gates pass on the real tree; frontend layering ceiling 12 production + 3 test edges; every law red under perturbation and restored
 - [x] T4b (M) fail-closed source roots derived from workspace members — done, awaiting the stage commit — roots follow the members; missing member folder or empty workspace is TargetMissing; old judged set ⊆ new; 10 `source_roots_` tests; file-length 4606 files, 0 violations
-- [ ] G0 (M) closing batch: F-014 (prose rule, D13), F-007 (clippy.toml, D14), F-005, F-006, F-009, F-010 — running
+- [x] G0 (M) closing batch: F-014 (prose rule, D13), F-007 (clippy.toml, D14), F-005, F-006, F-009, F-010 — done, awaiting the stage commit
 - [x] T5 (S) `Generated` exemption (F-001) and vestigial sqlx offline settings removed — done, awaiting the stage commit — readme-coverage 0 violations (from 19); 5 `generated_folder_exemption_*` tests; perturbation red on exactly the 19 folders and restored
 - [x] Baselines recorded (see the execution log) — done
-- [ ] Stage commit — pending
+- [x] Stage commit — done (see the execution log)
 
 ### S1 Global renames
 - [ ] R1 (M) scripted renames and ticket path rewrites — pending
@@ -181,6 +181,10 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 | 2026-10-01 | S0 T5 report | Exemption covers `generated` and `Generated` (`path_regions.rs`); the three `SQLX_OFFLINE` lines and two emptied `env:` keys removed from ci.yml (YAML valid); readme standard and documentation standards updated. Reviewed: diff matches the report | logs/T5-* |
 | 2026-10-02 | S0 decisions | Operator: D13 keep `legacy/` with a prose-rule exemption for the folder name; D14 allow `unwrap()` in tests; finish S0 and continue into S1 without pausing. Container restarted: `dockerd` and Postgres restarted, `target/` cleaned (18.5 GiB) | — |
 | 2026-10-02 | S0 T4b report | `law_source_roots` walks every workspace member (nested members once); `FILE_LENGTH_PINS` became `PINNED_SCRIPT_ROOTS` (the mod script roots); perturbation red and restored; renaming a member folder on a scratch copy gives exit 2 | logs/T4b-* |
+| 2026-10-02 | S0 G0 report | Prose rule exempts the parking folder name (`legacy/`, `"legacy"`) only; the retired `crates/(tbd|map)` needle now ends at the hyphen so the planned snake_case category folders are live names (reviewed and accepted: every retired crate folder was hyphenated, a test proves it still bites); root `clippy.toml` allows `unwrap()` in tests; mcp daemon and db selftest build under `target/`; stale docs fixed. Orchestrator fixed the last `target-<slice>` hint in `wave_execution/flush.rs` | logs/G0-* |
+| 2026-10-02 | S0 gate (first pass) | fmt OK; workspace clippy `-D warnings` (frontend excluded, F-004) OK; frontend wasm32 warnings 116 + 137, equal to the baseline; relocate --verify OK; crate-tiers, crate-anatomy, strangler, frontend-layering, tailwind-sources, file-length, ci-schema-parity OK; API release check OK; verification-core 185/186 and xtask 1322/1324 (only the root-permission cases, F-008); ci-local stopped at `rust-test-it` because it calls `podman` (environment: a `podman`→`docker` shim added to the program env); ticket-engine round-trip red on T-086 (F-016) and `ticket check --strict` red on a retired id spelling (F-017), both pre-existing; leptos-gates red on satellite, roads and buildings because the Everon LFS objects were not pulled (pulled: all 2013) | logs/s0-gate-* |
+| 2026-10-02 | S0 G0b report | F-016: T-086 rewritten by `ticket set-status` (a pure line move, no value changed); F-017: plan slice ids in the mod modularisation checkpoint respelled; ticket-engine 236 passed, `ticket check --strict` OK, verify-documentation OK | logs/G0b-* |
+| 2026-10-02 | S0 gate (final) | `ci-local` green with a `podman`→`docker` shim: 172 test binaries, 5189 passed, 0 failed (includes API integration tests, trunk release build, documentation gates, the five new laws); browser gates: every smoke passes except outliner-drag and perf, which time out in `Runtime.evaluate`; outliner-drag fails the same way on the pre-S0 commit (F-019). Operator: too much testing — decision D15 (lean gates) | logs/s0-gate-*, s0-smoke-* |
 
 ## Amendments
 
@@ -210,6 +214,10 @@ become tickets at S12.
 - **F-013 (NOTE, S2): a legacy map engine that re-exports the graphics engine would show about 28 shims.** The S2 and S4 prompts must cut or switch them in the stage that creates them. Reported by T4.
 - **F-014 (FIX, before the S0 gate): the xtask prose-rule tests fail on T4's law files.** `tools_v2/xtask/src/tests/tooling_prose_rules.rs` flags the word "legacy" (see F-012) and planned paths such as `crates/map_rendering` and `prelude.rs` written in prose. Reported by T1b and T4.
 - **F-015 (NOTE): a relocation `path` row never rewrites `mod` declarations**; each stage's author edits them. Reported by T1b.
+- **F-016 (FIX, done by G0b): `.ai/tickets/T-086.toml` was not in canonical form** (hand-edited in milestone S), so the ticket store's round-trip test failed.
+- **F-017 (FIX, done by G0b): `ticket check --strict` rejected plan slice ids** in `documentation_v2/mod/script_modularisation_progress_checkpoint.md` that match the retired priority-backlog id pattern.
+- **F-018 (NOTE, environment): the `rust-test-it` task calls `podman` directly** (`tools_v2/xtask/src/commands/ci/task_definitions.rs`), unlike `cargo xtask db test-it`, which resolves the runtime. This container uses a `podman`→`docker` shim. A code fix to resolve the runtime in that task belongs to S2 (A2 owns the db lane).
+- **F-019 (NOTE, environment): the outliner-drag and perf browser smokes time out in `Runtime.evaluate` in this container.** Outliner-drag fails identically on the pre-S0 commit; perf shows the same signature. The container's Chromium is 141, while the gate pins 149.
 - **F-002 (CLOSE, P0): shallow clone.** The container's clone was shallow, so 353 archive
   permalinks failed link-check as unknown objects. `git fetch --unshallow` in P0 fixed it, and
   link-check passes (2044 checks). A fresh container clones shallow again, so every new session

@@ -101,8 +101,8 @@ gate's server, its fixtures or its request interception.
 ## Boundaries
 
 - Depends on: `crate::repository_layout` for the map asset and glyph folders; `tokio`, `axum`,
-  `reqwest`, `tokio-tungstenite`, `clap`, `image` and `sha2`; a Chromium build from the Playwright
-  cache or `CHROME_HEADLESS_SHELL`; the pins in `tools_v2/developer-tools/gate-env.json`; the built
+  `reqwest`, `tokio-tungstenite`, `clap`, `image` and `sha2`; a Chromium build from
+  `CHROME_HEADLESS_SHELL`, `PLAYWRIGHT_BROWSERS_PATH` or the Playwright cache; the pins in `tools_v2/developer-tools/gate-env.json`; the built
   app in `apps/website/frontend/dist`, the fixtures in `apps/website/frontend/tests/fixtures/api/`
   and the goldens in `tools_v2/developer-tools/fixtures/dom_oracle/`.
 - Used by: `tools_v2/developer-tools/src/bin/gate.rs` and `capture.rs`; `repo_root` in

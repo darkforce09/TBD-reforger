@@ -1,4 +1,25 @@
+//! `cargo xtask platform wave reclaim`: argument parsing, the live-slice set, the sweeps of
+//! `/var/tmp`, the main checkout and `$HOME/.cache`, and the summary line.
+//!
+//! **Role:** deletes build caches whose owning slice is gone and reports the ones it spares; the
+//! build output folder and the retired root-level folders are swept by the sibling
+//! `build_output_folders.rs`.
+//!
+//! **Position:** dispatched from `flush.rs` through `reclaim.rs`, which states the policy; reads
+//! `git worktree list`, `du` and `df`.
+//!
+//! **Signals & state:** none held; every sweep deletes folders and adds the megabytes it freed to
+//! the summary.
+//!
+//! **Invariants:** a folder is deleted only when its own name attributes it to a slice that has no
+//! live worktree, or when it is a gate folder the operator opted into, or a retired root-level
+//! build folder; when `git worktree list` does not answer, the attributed sweeps refuse.
+
+use super::build_output_folders::{
+    report_permanent_build_output, sweep_gate_folders, sweep_retired_root_level_folders,
+};
 use super::*;
+use crate::core::cargo_target_directory::is_retired_root_level_build_folder;
 
 /// `du -sm <path> | cut -f1` — megabytes, or `None` when du could not answer.
 pub(super) fn du_mb(p: &Path) -> Option<u64> {
@@ -200,11 +221,14 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
+    // Retired root-level build folders: no tool writes them, so they go whatever the flags say.
+    freed += sweep_retired_root_level_folders(&ctx.main_root);
+
     // PER-SLICE PRIVATE TARGET DIRS AT MAIN_ROOT. Swept by DEFAULT. Here is why, since the
     // sibling set two blocks down is deliberately opt-in and the two are easy to confuse.
     //
-    // Made target-gate-* opt-in for one reason: it is a WARM SHARED cache. Every future slice
-    // gate hits target-gate-api (24 GB today), and a cold build measures 23.4 s vs 9.3 s warm — so
+    // The gate set (`target/gate-*`) is opt-in for one reason: it is a WARM SHARED cache. Every
+    // future slice gate hits `target/gate-api`, and a cold build measures 23.4 s vs 9.3 s warm — so
     // deleting it bills work that has not happened yet, to everyone, invisibly. That argument does
     // not survive translation to a target-<SLICE> dir, which is the opposite on every axis: exactly
     // one slice ever hits it, that slice is gone, and nothing will ever hit it again. Its entire
@@ -224,14 +248,12 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
     // SELECTION IS POSITIVE IDENTIFICATION, NOT A BLOCKLIST. A dir is removed only when its own
     // name says which slice owns it: `target-<TICKET>` with the ticket FIRST, optional suffix
     // after. A blocklist here fails open — the one unlisted name is the one that gets deleted — and
-    // this function's blast radius is `rm -rf` on a directory. Measured at MAIN_ROOT today, three
-    // dirs that a looser rule would have eaten:
-    //     target/                  67 GB  the shared CARGO_TARGET_DIR for every worktree
-    //     target-dev-api          3.6 GB  the operator's live `cargo xtask mk rust-api` cache — no ticket in name
-    //     target-gate-schema-t422 1.7 GB  a GATE dir that CONTAINS a ticket id
-    // The last one is why the ticket must be the first component after `target-`: anchoring there
-    // means no target-gate-* name can be read as a slice dir even if the explicit exclusion below
-    // were deleted. A name the pattern cannot parse (target-ci, or an id with a suffix after it) is SPARED, not
+    // this function's blast radius is `rm -rf` on a directory. The shared `target/` (tens of GB,
+    // every worktree's cache) never comes out of a `target-*` glob, and a gate-shaped name that
+    // CONTAINS a ticket id (`target-gate-schema-t422`) is why the ticket must be the first
+    // component after `target-`: anchoring there means no gate-shaped name can be read as a slice
+    // dir even without the retired-name exclusion below. A name the pattern cannot parse (an id
+    // with a suffix after it, a hand-set `target-container`) is SPARED, not
     // guessed at — and printed with its size, because a silent skip is the same defect as the
     // "0 MB" report that hid the leak, just wearing a quieter hat.
     let main_root = ctx.main_root.display().to_string();
@@ -248,13 +270,6 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
         let mut unknown_mb: u64 = 0;
         let mut unknown_n: u64 = 0;
         wprintln!("slice dirs at {main_root}:");
-        let shared = ctx.main_root.join("target");
-        let sz = du_mb(&shared);
-        wprintln!(
-            "  spared  {:<44} {} MB  (shared CARGO_TARGET_DIR — never reclaimed)",
-            shared.display(),
-            sz_or_q(sz)
-        );
         for sd in glob_dir(&main_root, |n| n.starts_with("target-")) {
             if !sd.is_dir() {
                 continue;
@@ -263,25 +278,11 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
                 .file_name()
                 .map(|s| s.to_string_lossy().into_owned())
                 .unwrap_or_default();
-            // `target` cannot come out of a target-* glob and target-gate-* cannot parse as a slice
-            // dir; both arms are asserted anyway rather than reasoned about, because the cost of
-            // being wrong once is 67 GB or a red gate, and the cost of the arm is a string compare.
-            if sbase == "target" || sbase.starts_with("target-gate-") {
-                continue;
-            }
-            // NOT a safety arm — the ticket-first rule below already spares this, and did so on its
-            // own in this sweep's first real run. It is a REPORTING arm: target-dev-api is the
-            // operator's live `cargo xtask mk rust-api` cache (Makefile:134,196), permanent by design, and the
-            // generic line below filed it under "unparseable" and advised RENAMING IT so it could
-            // be reaped. Naming one known-permanent dir is cheaper than printing that about the
-            // cache behind the API the operator is using right now.
-            if sbase == "target-dev-api" {
-                let sz = du_mb(&sd);
-                wprintln!(
-                    "  spared  {:<44} {} MB  (operator dev API cache — permanent, Makefile owns it)",
-                    sd.display(),
-                    sz_or_q(sz)
-                );
+            // `target` cannot come out of a target-* glob, and a retired root-level folder was
+            // already swept above (it reaches here only when its deletion failed, and it never
+            // parses as a slice dir); both arms are asserted anyway rather than reasoned about,
+            // because the cost of being wrong once is the shared cache or a red gate.
+            if sbase == "target" || is_retired_root_level_build_folder(&sbase) {
                 continue;
             }
             let Some(stok) = slice_token(&sbase) else {
@@ -364,50 +365,9 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    // ── the gate set, opt-in ─────────────────────────────────────────────────────────────
-    let gate_glob = |root: &str| -> Vec<PathBuf> {
-        let mut v = glob_dir(root, |n| n.starts_with("target-gate-"));
-        v.extend(glob_dir(root, |n| n.starts_with("dist-gate-")));
-        v
-    };
-    if gate_dirs {
-        // PRESERVED ODDITY: `${gate_min_age_days:+, min age …}` tests for NON-EMPTY, and the
-        // variable defaults to the string "0", so a bare `--gate-dirs` still prints ", min age 0d".
-        wprintln!("gate dirs (--gate-dirs, min age {gate_min_age_days}d):");
-        for d in gate_glob(&main_root) {
-            if !d.exists() {
-                continue;
-            }
-            if gate_min_age_days > 0 {
-                let age_days = dir_age_days(&d);
-                if age_days < gate_min_age_days {
-                    wprintln!(
-                        "  spared (age {age_days}d < {gate_min_age_days}d) {}",
-                        d.display()
-                    );
-                    continue;
-                }
-            }
-            let sz = du_mb(&d);
-            if std::fs::remove_dir_all(&d).is_ok() {
-                freed += sz.unwrap_or(0);
-                wprintln!("  removed {:<44} {} MB", d.display(), sz_or_q(sz));
-            }
-        }
-    } else {
-        let mut gate_sz: u64 = 0;
-        for gd in gate_glob(&main_root) {
-            if !gd.exists() {
-                continue;
-            }
-            gate_sz += du_mb(&gd).unwrap_or(0);
-        }
-        if gate_sz > 0 {
-            wprintln!(
-                "gate dirs at {main_root}: {gate_sz} MB not reclaimed (pass --gate-dirs to opt in)"
-            );
-        }
-    }
+    // ── the build output folder: the permanent part reported, the gate set opt-in ─────────────────
+    report_permanent_build_output(&ctx.main_root);
+    freed += sweep_gate_folders(&ctx.main_root, gate_dirs, gate_min_age_days);
 
     wprintln!("reclaimed {freed} MB — {} free", df_avail(&ctx.root));
     0

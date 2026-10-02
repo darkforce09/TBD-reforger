@@ -109,6 +109,32 @@ pub(crate) enum VerifyCmd {
     /// `verify-engine-layers` task row aliases both.)
     #[command(name = "engine-layers")]
     EngineLayers,
+    /// Crate-tier law (documentation_v2/restructure/laws_and_gates.md): every manifest under
+    /// apps/, crates/, tools/, tools_v2/ and legacy/ is a workspace member; each judged crate
+    /// declares [package.metadata.layout], sits at its category plus its name, and declares the
+    /// tier its dependencies give it; edges point strictly down and follow the category matrix;
+    /// the external-crate firewalls hold; nothing new depends on a member under legacy/
+    #[command(name = "crate-tiers")]
+    CrateTiers,
+    /// Crate-anatomy law: every judged library crate keeps a lib.rs of at most 80 lines of
+    /// module lines, a prelude, a thiserror error.rs when fallible, workspace-inherited
+    /// edition, rust-version, lints and dependencies, only dev-only features, typed ids, and no
+    /// re-export of another workspace crate outside its prelude
+    #[command(name = "crate-anatomy")]
+    CrateAnatomy,
+    /// Strangler law: no member outside legacy/ but apps and the tool binaries depends on a
+    /// member under legacy/, and no member under legacy/ re-exports a new crate (a shim)
+    #[command(name = "strangler")]
+    Strangler,
+    /// Frontend-layering law (ratchet): a lower frontend layer never imports a higher one, pages
+    /// and workspaces never import each other, and one page area never imports another; more
+    /// edges than the ceiling fail
+    #[command(name = "frontend-layering")]
+    FrontendLayering,
+    /// Tailwind-sources law: every member that depends on leptos has an @source line in the app
+    /// stylesheet covering its src/**/*.rs
+    #[command(name = "tailwind-sources")]
+    TailwindSources,
     /// Every tracked folder of the code trees and the documentation root carries a README.md,
     /// and every README.md there has a Contents block that lists exactly the folder's tracked
     /// children

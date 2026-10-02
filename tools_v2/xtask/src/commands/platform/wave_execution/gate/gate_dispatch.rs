@@ -1,4 +1,6 @@
 use super::*;
+use crate::commands::platform::wave_execution::gate_folder;
+use crate::core::cargo_target_directory;
 
 /// Full gate — runs once per wave on merged main.
 ///
@@ -217,7 +219,10 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // dir for the same reason as `test api` and `test frontend`: this step RUNS test binaries.
     let mapengine_dir = format!(
         "CARGO_TARGET_DIR={}",
-        ctx.main_root.join("target-gate-mapengine").display()
+        gate_folder(
+            &ctx.main_root,
+            cargo_target_directory::GATE_MAP_ENGINE_SUBFOLDER
+        )
     );
     r.run("test map-engine", || {
         hostrun(
@@ -241,7 +246,10 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // worktrees = same artifact hash = clobbering.
     let frontend_dir = format!(
         "CARGO_TARGET_DIR={}",
-        ctx.main_root.join("target-gate-frontend").display()
+        gate_folder(
+            &ctx.main_root,
+            cargo_target_directory::GATE_FRONTEND_SUBFOLDER
+        )
     );
     r.run("test frontend", || {
         hostrun(
@@ -264,7 +272,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // PRIVATE TARGET DIR, same reason and not negotiable: this step BUILDS AND RUNS test binaries.
     let tools_dir = format!(
         "CARGO_TARGET_DIR={}",
-        ctx.main_root.join("target-gate-tools").display()
+        gate_folder(&ctx.main_root, cargo_target_directory::GATE_TOOLS_SUBFOLDER)
     );
     r.run("test xtask+developer-tools", || {
         hostrun(

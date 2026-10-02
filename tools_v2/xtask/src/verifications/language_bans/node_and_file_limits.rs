@@ -51,6 +51,6 @@ use verification_core::repository_laws::file_length::{
 };
 #[cfg(test)]
 use verification_core::repository_laws::source_roots::{
-    FILE_LENGTH_PINS, MOD_SCRIPT_ROOTS, is_test_file, mod_pins_are_script_roots,
+    MOD_SCRIPT_ROOTS, PINNED_SCRIPT_ROOTS, is_test_file, mod_pins_are_script_roots,
     walk_length_gated_sources,
 };

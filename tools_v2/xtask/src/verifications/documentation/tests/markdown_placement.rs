@@ -51,6 +51,30 @@ fn code_trees_hold_only_readme_markdown() {
 }
 
 #[test]
+fn generated_folder_exemption_spares_markdown_below_the_capitalised_folder_only() {
+    let mut fixture = FixtureCheckout::new("placement-generated-spellings");
+    fixture
+        .tracked("apps/tool/Generated/weapon/table.md", "")
+        .tracked("apps/tool/generated/api.md", "")
+        .tracked("apps/tool/GENERATED/table.md", "")
+        .tracked("apps/tool/generated_data/notes.md", "");
+    let run = run(&fixture, &[]);
+    assert_eq!(
+        failures(&run),
+        [
+            "FAIL: apps/tool/GENERATED/table.md: Markdown in a code tree; a code tree holds only \
+             README.md, and documents live under documentation_v2/",
+            "FAIL: apps/tool/generated_data/notes.md: Markdown in a code tree; a code tree holds \
+             only README.md, and documents live under documentation_v2/",
+        ]
+    );
+    assert_eq!(
+        run.totals[0],
+        "  code trees: 2 Markdown file(s) judged, 2 other than README.md"
+    );
+}
+
+#[test]
 fn the_retired_root_holds_no_tracked_file() {
     let mut fixture = FixtureCheckout::new("placement-retired");
     fixture

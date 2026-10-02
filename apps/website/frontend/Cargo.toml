@@ -1,60 +1,51 @@
-# T-159 — Leptos (Rust/wasm) website SPA; THE frontend since the T-159.29.3 React deletion
-# (dev: `cargo xtask mk leptos`; prod: SPA_DIST_DIR serve). CSR-only for now (L1); links the existing
-# map-engine crates directly from T-159.15 (the wasm-boundary collapse).
+# The website single-page app: Leptos client-side rendering compiled to WebAssembly (dev:
+# `cargo xtask mk leptos`; production: the built bundle served from `SPA_DIST_DIR`). It links the
+# map engine directly for the Mission Creator canvas and the mission compiler.
 [package]
 name = "website-frontend"
 version = "0.1.0"
 edition = "2021"
-publish = false
+publish.workspace = true
 
 [dependencies]
 leptos = { version = "0.8", features = ["csr"] }
 leptos_router = "0.8"
-console_error_panic_hook = "0.1"
-futures = "0.3"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-base64 = "0.22"
-# T-180.7 — `format_slot_line` on native + wasm. T-243 — the mission compiler is on the NATIVE
-# build too, not just wasm32: `MissionDetail::compiled_meta` is the row half of the editor's
-# server-truth Export, and a projection that only exists in the wasm build is a projection
-# `cargo test` cannot check; `compiled_meta_is_the_row_the_server_compiles_from` runs it against
-# the real captured `GET /missions/:id` golden.
-# T-0xx Phase 2A: this line absorbed `website-mission-core`, which was a separate unconditional
-# dependency with `features = ["doc"]`. `doc` was `compiler` + yrs, and it is now `store`
-# (= `scenario` + yrs). It is named HERE, in the shared block, and not in the wasm32 block below,
-# because the map-engine edges are target-split while the old mission-core edge was not — putting
-# `store` on wasm32 alone would take `compiled_meta` off the native build and kill that test
-# silently. `terrain` -> `world` and `formats` -> `io` are the same phase's renames. There is no
-# `blueprint` feature and there never was — `architecture/blueprint` (building structs + the LOS
-# raycaster behind `/debug/building-viewer`) rides `io`, which is why this line takes it.
-# `streaming` is deliberately absent: the native build wants the world/io pair without the
-# loader/scheduler stack (flate2), which the wasm32 block below adds.
+console_error_panic_hook = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+base64 = { workspace = true }
+# The map engine on every target. `format_slot_line` and the mission compiler run on the native
+# build as well as wasm32: `MissionDetail::compiled_meta` is the row half of the Mission Creator's
+# server-truth Export, and `compiled_meta_is_the_row_the_server_compiles_from` checks it natively
+# against the captured `GET /missions/:id` golden, so `store` (`scenario` plus yrs) sits in this
+# shared block rather than the wasm32 block. `io` carries `world::architecture` (the building
+# structures and line-of-sight raycaster behind `/debug/building-viewer`); `editing` brings
+# `streaming` with it. The wasm32 block adds `render`.
 website-map-engine = { path = "../map-engine", default-features = false, features = ["world", "io", "store", "editing"] }
-gloo-net = "0.6"
-js-sys = "0.3"
-# T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already
-# linked twice over via `leptos_router` and `leptos → leptos_server → server_fn`, and the workspace
-# lockfile pins the same 2.5.8 `website-api` builds against — which is the point. Both copies of
-# `is_http_url` call the SAME compiled `Url::parse`, so they agree by construction rather than by
-# discipline. Naming it here just makes the direct use honest. See `src/url_guard.rs` for why the
-# predicate is a port and not a shared crate.
-url = "2.5"
+gloo-net = { workspace = true }
+js-sys = { workspace = true }
+# The `<a href>` scheme guard (`src/v2/core/auth/url_guard.rs`). `leptos_router` and
+# `leptos → leptos_server → server_fn` already link `url`, so the bundle pays nothing, and the
+# workspace lockfile resolves the same version `website-api` builds against: both copies of
+# `is_http_url` call the same compiled `Url::parse`, so they agree by construction. `url_guard.rs`
+# explains why the predicate is a port and not a shared crate.
+url = { workspace = true }
 # The offline policy the service worker applies (cache names, request classes, the terrain pack
 # list), linked so the page's offline pack download writes the caches and keys the worker reads.
 website-offline-service-worker = { path = "../offline-service-worker" }
-wasm-bindgen = "0.2"
-web-sys = { version = "0.3", features = [
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
     "Window",
     "Location",
     "Storage",
-    # T-159.17 yrs IDB persist: `window.document()` + `document.hidden()` (Page Visibility) and the
-    # `visibilitychange` flush-on-hide listener. sessionStorage/localStorage stay under `Storage`;
-    # set_timeout/clear_timeout_with_handle live under the existing `Window`.
+    # Mission document persistence: `window.document()` + `document.hidden()` (Page Visibility)
+    # and the `visibilitychange` flush-on-hide listener. sessionStorage/localStorage stay under
+    # `Storage`; set_timeout/clear_timeout_with_handle live under `Window`.
     "Document",
     "RequestCredentials",
     "HtmlCanvasElement",
-    # T-159.15.1 Mission Creator render loop: container div, its bounding rect, wheel-zoom, and the
+    # Mission Creator render loop: container div, its bounding rect, wheel-zoom, and the
     # capture/passive wheel + window resize listeners.
     "HtmlDivElement",
     "Element",
@@ -65,20 +56,20 @@ web-sys = { version = "0.3", features = [
     "IntersectionObserverEntry",
     "IntersectionObserverInit",
     "WheelEvent",
-    # T-159.15.2 Mission Creator pan: MMB/RMB drag (PointerEvent) + contextmenu (MouseEvent).
+    # Mission Creator pan: MMB/RMB drag (PointerEvent) + contextmenu (MouseEvent).
     # `PointerEvent = ["Event","MouseEvent","UiEvent"]` transitively enables the inherited
     # button()/client_x()/prevent_default() accessors; MouseEvent is listed for the standalone
-    # contextmenu handler type. set/has/release_pointer_capture live under the existing `Element`.
+    # contextmenu handler type. set/has/release_pointer_capture live under `Element`.
     "PointerEvent",
     "MouseEvent",
-    # T-159.21 undo/redo shortcuts: the window `keydown` listener (Ctrl/Cmd+Z, Ctrl+Y). Brings the
+    # Undo and redo shortcuts: the window `keydown` listener (Ctrl/Cmd+Z, Ctrl+Y). Brings the
     # inherited code()/ctrl_key()/meta_key()/shift_key()/alt_key() accessors via UiEvent/Event.
-    # The focus guard's `active_element` / `is_content_editable` are already covered by the
-    # existing `Document` / `Element` / `HtmlElement`.
+    # The focus guard's `active_element` / `is_content_editable` are covered by `Document` /
+    # `Element` / `HtmlElement`.
     "KeyboardEvent",
     "EventTarget",
     "AddEventListenerOptions",
-    # T-159.20 Save/Export: the semver <input> (HtmlInputElement) + the Export download dance
+    # Save and Export: the semver <input> (HtmlInputElement) + the Export download
     # (Blob/BlobPropertyBag → Url.createObjectURL → <a download> click → revokeObjectURL). `click()`
     # lives on HtmlElement; the anchor is created via `document.create_element("a")` → HtmlAnchorElement.
     "HtmlInputElement",
@@ -87,30 +78,30 @@ web-sys = { version = "0.3", features = [
     "Url",
     "HtmlAnchorElement",
     "HtmlElement",
-    # T-446 — CMS Content hero upload: `<input type=file>` → FormData field `"file"` →
-    # POST /api/v1/cms/uploads. `File` extends `Blob` (already listed); `FileList` is required for
+    # Content hero upload: `<input type=file>` → FormData field `"file"` →
+    # POST /api/v1/cms/uploads. `File` extends `Blob`; `FileList` is required for
     # `HtmlInputElement::files()` (HtmlInputElement's feature deps do not pull it).
     "FormData",
     "File",
     "FileList",
-    # T-159.25 SSE consumer (sse.rs): Bearer fetch + ReadableStream reader — the useServerTelemetry
-    # transport (EventSource can't carry the Authorization header).
+    # SSE consumer (`sse.rs`): Bearer fetch + ReadableStream reader, because EventSource cannot
+    # carry the Authorization header.
     "Headers",
     "Request",
     "RequestInit",
     "Response",
     "ReadableStream",
     "ReadableStreamDefaultReader",
-    # T-287 — abort the SSE fetch on SPA route-leave (AbortController parked in thread_local;
+    # Aborts the SSE fetch when the route is left (AbortController parked in a thread_local;
     # on_cleanup calls the Send zero-capture abort_server_status_stream).
     "AbortController",
     "AbortSignal",
-    # T-159.25 Server Intel copy-address (navigator.clipboard.writeText).
+    # Server Intel copy-address (navigator.clipboard.writeText).
     "Navigator",
     "Clipboard",
     # Building-viewer debug bench — `?prefab=` override parse.
     "UrlSearchParams",
-    # T-166 — TBDS/WebP decode → ImageBitmap (WebGPU) or OffscreenCanvas→RGBA (WebGL2 gates).
+    # TBDS/WebP decode → ImageBitmap (WebGPU) or OffscreenCanvas→RGBA (WebGL2 gates).
     "ImageBitmap",
     "ImageBitmapOptions",
     "ColorSpaceConversion",
@@ -129,23 +120,24 @@ web-sys = { version = "0.3", features = [
 # Rendering and browser asset I/O share the frontend's WebAssembly module.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 gloo-timers = { version = "0.3", features = ["futures"] }
-# `default-features = false` is explicit since T-0xx Phase 2A flipped the crate default to
-# `scenario`. This line was the only one riding the old default; `render` reaches
-# streaming -> io -> world -> bvh transitively, so the resulting feature set is unchanged.
+# The renderer tier of the browser build: `render` reaches `streaming` -> `io` -> `world` -> `bvh`.
+# Default features are off, as on every frontend edge to the map engine, so the crate default
+# (`scenario`) never chooses a tier.
 website-map-engine = { path = "../map-engine", default-features = false, features = ["render", "streaming"] }
-# T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
-# `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
-# features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on
-# wasm32-unknown-unknown — so keep default features (dropping them strips the async API).
+# The mission document's IndexedDB persistence (database `tbd-mission-yrs`, store `doc-state`, the
+# whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default features pull
+# `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on wasm32-unknown-unknown, and
+# dropping them strips the async API, so default features stay on.
 idb = "0.6"
-# T-159.25 SSE consumer — awaiting fetch/reader promises in sse.rs. Already in the tree via leptos
-# (spawn_local); listing it just makes the direct use explicit.
-wasm-bindgen-futures = "0.4"
+# Awaits the fetch and stream-reader promises of the SSE consumer (`sse.rs`). Leptos links it for
+# spawn_local; this line names the direct use.
+wasm-bindgen-futures = { workspace = true }
 
-# [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
-# wasm-opt via the index.html data-wasm-opt attribute.
+# Member manifests carry no [profile.*]: Cargo reads profiles from the workspace root only. trunk
+# applies wasm-opt via the index.html data-wasm-opt attribute.
 
-# Native UI tests call the graphics crate's satellite selection and archive arithmetic.
+# Native UI tests call the map engine's satellite selection and archive arithmetic (the
+# `streaming` tier).
 [dev-dependencies]
 website-map-engine = { path = "../map-engine", default-features = false, features = [
     "streaming",

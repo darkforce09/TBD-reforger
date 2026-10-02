@@ -1,6 +1,7 @@
-# Website applications, the map/mission engine, the pure renderer, and repository tooling.
-# T-0xx Phase 2A folded `website-mission-core` into `website-map-engine`; the headless mission
-# domain is now that crate's `data/` module, gated on `scenario` (the api tier) and `store`.
+# The TBD Reforger workspace: the website applications (API, single-page app, offline service
+# worker), the map engine with the headless mission domain (its `data/` module, behind the
+# `scenario` and `store` features), the pure GPU renderer, the fleet host agent, the ticketboard
+# and the repository tooling.
 [workspace]
 resolver = "3"
 members = [
@@ -17,3 +18,70 @@ members = [
     "tools_v2/xtask",
     "tools_v2/developer-tools",
 ]
+
+# Package fields a member inherits with `<field>.workspace = true`. The frontend declares its own
+# edition and no rust-version.
+[workspace.package]
+edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
+publish = false
+
+# External dependencies that two or more members declare with the same version requirement. An
+# entry carries the version and, where they are off, the default features; each member names its
+# own features and `optional` beside `workspace = true`, so a feature stays the choice of the
+# member that needs it. A member whose version requirement differs keeps its own specification.
+[workspace.dependencies]
+anyhow = "1"
+axum = "0.8.9"
+base64 = "0.22"
+bytemuck = "1"
+chrono = "0.4.45"
+clap = "4"
+console_error_panic_hook = "0.1"
+flate2 = "1"
+futures = "0.3"
+gloo-net = "0.6"
+js-sys = "0.3"
+# Default features off drop the HTTP `$ref` resolver (reqwest and the aws-lc-rs C build): every
+# schema is local or embedded, so core draft 2020-12 validation is all a member needs.
+jsonschema = { version = "0.46.10", default-features = false }
+libc = "0.2"
+png = "0.17"
+proptest = "1"
+rand = "0.10.2"
+regex = "1"
+# Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
+# speaks HTTPS enables `rustls-no-provider` and installs the ring provider.
+reqwest = { version = "0.13.4", default-features = false }
+# Default features off drop the aws-lc-rs provider; members enable `ring`.
+rustls = { version = "0.23.41", default-features = false }
+serde = "1"
+serde_json = "1"
+thiserror = "2.0.18"
+time = "0.3"
+tokio = "1.52.3"
+toml = "0.8"
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+url = "2.5"
+uuid = "1.23.4"
+walkdir = "2"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+web-sys = "0.3"
+# Default features off: each member selects the browser backends (`webgpu`, `webgl`) and `wgsl`.
+wgpu = { version = "29", default-features = false }
+
+# The lint policy a crate adopts with `[lints] workspace = true`; under `-D warnings` every warning
+# fails the build. `clippy::unwrap_used` binds production code only: the root `clippy.toml` sets
+# `allow-unwrap-in-tests`, so tests may call `unwrap()`.
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unwrap_used = "warn"

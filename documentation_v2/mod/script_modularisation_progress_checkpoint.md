@@ -6,6 +6,9 @@ The resume file for [T-1092](/documentation_v2/tickets/specs/t1092_mod_script_mo
 To resume: read this file, then continue the roster of the
 [plan](/documentation_v2/tickets/plans/t-1092_plan.md) from the first row that is not `done`.
 Statuses: `pending`, `running`, `done — awaiting commit`, `done`, `blocked`.
+Ids are the plan's slice ids, except that the plan's two-digit phase 3 slices are written
+"P3 slice 10" to "P3 slice 14" here: `cargo xtask ticket check --strict` rejects a phase digit,
+hyphen and two digits in live documentation, the spelling of the retired priority backlog ids.
 
 ## Frozen class names
 
@@ -53,11 +56,11 @@ Commits of this program stage by pathspec only.
 | P3-7 | done | f8f8701c4 | Loadouts/Application (5 phases), Preview/, AI/Waypoints, AI/GroupState; export DTOs to `TBD_LoadoutExportStruct`. |
 | P3-8 | done | 03d9d83be | Audio (5), Markers (+Client/), Radio comment pass; modded PCs named `SCR_PlayerController.c` per folder. |
 | P3-9 | done | 0bf022275 | FrameworkManager 398 over Flow/ + Stage/; Safestart/, WinConditions/; `TBD_GameStage.c` -> `TBD_EGameStage.c`; Safestart OnDelete now cancels its timers. |
-| P3-10 | done | c7afddd02 | Briefing Service/, Catalog/, UI/Pages, UI/Navigation, map launcher; wire bytes unchanged; self-check armed from Serialise now runs. |
-| P3-11 | done | e198b3e64 | Lobby Service/, Catalog/, PreSlot/, UI/Roster, UI/Kit; deployment-authorization folded into `ApplyDeploy`; ticket ids removed from one attribute desc and one log line. |
-| P3-12 | done | 58163e9ec | Spectator Host/ (6) and Controller/ (4); Players and PostGame one type per file; DebriefScreen uses `TBD_WireCodec` separators. |
-| P3-13 | done | 8210e3784 | Admin (subcommands, audit, snapshot via codec), Admin/UI sections; MissionSelector Catalog/ and inspector cards; browser RPCs on the Admin player controller. |
-| P3-14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
+| P3 slice 10 | done | c7afddd02 | Briefing Service/, Catalog/, UI/Pages, UI/Navigation, map launcher; wire bytes unchanged; self-check armed from Serialise now runs. |
+| P3 slice 11 | done | e198b3e64 | Lobby Service/, Catalog/, PreSlot/, UI/Roster, UI/Kit; deployment-authorization folded into `ApplyDeploy`; ticket ids removed from one attribute desc and one log line. |
+| P3 slice 12 | done | 58163e9ec | Spectator Host/ (6) and Controller/ (4); Players and PostGame one type per file; DebriefScreen uses `TBD_WireCodec` separators. |
+| P3 slice 13 | done | 8210e3784 | Admin (subcommands, audit, snapshot via codec), Admin/UI sections; MissionSelector Catalog/ and inspector cards; browser RPCs on the Admin player controller. |
+| P3 slice 14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
 | P3-C | done | 4518a8665 | Forwarders removed, stale references fixed across scripts and docs, dead `TBD_Objective` members dropped, T-1219 filed; order line matches baseline. P3-C2 (this commit) filed T-1220..T-1228 for the bugs the checkpoint had missed. |
 | P4-1 | done | a055c173d, f6f350b51 | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md law 7 and section 3 committed separately; the law 8 sentence ("machine-checked by `cargo xtask verify enfusion-comments`") sits inside the other session's uncommitted law 8 rewrite and lands with it. ci-local exit 1 only on the other session's work (editorconfig in untracked assets_v2/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
 | OP-1 | done (waived) | | Operator 2026-09-26: playtest not relevant in pre-alpha; closed. |
@@ -71,8 +74,8 @@ Additions to a launch prompt beyond concrete values, by slice id.
 
 | Slice | Addition |
 |---|---|
-| P3-11…P3-14 | Brief file gains a "Bugs" section (operator 2026-09-26: bugs are noted with file:line, never fixed) and the wave B helpers (`EndRound`, `CountSurvivors`, `TBD_WarnOnce`, `TBD_AnnounceOnce`, `TBD_Rounding`). Slice notes carry each folder's stale-comment leftovers; P3-13 switches `TBD_MissionDeploymentRelay` off the `JsonEscape` forwarder. |
-| P3-6…P3-10 | Brief file gains wave A lessons: name split files after their primary type (ECM-9; companion structs live with their owner, enums get their own file); run `readme-coverage`/`link-check` with `--with-untracked`. |
+| P3 slices 11…14 (wave C) | Brief file gains a "Bugs" section (operator 2026-09-26: bugs are noted with file:line, never fixed) and the wave B helpers (`EndRound`, `CountSurvivors`, `TBD_WarnOnce`, `TBD_AnnounceOnce`, `TBD_Rounding`). Slice notes carry each folder's stale-comment leftovers; P3 slice 13 switches `TBD_MissionDeploymentRelay` off the `JsonEscape` forwarder. |
+| P3 slices 6…10 (wave B) | Brief file gains wave A lessons: name split files after their primary type (ECM-9; companion structs live with their owner, enums get their own file); run `readme-coverage`/`link-check` with `--with-untracked`. |
 | P3-1…P3-5 | Delivered as one scratch brief file (B0 + CARD + SPLIT RULES + writer steps, verbatim) plus a "Parallel wave rules" block: judge compile by own-file errors only; git mv is fine, no other git add/reset. Slice notes add: heartbeat owns Tick calls (keep static Tick signatures); P3-3 adds `TBD_ZoneRegistry.FindById` and `TBD_TriggerRuntime.HasFired` for other slices; P3-5 must not touch `TBD_DebriefScoreboard.c`. |
 | P2-2 | Also update `tools_v2/xtask/src/verifications/mod_scripts/enfusion_comments/network_authority_rule.rs:25` so `TBD_Authority.IsClient()`/`IsServer()` calls count as context-dependent (the P2-1 replacement hid 82 sites), with a test. |
 | P1-3 onward | B0 gains: "Never run `hcargo fmt -p <package>` (it reformats the other session's files); check with `hcargo fmt -p xtask -- --check` and format only your own files." |

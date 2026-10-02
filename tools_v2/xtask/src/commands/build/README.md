@@ -23,7 +23,7 @@ The runner prints each step's line before running it and stops at the first fail
 `cargo` and `trunk` gets the shared `CARGO_TARGET_DIR` from
 `tools_v2/xtask/src/core/cargo_target_directory.rs` (the primary checkout's `target/`, shared by
 every linked worktree, unless the caller exports another), except `rust-api`, which builds into
-`target-dev-api` in the current checkout so a running server never waits on the shared build lock.
+`target/dev-api` in the current checkout so a running server never waits on the shared build lock.
 Before a `cargo` or `trunk` step, `abi_guard` refuses a target directory stamped by another glibc.
 
 The tests in `tests/recipes.rs` are wired in from `tools_v2/xtask/src/core/cargo_target_directory.rs`,
@@ -41,14 +41,13 @@ since half of them cover that module's pin.
   | Target | Recipe |
   |---|---|
   | `print-cargo-target-dir` | prints the resolved shared target directory |
-  | `verify-cargo-target` | checks that the shared target-directory pin is intact and that `rust-build` sets no directory of its own |
-  | `reclaim-target-ci` | deletes the primary checkout's `target-ci/`, refusing any other path |
+  | `verify-cargo-target` | checks that the shared target-directory pin is intact, that `rust-build` sets no directory of its own and that `rust-api` builds into this checkout's `target/dev-api` |
+  | `reclaim-target-ci` | deletes the primary checkout's `target/ci/` and the retired root-level `target-ci/`, refusing any other path |
   | `rust-api` | `cargo run --bin api` in `apps/website/api_v2`; stays in the foreground |
   | `rust-build` | `cargo build --all-targets` in `apps/website/api_v2` |
   | `rust-test` | `cargo test --lib --bins` in `apps/website/api_v2`, no database |
   | `rust-fmt` | `cargo fmt --check` in `apps/website/api_v2`, then `cargo fmt --all --check` |
   | `rust-clippy` | `cargo clippy --all-targets -- -D warnings` in `apps/website/api_v2` |
-  | `rust-sqlx-prepare` | `cargo sqlx prepare` in `apps/website/api_v2` |
   | `rust-ci` | `rust-fmt`, `rust-clippy`, `rust-build`, `wasm-ci`, then the integration tests against a fresh `rust_it` database; needs `cargo xtask db up` |
   | `wasm-ci` | fmt, clippy (native with all features, and `wasm32-unknown-unknown`) and tests of `website-map-engine`, `website-graphics-engine` and `website-offline-service-worker` |
   | `leptos` | `trunk serve --release` in `apps/website/frontend`; stays in the foreground on :3000 |

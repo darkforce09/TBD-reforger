@@ -67,7 +67,8 @@ ci-local` nor the CI workflow runs them.
 | `ENFUSION_MCP_BIN` | the pinned npm package's module | `src/enfusion_tooling/enfusion_mcp_entrypoint.rs`: the enfusion-mcp server to start |
 | `MCP_SOCK`, `MCP_DAEMON_IDLE`, `MCP_DAEMON_MAX_LIFE`, `MCP_CALL_TIMEOUT`, `MCP_DEBUG`, `MCP_STUB` | none, 1800 s, 14400 s, 180 s, off, off | `src/enfusion_tooling/mcp_broker.rs`: the broker's socket, limits, logging and stub |
 | `STUB_MODE`, `STUB_DAEMON`, `STUB_LINGER` | `success`, off, 1 s | `src/enfusion_tooling/mcp_broker.rs`: the offline stub's behaviour |
-| `CHROME_HEADLESS_SHELL` | the Chromium the harness finds | `src/browser_testing/cdp/sleep_ms.rs`: the browser executable |
+| `CHROME_HEADLESS_SHELL` | the Chromium the harness finds | `src/browser_testing/cdp/chromium_discovery.rs`: the browser executable |
+| `PLAYWRIGHT_BROWSERS_PATH` | `~/.cache/ms-playwright` | `src/browser_testing/cdp/chromium_discovery.rs`: the Playwright browser folder searched before the default cache |
 | `LEPTOS_DIST` | `apps/website/frontend/dist` | `src/browser_testing/editor_smoke_tests/mutations.rs`: the built app `gate r-auth` serves without `--dist` |
 | `TOKEN`, `REFRESH` | none; the smoke exits 2 without them | `src/browser_testing/editor_smoke_tests/mutations.rs`: dev-login tokens for `gate smoke mutations` |
 | `PROFILE`, `ENFUSION_PROFILE_PATH` | none | `src/world_export_pipeline/export_preparation/export_profile.rs`: the [Workbench](/documentation_v2/glossary/n_to_z.md#workbench) profile `world copy-export-profile` reads |

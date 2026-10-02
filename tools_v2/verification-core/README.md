@@ -5,7 +5,9 @@ every `cargo xtask` verification and many xtask commands are written with. It gi
 outcomes instead of two (held, failed, did not run), so a check whose input is missing, whose tool
 is absent or whose child process was killed can never report a pass. Its `repository_laws` module
 holds the structural engineering laws (file length, test placement, no exemptions, the engine
-layer walls, the website crate dependency directions) as pure checks over a checkout.
+layer walls, the website crate dependency directions, and the workspace laws: crate tiers, crate
+anatomy, the strangler rule, frontend layering and Tailwind sources) as pure checks over a
+checkout.
 
 ## Contents
 

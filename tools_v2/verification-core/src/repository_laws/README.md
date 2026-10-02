@@ -1,16 +1,19 @@
 # Repository laws
 
 The structural engineering laws of the repository as pure checks over a checkout: file length,
-test placement, the absence of any exemption mechanism, the engine layer walls and the dependency
-direction between the website crates. `cargo xtask verify file-length` and
-`cargo xtask verify engine-layers` print these results, and the `engineering_laws` test binary of
-`website-api` asserts on them, so the gates and that binary never disagree about the tree.
+test placement, the absence of any exemption mechanism, the engine layer walls, the dependency
+direction between the website crates, and the workspace laws over the members of the root
+manifest. `cargo xtask verify file-length`, `cargo xtask verify engine-layers` and the five
+workspace-law verbs (`cargo xtask verify crate-tiers` and its siblings) print these results, and
+the `engineering_laws` test binary of `website-api` asserts on them, so the gates and that binary
+never disagree about the tree.
 
 ## Contents
 
 ```text
 tools_v2/verification-core/src/repository_laws/
-├── cargo_manifest.rs          a `Cargo.toml` reader: package name, dependency edges in every table, features
+├── cargo_manifest/            the manifest reader's lexical helpers
+├── cargo_manifest.rs          a `Cargo.toml` reader: package keys, dependency edges in every table, features, layout, lints, targets, workspace
 ├── crate_dependencies.rs      the dependency-direction rules of the website crates and the test-only feature rule
 ├── engine_layers/             the eight engine-layer walls and the map engine's UI-framework ban
 ├── exemption_mechanisms.rs    exemption files, comment directives and exemption tables
@@ -18,7 +21,9 @@ tools_v2/verification-core/src/repository_laws/
 ├── mod.rs                     the module tree and the laws' shared contract
 ├── sibling_test_placement.rs  inline test-module bodies in production files, found by name or by `cfg`
 ├── source_roots.rs            the roots every structural law walks and the test-file rule
-└── tests/                     unit tests for each module and the throwaway checkout they plant files in
+├── tests/                     unit tests for each module and the throwaway checkout they plant files in
+├── workspace_laws/            crate tiers, crate anatomy, strangler, frontend layering and Tailwind sources
+└── workspace_members.rs       the root manifest's members: explicit folders and globs, minus excludes
 ```
 
 ## How it works
@@ -35,11 +40,14 @@ input it needs is missing or unreadable.
 | UI-framework ban | `engine_layers::map_engine_ui_framework_findings` | the map engine's manifest and sources | a UI framework dependency edge or import anywhere in the crate |
 | Crate directions | `crate_dependencies::crate_dependency_findings` | the four website crate manifests | an edge against the layer order, in any dependency table |
 | Test-only feature | `crate_dependencies::test_only_feature_findings` | one parsed manifest | a feature that a non-test build could carry |
+| Workspace laws | `workspace_laws::{crate_tiers, crate_anatomy, strangler, frontend_layering, tailwind_sources}` | the root manifest's members, their manifests and sources, the app stylesheet | see the [workspace laws README](/tools_v2/verification-core/src/repository_laws/workspace_laws/README.md) |
 
-The law roots are `source_roots::FILE_LENGTH_PINS` — the four `tools_v2` crates,
-`apps/ticketboard/src`, `apps/fleet_host_agent/src` and `tests`, `apps/website/api_v2/src`,
-`apps/website/frontend/src` and the framework and tbd-emcp addon script roots — plus every `src`
-and `tests` folder directly under `apps/website/`. A file is a test file when a path component is
+The law roots are the folder of every workspace member the root `Cargo.toml` names (read by
+`workspace_members`; a member nested inside another member is walked once, as part of the outer
+one) plus `source_roots::PINNED_SCRIPT_ROOTS`, the framework and tbd-emcp addon script roots. A
+missing root manifest, a workspace that names no member, an explicit member folder that is missing
+and a missing script root are each `NotRun::TargetMissing`, never a smaller walk, so a crate is
+judged from the commit that makes it a member. A file is a test file when a path component is
 `tests` or its `.rs` or `.c` stem ends in `_tests`; test files are the sibling files, so the
 placement law reads only production files.
 
@@ -50,7 +58,10 @@ rule or an exemption table explicitly, so a host allow-list or a rate-limit exem
 finding, and a directive counts only on a comment line.
 
 The dependency laws read manifests with `cargo_manifest`, a reader for the TOML subset Cargo
-manifests use, so the crate keeps its two dependencies. A renamed dependency counts under its real
+manifests use, so the crate keeps its two dependencies. It reads both spellings of a workspace
+dependency (`name = { workspace = true }`, `name.workspace = true`) and of an inherited package key,
+tells a `[target.'cfg(…)'.dependencies]` table apart from a plain one, and never reads a
+`[workspace.dependencies]` entry as an edge. A renamed dependency counts under its real
 package name, and a `#` comment never produces an edge.
 
 ## Public surface
@@ -61,11 +72,14 @@ package name, and a `#` comment never produces an edge.
   `attribute_enables_tests`, `InlineTestModule`, `InlineTestModuleScan`.
 - `exemption_mechanisms`: `scan_exemption_mechanisms`, `ExemptionScan`, `ExemptionFinding`,
   `ExemptionKind` and the three patterns.
-- `source_roots`: `FILE_LENGTH_PINS`, `MOD_SCRIPT_ROOTS`, `LENGTH_GATED_EXTENSIONS`,
-  `law_source_roots`, the three walks, `repository_relative`, `is_test_file`,
+- `source_roots`: `PINNED_SCRIPT_ROOTS`, `MOD_SCRIPT_ROOTS`, `LENGTH_GATED_EXTENSIONS`,
+  `law_source_roots`, `outermost_folders`, the three walks, `repository_relative`, `is_test_file`,
   `mod_pins_are_script_roots`.
 - `cargo_manifest`: `read_manifest`, `parse_manifest`, `CargoManifest`, `DependencyEdge`,
-  `FeatureDeclaration`.
+  `DependencyKind`, `FeatureDeclaration`, `PackageField`, `LintsSource`, `LayoutDeclaration`,
+  `BuildTarget`, `WorkspaceDeclaration`.
+- `workspace_members`: `read_workspace_members`, `WorkspaceMember`, `wildcard_matches`.
+- `workspace_laws`: see its [README](/tools_v2/verification-core/src/repository_laws/workspace_laws/README.md).
 - `crate_dependencies`: the four rules and `CRATE_DEPENDENCY_RULES`, `rule_findings`,
   `crate_dependency_findings`, `test_only_feature_findings`, `DependencyFinding`.
 - `engine_layers`: see its [README](/tools_v2/verification-core/src/repository_laws/engine_layers/README.md).
@@ -75,7 +89,8 @@ package name, and a `#` comment never produces an edge.
 - Depends on: `crate::scan`, `crate::pattern` and `crate::verdict`; `std` only otherwise.
 - Used by: `tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/` (`verify
   file-length`), `tools_v2/xtask/src/verifications/architecture/engine_layer_boundaries.rs`
-  (`verify engine-layers`), and `apps/website/api_v2/tests/engineering_laws.rs`.
+  (`verify engine-layers`), `tools_v2/xtask/src/verifications/architecture/workspace_laws.rs`
+  (the five workspace-law verbs), and `apps/website/api_v2/tests/engineering_laws.rs`.
 - Rules:
   - a missing root or unreadable file is `NotRun`, never zero findings
     (`a_missing_pin_is_a_walk_that_did_not_run`, `an_unreadable_file_is_a_scan_that_did_not_run`,

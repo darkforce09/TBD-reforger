@@ -64,7 +64,8 @@ scope selected nothing to judge.
 The README span is every tracked folder at or under the code trees (`CODE_TREES`: `apps`,
 `tools_v2`, `contracts_v2`, `assets_v2`) and the documentation root (`DOCUMENTATION_ROOT`:
 `documentation_v2`), the roots included, minus the exempt folders and everything below them: a
-folder named `tests` or `generated`, a folder whose name begins with `.`, and the pending-merge area
+folder named exactly `tests`, `generated` or `Generated` (the spelling of the Enfusion script
+trees; no other casing), a folder whose name begins with `.`, and the pending-merge area
 (`PENDING_MERGE_DIR`). The repository root's README.md lies outside the span. Both rules judge the
 span alone, so a README.md inside an exempt folder is neither required nor checked.
 
@@ -109,7 +110,7 @@ check is the only structural rule: section order, headings and wording are not c
 ### markdown-placement
 
 1. The code trees hold no tracked `.md` file, in any letter case, other than README.md, except below a
-   `tests`, `generated` or `.`-prefixed folder.
+   `tests`, `generated`, `Generated` or `.`-prefixed folder.
 2. The retired documentation root (`RETIRED_DOCS_ROOT`: `docs`) holds no tracked file.
 3. Every tracked `.md` file, in any letter case, under the documentation root is at most 500 lines,
    except under the [ticket](/documentation_v2/glossary/n_to_z.md#ticket) records
@@ -221,7 +222,7 @@ new rule joins the list in `verify_link_check` and reads the scan it is given.
 
 | Area | readme-coverage | markdown-placement | link-check |
 |---|---|---|---|
-| a folder named `tests` or `generated`, or starting with `.`, and all below it | no README needed, none checked | in a code tree, may hold any Markdown; under the documentation root, still size-limited | judged like any other document |
+| a folder named `tests`, `generated` or `Generated`, or starting with `.`, and all below it | no README needed, none checked | in a code tree, may hold any Markdown; under the documentation root, still size-limited | judged like any other document |
 | the pending-merge area (`PENDING_MERGE_DIR`) | no README needed, none checked | outside the size limit | judged as live |
 | ticket records (`TICKET_DOCUMENTS_DIR`) and archive (`ARCHIVE_DIR`) | judged | outside the size limit | frozen: rules 1 to 7 only |
 | program records (`PROGRAM_RECORDS_PREFIX`) | judged, when a folder | outside the size limit | not judged |
@@ -266,6 +267,8 @@ turns into the `GateRequest` every gate takes. `--report` belongs to link-check 
     (`untracked_files_join_the_listing_only_when_included_and_ignored_files_never_do`);
   - the exemptions above are fixed in `path_regions.rs` and `link_check/judged_documents.rs`
     (`test_generated_hidden_and_pending_merge_folders_need_no_readme`,
+    `generated_folder_exemption_spares_the_capitalised_folder_and_no_other_spelling`,
+    `generated_folder_exemption_spares_markdown_below_the_capitalised_folder_only`,
     `the_size_limit_skips_frozen_pending_record_and_sync_managed_documents`,
     `every_judged_area_is_judged_and_nothing_else`).
 

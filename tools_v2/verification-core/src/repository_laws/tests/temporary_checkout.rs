@@ -1,8 +1,9 @@
 //! A throwaway checkout for the repository-law tests.
 //!
-//! **Role:** builds a repository skeleton in the system temporary directory with every pinned
-//! law root present, so a test plants exactly the files it is about and nothing refuses for a
-//! missing root.
+//! **Role:** builds a repository skeleton in the system temporary directory with every law root
+//! present — a root manifest naming [`FIXTURE_WORKSPACE_MEMBERS`], each member with a manifest and
+//! one `src/lib.rs`, and every pinned script root — so a test plants exactly the files it is about
+//! and nothing refuses for a missing root.
 //! **Position:** test support for the sibling test modules of [`super`].
 //! **Signals & state:** each [`TemporaryCheckout`] owns one directory and removes it on drop.
 //! **Invariants:** the directory name carries the process id and the test's own name, so tests
@@ -10,17 +11,50 @@
 
 use std::path::{Path, PathBuf};
 
-use super::source_roots::FILE_LENGTH_PINS;
+use super::source_roots::PINNED_SCRIPT_ROOTS;
+
+/// The member folders of the workspace a [`TemporaryCheckout::with_law_roots`] checkout declares:
+/// the folders the repository's own members sit in.
+pub(super) const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
+    "apps/fleet_host_agent",
+    "apps/ticketboard",
+    "apps/website/api_v2",
+    "apps/website/frontend",
+    "apps/website/map-engine",
+    "apps/website/graphics-engine",
+    "apps/website/offline-service-worker",
+    "tools_v2/verification-core",
+    "tools_v2/ticket-engine",
+    "tools_v2/xtask",
+    "tools_v2/developer-tools",
+];
 
 /// A temporary repository root.
 pub(super) struct TemporaryCheckout(PathBuf);
 
 impl TemporaryCheckout {
-    /// A checkout holding every pinned root, each with one one-line `lib.rs`.
-    pub(super) fn with_pinned_roots(name: &str) -> Self {
+    /// A checkout holding every law root: a workspace of [`FIXTURE_WORKSPACE_MEMBERS`], each
+    /// with a `Cargo.toml` and a one-line `src/lib.rs`, and every pinned script root, empty.
+    pub(super) fn with_law_roots(name: &str) -> Self {
         let checkout = Self::empty(name);
-        for pin in FILE_LENGTH_PINS {
-            checkout.write(&format!("{pin}/lib.rs"), "fn placeholder() {}\n");
+        let listed: Vec<String> = FIXTURE_WORKSPACE_MEMBERS
+            .iter()
+            .map(|member| format!("    \"{member}\",\n"))
+            .collect();
+        checkout.write(
+            "Cargo.toml",
+            &format!("[workspace]\nmembers = [\n{}]\n", listed.concat()),
+        );
+        for member in FIXTURE_WORKSPACE_MEMBERS {
+            let package = member.rsplit('/').next().unwrap_or(member);
+            checkout.write(
+                &format!("{member}/Cargo.toml"),
+                &format!("[package]\nname = \"{package}\"\n"),
+            );
+            checkout.write(&format!("{member}/src/lib.rs"), "fn placeholder() {}\n");
+        }
+        for root in PINNED_SCRIPT_ROOTS {
+            std::fs::create_dir_all(checkout.root().join(root)).unwrap();
         }
         checkout
     }

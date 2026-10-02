@@ -23,6 +23,7 @@ tools_v2/xtask/src/commands/
 ├── mod.rs          the module tree
 ├── mod_ops/        `mod`: compile gates, dev and playtest servers, mission tests, world boot, waves
 ├── platform/       `platform`: preflight, slice worktrees, slice runs, the platform wave lifecycle
+├── refactor/       `refactor`: manifest-driven relocation of tracked paths and their references
 ├── reproduction/   `repro`: the mission-version upload reproduction and its helpers
 ├── schema/         `schema`: contract codegen, contract and map-asset gates, mission-file tools
 ├── setup/          `setup`: server profiles, Workbench, the MCP game root and client addons

@@ -23,9 +23,11 @@ use crate::core::repository_layout::documentation::{
 pub(super) const README: &str = "README.md";
 
 /// Folder names that exempt a folder, with everything below it, from the README rules and the
-/// code-tree Markdown rule: test sources and generated output. A folder whose name starts with `.`
-/// (hidden tool configuration) is exempt the same way.
-const EXEMPT_FOLDER_NAMES: [&str; 2] = ["tests", "generated"];
+/// code-tree Markdown rule: test sources and generated output. Generated output carries two exact
+/// spellings, `generated` in the Rust and web trees and `Generated` in the Enfusion script trees,
+/// whose folder names are capitalised; every other casing is an ordinary folder. A folder whose
+/// name starts with `.` (hidden tool configuration) is exempt the same way.
+const EXEMPT_FOLDER_NAMES: [&str; 3] = ["tests", "generated", "Generated"];
 
 /// Documents `cargo xtask ticket sync` rewrites between markers. Their sync-managed tables stay
 /// in one file whatever their length, so the size limit skips them.

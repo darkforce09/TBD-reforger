@@ -79,7 +79,7 @@ engines and the app are in the [engine boundary rules](/documentation_v2/standar
 | a term | the file of its first letter in `documentation_v2/glossary/`, with a line in its index |
 
 `cargo xtask verify markdown-placement` holds the documentation layout: it refuses any Markdown
-in a code tree other than a README (a `tests`, `generated` or dot-prefixed folder excepted) and any
-live document under `documentation_v2/` over 500 lines. `ci-local` (through
+in a code tree other than a README (a `tests`, `generated`, `Generated` or dot-prefixed folder
+excepted) and any live document under `documentation_v2/` over 500 lines. `ci-local` (through
 `cargo xtask ci verify-documentation`) and the `language-gates` job of `ci.yml` run it. The
 [documentation standards](/documentation_v2/standards/documentation_standards.md) hold the rest.

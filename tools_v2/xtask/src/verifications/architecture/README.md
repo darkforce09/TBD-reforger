@@ -1,7 +1,7 @@
 # Architecture verifications
 
-Source checks for three structural contracts: the layer walls between the map engine, the graphics
-engine and the frontend; the `@route` doc tags of the [API](/documentation_v2/glossary/a_to_f.md#api)
+Source checks for four structural contracts: the layer walls between the map engine, the graphics
+engine and the frontend; the workspace laws over the members of the root manifest; the `@route` doc tags of the [API](/documentation_v2/glossary/a_to_f.md#api)
 against its route tables; and the [ORBAT](/documentation_v2/glossary/n_to_z.md#orbat) and placement
 guarantees of the [Mission Creator](/documentation_v2/glossary/g_to_m.md#mission-creator). Each gate is
 its own `cargo xtask verify` verb.
@@ -16,8 +16,9 @@ tools_v2/xtask/src/verifications/architecture/
 ├── mod.rs                      the module tree
 ├── route_tags/                 route-tag extraction, report collation and the runner
 ├── route_tags.rs               the route-tag gate's paths, patterns, sentinels and report text
-├── tests/                      unit tests for the three gates
-└── wave_gate_sources.rs        checks that the wave gate facade declares and exports both implementations
+├── tests/                      unit tests for the gates
+├── wave_gate_sources.rs        checks that the wave gate facade declares and exports both implementations
+└── workspace_laws.rs           the five workspace-law gates: print each library report
 ```
 
 ## How it works
@@ -30,6 +31,7 @@ check that did not run, never as a pass.
 |---|---|---|---|
 | `engine-layers` | `apps/website/graphics-engine` (sources and `Cargo.toml`), `apps/website/map-engine/src`, `apps/website/frontend` (sources and `Cargo.toml`) | a rule below is broken, a matcher self-probe answers wrongly, or a walk finds no files | 0 pass, 1 breach, 2 a root or manifest missing |
 | `route-tags` | `apps/website/api_v2/src`: the domain `routes.rs` tables, `core/http_router.rs`, every `@route` tag | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
+| `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; the frontend's sources; `apps/website/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
 | `editor-orbat-coherency` | named editor, store and symbology files; `cargo test` runs | a ban matches, a pin is absent, or a test pin fails or runs no test | 0 pass, 1 every failure |
 
 ### Engine layers
@@ -40,6 +42,15 @@ with its code. The eight rules, their matchers, pins and report text live in
 [`tools_v2/verification-core/src/repository_laws/engine_layers/`](/tools_v2/verification-core/src/repository_laws/engine_layers/README.md),
 which the `engineering_laws` test binary of `website-api` reads as well, so the gate and that
 binary judge the tree the same way.
+
+### Workspace laws
+
+Each of the five verbs prints the report of its law in
+[`tools_v2/verification-core/src/repository_laws/workspace_laws/`](/tools_v2/verification-core/src/repository_laws/workspace_laws/README.md)
+line for line and exits with its code. The paths that move with the tree (the manifest sweep
+roots, the stylesheet, the frontend layer table) are the `workspace_laws` constants of
+`tools_v2/xtask/src/core/repository_layout.rs`. The `verify-workspace-laws` task row runs the five
+in order as a step of `ci-local`.
 
 ### Route tags
 
@@ -65,6 +76,9 @@ the first failure.
 - `engine_layer_boundaries::verify_engine_layers`, `route_tags::verify_route_tags` and
   `editor_orbat_coherency::verify_editor_orbat_coherency`: the three gates, each taking the
   repository root and returning the exit status.
+- `workspace_laws::verify_crate_tiers`, `verify_crate_anatomy`, `verify_strangler`,
+  `verify_frontend_layering` and `verify_tailwind_sources`: the five workspace-law gates over the
+  checkout the command runs in; `workspace_law_report` and `verify_workspace_law` take a root.
 - `wave_gate_sources::WAVE_CHILDREN` and `wave_children_are_linked`: the two implementation
   modules of `tools_v2/xtask/src/commands/platform/wave_execution/gate.rs` (`checkrun` with
   `gate_slice`, `gate_dispatch` with `cmd_gate`) and the `syn` check that the facade declares each
@@ -73,14 +87,16 @@ the first failure.
 ## Boundaries
 
 - Depends on: `verification-core` (patterns, gates, scans, verdicts, `proc::Run`, and
-  `repository_laws::engine_layers` for the engine-layer rules); the `regex` and `syn` crates;
+  `repository_laws::engine_layers` and `repository_laws::workspace_laws` for the rules); the
+  `regex` and `syn` crates;
   `cargo` for the ORBAT test pins.
 - Used by:
   - `tools_v2/xtask/src/commands/verify/dispatch.rs`, for `cargo xtask verify engine-layers`,
     `cargo xtask verify route-tags` and `cargo xtask verify editor-orbat-coherency`;
   - `tools_v2/xtask/src/commands/ci/task_definitions/verification_dispatch.rs`, for the
     `verify-engine-layers` step of `ci-local` and the `route-tags` step of
-    `verify-coding-standards`;
+    `verify-coding-standards`, and `tools_v2/xtask/src/commands/ci/task_definitions.rs`, for the
+    five steps of `verify-workspace-laws`;
   - the [wave](/documentation_v2/glossary/n_to_z.md#wave) gate, whose `VERIFY_STEPS` in
     `tools_v2/xtask/src/commands/platform/wave_execution/gate.rs` runs `verify route-tags`, and
     the `language-gates` job of `.github/workflows/ci.yml`, which runs `verify engine-layers`;

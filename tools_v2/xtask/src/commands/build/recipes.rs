@@ -1,25 +1,21 @@
-//! `cargo xtask mk <target>` — the Makefile's **build/test lane**, in Rust.
+//! `cargo xtask mk <target>` — the build/test lane: the targets listed in [`TARGETS`].
 //!
-//! Sixteen build targets, byte-for-byte:
-//! `rust-api rust-build rust-test rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
-//! leptos leptos-debug leptos-build leptos-gates ci-local-leptos verify-cargo-target
-//! print-cargo-target-dir reclaim-target-ci`. There is no Makefile; this module
-//! only has to make the equivalents exist and be provably identical. `mortar-offline-gate`
-//! (a release build, then `gate mortar-offline`) has no Makefile ancestor.
-//! `ballistics-wasm-agreement` (a release build, then `gate ballistics-agreement`) has none either.
+//! `print-cargo-target-dir`, `verify-cargo-target` and `reclaim-target-ci` compute or delete; every
+//! other target is a recipe of [`Step`]s. `mortar-offline-gate` (a release build, then `gate
+//! mortar-offline`) and `ballistics-wasm-agreement` (a release build, then `gate
+//! ballistics-agreement`) chain a build into a browser gate.
 //!
 //! ── WHERE THE TARGET-DIR PIN LIVES ───────────────────────────────────────────────────────────
 //!
-//! In [`crate::core::cargo_target_directory`], with the two `make` targets that police it. That module is the one
-//! to read before changing anything here: `CARGO_TARGET_DIR` is derived from `git rev-parse
+//! In [`crate::core::cargo_target_directory`], with the `mk` targets that police it. That module is
+//! the one to read before changing anything here: `CARGO_TARGET_DIR` is derived from `git rev-parse
 //! --git-common-dir` so that every linked worktree shares the PRIMARY repo's warm `target/`, and
 //! a `.cargo/config.toml` `[env]` with `relative = true` would silently reverse that.
 //!
-//! Because the pin is a *value we compute*, it must be **injected into every child cargo**
-//! ([`run_steps`]) rather than left to inheritance: `make` `export`ed it, so its children saw it,
-//! and an `xtask` invoked without it in the environment must reproduce that. The one recipe-level
-//! override is `rust-api`'s private `$(CURDIR)/target-dev-api` — the *other* root, and the
-//! reason `mk_target_dir` has two.
+//! Because the pin is a *value we compute*, it is **injected into every child cargo**
+//! ([`run_steps`]) rather than left to inheritance. The one recipe-level override is `rust-api`'s
+//! private `<this checkout>/target/dev-api` — the *other* root, and the reason
+//! `cargo_target_directory` has two.
 //!
 //! ── OUTPUT IS A CONTRACT ─────────────────────────────────────────────────────────────────────
 //!
@@ -47,7 +43,7 @@ use verification_core::proc::Run;
 use verification_core::{Kind, NotRun, Verdict};
 
 use crate::core::cargo_target_directory::{
-    DEV_API_TARGET, abi_guard, cwd_root, env_pin, primary_root, reclaim_target_ci,
+    abi_guard, cwd_root, dev_api_target_dir, env_pin, primary_root, reclaim_target_ci,
     resolve_target_dir, verify_cargo_target,
 };
 
@@ -56,7 +52,7 @@ use crate::core::cargo_target_directory::{
 /// One line of a `make` recipe: where it runs, what it sets, what it execs.
 ///
 /// `envs` are **recipe-level** assignments — the ones make echoed as part of the line, e.g.
-/// `CARGO_TARGET_DIR=…/target-dev-api cargo run --bin api`. The inherited shared pin is NOT one of
+/// `CARGO_TARGET_DIR=…/target/dev-api cargo run --bin api`. The inherited shared pin is NOT one of
 /// these; it is injected by [`run_steps`] and was never echoed. That distinction is what
 /// [`verify_cargo_target`] §5 checks, so it is structural rather than a convention.
 pub(crate) struct Step {
@@ -150,7 +146,6 @@ pub(crate) const TARGETS: &[&str] = &[
     "rust-test",
     "rust-fmt",
     "rust-clippy",
-    "rust-sqlx-prepare",
     "rust-ci",
     "wasm-ci",
     "leptos",
@@ -179,7 +174,6 @@ pub(crate) use shell_word::rust_build;
 use shell_word::rust_ci;
 pub(crate) use shell_word::rust_clippy;
 pub(crate) use shell_word::rust_fmt;
-pub(crate) use shell_word::rust_sqlx_prepare;
 pub(crate) use shell_word::rust_test;
 pub(crate) use shell_word::rust_test_it;
 use shell_word::shell_word;

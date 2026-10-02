@@ -1,8 +1,8 @@
 //! The paths only a development machine holds, which both deploy rsyncs exclude.
 //!
-//! **Role:** lists, as rsync `--exclude` patterns, the build output that a development machine's
-//! own builds and gates write beside the tracked tree and the local state of its agents and tools,
-//! and renders them as the `--exclude=` arguments of [`exclude_arguments`].
+//! **Role:** lists, as rsync `--exclude` patterns, the build folders a development machine holds
+//! beside `target/` (retired root-level ones and hand-set ones) and the local state of its agents
+//! and tools, and renders them as the `--exclude=` arguments of [`exclude_arguments`].
 //!
 //! **Position:** read by the `rsync_argv` of `cargo xtask deploy website`
 //! (`tools_v2/xtask/src/commands/deploy/website/rsync_argv.rs`) and of `cargo xtask deploy
@@ -22,14 +22,16 @@
 /// checkout root: a trailing `/` matches a folder only, and `*` stands for any run of characters
 /// within one path component.
 pub(crate) const DEVELOPMENT_MACHINE_ONLY_PATHS: &[&str] = &[
-    // Cargo target folders beside `target/` (`target-container/`, `target-dev-api/`,
-    // `target-gate-check/` and every other one a build or a gate names), tens of gigabytes
-    // together.
+    // Cargo target folders beside `target/`, tens of gigabytes together: the retired root-level
+    // ones (`target-dev-api/`, `target-ci/`, `target-gate-*/`) that `cargo xtask platform wave
+    // reclaim` deletes, and hand-set `CARGO_TARGET_DIR` folders such as `target-container/`. Every
+    // tool now writes under `target/`, which each rsync excludes itself.
     "/target-*/",
     // The same folders beside the app, where cargo puts them when trunk builds the app under a
     // relative `CARGO_TARGET_DIR`.
     "/apps/website/frontend/target-*/",
-    // The gates' private app builds and a debug build of the app.
+    // The retired root-level gate app builds (`dist-gate-frontend/`, deleted by the same reclaim)
+    // and a debug build of the app.
     "/dist-gate-*/",
     "/apps/website/frontend/dist-debug/",
     // The vanilla script count `cargo xtask mod compile` calibrates once per machine.

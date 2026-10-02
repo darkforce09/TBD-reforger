@@ -81,7 +81,7 @@ fn worktree_local_pin_is_detected() {
     assert!(!pin_is_worktree_local("/repo/target", primary, primary));
     // A private dir is not the shared pin, but it is also not this check's business.
     assert!(!pin_is_worktree_local(
-        "/repo/target-gate-check",
+        "/repo/target/gate-check",
         wt,
         primary
     ));
@@ -102,17 +102,26 @@ fn private_target_dir_violation_bites() {
     );
 }
 
-/// `rust-build` inherits; `rust-api` keeps its private dir. §5 of the gate, as a unit test.
+/// `rust-build` inherits; `rust-api` keeps its private dir inside this checkout's `target/`.
+/// §5 of the gate, as a unit test.
 #[test]
 fn only_rust_api_sets_a_private_target_dir() {
     assert!(private_target_dir_violation(&rust_build()).is_none());
     let api = rust_api();
     let v = api[0]
         .recipe_env("CARGO_TARGET_DIR")
-        .expect("rust-api keeps target-dev-api");
-    assert!(v.ends_with(DEV_API_TARGET));
-    // …and it is CURDIR-relative, not primary-relative: two roots, never one.
-    assert_eq!(v, cwd_root().join(DEV_API_TARGET).display().to_string());
+        .expect("rust-api keeps target/dev-api");
+    assert!(v.ends_with("/target/dev-api"), "{v}");
+    // …and it is relative to this checkout, not the primary one: two roots, never one.
+    assert_eq!(
+        v,
+        cwd_root()
+            .join("target")
+            .join("dev-api")
+            .display()
+            .to_string()
+    );
+    assert_eq!(v, dev_api_target_dir().display().to_string());
 }
 
 /// The echoed lines, pinned against the strings `make -n` printed on 2026-08-12.
@@ -149,7 +158,7 @@ fn echo_matches_make() {
     assert_eq!(
         rust_api()[0].echo(),
         format!(
-            "cd apps/website/api_v2 && CARGO_TARGET_DIR={}/{DEV_API_TARGET} cargo run --bin api",
+            "cd apps/website/api_v2 && CARGO_TARGET_DIR={}/target/dev-api cargo run --bin api",
             cwd_root().display()
         )
     );
@@ -253,18 +262,29 @@ fn leptos_gates_does_not_double_build() {
     assert_eq!(leptos_gates().len(), 4);
 }
 
-/// `reclaim-target-ci` deletes `target-ci` and **leaves a live slice's dir alone**.
+/// `reclaim-target-ci` deletes `target/ci` and the retired root-level `target-ci`, and **leaves
+/// the shared cache, its other purpose folders and a live slice's dir alone**.
 #[test]
 fn reclaim_never_touches_a_live_target_dir() {
     let root = std::env::temp_dir().join(format!("t895-reclaim-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
-    for d in ["target-ci", "target", "target-ctr", "target-dev-api"] {
+    let gone = ["target/ci", "target-ci"];
+    let kept = [
+        "target",
+        "target/dev-api",
+        "target/gate-check",
+        "target-ctr",
+        "target-T-454",
+    ];
+    for d in gone.iter().chain(kept.iter()) {
         std::fs::create_dir_all(root.join(d)).unwrap();
         std::fs::write(root.join(d).join("live"), "x").unwrap();
     }
     assert_eq!(reclaim_target_ci(&root).unwrap(), 0);
-    assert!(!root.join("target-ci").exists(), "target-ci must be gone");
-    for d in ["target", "target-ctr", "target-dev-api"] {
+    for d in gone {
+        assert!(!root.join(d).exists(), "{d} must be gone");
+    }
+    for d in kept {
         assert!(root.join(d).join("live").is_file(), "{d} must survive");
     }
     // Idempotent: a second run reports absence, rc 0.
@@ -272,21 +292,15 @@ fn reclaim_never_touches_a_live_target_dir() {
     let _ = std::fs::remove_dir_all(&root);
 }
 
-/// The two `REFUSING:` guards are carried over verbatim from a Makefile in which **neither was
-/// reachable** — see [`crate::core::cargo_target_directory::reclaim_target_ci`]. One of them becomes reachable in
-/// Rust, and this is the arm that reaches it; without it the port would be shipping two lines of
-/// text that nothing has ever executed.
+/// Both `REFUSING:` guards. An empty root makes the relative paths `target/ci` and `target-ci`,
+/// which fail the shape test; the collision test cannot fire for any root, and that is pinned so a
+/// refactor that derives one path from the other has to confront this test.
 #[test]
 fn reclaim_refusals_are_preserved() {
-    // Shape: an empty root makes the RELATIVE path `target-ci`, which is not `…/target-ci`.
-    // `make` could not produce this — `$(TBD_REPO_ROOT)` empty yields the absolute `/target-ci`.
     assert_eq!(reclaim_target_ci(Path::new("")).unwrap(), 1);
-    // Collision: still unreachable, and the assertion says WHY rather than asserting nothing.
-    // `X/target-ci` and `X/target` differ for every X, so the branch is structurally dead here as
-    // it was in the recipe. Pinned so that a future refactor which makes the two paths equal (a
-    // `warm` derived from `ci`, say) has to confront this test.
     for x in ["/a", "/a/b", "", "/"] {
         let p = Path::new(x);
+        assert_ne!(p.join("target/ci"), p.join("target"));
         assert_ne!(p.join("target-ci"), p.join("target"));
     }
 }

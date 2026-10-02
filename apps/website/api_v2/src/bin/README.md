@@ -59,7 +59,7 @@ checkout root, where its default API env file, `apps/website/api_v2/.env`, resol
 - Exit codes: 0 after a signal and a clean drain; 1 when the configuration, the database
   connection, a migration or the port bind fails.
 - Example: `cargo xtask mk rust-api`, which runs `cargo run --bin api` in `apps/website/api_v2/`
-  with its own target directory, `target-dev-api` at the repository root.
+  with its own target directory, `target/dev-api` in the checkout.
 
 ### import-registry
 

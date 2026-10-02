@@ -1,41 +1,37 @@
-//! `mk_target_dir` — custody of `CARGO_TARGET_DIR`, and the two `make` targets that police it.
+//! Custody of `CARGO_TARGET_DIR`: the shared pin, the layout of the build output folder, the
+//! glibc stamp guard, and the `mk` targets that print, verify and reclaim them.
 //!
-//! This module owns the target directory policy for `print-cargo-target-dir`,
-//! `verify-cargo-target`, and `reclaim-target-ci`, plus the pin they all read.
+//! **Role:** answers where every build writes. [`resolve_target_dir`] is the shared cache pin
+//! (`CARGO_TARGET_DIR` when set, else [`primary_root`]`/target`); [`build_output_subfolder`] names
+//! each tool's purpose subfolder inside `target/`; [`abi_guard`] refuses a target directory that
+//! another glibc built; [`verify_cargo_target`] and [`reclaim_target_ci`] are the bodies of
+//! `cargo xtask mk verify-cargo-target` and `cargo xtask mk reclaim-target-ci`.
 //!
-//! ── THE PIN THIS SLICE EXISTS TO PROTECT ─────────────────────────────────────────────────────
+//! **Position:** read by the `mk` recipes (`crate::commands::build::recipes`), the wave gate and
+//! its reclaim sweep (`crate::commands::platform::wave_execution`); reads `git` for the primary
+//! checkout and the recipe steps for the private-directory checks.
 //!
-//! `Makefile:15-17` derived it like this:
+//! **Signals & state:** none held; [`abi_guard`] writes one stamp file per target directory and
+//! [`reclaim_target_ci`] deletes folders under the root it is given.
 //!
-//! ```make
-//! TBD_GIT_COMMON := $(shell git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
-//! TBD_REPO_ROOT  := $(patsubst %/.git,%,$(TBD_GIT_COMMON))
-//! export CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target
-//! ```
-//!
-//! `--git-common-dir` is the **primary** checkout's `.git`, shared by every linked worktree. So a
-//! run from `.ai/artifacts/worktrees/T-XXX` still points at the primary repo's warm 52 GB
-//! `target/`, which is why eight parallel slice agents do not each
-//! cold-build a 609-crate workspace.
-//!
-//! **This is why the pin is computed in Rust and NOT moved into `.cargo/config.toml`.** A `[env]`
-//! entry with `relative = true` resolves against the *config file's own directory* — which inside a
-//! linked worktree is THAT WORKTREE. It looks like the same pin written more declaratively, and it
-//! silently reverses the invariant: every worktree gets its own cold `target/` and nothing reports
-//! an error. [`verify_cargo_target`] §4 asserts the negation directly, so the reversal is caught
-//! rather than merely warned about in prose.
-//!
-//! ── TWO ROOTS, NEVER ONE ─────────────────────────────────────────────────────────────────────
-//!
-//! [`primary_root`] (`$(TBD_REPO_ROOT)`) and [`cwd_root`] (`$(CURDIR)`) are the SAME directory in
-//! the primary checkout and DIFFERENT inside a worktree. The Makefile used both, and the difference
-//! is load-bearing:
-//!
-//! * the shared warm cache is `primary_root/target` — deliberately cross-worktree;
-//! * `rust-api`'s private dir is `cwd_root/target-dev-api` — deliberately per-worktree, because it
-//!   starts a long-lived server that must not sit in the shared build-lock queue.
-//!
-//! Collapsing them either way is a silent regression, so they are two functions with two names.
+//! **Invariants:**
+//! - Two roots, never one. [`primary_root`] (the primary checkout, from `git rev-parse
+//!   --git-common-dir`) and [`cwd_root`] (this checkout) are the same folder in the primary
+//!   checkout and different inside a linked worktree. The shared warm cache is
+//!   `primary_root/target`, shared by every worktree so parallel slices do not each cold-build the
+//!   workspace; the development API's private directory is `cwd_root/target/dev-api`, per checkout,
+//!   because it starts a long-lived server that must not wait in the shared build-lock queue.
+//!   Collapsing them either way is a silent regression, so they are two functions with two names.
+//! - The pin is computed here and never moved into `.cargo/config.toml`: an `[env]` entry with
+//!   `relative = true` resolves against the config file's own folder, which inside a linked
+//!   worktree is that worktree, so every worktree would get its own cold `target/` and nothing would
+//!   report it. [`verify_cargo_target`] §4 asserts the negation, and §1 reads this file for
+//!   [`PIN_SOURCE_MARKER`].
+//! - All build output lives under one `target/` folder. Each purpose subfolder is its own
+//!   `CARGO_TARGET_DIR` (or trunk dist folder, or compose project) and so holds its own cargo
+//!   lock, and no subfolder name is an entry cargo writes inside a target directory (profile
+//!   folders, `build`, `doc`, `package`, `tmp`, target triples, its bookkeeping files), so nesting
+//!   shares no file with the shared cache.
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -50,39 +46,28 @@ use crate::commands::build::recipes::{Step, rust_api, rust_build};
 
 /// The source text that must be present in **this file** for the shared pin to exist at all.
 ///
-/// ── WHY A GATE READS ITS OWN SOURCE ──────────────────────────────────────────────────────────
-///
-/// `make verify-cargo-target` grepped the *Makefile* for `export CARGO_TARGET_DIR ?=
-/// $(TBD_REPO_ROOT)/target`. That self-reference is the half of the check that survives a
-/// refactor: the behavioural probe below can be satisfied by an accident (a stray environment
-/// variable, a `.cargo/config.toml` that happens to agree today), while the source pin says the
-/// formula is still written down where it belongs. Deleting the self-reference when the pin moves
-/// would evaporate the check — the same shape as a gate reading its own call sites, where the
-/// const and the call site can be changed apart.
-///
-/// So it moves WITH the pin, and `tests::pin_marker_is_present_in_this_file` derives its fixture
-/// FROM this const (via `include_str!`) so the two cannot drift.
+/// The behavioural probe of [`verify_cargo_target`] can be satisfied by an accident (a stray
+/// environment variable, a `.cargo/config.toml` that happens to agree today); the source pin says
+/// the formula is still written down where it belongs. It moves with the pin, and
+/// `tests::pin_marker_is_present_in_this_file` derives its fixture from this const (through
+/// `include_str!`) so the two cannot drift.
 pub(crate) const PIN_SOURCE_MARKER: &str = "primary_root().join(\"target\")";
 
-/// This module's own path, repo-relative — the file [`PIN_SOURCE_MARKER`] must appear in.
+/// This module's own path, repository-relative: the file [`PIN_SOURCE_MARKER`] must appear in.
 pub(crate) const PIN_SOURCE_REL: &str = "tools_v2/xtask/src/core/cargo_target_directory.rs";
 
-/// The private target dir `api` / `rust-api` keep, relative to [`cwd_root`].
-pub(crate) const DEV_API_TARGET: &str = "target-dev-api";
-
-/// `$(CURDIR)` — the checkout `make` would have been invoked from. **Inside a worktree this IS the
-/// worktree.** Used only for [`DEV_API_TARGET`]; never for the shared cache.
+/// The checkout this process runs in. **Inside a worktree this is the worktree.** Used only for
+/// the development API's private directory ([`dev_api_target_dir`]); never for the shared cache.
 pub(crate) fn cwd_root() -> PathBuf {
     crate::core::repository_root::find_repo_root().unwrap_or_else(|_| PathBuf::from("."))
 }
 
-/// `$(TBD_REPO_ROOT)` — the **primary** checkout, from `git rev-parse --path-format=absolute
-/// --git-common-dir` with a trailing `/.git` stripped (`$(patsubst %/.git,%,…)`).
+/// The **primary** checkout: `git rev-parse --path-format=absolute --git-common-dir` with its
+/// trailing `/.git` removed.
 ///
-/// Same derivation as `crate::commands::platform::wave_execution::Ctx::enter`'s `main_root`, deliberately: the mandate is one formula,
-/// not two. The fallback mirrors the Makefile's `2>/dev/null` — an empty `$(TBD_GIT_COMMON)` made
-/// `$(patsubst …)` empty and the pin `/target`, which is nonsense; here a git that cannot answer
-/// falls back to this checkout, which is at worst a cold build and never a write to `/`.
+/// The same derivation as `crate::commands::platform::wave_execution::Ctx::enter`'s `main_root`:
+/// one formula, not two. A git that cannot answer falls back to this checkout, which is at worst a
+/// cold build and never a write to `/`.
 pub(crate) fn primary_root() -> PathBuf {
     let common = Run::new("git")
         .args(["rev-parse", "--path-format=absolute", "--git-common-dir"])
@@ -100,38 +85,121 @@ pub(crate) fn primary_root() -> PathBuf {
     }
 }
 
-/// `CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target` — the whole formula, in one expression.
+/// `CARGO_TARGET_DIR` when set and non-empty, else the primary checkout's `target/`.
 ///
 /// `env` is the caller's `$CARGO_TARGET_DIR`, threaded as a **parameter** rather than read from the
 /// process environment, so [`verify_cargo_target`] can ask "what would this be with the variable
-/// unset?" without a `remove_var` (unsafe, global, and racy with any thread) and without the
-/// `env -u CARGO_TARGET_DIR $(MAKE) -s print-cargo-target-dir` sub-process the Makefile needed.
-/// One function answers both questions, so the probe cannot test a different formula than the one
-/// that ships.
+/// unset?" without a `remove_var` (unsafe, global, and racy with any thread). One function answers
+/// both questions, so the probe cannot test a different formula than the one that ships.
 pub(crate) fn resolve_target_dir(env: Option<&str>) -> String {
     match env {
-        // `?=` — an operator or driver export wins, as it must: the wave driver hands its gate steps a
-        // private dir, and a pin that overrode that would put every gate back in the shared cache.
+        // An operator or driver export wins: the wave driver hands its gate steps a private
+        // directory, and a pin that overrode it would put every gate back in the shared cache.
         Some(v) if !v.is_empty() => v.to_string(),
         _ => primary_root().join("target").display().to_string(),
     }
 }
 
-/// `$CARGO_TARGET_DIR` from the environment, empty treated as unset (make's `?=` semantics).
+/// `$CARGO_TARGET_DIR` from the environment, empty treated as unset.
 pub(crate) fn env_pin() -> Option<String> {
     std::env::var("CARGO_TARGET_DIR")
         .ok()
         .filter(|s| !s.is_empty())
 }
 
+// ── THE BUILD OUTPUT FOLDER AND ITS PURPOSE SUBFOLDERS ───────────────────────────────────────
+
+/// The one gitignored folder that holds all build output, relative to a checkout root. Under
+/// [`primary_root`] it is also the shared cache that [`resolve_target_dir`] pins.
+pub(crate) const BUILD_OUTPUT_FOLDER: &str = "target";
+
+/// The development API's private `CARGO_TARGET_DIR` (`cargo xtask mk rust-api`), under
+/// [`cwd_root`]; see [`dev_api_target_dir`].
+pub(crate) const DEV_API_SUBFOLDER: &str = "dev-api";
+/// The wave gate's trunk `CARGO_TARGET_DIR`; `TBD_GATE_TRUNK_TARGET` overrides it.
+pub(crate) const GATE_TRUNK_SUBFOLDER: &str = "gate-trunk";
+/// The wave gate's trunk dist folder; `TBD_GATE_TRUNK_DIST` overrides it.
+pub(crate) const GATE_FRONTEND_DIST_SUBFOLDER: &str = "gate-dist-frontend";
+/// The wave gate's `cargo check` and clippy `CARGO_TARGET_DIR`; `TBD_GATE_CHECK_TARGET`
+/// overrides it.
+pub(crate) const GATE_CHECK_SUBFOLDER: &str = "gate-check";
+/// The wave gate's schema step `CARGO_TARGET_DIR`; `TBD_GATE_SCHEMA_TARGET` overrides it.
+pub(crate) const GATE_SCHEMA_SUBFOLDER: &str = "gate-schema";
+/// The wave gate's `website-api` test `CARGO_TARGET_DIR`.
+pub(crate) const GATE_API_SUBFOLDER: &str = "gate-api";
+/// The wave gate's `website-map-engine` test `CARGO_TARGET_DIR`.
+pub(crate) const GATE_MAP_ENGINE_SUBFOLDER: &str = "gate-map-engine";
+/// The wave gate's `website-frontend` test `CARGO_TARGET_DIR`.
+pub(crate) const GATE_FRONTEND_SUBFOLDER: &str = "gate-frontend";
+/// The wave gate's `xtask` and `developer-tools` test `CARGO_TARGET_DIR`.
+pub(crate) const GATE_TOOLS_SUBFOLDER: &str = "gate-tools";
+/// A slice gate's private frontend test `CARGO_TARGET_DIR` is this prefix followed by the slice id.
+pub(crate) const GATE_SLICE_FRONTEND_PREFIX: &str = "gate-slice-frontend-";
+/// The continuous-integration scratch `CARGO_TARGET_DIR` that `mk reclaim-target-ci` deletes.
+pub(crate) const CONTINUOUS_INTEGRATION_SUBFOLDER: &str = "ci";
+/// The `mcpd` broker's private `CARGO_TARGET_DIR` (`cargo xtask mcp daemon start`), so a wave
+/// gate never rewrites the running daemon's binary; `MCPD_CARGO_TARGET_DIR` overrides it.
+pub(crate) const MCP_DAEMON_SUBFOLDER: &str = "dev-mcpd";
+/// The throwaway compose project of `cargo xtask db selftest`'s compose-parity arm.
+pub(crate) const DATABASE_SELFTEST_SUBFOLDER: &str = "db-selftest";
+/// The prefix every wave-gate subfolder shares; `platform wave reclaim --gate-dirs` sweeps the
+/// subfolders that carry it.
+pub(crate) const GATE_SUBFOLDER_PREFIX: &str = "gate-";
+
+/// Every fixed purpose subfolder name under [`BUILD_OUTPUT_FOLDER`], for the proof that none
+/// collides with an entry cargo writes there itself.
+pub(crate) const PURPOSE_SUBFOLDERS: &[&str] = &[
+    DEV_API_SUBFOLDER,
+    GATE_TRUNK_SUBFOLDER,
+    GATE_FRONTEND_DIST_SUBFOLDER,
+    GATE_CHECK_SUBFOLDER,
+    GATE_SCHEMA_SUBFOLDER,
+    GATE_API_SUBFOLDER,
+    GATE_MAP_ENGINE_SUBFOLDER,
+    GATE_FRONTEND_SUBFOLDER,
+    GATE_TOOLS_SUBFOLDER,
+    CONTINUOUS_INTEGRATION_SUBFOLDER,
+    MCP_DAEMON_SUBFOLDER,
+    DATABASE_SELFTEST_SUBFOLDER,
+];
+
+/// `<checkout_root>/target/<subfolder>`: the one formula every tool names its build output with.
+pub(crate) fn build_output_subfolder(checkout_root: &Path, subfolder: &str) -> PathBuf {
+    checkout_root.join(BUILD_OUTPUT_FOLDER).join(subfolder)
+}
+
+/// The development API's private `CARGO_TARGET_DIR`: `<this checkout>/target/dev-api`.
+pub(crate) fn dev_api_target_dir() -> PathBuf {
+    build_output_subfolder(&cwd_root(), DEV_API_SUBFOLDER)
+}
+
+/// Root-level folder names beside [`BUILD_OUTPUT_FOLDER`] that no tool writes; a machine that ran
+/// earlier tooling can still hold them, and the reclaim commands delete them.
+pub(crate) const RETIRED_ROOT_LEVEL_FOLDERS: &[&str] = &[
+    "target-dev-api",
+    "target-ci",
+    "target-dev-mcpd",
+    "target-mk-db-selftest",
+];
+/// Prefixes of the retired root-level gate folders (cargo target folders and trunk dist folders).
+pub(crate) const RETIRED_ROOT_LEVEL_FOLDER_PREFIXES: &[&str] = &["target-gate-", "dist-gate-"];
+
+/// Is `name` (a folder at a checkout root) one of the retired root-level build folders?
+pub(crate) fn is_retired_root_level_build_folder(name: &str) -> bool {
+    RETIRED_ROOT_LEVEL_FOLDERS.contains(&name)
+        || RETIRED_ROOT_LEVEL_FOLDER_PREFIXES
+            .iter()
+            .any(|prefix| name.starts_with(prefix))
+}
+
 // ── THE TWO-GLIBC GUARD ──────────────────────────────────────────────────────────────────────
 
-/// The ABI that is allowed to write into a given target dir — stamped on first use, enforced after.
+/// The ABI allowed to write into a given target directory: stamped on first use, enforced after.
 ///
-/// See the module header. This is the difference between `GLIBC_2.39 not found` (a link error that
-/// reads as a broken checkout) and a named refusal at the boundary. An unreadable or unwritable
-/// stamp is **not** a failure: this guard exists to catch a specific measured collision, and a
-/// guard that blocks builds over a permissions quirk would simply be disabled by the next person.
+/// Two glibcs sharing one `CARGO_TARGET_DIR` produce `GLIBC_2.xx not found` at run time, a link
+/// error that reads like a broken checkout; this turns it into a named refusal at the boundary. An
+/// unreadable or unwritable stamp is **not** a failure: the guard catches one specific collision,
+/// and a guard that blocked builds over a permissions quirk would simply be disabled.
 pub(crate) fn abi_guard(dir: &Path) -> std::result::Result<(), String> {
     let want = abi_id();
     let stamp = dir.join(".tbd-build-abi");
@@ -141,7 +209,7 @@ pub(crate) fn abi_guard(dir: &Path) -> std::result::Result<(), String> {
             return Err(format!(
                 "REFUSING: {} was built by '{found}', this is '{want}'.\n      \
                  Two glibcs sharing one CARGO_TARGET_DIR produce `GLIBC_2.xx not found` at run \
-                 time, which reads like a broken checkout (measured 2026-08-12).\n      \
+                 time, which reads like a broken checkout.\n      \
                  Set CARGO_TARGET_DIR to a directory of your own, or delete {}.",
                 dir.display(),
                 stamp.display()
@@ -156,8 +224,8 @@ pub(crate) fn abi_guard(dir: &Path) -> std::result::Result<(), String> {
 }
 
 /// `glibc<version>-<container|host>`. The container test is distrobox's own (`/run/.containerenv`
-/// or `/.dockerenv`) — the same one the host bridge uses, and NOT `command -v distrobox-host-exec`,
-/// which is true on both sides of the bridge (the 126 trap).
+/// or `/.dockerenv`), the same one the host bridge uses, and NOT `command -v distrobox-host-exec`,
+/// which is true on both sides of the bridge.
 pub(crate) fn abi_id() -> String {
     // SAFETY: `gnu_get_libc_version` returns a pointer to a static NUL-terminated string in libc;
     // it takes no arguments, allocates nothing, and the result outlives this call.
@@ -179,14 +247,15 @@ pub(crate) fn abi_id() -> String {
 
 // ── verify-cargo-target ──────────────────────────────────────────────────────────────────────
 
-/// Assert the shared `CARGO_TARGET_DIR` pin is intact. Port of `Makefile:27-48`.
+/// Assert the shared `CARGO_TARGET_DIR` pin is intact; exit 0 when it is, 1 with a `FAIL:` line.
 ///
-/// Five checks; the first three are the Makefile's, §4 is new, §5 is the Makefile's `make -n
-/// rust-build` grep expressed against the data instead of against dry-run text.
+/// §1 the source marker; §2/§3 the behavioural probe with the variable unset; §4 the
+/// worktree-local reversal; §5 `rust-build` inherits the pin while `rust-api` keeps its private
+/// `cwd_root/target/dev-api`.
 pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
     let expected = primary_root().join("target").display().to_string();
 
-    // §1 — the moved self-reference. See PIN_SOURCE_MARKER.
+    // §1 — the self-reference. See PIN_SOURCE_MARKER.
     match pin_marker_verdict(root) {
         Verdict::Held => {}
         _ => {
@@ -196,21 +265,21 @@ pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
     }
 
     // §2/§3 — the behavioural probe, with CARGO_TARGET_DIR unset. `resolve_target_dir(None)` is
-    // literally the function the CLI calls, so this cannot drift from what ships.
+    // the function the CLI calls, so this cannot drift from what ships.
     let got = resolve_target_dir(None);
     if got.is_empty() {
-        println!("FAIL: with CARGO_TARGET_DIR unset, make resolved an empty target dir");
+        println!("FAIL: with CARGO_TARGET_DIR unset, the pin resolved to an empty target dir");
         return Ok(1);
     }
     if got != expected {
         println!(
-            "FAIL: with CARGO_TARGET_DIR unset, make resolves to '{got}' (expected {expected} — \
+            "FAIL: with CARGO_TARGET_DIR unset, the pin resolves to '{got}' (expected {expected} — \
              primary-repo shared target, not a worktree-local dir)"
         );
         return Ok(1);
     }
 
-    // §4 — NEW, and the reason this gate now bites harder than the Makefile's.
+    // §4 — the `.cargo/config.toml` reversal.
     if pin_is_worktree_local(&got, &cwd_root(), &primary_root()) {
         println!(
             "FAIL: in a linked worktree the pin resolved to '{got}' — that is this worktree's \
@@ -227,19 +296,21 @@ pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
         );
         return Ok(1);
     }
-    // The parenthetical is not decoration: `rust-api` keeping its private dir is the other half of
-    // the invariant, so it is asserted rather than merely claimed.
-    if !rust_api()
+    // `rust-api` keeping its private per-checkout dir is the other half of the invariant, so its
+    // exact location is asserted rather than merely claimed.
+    let dev_api = dev_api_target_dir().display().to_string();
+    let api_dirs: Vec<String> = rust_api()
         .iter()
-        .any(|s| s.recipe_env("CARGO_TARGET_DIR").is_some())
-    {
-        println!("FAIL: rust-api lost its private target-dev-api dir");
+        .filter_map(|s| s.recipe_env("CARGO_TARGET_DIR").map(str::to_string))
+        .collect();
+    if api_dirs != [dev_api.clone()] {
+        println!("FAIL: rust-api must build into its private {dev_api} (got: {api_dirs:?})");
         return Ok(1);
     }
 
     println!(
         "OK: CARGO_TARGET_DIR pin={expected} (rust-build inherits; api/rust-api keep private \
-         target-dev-api)"
+         {dev_api})"
     );
     Ok(0)
 }
@@ -247,17 +318,16 @@ pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
 /// §4 — has the pin been reversed into a per-worktree one?
 ///
 /// A `.cargo/config.toml` `[env]` with `relative = true` resolves against the config file's own
-/// directory, so inside a linked worktree it yields THAT worktree's `target/` while still looking
-/// like "having a pin". §1–§3 all pass under that reversal when the probe happens to run in the
-/// primary checkout, which is why this is a separate assertion and why it takes its three inputs as
-/// parameters: the RED arm is only reachable from a test if the roots can be supplied.
+/// folder, so inside a linked worktree it yields THAT worktree's `target/` while still looking like
+/// "having a pin". §1–§3 all pass under that reversal when the probe runs in the primary checkout,
+/// which is why this is a separate assertion and why it takes its three inputs as parameters: the
+/// RED arm is only reachable from a test if the roots can be supplied.
 pub(crate) fn pin_is_worktree_local(got: &str, here: &Path, primary: &Path) -> bool {
     here != primary && got == here.join("target").display().to_string()
 }
 
-/// §5 — the Makefile grepped `make -n rust-build` for `CARGO_TARGET_DIR=`. Here the recipe IS a
+/// §5 — the first step that sets its own `CARGO_TARGET_DIR`, as its echoed line. The recipe is a
 /// value, so the check reads the data directly and cannot be fooled by dry-run formatting.
-/// Returns the offending echoed line, as the Makefile printed the offending recipe.
 pub(crate) fn private_target_dir_violation(steps: &[Step]) -> Option<String> {
     steps
         .iter()
@@ -267,8 +337,7 @@ pub(crate) fn private_target_dir_violation(steps: &[Step]) -> Option<String> {
 
 /// §1 as a [`Verdict`] — `Held`, `Failed`, or `DidNotRun` when the source file cannot be read.
 ///
-/// A deleted or unreadable recipe module must never read as "the pin is fine"; that is the
-/// fail-open `verify-no-python` sat on for four waves.
+/// A deleted or unreadable source file must never read as "the pin is fine".
 pub(crate) fn pin_marker_verdict(root: &Path) -> Verdict {
     let path = root.join(PIN_SOURCE_REL);
     let text = match std::fs::read_to_string(&path) {
@@ -299,58 +368,60 @@ pub(crate) fn pin_marker_verdict(root: &Path) -> Verdict {
 
 // ── reclaim-target-ci ────────────────────────────────────────────────────────────────────────
 
-/// Delete the obsolete primary-repo `target-ci/` (~13G). Port of `Makefile:50-67`.
+/// Delete the continuous-integration scratch folder `root/target/ci`, and the retired root-level
+/// `root/target-ci` when the machine still holds it. Exit 0 when both are gone, 1 on a refusal.
 ///
-/// `root` is a parameter so the destructive path is testable against a scratch tree — the
-/// rule is "never perturb the real tree", and a function that can only read the real repo cannot
-/// be proved to leave a live slice's dir alone.
-///
-/// Two refusals guard it and both are kept: the collision test (never the warm shared `target/`)
-/// and the shape test (the path must end in `target-ci`). A slice's own dir is unreachable by
-/// construction — this function never derives a path from anything but `root`.
-///
-/// ── PRESERVED ODDITY: IN THE MAKEFILE, BOTH REFUSALS ARE DEAD CODE ───────────────────────────
-///
-/// MEASURED 2026-08-12 while writing the RED arms. `ci` is `$(TBD_REPO_ROOT)/target-ci` and `warm`
-/// is `$(TBD_REPO_ROOT)/target`, so:
-///
-/// * the collision test asks whether `X/target-ci` equals `X/target` — never, for any `X`;
-/// * the shape test asks whether `X/target-ci` ends in `/target-ci` — always, for any non-empty
-///   `X`, and an EMPTY `$(TBD_REPO_ROOT)` yields the absolute `/target-ci`, which also passes.
-///
-/// So neither `REFUSING:` line was reachable from `make`, and the RED arm that went looking for
-/// them aborted itself rather than pretend. They are reproduced here verbatim anyway,
-/// because deleting a guard is a behaviour change and this is a port — but one of them DOES become
-/// reachable in Rust: `Path::new("").join("target-ci")` is the *relative* `target-ci`, which fails
-/// the shape test. `tests::reclaim_refusals_are_preserved` pins that, so the text is not merely
-/// carried along untested.
+/// `root` is a parameter so the destructive path is testable against a scratch tree, and no path
+/// is derived from anything but `root`, so a slice's own folder is unreachable by construction.
+/// Two refusals guard every deletion and run before any of them: the path never equals the shared
+/// cache `root/target`, and it ends in its own name (`/target/ci`, `/target-ci`). An empty `root`
+/// yields a relative path, which fails the second.
 pub(crate) fn reclaim_target_ci(root: &Path) -> Result<u8> {
-    let ci = root.join("target-ci").display().to_string();
-    let warm = root.join("target").display().to_string();
+    let warm = root.join(BUILD_OUTPUT_FOLDER).display().to_string();
+    let folders = [
+        (
+            build_output_subfolder(root, CONTINUOUS_INTEGRATION_SUBFOLDER),
+            "/target/ci",
+        ),
+        (root.join("target-ci"), "/target-ci"),
+    ];
 
-    if ci == warm || ci == format!("{warm}/") {
-        println!("REFUSING: reclaim path collides with shared target/ ({warm})");
-        return Ok(1);
+    for (folder, suffix) in &folders {
+        let shown = folder.display().to_string();
+        if shown == warm || shown == format!("{warm}/") {
+            println!("REFUSING: reclaim path collides with shared target/ ({warm})");
+            return Ok(1);
+        }
+        if !(shown.ends_with(suffix) || shown.ends_with(&format!("{suffix}/"))) {
+            println!("REFUSING: path '{shown}' is not …{suffix}");
+            return Ok(1);
+        }
     }
-    if !(ci.ends_with("/target-ci") || ci.ends_with("/target-ci/")) {
-        println!("REFUSING: path '{ci}' is not …/target-ci");
-        return Ok(1);
+    for (folder, _) in &folders {
+        if !folder.exists() {
+            println!("already absent: {}", folder.display());
+            continue;
+        }
+        // `du -sh` with inherited stdio: its output (size TAB path) is part of the target's contract.
+        let _ = Command::new("du")
+            .arg("-sh")
+            .arg(folder)
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .status();
+        std::fs::remove_dir_all(folder)?;
+        println!(
+            "removed {} (shared target/ left intact at {warm})",
+            folder.display()
+        );
     }
-    if !Path::new(&ci).exists() {
-        println!("target-ci already absent at {ci}");
-        return Ok(0);
-    }
-    // `du -sh` with inherited stdio: its output (size TAB path) is part of the target's contract.
-    let _ = Command::new("du")
-        .args(["-sh", &ci])
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status();
-    std::fs::remove_dir_all(&ci)?;
-    println!("removed {ci} (shared target/ left intact at {warm})");
     Ok(0)
 }
 
 #[cfg(test)]
 #[path = "../commands/build/tests/recipes.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "tests/cargo_target_directory/tests.rs"]
+mod build_output_folder_tests;

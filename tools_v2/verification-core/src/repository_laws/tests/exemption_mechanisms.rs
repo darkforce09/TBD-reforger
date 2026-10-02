@@ -79,7 +79,7 @@ fn an_exemption_table_is_a_declared_name() {
 
 #[test]
 fn the_scan_finds_every_shape_and_nothing_else() {
-    let checkout = TemporaryCheckout::with_pinned_roots("exemptions");
+    let checkout = TemporaryCheckout::with_law_roots("exemptions");
     checkout.write(
         "apps/website/frontend/src/v2/tests/doc_audit/allowlist.rs",
         "//! Rows.\n",

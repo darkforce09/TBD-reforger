@@ -147,7 +147,7 @@ loading rules behind both warnings are in
 | `MCP_DEBUG` | unset | `1` prints the runner tier and captured stderr |
 | `MCP_DAEMON_IDLE` | `1800` | seconds idle before the broker exits; `0` never |
 | `MCP_DAEMON_MAX_LIFE` | `14400` | seconds of life before the broker exits, idle or not; `0` never |
-| `MCPD_CARGO_TARGET_DIR` | `target-dev-mcpd` in the checkout | where `daemon start` builds `mcpd` |
+| `MCPD_CARGO_TARGET_DIR` | `target/dev-mcpd` in the checkout | where `daemon start` builds `mcpd` |
 | `ENFUSION_MCP_BIN` | unset | the server entry file, ahead of every other tier |
 | `ENFUSION_WORKBENCH_HOST`, `ENFUSION_WORKBENCH_PORT` | `127.0.0.1`, `5775` | the Net API that `wbcall` reaches |
 

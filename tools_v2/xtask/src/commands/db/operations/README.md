@@ -45,7 +45,8 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   the proof.
 - `selftest::run` reports each arm through a `verification_core::Report`, where an arm that could
   not reach its subject ranks above a failure. Arm 1 compares `recipes::rendered_recipes` with a
-  frozen literal; arms 2 and 6 compare the lane with `make` and report held when the checkout has
+  frozen literal; arms 2 and 6 compare the lane with `make` (arm 6 over a throwaway compose project
+  in `target/db-selftest`) and report held when the checkout has
   no `Makefile`; arm 3 runs `TBD_IT_BASE_DB=tbd_reforger db test-it` and asserts the refusal and
   that `tbd_reforger` survives; arm 4 creates two scratch suite databases under a `tbd_gate` base
   and asserts the cleanup drops them and spares a bystander; arm 5 asserts the cleanup fails,

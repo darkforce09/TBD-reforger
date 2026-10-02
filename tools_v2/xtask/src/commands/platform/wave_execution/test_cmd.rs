@@ -14,7 +14,7 @@
 //! `CARGO_TARGET_DIR` currently holds; that false-refused the sanctioned per-slice path when an
 //! agent had already exported it), mtime-bumps via `touch_changed` (same fingerprint cure as the
 //! gate), and runs with `CARGO_INCREMENTAL=0`. It does NOT take the shared gate lock — that lock
-//! serialises the SHARED gate dirs (`target-gate-*`); isolation here is the private directory
+//! serialises the SHARED gate dirs (`target/gate-*`); isolation here is the private directory
 //! itself (measured: frontend-only private dir ~2.7 GB, not a 57 GB shared-cache clone). Cargo does
 //! NOT rebuild across worktrees that share a target dir — the private path is the mitigator;
 //! shared-dir `cargo test` remains the foreign-binary class.

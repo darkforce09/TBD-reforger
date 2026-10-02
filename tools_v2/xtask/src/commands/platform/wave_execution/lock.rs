@@ -3,10 +3,10 @@
 //! TWO GATES AT ONCE REPORT ON EACH OTHER'S CODE. Two independent mechanisms, one root cause:
 //! every gate in every worktree writes to the same shared paths.
 //!
-//!   ARTIFACT CLOBBERING. The per-step private target dirs (target-gate-api, -frontend,
-//!   -mapengine, -trunk, -schema, -check) are private per STEP but SHARED ACROSS
+//!   ARTIFACT CLOBBERING. The per-step private target dirs (target/gate-api, gate-frontend,
+//!   gate-map-engine, gate-trunk, gate-schema, gate-check) are private per STEP but SHARED ACROSS
 //!   WORKTREES — same package + same version = same artifact hash = clobbering. One agent
-//!   watched `target-gate-api/debug/deps/events-*` be overwritten mid-session by a sibling
+//!   watched `target/gate-api/debug/deps/events-*` be overwritten mid-session by a sibling
 //!   worktree's build and found main's literals inside a binary its own gate had just produced,
 //!   with `ps` confirming a concurrent `gate_test_api` from another tree. So "N passed" was not its
 //!   own code.
@@ -236,7 +236,7 @@ impl GateState {
     ///     actually happening at 252 MB free mid-wave. A disk that full is exactly when steps start
     ///     failing with "No space left on device" that reads like a build error, i.e. the worst
     ///     possible moment to also hand out a verdict nobody can trust.
-    ///   * What the lock buys is not a nicety. A run watched `target-gate-api/debug/deps/events-*`
+    ///   * What the lock buys is not a nicety. A run watched `target/gate-api/debug/deps/events-*`
     ///     be overwritten mid-session by a sibling worktree and found MAIN's literals inside a
     ///     binary its own gate had just produced. Unserialised, "N passed" is not a claim about this
     ///     slice.

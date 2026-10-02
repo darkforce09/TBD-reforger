@@ -107,7 +107,7 @@ repository root; the first API build takes several minutes.
    cargo xtask mk rust-api
    ```
 
-   Expected: cargo builds the `api` binary into `target-dev-api/`, then the API logs
+   Expected: cargo builds the `api` binary into `target/dev-api/`, then the API logs
    `migrations applied` and `listening on 0.0.0.0:8080`.
 
 4. In a second terminal, once the API has applied the migrations, load the development seeds.

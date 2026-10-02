@@ -32,6 +32,7 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Help => Ok(u8::try_from(crate::commands::ci::task_runner::help()).unwrap_or(1)),
         TopCmd::Gen { cmd } => commands::generate::dispatch::run(cmd),
         TopCmd::Schema { cmd } => commands::schema::dispatch::run(cmd),
+        TopCmd::Refactor { cmd } => commands::refactor::dispatch::run(cmd),
         TopCmd::RegistryGet { field } => {
             let root = find_repo_root()?;
             let reg = load_registry(&root)?;

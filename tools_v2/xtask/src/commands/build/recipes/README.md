@@ -27,7 +27,7 @@ function in `shell_word.rs`.
 for a step marked `ignore_error`. For each step it:
 
 1. resolves the target directory: the step's own `CARGO_TARGET_DIR` (only `rust-api` sets one,
-   `target-dev-api` in the checkout) or the shared pin from `cargo_target_directory.rs`;
+   `target/dev-api` in the checkout) or the shared pin from `cargo_target_directory.rs`;
 2. for `cargo` and `trunk`, refuses with exit 1 when `abi_guard` finds that directory stamped by
    another glibc;
 3. prints the step's `echo()` line, rendered from the same fields that run;

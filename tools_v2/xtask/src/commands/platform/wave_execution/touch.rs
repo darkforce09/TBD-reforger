@@ -115,7 +115,7 @@ pub fn touch_changed(base: &str) -> i32 {
 ///      PASS.
 ///
 /// WHY THE PRIVATE DIR IS NOT ENOUGH, which is the thing to not re-derive wrongly. MEASURED
-/// 2026-07-26 against a freshly built `target-gate-check`: repro A run in the PRIVATE dir still
+/// 2026-07-26 against a freshly built `target/gate-check`: repro A run in the PRIVATE dir still
 /// returned rc 0. Of course it does — the mechanism is mtime, and a private dir changes only whose
 /// artifacts are there, not how freshness is decided. A private dir alone cures neither repro; it
 /// is the touch that does, and the private dir is what keeps the touch sufficient (it bounds the

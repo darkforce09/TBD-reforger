@@ -17,16 +17,15 @@ tools_v2/xtask/src/verifications/language_bans/node_and_file_limits/
 
 `verify file-length` runs `verification_core::repository_laws::file_length::scan_file_lengths`
 and prints its result. The scan walks every `.rs` and `.c` file under the law roots of
-[`repository_laws`](/tools_v2/verification-core/src/repository_laws/README.md): the pinned roots
-in `FILE_LENGTH_PINS` (the four `tools_v2` crates, `apps/ticketboard/src`,
-`apps/fleet_host_agent/src` and `tests`, `apps/website/api_v2/src`, `apps/website/frontend/src`,
-`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`) plus every `src/` and `tests/`
-folder directly under `apps/website/`. A file is a test file when a path component is `tests` or
+[`repository_laws`](/tools_v2/verification-core/src/repository_laws/README.md): the folder of
+every workspace member the root `Cargo.toml` names, plus the script roots in `PINNED_SCRIPT_ROOTS`
+(`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`). A file is a test file when a path component is `tests` or
 its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000 lines (`TEST_MAX_LINES`), any
 other file 500 (`PRODUCTION_MAX_LINES`). There is no exemption list. Each file over its limit
 prints one `SIZE-3:` line on stderr, and the summary line on stdout reads
 `scanned N source file(s) (R .rs, C .c)`. A missing root or an unreadable file is a check that
-did not run, never a pass, and so is a walk that found no source file at all. The
+did not run, never a pass — an explicit workspace member whose folder is missing included — and
+so is a walk that found no source file at all. The
 `engineering_laws` test binary of `website-api` reads the same scan, so the gate and that binary
 judge the tree the same way.
 

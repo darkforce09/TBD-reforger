@@ -1,4 +1,6 @@
 use super::*;
+use crate::commands::platform::wave_execution::gate_folder;
+use crate::core::cargo_target_directory;
 
 /// The changed-Rust-file list, and the one distinction the change-scoped steps kept getting wrong.
 ///
@@ -290,14 +292,13 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// here, and the two failures above were both in natively-reachable code (`save_status.rs` is
 /// deliberately left ungated for exactly this reason).
 ///
-/// **A PRIVATE, PER-SLICE target dir — not [`Ctx::gate_check_target`].** This was wrong in the
-/// first cut and the wave-255 verify caught it. `gate_check_target` is `main_root/target-gate-check`,
-/// and `main_root` is the primary checkout SHARED BY EVERY WORKTREE — so five concurrent slice gates
-/// all build `website-frontend` into one directory. That is the exact condition
-/// [`super::super::gate::cmd_gate`] refuses in so many words: two runs independently measured
+/// **A PRIVATE, PER-SLICE target dir — not [`Ctx::gate_check_target`].** `gate_check_target` is
+/// `main_root/target/gate-check`, and `main_root` is the primary checkout SHARED BY EVERY WORKTREE —
+/// so five concurrent slice gates would all build `website-frontend` into one directory. That is
+/// the exact condition [`super::super::gate::cmd_gate`] refuses in so many words: two runs measured
 /// `cargo test -p website-frontend` running a stale `website_frontend-<hash>` binary built from
 /// ANOTHER worktree (same package name + version across worktrees = same artifact hash =
-/// clobbering), and the wave gate gives its own frontend step `target-gate-frontend` for it. A
+/// clobbering), and the wave gate gives its own frontend step `target/gate-frontend` for it. A
 /// *test* step reporting another worktree's cached PASS is worse than no step at all. Keyed by
 /// slice id so five concurrent gates cannot collide with each other either.
 pub fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 {
@@ -325,11 +326,15 @@ pub fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 {
         );
         return 0;
     }
-    let private = ctx
-        .main_root
-        .join(format!("target-gate-slice-frontend-{slice}"));
+    let private = gate_folder(
+        &ctx.main_root,
+        &format!(
+            "{}{slice}",
+            cargo_target_directory::GATE_SLICE_FRONTEND_PREFIX
+        ),
+    );
     let argv = ctx.host.checkrun_argv(
-        &private.display().to_string(),
+        &private,
         &host::v(&["cargo", "test", "-p", "website-frontend"]),
     );
     let (out, rc) = host::capture(&argv);

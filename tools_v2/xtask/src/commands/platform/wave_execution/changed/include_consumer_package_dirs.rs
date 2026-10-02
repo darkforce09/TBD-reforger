@@ -101,7 +101,7 @@ pub fn workspace_members() -> Vec<String> {
 /// JSON/WGSL/SQL paths those macros pull in — same mtime-freshness hole, narrower blast radius.
 /// MEASURED 2026-07-27: repro on `contracts_v2/definitions/mission.schema.json` with `touch -r`
 /// back to original mtime after a byte change: `cargo check -p website-map-engine --features
-/// doc,mission,world` in `target-gate-check` stayed rc 0 until the schema file itself was touched.
+/// doc,mission,world` in `target/gate-check` stayed rc 0 until the schema file itself was touched.
 ///
 /// Static paths are resolved from the including `.rs` file; `concat!(env!("CARGO_MANIFEST_DIR"),
 /// "…")` is resolved from the owning package dir. Macro-expanded fixture trees (the DTO golden

@@ -1,5 +1,6 @@
 use super::cli::{DocumentationGateArgs, VerifyCmd};
 use crate::core::repository_root::find_repo_root;
+use crate::verifications::architecture::workspace_laws;
 use crate::verifications::documentation::{GateRequest, UntrackedFiles};
 use crate::*;
 use anyhow::Result;
@@ -99,6 +100,11 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                     &find_repo_root()?,
                 )?
             }
+            VerifyCmd::CrateTiers => workspace_laws::verify_crate_tiers()?,
+            VerifyCmd::CrateAnatomy => workspace_laws::verify_crate_anatomy()?,
+            VerifyCmd::Strangler => workspace_laws::verify_strangler()?,
+            VerifyCmd::FrontendLayering => workspace_laws::verify_frontend_layering()?,
+            VerifyCmd::TailwindSources => workspace_laws::verify_tailwind_sources()?,
             VerifyCmd::ReadmeCoverage { arguments } => {
                 crate::verifications::documentation::readme_coverage::verify_readme_coverage(
                     &find_repo_root()?,

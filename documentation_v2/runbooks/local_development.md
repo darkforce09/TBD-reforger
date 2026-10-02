@@ -56,7 +56,7 @@ Run every command from the repository root unless a step says otherwise.
    then compose starts the `tbd_reforger_db` container from `postgres:18-alpine`, listening on
    host port 5434 with the user, password and database `tbd`, `tbd` and `tbd_reforger`.
 
-3. Run the API. It builds the `api` binary into `target-dev-api/` in this checkout, applies the
+3. Run the API. It builds the `api` binary into `target/dev-api/` in this checkout, applies the
    pending migrations and stays in the foreground; leave it running and open a second terminal.
 
    ```bash
@@ -64,7 +64,7 @@ Run every command from the repository root unless a step says otherwise.
    ```
 
    Expected: the line
-   `cd apps/website/api_v2 && CARGO_TARGET_DIR=<checkout>/target-dev-api cargo run --bin api`,
+   `cd apps/website/api_v2 && CARGO_TARGET_DIR=<checkout>/target/dev-api cargo run --bin api`,
    the build, then the log lines `migrations applied` and `listening on 0.0.0.0:8080`. Restart it
    after a change to the API; `cargo run` does not reload.
 

@@ -11,7 +11,7 @@ without owning [ticket](/documentation_v2/glossary/n_to_z.md#ticket) storage or 
 
 ```text
 tools_v2/xtask/src/core/
-├── cargo_target_directory.rs  the shared target directory, the glibc stamp guard, and the target checks
+├── cargo_target_directory.rs  the shared target directory, the build output subfolder names, the glibc stamp guard, and the target checks
 ├── deploy_environment/        the deploy settings grammar, the deploy host and the remote folder defaults
 ├── deploy_environment.rs      `DeployEnvironment`: loads `deploy.env` under one precedence rule; errors
 ├── host_execution.rs          `Host`: runs host binaries through the container bridge, or directly on the host
@@ -20,7 +20,7 @@ tools_v2/xtask/src/core/
 ├── repository_root.rs         `find_repo_root` for commands, `test_repo_root` for tests
 ├── secure_shell_transport.rs  `SshBase` and `ssh_argv`, the shared ssh transport to the deploy host
 ├── test_environment.rs        `PathGuard`: prepends a folder to `PATH` and keeps the system tools reachable
-└── tests/                     unit tests for the deploy settings, the host bridge and the `PATH` construction
+└── tests/                     unit tests for the deploy settings, the host bridge, the `PATH` construction and the build output folders
 ```
 
 ## How it works
@@ -64,12 +64,19 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
 
 - `resolve_target_dir`: `CARGO_TARGET_DIR` when set, else the `target/` of the primary checkout
   (from `git rev-parse --git-common-dir`), so every linked worktree shares one warm cache; the
-  development API builds into the current checkout's own `target-dev-api` instead.
+  development API builds into the current checkout's own `target/dev-api` instead.
+- `build_output_subfolder`: every tool's private build output is one purpose subfolder of
+  `target/` (`dev-api`, `ci`, `dev-mcpd` and the wave gate's `gate-*` folders, each its own
+  `CARGO_TARGET_DIR` with its own cargo lock, and `db-selftest`, the database selftest's compose
+  project); no name is one cargo writes inside a target directory.
+  `is_retired_root_level_build_folder` names the root-level `target-dev-api`, `target-ci`,
+  `target-dev-mcpd`, `target-mk-db-selftest`, `target-gate-*` and `dist-gate-*` folders no tool
+  writes, which `cargo xtask platform wave reclaim` deletes.
 - `abi_guard`: stamps a target directory with `glibc<version>-<container|host>` in
   `.tbd-build-abi` on first use and refuses a build whose stamp names the other glibc, since the
   two share no binaries.
 - `verify_cargo_target` and `reclaim_target_ci`: the bodies of `cargo xtask mk verify-cargo-target`
-  and `cargo xtask mk reclaim-target-ci`.
+  and `cargo xtask mk reclaim-target-ci` (which deletes `target/ci` and the retired `target-ci`).
 
 `test_environment::PathGuard` prepends a stub folder to `PATH` for its lifetime and always keeps
 `/usr/bin` and `/bin` on it; tests hold `ENV_LOCK` while they change `PATH`.
@@ -93,8 +100,9 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
     playtest server of the `mod` group
     (`tools_v2/xtask/src/commands/mod_ops/playtest_server/host.rs`) and the platform [wave](/documentation_v2/glossary/n_to_z.md#wave) driver
     (`tools_v2/xtask/src/commands/platform/wave_execution/host.rs`);
-  - `cargo_target_directory`: the `mk` recipes (`tools_v2/xtask/src/commands/build/recipes.rs`)
-    and the wave driver's flush (`tools_v2/xtask/src/commands/platform/wave_execution/flush.rs`);
+  - `cargo_target_directory`: the `mk` recipes (`tools_v2/xtask/src/commands/build/recipes.rs`),
+    the wave driver's flush and gate folders (`tools_v2/xtask/src/commands/platform/wave_execution/`)
+    and its reclaim sweep (`tools_v2/xtask/src/commands/platform/wave_execution/reclaim/`);
   - `test_environment`: the tests of the `db`, `debug`, `mcp`, `mod` and `setup` groups.
 - Rules:
   - A production source outside the three layout modules (this one, and those of `ticket-engine`

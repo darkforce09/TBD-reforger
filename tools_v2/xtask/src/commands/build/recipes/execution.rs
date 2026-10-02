@@ -43,7 +43,6 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
         "rust-test" => rust_test(),
         "rust-fmt" => rust_fmt(),
         "rust-clippy" => rust_clippy(),
-        "rust-sqlx-prepare" => rust_sqlx_prepare(),
         "wasm-ci" => wasm_ci(),
         "leptos" => leptos(),
         "leptos-debug" => leptos_debug(),

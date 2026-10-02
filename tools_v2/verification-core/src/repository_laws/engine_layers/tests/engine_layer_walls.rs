@@ -619,10 +619,7 @@ fn build_output_is_pruned_but_only_below_the_root() {
         ),
         "the prune must not see the root's own path components"
     );
-    assert!(!is_source(
-        root,
-        &root.join("src/target-gate-frontend/x.rs")
-    ));
+    assert!(!is_source(root, &root.join("src/target-container/x.rs")));
     assert!(!is_source(root, &root.join("target/debug/x.rs")));
 }
 

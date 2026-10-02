@@ -22,7 +22,7 @@ input it never examined.** Each instance looks like a green check.
 | the collision analysis | tickets with no plan row are never candidates | `slice-collisions` warns about dispatchable tickets missing from the lock |
 | a health check that is a TCP connect | a six-hour-old API binary reports as up | preflight reads `/healthz` and compares the API process's age with the newest API commit |
 | a test that `include_str!`s its own file and greps for a literal | the needle matches the test's own assertion, forever | scrub the test module out of the haystack with `class_r_scrub::live_source` or `live_code` (`apps/website/frontend/src/v2/core/test_support/class_r_scrub/`) |
-| `cargo check` under lock contention | it replays a cached verdict and prints `Finished`, exit 0, over code that does not compile | the gate checks into its own `target-gate-check` folder and invalidates fingerprints first |
+| `cargo check` under lock contention | it replays a cached verdict and prints `Finished`, exit 0, over code that does not compile | the gate checks into its own `target/gate-check` folder and invalidates fingerprints first |
 | a piped gate (`cargo check … \| tail -5`) | the pipeline returns `tail`'s exit status | never pipe a gate or test; the wave driver captures each step's status itself |
 | a grep loop that reads exit 2 as "no match" | an invalid pattern becomes a pass | read the exit status: 0 match, 1 no match, 2 error, 127 tool absent; the last two fail closed |
 
@@ -74,8 +74,8 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **One shared cache, several private ones.** Every worktree building into its own `target/`
   would cold-build the whole workspace and cost tens of gigabytes each; preflight blocks a
   worktree that did. The wave driver drops an inherited `CARGO_TARGET_DIR`, announces it, and
-  uses `<main checkout>/target` for checks and clippy, `target-gate-*` and `dist-gate-frontend`
-  for its own steps, `$HOME/.cache/tbd-target-<id>` for `platform wave test --slice`, and
+  uses `<main checkout>/target` for checks and clippy, its own `target/gate-*` subfolders
+  (each a separate `CARGO_TARGET_DIR`) for its own steps, `$HOME/.cache/tbd-target-<id>` for `platform wave test --slice`, and
   `<shared cache>/run-main` for binaries it launches from `main`.
 - **Two checkouts, one artifact.** Cargo's artifact hash omits the manifest path, so a worktree
   and the main checkout building the same package into one folder share one binary, and the

@@ -21,3 +21,14 @@ fn frozen_baseline_matches_the_port() {
         other => panic!("arm 1 must hold on a clean tree: {other:?}"),
     }
 }
+
+/// Arm 6's compose project lives in its purpose subfolder of the build output folder, and the
+/// relative spelling both sides receive names the same folder.
+#[test]
+fn selftest_compose_project_lives_under_the_build_output_folder() {
+    let root = Path::new("/checkout");
+    let (scratch, rel) = scratch_compose_project(root);
+    assert_eq!(scratch, Path::new("/checkout/target/db-selftest"));
+    assert_eq!(rel, "target/db-selftest");
+    assert_eq!(root.join(&rel), scratch);
+}

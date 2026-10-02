@@ -13,7 +13,8 @@ The README span is every tracked folder at or under the code trees (`apps/`, `to
 `contracts_v2/`, `assets_v2/`) and the documentation root (`documentation_v2/`), the roots
 included, minus the exempt folders and everything below them:
 
-- a folder named `tests` or `generated`;
+- a folder named exactly `tests`, `generated` or `Generated` (the spelling of the Enfusion script
+  trees); any other casing, such as `GENERATED`, is an ordinary folder;
 - a folder whose name begins with `.` (tool configuration);
 - the pending-merge area, `pending_merge/` directly under the documentation root.
 
@@ -110,7 +111,7 @@ The gate checks the grammar; these conventions keep every block readable the sam
 - A role says what the child is for, not what it is made of: a lowercase phrase with no closing
   period, short enough that the line stays within about 100 characters.
 - List dot-files: `.gitignore` and `.env.example` are tracked children like any other.
-- `tests/` and `generated/` get one line each; their insides are exempt.
+- `tests/`, `generated/` and `Generated/` get one line each; their insides are exempt.
 - A homogeneous collection gets one glob line, such as `*.sql` in a migrations folder. A child must
   never match both a glob and a name, since each child matches exactly one entry.
 - A folder that holds only its README.md has a block with the root line alone.
@@ -300,7 +301,7 @@ specifies every rule.
 | Gate | What it checks |
 |---|---|
 | `cargo xtask verify readme-coverage` | every folder in the README span has a tracked README.md, and every README.md in the span passes the Contents grammar |
-| `cargo xtask verify markdown-placement` | the code trees hold no Markdown besides README.md (outside `tests`, `generated` and dot-folders), the retired documentation root holds no file, and every live document under `documentation_v2/` stays within 500 lines, apart from the exemptions the gates README lists |
+| `cargo xtask verify markdown-placement` | the code trees hold no Markdown besides README.md (outside `tests`, `generated`, `Generated` and dot-folders), the retired documentation root holds no file, and every live document under `documentation_v2/` stays within 500 lines, apart from the exemptions the gates README lists |
 | `cargo xtask verify link-check` | every link in every README and documentation file reaches a tracked target, anchors and line ranges included; in live documents, every backticked repository path exists and every cited `cargo xtask` command exists in the command tree, fenced blocks included |
 
 The Contents check is the only structural rule a gate enforces. The section order, the kind

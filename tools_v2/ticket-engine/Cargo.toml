@@ -1,25 +1,25 @@
 [package]
 name = "ticket-engine"
 version = "0.1.0"
-edition = "2024"
-rust-version = "1.95"
-license = "UNLICENSED"
-publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
 description = "Ticket storage, validation, operations, queue and document sync, scheduling, and metrics"
 
 [dependencies]
-anyhow = "1"
-regex = "1"
-serde_json = { version = "1", features = ["preserve_order"] }
-walkdir = "2"
-jsonschema = { version = "0.46.10", default-features = false }
-serde = { version = "1", features = ["derive"] }
-# Timestamp parse/format: `time` is already in the workspace lockfile as a
-# transitive dependency (0.3.53), so this adds zero new supply chain; its well-known
-# Rfc3339 parser is strict and exposes the offset for the UTC-only rule.
-time = { version = "0.3", features = ["parsing", "formatting"] }
-toml = { version = "0.8", features = ["preserve_order"] }
+anyhow = { workspace = true }
+regex = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+walkdir = { workspace = true }
+jsonschema = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# Timestamp parse and format: `time` is also a transitive dependency of the workspace, so this
+# edge adds no supply chain; its Rfc3339 parser is strict and exposes the offset for the UTC-only
+# rule.
+time = { workspace = true, features = ["parsing", "formatting"] }
+toml = { workspace = true, features = ["preserve_order"] }
 
 [dev-dependencies]
-proptest = "1"
+proptest = { workspace = true }
 trybuild = "1"

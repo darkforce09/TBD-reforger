@@ -8289,7 +8289,6 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "console_error_panic_hook",
- "earcutr",
  "flate2",
  "futures",
  "gloo-net",
@@ -9135,7 +9134,6 @@ dependencies = [
  "heck",
  "jsonschema",
  "libc",
- "png 0.17.16",
  "prettyplease",
  "regex",
  "schemars",

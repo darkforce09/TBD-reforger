@@ -24,13 +24,14 @@ tools_v2/xtask/src/commands/deploy/website/
   first, continues with a warning on the third (a host that serves only the mission library), and
   stops on the second or on any other answer, printing the `mv` commands for the second.
 - `rsync_argv`: `rsync -e <ssh> -avz --delete` of the checkout root with exclusions for `.git/`,
-  build output (`target/`, `target-gate-*/`, `dist-gate-*/`, `node_modules`,
+  build output (`target/`, which holds the gates' private folders too, `node_modules`,
   `apps/website/frontend/dist/`), the server's secrets (the API's `.env` and `.tools/`,
   `deploy.env`), the served terrain tree `assets_v2/terrains/`, the scratch and equipment asset
   trees, `packages/`, the untracked reference trees under `apps/mod/` and the local test profile,
   followed by the patterns `deploy staging` excludes too, from
   `tools_v2/xtask/src/commands/deploy/development_machine_only_paths.rs`: what only a
-  development machine holds, such as the cargo target folders beside `target/`, worktrees and
+  development machine holds, such as the retired and hand-set cargo target folders beside
+  `target/`, worktrees and
   the local files of its agents and tools. With no `--delete-excluded`, every exclusion is also a
   path rsync never deletes on the server; `assets_v2/glyphs/` is tracked and travels with the
   rsync. `dry_run_lines` renders the transfer and one `[dry-run]   --exclude=` line per exclusion,

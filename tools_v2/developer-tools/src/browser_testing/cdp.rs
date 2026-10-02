@@ -1,7 +1,8 @@
 //! Chrome DevTools Protocol client.
 //!
 //! Same wire behavior as the Node harness: raw CDP over one WebSocket per page, chromium
-//! resolved from `CHROME_HEADLESS_SHELL` or the playwright cache, SwiftShader WebGL2 +
+//! resolved from `CHROME_HEADLESS_SHELL`, `PLAYWRIGHT_BROWSERS_PATH` or the playwright cache
+//! (`cdp/chromium_discovery.rs`), SwiftShader WebGL2 +
 //! lavapipe WebGPU flags, fixed 1440×900 dsf=1 viewport applied BEFORE navigation, init
 //! scripts on document-start.
 
@@ -414,10 +415,12 @@ impl Page {
     }
 }
 
+#[path = "cdp/chromium_discovery.rs"]
+mod chromium_discovery;
+pub use chromium_discovery::find_chromium;
+pub use chromium_discovery::is_headless_shell;
 #[path = "cdp/sleep_ms.rs"]
 mod sleep_ms;
-pub use sleep_ms::find_chromium;
-pub use sleep_ms::is_headless_shell;
 pub use sleep_ms::launch;
 pub use sleep_ms::launch_with_gpu;
 use sleep_ms::merge;

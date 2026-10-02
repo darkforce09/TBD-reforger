@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn cksum_matches_the_coreutils_tool() {
-    // If this drifts, the bash gate and this one fight over target-gate-schema and each pays a
+    // If this drifts, the bash gate and this one fight over target/gate-schema and each pays a
     // cold rebuild. Compared against the real `cksum` so the interop claim is measured.
     use std::io::Write;
     let data = b"the quick brown fox\n";

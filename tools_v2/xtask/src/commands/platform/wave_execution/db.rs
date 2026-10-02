@@ -1,6 +1,7 @@
 //! The gate's integration database, and the one test step that refuses to call a skip a pass.
 
-use super::{Ctx, host, ledger, lock::GateState};
+use super::{Ctx, gate_folder, host, ledger, lock::GateState};
+use crate::core::cargo_target_directory;
 use crate::{werr, wprint, wprintln};
 
 /// `podman exec tbd_reforger_db psql …`, bridged when we are in the container.
@@ -297,7 +298,7 @@ pub fn gate_test_api(ctx: &Ctx) -> i32 {
         "env",
         &format!(
             "CARGO_TARGET_DIR={}",
-            ctx.main_root.join("target-gate-api").display()
+            gate_folder(&ctx.main_root, cargo_target_directory::GATE_API_SUBFOLDER)
         ),
         "CARGO_INCREMENTAL=0",
         "cargo",

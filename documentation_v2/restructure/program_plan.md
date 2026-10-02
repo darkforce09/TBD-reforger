@@ -111,6 +111,7 @@ Each finding was checked against the code. The evidence is in the
 | D12 | The dying monoliths park in a top-level legacy folder from S2; no new crate may depend on it. |
 | D13 | The parking folder keeps the name `legacy/`; the repository's prose rule exempts that folder name (the path segment and identifiers naming the folder), while the word stays banned as history vocabulary. |
 | D14 | Tests may call `unwrap()`: a root `clippy.toml` sets `allow-unwrap-in-tests`; production code under the workspace lint policy still may not. |
+| D15 | Lean gates: every stage runs the stage gate (formatting, clippy and tests of the crates it touched, the new laws, `relocate --verify`, the documentation gates); the full gate set GS, including `ci-local`, the API integration tests and the browser gates, runs only at checkpoint stages S2, S5, S8, S10 and S12. A red check is compared with the base commit only when it sits in code the stage touched. |
 
 ## 4. Execution model: foundations up
 

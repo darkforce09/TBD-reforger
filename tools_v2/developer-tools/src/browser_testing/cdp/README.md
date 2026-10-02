@@ -9,14 +9,21 @@ helpers every gate uses.
 
 ```text
 tools_v2/developer-tools/src/browser_testing/cdp/
-└── sleep_ms.rs  `find_chromium`, `launch`, `launch_with_gpu`, `new_page`, `wait_http` and the pipe drain
+├── chromium_discovery.rs  `find_chromium` and `is_headless_shell`: which Chromium executable the gates launch
+├── sleep_ms.rs            `sleep_ms`, `launch`, `launch_with_gpu`, `new_page`, `wait_http` and the pipe drain
+└── tests/                 unit tests for Chromium discovery over scratch Playwright folders
 ```
 
 ## How it works
 
-`find_chromium` takes `CHROME_HEADLESS_SHELL` when it names an existing file, and otherwise scans
-`~/.cache/ms-playwright`, newest first, preferring a full `chromium-*/chrome-linux64/chrome` build
-over `chromium_headless_shell-*`, because the headless shell aborts on per-character font fallback.
+`find_chromium` takes `CHROME_HEADLESS_SHELL` when it names an existing file, and otherwise
+searches the Playwright browser folder `PLAYWRIGHT_BROWSERS_PATH`, then `~/.cache/ms-playwright`;
+the first folder holding a known layout wins. Inside a folder a full build
+(`chromium-*/chrome-linux64/chrome` or `chromium-*/chrome-linux/chrome`) beats a headless shell
+(`chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell` or
+`chromium_headless_shell-*/chrome-linux/headless_shell`), because the headless shell aborts on
+per-character font fallback; among builds of one kind the highest build number wins, compared as a
+number.
 `launch` is `launch_with_gpu` with `GpuBackend::Swiftshader`, the software WebGL2 path every gate
 uses; the `capture` binary passes `GpuBackend::Vulkan` instead. Each launch:
 

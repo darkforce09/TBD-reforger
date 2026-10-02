@@ -23,6 +23,7 @@ use std::time::Duration;
 use developer_tools::enfusion_tooling::enfusion_mcp_entrypoint;
 use verification_core::proc::Run;
 
+use crate::core::cargo_target_directory::{MCP_DAEMON_SUBFOLDER, build_output_subfolder};
 use crate::core::repository_root::find_repo_root;
 
 const USAGE: &str = "usage: cargo xtask mcp daemon {start|stop|status|restart|stop-all}";
@@ -93,7 +94,7 @@ pub fn start_at(sock: &str, quiet: bool) -> i32 {
     let project = env::var("ENFUSION_PROJECT_PATH").unwrap_or_else(|_| default_project_path());
 
     let mcpd_target = env::var("MCPD_CARGO_TARGET_DIR")
-        .unwrap_or_else(|_| root.join("target-dev-mcpd").display().to_string());
+        .unwrap_or_else(|_| default_mcpd_target_dir(&root).display().to_string());
 
     match build_mcpd(&root, &mcpd_target) {
         Ok(()) => {}
@@ -260,6 +261,12 @@ fn rm_tbd_mcp_globs(dir: &Path) {
             let _ = fs::remove_file(ent.path());
         }
     }
+}
+
+/// The folder `mcpd` builds into when `MCPD_CARGO_TARGET_DIR` is unset:
+/// `<checkout>/target/dev-mcpd`, private so a wave gate never rewrites the daemon's binary.
+fn default_mcpd_target_dir(root: &Path) -> PathBuf {
+    build_output_subfolder(root, MCP_DAEMON_SUBFOLDER)
 }
 
 /// Build `mcpd` quietly into its own target directory, forwarding cargo's stderr.

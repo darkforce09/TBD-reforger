@@ -13,7 +13,7 @@ S0 builds each of these in the repository-laws library, wires it into `cargo xta
 [perturbation proof](/documentation_v2/glossary/n_to_z.md#perturbation-proof). Laws that the
 current tree cannot pass yet start in ratchet mode and turn hard at the stage named.
 
-### Crate tiers (xtask verify crate-tiers)
+### Crate tiers (`cargo xtask verify crate-tiers`)
 
 1. Every manifest under the apps, crates, tools and legacy folders is a workspace member.
 2. Each member declares `[package.metadata.layout]` with `category`, `tier` and `targets`.
@@ -45,7 +45,7 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
    while legacy exists.
 8. Dev-dependencies are exempt from the tier order but never point at apps or legacy.
 
-### Crate anatomy (xtask verify crate-anatomy)
+### Crate anatomy (`cargo xtask verify crate-anatomy`)
 
 For every library crate:
 - `lib.rs` is at most 80 lines and holds only the module header, attributes, `mod` and `pub use`.
@@ -62,17 +62,19 @@ For every library crate:
 
 ### Other laws
 
-- **Strangler** (xtask verify strangler): the shim ledger is empty at commit, and no new crate
+- **Strangler** (`cargo xtask verify strangler`): the shim ledger is empty at commit, and no new crate
   depends on legacy.
-- **Frontend layering** (xtask verify frontend-layering): foundation does not import features,
+- **Frontend layering** (`cargo xtask verify frontend-layering`): foundation does not import features,
   pages, workspaces or the app shell; features do not import pages or workspaces. Hard from S3.
-- **Tailwind sources** (xtask verify tailwind-sources): every frontend crate has an `@source`
+- **Tailwind sources** (`cargo xtask verify tailwind-sources`): every frontend crate has an `@source`
   line in the app's stylesheet. Hard from S10.
-- **Relocation** (xtask refactor relocate --verify): no retired spelling in a live file.
+- **Relocation** (`cargo xtask refactor relocate --verify`): no retired spelling in a live file.
 - **Fail-closed roots:** the file-length and law root walkers derive their roots from the
   workspace members and fail on a missing root instead of skipping it.
 
 ## Standard gate set
+
+Two tiers (decision D15). The **stage gate** runs at the end of every stage: formatting, clippy `-D warnings` and the tests of every crate the stage touched, the new laws, the relocation verify, and the documentation gates. The **full gate set GS** below runs at the checkpoint stages S2, S5, S8, S10 and S12.
 
 GS is run between waves and before every stage commit, one command per shell call, each into its
 own log:
@@ -87,7 +89,7 @@ own log:
 8. `cargo xtask ci verify-documentation`
 9. `cargo xtask ticket check`
 10. the new laws: crate tiers, crate anatomy, strangler, frontend layering, tailwind sources
-11. xtask refactor relocate --verify
+11. `cargo xtask refactor relocate --verify`
 12. Dependency drift probe: the external dependency set equals the baseline plus the stage's
     declared unifications.
 13. Test-name census at or above the S0 baseline, so a moved test is counted, not lost.

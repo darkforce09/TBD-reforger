@@ -14,8 +14,9 @@ does not repeat it.
 ## Prerequisites
 
 - **The full Chromium build, never `chrome-headless-shell`.** `find_chromium` takes
-  `CHROME_HEADLESS_SHELL` when it names an existing file, else the newest
-  `~/.cache/ms-playwright/chromium-*/chrome-linux64/chrome`, and adds `--headless=new`. The
+  `CHROME_HEADLESS_SHELL` when it names an existing file, else the highest-numbered
+  `chromium-*/chrome-linux64/chrome` or `chromium-*/chrome-linux/chrome` under
+  `PLAYWRIGHT_BROWSERS_PATH`, then under `~/.cache/ms-playwright`, and adds `--headless=new`. The
   headless shell aborts on per-character font fallback, and the doctor warns when it resolves to
   one. The pinned version is `chromium.version` in `tools_v2/developer-tools/gate-env.json`. Check:
   the doctor's `chromium` line.

@@ -32,9 +32,9 @@ pub fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         "-avz".into(),
         "--delete".into(),
         "--exclude=.git/".into(),
+        // All build output, the gates' private folders included: every tool writes under
+        // `target/` (one subfolder per purpose).
         "--exclude=target/".into(),
-        "--exclude=target-gate-*/".into(),
-        "--exclude=dist-gate-*/".into(),
         "--exclude=**/node_modules/".into(),
         "--exclude=apps/website/frontend/dist/".into(),
         "--exclude=apps/website/api_v2/.env".into(),
@@ -59,9 +59,9 @@ pub fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         "--exclude=apps/mod/playable_selector/".into(),
         "--exclude=apps/mod/.local-test-profile/".into(),
     ];
-    // What only a development machine holds, excluded by `deploy staging` too: the cargo target
-    // folders beside `target/`, the gate and debug app builds, worktrees, and the local state of
-    // its agents and tools.
+    // What only a development machine holds, excluded by `deploy staging` too: the retired and
+    // hand-set cargo target folders beside `target/`, the retired gate and debug app builds,
+    // worktrees, and the local state of its agents and tools.
     argv.extend(development_machine_only_paths::exclude_arguments());
     argv.push(mono.to_string());
     argv.push(dest.to_string());

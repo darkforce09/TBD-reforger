@@ -8,6 +8,7 @@ use crate::commands::map::cli::MapCmd;
 use crate::commands::mcp::cli::McpCmd;
 use crate::commands::mod_ops::cli::ModCmd;
 use crate::commands::platform::cli::PlatformCmd;
+use crate::commands::refactor::cli::RefactorCmd;
 use crate::commands::reproduction::cli::ReproCmd;
 use crate::commands::schema::cli::SchemaCmd;
 use crate::commands::setup::cli::SetupCmd;
@@ -115,6 +116,11 @@ pub(crate) enum TopCmd {
     Gen {
         #[command(subcommand)]
         cmd: GenCmd,
+    },
+    /// Relocation: move tracked files and rewrite every reference to them from a manifest
+    Refactor {
+        #[command(subcommand)]
+        cmd: RefactorCmd,
     },
     /// Max file-disjoint dispatch set: [--repack] [--check] [TICKET...]
     #[command(name = "slice-collisions")]

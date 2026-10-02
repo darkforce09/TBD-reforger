@@ -50,6 +50,18 @@ Run each as `cargo xtask verify <verb>` from the repository root.
   Body: `tools_v2/xtask/src/verifications/architecture/`.
 - Example: `cargo xtask verify engine-layers`
 
+### Workspace laws
+
+- Synopsis: `verify crate-tiers`; `verify crate-anatomy`; `verify strangler`;
+  `verify frontend-layering`; `verify tailwind-sources`
+- Does: the five workspace laws of the
+  [laws and gates](/documentation_v2/restructure/laws_and_gates.md#new-laws) over the members of
+  the root manifest: membership, layout, tiers, category edges and firewalls; the library crate
+  anatomy; no new dependency on a member under `legacy/` and no shim; the frontend layer order (a
+  ratchet); an `@source` line per leptos crate. Body:
+  `tools_v2/xtask/src/verifications/architecture/workspace_laws.rs`.
+- Example: `cargo xtask verify crate-tiers`
+
 ### CI gates
 
 - Synopsis: `verify ci-shell`; `verify ci-schema-parity`

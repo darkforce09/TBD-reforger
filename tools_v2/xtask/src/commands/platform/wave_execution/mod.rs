@@ -49,6 +49,8 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
+use crate::core::cargo_target_directory;
+
 pub mod archived_wave_plans;
 pub mod base;
 pub mod changed;
@@ -277,19 +279,22 @@ impl Ctx {
             gate_timeout: host.timeout_secs,
             gate_trunk_target: envd(
                 "TBD_GATE_TRUNK_TARGET",
-                main_root.join("target-gate-trunk").display().to_string(),
+                gate_folder(&main_root, cargo_target_directory::GATE_TRUNK_SUBFOLDER),
             ),
             gate_trunk_dist: envd(
                 "TBD_GATE_TRUNK_DIST",
-                main_root.join("dist-gate-frontend").display().to_string(),
+                gate_folder(
+                    &main_root,
+                    cargo_target_directory::GATE_FRONTEND_DIST_SUBFOLDER,
+                ),
             ),
             gate_check_target: envd(
                 "TBD_GATE_CHECK_TARGET",
-                main_root.join("target-gate-check").display().to_string(),
+                gate_folder(&main_root, cargo_target_directory::GATE_CHECK_SUBFOLDER),
             ),
             gate_schema_target: envd(
                 "TBD_GATE_SCHEMA_TARGET",
-                main_root.join("target-gate-schema").display().to_string(),
+                gate_folder(&main_root, cargo_target_directory::GATE_SCHEMA_SUBFOLDER),
             ),
             gate_lock: PathBuf::from(envd(
                 "TBD_GATE_LOCK",
@@ -338,6 +343,15 @@ impl Ctx {
 
 /// The one extra target dir, under the shared cache. Named for its owner: the MAIN checkout.
 pub const RUN_TARGET_SUBDIR: &str = "run-main";
+
+/// `<main checkout>/target/<subfolder>`: the default location of a wave-gate step's private build
+/// folder, each its own `CARGO_TARGET_DIR` (or trunk dist folder). The subfolder names live in
+/// [`crate::core::cargo_target_directory`].
+pub(crate) fn gate_folder(main_root: &Path, subfolder: &str) -> String {
+    cargo_target_directory::build_output_subfolder(main_root, subfolder)
+        .display()
+        .to_string()
+}
 
 /// The provenance file written beside a run binary. Contents are exactly `<sha> <path>`.
 pub const RUN_STAMP_FILE: &str = "tbd-built-from";

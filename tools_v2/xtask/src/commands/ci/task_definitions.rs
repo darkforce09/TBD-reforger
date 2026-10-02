@@ -5,6 +5,8 @@ mod recipe_macros;
 mod map_asset_steps;
 #[path = "task_definitions/verification_dispatch.rs"]
 mod verification_dispatch;
+#[path = "task_definitions/workspace_law_steps.rs"]
+mod workspace_law_steps;
 
 use super::{Lane, Step, Task};
 use crate::commands::generate::schema_types::codegen;
@@ -26,6 +28,7 @@ use verification_dispatch::{
     run_readme_coverage, run_route_tags, run_staging_compose_paths, run_terrain_alignment,
     run_terrain_alignment_strict, run_terrain_manifest,
 };
+use workspace_law_steps::WORKSPACE_LAW_STEPS;
 
 pub static TASKS: &[Task] = &[
     // ── composites ──────────────────────────────────────────────────────────────────────────
@@ -46,6 +49,7 @@ pub static TASKS: &[Task] = &[
             // map-engine -> graphics-engine wall the compiler does not see; required here and in
             // ci.yml by documentation_v2/standards/engine_boundary_rules.md §5.
             Step::Task("verify-engine-layers"),
+            Step::Task("verify-workspace-laws"),
             Step::Task("rust-ci"),
             Step::Task("verify-coding-standards"),
             Step::Task("verify-documentation"),
@@ -282,6 +286,13 @@ pub static TASKS: &[Task] = &[
             false,
             run_engine_layers
         )],
+    },
+    Task {
+        name: "verify-workspace-laws",
+        help: "WS-1 to WS-5, the workspace laws — crate tiers, crate anatomy, the strangler rule, frontend layering (ratchet) and Tailwind sources over the workspace members",
+        group: "verify",
+        lane: Lane::Alias,
+        steps: WORKSPACE_LAW_STEPS,
     },
     Task {
         name: "verify-no-shell",

@@ -11,7 +11,8 @@ that let a table row call a verification in process.
 tools_v2/xtask/src/commands/ci/task_definitions/
 ├── map_asset_steps.rs        step lists of the `map-water-everon` and `map-cartographic-everon` rows
 ├── recipe_macros.rs          `sh!` for a subprocess step, `xt!` for an in-process xtask step
-└── verification_dispatch.rs  argument-free adapters for the in-process verification steps
+├── verification_dispatch.rs  argument-free adapters for the in-process verification steps
+└── workspace_law_steps.rs    step list of the `verify-workspace-laws` row: the five workspace laws
 ```
 
 ## How it works

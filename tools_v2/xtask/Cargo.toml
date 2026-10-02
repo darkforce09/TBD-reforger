@@ -1,10 +1,10 @@
 [package]
 name = "xtask"
 version = "0.1.0"
-edition = "2024"
-rust-version = "1.95"
-license = "UNLICENSED"
-publish = false
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
 description = "Repository command router, verifications and platform execution (cargo xtask)"
 
 [[bin]]
@@ -12,25 +12,27 @@ name = "xtask"
 path = "src/main.rs"
 
 [dependencies]
-anyhow = "1"
-flate2 = "1"
+anyhow = { workspace = true }
+flate2 = { workspace = true }
 tar = "0.4"
-png = "0.17"
-clap = { version = "4", features = ["derive"] }
-regex = "1"
-serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["preserve_order", "raw_value"] }
-toml = "0.8"
+clap = { workspace = true, features = ["derive"] }
+regex = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order", "raw_value"] }
 serde_norway = "0.9"
-walkdir = "2"
-jsonschema = { version = "0.46.10", default-features = false }
+walkdir = { workspace = true }
+jsonschema = { workspace = true }
 developer-tools = { path = "../developer-tools" }
 verification-core = { path = "../verification-core" }
 ticket-engine = { path = "../ticket-engine" }
-libc = "0.2"
+libc = { workspace = true }
 typify = "0.7"
 schemars = "0.8"
 prettyplease = "0.2"
 syn = { version = "2", features = ["full", "visit"] }
 heck = "0.5"
 sha2 = "0.10"
+
+[dev-dependencies]
+# Manifest parsing in the tooling dependency-boundary and deploy tests.
+toml = { workspace = true }

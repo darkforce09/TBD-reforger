@@ -83,7 +83,7 @@ engine, and `doll` is a second, small renderer for the
 
 - Depends on: `website-graphics-engine` from the `world` tier up; `serde`, `serde_json` and
   `thiserror`; `yrs` for `store`; `png`, `rkyv` and `flate2` for the world, archive and streaming
-  tiers; `bytemuck` and `earcutr` always; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` and
+  tiers; `bytemuck` always; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` and
   `gloo-net` on wasm32; `contracts_v2/rules/kit-aliases.json`, embedded at build time; the terrain
   assets in `assets_v2/terrains/`, fetched as `/map-assets` at run time and read by the tests.
 - Used by: the API's missions and operations domains under `apps/website/api_v2/src/` (`data`

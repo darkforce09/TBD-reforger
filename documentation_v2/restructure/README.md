@@ -13,6 +13,7 @@ session, including a fresh one with no chat history, resumes the program from th
 documentation_v2/restructure/
 ├── crate_catalogue.md    every planned crate: category, tier, source paths, dependencies, what it fixes
 ├── laws_and_gates.md     the new repository laws, the standard gate set, gate evolution, end-state checks
+├── manifests/            the relocation manifests the stages run, and the format sample
 ├── program_plan.md       context, verified findings, binding decisions, execution model, stages, agents, risks
 ├── progress.md           the progress tracker: stage and agent rows, execution log, findings, handoff
 └── target_file_tree.md   the exact end-state file tree and the crate anatomy
@@ -38,9 +39,9 @@ updates it after every agent report and gate, and commits and pushes it at every
 
 Planned paths that do not exist yet are written as plain text or inside `text` blocks, never as
 inline code under an existing top-level folder. Planned `xtask` subcommands are written without
-the `cargo` prefix (for example xtask refactor relocate). Both conventions keep the
-documentation gates green while the documents describe the future tree. The research the plan
-rests on is archived in
+the `cargo` prefix, since the link check requires every cited `cargo xtask` command to exist.
+Both conventions keep the documentation gates green while the documents describe the future
+tree. The research the plan rests on is archived in
 [restructure research](/documentation_v2/archive/restructure_research/README.md).
 
 ## Code

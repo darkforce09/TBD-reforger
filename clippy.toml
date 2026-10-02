@@ -1,0 +1,4 @@
+# Clippy configuration for every crate in the workspace (clippy reads the nearest clippy.toml
+# upward from a crate's manifest). Tests may call `unwrap()`: `clippy::unwrap_used` in the
+# workspace lint policy binds production code only.
+allow-unwrap-in-tests = true

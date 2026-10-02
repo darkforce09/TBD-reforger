@@ -38,14 +38,17 @@ __pycache__/
 # ==============================================================================
 # 5. Rust / Cargo Build Directories
 # ==============================================================================
-# Workspace root target directory shared across worktrees
+# All build output: the target directory shared across worktrees and its purpose
+# subfolders (dev-api, ci, gate-*)
 /target/
-# CI scratch directory
+# Retired root-level build folders: local folders no tool writes any more, which
+# `cargo xtask platform wave reclaim` deletes where a machine still holds them
 /target-ci/
-# Per-slice and gate target directories
+/target-dev-api/
+/target-gate-*/
+/dist-gate-*/
+# Per-slice and hand-set target directories (target-<ticket id>, target-container)
 target-*/
-target-gate-frontend/
-/target-gate-trunk/
 
 # ==============================================================================
 # 6. Website Suite (apps/website)
@@ -53,8 +56,6 @@ target-gate-frontend/
 # Trunk frontend build outputs
 /apps/website/frontend/dist/
 /apps/website/frontend/dist-debug/
-# Wave-gate private trunk output
-/dist-gate-frontend/
 
 # ==============================================================================
 # 7. Mod Suite (apps/mod)

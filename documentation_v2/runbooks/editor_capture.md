@@ -14,7 +14,8 @@ binary of `tools_v2/developer-tools`, described in the
 - A GPU with a Vulkan driver on the machine that runs the capture: the map boots only on ANGLE
   over Vulkan (environment rule 2 below).
 - The full Chromium build the [editor gates](/documentation_v2/runbooks/editor_gates.md) use,
-  found the same way (`CHROME_HEADLESS_SHELL` or the Playwright cache). Check:
+  found the same way (`CHROME_HEADLESS_SHELL`, `PLAYWRIGHT_BROWSERS_PATH` or the Playwright
+  cache). Check:
   `cargo run -q -p developer-tools --bin gate -- doctor` prints a `✓ chromium` line.
 - The database, the [API](/documentation_v2/glossary/a_to_f.md#api) on port 8080 and the app on port 3000 running, as in
   [Local development](/documentation_v2/runbooks/local_development.md): `cargo xtask db up`,

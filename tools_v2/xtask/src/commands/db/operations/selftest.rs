@@ -31,7 +31,7 @@
 //! Sibling lanes run against the SAME host: the same `tbd_reforger_db` container and the same
 //! postgres. `db down` on the shared project, or a reap of `rust_it_%_it` while a sibling's suite
 //! is mid-run, would corrupt their runs and look like a defect in their code. So arm 6 drives a
-//! private compose project (`target-mk-db-selftest/`, its own container name, port 5499 and
+//! private compose project (`target/db-selftest/`, its own container name, port 5499 and
 //! volume) and arm 4 uses a `tbd_gate_selftest_arm4*` base, which no other lane's pattern
 //! matches.
 
@@ -50,6 +50,9 @@ use super::ab::{
 use super::recipes::{expand_make_vars, recipe_body, rendered_recipes};
 use super::test_it::{reap, reap_select};
 use crate::commands::deploy::database_operations as dbc;
+use crate::core::cargo_target_directory::{
+    BUILD_OUTPUT_FOLDER, DATABASE_SELFTEST_SUBFOLDER, build_output_subfolder,
+};
 use crate::core::repository_root::find_repo_root;
 
 /// The pinned recipe text the whole lane is measured against: what `make -n` printed at the repo
@@ -357,13 +360,21 @@ fn arm_reap_fail_open() -> Verdict {
 
 // ── arm 6: `make db-up` vs `cargo xtask db up`, byte for byte ────────────────────────────────
 
+/// Arm 6's throwaway compose project: its folder under `root`, and the same folder relative to
+/// `root` as the `WEB=` / `TBD_MK_WEB` value both sides receive.
+fn scratch_compose_project(root: &Path) -> (std::path::PathBuf, String) {
+    (
+        build_output_subfolder(root, DATABASE_SELFTEST_SUBFOLDER),
+        format!("{BUILD_OUTPUT_FOLDER}/{DATABASE_SELFTEST_SUBFOLDER}"),
+    )
+}
+
 fn arm_compose_parity(root: &Path) -> Verdict {
     if !root.join("Makefile").is_file() {
         println!("arm 6 SKIPPED — no Makefile in the tree; nothing left to diff against");
         return Verdict::Held;
     }
-    let scratch = root.join("target-mk-db-selftest");
-    let rel = "target-mk-db-selftest";
+    let (scratch, rel) = scratch_compose_project(root);
     if let Err(e) = write_scratch_compose(&scratch) {
         return did_not_run("arm 6: could not write the scratch compose project", e);
     }
@@ -405,9 +416,9 @@ fn arm_compose_parity(root: &Path) -> Verdict {
     }
 
     // GREEN arm: same command, same already-running container, so podman prints a stable id.
-    let _ = run_port(root, rel);
-    let green_make = run_make(root, "db-up", rel);
-    let green_port = run_port(root, rel);
+    let _ = run_port(root, &rel);
+    let green_make = run_make(root, "db-up", &rel);
+    let green_port = run_port(root, &rel);
     match (green_make, green_port) {
         (Some(gm), Some(gp)) => {
             if gm.0 != 0 {
@@ -431,7 +442,7 @@ fn arm_compose_parity(root: &Path) -> Verdict {
         _ => findings.push("db-up: one side could not be run".to_string()),
     }
     // Leave nothing running: `db down` on the scratch project only.
-    let _ = run_port_args(root, rel, &["db", "down"]);
+    let _ = run_port_args(root, &rel, &["db", "down"]);
 
     if findings.is_empty() {
         println!("arm 6 OK — `make db-up` and `xtask db up` agree, broken and working");

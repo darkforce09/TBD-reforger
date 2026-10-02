@@ -281,7 +281,7 @@ pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
 pub(super) fn check_chromium(env: Option<&Value>) -> u32 {
     let Some(bin) = cdp::find_chromium() else {
         println!(
-            "  ✗ chromium    not found (set CHROME_HEADLESS_SHELL or install the playwright chromium)"
+            "  ✗ chromium    not found (set CHROME_HEADLESS_SHELL or PLAYWRIGHT_BROWSERS_PATH, or install the playwright chromium)"
         );
         return 1;
     };

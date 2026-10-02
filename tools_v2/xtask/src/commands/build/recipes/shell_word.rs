@@ -110,9 +110,9 @@ pub(super) fn is_rust_build_tool(prog: &str) -> bool {
 }
 
 pub(crate) fn rust_api() -> Vec<Step> {
-    // `$(CURDIR)/target-dev-api`, NOT the shared cache: this starts the same long-lived server as
-    // `make api`, so it needs the same isolation. Build targets below exit, so they do not.
-    let private = cwd_root().join(DEV_API_TARGET).display().to_string();
+    // `<this checkout>/target/dev-api`, NOT the shared cache: this starts a long-lived server that
+    // must not wait in the shared build-lock queue. The build targets below exit, so they do not.
+    let private = dev_api_target_dir().display().to_string();
     vec![
         Step::new(&["cargo", "run", "--bin", "api"])
             .cd(WEB)
@@ -138,10 +138,6 @@ pub(crate) fn rust_fmt() -> Vec<Step> {
 
 pub(crate) fn rust_clippy() -> Vec<Step> {
     vec![Step::new(&["cargo", "clippy", "--all-targets", "--", "-D", "warnings"]).cd(WEB)]
-}
-
-pub(crate) fn rust_sqlx_prepare() -> Vec<Step> {
-    vec![Step::new(&["cargo", "sqlx", "prepare"]).cd(WEB)]
 }
 
 /// Fmt / clippy / test for the engine crates and the offline service worker.

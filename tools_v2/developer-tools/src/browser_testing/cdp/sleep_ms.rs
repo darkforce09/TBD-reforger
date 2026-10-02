@@ -4,62 +4,6 @@ pub async fn sleep_ms(ms: u64) {
     tokio::time::sleep(Duration::from_millis(ms)).await;
 }
 
-/// `CHROME_HEADLESS_SHELL` env → `~/.cache/ms-playwright` scan.
-///
-/// Prefer the **full `chrome` build over `chrome-headless-shell`**. The minimal headless
-/// shell ships a stubbed `SkFontMgr_FontConfigInterface` whose `onMatchFamilyStyleCharacter`
-/// (per-character font fallback) is a `FATAL: … "Not implemented"` (`SkFontMgr_FontConfigInterface.cpp:163`):
-/// the moment a page needs a fallback glyph — which the editor chrome does, env-dependently — the
-/// renderer aborts (SIGTRAP/SIGABRT), and the harness sees only a 130 s `Runtime.evaluate` hang
-/// (the process is dead, the WS never answers). The full `chrome --headless=new` (see [`launch`])
-/// has the complete font backend and does not crash. Fallback to the shell only if no full build
-/// exists (the shell still works for pages that never trigger fallback). Also note the playwright
-/// full-chrome path is `chrome-linux64/chrome` (not the old `chrome-linux/chrome`).
-pub fn find_chromium() -> Option<PathBuf> {
-    if let Ok(p) = std::env::var("CHROME_HEADLESS_SHELL") {
-        let p = PathBuf::from(p);
-        if p.exists() {
-            return Some(p);
-        }
-    }
-    let cache = dirs_home()?.join(".cache/ms-playwright");
-    if !cache.exists() {
-        return None;
-    }
-    for prefix in ["chromium-", "chromium_headless_shell-"] {
-        let mut dirs: Vec<String> = std::fs::read_dir(&cache)
-            .ok()?
-            .filter_map(|e| e.ok())
-            .filter_map(|e| e.file_name().into_string().ok())
-            .filter(|d| d.starts_with(prefix))
-            .collect();
-        dirs.sort();
-        dirs.reverse();
-        for d in dirs {
-            for rel in [
-                "chrome-linux64/chrome",
-                "chrome-headless-shell-linux64/chrome-headless-shell",
-            ] {
-                let bin = cache.join(&d).join(rel);
-                if bin.exists() {
-                    return Some(bin);
-                }
-            }
-        }
-    }
-    None
-}
-
-/// True when the resolved chromium is the minimal `chrome-headless-shell` (which is always headless
-/// and ignores `--headless`); the full `chrome` build needs an explicit `--headless=new` ([`launch`]).
-pub fn is_headless_shell(bin: &std::path::Path) -> bool {
-    bin.to_string_lossy().contains("chrome-headless-shell")
-}
-
-pub(super) fn dirs_home() -> Option<PathBuf> {
-    std::env::var_os("HOME").map(PathBuf::from)
-}
-
 /// Poll a URL until it answers (ok or 404 = server up). 60 tries × 250 ms.
 pub async fn wait_http(client: &reqwest::Client, url: &str, tries: u32) -> bool {
     for _ in 0..tries {
@@ -152,7 +96,10 @@ pub async fn launch_with_gpu(
     extra_args: &[String],
 ) -> Result<Browser> {
     let chromium = find_chromium().ok_or_else(|| {
-        anyhow!("cdp: no chromium (set CHROME_HEADLESS_SHELL or install playwright)")
+        anyhow!(
+            "cdp: no chromium (set CHROME_HEADLESS_SHELL or PLAYWRIGHT_BROWSERS_PATH, or install \
+             playwright)"
+        )
     })?;
     // Every CDP caller (smokes Harness, vsuite, doctor liveness) gets the gate-owned
     // fontconfig cache. Pin `XDG_CACHE_HOME` on the *child* Command rather than relying

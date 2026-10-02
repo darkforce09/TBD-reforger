@@ -254,7 +254,7 @@ pub(super) fn run_lane_refusal(
             format!("     main checkout = {}", main_root.display()),
             format!("     run target    = {run_target_dir}"),
             "     A worktree build here would be executed by main's next run lane.".into(),
-            "     Use CARGO_TARGET_DIR=<main_root>/target-<slice> for a private server dir.".into(),
+            "     Use CARGO_TARGET_DIR=<main_root>/target/<slice> for a private server dir.".into(),
         ]);
     }
     None

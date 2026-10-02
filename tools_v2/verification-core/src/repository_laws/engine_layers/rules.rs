@@ -71,7 +71,7 @@ pub(super) const RULE3B_PIN: &[(&str, usize, &str)] = &[
 ];
 
 /// Rule 2's declaration matcher. See the module docs for why it is anchored on a keyword.
-pub(super) const DECL_RE: &str =
+pub(in crate::repository_laws) const DECL_RE: &str =
     r"\b(struct|enum|trait|type|fn|const|static|mod)\s+\w*(terrain|symbology|mission|orbat|arma)";
 
 /// The editor's decisions, inside the engine — rule 5's root and nothing else.

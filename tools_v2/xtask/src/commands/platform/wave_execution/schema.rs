@@ -298,7 +298,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
 ///
 /// Reimplemented rather than shelled out because the stamp file is SHARED with the bash gate during
 /// the overlap: if the two disagreed about the stamp, each would throw away the other's
-/// `target-gate-schema` and pay a 14 s cold rebuild every alternate run. `tr -d ' '` in the bash
+/// `target/gate-schema` and pay a 14 s cold rebuild every alternate run. `tr -d ' '` in the bash
 /// joined the two fields, so the rendering is `crc` immediately followed by `length`.
 fn cksum(data: &[u8]) -> String {
     let mut table = [0u32; 256];

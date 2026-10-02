@@ -111,6 +111,40 @@ fn test_generated_hidden_and_pending_merge_folders_need_no_readme() {
 }
 
 #[test]
+fn generated_folder_exemption_spares_the_capitalised_folder_and_no_other_spelling() {
+    let mut fixture = FixtureCheckout::new("coverage-generated-spellings");
+    fixture
+        .tracked(
+            "apps/README.md",
+            &readme_with_contents(
+                "apps/",
+                &[
+                    "├── GENERATED/       tables in capitals",
+                    "├── Generated/       generated script tables",
+                    "├── generated/       generated models",
+                    "└── generated_data/  inputs a generator reads",
+                ],
+            ),
+        )
+        .tracked("apps/Generated/weapon/table.c", "")
+        .tracked("apps/generated/models/model.rs", "")
+        .tracked("apps/GENERATED/table.c", "")
+        .tracked("apps/generated_data/input.json", "");
+    let run = run(&fixture, &[]);
+    assert_eq!(
+        failures(&run),
+        [
+            "FAIL: apps/GENERATED/: no tracked README.md",
+            "FAIL: apps/generated_data/: no tracked README.md",
+        ]
+    );
+    assert_eq!(
+        run.totals[0],
+        "  coverage: 3 folder(s) judged, 2 without a tracked README.md"
+    );
+}
+
+#[test]
 fn a_readme_inside_an_exempt_folder_is_not_held_to_its_contents() {
     const NO_CONTENTS: &str = "# Exempt\n\nNo Contents here.\n";
     let pending_merge = file_name(PENDING_MERGE_DIR);

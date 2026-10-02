@@ -60,7 +60,7 @@ The crate has no features and reads no configuration file of its own. What it re
 
 - `CARGO_TARGET_DIR`: kept when set; otherwise the `mk` and `ci` children get the primary
   checkout's `target/`, shared by every linked worktree
-  (`src/core/cargo_target_directory.rs`), and `mk rust-api` builds into `target-dev-api`.
+  (`src/core/cargo_target_directory.rs`), and `mk rust-api` builds into `target/dev-api`.
 - `.ai/tickets/ROOT`: the marker that identifies the checkout root (`find_repo_root` in
   `tools_v2/ticket-engine/src/repository.rs`).
 - `deploy/deploy.env`: the deploy host (`TBD_SSH_HOST`, the one place the staging host is named),

@@ -15,7 +15,7 @@ tools_v2/verification-core/src/
 ├── pattern.rs  `Pattern`: a compiled regex or escaped literal whose `^` and `$` anchor lines
 ├── proc/       child processes with process-group isolation, deadlines and signal reporting
 ├── report.rs   `Report`: accumulates verdicts, prints failures as they land, and yields the exit code
-├── repository_laws/  the engineering laws as pure checks: file length, test placement, exemptions, engine layers, crate directions
+├── repository_laws/  the engineering laws as pure checks: file length, test placement, exemptions, engine layers, crate directions, workspace laws
 ├── scan.rs     `walk_files`, `matching_lines` and `Hit`: a sorted tree walk and the lines that match
 ├── tests/      unit tests for every module, one file each
 └── verdict.rs  `Verdict`, `NotRun`, `Finding` and `Kind`: the three outcomes and their rendering
@@ -67,8 +67,8 @@ scan::walk_files + matching_lines ──► Result<Vec<Hit>, NotRun>   (the call
 - `lock`: the platform wave driver (`tools_v2/xtask/src/commands/platform/wave_execution/lock.rs`
   and `mod.rs`, which resolves `GATE_LOCK_RELPATH`) and the MCP broker start
   (`tools_v2/xtask/src/commands/mcp/call.rs`, one lock per socket).
-- `repository_laws`: `verify file-length` and `verify engine-layers` in
-  `tools_v2/xtask/src/verifications/`, and `apps/website/api_v2/tests/engineering_laws.rs`; its
+- `repository_laws`: `verify file-length`, `verify engine-layers` and the five workspace-law
+  verbs (`verify crate-tiers` and its siblings) in `tools_v2/xtask/src/verifications/`, and `apps/website/api_v2/tests/engineering_laws.rs`; its
   [README](/tools_v2/verification-core/src/repository_laws/README.md) lists every law.
 
 ## Boundaries

@@ -6,6 +6,9 @@
 //! here. Commit history owns history, and a reader who cannot see the history is the reader these
 //! files are written for.
 //!
+//! One name is exempt from the history vocabulary: the workspace restructure's parking folder,
+//! spelled as its path segment or as the string literal naming it ([`PARKING_FOLDER_NAME`]).
+//!
 //! The walk is `git ls-files tools_v2`, so an untracked build tree — an installed `node_modules`
 //! among them — never enters, and a rule can never be satisfied by deleting a file from the index
 //! while leaving it on disk.
@@ -22,6 +25,10 @@ const TICKET_IDENTIFIER: &str = r"\bT-[0-9]{2,4}(\.[0-9]+)*\b";
 /// Names that no longer describe anything in this repository: retired crate and directory
 /// spellings, ticket-numbered file stems, and module names that moved.
 ///
+/// The retired crate folders under `crates/` are the hyphenated `tbd-` and `map-` ones; the
+/// underscore category folders of the planned crate layout (a map rendering or map overlay
+/// category) are live names, so the needle ends at the hyphen.
+///
 /// Each is held in halves and joined at runtime, so this file does not match its own needles —
 /// the same discipline `ticket_engine::validation::references` uses for its fossil-path guard.
 /// [`every_rule_fires_on_a_line_that_breaks_it`] is what proves the joined pattern still bites.
@@ -30,7 +37,7 @@ const RETIRED_SPELLINGS: &[(&str, &str)] = &[
     ("tbd", "_tools"),
     ("map", "-engine-core"),
     ("map", "_engine_core"),
-    ("crates/", "(tbd|map)"),
+    ("crates/", "(tbd|map)-"),
     ("tools/", "tbd"),
     ("map", "_blueprint"),
     ("schema", "_gates"),
@@ -82,6 +89,22 @@ fn history_word_pattern() -> Regex {
         .case_insensitive(true)
         .build()
         .expect("history words")
+}
+
+/// The name of the workspace restructure's parking folder, which keeps the spelling `legacy/` by
+/// operator decision: the path segment `legacy/` and the string literal `"legacy"` that names the
+/// folder. Upper-case identifiers such as `LEGACY_ROOT` and snake-case ones never meet the
+/// history needle's word boundary. The bare word, in any case, stays history vocabulary.
+const PARKING_FOLDER_NAME: &str = r#"\blegacy/|"legacy""#;
+
+fn parking_folder_name_pattern() -> Regex {
+    Regex::new(PARKING_FOLDER_NAME).expect("parking folder name")
+}
+
+/// Does `line` narrate history once every spelling of the parking folder's name is blanked? Each
+/// spelling becomes a space, so blanking never joins two words into a new match.
+fn narrates_history(line: &str, history: &Regex, parking_folder: &Regex) -> bool {
+    history.is_match(&parking_folder.replace_all(line, " "))
 }
 
 /// A shell, Python or Node source file name. The tooling ships none of them.
@@ -323,7 +346,8 @@ fn nothing_narrates_its_own_history() {
     let root = crate::core::repository_root::test_repo_root();
     let files = tracked_tooling_files(&root);
     let pattern = history_word_pattern();
-    let select = |_path: &str, _line: &str| true;
+    let parking_folder = parking_folder_name_pattern();
+    let select = |_path: &str, line: &str| narrates_history(line, &pattern, &parking_folder);
     assert_clean(
         "prose narrates a past state; describe the present one:",
         &offences(&root, &files, &pattern, &select),
@@ -493,4 +517,78 @@ fn every_rule_fires_on_a_line_that_breaks_it() {
         "tools_v2/ticket-engine/src/store.rs",
         &FIXTURE_TREES
     ));
+}
+
+/// The parking folder's name, as a path segment or as the string literal that names the folder,
+/// is not history vocabulary.
+#[test]
+fn prose_rules_legacy_folder_name_is_not_history() {
+    let history = history_word_pattern();
+    let parking_folder = parking_folder_name_pattern();
+    for line in [
+        "//! no member outside `legacy/` depends on a member under `legacy/`",
+        "    workspace.member(\"legacy/website_map_engine\", &manifest);",
+        "website_map_engine = { path = \"../../legacy/website_map_engine\" }",
+        r#"pub const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "legacy"];"#,
+        r#"pub const LEGACY_ROOT: &str = "legacy";"#,
+        "    findings.extend(strangler::legacy_dependency_findings(&members));",
+    ] {
+        assert!(!narrates_history(line, &history, &parking_folder), "{line}");
+    }
+}
+
+/// The bare word stays history vocabulary, in any case and on a line that also names the folder.
+#[test]
+fn prose_rules_legacy_folder_word_stays_banned_as_history() {
+    let history = history_word_pattern();
+    let parking_folder = parking_folder_name_pattern();
+    // Assembled from halves, so this file carries no live offender.
+    let word = format!("{}{}", "lega", "cy");
+    for line in [
+        format!("// the {word} implementation"),
+        format!("/// nothing new depends on {word}"),
+        format!("//! a {word} member sits under `legacy/`"),
+        format!("{}{} code paths", "Lega", "cy"),
+        format!("let path = \"{word}\\\\tools\";"),
+        format!("    let {word}: Vec<&Member> = members;"),
+        format!("(apps or {word})"),
+    ] {
+        assert!(narrates_history(&line, &history, &parking_folder), "{line}");
+    }
+}
+
+/// Blanking the folder's name leaves a space, so it never fuses two words into a match.
+#[test]
+fn prose_rules_legacy_folder_blanking_never_joins_words() {
+    let parking_folder = parking_folder_name_pattern();
+    let fused = format!("{}legacy/{}", "used to ", "be");
+    assert_eq!(parking_folder.replace_all(&fused, " "), "used to  be");
+    assert!(!narrates_history(
+        &fused,
+        &history_word_pattern(),
+        &parking_folder
+    ));
+    assert!(!parking_folder.is_match(&format!("{}{}/", "LEG", "ACY")));
+}
+
+/// The retired crate needle still bites on the hyphenated retired folders and leaves the planned
+/// underscore categories alone.
+#[test]
+fn prose_rules_retired_crate_folders_fire_and_planned_categories_pass() {
+    let dead = dead_name_pattern();
+    for (head, tail) in [
+        ("map", "-engine-core"),
+        ("map", "-engine-render"),
+        ("tbd", "-gate"),
+        ("tbd", "-tickets"),
+    ] {
+        assert!(
+            dead.is_match(&format!("{}{head}{tail}", "crates/")),
+            "{head}{tail}"
+        );
+    }
+    for planned in ["map_rendering", "map_overlay", "mission", "geometry"] {
+        let line = format!("{}{planned}", "crates/");
+        assert!(!dead.is_match(&line), "{line}");
+    }
 }

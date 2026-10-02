@@ -45,7 +45,7 @@ usual Steam and Workbench folders when unset, and the server command comes from
 `developer_tools::enfusion_tooling::enfusion_mcp_entrypoint`: `ENFUSION_MCP_BIN` when it names a
 file, else the package `npm ci` installed in `tools_v2/enfusion_mcp_node_package/`, else a copy in
 the npx cache, else `npx -y enfusion-mcp`. `daemon start` builds `mcpd` into `MCPD_CARGO_TARGET_DIR`
-(default `target-dev-mcpd` in the checkout), spawns it in its own session with `--socket` and
+(default `target/dev-mcpd` in the checkout), spawns it in its own session with `--socket` and
 `--pidfile <socket>.pid`, logs to `<socket>.log`, and counts it as running once the socket accepts a
 connection. A missing `timeout` binary makes a one-shot attempt fail rather than hang.
 
