@@ -17,7 +17,8 @@
 //! `owns` values only; the verification judges exactly the spans [`allowed_spans`] opens, with the
 //! same occurrence classes ([`path_tokens::classify_occurrence`]), so a spelling it can see is one
 //! this pass rewrites or reports unresolved; the dry run's verification of the planned tree proves
-//! that for every run.
+//! that for every run; a relative literal its spelling does not pin to one anchor is never
+//! rewritten, only reported as ambiguous.
 
 pub(crate) mod anchor_resolution;
 pub(crate) mod markdown_links;
@@ -44,13 +45,16 @@ pub(crate) struct UnresolvedReference {
     pub(crate) message: String,
 }
 
-/// One file's path-row edits and unresolved literals.
+/// One file's path-row edits, unresolved literals and literals left as written.
 #[derive(Debug, Default)]
 pub(crate) struct PathReferenceOutcome {
     /// The edits, merged and in source order.
     pub(crate) edits: Vec<Edit>,
     /// The literals with no single rewrite.
     pub(crate) unresolved: Vec<UnresolvedReference>,
+    /// The literals the moves would change that their spelling does not pin to one anchor, left
+    /// as written.
+    pub(crate) ambiguous: Vec<UnresolvedReference>,
 }
 
 /// The path-row edits of `source`, the text of `context.file`, under `treatment`.
@@ -86,6 +90,12 @@ pub(crate) fn path_reference_edits(
             }),
             ReferenceOutcome::Unresolvable(message) => {
                 outcome.unresolved.push(UnresolvedReference {
+                    offset: candidate.span.start,
+                    message,
+                });
+            }
+            ReferenceOutcome::Ambiguous(message) => {
+                outcome.ambiguous.push(UnresolvedReference {
                     offset: candidate.span.start,
                     message,
                 });

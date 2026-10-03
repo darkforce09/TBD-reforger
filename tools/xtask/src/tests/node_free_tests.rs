@@ -22,6 +22,8 @@ const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
     "tools/ticket_engine",
     "tools/xtask",
     "tools/developer_tools",
+    "tools/foundation/repository_layout",
+    "crates/contracts/contract_schema_types",
 ];
 
 /// A temporary checkout holding every law root: a workspace of [`FIXTURE_WORKSPACE_MEMBERS`],
@@ -250,10 +252,10 @@ fn website_test_roots_and_generated_contracts_are_walked_without_exemption() {
     let d = TmpRepo::new("walk-coverage");
     let test = d.0.join("apps/api/tests/integration.rs");
     let generated = [
-        "apps/api/src/missions/contract/generated/registry_items/mod.rs",
-        "apps/api/src/missions/models/generated/mission_review/mission_row.rs",
-        "apps/api/src/operations/models/generated/event_hub/mod.rs",
-        "apps/api/src/server_infrastructure/models/generated/fleet_command/error.rs",
+        "crates/contracts/contract_schema_types/src/generated/missions/registry_items/mod.rs",
+        "crates/contracts/contract_schema_types/src/generated/missions/mission_review/approval_queue_row.rs",
+        "crates/contracts/contract_schema_types/src/generated/operations/event_hub/mod.rs",
+        "crates/contracts/contract_schema_types/src/generated/server_infrastructure/fleet_command/claim_request.rs",
     ]
     .map(|path| d.0.join(path));
     write_lines(&test, SIZE_3_TEST_MAX_LINES + 1);

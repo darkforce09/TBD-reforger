@@ -43,6 +43,18 @@ literal is reported unresolved. Otherwise the new literal names the moved target
 anchor, so a depth change re-relativises it in both directions; a literal that climbs back out of
 a folder it named keeps everything through its last `..` (`folder/../to`).
 
+A literal whose syntax does not fix its anchor (every candidate read under more than one anchor: a
+path token in a Rust literal or comment, a climbing token in prose or a Cargo manifest) is
+rewritten only when its spelling pins it to the reading that changes it. It is left as written
+and reported ambiguous, never unresolved, when that reading names only a leading part of it (an
+example path whose tail names nothing, such as a comment's `../../tests/cases_1.rs`), or when the
+reading comes from the owning crate's folder and another crate folder reads the same literal as a
+tracked path the moves leave differently: a literal every crate spells for its own files
+(`src/lib.rs`, `src/`) or a fixture path relative to a temporary checkout
+(`../../legacy/map_engine` in a test's synthetic `Cargo.toml`) names no crate in particular. An
+`include!`, `#[path]`, Markdown link, Cargo `path` value or `CARGO_MANIFEST_DIR` join fixes its
+anchor and follows the moves as before.
+
 `root_spellings.rs` rewrites every whole-path occurrence written from the repository root, after a
 leading `/` (repository-root Markdown links), after the letter of a control escape (`\n`, `\t`,
 `\r`, `\0` after an odd run of backslashes, as in `"a.rs\0from/b.rs"` test listings and messages
@@ -69,7 +81,9 @@ destinations in a frozen record, the `spec`, `plan` and `owns` values of a close
   (`relocate_lone_separator_literals_name_no_path`,
   `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); a literal whose
   meaning the moves do not change is never rewritten (`relocate_depth_change_rerelativises_include_and_manifest_dir_literals`,
-  `relocate_unresolvable_literal_fails_apply_with_nothing_written`); escape-adjacent spellings,
+  `relocate_unresolvable_literal_fails_apply_with_nothing_written`); a literal its spelling does
+  not pin to one anchor is left as written and reported ambiguous
+  (`relocate_crate_generic_literals_in_a_file_leaving_its_crate_stay_as_written`); escape-adjacent spellings,
   `file:` URLs and `/../` pieces are rewritten or unresolved, never skipped
   (`relocate_spellings_after_control_escapes_are_rewritten_and_verified`,
   `relocate_file_urls_carrying_a_repository_path_are_rewritten`,

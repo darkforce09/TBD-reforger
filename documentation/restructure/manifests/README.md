@@ -55,10 +55,19 @@ and `.gitignore`) and relative references (`include_str!` and its kin, `#[path]`
 A relative reference is read from the file's folder, the owning crate's folder or the repository
 root, and rewritten so it names the moved target from the same anchor; one that cannot be re-read,
 or that two anchors read differently, makes `--apply` refuse the whole manifest with its
-`path:line` before anything is written. When a moved module's code reaches outside the moved
-subtree through `self::` or `super::` chains, a `rust_path` row turns those chains into absolute
-`crate::` paths first. Rows of one manifest compose: a path moves by the longest `from` that
-contains it.
+`path:line` before anything is written. A literal whose syntax does not fix its anchor (a token in
+a Rust literal or comment, a climbing token in prose) is rewritten only when its spelling pins it
+to one reading; one every crate spells for its own files (`src/lib.rs`), a fixture path relative
+to a temporary checkout (`../../legacy/map_engine` in a test's synthetic `Cargo.toml`) or an
+example path whose tail names nothing stays as written and is listed as ambiguous with its
+`path:line`, for review, without stopping the run. When a moved module's code reaches outside the
+moved subtree through `self::` or `super::` chains, a `rust_path` row turns those chains into
+absolute `crate::` paths first. Rows of one manifest compose: a path moves by the longest `from`
+that contains it, and each row lands exactly at its `to` in any manifest order, so folder rows may
+share a destination parent (one folder becomes `crate/src`, two others `crate/src/ortho` and
+`crate/src/orbit`). Rows that would put two things in one place are refused by the dry run with
+both lines: two rows with the same `to`, a `to` inside its own `from`, a file landing where another
+row's moved files already lie, and rows no order of moves can make (two folders that swap names).
 
 Frozen records change as little as their checks need: Markdown under the archive and the ticket
 documents gets only its link destinations rewritten, prose and backticks staying as history; a
@@ -72,11 +81,14 @@ it) move byte-identical and are never edited or verified.
 ### Running a stage manifest
 
 1. `cargo xtask refactor relocate --manifest <path.tsv> --dry-run` prints, per row, the tracked
-   files moved and the references rewritten by file kind, then every unresolved literal, and runs
-   the verification below over the tree the plan would leave; it writes nothing and exits 1 on
-   any unresolved literal or finding.
+   files moved and the references rewritten by file kind, then every unresolved literal and every
+   ambiguous literal left as written, and runs the verification below over the tree the plan
+   would leave; it writes nothing and exits 1 on any unresolved literal or finding (ambiguous
+   literals are for review and do not fail it).
 2. `cargo xtask refactor relocate --manifest <path.tsv> --apply` refuses, writing nothing, unless
    that dry run passes; otherwise it makes the moves and rewrites and then verifies the manifest.
+   A failure at any step undoes every step, leaving the index and the working tree byte-identical
+   to before.
 3. `cargo xtask refactor relocate --verify` judges every committed manifest in this folder except
    `example.tsv`: no live tracked file spells a `path` row's retired `from` on segment boundaries
    (frozen records and the manifests themselves excluded), and no `rust_path` prefix is left in its

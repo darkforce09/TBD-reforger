@@ -1,8 +1,8 @@
 //! The text a dry run prints: per row, what moves and how many references change, by file kind.
 //!
 //! **Role:** renders a [`RelocationPlan`] as one block per manifest row (tracked files moved,
-//! references rewritten per file kind), the unresolved list with `path:line` for each, and one
-//! totals line.
+//! references rewritten per file kind), the unresolved list and the list of ambiguous literals
+//! left as written, with `path:line` for each, and one totals line.
 //!
 //! **Position:** printed by `--dry-run`, and by `--apply` before it writes.
 //!
@@ -81,6 +81,14 @@ pub(crate) fn render_summary(label: &str, rows: &[ManifestRow], plan: &Relocatio
     }
     let _ = writeln!(out, "  unresolved: {}", plan.unresolved.len());
     for item in &plan.unresolved {
+        let _ = writeln!(out, "    {}:{}: {}", item.path, item.line, item.message);
+    }
+    let _ = writeln!(
+        out,
+        "  ambiguous, left as written (review each): {}",
+        plan.ambiguous.len()
+    );
+    for item in &plan.ambiguous {
         let _ = writeln!(out, "    {}:{}: {}", item.path, item.line, item.message);
     }
     let moved: usize = plan.moves.iter().map(|planned| planned.tracked_files).sum();

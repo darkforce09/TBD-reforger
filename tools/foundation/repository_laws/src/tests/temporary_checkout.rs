@@ -29,6 +29,8 @@ pub(super) const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
     "tools/ticket_engine",
     "tools/xtask",
     "tools/developer_tools",
+    "tools/foundation/repository_layout",
+    "crates/contracts/contract_schema_types",
 ];
 
 /// A temporary repository root.

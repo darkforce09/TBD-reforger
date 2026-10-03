@@ -15,7 +15,8 @@
 //! **Invariants:** nothing is written while a plan is built; each pass reads the text the previous
 //! pass produced; a pass edits a file only as far as its [`FileTreatment`] allows; binaries and
 //! Git LFS pointers are moved with their folders and never read as text; a move whose `from` is
-//! not tracked or whose `to` already exists refuses the whole plan.
+//! not tracked or whose `to` already exists, and rows that would put two things in one place or
+//! that no order of moves can make ([`super::move_placement`]), refuse the whole plan.
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -23,6 +24,7 @@ use verification_core::NotRun;
 
 use super::file_treatment::{FileTreatment, TreatmentAreas};
 use super::manifest::{ManifestRow, RowKind};
+use super::move_placement::{execution_order, placement_conflicts};
 use super::path_mapping::{PathMapping, is_at_or_below, parent_folder};
 use super::path_references::anchor_resolution::ResolutionContext;
 use super::path_references::path_reference_edits;
@@ -62,7 +64,7 @@ pub(crate) struct PlannedRewrite {
     pub(crate) edits_by_row: BTreeMap<usize, usize>,
 }
 
-/// A literal or `use` tree no pass could rewrite.
+/// A literal or `use` tree no pass could rewrite, or a literal a pass left as written.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct UnresolvedItem {
     /// The file, before the moves.
@@ -78,10 +80,16 @@ pub(crate) struct UnresolvedItem {
 pub(crate) struct RelocationPlan {
     /// The moves, in manifest order.
     pub(crate) moves: Vec<PlannedMove>,
+    /// The order the apply runs [`RelocationPlan::moves`] in, as indexes into it
+    /// ([`super::move_placement::execution_order`]).
+    pub(crate) move_order: Vec<usize>,
     /// The files whose text changes.
     pub(crate) rewrites: Vec<PlannedRewrite>,
     /// What could not be rewritten; a plan with any is never applied.
     pub(crate) unresolved: Vec<UnresolvedItem>,
+    /// Relative literals the moves would change that their spelling does not pin to one anchor,
+    /// left as written and listed for review; they never stop an apply.
+    pub(crate) ambiguous: Vec<UnresolvedItem>,
     /// Tracked files that are binaries or symbolic links, moved but never read.
     pub(crate) files_not_text: usize,
     /// Tracked Git LFS pointers, moved but never read.
@@ -114,7 +122,7 @@ pub(crate) fn build_plan(
 ) -> Result<RelocationPlan, PlanRefusal> {
     let before = snapshot.paths();
     let mapping = PathMapping::from_rows(rows);
-    let moves = checked_moves(snapshot, rows)?;
+    let (moves, move_order) = checked_moves(snapshot, rows, &mapping)?;
     let after = PathSet::from_files(
         before
             .files()
@@ -123,6 +131,7 @@ pub(crate) fn build_plan(
     );
     let mut plan = RelocationPlan {
         moves,
+        move_order,
         ..RelocationPlan::default()
     };
     let crate_folders = before.crate_folders();
@@ -164,6 +173,13 @@ pub(crate) fn build_plan(
                     path: file.clone(),
                     line: line_of(&text, unresolved.offset),
                     message: unresolved.message,
+                });
+            }
+            for ambiguous in outcome.ambiguous {
+                plan.ambiguous.push(UnresolvedItem {
+                    path: file.clone(),
+                    line: line_of(&text, ambiguous.offset),
+                    message: ambiguous.message,
                 });
             }
             text = apply_counted(&text, &outcome.edits, &mut edits_by_row);
@@ -226,11 +242,13 @@ fn apply_counted(text: &str, edits: &[Edit], counts: &mut BTreeMap<usize, usize>
     apply_edits(text, edits)
 }
 
-/// The moves of the `path` rows, each checked: its `from` is tracked and its `to` is free.
+/// The moves of the `path` rows and the order they run in, each checked: its `from` is tracked,
+/// its `to` is free or freed by another move, and no two rows put things in one place.
 fn checked_moves(
     snapshot: &RepositorySnapshot,
     rows: &[ManifestRow],
-) -> Result<Vec<PlannedMove>, PlanRefusal> {
+    mapping: &PathMapping,
+) -> Result<(Vec<PlannedMove>, Vec<usize>), PlanRefusal> {
     let before = snapshot.paths();
     let mut errors = Vec::new();
     let mut moves = Vec::new();
@@ -258,9 +276,16 @@ fn checked_moves(
                 .count(),
         });
     }
-    if errors.is_empty() {
-        Ok(moves)
-    } else {
-        Err(PlanRefusal::Refused(errors))
+    if !errors.is_empty() {
+        return Err(PlanRefusal::Refused(errors));
+    }
+    errors.extend(placement_conflicts(&moves, before, mapping));
+    match execution_order(&moves) {
+        Ok(order) if errors.is_empty() => Ok((moves, order)),
+        Ok(_) => Err(PlanRefusal::Refused(errors)),
+        Err(cycle) => {
+            errors.push(cycle);
+            Err(PlanRefusal::Refused(errors))
+        }
     }
 }

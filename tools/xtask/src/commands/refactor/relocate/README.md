@@ -12,12 +12,13 @@ tools/xtask/src/commands/refactor/relocate/
 ├── file_treatment.rs     what a file may receive: live, frozen record, closed ticket, excluded
 ├── manifest.rs           the manifest parser, refusing the whole manifest on any bad row
 ├── mod.rs                the three modes (dry run, apply, verify) and their exit codes
+├── move_placement.rs     where the moves land, the rows that collide, the order the moves run in
 ├── path_mapping.rs       where each path lands after the moves, and the relative-path math
 ├── path_references/      the `path` row pass: repository-root spellings and relative literals
-├── plan_application.rs   the `git mv` moves and the file writes, undone on any failure
+├── plan_application.rs   the `git mv` moves and the file writes, undone byte-identically on any failure
 ├── plan_summary.rs       the per-row summary a dry run and an apply print
 ├── planned_tree.rs       the tree a plan would leave, read in memory for the verification
-├── relocation_plan.rs    the plan: checked moves, rewritten files, unresolved literals
+├── relocation_plan.rs    the plan: checked moves, rewritten files, unresolved and ambiguous literals
 ├── repository_files.rs   the tracked files, which are text, the crate each sits in, the judged tree
 ├── retired_spellings.rs  the verification: no retired `from` left in a live file or scope
 ├── rust_lexer.rs         a lossless Rust tokenizer telling code, literals and comments apart
@@ -36,8 +37,8 @@ manifest.rs ─rows─▶ relocation_plan.rs ─plan─▶ plan_summary.rs      
                      │  2. rust_paths/ (live .rs)
                      │  3. text_tokens.rs (live)└─▶ plan_application.rs (--apply, clean plan)
                      └─ repository_files.rs,                │
-                        file_treatment.rs                   ▼
-                                                 retired_spellings.rs
+                        file_treatment.rs,                  ▼
+                        move_placement.rs        retired_spellings.rs
                                                  (--verify, end of --apply)
 ```
 
@@ -63,7 +64,20 @@ whether this build of the tool names them as they lie before or after the moves.
 `path_mapping.rs` turns the `path` rows into one mapping that relocates a path by its longest moved
 prefix, so nested rows compose. `relocation_plan.rs` runs the three passes, each over the text the
 previous one produced, refuses the whole plan when a `from` is not tracked or a `to` exists, and
-records every literal it could not rewrite.
+records every literal it could not rewrite and every literal it left as written as ambiguous (a
+relative literal its spelling does not pin to one anchor; see `path_references/`). Ambiguous
+literals are printed with `path:line` for review and never stop a run.
+
+`move_placement.rs` proves that the mapping's tree is one `git mv` can make, and refuses the plan
+otherwise, naming both manifest lines of each conflict: two rows with the same `to`, a `to` inside
+its own `from`, two files landing on one path or a file landing where another needs a folder, and
+a file landing inside another row's `to` unless it comes from that row's `from` or from a row whose
+`to` lies strictly inside it. Folder rows that only share a destination parent, such as a folder
+that becomes `crate/src` and two folders that become `crate/src/ortho` and `crate/src/orbit`, are
+no conflict. It then orders the moves: a move runs after every move whose `to` holds its `to` (that
+one needs its `to` absent, or `git mv` would nest the folder inside it) and after every move whose
+`from` holds its `to` (that one frees the place); otherwise shallower `from` first, then manifest
+order. Rows no order satisfies, such as two folders that swap names, are refused.
 
 `planned_tree.rs` presents the checkout as the plan would leave it, in memory: every tracked path
 relocated, every rewritten file holding its planned text, every other file read where it lies.
@@ -71,8 +85,11 @@ relocated, every rewritten file holding its planned text, every other file read 
 verification `--verify` runs after an apply, listing every finding as `path:line` at its new path;
 it exits 1 when anything is unresolved or the planned tree keeps a retired spelling. `--apply` runs
 the same two checks first and writes nothing unless both are clean; then `plan_application.rs` runs
-the moves shallowest first, writes every rewritten file at its new path, undoes everything on a
-failure, and `retired_spellings.rs` judges the same manifest on the checkout. A plan that passes
+the moves in that order, each into a `to` it checks is absent, writes every rewritten file at its
+new path, and `retired_spellings.rs` judges the same manifest on the checkout. Every step is
+journaled; a failure at any step restores the rewritten files' original bytes, renames the moves
+back last first, removes the folders the apply created and writes back the index file copied
+before the first move, so the index and the working tree are byte-identical to before. A plan that passes
 its dry run therefore leaves a checkout that verifies clean, whatever spelling a pass missed: the
 miss shows in the dry run instead of after the apply.
 
@@ -104,7 +121,15 @@ no finding.
   like a path is never rewritten: a literal of separators alone and a plain fixture path that only
   starts with a moved folder's name stay as written
   (`relocate_lone_separator_literals_name_no_path`,
-  `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); the passes
+  `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); a literal every crate
+  spells for its own files, a fixture path relative to a temporary checkout and a path whose tail
+  names nothing stay as written in a file that leaves its crate, listed as ambiguous
+  (`relocate_crate_generic_literals_in_a_file_leaving_its_crate_stay_as_written`); each move lands
+  exactly at its `to` in any manifest order
+  (`relocate_folder_rows_sharing_a_parent_each_land_at_their_to`), colliding rows are refused with
+  both lines (`relocate_rows_that_collide_are_refused_with_both_lines`), and a failure after any
+  step leaves the index and the working tree byte-identical
+  (`relocate_failed_apply_leaves_index_and_tree_byte_identical`); the passes
   and the verification share `file_treatment.rs`, `path_references::allowed_spans` and
   `path_tokens::classify_occurrence`, so they judge the same bytes the same way; tests are named
   `relocate_*` and run on throwaway checkouts, never on this one.

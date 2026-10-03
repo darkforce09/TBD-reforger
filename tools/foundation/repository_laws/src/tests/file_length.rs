@@ -62,7 +62,7 @@ fn an_enfusion_script_meets_the_production_ceiling() {
 fn generated_code_and_website_test_trees_have_no_exemption() {
     let checkout = TemporaryCheckout::with_law_roots("no-exemption");
     checkout.write_lines(
-        "apps/api/src/missions/models/generated/mission_row.rs",
+        "crates/contracts/contract_schema_types/src/generated/missions/mission_review/approval_queue_row.rs",
         PRODUCTION_MAX_LINES + 1,
     );
     checkout.write_lines("legacy/map_engine/tests/cases.rs", TEST_MAX_LINES + 1);

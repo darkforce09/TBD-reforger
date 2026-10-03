@@ -20,7 +20,11 @@
 //! literal keeps the old one's `./` lead, trailing `/` and leading `/`, and a literal that climbs
 //! back out of a folder it named (`apps/../from`) keeps everything through its last `..` when the
 //! moved target still lies below the folder that part reaches; a literal whose meaning the moves
-//! do not change is never rewritten.
+//! do not change is never rewritten; a literal read under more than one anchor kind is rewritten
+//! only when its spelling pins it to the reading that changes it, and is otherwise
+//! [`ReferenceOutcome::Ambiguous`]: left as written when that reading names only a leading part of
+//! it, or comes from the owning crate's folder while another crate folder reads the literal as a
+//! tracked path the moves leave differently.
 
 use super::super::path_mapping::{PathMapping, normalize, parent_folder, relative_path};
 use super::super::repository_files::PathSet;
@@ -97,6 +101,9 @@ pub(crate) enum ReferenceOutcome {
     },
     /// The literal resolved before the moves and has no single rewrite.
     Unresolvable(String),
+    /// The literal would change, but its spelling does not pin it to the reading that changes it:
+    /// it is left as written and reported.
+    Ambiguous(String),
 }
 
 /// One reading of a literal.
@@ -138,6 +145,19 @@ pub(crate) fn resolve_and_rewrite(
         .iter()
         .all(|(_, outcome)| same_effect(outcome, &first))
     {
+        let changes = matches!(
+            first,
+            ReferenceOutcome::Rewritten { .. } | ReferenceOutcome::Unresolvable(_)
+        );
+        if changes && anchors.len() > 1 {
+            let readings: Vec<Resolution> =
+                outcomes.into_iter().map(|(reading, _)| reading).collect();
+            if let Some(reason) =
+                unpinned_reading(literal, leading_slash, &readings, &first, context)
+            {
+                return ReferenceOutcome::Ambiguous(reason);
+            }
+        }
         return first;
     }
     outcomes.sort_by_key(|(reading, _)| reading.anchor_folder.clone());
@@ -149,6 +169,60 @@ pub(crate) fn resolve_and_rewrite(
         "`{literal}` resolves to {} and the moves rewrite those readings differently",
         places.join(" and ")
     ))
+}
+
+/// Why a literal whose spelling admits several anchors is not pinned to the reading that would
+/// change it, or `None` when it is. A reading that names only a leading part of the literal (an
+/// untracked tail) names no file the moves move; a reading from the owning crate's folder is
+/// pinned only when no other crate folder reads the same literal as a tracked path the moves leave
+/// differently, since a literal every crate spells for its own files (`src/lib.rs`), or a fixture
+/// path relative to a temporary checkout (`../../legacy/map_engine`), names no crate in
+/// particular.
+fn unpinned_reading(
+    literal: &str,
+    leading_slash: bool,
+    readings: &[Resolution],
+    chosen: &ReferenceOutcome,
+    context: &ResolutionContext<'_>,
+) -> Option<String> {
+    if let Some(partial) = readings.iter().find(|reading| !reading.full) {
+        return Some(format!(
+            "`{literal}` names only `{}` under {}, with an untracked tail `{}`; left as written",
+            partial.target,
+            partial.anchor.label(),
+            partial.tail
+        ));
+    }
+    let owning_crate = context.before.crate_folder_of(parent_folder(context.file));
+    let crate_reading = readings.iter().find(|reading| {
+        !owning_crate.is_empty()
+            && reading.anchor_folder == owning_crate
+            && matches!(
+                reading.anchor,
+                AnchorKind::FileFolder | AnchorKind::CrateFolder
+            )
+    })?;
+    context
+        .crate_folders
+        .iter()
+        .filter(|folder| **folder != owning_crate)
+        .find_map(|folder| {
+            let other = read_under(
+                literal,
+                AnchorKind::EveryCrateFolder,
+                folder,
+                context.before,
+            )
+            .filter(|reading| reading.full)?;
+            let outcome = rewrite_reading(literal, leading_slash, &other, context);
+            (!same_effect(&outcome, chosen)).then(|| {
+                format!(
+                    "`{literal}` names {} from this crate's folder and {} from the crate folder \
+                     `{folder}`, which the moves leave differently; left as written",
+                    crate_reading.target, other.target
+                )
+            })
+        })
 }
 
 /// Every reading of `literal` worth keeping: the full ones when any exist, otherwise the deepest

@@ -77,6 +77,13 @@ mod t427_cold_registry_path;
 #[path = "../t628_boot_progress.rs"]
 mod t628_boot_progress;
 
+/// The terrain segment of the same boot bar: the DEM download is streamed and measured against
+/// the length its response announces (a source pin over the map engine's terrain host and the
+/// browser platform's fetch).
+#[cfg(test)]
+#[path = "../terrain_dem_streaming.rs"]
+mod terrain_dem_streaming;
+
 /// T-631 — the boot overlay cannot fail SILENTLY. The engine-init failure itself is wasm-side
 /// (`RenderEngine::create` needs a real GPU), but the state machine the overlay reads —
 /// `BootPhase` and its `advance` fold — is pure and drives entirely here, which is exactly what

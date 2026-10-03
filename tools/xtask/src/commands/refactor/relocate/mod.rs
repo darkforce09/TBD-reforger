@@ -22,6 +22,7 @@
 
 pub(crate) mod file_treatment;
 pub(crate) mod manifest;
+pub(crate) mod move_placement;
 pub(crate) mod path_mapping;
 pub(crate) mod path_references;
 pub(crate) mod plan_application;
@@ -305,3 +306,11 @@ mod rust_path_scenarios;
 #[cfg(test)]
 #[path = "tests/unusual_spelling_scenarios.rs"]
 mod unusual_spelling_scenarios;
+
+#[cfg(test)]
+#[path = "tests/move_placement_scenarios.rs"]
+mod move_placement_scenarios;
+
+#[cfg(test)]
+#[path = "tests/ambiguous_literal_scenarios.rs"]
+mod ambiguous_literal_scenarios;
