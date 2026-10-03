@@ -274,6 +274,43 @@ fn crate_tiers_a_missing_declaration_wrong_category_or_name_is_rule_2_or_3() {
     }
 }
 
+/// The mission crates' isolation: a `crates/mission` crate reaching a world or graphics crate is a
+/// forbidden category edge, and one reaching the parked map engine breaks rule 7, so no mission
+/// code links the world, streaming or rendering tiers.
+#[test]
+fn crate_tiers_a_mission_crate_reaching_world_or_graphics_is_rule_5() {
+    let mut workspace = green_workspace("tiers-mission-isolation");
+    workspace.layout_crate("crates/terrain/terrain_elevation", 0, "any", &[]);
+    workspace.layout_crate("crates/graphics/render_primitives", 0, "any", &[]);
+    workspace.member("legacy/map_engine", &application_manifest("map_engine", ""));
+    workspace.layout_crate(
+        "crates/mission/mission_compiler",
+        3,
+        "any",
+        &[
+            normal("mission_model"),
+            normal("terrain_elevation"),
+            normal("render_primitives"),
+            normal("map_engine"),
+        ],
+    );
+    assert_one_finding(
+        &workspace,
+        "crates/mission may not depend on crates/terrain/terrain_elevation",
+    );
+    assert_one_finding(
+        &workspace,
+        "crates/mission may not depend on crates/graphics/render_primitives",
+    );
+    let found = findings(&workspace);
+    assert!(
+        found
+            .iter()
+            .any(|f| f.starts_with("rule 7: crates/mission/mission_compiler/Cargo.toml")),
+        "{found:#?}"
+    );
+}
+
 #[test]
 fn crate_tiers_legacy_edges_and_dev_edges_onto_apps_are_rules_7_and_8() {
     let mut workspace = green_workspace("tiers-parked-member");

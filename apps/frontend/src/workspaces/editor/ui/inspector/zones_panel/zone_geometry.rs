@@ -76,7 +76,7 @@ fn terrain_rect_corners(bounds: [f64; 4]) -> [(f64, f64); 4] {
 /// Builds the terrain boundary ring for the current terrain.
 #[must_use]
 pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
-    if bounds != map_engine::data::scenario::compile::terrain_bounds(terrain) {
+    if bounds != mission_payload::terrain_bounds(terrain) {
         return None;
     }
     if !terrain_rect_is_authorable(bounds) {
@@ -86,7 +86,7 @@ pub fn terrain_rect_ring(terrain: &str, bounds: [f64; 4]) -> Option<Vec<f64>> {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub use map_engine::data::store::operations::zones::ZoneShape;
+pub use mission_operations::zones::ZoneShape;
 
 /// Projected screen endpoints of an owner link.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -112,8 +112,8 @@ where
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub fn add_whole_terrain_zone() -> Option<String> {
-    use map_engine::data::store::operations::entity::{terrain_bounds_of, terrain_key_of};
     use map_engine::editing::hosted_commands as engine_ops;
+    use mission_operations::entity::{terrain_bounds_of, terrain_key_of};
 
     let (terrain, bounds) = map_engine::editing::host::with_doc(|core| {
         (terrain_key_of(core), terrain_bounds_of(core))

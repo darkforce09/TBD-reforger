@@ -45,7 +45,7 @@ pub fn build_faction_catalog_tree(items: &[RegistryItem], side: &str) -> Vec<Cat
             default_expanded: false,
             children: Vec::new(),
             payload: Some(PlacePayload {
-                asset_id: leaf_id.to_string(),
+                asset_id: leaf_id.into(),
                 role: leaf_label.to_string(),
             }),
         });
@@ -126,7 +126,7 @@ pub fn build_picker_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
             default_expanded: false,
             children: Vec::new(),
             payload: Some(PlacePayload {
-                asset_id: leaf_id.to_string(),
+                asset_id: leaf_id.into(),
                 role: leaf_label.to_string(),
             }),
         });

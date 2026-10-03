@@ -15,7 +15,7 @@
 
 use std::path::Path;
 
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use ballistics_model::catalog::BallisticsCatalog;
 use sha2::{Digest, Sha256};
 
 /// The captured list golden's file name.
@@ -56,7 +56,7 @@ pub fn check_served_goldens(
 ) -> Result<ServedGoldens, String> {
     let list_path = fixtures_dir.join(LIST_GOLDEN);
     let document_path = fixtures_dir.join(document_golden(
-        &committed.catalog_id,
+        committed.catalog_id.as_str(),
         committed.catalog_version,
     ));
     let list_body = read_golden(&list_path)?;

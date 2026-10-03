@@ -37,12 +37,12 @@
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
-use map_engine::data::scenario::win_conditions::optional_param_keys_for_mode;
-use map_engine::data::scenario::win_conditions::param_key_for_mode;
-use map_engine::data::scenario::win_conditions::AUTHORED_MODES;
-use map_engine::data::scenario::win_conditions::END_ON_TRIGGERS;
-use map_engine::data::scenario::win_conditions::TIMEOUT_MINUTES_MAX;
-use map_engine::data::scenario::win_conditions::TIMEOUT_MINUTES_MIN;
+use mission_model::objectives::win_conditions::optional_param_keys_for_mode;
+use mission_model::objectives::win_conditions::param_key_for_mode;
+use mission_model::objectives::win_conditions::AUTHORED_MODES;
+use mission_model::objectives::win_conditions::END_ON_TRIGGERS;
+use mission_model::objectives::win_conditions::TIMEOUT_MINUTES_MAX;
+use mission_model::objectives::win_conditions::TIMEOUT_MINUTES_MIN;
 
 /// The reader chain for `meta.environment.winConditions`, end to end.
 ///
@@ -349,7 +349,7 @@ fn read_block() -> Option<serde_json::Value> {
 #[cfg(target_arch = "wasm32")]
 fn commit(block: Option<&serde_json::Value>) {
     if let Some(clause) =
-        block.and_then(|b| map_engine::data::scenario::win_conditions::validate(b).err())
+        block.and_then(|b| mission_model::objectives::win_conditions::validate(b).err())
     {
         leptos::logging::warn!("winConditions is not yet complete: {clause}");
     }

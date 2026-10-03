@@ -35,7 +35,7 @@ pub fn save_now(
     // DIVERGENCE, DELIBERATE AND UNRESOLVED (see the slice report): the UPLOAD path has a
     // private near-twin, `check_duplicate_slot_ids_in_payload` in `library/mission_library.rs`
     // (defined :1519, called :1565), which reads `payload.editor.squads[]` JSON. The two do
-    // NOT agree  the engine's `data::store::operations::slot_ids` gates each id on
+    // NOT agree  `mission_operations::slot_ids` gates each id on
     // `doc.slot_exists(id)` and the library version does not, so a payload carrying a
     // DANGLING duplicate id is refused on upload and passes here. Collapsing them onto this
     // function is the right repair; `mission_library.rs` is outside 's owns, so the

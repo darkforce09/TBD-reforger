@@ -4,7 +4,7 @@ use super::*;
 
 fn slot(id: &str, role: &str) -> SlotRow {
     SlotRow {
-        id: id.to_string(),
+        id: id.into(),
         role: role.to_string(),
     }
 }
@@ -22,9 +22,9 @@ fn layer_flags(
     locked: bool,
 ) -> LayerRow {
     LayerRow {
-        id: id.to_string(),
+        id: id.into(),
         name: name.to_string(),
-        parent_id: parent.map(str::to_string),
+        parent_id: parent.map(Into::into),
         entity_ids: ents.iter().map(|s| (*s).to_string()).collect(),
         hidden,
         locked,
@@ -461,7 +461,7 @@ fn child_folder_and_slots_inherit_parent_hidden_and_locked() {
 
 fn comment(id: &str, title: &str, tooltip: &str) -> CommentRow {
     CommentRow {
-        id: id.to_string(),
+        id: id.into(),
         title: title.to_string(),
         tooltip: tooltip.to_string(),
     }

@@ -16,7 +16,7 @@ Manager dialog.
   and the rows in [`tree/`](/apps/frontend/src/workspaces/editor/ui/outliner/tree/README.md);
   the ORBAT Manager in [`apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/`](/apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/README.md);
   the document writes in [`legacy/map_engine/src/editing/hosted_commands/`](/legacy/map_engine/src/editing/hosted_commands/README.md)
-  and [`legacy/map_engine/src/data/store/operations/entity/`](/legacy/map_engine/src/data/store/operations/entity/README.md).
+  and [`crates/mission/mission_operations/src/entity/`](/crates/mission/mission_operations/src/entity/README.md).
 - Entry: the dock mounts with the page; the top strip's "ORBAT Manager" button (title "Open the
   ORBAT Manager") opens the ORBAT tree.
 - Related features: [attributes and settings](/documentation/apps/frontend/workspaces/editor/feature_inventory/attributes_and_settings.md)
@@ -172,17 +172,17 @@ The chevron ("Collapse panel" / "Expand panel") or the E key collapses and expan
 - The "Placing into:" strip names the first top-level folder when none is active
   (`apps/frontend/src/workspaces/editor/ui/docks/dock_left/places.rs`) — the placement goes
   to the first folder by sorted id at any depth
-  (`legacy/map_engine/src/data/store/operations/entity/layers.rs`), so the two disagree
+  (`crates/mission/mission_operations/src/entity/layers.rs`), so the two disagree
   when that folder is nested or when ids such as `layer-10` and `layer-2` sort apart.
 - Deleting the last folder asks for confirmation that promises the delete
   (`apps/frontend/src/workspaces/editor/ui/outliner/tree/row_actions.rs`) — the store keeps
   the folder, while the hosted `delete_layer` still reports success and marks the mission unsaved
-  (`legacy/map_engine/src/data/store/rows/layers.rs`,
+  (`crates/mission/mission_document/src/rows/layers.rs`,
   `legacy/map_engine/src/editing/hosted_commands/editor_layers.rs`).
 - The default folder is "Layer 1" when a placement creates it
   (`apps/frontend/src/workspaces/editor/ui/outliner/node_model.rs`) — it is "Default Layer"
   when a delete or a server load creates it (`rows/layers.rs`,
-  `legacy/map_engine/src/data/store/rows/hydrate.rs`).
+  `crates/mission/mission_document/src/rows/hydrate.rs`).
 - The folder, eye, lock, rename, delete and chevron controls are spans with `tabindex="-1"`
   inside the row button (`row_actions.rs`, `row_geometry.rs`), so the keyboard reaches none of
   them.

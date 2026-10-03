@@ -62,7 +62,8 @@ viewer also import directly.
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) reaches the loaded world
   through `crate::streaming::host`.
 - Rules: the static world and the authored [mission](/documentation/glossary/g_to_m.md#mission)
-  document share nothing: no file here names `crate::data` or `yrs`, and no file under
-  `legacy/map_engine/src/data/` names this module (`cargo xtask verify engine-layers`,
-  rule 7); a type here never gains a dirty flag; the module and `mesh.rs` compile with the
+  document share nothing: no file here names `yrs`, a mission document crate (`mission_crdt`,
+  `mission_document`, `mission_operations`) or `crate::editing` (`cargo xtask verify
+  engine-layers`, rule 7), and the mission crates cannot depend on this crate
+  (`cargo xtask verify crate-tiers`); a type here never gains a dirty flag; the module and `mesh.rs` compile with the
   `world` feature, and `scene.rs` only with `streaming`.

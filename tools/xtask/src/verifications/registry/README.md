@@ -17,7 +17,7 @@ tools/xtask/src/verifications/registry/
 ## How it works
 
 The palette derives an object's alias from its [Workbench](/documentation/glossary/n_to_z.md#workbench) resource name and display name
-(`derive_object_alias` in `legacy/map_engine/src/data/store/operations/assets.rs`), and the
+(`derive_object_alias` in `crates/mission/mission_operations/src/assets.rs`), and the
 mod's `SpawnMissionEntities` looks that alias up in `apps/mod/tbd-framework/Data/registry.json`.
 Nothing joins the two ends at compile time, so the check recomputes the alias independently:
 

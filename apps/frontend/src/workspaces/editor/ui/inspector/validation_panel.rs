@@ -2,9 +2,9 @@
 
 use leptos::prelude::*;
 
-use map_engine::data::scenario::validate::Finding;
-use map_engine::data::scenario::validate::Primitive;
-use map_engine::data::scenario::validate::Severity;
+use mission_validation::Finding;
+use mission_validation::Primitive;
+use mission_validation::Severity;
 
 /// Trailing delay between document changes and validation passes.
 pub const REEVAL_DEBOUNCE_MS: f64 = 250.0;
@@ -36,7 +36,7 @@ impl PanelFinding {
             primitive: f.primitive,
             message: f.message.clone(),
             subject: f.subject.clone(),
-            subject_id: f.subject_id.clone(),
+            subject_id: f.subject_id.as_ref().map(ToString::to_string),
         }
     }
 

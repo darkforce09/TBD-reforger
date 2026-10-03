@@ -5,12 +5,11 @@
 //! about what an entity's kind or faction is. No document hosted means an empty index, never a
 //! partial one.
 
-use crate::data::store::operations::document_index;
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::host::{selection_ids, with_doc};
+use mission_operations::document_index;
+use mission_operations::entity as entity_ops;
 
-/// One searchable entity, as the search box's row needs it.
-pub use crate::data::store::operations::document_index::DocEntity;
+use mission_operations::document_index::DocEntity;
 
 /// Every entity the document places, for the Outliner's search.
 #[must_use]

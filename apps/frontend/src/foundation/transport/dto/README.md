@@ -12,7 +12,7 @@ vehicle, wiki, equipment data viewer and role types are named by their module
 apps/frontend/src/foundation/transport/dto/
 ├── administration.rs               the personnel roster page, audit lines, the audit stream's ready and reset
 ├── auth.rs                         the signed-in `User`, the refreshed token pair, the Arma link, member rows and search
-├── ballistics_catalogs.rs          the stored catalog versions, the map engine's catalog document, the upload report
+├── ballistics_catalogs.rs          the stored catalog versions, the `ballistics_model` catalog document, the upload report
 ├── common.rs                       the list envelopes and `absent_null_or_value`, the patch field's wire form
 ├── content.rs                      modpack rows with their mods, the current modpack, announcement rows
 ├── equipment_data_viewer/          the equipment data viewer's read-only pages, one module per endpoint family
@@ -84,7 +84,7 @@ modules, check the stream events, write bodies and refusals no capture carries.
   `ServerRowDto` the server list reads.
 - A fire mission's solution (the battery, each gun's charge rows with their refusals and wind
   corrections, the dispersion, the time fuze with its burst-point aim, the crest clearance) and a
-  ballistics catalog document are the map engine's own types, re-exported, so the mortar
+  ballistics catalog document are the ballistics crates' own types, re-exported, so the mortar
   calculator renders, solves and posts exactly the shapes the engine produces and the API
   re-solves. A solution's `fuze` and `crest`, and the save body's `event_id`, `charge_rings`,
   `wind` and `burst_height_m`, are absent rather than `null` when unset; a stored mission whose
@@ -103,8 +103,8 @@ modules, check the stream events, write bodies and refusals no capture carries.
 ## Boundaries
 
 - Depends on: `serde` and `serde_json`;
-  `map_engine::data`, for the compiler metadata and the re-exported `FactionDoc`,
-  `FactionRole`, `FactionVehicle` and `MissionEnv`.
+  `mission_compiler`, for the compiler metadata (`MissionMeta`); `mission_operations`, for the
+  re-exported `FactionDoc`, `FactionRole`, `FactionVehicle` and `MissionEnv`.
 - Used by: the client, endpoint calls and live status stream in
   `apps/frontend/src/foundation/transport/`, the session in `apps/frontend/src/foundation/auth/`
   (built from `User`, `Role` and `RefreshResponse`), the route table in

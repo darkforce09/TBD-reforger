@@ -1,7 +1,7 @@
 # Map engine source
 
-The source of the `map_engine` library: ten top-level modules, each compiled only under
-the crate feature it needs, and the crate's own unit tests. It holds no UI framework: browser code
+The source of the `map_engine` library: nine top-level modules, each but `camera` compiled only
+under the crate feature it needs, and the crate's own unit tests. It holds no UI framework: browser code
 compiles only for wasm32, most of it only with the `render` feature as well, and everything else
 builds and tests natively.
 
@@ -10,7 +10,6 @@ builds and tests natively.
 ```text
 legacy/map_engine/src/
 ├── camera/       the render engine's viewport: resize, pan and zoom, world and screen answers
-├── data/         the mission domain and the Yjs CRDT document the Mission Creator edits
 ├── diagnostics/  readback checks, the benchmark and statistics, and the GPU and frame clocks
 ├── doll/         the arsenal's 3D mannequin preview: scene, picking and its own renderer
 ├── editing/      the live mission document, its undo drive and the headless map tools
@@ -33,7 +32,7 @@ static side     /map-assets/<terrain>/ ──▶ streaming ──▶ world (deco
                                                spatial_indexes, line of sight crates
                                                            │
                                                            ▼
-authored side   data::scenario ──▶ data::store ──▶ editing: tools, selection, undo
+authored side   mission crates (crates/mission/) ──▶ editing: hosted document, tools, selection, undo
 
 draw path       map overlay crates ──▶ overlay ──▶ frame ◀── camera
                                               │
@@ -41,11 +40,12 @@ draw path       map overlay crates ──▶ overlay ──▶ frame ◀── c
                                    graphics_engine
 ```
 
-`data` holds the [mission](/documentation/glossary/g_to_m.md#mission) domain and the CRDT document the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) edits; it reads no other module
-of the crate. `world` holds the static ground and never names `data`, so inside the crate the
-authored mission and the streamed world meet only in `editing`, which drives the document and the
-map tools with no browser in reach and asks the
+The [mission](/documentation/glossary/g_to_m.md#mission) domain and the CRDT document the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) edits are the
+[mission crates](/crates/mission/README.md), which reach no module of this crate. `world` holds the
+static ground and never names the document, so inside the crate the authored mission and the
+streamed world meet only in `editing`, which hosts the document, drives it and the map tools with
+no browser in reach and asks the
 [`spatial_indexes`](/crates/geometry/spatial_indexes/README.md) and line of sight crates where a
 click or a sight line lands. `streaming` fetches a terrain's served files and chunks, the
 [`world_file_formats`](/crates/world_formats/world_file_formats/README.md) crate and the world
@@ -64,7 +64,6 @@ engine, and `doll` is a second, small renderer for the
 | Module | Compiled with |
 |---|---|
 | `camera` | always; its one file, `viewport.rs`, only for wasm32 with `render` |
-| `data` | always; its `scenario` half with `scenario`, its `store` half with `store` |
 | `world`, `spatial`, `overlay`, `frame` | `world`; the GPU half of `frame` only for wasm32 with `render` |
 | `streaming` | `streaming`; its browser host and loaders only for wasm32 with `render` |
 | `editing` | `editing` |
@@ -72,30 +71,27 @@ engine, and `doll` is a second, small renderer for the
 
 ## Public surface
 
-- `data::scenario`: the mission compiler and validator, for the
-  [API](/documentation/glossary/a_to_f.md#api) at the default `scenario` tier and for the Mission
+- `editing`: the hosted mission document and the headless editing layer, for the Mission
   Creator.
-- `data::store` and `editing`: the mission's Yjs document and the headless editing layer, for the
-  Mission Creator.
 - `frame` (`RenderEngine`, `RafPump`, `EngineHandle`), `streaming` (`host`, `bridge`, the
   occluder loader, the residency) and `camera`: the map canvas of the Mission Creator and the
   debug benches.
 - `doll`: the arsenal's preview.
-- `data::scenario` and `frame`: the offline tools in `tools/developer_tools/`.
+- `frame`: the offline tools in `tools/developer_tools/`.
 
 ## Boundaries
 
-- Depends on: `map_coordinates`, `camera_math` and `bytemuck` always; `serde`, `serde_json`,
-  `thiserror` and `libm` for `scenario`; `yrs` for `store`; for `world`, `graphics_engine`,
+- Depends on: `map_coordinates`, `camera_math` and `bytemuck` always; for `world`, `graphics_engine`,
   `render_primitives`, `terrain_elevation`, `terrain_relief`, `map_draw_lanes`, `label_layout`,
   `unit_symbology`, `overlay_instances`, `road_network`, `vegetation`, `place_names`,
-  `spatial_indexes` and `terrain_line_of_sight`; for `streaming`, `rkyv`, `world_file_formats`,
-  `flate2`, `prefab_catalog`, `world_chunks`, `satellite_imagery`, `water_bodies`, `world_store`,
-  `interior_line_of_sight` and `world_line_of_sight`; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` on wasm32 and
-  `browser_platform` on wasm32 for `render`; `contracts/rules/kit-aliases.json`, embedded at build time; the terrain
-  assets in `assets/terrains/`, fetched as `/map-assets` at run time and read by the tests.
-- Used by: the API's missions and operations domains under `apps/api/src/` (`data`
-  only); the Mission Creator, the mission library, the DTOs and the debug benches under
+  `spatial_indexes` and `terrain_line_of_sight`; for `streaming`, `serde`, `serde_json`, `rkyv`,
+  `world_file_formats`, `flate2`, `prefab_catalog`, `world_chunks`, `satellite_imagery`,
+  `water_bodies`, `world_store`, `interior_line_of_sight` and `world_line_of_sight`; for
+  `editing`, `mission_payload`, `mission_validation`, `formation_geometry`, `mission_crdt`,
+  `mission_document` and `mission_operations`; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` on
+  wasm32 and `browser_platform` on wasm32 for `render`; the terrain assets in `assets/terrains/`,
+  fetched as `/map-assets` at run time and read by the tests.
+- Used by: the Mission Creator, the mission library and the debug benches under
   `apps/frontend/src/`; the tools in `tools/developer_tools/src/`; and the gates in
   `tools/xtask/src/verifications/` that read this tree.
 - Rules:
@@ -104,10 +100,8 @@ engine, and `doll` is a second, small renderer for the
   - `cargo xtask verify engine-layers` holds the layering, by the rule numbers it prints:
     - 3a and 3b: only `frame/mod.rs` names `graphics_engine::frame` (five lines), and the
       graphics engine's GPU modules are named only in `frame/mod.rs` and `frame/pump.rs`;
-    - 4: `data/scenario/` names neither `data::store`, the graphics engine nor any of the nine
-      sibling modules the gate lists (every top-level module but `data`), so the API's
-      `scenario` build pulls no graphics crate, `png`, `rkyv` or `flate2`; two store-gated tests
-      are pinned exceptions;
     - 5: no `web_sys`, `leptos` or `wasm_bindgen` anywhere under `editing/`;
-    - 7: `data/` names neither the graphics engine nor those nine modules, and `world/` names
-      neither `crate::data` nor `yrs`.
+    - 7: `world/` names neither `yrs`, nor `mission_crdt`, `mission_document` or
+      `mission_operations`, nor `crate::editing`;
+  - the mission crates depend on no module of this crate and no world or graphics crate
+    (`cargo xtask verify crate-tiers`).

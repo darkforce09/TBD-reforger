@@ -26,12 +26,13 @@ pub fn build_orbat(
                     .iter()
                     .filter_map(|id| slot_by_id(id))
                     .map(|s| {
-                        let is_leader = !sq.leader_slot_id.is_empty() && s.id == sq.leader_slot_id;
+                        let is_leader =
+                            !sq.leader_slot_id.as_str().is_empty() && s.id == sq.leader_slot_id;
                         slot_node_leader(s, is_leader)
                     })
                     .collect();
                 OutlinerNode {
-                    id: sq.id.clone(),
+                    id: sq.id.to_string(),
                     label: format!("{} ({})", sq.name, slot_children.len()),
                     kind: NodeKind::Squad,
                     children: slot_children,
@@ -47,7 +48,7 @@ pub fn build_orbat(
             })
             .collect();
         out.push(OutlinerNode {
-            id: f.id.clone(),
+            id: f.id.to_string(),
             label: f.name.clone(),
             kind: NodeKind::Faction,
             children: squad_nodes,

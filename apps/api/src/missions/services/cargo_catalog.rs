@@ -19,7 +19,7 @@
 //! It lives under `missions::services` because the catalog is mission-compile vocabulary; the
 //! operations domain reaches it through services, never through the mission handlers.
 
-use map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
+use mission_wire_safety::{CargoPhys, CargoPhysCatalog};
 use sqlx::PgPool;
 
 use crate::core::error_handling::api_error::ApiError;

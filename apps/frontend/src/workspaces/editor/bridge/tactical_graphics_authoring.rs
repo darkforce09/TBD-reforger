@@ -19,10 +19,10 @@ use super::tactical_graphics::{
 use crate::workspaces::editor::bridge::host_state::editor_context::{
     bump_doc_tick, read_env_value, update_environment,
 };
-use map_engine::data::store::operations::tactical_graphics as graphics_ops;
+use mission_operations::tactical_graphics as graphics_ops;
 
 /// How many points each kind of control measure needs before it can close.
-pub use map_engine::data::store::operations::tactical_graphics::tactical_min_points;
+pub use mission_operations::tactical_graphics::tactical_min_points;
 
 /// The authored graphics, as the canvas draws them.
 #[must_use]
@@ -174,7 +174,7 @@ pub fn commit_tactical_vertex_drag() -> bool {
     else {
         return false;
     };
-    if !graphics_ops::commit_tactical_vertex_drag(&mut rows, &id, index, x, z) {
+    if !graphics_ops::commit_tactical_vertex_drag(&mut rows, &*id, index, x, z) {
         return false;
     }
 

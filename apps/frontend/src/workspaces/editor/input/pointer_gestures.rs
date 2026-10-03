@@ -42,9 +42,9 @@ use crate::workspaces::editor::mission_editor::{
     read_widget_pivot, set_map_cursor, transform, HoverPoints, HoverState, COMMENT_PICK_PX,
     CONN_PICK_PX,
 };
-use map_engine::data::store::operations::attrs;
 use map_engine::editing::hosted_commands as engine_ops;
 use map_engine::editing::hosted_commands::selection_transform;
+use mission_operations::attrs;
 
 /// Every handle the six gesture closures capture, bundled so the page hands them over in one
 /// `attach_canvas_gestures(&ctx)` call. `Rc`/element handles clone (shared ownership with the

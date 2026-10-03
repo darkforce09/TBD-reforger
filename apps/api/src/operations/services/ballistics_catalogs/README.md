@@ -1,7 +1,7 @@
 # Ballistics catalog services
 
 The logic behind the game ballistics catalog routes: the judgement of an uploaded catalog and its
-calibration bundle by the map engine's flight model, and the immutable catalog store.
+calibration bundle by the `ballistics_calibration` crate, and the immutable catalog store.
 
 ## Contents
 
@@ -32,7 +32,7 @@ reports it. `load_catalog` decodes a stored version for a route that pins one.
 
 ## Boundaries
 
-- Depends on: `map_engine::data::scenario::ballistics` (`catalog`, `calibration`);
+- Depends on: `ballistics_model` (`catalog`) and `ballistics_calibration`;
   `operations::models::ballistics_catalog`; `administration` for the audit row; `core` for the
   digest and the unique-violation check; the `ballistics_catalogs` table of migration 0060.
 - Used by: `apps/api/src/operations/handlers/ballistics_catalogs/` and the fire-mission

@@ -26,13 +26,13 @@
 //! instead of quietly becoming a pass. Every check names explicit files, so no recursive search
 //! and no ignore-file default is in play.
 //!
-//! ── `--features "scenario store"`: THE MISSION-AUTHORING TIER ────────────────────────────────
+//! ── THE MISSION-AUTHORING ROWS ───────────────────────────────────────────────────────────────
 //!
-//! The store rows exercise `data/store` (the Yjs document store, feature `store`), and the derive
-//! and compile rows exercise `data/scenario` (the mission AST and compiler, feature `scenario`).
-//! `store` enables `scenario`, and `scenario` is the crate default, so the pair builds exactly what
-//! `store` alone builds; the pin names both so its failure text shows the whole tier, and every
-//! row of the tier shares one lib test binary.
+//! The authoring rows run in the mission crates, which have no features: the character placement
+//! and the faction library apply in `mission_operations`, the roster mutators, the leader
+//! invariant and the vehicle contract floor in `mission_document`. The ORBAT derive, the slot line,
+//! the export payload's ORBAT and the compile boundary run in the `mission_model`,
+//! `mission_payload` and `mission_compiler` crates.
 //!
 //! ── A SELECTOR THAT MATCHES NOTHING IS NOT A PASS ────────────────────────────────────────────
 //!
@@ -71,9 +71,9 @@ use verification_core::{NotRun, Pattern, Verdict, gate};
 #[cfg(test)]
 const EDITOR_OPS: &str =
     "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/mod.rs";
-// The place path spans two crates: the document mutations in the map engine
-// (`data/store/operations` and the hosted commands that drive them) and the host half in the
-// frontend that arms a placement and commits it. Both sides are scanned together, and the scratch
+// The place path spans three crates: the document mutations in `mission_operations`, the map
+// engine's hosted commands that drive them, and the host half in the frontend that arms a
+// placement and commits it. Both sides are scanned together, and the scratch
 // fixtures perturb one of each, so moving a mutation across the crate boundary cannot bypass the
 // ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
@@ -90,47 +90,47 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
     "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/mod.rs",
     "apps/frontend/src/workspaces/editor/bridge/host_state/entity_selection.rs",
     "apps/frontend/src/workspaces/editor/bridge/host_state/undo_grouped_gestures.rs",
-    "legacy/map_engine/src/data/store/operations/apply_faction/apply.rs",
-    "legacy/map_engine/src/data/store/operations/apply_faction/authorship.rs",
-    "legacy/map_engine/src/data/store/operations/apply_faction/library.rs",
-    "legacy/map_engine/src/data/store/operations/apply_faction/mod.rs",
-    "legacy/map_engine/src/data/store/operations/assets.rs",
-    "legacy/map_engine/src/data/store/operations/attrs.rs",
-    "legacy/map_engine/src/data/store/operations/cargo.rs",
-    "legacy/map_engine/src/data/store/operations/cargo_rules.rs",
-    "legacy/map_engine/src/data/store/operations/compositions.rs",
-    "legacy/map_engine/src/data/store/operations/document_index.rs",
-    "legacy/map_engine/src/data/store/operations/entity/clipboard.rs",
-    "legacy/map_engine/src/data/store/operations/entity/comments.rs",
-    "legacy/map_engine/src/data/store/operations/entity/connections.rs",
-    "legacy/map_engine/src/data/store/operations/entity/factions.rs",
-    "legacy/map_engine/src/data/store/operations/entity/identity.rs",
-    "legacy/map_engine/src/data/store/operations/entity/markers.rs",
-    "legacy/map_engine/src/data/store/operations/entity/mod.rs",
-    "legacy/map_engine/src/data/store/operations/entity/placement.rs",
-    "legacy/map_engine/src/data/store/operations/entity/roster.rs",
-    "legacy/map_engine/src/data/store/operations/entity/selection.rs",
-    "legacy/map_engine/src/data/store/operations/entity/vehicles.rs",
-    "legacy/map_engine/src/data/store/operations/entity/zones.rs",
-    "legacy/map_engine/src/data/store/operations/environment.rs",
-    "legacy/map_engine/src/data/store/operations/faction_library.rs",
-    "legacy/map_engine/src/data/store/operations/mod.rs",
-    "legacy/map_engine/src/data/store/operations/place_orbat/mod.rs",
-    "legacy/map_engine/src/data/store/operations/place_orbat/placement.rs",
-    "legacy/map_engine/src/data/store/operations/placement/alignment.rs",
-    "legacy/map_engine/src/data/store/operations/placement/garrison.rs",
-    "legacy/map_engine/src/data/store/operations/placement/geometry.rs",
-    "legacy/map_engine/src/data/store/operations/placement/mod.rs",
-    "legacy/map_engine/src/data/store/operations/placement/patterns.rs",
-    "legacy/map_engine/src/data/store/operations/projections.rs",
-    "legacy/map_engine/src/data/store/operations/reassign.rs",
-    "legacy/map_engine/src/data/store/operations/rotation.rs",
-    "legacy/map_engine/src/data/store/operations/rows.rs",
-    "legacy/map_engine/src/data/store/operations/slot_ids/duplicates.rs",
-    "legacy/map_engine/src/data/store/operations/slot_ids/mod.rs",
-    "legacy/map_engine/src/data/store/operations/tactical_graphics.rs",
-    "legacy/map_engine/src/data/store/operations/transform.rs",
-    "legacy/map_engine/src/data/store/operations/zones.rs",
+    "crates/mission/mission_operations/src/apply_faction/apply.rs",
+    "crates/mission/mission_operations/src/apply_faction/authorship.rs",
+    "crates/mission/mission_operations/src/apply_faction/library.rs",
+    "crates/mission/mission_operations/src/apply_faction/mod.rs",
+    "crates/mission/mission_operations/src/assets.rs",
+    "crates/mission/mission_operations/src/attrs.rs",
+    "crates/mission/mission_operations/src/cargo.rs",
+    "crates/mission/mission_operations/src/cargo_rules.rs",
+    "crates/mission/mission_operations/src/compositions.rs",
+    "crates/mission/mission_operations/src/document_index.rs",
+    "crates/mission/mission_operations/src/entity/clipboard.rs",
+    "crates/mission/mission_operations/src/entity/comments.rs",
+    "crates/mission/mission_operations/src/entity/connections.rs",
+    "crates/mission/mission_operations/src/entity/factions.rs",
+    "crates/mission/mission_operations/src/entity/identity.rs",
+    "crates/mission/mission_operations/src/entity/markers.rs",
+    "crates/mission/mission_operations/src/entity/mod.rs",
+    "crates/mission/mission_operations/src/entity/placement.rs",
+    "crates/mission/mission_operations/src/entity/roster.rs",
+    "crates/mission/mission_operations/src/entity/selection.rs",
+    "crates/mission/mission_operations/src/entity/vehicles.rs",
+    "crates/mission/mission_operations/src/entity/zones.rs",
+    "crates/mission/mission_operations/src/environment.rs",
+    "crates/mission/mission_operations/src/faction_library.rs",
+    "crates/mission/mission_operations/src/lib.rs",
+    "crates/mission/mission_operations/src/place_orbat/mod.rs",
+    "crates/mission/mission_operations/src/place_orbat/placement.rs",
+    "crates/mission/formation_geometry/src/alignment.rs",
+    "crates/mission/formation_geometry/src/garrison.rs",
+    "crates/mission/formation_geometry/src/geometry.rs",
+    "crates/mission/formation_geometry/src/lib.rs",
+    "crates/mission/formation_geometry/src/patterns.rs",
+    "crates/mission/mission_operations/src/projections.rs",
+    "crates/mission/mission_operations/src/reassign.rs",
+    "crates/mission/mission_operations/src/rotation.rs",
+    "crates/mission/mission_operations/src/rows.rs",
+    "crates/mission/mission_operations/src/slot_ids/duplicates.rs",
+    "crates/mission/mission_operations/src/slot_ids/mod.rs",
+    "crates/mission/mission_operations/src/tactical_graphics.rs",
+    "crates/mission/mission_operations/src/transform.rs",
+    "crates/mission/mission_operations/src/zones.rs",
     "legacy/map_engine/src/editing/hosted_commands/composition_library.rs",
     "legacy/map_engine/src/editing/hosted_commands/document_edit.rs",
     "legacy/map_engine/src/editing/hosted_commands/document_search.rs",
@@ -149,7 +149,7 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
     "legacy/map_engine/src/editing/hosted_commands/squad_reassignment.rs",
     "legacy/map_engine/src/editing/hosted_commands/zone_authoring.rs",
 ];
-const ORBAT_RS: &str = "legacy/map_engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
+const ORBAT_RS: &str = "crates/mission/mission_model/src/orbat/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/frontend/src/workspaces/editor/session/eden_chrome.rs";
 const SLOTS_GPU: &str = "crates/map_overlay/unit_symbology/src/classification.rs";
@@ -197,13 +197,19 @@ const PINS: &[(&str, &str)] = &[
 ];
 
 const FE: &str = "frontend";
-/// The map engine, pinned at its mission-authoring feature tier.
-///
-/// One argv element, not two, so the failure text reads `--features scenario store`. Rendered by
-/// `shown`.
-const MC: &str = "map_engine";
-/// The mission-authoring feature tier.
-const MSN: Option<&str> = Some("scenario store");
+/// The mission model crate: the ORBAT derive and the slot line, no features.
+const MM: &str = "mission_model";
+/// The mission payload crate: the export payload's ORBAT, no features.
+const MP: &str = "mission_payload";
+/// The game-document compiler crate: the compile boundary ledger and the compiled slot's keys, no
+/// features.
+const MCP: &str = "mission_compiler";
+/// The mission document crate: the roster mutators, the leader invariant and the vehicle writer
+/// round trip, no features.
+const MD: &str = "mission_document";
+/// The mission operations crate: character placement under a side and the faction library apply,
+/// no features.
+const MO: &str = "mission_operations";
 /// The map overlay crates that draw the ORBAT: the lane order (`map_draw_lanes`), the side tints
 /// and squad links (`unit_symbology`) and the slot and vehicle instances (`overlay_instances`).
 /// They have no features, so their pins pass `NOF`.
@@ -219,30 +225,31 @@ type PinRow = (&'static str, Option<&'static str>, bool, &'static str, Option<&'
 
 #[rustfmt::skip]
 const CARGO_PINS: &[PinRow] = &[
-    // A / B / H — the mission-authoring tier `scenario store`; module docs §2.
-    (MC, MSN, true, "place_", None),
-    (MC, MSN, true, "set_leader_exclusive", None),
-    (MC, MSN, true, "empty_squad_garbage_collected", None),
-    (MC, MSN, true, "move_slot_bidirectional", None),
-    (MC, MSN, true, "leader_invariant_holds", None),
-    (MC, MSN, true, "attach_vehicle_roundtrip", None),
-    (MC, MSN, true, "apply_faction_", Some("store-feature place/mutator/apply gates")),
+    // A / B / H — the mission-authoring rows; module docs §2.
+    (MO, NOF, true, "place_", None),
+    (MD, NOF, true, "place_", None),
+    (MD, NOF, true, "set_leader_exclusive", None),
+    (MD, NOF, true, "empty_squad_garbage_collected", None),
+    (MD, NOF, true, "move_slot_bidirectional", None),
+    (MD, NOF, true, "leader_invariant_holds", None),
+    (MD, NOF, true, "attach_vehicle_roundtrip", None),
+    (MO, NOF, true, "apply_faction_", Some("mission authoring place/mutator/apply gates")),
     // C / D / G / vehicle pack.
     (INSTANCES, NOF, true, "side_tint_three_distinct", None),
     (SYMBOLOGY, NOF, true, "squad_link_", None),
-    (MC, MSN, true, "format_slot_line", None),
+    (MM, NOF, true, "format_slot_line", None),
     (INSTANCES, NOF, true, "pack_vehicle_instances", None),
     (LANES, NOF, true, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
-    // I — scenario feature derive / compile.
-    (MC, MSN, true, "derive_fills_loadout", None),
-    (MC, MSN, true, "derive_empty_loadout", None),
-    (MC, MSN, true, "derives_from_editor_sorted", None),
-    (MC, MSN, true, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
+    // I — the mission model's ORBAT derive and the payload compiler's export.
+    (MM, NOF, true, "derive_fills_loadout", None),
+    (MM, NOF, true, "derive_empty_loadout", None),
+    (MM, NOF, true, "derives_from_editor_sorted", None),
+    (MP, NOF, true, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
     // ── THE COMPILE BOUNDARY. Read this before trimming the list above. ─────────────────────
     // Every selector up to here proves the editor can AUTHOR an ORBAT value
-    // (data::store::operations::place_orbat, data::store::rows), that the map can DRAW it
-    // (the map overlay crates), or that the ORBAT derive keeps it (data::scenario::ast::factions,
-    // data::scenario::compiler). None of them crosses the edge where the document is handed to
+    // (mission_operations::place_orbat, mission_document), that the map can DRAW it
+    // (the map overlay crates), or that the ORBAT derive keeps it (mission_model::orbat,
+    // mission_payload). None of them crosses the edge where the document is handed to
     // the game server: without these two rows, a payload authoring a squad's leaderSlotId, a
     // slot's tag / callsign / rank / stance and the whole vehicle roster could compile to a
     // document carrying none of them while this gate prints ALL PASS. A gate is worth nothing
@@ -251,12 +258,12 @@ const CARGO_PINS: &[PinRow] = &[
     // mission.schema.json, so a widened contract turns the newly-legal key's row red and the dead
     // feature becomes visible work; the second pins the compiled slot's key set, so nothing is
     // added to or removed from the website<->mod interface in silence.
-    (MC, MSN, true, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
-    (MC, MSN, true, "a_compiled_slot_carries_exactly_these_keys", None),
-    // The vehicle-floor test lives behind #[cfg(feature = "store")] (the MissionDocCore writer
-    // round-trip in flatten.rs), so a scenario-only feature set matches 0 tests and this pin
-    // FAILs. Aligned with the place_/attach_vehicle pins above rather than weakened.
-    (MC, MSN, true, "the_vehicle_row_still_has_the_shape_this_module_reads",
+    (MCP, NOF, true, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
+    (MCP, NOF, true, "a_compiled_slot_carries_exactly_these_keys", None),
+    // The vehicle-floor test is a mission document test (the MissionDocCore writer round trip in
+    // crates/mission/mission_document/src/tests/vehicle_row_round_trips.rs). Aligned with the
+    // place_/attach_vehicle pins above.
+    (MD, NOF, true, "the_vehicle_row_still_has_the_shape_this_module_reads",
         Some("compile-boundary ledger + compiled-slot key set + vehicle contract floor")),
     // E / F / G / H / I — FE. A bin crate, so no `--lib`: its tests live in src/main.rs.
     (FE, NOF, false, "eden_side", None),

@@ -5,8 +5,8 @@ use super::{
 };
 use crate::foundation::test_support::class_r_scrub::{live_code, live_source, only_body};
 use leptos::prelude::*;
-use map_engine::data::scenario::validate::Primitive;
-use map_engine::data::scenario::validate::Severity;
+use mission_validation::Primitive;
+use mission_validation::Severity;
 
 #[test]
 fn chip_findings_returns_the_registered_sink() {

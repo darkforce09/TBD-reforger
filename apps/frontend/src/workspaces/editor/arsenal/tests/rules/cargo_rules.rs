@@ -1,6 +1,6 @@
 use super::fixtures::{edge, item, picks};
 use super::*;
-use map_engine::data::store::operations::cargo_rules::{seed_cargo, WEAR_PICK_KEYS};
+use mission_operations::cargo_rules::{seed_cargo, WEAR_PICK_KEYS};
 
 fn cargo_edge(item: &str, character: &str, target: &str, n: usize) -> Vec<RegistryCompatEdge> {
     (0..n)

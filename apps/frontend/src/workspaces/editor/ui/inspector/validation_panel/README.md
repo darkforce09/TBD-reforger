@@ -31,7 +31,7 @@ sink signal ──> top strip chip (Rollup) ──opens──> findings_dropdown
   evaluates as soon as the payload source answers (polled every `INITIAL_EVAL_TICK_MS`, 50 ms, at
   most `INITIAL_EVAL_MAX_TICKS`, 32 times), then `REEVAL_DEBOUNCE_MS`, 250 ms, after the last
   document change. It renders nothing itself.
-- `evaluate_now` runs `default_registry()` of `map_engine::data::scenario::validate` over
+- `evaluate_now` runs `default_registry()` of `mission_validation` over
   the compiled payload, with the asset ids the item [registry](/documentation/glossary/n_to_z.md#registry)
   knows, and appends the findings the latest compile published through `publish_compile_findings`;
   `clear_compile_findings` empties them when another mission loads. A rule that panics yields no
@@ -44,7 +44,7 @@ sink signal ──> top strip chip (Rollup) ──opens──> findings_dropdown
 
 ## Boundaries
 
-- Depends on: `map_engine::data::scenario::validate` (`default_registry`, `EvalContext`,
+- Depends on: `mission_validation` (`default_registry`, `EvalContext`,
   `Finding`, `Severity`, `Primitive`); the parent module's model; `derive_object_alias` from the
   [Arsenal](/documentation/glossary/a_to_f.md#arsenal)'s `asset_catalog` in `apps/frontend/src/workspaces/editor/arsenal/`; `MaterialIcon`
   and the `RegistryItem` DTO from `crate::foundation`.

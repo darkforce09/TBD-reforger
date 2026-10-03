@@ -17,8 +17,9 @@ stands in for collaboration.
   the document handle and seed in [`apps/frontend/src/workspaces/editor/bridge/document_host/`](/apps/frontend/src/workspaces/editor/bridge/document_host/README.md);
   the record keys, the local-versus-server classification and the adoption in
   [`legacy/map_engine/src/editing/persist/`](/legacy/map_engine/src/editing/persist/README.md);
-  the CRDT document in [`legacy/map_engine/src/data/store/`](/legacy/map_engine/src/data/store/README.md);
-  the payload compiler in [`legacy/map_engine/src/data/scenario/compiler/`](/legacy/map_engine/src/data/scenario/compiler/README.md).
+  the CRDT document in [`crates/mission/mission_document/`](/crates/mission/mission_document/README.md);
+  the payload compiler in [`crates/mission/mission_payload/`](/crates/mission/mission_payload/README.md)
+  and the game-document compiler in [`crates/mission/mission_compiler/`](/crates/mission/mission_compiler/README.md).
 - Entry: the canvas mount's boot tasks
   (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/boot_tasks.rs`) restore
   the draft and hydrate from the server; the undo driver schedules every draft write.
@@ -99,7 +100,7 @@ that carries an ORBAT without an `editor` block loads no slots.
 
 ### DATA-COMP-001 — Compile
 
-1. `compile_payload` in `legacy/map_engine/src/data/scenario/compiler/payload/` turns the
+1. `compile_payload` in `crates/mission/mission_payload/` turns the
    document into the payload `contracts/definitions/mission-editor-payload.schema.json`
    describes: `schemaVersion`, `map`, `environment`, `loadouts`, `objectives`, `vehicles`,
    `entities`, `markers`, the `editor` block (`factions`, `squads`, `slots`, `editorLayers`), the
@@ -151,7 +152,7 @@ that belong to other accounts.
   unsaved dot and the unload prompt disappear while that work exists only in the browser.
 - "Load server version" adopts with an empty mission row, so a payload without a title leaves the
   mission untitled (`server_reconciliation.rs`,
-  `legacy/map_engine/src/data/store/rows/hydrate.rs`).
+  `crates/mission/mission_document/src/rows/hydrate.rs`).
 - A re-hydrate keeps connections the new payload lacks (`hydrate.rs`).
 - The conflict dialog's object counts count slots only, and it mixes a relative local time with
   an absolute server time.

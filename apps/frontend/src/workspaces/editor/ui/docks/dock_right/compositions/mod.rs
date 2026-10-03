@@ -41,7 +41,7 @@ pub(crate) fn compositions_panel(
             };
             let label = engine_ops::composition_rows()
                 .into_iter()
-                .find(|r| r.id == armed)
+                .find(|r| r.id == *armed)
                 .map(|r| {
                     if r.title.trim().is_empty() {
                         "Untitled".to_string()
@@ -164,7 +164,7 @@ pub(crate) fn compositions_panel(
                 }
                     .into_any();
             }
-            let mut groups: Vec<(String, Vec<engine_ops::CompositionRow>)> = Vec::new();
+            let mut groups: Vec<(String, Vec<mission_operations::compositions::CompositionRow>)> = Vec::new();
             for r in rows {
                 match groups.last_mut() {
                     Some((cat, list)) if *cat == r.category => list.push(r),
@@ -208,7 +208,7 @@ pub(crate) fn compositions_panel(
 /// When `editing == this id`, the row swaps to inline title + category inputs (the idiom).
 #[cfg(target_arch = "wasm32")]
 fn composition_row_view(
-    c: engine_ops::CompositionRow,
+    c: mission_operations::compositions::CompositionRow,
     doc_tick: RwSignal<u64>,
     editing: RwSignal<Option<String>>,
     row: &'static str,
@@ -282,13 +282,13 @@ fn composition_row_view(
                                     on:click=move |_| {
                                         let t = edit_title.get_untracked();
                                         let t = if t.trim().is_empty() { "Untitled".to_string() } else { t };
-                                        engine_ops::rename_composition(save_id.clone(), t);
+                                        engine_ops::rename_composition(save_id.to_string(), t);
                                         engine_ops::recategorize_composition(
-                                            save_id.clone(),
+                                            save_id.to_string(),
                                             edit_category.get_untracked(),
                                         );
                                         engine_ops::set_composition_author(
-                                            save_id.clone(),
+                                            save_id.to_string(),
                                             edit_author.get_untracked(),
                                         );
                                         editing.set(None);
@@ -320,7 +320,7 @@ fn composition_row_view(
                                 title="Click to arm, then click the map to place"
                                 class=format!("{row} flex-1")
                                 on:pointerdown=move |_| {
-                                    armed_placement::begin_place_composition(arm_id.clone());
+                                    armed_placement::begin_place_composition(arm_id.to_string());
                                 }
                             >
                                 <MaterialIcon name="dashboard_customize" class="block text-sm" />
@@ -337,7 +337,7 @@ fn composition_row_view(
                                 title="Rename / recategorize"
                                 class="shrink-0 rounded-md p-1 text-on-surface-variant opacity-0 transition-opacity hover:bg-white/10 group-hover:opacity-100"
                                 on:click=move |_| {
-                                    editing.set(Some(edit_open_id.clone()));
+                                    editing.set(Some(edit_open_id.to_string()));
                                 }
                             >
                                 <MaterialIcon name="edit" class="block text-sm" />
@@ -348,8 +348,8 @@ fn composition_row_view(
                                 title="Delete"
                                 class="shrink-0 rounded-md p-1 text-error opacity-0 transition-opacity hover:bg-error/15 group-hover:opacity-100"
                                 on:click=move |_| {
-                                    if engine_ops::delete_composition(&del_id) {
-                                        editor_context::cancel_armed_composition(&del_id);
+                                    if engine_ops::delete_composition(del_id.as_str()) {
+                                        editor_context::cancel_armed_composition(del_id.as_str());
                                     }
                                     bump();
                                 }

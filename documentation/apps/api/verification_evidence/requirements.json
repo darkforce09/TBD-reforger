@@ -885,13 +885,13 @@
       "id": "missions_authored_preservation",
       "behavior": "Every supported authored field survives compilation; unsupported gameplay data receives actionable rejection.",
       "implementation": [
-        "legacy/map_engine/src/data/scenario/compiler/flatten/unsupported_authored_data.rs",
+        "crates/mission/mission_compiler/src/game_document/unsupported_authored_data.rs",
         "apps/api/src/missions/services/mission_artifacts/artifact_store.rs",
         "apps/frontend/src/features/mission_review_record/submission_refusal.rs",
         "apps/frontend/src/features/mission_review_record/tests/submission_refusal.rs",
         "apps/api/src/missions/services/mission_artifacts/tests/artifact_store.rs",
         "apps/api/tests/mission_authored_preservation.rs",
-        "legacy/map_engine/src/data/scenario/compiler/flatten/tests/unsupported_authored_data.rs"
+        "crates/mission/mission_compiler/src/game_document/tests/unsupported_authored_data.rs"
       ],
       "checks": [
         "missions_authored_preservation",
@@ -1630,10 +1630,10 @@
       "id": "game_ballistics_flight_model",
       "behavior": "The headless flight model integrates game shells with gravity, quadratic drag and wind from the catalog's weapon, shell and charge data, bounded by the shell's time to live.",
       "implementation": [
-        "legacy/map_engine/src/data/scenario/ballistics/flight_model",
-        "legacy/map_engine/src/data/scenario/ballistics/wind.rs",
-        "legacy/map_engine/src/data/scenario/ballistics/angular_units.rs",
-        "legacy/map_engine/src/data/scenario/ballistics/catalog",
+        "crates/ballistics/ballistics_model/src/flight_model",
+        "crates/ballistics/ballistics_model/src/wind.rs",
+        "crates/ballistics/ballistics_model/src/angular_units.rs",
+        "crates/ballistics/ballistics_model/src/catalog",
         "contracts/definitions/ballistics-catalog.schema.json",
         "contracts/catalogs/ballistics"
       ],
@@ -1648,7 +1648,7 @@
       "id": "game_ballistics_calibration",
       "behavior": "A catalog is accepted only when its calibration bundle from the in-game oracle agrees with the flight model on every native table row and oracle sample and its provenance digests match.",
       "implementation": [
-        "legacy/map_engine/src/data/scenario/ballistics/calibration",
+        "crates/ballistics/ballistics_calibration/src",
         "contracts/definitions/ballistics-calibration.schema.json",
         "contracts/fixtures/ballistics",
         "apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle",
@@ -1666,13 +1666,17 @@
       "id": "game_ballistics_elevation_wind_dispersion",
       "behavior": "The solver returns the high-angle elevation, time of flight and apex per charge with typed refusals, wind-corrected aim, probable-error dispersion, time-fuze settings and crest clearance.",
       "implementation": [
-        "legacy/map_engine/src/data/scenario/ballistics/solver",
-        "legacy/map_engine/src/data/scenario/ballistics/dispersion.rs",
-        "legacy/map_engine/src/data/scenario/ballistics/fuze.rs",
-        "legacy/map_engine/src/data/scenario/ballistics/crest_clearance.rs"
+        "crates/ballistics/ballistics_solver/src",
+        "crates/ballistics/ballistics_solver/src/dispersion.rs",
+        "crates/ballistics/fire_mission_planning/src/fuze.rs",
+        "crates/ballistics/ballistics_solver/src/crest_clearance.rs",
+        "crates/ballistics/fire_mission_planning/src/tests/end_to_end.rs",
+        "crates/ballistics/ballistics_calibration/src/tests/oracle_elevation_and_wind.rs"
       ],
       "checks": [
-        "game_ballistics_elevation_wind_dispersion"
+        "game_ballistics_elevation_wind_dispersion",
+        "game_ballistics_fuze_and_end_to_end",
+        "game_ballistics_oracle_elevation_and_wind"
       ],
       "assumptions": [
         "Dispersion is a documented interpretation of the weapon and shell dispersion fields and is not verified in-engine.",
@@ -1683,9 +1687,9 @@
       "id": "game_ballistics_battery",
       "behavior": "A fire mission solves every gun of a battery independently onto one target and compares a client solution with the server solution within one weapon mil and 0.1 s.",
       "implementation": [
-        "legacy/map_engine/src/data/scenario/ballistics/battery.rs",
-        "legacy/map_engine/src/data/scenario/ballistics/fire_mission.rs",
-        "legacy/map_engine/src/data/scenario/ballistics/fire_mission_comparison.rs"
+        "crates/ballistics/fire_mission_planning/src/battery.rs",
+        "crates/ballistics/fire_mission_planning/src/fire_mission.rs",
+        "crates/ballistics/fire_mission_planning/src/fire_mission_comparison.rs"
       ],
       "checks": [
         "game_ballistics_battery"
@@ -1698,15 +1702,16 @@
       "id": "game_ballistics_wasm_agreement",
       "behavior": "The WASM build of the solver in the browser returns bit-identical solutions to the native build across the shared agreement cases.",
       "implementation": [
-        "legacy/map_engine/src/data/scenario/ballistics/agreement_cases.rs",
-        "legacy/map_engine/src/data/scenario/ballistics/solution_wording.rs",
+        "crates/ballistics/ballistics_agreement_cases/src/case_lattice.rs",
+        "crates/ballistics/fire_mission_planning/src/solution_wording.rs",
         "apps/frontend/src/workspaces/debug/ballistics_agreement.rs",
         "apps/frontend/src/workspaces/debug/ballistics_agreement",
         "tools/developer_tools/src/browser_testing/ballistics_agreement"
       ],
       "checks": [
         "game_ballistics_wasm_agreement",
-        "game_ballistics_shared_solution_cases"
+        "game_ballistics_shared_solution_cases",
+        "game_ballistics_solution_wording"
       ],
       "assumptions": [
         "Agreement is measured in headless Chrome on this workstation; transcendentals come from the libm crate on both targets."
@@ -2877,15 +2882,13 @@
         "cargo",
         "test",
         "-p",
-        "map_engine",
-        "--all-features",
-        "--locked",
-        "data::scenario::ballistics::"
+        "ballistics_model",
+        "--locked"
       ],
       "timeout_seconds": 1800,
       "minimum_cases": 51,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test data::scenario::ballistics::(?:flight_model|wind|angular_units|catalog)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test (?:flight_model|wind|angular_units|catalog)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "game_ballistics_calibration",
@@ -2894,15 +2897,13 @@
         "cargo",
         "test",
         "-p",
-        "map_engine",
-        "--all-features",
-        "--locked",
-        "data::scenario::ballistics::"
+        "ballistics_calibration",
+        "--locked"
       ],
       "timeout_seconds": 1800,
       "minimum_cases": 34,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test data::scenario::ballistics::(?:calibration)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test (?:tests|report|tests_catalog_digest)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "game_ballistics_elevation_wind_dispersion",
@@ -2911,15 +2912,43 @@
         "cargo",
         "test",
         "-p",
-        "map_engine",
-        "--all-features",
-        "--locked",
-        "data::scenario::ballistics::"
+        "ballistics_solver",
+        "--locked"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 81,
+      "minimum_cases": 64,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test data::scenario::ballistics::(?:solver|dispersion|fuze|crest_clearance|tests_bounded_failure|tests_end_to_end|tests_oracle_elevation_and_wind|tests_symmetry)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test (?:tests|wind_corrected_aim|dispersion|crest_clearance|tests_bounded_failure|tests_symmetry)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_fuze_and_end_to_end",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "fire_mission_planning",
+        "--locked"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 9,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test (?:fuze|tests_end_to_end)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_oracle_elevation_and_wind",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "ballistics_calibration",
+        "--locked"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 8,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test (?:tests_oracle_elevation_and_wind)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "game_ballistics_battery",
@@ -2928,15 +2957,13 @@
         "cargo",
         "test",
         "-p",
-        "map_engine",
-        "--all-features",
-        "--locked",
-        "data::scenario::ballistics::"
+        "fire_mission_planning",
+        "--locked"
       ],
       "timeout_seconds": 1800,
       "minimum_cases": 29,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test data::scenario::ballistics::(?:battery|fire_mission|fire_mission_comparison)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test (?:battery|fire_mission|fire_mission_comparison)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "game_ballistics_shared_solution_cases",
@@ -2945,15 +2972,28 @@
         "cargo",
         "test",
         "-p",
-        "map_engine",
-        "--all-features",
-        "--locked",
-        "data::scenario::ballistics::"
+        "ballistics_agreement_cases",
+        "--locked"
       ],
       "timeout_seconds": 1800,
-      "minimum_cases": 18,
+      "minimum_cases": 11,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test data::scenario::ballistics::(?:agreement_cases|solution_wording)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test (?:case_lattice)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+    },
+    {
+      "id": "game_ballistics_solution_wording",
+      "class": "implementation",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "fire_mission_planning",
+        "--locked"
+      ],
+      "timeout_seconds": 1800,
+      "minimum_cases": 7,
+      "success_marker": "test result: ok.",
+      "case_pattern": "(?m)^test (?:solution_wording)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "game_ballistics_wasm_agreement",

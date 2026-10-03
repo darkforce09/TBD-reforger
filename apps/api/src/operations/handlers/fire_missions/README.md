@@ -43,7 +43,7 @@ apps/api/src/operations/handlers/fire_missions/
 
 - Depends on: `operations::services::fire_mission_resolve`, `operations::services::fire_mission_store`
   and `operations::services::event_access`; `operations::models::fire_mission`;
-  `map_engine::data::scenario::ballistics::fire_mission` for the body's input and
+  `fire_mission_planning::fire_mission` for the body's input and
   solution types; `core` for `AuthUser`, `PathParams` and `ApiError`.
 - Used by: `apps/api/src/operations/routes.rs`; over HTTP, the mortar calculator in
   `apps/frontend/src/pages/field_tools/mortar/`; the tests

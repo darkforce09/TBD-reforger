@@ -1,5 +1,5 @@
 use super::*;
-use map_engine::data::store::operations::tactical_graphics::mint_graphic_id;
+use mission_operations::tactical_graphics::mint_graphic_id;
 use serde_json::json;
 
 fn env(rows: Value) -> Value {
@@ -276,8 +276,8 @@ fn a_draft_knows_how_many_vertices_it_still_needs() {
 /// vocabulary so a kind added there without one here fails by name.
 #[test]
 fn the_canvas_floor_is_the_core_validator_floor() {
-    use map_engine::data::scenario::tactical_graphics::min_points;
-    use map_engine::data::scenario::tactical_graphics::KINDS;
+    use mission_model::tactical_graphics::min_points;
+    use mission_model::tactical_graphics::KINDS;
     assert_eq!(KINDS.len(), 4);
     for kind in KINDS {
         let floor = min_points(kind).unwrap_or_else(|| panic!("{kind} has no floor"));

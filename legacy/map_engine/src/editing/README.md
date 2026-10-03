@@ -35,7 +35,7 @@ Mission Creator (apps/frontend/src/workspaces/editor/)
   ▼
 host.rs ── with_doc / with_doc_mut: one borrow per call, dropped before returning
   │
-  ├─ hosted_commands/ ── data::store::operations ── history::after_local_edit (host's tail)
+  ├─ hosted_commands/ ── mission_operations ── history::after_local_edit (host's tail)
   ├─ history/ ────────── MissionDocCore::undo / redo, then the same tail
   ├─ batch.rs ────────── begin_group / end_group around a multi-transaction edit
   ├─ lanes/, picking.rs, routing.rs, selection_universe.rs ── read the document's JSON and SoA
@@ -47,7 +47,7 @@ The editing host is one thread-local `EditingHost`: the document handle (`DocHan
 shared cell a restore or a hydrate swaps into, so a command always sees the live document), the
 selected ids and a per-session id counter, `next_id`, that restarts at 0 on every install and is
 passed to the document's minting operations. The Mission Creator also calls
-`crate::data::store::operations` and the document's mutators directly, outside this layer.
+`mission_operations` and the document's mutators directly, outside this layer.
 
 Every edit through `hosted_commands` ends in `history::after_local_edit`, which runs the one hook
 the host installed (prune the selection, rebind lanes, mark unsaved, schedule a save); undo and
@@ -78,12 +78,13 @@ probe and the click with one resolution, so a row is clickable only when a click
 
 ## Boundaries
 
-- Depends on: `crate::data::store` (`MissionDocCore`, `SlotSoa`, `operations`),
-  `crate::data::scenario` (the compile and its findings), `crate::camera` (the frozen ortho camera
-  and the grid reference), `spatial_indexes` (the point index and picking rows), the line of
-  sight crates (`terrain_line_of_sight`, `interior_line_of_sight`, `world_line_of_sight`),
-  `terrain_elevation::manifest`, `unit_symbology` (squad link inputs, side tints),
-  `crate::frame::EngineHandle` on `wasm32` with `render`; `serde_json`. The `editing`
+- Depends on: `mission_document` (`MissionDocCore`, `ConnectionKind`), `mission_crdt`
+  (`SlotSoa`), `mission_operations`, `formation_geometry` (the arrange vocabulary),
+  `mission_payload` and `mission_validation` (the compile and its findings), `crate::camera` (the
+  frozen ortho camera and the grid reference), `spatial_indexes` (the point index and picking
+  rows), the line of sight crates (`terrain_line_of_sight`, `interior_line_of_sight`,
+  `world_line_of_sight`), `terrain_elevation::manifest`, `unit_symbology` (squad link inputs, side
+  tints), `crate::frame::EngineHandle` on `wasm32` with `render`; `serde_json`. The `editing`
   feature turns on `store`, `world` and `streaming`.
 - Used by:
   - the Mission Creator in `apps/frontend/src/workspaces/editor/` (canvas mount, bridge,
@@ -107,7 +108,7 @@ probe and the click with one resolution, so a row is clickable only when a click
 
 ## Related documentation
 
-- [Mission document store](/legacy/map_engine/src/data/store/README.md) — the document this
+- [Mission document](/crates/mission/mission_document/README.md) — the document this
   layer edits and the operations it calls.
 - [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the
   `engine-layers` and `editor-orbat-coherency` gates that scan this tree.

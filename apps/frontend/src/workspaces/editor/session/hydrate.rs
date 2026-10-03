@@ -9,7 +9,6 @@ use std::rc::Rc;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use map_engine::data::store::MissionDocCore;
 use map_engine::editing::persist::local_versus_server::{
     classify_local_draft, server_slot_count, LocalDraftVerdict,
 };
@@ -19,6 +18,7 @@ use map_engine::editing::persist::server_adoption::{
     adopt_payload, apply_row_meta_only, Adopt, RowMeta,
 };
 use map_engine::editing::persist::snapshot_slot::{capture_document_snapshot, SnapshotSlot};
+use mission_document::MissionDocCore;
 use wasm_bindgen::prelude::*;
 
 use crate::foundation::auth::AuthStore;

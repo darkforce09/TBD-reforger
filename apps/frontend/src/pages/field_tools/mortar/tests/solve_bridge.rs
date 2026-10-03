@@ -3,15 +3,13 @@
 //! the wind hand-over, and the wording of each charge row.
 
 use super::*;
-use map_engine::data::scenario::ballistics::angular_units::MilsConvention;
-use map_engine::data::scenario::ballistics::crest_clearance::TerrainSample;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use ballistics_model::angular_units::MilsConvention;
+use ballistics_solver::crest_clearance::TerrainSample;
+use ballistics_solver::SolutionRefusal;
+use fire_mission_planning::fire_mission::{
     FireMissionGunPosition, FireMissionPoint, FireMissionWind, HeightSource,
 };
-use map_engine::data::scenario::ballistics::solution_wording::{
-    deflection_text, range_correction_text,
-};
-use map_engine::data::scenario::ballistics::solver::SolutionRefusal;
+use fire_mission_planning::solution_wording::{deflection_text, range_correction_text};
 
 fn catalog() -> BallisticsCatalog {
     BallisticsCatalog::from_json_slice(include_bytes!("mortar_test_catalog.json"))

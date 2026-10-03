@@ -19,7 +19,7 @@ Local drafts are a separate doc, [draft persistence](/documentation/legacy/map_e
   [`lanes/`](/legacy/map_engine/src/editing/lanes/README.md),
   [`tools/`](/legacy/map_engine/src/editing/tools/README.md), and the picks and routing
   files. The document it edits is `MissionDocCore` in
-  [`data/store/`](/legacy/map_engine/src/data/store/README.md).
+  [`mission_document`](/crates/mission/mission_document/README.md).
 - Entry: `editing::host::install(doc, selection)`, which the Mission Creator's canvas mount calls
   once the document exists (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`),
   and `history::install_host`, through which its document host installs the post-change hook
@@ -44,7 +44,7 @@ Local drafts are a separate doc, [draft persistence](/documentation/legacy/map_e
    holds no document, they answer `None`, which callers read as "nothing happened".
 4. A second install replaces the first wholesale: a second mount is a second document.
 
-The Mission Creator also calls `crate::data::store::operations` and the document's mutators
+The Mission Creator also calls `mission_operations` and the document's mutators
 directly, outside this layer.
 
 ### A hosted command
@@ -52,7 +52,7 @@ directly, outside this layer.
 1. A caller names what to change (ids, values) and passes the closures only the host can answer:
    the folder a new entity is filed under (`ensure_layer`), the confirmation a large move needs
    (`confirm_bulk`), and the closed vocabularies of marker icons and zone types.
-2. The command opens one host borrow and calls the matching `data::store::operations` edit, as one
+2. The command opens one host borrow and calls the matching `mission_operations` edit, as one
    transaction, or one undo group for a set. New ids come from the host's counter, passed to the
    document's minting operations.
 3. It drops the borrow, then, when something changed, calls `history::after_local_edit`, which runs
@@ -84,7 +84,7 @@ families and their files are in the
    installed hook it still undoes and redoes, and tells nobody.
 
 The grouping clock and the cap are in the
-[undo groups README](/legacy/map_engine/src/data/store/crdt/undo_groups/README.md#how-it-works).
+[undo groups README](/crates/mission/mission_crdt/src/undo_groups/README.md#how-it-works).
 
 ### Tools, picks and routing
 
@@ -118,7 +118,7 @@ The grouping clock and the cap are in the
 ## Data
 
 - The document: `MissionDocCore`, one `yrs` document with the local and init origins; its root
-  maps and JSON views are in the [document store README](/legacy/map_engine/src/data/store/README.md).
+  maps and JSON views are in the [mission document README](/crates/mission/mission_document/README.md).
 - The selection: a list of ids the host owns beside the document; it is never document content.
 - The id counter: per install, starting at 0; each mint still checks the document for a clash.
 - The host's hook (`HistoryHost::after_document_change`) and the closures a command takes; no
@@ -133,8 +133,8 @@ The grouping clock and the cap are in the
 - Rule 5 of `cargo xtask verify engine-layers` keeps `web_sys`, `leptos` and `wasm_bindgen` out
   of the tree, prose included
   ([§2B](/documentation/standards/engine_boundary_rules.md#2b-the-headless-editing-layer)).
-  Rules 4 and 7 do not yet treat `editing` as a sibling module, so `data/` naming
-  `crate::editing` would pass the gate.
+  Rule 7 keeps `world/` from naming `crate::editing`, and the mission crates the layer drives
+  cannot depend on the map engine at all (the crate-tier law).
 - `cargo xtask verify editor-orbat-coherency` scans `hosted_commands/` and bans
   `ensure_default_squad` on the place path.
 
@@ -147,8 +147,6 @@ The grouping clock and the cap are in the
   (idea, no plan): `next_id` restarts at 0 on every install, and the single-id mint checks slot
   ids only; a reopened mission's vehicle or object id either cannot be overwritten, and the guard
   is documented, or the mint checks every id map.
-- [T-1055 — Fix engine-layers gate omitting the map engine editing module](/.ai/tickets/T-1055.toml)
-  (idea, no plan): rules 4 and 7 treat `editing` as a sibling module.
 - [T-1062 — Derive map grid, basemap, peaks and forest from terrain size](/.ai/tickets/T-1062.toml)
   (idea, no plan): terrain-size constants follow the loaded terrain.
 - [T-1068 — Rewrite stale map engine comments outside mission data](/.ai/tickets/T-1068.toml)

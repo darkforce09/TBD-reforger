@@ -165,7 +165,7 @@ fn restore_authored_document(restore: AuthoredRestore) {
         async move {
             if let Some(blob) = yrs_persist::load_state(&id).await {
                 if !blob.is_empty() {
-                    let fresh = map_engine::data::store::MissionDocCore::new();
+                    let fresh = mission_document::MissionDocCore::new();
                     fresh.set_origin_init(true);
                     let ok = fresh.apply_update(&blob).is_ok();
                     fresh.set_origin_init(false);

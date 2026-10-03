@@ -1,13 +1,13 @@
 //! The judgement of one uploaded catalog pair: decode, contract field checks, calibration.
 //!
 //! **Role:** turns the bytes of the `catalog` and `calibration` parts of a catalog upload into a
-//! [`DecodedUpload`] or an [`UploadRefusal`], and runs the map engine's calibration over a
+//! [`DecodedUpload`] or an [`UploadRefusal`], and runs `ballistics_calibration` over a
 //! decoded pair into the [`CatalogUploadReport`] the upload answers with.
 //!
 //! **Position:** operations services; called by
 //! [`crate::operations::handlers::ballistics_catalogs::upload`] after it has read the multipart
 //! parts, before [`super::catalog_store`] stores the version. The flight model and the
-//! calibration judges are [`map_engine::data::scenario::ballistics::calibration`].
+//! calibration judges are [`ballistics_calibration`].
 //!
 //! **Signals & state:** none; pure functions over bytes and decoded documents.
 //!
@@ -24,10 +24,8 @@
 //!
 //! @contract ballistics-catalog.schema.json#/definitions/CatalogUploadReport
 
-use map_engine::data::scenario::ballistics::calibration::{
-    CalibrationBundle, CalibrationReport, PinnedCatalog, evaluate,
-};
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use ballistics_calibration::{CalibrationBundle, CalibrationReport, PinnedCatalog, evaluate};
+use ballistics_model::catalog::BallisticsCatalog;
 use serde::Serialize;
 
 use crate::core::wire_format::content_digest::sha256_hex;
@@ -157,7 +155,7 @@ fn check_catalog_identity(catalog: &BallisticsCatalog) -> Result<i32, UploadRefu
         field,
         reason: reason.to_owned(),
     };
-    if !is_slug(&catalog.catalog_id) {
+    if !is_slug(catalog.catalog_id.as_str()) {
         return Err(invalid(
             "catalog_id",
             "a lowercase slug of at most 64 characters: letters and digits in groups joined by \
@@ -178,7 +176,7 @@ fn check_catalog_identity(catalog: &BallisticsCatalog) -> Result<i32, UploadRefu
             "two to four dot-separated groups of digits",
         ));
     }
-    if !is_enfusion_guid(&catalog.export_generation_id) {
+    if !is_enfusion_guid(catalog.export_generation_id.as_str()) {
         return Err(invalid(
             "export_generation_id",
             "16 uppercase hexadecimal digits",

@@ -1,5 +1,6 @@
 //! Engine-layer walls — `documentation/standards/engine_boundary_rules.md` §5 rules
-//! **1, 2, 3a, 3b, 4, 5, 6 and 7**, plus the map engine's whole-crate UI-framework ban.
+//! **1, 2, 3a, 3b, 5, 6 and 7**, plus the map engine's whole-crate UI-framework ban. Number 4 is
+//! unassigned: the mission crates' isolation is the crate-tier law's category matrix.
 //!
 //! **Role:** judges the one-way layering of the graphics layer (the parked graphics engine and
 //! the `crates/graphics` members), the map engine and the frontend, and renders the report
@@ -22,8 +23,8 @@
 //! The graphics layer is only a renderer: device, pipelines, shaders, draw batching, text
 //! packing, the rAF pump in `graphics_engine`, and the GPU-free byte layouts, geometry, glyph
 //! packing and WGSL source in the `crates/graphics` members it builds on. The map domain
-//! (terrain, symbology, spatial, streaming, the mission document) lives in `map_engine`. The
-//! dependency arrow is one-way:
+//! (terrain, symbology, spatial, streaming, the editing layer over the mission document) lives in
+//! `map_engine` and the crates it links. The dependency arrow is one-way:
 //!
 //! ```text
 //! frontend ──► map_engine ──► graphics_engine ──► crates/graphics
@@ -42,10 +43,9 @@
 //! | 2 | no `terrain` / `symbology` / `mission` / `orbat` / `arma` in a declared name there | "pure renderer" becomes a claim in a README rather than a property of the code |
 //! | 3a | only one enumerated file of `legacy/map_engine/src` names `graphics_engine::frame` | the packet boundary scatters into imports across the crate |
 //! | 3b | no module of `legacy/map_engine/src` names `graphics_engine::{device, pipeline, shaders, r#loop}` beyond the pin | GPU resource creation drifts back to the caller one import at a time |
-//! | 4 | `legacy/map_engine/src/data/scenario/**` imports nothing outside itself | the `api` build stops being thin |
 //! | 5 | no `web_sys` / `leptos` / `wasm_bindgen` under `legacy/map_engine/src/editing` | editing logic grows a browser and stops being testable without one |
 //! | 6 | `apps/frontend/**` may not import `graphics_engine` or a wasm-only `crates/graphics` member | the frontend drives the GPU directly and the middle crate becomes optional |
-//! | 7 | `data/**` names no world module and `world/**` names no document module | the static world and the authored document fuse into one |
+//! | 7 | `legacy/map_engine/src/world/**` names neither `yrs`, nor a mission document crate, nor the `editing` module | the static world and the authored document fuse into one |
 //!
 //! ── RULES 1 AND 6 — A MANIFEST ARM BESIDE THE SOURCE ARM ─────────────────────────────────────
 //!
@@ -96,21 +96,14 @@
 //! whose count grows or shrinks fails, and a pinned file that no longer matches at all fails —
 //! the arm that tells a renamed or deleted directory apart from a clean boundary.
 //!
-//! ── RULE 4 — THE MISSION COMPILER THE SERVER LINKS ───────────────────────────────────────────
+//! ── NUMBER 4 — THE MISSION CRATES' ISOLATION, JUDGED ELSEWHERE ────────────────────────────────
 //!
-//! `api` links `map_engine` at the `scenario` feature alone, which is why its
-//! dependency tree carries no `wgpu`, `png`, `rkyv` or `flate2`. One import of
-//! `crate::streaming` inside `data/scenario/` would drag that whole tier into an HTTP server.
-//! "Outside itself" is enumerable because the crate declares exactly ten top-level modules
-//! (`camera`, `data`, `diagnostics`, `doll`, `editing`, `frame`, `overlay`, `spatial`,
-//! `streaming`, `world`): nine of them are outside `data`, `data::store` is the tenth's other
-//! half, and `graphics_engine` is outside the crate. That list is the matcher. Code that left the
-//! map engine for a crate of its own (`world_file_formats`, `camera_math`, `map_coordinates`) is
-//! no module of it; those edges belong to the crate-tier law and the map engine's feature gates.
-//!
-//! Two test sites are pinned: both are `#[cfg(feature = "store")]` and build a real
-//! `MissionDocCore` to push through the compiler, and the `scenario` tier compiles neither. A third
-//! site, or an ungated one, fails.
+//! The mission compiler, the validator and the document are the crates of `crates/mission/`, not
+//! modules of the map engine. That they reach no world, streaming or graphics code is a
+//! dependency edge, and the crate-tier law judges it from the manifests: a `crates/mission` crate
+//! depends on foundation, mission and geometry crates only (rule 5 of that law,
+//! `crate_tiers_a_mission_crate_reaching_world_or_graphics_is_rule_5`) and on nothing under
+//! `legacy/` (its rule 7, the same test). No line matcher here repeats it.
 //!
 //! ── RULE 5 — ONE DIRECTORY, HARD ZERO ────────────────────────────────────────────────────────
 //!
@@ -124,32 +117,29 @@
 //!
 //! ── RULE 7 — THE IMPORT WALL BETWEEN WORLD AND DOCUMENT ──────────────────────────────────────
 //!
-//! `world/` is immutable, streamed, cacheable and never persisted; `data/` is mutable, undoable,
-//! CRDT-synced and persisted; they share the spatial index and nothing else. A `world/` type
-//! cannot acquire undo, persistence or CRDT state without naming `crate::data` or `yrs`, and a
-//! `data/` type cannot acquire a chunk id, a tile coordinate or a residency handle without naming
-//! one of the nine sibling modules, because that is where every one of those types is declared.
-//! So `data/**` may name `crate::data` and nothing else in the crate, and `world/**` may name
-//! neither `crate::data` nor `yrs::`. A hand-rolled `dirty: bool` on a world struct that imports
-//! nothing is not visible to a line matcher; it becomes visible the moment anything persists it.
+//! `world/` is immutable, streamed, cacheable and never persisted; the mission document is
+//! mutable, undoable, CRDT-synced and persisted. A `world/` type cannot acquire undo, persistence
+//! or CRDT state without naming `yrs`, a mission document crate (`mission_crdt`,
+//! `mission_document`, `mission_operations`) or the `editing` module that hosts the live document,
+//! so `world/**` may name none of them. The other direction is a dependency edge: the mission
+//! crates cannot reach a world module because the crate-tier law forbids the edge (see number 4
+//! above). A hand-rolled `dirty: bool` on a world struct that imports nothing is not visible to a
+//! line matcher; it becomes visible the moment anything persists it.
 //!
 //! ── THE `super::` ARMS ───────────────────────────────────────────────────────────────────────
 //!
-//! `use super::super::streaming::x;` reaches the same module as `crate::streaming::x`. File depth
-//! is not module depth here (`#[path = "../../tests/cases_1.rs"] mod tests;` is used throughout),
-//! so a depth calculation would be unsound; the destination is sound instead: a `super::` chain
-//! that lands on a name which exists nowhere inside the scanned tree has escaped it. Exactly one
-//! top-level module name collides with a module inside `data/` —
-//! `data/scenario/compiler/flatten/diagnostics.rs` — so `diagnostics` is the one name left out of
-//! the `super::` arms; the `crate::` arms still cover `crate::diagnostics`.
+//! `use super::super::editing::x;` reaches the same module as `crate::editing::x`. File depth is
+//! not module depth here (`#[path = "../../tests/cases_1.rs"] mod tests;` is used throughout), so
+//! a depth calculation would be unsound; the destination is sound instead: a `super::` chain that
+//! lands on a name which exists nowhere inside the scanned tree has escaped it.
 //!
 //! ── WHY EXIT 2 EXISTS ────────────────────────────────────────────────────────────────────────
 //!
 //! A layer wall is exactly the kind of check a directory move renames out from under itself. If a
 //! missing root read as "no violations found", the wall would evaporate on the very commit that
 //! most needs it. So a root that is absent or unreadable is [`verification_core::NotRun`] and exits 2, and a
-//! root that exists but is empty — `data/` and `world/` included — is a failure, because "no file
-//! under `data/` names a world module" and "there is no `data/`" are the same sentence to a
+//! root that exists but is empty — `world/` and `editing/` included — is a failure, because "no
+//! file under `world/` names the document" and "there is no `world/`" are the same sentence to a
 //! matcher; the scanned counts are printed so the two never read alike.
 
 use std::path::Path;
@@ -183,14 +173,13 @@ pub enum EngineLayerRule {
     FrameVocabularyStaysAtThePacketBoundary,
     /// Rule 3b: GPU-resource modules of the renderer are named only at the pinned sites.
     GpuResourceModulesStayPinned,
-    /// Rule 4: `data/scenario` imports nothing outside itself beyond the pinned test sites.
-    ScenarioTreeIsSelfContained,
     /// Rule 5: no browser binding or UI framework named under `editing/`.
     EditingTreeNamesNoBrowser,
     /// Rule 6: the frontend neither imports nor depends on `graphics_engine` or a wasm-only
     /// `crates/graphics` member.
     FrontendImportsNoRenderer,
-    /// Rule 7: `data/` names no world module and `world/` names no document module.
+    /// Rule 7: `world/` names neither `yrs`, nor a mission document crate, nor the `editing`
+    /// module.
     WorldAndDocumentShareNothing,
 }
 
@@ -202,7 +191,6 @@ impl EngineLayerRule {
             Self::GraphicsEngineDeclaresNoMapNoun => "2",
             Self::FrameVocabularyStaysAtThePacketBoundary => "3a",
             Self::GpuResourceModulesStayPinned => "3b",
-            Self::ScenarioTreeIsSelfContained => "4",
             Self::EditingTreeNamesNoBrowser => "5",
             Self::FrontendImportsNoRenderer => "6",
             Self::WorldAndDocumentShareNothing => "7",
@@ -239,7 +227,7 @@ pub struct EngineLayerReport {
     pub exit_code: u8,
     /// The report text, one line per entry.
     pub lines: Vec<String>,
-    /// Every rule judged, in report order; fewer than eight when the run stopped early.
+    /// Every rule judged, in report order; fewer than seven when the run stopped early.
     pub rule_results: Vec<EngineLayerRuleResult>,
 }
 
@@ -251,7 +239,7 @@ impl EngineLayerReport {
 
     /// True when every rule was judged, whatever the outcome.
     pub fn judged_every_rule(&self) -> bool {
-        self.rule_results.len() == 8
+        self.rule_results.len() == 7
     }
 }
 

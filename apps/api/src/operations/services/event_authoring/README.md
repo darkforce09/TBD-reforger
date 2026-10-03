@@ -57,7 +57,7 @@ Slot rows store `faction` byte for byte, because the Event Hub joins it to the a
 - Depends on: `operations::models`; the domain's `event_reservations` (schedule normalisation, the
   event scope lock, mission restoration), `event_status_rules` and `event_lifecycle_transition`;
   `core` for errors, configuration, `AuthUser`, the URL guard and unique-violation detection;
-  `administration` for the audit rows; `map_engine::data::scenario::orbat` for the faction
+  `administration` for the audit rows; `mission_model::orbat` for the faction
   join-key check.
 - Used by: `apps/api/src/operations/handlers/event_create_update.rs` and
   `event_mission_attachment.rs`; the `staging-fixtures` host tool's

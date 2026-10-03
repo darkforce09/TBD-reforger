@@ -3,7 +3,7 @@
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(any(test, target_arch = "wasm32"))]
-pub use map_engine::data::store::operations::zones::DrawTarget;
+pub use mission_operations::zones::DrawTarget;
 
 #[cfg(target_arch = "wasm32")]
 use crate::foundation::ui::MaterialIcon;

@@ -1,0 +1,27 @@
+# The mission validation rules: the ordered rule list the Mission Creator's validation panel runs
+# over an editor payload, the findings it answers, the facts a context-dependent rule reads, the
+# self-check that proves every rule can fire, and the ids a finding names. The game-document
+# compiler reports its compile findings in the same vocabulary.
+[package]
+name = "mission_validation"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The ordered validation rules of a mission editor payload, their findings, facts and self-check."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 3
+targets = "any"
+
+[dependencies]
+mission_payload = { workspace = true }
+mission_wire_safety = { workspace = true }
+newtype_ids = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

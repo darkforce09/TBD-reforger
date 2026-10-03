@@ -1,7 +1,7 @@
 # The TBD Reforger workspace: the website applications (API, single-page app, offline service
-# worker), the library crates under `crates/`, the map engine with the headless mission domain
-# (its `data/` module, behind the `scenario` and `store` features), the pure GPU renderer, the
-# fleet host agent, the ticketboard and the repository tooling.
+# worker), the library crates under `crates/` (the mission domain among them), the map engine
+# with the Mission Creator's editing layer, the pure GPU renderer, the fleet host agent, the
+# ticketboard and the repository tooling.
 [workspace]
 resolver = "3"
 members = [
@@ -41,6 +41,17 @@ publish = false
 anyhow = "1"
 axum = "0.8.9"
 base64 = "0.22"
+# The seeded lattice of battery fire problems for native/wasm32 agreement
+# (`crates/ballistics/ballistics_agreement_cases`).
+ballistics_agreement_cases = { path = "crates/ballistics/ballistics_agreement_cases" }
+# A ballistics catalog judged against the game's tables and the engine oracle
+# (`crates/ballistics/ballistics_calibration`).
+ballistics_calibration = { path = "crates/ballistics/ballistics_calibration" }
+# The ballistics catalog, shell flight model, wind and angular units
+# (`crates/ballistics/ballistics_model`).
+ballistics_model = { path = "crates/ballistics/ballistics_model" }
+# The firing solver, crest clearance and impact dispersion (`crates/ballistics/ballistics_solver`).
+ballistics_solver = { path = "crates/ballistics/ballistics_solver" }
 # Building blueprints, compounds and section cuts
 # (`crates/world_objects/building_interiors`).
 building_interiors = { path = "crates/world_objects/building_interiors" }
@@ -63,6 +74,9 @@ contract_schema_types = { path = "crates/contracts/contract_schema_types" }
 deterministic_random = { path = "crates/foundation/deterministic_random" }
 # Ear-clipping polygon triangulation behind `render_primitives`.
 earcutr = "0.5.0"
+# The fire-mission assembler, fuzes, comparison rule and solution wording
+# (`crates/ballistics/fire_mission_planning`).
+fire_mission_planning = { path = "crates/ballistics/fire_mission_planning" }
 flate2 = "1"
 # The fleet-command wire shapes, executor kind and machine credential format the API and the
 # fleet host agent share (`crates/contracts/fleet_wire_contract`).
@@ -88,12 +102,41 @@ jsonschema = { version = "0.46.10", default-features = false }
 # (`crates/map_overlay/label_layout`).
 label_layout = { path = "crates/map_overlay/label_layout" }
 libc = "0.2"
+# Pure-Rust transcendentals: the same bits on native and wasm32.
+libm = "0.2"
 # Terrain centres and bounds, the chunk grid, JavaScript rounding and grid references
 # (`crates/geometry/map_coordinates`).
+map_coordinates = { path = "crates/geometry/map_coordinates" }
 # The map's named draw lanes, their paint order and the zoom gates
 # (`crates/map_overlay/map_draw_lanes`).
 map_draw_lanes = { path = "crates/map_overlay/map_draw_lanes" }
-map_coordinates = { path = "crates/geometry/map_coordinates" }
+# The wire-safety and cargo capacity scans of a mission editor payload
+# (`crates/mission/mission_wire_safety`).
+mission_wire_safety = { path = "crates/mission/mission_wire_safety" }
+# The compiled rows, ORBAT projection, authored extension blocks, slot line and ids of a mission
+# (`crates/mission/mission_model`).
+mission_model = { path = "crates/mission/mission_model" }
+# The editor payload, export envelope and version body compiler, with the kit alias table
+# (`crates/mission/mission_payload`).
+mission_payload = { path = "crates/mission/mission_payload" }
+# The ordered validation rules of a mission editor payload, their findings and self-check
+# (`crates/mission/mission_validation`).
+mission_validation = { path = "crates/mission/mission_validation" }
+# The game-document compiler of a mission and its compiler identity
+# (`crates/mission/mission_compiler`).
+mission_compiler = { path = "crates/mission/mission_compiler" }
+# The placement patterns, align, space, orient and garrison positions of the arrange commands
+# (`crates/mission/formation_geometry`).
+formation_geometry = { path = "crates/mission/formation_geometry" }
+# The native id arrays, slot columns and undo grouping clocks of the mission document
+# (`crates/mission/mission_crdt`).
+mission_crdt = { path = "crates/mission/mission_crdt" }
+# The mergeable mission document: rows, hydrate and export, merge, slot columns, selection and
+# undo (`crates/mission/mission_document`).
+mission_document = { path = "crates/mission/mission_document" }
+# The authoring commands and row projections of the mission document
+# (`crates/mission/mission_operations`).
+mission_operations = { path = "crates/mission/mission_operations" }
 # The offline cache policy the service worker and the page share
 # (`crates/contracts/offline_cache_policy`).
 offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
@@ -189,6 +232,8 @@ world_chunks = { path = "crates/world_formats/world_chunks" }
 # The headless world store: manifest, prefab table, roads, regions and one chunk at a time
 # (`crates/world_formats/world_store`).
 world_store = { path = "crates/world_formats/world_store" }
+# The CRDT behind the mission document (`mission_crdt`, `mission_document`, the map engine).
+yrs = "0.27"
 
 # The lint policy a crate adopts with `[lints] workspace = true`; under `-D warnings` every warning
 # fails the build. `clippy::unwrap_used` binds production code only: the root `clippy.toml` sets

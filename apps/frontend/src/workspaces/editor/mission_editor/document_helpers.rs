@@ -6,7 +6,7 @@ use super::*;
 #[must_use]
 /// Builds drawable connection segments from the live mission document.
 pub(crate) fn live_connection_segments(
-    core: &map_engine::data::store::MissionDocCore,
+    core: &mission_document::MissionDocCore,
 ) -> Vec<ConnSegment> {
     let soa = core.materialize();
     let mut positions: std::collections::HashMap<String, (f64, f64)> =
@@ -33,7 +33,7 @@ pub(crate) fn set_map_cursor(canvas: &web_sys::HtmlCanvasElement, pickable: bool
 /// Point sets cached for hover hit testing by document generation.
 pub(crate) struct HoverPoints {
     tick: u64,
-    soa: map_engine::data::store::SlotSoa,
+    soa: mission_crdt::soa::SlotSoa,
     vehicles: Vec<(String, f64, f64)>,
     comments: Vec<CommentPoint>,
 }

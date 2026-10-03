@@ -25,7 +25,7 @@ use enfscript_source_support::{
     read_scripts, type_class_names,
 };
 use event_eligibility_support::{EventShape, Fixture};
-use map_engine::data::scenario::flatten::{MissionMeta, flatten_to_mod_document};
+use mission_compiler::{MissionMeta, flatten_to_mod_document};
 
 const SUITE: &str = "contract_parity_mod_wire";
 
@@ -636,7 +636,7 @@ fn mod_schema_version_window(scripts: &[ScriptFile]) -> BTreeSet<String> {
 /// Every `schemaVersion` literal the mission compiler chooses between.
 fn compiler_schema_versions() -> BTreeSet<String> {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../legacy/map_engine/src/data/scenario/compiler/flatten/compile_graph.rs");
+        .join("../../crates/mission/mission_compiler/src/game_document/compile_graph.rs");
     let source = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
     let start = source
@@ -670,7 +670,7 @@ fn contract_parity_mod_mission_schema_version_window_includes_the_compiler_versi
         .collect();
     let emittable = compiler_schema_versions();
     let meta = MissionMeta {
-        id: "contract-parity-mod-wire".to_owned(),
+        id: "contract-parity-mod-wire".into(),
         title: "Contract parity".to_owned(),
         terrain: "everon".to_owned(),
         ..MissionMeta::default()

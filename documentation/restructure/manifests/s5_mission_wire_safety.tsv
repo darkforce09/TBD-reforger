@@ -1,0 +1,13 @@
+# Stage S5 — crate birth of mission_wire_safety. Paths name the tree before the moves (after S2).
+kind	from	to	scope
+#
+# the wire-safety module becomes the crate: its module root becomes lib.rs, its scan and tests
+# move beside it, and its module README becomes the source README (the crate gets a new README)
+path	legacy/map_engine/src/data/scenario/validation/wire_safety/mod.rs	crates/mission/mission_wire_safety/src/lib.rs
+path	legacy/map_engine/src/data/scenario/validation/wire_safety/scan.rs	crates/mission/mission_wire_safety/src/scan.rs
+path	legacy/map_engine/src/data/scenario/validation/wire_safety/tests	crates/mission/mission_wire_safety/src/tests
+path	legacy/map_engine/src/data/scenario/validation/wire_safety/README.md	crates/mission/mission_wire_safety/src/README.md
+#
+# the map engine's and the API's paths to the module name the crate
+rust_path	crate::data::scenario::wire_safety::	mission_wire_safety::	legacy/map_engine
+rust_path	map_engine::data::scenario::wire_safety::	mission_wire_safety::	apps/api

@@ -1,0 +1,45 @@
+# Stage S5 X5 — the S5 switch: every consumer of the mission crates imports them directly, and the legacy `data::scenario`, `data::store` and `editing::tools::placement` re-export shims go. Paths name the tree before the moves.
+# One row per module-prefix line of the S5 shim ledger, split per scope. Leaf-item rows of the
+# ledger (`MissionDocCore`, `SlotSoa`, `ConnectionKind`, `place_character_under_side`), grouped
+# `use` trees, `{self, …}` imports and prose spellings without a trailing `::` cannot be prefix
+# rows and are rewritten by hand.
+kind	from	to	scope
+#
+# mission_model: the ORBAT projection and the authored blocks
+rust_path	map_engine::data::scenario::orbat::	mission_model::orbat::	apps/api
+rust_path	map_engine::data::scenario::audio::	mission_model::environment::audio::	apps/frontend
+rust_path	map_engine::data::scenario::weather::	mission_model::environment::weather::	apps/frontend
+rust_path	map_engine::data::scenario::tasks::	mission_model::objectives::tasks::	apps/frontend
+rust_path	map_engine::data::scenario::win_conditions::	mission_model::objectives::win_conditions::	apps/frontend
+rust_path	map_engine::data::scenario::radio_plan::	mission_model::radio_plan::	apps/frontend
+rust_path	map_engine::data::scenario::slot_line::	mission_model::slot_line::	apps/frontend
+rust_path	map_engine::data::scenario::spawn_modules::	mission_model::spawn_modules::	apps/frontend
+rust_path	map_engine::data::scenario::tactical_graphics::	mission_model::tactical_graphics::	apps/frontend
+rust_path	crate::data::scenario::tactical_graphics::	mission_model::tactical_graphics::	legacy/map_engine/src
+#
+# mission_payload: the payload compiler and the kit alias table
+rust_path	map_engine::data::scenario::compile::	mission_payload::	apps/api
+rust_path	map_engine::data::scenario::compile::	mission_payload::	apps/frontend
+rust_path	map_engine::data::scenario::compile::	mission_payload::	legacy/map_engine/tests
+rust_path	crate::data::scenario::compile::	mission_payload::	legacy/map_engine/src
+rust_path	map_engine::data::scenario::kit::	mission_payload::kit_aliases::	apps/api
+#
+# mission_compiler: the game-document compiler
+rust_path	map_engine::data::scenario::flatten::	mission_compiler::	apps/api
+rust_path	map_engine::data::scenario::flatten::	mission_compiler::	apps/frontend
+rust_path	crate::data::scenario::flatten::	mission_compiler::	legacy/map_engine/src
+#
+# mission_validation: the validation rules
+rust_path	map_engine::data::scenario::validate::	mission_validation::	apps/api
+rust_path	map_engine::data::scenario::validate::	mission_validation::	apps/frontend
+rust_path	crate::data::scenario::validate::	mission_validation::	legacy/map_engine/src
+#
+# mission_operations: the document's authoring commands
+rust_path	map_engine::data::store::operations::	mission_operations::	apps/frontend
+rust_path	map_engine::data::store::operations::	mission_operations::	legacy/map_engine/tests
+rust_path	crate::data::store::operations::	mission_operations::	legacy/map_engine/src
+#
+# formation_geometry: the arrange vocabulary the editing tools re-exported, and its goldens
+rust_path	crate::editing::tools::placement::	formation_geometry::	legacy/map_engine/src
+rust_path	map_engine::editing::tools::placement::	formation_geometry::	apps/frontend
+path	legacy/map_engine/src/editing/tools/tests/placement.rs	crates/mission/formation_geometry/src/tests/placement_goldens.rs

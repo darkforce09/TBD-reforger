@@ -80,8 +80,8 @@ buffers and the budget also run natively, as the crate's tests use them.
     `spatial_indexes` and `world_line_of_sight` (the world object index, the line-of-sight
     occluder, BVH sidecars); `map_draw_lanes`, `label_layout`, `road_network`, `vegetation`,
     `terrain_elevation`, `terrain_relief` and `water_bodies`; `map_coordinates` (the chunk math) and
-    `browser_platform` (the fetch helpers and console macros); nothing of `crate::data`,
-    `crate::editing`, `crate::camera` or `crate::doll`;
+    `browser_platform` (the fetch helpers and console macros); nothing of `crate::editing`,
+    `crate::camera` or `crate::doll`, and no mission crate;
   - `serde`, `serde_json`, `flate2`, `bytemuck`, `thiserror` and `futures`, and on wasm32
     `gloo-net`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures`;
   - the [API](/documentation/glossary/a_to_f.md#api)'s `/map-assets` mount, which serves
@@ -97,7 +97,8 @@ buffers and the budget also run natively, as the crate's tests use them.
 - Rules:
   - the tree reaches the render engine only through `crate::frame` and names no
     `graphics_engine` module itself (rules 3a and 3b of `cargo xtask verify engine-layers`),
-    and nothing under `crate::data` may name it (rules 4 and 7);
+    and no mission crate may name it (a `crates/mission` crate depends on no map engine module,
+    `cargo xtask verify crate-tiers`);
   - the tree imports no UI crate: editor state enters only through the preference readers and the
     progress callback the page supplies, and browser I/O compiles only for wasm32;
   - the crate's tests need every feature (`map_engine_tests_require_all_features` in

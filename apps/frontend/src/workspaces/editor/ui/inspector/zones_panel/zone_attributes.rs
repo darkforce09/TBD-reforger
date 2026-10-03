@@ -6,7 +6,7 @@ use super::*;
 /// Renders identity and rule controls for one authored zone.
 #[cfg(target_arch = "wasm32")]
 pub(super) fn zone_attributes(
-    z: map_engine::editing::hosted_commands::ZoneRow,
+    z: mission_operations::entity::ZoneRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
@@ -33,7 +33,7 @@ pub(super) fn zone_attributes(
                 aria-label="Zone type"
                 class=input_class
                 on:change=move |ev| {
-                    engine_ops::set_zone_kind(&id_type, &event_target_value(&ev), |k| {
+                    engine_ops::set_zone_kind(id_type.as_str(), &event_target_value(&ev), |k| {
                         zone_types().iter().any(|t| t == k)
                     });
                     bump();
@@ -60,7 +60,7 @@ pub(super) fn zone_attributes(
                     class=input_class
                     prop:value=z.label.clone().unwrap_or_default()
                     on:change=move |ev| {
-                        engine_ops::set_zone_label(&id_label, Some(event_target_value(&ev)));
+                        engine_ops::set_zone_label(id_label.as_str(), Some(event_target_value(&ev)));
                         bump();
                     }
                 />
@@ -72,7 +72,7 @@ pub(super) fn zone_attributes(
                             title="Remove the label key (not the same as an empty label)"
                             class="mt-1 shrink-0 rounded-md px-1.5 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                engine_ops::set_zone_label(&id_clear, None);
+                                engine_ops::set_zone_label(id_clear.as_str(), None);
                                 bump();
                             }
                         >
@@ -92,7 +92,7 @@ pub(super) fn zone_attributes(
                 on:change=move |ev| {
                     let v = event_target_value(&ev);
                     let next = (!v.trim().is_empty()).then_some(v);
-                    engine_ops::set_zone_faction(&id_faction, next);
+                    engine_ops::set_zone_faction(id_faction.as_str(), next);
                     bump();
                 }
             />
@@ -107,7 +107,7 @@ pub(super) fn zone_attributes(
                             title="Redraw this zone as a circle — click the centre, then the rim"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                armed_placement::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Zone);
+                                armed_placement::begin_zone_reshape(a.as_str(), ZoneShape::Circle, DrawTarget::Zone);
                                 bump();
                             }
                         >
@@ -118,7 +118,7 @@ pub(super) fn zone_attributes(
                             title="Redraw this zone as a polygon — click each vertex, then Close"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                armed_placement::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Zone);
+                                armed_placement::begin_zone_reshape(b.as_str(), ZoneShape::Polygon, DrawTarget::Zone);
                                 bump();
                             }
                         >
@@ -134,14 +134,14 @@ pub(super) fn zone_attributes(
             </p>
             {zone_rule_fields()
                 .into_iter()
-                .map(|f| zone_rule_control(zid.clone(), f, rules.clone(), doc_tick))
+                .map(|f| zone_rule_control(zid.to_string(), f, rules.clone(), doc_tick))
                 .collect_view()}
 
             <button
                 type="button"
                 class="mt-3 w-full rounded-md border border-error/40 px-2 py-1.5 text-label-sm text-error transition-colors hover:bg-error/15"
                 on:click=move |_| {
-                    engine_ops::delete_zone(&id_delete);
+                    engine_ops::delete_zone(id_delete.as_str());
                     selected.set(None);
                     bump();
                 }

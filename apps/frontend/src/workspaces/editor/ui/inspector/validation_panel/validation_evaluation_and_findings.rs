@@ -5,13 +5,13 @@ use super::*;
 /// Runs validation over a compiled payload source.
 #[must_use]
 pub fn evaluate_source(source: &PayloadSource) -> Vec<PanelFinding> {
-    use map_engine::data::scenario::validate::default_registry;
-    use map_engine::data::scenario::validate::EvalContext;
+    use mission_validation::default_registry;
+    use mission_validation::EvalContext;
 
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let mut ctx = EvalContext::default();
         if let Some(ids) = source.known_asset_ids.clone() {
-            ctx = ctx.with_known_asset_ids(ids);
+            ctx = ctx.with_known_asset_ids(ids.into_iter().map(Into::into).collect());
         }
         default_registry().evaluate_with_context(&source.payload, &ctx)
     }));

@@ -66,7 +66,7 @@ fn every_static_arm_can_go_red() {
     red_append("ban1", EDITOR_OPS, "\nensure_default_squad\n", BANS[0].0);
     red_append(
         "ban1-domain",
-        "legacy/map_engine/src/data/store/operations/entity/placement.rs",
+        "crates/mission/mission_operations/src/entity/placement.rs",
         "\nensure_default_squad\n",
         BANS[0].0,
     );
@@ -136,33 +136,39 @@ fn every_cargo_pin_arm_can_go_red() {
     assert!(passed_counts("all 9 passed; nothing to see\n").is_empty());
 }
 
-/// `$*` loses the quoting around `--features "scenario store"`, and the failure text must too.
+/// `$*` loses the quoting around `--features "world editing"`, and the failure text must too.
 /// The pin table is also the gate's whole scope, and a silently shortened one is a silently
-/// weakened gate: 25 rows and 5 section `ok` lines, exactly as the script had.
+/// weakened gate: 26 rows and 5 section `ok` lines, exactly as the script had.
 #[test]
 fn the_argv_rendering_and_the_pin_table_match_the_script() {
     let args = [
         "test",
         "-p",
-        MC,
+        "map_engine",
         "--features",
-        "scenario store",
+        "world editing",
         "--lib",
         "x",
     ];
-    let want = "-p map_engine --features scenario store --lib x";
+    let want = "-p map_engine --features world editing --lib x";
     assert_eq!(shown(&args), want);
-    assert_eq!(CARGO_PINS.len(), 25);
+    assert_eq!(CARGO_PINS.len(), 26);
     assert_eq!(CARGO_PINS.iter().filter(|p| p.4.is_some()).count(), 5);
-    // The vehicle-floor pin must keep `store`, or it matches zero tests.
+    // The vehicle-floor pin runs in the mission document crate, which holds the writer round trip.
     let veh = CARGO_PINS
         .iter()
         .find(|p| p.3 == "the_vehicle_row_still_has_the_shape_this_module_reads");
-    assert_eq!(veh.expect("the vehicle-floor pin is still listed").1, MSN);
-    // No pin may ask for `store` without `scenario`.
-    assert!(!CARGO_PINS.iter().any(|p| p.1 == Some("store")));
-    // T-0xx Phase 2A: the crate default is `scenario` alone now. A map-engine graphics row
-    // left on `NOF` would compile none of its modules and report "0 tests" as a pass.
+    assert_eq!(veh.expect("the vehicle-floor pin is still listed").0, MD);
+    // The mission crates declare no features, so a mission pin naming one could never build.
+    assert!(
+        CARGO_PINS
+            .iter()
+            .filter(|p| p.0.starts_with("mission_"))
+            .all(|p| p.1.is_none()),
+        "a mission crate pin names a feature the crate does not declare"
+    );
+    // The map engine has no default tier: a map-engine row left on `NOF` would compile none of
+    // its modules and report "0 tests" as a pass.
     assert!(
         !CARGO_PINS
             .iter()

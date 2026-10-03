@@ -1,0 +1,29 @@
+# The mission game-document compiler: compiles a stored editor payload and its mission metadata
+# into the game document a server loads, with its compile findings and kit substitutions, scans a
+# payload for type errors, lists the authored data a document cannot carry, and holds the compiler
+# identity every compiled artifact records.
+[package]
+name = "mission_compiler"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The game-document compiler of a mission, its compile findings and its compiler identity."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 4
+targets = "any"
+
+[dependencies]
+mission_model = { workspace = true }
+mission_payload = { workspace = true }
+mission_validation = { workspace = true }
+mission_wire_safety = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

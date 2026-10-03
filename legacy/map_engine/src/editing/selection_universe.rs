@@ -7,8 +7,8 @@
 //! prune and a removed id still falls out; id universes come off the raw by-id maps, never off the
 //! materialized SoA, which drops rows for being hidden rather than for being gone.
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::SlotSoa;
+use mission_crdt::soa::SlotSoa;
+use mission_document::MissionDocCore;
 
 /// **The ids the live document holds that a selection may name.** Slots off the raw `slots_json`
 /// key set (hidden rows INCLUDED), plus the `vehiclesById` / `entitiesById` / `commentsById` key

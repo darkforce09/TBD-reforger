@@ -1,7 +1,7 @@
 //! Unit tests for the judgement of the browser's reading against the native solves.
 
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use map_engine::data::scenario::ballistics::fire_mission::SOLVER_REVISION;
+use ballistics_model::catalog::BallisticsCatalog;
+use fire_mission_planning::fire_mission::SOLVER_REVISION;
 use serde_json::{Value, json};
 
 use super::*;
@@ -30,7 +30,7 @@ fn requested(catalog: &BallisticsCatalog, count: usize) -> RequestedRun {
     RequestedRun {
         seed: SEED,
         count,
-        catalog_id: catalog.catalog_id.clone(),
+        catalog_id: catalog.catalog_id.to_string(),
         catalog_version: catalog.catalog_version,
         solver_revision: SOLVER_REVISION.to_string(),
     }

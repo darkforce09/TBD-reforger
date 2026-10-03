@@ -6,8 +6,8 @@
 //! [`AgreementCaseReport`]; the whole run is an [`AgreementReport`], serialised into the bench's
 //! `<pre>`.
 //! **Position:** the pure half of [`super`], called by the browser half once per case. The
-//! case-to-inputs mapping, the lead summary and the bit walk are the map engine's
-//! (`map_engine::data::scenario::ballistics::agreement_cases`), shared with the native
+//! case-to-inputs mapping, the lead summary and the bit walk are those of the
+//! `ballistics_agreement_cases` crate, shared with the native
 //! agreement gate of `tools/developer_tools/` (`browser_testing::ballistics_agreement`), which
 //! decodes this shape and solves the same cases natively.
 //! **Signals & state:** none; pure functions over a borrowed catalog.
@@ -21,11 +21,11 @@
 
 use std::collections::BTreeMap;
 
-use map_engine::data::scenario::ballistics::agreement_cases::{
+use ballistics_agreement_cases::{
     case_bit_patterns, fire_mission_inputs, lead_summary, AgreementCase,
 };
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use ballistics_model::catalog::BallisticsCatalog;
+use fire_mission_planning::fire_mission::{
     solve_fire_mission, FireMissionInputs, FireMissionSolution, SOLVER_REVISION,
 };
 use serde::Serialize;
@@ -76,7 +76,7 @@ pub fn case_report(catalog: &BallisticsCatalog, case: &AgreementCase) -> Agreeme
     let (lead_recommended_rings, lead_time_of_flight_s) = lead_summary(solution.as_ref());
     let bit_patterns = case_bit_patterns(&inputs, solution.as_ref());
     AgreementCaseReport {
-        case_id: case.case_id.clone(),
+        case_id: case.case_id.to_string(),
         inputs,
         solution,
         refusal,
@@ -96,7 +96,7 @@ pub fn assemble_report(
     AgreementReport {
         seed,
         count,
-        catalog_id: catalog.catalog_id.clone(),
+        catalog_id: catalog.catalog_id.to_string(),
         catalog_version: catalog.catalog_version,
         solver_revision: SOLVER_REVISION.to_string(),
         cases,

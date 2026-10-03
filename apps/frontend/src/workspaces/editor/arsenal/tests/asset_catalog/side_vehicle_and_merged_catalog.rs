@@ -108,7 +108,7 @@ fn vehicle_tree_keeps_the_family_folder() {
     assert_eq!(
         uaz.children[1].payload,
         Some(PlacePayload {
-            asset_id: "{B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et".to_string(),
+            asset_id: "{B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et".into(),
             role: "UAZ469 PKM".to_string(),
         }),
         "the drop carries the real ResourceName"
@@ -214,7 +214,7 @@ fn merged_tree_reaches_a_vehicle_leaf_under_the_nato_subtree() {
     assert_eq!(
         vehicles.children[0].payload,
         Some(PlacePayload {
-            asset_id: "{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et".to_string(),
+            asset_id: "{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et".into(),
             role: "M1025 Humvee (M2)".to_string(),
         }),
         "a vehicle leaf drops its ResourceName, exactly like a character leaf"

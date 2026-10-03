@@ -47,8 +47,8 @@ dragged [slot](/documentation/glossary/n_to_z.md#slot) and vehicle height inside
   `apps/frontend/src/workspaces/editor/bridge/host_state/`; the hydrate in
   `apps/frontend/src/workspaces/editor/session/hydrate/`; the asset catalog tree in
   `apps/frontend/src/workspaces/editor/arsenal/asset_catalog/`; `map_engine`
-  (`editing::hosted_commands`, `editing::tools::selection`, `streaming::host::camera_snapshot`,
-  `data::store::MissionDocCore`); `crate::foundation::ui::modal_stack` and the `RegistryItem` DTO.
+  (`editing::hosted_commands`, `editing::tools::selection`, `streaming::host::camera_snapshot`);
+  `mission_document::MissionDocCore`; `crate::foundation::ui::modal_stack` and the `RegistryItem` DTO.
 - Used by:
   - the editor page `apps/frontend/src/workspaces/editor/mission_editor.rs`, which mounts the
     overlays and re-exports `AssetPickerState` and `ConflictInfo`;

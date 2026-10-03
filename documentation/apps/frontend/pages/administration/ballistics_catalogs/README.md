@@ -20,13 +20,13 @@ documentation/apps/frontend/pages/administration/ballistics_catalogs/
   — the route component `BallisticsCatalogsPage`, the upload form, the validation report and the
   version list.
 - [Operations domain](/apps/api/src/operations/) — the catalog upload and read routes.
-- [Game ballistics](/legacy/map_engine/src/data/scenario/ballistics/) — the calibration the
+- [Game ballistics](/crates/ballistics/README.md) — the calibration the
   upload runs.
 
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md); the
-  page code, the operations catalog handlers and the map engine's calibration the feature doc is
+  page code, the operations catalog handlers and the `ballistics_calibration` crate the feature doc is
   written from.
 - Used by: the administration pages README; the mortar calculator and game ballistics engine
   feature docs, which link the feature doc.

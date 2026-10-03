@@ -3,7 +3,7 @@
 //! Signals & state: a frozen camera snapshot and the app-side selected-id set; never the document.
 //! Invariants: the oracle is a linear scan over the same rows, so an index that disagrees with it is wrong — not merely different.
 
-use crate::data::store::SlotSoa;
+use mission_crdt::soa::SlotSoa;
 use spatial_indexes::point_indexes::point_index::PointIndex;
 
 use super::gesture::GRID_CELL_M;

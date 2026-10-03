@@ -1,0 +1,26 @@
+# The mission model: the compiled rows of a mission document, the ORBAT projection of the editor
+# graph, the authored extension blocks with their parse and validate rules, the plain-text slot
+# line, and the newtype ids every one of them names. The payload compiler, the game-document
+# compiler, the validator, the API and the Mission Creator build on it.
+[package]
+name = "mission_model"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The compiled rows, ORBAT projection, authored extension blocks, slot line and ids of a mission."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 1
+targets = "any"
+
+[dependencies]
+newtype_ids = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+
+[lints]
+workspace = true

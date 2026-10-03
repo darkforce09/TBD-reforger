@@ -44,7 +44,7 @@ which optic and magazine are edge rows fed by the graph, and re-exports this fol
 ## Boundaries
 
 - Depends on: `RegistryItem` and `RegistryCompatEdge` from `crate::foundation::transport::dto`;
-  `map_engine::data::store::operations::cargo_rules` (`CargoRow`, `cargo_from_loadout`,
+  `mission_operations::cargo_rules` (`CargoRow`, `cargo_from_loadout`,
   `cargo_rows_json`), re-exported by the parent; the embedded schema file.
 - Used by: `rules.rs`, which re-exports the items; in
   `apps/frontend/src/workspaces/editor/`:
@@ -61,7 +61,7 @@ which optic and magazine are edge rows fed by the graph, and re-exports this fol
   (`cargo_capacity_never_invents_a_limit`); an unworn-container warning never becomes an export
   refusal (`the_unworn_warning_never_becomes_an_export_refusal`); the tests live in
   `apps/frontend/src/workspaces/editor/arsenal/tests/rules/`. `CARGO_CONTAINERS` has a hand
-  copy in `legacy/map_engine/src/data/scenario/validation/wire_safety/scan.rs`, which checks
+  copy in `crates/mission/mission_wire_safety/src/scan.rs`, which checks
   cargo when a [mission](/documentation/glossary/g_to_m.md#mission) saves; no test holds the two equal.
 
 ## Related documentation

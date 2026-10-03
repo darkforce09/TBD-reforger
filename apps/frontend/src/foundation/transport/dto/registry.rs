@@ -15,9 +15,9 @@
 
 use serde::{Deserialize, Serialize};
 
-pub use map_engine::data::store::operations::faction_library::FactionDoc;
-pub use map_engine::data::store::operations::faction_library::FactionRole;
-pub use map_engine::data::store::operations::faction_library::FactionVehicle;
+pub use mission_operations::faction_library::FactionDoc;
+pub use mission_operations::faction_library::FactionRole;
+pub use mission_operations::faction_library::FactionVehicle;
 
 /// One entry in the asset catalogue: what it is, where it lives, and how it is shown.
 #[derive(Clone, PartialEq, Serialize, Deserialize)]

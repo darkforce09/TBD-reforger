@@ -62,7 +62,7 @@ server.
   nothing; `game_runtime_deployments.rs` answers a refused player life with 200 and
   `decision = "denied"`.
 - `fire_missions/` re-solves every save against its pinned ballistics catalog through
-  `map_engine::data::scenario::ballistics` and stores the server's solution with one row
+  `fire_mission_planning` and stores the server's solution with one row
   per gun; a client solution beyond the tolerance answers 422 `solution_mismatch`. A saved fire
   mission names an event the caller fully sees or none, so saving against, or listing those of,
   an event that is missing or hidden answers 404.
@@ -77,8 +77,8 @@ server.
   user lookups and the Discord membership enrollment of partner guilds; `missions` for the mission
   title and terrain, `MissionArmory` and the deployment in effect; `match_telemetry::models` for
   the matches of the service record; `server_infrastructure` for `MachineCaller`;
-  `fleet_wire_contract` for `ExecutorKind`; `map_engine::data::scenario` for the faction join-key check and the
-  ballistics.
+  `fleet_wire_contract` for `ExecutorKind`; `mission_model::orbat` for the faction join-key check;
+  `fire_mission_planning` for the ballistics.
 - Used by: the domain's `routes.rs`; over HTTP, the operations pages in
   `apps/frontend/src/pages/operations/`, the
   [event manager](/documentation/glossary/a_to_f.md#event-manager) in

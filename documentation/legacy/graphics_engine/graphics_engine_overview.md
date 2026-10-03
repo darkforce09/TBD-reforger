@@ -118,8 +118,6 @@ change to both crates.
 - [T-1078 — Remove unused text parameters and fix stale graphics engine comments](/.ai/tickets/T-1078.toml)
   (idea, no plan): the ignored `_tint` and `char_m`, the 28-entry UV comment, the dead
   `crate::scene` link and the placeholder module headers go.
-- [T-1055 — Fix engine-layers gate omitting the map engine editing module](/.ai/tickets/T-1055.toml)
-  (idea, no plan): among its fixes, rules 4 and 7 gain the map engine's `editing` module.
 - [T-938 — Engine and wasm performance](/documentation/tickets/specs/t938_engine_perf.md)
   (queued, [plan](/documentation/tickets/plans/t-938_plan.md)): pooled lane buffers and GPU
   culling for every icon lane.

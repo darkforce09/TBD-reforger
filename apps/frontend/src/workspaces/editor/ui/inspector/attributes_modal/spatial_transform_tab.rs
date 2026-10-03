@@ -7,9 +7,9 @@ use super::*;
 #[cfg(target_arch = "wasm32")]
 pub(super) fn transform_tab(
     targets: StoredValue<Vec<String>>,
-    attrs: StoredValue<engine_ops::SlotAttrs>,
+    attrs: StoredValue<mission_operations::attrs::SlotAttrs>,
     is_multi: bool,
-    diff: engine_ops::AttrDiff,
+    diff: mission_operations::attrs::AttrDiff,
     opts: MultiOpts,
     locked_n: usize,
 ) -> impl IntoView {

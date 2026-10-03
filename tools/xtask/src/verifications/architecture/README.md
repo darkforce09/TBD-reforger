@@ -62,14 +62,15 @@ that `api_v1_routes` merges under `/api/v1`; the `route_tags/` README describes 
 ### ORBAT coherency
 
 Three bans: `ensure_default_squad` on the placement path (the Mission Creator's arming and
-context files in `apps/frontend/src/workspaces/editor/` and the map engine's
-`data/store/operations/` and `editing/hosted_commands/`), `loadout: String::new()` in the slot
+context files in `apps/frontend/src/workspaces/editor/`, `crates/mission/mission_operations/src/`
+and the map engine's `editing/hosted_commands/`), `loadout: String::new()` in the slot
 template derive, and the strings Standardization, IFAK or Grenade Complement in the ORBAT manager
 modal and the editor chrome. Three pins require the BLUFOR, OPFOR and INDFOR side colours in
-`crates/map_overlay/unit_symbology/src/classification.rs`. Then 25 `cargo test` pins run
-named selectors: `map_engine --lib` with the `scenario store` features, the map overlay crates
-`map_draw_lanes`, `unit_symbology` and `overlay_instances` with none, and `frontend` with none;
-each must exit 0 and pass at least one test. The gate stops at the first failure.
+`crates/map_overlay/unit_symbology/src/classification.rs`. Then 26 `cargo test` pins run
+named selectors: `mission_operations`, `mission_document`, `mission_model`, `mission_payload`
+and `mission_compiler` with `--lib`, the map overlay crates `map_draw_lanes`, `unit_symbology`
+and `overlay_instances` with `--lib`, and `frontend`, all with no features; each must exit 0 and
+pass at least one test. The gate stops at the first failure.
 
 ## Public surface
 

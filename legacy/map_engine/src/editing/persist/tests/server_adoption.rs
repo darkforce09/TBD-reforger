@@ -9,7 +9,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use super::*;
-use crate::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
 
 fn handle() -> DocHandle {
     Rc::new(RefCell::new(Some(MissionDocCore::new())))

@@ -3,9 +3,9 @@
 //! Signals & state: explicit frozen camera and document projections.
 //! Invariants: square slot hits, circular vehicle hits, slot-first ties and marquee order.
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::SlotSoa;
 use camera_math::ortho::state::OrthoCamera;
+use mission_crdt::soa::SlotSoa;
+use mission_document::MissionDocCore;
 use spatial_indexes::point_indexes::picking as spatial;
 use unit_symbology::slot_ids::SlotId;
 use unit_symbology::squad_links::SquadLinkInput;

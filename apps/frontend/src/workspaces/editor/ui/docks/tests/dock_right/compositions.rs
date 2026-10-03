@@ -84,7 +84,7 @@ fn compositions_tab_is_wired_not_stubbed() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                "/../../crates/mission/mission_operations/src/compositions.rs"
             )),
             crate::foundation::test_support::editor_operations::ENTITY,
             crate::foundation::test_support::editor_operations::DOMAIN_ENTITY,
@@ -129,7 +129,7 @@ fn a_composition_captures_comments_and_authored_elevation() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+            "/../../crates/mission/mission_operations/src/compositions.rs"
         )),
         crate::foundation::test_support::editor_operations::ENTITY,
     ]
@@ -178,7 +178,7 @@ fn a_composition_captures_comments_and_authored_elevation() {
     // ── The PLACE half (`map-engine-core`) — the same two keys, read back ────────────────────
     let store = live_source(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/rows/compositions.rs"
+        "/../../crates/mission/mission_document/src/rows/compositions.rs"
     )));
     let place = only_body(&store, &format!("fn {}(", "place_composition"));
     assert!(
@@ -307,7 +307,7 @@ fn composition_arm_rides_the_shared_pending_machine() {
     );
     let release = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/armed_placement.rs"
+        "/../../crates/mission/mission_operations/src/entity/armed_placement.rs"
     )));
     assert!(
         only_body(&release, "pub fn commit_armed_placement(").contains(&place_call),

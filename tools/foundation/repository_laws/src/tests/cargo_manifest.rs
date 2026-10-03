@@ -22,7 +22,7 @@ web-sys = { version = "0.3", features = [
 [dependencies.map_engine]
 path = "../../legacy/map_engine"
 default-features = false
-features = ["scenario"]
+features = ["streaming"]
 
 [features]
 default = []
@@ -90,7 +90,7 @@ fn a_dependency_subtable_collects_its_fields() {
     let map_engine = edge(&manifest, "map_engine");
     assert_eq!(map_engine.table, "dependencies");
     assert_eq!(map_engine.path.as_deref(), Some("../../legacy/map_engine"));
-    assert_eq!(map_engine.features, ["scenario"]);
+    assert_eq!(map_engine.features, ["streaming"]);
 }
 
 #[test]

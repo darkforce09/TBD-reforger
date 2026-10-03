@@ -13,7 +13,7 @@ pub(super) fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String
     if !authoring {
         return ().into_any();
     }
-    let rows: Vec<map_engine::editing::hosted_commands::VehicleRow> =
+    let rows: Vec<mission_operations::entity::VehicleRow> =
         map_engine::editing::hosted_commands::vehicle_rows()
             .into_iter()
             .filter(|v| v.xy.is_some()) // on-the-map vehicles only
@@ -32,14 +32,14 @@ pub(super) fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String
         {rows
             .into_iter()
             .map(|v| {
-                let id = v.id.clone();
+                let id = v.id.to_string();
                 let id_click = id.clone();
                 let id_dbl = id.clone();
                 // Label the row by the vehicle's classname tail (`resourceName` is a GUID-headed path);
                 // the outliner shows an author-legible name, not a raw prefab path.
                 let label = {
                     let tail = crate::workspaces::editor::arsenal::asset_catalog::classname_tail(&v.resource_name);
-                    if tail.is_empty() { v.id.clone() } else { tail.to_string() }
+                    if tail.is_empty() { v.id.to_string() } else { tail.to_string() }
                 };
                 let aria = label.clone();
                 let is_sel = {

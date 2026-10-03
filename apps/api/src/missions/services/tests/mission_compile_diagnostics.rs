@@ -5,7 +5,7 @@
 //! The mission fixture is shared with `mission_compile_flatten.rs`, which is where it is
 //! predominantly used.
 
-use map_engine::data::scenario::wire_safety::CargoPhys;
+use mission_wire_safety::CargoPhys;
 
 use super::flatten_tests::{FIXTURE, fixture_mission};
 use super::*;
@@ -76,7 +76,7 @@ fn compile_with_catalog_refuses_over_capacity_like_save() {
     let save_details =
         validate_mission_editor_payload_with_catalog(bad.as_bytes(), &catalog).expect("schema");
     let parsed: serde_json::Value = serde_json::from_str(&bad).unwrap();
-    let scan = wire_safety::scan_cargo_capacity(&parsed, &catalog);
+    let scan = mission_wire_safety::scan_cargo_capacity(&parsed, &catalog);
     assert!(
         !scan.is_empty()
             && scan
@@ -124,7 +124,7 @@ fn flatten_routes_through_catalogued_compile_gate() {
         "catalogued compile gate must exist"
     );
     assert!(
-        production.contains("wire_safety::scan_cargo_capacity"),
+        production.contains("mission_wire_safety::scan_cargo_capacity("),
         "compile gate must call the same cargo helper Save uses"
     );
     let no_arg = production
@@ -201,9 +201,9 @@ fn compile_documents_save_cargo_refuse() {
 #[test]
 fn the_rules_header_dedupes_and_keeps_fire_order() {
     let f = |rule_id: &'static str| CompileFinding {
-        rule_id,
+        rule_id: rule_id.into(),
         severity: FindingSeverity::Info,
-        primitive: map_engine::data::scenario::validate::Primitive::PerObjectInvariant,
+        primitive: mission_validation::Primitive::PerObjectInvariant,
         message: String::new(),
         subject: "/editor/slots/0".into(),
         subject_id: None,

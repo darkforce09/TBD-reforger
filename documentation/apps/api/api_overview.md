@@ -262,7 +262,7 @@ DTO in `apps/frontend/src/foundation/transport/dto/`. Acceptance of the API as a
 - [T-940.10 — Mortar ballistics crate for API and offline frontend](/documentation/tickets/specs/t940_website_platform.md)
   (ready, [plan](/documentation/tickets/plans/t-940_10_plan.md)): the scope is built by
   milestone B, [game ballistics](/documentation/apps/api/verification_evidence/game_ballistics.md):
-  the map engine's `solve_fire_mission` runs in the mortar page, which solves without the API
+  `fire_mission_planning`'s `solve_fire_mission` runs in the mortar page, which solves without the API
   and works offline, and in `POST /api/v1/fire-missions`, which re-solves every save; the
   registry closes the ticket with the milestone.
 - [T-940.13 — Combat, medical and vehicle telemetry events](/documentation/tickets/specs/t940_website_platform.md)

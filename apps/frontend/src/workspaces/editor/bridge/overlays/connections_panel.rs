@@ -52,17 +52,17 @@ pub(crate) fn ConnectionsPanelOverlay(
                 std::collections::HashMap::new();
             for f in &findings {
                 by_row
-                    .entry(f.connection_id.clone())
+                    .entry(f.connection_id.to_string())
                     .or_default()
                     .push(format!("{}: {}", f.code, f.detail));
             }
             let rows: Vec<ConnRowView> = list
                 .into_iter()
                 .map(|r| ConnRowView {
-                    problems: by_row.get(&r.id).cloned().unwrap_or_default(),
+                    problems: by_row.get(r.id.as_str()).cloned().unwrap_or_default(),
                     head: format!("{} \u{2192} {}", r.from_label, r.to_label),
                     kind: r.kind,
-                    id: r.id,
+                    id: r.id.into_inner(),
                 })
                 .collect();
             let armed_line = engine_ops::pending_connect()

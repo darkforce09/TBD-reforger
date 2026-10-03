@@ -1,0 +1,31 @@
+# The vocabulary every ballistics crate speaks: the catalog of weapons, shells and charges with
+# its typed identifiers, the engine's point-mass shell flight, the surface wind and the angular
+# units. The firing solver, the fire-mission planner, the calibration and the agreement cases
+# build on it; the API, the single-page app and the developer tools read catalogs through it.
+[package]
+name = "ballistics_model"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The game ballistics catalog, the shell flight model, surface wind and angular units, with the typed catalog identifiers."
+
+[package.metadata.layout]
+category = "crates/ballistics"
+tier = 1
+targets = "any"
+
+[dependencies]
+newtype_ids = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+libm = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+jsonschema = { workspace = true }
+
+[lints]
+workspace = true

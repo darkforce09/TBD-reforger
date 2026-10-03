@@ -95,5 +95,5 @@ trim, so every native row of every kept table is in the bundle.
 
 - Producer: `cargo xtask ballistics trim-export` (`tools/xtask/src/commands/ballistics/`).
 - Consumers: `cargo xtask schema validate`, whose ballistics section checks both documents and their
-  provenance and coverage; the map engine's calibration tests; the upload of the catalog pair through
+  provenance and coverage; the `ballistics_calibration` tests; the upload of the catalog pair through
   `POST /api/v1/ballistics-catalogs`.

@@ -1,0 +1,23 @@
+# The building blocks of the mission document below its rows: the squad and layer id lists as
+# native yrs arrays, the row-aligned slot columns with their string interner, and the clocks,
+# window and cap that group local edits into undo steps. The mission document builds on it.
+[package]
+name = "mission_crdt"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Native yrs id arrays, row-aligned slot columns and undo grouping clocks of the mission document."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 1
+targets = "any"
+
+[dependencies]
+time_source = { workspace = true }
+yrs = { workspace = true }
+
+[lints]
+workspace = true

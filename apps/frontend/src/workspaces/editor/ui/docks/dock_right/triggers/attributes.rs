@@ -6,7 +6,7 @@ use super::*;
 /// Render the selected trigger's fields, owner link choice, rules, and reshape actions.
 #[cfg(target_arch = "wasm32")]
 pub(super) fn trigger_attributes(
-    t: engine_ops::TriggerRow,
+    t: mission_operations::entity::TriggerRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
@@ -24,10 +24,10 @@ pub(super) fn trigger_attributes(
         (tid.clone(), tid.clone(), tid.clone(), tid.clone());
     let rules = t.rules.clone();
     let owner_opts = engine_ops::placed_owner_options();
-    let current_owner = t.owner_id.clone();
+    let current_owner = t.owner_id.as_ref().map(ToString::to_string);
     let current_owner_dangling = current_owner
         .as_ref()
-        .is_some_and(|o| !owner_opts.iter().any(|opt| &opt.id == o));
+        .is_some_and(|o| !owner_opts.iter().any(|opt| opt.id == o.as_str()));
 
     view! {
         <div class="mt-3 border-t border-white/10 pt-2">
@@ -45,7 +45,7 @@ pub(super) fn trigger_attributes(
                 on:change=move |ev| {
                     let v = event_target_value(&ev);
                     let next = (!v.trim().is_empty()).then_some(v);
-                    engine_ops::set_trigger_name(&id_name, next);
+                    engine_ops::set_trigger_name(id_name.as_str(), next);
                     bump();
                 }
             />
@@ -55,13 +55,13 @@ pub(super) fn trigger_attributes(
                 aria-label="Trigger activation"
                 class=input_class
                 on:change=move |ev| {
-                    engine_ops::set_trigger_activation(&id_activation, &event_target_value(&ev));
+                    engine_ops::set_trigger_activation(id_activation.as_str(), &event_target_value(&ev));
                     bump();
                 }
             >
                 {
                     let current = t.activation.clone();
-                    engine_ops::TRIGGER_ACTIVATIONS
+                    mission_operations::entity::TRIGGER_ACTIVATIONS
                         .iter()
                         .map(|a| {
                             let a = (*a).to_string();
@@ -80,7 +80,7 @@ pub(super) fn trigger_attributes(
                 on:change=move |ev| {
                     let v = event_target_value(&ev);
                     let next = (!v.is_empty()).then_some(v);
-                    engine_ops::set_trigger_owner(&id_owner, next);
+                    engine_ops::set_trigger_owner(id_owner.as_str(), next);
                     bump();
                 }
             >
@@ -102,7 +102,7 @@ pub(super) fn trigger_attributes(
                         .into_iter()
                         .map(|opt| {
                             let is = current_owner.as_deref() == Some(opt.id.as_str());
-                            view! { <option value=opt.id selected=is>{opt.label}</option> }
+                            view! { <option value=opt.id.into_inner() selected=is>{opt.label}</option> }
                         })
                         .collect_view()
                 }
@@ -118,7 +118,7 @@ pub(super) fn trigger_attributes(
                             title="Redraw this trigger as a circle — click the centre, then the rim"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                armed_placement::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Trigger);
+                                armed_placement::begin_zone_reshape(a.as_str(), ZoneShape::Circle, DrawTarget::Trigger);
                                 bump();
                             }
                         >
@@ -129,7 +129,7 @@ pub(super) fn trigger_attributes(
                             title="Redraw this trigger as a polygon — click each vertex, then Close"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                armed_placement::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Trigger);
+                                armed_placement::begin_zone_reshape(b.as_str(), ZoneShape::Polygon, DrawTarget::Trigger);
                                 bump();
                             }
                         >
@@ -145,14 +145,14 @@ pub(super) fn trigger_attributes(
             </p>
             {crate::workspaces::editor::ui::inspector::zones_panel::zone_rule_fields()
                 .into_iter()
-                .map(|f| trigger_rule_control(tid.clone(), f, rules.clone(), doc_tick))
+                .map(|f| trigger_rule_control(tid.to_string(), f, rules.clone(), doc_tick))
                 .collect_view()}
 
             <button
                 type="button"
                 class="mt-3 w-full rounded-md border border-error/40 px-2 py-1.5 text-label-sm text-error transition-colors hover:bg-error/15"
                 on:click=move |_| {
-                    engine_ops::delete_trigger(&id_delete);
+                    engine_ops::delete_trigger(id_delete.as_str());
                     selected.set(None);
                     bump();
                 }

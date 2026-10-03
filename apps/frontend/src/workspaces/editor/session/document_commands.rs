@@ -23,12 +23,12 @@ mod imp {
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
 
-    use map_engine::data::scenario::compile::compile_export;
-    use map_engine::data::scenario::compile::compile_payload;
-    use map_engine::data::scenario::compile::version_body;
-    use map_engine::data::scenario::flatten::flatten_mod_document_json_with_diagnostics;
-    use map_engine::data::scenario::flatten::MissionMeta;
-    use map_engine::data::scenario::validate::Finding;
+    use mission_compiler::flatten_mod_document_json_with_diagnostics;
+    use mission_compiler::MissionMeta;
+    use mission_payload::compile_export;
+    use mission_payload::compile_payload;
+    use mission_payload::version_body;
+    use mission_validation::Finding;
 
     /// what a compile hands the command layer: the download text and the structured
     /// findings, from one compile. Aliased so the entry point's signature stays on one line, which
@@ -224,7 +224,7 @@ mod imp {
     /// there is no editor context yet.
     ///
     /// Separate from [`snapshot`] because `Snap` is a VALUE snapshot (JSON strings) and
-    /// [`map_engine::data::store::operations::slot_ids::duplicate_slot_ids`] takes the
+    /// [`mission_operations::slot_ids::duplicate_slot_ids`] takes the
     /// `MissionDocCore` itself  it needs `doc.slot_exists`, which the JSON alone cannot answer.
     /// Same one-borrow discipline as `snapshot`: one `EDITOR_CTX` borrow, released before the
     /// caller does anything else.
@@ -238,7 +238,7 @@ mod imp {
             let Some(core) = doc.as_ref() else {
                 return Vec::new();
             };
-            map_engine::data::store::operations::slot_ids::duplicate_slot_ids(core)
+            mission_operations::slot_ids::duplicate_slot_ids(core)
         })
     }
 
@@ -326,7 +326,7 @@ mod imp {
                         let env = compile_export(
                             &payload,
                             &small,
-                            "smoke",
+                            &"smoke".into(),
                             "0.1.0",
                             "1970-01-01T00:00:00.000Z",
                         );

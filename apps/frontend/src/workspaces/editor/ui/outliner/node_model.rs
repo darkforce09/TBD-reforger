@@ -5,11 +5,11 @@
 //! folders keep their authored entity order; unfiled children sort by id for stable display.
 //! The tree operates on plain rows so its construction and ordering work in native tests.
 
-pub use map_engine::data::store::operations::rows::CommentRow;
-pub use map_engine::data::store::operations::rows::FactionRow;
-pub use map_engine::data::store::operations::rows::LayerRow;
-pub use map_engine::data::store::operations::rows::SlotRow;
-pub use map_engine::data::store::operations::rows::SquadRow;
+pub use mission_operations::rows::CommentRow;
+pub use mission_operations::rows::FactionRow;
+pub use mission_operations::rows::LayerRow;
+pub use mission_operations::rows::SlotRow;
+pub use mission_operations::rows::SquadRow;
 use std::collections::HashSet;
 
 /// The virtual root's id. Not a doc id — see the module docs.
@@ -100,7 +100,7 @@ fn slot_node_full(
     locked_effective: bool,
 ) -> OutlinerNode {
     OutlinerNode {
-        id: s.id.clone(),
+        id: s.id.to_string(),
         label: if s.role.is_empty() {
             SLOT_FALLBACK_LABEL.to_string()
         } else {
@@ -124,7 +124,7 @@ fn slot_node_full(
 /// Inheriting the dim/lock adornments would advertise a refusal that does not exist.
 fn comment_node(c: &CommentRow) -> OutlinerNode {
     OutlinerNode {
-        id: c.id.clone(),
+        id: c.id.to_string(),
         label: if c.title.is_empty() {
             COMMENT_FALLBACK_LABEL.to_string()
         } else {
@@ -248,7 +248,7 @@ fn build_layer<'a>(
         // Child folders first, then this folder's slots — React's `[...childFolders, ...entityNodes]`.
         for child in layers
             .iter()
-            .filter(|l| l.parent_id.as_deref() == Some(layer.id.as_str()))
+            .filter(|l| l.parent_id.as_ref() == Some(&layer.id))
         {
             children.push(build_layer(
                 child,
@@ -268,16 +268,16 @@ fn build_layer<'a>(
         // is tried first: ids come from disjoint mints, so the order is not a tie-break but a cheap
         // ordering of the common case, and an id in neither map is still skipped as dangling.
         for eid in &layer.entity_ids {
-            if let Some(s) = slots.iter().find(|s| &s.id == eid) {
+            if let Some(s) = slots.iter().find(|s| s.id == **eid) {
                 children.push(slot_node_full(s, false, hidden_effective, locked_effective));
-            } else if let Some(c) = comments.iter().find(|c| &c.id == eid) {
+            } else if let Some(c) = comments.iter().find(|c| c.id == **eid) {
                 children.push(comment_node(c));
             }
         }
     }
 
     OutlinerNode {
-        id: layer.id.clone(),
+        id: layer.id.to_string(),
         label: layer.name.clone(),
         kind: NodeKind::Folder,
         children,

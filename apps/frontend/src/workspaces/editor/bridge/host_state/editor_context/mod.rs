@@ -43,9 +43,9 @@ use crate::workspaces::editor::bridge::document_host::history as mission_history
 use crate::workspaces::editor::mission_editor::AssetPickerState;
 use crate::workspaces::editor::ui::outliner::node_model::build_outliner_with_comments;
 use crate::workspaces::editor::ui::outliner::node_model::OutlinerNode;
-use map_engine::data::store::operations::entity::{comment_rows, connection_id_in_doc};
 use map_engine::editing::tools::selection;
 use map_engine::frame::EngineHandle;
+use mission_operations::entity::{comment_rows, connection_id_in_doc};
 use selection::SelectionHandle;
 
 use crate::foundation::transport::dto::MissionEnv;
@@ -53,10 +53,10 @@ use leptos::prelude::{GetUntracked, RwSignal, Set};
 
 use std::cell::{Cell, RefCell};
 
-use map_engine::data::store::operations::projections::faction_rows;
-use map_engine::data::store::operations::projections::layer_rows;
-use map_engine::data::store::operations::projections::slot_rows;
-use map_engine::data::store::operations::projections::squad_rows;
+use mission_operations::projections::faction_rows;
+use mission_operations::projections::layer_rows;
+use mission_operations::projections::slot_rows;
+use mission_operations::projections::squad_rows;
 
 mod installation;
 

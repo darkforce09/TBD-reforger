@@ -101,7 +101,7 @@ pub(super) fn render_shape_section(
             Some(handle) => {
                 let doc = handle.borrow();
                 doc.as_ref()
-                    .map_or(0, map_engine::data::store::MissionDocCore::slot_count)
+                    .map_or(0, mission_document::MissionDocCore::slot_count)
             }
             None => 0,
         };

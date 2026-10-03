@@ -127,7 +127,7 @@ pub(crate) fn markers_panel(
                     {rows
                         .into_iter()
                         .map(|m| {
-                            let addr = (m.faction_id.clone(), m.id.clone());
+                            let addr = (m.faction_id.to_string(), m.id.to_string());
                             let sel_addr = addr.clone();
                             let sel_addr2 = addr.clone();
                             let title = if m.label.is_empty() {
@@ -172,7 +172,7 @@ pub(crate) fn markers_panel(
             };
             let Some(m) = engine_ops::marker_rows()
                 .into_iter()
-                .find(|r| r.faction_id == faction_id && r.id == id)
+                .find(|r| r.faction_id == *faction_id && r.id == *id)
             else {
                 return ().into_any();
             };
@@ -185,15 +185,15 @@ pub(crate) fn markers_panel(
 /// Render the selected marker's icon, label, position, and delete controls.
 #[cfg(target_arch = "wasm32")]
 pub(in crate::workspaces::editor::ui::docks::dock_right) fn marker_attributes(
-    m: engine_ops::MarkerRow,
+    m: mission_operations::entity::MarkerRow,
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     use crate::workspaces::editor::ui::inspector::zones_panel::humanize_token;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
-    let faction = m.faction_id.clone();
-    let mid = m.id.clone();
+    let faction = m.faction_id.to_string();
+    let mid = m.id.to_string();
 
     let (f_icon, i_icon) = (faction.clone(), mid.clone());
     let (f_label, i_label) = (faction.clone(), mid.clone());

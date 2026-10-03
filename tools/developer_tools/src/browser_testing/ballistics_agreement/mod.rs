@@ -26,8 +26,8 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use map_engine::data::scenario::ballistics::fire_mission::SOLVER_REVISION;
+use ballistics_model::catalog::BallisticsCatalog;
+use fire_mission_planning::fire_mission::SOLVER_REVISION;
 
 use crate::repository_layout::compiled_checkout_root;
 use bench_reading::decode_bench_reading;
@@ -80,7 +80,7 @@ pub async fn run(args: &AgreementArgs) -> Result<u8> {
     let requested = RequestedRun {
         seed: args.seed,
         count: args.count,
-        catalog_id: committed.catalog_id.clone(),
+        catalog_id: committed.catalog_id.to_string(),
         catalog_version: committed.catalog_version,
         solver_revision: SOLVER_REVISION.to_string(),
     };
@@ -106,7 +106,7 @@ pub async fn run(args: &AgreementArgs) -> Result<u8> {
                     "{BENCH_ROUTE}?seed={}&count={}&catalog={}&version={}",
                     args.seed, args.count, committed.catalog_id, committed.catalog_version
                 ),
-                catalog: (committed.catalog_id.clone(), committed.catalog_version),
+                catalog: (committed.catalog_id.to_string(), committed.catalog_version),
                 timeout: Duration::from_secs(args.timeout_s),
             };
             match read_bench(&session, &goldens).await {

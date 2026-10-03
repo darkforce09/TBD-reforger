@@ -90,8 +90,8 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **The shared cache replays verdicts.** Under lock contention the sign is `Blocking waiting for
   file lock`, then `Finished` with no `Compiling` or `Checking` line. `--quiet` hides that line,
   so a hand-run `cargo check --quiet` has no tell at all.
-- **Feature-gated crates.** `map_engine`'s default feature is `scenario` alone; a bare
-  `cargo test -p map_engine` compiles only that tier. Pass `--all-features`;
+- **Feature-gated crates.** `map_engine` turns no feature tier on by default; a bare
+  `cargo test -p map_engine` compiles almost none of the crate. Pass `--all-features`;
   `platform wave test --slice` isolates the folder but does not add features.
 - **Editions differ.** The frontend crate is edition 2021 and the other workspace crates 2024,
   and their import orders differ; the gate runs rustfmt on each changed file with its own crate's
@@ -146,10 +146,10 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **Parallel arrays.** Build ids, positions, headings and tints in one pass over one sorted
   source; `vehicle_rows()` is id-sorted while `vehicle_xy_flat()` follows map order, and mixing
   them gives every vehicle another's heading.
-- **The z policy.** `update_slot_position` (`legacy/map_engine/src/data/store/rows/transforms.rs`)
+- **The z policy.** `update_slot_position` (`crates/mission/mission_document/src/rows/transforms.rs`)
   resets z to 0 when an edit moves x or y without a z, by design. A caller that must keep a
   manual z reuses `keep_z_rows` and `slot_z`
-  (`legacy/map_engine/src/data/store/operations/attrs.rs`) and reads z from the slot rows,
+  (`crates/mission/mission_operations/src/attrs.rs`) and reads z from the slot rows,
   never from the flattened arrays.
 - **Scrubbed pins can go blind.** `class_r_scrub` cuts from the first `#[cfg(test)]` to the end of
   the file, so a file with a test-only item inside a production module is examined only up to

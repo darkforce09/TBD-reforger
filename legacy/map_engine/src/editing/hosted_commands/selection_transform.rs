@@ -6,10 +6,10 @@
 //! as a closure and the document layer calls it before committing, so the engine never owns a
 //! prompt. A commit that moved nothing runs no post-change tail.
 
-use crate::data::store::operations::transform;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::{selection_ids, with_doc};
-use crate::editing::tools::placement::{AlignEdge, Orient, PatternKind, SpaceAxis};
+use formation_geometry::{AlignEdge, Orient, PatternKind, SpaceAxis};
+use mission_operations::transform;
 
 /// Rotate every selected entity to face `(cx, cy)`, quantised to `rung`. Returns whether anything
 /// rotated: nothing selected, or an entity sitting exactly under the cursor, is a no-op — the

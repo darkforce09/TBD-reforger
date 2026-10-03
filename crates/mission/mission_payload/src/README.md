@@ -1,0 +1,81 @@
+# Mission payload source
+
+The source of `mission_payload`. It turns the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document into the
+editor payload a [mission](/documentation/glossary/g_to_m.md#mission) version saves, wraps a payload in
+the JSON export envelope, writes the request body of a version save, and holds the kit alias table
+the game-document compiler resolves registry aliases through.
+
+## Contents
+
+```text
+crates/mission/mission_payload/src/
+├── error.rs           `Error` and `Result`: a version body that could not be written
+├── export.rs          `version_body` and `version_body_to_writer`: the body of a version save
+├── kit_aliases/       the kit alias table: kits, vehicles and faction defaults by resource name
+├── lib.rs             the crate root; re-exports the compile functions, key list and bounds
+├── prelude.rs         every public item for glob import
+├── serialization.rs   `compile_payload` and `compile_export`: the saved payload and the envelope
+├── terrain_bounds.rs  `terrain_bounds`: a terrain's playable rectangle in metres
+└── tests/             the save and export shapes, row order, extras, the body, the block round trips
+```
+
+## How it works
+
+`compile_payload(small_maps_json, slots_json, include_orbat)` reads the by-id maps and the
+[slots](/documentation/glossary/n_to_z.md#slot) that the document store projects to JSON
+(`MissionDocCore::small_maps_json` and `slots_json` in `mission_document`) and builds the payload:
+
+- `schemaVersion` (the document's, else 1), `map` with `terrain` (`everon` when unset) and
+  `bounds` (`terrain_bounds` of that terrain when unset), `environment` and `loadouts`;
+- the `objectives`, `vehicles`, `entities` and `markers` lists and the `editor` graph's
+  `factions`, `squads`, `slots` and `editorLayers`, each in the document's `entityOrder`, then the
+  rows the order does not name;
+- `title` when the document's title is not blank;
+- `orbat` only when `include_orbat` is true (the Export path), derived with
+  `mission_model::orbat`; a saved payload has none, and the server derives the
+  [ORBAT](/documentation/glossary/n_to_z.md#orbat);
+- the authored blocks, which `mission_model::authored_blocks` copies from the environment bag
+  to the payload root, and every `payloadExtras` key that no known key or authored block claims;
+  the store hands its `zones`, `compositions`, `triggers`, `comments` and `connections` rows over
+  that way.
+
+`compile_export` wraps a payload in the envelope a mission maker downloads: `exportFormatVersion`
+1, the document's mission id (else the `MissionId` argument), the title (`Untitled Mission` when blank), the
+terrain, weather and time of day (`everon`, `clear` and `06:00` when unset), the library blurb as
+`briefing`, the version and `exportedAt`. `version_body` builds `{semver, editor_notes, payload}`,
+the body of `POST /api/v1/missions/{id}/versions`, as a `serde_json::Value`, which clones the
+payload; `version_body_to_writer` streams the same bytes into a writer without that copy.
+`terrain_bounds` answers a 4,096 m square for `arland` and a 12,800 m square for every other
+terrain.
+
+## Boundaries
+
+- Depends on: `mission_model::orbat` (`derive_orbat_from_editor`),
+  `mission_model::authored_blocks` (the authored-block list) and `mission_model::ids`
+  (`MissionId`); `serde`, `serde_json` and `thiserror`.
+- Used by:
+  - `mission_compiler` (`terrain_bounds`, the kit aliases) and `mission_validation`
+    (`terrain_bounds`);
+  - the document operations in `mission_operations` (`terrain_bounds`), and the map engine's
+    `editing::persist`, which compares a local draft with the server's version through
+    `compile_payload`;
+  - the API, which reads the kit aliases (`apps/api/src/missions/contract/mod.rs`);
+  - the Mission Creator's Save and Export
+    (`apps/frontend/src/workspaces/editor/session/document_commands.rs`), its validation
+    panel's payload (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`) and
+    its zone inspector (`apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/`);
+  - the mission library's document upload, through `version_body_to_writer`
+    (`apps/frontend/src/pages/mission_hub/library/dossier_upload_panel.rs`).
+- Rules:
+  - a saved payload has no `orbat` key, and an export's ORBAT runs faction, squad, then `index`
+    (`save_payload_omits_orbat_and_has_editor_shape`,
+    `export_orbat_is_faction_then_squad_then_index_sorted` in `tests/cases_1.rs`);
+  - both version-body builders write identical bytes
+    (`both_doors_onto_create_version_serialise_identical_bytes`);
+  - `payloadExtras` never overwrites or re-emits a known key
+    (`payload_extras_merge_does_not_overwrite_known_keys`,
+    `payload_extras_key_name_never_promoted_onto_wire`), and `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`
+    leaves out the five store rows that travel as extras
+    (`editor_only_and_transitional_keys_stay_absent_from_compile_known_list`);
+  - the envelope's `briefing` is the library blurb, never a faction's briefing
+    (`export_envelope_briefing_is_the_row_blurb_not_the_faction_block`).

@@ -1,11 +1,11 @@
-//! The seam between the calculator's input drafts and the map engine's fire-mission solve, run
+//! The seam between the calculator's input drafts and `fire_mission_planning`'s fire-mission solve, run
 //! on this device.
 //!
 //! **Role:** maps the page's drafts (selection, terrain, target, battery, wind, burst height)
-//! onto the map engine's [`FireMissionInputs`], hands them to [`solve_fire_mission`] — the one
+//! onto `fire_mission_planning`'s [`FireMissionInputs`], hands them to [`solve_fire_mission`] — the one
 //! assembler the API re-solves a saved fire mission with — and words each charge row for the
-//! page through the map engine's shared
-//! [`map_engine::data::scenario::ballistics::solution_wording`], the same words the
+//! page through `fire_mission_planning`'s shared
+//! [`fire_mission_planning::solution_wording`], the same words the
 //! offline browser gate checks the page against.
 //! **Position:** between the inputs (`inputs/`) and the page's output; the catalog is the
 //! [`BallisticsCatalog`] the catalog source decoded, pinned by its id and version in the inputs.
@@ -40,21 +40,19 @@ use super::inputs::wind::{parse_wind, wind_error_message};
 #[cfg(any(target_arch = "wasm32", test))]
 use crate::foundation::transport::dto::ballistics_catalogs::BallisticsCatalog;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::crest_clearance::TerrainProfile;
+use ballistics_solver::crest_clearance::TerrainProfile;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fire_mission::solve_fire_mission;
+use ballistics_solver::ChargeSolution;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fire_mission::{
-    FireMissionInputs, FireMissionSolution,
-};
+use fire_mission_planning::fire_mission::solve_fire_mission;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::solution_wording::{charge_row_words, ChargeRowWords};
+use fire_mission_planning::fire_mission::{FireMissionInputs, FireMissionSolution};
 #[cfg(any(target_arch = "wasm32", test))]
-pub(crate) use map_engine::data::scenario::ballistics::solution_wording::{
+use fire_mission_planning::solution_wording::{charge_row_words, ChargeRowWords};
+#[cfg(any(target_arch = "wasm32", test))]
+pub(crate) use fire_mission_planning::solution_wording::{
     gun_heading, laid_rings, mils_and_degrees,
 };
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::solver::ChargeSolution;
 
 /// Every input draft of the page, as typed.
 #[cfg(any(target_arch = "wasm32", test))]
@@ -134,8 +132,8 @@ pub(crate) fn mission_inputs(
             Ok(FireMissionInputs {
                 catalog_id: catalog.catalog_id.clone(),
                 catalog_version: catalog.catalog_version,
-                weapon_id: selection.weapon_id.clone(),
-                shell_id: selection.shell_id.clone(),
+                weapon_id: selection.weapon_id.clone().into(),
+                shell_id: selection.shell_id.clone().into(),
                 charge_rings,
                 target,
                 guns,

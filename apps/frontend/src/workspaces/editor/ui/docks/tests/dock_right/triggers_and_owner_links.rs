@@ -115,7 +115,7 @@ fn trigger_draw_is_second_consumer_of_the_zone_tool() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+            "/../../crates/mission/mission_operations/src/compositions.rs"
         )),
         crate::foundation::test_support::editor_operations::CONTEXT,
         crate::foundation::test_support::editor_operations::ENTITY,

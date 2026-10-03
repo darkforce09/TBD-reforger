@@ -91,9 +91,9 @@ deviation; the mortar calculator reports it along range and along deflection wit
 ellipse. The platform derives it from the game's dispersion parameters, a documented
 interpretation that no engine call verifies, not from measured impacts.
 
-In code: `charge_dispersion` in `legacy/map_engine/src/data/scenario/ballistics/dispersion.rs`; the dispersion card in `apps/frontend/src/pages/field_tools/mortar/solution/dispersion_card.rs`.
+In code: `charge_dispersion` in `crates/ballistics/ballistics_solver/src/dispersion.rs`; the dispersion card in `apps/frontend/src/pages/field_tools/mortar/solution/dispersion_card.rs`.
 
-See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
+See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md).
 
 ### RCON
 
@@ -159,11 +159,11 @@ See: [Round stages and safe start](/apps/mod/tbd-framework/Scripts/Game/TBD/Game
 
 ### scenario
 
-A code spelling, never a prose term. Platform code that says scenario means a [mission](/documentation/glossary/g_to_m.md#mission)
-(the map engine's mission domain); fleet code means a [mission header](/documentation/glossary/g_to_m.md#mission-header); Enfusion's
+A code spelling, never a prose term. Platform code that says scenario means a [mission](/documentation/glossary/g_to_m.md#mission);
+fleet code means a [mission header](/documentation/glossary/g_to_m.md#mission-header); Enfusion's
 own names (`scenarioId`, the `SCR_EScenario*` types) keep it. Prose says mission or mission header.
 
-In code: `legacy/map_engine/src/data/scenario/`; `apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`.
+In code: `apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`.
 
 See: [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario).
 
@@ -306,9 +306,9 @@ rings whose time lies inside the window. A refused setting carries no time and n
 outside the window, or the burst point out of reach (above the apex, beyond range, inside the
 minimum range).
 
-In code: `TimeFuze` (`min_s`, `max_s`, `default_s`) in `legacy/map_engine/src/data/scenario/ballistics/catalog/shell.rs`; `solve_time_fuze_over_charges` and `FuzeRefusal` in `legacy/map_engine/src/data/scenario/ballistics/fuze.rs`; `FuzeSetting` and `FuzeRefusal` in `contracts/definitions/fire-mission.schema.json`.
+In code: `TimeFuze` (`min_s`, `max_s`, `default_s`) in `crates/ballistics/ballistics_model/src/catalog/shell.rs`; `solve_time_fuze_over_charges` and `FuzeRefusal` in `crates/ballistics/fire_mission_planning/src/fuze.rs`; `FuzeSetting` and `FuzeRefusal` in `contracts/definitions/fire-mission.schema.json`.
 
-See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
+See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md).
 
 ### wave
 

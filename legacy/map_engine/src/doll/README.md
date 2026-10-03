@@ -62,7 +62,8 @@ wasm32 as well.
     for wasm32;
   - it imports no UI crate and reads no editor state: the page passes everything in through
     `DollEngine`'s calls;
-  - nothing under `crate::data` may name it (rules 4 and 7 of `cargo xtask verify engine-layers`).
+  - no mission crate may name it: a `crates/mission` crate depends on no map engine module
+    (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 

@@ -82,7 +82,8 @@ nonzero; both render in a hidden element of the menu row.
   - `crate::foundation`: `api_patch` and `MissionEnv` from `api`, `AuthStore`, and `Select`,
     `Slider`, `MaterialIcon`, the toasts and the modal stack from `ui`;
   - `map_engine`: `editing::hosted_commands` (`census_input`, `selection_transform`),
-    `editing::host::selection_len` and the placement kinds of `editing::tools::placement`;
+    `editing::host::selection_len`;
+  - `formation_geometry`: the placement kinds of the arrange menu;
   - over HTTP, `PATCH /api/v1/missions/{id}` of the
     [missions](/documentation/glossary/g_to_m.md#missions) domain.
 - Used by: the callers above; the tests in

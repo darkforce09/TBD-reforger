@@ -105,7 +105,7 @@ fn switching_mode_keeps_the_checklist_and_drops_the_old_param() {
     // ...and the result is a shape the compile's own validator will take once the param lands.
     let with_minutes =
         with_param(Some(&next), "timeout", "timeoutMinutes", "45").expect("45 is in range");
-    map_engine::data::scenario::win_conditions::validate(&with_minutes)
+    mission_model::objectives::win_conditions::validate(&with_minutes)
         .expect("a completed switch must validate");
 }
 
@@ -214,7 +214,7 @@ fn a_full_authoring_pass_produces_a_block_the_compile_accepts() {
             "mode": "vip", "endOn": ["faction_eliminated"], "vipSlotId": "slot_sl"
         })
     );
-    map_engine::data::scenario::win_conditions::validate(&block)
+    mission_model::objectives::win_conditions::validate(&block)
         .expect("the card must not author a block the compile refuses");
 }
 

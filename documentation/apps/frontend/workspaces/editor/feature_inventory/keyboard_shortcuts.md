@@ -106,7 +106,7 @@ new binding cannot ship undocumented.", and the tests in
   (`apps/frontend/src/workspaces/editor/ui/modals/help_modal/shortcut_catalog.rs`) — Delete
   and the delete half of Ctrl/Cmd+X remove slots, comments and connections but never vehicles, and
   a selected vehicle is only deselected (`delete_selection` in
-  `legacy/map_engine/src/data/store/operations/entity/clipboard.rs`), although Ctrl/Cmd+A
+  `crates/mission/mission_operations/src/entity/clipboard.rs`), although Ctrl/Cmd+A
   selects vehicles.
 - Ctrl/Cmd+X on a mixed selection copies only the slots but deletes comments and connections too,
   so those cannot be pasted back (`window_keydown.rs`).

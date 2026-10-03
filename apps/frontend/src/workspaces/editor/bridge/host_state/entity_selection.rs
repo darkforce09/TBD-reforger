@@ -10,9 +10,9 @@
 
 use crate::workspaces::editor::bridge::document_host::history as mission_history;
 use crate::workspaces::editor::bridge::host_state::editor_context::EDITOR_CONTEXT;
-use map_engine::data::store::operations::projections::layer_rows;
 use map_engine::editing::hosted_commands::vehicle_points;
 use map_engine::editing::tools::selection;
+use mission_operations::projections::layer_rows;
 
 /// Replace the selected ids, rebind the renderer's tint, and refresh the mirrors.
 pub fn set_slot_selection(ids: Vec<String>) {
@@ -171,9 +171,7 @@ pub fn center_on_selection() -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        let Some((sx, sy)) =
-            map_engine::data::store::operations::entity::selection_centroid(core, &sel)
-        else {
+        let Some((sx, sy)) = mission_operations::entity::selection_centroid(core, &sel) else {
             return false;
         };
         let mut eng = ctx.engine.borrow_mut();

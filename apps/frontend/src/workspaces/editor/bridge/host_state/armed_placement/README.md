@@ -49,9 +49,9 @@ write. An arm itself is never document state and never an undo step.
 - Depends on: the editor context in
   `apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/` (`EDITOR_CONTEXT`,
   `Pending`, `bump_doc_tick`, `place_with_crew`); the undo driver in
-  `apps/frontend/src/workspaces/editor/bridge/document_host/`; `map_engine`
-  (`data::store::operations::entity` for the arm gate, the placement commit and the zone draft,
-  `editing::hosted_commands` for the zone and trigger rows); the asset catalog's `PlacePayload`; the
+  `apps/frontend/src/workspaces/editor/bridge/document_host/`; `mission_operations::entity` for the
+  arm gate, the placement commit and the zone draft; `map_engine` (`editing::hosted_commands` for
+  the zone and trigger rows); the asset catalog's `PlacePayload`; the
   right dock's `marker_icon_is_authorable` and `record_placed`; the zone predicates re-exported by
   `apps/frontend/src/workspaces/editor/session/eden_chrome.rs`; the outliner's
   `ensure_active_layer`.

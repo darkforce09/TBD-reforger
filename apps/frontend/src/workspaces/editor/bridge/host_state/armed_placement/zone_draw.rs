@@ -17,8 +17,8 @@ use crate::workspaces::editor::session::eden_chrome::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
 };
 use crate::workspaces::editor::ui::inspector::zones_panel::DrawTarget;
-use map_engine::data::store::operations::entity::ZoneDrawStep;
 use map_engine::editing::hosted_commands as engine_ops;
+use mission_operations::entity::ZoneDrawStep;
 
 /// Is a zone draw in flight?
 #[must_use]
@@ -46,9 +46,7 @@ pub fn zone_draft() -> Option<ZoneDraft> {
 
 /// Arm a draw that MINTS a new row. Refuses a kind the collection's schema enum does not carry.
 pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> bool {
-    let valid = map_engine::data::store::operations::entity::zone_draft_kind_is_valid(
-        kind, collection, zone_types,
-    );
+    let valid = mission_operations::entity::zone_draft_kind_is_valid(kind, collection, zone_types);
     if !valid {
         return false;
     }
@@ -58,12 +56,7 @@ pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> 
             return false;
         };
         *ctx.pending.borrow_mut() = Some(Pending::Zone(
-            map_engine::data::store::operations::entity::begin_zone_draft(
-                kind.to_string(),
-                shape,
-                collection,
-                None,
-            ),
+            mission_operations::entity::begin_zone_draft(kind.to_string(), shape, collection, None),
         ));
         true
     })
@@ -90,14 +83,13 @@ pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget
         let Some(ctx) = guard.as_ref() else {
             return false;
         };
-        *ctx.pending.borrow_mut() = Some(Pending::Zone(
-            map_engine::data::store::operations::entity::begin_zone_draft(
+        *ctx.pending.borrow_mut() =
+            Some(Pending::Zone(mission_operations::entity::begin_zone_draft(
                 kind,
                 shape,
                 collection,
                 Some(row_id.to_string()),
-            ),
-        ));
+            )));
         true
     })
 }
@@ -130,7 +122,7 @@ pub fn zone_draw_pop_vertex() -> usize {
         };
         let mut p = ctx.pending.borrow_mut();
         if let Some(Pending::Zone(d)) = p.as_mut() {
-            return map_engine::data::store::operations::entity::pop_zone_draft_vertex(d);
+            return mission_operations::entity::pop_zone_draft_vertex(d);
         }
         0
     })
@@ -145,12 +137,7 @@ pub(crate) fn advance_zone_draw(x: f64, z: f64) -> bool {
         let Some(Pending::Zone(d)) = p.as_mut() else {
             return None;
         };
-        let step = map_engine::data::store::operations::entity::advance_zone_draft(
-            d,
-            x,
-            z,
-            circle_from_clicks,
-        );
+        let step = mission_operations::entity::advance_zone_draft(d, x, z, circle_from_clicks);
         if matches!(step, ZoneDrawStep::CircleClosed { .. }) {
             *p = None;
         }
@@ -164,18 +151,18 @@ pub(crate) fn advance_zone_draw(x: f64, z: f64) -> bool {
             target,
             collection,
         }) => match (collection, target) {
-            (DrawTarget::Zone, Some(id)) => {
-                engine_ops::commit_document_edit(|core| core.set_zone_circle(&id, cx, cz, r))
-            }
+            (DrawTarget::Zone, Some(id)) => engine_ops::commit_document_edit(|core| {
+                core.set_zone_circle(id.as_str(), cx, cz, r)
+            }),
             (DrawTarget::Zone, None) => {
                 engine_ops::add_authored_row(DrawTarget::Zone, |core, id| {
                     core.add_circle_zone(id, &kind, cx, cz, r);
                 })
                 .is_some()
             }
-            (DrawTarget::Trigger, Some(id)) => {
-                engine_ops::commit_document_edit(|core| core.set_trigger_circle(&id, cx, cz, r))
-            }
+            (DrawTarget::Trigger, Some(id)) => engine_ops::commit_document_edit(|core| {
+                core.set_trigger_circle(id.as_str(), cx, cz, r)
+            }),
             (DrawTarget::Trigger, None) => {
                 engine_ops::add_authored_row(DrawTarget::Trigger, |core, id| {
                     core.add_circle_trigger(id, &kind, cx, cz, r);
@@ -201,10 +188,8 @@ pub fn close_zone_polygon() -> bool {
         let Some(Pending::Zone(d)) = p.as_ref() else {
             return None;
         };
-        let commit = map_engine::data::store::operations::entity::close_zone_polygon_draft(
-            d,
-            polygon_is_committable,
-        )?;
+        let commit =
+            mission_operations::entity::close_zone_polygon_draft(d, polygon_is_committable)?;
         *p = None;
         Some(commit)
     });
@@ -215,14 +200,14 @@ pub fn close_zone_polygon() -> bool {
     let flat = polygon_flat(&commit.ring);
     match (commit.collection, commit.target) {
         (DrawTarget::Zone, Some(id)) => {
-            engine_ops::commit_document_edit(|core| core.set_zone_polygon(&id, &flat))
+            engine_ops::commit_document_edit(|core| core.set_zone_polygon(id.as_str(), &flat))
         }
         (DrawTarget::Zone, None) => engine_ops::add_authored_row(DrawTarget::Zone, |core, id| {
             core.add_polygon_zone(id, &kind, &flat);
         })
         .is_some(),
         (DrawTarget::Trigger, Some(id)) => {
-            engine_ops::commit_document_edit(|core| core.set_trigger_polygon(&id, &flat))
+            engine_ops::commit_document_edit(|core| core.set_trigger_polygon(id.as_str(), &flat))
         }
         (DrawTarget::Trigger, None) => {
             engine_ops::add_authored_row(DrawTarget::Trigger, |core, id| {

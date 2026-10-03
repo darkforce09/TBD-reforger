@@ -183,7 +183,7 @@ library's "New Mission" button or Ctrl/Cmd+N
 **Decision:** X, Y, Z and "Rotation" are edited in the Attributes dialog's Transform tab, one undo
 step per commit; X and Y clamp to the terrain, and an X or Y edit resets Z to 0 so the entity
 follows the ground (`update_slot_position`,
-`/legacy/map_engine/src/data/store/rows/transforms.rs`). The status bar shows the cursor's
+`/crates/mission/mission_document/src/rows/transforms.rs`). The status bar shows the cursor's
 X, Y and Z ("CUR") or the one selected entity's ("SEL"), the object and selection counts, the save
 size and the map scale.
 
@@ -296,7 +296,7 @@ Version.
 thousands at most.
 
 **Decision:** The mission document (slots, vehicles, markers and the rest) lives in the Yjs CRDT
-store (`/legacy/map_engine/src/data/store/`); terrain objects are map data streamed in
+store (`/crates/mission/mission_document/`); terrain objects are map data streamed in
 512 m chunks, never part of the document. A terrain base with sparse per-mission deltas is
 T-110 (deferred).
 
@@ -324,7 +324,7 @@ T-094 is deferred, and T-111 and T-112 are cancelled.
 
 **Decision:** A saved payload omits `orbat`, and the server derives the ORBAT from the document;
 only the Export path includes it (`include_orbat`,
-`/legacy/map_engine/src/data/scenario/compiler/payload/`).
+`/crates/mission/mission_payload/`).
 
 **Consequences:** Anything that reads a saved payload's ORBAT reads the server's derivation.
 

@@ -3,12 +3,12 @@
 //! **Role:** shows the input problems, or the solved fire mission: the battery summary, the lead
 //! gun's crest clearance, fuze setting and dispersion, and one charge table per gun.
 //! **Position:** below Calculate on `/tools/mortar`; reads the page's outcome signal. The figures
-//! are the map engine's [`FireMissionSolution`] as solved on this device.
+//! are `fire_mission_planning`'s [`FireMissionSolution`] as solved on this device.
 //! **Signals & state:** reads the outcome signal; holds nothing.
 //! **Invariants:** every figure comes from the one solution, so the summary, the cards and the
 //! tables always describe the same solve; the dispersion is labelled as an interpretation.
 //!
-//! [`FireMissionSolution`]: map_engine::data::scenario::ballistics::fire_mission::FireMissionSolution
+//! [`FireMissionSolution`]: fire_mission_planning::fire_mission::FireMissionSolution
 
 pub(crate) mod battery_rows;
 pub(crate) mod charges_table;

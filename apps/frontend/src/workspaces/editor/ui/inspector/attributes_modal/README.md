@@ -50,7 +50,7 @@ tab of `apps/frontend/src/workspaces/editor/arsenal/` for the id the dialog open
 ## Boundaries
 
 - Depends on: `map_engine::editing::hosted_commands` (the attribute reads and writes, the
-  squad reassignment, the vehicle commands) and `map_engine::data::store::operations::reassign`;
+  squad reassignment, the vehicle commands) and `mission_operations::reassign`;
   the Arsenal's `asset_catalog` in `apps/frontend/src/workspaces/editor/arsenal/` for the type
   picker's tree and search; `editor_context::close_attributes` in the bridge; `MaterialIcon` and the
   `RegistryItem` DTO from `crate::foundation`.

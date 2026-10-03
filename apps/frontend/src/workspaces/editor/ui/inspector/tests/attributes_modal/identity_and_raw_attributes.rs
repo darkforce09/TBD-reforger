@@ -33,7 +33,7 @@ fn the_new_fields_read_their_own_columns_and_take_the_multi_edit_gate() {
     let src = attrs_src();
     let body = only_body(&src, "fn identity_tab(");
     for needle in [
-        "a.asset_id.clone()",
+        "a.asset_id.to_string()",
         "g(diff.asset_id, opts.asset_id)",
         "a.description.clone()",
         "g(diff.description, opts.description)",
@@ -98,11 +98,11 @@ fn the_lock_affordance_asks_the_core_and_distinguishes_all_locked_from_some_lock
 fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/attrs.rs"
+        "/../../crates/mission/mission_operations/src/attrs.rs"
     )));
     let body = only_body(
         &ops,
-        "pub fn read_attrs(core: &MissionDocCore, id: &str) -> Option<SlotAttrs>",
+        "pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotId>) -> Option<SlotAttrs>",
     );
     assert!(
         body.contains("raw_slot_rows(core)"),
@@ -117,11 +117,11 @@ fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
 fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/attrs.rs"
+        "/../../crates/mission/mission_operations/src/attrs.rs"
     )));
     let body = only_body(
         &ops,
-        "pub fn read_attrs(core: &MissionDocCore, id: &str) -> Option<SlotAttrs>",
+        "pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotId>) -> Option<SlotAttrs>",
     );
     let raw_gate = "!rows.contains_key(id)";
     assert!(
@@ -186,7 +186,7 @@ fn attributes_modal_none_arm_still_closes_on_true_absence() {
 fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/attrs.rs"
+        "/../../crates/mission/mission_operations/src/attrs.rs"
     )));
     let body = only_body(&ops, "pub fn attrs_update_slot(");
     assert!(
@@ -230,7 +230,7 @@ fn attrs_update_slot_noops_when_all_none_or_id_missing() {
 
     let domain = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/attrs.rs"
+        "/../../crates/mission/mission_operations/src/attrs.rs"
     )));
     let body = only_body(&domain, "pub fn attrs_update_slot(");
     let raw_gate = "!raw_slot_rows(core).contains_key(id)";

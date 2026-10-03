@@ -233,7 +233,7 @@ pub fn DockLeft(
                                         on:click=move |ev: web_sys::MouseEvent| {
                                             ev.stop_propagation();
                                             crate::workspaces::editor::ui::inspector::validation_panel::route_select_by_subject_id(
-                                                &click_id,
+                                                click_id.as_str(),
                                             );
                                         }
                                     >

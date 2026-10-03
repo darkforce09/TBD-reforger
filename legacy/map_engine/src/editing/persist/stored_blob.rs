@@ -6,7 +6,7 @@
 //! every threshold on length is a guess and this is not. A blob that cannot be replayed is not a
 //! backup, and answers `false` for the same reason an empty one does.
 
-use crate::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
 
 /// Read the leading unsigned var-int of a Yjs v1 update stream: the **number of client blocks**.
 ///

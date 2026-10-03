@@ -8,10 +8,10 @@
 //! and a matching one vouches for local work it has never seen. Only a difference that actually
 //! exists may raise a prompt, and every difference that exists must raise one.
 
-use crate::data::scenario::compile::compile_payload;
-use crate::data::store::MissionDocCore;
 use crate::editing::host::DocHandle;
 use crate::editing::persist::server_adoption::DEFAULT_LAYER_ID;
+use mission_document::MissionDocCore;
+use mission_payload::compile_payload;
 
 /// What the local draft holds, measured against the server's current version.
 ///

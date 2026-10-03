@@ -138,7 +138,7 @@ pub(crate) fn fixture_readme(report: &TrimReport) -> String {
         text,
         "## Producers and consumers\n\n\
          - Producer: `cargo xtask ballistics trim-export` (`tools/xtask/src/commands/ballistics/`).\n\
-         - Consumers: `cargo xtask schema validate`, whose ballistics section checks both documents and their\n  provenance and coverage; the map engine's calibration tests; the upload of the catalog pair through\n  `POST /api/v1/ballistics-catalogs`."
+         - Consumers: `cargo xtask schema validate`, whose ballistics section checks both documents and their\n  provenance and coverage; the `ballistics_calibration` tests; the upload of the catalog pair through\n  `POST /api/v1/ballistics-catalogs`."
     );
     text
 }

@@ -1,11 +1,12 @@
-//! Role: exercise editor operations through the public headless boundary.
-//! Position: map-engine `data/store` integration tests.
-//! Signals & state: deterministic documents and explicit host-policy callbacks.
-//! Invariants: cancellation is inert; edits retain authored precision and undo behavior.
+//! **Role:** exercise editor operations through the public headless boundary.
+//! **Position:** an integration suite of the map engine's `editing` tier, over the mission crates
+//! that tier links.
+//! **Signals & state:** deterministic documents and explicit host-policy callbacks.
+//! **Invariants:** cancellation is inert; edits retain authored precision and undo behavior.
 
-#![cfg(feature = "store")]
+#![cfg(feature = "editing")]
 
-use map_engine::data::store::{MissionDocCore, operations};
+use mission_document::MissionDocCore;
 use serde_json::{Value, json};
 use std::cell::Cell;
 
@@ -33,9 +34,9 @@ fn refused_transform_leaves_document_and_history_unchanged() {
     let other: Value = serde_json::from_str(&core.small_maps_json()).unwrap();
     let depth = core.undo_depth();
     let calls = Cell::new(0);
-    assert!(!operations::transform::align_selection(
+    assert!(!mission_operations::transform::align_selection(
         &core,
-        operations::placement::AlignEdge::Left,
+        formation_geometry::AlignEdge::Left,
         vec!["slot".into(), "vehicle".into()],
         |count, action| {
             assert_eq!((count, action), (2, "align"));
@@ -64,9 +65,9 @@ fn mixed_transform_preserves_elevation_heading_and_group_undo() {
     let other: Value = serde_json::from_str(&core.small_maps_json()).unwrap();
     let depth = core.undo_depth();
     core.begin_group();
-    assert!(operations::transform::align_selection(
+    assert!(mission_operations::transform::align_selection(
         &core,
-        operations::placement::AlignEdge::Right,
+        formation_geometry::AlignEdge::Right,
         vec!["slot".into(), "vehicle".into()],
         |_, _| true,
     ));
@@ -101,7 +102,7 @@ fn copied_loadout_is_a_snapshot_and_commits_count_only_existing_targets() {
         "slot",
         Some(json!({"primary":"rifle.et","cargo":[{"id":"mag","count":2}]}).to_string()),
     );
-    let buffer = operations::cargo::copy_loadouts_from_selection(
+    let buffer = mission_operations::cargo::copy_loadouts_from_selection(
         &core,
         vec!["slot".into(), "vehicle".into(), "missing".into()],
     );
@@ -110,24 +111,32 @@ fn copied_loadout_is_a_snapshot_and_commits_count_only_existing_targets() {
     core.update_slot_loadout("slot", None);
     assert_eq!(buffer[0].loadout_json, snapshot);
     let writes = [
-        operations::cargo::LoadoutWrite {
+        mission_operations::cargo::LoadoutWrite {
             target_id: "missing".into(),
             source_id: Some("slot".into()),
             loadout_json: snapshot.clone(),
         },
-        operations::cargo::LoadoutWrite {
+        mission_operations::cargo::LoadoutWrite {
             target_id: "slot".into(),
             source_id: Some("slot".into()),
             loadout_json: snapshot.clone(),
         },
     ];
-    assert_eq!(operations::cargo::commit_loadout_writes(&core, &writes), 1);
     assert_eq!(
-        serde_json::from_str::<Value>(&operations::cargo::read_loadout(&core, "slot").unwrap())
-            .unwrap(),
+        mission_operations::cargo::commit_loadout_writes(&core, &writes),
+        1
+    );
+    assert_eq!(
+        serde_json::from_str::<Value>(
+            &mission_operations::cargo::read_loadout(&core, "slot").unwrap()
+        )
+        .unwrap(),
         serde_json::from_str::<Value>(&snapshot.unwrap()).unwrap()
     );
-    assert_eq!(operations::cargo::commit_loadout_writes(&core, &[]), 0);
+    assert_eq!(
+        mission_operations::cargo::commit_loadout_writes(&core, &[]),
+        0
+    );
 }
 
 #[test]
@@ -136,10 +145,10 @@ fn clipboard_paste_preserves_unknown_fields_and_authored_elevation() {
     let rows: Value = serde_json::from_str(&core.slots_json()).unwrap();
     let mut copied = rows["slot"].clone();
     copied["futureExtension"] = json!({"ordered":[3,1,2],"enabled":true});
-    let ids = operations::entity::paste_at_cursor(
+    let ids = mission_operations::entity::paste_at_cursor(
         &core,
         vec![copied],
-        "layer".into(),
+        "layer",
         &Cell::new(0),
         Some(900.0),
         Some(800.0),

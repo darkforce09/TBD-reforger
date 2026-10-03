@@ -1,0 +1,30 @@
+# The firing solver over the ballistics model: the elevation of every charge onto a target, the
+# wind-corrected aim, the recommended charge, the trajectory's clearance over a terrain profile and
+# the impact dispersion of a solved charge.
+[package]
+name = "ballistics_solver"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The high-angle firing solver per charge, the wind-corrected aim, crest clearance and impact dispersion."
+
+[package.metadata.layout]
+category = "crates/ballistics"
+tier = 2
+targets = "any"
+
+[dependencies]
+ballistics_model = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+libm = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+# The seeded generator of the bounded-failure sweep's random requests.
+deterministic_random = { workspace = true }
+
+[lints]
+workspace = true

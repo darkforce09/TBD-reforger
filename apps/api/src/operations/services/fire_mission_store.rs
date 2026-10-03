@@ -25,9 +25,7 @@
 
 use std::collections::BTreeMap;
 
-use map_engine::data::scenario::ballistics::fire_mission::{
-    FireMissionInputs, HeightSource as InputHeightSource,
-};
+use fire_mission_planning::fire_mission::{FireMissionInputs, HeightSource as InputHeightSource};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -162,10 +160,10 @@ pub async fn insert_fire_mission(
     .bind(lead.azimuth_mils.round() as i64)
     .bind(i64::from(lead_rings))
     .bind(lead.time_of_flight_s)
-    .bind(&inputs.catalog_id)
+    .bind(inputs.catalog_id.as_str())
     .bind(catalog_version)
-    .bind(&inputs.weapon_id)
-    .bind(&inputs.shell_id)
+    .bind(inputs.weapon_id.as_str())
+    .bind(inputs.shell_id.as_str())
     .bind(operator_rings)
     .bind(inputs.target.height_m)
     .bind(height_source_text(inputs.target.height_source))

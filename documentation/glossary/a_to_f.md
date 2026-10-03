@@ -116,9 +116,9 @@ charge, and each charge multiplies the shell's initial speed by its own coeffici
 charges are listed by ring count in a ballistics catalog, with one marked default; the firing
 solver solves every charge and recommends the one with the fewest rings that reaches the target.
 
-In code: `Charge` (`rings`, `init_speed_coef`, `is_default`) in `legacy/map_engine/src/data/scenario/ballistics/catalog/shell.rs`; `charges` in `contracts/definitions/ballistics-catalog.schema.json`; the game's `SCR_MortarShellGadgetComponent` `m_aChargeRingConfig`.
+In code: `Charge` (`rings`, `init_speed_coef`, `is_default`) in `crates/ballistics/ballistics_model/src/catalog/shell.rs`; `charges` in `contracts/definitions/ballistics-catalog.schema.json`; the game's `SCR_MortarShellGadgetComponent` `m_aChargeRingConfig`.
 
-See: [probable error](/documentation/glossary/n_to_z.md#probable-error), [time fuze](/documentation/glossary/n_to_z.md#time-fuze), [Game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
+See: [probable error](/documentation/glossary/n_to_z.md#probable-error), [time fuze](/documentation/glossary/n_to_z.md#time-fuze), [Game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md).
 
 ### closing-fix batch
 

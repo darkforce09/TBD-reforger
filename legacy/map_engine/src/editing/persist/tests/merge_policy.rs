@@ -11,7 +11,7 @@ use std::rc::Rc;
 use futures::executor::block_on;
 
 use super::*;
-use crate::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
 
 fn document_with(slot_count: u32, seed: u64) -> MissionDocCore {
     let core = MissionDocCore::new();

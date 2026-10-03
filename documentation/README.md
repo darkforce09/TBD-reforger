@@ -20,6 +20,7 @@ documentation/
 ├── archive/                 frozen history, one folder per topic
 ├── assets/                  documents on the terrain export and the map data in assets/
 ├── contracts/               documents on the contracts in contracts/
+├── crates/                  documents on the library crates in crates/
 ├── design_system/           design tokens, symbology and interaction patterns the website and mod share
 ├── glossary/                the project's terms and abbreviations, split by first letter
 ├── known_bugs/              the live registry of known bugs

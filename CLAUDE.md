@@ -20,7 +20,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    Avoid flat dumping of dozens of files or variant variations into a single folder. Related variants, numerical sets (e.g. column counts, rounded radius variants), and functional primitives should be grouped into dedicated, well-named subfolders to maintain clean directory comprehension.
 6. **Strict Boundary Layers**:
    - `graphics_engine` (`legacy/graphics_engine/`): Pure GPU rendering primitives (pipelines, shaders, draw batching). Knows **zero** map concepts.
-   - `map_engine` (`legacy/map_engine/`): Map graphics, spatial computation, terrain formats, asset streaming, camera math, and the mission domain (compilation, validation, Yjs CRDT document model). Speaks graphics engine frame vocabulary; zero UI/Leptos dependencies.
+   - `map_engine` (`legacy/map_engine/`): Map graphics, spatial computation, terrain formats, asset streaming, camera math, and the editing seam over the mission crates (the mission domain itself — compilation, validation, Yjs CRDT document model — lives in `crates/mission/`). Speaks graphics engine frame vocabulary; zero UI/Leptos dependencies.
    - `frontend` (`apps/frontend/`): Presentation, navigation, and CAD workspaces, in five layers under `src/` (foundation < features < pages, workspaces < shell); consumes engine crates.
    - `api` (`apps/api/`): Axum REST API and SSE realtime hub.
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
@@ -178,9 +178,8 @@ apps/
 └── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets
 
 legacy/                                  <-- Parking folder of the two engine monoliths while their code moves into crates/; no new crate depends on it
-├── map_engine/                          <-- World, spatial computation, formats, and mission domain
+├── map_engine/                          <-- World, spatial computation, formats, and the mission editing seam
 │   └── src/
-│       ├── data/                        <-- Mission domain (`scenario` module: shapes, compiler, checks, game ballistics) + Yjs CRDT store
 │       ├── editing/                     <-- Live mission document, undo history, headless map tools (select, ruler, LOS, viewshed)
 │       ├── world/                       <-- Scene calibration and the GPU and loader parts of terrain, buildings, vegetation, labels (CPU in crates/terrain, crates/world_objects)
 │       ├── spatial/                     <-- The terrain viewshed's GPU overlay (line of sight is in crates/line_of_sight)
@@ -241,6 +240,22 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── terrain_line_of_sight/           <-- Elevation profiles along a sight line, viewsheds whole or a ray at a time
 │   ├── interior_line_of_sight/          <-- Compound traces, the one sight-line evaluation, floor washes whole or in batches
 │   └── world_line_of_sight/             <-- The world occluder: chunk box trees, the prefab occluder library, verdicts with coverage
+├── mission/                             <-- The mission domain: model, editor payload, validation, compilation, mergeable document, authoring commands
+│   ├── mission_wire_safety/             <-- Control-character scan of authored names, cargo capacity scan of slot loadouts
+│   ├── mission_model/                   <-- Compiled rows, ORBAT projection, authored extension blocks, slot line, typed mission ids
+│   ├── mission_crdt/                    <-- Native yrs id arrays, row-aligned slot columns, undo grouping clocks
+│   ├── formation_geometry/              <-- Placement patterns, align, space, orient and garrison positions of the arrange commands
+│   ├── mission_payload/                 <-- Editor payload, export envelope, version body compiler, kit alias table
+│   ├── mission_validation/              <-- Ordered validation rules of an editor payload, their findings, facts and self-check
+│   ├── mission_compiler/                <-- Game-document compiler, its compile findings and the compiler identity
+│   ├── mission_document/                <-- Mergeable Yjs mission document: rows, hydrate and export, merge, selection, undo
+│   └── mission_operations/              <-- Authoring commands and row projections the Mission Creator applies to the document
+├── ballistics/                          <-- Mortar ballistics: catalog and flight model, firing solver, fire-mission planner, calibration
+│   ├── ballistics_model/                <-- Ballistics catalog, shell flight model, surface wind, angular units, typed catalog ids
+│   ├── ballistics_solver/               <-- High-angle firing solver per charge, wind-corrected aim, crest clearance, impact dispersion
+│   ├── fire_mission_planning/           <-- Fire-mission assembler: battery solutions, time fuzes, client/server comparison, wording
+│   ├── ballistics_calibration/          <-- Catalog calibration against the game's native tables, wind tables and engine oracle samples
+│   └── ballistics_agreement_cases/      <-- Seeded lattice of battery fire problems and their solution bit patterns (native and wasm32 agreement)
 └── graphics/                            <-- Map-agnostic CPU rendering primitives
     └── render_primitives/               <-- Instance layouts, geometry, triangulation, CPU cull oracle, frame ids, text atlas, the WGSL shader
 

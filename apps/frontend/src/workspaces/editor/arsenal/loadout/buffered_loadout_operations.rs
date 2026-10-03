@@ -110,7 +110,7 @@ pub fn plan_apply(
     for (ordinal, target) in targets.iter().enumerate() {
         let src = &buffer[buffer_draw(seed, ordinal as u64, buffer.len())];
         writes.push(LoadoutWrite {
-            target_id: target.clone(),
+            target_id: target.clone().into(),
             source_id: Some(src.source_id.clone()),
             loadout_json: src.loadout_json.clone(),
         });
@@ -141,7 +141,7 @@ pub fn plan_remove(targets: &[String]) -> Vec<LoadoutWrite> {
     targets
         .iter()
         .map(|id| LoadoutWrite {
-            target_id: id.clone(),
+            target_id: id.clone().into(),
             source_id: None,
             loadout_json: Some(stripped_loadout()),
         })

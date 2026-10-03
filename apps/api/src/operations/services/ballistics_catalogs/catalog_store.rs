@@ -20,7 +20,7 @@
 //!   collision is a [`CatalogDuplicate`], whether the pre-check or the insert finds it.
 //! - The list orders by `catalog_id ASC, catalog_version ASC`, a total order.
 
-use map_engine::data::scenario::ballistics::catalog::{BallisticsCatalog, CatalogDecodeError};
+use ballistics_model::catalog::{BallisticsCatalog, CatalogDecodeError};
 use sqlx::PgPool;
 
 use super::upload_validation::{CatalogUploadReport, DecodedUpload};
@@ -152,11 +152,11 @@ pub async fn store_catalog_version(
          RETURNING ",
         summary_columns!()
     ))
-    .bind(&catalog.catalog_id)
+    .bind(catalog.catalog_id.as_str())
     .bind(new.upload.catalog_version)
     .bind(&catalog.title)
     .bind(&catalog.game_build)
-    .bind(&catalog.export_generation_id)
+    .bind(catalog.export_generation_id.as_str())
     .bind(&new.upload.pinned.sha256)
     .bind(&new.upload.calibration_sha256)
     .bind(new.catalog_json)

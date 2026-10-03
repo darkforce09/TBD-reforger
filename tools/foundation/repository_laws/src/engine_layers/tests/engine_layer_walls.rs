@@ -1,4 +1,4 @@
-//! Tests for [`super`] — the engine-layer walls, §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7.
+//! Tests for [`super`] — the engine-layer walls, §5 rules 1, 2, 3a, 3b, 5, 6 and 7.
 //!
 //! Every rule is pinned red and green against a fixture checkout, every matcher line by line,
 //! and every refusal path by its exit code. The module reaches the private matchers and `run()`
@@ -18,21 +18,18 @@ fn a_pure_renderer_passes_and_prose_does_not_trip_it() {
             RULE2_HEAD,
             RULE3A_HEAD,
             RULE3B_HEAD,
-            RULE4_HEAD,
             RULE7_HEAD,
             "  OK (none)",
             "  OK — 5 pinned site(s) in 1 file(s), 0 unpinned.",
             "  OK — 5 pinned site(s), 0 unpinned.",
-            "  OK — 2 pinned site(s) in 2 file(s), 0 unpinned.",
-            "  OK — 0 site(s) in both directions: 4 .rs file(s) under data/ name no world \
-                 module, 1 under world/ name neither crate::data nor yrs.",
+            "  OK — 0 site(s) across 1 .rs file(s) under world/: the static world names \
+                 neither yrs, nor a mission document crate, nor the editing module.",
             "  OK — 0 site(s) across 1 .rs file(s) under editing/:",
             "  OK — 0 import(s) across 1 .rs file(s) and the manifest:",
             "  scanned 1 .rs file(s) + legacy/graphics_engine/Cargo.toml, \
                  1 .rs file(s) + Cargo.toml across 1 crates/graphics member(s) (0 wasm-only), \
-                 8 .rs file(s) under legacy/map_engine/src — of those 4 under data/ \
-                 (3 under data/scenario), 1 under world/ and 1 under editing/ — plus 1 .rs \
-                 file(s) + Cargo.toml under apps/frontend",
+                 4 .rs file(s) under legacy/map_engine/src — of those 1 under world/ and 1 \
+                 under editing/ — plus 1 .rs file(s) + Cargo.toml under apps/frontend",
             "ENGINE-LAYERS: PASS",
         ],
     );
@@ -52,7 +49,8 @@ fn importing_the_map_engine_fails() {
             RULE1_TAIL[0],
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 scenario-isolation finding(s), 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world/data finding(s)",
+                 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world-document \
+                 finding(s)",
         ],
     );
 }
@@ -83,7 +81,8 @@ fn a_dependency_edge_is_a_breach_and_a_comment_is_not() {
             "  legacy/graphics_engine/Cargo.toml:6:me = { package = \"map_engine\" }",
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 scenario-isolation finding(s), 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world/data finding(s)",
+                 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world-document \
+                 finding(s)",
         ],
     );
     r.manifest(&format!(
@@ -109,7 +108,8 @@ fn map_nouns_in_declared_names_fail() {
             RULE2_TAIL[0],
             "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 scenario-isolation finding(s), 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world/data finding(s)",
+                 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world-document \
+                 finding(s)",
         ],
     );
 }
@@ -186,233 +186,86 @@ fn inputs_that_were_never_read_do_not_pass() {
     );
 }
 
-/// RULE 7'S ANTI-VACUITY CASE, and the reason the rule prints two counts.
+/// RULE 7'S ANTI-VACUITY CASE, and the reason the rule prints its count.
 ///
-/// Rule 7 is the one rule in this gate whose green state is **zero sites**, which makes it the
-/// one most able to go vacuously green: a matcher that finds nothing over a tree that is not
-/// there reports exactly what a clean wall reports. Phase 2 moved `data/` and `world/` into
-/// existence and phase 3 moves more code into them, so "the directory is gone" is a live
-/// outcome, not a hypothetical. Each half is removed separately — a combined check would pass
-/// if either guard existed.
+/// Rule 7's green state is **zero sites**, which makes it able to go vacuously green: a matcher
+/// that finds nothing over a tree that is not there reports exactly what a clean wall reports.
+/// Code keeps leaving `world/` for crates of its own, so "the directory is gone" is a live
+/// outcome, not a hypothetical.
 #[test]
-fn an_absent_half_of_the_wall_is_not_a_clean_wall() {
-    for (name, dir) in [
-        ("no-data", "legacy/map_engine/src/data"),
-        ("no-world", "legacy/map_engine/src/world"),
-    ] {
-        let r = Repo::new(name);
-        std::fs::remove_dir_all(r.0.join(dir)).unwrap();
-        let want = format!("FAIL: engine-layers walked 0 .rs file(s) under {dir}");
-        let all = r.expect(1, &[want.as_str(), "ENGINE-LAYERS: FAIL (no inputs)"]);
-        assert!(
-            !all.contains("ENGINE-LAYERS: PASS"),
-            "a missing {dir} must never read as a clean wall:\n{all}"
-        );
-    }
-
-    // And the scenario root on its own: rule 4's pin catches a vanished *file*, but a
-    // vanished *tree* has to be caught by the count, because an empty walk finds no hits to
-    // group and the pin's own arm would then report two stale rows instead of "no inputs".
-    let r = Repo::new("no-scenario");
-    std::fs::remove_dir_all(r.0.join("legacy/map_engine/src/data/scenario")).unwrap();
-    r.expect(
+fn an_absent_world_tree_is_not_a_clean_rule_7() {
+    let r = Repo::new("no-world");
+    std::fs::remove_dir_all(r.0.join(WORLD_REL)).unwrap();
+    let all = r.expect(
         1,
         &[
-            "FAIL: engine-layers walked 0 .rs file(s) under \
-                 legacy/map_engine/src/data/scenario",
+            "FAIL: engine-layers walked 0 .rs file(s) under legacy/map_engine/src/world",
             "ENGINE-LAYERS: FAIL (no inputs)",
         ],
     );
-}
-
-/// RULE 4, RED — the authored mission importing the document store outside a `cfg`, and
-/// importing the streaming tier, which is the import that would actually cost the API build.
-#[test]
-fn the_scenario_tree_reaching_outside_itself_fails() {
-    let r = Repo::new("rule4-new");
-    r.map(
-        "data/scenario/compiler/flatten/terrain.rs",
-        "use crate::streaming::loaders::chunk::WorldChunk;\n",
-    );
-    r.expect(
-        1,
-        &[
-            "FAIL: the authored mission reaches outside its own tree:",
-            "  unpinned file — 1 site(s):",
-            "legacy/map_engine/src/data/scenario/compiler/flatten/terrain.rs:1:\
-                 use crate::streaming::loaders::chunk::WorldChunk;",
-            RULE4_TAIL[0],
-            "1 scenario-isolation finding(s)",
-        ],
+    assert!(
+        !all.contains("ENGINE-LAYERS: PASS"),
+        "a missing world tree must never read as a clean wall:\n{all}"
     );
 }
 
-/// RULE 4, THE RATCHET — the cfg-gated residue may not grow, shrink, or move house unseen.
+/// RULE 7, RED — the CRDT crate, a mission document crate and the editing module reaching
+/// `world/`, each reported with its exact line.
 #[test]
-fn the_rule_4_pin_is_a_ratchet_in_both_directions() {
-    let r = Repo::new("rule4-grow");
-    r.map(
-        "data/scenario/compiler/flatten/tests/mod.rs",
-        &format!("{MAP_SCENARIO_FLATTEN_TEST}use crate::data::store::SlotSoa;\n"),
-    );
-    r.expect(
-        1,
-        &[
-            "legacy/map_engine/src/data/scenario/compiler/flatten/tests/mod.rs: \
-                 pinned at 1 site(s), found 2",
-            "1 scenario-isolation finding(s)",
-        ],
-    );
-
-    let r = Repo::new("rule4-shrink");
-    r.map(
-        "data/scenario/compiler/payload/tests/cases_1.rs",
-        "// the pairing is tested from the store side now\n",
-    );
-    r.expect(
-        1,
-        &[
-            "legacy/map_engine/src/data/scenario/compiler/payload/tests/cases_1.rs: \
-                 pinned at 1 site(s), found 0 — the pin is stale, delete the row.",
-            "1 scenario-isolation finding(s)",
-        ],
-    );
-}
-
-/// RULE 4's matcher, one line at a time. The `ok` list is the whole point: `data/scenario`
-/// names itself on nearly every line it has, and `std::io` proves the matcher is anchored on
-/// `crate::` rather than on a module name.
-#[test]
-fn rule_4_matches_only_what_is_outside_the_scenario_tree() {
-    let p = Pattern::regex(RULE4_RE).unwrap();
-    for bad in [
-        "use crate::data::store::MissionDocCore;",
-        "use crate::streaming::loaders::chunk::WorldChunk;",
-        "use crate::world::terrain::dem::grid::DemVectorGrid;",
-        "use crate::spatial::bvh::traversal::Bvh;",
-        "use crate::overlay::lanes::LaneRole;",
-        "use crate::frame::EngineHandle;",
-        "use crate::camera::viewport::Viewport;",
-        "use crate::diagnostics::bench::Sample;",
-        "use crate::doll::pose::Pose;",
-        "use graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
-        // The `super::` chain, at three depths — the bypass a `crate::`-anchored matcher
-        // would leave open. Depth is irrelevant to the match; the destination is what tells.
-        "use super::store::MissionDocCore;",
-        "use super::super::super::store::MissionDocCore;",
-        "use super::super::super::super::streaming::loaders::chunk::WorldChunk;",
-        "    let lane = super::super::overlay::lanes::lane_id(role);",
-    ] {
-        assert!(p.is_match(bad), "should fail the gate: {bad}");
-    }
-    for ok in [
-        "use crate::data::scenario::ast::entities;",
-        "use crate::data::scenario::compile::terrain_bounds;",
-        "use crate::data::store_of_record::Row;",
-        "use std::io::Write;",
-        "use serde_json::Value;",
-        // Code that left the map engine for a crate of its own is no module of it; the crate-tier
-        // law and the feature gates judge those edges, not this matcher.
-        "use world_file_formats::archives::codec::to_bytes;",
-        "use camera_math::ortho::Ortho;",
-        "use super::*;",
-        "use super::ast::entities;",
-        // The one collision: `data/scenario/compiler/flatten/diagnostics.rs` exists, so a
-        // `super::` chain landing on that name is in-tree traffic and the arm leaves it out.
-        "use super::super::diagnostics::render_authored;",
-        "pub(super) fn merge_resident_index() {}",
-        "use super::super::io_helpers::read;",
-        "// the streaming tier lives above this one and must stay there",
-    ] {
-        assert!(!p.is_match(ok), "should pass the gate: {ok}");
-    }
-}
-
-/// RULE 7, RED, BOTH WAYS — a chunk id reaching `data/` and a document handle reaching
-/// `world/`, in one fixture, because the rule is one wall and half of it standing is not a
-/// pass.
-#[test]
-fn the_world_data_wall_fails_in_either_direction() {
+fn the_world_naming_the_document_breaches_the_wall() {
     let r = Repo::new("rule7");
     r.map(
-        "data/store/rows/chunked.rs",
-        "use crate::streaming::scheduler::chunk_math::Bbox;\n",
-    );
-    r.map(
         "world/terrain/dem/edited.rs",
-        "use yrs::Doc;\nlet t = crate::data::store::MissionDocCore::new();\n",
+        "use yrs::Doc;\nlet t = mission_document::MissionDocCore::new();\n\
+         use crate::editing::history::UndoStack;\n",
     );
     r.expect(
         1,
         &[
-            "FAIL: the world/data wall is breached:",
-            "  data/ names the world — legacy/map_engine/src/data/store/rows/\
-                 chunked.rs:1:use crate::streaming::scheduler::chunk_math::Bbox;",
+            "FAIL: the static world names the authored document:",
             "  world/ names the document — legacy/map_engine/src/world/terrain/dem/\
                  edited.rs:1:use yrs::Doc;",
             "  world/ names the document — legacy/map_engine/src/world/terrain/dem/\
-                 edited.rs:2:let t = crate::data::store::MissionDocCore::new();",
+                 edited.rs:2:let t = mission_document::MissionDocCore::new();",
+            "  world/ names the document — legacy/map_engine/src/world/terrain/dem/\
+                 edited.rs:3:use crate::editing::history::UndoStack;",
             RULE7_TAIL[0],
-            "3 world/data finding(s)",
+            "3 world-document finding(s)",
         ],
     );
 }
 
-/// RULE 7's two matchers, one line at a time.
+/// RULE 7's matcher, one line at a time.
 ///
-/// The `ok` lists carry the three false positives that would each, on their own, make the
-/// rule unusable: `crate::worldgen` and `crate::database` are one suffix away from a hit, and
-/// "3 yrs" is the English word the CRDT crate is unfortunately spelled as.
+/// The `ok` list carries the false positives that would each, on their own, make the rule
+/// unusable: "3 yrs" is the English word the CRDT crate is spelled as, `my_mission_document` and
+/// `crate::editing_notes` are one affix away from a hit, and `mission_model` is the mission domain
+/// crate that is not the document.
 #[test]
-fn rule_7_matches_the_wall_and_not_the_legal_traffic() {
-    let data = Pattern::regex(RULE7_DATA_RE).unwrap();
-    for bad in [
-        "use crate::world::terrain::dem::grid::DemVectorGrid;",
-        "use crate::streaming::scheduler::state::WorldResidency;",
-        "use crate::spatial::indexing::picking::pick;",
-        "use crate::doll::pose::Pose;",
-        "use crate::overlay::lod::class_visible;",
-        "use crate::frame::DrawPayload;",
-        "    let v = crate::camera::viewport::Viewport::default();",
-        "use graphics_engine::draw::instances::QuadInstance;",
-        "use super::super::super::streaming::loaders::chunk::WorldChunk;",
-        "use super::world::terrain::dem::grid::DemVectorGrid;",
-    ] {
-        assert!(data.is_match(bad), "should fail the gate: {bad}");
-    }
-    for ok in [
-        "use crate::data::store::MissionDocCore;",
-        "use crate::data::scenario::compile::terrain_bounds;",
-        "use crate::worldgen::seed::X;",
-        "use std::io::Write;",
-        "use world_file_formats::containers::header::ContainerHeader;",
-        "use super::super::store::MissionDocCore;",
-        "use super::super::diagnostics::render_authored;",
-        "pub struct SlotSoa { pub x: Vec<f64>, pub y: Vec<f64> }",
-        "// authored positions are world-space metres; that is not a chunk id",
-    ] {
-        assert!(!data.is_match(ok), "should pass the gate: {ok}");
-    }
-
+fn rule_7_matches_the_document_and_not_the_legal_traffic() {
     let world = Pattern::regex(RULE7_WORLD_RE).unwrap();
     for bad in [
-        "use crate::data::store::MissionDocCore;",
-        "use crate::data::scenario::flatten::MissionMeta;",
-        "    let b = crate::data::store::operations::attrs::slot_z(&d);",
+        "use mission_document::MissionDocCore;",
+        "use mission_crdt::slot_columns::SlotSoa;",
+        "    let ids = mission_operations::entity::paste_at_cursor(&core, &buffer);",
         "use yrs::{Doc, Transact};",
         "fn tx(d: &yrs::Doc) -> yrs::TransactionMut<'_> { d.transact_mut() }",
-        "use super::super::super::super::data::store::MissionDocCore;",
+        "use crate::editing::history::UndoStack;",
+        "    let s = crate::editing::hosted_commands::summarise(&doc);",
+        "use super::super::super::super::editing::history::UndoStack;",
     ] {
         assert!(world.is_match(bad), "should fail the gate: {bad}");
     }
     for ok in [
-        "use crate::database::pool::Pool;",
+        "use crate::editing_notes::Note;",
+        "use my_mission_document::Row;",
+        "use mission_model::orbat::OrbatSlot;",
         "// resurveyed 3 yrs after the original DEM pass",
+        "// the editing tools read this module; it never reads them",
         "use world_file_formats::archives::codec::to_bytes;",
         "use crate::world::terrain::dem::grid::DemVectorGrid;",
         "use crate::streaming::loaders::fetch::fetch_bytes;",
         "use super::super::dem::grid::DemVectorGrid;",
-        "use super::super::database_of_record::Row;",
         "pub struct DemVectorGrid { pub cells: Vec<u16> }",
     ] {
         assert!(!world.is_match(ok), "should pass the gate: {ok}");

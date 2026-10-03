@@ -46,7 +46,7 @@ behaviour. `t726_window_esc_stack.rs` and `t662_input_traps.rs` pin the same sur
 
 ## `map_engine` pins `gestures.rs` — this one is not optional
 
-`legacy/map_engine/src/data/store/rows/tests/cases_1.rs` holds an `include_str!` of
+`crates/mission/mission_document/src/rows/tests/cases_1.rs` holds an `include_str!` of
 `canvas/gestures.rs`. You are moving that file, so **repoint that pin and run the engine's test
 build**. A sweep scoped to the frontend left this crate's tests uncompilable once already in this
 phase, and nobody noticed until the next brief tripped over it.

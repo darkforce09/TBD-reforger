@@ -2,27 +2,27 @@
 
 # Map engine overview
 
-The `map_engine` crate holds everything between the platform's map data and the pixels,
-and the [mission](/documentation/glossary/g_to_m.md#mission) domain that the
-[API](/documentation/glossary/a_to_f.md#api) and the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) share. This overview covers its
-layers, the feature tiers its consumers take, and the path from a mounted canvas to a drawn frame.
-The code READMEs it links hold the exact detail.
+The `map_engine` crate holds everything between the platform's map data and the pixels, and the
+editing layer through which the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
+drives the [mission](/documentation/glossary/g_to_m.md#mission) document. The mission domain itself
+(the model, the payload and game-document compilers, the validator, the document and its authoring
+commands) is the [mission crates](/crates/mission/README.md), which the
+[API](/documentation/glossary/a_to_f.md#api) and the Mission Creator link directly. This overview
+covers the crate's layers, the feature tiers its consumers take, and the path from a mounted canvas
+to a drawn frame. The code READMEs it links hold the exact detail.
 
 ## Where it lives
 
 - Code: [`legacy/map_engine/`](/legacy/map_engine/README.md), whose README gives the
   feature table, the commands and the public surface; [`src/`](/legacy/map_engine/src/README.md),
-  whose README gives the ten modules and the tier each compiles under.
+  whose README gives the nine modules and the tier each compiles under.
 - Entry:
-  - the API links the default `scenario` tier (`apps/api/Cargo.toml:65`) and calls
-    `data::scenario` from its missions and operations domains;
   - the Mission Creator installs the editing host (`editing::host::install` in
     `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`), creates the
     render engine (`RenderEngine::create` in `canvas_mount/boot_tasks.rs`) and starts streaming
     (`streaming::host::bootstrap`, through `apps/frontend/src/workspaces/editor/bridge/world_assets.rs`);
-  - the offline tools in `tools/developer_tools/` link the `world`, `streaming` and `scenario`
-    tiers, and import the world crates under `crates/` directly for the world export, the
+  - the offline tools in `tools/developer_tools/` link the `world` and `streaming` tiers, and
+    import the world crates under `crates/` directly for the world export, the
     blueprint tooling and the map checks.
 - Related features: [map streaming](/documentation/legacy/map_engine/map_streaming.md), the
   [editing layer](/documentation/legacy/map_engine/editing_layer.md),
@@ -35,14 +35,14 @@ The code READMEs it links hold the exact detail.
 
 ### Layers
 
-The modules fall into three sides and a support layer. `data` never names the world, and `world`
-never names the document; they meet only in `editing`
+The modules fall into three sides and a support layer. `world` never names the mission document
+(`yrs`, the mission document crates or `editing`), and the mission crates never reach a world
+module; the two meet only in `editing`
 ([engine boundary rules §2D](/documentation/standards/engine_boundary_rules.md#2d-static-world-and-authored-document)).
 
 | Side | Module | What it does | Tier | Deeper doc |
 |---|---|---|---|---|
-| authored | `data/scenario` | the mission compiler, validator and AST | `scenario` | [README](/legacy/map_engine/src/data/scenario/README.md) |
-| authored | `data/store` | the Yjs (`yrs`) document the Mission Creator edits, its rows and operations | `store` | [README](/legacy/map_engine/src/data/store/README.md) |
+| authored | the mission crates (`crates/mission/`) | the payload compiler, the validator, the Yjs (`yrs`) document the Mission Creator edits and its authoring commands, linked as crates | `editing` | [README](/crates/mission/README.md) |
 | authored | `editing` | the editing host, hosted commands, undo drive, draft decisions and map tools | `editing` | [editing layer](/documentation/legacy/map_engine/editing_layer.md) |
 | static | `streaming` | fetch, chunk residency, draw buffers and the memory budget | `streaming` | [map streaming](/documentation/legacy/map_engine/map_streaming.md) |
 | static | `world_file_formats` (crate) | the binary formats: rkyv archives, containers, density grids, POD layouts | `streaming` | [README](/crates/world_formats/world_file_formats/README.md) |
@@ -55,8 +55,8 @@ never names the document; they meet only in `editing`
 | support | `doll` | the [arsenal](/documentation/glossary/a_to_f.md#arsenal)'s 3D mannequin preview, a second small renderer | `render` | [README](/legacy/map_engine/src/doll/README.md) |
 
 Browser code (canvas, fetch, image decoding, timers, the console) compiles only for wasm32, most
-of it only with `render` as well; everything else builds and tests natively, which is how the API
-and the offline tools use the crate.
+of it only with `render` as well; everything else builds and tests natively, which is how the
+offline tools and the editing layer's tests use the crate.
 
 ### From a mounted canvas to a drawn frame
 
@@ -89,12 +89,14 @@ encode, submit) are in the [frame README](/legacy/map_engine/src/frame/README.md
 
 A consumer takes the lowest tier that holds what it needs; the map engine README's
 [Configuration](/legacy/map_engine/README.md#configuration) lists each feature, what it
-turns on and who takes it. The chain runs `render → streaming → world`, with `streaming` also
-taking `scenario`, and `editing → store → scenario` with `editing` also taking `world` and
-`streaming`. The graphics engine arrives with `world`, with the terrain, world-object, map overlay
-and spatial crates its modules draw; the on-disk formats, the world format crates and the
-streamed line of sight arrive with `streaming`. The API's `scenario` tier carries no
-graphics crate, PNG decoder, `rkyv` or `flate2`; the gate's rule 4 keeps it so.
+turns on and who takes it. No tier is on by default. The chain runs `render → streaming → world`
+and `editing → streaming → world`, with `editing` also taking the six mission crates it drives
+(`mission_payload`, `mission_validation`, `formation_geometry`, `mission_crdt`,
+`mission_document`, `mission_operations`). The graphics engine arrives with `world`, with the
+terrain, world-object, map overlay and spatial crates its modules draw; the on-disk formats, the
+world format crates and the streamed line of sight arrive with `streaming`. The API links the
+mission crates and not this crate, so its tree carries no graphics crate, PNG decoder, `rkyv` or
+`flate2`; the crate-tier law keeps the mission crates free of them.
 
 The crate's tests need every feature: `cargo test -p map_engine --all-features`, which
 `cargo xtask mk wasm-ci` runs, and without which the tripwire test
@@ -109,19 +111,17 @@ The crate's tests need every feature: `cargo test -p map_engine --all-features`,
   the `unit_symbology` crate, uploaded by `overlay/symbology/`, and implements no MIL-STD-2525 set
   (`crates/map_overlay/unit_symbology/README.md`). `CLAUDE.md`'s atlas also omits
   `overlay/` and `frame/`'s role as the render engine's home.
-- `legacy/map_engine/src/lib.rs:1-4` calls the crate root a module "in the graphics engine"
-  with placeholder role lines; the crate is the map engine.
 
 ## Data
 
 - `/map-assets/<terrain>/`: the served terrain tree (`assets/terrains/`), which the API mounts;
   [map streaming](/documentation/legacy/map_engine/map_streaming.md#data) lists what the
   loaders read.
-- `contracts/rules/kit-aliases.json`: embedded in `data::scenario` at build time.
+- `contracts/rules/kit-aliases.json`: embedded in `mission_payload` at build time.
 - The mission payload: the JSON the API stores as a mission version's `json_payload`, which
-  `data::store` hydrates and `data::scenario` compiles and validates; the
-  [scenario README](/legacy/map_engine/src/data/scenario/README.md) gives the compile and
-  its findings.
+  `mission_document` hydrates, `mission_payload` and `mission_compiler` compile and
+  `mission_validation` validates; the [mission crates README](/crates/mission/README.md) leads to
+  each crate's compile and findings.
 - The local draft: the document's Yjs encoding, which the Mission Creator keeps in IndexedDB;
   [draft persistence](/documentation/legacy/map_engine/draft_persistence.md) gives the
   decisions the engine makes about it.
@@ -154,8 +154,6 @@ The design target is the layout those rules describe. Where the built crate diff
 - [T-1049 — Add @contract tags to map-engine compiled mission document structs](/.ai/tickets/T-1049.toml)
   (idea, no plan): the AST, world, io and descriptor models that project `contracts` schemas
   gain `@contract` tags the citations gate resolves.
-- [T-1055 — Fix engine-layers gate omitting the map engine editing module](/.ai/tickets/T-1055.toml)
-  (idea, no plan): `data/` and `data/scenario/` naming `crate::editing` starts failing the gate.
 - [T-1058 — Fix map basemap switch back never restoring the satellite imagery](/.ai/tickets/T-1058.toml)
   (idea, no plan): switching the basemap from `map` back to `satellite` shows the imagery again.
 - [T-1059 — Check whether empty uploads leave stale height and road labels](/.ai/tickets/T-1059.toml)
@@ -191,11 +189,12 @@ The design target is the layout those rules describe. Where the built crate diff
 
 ## Decisions
 
-- One crate for the data, the world and the editing layer, with walls inside it rather than more
-  crates: the walls are cheaper to move than crate boundaries, and the gate enforces them
+- One crate for the world and the editing layer, with walls inside it rather than more crates:
+  the walls are cheaper to move than crate boundaries, and the gate enforces them
   ([engine boundary rules §2](/documentation/standards/engine_boundary_rules.md#2-walls-inside-the-map-engine)).
-- The default tier is `scenario`: the API links the compiler and nothing else, so an HTTP server
-  never compiles a GPU, image or archive crate.
+  The mission domain is its own crates, because the API links it with no map code at all.
+- No tier is on by default: every consumer names the tiers it links, so no build compiles a GPU,
+  image or archive crate it did not ask for.
 - The graphics engine arrives with `world`, not `render`: the upload belts import the renderer's
   byte layouts directly, and moving the edge up would mean rewriting them.
 - The frontend never depends on the graphics engine; it reaches the render loop through this

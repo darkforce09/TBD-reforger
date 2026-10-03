@@ -1,24 +1,22 @@
 //! The battery summary: one line per gun with what it lays.
 //!
 //! **Role:** shows each gun's laid charge — charge, elevation, aim azimuth and time of flight —
-//! in the table at the head of the solution panel, worded by the map engine's shared
-//! [`map_engine::data::scenario::ballistics::solution_wording`].
+//! in the table at the head of the solution panel, worded by `fire_mission_planning`'s shared
+//! [`fire_mission_planning::solution_wording`].
 //! **Position:** the first table of the solution panel (`super`), above the per-gun charge tables.
 //! **Signals & state:** none; pure functions and a view over plain values.
 //! **Invariants:** a gun lays the pinned charge when the operator chose one, else its
 //! recommendation; a gun whose laid charge does not solve says so and shows no figures; angles
 //! are in the weapon's mils and in degrees.
 
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::battery::GunFireSolution;
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::solution_wording::{battery_line_words, BatteryLineWords};
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::battery::GunFireSolution;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::solution_wording::{
-    battery_line_words, BatteryLineWords,
-};
 
-/// One gun's summary line: the map engine's shared [`BatteryLineWords`].
+/// One gun's summary line: `fire_mission_planning`'s shared [`BatteryLineWords`].
 #[cfg(any(target_arch = "wasm32", test))]
 pub(crate) type BatteryRowText = BatteryLineWords;
 

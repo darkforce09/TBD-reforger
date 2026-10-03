@@ -54,10 +54,10 @@ pub(super) fn vehicle_attrs_view(
     id: String,
     registry_items: RwSignal<Option<Vec<crate::foundation::transport::dto::RegistryItem>>>,
 ) -> AnyView {
-    use map_engine::editing::hosted_commands::VehicleCargoRow;
+    use mission_operations::entity::VehicleCargoRow;
     use std::collections::HashMap;
 
-    let Some(v) = engine_ops::vehicle_rows().into_iter().find(|r| r.id == id) else {
+    let Some(v) = engine_ops::vehicle_rows().into_iter().find(|r| r.id == *id) else {
         crate::workspaces::editor::bridge::host_state::editor_context::close_attributes();
         return ().into_any();
     };
@@ -93,7 +93,7 @@ pub(super) fn vehicle_attrs_view(
         let id_h = StoredValue::new(vid.clone());
         number_field("Heading", h, Some("°"), Gate::open(), move |raw| {
             let deg = ((raw % 360.0) + 360.0) % 360.0;
-            engine_ops::set_vehicle_heading(id_h.get_value(), deg);
+            engine_ops::set_vehicle_heading((id_h.get_value()).into_inner(), deg);
         })
         .into_any()
     } else {
@@ -128,7 +128,7 @@ pub(super) fn vehicle_attrs_view(
                             if let Some(r) = next.get_mut(i) {
                                 r.qty = q;
                             }
-                            engine_ops::set_vehicle_cargo(id_q.clone(), next);
+                            engine_ops::set_vehicle_cargo(id_q.to_string(), next);
                         }
                     />
                     <button
@@ -140,7 +140,7 @@ pub(super) fn vehicle_attrs_view(
                             if i < next.len() {
                                 next.remove(i);
                             }
-                            engine_ops::set_vehicle_cargo(id_r.clone(), next);
+                            engine_ops::set_vehicle_cargo(id_r.to_string(), next);
                         }
                     >
                         <crate::foundation::ui::MaterialIcon name="close" class="block text-sm" />
@@ -170,10 +170,10 @@ pub(super) fn vehicle_attrs_view(
                         on:change=move |ev| {
                             let slot = event_target_value(&ev);
                             if slot.is_empty() {
-                                engine_ops::clear_crew_seat(id_seat.clone(), sid.clone());
+                                engine_ops::clear_crew_seat(id_seat.to_string(), sid.clone());
                             } else {
                                 engine_ops::assign_crew_seat(
-                                    id_seat.clone(),
+                                    id_seat.to_string(),
                                     sid.clone(),
                                     slot,
                                 );
@@ -187,9 +187,9 @@ pub(super) fn vehicle_attrs_view(
                             .get_value()
                             .into_iter()
                             .map(|choice| {
-                                let is_sel = choice.id == occupant;
+                                let is_sel = choice.id == *occupant;
                                 view! {
-                                    <option value=choice.id.clone() selected=is_sel>
+                                    <option value=choice.id.to_string() selected=is_sel>
                                         {choice.label}
                                     </option>
                                 }
@@ -253,7 +253,7 @@ pub(super) fn vehicle_attrs_view(
                                 } else {
                                     next.push(VehicleCargoRow { item, qty: 1 });
                                 }
-                                engine_ops::set_vehicle_cargo(id_add.clone(), next);
+                                engine_ops::set_vehicle_cargo(id_add.to_string(), next);
                             }
                         >
                             <option value="">"Add cargo…"</option>

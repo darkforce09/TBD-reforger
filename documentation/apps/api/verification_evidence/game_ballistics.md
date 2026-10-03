@@ -10,9 +10,9 @@ engine oracle identified; acceptance evidence is the command output recorded in
 progress_checkpoint.md. The wire shapes are three schemas under `contracts/definitions/`:
 `contracts/definitions/ballistics-catalog.schema.json`,
 `contracts/definitions/ballistics-calibration.schema.json` and
-`contracts/definitions/fire-mission.schema.json` (version 2). The map-engine module is
-`legacy/map_engine/src/data/scenario/ballistics/`, written `ballistics/` below; its feature
-doc is the [game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
+`contracts/definitions/fire-mission.schema.json` (version 2). The code is the five
+crates under `crates/ballistics/` (`ballistics_model`, `ballistics_solver`, `fire_mission_planning`,
+`ballistics_calibration`, `ballistics_agreement_cases`); its feature doc is the [game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md).
 The section B entry of remaining_milestones.md links here once the register lands.
 
 ## Operator decisions
@@ -109,7 +109,7 @@ are 90 rows at 1° of [θ rad, range, apex] plus `m_aValues`, decoded below.
 
 ## Flight model
 
-`ballistics/flight_model/` with `ballistics/wind.rs`. It takes its own `FlightParameters` and knows
+`ballistics_model`'s `flight_model/` with its `wind.rs`. It takes its own `FlightParameters` and knows
 nothing of catalogs.
 
 - Acceleration a = −g·ẑ − k·|v_rel|·v_rel with k = AirDrag / Mass, v_rel = v − m_w·w and
@@ -160,7 +160,7 @@ to 0.01 mil and 1e-3 s rather than 1e-9.
 
 ## Solver
 
-`ballistics/solver/`, over `ballistics/catalog/` lookups and the flight model.
+`ballistics_solver`, over `ballistics_model`'s `catalog/` lookups and the flight model.
 
 - Per charge, the top of the bracket is the maximum elevation, or, when that flight outlives the
   shell's TimeToLive, the highest elevation that still lands in time (found by bisection).
@@ -223,18 +223,18 @@ below zero).
 ### Battery and the assembled solution
 
 `guns[]` (one to twelve) each solve independently onto one target, each with its own azimuth,
-elevation, charge, time of flight and dispersion. `ballistics/fire_mission.rs` is the one
+elevation, charge, time of flight and dispersion. `fire_mission_planning`'s `fire_mission.rs` is the one
 assembler the API and the page call: `solve_fire_mission` takes the save's input fields and an
 optional terrain profile and returns the whole `FireMissionSolution`, stamped with the catalog and
-`SOLVER_REVISION` (the constant in `ballistics/fire_mission.rs`, now `game-ballistics-2`, bumped
+`SOLVER_REVISION` (the constant in `fire_mission_planning`'s `fire_mission.rs`, now `game-ballistics-2`, bumped
 by any change that can alter a solved number).
-`ballistics/fire_mission_comparison.rs` holds the mismatch rule: equal provenance, gun count, ring
+`fire_mission_planning`'s `fire_mission_comparison.rs` holds the mismatch rule: equal provenance, gun count, ring
 lists, recommended charges and refusals; aim azimuths and elevations within 1 weapon mil; times of
 flight and the fuze time within 0.1 s.
 
 ## Calibration criterion
 
-`ballistics/calibration/` is production code: `evaluate(catalog, bundle)` returns a
+`ballistics_calibration` is production code: `evaluate(catalog, bundle)` returns a
 `CalibrationReport {cases, failures, forward_samples_not_judged}`. The API upload and the tests
 run the same function. Each shell is flown at InitSpeed × coefficient with the catalog's gravity,
 mass, drag and wind multiplier.
@@ -415,21 +415,23 @@ Migration `apps/api/migrations/0060_game_ballistics_catalogs_and_fire_mission_in
 
 ## Register
 
-Minimums are the counts the orchestrator measures after implementation, never lowered. The
-map-engine crate has two `#[ignore]` tests, so its checks use name filters and never `--quiet`.
+Minimums are the counts the orchestrator measures after implementation, never lowered. Checks
+never pass `--quiet`, so every case line is counted.
 
-Every map-engine check runs the one command
-`cargo test -p map_engine --all-features --locked data::scenario::ballistics::` and counts
-its own modules with `(?m)^test data::scenario::ballistics::(?:<modules>)::[A-Za-z0-9_:]+ \.\.\. ok$`;
-each of the 18 modules belongs to exactly one check.
+Every crate check runs `cargo test -p <crate> --locked` and counts its own test modules with
+`(?m)^test (?:<modules>)::[A-Za-z0-9_:]+ \.\.\. ok$`; each test module of the five crates
+belongs to exactly one check.
 
 | Requirement | Check | Modules or command | Minimum |
 |---|---|---|---|
-| `game_ballistics_flight_model` | `game_ballistics_flight_model` | `flight_model`, `wind`, `angular_units`, `catalog` | 51 |
-| `game_ballistics_calibration` | `game_ballistics_calibration` | `calibration` | 34 |
-| `game_ballistics_elevation_wind_dispersion` | `game_ballistics_elevation_wind_dispersion` | `solver`, `dispersion`, `fuze`, `crest_clearance`, `tests_bounded_failure`, `tests_end_to_end`, `tests_oracle_elevation_and_wind`, `tests_symmetry` | 81 |
-| `game_ballistics_battery` | `game_ballistics_battery` | `battery`, `fire_mission`, `fire_mission_comparison` | 29 |
-| `game_ballistics_wasm_agreement` | `game_ballistics_shared_solution_cases` | `agreement_cases`, `solution_wording` | 18 |
+| `game_ballistics_flight_model` | `game_ballistics_flight_model` | `ballistics_model`: `flight_model`, `wind`, `angular_units`, `catalog` | 51 |
+| `game_ballistics_calibration` | `game_ballistics_calibration` | `ballistics_calibration`: `tests`, `report`, `tests_catalog_digest` | 34 |
+| `game_ballistics_elevation_wind_dispersion` | `game_ballistics_elevation_wind_dispersion` | `ballistics_solver`: `tests`, `wind_corrected_aim`, `dispersion`, `crest_clearance`, `tests_bounded_failure`, `tests_symmetry` | 64 |
+| | `game_ballistics_fuze_and_end_to_end` | `fire_mission_planning`: `fuze`, `tests_end_to_end` | 9 |
+| | `game_ballistics_oracle_elevation_and_wind` | `ballistics_calibration`: `tests_oracle_elevation_and_wind` | 8 |
+| `game_ballistics_battery` | `game_ballistics_battery` | `fire_mission_planning`: `battery`, `fire_mission`, `fire_mission_comparison` | 29 |
+| `game_ballistics_wasm_agreement` | `game_ballistics_shared_solution_cases` | `ballistics_agreement_cases`: `case_lattice` | 11 |
+| | `game_ballistics_solution_wording` | `fire_mission_planning`: `solution_wording` | 7 |
 | | `game_ballistics_wasm_agreement` | `cargo xtask mk ballistics-wasm-agreement` (trunk release build plus the developer_tools `gate ballistics-agreement`): `(?m)^case ballistics_wasm_agreement_[A-Za-z0-9_]+ \.\.\. ok$`, marker `ballistics-wasm-agreement: PASS 32/32` | 32 |
 | `game_ballistics_offline_page` | `game_ballistics_offline_page`, plus `frontend_quality` and `browser_acceptance` | `cargo xtask mk mortar-offline-gate` (the developer_tools `gate mortar-offline`): `(?m)^case mortar_offline_[a-z0-9_]+ \.\.\. ok$`, marker `mortar-offline: PASS` | 15 |
 | `verification_game_ballistics` (catalog API and saved fire missions) | `verification_game_ballistics`, plus `backend_regression`, route acceptance and contract parity | `cargo xtask db test-it`, `game_ballistics*` | 29 |
@@ -448,8 +450,8 @@ catalog all 32 cases agree and all 32 are bit-identical.
 ## Settled model questions
 
 Each question was settled against the committed bundle of game build 1.8.0.13; the calibration
-module's [README](/legacy/map_engine/src/data/scenario/ballistics/calibration/README.md)
-holds the evidence and `ballistics/calibration/tests/committed_bundle.rs` pins it.
+module's [README](/crates/ballistics/ballistics_calibration/src/README.md)
+holds the evidence and `crates/ballistics/ballistics_calibration/src/tests/committed_bundle.rs` pins it.
 
 | # | Question | Answer |
 |---|---|---|

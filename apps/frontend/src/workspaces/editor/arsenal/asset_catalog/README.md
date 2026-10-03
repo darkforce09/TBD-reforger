@@ -44,7 +44,7 @@ folders follow the row's `category` path.
 - Depends on: the parent `asset_catalog.rs` (`CatalogNode`, `PlacePayload`, the side predicates,
   `object_alias_registered`, which reads `apps/mod/tbd-framework/Data/registry.json` embedded at
   compile time); `RegistryItem` from `crate::foundation::transport::dto`; `classname_tail` from
-  `map_engine::data::store::operations::assets`.
+  `mission_operations::assets`.
 - Used by: `asset_catalog.rs`, which re-exports the builders and the search; through it, in
   `apps/frontend/src/workspaces/editor/`:
   - `mission_editor/canvas_mount/registry_effects.rs`, for the vehicle tree;

@@ -1,0 +1,31 @@
+# The one fire-mission assembler: a fire mission's inputs against a pinned catalog to the whole
+# battery solution with fuzes, crest clearance and dispersion, the client/server mismatch rule and
+# the words every surface shows a solution in. The API, the mortar calculator and the developer
+# tools' browser gates all solve through it.
+[package]
+name = "fire_mission_planning"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The fire-mission assembler: battery solutions, time fuzes, the client/server comparison rule and the solution wording."
+
+[package.metadata.layout]
+category = "crates/ballistics"
+tier = 3
+targets = "any"
+
+[dependencies]
+ballistics_model = { workspace = true }
+ballistics_solver = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+libm = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+jsonschema = { workspace = true }
+
+[lints]
+workspace = true

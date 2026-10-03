@@ -15,7 +15,7 @@ pub(crate) fn triggers_panel(
     use crate::workspaces::editor::ui::outliner::tree::{ROW, ROW_ACTIVE};
 
     let draw_activation = RwSignal::new(
-        engine_ops::TRIGGER_ACTIVATIONS
+        mission_operations::entity::TRIGGER_ACTIVATIONS
             .first()
             .copied()
             .unwrap_or("presence")
@@ -50,7 +50,7 @@ pub(crate) fn triggers_panel(
             class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
             on:change=move |ev| draw_activation.set(event_target_value(&ev))
         >
-            {engine_ops::TRIGGER_ACTIVATIONS
+            {mission_operations::entity::TRIGGER_ACTIVATIONS
                 .iter()
                 .map(|a| {
                     let a = (*a).to_string();
@@ -195,7 +195,7 @@ pub(crate) fn triggers_panel(
                                                 ROW
                                             }
                                         }
-                                        on:click=move |_| selected.set(Some(id.clone()))
+                                        on:click=move |_| selected.set(Some(id.to_string()))
                                     >
                                         <MaterialIcon
                                             name=if t.circle.is_some() {
@@ -224,7 +224,7 @@ pub(crate) fn triggers_panel(
             let Some(id) = selected.get() else {
                 return ().into_any();
             };
-            let Some(t) = engine_ops::trigger_rows().into_iter().find(|r| r.id == id) else {
+            let Some(t) = engine_ops::trigger_rows().into_iter().find(|r| r.id == *id) else {
                 return ().into_any();
             };
             trigger_attributes(t, doc_tick, selected).into_any()

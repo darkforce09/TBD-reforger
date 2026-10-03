@@ -110,8 +110,8 @@ fn the_z_arm_releases_the_pointer_capture_before_it_commits() {
     );
 }
 
-fn mixed_doc() -> map_engine::data::store::MissionDocCore {
-    let core = map_engine::data::store::MissionDocCore::new();
+fn mixed_doc() -> mission_document::MissionDocCore {
+    let core = mission_document::MissionDocCore::new();
     core.set_origin_init(true);
     core.add_slot(
         "roof",

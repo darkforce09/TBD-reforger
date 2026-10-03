@@ -2,10 +2,10 @@
 
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(test, target_arch = "wasm32"))]
-pub use map_engine::data::store::operations::reassign::faction_label;
 #[cfg(target_arch = "wasm32")]
 use map_engine::editing::hosted_commands as engine_ops;
+#[cfg(any(test, target_arch = "wasm32"))]
+pub use mission_operations::reassign::faction_label;
 
 mod asset_type_picker;
 mod attribute_commits_and_revert;
@@ -64,7 +64,8 @@ pub fn AttributesModal(
         });
     }
     let opts = MultiOpts::new();
-    let snapshot: StoredValue<Vec<engine_ops::SlotAttrs>> = StoredValue::new(Vec::new());
+    let snapshot: StoredValue<Vec<mission_operations::attrs::SlotAttrs>> =
+        StoredValue::new(Vec::new());
     Effect::new(move |_| {
         let open = attrs_open.get();
         opts.reset();
@@ -121,23 +122,23 @@ pub fn AttributesModal(
 #[cfg(target_arch = "wasm32")]
 #[allow(clippy::too_many_arguments)]
 fn modal_view(
-    attrs: engine_ops::SlotAttrs,
+    attrs: mission_operations::attrs::SlotAttrs,
     multi: Vec<String>,
     selection_n: usize,
-    diff: engine_ops::AttrDiff,
+    diff: mission_operations::attrs::AttrDiff,
     opts: MultiOpts,
-    snapshot: StoredValue<Vec<engine_ops::SlotAttrs>>,
+    snapshot: StoredValue<Vec<mission_operations::attrs::SlotAttrs>>,
     registry_items: RwSignal<Option<Vec<crate::foundation::transport::dto::RegistryItem>>>,
     compat: RwSignal<crate::workspaces::editor::arsenal::rules::CompatFeed>,
     tab: RwSignal<usize>,
 ) -> AnyView {
-    let slot_id = StoredValue::new(attrs.id.clone());
+    let slot_id = StoredValue::new(attrs.id.to_string());
     let is_multi = multi.len() > 1;
     let multi_n = multi.len();
     let targets = StoredValue::new(if is_multi {
         multi
     } else {
-        vec![attrs.id.clone()]
+        vec![attrs.id.to_string()]
     });
     let locked_n = engine_ops::attrs_locked_count(&targets.get_value());
     let attrs = StoredValue::new(attrs);
@@ -233,7 +234,7 @@ fn modal_view(
                             .into_any(),
                         2 => states_tab().into_any(),
                         _ => {
-                            let loadout = engine_ops::read_loadout(&slot_id.get_value());
+                            let loadout = engine_ops::read_loadout(slot_id.get_value().as_str());
                             view! {
                                 {is_multi
                                     .then(|| {

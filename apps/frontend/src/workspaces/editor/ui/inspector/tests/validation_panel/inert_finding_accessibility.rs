@@ -5,8 +5,8 @@ use super::{
     PanelFinding,
 };
 use crate::foundation::test_support::class_r_scrub::{live_code, live_source, only_body};
-use map_engine::data::scenario::validate::Primitive;
-use map_engine::data::scenario::validate::Severity;
+use mission_validation::Primitive;
+use mission_validation::Severity;
 
 fn pf(rule_id: &str, subject_id: Option<&str>) -> PanelFinding {
     PanelFinding {

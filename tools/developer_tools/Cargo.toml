@@ -24,8 +24,12 @@ webp = "0.3"
 map_engine = { path = "../../legacy/map_engine", default-features = false, features = [
     "world",
     "streaming",
-    "scenario",
 ] }
+# The ballistics crates the agreement and offline mortar browser gates solve and compare with:
+# the catalog, the fire-mission assembler and the seeded agreement cases.
+ballistics_model = { workspace = true }
+fire_mission_planning = { workspace = true }
+ballistics_agreement_cases = { workspace = true }
 # The on-disk world formats the export and verification pipelines write and read, and the
 # geometry crates their blueprint, chunk and line-of-sight code computes with.
 world_file_formats = { workspace = true }

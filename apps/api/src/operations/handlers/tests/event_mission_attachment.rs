@@ -1,7 +1,7 @@
 //! Source pins for the attach path: the join-key refusal must run before any slot is written,
 //! and the writer must store `faction` byte-for-byte.
 
-use map_engine::data::scenario::orbat::validate_faction_join_key;
+use mission_model::orbat::validate_faction_join_key;
 
 const ATTACHMENT: &str = include_str!("../event_mission_attachment.rs");
 const MISSION_ATTACHMENT: &str =

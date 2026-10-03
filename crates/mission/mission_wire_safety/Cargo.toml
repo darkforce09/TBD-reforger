@@ -1,0 +1,23 @@
+# The wire-safety and cargo capacity scans of a mission editor payload: the authored names that
+# would carry a control character into the compiled mission document, and the slot cargo heavier
+# or bulkier than the garment that holds it. The API runs both on every save; the mission
+# compiler and validator crates call them too.
+[package]
+name = "mission_wire_safety"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The control-character scan of a mission's authored names and the cargo capacity scan of its slot loadouts."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 0
+targets = "any"
+
+[dependencies]
+serde_json = { workspace = true, features = ["preserve_order"] }
+
+[lints]
+workspace = true

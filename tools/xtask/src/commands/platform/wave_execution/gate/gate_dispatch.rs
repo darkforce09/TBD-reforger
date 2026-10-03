@@ -226,9 +226,9 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         migrate::gate_db_migrate_persist(ctx, &state, "advance") as i32
     });
     r.run("test api", || db::gate_test_api(ctx));
-    // --all-features is REQUIRED. `map_engine`'s default feature is `scenario` alone, so
+    // --all-features is REQUIRED. `map_engine` turns no feature tier on by default, so
     // a bare `cargo test -p map_engine` compiles a fraction of the crate and is a vacuous
-    // pass; the merged tripwire REDs on it. `ci-local` and this gate must match. Private target
+    // pass; the feature-floor tripwire REDs on it. `ci-local` and this gate must match. Private target
     // dir for the same reason as `test api` and `test frontend`: this step RUNS test binaries.
     let mapengine_dir = format!(
         "CARGO_TARGET_DIR={}",

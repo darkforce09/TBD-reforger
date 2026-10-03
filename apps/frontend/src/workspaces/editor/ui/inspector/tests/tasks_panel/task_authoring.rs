@@ -14,7 +14,7 @@ fn add_appends_a_primary_assigned_task_with_a_fresh_id() {
     assert_eq!(next[1]["id"], "task-2");
     assert_eq!(next[1]["tier"], "primary");
     assert_eq!(next[1]["state"], "assigned");
-    map_engine::data::scenario::tasks::validate(&Value::Array(next))
+    mission_model::objectives::tasks::validate(&Value::Array(next))
         .expect("the panel must not author a block the compile refuses");
 }
 
@@ -63,7 +63,7 @@ fn with_field_sets_tier_trigger_and_marker_and_strips_blank_optionals() {
     assert_eq!(next[0]["markerId"], "attack");
     let next = with_field(&next, 0, "triggerId", "  ").expect("blank optional");
     assert!(next[0].get("triggerId").is_none());
-    map_engine::data::scenario::tasks::validate(&Value::Array(next)).expect("valid");
+    mission_model::objectives::tasks::validate(&Value::Array(next)).expect("valid");
 }
 
 #[test]
@@ -97,7 +97,7 @@ fn a_full_authoring_pass_produces_a_block_the_compile_accepts() {
     rows = with_field(&rows, 2, "tier", "optional").expect("opt");
     rows = move_task(&rows, 2, -1);
     assert_eq!(rows[1]["tier"], "optional");
-    map_engine::data::scenario::tasks::validate(&Value::Array(rows))
+    mission_model::objectives::tasks::validate(&Value::Array(rows))
         .expect("the panel must not author a block the compile refuses");
 }
 
@@ -126,7 +126,7 @@ fn with_schedule_writes_start_and_window() {
     assert_eq!(schedule_seconds(&next[0], "startAfterS"), "600");
     assert_eq!(schedule_seconds(&next[0], "windowS"), "300");
     assert_eq!(schedule_seconds(&pri(), "startAfterS"), "");
-    map_engine::data::scenario::tasks::validate(&Value::Array(next))
+    mission_model::objectives::tasks::validate(&Value::Array(next))
         .expect("the panel must not author a block the compile refuses");
     assert_eq!(FLOW_DEFAULT_TIMELIMIT_S, 5400);
 }

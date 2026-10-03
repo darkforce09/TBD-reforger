@@ -4,7 +4,7 @@
 //! of the chosen shell; keeps the choice valid when the catalog or the weapon changes; renders
 //! the three pickers.
 //! **Position:** the head of the inputs card; the solve bridge reads [`ArmamentSelection`] and the
-//! illumination field reads the chosen shell's time fuze. The catalog is the map engine's
+//! illumination field reads the chosen shell's time fuze. The catalog is `ballistics_model`'s
 //! [`BallisticsCatalog`] as the catalog source decoded it.
 //! **Signals & state:** the view reads the page's catalog signal and reads and writes its
 //! selection signal; the pure functions hold nothing.
@@ -61,7 +61,7 @@ pub(crate) fn weapon_options(catalog: &BallisticsCatalog) -> Vec<PickerOption> {
         .weapons
         .iter()
         .map(|w| PickerOption {
-            value: w.weapon_id.clone(),
+            value: w.weapon_id.to_string(),
             label: format!("{} ({} mils)", w.display_name, w.mils_per_circle),
         })
         .collect()
@@ -78,7 +78,7 @@ pub(crate) fn shell_options(catalog: &BallisticsCatalog, weapon_id: &str) -> Vec
         .iter()
         .filter_map(|id| catalog.shells.iter().find(|s| &s.shell_id == id))
         .map(|s| PickerOption {
-            value: s.shell_id.clone(),
+            value: s.shell_id.to_string(),
             label: format!("{} — {}", s.display_name, role_label(s.role)),
         })
         .collect()
@@ -139,14 +139,14 @@ pub(crate) fn reconcile_selection(
     let weapon_id = if catalog
         .weapons
         .iter()
-        .any(|w| w.weapon_id == current.weapon_id)
+        .any(|w| w.weapon_id == *current.weapon_id)
     {
         current.weapon_id.clone()
     } else {
         catalog
             .weapons
             .first()
-            .map(|w| w.weapon_id.clone())
+            .map(|w| w.weapon_id.to_string())
             .unwrap_or_default()
     };
     let shells = shell_options(catalog, &weapon_id);

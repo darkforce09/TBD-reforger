@@ -73,9 +73,8 @@ Rust 1.95.
     optional dependency turned on by its `world` and `render` features;
   - through the map engine, and never by a direct dependency, the frontend in
     `apps/frontend/` (the `world` tier natively, `render` in the browser) and the
-    developer tools in `tools/developer_tools/` (the `world` tier); `api` takes the
-    map engine's `scenario` tier and does not link this crate, although `deploy/Dockerfile`
-    copies it into the image's trimmed workspace;
+    developer tools in `tools/developer_tools/` (the `world` tier); `api` links neither engine,
+    although `deploy/Dockerfile` copies this crate into the image's trimmed workspace;
   - `tools/xtask/`, whose `mk wasm-ci` recipe and `verify engine-layers` gate name it.
 - Rules:
   - this crate never imports `map_engine` (`cargo xtask verify engine-layers`, rule 1);

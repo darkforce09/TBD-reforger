@@ -1,8 +1,8 @@
 //! Validation panel finding rollup and debounce tests.
 
 use super::*;
-use map_engine::data::scenario::validate::default_registry;
-use map_engine::data::scenario::validate::EvalContext;
+use mission_validation::default_registry;
+use mission_validation::EvalContext;
 use serde_json::json;
 
 fn duplicate_callsign_payload() -> serde_json::Value {
@@ -202,7 +202,8 @@ fn a_clean_payload_stays_clean_with_a_supplied_catalogue() {
             }]
         }
     });
-    let ids: std::collections::HashSet<String> = [asset.to_string()].into_iter().collect();
+    let ids: std::collections::HashSet<mission_validation::AssetId> =
+        [asset.into()].into_iter().collect();
     let ctx = EvalContext::default().with_known_asset_ids(ids);
     let findings = default_registry().evaluate_with_context(&clean, &ctx);
     assert!(

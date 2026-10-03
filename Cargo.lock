@@ -302,10 +302,14 @@ dependencies = [
  "async-stream",
  "axum",
  "axum-extra",
+ "ballistics_calibration",
+ "ballistics_model",
+ "ballistics_solver",
  "chrono",
  "contract_schema_types",
  "csv",
  "dotenvy",
+ "fire_mission_planning",
  "fleet_wire_contract",
  "futures",
  "governor",
@@ -313,7 +317,11 @@ dependencies = [
  "http_url_guard",
  "jsonschema",
  "jsonwebtoken",
- "map_engine",
+ "mission_compiler",
+ "mission_model",
+ "mission_payload",
+ "mission_validation",
+ "mission_wire_safety",
  "proptest",
  "pulldown-cmark",
  "rand 0.10.2",
@@ -728,6 +736,57 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
+]
+
+[[package]]
+name = "ballistics_agreement_cases"
+version = "0.1.0"
+dependencies = [
+ "ballistics_model",
+ "ballistics_solver",
+ "deterministic_random",
+ "fire_mission_planning",
+ "libm",
+ "newtype_ids",
+ "serde_json",
+]
+
+[[package]]
+name = "ballistics_calibration"
+version = "0.1.0"
+dependencies = [
+ "ballistics_model",
+ "ballistics_solver",
+ "content_digest",
+ "libm",
+ "newtype_ids",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ballistics_model"
+version = "0.1.0"
+dependencies = [
+ "jsonschema",
+ "libm",
+ "newtype_ids",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "ballistics_solver"
+version = "0.1.0"
+dependencies = [
+ "ballistics_model",
+ "deterministic_random",
+ "libm",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -1672,10 +1731,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "ballistics_agreement_cases",
+ "ballistics_model",
  "base64",
  "bcdec_rs",
  "building_interiors",
  "clap",
+ "fire_mission_planning",
  "flate2",
  "futures-util",
  "geometry_primitives",
@@ -2346,6 +2408,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
+name = "fire_mission_planning"
+version = "0.1.0"
+dependencies = [
+ "ballistics_model",
+ "ballistics_solver",
+ "jsonschema",
+ "libm",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "flate2"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2474,6 +2549,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "formation_geometry"
+version = "0.1.0"
+dependencies = [
+ "deterministic_random",
+]
+
+[[package]]
 name = "fraction"
 version = "0.15.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2487,11 +2569,16 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
+ "ballistics_agreement_cases",
+ "ballistics_model",
+ "ballistics_solver",
  "base64",
  "browser_platform",
  "building_interiors",
  "camera_math",
  "console_error_panic_hook",
+ "fire_mission_planning",
+ "formation_geometry",
  "futures",
  "geometry_primitives",
  "gloo-net",
@@ -2505,6 +2592,13 @@ dependencies = [
  "map_coordinates",
  "map_draw_lanes",
  "map_engine",
+ "mission_compiler",
+ "mission_crdt",
+ "mission_document",
+ "mission_model",
+ "mission_operations",
+ "mission_payload",
+ "mission_validation",
  "offline_cache_policy",
  "overlay_instances",
  "render_primitives",
@@ -4080,15 +4174,19 @@ dependencies = [
  "camera_math",
  "console_error_panic_hook",
  "flate2",
+ "formation_geometry",
  "futures",
  "graphics_engine",
  "interior_line_of_sight",
  "js-sys",
- "jsonschema",
  "label_layout",
- "libm",
  "map_coordinates",
  "map_draw_lanes",
+ "mission_crdt",
+ "mission_document",
+ "mission_operations",
+ "mission_payload",
+ "mission_validation",
  "overlay_instances",
  "place_names",
  "prefab_catalog",
@@ -4102,7 +4200,6 @@ dependencies = [
  "terrain_elevation",
  "terrain_line_of_sight",
  "terrain_relief",
- "thiserror 2.0.18",
  "unit_symbology",
  "vegetation",
  "wasm-bindgen",
@@ -4114,7 +4211,6 @@ dependencies = [
  "world_file_formats",
  "world_line_of_sight",
  "world_store",
- "yrs",
 ]
 
 [[package]]
@@ -4225,6 +4321,97 @@ dependencies = [
  "log",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "mission_compiler"
+version = "0.1.0"
+dependencies = [
+ "mission_model",
+ "mission_payload",
+ "mission_validation",
+ "mission_wire_safety",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "mission_crdt"
+version = "0.1.0"
+dependencies = [
+ "time_source",
+ "yrs",
+]
+
+[[package]]
+name = "mission_document"
+version = "0.1.0"
+dependencies = [
+ "mission_compiler",
+ "mission_crdt",
+ "mission_model",
+ "mission_payload",
+ "mission_validation",
+ "newtype_ids",
+ "serde_json",
+ "thiserror 2.0.18",
+ "time_source",
+ "yrs",
+]
+
+[[package]]
+name = "mission_model"
+version = "0.1.0"
+dependencies = [
+ "newtype_ids",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "mission_operations"
+version = "0.1.0"
+dependencies = [
+ "formation_geometry",
+ "map_coordinates",
+ "mission_crdt",
+ "mission_document",
+ "mission_model",
+ "mission_payload",
+ "mission_validation",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "mission_payload"
+version = "0.1.0"
+dependencies = [
+ "mission_model",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "mission_validation"
+version = "0.1.0"
+dependencies = [
+ "mission_payload",
+ "mission_wire_safety",
+ "newtype_ids",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "mission_wire_safety"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
 ]
 
 [[package]]

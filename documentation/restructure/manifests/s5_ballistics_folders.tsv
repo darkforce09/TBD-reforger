@@ -1,0 +1,14 @@
+# Stage S5 D2, first of three: the four ballistics module folders into their crates, and the
+# ballistics feature docs. Folder rows only, so no row nests in another; the file moves follow in
+# s5_ballistics.tsv and the Rust path rewrites in s5_ballistics_paths.tsv. Paths name the tree
+# before the moves.
+kind	from	to	scope
+#
+# the catalog and the shell flight model are the ballistics model crate's modules
+path	legacy/map_engine/src/data/scenario/ballistics/catalog	crates/ballistics/ballistics_model/src/catalog
+path	legacy/map_engine/src/data/scenario/ballistics/flight_model	crates/ballistics/ballistics_model/src/flight_model
+# the solver folder becomes the solver crate's source root; the calibration folder the calibration crate's
+path	legacy/map_engine/src/data/scenario/ballistics/solver	crates/ballistics/ballistics_solver/src
+path	legacy/map_engine/src/data/scenario/ballistics/calibration	crates/ballistics/ballistics_calibration/src
+# the feature docs follow the code to the crates documentation tree
+path	documentation/legacy/map_engine/data/scenario/ballistics	documentation/crates/ballistics

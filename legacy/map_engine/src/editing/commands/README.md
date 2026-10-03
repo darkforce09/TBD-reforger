@@ -41,7 +41,7 @@ legacy/map_engine/src/editing/commands/
 ## Boundaries
 
 - Depends on: `map_coordinates::grid_reference` for the three-digit grid reference,
-  `crate::data::scenario::validate` (`Finding`, `Severity`) for the compile summary, and
+  `mission_validation` (`Finding`, `Severity`) for the compile summary, and
   `serde_json`.
 - Used by: the Mission Creator's document commands
   (`apps/frontend/src/workspaces/editor/session/document_commands.rs`, which re-exports all

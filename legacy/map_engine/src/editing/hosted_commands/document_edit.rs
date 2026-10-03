@@ -5,9 +5,9 @@
 //! borrows of the same document. An edit made with no document hosted runs no tail and reports
 //! `false`, which every caller reads as "nothing happened" rather than as a failure.
 
-use crate::data::store::MissionDocCore;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_document::MissionDocCore;
 
 /// Run `edit` against the live document, then the tail, so the whole edit is one undo step.
 /// `false` when no document is hosted.

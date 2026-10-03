@@ -8,16 +8,16 @@
 //! [`crate::operations::handlers::fire_missions::save`] before anything is stored. Reads the pinned
 //! catalog through
 //! [`crate::operations::services::ballistics_catalogs::catalog_store::load_catalog`]; solves with
-//! [`map_engine::data::scenario::ballistics::fire_mission::solve_fire_mission`] and compares
-//! with [`map_engine::data::scenario::ballistics::fire_mission_comparison::compare_solutions`].
+//! [`fire_mission_planning::fire_mission::solve_fire_mission`] and compares
+//! with [`fire_mission_planning::fire_mission_comparison::compare_solutions`].
 //! The stored row is written by [`crate::operations::services::fire_mission_store`].
 //!
 //! **Signals & state:** none; the solve runs on the blocking pool, so a large battery never
 //! stalls the async workers.
 //!
 //! **Invariants:**
-//! - The API never assembles a solution: the stored and answered solution is the map engine's
-//!   re-solve, bit for bit.
+//! - The API never assembles a solution: the stored and answered solution is
+//!   `fire_mission_planning`'s re-solve, bit for bit.
 //! - An unknown catalog id or version answers 404; a save the assembler refuses answers 422 with
 //!   `details.code = "fire_mission_refused"`; a client solution the comparison rule does not
 //!   tolerate answers 422 with `details.code = "solution_mismatch"`, every mismatch with both
@@ -27,12 +27,12 @@
 //!   and no invented number fills them.
 
 use axum::http::StatusCode;
-use map_engine::data::scenario::ballistics::battery::GunFireSolution;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use ballistics_solver::ChargeSolution;
+use fire_mission_planning::battery::GunFireSolution;
+use fire_mission_planning::fire_mission::{
     FireMissionInputs, FireMissionSolution, solve_fire_mission,
 };
-use map_engine::data::scenario::ballistics::fire_mission_comparison::compare_solutions;
-use map_engine::data::scenario::ballistics::solver::ChargeSolution;
+use fire_mission_planning::fire_mission_comparison::compare_solutions;
 use serde_json::json;
 
 use crate::core::error_handling::api_error::ApiError;
@@ -116,7 +116,7 @@ pub async fn resolve_fire_mission(
 ) -> Result<ResolvedFireMission, ApiError> {
     let not_found = || ApiError::not_found("ballistics catalog version not found");
     let version = i32::try_from(inputs.catalog_version).map_err(|_| not_found())?;
-    let catalog = match load_catalog(pool, &inputs.catalog_id, version).await {
+    let catalog = match load_catalog(pool, inputs.catalog_id.as_str(), version).await {
         Ok(Some(catalog)) => catalog,
         Ok(None) => return Err(not_found()),
         Err(CatalogLoadError::Database(error)) => return Err(error.into()),

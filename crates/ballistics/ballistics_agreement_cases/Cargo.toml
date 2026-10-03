@@ -1,0 +1,32 @@
+# The agreement cases: a seeded lattice of battery fire problems drawn over a catalog, their
+# fire-mission inputs and the IEEE 754 bit patterns of their solutions, so the native build and
+# the wasm32 build of the planner can be compared bit for bit. The developer tools' agreement gate
+# and the single-page app's agreement bench both draw from it.
+[package]
+name = "ballistics_agreement_cases"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A seeded, deterministic lattice of battery fire problems and the bit patterns of their solutions, for native and wasm32 agreement."
+
+[package.metadata.layout]
+category = "crates/ballistics"
+tier = 4
+targets = "any"
+
+[dependencies]
+ballistics_model = { workspace = true }
+ballistics_solver = { workspace = true }
+fire_mission_planning = { workspace = true }
+deterministic_random = { workspace = true }
+newtype_ids = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+libm = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+
+[lints]
+workspace = true

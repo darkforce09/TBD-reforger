@@ -45,8 +45,8 @@ both sample exports in `contracts/fixtures/registry/`.
 ## Boundaries
 
 - Depends on: the schemas in `contracts/definitions/`, embedded with `include_str!`; the
-  `jsonschema` crate; `map_engine::data::scenario` for the `wire_safety` scans, the cargo
-  catalog type and the kit-alias table.
+  `jsonschema` crate; the `mission_wire_safety` crate for the name and cargo capacity scans and
+  the cargo catalog type; `mission_payload::kit_aliases` for the kit-alias table.
 - Used by: `missions::handlers` (`mission_versions`, `faction_library`) and `missions::services`
   (`mission_artifacts`, `registry_import`).
 - The types generated from the registry, editor payload and faction schemas live in

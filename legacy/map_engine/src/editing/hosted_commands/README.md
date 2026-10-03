@@ -3,7 +3,7 @@
 The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document commands that run
 against the installed editing host: each names what to change, opens the hosted
 [mission](/documentation/glossary/g_to_m.md#mission) document, calls the matching
-`crate::data::store::operations` edit, and runs the post-change tail. A caller passes no document
+`mission_operations` edit, and runs the post-change tail. A caller passes no document
 handle, selection set or undo bookkeeping.
 
 ## Contents
@@ -35,7 +35,7 @@ legacy/map_engine/src/editing/hosted_commands/
 host UI ──► hosted command (ids, values, host closures)
                │ crate::editing::host: one borrow of the document (and the selection, the id minter)
                ▼
-            crate::data::store::operations::<area>  one transaction, or one group for a set
+            mission_operations::<area>  one transaction, or one group for a set
                │ borrow dropped
                ▼
             crate::editing::history::after_local_edit  only when something changed
@@ -60,9 +60,9 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
 
 - Depends on: `crate::editing::host` (the document, selection and id minter),
   `crate::editing::history::after_local_edit`, `crate::editing::batch`,
-  `crate::editing::tools::placement` for the arrange vocabulary, and `crate::data::store`
-  (`MissionDocCore` and the `operations` modules for attributes, cargo, compositions, document
-  index, entities, faction library, projections, reassignment, transforms and zones).
+  `formation_geometry` for the arrange vocabulary, `mission_document` (`MissionDocCore`,
+  `ConnectionKind`), and the `mission_operations` modules for attributes, cargo, compositions,
+  document index, entities, faction library, projections, reassignment, transforms and zones.
 - Used by:
   - `crate::editing::tools::selection`, whose `Rotate` gesture commits through
     `selection_transform::rotate_selection_to_face`;
@@ -77,7 +77,7 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
 
 ## Related documentation
 
-- [Mission document store](/legacy/map_engine/src/data/store/README.md) — the document and
+- [Mission document](/crates/mission/mission_document/README.md) — the document and
   the operations these commands drive.
 - [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — the [ORBAT](/documentation/glossary/n_to_z.md#orbat), layers, markers, zones, triggers,

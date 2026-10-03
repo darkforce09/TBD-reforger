@@ -29,7 +29,7 @@ build renders nothing.
 
 - Depends on: the parent module (`mode_options`, `param_fields`, `with_mode`, `with_param`,
   `with_trigger` and the write through the bridge's `editor_context::update_environment`), whose
-  modes, triggers and limits come from `map_engine::data::scenario::win_conditions`.
+  modes, triggers and limits come from `mission_model::objectives::win_conditions`.
 - Used by: the parent module, which re-exports `win_conditions_card`; the Mission Settings dialog,
   which renders it after the mission flow section
   (`apps/frontend/src/workspaces/editor/ui/modals/settings_modal/mission_dialog.rs`).

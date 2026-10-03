@@ -161,7 +161,7 @@ character ("Every role needs a name and a character.").
   (`shell/factions_panel.rs:96`) — interface text names a ticket, and T-078 is cancelled.
 - An object leaf in a side's tree says "Drag onto the map to place this object"
   (`ui/docks/dock_right/palette/mod.rs:38`) — the side mode refuses to arm objects
-  (`placement_is_armable` in `legacy/map_engine/src/data/store/operations/entity/arming.rs`),
+  (`placement_is_armable` in `crates/mission/mission_operations/src/entity/arming.rs`),
   so the press places nothing (PLACE-DROP-002).
 
 ## Data

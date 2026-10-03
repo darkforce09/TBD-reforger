@@ -99,7 +99,7 @@ pub fn export_now(version: &str) {
     let doc = compile_export(
         &payload,
         &snap.small,
-        &snap.mission_id,
+        &snap.mission_id.clone().into(),
         version,
         &js_date_iso(),
     );

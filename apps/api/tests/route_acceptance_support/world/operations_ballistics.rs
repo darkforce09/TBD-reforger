@@ -12,7 +12,7 @@
 //! `contracts/fixtures/ballistics/vanilla_mortars.v1/calibration.json`) by renaming its
 //! `catalog_id` in both documents and re-pinning the bundle's `catalog_sha256` to the renamed
 //! catalog bytes, so the calibration still flies every case of the committed bundle. Each client
-//! solution is solved with the same map-engine assembler the mortar calculator runs.
+//! solution is solved with the same `fire_mission_planning` assembler the mortar calculator runs.
 //!
 //! **Signals & state:** the committed pair's text, read once per world, and the world's own
 //! catalog version.
@@ -26,8 +26,8 @@ use api::core::application_state::AppState;
 use api::core::http_router;
 use api::core::wire_format::content_digest::sha256_hex;
 use axum::Router;
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use ballistics_model::catalog::BallisticsCatalog;
+use fire_mission_planning::fire_mission::{
     FireMissionGunPosition, FireMissionInputs, FireMissionPoint, HeightSource, solve_fire_mission,
 };
 use serde_json::{Value, json};
@@ -182,10 +182,10 @@ impl OperationsBallisticsWorld {
     /// M252 firing M821 HE from one gun onto a target 1.2 km away, in calm air.
     fn inputs(catalog_id: &str) -> FireMissionInputs {
         FireMissionInputs {
-            catalog_id: catalog_id.to_owned(),
+            catalog_id: catalog_id.into(),
             catalog_version: 1,
-            weapon_id: "m252".to_owned(),
-            shell_id: "m821".to_owned(),
+            weapon_id: "m252".into(),
+            shell_id: "m821".into(),
             charge_rings: None,
             target: FireMissionPoint {
                 x: 2200.0,
@@ -208,7 +208,7 @@ impl OperationsBallisticsWorld {
 
     /// A `FireMissionSave` body on `event` against `catalog`, with the engine's own solution.
     fn save_body(catalog: &BallisticsCatalog, event: Uuid) -> Value {
-        let inputs = Self::inputs(&catalog.catalog_id);
+        let inputs = Self::inputs(catalog.catalog_id.as_str());
         let solution = solve_fire_mission(catalog, &inputs).expect("the world's inputs solve");
         let mut body = serde_json::to_value(&inputs).expect("serialise the inputs");
         body["event_id"] = json!(event.to_string());

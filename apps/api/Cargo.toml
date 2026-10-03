@@ -50,6 +50,17 @@ http_url_guard = { workspace = true }
 jsonschema = { workspace = true }
 # rust_crypto = pure-Rust HMAC/SHA backend for HS256 (no aws-lc-rs C dependency).
 jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto"] }
+# The control-character and cargo capacity scans every mission save and compile runs.
+mission_wire_safety = { workspace = true }
+# The game-document compiler's identity, error and compiled document the artifact store records.
+mission_compiler = { workspace = true }
+# The compiled slot row the compile service re-exports, and the ORBAT template parse and faction
+# join-key check behind event mission attachment.
+mission_model = { workspace = true }
+# The editor payload compiler and the kit alias table the mission contract loads.
+mission_payload = { workspace = true }
+# The validation findings the compile service re-exports as its diagnostics.
+mission_validation = { workspace = true }
 pulldown-cmark = { version = "0.13.4", default-features = false }
 rand = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
@@ -71,11 +82,12 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 url = "2.5.8"
 uuid = { workspace = true, features = ["v4", "serde"] }
-# The map engine's mission domain (its `data/scenario` module): the mission compiler the server
-# and the wasm client share. The default features are `scenario` alone, the one tier with no
-# graphics crate, no png, no rkyv and no flate2, so the server compiles the mission domain and
-# nothing else.
-map_engine = { path = "../../legacy/map_engine" }
+# The ballistics crates behind the fire-mission routes and the catalog uploads: the catalog, the
+# solver's charge rows, the fire-mission assembler and comparison, and the catalog calibration.
+ballistics_model = { workspace = true }
+ballistics_solver = { workspace = true }
+fire_mission_planning = { workspace = true }
+ballistics_calibration = { workspace = true }
 
 # `failpoints` compiles the fault-injection registry of `src/core/failpoints/` in. Only the self
 # dev-dependency below enables it: every test build of this crate carries it, and the deploy

@@ -35,8 +35,8 @@ pub(super) fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoVie
     let faction_of = |sid: &String| {
         squads
             .iter()
-            .find(|s| &s.id == sid)
-            .map(|s| s.faction_id.clone())
+            .find(|s| s.id == **sid)
+            .map(|s| s.faction_id.to_string())
             .unwrap_or_default()
     };
     let current_factions: Vec<String> = current_squads.iter().map(faction_of).collect();
@@ -51,18 +51,18 @@ pub(super) fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoVie
     let listed_faction = one_faction.clone();
     let squad_options: Vec<(String, String)> = ordered
         .iter()
-        .find(|f| f.id == listed_faction)
+        .find(|f| f.id == *listed_faction)
         .map(|f| {
             f.squad_ids
                 .iter()
-                .filter_map(|sid| squads.iter().find(|s| &s.id == sid))
+                .filter_map(|sid| squads.iter().find(|s| s.id == **sid))
                 .map(|s| {
                     let name = if s.name.trim().is_empty() {
-                        s.id.clone()
+                        s.id.to_string()
                     } else {
                         s.name.clone()
                     };
-                    (s.id.clone(), format!("{name} ({})", s.slot_ids.len()))
+                    (s.id.to_string(), format!("{name} ({})", s.slot_ids.len()))
                 })
                 .collect()
         })
@@ -72,9 +72,9 @@ pub(super) fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoVie
     let refusal = RwSignal::new(String::new());
     let n = ids.len();
     let commit = move |faction_id: String, squad_id: String| {
-        let target = ops::ReassignTarget {
-            faction_id,
-            squad_id,
+        let target = mission_operations::reassign::ReassignTarget {
+            faction_id: faction_id.into(),
+            squad_id: squad_id.into(),
         };
         match ops::reassign_slots(&targets.get_value(), &target) {
             Ok(_) => refusal.set(String::new()),
@@ -106,9 +106,9 @@ pub(super) fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoVie
                     {ordered
                         .iter()
                         .map(|f| {
-                            let sel = f.id == one_faction;
+                            let sel = f.id == *one_faction;
                             view! {
-                                <option value=f.id.clone() selected=sel>
+                                <option value=f.id.to_string() selected=sel>
                                     {faction_label(f)}
                                 </option>
                             }

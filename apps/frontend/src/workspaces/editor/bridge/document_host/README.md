@@ -67,8 +67,9 @@ the harness.
 ## Boundaries
 
 - Depends on:
-  - `map_engine`: `data::store` (`MissionDocCore`, `SlotSoa`, the debug seed),
-    `editing::history`, `editing::tools::selection` and `frame` (`RenderEngine`, `EngineHandle`);
+  - `map_engine`: `editing::history`, `editing::tools::selection` and `frame` (`RenderEngine`,
+    `EngineHandle`);
+  - `mission_document` (`MissionDocCore`, the debug seed) and `mission_crdt` (`SlotSoa`);
   - `unit_symbology` (`classification`, `squad_links`) and `map_draw_lanes::lane_roles`;
   - in `apps/frontend/src/workspaces/editor/`: the editor context in
     `apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/`,

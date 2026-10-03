@@ -1,0 +1,36 @@
+# The authoring commands of the mission document: entity placement, ORBAT roster, faction library
+# apply, attribute and transform edits, cargo and loadouts, zones, tactical graphics, layers,
+# compositions, document search and the row projections the Mission Creator's docks read. The map
+# engine's hosted commands call it with the document they borrow.
+[package]
+name = "mission_operations"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The authoring commands and row projections of the mission document the Mission Creator edits."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 5
+targets = "any"
+
+[dependencies]
+formation_geometry = { workspace = true }
+map_coordinates = { workspace = true }
+mission_crdt = { workspace = true }
+mission_document = { workspace = true }
+mission_model = { workspace = true }
+mission_payload = { workspace = true }
+mission_validation = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The stepping undo clock the undo-grouping tests drive the document with.
+mission_document = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

@@ -10,7 +10,7 @@ fn attrs_src() -> String {
 fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/attrs.rs"
+        "/../../crates/mission/mission_operations/src/attrs.rs"
     )));
     {
         let f = "pub fn attrs_update_position(";
@@ -63,7 +63,7 @@ fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
     );
     let live_ops = live_source(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/attrs.rs"
+        "/../../crates/mission/mission_operations/src/attrs.rs"
     )));
     let read = only_body(&live_ops, "fn slot_z(");
     assert!(
@@ -81,7 +81,7 @@ fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
 fn a_placement_commit_carries_each_slots_current_z_back_in() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/transform.rs"
+        "/../../crates/mission/mission_operations/src/transform.rs"
     )));
     let body = only_body(&ops, "fn commit_positions(");
     assert!(
@@ -153,7 +153,7 @@ fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+            "/../../crates/mission/mission_operations/src/compositions.rs"
         )),
         crate::foundation::test_support::editor_operations::CONTEXT,
         crate::foundation::test_support::editor_operations::ENTITY,

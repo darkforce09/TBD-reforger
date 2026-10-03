@@ -9,9 +9,9 @@ use std::rc::Rc;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_draw_lanes::lane_roles::role_id;
-use map_engine::data::store::MissionDocCore;
-use map_engine::data::store::SlotSoa;
 use map_engine::frame::engine::RenderEngine;
+use mission_crdt::soa::SlotSoa;
+use mission_document::MissionDocCore;
 use unit_symbology::squad_links::build_squad_link_segments;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;

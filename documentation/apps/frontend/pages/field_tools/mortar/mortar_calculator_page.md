@@ -5,7 +5,7 @@
 The `/tools/mortar` page, titled "Mortar Calculator": anyone picks a weapon, shell and charge from
 a ballistics catalog, places one to twelve guns and a target on the Everon map or by grid
 reference, gives the wind and a burst height, and the page solves every gun's firing solution on
-the device with the map engine's ballistics. It works offline once visited. A signed-in member can
+the device with the ballistics crates. It works offline once visited. A signed-in member can
 save the fire mission against an [event](/documentation/glossary/a_to_f.md#event), so the gun
 line can reload it.
 
@@ -15,13 +15,13 @@ line can reload it.
   `page.rs` holds the route component `MortarCalculatorPage`; `catalog_source.rs` the public
   catalog reads; `inputs/` the weapon and shell, position, battery, wind and illumination inputs;
   `map_picker/` the Everon map with placing, dragging, the fire-mission overlay and the crest
-  profile; `solve_bridge.rs` the mapping onto the map engine's solver; `solution/` the solution
+  profile; `solve_bridge.rs` the mapping onto `fire_mission_planning`'s solver; `solution/` the solution
   panel; `saved_fires/` the save area; `offline_status.rs` the offline pack line. The folder's
   [README](/apps/frontend/src/pages/field_tools/mortar/README.md) describes each file.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/frontend/src/pages/field_tools/mortar/README.md#routes).
 - Related:
-  - the [game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md),
+  - the [game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md),
     whose `solve_fire_mission` the page and the API both run;
   - the [ballistics catalogs page](/documentation/apps/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md),
     where administrators publish the catalogs the page solves with;

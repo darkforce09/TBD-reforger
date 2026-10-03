@@ -61,9 +61,9 @@ fn the_kind_list_is_the_cores_vocabulary() {
         src.contains("tactical_graphics::KINDS"),
         "T-946.86 (.84): the kind select must read map-engine-core's KINDS, not a local list"
     );
-    for kind in map_engine::data::scenario::tactical_graphics::KINDS {
+    for kind in mission_model::tactical_graphics::KINDS {
         assert!(
-            map_engine::data::scenario::tactical_graphics::min_points(kind).is_some(),
+            mission_model::tactical_graphics::min_points(kind).is_some(),
             "every offered kind must be one begin_tactical_draw accepts — `{kind}` is not"
         );
     }

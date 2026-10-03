@@ -5,7 +5,7 @@
 //! their rows materialize in and whatever order their string dictionaries interned in. Floats are
 //! compared bit-exactly, so the fingerprint never hides a coordinate that merely rounds the same.
 
-use crate::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
 
 /// A canonical fingerprint of the materialized slots: one sorted line per slot, every interned
 /// index resolved to its string, every float as its exact bits.

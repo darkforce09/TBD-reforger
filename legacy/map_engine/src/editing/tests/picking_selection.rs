@@ -148,7 +148,7 @@ fn mix_test_soa(rows: &[(&str, f32, f32)]) -> SlotSoa {
 /// exercises the mint-around-authoring branch and the original F4 render invariant at once.
 #[test]
 fn refile_merge_two_link_segments() {
-    use crate::data::store::place_character_under_side;
+    use mission_operations::place_orbat::place_character_under_side;
     use std::collections::HashMap;
     use unit_symbology::squad_links::build_squad_link_segments;
 
@@ -158,12 +158,12 @@ fn refile_merge_two_link_segments() {
         &doc, "BLUFOR", "a", "lyr", "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
     )
     .expect("p1");
-    doc.rename_squad(&s1, "Alpha");
+    doc.rename_squad(s1.as_str(), "Alpha");
     let (_, s2, b) = place_character_under_side(
         &doc, "BLUFOR", "b", "lyr", "Rifleman", None, None, 10.0, 0.0, 0.0, 0.0,
     )
     .expect("p2");
-    doc.rename_squad(&s2, "Bravo");
+    doc.rename_squad(s2.as_str(), "Bravo");
     let (_, s3, c) = place_character_under_side(
         &doc, "BLUFOR", "c", "lyr", "Rifleman", None, None, 20.0, 0.0, 0.0, 0.0,
     )
@@ -171,8 +171,8 @@ fn refile_merge_two_link_segments() {
     assert_ne!(s1, s2, "a renamed squad is not grown");
     assert_ne!(s2, s3, "a renamed squad is not grown");
 
-    doc.move_slot_to_squad(&b, &s1);
-    doc.move_slot_to_squad(&c, &s1);
+    doc.move_slot_to_squad(b.as_str(), s1.as_str());
+    doc.move_slot_to_squad(c.as_str(), s1.as_str());
 
     let root: serde_json::Value =
         serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json");

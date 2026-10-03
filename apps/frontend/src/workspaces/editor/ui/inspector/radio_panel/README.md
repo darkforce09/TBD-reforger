@@ -28,7 +28,7 @@ The native build renders nothing.
 - Depends on: the parent module (`nets_from_block`, `add_net`, `move_net`, `remove_net`,
   `with_field`, `plan_from_nets` and the write through the bridge's
   `editor_context::update_environment`), whose limits come from
-  `map_engine::data::scenario::radio_plan`.
+  `mission_model::radio_plan`.
 - Used by: the parent module, which re-exports `radio_panel`; the Mission Settings dialog
   (`apps/frontend/src/workspaces/editor/ui/modals/settings_modal/mission_dialog.rs`), which mounts it
   after the tasks panel.

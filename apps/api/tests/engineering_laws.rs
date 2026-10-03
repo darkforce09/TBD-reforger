@@ -163,8 +163,8 @@ fn engineering_laws_api_depends_on_no_graphics_or_frontend_crate() {
         manifest
             .dependencies
             .iter()
-            .any(|edge| edge.package == "map_engine"),
-        "the manifest reader found no map_engine edge, so it read nothing"
+            .any(|edge| edge.package == "mission_compiler"),
+        "the manifest reader found no mission_compiler edge, so it read nothing"
     );
     let edges = rule_findings(&root, &API_RULE).expect("the api manifest reads");
     assert!(edges.is_empty(), "{}", rendered(&edges));

@@ -124,7 +124,7 @@ pub(crate) fn check_document_matches(
     requested: &CatalogKey,
     document: &BallisticsCatalog,
 ) -> Result<(), String> {
-    if document.catalog_id == requested.catalog_id
+    if document.catalog_id == *requested.catalog_id
         && document.catalog_version == requested.catalog_version
     {
         Ok(())

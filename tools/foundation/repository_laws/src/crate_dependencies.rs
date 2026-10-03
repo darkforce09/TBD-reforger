@@ -57,12 +57,13 @@ pub const FRONTEND_RULE: CrateDependencyRule = CrateDependencyRule {
              HTTP, never by linking either",
 };
 
-/// The server: the map engine's mission domain only, never the renderer or the frontend.
+/// The server: the mission and ballistics crates, never the map engine, the renderer or the
+/// frontend.
 pub const API_RULE: CrateDependencyRule = CrateDependencyRule {
     crate_rel: "apps/api",
-    forbidden_packages: &["graphics_engine", "frontend"],
-    reason: "the server links map_engine for the mission domain alone and links neither \
-             the renderer nor the frontend",
+    forbidden_packages: &["map_engine", "graphics_engine", "frontend"],
+    reason: "the server links the mission and ballistics crates for the mission domain and links \
+             neither the map engine, the renderer nor the frontend",
 };
 
 /// The offline service worker: cache policy the page also links, never the server, the page or

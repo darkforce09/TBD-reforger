@@ -80,7 +80,7 @@ fn cargo_key_presence_follows_user_state() {
     let (rows, present) = rules::cargo_from_loadout(Some(&lo));
     assert!(present && rows.is_empty());
     // Seeded rows survive a pick-edit persist verbatim.
-    let seeded = map_engine::data::store::operations::cargo_rules::seed_cargo(
+    let seeded = mission_operations::cargo_rules::seed_cargo(
         Some(&picks_to_loadout(&p, &names(), None).unwrap()),
         &[rules::CargoRow {
             container: "pants".into(),

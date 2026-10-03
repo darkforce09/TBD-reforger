@@ -7,9 +7,9 @@ use super::*;
 #[cfg(target_arch = "wasm32")]
 pub(super) fn identity_tab(
     targets: StoredValue<Vec<String>>,
-    attrs: StoredValue<engine_ops::SlotAttrs>,
+    attrs: StoredValue<mission_operations::attrs::SlotAttrs>,
     is_multi: bool,
-    diff: engine_ops::AttrDiff,
+    diff: mission_operations::attrs::AttrDiff,
     opts: MultiOpts,
     registry_items: RwSignal<Option<Vec<crate::foundation::transport::dto::RegistryItem>>>,
 ) -> impl IntoView {
@@ -20,7 +20,7 @@ pub(super) fn identity_tab(
         <div class="flex flex-col gap-4">
             {type_picker(
                 "Type",
-                a.asset_id.clone(),
+                a.asset_id.to_string(),
                 g(diff.asset_id, opts.asset_id),
                 registry_items,
                 move |asset_id| commit_slot(targets, None, None, None, Some(asset_id), None),

@@ -2,7 +2,7 @@
 use serde_json::Value;
 
 #[cfg(any(test, target_arch = "wasm32"))]
-pub use map_engine::data::store::operations::tactical_graphics::TacticalDraft;
+pub use mission_operations::tactical_graphics::TacticalDraft;
 
 /// Screen pixel tolerance for selecting a tactical graphic.
 #[cfg(target_arch = "wasm32")]
@@ -366,7 +366,7 @@ pub(crate) fn pick_tactical_vertex(
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub(crate) fn live_tactical_graphics(
-    core: &map_engine::data::store::MissionDocCore,
+    core: &mission_document::MissionDocCore,
 ) -> Vec<TacticalGraphic> {
     let Ok(root) = serde_json::from_str::<Value>(&core.small_maps_json()) else {
         return Vec::new();

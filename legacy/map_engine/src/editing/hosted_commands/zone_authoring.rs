@@ -7,16 +7,15 @@
 //! label are different authored states the schema allows on purpose: `Some("")` stores an empty
 //! label, which the mod reads as "use the pretty title fallback", and `None` removes the key.
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::operations::entity as entity_ops;
-use crate::data::store::operations::zones::DrawTarget;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_document::MissionDocCore;
+use mission_operations::entity as entity_ops;
+use mission_operations::zones::DrawTarget;
 
 use super::document_edit::commit_document_edit;
 
-/// One authored zone, as the dock's row needs it.
-pub use crate::data::store::operations::entity::ZoneRow;
+use mission_operations::entity::ZoneRow;
 
 /// Every authored zone, in document order — the dock's list.
 #[must_use]

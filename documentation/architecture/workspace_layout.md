@@ -54,7 +54,7 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 |---|---|---|
 | [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub, with the `api` server and the registry import and staging fixture tools |
 | [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk; its `src/` holds five layers: `foundation/`, `features/`, `pages/`, `workspaces/` and `shell/` |
-| [`legacy/map_engine/`](/legacy/map_engine/README.md) | `map_engine` | map graphics, spatial computation, terrain formats, streaming and the mission domain |
+| [`legacy/map_engine/`](/legacy/map_engine/README.md) | `map_engine` | map graphics, spatial computation, terrain formats, streaming and the editing seam over the mission crates |
 | [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | `graphics_engine` | GPU rendering primitives with no map concept |
 | [`apps/offline_service_worker/`](/apps/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs |
 | [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md) | `fleet_host_agent` | the agent beside each game-server instance that carries out fleet commands |
@@ -73,6 +73,20 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`crates/graphics/render_primitives/`](/crates/graphics/render_primitives/README.md) | `render_primitives` | map-agnostic CPU rendering primitives: instances, geometry, triangulation, cull oracle, text, the WGSL shader |
 | [`crates/contracts/fleet_wire_contract/`](/crates/contracts/fleet_wire_contract/README.md) | `fleet_wire_contract` | the fleet-command wire shapes the API and the fleet host agent share |
 | [`crates/contracts/contract_schema_types/`](/crates/contracts/contract_schema_types/README.md) | `contract_schema_types` | the Rust types generated from the JSON Schemas |
+| [`crates/mission/mission_wire_safety/`](/crates/mission/mission_wire_safety/README.md) | `mission_wire_safety` | the control-character scan of authored names and the cargo capacity scan of slot loadouts |
+| [`crates/mission/mission_model/`](/crates/mission/mission_model/README.md) | `mission_model` | the compiled rows, ORBAT projection, authored extension blocks, slot line and typed ids of a mission |
+| [`crates/mission/mission_crdt/`](/crates/mission/mission_crdt/README.md) | `mission_crdt` | the native yrs id arrays, row-aligned slot columns and undo grouping clocks of the mission document |
+| [`crates/mission/formation_geometry/`](/crates/mission/formation_geometry/README.md) | `formation_geometry` | the placement patterns, align, space, orient and garrison positions of the arrange commands |
+| [`crates/mission/mission_payload/`](/crates/mission/mission_payload/README.md) | `mission_payload` | the editor payload, export envelope and version body compiler, with the kit alias table |
+| [`crates/mission/mission_validation/`](/crates/mission/mission_validation/README.md) | `mission_validation` | the ordered validation rules of an editor payload, their findings, facts and self-check |
+| [`crates/mission/mission_compiler/`](/crates/mission/mission_compiler/README.md) | `mission_compiler` | the game-document compiler, its compile findings and the compiler identity |
+| [`crates/mission/mission_document/`](/crates/mission/mission_document/README.md) | `mission_document` | the mergeable mission document: rows, hydrate and export, merge, selection and undo |
+| [`crates/mission/mission_operations/`](/crates/mission/mission_operations/README.md) | `mission_operations` | the authoring commands and row projections the Mission Creator applies to the mission document |
+| [`crates/ballistics/ballistics_model/`](/crates/ballistics/ballistics_model/README.md) | `ballistics_model` | the ballistics catalog, shell flight model, surface wind, angular units and typed catalog ids |
+| [`crates/ballistics/ballistics_solver/`](/crates/ballistics/ballistics_solver/README.md) | `ballistics_solver` | the high-angle firing solver per charge, wind-corrected aim, crest clearance and impact dispersion |
+| [`crates/ballistics/fire_mission_planning/`](/crates/ballistics/fire_mission_planning/README.md) | `fire_mission_planning` | the fire-mission assembler: battery solutions, time fuzes, the comparison rule and the wording |
+| [`crates/ballistics/ballistics_calibration/`](/crates/ballistics/ballistics_calibration/README.md) | `ballistics_calibration` | a ballistics catalog judged against the game's native tables, wind tables and engine oracle samples |
+| [`crates/ballistics/ballistics_agreement_cases/`](/crates/ballistics/ballistics_agreement_cases/README.md) | `ballistics_agreement_cases` | the seeded lattice of battery fire problems and the bit patterns of their solutions |
 | [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command router: builds, gates, deploys, repository verifications |
 | [`tools/foundation/verification_core/`](/tools/foundation/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, gates and the verification lock |
 | [`tools/foundation/process_runner/`](/tools/foundation/process_runner/README.md) | `process_runner` | process isolation, deadlines, host-bridge execution and the secure shell transport |

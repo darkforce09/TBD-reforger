@@ -33,10 +33,8 @@ pub fn compiled_export_text(doc: &[u8]) -> Result<String, String> {
 ///
 /// Class-R / ungated so native `cargo test` can pin the wording without a browser (the
 /// [`compiled_export_text`] precedent).
-pub fn compile_diagnostics_summary(
-    findings: &[crate::data::scenario::validate::Finding],
-) -> Option<String> {
-    use crate::data::scenario::validate::Severity;
+pub fn compile_diagnostics_summary(findings: &[mission_validation::Finding]) -> Option<String> {
+    use mission_validation::Severity;
     if findings.is_empty() {
         return None;
     }

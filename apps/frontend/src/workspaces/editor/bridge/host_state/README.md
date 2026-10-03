@@ -33,8 +33,8 @@ also selects a folder's direct slots or its whole subtree, selects every slot an
 `undo_grouped_gestures.rs` wraps a delete, a paste and an align in
 `map_engine::editing::batch::with_batch`, so a gesture the operator made as one act is one
 Ctrl+Z, and supplies the engine with `confirm_bulk`, a browser confirmation the engine calls before
-a bulk move above its threshold; at wasm start `install_undo_gesture_clock` feeds `Date.now` into
-the engine's document store, the clock the undo grouping needs.
+a bulk move above its threshold. The undo grouping times gestures on the document's platform clock,
+`Date.now()` in the browser, so the host installs no clock.
 
 Nothing here mints an undo step of its own: an arm is host state, a selection over ids the document
 no longer holds is pruned by the undo driver's tail, and an unregistered side signal is silence
@@ -58,8 +58,9 @@ rather than an error.
 ## Boundaries
 
 - Depends on: `map_engine` (`editing::host`, `editing::batch`, `editing::hosted_commands`,
-  `editing::tools` for selection and placement, `data::store::operations` for the placement commit,
-  the zone draft, the projections and the selection centroid); the undo driver in
+  `editing::tools` for selection); `formation_geometry` for the arrange vocabulary;
+  `mission_operations` for the placement commit, the zone draft, the projections and the selection
+  centroid; the undo driver in
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; the outliner's node builders and
   `ensure_active_layer`; the asset catalog; the right dock's marker vocabulary and recently placed
   list; `web_sys` for the confirmation dialog.

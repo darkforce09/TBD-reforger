@@ -16,14 +16,12 @@ pub(super) const RULE3A_HEAD: &str = "==> engine-layers rule 3a — only the enu
      name graphics_engine::frame under legacy/map_engine/src";
 pub(super) const RULE3B_HEAD: &str = "==> engine-layers rule 3b — no GPU-resource module of \
      graphics_engine named under legacy/map_engine/src";
-pub(super) const RULE4_HEAD: &str = "==> engine-layers rule 4 — legacy/map_engine/src/data/scenario \
-     imports nothing outside itself";
 pub(super) const RULE5_HEAD: &str = "==> engine-layers rule 5 — no web_sys / leptos / wasm_bindgen under \
      legacy/map_engine/src/editing";
 pub(super) const RULE6_HEAD: &str = "==> engine-layers rule 6 — apps/frontend must not import graphics_engine \
      or a wasm-only crates/graphics member";
-pub(super) const RULE7_HEAD: &str = "==> engine-layers rule 7 — the static world and the authored document \
-     share nothing under legacy/map_engine/src";
+pub(super) const RULE7_HEAD: &str = "==> engine-layers rule 7 — legacy/map_engine/src/world names no home \
+     of the authored document";
 
 pub(super) const RULE1_TAIL: &[&str] = &[
     "      The arrow runs map-engine -> graphics layer and only that way. Compute it in",
@@ -49,12 +47,6 @@ pub(super) const RULE3B_TAIL: &[&str] = &[
     "      the construction; do not add a row to RULE3B_PIN",
     "      (documentation/standards/engine_boundary_rules.md §5 rule 3b).",
 ];
-pub(super) const RULE4_TAIL: &[&str] = &[
-    "      api links this crate at the `scenario` feature alone — that is why its tree",
-    "      carries no wgpu, png, rkyv or flate2. One import here drags a whole tier into an HTTP",
-    "      server. Pass the value in as an argument",
-    "      (documentation/standards/engine_boundary_rules.md §5 rule 4).",
-];
 pub(super) const RULE5_TAIL: &[&str] = &[
     "      editing/ holds the editor's DECISIONS — tool state machines, the undo drive, the",
     "      command formatting — and every one of them must be answerable by `cargo test` with no",
@@ -70,9 +62,10 @@ pub(super) const RULE6_TAIL: &[&str] = &[
     "      (documentation/standards/engine_boundary_rules.md §5 rule 6).",
 ];
 pub(super) const RULE7_TAIL: &[&str] = &[
-    "      world/ is streamed, immutable and never persisted; data/ is authored, undoable and",
-    "      persisted. They share the spatial index and nothing else — a chunk id in data/ or a",
-    "      document handle in world/ fuses them back together",
+    "      world/ is streamed, immutable and never persisted; the mission document (yrs,",
+    "      mission_crdt, mission_document, mission_operations and the editing module that hosts",
+    "      it) is authored, undoable and persisted. A document handle in world/ fuses them back",
+    "      together — hand the world's answer to the editing layer instead",
     "      (documentation/standards/engine_boundary_rules.md §2D).",
 ];
 pub(super) const PROBE_FAIL: &[&str] = &[

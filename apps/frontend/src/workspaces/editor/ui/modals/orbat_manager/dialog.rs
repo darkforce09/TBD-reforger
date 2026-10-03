@@ -69,7 +69,7 @@ pub fn OrbatManagerDialog(
         let vehicle_by_squad: HashMap<String, usize> = snap
             .squads
             .iter()
-            .map(|s| (s.id.clone(), s.vehicle_ids.len()))
+            .map(|s| (s.id.to_string(), s.vehicle_ids.len()))
             .collect();
         let entity_count: usize = squad_nodes.iter().map(|s| s.children.len()).sum();
         let vehicle_count: usize = squad_nodes

@@ -55,7 +55,7 @@ pub(crate) struct EditorContext {
 }
 
 /// Expose website mission core :: doc :: operations :: entity ::  zone draft at this domain boundary.
-pub use map_engine::data::store::operations::entity::ZoneDraft;
+pub use mission_operations::entity::ZoneDraft;
 
 /// The discriminant lives here, on the armed value, rather than on a separate "current tab" signal: the tab can change (or the dock can unmount) between the leaf's `pointerdown` and the canvas's `pointerup`, and a place must commit the entity the operator actually picked up.
 #[derive(Clone, Debug, PartialEq)]

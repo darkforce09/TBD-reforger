@@ -3,8 +3,8 @@
 use super::{finding_is_routable, register_route_probe, row_cursor_class, PanelFinding};
 use crate::foundation::test_support::class_r_scrub::{live_code, live_source, only_body};
 use crate::workspaces::editor::mission_editor::route_target;
-use map_engine::data::scenario::validate::Primitive;
-use map_engine::data::scenario::validate::Severity;
+use mission_validation::Primitive;
+use mission_validation::Severity;
 use serde_json::json;
 
 fn doc() -> serde_json::Value {

@@ -74,7 +74,7 @@ too.
 - `event_authoring`: `event_creation` and `mission_attachment` for the `staging-fixtures` host
   tool's load fixture events.
 - `parse_orbat_template`, `OrbatSquadTemplate` and `OrbatSlotTemplate`, re-exported from
-  `map_engine::data::scenario::orbat`, for the
+  `mission_model::orbat`, for the
   [deployment](/documentation/glossary/a_to_f.md#deployment) slot bindings in `missions`.
 
 ## Boundaries
@@ -83,7 +83,7 @@ too.
   `administration` for the audit rows; `command_center` for the user-statistics recompute
   (`services::user_stats::recompute_user_stats_on_connection`); `identity_and_access` for account
   locks, session authorization and cached membership permissions; `server_infrastructure` for the
-  machine caller and the shared runtime session; `map_engine::data::scenario::orbat`.
+  machine caller and the shared runtime session; `mission_model::orbat`.
 - Used by:
   - the domain's handlers;
   - `administration`, `identity_and_access`, `match_telemetry` and `missions`, through the surface

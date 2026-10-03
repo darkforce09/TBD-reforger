@@ -10,19 +10,16 @@
 
 use std::collections::HashMap;
 
-use crate::data::store::operations::cargo;
-use crate::data::store::operations::entity::selected_slot_ids;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::{selection_ids, with_doc};
+use mission_operations::cargo;
+use mission_operations::entity::selected_slot_ids;
 
-/// One buffered loadout: the bytes, and the slot they were copied from.
-pub use crate::data::store::operations::cargo::BufferedLoadout;
+use mission_operations::cargo::BufferedLoadout;
 
-/// One planned write: the target slot, the source it came from, and the bytes to store.
-pub use crate::data::store::operations::cargo::LoadoutWrite;
+use mission_operations::cargo::LoadoutWrite;
 
-/// The rows a character's engine defaults seed into an empty cargo list.
-pub use crate::data::store::operations::cargo_rules::CargoRow;
+use mission_operations::cargo_rules::CargoRow;
 
 /// Read a slot's embedded loadout document. `None` when the slot carries none.
 #[must_use]

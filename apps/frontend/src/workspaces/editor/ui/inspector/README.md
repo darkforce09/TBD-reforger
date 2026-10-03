@@ -83,9 +83,10 @@ handlers, and each view has a native stand-in that renders nothing.
 ## Boundaries
 
 - Depends on:
-  - `map_engine`: `editing::hosted_commands` and `editing::host`; the `data::scenario`
-    modules `validate`, `radio_plan`, `tasks`, `audio`, `weather`, `spawn_modules`,
-    `win_conditions`, `flatten`, `compile` and `tactical_graphics`; `data::store::operations`;
+  - `map_engine`: `editing::hosted_commands` and `editing::host`;
+  - the mission crates: `mission_validation`; `mission_model`'s `radio_plan`, `tasks`, `audio`,
+    `weather`, `spawn_modules`, `win_conditions` and `tactical_graphics`; `mission_compiler`;
+    `mission_payload`; `mission_operations`;
   - the editor's bridge (`host_state::editor_context`, `host_state::armed_placement`,
     `tactical_graphics_authoring`), the [Arsenal](/documentation/glossary/a_to_f.md#arsenal)
     (`ArsenalTab`, `asset_catalog`, `rules::CompatFeed`), the outliner's row classes and

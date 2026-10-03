@@ -6,15 +6,14 @@
 //! post-change tail. The folder a new comment is filed under is the HOST's answer and crosses as a
 //! closure, because which folder is active is host state.
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_document::MissionDocCore;
+use mission_operations::entity as entity_ops;
 
 use super::document_edit::commit_document_edit;
 
-/// One comment with everything a surface renders it from.
-pub use crate::data::store::operations::entity::CommentDetail;
+use mission_operations::entity::CommentDetail;
 
 /// Every comment the document carries.
 #[must_use]
@@ -49,17 +48,17 @@ pub fn place_comment(
 
 /// Retitle a comment.
 pub fn rename_comment(id: String, title: String) -> bool {
-    commit_document_edit(|core| core.set_comment_title(&id, &title))
+    commit_document_edit(|core| core.set_comment_title(id.as_str(), &title))
 }
 
 /// Rewrite a comment's tooltip.
 pub fn set_comment_tooltip(id: String, tooltip: String) -> bool {
-    commit_document_edit(|core| core.set_comment_tooltip(&id, &tooltip))
+    commit_document_edit(|core| core.set_comment_tooltip(id.as_str(), &tooltip))
 }
 
 /// Move a comment to `(x, z)` world metres.
 pub fn move_comment(id: String, x: f64, z: f64) -> bool {
-    commit_document_edit(|core| core.set_comment_position(&id, x, z))
+    commit_document_edit(|core| core.set_comment_position(id.as_str(), x, z))
 }
 
 /// Copy a comment, offset from its source. The offset exists so the copy is not perfectly stacked:
@@ -78,7 +77,7 @@ pub fn duplicate_comment(
 
 /// Delete a comment.
 pub fn delete_comment(id: String) -> bool {
-    commit_document_edit(|core| core.remove_comment(&id))
+    commit_document_edit(|core| core.remove_comment(id.as_str()))
 }
 
 /// File a comment under another folder.

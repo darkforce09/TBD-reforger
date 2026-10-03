@@ -19,7 +19,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::{Result, bail};
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use ballistics_model::catalog::BallisticsCatalog;
 use serde_json::{Value, json};
 
 use super::mission_entry::{enter_mission, solution_matches_native};

@@ -30,7 +30,7 @@ schedule) shows its reason. The native build renders nothing.
   `with_field`, `with_schedule`, the trigger and marker options read through
   `map_engine::editing::hosted_commands`, and the write through the bridge's
   `editor_context::update_environment`), whose tiers, states and schedule check come from
-  `map_engine::data::scenario::tasks`; `read_flow_seconds` and `FLOW_DEFAULT_TIMELIMIT_S`
+  `mission_model::objectives::tasks`; `read_flow_seconds` and `FLOW_DEFAULT_TIMELIMIT_S`
   of the sibling `env` module.
 - Used by: the parent module, which re-exports `tasks_panel`; the Mission Settings dialog
   (`apps/frontend/src/workspaces/editor/ui/modals/settings_modal/mission_dialog.rs`), which mounts it

@@ -78,12 +78,12 @@ fn mortar_offline_require_files_names_every_missing_file() {
 fn mortar_offline_high_explosive_shell_is_an_unfuzed_he_shell_of_the_weapon() {
     let catalog = committed_catalog();
     for weapon in &catalog.weapons {
-        let shell_id = high_explosive_shell(&catalog, &weapon.weapon_id).unwrap();
-        assert!(weapon.shell_ids.contains(&shell_id));
+        let shell_id = high_explosive_shell(&catalog, weapon.weapon_id.as_str()).unwrap();
+        assert!(weapon.shell_ids.iter().any(|listed| *listed == *shell_id));
         let shell = catalog
             .shells
             .iter()
-            .find(|s| s.shell_id == shell_id)
+            .find(|s| s.shell_id == *shell_id)
             .unwrap();
         assert_eq!(shell.role, ShellRole::He);
         assert!(shell.time_fuze.is_none());

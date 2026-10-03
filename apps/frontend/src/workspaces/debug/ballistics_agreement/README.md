@@ -22,10 +22,10 @@ apps/frontend/src/workspaces/debug/ballistics_agreement/
 the status line and `<pre data-ballistics-agreement>`, and hands its signals to `live::run`.
 `live.rs` parses the URL with `parse_bench_query`, reads `GET /api/v1/ballistics-catalogs`, picks
 the version with `choose_catalog_version`, reads that version's document and refuses one that
-names another catalog or version. It draws the cases with the map engine's `agreement_cases`
+names another catalog or version. It draws the cases with `ballistics_agreement_cases::agreement_cases`
 (the same seed and count give the same cases on every target) and solves each with
 `solve_fire_mission` through `case_report`, yielding to the event loop between cases.
-`case_report` maps the case with the map engine's `fire_mission_inputs`, restates the lead gun
+`case_report` maps the case with `fire_mission_inputs` of the same crate, restates the lead gun
 with `lead_summary` and records the bits with `case_bit_patterns`, the same functions the gate
 calls. The
 finished reading is serialised into the `<pre>`.
@@ -63,8 +63,9 @@ newest listed version of that catalog; needs `catalog`). A malformed parameter f
 
 ## Boundaries
 
-- Depends on: `map_engine::data::scenario::ballistics` (`agreement_cases` for the draw,
-  the case-to-inputs mapping, the lead summary and the bit walk; `fire_mission`, `catalog`); `crate::foundation::transport::client::public_reads::public_get` and the
+- Depends on: `ballistics_agreement_cases` (the draw, the case-to-inputs mapping, the lead
+  summary and the bit walk), `fire_mission_planning` (`fire_mission`) and `ballistics_model`
+  (`catalog`); `crate::foundation::transport::client::public_reads::public_get` and the
   catalog DTOs of `crate::foundation::transport::dto::ballistics_catalogs`; `gloo_timers`, `serde_json`
   and `web_sys` in the browser build.
 - Used by: the `/debug/ballistics-agreement` route in `apps/frontend/src/app_routes.rs`,

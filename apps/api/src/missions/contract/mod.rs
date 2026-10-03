@@ -12,7 +12,7 @@ pub mod zone_quantisation;
 
 /// The kit-aliases table lives in the shared map engine, next to the compiler that consumes it;
 /// it is re-exported here so the contract surface is reachable from one path.
-pub use map_engine::data::scenario::kit::{KitAliases, load_kit_aliases};
+pub use mission_payload::kit_aliases::{KitAliases, load_kit_aliases};
 pub use schema_validators::{
     ContractError, validate_faction_library_doc, validate_mission_document,
     validate_mission_editor_payload, validate_registry_compat_envelope,

@@ -30,6 +30,17 @@ documentation/restructure/manifests/
 ├── s4_b5_world_file_formats.tsv  stage S4 B5: the map engine's on-disk formats become the world_file_formats crate
 ├── s4_b6b_contract_schema_types.tsv  stage S4 B6b: the API's importers of its generated contract types switch to the contract_schema_types crate
 ├── s4_x4a_switch.tsv  stage S4 X4a: every consumer of the S4a crates imports them directly, and the legacy re-export shims go
+├── s5_ballistics.tsv  stage S5 D2, second of three: the ballistics files into the five ballistics crates
+├── s5_ballistics_folders.tsv  stage S5 D2, first of three: the four ballistics module folders and the ballistics docs
+├── s5_ballistics_paths.tsv  stage S5 D2, third of three: the Rust paths of the moved ballistics code and its consumers
+├── s5_formation_geometry.tsv  stage S5 D3a, first of three: the placement point math of the arrange commands becomes formation_geometry
+├── s5_mission_crdt.tsv  stage S5 D3a, second of three: the document's id arrays, slot columns and undo clocks become mission_crdt
+├── s5_mission_document.tsv  stage S5 D3a, third of three: the document's rows, selection policy and whole-document tests become mission_document
+├── s5_mission_model_payload.tsv  stage S5: the compiled rows, ORBAT, authored blocks and slot line become mission_model; the payload compiler and kit aliases become mission_payload
+├── s5_mission_operations.tsv  stage S5 D3b: the document operations become mission_operations; the store's re-export pins become its prelude tests
+├── s5_mission_validation_compiler.tsv  stage S5: the validator becomes mission_validation; the game-document compiler and its editor-input structs become mission_compiler
+├── s5_mission_wire_safety.tsv  stage S5: the map engine's wire-safety scans become crates/mission/mission_wire_safety
+├── s5_switch.tsv  stage S5 X5: every consumer of the mission crates imports them directly, and the legacy data and placement re-export shims go
 ├── s6_p0c_cuts.tsv          stage S6 P0c: chunk ingest, object index, footprint buffers, bind pins move
 ├── s6_p1_spatial_prefab_chunks.tsv  stage S6 P1: the BVH, point indexes, prefab catalogue and world chunks become spatial_indexes, prefab_catalog and world_chunks
 ├── s6_p2_overlay.tsv  stage S6 P2: the overlay's lanes, zoom gates, labels, symbology and instance packers become the map_overlay crates

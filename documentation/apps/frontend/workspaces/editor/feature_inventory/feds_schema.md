@@ -103,7 +103,7 @@ An Eden entry is never guessed: without a cited source its Evidence reads `UNVER
 ## Terms
 
 Both catalogues keep these terms apart; the document keys are those of the mission document in
-`legacy/map_engine/src/data/store/rows/construction.rs`.
+`crates/mission/mission_document/src/rows/construction.rs`.
 
 | Term | Meaning in the Mission Creator |
 |---|---|

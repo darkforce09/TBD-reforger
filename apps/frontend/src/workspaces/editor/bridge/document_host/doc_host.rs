@@ -5,7 +5,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use crate::workspaces::editor::ui::outliner::node_model;
-use map_engine::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
 use wasm_bindgen::prelude::*;
 
 /// Shared ownership of the optional active mission document.
@@ -138,12 +138,7 @@ fn debug_seed_slots(n: u32) {
             return;
         };
         let layer_id = ensure_active_layer(core);
-        map_engine::data::store::operations::entity::seed_debug_slots(
-            core,
-            &ctx.next_id,
-            &layer_id,
-            n,
-        );
+        mission_operations::entity::seed_debug_slots(core, &ctx.next_id, &*layer_id, n);
     });
     crate::workspaces::editor::bridge::document_host::history::after_local_edit();
 }

@@ -38,8 +38,8 @@ held to the document's 0.1 m grid (`ZONE_GRID_M`): a circle radius must survive 
 ## Boundaries
 
 - Depends on: `map_engine::editing::hosted_commands` and `host`,
-  `map_engine::data::store::operations::{zones, entity}` (`DrawTarget`, `ZoneShape`, the
-  terrain bounds), `map_engine::data::scenario::{compile, tactical_graphics}`; the bridge's
+  `mission_operations::{zones, entity}` (`DrawTarget`, `ZoneShape`, the
+  terrain bounds), `mission_payload` and `mission_model::tactical_graphics`; the bridge's
   `armed_placement` and `tactical_graphics_authoring` in
   `apps/frontend/src/workspaces/editor/bridge/`; the row classes of the outliner's `tree`
   module; the mission schema above.

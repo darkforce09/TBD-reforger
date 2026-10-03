@@ -111,7 +111,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn favourite_row_view(
         } => {
             let kind = PaletteKind::from_catalog(palette);
             let payload = crate::workspaces::editor::arsenal::asset_catalog::PlacePayload {
-                asset_id,
+                asset_id: asset_id.into(),
                 role: label.clone(),
             };
             let aria = label.clone();
@@ -279,7 +279,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn recently_placed_pane
                                 Some(palette) => {
                                     let kind = PaletteKind::from_catalog(palette);
                                     let payload = crate::workspaces::editor::arsenal::asset_catalog::PlacePayload {
-                                        asset_id: r.asset_id.clone(),
+                                        asset_id: r.asset_id.clone().into(),
                                         role: r.label.clone(),
                                     };
                                     let aria = label.clone();
@@ -295,7 +295,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn recently_placed_pane
                                                         arm_favourite_place(palette, payload.clone());
                                                         record_recent(
                                                             recent,
-                                                            payload.asset_id.clone(),
+                                                            payload.asset_id.to_string(),
                                                             payload.role.clone(),
                                                         );
                                                     }

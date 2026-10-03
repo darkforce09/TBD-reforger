@@ -80,8 +80,8 @@ pub fn compiled_document_json_with_diagnostics() -> Result<CompiledWithDiagnosti
     // Carry the mission id from the route when the row's is blank, matching the envelope export's
     // `meta.id`-then-route fallback (`compile_export`). `mission_doc_id` in the flatten normalizes
     // whatever lands here into the schema's id space either way.
-    if meta.id.is_empty() {
-        meta.id = snap.mission_id.clone();
+    if meta.id.as_str().is_empty() {
+        meta.id = snap.mission_id.clone().into();
     }
     // the compiled export's title read from `ROW_META`, which is the LIBRARY row's
     // title (`set_row_meta`, refreshed only by `GET /missions/:id`). Retitling in the editor

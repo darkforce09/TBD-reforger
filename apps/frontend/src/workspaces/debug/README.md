@@ -72,8 +72,9 @@ because the app's mount chain that names them, `apps/frontend/src/app_routes.rs`
   texture of `editing::tools::line_of_sight`); `gloo_net`,
   `futures`, `js_sys`, `wasm_bindgen` and `web_sys` in the browser build. The data viewer depends
   on `crate::foundation::transport` (its anonymous reads and the equipment data viewer DTOs), and the
-  ballistics agreement bench on its anonymous reads, the ballistics catalog DTOs and the map
-  engine's `data::scenario::ballistics`; nothing else here uses `crate::foundation`.
+  ballistics agreement bench on its anonymous reads, the ballistics catalog DTOs and the
+  ballistics crates (`ballistics_agreement_cases`, `fire_mission_planning`, `ballistics_model`);
+  nothing else here uses `crate::foundation`.
 - Used by: the four routes in `apps/frontend/src/app_routes.rs`, with their rows in
   `apps/frontend/src/foundation/route_table/mod.rs`; nothing in the navigation links to them.
 - Rules: a map bench reads committed assets and engine code only, and the data viewer only reads

@@ -146,8 +146,8 @@ required too.
 
 ## Boundaries
 
-- Depends on: `map_engine` with its default `scenario` tier, which compiles and validates
-  missions; the schemas in `contracts/definitions/`, embedded at compile time; Postgres 18;
+- Depends on: the mission crates `mission_payload` and `mission_validation`, which compile and
+  validate missions; the schemas in `contracts/definitions/`, embedded at compile time; Postgres 18;
   Discord's OAuth2 and REST APIs; and, at run time, the asset trees in `assets/terrains/` and
   `assets/glyphs/`.
 - Used by: the single-page app in `apps/frontend/`; the game servers, through the mod's

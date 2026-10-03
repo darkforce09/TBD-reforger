@@ -19,7 +19,7 @@ folder only the route table and the sidebar's "Field Tools" section refer to it,
 removed without touching the rest of the tree. The mortar calculator reads the public
 ballistics catalogs of the [operations](/documentation/glossary/n_to_z.md#operations) domain of the
 [API](/documentation/glossary/a_to_f.md#api) (or the offline copy of them), solves the firing
-solution on the device with the map engine's solver, and lists the fire missions saved against an
+solution on the device with the ballistics crates' solver, and lists the fire missions saved against an
 event for a signed-in viewer. The debug benches at `/debug/building-viewer`, `/debug/world-los`
 and `/debug/ballistics-agreement` are apps, in `apps/frontend/src/workspaces/debug/`, not field tools.
 
@@ -32,13 +32,14 @@ and `/debug/ballistics-agreement` are apps, in `apps/frontend/src/workspaces/deb
 
 - Depends on: `crate::foundation::transport`, `crate::foundation::auth` (the `AuthStore` context),
   `crate::foundation::map_view`, `crate::foundation::offline`, `crate::foundation::ui` and
-  `crate::foundation::utils`; `map_engine` (the ballistics solver and grid references);
+  `crate::foundation::utils`; `fire_mission_planning`, `ballistics_solver` and `ballistics_model`
+  (the ballistics solver); `map_coordinates` (grid references); `map_engine` (the map views);
   over HTTP, the ballistics-catalog reads, the event list and the fire-mission routes of the
   operations domain.
 - Used by: the route table in `apps/frontend/src/app_routes.rs` and
   `apps/frontend/src/foundation/route_table/mod.rs`; the sidebar's "Field Tools" section in
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`.
-- Rules: the mortar page solves with the map engine's solver, the same code the API re-solves a
+- Rules: the mortar page solves with the ballistics crates' solver, the same code the API re-solves a
   saved fire mission with, and never with a copy of it. No other folder imports a page's
   internals, so a page leaves with its route and its sidebar entry alone.
 

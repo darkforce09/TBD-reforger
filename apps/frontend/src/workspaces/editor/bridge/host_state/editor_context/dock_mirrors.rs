@@ -127,7 +127,7 @@ pub(in crate::workspaces::editor::bridge::host_state::editor_context) fn reconci
         let still_there = {
             let d = ctx.doc.borrow();
             d.as_ref()
-                .is_some_and(|core| connection_id_in_doc(core, &id))
+                .is_some_and(|core| connection_id_in_doc(core, &*id))
         };
         if entity_selected || !still_there {
             sig.set(None);

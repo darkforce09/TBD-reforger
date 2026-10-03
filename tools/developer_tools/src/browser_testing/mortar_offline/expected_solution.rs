@@ -1,7 +1,7 @@
 //! The native solve of the gate's fire mission and the words the page shows for it.
 //!
-//! **Role:** solves the mission the gate typed with the map engine's `solve_fire_mission` (the
-//! one assembler the page and the API use), words it with the map engine's `solution_wording`
+//! **Role:** solves the mission the gate typed with `fire_mission_planning`'s `solve_fire_mission` (the
+//! one assembler the page and the API use), words it with its `solution_wording`
 //! (the functions the mortar calculator's battery table and charge tables render), and compares
 //! those tables with the ones read from the page.
 //! **Position:** after `super::page_driver` has entered the mission and read the tables; the
@@ -14,13 +14,13 @@
 //! heights.
 
 use anyhow::{Result, anyhow};
-use map_engine::data::scenario::ballistics::battery::GunFireSolution;
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use ballistics_model::catalog::BallisticsCatalog;
+use fire_mission_planning::battery::GunFireSolution;
+use fire_mission_planning::fire_mission::{
     FireMissionGunPosition, FireMissionInputs, FireMissionPoint, FireMissionSolution,
     FireMissionWind, HeightSource, solve_fire_mission,
 };
-use map_engine::data::scenario::ballistics::solution_wording::{
+use fire_mission_planning::solution_wording::{
     BatteryLineWords, ChargeRowWords, battery_line_words, charge_row_words, gun_heading, laid_rings,
 };
 use serde::Deserialize;
@@ -75,8 +75,8 @@ pub fn solve_natively(
     let inputs = FireMissionInputs {
         catalog_id: catalog.catalog_id.clone(),
         catalog_version: catalog.catalog_version,
-        weapon_id: mission.weapon_id.clone(),
-        shell_id: mission.shell_id.clone(),
+        weapon_id: mission.weapon_id.clone().into(),
+        shell_id: mission.shell_id.clone().into(),
         charge_rings: None,
         target: FireMissionPoint {
             x: tx,

@@ -15,12 +15,12 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::INPUT_CLASS;
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::fire_mission::{FireMissionPoint, HeightSource};
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(any(target_arch = "wasm32", test))]
 use map_coordinates::grid_reference::{parse_grid, GridParseError};
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fire_mission::{FireMissionPoint, HeightSource};
 
 /// The terrain the positions are on.
 #[cfg(any(target_arch = "wasm32", test))]

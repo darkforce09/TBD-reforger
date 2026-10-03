@@ -2,7 +2,7 @@
 //! gun→target lines and the dispersion ellipses of a solved fire mission, each assigned to the
 //! existing overlay lane it paints in.
 //! **Position:** `overlay_instances`. The mortar page's map picker hands in world
-//! positions from the ballistics solution; the render host uploads the output into
+//! positions from the `fire_mission_planning` solution; the render host uploads the output into
 //! [`FIRE_MISSION_GLYPH_LANE`], [`FIRE_MISSION_LINE_LANE`] and [`FIRE_MISSION_DISPERSION_LANE`]
 //! through the map engine's frame builder like every other lane.
 //! **Signals & state:** none; pure functions from one [`FireMissionPlot`] to one

@@ -22,8 +22,8 @@ use serde_json::{Map, Value};
 
 #[cfg(target_arch = "wasm32")]
 use crate::workspaces::editor::bridge::host_state::armed_placement;
-use map_engine::data::scenario::audio::validate;
-use map_engine::data::scenario::audio::MUSIC_EVENTS;
+use mission_model::environment::audio::validate;
+use mission_model::environment::audio::MUSIC_EVENTS;
 
 /// The reader chain for `meta.environment.audio`, end to end.
 #[cfg(test)]
@@ -393,7 +393,7 @@ fn json_num(v: Option<&Value>) -> String {
 fn refuse_block(emitters: &[Value], cues: &[Value]) -> Result<(), String> {
     match block_from_parts(emitters, cues) {
         None => Ok(()),
-        Some(block) => validate(&block),
+        Some(block) => validate(&block).map_err(String::from),
     }
 }
 

@@ -70,7 +70,7 @@ leaves them untouched.
 |---------|--------|--------|----------|-----------|
 | RIGHT-MODE-001 | RIGHT-CAT-001 | partial | — | Eden's object mode is one tree over characters, vehicles and props; the Mission Creator splits it between the Factions tab (with the "Objects" chip) and the Vehicles tab, and no function key switches tabs (`ui/docks/dock_right/shell/layout.rs`) |
 | RIGHT-MODE-002 | RIGHT-COMP-001 | match | T-650 ✅ | The Compositions tab (`ui/docks/dock_right/compositions/mod.rs`); see the COMP rows |
-| RIGHT-MODE-003 | RIGHT-TRIG-001 | partial | T-079 ✅ | The Triggers tab draws trigger areas and edits them (`ui/docks/dock_right/triggers/`), but the compile carries no trigger and submission refuses a mission that holds one (`unsupported_authored_data` in `/legacy/map_engine/src/data/scenario/compiler/flatten/unsupported_authored_data.rs`) |
+| RIGHT-MODE-003 | RIGHT-TRIG-001 | partial | T-079 ✅ | The Triggers tab draws trigger areas and edits them (`ui/docks/dock_right/triggers/`), but the compile carries no trigger and submission refuses a mission that holds one (`unsupported_authored_data` in `/crates/mission/mission_compiler/src/game_document/unsupported_authored_data.rs`) |
 | RIGHT-MODE-004 | — | missing | — · wb | No waypoint mode or entity. The schema declares per-squad `waypoints` and the mod's `TBD_WaypointRuntime.c` reads them (T-677 ✅); no Mission Creator control writes them and the compiler emits none |
 | RIGHT-MODE-005 | — | partial | — | No systems mode; spawn modules (waves and garrisons) are a section of the Mission Settings dialog (`ui/inspector/spawn_modules.rs`). The `SYS` family declares no IDs ([System](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/attributes.md#system-sys)) |
 | RIGHT-MODE-006 | RIGHT-STUB-002 | match | T-069 ✅ · T-760 ✅ | The Markers tab: pick an icon, click the map, edit the marker in the tab (`ui/docks/dock_right/markers/panel.rs`); the style fields are the MRK rows |
@@ -80,7 +80,7 @@ leaves them untouched.
 | RIGHT-SEARCH-003 | RIGHT-SEARCH-002 | match | T-084 ✅ | `mod:` prefix, same parser |
 | RIGHT-SEARCH-004 | RIGHT-SEARCH-002 | match | T-084 ✅ | Wildcards (`GlobPattern`, `arsenal/asset_catalog/bounded_regex.rs`) |
 | RIGHT-SEARCH-005 | RIGHT-SEARCH-002 | match | T-084 ✅ | `/…/` bounded regular expressions (`Rx`, same file) |
-| RIGHT-CREW-001 | — | match | T-646 ✅ | The Vehicles tab's "Place with crew" checkbox; Alt while placing forces an empty vehicle and never adds a crew (`vehicle_places_its_crew`, `/legacy/map_engine/src/data/store/operations/entity/armed_placement.rs`) |
+| RIGHT-CREW-001 | — | match | T-646 ✅ | The Vehicles tab's "Place with crew" checkbox; Alt while placing forces an empty vehicle and never adds a crew (`vehicle_places_its_crew`, `/crates/mission/mission_operations/src/entity/armed_placement.rs`) |
 
 ### Placement — PLACE (7)
 
@@ -141,7 +141,7 @@ so they have no rows; four of them carry local IDs in Part 3.
 | eden_id | tbd_id | parity | ticket | gap_notes |
 |---------|--------|--------|----------|-----------|
 | CONN-START-001 | CONN-START-001 | match | T-672 ✅ · T-768 ✅ | Right-click an entity › "Connect" › "Sync to", "Group to" or "Set Trigger Owner", then click the target; Esc cancels (`ui/docks/context_menu/`) |
-| CONN-GROUP-001 | CONN-GROUP-001 | partial | T-672 ✅ | "Group to" only stores a `group` connection and changes no squad (`complete_connect` in `legacy/map_engine/src/data/store/operations/entity/connections.rs`). Regrouping exists separately: a Ctrl/Cmd+drag of one slot onto another moves it into the target's squad (XFORM-REGROUP-001, `regroup_slot_onto`, `input/pointer_gestures/pointer_up.rs`), and the ORBAT Manager edits squads as well |
+| CONN-GROUP-001 | CONN-GROUP-001 | partial | T-672 ✅ | "Group to" only stores a `group` connection and changes no squad (`complete_connect` in `crates/mission/mission_operations/src/entity/connections.rs`). Regrouping exists separately: a Ctrl/Cmd+drag of one slot onto another moves it into the target's squad (XFORM-REGROUP-001, `regroup_slot_onto`, `input/pointer_gestures/pointer_up.rs`), and the ORBAT Manager edits squads as well |
 | CONN-SYNC-001 | CONN-SYNC-001 | partial | T-672 ✅ | "Sync to" draws and stores a sync connection, saved with the mission; the compile carries no connection, so a sync does nothing in the game |
 | CONN-TRG-OWNER-001 | CONN-TRG-OWNER-001 | partial | T-079 ✅ | The trigger's "Owner" field sets it, with a dashed owner line; "Set Trigger Owner" only stores a `triggerOwner` connection between two slots or vehicles; triggers do not reach the game (RIGHT-MODE-003) |
 | CONN-RAND-START-001 | — | missing | — · wb | Needs waypoints (RIGHT-MODE-004) |
@@ -159,7 +159,7 @@ so they have no rows; four of them carry local IDs in Part 3.
 | CREW-SEAT-001 | — | partial | T-076 ✅ | Seat changes in the same view, not from a context menu |
 
 The compile carries the vehicle roster with its crew seats (`project_crew` in
-`/legacy/map_engine/src/data/scenario/compiler/flatten/roster.rs`); a vehicle whose crew plan
+`/crates/mission/mission_compiler/src/game_document/roster.rs`); a vehicle whose crew plan
 the wire cannot express is dropped whole with a `COMPILE-DROP-VEHICLE-ROSTER` warning.
 
 ### Selection, layers and attributes — SEL / LAYER / ATTR / CTX (12)
@@ -177,7 +177,7 @@ the wire cannot express is dropped whole with a `COMPILE-DROP-VEHICLE-ROSTER` wa
 | ATTR-OPEN-001 | ATTR-OPEN-001 | partial | T-647 ✅ · T-724 ✅ | Opens from a map double-click on a slot or vehicle, an outliner slot row's double-click and the context menu's "Attributes..."; a multi-selection now OPENS multi-edit (T-649 ✅, `open_attributes` in `bridge/host_state/editor_context/attributes_modal.rs`). Zones, triggers and markers edit in their right-dock tabs and comments in the comment editor. T-822 (ready) stops an outliner double-click from also opening the asset picker |
 | ATTR-MULTI-001 | ATTR-MULTI-001 | match | T-649 ✅ | Identity and Transform edits fan out to the whole selection; T-716 (deferred) covers the context menu's multi-selection rows |
 | ATTR-MULTI-CHK-001 | ATTR-MULTI-CHK-001 | match | T-649 ✅ | A field whose values differ stays locked until its "Apply to all" box is ticked (`ui/inspector/attributes_modal/field_gates_and_labels.rs`) |
-| CTX-FORMATION-001 | — | match | T-672 ✅ | Right-click a squad leader › "Transform" › one of nine formations lays the squad out around the leader (`force_to_formation`, `/legacy/map_engine/src/data/store/rows/formations.rs`) |
+| CTX-FORMATION-001 | — | match | T-672 ✅ | Right-click a squad leader › "Transform" › one of nine formations lays the squad out around the leader (`force_to_formation`, `/crates/mission/mission_document/src/rows/formations.rs`) |
 
 ### Keyboard — KEY (4)
 
@@ -224,7 +224,7 @@ the wire cannot express is dropped whole with a `COMPILE-DROP-VEHICLE-ROSTER` wa
 | ATTR-FIELD-OBJ-TYPE | ATTR-TAB-002 | match | a | T-082 ✅ | The Identity tab's "Type" picker (`ui/inspector/attributes_modal/identity_tab.rs`). The compile maps the type to a kit alias; a character with no alias row spawns as its faction's default, and submission lists it |
 | ATTR-FIELD-OBJ-VARNAME | — | na | d | — | Scripting handle; the Mission Creator has no script layer, and `slot.uid` gives durable identity |
 | ATTR-FIELD-OBJ-INIT | — | na | d | — | An SQF string run at spawn; the mission is declarative JSON with no evaluator |
-| ATTR-FIELD-OBJ-POSITION | ATTR-TAB-001 | match | a | T-049 ✅ | X, Y and Z in the Transform tab, compiled to `x`, `z` and `y`; an X or Y edit resets Z to 0 so the entity follows the terrain (`update_slot_position`, `/legacy/map_engine/src/data/store/rows/transforms.rs`) |
+| ATTR-FIELD-OBJ-POSITION | ATTR-TAB-001 | match | a | T-049 ✅ | X, Y and Z in the Transform tab, compiled to `x`, `z` and `y`; an X or Y edit resets Z to 0 so the entity follows the terrain (`update_slot_position`, `/crates/mission/mission_document/src/rows/transforms.rs`) |
 | ATTR-FIELD-OBJ-ROTATION | ATTR-TAB-001 | match | a | T-049 ✅ | "Rotation", normalised to 0–360°; a vehicle has "Heading" |
 | ATTR-FIELD-OBJ-SIZE | — | missing | c | — · wb | The schema's entity scale is read by `TBD_EntityState.c` (T-681 ✅); no Mission Creator control, and the compiler omits it |
 | ATTR-FIELD-OBJ-SHAPE | — | missing | b | — · wb | Placement scatter: the schema and `TBD_PlacementScatter.c` carry it (T-679 ✅); no control, no compiler emit |
@@ -254,7 +254,7 @@ the wire cannot express is dropped whole with a `COMPILE-DROP-VEHICLE-ROSTER` wa
 | ATTR-FIELD-OBJ-CALLSIGN | ORBAT Manager | match | b | T-674.1 ✅ · T-674.2 ✅ | "Callsign" in the ORBAT Manager's slot inspector; compiled to `slots[].callsign`, the seat's own call sign beside the squad's `groupCallsign` |
 
 A slot's `tag` ("MED · ENG · SL…") and a squad's `leaderSlotId` have no Eden ID. Both compile
-(`/legacy/map_engine/src/data/scenario/compiler/flatten/compile_graph.rs`), and each is
+(`/crates/mission/mission_compiler/src/game_document/compile_graph.rs`), and each is
 dropped with a warning when its value cannot ride the wire.
 
 ### Comment — CMT (3)
@@ -283,7 +283,7 @@ dropped with a warning when its value cannot ride the wire.
 ### Marker — MRK (10)
 
 The Markers tab authors a marker's type, text and position; the compile carries each marker as
-`{x, z, icon, label}` (`ModMarker`, `/legacy/map_engine/src/data/scenario/ast/scenario.rs`).
+`{x, z, icon, label}` (`ModMarker`, `/crates/mission/mission_model/src/compiled/mission.rs`).
 The schema declares the style fields and the area extent (`$defs/marker`, `$defs/markerArea`,
 T-673 ✅), and the schema itself says no mod reader binds the area.
 
@@ -308,7 +308,7 @@ direct counterpart, editor-only as in Eden.
 | eden_id | tbd_id | parity | build_class | ticket | gap_notes |
 |---------|--------|--------|:---:|----------|-----------|
 | ATTR-FIELD-LYR-NAME | LEFT-LAYER-005 | match | a | T-666 ✅ | A folder's "Rename layer" (`ui/outliner/tree/row_actions.rs`) |
-| ATTR-FIELD-LYR-ENABLE-XFORM | — | match | a | T-665 ✅ | The folder's lock toggle; a slot under a locked layer cannot be transformed (`/legacy/map_engine/src/data/store/rows/layers.rs`) |
+| ATTR-FIELD-LYR-ENABLE-XFORM | — | match | a | T-665 ✅ | The folder's lock toggle; a slot under a locked layer cannot be transformed (`/crates/mission/mission_document/src/rows/layers.rs`) |
 | ATTR-FIELD-LYR-ENABLE-VIS | — | match | a | T-665 ✅ | The folder's eye toggle hides the layer's subtree. Not the world-layer toggles, which are per-browser map preferences (`session/world_layer_prefs.rs`) |
 
 ### Scenario — SCN (11)
@@ -398,7 +398,7 @@ without an ID; the other rows are feature inventory IDs.
 | ENV-SETTINGS-002 | TOP-SETTINGS-001 | missing | T-663 ✅ | View distance and thermals have no control; the same subject as SCN-VIEW-DIST. `ui/inspector/env.rs` still says the framework has no view-distance concept, which `TBD_EnvironmentReader.c` contradicts |
 | DATA-HYD-TITLE-001 | TOP-TITLE-001 | match | T-049 ✅ | Adopting a server version takes the payload's title, else the mission row's; saving copies a non-blank title onto the row |
 | SEL-MAP-003 | SEL-MAP-003 | match | — | The marquee selects the slots and vehicles inside it |
-| XFORM-DEL-001 | XFORM-DEL-001 | partial | T-837 | Delete removes selected comments, their connections and slots in one undo step; a selected vehicle is not removed, only its connections (`/legacy/map_engine/src/data/store/operations/entity/clipboard.rs`); T-837 is ready |
+| XFORM-DEL-001 | XFORM-DEL-001 | partial | T-837 | Delete removes selected comments, their connections and slots in one undo step; a selected vehicle is not removed, only its connections (`/crates/mission/mission_operations/src/entity/clipboard.rs`); T-837 is ready |
 | TOP-SAVE-001 | TOP-SAVE-001 | partial | — | Immutable, numbered versions rather than Eden's save; the "Version" field starts at `0.1.0` and never advances, so the proposal is refused until the mission maker types a new number |
 | TOP-EXPORT-001 | TOP-EXPORT-001 | match | — | "Export JSON" and "Export Compiled Mission" |
 | — | TBD-LAYER-001 | tbd_only | — | Editor layers as workflow folders |

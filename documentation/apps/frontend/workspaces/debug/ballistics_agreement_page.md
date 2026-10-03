@@ -21,8 +21,8 @@ re-solves natively when a fire mission is saved.
   navigation entry links it; it is opened by URL.
 - Related: the gate in
   [`tools/developer_tools/src/browser_testing/ballistics_agreement/`](/tools/developer_tools/src/browser_testing/ballistics_agreement/README.md),
-  run by `cargo xtask mk ballistics-wasm-agreement`; the solver in
-  `legacy/map_engine/src/data/scenario/ballistics/`, whose `agreement_cases` draws the
+  run by `cargo xtask mk ballistics-wasm-agreement`; the solver in the
+  [ballistics crates](/crates/ballistics/README.md), whose `ballistics_agreement_cases` draws the
   lattice.
 
 ## Behaviour
@@ -56,5 +56,5 @@ the committed catalog `contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.
   depends on a decimal round trip.
 - The gate passes a case within 1 weapon mil and 0.1 s of the native solution, the tolerance the
   API applies to a client solution, and reports separately how many cases agree bit for bit.
-- The case lattice is the map engine's, drawn identically on every target, so the bench and the
+- The case lattice is `ballistics_agreement_cases`', drawn identically on every target, so the bench and the
   gate need only the seed and the count to solve the same problems.

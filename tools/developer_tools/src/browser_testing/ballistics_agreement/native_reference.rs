@@ -5,9 +5,9 @@
 //! the solution by JSON pointer and bit pattern.
 //! **Position:** called by [`super::run`] with the committed catalog; its [`NativeCase`]s are
 //! the reference [`super::case_verdict`] judges the browser's reading against. The drawing, the
-//! case-to-inputs mapping and the bit walk are the map engine's (`agreement_cases`,
+//! case-to-inputs mapping and the bit walk are `ballistics_agreement_cases`' (`agreement_cases`,
 //! `fire_mission_inputs`, `case_bit_patterns` of
-//! `map_engine::data::scenario::ballistics::agreement_cases`), the same functions the
+//! `ballistics_agreement_cases`), the same functions the
 //! browser bench that produces the reading calls.
 //! **Signals & state:** none; pure functions over a borrowed catalog.
 //! **Invariants:** a native case's inputs are `fire_mission_inputs` of the drawn case and its
@@ -15,11 +15,11 @@
 
 use std::collections::BTreeMap;
 
-use map_engine::data::scenario::ballistics::agreement_cases::{
+use ballistics_agreement_cases::{
     AgreementCase, agreement_cases, case_bit_patterns, fire_mission_inputs,
 };
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use ballistics_model::catalog::BallisticsCatalog;
+use fire_mission_planning::fire_mission::{
     FireMissionInputs, FireMissionSolution, solve_fire_mission,
 };
 
@@ -62,7 +62,7 @@ pub fn native_case(catalog: &BallisticsCatalog, case: &AgreementCase) -> NativeC
     let outcome = solve_fire_mission(catalog, &inputs).map_err(|refused| refused.to_string());
     let bit_patterns = case_bit_patterns(&inputs, outcome.as_ref().ok());
     NativeCase {
-        case_id: case.case_id.clone(),
+        case_id: case.case_id.to_string(),
         inputs,
         outcome,
         bit_patterns,

@@ -4,8 +4,8 @@
 //! Invariants: the group closes on the way out whatever `f` does — a panic or an early return
 //! must not leave the document permanently grouping, because every later edit would then fold
 //! into a step nobody can undo past.
-use crate::data::store::MissionDocCore;
 use crate::editing::host::{with_doc, with_doc_mut};
+use mission_document::MissionDocCore;
 
 /// Run `f` inside one undo group labelled `label`.
 ///

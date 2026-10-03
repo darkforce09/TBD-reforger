@@ -1,7 +1,7 @@
 //! Game ballistics catalogs: the judgement of an uploaded catalog pair and the immutable store.
 //!
 //! **Role:** the logic behind the catalog routes: [`upload_validation`] decodes an uploaded
-//! catalog and calibration bundle and judges them with the map engine's calibration;
+//! catalog and calibration bundle and judges them with `ballistics_calibration`;
 //! [`catalog_store`] checks duplicates, stores an accepted version with its audit line, and reads
 //! stored versions back.
 //!

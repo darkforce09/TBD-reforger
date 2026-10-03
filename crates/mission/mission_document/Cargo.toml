@@ -1,0 +1,40 @@
+# The mission document: the yrs document of one mission with its row writes and reads, hydrate and
+# export, merge, materialised slot columns, selection policy and local undo history. The map
+# engine's document operations and editing layer, and through them the Mission Creator, drive it.
+[package]
+name = "mission_document"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The mergeable mission document: rows, hydrate and export, merge, slot columns, selection and undo."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 4
+targets = "any"
+
+[features]
+# Exposes `test_fixtures::SteppingClock` to the tests of crates that drive a document; enabled
+# only from `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+mission_crdt = { workspace = true }
+mission_model = { workspace = true }
+mission_validation = { workspace = true }
+newtype_ids = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+time_source = { workspace = true }
+yrs = { workspace = true }
+
+[dev-dependencies]
+# The payload compiler and the game-document compiler the round-trip tests run the exported
+# editor payload through.
+mission_compiler = { workspace = true }
+mission_payload = { workspace = true }
+
+[lints]
+workspace = true

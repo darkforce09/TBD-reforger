@@ -21,10 +21,10 @@ use super::positions::PositionError;
 use super::positions::{position_error_message, resolve_position, MortarTerrain};
 #[cfg(target_arch = "wasm32")]
 use super::INPUT_CLASS;
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::fire_mission::FireMissionGunPosition;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fire_mission::FireMissionGunPosition;
 
 /// Most guns one battery may hold: the contract's `FireMissionSave.guns` `maxItems`, which the
 /// save route enforces too.

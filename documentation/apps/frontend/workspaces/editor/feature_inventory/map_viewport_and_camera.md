@@ -129,7 +129,7 @@ The status legend is in the [inventory index](/documentation/apps/frontend/works
 
 - No API call belongs to the viewport. The terrain id is read from the mission document's
   `meta.terrain`, and the grid setting lives in the document's environment block
-  (`legacy/map_engine/src/data/store/operations/environment.rs`).
+  (`crates/mission/mission_operations/src/environment.rs`).
 - The camera itself is not persisted; camera bookmarks are in the left dock's Locations tab (see
   the [left sidebar](/documentation/apps/frontend/workspaces/editor/feature_inventory/left_sidebar.md)).
 

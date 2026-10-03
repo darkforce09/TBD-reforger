@@ -24,7 +24,7 @@
 
 use axum::http::StatusCode;
 use chrono::{DateTime, Utc};
-use map_engine::data::scenario::orbat::validate_faction_join_key;
+use mission_model::orbat::validate_faction_join_key;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::{PgConnection, PgPool};

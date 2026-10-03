@@ -254,7 +254,7 @@ ticked, as Eden's per-field checkbox does.
 | Loadout (Eden's Arsenal, outside the Attributes dialog) | the "Arsenal" tab: the slot's loadout rows, a 3D paper doll, and loadout export and import | `apps/frontend/src/workspaces/editor/arsenal/` |
 | Vehicle crew and cargo | the vehicle view: "Heading", "Cargo" rows and "Crew" seats (driver, gunner, commander and cargo seats) | `apps/frontend/src/workspaces/editor/ui/inspector/attributes_modal/vehicle_attributes.rs` |
 | Comment (title, tooltip, position) | a comment's title and tooltip, edited in the comment editor overlay | `apps/frontend/src/workspaces/editor/bridge/overlays/comment_editor.rs` |
-| Layer (name, Enable Transformation, Enable Visibility) | an editor layer's name, "locked" and "hidden" flags, both editor-only as in Eden | `legacy/map_engine/src/data/store/rows/layers.rs` |
+| Layer (name, Enable Transformation, Enable Visibility) | an editor layer's name, "locked" and "hidden" flags, both editor-only as in Eden | `crates/mission/mission_document/src/rows/layers.rs` |
 | Scenario General and Environment | the Mission Settings dialog: "Presentation" (briefing, thumbnail link), "Mission shape", "Time", "Weather", "Mission flow" and the map display settings | `apps/frontend/src/workspaces/editor/ui/modals/settings_modal/` |
 | Composition metadata (title, author, category) | a saved composition's title, category and author, set on save and edited in the Compositions tab | `apps/frontend/src/workspaces/editor/ui/docks/dock_right/compositions/` |
 

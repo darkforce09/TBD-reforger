@@ -37,8 +37,9 @@ pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>
         }
         let side = r
             .faction_id
+            .as_str()
             .strip_prefix("faction-")
-            .unwrap_or(&r.faction_id);
+            .unwrap_or(r.faction_id.as_str());
         tints.extend_from_slice(&unit_symbology::classification::side_rgba(side));
         aliases.push(r.resource_name);
     }

@@ -3,8 +3,8 @@
 use super::{
     clear_compile_findings, compile_findings, evaluate_now, publish_compile_findings, PanelFinding,
 };
-use map_engine::data::scenario::validate::Primitive;
-use map_engine::data::scenario::validate::Severity;
+use mission_validation::Primitive;
+use mission_validation::Severity;
 
 fn mission_a_compile_row() -> PanelFinding {
     PanelFinding {

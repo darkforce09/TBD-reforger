@@ -1,5 +1,5 @@
 use super::*;
-use map_engine::data::scenario::wire_safety::CargoPhys;
+use mission_wire_safety::CargoPhys;
 
 #[test]
 fn editor_schema_compiles_and_accepts_minimal_payload() {

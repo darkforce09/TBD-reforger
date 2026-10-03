@@ -21,7 +21,7 @@ pub fn may_promote_pending(buttons: u16) -> bool {
     buttons != 0
 }
 /// The point index grid cell, world metres. One source of truth: the document's own constant.
-pub(super) const GRID_CELL_M: f64 = crate::data::store::MissionDocCore::GRID_CELL_M;
+pub(super) const GRID_CELL_M: f64 = mission_document::MissionDocCore::GRID_CELL_M;
 /// Everon bounds, for the frozen-camera target clamp.
 pub(super) const TERRAIN_W: f64 = 12_800.0;
 pub(super) const TERRAIN_H: f64 = 12_800.0;

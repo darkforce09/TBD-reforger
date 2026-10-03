@@ -135,8 +135,8 @@ mission clean.
 - The Arsenal's over-capacity message ends in the caveat of
   `apps/frontend/src/workspaces/editor/arsenal/rules/cargo_capacity_and_delivery.rs:136` —
   the save-time check in
-  `legacy/map_engine/src/data/scenario/validation/wire_safety/scan.rs:245` carries a
-  different caveat from a hand copy of `CARGO_CONTAINERS` (same file, :241-242), so export and
+  `crates/mission/mission_wire_safety/src/scan.rs:250` carries a
+  different caveat from a hand copy of `CARGO_CONTAINERS` (same file, :246-247), so export and
   Save explain one fault differently.
 - The Mission Creator's validation panel evaluates the rules with known asset ids only
   (`apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/validation_evaluation_and_findings.rs:12-15`)

@@ -181,7 +181,7 @@ fn move_comment_is_one_transaction() {
     );
     let store = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/rows/comments.rs"
+        "/../../crates/mission/mission_document/src/rows/comments.rs"
     ));
     // set_comment_position delegates the write to set_comment_field (the shared read-modify-write
     // for all three comment field edits), which is where the SINGLE transaction is opened.

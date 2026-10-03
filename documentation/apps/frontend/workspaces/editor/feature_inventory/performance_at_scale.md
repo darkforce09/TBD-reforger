@@ -49,7 +49,7 @@ The status legend is in the [inventory index](/documentation/apps/frontend/works
 
 Ctrl/Cmd+V writes every copied slot in one document transaction, one undo step, and selects every
 pasted slot; no cap limits the count or the selection (`paste_slots`,
-`legacy/map_engine/src/data/store/rows/paste.rs:22-55`; KEY-COPY-001). A bulk delete is one
+`crates/mission/mission_document/src/rows/paste.rs:22-55`; KEY-COPY-001). A bulk delete is one
 `remove_slots` call (XFORM-DEL-001).
 
 ### PERF-OUTLINER-001 — Windowed trees

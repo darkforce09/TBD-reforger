@@ -6,15 +6,13 @@
 //! an apply-to-all is one undo step rather than one per slot. A `None` argument is a field the
 //! operator did not opt in; the document mutators leave those columns untouched.
 
-use crate::data::store::operations::attrs;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::{selection_ids, with_doc};
+use mission_operations::attrs;
 
-/// Which fields disagree across a multi-slot selection.
-pub use crate::data::store::operations::attrs::AttrDiff;
+use mission_operations::attrs::AttrDiff;
 
-/// One slot's editable attributes, as the panel's fields read them.
-pub use crate::data::store::operations::attrs::SlotAttrs;
+use mission_operations::attrs::SlotAttrs;
 
 /// Read one slot's editable attributes for the modal's field values. `None` when the slot no
 /// longer exists (undone away while open → the modal closes).
@@ -87,7 +85,15 @@ pub fn attrs_update_slot(
         return;
     }
     let did = with_doc(|core| {
-        attrs::attrs_update_slot(core, id, role, tag, stance, asset_id, description)
+        attrs::attrs_update_slot(
+            core,
+            id,
+            role,
+            tag,
+            stance,
+            asset_id.map(Into::into),
+            description,
+        )
     })
     .unwrap_or(false);
     if did {
@@ -122,7 +128,7 @@ pub fn attrs_update_slot_multi(
             role,
             tag,
             stance,
-            asset_id,
+            asset_id.map(Into::into),
             description,
             slot_half,
         )

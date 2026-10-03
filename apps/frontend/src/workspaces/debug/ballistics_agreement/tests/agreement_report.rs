@@ -1,8 +1,8 @@
 //! Unit tests for the ballistics agreement bench's reading, over the committed vanilla catalog; the
-//! shared mapping, lead summary and bit walk are tested in the map engine.
+//! shared mapping, lead summary and bit walk are tested in `ballistics_agreement_cases`.
 
 use super::*;
-use map_engine::data::scenario::ballistics::agreement_cases::agreement_cases;
+use ballistics_agreement_cases::agreement_cases;
 
 /// The committed catalog the agreement gate solves natively.
 const COMMITTED_CATALOG: &str =
@@ -43,12 +43,12 @@ fn the_report_solves_every_drawn_case_in_order() {
     let report = agreement_report(&catalog, SEED, 4);
     assert_eq!(report.seed, SEED);
     assert_eq!(report.count, 4);
-    assert_eq!(report.catalog_id, catalog.catalog_id);
+    assert_eq!(catalog.catalog_id, *report.catalog_id);
     assert_eq!(report.catalog_version, catalog.catalog_version);
     assert_eq!(report.solver_revision, SOLVER_REVISION);
     let drawn: Vec<String> = agreement_cases(&catalog, SEED, 4)
         .into_iter()
-        .map(|case| case.case_id)
+        .map(|case| case.case_id.into_inner())
         .collect();
     let reported: Vec<String> = report
         .cases

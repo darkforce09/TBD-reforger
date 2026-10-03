@@ -76,7 +76,8 @@ the document.
 
 ## Boundaries
 
-- Depends on: `map_engine` (`data::store`, `editing` for the history, host, hosted commands,
+- Depends on: `mission_document`, `mission_crdt` and `mission_operations` (the document, its slot
+  columns and its authoring commands); `map_engine` (`editing` for the history, host, hosted commands,
   lanes and tools, `frame` for `RenderEngine`, `EngineHandle` and `RafPump`, `streaming` for the
   host, the progress events and the memory budget); `unit_symbology` (side tints, squad links),
   `map_draw_lanes` (lane ids) and `terrain_elevation` (the full-resolution heights); in the editor, the

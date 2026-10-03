@@ -43,7 +43,7 @@ tolerance. Catalogs are immutable once uploaded: a changed catalog is a new vers
   - `cargo xtask schema validate`, whose ballistics section
     (`tools/xtask/src/verifications/schemas/checks/ballistics_validation.rs`) validates the
     catalog and cross-checks it with its calibration bundle;
-  - the map engine's calibration tests, which load the catalog and bundle and run the flight model
+  - the `ballistics_calibration` tests, which load the catalog and bundle and run the flight model
     over every case;
   - the catalog upload of `POST /api/v1/ballistics-catalogs`, fed by an administrator.
 
@@ -51,6 +51,6 @@ tolerance. Catalogs are immutable once uploaded: a changed catalog is a new vers
 
 - Depends on: `contracts/definitions/ballistics-catalog.schema.json`; the gameplay export and
   the oracle output of the generation it names.
-- Used by: the schema gate, the map engine's calibration tests and the catalog upload.
+- Used by: the schema gate, the `ballistics_calibration` tests and the catalog upload.
 - Rules: a catalog and its calibration bundle change together, in one trim; the bundle's
   `catalog_sha256` equals the SHA-256 of the catalog file's bytes (`cargo xtask schema validate`).

@@ -7,7 +7,7 @@
 use std::sync::OnceLock;
 
 use jsonschema::Validator;
-use map_engine::data::scenario::wire_safety::MAX_REPORTED;
+use mission_wire_safety::MAX_REPORTED;
 use serde_json::{Value, json};
 
 use super::schema_validators::MISSION_SCHEMA;

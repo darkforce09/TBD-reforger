@@ -39,9 +39,9 @@ pub(crate) fn layer_descendant_slots(layers: &[LayerRow], id: &str) -> Vec<Strin
         out.extend(layer.entity_ids.iter().cloned());
         for child in layers
             .iter()
-            .filter(|l| l.parent_id.as_deref() == Some(layer.id.as_str()))
+            .filter(|l| l.parent_id.as_ref() == Some(&layer.id))
         {
-            walk(layers, &child.id, seen, out);
+            walk(layers, child.id.as_str(), seen, out);
         }
     }
     walk(layers, id, &mut seen, &mut out);

@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S5 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b) and S6 landed |
-| Last green commit | the S6 stage commit (S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Current stage | S7 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5 and S6 landed |
+| Last green commit | the S5 stage commit (S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
@@ -96,12 +96,13 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [x] S4b stage commit — done (see the stage log)
 
 ### S5 Mission and ballistics
-- [ ] D1 (L) mission authoring crates — pending
-- [ ] D2 (M) ballistics crates — pending
-- [ ] D3 (L) CRDT, document, formation geometry, operations — pending
-- [ ] X5 (M) switch — pending
-- [ ] D4 (S) data rules retired, two features deleted — pending
-- [ ] Stage commit — pending
+- [x] D1 (L) mission authoring crates — done, awaiting the stage commit — D1a (model, payload) and D1b (validation, compiler) plus W0 (wire safety): five crates, every moved test counted (stage log s5)
+- [x] D2 (L) ballistics crates — done, awaiting the stage commit — five crates, 213 tests moved, agreement bit patterns identical (stage log s5)
+- [x] D3 (L) CRDT, document, formation geometry, operations — done, awaiting the stage commit — D3a (crdt, document, formation geometry) and D3b (operations), every moved test counted (stage log s5)
+- [x] X5 (M) switch — done, awaiting the stage commit — ledger empty, every shim deleted, the API off the map engine (stage log s5)
+- [x] D4 (M) data rules retired, two features deleted — done — the map engine's `data` module, its `scenario` and `store` features, engine rule 4 and the data half of rule 7 gone (stage log s5)
+- [x] G5, G5b closing batch (F-S5-01 schema description, CLAUDE.md, workspace layout, catalogue, rustdoc) — done
+- [x] Stage commit — done (see the stage log)
 
 ### S6 World CPU
 - [x] P0c (M) cuts K1–K12 inside the map engine — done — map engine 1665 library tests equal to the baseline; rebased onto S4a by R6 (30 conflicts)
@@ -314,6 +315,15 @@ S3 is on `main`: the frontend is `src/{foundation, features, pages, workspaces, 
 S4 is on `main` in two commits, S4a (the tier 0–1 crates S5 and S6 need) and S4b (tool foundations
 and contract crates). Duplicates S4 left in place, each with the stage that switches it, are in the
 "Handoff duplicates" table of [stage_logs/s4.md](/documentation/restructure/stage_logs/s4.md).
+
+S5 is on `main`: the mission domain is nine crates under `crates/mission/` (wire safety, model,
+payload, validation, compiler, formation geometry, CRDT, document, operations) and ballistics five
+under `crates/ballistics/`; the map engine has no `data` module and no `scenario` or `store`
+feature, and the API no longer depends on it. `COMPILER_PACKAGE_VERSION` is the literal
+`website-map-engine 0.1.0` in `mission_compiler`. Findings and the notes for later stages (the
+three map engine integration suites that test only mission crates, the seed generators kept,
+pre-existing rustdoc warnings in the map engine) are in
+[stage_logs/s5.md](/documentation/restructure/stage_logs/s5.md).
 
 Every remaining stage (S3–S12, M3) has its own worktree and orchestrator, managed by the
 "Restructure coordinator" session (decision D22; inputs per stage in the stage logs protocol). The

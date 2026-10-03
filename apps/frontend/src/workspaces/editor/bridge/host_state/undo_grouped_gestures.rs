@@ -1,7 +1,8 @@
-//! Role: the gestures that must collapse into ONE undo step, the prompt a bulk gesture asks before
-//! it commits, and the host clock that grouping needs.
+//! Role: the gestures that must collapse into ONE undo step, and the prompt a bulk gesture asks
+//! before it commits.
 //! Position: `editor/bridge/host_state` in the frontend editor shell.
-//! Signals & state: none of its own; the grouping is the engine's, over the hosted document.
+//! Signals & state: none of its own; the grouping is the engine's, over the hosted document, timed
+//! by the document's platform clock (`Date.now()` in the browser).
 //! Invariants: a gesture the operator experienced as one act undoes as one act — a delete that
 //! spans comments, a connection cascade and slots, a paste that mints a folder first, an align that
 //! moves many rows. The confirmation is the HOST's: the engine takes it as a closure and calls it
@@ -10,9 +11,9 @@
 #![cfg(target_arch = "wasm32")]
 
 use crate::workspaces::editor::ui::outliner::node_model;
+use formation_geometry::{needs_confirm, AlignEdge};
 pub use map_engine::editing::batch::with_batch;
 use map_engine::editing::hosted_commands::{entity_clipboard, selection_transform};
-use map_engine::editing::tools::placement::{needs_confirm, AlignEdge};
 use node_model::ensure_active_layer;
 
 /// One Ctrl+Z restores a delete that spans comments, a connection cascade and slots.
@@ -56,10 +57,4 @@ pub fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
     web_sys::window()
         .and_then(|w| w.confirm_with_message(&msg).ok())
         .unwrap_or(false)
-}
-
-/// Wasm boot: feed `Date.now` into the engine's document store.
-#[wasm_bindgen::prelude::wasm_bindgen(start)]
-pub fn install_undo_gesture_clock() {
-    map_engine::data::store::install_wasm_now(|| js_sys::Date::now() as u64);
 }

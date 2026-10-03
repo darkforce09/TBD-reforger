@@ -57,7 +57,7 @@ impl ::std::default::Default for TbdMissionEditorPayload {
         }
     }
 }
-///Lossless editor graph. `squads` is intentionally unconstrained (no per-item schema) so validation stays O(1) on missions with hundreds of thousands of slots; the rules those arrays do need are expressed in CODE instead — `crates/map-engine-core/src/mission/wire_safety.rs`. `slots` and `editorLayers` carry per-item subschemas constraining known fields with additionalProperties: false.
+///Lossless editor graph. `squads` is intentionally unconstrained (no per-item schema) so validation stays O(1) on missions with hundreds of thousands of slots; the rules those arrays do need are expressed in CODE instead — the `mission_wire_safety` crate (`crates/mission/mission_wire_safety/`). `slots` and `editorLayers` carry per-item subschemas constraining known fields with additionalProperties: false.
 #[derive(::serde::Deserialize, ::serde::Serialize, Clone, Debug)]
 pub struct TbdMissionEditorPayloadEditor {
     #[serde(

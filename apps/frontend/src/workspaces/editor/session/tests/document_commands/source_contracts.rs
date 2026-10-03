@@ -160,19 +160,19 @@ fn the_export_pin_rejects_every_dead_code_wrapper() {
 
 /* ══════════ T-690 — the compile's structured result ══════════ */
 
-use map_engine::data::scenario::validate::Finding;
-use map_engine::data::scenario::validate::Primitive;
-use map_engine::data::scenario::validate::Severity;
+use mission_validation::Finding;
+use mission_validation::Primitive;
+use mission_validation::Severity;
 
 /// A finding shaped like the ones a compile emits.
 fn finding(rule_id: &'static str, severity: Severity, subject_id: Option<&str>) -> Finding {
     Finding {
-        rule_id,
+        rule_id: rule_id.into(),
         severity,
         primitive: Primitive::PerObjectInvariant,
         message: "the compile dropped a value".to_string(),
         subject: "/editor/slots/0/rank".to_string(),
-        subject_id: subject_id.map(ToString::to_string),
+        subject_id: subject_id.map(Into::into),
     }
 }
 

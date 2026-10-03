@@ -6,18 +6,18 @@
 //! [`FireMissionGun`]s, and the [`SavedFireMissionAnswer`] the save returns. The solution itself
 //! ([`FireMissionSolution`] with its [`GunFireSolution`]s, [`ChargeSolution`] rows,
 //! [`ImpactDispersion`], [`FireMissionFuze`] with its [`FuzeBurstAim`], and
-//! [`CrestClearance`]) is the map engine's own type, carried on the wire unchanged.
+//! [`CrestClearance`]) is the ballistics crates' own type, carried on the wire unchanged.
 //!
-//! [`GunFireSolution`]: map_engine::data::scenario::ballistics::battery::GunFireSolution
-//! [`ChargeSolution`]: map_engine::data::scenario::ballistics::solver::ChargeSolution
-//! [`FireMissionFuze`]: map_engine::data::scenario::ballistics::fire_mission::FireMissionFuze
-//! [`FuzeBurstAim`]: map_engine::data::scenario::ballistics::fire_mission::FuzeBurstAim
-//! [`CrestClearance`]: map_engine::data::scenario::ballistics::crest_clearance::CrestClearance
+//! [`GunFireSolution`]: fire_mission_planning::battery::GunFireSolution
+//! [`ChargeSolution`]: ballistics_solver::ChargeSolution
+//! [`FireMissionFuze`]: fire_mission_planning::fire_mission::FireMissionFuze
+//! [`FuzeBurstAim`]: fire_mission_planning::fire_mission::FuzeBurstAim
+//! [`CrestClearance`]: ballistics_solver::crest_clearance::CrestClearance
 //! **Position:** deserialised from and serialised to the API's fire-mission routes by the mortar
 //! page. The page solves with
-//! [`map_engine::data::scenario::ballistics::fire_mission::solve_fire_mission`] and posts
+//! [`fire_mission_planning::fire_mission::solve_fire_mission`] and posts
 //! that solution unchanged as `client_solution`; the API re-solves with the same function, so the
-//! solution types exist once, in the engine, which carries their `@contract` tags.
+//! solution types exist once, in the ballistics crates, which carry their `@contract` tags.
 //! **Signals & state:** none — these are plain data.
 //! **Invariants:** a null the API sends stays an explicit `null` when serialising; a key the
 //! contract makes optional and non-nullable (the save body's `event_id`, `charge_rings`, `wind`,
@@ -39,11 +39,11 @@
 #[cfg(any(target_arch = "wasm32", test))]
 use serde::{Deserialize, Serialize};
 
-// The map engine's battery solution and its dispersion, carried on the wire unchanged.
+// The ballistics crates' battery solution and its dispersion, carried on the wire unchanged.
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::{
-    dispersion::ImpactDispersion, fire_mission::FireMissionSolution,
-};
+use ballistics_solver::dispersion::ImpactDispersion;
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::fire_mission::FireMissionSolution;
 
 /// Where a height came from: sampled from the terrain elevation model, or typed by the operator.
 #[cfg(any(target_arch = "wasm32", test))]

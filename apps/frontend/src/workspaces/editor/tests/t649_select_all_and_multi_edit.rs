@@ -244,7 +244,7 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                "/../../crates/mission/mission_operations/src/compositions.rs"
             )),
             crate::foundation::test_support::editor_operations::CONTEXT,
             crate::foundation::test_support::editor_operations::ENTITY,
@@ -380,7 +380,7 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
     }
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/attrs.rs"
+        "/../../crates/mission/mission_operations/src/attrs.rs"
     )));
     let host = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),

@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow, bail};
 use axum::http::Method;
-use map_engine::data::scenario::ballistics::catalog::{BallisticsCatalog, ShellRole};
+use ballistics_model::catalog::{BallisticsCatalog, ShellRole};
 
 use crate::browser_testing::server::api_fixture_corpus::corpus_file_name;
 
@@ -162,7 +162,7 @@ pub fn high_explosive_shell(catalog: &BallisticsCatalog, weapon_id: &str) -> Res
                 .iter()
                 .any(|s| &s.shell_id == *id && s.role == ShellRole::He && s.time_fuze.is_none())
         })
-        .cloned()
+        .map(ToString::to_string)
         .ok_or_else(|| anyhow!("weapon {weapon_id} fires no high-explosive shell"))
 }
 

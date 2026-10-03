@@ -168,7 +168,7 @@ pub fn win_conditions_card(ctrl: &'static str) -> AnyView {
 
     let incomplete = block
         .as_ref()
-        .and_then(|b| map_engine::data::scenario::win_conditions::validate(b).err());
+        .and_then(|b| mission_model::objectives::win_conditions::validate(b).err());
 
     view! {
         <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">

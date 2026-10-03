@@ -11,7 +11,7 @@ use super::{
 fn zone_quantisation_mirrors_flatten() {
     let flatten = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/scenario/compiler/flatten/zones.rs"
+        "/../../crates/mission/mission_compiler/src/game_document/zones.rs"
     ));
     let body = flatten
         .split("fn round_coord(v: f64) -> f64 {")
@@ -383,12 +383,9 @@ fn terrain_payload(extra: &str) -> Vec<u8> {
     .into_bytes()
 }
 
-fn compile_for(
-    terrain: &str,
-    payload: &[u8],
-) -> map_engine::data::scenario::flatten::ModMissionDocument {
-    use map_engine::data::scenario::flatten::flatten_to_mod_document;
-    use map_engine::data::scenario::flatten::MissionMeta;
+fn compile_for(terrain: &str, payload: &[u8]) -> mission_compiler::ModMissionDocument {
+    use mission_compiler::flatten_to_mod_document;
+    use mission_compiler::MissionMeta;
     let meta = MissionMeta {
         terrain: terrain.to_string(),
         ..MissionMeta::default()
@@ -402,11 +399,8 @@ fn compile_for(
     doc
 }
 
-fn compiled_boundary_ring(
-    doc: &map_engine::data::scenario::flatten::ModMissionDocument,
-    id: &str,
-) -> Vec<f64> {
-    use map_engine::data::scenario::flatten::ModZoneShape;
+fn compiled_boundary_ring(doc: &mission_compiler::ModMissionDocument, id: &str) -> Vec<f64> {
+    use mission_model::compiled::mission::ModZoneShape;
     let z = doc
         .zones
         .iter()
@@ -421,7 +415,7 @@ fn compiled_boundary_ring(
 
 #[test]
 fn whole_terrain_ring_is_the_rect_the_compile_reads() {
-    use map_engine::data::scenario::compile::terrain_bounds;
+    use mission_payload::terrain_bounds;
     for terrain in SHIPPED_TERRAINS {
         let compiled =
             compiled_boundary_ring(&compile_for(terrain, &terrain_payload("[]")), "z_bounds");
@@ -448,7 +442,7 @@ fn whole_terrain_ring_is_the_rect_the_compile_reads() {
 
 #[test]
 fn the_authored_play_area_becomes_the_compiled_play_area() {
-    use map_engine::data::scenario::compile::terrain_bounds;
+    use mission_payload::terrain_bounds;
     for terrain in SHIPPED_TERRAINS {
         let synthesised =
             compiled_boundary_ring(&compile_for(terrain, &terrain_payload("[]")), "z_bounds");
@@ -498,7 +492,7 @@ fn the_authored_play_area_becomes_the_compiled_play_area() {
 
 #[test]
 fn terrain_rect_ring_refuses_bounds_that_are_not_this_terrain() {
-    use map_engine::data::scenario::compile::terrain_bounds;
+    use mission_payload::terrain_bounds;
     let everon = terrain_bounds("everon");
     let arland = terrain_bounds("arland");
     assert!(terrain_rect_ring("everon", everon).is_some());
@@ -522,7 +516,7 @@ fn terrain_rect_ring_refuses_bounds_that_are_not_this_terrain() {
 
 #[test]
 fn terrain_rect_rule_fires() {
-    use map_engine::data::scenario::compile::terrain_bounds;
+    use mission_payload::terrain_bounds;
     for terrain in SHIPPED_TERRAINS {
         assert!(
             terrain_rect_is_authorable(terrain_bounds(terrain)),
@@ -624,7 +618,7 @@ fn whole_terrain_affordance_is_wired() {
         squash(&gate[from..opens_at]),
         squash(
             "let Some(id) = selected.get() else { return ().into_any(); };
-                 let Some(z) = engine_ops::zone_rows().into_iter().find(|r| r.id == id) else {
+                 let Some(z) = engine_ops::zone_rows().into_iter().find(|r| r.id == *id) else {
                      return ().into_any();
                  };"
         ),

@@ -131,9 +131,9 @@ pub struct ArtifactMetadata {
 impl ArtifactMetadata {
     /// The row fields the shared compiler reads, exactly as this artifact's compile read them —
     /// so a compile of the reviewed version in the browser runs over the same inputs.
-    pub fn compiled_meta(&self) -> map_engine::data::scenario::flatten::MissionMeta {
-        map_engine::data::scenario::flatten::MissionMeta {
-            id: self.id.clone(),
+    pub fn compiled_meta(&self) -> mission_compiler::MissionMeta {
+        mission_compiler::MissionMeta {
+            id: self.id.clone().into(),
             title: self.title.clone(),
             author: self.author.clone(),
             terrain: self.terrain.clone(),

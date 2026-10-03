@@ -34,7 +34,7 @@ fn ops_live() -> String {
 fn release_machine_live() -> String {
     live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/armed_placement.rs"
+        "/../../crates/mission/mission_operations/src/entity/armed_placement.rs"
     )))
 }
 

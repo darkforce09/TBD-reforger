@@ -2,8 +2,8 @@
 //! already produced, and read artifacts back.
 
 use chrono::{DateTime, Utc};
-use map_engine::data::scenario::COMPILER_PACKAGE_VERSION;
-use map_engine::data::scenario::flatten::unsupported_authored_data;
+use mission_compiler::COMPILER_PACKAGE_VERSION;
+use mission_compiler::unsupported_authored_data;
 use serde::Serialize;
 use serde_json::Value;
 use sqlx::PgConnection;
@@ -214,7 +214,7 @@ pub async fn compile_artifact(
                     rule = %finding.rule_id,
                     severity = %finding.severity.as_str(),
                     subject = %finding.subject,
-                    subject_id = %finding.subject_id.as_deref().unwrap_or(""),
+                    subject_id = %finding.subject_id.as_ref().map_or("", |id| id.as_str()),
                     detail = %finding.message,
                     "compile diagnostic",
                 );

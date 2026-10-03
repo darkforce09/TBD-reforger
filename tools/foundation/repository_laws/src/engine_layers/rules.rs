@@ -1,6 +1,6 @@
 //! The engine-layer walls' matchers, pinned residues and scanned roots.
 //!
-//! **Role:** every regular expression, path and pin the eight engine-layer rules judge with.
+//! **Role:** every regular expression, path and pin the seven engine-layer rules judge with.
 //! **Position:** the constants half of [`super`], which owns the rules; the report text lives in
 //! [`super::report_text`].
 //! **Signals & state:** none; every item here is a `const` a reviewer can read end to end.
@@ -128,81 +128,39 @@ pub(super) const GRAPHICS_IMPORT_RE: &str =
 /// manifest. A wasm-only graphics member's edge is spelled with its own package name.
 pub(super) const GRAPHICS_PKG: &str = "graphics_engine";
 
-/// The authored document's tree — rules 4 and 7's `data` side.
-pub(super) const DATA_REL: &str = "legacy/map_engine/src/data";
-/// The static world's tree — rule 7's `world` side.
+/// The static world's tree — rule 7's subject.
 pub(super) const WORLD_REL: &str = "legacy/map_engine/src/world";
-/// The authored mission the server links on its own — rule 4's root.
-pub(super) const SCENARIO_REL: &str = "legacy/map_engine/src/data/scenario";
 
-// ── RULES 4 AND 7'S MATCHERS ─────────────────────────────────────────────────────────────────
+// ── RULE 7'S MATCHER ─────────────────────────────────────────────────────────────────────────
 //
-// Rule 4 and rule 7's `data` side spell "outside this tree" as the top-level modules that are
-// not the tree's own, plus the renderer crate. That is the whole of it written out, because
-// `map_engine` declares exactly ten top-level modules (`lib.rs`: camera, data, diagnostics, doll,
-// editing, frame, overlay, spatial, streaming, world) and an enumeration is cheaper to read — and
-// impossible to widen by accident — than a negation would be. Code that left the map engine for a
-// crate of its own (the on-disk formats in `world_file_formats`, the camera projections in
-// `camera_math`, the grid references in `map_coordinates`) is no module of the crate, so no arm
-// names it: the crate-tier law and the map engine's feature gates judge those edges. `camera`
-// stays in the list because the module still holds the viewport. `\b` after each group is what
-// keeps a future `crate::worldgen` from being caught by its prefix rather than by its name.
+// The static world may name no home of the authored document: the CRDT crate (`yrs`), the mission
+// crates that hold the document (`mission_crdt`, `mission_document`, `mission_operations`), and
+// the crate's own `editing` module, which hosts the live document and its undo drive. That is the
+// whole list written out, because an enumeration is cheaper to read — and impossible to widen by
+// accident — than a negation would be. The mission crates' own edges are the crate-tier law's
+// (a `crates/mission` crate depends on foundation, mission and geometry crates only), so this
+// matcher judges the one direction that law cannot see: a module of this crate reaching the
+// document.
 //
-// A raw string processes no escapes, so these stay one line each: a `\` continuation inside
+// `yrs::` and not `\byrs\b`: the bare word would match prose ("3 yrs"), and a matcher that fires
+// on prose gets suppressed. Every real shape is a path — `use yrs::Doc`, `-> yrs::TransactionMut`,
+// `yrs::Transact::transact` — so the `::` is free precision, not a loophole. `\b` before each crate
+// name keeps `my_mission_document::` from matching on a suffix, and `\b` after `editing` keeps a
+// future `crate::editing_notes` from matching on a prefix.
+//
+// ── THE `super::` ARM ────────────────────────────────────────────────────────────────────────
+//
+// `crate::editing::x` is not the only way to spell an escape. `use super::super::super::
+// editing::x;` reaches the same module and a `crate::`-anchored matcher never sees it. How many
+// `super`s it takes to escape depends on the file's depth, and file depth is not module depth in
+// this repo — `#[path = "../../tests/cases_1.rs"] mod tests;` is used throughout — so a depth
+// calculation would be unsound, and an unsound gate rule is worse than none. What IS sound is the
+// destination: no module inside `world/` is named `editing`, so a `super::` chain of any length
+// that lands on that name has escaped the tree.
+//
+// A raw string processes no escapes, so the matcher stays one line: a `\` continuation inside
 // `r"…"` would put a literal backslash and the next line's indentation into the pattern.
-//
-// ── THE `super::` ARM, AND THE ONE NAME IT CANNOT COVER ──────────────────────────────────────
-//
-// `crate::streaming::x` is not the only way to spell an escape. `use super::super::super::
-// streaming::x;` reaches the same module and a `crate::`-anchored matcher never sees it, which
-// would leave every rule below with a documented one-line bypass. How many `super`s it takes to
-// escape depends on the file's depth, and file depth is not module depth in this repo —
-// `#[path = "../../tests/cases_1.rs"] mod tests;` is used throughout — so a depth calculation would be
-// unsound, and an unsound gate rule is worse than none.
-//
-// What IS sound is the destination. A `super::` chain of any length that lands on a name which
-// does not exist inside the scanned tree has escaped it, whatever the depth. Every top-level
-// module name, `editing` included, collides with nothing in the two trees but one —
-// `data/scenario/compiler/flatten/diagnostics.rs` — so `diagnostics` is the single name left out
-// of the `super::` arm, and `super::diagnostics` from inside `flatten/` stays legal because it
-// is. The `crate::` arm still covers `crate::diagnostics`.
-//
-// The three patterns are written out rather than composed from shared fragments: `concat!` takes
-// literals and not `const` idents, and a `format!` would make them runtime `String`s built in a
-// gate whose whole point is that its matchers are constants a reviewer can read.
 
-/// Rule 4's matcher — everything outside `data/scenario`: the nine sibling modules, the renderer,
-/// the document store, and the `super::` spelling of each. `\b` after `data::store` is what keeps
-/// a hypothetical `data::stored_rows` from matching on the prefix.
-pub(super) const RULE4_RE: &str = r"crate::(camera|diagnostics|doll|editing|frame|overlay|spatial|streaming|world|data::store)\b|graphics_engine|\bsuper::(super::)*(store|camera|doll|editing|frame|overlay|spatial|streaming|world)\b";
-
-/// Rule 7's `data` side — the authored document may name `crate::data` and nothing else.
-pub(super) const RULE7_DATA_RE: &str = r"crate::(camera|diagnostics|doll|editing|frame|overlay|spatial|streaming|world)\b|graphics_engine|\bsuper::(super::)*(camera|doll|editing|frame|overlay|spatial|streaming|world)\b";
-
-/// Rule 7's `world` side — the static world may name neither the document nor the CRDT crate.
-///
-/// `yrs::` and not `\byrs\b`: the bare word would match prose ("3 yrs"), and a matcher that fires
-/// on prose gets suppressed. Every real shape is a path — `use yrs::Doc`, `-> yrs::TransactionMut`,
-/// `yrs::Transact::transact` — so the `::` is free precision, not a loophole.
-pub(super) const RULE7_WORLD_RE: &str = r"crate::data\b|\byrs::|\bsuper::(super::)*data\b";
-
-/// Rule 4's pinned residue — file, exact count, and why it does not reach the `api` build.
-///
-/// Read the module docs before adding a row. Both entries are `#[cfg(feature = "store")]` test
-/// code, and `api` links the `scenario` feature alone, so neither is compiled by the build
-/// this rule protects. An *ungated* import of the store from `data/scenario/` would satisfy this
-/// pin's count and still be wrong — which is why the pin carries the reason and not just a number.
-pub(super) const RULE4_PIN: &[(&str, usize, &str)] = &[
-    (
-        "legacy/map_engine/src/data/scenario/compiler/flatten/tests/mod.rs",
-        1,
-        "cfg(feature = \"store\") — vehicles_from_writer_json_roundtrip builds a real \
-         MissionDocCore and flattens it; api compiles neither the cfg nor the test",
-    ),
-    (
-        "legacy/map_engine/src/data/scenario/compiler/payload/tests/cases_1.rs",
-        1,
-        "cfg(feature = \"store\") — briefing_prose_round_trips_through_the_document_core, \
-         the same pairing from the payload side",
-    ),
-];
+/// Rule 7's matcher — the static world may name neither the CRDT crate, nor the mission document
+/// crates, nor the `editing` module that hosts the live document.
+pub(super) const RULE7_WORLD_RE: &str = r"\byrs::|\b(mission_crdt|mission_document|mission_operations)\s*::|crate::editing\b|\bsuper::(super::)*editing\b";

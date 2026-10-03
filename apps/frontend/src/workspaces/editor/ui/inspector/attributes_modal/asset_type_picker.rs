@@ -116,7 +116,7 @@ pub(super) fn type_picker(
                                     ) {
                                         for n in nodes {
                                             if let Some(p) = &n.payload {
-                                                out.push((n.label.clone(), p.asset_id.clone()));
+                                                out.push((n.label.clone(), p.asset_id.to_string()));
                                             }
                                             collect(&n.children, out);
                                         }

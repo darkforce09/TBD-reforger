@@ -41,7 +41,7 @@ mod t737 {
     /// module, and a sibling reaching into it would not compile.
     fn buf(source: &str, json: Option<&str>) -> BufferedLoadout {
         BufferedLoadout {
-            source_id: source.to_string(),
+            source_id: source.into(),
             loadout_json: json.map(str::to_string),
         }
     }

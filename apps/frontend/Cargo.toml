@@ -15,18 +15,38 @@ futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 base64 = { workspace = true }
-# The map engine on every target. `format_slot_line` and the mission compiler run on the native
-# build as well as wasm32: `MissionDetail::compiled_meta` is the row half of the Mission Creator's
-# server-truth Export, and `compiled_meta_is_the_row_the_server_compiles_from` checks it natively
-# against the captured `GET /missions/:id` golden, so `store` (`scenario` plus yrs) sits in this
-# shared block rather than the wasm32 block; `editing` brings `streaming` with it. The wasm32
-# block adds `render`.
-map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "store", "editing"] }
+# The map engine on every target: the Mission Creator's editing layer runs on the native build as
+# well as wasm32, for the editor tests; `editing` brings `streaming` with it. The wasm32 block adds
+# `render`.
+map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "editing"] }
+# The mission crates on every target. The compiler runs on the native build as well as wasm32:
+# `MissionDetail::compiled_meta` is the row half of the Mission Creator's server-truth Export, and
+# `compiled_meta_is_the_row_the_server_compiles_from` checks it natively against the captured
+# `GET /missions/:id` golden. The authored blocks, the slot line and the ORBAT come from
+# `mission_model`; the payload and export envelope from `mission_payload`; the rule list and its
+# findings from `mission_validation`; the document, its slot columns and its authoring commands
+# from `mission_document`, `mission_crdt` and `mission_operations`; the arrange menu's vocabulary
+# from `formation_geometry`.
+mission_model = { workspace = true }
+mission_payload = { workspace = true }
+mission_compiler = { workspace = true }
+mission_validation = { workspace = true }
+mission_document = { workspace = true }
+mission_crdt = { workspace = true }
+mission_operations = { workspace = true }
+formation_geometry = { workspace = true }
 # The geometry crates the map views and debug benches name directly: the orthographic and orbit
 # cameras, the grid reference and chunk arithmetic, and the rigid transform of the building
 # interior bench.
 camera_math = { workspace = true }
 map_coordinates = { workspace = true }
+# The ballistics crates the mortar calculator solves locally with and the agreement bench draws
+# from: the catalog, the solver's rows and terrain profile, the fire-mission assembler and the
+# seeded agreement cases. They run on the native build too, for the page tests.
+ballistics_model = { workspace = true }
+ballistics_solver = { workspace = true }
+fire_mission_planning = { workspace = true }
+ballistics_agreement_cases = { workspace = true }
 geometry_primitives = { workspace = true }
 # The ear-clipping triangulation the native building viewer fills footprints with.
 render_primitives = { workspace = true }
@@ -144,8 +164,8 @@ web-sys = { workspace = true, features = [
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 gloo-timers = { version = "0.3", features = ["futures"] }
 # The renderer tier of the browser build: `render` reaches `streaming` -> `world`.
-# Default features are off, as on every frontend edge to the map engine, so the crate default
-# (`scenario`) never chooses a tier.
+# Default features are off, as on every frontend edge to the map engine, so no crate default ever
+# chooses a tier.
 map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["render", "streaming"] }
 # The same-origin fetch helpers the map view mount and the world line-of-sight bench load with.
 browser_platform = { workspace = true }

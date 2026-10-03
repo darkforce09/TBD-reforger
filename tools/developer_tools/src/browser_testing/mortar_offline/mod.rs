@@ -30,7 +30,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use anyhow::{Result, anyhow, bail};
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
+use ballistics_model::catalog::BallisticsCatalog;
 use serde_json::{Value, json};
 use tokio::sync::mpsc::UnboundedReceiver;
 

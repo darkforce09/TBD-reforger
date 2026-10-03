@@ -24,7 +24,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
     };
 
     let tactical_kind = RwSignal::new(
-        map_engine::data::scenario::tactical_graphics::KINDS
+        mission_model::tactical_graphics::KINDS
             .first()
             .map_or_else(String::new, |k| (*k).to_string()),
     );
@@ -216,7 +216,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                                                 ROW
                                             }
                                         }
-                                        on:click=move |_| selected.set(Some(id.clone()))
+                                        on:click=move |_| selected.set(Some(id.to_string()))
                                     >
                                         <MaterialIcon
                                             name=if z.circle.is_some() {
@@ -245,7 +245,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
             let Some(id) = selected.get() else {
                 return ().into_any();
             };
-            let Some(z) = engine_ops::zone_rows().into_iter().find(|r| r.id == id) else {
+            let Some(z) = engine_ops::zone_rows().into_iter().find(|r| r.id == *id) else {
                 return ().into_any();
             };
             zone_attributes(z, doc_tick, selected).into_any()
@@ -273,7 +273,7 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
                 class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
                 on:change=move |ev| tactical_kind.set(event_target_value(&ev))
             >
-                {map_engine::data::scenario::tactical_graphics::KINDS
+                {mission_model::tactical_graphics::KINDS
                     .iter()
                     .map(|k| {
                         let k = (*k).to_string();

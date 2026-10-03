@@ -44,7 +44,7 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
 ## Boundaries
 
 - Depends on: the `idb` crate; `map_engine::editing::persist` (`record_key`, `stored_blob`,
-  `merge_policy`, `record_read_retry`, `slot_fingerprint`) and `data::store::MissionDocCore`; the
+  `merge_policy`, `record_read_retry`, `slot_fingerprint`) and `mission_document::MissionDocCore`; the
   `DocHandle` and undo driver in `apps/frontend/src/workspaces/editor/bridge/document_host/`;
   `save_status`, `tab_lock` and `session` in `apps/frontend/src/workspaces/editor/session/`; the
   auth store of `crate::foundation::auth`.

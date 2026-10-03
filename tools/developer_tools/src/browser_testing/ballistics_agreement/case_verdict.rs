@@ -19,8 +19,8 @@
 
 use std::collections::BTreeMap;
 
-use map_engine::data::scenario::ballistics::agreement_cases::{case_bit_patterns, lead_summary};
-use map_engine::data::scenario::ballistics::fire_mission_comparison::{
+use ballistics_agreement_cases::{case_bit_patterns, lead_summary};
+use fire_mission_planning::fire_mission_comparison::{
     ANGLE_TOLERANCE_MILS, TIME_TOLERANCE_S, compare_solutions,
 };
 

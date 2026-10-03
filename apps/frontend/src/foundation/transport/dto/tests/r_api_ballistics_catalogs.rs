@@ -1,5 +1,5 @@
 //! Round trips for the ballistics-catalog shapes: the public list, one catalog document decoded
-//! by the map engine's type, and the administrator upload's report.
+//! by the `ballistics_model` type, and the administrator upload's report.
 
 use super::*;
 use crate::foundation::transport::dto::ballistics_catalogs::{
@@ -37,9 +37,9 @@ fn a_summary_with_an_unknown_key_fails_the_read() {
     assert!(serde_json::from_value::<BallisticsCatalogList>(wire).is_err());
 }
 
-/// A catalog document decodes through the map engine's type and writes back every key.
+/// A catalog document decodes through the `ballistics_model` type and writes back every key.
 #[test]
-fn a_catalog_document_round_trips_through_the_map_engine_type() {
+fn a_catalog_document_round_trips_through_the_ballistics_model_type() {
     let weapon = json!({
         "weapon_id": "m252", "display_name": "M252", "prefab_guid": "5A3F0C9B1E2D4A7E",
         "caliber_mm": 81.0, "mils_per_circle": 6400, "elevation_min_deg": 45.0,

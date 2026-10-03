@@ -83,7 +83,7 @@ pub async fn upload_catalog(
     let catalog = upload.catalog();
     if let Some(duplicate) = find_duplicate(
         &state.pool,
-        &catalog.catalog_id,
+        catalog.catalog_id.as_str(),
         upload.catalog_version,
         &upload.pinned.sha256,
     )

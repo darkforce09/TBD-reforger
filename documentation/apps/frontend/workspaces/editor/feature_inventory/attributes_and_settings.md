@@ -110,7 +110,7 @@ note reads "Edits apply live." and it has no Revert.
 - The Transform help text says "Z is sampled from terrain elevation (DEM)"
   (`apps/frontend/src/workspaces/editor/ui/inspector/attributes_modal/spatial_transform_tab.rs`)
   — a typed X or Y keeps the old Z (`keep_z_rows` in
-  `legacy/map_engine/src/data/store/operations/attrs.rs`).
+  `crates/mission/mission_operations/src/attrs.rs`).
 - One Revert writes position and identity per slot and then regroups squads, so undoing a Revert
   can take several Ctrl/Cmd+Z presses
   (`apps/frontend/src/workspaces/editor/ui/inspector/attributes_modal/attribute_commits_and_revert.rs`).

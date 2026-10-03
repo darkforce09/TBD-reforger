@@ -3,7 +3,7 @@ use crate::workspaces::editor::mission_editor::transform::{
     press_on_ring, snap_translate, snap_value, step, Axis, SnapState, WidgetVariant,
     RING_HIT_TOL_PX, ROTATE_LADDER_DEG, TRANSLATE_LADDER_M, WIDGET_RADIUS_PX,
 };
-use map_engine::data::store::operations::rotation::{bearing_to_face, norm_deg, snap_rotate};
+use mission_operations::rotation::{bearing_to_face, norm_deg, snap_rotate};
 
 /// Page-from-anchor + the T-934.13 gesture file (`input/pointer_gestures.rs`) — the transform wiring
 /// spans the page body (keydown arms, widget mounts) and the moved pointer closures (the ring
@@ -727,7 +727,7 @@ fn transform_module_is_native_testable() {
     // And the rotate commit really rides the existing field write, per the ticket.
     let ops = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/transform.rs"
+        "/../../crates/mission/mission_operations/src/transform.rs"
     ));
     let ops_live = live_code(ops);
     let body = only_body(&ops_live, "pub fn rotate_selection_to_face(");

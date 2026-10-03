@@ -12,9 +12,9 @@ with the mission and read by nothing outside the editor.
 ## Where it lives
 
 - Code: the rows, the add rules and the graph findings in
-  `legacy/map_engine/src/data/store/rows/connections.rs` and `connection_types.rs` beside it
-  ([rows README](/legacy/map_engine/src/data/store/rows/README.md)); the id minting, the
-  panel list and the delete in `legacy/map_engine/src/data/store/operations/entity/connections.rs`;
+  `crates/mission/mission_document/src/rows/connections.rs` and `connection_types.rs` beside it
+  ([rows README](/crates/mission/mission_document/src/rows/README.md)); the id minting, the
+  panel list and the delete in `crates/mission/mission_operations/src/entity/connections.rs`;
   the armed connect in `legacy/map_engine/src/editing/hosted_commands/entity_connections.rs`;
   the map lane and its pick in
   [`legacy/map_engine/src/editing/lanes/`](/legacy/map_engine/src/editing/lanes/README.md)
@@ -177,7 +177,7 @@ rows added for shipped code.
 - No API call. The rows live in the document's `connections` map as `{id, kind, from, to}`
   (`data/store/rows/connection_types.rs:212-219`) and reach Save Version as the payload's
   `connections` array, carried through `payloadExtras`
-  ([payload compiler README](/legacy/map_engine/src/data/scenario/compiler/payload/README.md)).
+  ([payload compiler README](/crates/mission/mission_payload/src/README.md)).
   Neither `mission-editor-payload.schema.json` nor `mission.schema.json` in
   `contracts/definitions/` names the key, and the compiled mission carries no connection.
 - A re-hydrate keeps connections the new payload lacks

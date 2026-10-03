@@ -10,29 +10,27 @@ description = "Map graphics, spatial computation, terrain formats, and asset str
 [lib]
 crate-type = ["rlib"]
 
-# Feature tiers, lowest first. `scenario` is the headless mission domain (`data/scenario`) and the
-# crate default, so `api` links the mission compiler and nothing else; `store` adds the
-# yrs CRDT document. `world` adds the static world's meshes, the overlay and the frame
-# vocabulary, `streaming` the served-data loaders, scheduler and buffers with the on-disk formats
-# they read, and `render` the GPU frame builder.
+# Feature tiers, lowest first. `world` is the static world's meshes, the overlay and the frame
+# vocabulary, `streaming` adds the served-data loaders, scheduler and buffers with the on-disk
+# formats they read, `render` the GPU frame builder, and `editing` the Mission Creator's editing
+# layer over the mission crates. No tier is on by default: every consumer names the tiers it
+# links, and the mission domain itself is the crates of `crates/mission/`, which a consumer links
+# directly.
 [features]
-default = ["scenario"]
-scenario = ["dep:serde", "dep:serde_json", "dep:thiserror", "dep:libm"]
-store = ["scenario", "dep:yrs"]
-# `dep:graphics_engine` and `dep:render_primitives` sit on `world`, the first tier above
-# `scenario`, because code from `world` upward speaks the renderer's vocabulary: `world::mesh`
-# composes meshes with `render_primitives::draw::{compose, triangulate}`, and the frame and overlay
-# modules name the renderer's lanes. `scenario` is the one tier without them, so `cargo tree -p api`
-# carries no graphics crate, no png, no rkyv and no flate2.
+default = []
+# `dep:graphics_engine` and `dep:render_primitives` sit on `world`, the lowest tier, because every
+# module the crate gates speaks the renderer's vocabulary: `world::mesh` composes meshes with
+# `render_primitives::draw::{compose, triangulate}`, and the frame and overlay modules name the
+# renderer's lanes.
 world = ["dep:graphics_engine", "dep:render_primitives", "dep:terrain_elevation", "dep:terrain_relief", "dep:map_draw_lanes", "dep:label_layout", "dep:unit_symbology", "dep:overlay_instances", "dep:road_network", "dep:vegetation", "dep:place_names", "dep:spatial_indexes", "dep:terrain_line_of_sight"]
-streaming = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv", "dep:world_file_formats", "dep:flate2", "dep:prefab_catalog", "dep:world_chunks", "dep:satellite_imagery", "dep:water_bodies", "dep:world_store", "dep:interior_line_of_sight", "dep:world_line_of_sight"]
+streaming = ["world", "dep:serde", "dep:serde_json", "serde_json/float_roundtrip", "dep:rkyv", "dep:world_file_formats", "dep:flate2", "dep:prefab_catalog", "dep:world_chunks", "dep:satellite_imagery", "dep:water_bodies", "dep:world_store", "dep:interior_line_of_sight", "dep:world_line_of_sight"]
 render = ["streaming", "dep:graphics_engine", "dep:browser_platform"]
 # The editing tier drives the STREAMED world, not just the static one: the line-of-sight tool's
 # object layer washes a viewshed by testing cells against the world occluder, whose frame convention
 # and traversal live in `world_line_of_sight` — which is `streaming`'s. So the honest edge for
-# authored-document editing is "the document plus everything the operator can see", and `streaming`
-# is the tier that names the second half.
-editing = ["store", "world", "streaming"]
+# authored-document editing is "the document plus everything the operator can see": the mission
+# crates the editing layer hosts and drives, and `streaming` for the second half.
+editing = ["world", "streaming", "dep:serde_json", "dep:mission_payload", "dep:mission_validation", "dep:formation_geometry", "dep:mission_crdt", "dep:mission_document", "dep:mission_operations"]
 
 [dependencies]
 # The pure renderer. The arrow points one way: the map engine speaks the renderer's frame
@@ -44,14 +42,24 @@ render_primitives = { workspace = true, optional = true }
 # The map coordinates and the cameras, which every tier links (`camera` is ungated).
 map_coordinates = { workspace = true }
 camera_math = { workspace = true }
+# The payload compiler the local-versus-server draft comparison compiles each side through,
+# behind `editing`.
+mission_payload = { workspace = true, optional = true }
+# The validator whose findings the editing commands format, behind `editing`.
+mission_validation = { workspace = true, optional = true }
+# The arrange vocabulary (patterns, aligns, spacing, orient) the hosted selection transforms take,
+# behind `editing`.
+formation_geometry = { workspace = true, optional = true }
+# The mission document and the slot columns it materialises, which the editing layer hosts,
+# behind `editing`.
+mission_crdt = { workspace = true, optional = true }
+mission_document = { workspace = true, optional = true }
+# The authoring commands the hosted commands drive against the document, behind `editing`.
+mission_operations = { workspace = true, optional = true }
 bytemuck = { workspace = true, features = ["derive", "min_const_generics"] }
+# The served-data descriptors the streaming tier reads, and the editing layer's JSON views.
 serde = { workspace = true, features = ["derive"], optional = true }
 serde_json = { workspace = true, optional = true, features = ["preserve_order"] }
-thiserror = { version = "2", optional = true }
-# Pure-Rust transcendentals for the shell flight model: the same bits on native and wasm32.
-libm = { version = "0.2", optional = true }
-# The CRDT layer behind `store`.
-yrs = { version = "0.27", optional = true }
 flate2 = { workspace = true, optional = true }
 # Validation and endian settings are part of the shared on-disk format.
 rkyv = { workspace = true, optional = true, features = ["std", "bytecheck", "little_endian"] }
@@ -118,6 +126,3 @@ serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"
 # The editing layer hands a host-supplied async read to `editing::persist::merge_policy`, so a
 # native test of that ordering needs an executor to drive the future to completion.
 futures = { workspace = true }
-# The catalog tests validate their sample against `contracts/definitions/ballistics-catalog.schema.json`
-# with the same validator the xtask schema checks use.
-jsonschema = { workspace = true }

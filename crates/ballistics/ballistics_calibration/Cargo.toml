@@ -1,0 +1,32 @@
+# The calibration of a ballistics catalog: a bundle of the game's native and wind tables and the
+# engine oracle's samples, judged against the catalog's flight model, with the provenance that
+# pins the catalog bytes by SHA-256. The API runs it on every catalog upload.
+[package]
+name = "ballistics_calibration"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The calibration of a ballistics catalog against the game's native tables, wind tables and engine oracle samples."
+
+[package.metadata.layout]
+category = "crates/ballistics"
+tier = 3
+targets = "any"
+
+[dependencies]
+ballistics_model = { workspace = true }
+ballistics_solver = { workspace = true }
+content_digest = { workspace = true }
+newtype_ids = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+libm = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+
+[lints]
+workspace = true

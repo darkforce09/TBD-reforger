@@ -8,13 +8,12 @@
 //! document's half only — an armed place that named the dropped row is the host's own state, and
 //! the host clears it on a `true` return.
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::operations::compositions;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::{selection_ids, with_doc, with_host};
+use mission_document::MissionDocCore;
+use mission_operations::compositions;
 
-/// One saved composition as the palette's row needs it.
-pub use crate::data::store::operations::compositions::CompositionRow;
+use mission_operations::compositions::CompositionRow;
 
 /// Capture the current selection as a new saved composition. `None` when nothing is selected, when
 /// the selection captured no placeable entry, or before a document exists.
@@ -50,17 +49,17 @@ pub fn composition_count() -> usize {
 
 /// Rename a saved composition.
 pub fn rename_composition(id: String, title: String) -> bool {
-    edit_composition(|core| core.set_composition_title(&id, &title))
+    edit_composition(|core| core.set_composition_title(id.as_str(), &title))
 }
 
 /// Move a saved composition into another category.
 pub fn recategorize_composition(id: String, category: String) -> bool {
-    edit_composition(|core| core.set_composition_category(&id, &category))
+    edit_composition(|core| core.set_composition_category(id.as_str(), &category))
 }
 
 /// Re-attribute a saved composition.
 pub fn set_composition_author(id: String, author: String) -> bool {
-    edit_composition(|core| core.set_composition_author(&id, &author))
+    edit_composition(|core| core.set_composition_author(id.as_str(), &author))
 }
 
 /// Drop a saved composition from the library. `true` once the document has taken the removal,

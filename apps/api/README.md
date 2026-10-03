@@ -36,7 +36,8 @@ least a given [role](/documentation/glossary/n_to_z.md#role), or a per-server
 confirmation, fleet commands) and the fleet host agent authenticate. `/metrics` and the detailed
 `/healthz` take the operator's `OBSERVABILITY_TOKEN` bearer, which no other route accepts.
 The [mission](/documentation/glossary/g_to_m.md#mission) compiler and the mortar ballistics come from
-`map_engine`, which the crate takes with its default `scenario` tier alone. Game servers
+the mission crates of `crates/mission/` and the ballistics crates of `crates/ballistics/`; the
+crate links no map engine and no graphics crate. Game servers
 fetch compiled mission [artifacts](/documentation/glossary/a_to_f.md#artifact) over HTTPS from
 `/api/v1/game-runtime/artifacts/{artifactId}`; nothing is staged on disk for them.
 
@@ -160,8 +161,10 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 
 ## Boundaries
 
-- Depends on: `map_engine` with its default `scenario` tier, which compiles and validates
-  missions and solves fire missions; `fleet_wire_contract`, the fleet command shapes and machine
+- Depends on: the mission crates (`mission_model`, `mission_payload`, `mission_validation`,
+  `mission_compiler`, `mission_wire_safety`), which compile and validate missions, and the
+  ballistics crates (`ballistics_model`, `ballistics_solver`, `fire_mission_planning`,
+  `ballistics_calibration`), which solve fire missions; `fleet_wire_contract`, the fleet command shapes and machine
   credential format shared with the fleet host agent; the schemas in
   `contracts/definitions/`, embedded at compile time; Postgres 18; Discord's OAuth2 and REST
   APIs and a channel webhook; and, at run time, the asset trees in `assets/terrains/` and

@@ -22,7 +22,7 @@ through it.
   [Routes](/apps/frontend/src/pages/administration/ballistics_catalogs/README.md#routes).
 - Related: the [mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md),
   which reads the published catalogs; the
-  [game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md),
+  [game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md),
   whose calibration judges an upload.
 
 ## Behaviour

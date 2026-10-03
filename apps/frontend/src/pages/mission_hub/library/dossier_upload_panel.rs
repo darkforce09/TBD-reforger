@@ -202,10 +202,7 @@ pub(super) fn upload_panel(
             let body = up_doc.with_untracked(|slot| {
                 let doc = slot.as_ref()?;
                 let mut buf: Vec<u8> = Vec::with_capacity(cap);
-                map_engine::data::scenario::compile::version_body_to_writer(
-                    &mut buf, &semver, &notes, doc,
-                )
-                .ok()?;
+                mission_payload::version_body_to_writer(&mut buf, &semver, &notes, doc).ok()?;
                 String::from_utf8(buf).ok()
             });
             // Unreachable in practice, since a parsed value always serialises and the serialiser

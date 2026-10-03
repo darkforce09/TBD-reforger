@@ -20,7 +20,7 @@ use crate::foundation::transport::client::public_reads::public_get;
 use crate::foundation::transport::dto::ballistics_catalogs::{
     BallisticsCatalog, BallisticsCatalogList,
 };
-use map_engine::data::scenario::ballistics::agreement_cases::agreement_cases;
+use ballistics_agreement_cases::agreement_cases;
 
 /// The reactive cells the host writes.
 pub(super) struct Signals {
@@ -63,7 +63,7 @@ async fn read_and_solve(signals: &Signals) -> Result<String, String> {
         choice.catalog_id, choice.catalog_version
     ));
     let catalog = public_get::<BallisticsCatalog>(&choice.document_path(), &abort.signal()).await?;
-    if catalog.catalog_id != choice.catalog_id || catalog.catalog_version != choice.catalog_version
+    if catalog.catalog_id != *choice.catalog_id || catalog.catalog_version != choice.catalog_version
     {
         return Err(format!(
             "the server answered catalog {} v{} for {} v{}",

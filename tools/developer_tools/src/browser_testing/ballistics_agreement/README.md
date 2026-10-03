@@ -36,7 +36,7 @@ judge_reading(native, reading) ──▶ case ballistics_wasm_agreement_<id> ...
    `contracts/fixtures/api_goldens/`: the list must name the version with the SHA-256 of
    the committed file's bytes, and the document must decode to the committed catalog (the API
    re-serialises the stored document, so it is compared decoded).
-3. `native_cases` draws the agreement cases with the map engine's `agreement_cases`, turns each
+3. `native_cases` draws the agreement cases with `ballistics_agreement_cases::agreement_cases`, turns each
    into fire-mission inputs with its `fire_mission_inputs` and solves them with
    `solve_fire_mission`, recording every `f64` of the inputs and the solution by JSON pointer and
    bit pattern with its `case_bit_patterns`: the functions the bench calls.
@@ -68,14 +68,13 @@ or a case disagrees; 3 the committed catalog is unreadable or a driver error.
 
 ## Boundaries
 
-- Depends on: `map_engine::data::scenario::ballistics` (`agreement_cases`, `catalog`,
-  `fire_mission`, `fire_mission_comparison`), through the `scenario` feature of
-  `tools/developer_tools/Cargo.toml`; `crate::browser_testing::server` and
+- Depends on: `ballistics_agreement_cases`, `ballistics_model` (`catalog`) and
+  `fire_mission_planning` (`fire_mission`, `fire_mission_comparison`); `crate::browser_testing::server` and
   `crate::browser_testing::cdp`; `sha2`, `serde_json`, `tokio`.
 - Used by: `crate::browser_testing::cli` (`gate ballistics-agreement`) and
   `cargo xtask mk ballistics-wasm-agreement`, which runs `trunk build --release` first.
-- Rules: the case-to-inputs mapping, the lead summary and the bit walk are the map engine's
-  (`agreement_cases.rs` of `legacy/map_engine/src/data/scenario/ballistics/`, tested there),
+- Rules: the case-to-inputs mapping, the lead summary and the bit walk are the
+  `ballistics_agreement_cases` crate's (`crates/ballistics/ballistics_agreement_cases/`, tested there),
   called by both the gate and the bench, so they cannot drift; `bench_reading.rs` mirrors the
   reading of `apps/frontend/src/workspaces/debug/ballistics_agreement/agreement_report.rs`
   and decodes it strictly. A missing golden fails the gate; nothing is skipped.

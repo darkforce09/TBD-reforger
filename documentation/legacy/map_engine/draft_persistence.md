@@ -13,7 +13,7 @@ decisions; the Mission Creator stores the bytes in IndexedDB and fetches the ser
 
 - Code: [`legacy/map_engine/src/editing/persist/`](/legacy/map_engine/src/editing/persist/README.md),
   part of the [editing layer](/documentation/legacy/map_engine/editing_layer.md), over the
-  document in [`data/store/`](/legacy/map_engine/src/data/store/README.md).
+  document in [`mission_document`](/crates/mission/mission_document/README.md).
 - Entry: the Mission Creator's shell. The boot's server reconciliation calls `is_uuid`,
   `classify_local_draft`, `adopt_payload` and the snapshot capture
   ([`shell/hydrate/`](/apps/frontend/src/workspaces/editor/session/hydrate/README.md));
@@ -93,7 +93,7 @@ Terrain, environment and row fields never raise the prompt: only the authored ke
 
 - An adopt is meant to replace the document, but it keeps the replaced document's connections:
   the hydrate clears every authored map but `connections`
-  (`legacy/map_engine/src/data/store/rows/hydrate.rs:30-48`). The persist README states it
+  (`crates/mission/mission_document/src/rows/hydrate.rs:30-48`). The persist README states it
   as behaviour; T-1050 files it as a bug.
 
 ## Data

@@ -10,10 +10,10 @@
 use std::cell::RefCell;
 use std::collections::HashSet;
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::{selection_ids, set_selection_ids, with_doc, with_host};
+use mission_document::MissionDocCore;
+use mission_operations::entity as entity_ops;
 
 thread_local! {
     static CLIPBOARD: RefCell<Vec<serde_json::Value>> = const { RefCell::new(Vec::new()) };

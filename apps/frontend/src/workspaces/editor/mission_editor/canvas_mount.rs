@@ -252,7 +252,7 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
             validation_panel::register_payload_source(std::rc::Rc::new(move || {
                 let d = doc.borrow();
                 let core = d.as_ref()?;
-                let payload = map_engine::data::scenario::compile::compile_payload(
+                let payload = mission_payload::compile_payload(
                     &core.small_maps_json(),
                     &core.slots_json(),
                     false,

@@ -45,8 +45,8 @@ derived inside Postgres from its schedule and the database's clock, so no read w
 that stores it. The roster and deployment authorization read the slot bindings a
 [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) recorded, so the game, the
 roster and seat authorization name one [artifact](/documentation/glossary/a_to_f.md#artifact). The
-ballistics of the fire missions live in `map_engine::data::scenario::ballistics`; this
-domain re-solves every saved fire mission through them against the stored catalog version it
+ballistics of the fire missions live in the ballistics crates (`fire_mission_planning` and the
+crates under it); this domain re-solves every saved fire mission through them against the stored catalog version it
 pins, refuses a client solution that disagrees, and stores the server's solution.
 
 ## Public surface
@@ -125,8 +125,9 @@ pins, refuses a client solution that disagrees, and stores the server's solution
     and terrains, `MissionArmory` and the deployment a server runs; `server_infrastructure` for
     `MachineCaller` and the open runtime session; `fleet_wire_contract` for `ExecutorKind`;
     `match_telemetry::models` for the matches of a service record;
-  - `map_engine::data::scenario` for the ORBAT template, the faction join-key check and
-    the ballistics.
+  - `mission_model::orbat` for the ORBAT template and the faction join-key check;
+  - the ballistics crates `ballistics_model`, `ballistics_solver`, `fire_mission_planning` and
+    `ballistics_calibration` for the ballistics.
 - Used by:
   - `core::http_router`, which merges the route table;
   - the `event_lifecycle_sweeper` and `event_reservation_reevaluator` workers in

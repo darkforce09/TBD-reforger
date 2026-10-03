@@ -40,13 +40,13 @@ pub(super) fn read_snapshot() -> Snap {
                 .slots
                 .into_iter()
                 .map(|d| SlotDetail {
-                    id: d.id,
+                    id: d.id.into_inner(),
                     role: d.role,
                     tag: d.tag,
                     callsign: d.callsign,
                     rank: d.rank,
                     index: d.index,
-                    squad_id: d.squad_id,
+                    squad_id: d.squad_id.into_inner(),
                     summary: d.summary,
                     primary: d.primary,
                     launcher: d.launcher,
@@ -65,7 +65,7 @@ pub(super) fn slot_rows_from(
         .iter()
         .map(
             |s| crate::workspaces::editor::ui::outliner::node_model::SlotRow {
-                id: s.id.clone(),
+                id: s.id.clone().into(),
                 role: s.role.clone(),
             },
         )

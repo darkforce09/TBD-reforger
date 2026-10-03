@@ -6,7 +6,7 @@
 //!
 //! **Position:** The producer of `contracts/catalogs/ballistics/` and
 //! `contracts/fixtures/ballistics/vanilla_mortars.v1/`; `cargo xtask schema validate` checks
-//! what it writes, the map engine's calibration tests load it, and administrators upload the pair
+//! what it writes, the `ballistics_calibration` tests load it, and administrators upload the pair
 //! through `POST /api/v1/ballistics-catalogs`.
 //!
 //! **Signals & state:** none beyond the files it writes; every document is assembled in memory

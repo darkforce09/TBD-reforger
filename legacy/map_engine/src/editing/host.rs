@@ -11,7 +11,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use crate::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
 
 /// The hosted document. A shared cell rather than an owned value: a restore or a server hydrate
 /// replaces the document wholesale, and every command must see the replacement without being

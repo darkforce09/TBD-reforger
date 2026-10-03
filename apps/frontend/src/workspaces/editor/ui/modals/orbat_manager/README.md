@@ -48,7 +48,7 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
 
 - Depends on: `map_engine::editing::hosted_commands` (the snapshot and the `orbat_*`
   commands, refiling, `orbat_apply_faction`, `faction_doc_from_side`) and
-  `map_engine::data::scenario::slot_line`; the outliner in
+  `mission_model::slot_line`; the outliner in
   `apps/frontend/src/workspaces/editor/ui/outliner/` (the node model, `flatten_visible`, the
   side filter, the dialog class, the drag latch); the bridge's `entity_selection` and
   `editor_context::open_attributes`/`open_arsenal`; `crate::foundation` (the

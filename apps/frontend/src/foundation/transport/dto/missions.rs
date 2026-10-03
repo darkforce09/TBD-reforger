@@ -17,7 +17,7 @@
 //! @contract mission-library.schema.json#/definitions/MissionDetail
 
 #[cfg(target_arch = "wasm32")]
-pub use map_engine::data::store::operations::environment::MissionEnv;
+pub use mission_operations::environment::MissionEnv;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -190,9 +190,9 @@ impl MissionDetail {
     /// `author` field carries the account id, not the display name — the display name travels
     /// beside it — which is the one field a reasonable reading gets wrong, and getting it wrong
     /// would produce a document that looks right and is not the one the server builds.
-    pub fn compiled_meta(&self) -> map_engine::data::scenario::flatten::MissionMeta {
-        map_engine::data::scenario::flatten::MissionMeta {
-            id: self.id.clone(),
+    pub fn compiled_meta(&self) -> mission_compiler::MissionMeta {
+        mission_compiler::MissionMeta {
+            id: self.id.clone().into(),
             title: self.title.clone(),
             author: self.author_id.clone(),
             terrain: self.terrain.clone(),

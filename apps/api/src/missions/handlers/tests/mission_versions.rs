@@ -2,7 +2,7 @@
 //! validator performs, plus source pins for the guards that run before an INSERT can land.
 
 use super::*;
-use map_engine::data::scenario::wire_safety::CargoPhys;
+use mission_wire_safety::CargoPhys;
 
 const VERSIONS: &str = include_str!("../mission_versions.rs");
 const LIFECYCLE: &str = include_str!("../mission_lifecycle.rs");

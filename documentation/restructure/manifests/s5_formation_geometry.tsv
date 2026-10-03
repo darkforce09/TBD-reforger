@@ -1,0 +1,9 @@
+# Stage S5 D3a, first of three: the placement point math of the arrange commands becomes crates/mission/formation_geometry. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the placement module becomes the crate source; its module root the crate root
+path	legacy/map_engine/src/data/store/operations/placement	crates/mission/formation_geometry/src
+path	legacy/map_engine/src/data/store/operations/placement/mod.rs	crates/mission/formation_geometry/src/lib.rs
+#
+# the editing tools re-export the crate instead of the document operations module
+rust_path	crate::data::store::operations::placement::	formation_geometry::	legacy/map_engine/src

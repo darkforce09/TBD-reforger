@@ -12,9 +12,9 @@ use crate::pages::field_tools::mortar::solve_bridge::charge_row_text;
 #[cfg(target_arch = "wasm32")]
 use crate::pages::field_tools::mortar::solve_bridge::{gun_heading, laid_rings};
 #[cfg(target_arch = "wasm32")]
-use leptos::prelude::*;
+use fire_mission_planning::battery::GunFireSolution;
 #[cfg(target_arch = "wasm32")]
-use map_engine::data::scenario::ballistics::battery::GunFireSolution;
+use leptos::prelude::*;
 
 /// The charge table of `gun` laying the mission's `charge_rings`.
 #[cfg(target_arch = "wasm32")]

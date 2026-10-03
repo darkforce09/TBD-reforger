@@ -6,10 +6,10 @@
 //! **Invariants:** a blocked flight is a warning naming the first blocking distance; a clear one
 //! states the smallest clearance and where it is; no profile is said plainly, never shown as clear.
 
+#[cfg(any(target_arch = "wasm32", test))]
+use ballistics_solver::crest_clearance::CrestClearance;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::crest_clearance::CrestClearance;
 
 /// The crest sentence and whether it warns.
 #[cfg(any(target_arch = "wasm32", test))]

@@ -8,14 +8,13 @@
 
 use std::collections::HashSet;
 
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_operations::entity as entity_ops;
 
 use super::document_edit::commit_document_edit;
 
-/// One placed vehicle, as the docks need it.
-pub use crate::data::store::operations::entity::{PlacedSlotChoice, VehicleCargoRow, VehicleRow};
+use mission_operations::entity::{PlacedSlotChoice, VehicleCargoRow, VehicleRow};
 
 /// Every placed vehicle, sorted by id — the docks' row order.
 #[must_use]
@@ -39,7 +38,7 @@ pub fn crewed_slot_ids() -> HashSet<String> {
 pub fn vehicle_points() -> Vec<(String, f64, f64)> {
     vehicle_rows()
         .into_iter()
-        .filter_map(|v| v.xy.map(|(x, y)| (v.id, x, y)))
+        .filter_map(|v| v.xy.map(|(x, y)| (v.id.into_inner(), x, y)))
         .collect()
 }
 
@@ -86,15 +85,17 @@ pub fn move_vehicles(ids: Vec<String>, dx: f64, dy: f64) -> bool {
 
 /// Delete a placed vehicle, freeing whoever was seated in it.
 pub fn remove_vehicle(vehicle_id: String) -> bool {
-    commit_document_edit(|core| core.remove_vehicle(&vehicle_id))
+    commit_document_edit(|core| core.remove_vehicle(vehicle_id.as_str()))
 }
 
 /// Seat `slot_id` in `seat_id` of `vehicle_id`.
 pub fn assign_crew_seat(vehicle_id: String, seat_id: String, slot_id: String) -> bool {
-    commit_document_edit(|core| core.assign_crew_seat(&vehicle_id, &seat_id, &slot_id))
+    commit_document_edit(|core| {
+        core.assign_crew_seat(vehicle_id.as_str(), seat_id.as_str(), slot_id.as_str())
+    })
 }
 
 /// Empty one seat of a vehicle.
 pub fn clear_crew_seat(vehicle_id: String, seat_id: String) -> bool {
-    commit_document_edit(|core| core.clear_crew_seat(&vehicle_id, &seat_id))
+    commit_document_edit(|core| core.clear_crew_seat(vehicle_id.as_str(), seat_id.as_str()))
 }

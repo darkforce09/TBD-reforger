@@ -64,8 +64,8 @@ view and selection state: none of them edits the document or adds an undo step.
     validation panel's `subject_id_routes` and `route_select_by_subject_id`; and
     `bridge::host_state::entity_selection::set_selection_ids`;
   - `crate::foundation::ui` (`MaterialIcon`);
-  - `map_engine`: `DocEntity` and `DocKind` from
-    `data::store::operations::document_index`; `document_entities`, `selection_entities`,
+  - `mission_operations::document_index`: `DocEntity` and `DocKind`;
+  - `map_engine`: `document_entities`, `selection_entities`,
     `complete_layer_drop_onto_root` and `cancel_layer_drag` from `editing::hosted_commands`;
     `camera_snapshot`, `fly_to` and `named_locations` from `streaming::host`;
   - the browser's local storage, through `web_sys`.

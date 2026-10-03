@@ -12,7 +12,7 @@
 use std::sync::OnceLock;
 
 use jsonschema::Validator;
-use map_engine::data::scenario::wire_safety::{self, CargoPhysCatalog};
+use mission_wire_safety::CargoPhysCatalog;
 use serde_json::Value;
 
 use super::zone_quantisation::scan_authored_zones;
@@ -86,8 +86,8 @@ fn run_parsed(
 /// (the write-side editor superset). Used by CreateMission + CreateVersion.
 ///
 /// Three code-side passes after the schema, all on one parse:
-/// * [`wire_safety::scan_editor_payload`] — control characters in authored strings;
-/// * [`wire_safety::scan_cargo_capacity`] — over-capacity cargo when a phys catalog is supplied
+/// * [`mission_wire_safety::scan_editor_payload`] — control characters in authored strings;
+/// * [`mission_wire_safety::scan_cargo_capacity`] — over-capacity cargo when a phys catalog is supplied
 ///   via [`validate_mission_editor_payload_with_catalog`]. This entry point passes an **empty**
 ///   catalog so a caller that has no registry keeps the one-argument signature; without phys
 ///   attrs the cargo walk is a no-op (never invent capacity). Wire Save/compile refusal by
@@ -101,7 +101,7 @@ pub fn validate_mission_editor_payload(raw: &[u8]) -> Result<Vec<String>, Contra
 
 /// Same as [`validate_mission_editor_payload`], but the cargo-capacity walk uses `catalog`
 /// (`resource_name →` weight/volume/garment maxima). Build it from `registry_items`; do not put the
-/// registry inside the map engine (see the `wire_safety` module header).
+/// registry inside `mission_wire_safety`: the caller supplies the catalog.
 pub fn validate_mission_editor_payload_with_catalog(
     raw: &[u8],
     catalog: &CargoPhysCatalog,
@@ -113,8 +113,8 @@ pub fn validate_mission_editor_payload_with_catalog(
         raw,
         "payload is not valid JSON",
         |instance| {
-            let mut d = wire_safety::scan_editor_payload(instance);
-            d.extend(wire_safety::scan_cargo_capacity(instance, catalog));
+            let mut d = mission_wire_safety::scan_editor_payload(instance);
+            d.extend(mission_wire_safety::scan_cargo_capacity(instance, catalog));
             d.extend(scan_authored_zones(instance));
             d
         },

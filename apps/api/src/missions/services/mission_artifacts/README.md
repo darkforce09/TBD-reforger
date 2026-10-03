@@ -45,8 +45,8 @@ digest never depends on storage order.
 
 - Depends on: `services::mission_compile` for the compile and `contract::schema_validators` for the
   document check; `models::mission::Mission`; `core` for errors and RFC 3339 timestamps;
-  `map_engine::data::scenario` for `COMPILER_PACKAGE_VERSION`, the cargo catalog types and
-  `unsupported_authored_data`; the `mission_artifacts`, `mission_versions`, `registry_items` and
+  `mission_compiler` for `COMPILER_PACKAGE_VERSION` and `unsupported_authored_data`;
+  `mission_wire_safety` for the cargo catalog types; the `mission_artifacts`, `mission_versions`, `registry_items` and
   `modpacks` tables.
 - Used by: `services::mission_reviews`, whose `open_review` compiles the artifact a submission puts
   under review; the handlers `mission_reviews.rs` (provenance, bytes and review workspace),

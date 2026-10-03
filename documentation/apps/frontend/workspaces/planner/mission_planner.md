@@ -26,7 +26,7 @@ None: no code serves the planner. The nearest built pieces are these:
 1. The [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) lets the mission maker drop
    briefing markers for one side and draw tactical graphics (phase lines, boundaries, axes of
    advance and curved arrows) into the mission itself; the checks live in
-   `legacy/map_engine/src/data/scenario/extensions/tactical_graphics/`.
+   `crates/mission/mission_model/src/tactical_graphics/`.
 2. The [mod](/documentation/glossary/g_to_m.md#mod) puts a mission's briefing markers on the in-game
    map and sends each player only their own side's markers
    (`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`).

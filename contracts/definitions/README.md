@@ -68,7 +68,7 @@ A schema reaches code in one of three ways:
 | Building geometry | `building-blueprint`, `building-instances`, `prefab-descriptor`, `blas-manifest` | the developer tools' blueprint compiler and map verifications |
 | Workbench equipment export | `equipment-vehicle-export` | `cargo xtask mod validate-equipment-vehicle-export` and `publish-equipment-vehicle-export` |
 | Voice bridge | `bridge-messages` | the schema gate, over `contracts/fixtures/bridge_samples/` |
-| Game ballistics | `ballistics-catalog`, `ballistics-calibration` | the map engine's ballistics catalog types and calibration evaluator; the API's ballistics catalog routes; the schema gate, over the committed catalog in `contracts/catalogs/ballistics/` and its calibration bundle in `contracts/fixtures/ballistics/` |
+| Game ballistics | `ballistics-catalog`, `ballistics-calibration` | the `ballistics_model` catalog types and the `ballistics_calibration` evaluator; the API's ballistics catalog routes; the schema gate, over the committed catalog in `contracts/catalogs/ballistics/` and its calibration bundle in `contracts/fixtures/ballistics/` |
 
 `match-telemetry.schema.json` describes the event read page at its root and carries the
 machine-authenticated ingest shapes of `/api/v1/ingest/matches`, `/api/v1/ingest/match-results` and

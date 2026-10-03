@@ -7,7 +7,7 @@ use std::collections::HashSet;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
-use map_engine::data::scenario::slot_line::format_slot_line;
+use mission_model::slot_line::format_slot_line;
 
 #[cfg(target_arch = "wasm32")]
 use crate::foundation::transport::dto::RegistryItem;

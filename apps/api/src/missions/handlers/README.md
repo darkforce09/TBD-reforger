@@ -65,7 +65,7 @@ missing one, and a write by someone who may not edit the mission answers 403.
 - Depends on: the domain's `models`, `services`, `validation` and `contract`; `core` for the
   extractors, errors, pagination and wire formats; `administration` for the audit rows;
   `identity_and_access` for the reviewer recheck; `server_infrastructure` for `MachineCaller`;
-  `community_content::models` for a registry's modpack; `map_engine::data::scenario` for
+  `community_content::models` for a registry's modpack; `mission_compiler` for
   the save-time type scan; `contracts/definitions/mission.schema.json`, embedded.
 - Used by: the domain's `routes.rs`; over HTTP, the Mission Creator in
   `apps/frontend/src/workspaces/editor/`, the mission hub pages in

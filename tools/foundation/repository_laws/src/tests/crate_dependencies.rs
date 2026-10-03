@@ -26,7 +26,7 @@ fn layered_checkout(name: &str) -> TemporaryCheckout {
     checkout.write(
         "apps/api/Cargo.toml",
         "[package]\nname = \"api\"\n\n[dependencies]\n\
-         map_engine = { path = \"../../legacy/map_engine\" }\n",
+         mission_compiler = { path = \"../../crates/mission/mission_compiler\" }\n",
     );
     checkout.write(
         "apps/offline_service_worker/Cargo.toml",
@@ -78,6 +78,12 @@ fn a_forbidden_edge_in_any_table_or_spelling_is_a_finding() {
             "api",
             "[build-dependencies]\ngraphics_engine = { path = \"../../legacy/graphics_engine\" }",
             "graphics_engine",
+        ),
+        (
+            "apps/api",
+            "api",
+            "[dependencies]\nmap_engine = { path = \"../../legacy/map_engine\" }",
+            "map_engine",
         ),
     ] {
         let checkout = layered_checkout("directions-breach");

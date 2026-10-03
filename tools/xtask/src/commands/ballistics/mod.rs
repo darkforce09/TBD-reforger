@@ -6,8 +6,8 @@
 //! to `contracts/fixtures/ballistics/`.
 //!
 //! **Position:** Reads the gitignored gameplay export and oracle output under `assets/`; its
-//! documents are checked by `cargo xtask schema validate` and consumed by the map engine's
-//! calibration and the API's catalog upload.
+//! documents are checked by `cargo xtask schema validate` and consumed by
+//! `ballistics_calibration` and the API's catalog upload.
 //!
 //! **Signals & state:** none; each run reads its inputs and writes its outputs whole.
 //!

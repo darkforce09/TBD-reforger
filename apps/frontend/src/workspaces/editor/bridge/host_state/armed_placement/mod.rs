@@ -12,7 +12,7 @@ use crate::workspaces::editor::bridge::host_state::editor_context::{
     bump_doc_tick, Pending, EDITOR_CONTEXT,
 };
 use leptos::prelude::GetUntracked;
-use map_engine::data::store::operations::entity::ArmedPlacementKind;
+use mission_operations::entity::ArmedPlacementKind;
 
 mod palette_arming;
 
@@ -54,7 +54,7 @@ pub(crate) fn arm(pending: Pending) {
     EDITOR_CONTEXT.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let objects = ctx.objects_mode.get_untracked();
-            let ok = map_engine::data::store::operations::entity::placement_is_armable(
+            let ok = mission_operations::entity::placement_is_armable(
                 armed_placement_kind(&pending),
                 objects,
             );

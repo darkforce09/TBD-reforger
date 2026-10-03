@@ -2,7 +2,7 @@
 //! and the bytes they produce belong to one snapshot: the mission row the compiler reads, the
 //! version payload, the current modpack's cargo catalog, and the compiler's own identity.
 
-use map_engine::data::scenario::wire_safety::{CargoPhys, CargoPhysCatalog};
+use mission_wire_safety::{CargoPhys, CargoPhysCatalog};
 use serde_json::{Value, json};
 use sqlx::PgConnection;
 use uuid::Uuid;

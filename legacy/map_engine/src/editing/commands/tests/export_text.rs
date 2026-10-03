@@ -5,7 +5,7 @@
 
 use super::*;
 
-use crate::data::scenario::validate::{Finding, Primitive, Severity};
+use mission_validation::{Finding, Primitive, Severity};
 
 /// First-level object key order from a JSON object string (no full parse → no Map reorder).
 fn raw_top_level_keys(json: &str) -> Vec<&str> {
@@ -138,12 +138,12 @@ fn class_r_auth_failure_is_not_no_saved_row() {
 /// A finding shaped like the ones a compile emits.
 fn finding(rule_id: &'static str, severity: Severity, subject_id: Option<&str>) -> Finding {
     Finding {
-        rule_id,
+        rule_id: rule_id.into(),
         severity,
         primitive: Primitive::PerObjectInvariant,
         message: "the compile dropped a value".to_string(),
         subject: "/editor/slots/0/rank".to_string(),
-        subject_id: subject_id.map(ToString::to_string),
+        subject_id: subject_id.map(Into::into),
     }
 }
 

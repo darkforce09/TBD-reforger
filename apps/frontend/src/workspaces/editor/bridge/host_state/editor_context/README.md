@@ -42,10 +42,9 @@ init origin, before the draft restore and the server hydrate replace the documen
 
 ## Boundaries
 
-- Depends on: `map_engine` (`data::store::operations::projections` for the layer, faction,
-  squad and slot rows, `data::store::operations::entity` for comment rows and connection ids,
-  `data::store::operations::environment::read_env`, `editing::tools::selection`,
-  `frame::EngineHandle`); the undo driver and `DocHandle` in
+- Depends on: `mission_operations` (`projections` for the layer, faction, squad and slot rows,
+  `entity` for comment rows and connection ids, `environment::read_env`); `map_engine`
+  (`editing::tools::selection`, `frame::EngineHandle`); the undo driver and `DocHandle` in
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; the outliner's node builders;
   the asset catalog's `PlacePayload`; `MissionEnv` from `crate::foundation::transport::dto`.
 - Used by:

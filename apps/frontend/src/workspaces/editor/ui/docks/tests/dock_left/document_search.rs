@@ -32,7 +32,7 @@ fn ops_code() -> String {
 
 fn entity(id: &str, kind: DocKind, label: &str, faction: &str) -> DocEntity {
     DocEntity {
-        id: id.to_string(),
+        id: id.into(),
         kind,
         label: label.to_string(),
         class_name: String::new(),
@@ -449,7 +449,7 @@ fn the_selection_filter_offers_only_proper_subsets() {
         );
         for id in &f.ids {
             assert!(
-                mixed.iter().any(|e| &e.id == id),
+                mixed.iter().any(|e| e.id == **id),
                 "a chip must not invent an id"
             );
         }
@@ -531,7 +531,7 @@ fn the_index_covers_every_placeable_collection() {
     let ops = ops_code();
     let domain = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/document_index.rs"
+        "/../../crates/mission/mission_operations/src/document_index.rs"
     )));
     let body = only_body(&domain, "pub fn document_entities");
     for kind in [
@@ -565,7 +565,7 @@ fn the_index_covers_every_placeable_collection() {
     );
     let projection = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/selection_index.rs"
+        "/../../crates/mission/mission_operations/src/entity/selection_index.rs"
     )));
     assert!(
         only_body(&projection, "pub fn selection_entities").contains("document_entities(core)"),

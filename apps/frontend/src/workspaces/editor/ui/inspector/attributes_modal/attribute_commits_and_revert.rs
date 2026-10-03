@@ -40,21 +40,21 @@ pub(super) fn commit_slot(
 
 /// Restores each selected slot from its value captured when the modal opened.
 #[cfg(target_arch = "wasm32")]
-pub(super) fn revert_to_snapshot(snapshot: StoredValue<Vec<engine_ops::SlotAttrs>>) {
+pub(super) fn revert_to_snapshot(snapshot: StoredValue<Vec<mission_operations::attrs::SlotAttrs>>) {
     for snap in snapshot.get_value() {
         engine_ops::attrs_update_position(
-            &snap.id,
+            snap.id.as_str(),
             Some(snap.x),
             Some(snap.y),
             Some(snap.z),
             Some(snap.rotation),
         );
         engine_ops::attrs_update_slot(
-            &snap.id,
+            snap.id.as_str(),
             Some(snap.role.clone()),
             Some(snap.tag.clone()),
             Some(snap.stance.clone()),
-            Some(snap.asset_id.clone()),
+            Some(snap.asset_id.to_string()),
             Some(snap.description.clone()),
         );
     }

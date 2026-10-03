@@ -1,0 +1,22 @@
+# The point math of the Mission Creator's arrange commands: the four placement patterns, align,
+# space and orient over a selection's positions, and garrison firing positions around a building.
+# The document operations commit its results; the Mission Creator names its vocabulary directly.
+[package]
+name = "formation_geometry"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Placement patterns, align, space, orient and garrison positions over a selection of placed entities."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 1
+targets = "any"
+
+[dependencies]
+deterministic_random = { workspace = true }
+
+[lints]
+workspace = true

@@ -12,10 +12,10 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::INPUT_CLASS;
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::fire_mission::FireMissionWind;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fire_mission::FireMissionWind;
 
 /// The wind as typed.
 #[cfg(any(target_arch = "wasm32", test))]

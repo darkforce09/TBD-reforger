@@ -27,7 +27,7 @@ Without an installed host the drive still undoes and redoes, and tells nobody.
 
 ## Boundaries
 
-- Depends on: `crate::data::store::MissionDocCore` (`undo`, `redo`) and `crate::editing::host`.
+- Depends on: `mission_document::MissionDocCore` (`undo`, `redo`) and `crate::editing::host`.
 - Used by:
   - every module of `crate::editing::hosted_commands`, through `after_local_edit`;
   - the Mission Creator's document host
@@ -38,5 +38,5 @@ Without an installed host the drive still undoes and redoes, and tells nobody.
 
 ## Related documentation
 
-- [Mission document store](/legacy/map_engine/src/data/store/README.md) — the undo manager,
+- [Mission document](/crates/mission/mission_document/README.md) — the undo manager,
   its local origin and the grouping clock.

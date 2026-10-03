@@ -76,7 +76,7 @@ None: the handlers are private to the parent module, which exposes `EditorGestur
   pins in `apps/frontend/src/workspaces/editor/bridge/tests/overlays/z_arm_gesture.rs`, the
   inset pin in `apps/frontend/src/workspaces/editor/session/tests/layout/band_readers.rs` and
   `mission_editor_move_commit_names_the_atomic_mix_api` in
-  `legacy/map_engine/src/data/store/rows/tests/cases_1.rs`.
+  `crates/mission/mission_document/src/rows/tests/cases_1.rs`.
 - Rules:
   - exactly one `LG::Move` arm commits, through `.move_entities_and_vehicles(`, across this folder's
     `pointer_up.rs` and the canvas mount (`mission_editor_move_commit_names_the_atomic_mix_api`);

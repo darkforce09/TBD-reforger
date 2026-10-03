@@ -87,9 +87,10 @@ preferences and marker it stores outlive it.
 
 - Depends on: `map_engine::editing::persist` (record keys, stored blobs, merge policy,
   local-versus-server verdict, server adoption, snapshot slots) and `editing::commands`,
-  `data::scenario` for the compile, `data::store` (`MissionDocCore`,
-  `operations::slot_ids::duplicate_slot_ids`), `streaming::bridge` for the boot progress and the
-  preference types; the `DocHandle` and undo driver of
+  `streaming::bridge` for the boot progress and the
+  preference types; `mission_payload` and `mission_compiler` for the compile;
+  `mission_document::MissionDocCore` and `mission_operations::slot_ids::duplicate_slot_ids`; the
+  `DocHandle` and undo driver of
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; `crate::foundation` (the
   [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the auth store, the toasts, the
   clipboard helper); `idb`, `gloo_net`, `web_sys` and `js_sys`; over HTTP,

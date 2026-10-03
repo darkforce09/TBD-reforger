@@ -70,7 +70,8 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
   authorization and administrator authority; `server_infrastructure` for the
   [fleet command](/documentation/glossary/a_to_f.md#fleet-command) ledger; `operations::services` for
   the [ORBAT](/documentation/glossary/n_to_z.md#orbat) template a deployment binds;
-  `map_engine::data::scenario` for the compile, the cargo catalog and the wire-safety scans.
+  `mission_compiler`, `mission_validation` and `mission_model` for the compile and its findings,
+  `mission_wire_safety` for the cargo catalog and the wire-safety scans.
 - Used by:
   - the domain's handlers, for everything above;
   - `command_center` and `operations`, through the public surface;

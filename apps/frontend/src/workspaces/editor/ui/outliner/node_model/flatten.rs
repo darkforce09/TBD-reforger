@@ -123,8 +123,8 @@ mod active_folder {
         EditorContext, EDITOR_CONTEXT,
     };
     use leptos::prelude::{GetUntracked, Set};
-    use map_engine::data::store::MissionDocCore;
     use map_engine::editing::hosted_commands as engine_ops;
+    use mission_document::MissionDocCore;
 
     /// Focus a folder, or clear the focus. A focused folder is the drop target for the next place.
     pub fn set_active_layer(id: Option<String>) {
@@ -140,7 +140,7 @@ mod active_folder {
     /// the mint is part of the same undoable act as the place it serves. A focus pointing at a
     /// folder the document no longer holds is cleared as it is resolved.
     fn ensure_layer(ctx: &EditorContext, core: &MissionDocCore) -> String {
-        let ensured = map_engine::data::store::operations::entity::ensure_layer(
+        let ensured = mission_operations::entity::ensure_layer(
             core,
             ctx.active_layer.get_untracked(),
             DEFAULT_LAYER_ID,
@@ -149,7 +149,7 @@ mod active_folder {
         if ensured.active_layer_was_stale {
             ctx.active_layer.set(None);
         }
-        ensured.layer_id
+        ensured.layer_id.into_inner()
     }
 
     /// Resolve the folder a new entity is filed under without a context in hand. This is the form

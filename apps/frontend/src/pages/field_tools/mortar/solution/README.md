@@ -18,14 +18,14 @@ apps/frontend/src/pages/field_tools/mortar/solution/
 ## How it works
 
 `mod.rs` renders the `SolveOutcome`: either the list of input problems or a solved mission, whose
-`FireMissionSolution` comes from the map engine's `solve_fire_mission` unchanged. Every number is
+`FireMissionSolution` comes from `fire_mission_planning`'s `solve_fire_mission` unchanged. Every number is
 worded here, in the weapon's mils and in degrees through the solve bridge's `mils_and_degrees`; the
 dispersion card carries "Interpretation, not verified in-engine".
 
 ## Boundaries
 
-- Depends on: `map_engine::data::scenario::ballistics` (`battery`, `crest_clearance`,
-  `dispersion`, `fire_mission`, `fuze`); the ballistics catalog DTOs; the solve bridge.
+- Depends on: `fire_mission_planning` (`battery`, `fire_mission`, `fuze`) and
+  `ballistics_solver` (`crest_clearance`, `dispersion`); the ballistics catalog DTOs; the solve bridge.
 - Used by: the mortar page (`page.rs`).
 - Rules: the panel only words the engine's solution and never computes a firing number.
 

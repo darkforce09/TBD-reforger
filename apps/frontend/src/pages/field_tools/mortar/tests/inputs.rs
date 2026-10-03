@@ -27,8 +27,8 @@ use crate::pages::field_tools::mortar::catalog_source::{
     check_document_matches, choose_catalog, failure_message, latest_catalog_versions,
     origin_notice, origin_of_read, CatalogFailure, CatalogKey, CatalogOrigin,
 };
+use fire_mission_planning::fire_mission::{FireMissionWind as Wind, HeightSource};
 use map_coordinates::grid_reference::GridParseError;
-use map_engine::data::scenario::ballistics::fire_mission::{FireMissionWind as Wind, HeightSource};
 
 fn catalog() -> BallisticsCatalog {
     BallisticsCatalog::from_json_slice(include_bytes!("mortar_test_catalog.json"))

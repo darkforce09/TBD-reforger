@@ -146,7 +146,7 @@ fn polygon_zone_is_accepted_and_quantised() {
 #[test]
 fn zone_quantisation_mirrors_flatten() {
     let flatten = include_str!(
-        "../../../../../../legacy/map_engine/src/data/scenario/compiler/flatten/zones.rs"
+        "../../../../../../crates/mission/mission_compiler/src/game_document/zones.rs"
     );
     let body = flatten
         .split("fn round_coord(v: f64) -> f64 {")

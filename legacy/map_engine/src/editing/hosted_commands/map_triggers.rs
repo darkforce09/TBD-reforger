@@ -8,16 +8,12 @@
 //! every compile after. The owner edge carries no referential check — a later deletion of the owner
 //! is tolerated as a dangling edge rather than cascading.
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_document::MissionDocCore;
+use mission_operations::entity as entity_ops;
 
-/// One authored trigger, as the palette's row needs it.
-pub use crate::data::store::operations::entity::TriggerRow;
-
-/// The closed set of activation kinds a trigger may carry.
-pub use crate::data::store::operations::entity::TRIGGER_ACTIVATIONS;
+use mission_operations::entity::TriggerRow;
 
 /// Every authored trigger, sorted by id — the palette's list.
 #[must_use]
@@ -58,7 +54,7 @@ pub fn set_trigger_activation(id: &str, activation: &str) -> bool {
 /// Assign or clear the owner edge. `Some(id)` is a placed entity; `None` clears the link.
 pub fn set_trigger_owner(id: &str, owner_id: Option<String>) -> bool {
     edit_trigger(|core| {
-        entity_ops::set_trigger_owner(core, id, owner_id.as_deref());
+        entity_ops::set_trigger_owner(core, id, owner_id.clone().map(Into::into));
         true
     })
 }

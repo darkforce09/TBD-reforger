@@ -16,8 +16,8 @@
 use leptos::prelude::*;
 use serde_json::{Map, Value};
 
-use map_engine::data::scenario::weather::validate;
-use map_engine::data::scenario::weather::WEATHER_PRESETS;
+use mission_model::environment::weather::validate;
+use mission_model::environment::weather::WEATHER_PRESETS;
 
 /// The reader chain for `meta.environment.weatherTimeline`, end to end.
 #[cfg(test)]
@@ -224,7 +224,7 @@ fn optional_number(
 fn refuse_order(rows: &[Value]) -> Result<(), String> {
     match timeline_from_keyframes(rows) {
         None => Ok(()),
-        Some(block) => validate(&block),
+        Some(block) => validate(&block).map_err(String::from),
     }
 }
 

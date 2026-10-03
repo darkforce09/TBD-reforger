@@ -1,5 +1,5 @@
 //! Unit tests for the native half of the ballistics agreement gate; the shared mapping, lead
-//! summary and bit walk are tested in the map engine.
+//! summary and bit walk are tested in `ballistics_agreement_cases`.
 
 use super::*;
 use crate::browser_testing::ballistics_agreement::COMMITTED_CATALOG;
@@ -27,7 +27,7 @@ fn the_native_cases_are_the_drawn_cases_in_order() {
     let drawn = agreement_cases(&catalog, SEED, 3);
     assert_eq!(native.len(), 3);
     for (native_case, drawn_case) in native.iter().zip(&drawn) {
-        assert_eq!(native_case.case_id, drawn_case.case_id);
+        assert_eq!(drawn_case.case_id, *native_case.case_id);
         assert_eq!(
             native_case.inputs,
             fire_mission_inputs(&catalog, drawn_case)

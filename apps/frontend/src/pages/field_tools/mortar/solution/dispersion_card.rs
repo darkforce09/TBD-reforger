@@ -7,10 +7,10 @@
 //! **Invariants:** the card always carries [`DISPERSION_CAVEAT`]: the spread is derived from the
 //! game's dispersion parameters and is not verified in-engine.
 
+#[cfg(any(target_arch = "wasm32", test))]
+use ballistics_solver::dispersion::ImpactDispersion;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::dispersion::ImpactDispersion;
 
 /// The label every dispersion figure carries.
 #[cfg(any(target_arch = "wasm32", test))]

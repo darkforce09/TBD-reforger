@@ -6,8 +6,8 @@ use super::{
     PanelFinding, PayloadSource,
 };
 use leptos::prelude::*;
-use map_engine::data::scenario::validate::Primitive;
-use map_engine::data::scenario::validate::Severity;
+use mission_validation::Primitive;
+use mission_validation::Severity;
 use std::cell::RefCell;
 use std::rc::Rc;
 

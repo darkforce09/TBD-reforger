@@ -16,9 +16,9 @@
 use leptos::prelude::*;
 use serde_json::Value;
 
-use map_engine::data::scenario::tasks::validate_schedule;
-use map_engine::data::scenario::tasks::STATES;
-use map_engine::data::scenario::tasks::TIERS;
+use mission_model::objectives::tasks::validate_schedule;
+use mission_model::objectives::tasks::STATES;
+use mission_model::objectives::tasks::TIERS;
 
 #[cfg(target_arch = "wasm32")]
 use super::env::read_flow_seconds;
@@ -283,7 +283,7 @@ fn read_block() -> Option<Value> {
 fn commit(tasks: Option<&[Value]>) {
     if let Some(rows) = tasks {
         let value = Value::Array(rows.to_vec());
-        if let Err(clause) = map_engine::data::scenario::tasks::validate(&value) {
+        if let Err(clause) = mission_model::objectives::tasks::validate(&value) {
             leptos::logging::warn!("tasks is not yet complete: {clause}");
         }
     }
@@ -297,8 +297,8 @@ fn trigger_options() -> Vec<(String, String)> {
     let mut rows: Vec<(String, String)> = engine_ops::trigger_rows()
         .into_iter()
         .map(|r| {
-            let label = r.name.unwrap_or_else(|| r.id.clone());
-            (r.id, label)
+            let label = r.name.unwrap_or_else(|| r.id.to_string());
+            (r.id.into_inner(), label)
         })
         .collect();
     rows.sort_by(|a, b| a.0.cmp(&b.0));
@@ -311,11 +311,11 @@ fn marker_options() -> Vec<(String, String)> {
         .into_iter()
         .map(|r| {
             let label = if r.label.is_empty() {
-                r.id.clone()
+                r.id.to_string()
             } else {
                 format!("{} ({})", r.label, r.id)
             };
-            (r.id, label)
+            (r.id.into_inner(), label)
         })
         .collect()
 }

@@ -22,15 +22,15 @@ use crate::workspaces::editor::ui::outliner::node_model::{build_outliner, LayerR
 
 fn slot(id: &str) -> SlotRow {
     SlotRow {
-        id: id.to_string(),
+        id: id.into(),
         role: "Rifleman".to_string(),
     }
 }
 fn layer(id: &str, parent: Option<&str>, ents: &[&str]) -> LayerRow {
     LayerRow {
-        id: id.to_string(),
+        id: id.into(),
         name: format!("{id}-name"),
-        parent_id: parent.map(str::to_string),
+        parent_id: parent.map(Into::into),
         entity_ids: ents.iter().map(|s| (*s).to_string()).collect(),
         hidden: false,
         locked: false,
@@ -103,7 +103,7 @@ fn descendants_recursion_gate_fires() {
     perturbed.push(layer("other", None, &[]));
     for l in &mut perturbed {
         if l.id == "grand" {
-            l.parent_id = Some("other".to_string());
+            l.parent_id = Some("other".into());
         }
     }
     let broken = layer_descendant_slots(&perturbed, "root");
@@ -202,7 +202,7 @@ mod source_pins {
     /// host and take the refresh tail; the document mutators live here.
     const ENGINE_LAYERS: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/layers.rs"
+        "/../../crates/mission/mission_operations/src/entity/layers.rs"
     ));
     const TREE: &str = crate::workspaces::editor::ui::outliner::tree::TREE_PRODUCTION_SOURCE;
     const DOCK: &str = include_str!(concat!(

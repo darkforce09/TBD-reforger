@@ -23,7 +23,7 @@ document.
   the document edits in
   [`legacy/map_engine/src/editing/hosted_commands/`](/legacy/map_engine/src/editing/hosted_commands/README.md)
   (`selection_transform.rs`, `entity_clipboard.rs`, `entity_connections.rs`) and
-  `legacy/map_engine/src/data/store/operations/` (`transform.rs`, `placement/`,
+  `crates/mission/mission_operations/src/` (`transform.rs`, `placement/`,
   `entity/clipboard.rs`).
 - Related features: [selection](/documentation/apps/frontend/workspaces/editor/feature_inventory/selection.md),
   [keyboard shortcuts](/documentation/apps/frontend/workspaces/editor/feature_inventory/keyboard_shortcuts.md)
@@ -128,7 +128,7 @@ default. The horizontal move is always the entity drag of XFORM-MOVE-001.
 Right-clicking a squad leader and choosing "Transform" › a formation ("Column", "Staggered
 Column", "Wedge", "Echelon Left", "Echelon Right", "Vee", "Line", "File", "Diamond") lays the
 squad's members out around the leader, turned to the leader's heading; the leader stays put
-(`force_to_formation`, `legacy/map_engine/src/data/store/rows/formations.rs:18-19`).
+(`force_to_formation`, `crates/mission/mission_document/src/rows/formations.rs:18-19`).
 
 ### XFORM-SYNC-001 — Position sync
 
@@ -141,7 +141,7 @@ connection between two entities without moving either.
 1. Delete, or the delete half of Ctrl/Cmd+X, removes whatever is selected, of any kind, as one
    undo step; no dialog confirms it (KEY-DEL-001).
 2. `delete_selection` removes selected comments, then every connection that touches a selected
-   id, then the selected slots (`legacy/map_engine/src/data/store/operations/entity/clipboard.rs:18-34`).
+   id, then the selected slots (`crates/mission/mission_operations/src/entity/clipboard.rs:18-34`).
 3. Partial: a selected vehicle is not removed — only its connections are — and nothing else in
    the editor deletes a placed vehicle either.
 

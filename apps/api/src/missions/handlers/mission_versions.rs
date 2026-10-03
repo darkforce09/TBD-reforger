@@ -14,8 +14,8 @@ use serde_json::value::RawValue;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use map_engine::data::scenario::flatten::scan_editor_payload_types;
-use map_engine::data::scenario::wire_safety::CargoPhysCatalog;
+use mission_compiler::scan_editor_payload_types;
+use mission_wire_safety::CargoPhysCatalog;
 
 use crate::administration::models::audit_log::AuditSeverity;
 use crate::administration::services::audit_writer::{actor_display_name, write_audit};
@@ -264,7 +264,7 @@ pub async fn set_current_version(
 /// so the wire shape is one list however many passes run:
 ///
 /// * **`validate_mission_editor_payload_with_catalog`** — `mission-editor-payload.schema.json`,
-///   plus the `wire_safety` walk and the cargo-capacity walk (catalog from
+///   plus the `mission_wire_safety` name walk and the cargo-capacity walk (catalog from
 ///   [`load_cargo_phys_catalog`]).
 /// * **`scan_editor_payload_types`** — the mission compiler's OWN deserialiser, run here so a
 ///   shape it cannot read is a **400 at save**, in front of the author, instead of a **500 at
@@ -280,7 +280,7 @@ pub(crate) async fn validate_payload(pool: &PgPool, payload: &str) -> Result<(),
     validate_payload_with_catalog(payload, &catalog)
 }
 
-/// Sync half of [`validate_payload`] — schema + wire_safety + cargo + type scan. Unit-testable
+/// Sync half of [`validate_payload`] — schema + `mission_wire_safety` names + cargo + type scan. Unit-testable
 /// without a pool: pass an inline [`CargoPhysCatalog`].
 fn validate_payload_with_catalog(
     payload: &str,

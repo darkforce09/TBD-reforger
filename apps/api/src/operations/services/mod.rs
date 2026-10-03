@@ -15,8 +15,6 @@ pub mod fire_mission_store;
 pub mod live_slot_occupancy;
 pub mod participation_attribution;
 
-// The ORBAT template shapes and parser live in the map engine, where the scenario document is
-// defined. Re-exported here so the handlers that seat an ORBAT name one path.
-pub use map_engine::data::scenario::orbat::{
-    OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,
-};
+// The ORBAT template shapes and parser live in `mission_model`, beside the mission document's
+// other shapes. Re-exported here so the handlers that seat an ORBAT name one path.
+pub use mission_model::orbat::{OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template};

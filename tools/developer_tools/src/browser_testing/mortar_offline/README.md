@@ -11,7 +11,7 @@ fire mission it types and places on the map.
 ```text
 tools/developer_tools/src/browser_testing/mortar_offline/
 ├── api_down_visit.rs     the visit with every `/api/` request answering 502: worker cache, dated offline copy, kept pack, solution
-├── expected_solution.rs  the native solve, worded by the map engine's shared `solution_wording`
+├── expected_solution.rs  the native solve, worded by `fire_mission_planning`'s shared `solution_wording`
 ├── map_pixels.rs         whether the map rectangle of a screenshot shows drawn imagery
 ├── mission_entry.rs      the typed mission (shell, charge, map click, gun, heights, wind) and its native comparison
 ├── mission_plan.rs       the required files, the recorded catalog reads, the shell and the gun position
@@ -65,8 +65,9 @@ network domain enabled so each response says whether the service worker answered
 
 - Depends on: `crate::browser_testing::cdp` (launch, pages, input, screenshots),
   `crate::browser_testing::server` (the server and its `api_fixture_corpus`),
-  `crate::repository_layout::MapAssetMounts`; `map_engine` (`camera::grid_reference`,
-  `data::scenario::ballistics::{catalog, fire_mission, battery, solver, solution_wording}`); `image` for the
+  `crate::repository_layout::MapAssetMounts`; `map_engine` (`camera::grid_reference`);
+  `ballistics_model` (`catalog`) and `fire_mission_planning` (`fire_mission`, `battery`,
+  `solution_wording`); `image` for the
   screenshot; the committed catalog in `contracts/catalogs/ballistics/`.
 - Used by: `gate mortar-offline` in `tools/developer_tools/src/browser_testing/cli.rs`, run by
   `cargo xtask mk mortar-offline-gate` after `trunk build --release`.
@@ -74,7 +75,7 @@ network domain enabled so each response says whether the service worker answered
   `data-offline-refresh`, `data-mortar-catalog`, `data-mortar-offline`,
   `data-mortar-input`, `data-mortar-position`, `data-mortar-map-state`, `data-mortar-solution`,
   `data-mortar-problems`, `data-mortar-battery` and `data-mortar-gun`; the page and `expected_solution.rs` both word a
-  solution with `legacy/map_engine/src/data/scenario/ballistics/solution_wording.rs`, so the
+  solution with `crates/ballistics/fire_mission_planning/src/solution_wording.rs`, so the
   comparison is exact at every shown digit and never a tolerance.
 - The gate runs against the `dist` it is given: run it through `cargo xtask mk mortar-offline-gate`,
   which builds the release app first; a `dist` built before a solver change fails

@@ -12,11 +12,11 @@
 //! **Invariants:** the SVG paper-doll region list (`DOLL_REGIONS`) has no shipping consumer and
 //! is compiled for the tests only; the slot rail (`RAIL_REGIONS`) drives the 3D doll.
 
-pub use map_engine::data::store::operations::cargo_rules::cargo_from_loadout;
-pub use map_engine::data::store::operations::cargo_rules::cargo_rows_json;
+pub use mission_operations::cargo_rules::cargo_from_loadout;
+pub use mission_operations::cargo_rules::cargo_rows_json;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-pub use map_engine::data::store::operations::cargo_rules::CargoRow;
+pub use mission_operations::cargo_rules::CargoRow;
 
 use crate::foundation::transport::dto::{RegistryCompatEdge, RegistryItem};
 

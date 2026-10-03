@@ -2,7 +2,7 @@
 //!
 //! **Role:** walks the graphics layer (the parked graphics engine and every workspace member of
 //! the graphics category, each with its manifest), the map engine and the frontend, splits the
-//! map engine into the `data/`, `data/scenario/`, `world/` and `editing/` subsets the rules scan,
+//! map engine into the `world/` and `editing/` subsets the rules scan,
 //! names the wasm-only graphics crates rule 6 guards, and writes the `scanned …` line.
 //! **Position:** the second step of [`super::check_engine_layers`], after
 //! [`super::matcher_probes::probe_matchers`]; its output feeds [`super::evaluation::evaluate`].
@@ -81,18 +81,16 @@ pub(super) fn walk_crates(
         }
     }
 
-    // The map engine is the root of rules 3a, 3b, 4, 5 and 7, and the check refuses to run
+    // The map engine is the root of rules 3a, 3b, 5 and 7, and the check refuses to run
     // without it.
     let map_sources = rust_files(repo_root, &repo_root.join(MAP_CRATE_REL).join("src"))
         .map_err(|cause| refuse(o, "engine-layers could not walk the map engine", cause))?;
 
-    // Rules 4 and 7 scan three subtrees of the walk rules 3a/3b already do, rather than walking
-    // the disk three more times. Each is its own anti-vacuity subject below: "no file under
-    // `data/` names a world module" and "there is no `data/` any more" are the same sentence to a
-    // matcher, and only the count tells them apart.
-    let data_files = under(repo_root, &map_sources, DATA_REL);
+    // Rules 5 and 7 scan two subtrees of the walk rules 3a/3b already do, rather than walking
+    // the disk twice more. Each is its own anti-vacuity subject below: "no file under `world/`
+    // names the document" and "there is no `world/` any more" are the same sentence to a matcher,
+    // and only the count tells them apart.
     let world_files = under(repo_root, &map_sources, WORLD_REL);
-    let scenario_files = under(repo_root, &map_sources, SCENARIO_REL);
     let editing_files = under(repo_root, &map_sources, EDITING_REL);
 
     // Rule 6's root is the frontend, walked here because no earlier rule reads it. Its manifest
@@ -113,14 +111,11 @@ pub(super) fn walk_crates(
     let scanned = format!(
         "  scanned {engine_source_count} .rs file(s) + {GRAPHICS_ENGINE_REL}/Cargo.toml, \
          {member_source_count} .rs file(s) + Cargo.toml across {} {GRAPHICS_CATEGORY} member(s) \
-         ({} wasm-only), {} .rs file(s) under {MAP_CRATE_REL}/src — of those {} under data/ ({} \
-         under data/scenario), {} under world/ and {} under editing/ — plus {} .rs file(s) + \
-         Cargo.toml under {FRONTEND_REL}",
+         ({} wasm-only), {} .rs file(s) under {MAP_CRATE_REL}/src — of those {} under world/ and \
+         {} under editing/ — plus {} .rs file(s) + Cargo.toml under {FRONTEND_REL}",
         members.len(),
         wasm_only_graphics.len(),
         map_sources.len(),
-        data_files.len(),
-        scenario_files.len(),
         world_files.len(),
         editing_files.len(),
         front_sources.len()
@@ -129,9 +124,7 @@ pub(super) fn walk_crates(
     roots.extend(member_counts);
     roots.extend([
         (map_sources.len(), format!("{MAP_CRATE_REL}/src")),
-        (data_files.len(), DATA_REL.to_string()),
         (world_files.len(), WORLD_REL.to_string()),
-        (scenario_files.len(), SCENARIO_REL.to_string()),
         (editing_files.len(), EDITING_REL.to_string()),
         (front_sources.len(), format!("{FRONTEND_REL}/src")),
         (front_manifest.len(), format!("{FRONTEND_REL}/Cargo.toml")),
@@ -153,11 +146,9 @@ pub(super) fn walk_crates(
             manifest_files,
             wasm_only_graphics,
             map_sources,
-            scenario_files,
             editing_files,
             front_sources,
             front_manifest,
-            data_files,
             world_files,
         },
         scanned,

@@ -1,11 +1,11 @@
 //! Asset catalog tree models and palette classification behavior.
 
-pub use map_engine::data::store::operations::assets::classname_tail;
-pub use map_engine::data::store::operations::assets::derive_object_alias;
+pub use mission_operations::assets::classname_tail;
+pub use mission_operations::assets::derive_object_alias;
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
-pub use map_engine::data::store::operations::assets::PlacePayload;
+pub use mission_operations::assets::PlacePayload;
 
 use crate::foundation::transport::dto::RegistryItem;
 
@@ -137,7 +137,7 @@ pub fn build_catalog_tree(items: &[RegistryItem], side: &str) -> Vec<CatalogNode
             default_expanded: false,
             children: Vec::new(),
             payload: Some(PlacePayload {
-                asset_id: item.resource_name.clone(),
+                asset_id: item.resource_name.clone().into(),
                 role: item.display_name.clone(),
             }),
         });

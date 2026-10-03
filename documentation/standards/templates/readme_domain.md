@@ -81,7 +81,7 @@ comments take the mission write lock first.
 
 The Mission Creator saves a version with `POST /api/v1/missions/{id}/versions`, whose body limit is
 set for that route alone. Submitting a mission compiles its current version into an immutable
-artifact (`services/mission_compile.rs` adapts the compile in `map_engine::data::scenario`)
+artifact (`services/mission_compile.rs` adapts the compile in the `mission_compiler` crate)
 and opens a review of exactly that artifact, in one transaction with the status change and its
 audit record. An administrator approves or rejects that artifact from the approval queue. A
 deployment selects an approved artifact for a server, is carried out by one fleet command, and
@@ -116,7 +116,8 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
     authorization, account authority and account locks, `server_infrastructure` for machine
     credentials and the fleet command ledger, `operations` services for the ORBAT templates slot
     bindings read, and `community_content` models for the modpack a registry belongs to;
-  - `map_engine::data::scenario`, which compiles and validates mission documents;
+  - the mission crates (`mission_compiler`, `mission_validation`), which compile and validate
+    mission documents;
   - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
   - `core::http_router`, which merges the route table;

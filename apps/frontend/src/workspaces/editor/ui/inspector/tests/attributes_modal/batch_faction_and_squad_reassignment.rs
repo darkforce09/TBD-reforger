@@ -3,7 +3,7 @@
 use super::faction_label;
 use crate::foundation::test_support::class_r_scrub::{live_code, live_source, only_body};
 use crate::workspaces::editor::ui::outliner::node_model::{FactionRow, SquadRow};
-use map_engine::data::store::operations::reassign::plan_reassign;
+use mission_operations::reassign::plan_reassign;
 
 const REASSIGN_RS: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -12,29 +12,29 @@ const REASSIGN_RS: &str = include_str!(concat!(
 
 fn rows() -> (Vec<FactionRow>, Vec<SquadRow>) {
     let squad = |id: &str, name: &str, faction: &str| SquadRow {
-        id: id.to_string(),
+        id: id.into(),
         name: name.to_string(),
-        faction_id: faction.to_string(),
+        faction_id: faction.into(),
         slot_ids: vec!["s1".to_string()],
-        leader_slot_id: String::new(),
+        leader_slot_id: String::new().into(),
         vehicle_ids: Vec::new(),
     };
     (
         vec![
             FactionRow {
-                id: "faction-BLUFOR".to_string(),
+                id: "faction-BLUFOR".into(),
                 key: "BLUFOR".to_string(),
                 name: "US Army".to_string(),
                 squad_ids: vec!["sq-a".to_string(), "sq-c".to_string()],
             },
             FactionRow {
-                id: "faction-OPFOR".to_string(),
+                id: "faction-OPFOR".into(),
                 key: "OPFOR".to_string(),
                 name: "Soviet Army".to_string(),
                 squad_ids: vec!["sq-b".to_string()],
             },
             FactionRow {
-                id: "faction-EMPTY".to_string(),
+                id: "faction-EMPTY".into(),
                 key: "INDFOR".to_string(),
                 name: "Militia".to_string(),
                 squad_ids: Vec::new(),
@@ -115,7 +115,7 @@ fn a_destination_that_no_longer_exists_refuses_rather_than_guessing() {
 #[test]
 fn faction_label_names_the_faction_and_its_side_key() {
     let f = |id: &str, key: &str, name: &str| FactionRow {
-        id: id.to_string(),
+        id: id.into(),
         key: key.to_string(),
         name: name.to_string(),
         squad_ids: Vec::new(),
@@ -177,7 +177,7 @@ fn the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/data/store/operations/reassign.rs"
+            "/../../crates/mission/mission_operations/src/reassign.rs"
         ))
     ));
     assert!(
@@ -239,7 +239,7 @@ fn revert_restores_the_open_snapshot_squads_in_one_keep_source_group() {
     let ops = live_code(REASSIGN_RS);
     let domain = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/reassign.rs"
+        "/../../crates/mission/mission_operations/src/reassign.rs"
     )));
     let restore = [
         only_body(&ops, "pub fn restore_slot_squads("),
@@ -268,7 +268,7 @@ fn revert_restores_the_open_snapshot_squads_in_one_keep_source_group() {
 fn reassign_and_revert_read_raw_membership_for_hidden_single_slot_attributes() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/reassign.rs"
+        "/../../crates/mission/mission_operations/src/reassign.rs"
     )));
     for entry in ["pub fn reassign_slots(", "pub fn restore_moves("] {
         let body = only_body(&ops, entry);

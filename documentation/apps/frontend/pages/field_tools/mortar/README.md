@@ -25,7 +25,7 @@ target, solving, working offline and saving, gives what each catalog and fire-mi
 in `visual_references/`. The blueprint is a design-phase reference: the built page keeps its map
 with draggable markers and replaces its three readouts with a whole solution panel. The model the
 page solves with is documented in the
-[game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md)
+[game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md)
 feature doc; the code folder's README lists the page's files.
 
 ## Code
@@ -33,7 +33,7 @@ feature doc; the code folder's README lists the page's files.
 - [Mortar calculator page](/apps/frontend/src/pages/field_tools/mortar/) — the route
   component `MortarCalculatorPage`, the inputs, the map picker, the solve bridge, the solution
   panel, the save area and the offline pack line.
-- [Game ballistics](/legacy/map_engine/src/data/scenario/ballistics/) — the
+- [Game ballistics](/crates/ballistics/README.md) — the
   `solve_fire_mission` assembler the page and the API run.
 - [Offline core](/apps/frontend/src/foundation/offline/) — the offline pack the page
   triggers.
@@ -43,7 +43,7 @@ feature doc; the code folder's README lists the page's files.
 ## Boundaries
 
 - Depends on: the feature doc template; the page code, the catalog and fire-mission handlers, the
-  map engine's ballistics, the offline core and the ticket registry the feature doc is written
+  ballistics crates, the offline core and the ticket registry the feature doc is written
   from.
 - Used by: the in-code READMEs of the mortar page and of the field tools pages, which link the
   feature doc; the field tools pages README.

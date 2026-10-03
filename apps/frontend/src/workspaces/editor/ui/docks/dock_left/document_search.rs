@@ -15,7 +15,9 @@ use super::*;
 /// probe is registered** — no probe means no router to click into, and `false` is the honest answer.
 #[must_use]
 pub fn hit_is_routable(hit: &DocHit) -> bool {
-    crate::workspaces::editor::ui::inspector::validation_panel::subject_id_routes(&hit.entity.id)
+    crate::workspaces::editor::ui::inspector::validation_panel::subject_id_routes(
+        hit.entity.id.as_str(),
+    )
 }
 
 /// (and its `aria-description`) so the answer is available exactly where the click would have been.
@@ -76,7 +78,7 @@ pub fn query_hits(query: &str, text: &str, class_name: &str, group: &str) -> boo
         children: Vec::new(),
         payload: Some(
             crate::workspaces::editor::arsenal::asset_catalog::PlacePayload {
-                asset_id: class_name.to_string(),
+                asset_id: class_name.into(),
                 role: String::new(),
             },
         ),
@@ -164,7 +166,7 @@ pub fn selection_facets(rows: &[DocEntity]) -> Vec<SelectionFacet> {
         let ids: Vec<String> = rows
             .iter()
             .filter(|e| e.kind == k)
-            .map(|e| e.id.clone())
+            .map(|e| e.id.to_string())
             .collect();
         if ids.len() < total {
             out.push(SelectionFacet {
@@ -181,7 +183,7 @@ pub fn selection_facets(rows: &[DocEntity]) -> Vec<SelectionFacet> {
         let ids: Vec<String> = rows
             .iter()
             .filter(|e| e.faction == f)
-            .map(|e| e.id.clone())
+            .map(|e| e.id.to_string())
             .collect();
         if ids.len() < total {
             out.push(SelectionFacet {

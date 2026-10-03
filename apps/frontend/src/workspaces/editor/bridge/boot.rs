@@ -1,6 +1,6 @@
 //! Role: boot.
 //! Position: `editor/bridge` in the frontend editor adapter.
-//! Signals & state: host signals, input state, and explicit map-engine `data::store` calls.
+//! Signals & state: host signals, input state, and explicit `mission_operations` calls.
 //! Invariants: preserve input routing, borrow lifetimes, and post-edit refresh order.
 
 #[cfg(target_arch = "wasm32")]

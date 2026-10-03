@@ -18,7 +18,7 @@ use crate::foundation::transport::dto::{
 #[cfg(any(target_arch = "wasm32", test))]
 use crate::pages::field_tools::mortar::solve_bridge::SolvedMission;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fire_mission::HeightSource as EngineHeightSource;
+use fire_mission_planning::fire_mission::HeightSource as EngineHeightSource;
 
 /// The save route, under the API prefix.
 #[cfg(target_arch = "wasm32")]
@@ -42,10 +42,10 @@ pub(crate) fn save_body(solved: &SolvedMission, event_id: Option<&str>) -> FireM
             .map(str::trim)
             .filter(|id| !id.is_empty())
             .map(str::to_string),
-        catalog_id: inputs.catalog_id.clone(),
+        catalog_id: inputs.catalog_id.to_string(),
         catalog_version: inputs.catalog_version,
-        weapon_id: inputs.weapon_id.clone(),
-        shell_id: inputs.shell_id.clone(),
+        weapon_id: inputs.weapon_id.to_string(),
+        shell_id: inputs.shell_id.to_string(),
         charge_rings: inputs.charge_rings,
         target: MapPoint {
             x: inputs.target.x,

@@ -17,7 +17,7 @@ use crate::workspaces::editor::bridge::host_state::editor_context::{
 };
 use crate::workspaces::editor::ui::outliner::node_model;
 use leptos::prelude::GetUntracked;
-use map_engine::data::store::operations::entity::{ArmedPlacement, ArmedPlacementRequest};
+use mission_operations::entity::{ArmedPlacement, ArmedPlacementRequest};
 use node_model::ensure_active_layer;
 
 /// Commit an armed place, with `alt_empty` asking a vehicle to spawn without its crew.
@@ -94,7 +94,7 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
         let side = ctx.active_side.get_untracked();
-        let placed = map_engine::data::store::operations::entity::commit_armed_placement(
+        let placed = mission_operations::entity::commit_armed_placement(
             core,
             ArmedPlacementRequest {
                 armed: armed_placement(pending),

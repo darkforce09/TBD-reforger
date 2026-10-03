@@ -2,11 +2,11 @@
 //!
 //! **Role:** the wire shapes of the ballistics-catalog routes — the public list of stored
 //! versions ([`BallisticsCatalogList`] of [`BallisticsCatalogSummary`]), one version's catalog
-//! document ([`BallisticsCatalog`], the map engine's own type), and the administrator upload's
+//! document ([`BallisticsCatalog`], the `ballistics_model` crate's own type), and the administrator upload's
 //! [`CatalogUploadReport`].
 //! **Position:** the mortar calculator reads the list and the catalog document; the catalog
-//! administration page reads the upload report. The catalog document is decoded by the map
-//! engine's type, so the calculator solves with exactly the values the API validated.
+//! administration page reads the upload report. The catalog document is decoded by the
+//! `ballistics_model` type, so the calculator solves with exactly the values the API validated.
 //! **Signals & state:** none — these are plain data.
 //! **Invariants:** every object refuses unknown fields. A catalog version is immutable once
 //! stored, so a summary's `catalog_sha256` names the same catalog bytes for its whole life.
@@ -18,11 +18,9 @@
 #[cfg(any(target_arch = "wasm32", test))]
 use serde::{Deserialize, Serialize};
 
-/// The map engine's catalog document and its parts, decoded on the wire unchanged.
+/// The ballistics model's catalog document and its parts, decoded on the wire unchanged.
 #[cfg(any(target_arch = "wasm32", test))]
-pub use map_engine::data::scenario::ballistics::catalog::{
-    BallisticsCatalog, Shell, ShellRole, TimeFuze,
-};
+pub use ballistics_model::catalog::{BallisticsCatalog, Shell, ShellRole, TimeFuze};
 
 /// One stored catalog version without its weapons and shells.
 /// @contract ballistics-catalog.schema.json#/definitions/BallisticsCatalogSummary

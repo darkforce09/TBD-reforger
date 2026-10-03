@@ -70,8 +70,8 @@ The map engine links the crate behind its `io` feature (`legacy/map_engine/Cargo
     reading, so a layout change comes with a new version, a reader for it and regenerated files;
   - rkyv stays `little_endian` with `bytecheck` (the crate's `Cargo.toml`), and the `Pod`
     layouts refuse to compile on a big-endian target;
-  - nothing under the map engine's `data` module may name the formats (rules 4 and 7 of
-    `cargo xtask verify engine-layers`).
+  - no mission crate may name the formats: a `crates/mission` crate depends on no
+    `crates/world_formats` crate (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 

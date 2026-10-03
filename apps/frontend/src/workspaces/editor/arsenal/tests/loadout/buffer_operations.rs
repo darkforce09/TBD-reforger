@@ -8,7 +8,7 @@ mod t699 {
 
     fn buf(source: &str, json: Option<&str>) -> BufferedLoadout {
         BufferedLoadout {
-            source_id: source.to_string(),
+            source_id: source.into(),
             loadout_json: json.map(str::to_string),
         }
     }
@@ -89,7 +89,8 @@ mod t699 {
         assert_eq!(writes.len(), targets.len(), "one write per selected entity");
         for (w, t) in writes.iter().zip(&targets) {
             assert_eq!(
-                &w.target_id, t,
+                w.target_id.as_str(),
+                t,
                 "writes stay index-aligned with the selection"
             );
             let src = sources
@@ -103,13 +104,16 @@ mod t699 {
         }
         // Over six entities and three sources the draw must actually vary — a plan that gave
         // everyone source #1 would satisfy every assertion above and be the bug.
-        let drawn: HashSet<Option<String>> = writes.iter().map(|w| w.source_id.clone()).collect();
+        let drawn: HashSet<Option<String>> = writes
+            .iter()
+            .map(|w| w.source_id.as_ref().map(ToString::to_string))
+            .collect();
         assert!(drawn.len() > 1, "the draw did not vary: {drawn:?}");
 
         // THE ANTI-INHERITANCE PROPERTY (T-687 was cancelled): the plan carries BYTES, so it is
         // complete without the sources. Drop them and every write still describes its loadout.
         drop(sources);
-        assert!(writes.iter().all(|w| w.target_id.starts_with('t')));
+        assert!(writes.iter().all(|w| w.target_id.as_str().starts_with('t')));
     }
 
     /// One buffered loadout ⇒ everybody gets it, with no draw involved.
@@ -298,15 +302,11 @@ mod t699 {
         // a cleared field, and really does not fire on this document.
         let defaults = vec![row("vest", "res://mag_stanag", 3)];
         assert!(
-            map_engine::data::store::operations::cargo_rules::seed_cargo(None, &defaults).is_some(),
+            mission_operations::cargo_rules::seed_cargo(None, &defaults).is_some(),
             "a cleared loadout field re-seeds — this is what the strip must not leave behind"
         );
         assert!(
-            map_engine::data::store::operations::cargo_rules::seed_cargo(
-                Some(&stripped),
-                &defaults
-            )
-            .is_none(),
+            mission_operations::cargo_rules::seed_cargo(Some(&stripped), &defaults).is_none(),
             "the stripped document must be seed-ineligible, or Remove Everything undoes itself"
         );
 

@@ -7,16 +7,15 @@
 //! slot leaving a squad never deletes that squad, its place in `faction.squadIds`, or the vehicles
 //! attached to it. Refusals are named sentences the caller can render, never a silent no-op.
 
-use crate::data::store::operations::attrs::SlotAttrs;
-use crate::data::store::operations::projections::{faction_rows, squad_rows};
-use crate::data::store::operations::reassign;
-use crate::data::store::operations::rows::{FactionRow, SquadRow};
 use crate::editing::batch::with_batch;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_operations::attrs::SlotAttrs;
+use mission_operations::projections::{faction_rows, squad_rows};
+use mission_operations::reassign;
+use mission_operations::rows::{FactionRow, SquadRow};
 
-/// The faction / squad a reassign is aimed at, as the picker names it.
-pub use crate::data::store::operations::reassign::ReassignTarget;
+use mission_operations::reassign::ReassignTarget;
 
 /// Move every id in `ids` into the squad `target` resolves to, as ONE undo group.
 pub fn reassign_slots(ids: &[String], target: &ReassignTarget) -> Result<usize, String> {
@@ -69,5 +68,10 @@ fn resolve_destination(target: &ReassignTarget) -> Result<String, String> {
                 .to_string(),
         );
     }
-    reassign::plan_reassign(&factions, &squads, &target.faction_id, &target.squad_id)
+    reassign::plan_reassign(
+        &factions,
+        &squads,
+        target.faction_id.clone(),
+        target.squad_id.clone(),
+    )
 }

@@ -1,7 +1,7 @@
 # Mortar calculator inputs
 
 What the battery fires, from where, onto what and through which wind: the drafts the operator types
-or the map writes, their resolution into the map engine's fire-mission inputs, and the fields that
+or the map writes, their resolution into `fire_mission_planning`'s fire-mission inputs, and the fields that
 edit them.
 
 ## Contents
@@ -27,8 +27,8 @@ weapon changes. Each resolution answers every problem it finds, so the page list
 ## Boundaries
 
 - Depends on: the ballistics catalog DTOs of `crate::foundation::transport::dto::ballistics_catalogs`;
-  `map_coordinates::grid_reference`; `map_engine` (the fire-mission input types of
-  `data::scenario::ballistics::fire_mission`); the terrain heights of `crate::foundation::map_view`.
+  `map_coordinates::grid_reference`; `fire_mission_planning` (the fire-mission input
+  types of `fire_mission`); the terrain heights of `crate::foundation::map_view`.
 - Used by: the page, the solve bridge, the map picker and the save area of the mortar page.
 - Rules: a height that has not loaded is an error, never zero; Arland resolves only manual heights.
 

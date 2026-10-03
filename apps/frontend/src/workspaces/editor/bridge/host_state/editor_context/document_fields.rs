@@ -16,7 +16,7 @@ pub fn read_env() -> MissionEnv {
             let ctx = guard.as_ref()?;
             let d = ctx.doc.borrow();
             let core = d.as_ref()?;
-            map_engine::data::store::operations::environment::read_env(core)
+            mission_operations::environment::read_env(core)
         })
         .unwrap_or_default()
 }

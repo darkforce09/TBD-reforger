@@ -50,7 +50,7 @@ fn leaf_id_and_payload_carry_the_resource_name() {
     assert_eq!(
         rifleman.payload,
         Some(PlacePayload {
-            asset_id: expected.to_string(),
+            asset_id: expected.into(),
             role: "US Rifleman".to_string(),
         })
     );

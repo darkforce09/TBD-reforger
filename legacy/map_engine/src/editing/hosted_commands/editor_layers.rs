@@ -9,9 +9,9 @@
 //! crosses in as an argument and the new folder's id crosses back out, because the engine never
 //! reads a dock's focus.
 
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::{selection_ids, with_doc};
+use mission_operations::entity as entity_ops;
 
 use super::document_edit::commit_document_edit;
 
@@ -134,7 +134,7 @@ pub fn cancel_layer_drag() {
 /// it. `false` when nothing was armed.
 pub fn complete_layer_drop_onto_folder(dest_folder_id: String) -> bool {
     let dropped =
-        with_doc(|core| entity_ops::complete_layer_drop_onto_folder(core, &dest_folder_id))
+        with_doc(|core| entity_ops::complete_layer_drop_onto_folder(core, dest_folder_id.as_str()))
             .unwrap_or(false);
     if dropped {
         after_local_edit();

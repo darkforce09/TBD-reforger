@@ -39,7 +39,8 @@ fn the_validation_panel_is_mounted_and_wired_to_doc_tick() {
     // The registered source compiles the SAVE-shape payload (the editor.{factions,squads,slots}
     // block the rules read) and threads the T-658 known-asset-id catalogue.
     assert!(
-        ed.contains("compile::compile_payload(") && ed.contains("known_asset_ids_from_registry("),
+        ed.contains("mission_payload::compile_payload(")
+            && ed.contains("known_asset_ids_from_registry("),
         "T-655/T-658: the source must feed compile_payload + the known-asset-id catalogue"
     );
 }

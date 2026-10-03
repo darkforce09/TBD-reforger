@@ -3,8 +3,8 @@
 //! Signals & state: a frozen camera snapshot and the app-side selected-id set; never the document.
 //! Invariants: a square box query decides slots and a circular one decides vehicles, because a slot glyph is a square and a vehicle glyph is a disc. Ties are the document's to break.
 
-use crate::data::store::SlotSoa;
 use camera_math::ortho::state::OrthoCamera;
+use mission_crdt::soa::SlotSoa;
 use spatial_indexes::point_indexes::point_index::PointIndex;
 
 use super::gesture::{TERRAIN_H, TERRAIN_W};

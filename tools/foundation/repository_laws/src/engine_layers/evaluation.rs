@@ -1,4 +1,5 @@
-//! The engine-layer judgement: rules 1 to 7 over the walked files, in report order.
+//! The engine-layer judgement: rules 1, 2, 3a, 3b, 5, 6 and 7 over the walked files, in report
+//! order.
 //!
 //! **Role:** runs each rule's matcher over its subset of the walked files, writes the rule's
 //! headline, its `OK` line or its findings and remedy, records the rule's finding count, and
@@ -33,8 +34,6 @@ pub(super) fn evaluate(
         decl,
         vocab,
         gpu,
-        scenario_iso,
-        data_side,
         world_side,
         dom,
         graphics_import,
@@ -44,11 +43,9 @@ pub(super) fn evaluate(
         manifest_files,
         wasm_only_graphics,
         map_sources,
-        scenario_files,
         editing_files,
         front_sources,
         front_manifest,
-        data_files,
         world_files,
     } = sources;
 
@@ -161,35 +158,6 @@ pub(super) fn evaluate(
         &gpu_bad,
     ));
 
-    // ── rule 4 ───────────────────────────────────────────────────────────────────────────────
-    o.push(RULE4_HEAD.to_string());
-    let iso_hits = match scan::matching_lines(&scenario_iso, &scenario_files) {
-        Ok(hits) => hits,
-        Err(cause) => return refuse(&mut o, "engine-layers rule 4 scan", cause),
-    };
-    let (iso_findings, iso_bad) = against_pin(repo_root, &iso_hits, RULE4_PIN);
-    let iso_total: usize = RULE4_PIN.iter().map(|(_, n, _)| *n).sum();
-    if iso_bad.is_empty() {
-        o.push(format!(
-            "  OK — {iso_total} pinned site(s) in {} file(s), 0 unpinned. Production code reaches \
-             outside data/scenario nowhere; the pinned residue is cfg-gated test code:",
-            RULE4_PIN.len()
-        ));
-        for (file, n, why) in RULE4_PIN {
-            o.push(format!("    {file} ({n}) — {why}"));
-        }
-    } else {
-        o.push("FAIL: the authored mission reaches outside its own tree:".to_string());
-        o.extend(iso_bad.iter().cloned());
-        say(&mut o, RULE4_TAIL);
-    }
-
-    results.push(EngineLayerRuleResult::new(
-        EngineLayerRule::ScenarioTreeIsSelfContained,
-        iso_findings,
-        &iso_bad,
-    ));
-
     // ── rule 5 ───────────────────────────────────────────────────────────────────────────────
     //
     // Hard zero, no allowlist. See the module docs for why the subject is one directory and not
@@ -289,33 +257,24 @@ pub(super) fn evaluate(
 
     // ── rule 7 ───────────────────────────────────────────────────────────────────────────────
     //
-    // One rule, two directions, one findings list — a breach in either direction is the same
-    // wall coming down, and reporting it as two rules would let half of it read green.
+    // The document's side of the wall is the mission crates', and the crate-tier law judges their
+    // edges; this rule judges the world's side, inside the one crate that holds both.
     o.push(RULE7_HEAD.to_string());
-    let mut wall: Vec<String> = Vec::new();
-    match scan::matching_lines(&data_side, &data_files) {
-        Ok(hits) => wall.extend(
-            hits.iter()
-                .map(|h| format!("  data/ names the world — {}", rel(repo_root, h))),
-        ),
-        Err(cause) => return refuse(&mut o, "engine-layers rule 7 data scan", cause),
-    }
-    match scan::matching_lines(&world_side, &world_files) {
-        Ok(hits) => wall.extend(
-            hits.iter()
-                .map(|h| format!("  world/ names the document — {}", rel(repo_root, h))),
-        ),
+    let wall: Vec<String> = match scan::matching_lines(&world_side, &world_files) {
+        Ok(hits) => hits
+            .iter()
+            .map(|h| format!("  world/ names the document — {}", rel(repo_root, h)))
+            .collect(),
         Err(cause) => return refuse(&mut o, "engine-layers rule 7 world scan", cause),
-    }
+    };
     if wall.is_empty() {
         o.push(format!(
-            "  OK — 0 site(s) in both directions: {} .rs file(s) under data/ name no world \
-             module, {} under world/ name neither crate::data nor yrs.",
-            data_files.len(),
+            "  OK — 0 site(s) across {} .rs file(s) under world/: the static world names neither \
+             yrs, nor a mission document crate, nor the editing module.",
             world_files.len()
         ));
     } else {
-        o.push("FAIL: the world/data wall is breached:".to_string());
+        o.push("FAIL: the static world names the authored document:".to_string());
         o.extend(wall.iter().cloned());
         say(&mut o, RULE7_TAIL);
     }
@@ -331,7 +290,6 @@ pub(super) fn evaluate(
         && nouns.is_empty()
         && vocab_bad.is_empty()
         && gpu_bad.is_empty()
-        && iso_bad.is_empty()
         && dom_hits.is_empty()
         && direct.is_empty()
         && wall.is_empty()
@@ -342,8 +300,8 @@ pub(super) fn evaluate(
     o.push(format!(
         "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s), \
          {vocab_findings} frame-vocab finding(s), {gpu_findings} GPU-module finding(s), \
-         {iso_findings} scenario-isolation finding(s), {} browser-in-editing site(s), \
-         {} direct-renderer import(s), {} world/data finding(s)",
+         {} browser-in-editing site(s), {} direct-renderer import(s), {} world-document \
+         finding(s)",
         breaches.len(),
         nouns.len(),
         dom_hits.len(),
@@ -353,32 +311,28 @@ pub(super) fn evaluate(
     (1, o)
 }
 
-/// The eight proved matchers, one per rule scan (rule 1 matches literals).
+/// The seven proved matchers, one per rule scan (rule 1's manifest arm matches literals).
 pub(super) struct BoundaryPatterns {
     pub(super) map_engine_import: Pattern,
     pub(super) decl: Pattern,
     pub(super) vocab: Pattern,
     pub(super) gpu: Pattern,
-    pub(super) scenario_iso: Pattern,
-    pub(super) data_side: Pattern,
     pub(super) world_side: Pattern,
     pub(super) dom: Pattern,
     pub(super) graphics_import: Pattern,
 }
 
 /// The walked files each rule scans: the graphics layer (the parked graphics engine and every
-/// graphics-category member) with its manifests, the map engine and its `data/`,
-/// `data/scenario/`, `world/` and `editing/` subsets, and the frontend with its manifest.
+/// graphics-category member) with its manifests, the map engine and its `world/` and `editing/`
+/// subsets, and the frontend with its manifest.
 pub(super) struct BoundarySources {
     pub(super) sources: Vec<std::path::PathBuf>,
     pub(super) manifest_files: Vec<std::path::PathBuf>,
     pub(super) wasm_only_graphics: Vec<WasmOnlyGraphicsCrate>,
     pub(super) map_sources: Vec<std::path::PathBuf>,
-    pub(super) scenario_files: Vec<std::path::PathBuf>,
     pub(super) editing_files: Vec<std::path::PathBuf>,
     pub(super) front_sources: Vec<std::path::PathBuf>,
     pub(super) front_manifest: Vec<std::path::PathBuf>,
-    pub(super) data_files: Vec<std::path::PathBuf>,
     pub(super) world_files: Vec<std::path::PathBuf>,
 }
 

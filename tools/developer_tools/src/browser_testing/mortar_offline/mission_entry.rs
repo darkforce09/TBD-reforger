@@ -8,11 +8,11 @@
 //! down behind the proxy and the visit with the listener stopped.
 //! **Signals & state:** none; drives the page it is given.
 //! **Invariants:** the comparison is exact at every shown digit (both sides word the solution
-//! with the map engine's `solution_wording`); a difference names the page's input values.
+//! with `fire_mission_planning`'s `solution_wording`); a difference names the page's input values.
 
 use anyhow::{Result, anyhow, bail};
+use ballistics_model::catalog::BallisticsCatalog;
 use map_coordinates::grid_reference::{GridFigures, format_grid, parse_grid};
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 
 use super::expected_solution::{TypedMission, expected_tables, solve_natively, table_differences};
 use super::mission_plan::{

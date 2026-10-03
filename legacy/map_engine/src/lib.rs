@@ -1,22 +1,16 @@
-//! Role: lib.
-//! Position: `legacy/map_engine/src` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
-//!
-//! T-0xx Phase 2A: every module below is feature-gated. It never was before — all thirteen were
-//! declared unconditionally and the 157 `cfg(feature = …)` sites lived *inside* them, so a
-//! consumer that asked for one feature still compiled the module shells of all the others. That
-//! is why `api` could not take a dependency on this crate without dragging `wgpu`, `png`,
-//! `rkyv` and `flate2` into the server's tree. The gate is what makes
-//! `cargo tree -p api | rg -i 'wgpu|png|rkyv|flate2'` come back empty.
+//! **Role:** the map engine's crate root: the camera viewport, the static world, the overlay,
+//! the frame builder, the streaming host and loaders, the doll, the diagnostics and the Mission
+//! Creator's editing layer, each declared behind its feature tier.
+//! **Position:** `legacy/map_engine/src`; the frontend and `developer_tools` link it, it links the
+//! renderer (`graphics_engine`), the world and overlay crates and, behind `editing`, the mission
+//! crates of `crates/mission/`.
+//! **Signals & state:** none at the root; each module documents its own.
+//! **Invariants:** every module but `camera` is feature-gated, so a consumer that names one tier
+//! compiles that tier's modules and the tiers below it and nothing else; each module's tier gate
+//! sits on its `mod` line here.
 
 /// Camera.
 pub mod camera;
-
-/// Mission data: the authored scenario and the CRDT store that edits it.
-// T-0xx Phase 2A: the folded `website-mission-core`. `data/mod.rs` gates its two halves on
-// `scenario` and `store`, and `scenario` is this crate's default — the tier `api` links.
-pub mod data;
 
 /// Editing: the live authored document, its undo drive, and the headless tool state machines.
 #[cfg(feature = "editing")]
@@ -62,8 +56,8 @@ pub mod world;
 mod feature_gate_tripwire;
 
 /// Reduce Rust source to the text a build compiles, for the guards that read this crate's own source.
-// Every such guard lives under `data::store` or `editing` (which implies `store`), so the helper
-// compiles under exactly the gate its callers do.
-#[cfg(all(test, feature = "store"))]
+// Every such guard lives under `editing`, so the helper compiles under exactly the gate its
+// callers do.
+#[cfg(all(test, feature = "editing"))]
 #[path = "tests/source_scrub.rs"]
 mod source_scrub;

@@ -46,7 +46,7 @@ Apply and Remove Everything receipts count the writes the document took, not the
 - Depends on: the parent `apps/frontend/src/workspaces/editor/arsenal/loadout.rs` (the
   kind-sourced loadout rows), the rules in `apps/frontend/src/workspaces/editor/arsenal/rules/`
   (validation, capacity, the export schema check, `CargoRow`), `RegistryItem` from
-  `crate::foundation::transport::dto`, `map_engine::data::store::operations::cargo`
+  `crate::foundation::transport::dto`, `mission_operations::cargo`
   (`BufferedLoadout`, `LoadoutWrite`, `commit_writes`) and, in the browser build,
   `bridge::host_state::editor_context::slots_json` for the slot's character prefab.
 - Used by: `loadout.rs`, which re-exports the public items; in

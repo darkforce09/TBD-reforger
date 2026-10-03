@@ -9,8 +9,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::*;
-use crate::data::store::MissionDocCore;
 use crate::editing::persist::record_key::{scoped_key, snapshot_key, split_scoped_key};
+use mission_document::MissionDocCore;
 
 fn authored_handle(slots: u32) -> DocHandle {
     let core = MissionDocCore::new();

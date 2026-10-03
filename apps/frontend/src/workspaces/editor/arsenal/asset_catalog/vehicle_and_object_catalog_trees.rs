@@ -46,7 +46,7 @@ pub fn build_vehicle_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
             default_expanded: false,
             children: Vec::new(),
             payload: Some(PlacePayload {
-                asset_id: item.resource_name.clone(),
+                asset_id: item.resource_name.clone().into(),
                 role: item.display_name.clone(),
             }),
         });
@@ -105,7 +105,7 @@ pub fn build_object_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
             default_expanded: false,
             children: Vec::new(),
             payload: Some(PlacePayload {
-                asset_id: item.resource_name.clone(),
+                asset_id: item.resource_name.clone().into(),
                 role: item.display_name.clone(),
             }),
         });

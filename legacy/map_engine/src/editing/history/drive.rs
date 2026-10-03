@@ -5,8 +5,8 @@
 //! because that tail opens read borrows of the same document. A step that changed nothing runs no
 //! tail, so a button fired against an empty stack costs a host nothing.
 
-use crate::data::store::MissionDocCore;
 use crate::editing::host::with_doc_mut;
+use mission_document::MissionDocCore;
 
 use super::host::host;
 

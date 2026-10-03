@@ -29,7 +29,7 @@ pub(super) fn inspector_panel(
         {
             let snap = engine_ops::orbat_manager_snapshot();
             if let Some(id) = selected.get_untracked().first() {
-                if let Some(d) = snap.slots.into_iter().find(|s| &s.id == id) {
+                if let Some(d) = snap.slots.into_iter().find(|s| s.id == **id) {
                     role.set(d.role);
                     callsign.set(d.callsign);
                     rank.set(d.rank);

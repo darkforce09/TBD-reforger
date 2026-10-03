@@ -46,7 +46,7 @@ pub(super) enum MenuAction {
     SnapStep(i32),
 }
 
-use map_engine::editing::tools::placement::{AlignEdge, Orient, PatternKind, SpaceAxis};
+use formation_geometry::{AlignEdge, Orient, PatternKind, SpaceAxis};
 
 /// One Arrange command's IDENTITY — an id enum, never a label string.
 ///

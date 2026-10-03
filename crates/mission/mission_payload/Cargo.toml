@@ -1,0 +1,25 @@
+# The mission payload compiler: the editor payload a Mission Creator document compiles to, the
+# export envelope and version body around it, the terrain bounds it stamps, and the kit alias
+# table the game-document compiler resolves registry aliases through.
+[package]
+name = "mission_payload"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The editor payload, export envelope and version body compiler of a mission, with the kit alias table."
+
+[package.metadata.layout]
+category = "crates/mission"
+tier = 2
+targets = "any"
+
+[dependencies]
+mission_model = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,5 +1,5 @@
 //! Role: live operation source for structural regression checks.
-//! Position: frontend test support for the map-engine `data::store` boundary.
+//! Position: frontend test support for the `mission_document` and `mission_operations` boundary.
 //! Signals & state: compile-time source text only.
 //! Invariants: include each production shard once and keep domain and adapter sources distinct.
 
@@ -123,62 +123,62 @@ pub(crate) const CONTEXT: &str = concat!(
 pub(crate) const DOMAIN_ENTITY: &str = concat!(
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/mod.rs"
+        "/../../crates/mission/mission_operations/src/entity/mod.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/selection.rs"
+        "/../../crates/mission/mission_operations/src/entity/selection.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/identity.rs"
+        "/../../crates/mission/mission_operations/src/entity/identity.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/comments.rs"
+        "/../../crates/mission/mission_operations/src/entity/comments.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/connections.rs"
+        "/../../crates/mission/mission_operations/src/entity/connections.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/roster.rs"
+        "/../../crates/mission/mission_operations/src/entity/roster.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/vehicles.rs"
+        "/../../crates/mission/mission_operations/src/entity/vehicles.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/markers.rs"
+        "/../../crates/mission/mission_operations/src/entity/markers.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/zones.rs"
+        "/../../crates/mission/mission_operations/src/entity/zones.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/clipboard.rs"
+        "/../../crates/mission/mission_operations/src/entity/clipboard.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/placement.rs"
+        "/../../crates/mission/mission_operations/src/entity/placement.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/operations/entity/factions.rs"
+        "/../../crates/mission/mission_operations/src/entity/factions.rs"
     )),
     "\n",
 );

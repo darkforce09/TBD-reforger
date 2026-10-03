@@ -65,6 +65,20 @@ checks them.
 | S6 | label_layout | `crates/map_overlay/label_layout/` | 1 |
 | S6 | unit_symbology | `crates/map_overlay/unit_symbology/` | 2 |
 | S6 | overlay_instances | `crates/map_overlay/overlay_instances/` | 3 |
+| S5 | mission_wire_safety | `crates/mission/mission_wire_safety/` | 0 |
+| S5 | mission_model | `crates/mission/mission_model/` | 1 |
+| S5 | mission_payload | `crates/mission/mission_payload/` | 2 |
+| S5 | mission_validation | `crates/mission/mission_validation/` | 3 |
+| S5 | mission_compiler | `crates/mission/mission_compiler/` | 4 |
+| S5 | formation_geometry | `crates/mission/formation_geometry/` | 1 |
+| S5 | mission_crdt | `crates/mission/mission_crdt/` | 1 |
+| S5 | mission_document | `crates/mission/mission_document/` | 4 |
+| S5 | mission_operations | `crates/mission/mission_operations/` | 5 |
+| S5 | ballistics_model | `crates/ballistics/ballistics_model/` | 1 |
+| S5 | ballistics_solver | `crates/ballistics/ballistics_solver/` | 2 |
+| S5 | fire_mission_planning | `crates/ballistics/fire_mission_planning/` | 3 |
+| S5 | ballistics_calibration | `crates/ballistics/ballistics_calibration/` | 3 |
+| S5 | ballistics_agreement_cases | `crates/ballistics/ballistics_agreement_cases/` | 4 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -89,17 +103,17 @@ Every other crate in this catalogue is still planned; its From column names the 
 | mission_wire_safety | 0 | `scenario/validation/wire_safety` | — |
 | mission_model | 1 | `scenario/{ast,extensions,slot_line}` | newtype_ids |
 | mission_payload | 2 | `compiler/{payload,kit}` | model |
-| mission_validation | 3 | `validation/validator` | payload, wire_safety |
-| mission_compiler | 4 | `compiler/flatten`; `COMPILER_PACKAGE_VERSION` pinned as a literal | the chain |
+| mission_validation | 3 | `validation/validator` | payload, wire_safety, newtype_ids |
+| mission_compiler | 4 | `compiler/flatten`, `ast/authoring.rs` as a private module; `COMPILER_PACKAGE_VERSION` pinned as a literal | model, payload, validation, wire_safety |
 | formation_geometry | 1 | `store/operations/placement` | deterministic_random |
 | mission_crdt | 1 | `store/crdt` (no `js_sys`; clock injected) | time_source |
-| mission_document | 2 | `store/{rows,selection}` plus `crdt/id_arrays/mission_doc_tests` | crdt, newtype_ids; dev: payload, compiler (round-trip and former RULE4 tests) |
-| mission_operations | 3 | all of `store/operations` (entity + the rest + `assets, cargo_rules, environment, projections, reassign, rotation, rows, slot_ids, zones`) | document, payload, model, formation_geometry, map_coordinates |
-| ballistics_model | 0 | `ballistics/{angular_units,catalog,wind,flight_model}` | — |
-| ballistics_solver | 1 | `solver, crest_clearance, dispersion` | model |
-| fire_mission_planning | 2 | `fire_mission, fire_mission_comparison, fuze, battery, solution_wording` | solver |
-| ballistics_calibration | 2 | `calibration` | solver, content_digest |
-| ballistics_agreement_cases | 3 | `agreement_cases` (a test oracle moved out of prod) | planning, deterministic_random |
+| mission_document | 4 | `store/{rows,selection}` plus `crdt/id_arrays/mission_doc_tests` | crdt, model, validation, newtype_ids, time_source; dev: payload, compiler (round-trip and former RULE4 tests) |
+| mission_operations | 5 | all of `store/operations` (entity + the rest + `assets, cargo_rules, environment, projections, reassign, rotation, rows, slot_ids, zones`) | document, crdt, validation, payload, model, formation_geometry, map_coordinates |
+| ballistics_model | 1 | `ballistics/{angular_units,catalog,wind,flight_model}` | newtype_ids |
+| ballistics_solver | 2 | `solver, crest_clearance, dispersion` | model; dev: deterministic_random |
+| fire_mission_planning | 3 | `fire_mission, fire_mission_comparison, fuze, battery, solution_wording` | model, solver |
+| ballistics_calibration | 3 | `calibration` | model, solver, content_digest, newtype_ids |
+| ballistics_agreement_cases | 4 | `agreement_cases` (a test oracle moved out of prod) | model, solver, planning, deterministic_random, newtype_ids |
 
 ## Engine CPU crates (geometry, world_formats, terrain, world_objects, line_of_sight, map_overlay, streaming, mission_editing)
 

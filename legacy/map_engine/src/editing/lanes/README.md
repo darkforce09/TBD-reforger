@@ -42,7 +42,7 @@ metres on the map plane; a comment's and a marker's stored `{x, z}` is read as e
 ## Boundaries
 
 - Depends on: `unit_symbology::classification::side_rgba` for the marker tints, and
-  `serde_json`; the rows come from `crate::data::store::MissionDocCore`'s JSON views, passed in by
+  `serde_json`; the rows come from `mission_document::MissionDocCore`'s JSON views, passed in by
   the caller.
 - Used by: the Mission Creator's editor page
   (`apps/frontend/src/workspaces/editor/mission_editor.rs`, which re-exports the lanes to its

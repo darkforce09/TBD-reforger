@@ -2,9 +2,9 @@
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 /// Searchable document entity shared with the map engine index.
-pub use map_engine::data::store::operations::document_index::DocEntity;
+pub use mission_operations::document_index::DocEntity;
 /// Kind of searchable document entity.
-pub use map_engine::data::store::operations::document_index::DocKind;
+pub use mission_operations::document_index::DocKind;
 use serde::{Deserialize, Serialize};
 
 #[cfg(target_arch = "wasm32")]

@@ -76,7 +76,7 @@ pub(crate) struct ZDrag {
 impl ZDrag {
     /// Starts an elevation drag from pointer and camera state.
     pub(crate) fn begin(
-        core: &map_engine::data::store::MissionDocCore,
+        core: &mission_document::MissionDocCore,
         ids: &[String],
         pointer_id: i32,
         start_y: f64,
@@ -123,11 +123,7 @@ impl ZDrag {
     }
 
     /// Writes the final snapped elevation to the document.
-    pub(crate) fn commit(
-        self,
-        core: &mut map_engine::data::store::MissionDocCore,
-        delta: f64,
-    ) -> bool {
+    pub(crate) fn commit(self, core: &mut mission_document::MissionDocCore, delta: f64) -> bool {
         if delta == 0.0 || !delta.is_finite() {
             return false;
         }
@@ -148,7 +144,7 @@ impl ZDrag {
                 .and_then(|row| row.get("position"))
             {
                 core.set_vehicle_position(
-                    &id,
+                    id.as_str(),
                     p["x"].as_f64().unwrap_or(0.0),
                     p["y"].as_f64().unwrap_or(0.0),
                     z + delta,

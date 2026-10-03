@@ -1,9 +1,9 @@
 //! The engine-layer matchers, compiled and proved before any of them judges source.
 //!
-//! **Role:** compiles the nine constant matchers of rules 1 to 7 and runs each over subjects whose
-//! answers are known: the shapes it must match and the legitimate spellings it must not; and
-//! does the same for rule 6's matcher over the wasm-only graphics crates, which is built from
-//! their names.
+//! **Role:** compiles the seven constant matchers of the engine-layer rules and runs each over
+//! subjects whose answers are known: the shapes it must match and the legitimate spellings it
+//! must not; and does the same for rule 6's matcher over the wasm-only graphics crates, which is
+//! built from their names.
 //! **Position:** [`probe_matchers`] is the first step of [`super::check_engine_layers`] and its
 //! output feeds [`super::evaluation::evaluate`]; [`probe_wasm_only_graphics_import`] runs inside
 //! that evaluation, once the walk has named the wasm-only members.
@@ -127,68 +127,26 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
         Err(cause) => return Err(refuse(o, "engine-layers rule 3b self-probe", cause)),
     }
 
-    // Rule 4. The negatives are the ones that matter: `crate::data::scenario` is the spelling
-    // every legitimate line in this tree uses, `data::store_of_record` proves the `\b` on the
-    // longest alternative, and `std::io` proves the matcher is anchored on `crate::` and not on
-    // the module name — a rule that banned the standard library's `io` would be deleted by
-    // whoever hit it first.
-    let scenario_iso = probed(
-        o,
-        "engine-layers rule 4 pattern",
-        RULE4_RE,
-        &[
-            "use crate::data::store::MissionDocCore;",
-            "use crate::streaming::loaders::chunk::WorldChunk;",
-            "    let lane = crate::overlay::lanes::lane_id(role);",
-            "use graphics_engine::layout::pack::TEXT_UNIFORM_BYTES;",
-            "use super::super::super::store::MissionDocCore;",
-        ],
-        &[
-            "use crate::data::scenario::compile::compile_payload;",
-            "use crate::data::store_of_record::Row;",
-            "use std::io::Write;",
-            "use serde_json::Value;",
-            "use super::super::diagnostics::render_authored;",
-        ],
-    )?;
-
-    // Rule 7, `data` side. `crate::worldgen` is the `\b` pair — a wall that can be walked through
-    // by appending three letters to a module name is not a wall.
-    let data_side = probed(
-        o,
-        "engine-layers rule 7 data pattern",
-        RULE7_DATA_RE,
-        &[
-            "use crate::world::terrain::dem::grid::DemVectorGrid;",
-            "use crate::streaming::scheduler::state::WorldResidency;",
-            "    let hit = crate::spatial::indexing::picking::pick(qx, qy);",
-            "use graphics_engine::draw::instances::QuadInstance;",
-            "use super::super::super::streaming::loaders::chunk::WorldChunk;",
-        ],
-        &[
-            "use crate::data::store::MissionDocCore;",
-            "use crate::data::scenario::compile::terrain_bounds;",
-            "use crate::worldgen::seed::X;",
-            "// the world is streamed; this module only records what was authored",
-            "use super::super::diagnostics::render_authored;",
-        ],
-    )?;
-
-    // Rule 7, `world` side. `crate::database` and the bare word "yrs" are the two false positives
-    // that would make this arm noise rather than a rule.
+    // Rule 7. The bare word "yrs", a crate whose name ends in a document crate's, a module whose
+    // name starts with `editing` and the mission crates outside the document are the false
+    // positives that would make this matcher noise rather than a rule.
     let world_side = probed(
         o,
-        "engine-layers rule 7 world pattern",
+        "engine-layers rule 7 pattern",
         RULE7_WORLD_RE,
         &[
-            "use crate::data::store::MissionDocCore;",
-            "    let b = crate::data::scenario::compile::terrain_bounds(&t);",
+            "use mission_document::MissionDocCore;",
+            "    let soa = mission_crdt::slot_columns::SlotSoa::default();",
+            "use mission_operations::entity::paste_at_cursor;",
             "use yrs::{Doc, Transact};",
             "fn tx(d: &yrs::Doc) -> yrs::TransactionMut<'_> { d.transact_mut() }",
-            "use super::super::super::data::store::MissionDocCore;",
+            "use crate::editing::history::UndoStack;",
+            "use super::super::super::editing::history::UndoStack;",
         ],
         &[
-            "use crate::database::pool::Pool;",
+            "use crate::editing_notes::Note;",
+            "use my_mission_document::Row;",
+            "use mission_model::orbat::OrbatSlot;",
             "// resurveyed 3 yrs after the original DEM pass",
             "use world_file_formats::archives::codec::to_bytes;",
             "use crate::world::terrain::dem::grid::DemVectorGrid;",
@@ -210,7 +168,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
             "// the host installs its leptos signal here",
         ],
         &[
-            "use crate::data::store::MissionDocCore;",
+            "use mission_document::MissionDocCore;",
             "use std::cell::RefCell;",
             "use web_sysfs::open;",
             "use leptosaur::prelude::*;",
@@ -243,8 +201,6 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
         decl,
         vocab,
         gpu,
-        scenario_iso,
-        data_side,
         world_side,
         dom,
         graphics_import,

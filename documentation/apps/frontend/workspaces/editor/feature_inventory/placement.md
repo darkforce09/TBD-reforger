@@ -14,11 +14,11 @@ compositions, briefing markers, zone and trigger areas and map comments.
   [`apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/`](/apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/README.md);
   the release decision in `apps/frontend/src/workspaces/editor/mission_editor/armed_place.rs`;
   the release branch in `apps/frontend/src/workspaces/editor/input/pointer_gestures/pointer_up.rs`;
-  the commit in `legacy/map_engine/src/data/store/operations/entity/armed_placement.rs` and
+  the commit in `crates/mission/mission_operations/src/entity/armed_placement.rs` and
   the arm gate in `entity/arming.rs`
-  ([entity operations README](/legacy/map_engine/src/data/store/operations/entity/README.md));
+  ([entity operations README](/crates/mission/mission_operations/src/entity/README.md));
   the squad rule in
-  [`legacy/map_engine/src/data/store/operations/place_orbat/`](/legacy/map_engine/src/data/store/operations/place_orbat/README.md).
+  [`crates/mission/mission_operations/src/place_orbat/`](/crates/mission/mission_operations/src/place_orbat/README.md).
 - Entry: a palette leaf's press in the [right dock](/apps/frontend/src/workspaces/editor/ui/docks/dock_right/README.md),
   then a release on the map.
 - Related features: [right asset palette](/documentation/apps/frontend/workspaces/editor/feature_inventory/right_asset_palette.md)
@@ -64,7 +64,7 @@ PLACE-MULTI-001 to PLACE-COMMENT-001 are rows added for shipped code.
    (`place_at_impl`, `armed_placement/map_release.rs:88-136`).
 5. Characters and vehicles land at height 0 m and rotation 0; characters, compositions and
    comments are filed in the active folder, and a new character starts with the cargo its asset
-   carries (`commit_armed_placement`, `legacy/map_engine/src/data/store/operations/entity/armed_placement.rs`).
+   carries (`commit_armed_placement`, `crates/mission/mission_operations/src/entity/armed_placement.rs`).
 
 ### PLACE-DROP-002 — Kinds
 
@@ -74,7 +74,7 @@ PLACE-MULTI-001 to PLACE-COMMENT-001 are rows added for shipped code.
    `apps/frontend/src/workspaces/editor/arsenal/asset_catalog.rs:195-209`).
 2. The arm gate lets a side chip arm characters and vehicles and the "Objects" chip arm objects
    only; compositions and markers arm in either (`placement_is_armable`,
-   `legacy/map_engine/src/data/store/operations/entity/arming.rs`).
+   `crates/mission/mission_operations/src/entity/arming.rs`).
 3. Partial: the Factions tree of a side also files that side's registered objects
    (`build_faction_catalog_tree`, `arsenal/asset_catalog/faction_catalog_trees.rs:77-81`), and
    pressing one arms nothing because the side mode refuses objects. The leaf still says "Drag
@@ -101,7 +101,7 @@ A placed character goes under the active side's faction, `faction-{SIDE}`, creat
 It joins the side's last squad while that squad is still open (an unnamed or "Squad N" squad with
 no callsign and no vehicles), otherwise a new "Squad N"; the first slot of a squad becomes its
 leader (`place_character_under_side`,
-`legacy/map_engine/src/data/store/operations/place_orbat/placement.rs:28-31`).
+`crates/mission/mission_operations/src/place_orbat/placement.rs:28-31`).
 
 ### PLACE-CREW-001 — Crew
 

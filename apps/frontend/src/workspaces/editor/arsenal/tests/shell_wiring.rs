@@ -249,7 +249,7 @@ mod t699 {
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                    "/../../crates/mission/mission_operations/src/compositions.rs"
                 )),
                 crate::foundation::test_support::editor_operations::CONTEXT,
                 crate::foundation::test_support::editor_operations::ENTITY,
@@ -287,7 +287,7 @@ mod t699 {
         let domain_cargo =
             crate::foundation::test_support::class_r_scrub::live_code(include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/cargo.rs"
+                "/../../crates/mission/mission_operations/src/cargo.rs"
             )));
         let domain_copy = fn_body(&domain_cargo, "pub fn buffer_loadouts_from_selection(");
         assert!(
@@ -323,7 +323,7 @@ mod t699 {
         let domain =
             crate::foundation::test_support::class_r_scrub::live_code(include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/cargo.rs"
+                "/../../crates/mission/mission_operations/src/cargo.rs"
             )));
         let domain_commit = fn_body(&domain, "pub fn commit_loadout_writes(");
         assert_eq!(
@@ -454,7 +454,7 @@ mod t739 {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                "/../../crates/mission/mission_operations/src/compositions.rs"
             )),
             crate::foundation::test_support::editor_operations::CONTEXT,
             crate::foundation::test_support::editor_operations::ENTITY,
@@ -688,7 +688,7 @@ mod t779 {
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                    "/../../crates/mission/mission_operations/src/compositions.rs"
                 )),
                 crate::foundation::test_support::editor_operations::CONTEXT,
                 crate::foundation::test_support::editor_operations::ENTITY,

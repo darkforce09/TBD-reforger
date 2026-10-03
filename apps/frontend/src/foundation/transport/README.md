@@ -96,7 +96,7 @@ them.
 ## Boundaries
 
 - Depends on: nothing above it in the foundation; `crate::foundation::test_support` in tests;
-  `map_engine::data`, in `dto/`; `serde`, `serde_json`
+  `mission_compiler` and `mission_operations`, in `dto/`; `serde`, `serde_json`
   and `futures`; `gloo-net`, `gloo-timers`, `web-sys`, `js-sys` and `wasm-bindgen-futures` in the
   browser build.
 - Used by:

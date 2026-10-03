@@ -362,7 +362,7 @@ fn save_scan_agrees_with_the_compiled_schema() {
     for (name, payload) in cases {
         let parsed: serde_json::Value =
             serde_json::from_str(&payload).unwrap_or_else(|e| panic!("{name}: {e}"));
-        let scan = map_engine::data::scenario::wire_safety::scan_editor_payload(&parsed);
+        let scan = mission_wire_safety::scan_editor_payload(&parsed);
 
         // Only the wireSafeString findings — the schema rejects other things (a blank uid, a
         // bad kit alias) for reasons this scan is not responsible for.
@@ -415,7 +415,7 @@ fn empty_editor_is_no_slots() {
 /// `POST /missions/:id/versions` stores, so the payload under test is not a hand-written
 /// restatement of what the editor emits.
 fn saved_payload_with_env(environment: serde_json::Value) -> String {
-    use map_engine::data::scenario::compile::compile_payload;
+    use mission_payload::compile_payload;
 
     let fixture: serde_json::Value = serde_json::from_str(FIXTURE).unwrap();
     let editor = &fixture["editor"];
@@ -570,11 +570,11 @@ fn weather_preset_list_matches_the_row_enum() {
             ..MissionMeta::default()
         };
         let payload = saved_payload_with_env(json!({ "weather": w.as_str() }));
-        flatten::apply_authored_environment(&mut meta, payload.as_bytes());
+        mission_compiler::apply_authored_environment(&mut meta, payload.as_bytes());
         assert_eq!(
             meta.weather_preset,
             w.as_str(),
-            "{:?} is a row weather core will not accept — add it to flatten::WEATHER_PRESETS",
+            "{:?} is a row weather core will not accept — add it to mission_compiler's WEATHER_PRESETS",
             w.as_str()
         );
     }
@@ -585,17 +585,18 @@ fn weather_preset_list_matches_the_row_enum() {
 ///
 /// The editor cannot call `GET /missions/:id/compiled`: that route is not an author-session route
 /// (`missions::handlers::mission_export::get_compiled_mission`), so an author's browser session is
-/// refused by design. The preview is therefore a *twin* — `flatten::flatten_mod_document_json` run
-/// in wasm over the same payload — and a twin is worth less than nothing if it can drift, because
-/// a confident wrong preview is worse than no preview at all.
+/// refused by design. The preview is therefore a *twin* —
+/// `mission_compiler::flatten_mod_document_json` run in wasm over the same payload — and a twin is
+/// worth less than nothing if it can drift, because a confident wrong preview is worse than no
+/// preview at all.
 ///
 /// So this runs BOTH paths over the same row and the same payload bytes and demands the output
 /// be **byte-identical**:
 ///
 ///   * server: `mission_compile::flatten_to_mod_document` → `serde_json::to_vec`, which is
 ///     exactly what `mission_export::validated_compiled_body` serves;
-///   * client: `flatten::flatten_mod_document_json` over the camelCase [`MissionMeta`] the
-///     frontend builds from `GET /missions/:id` (`mission_commands::compiled_meta_json`).
+///   * client: `mission_compiler::flatten_mod_document_json` over the camelCase [`MissionMeta`]
+///     the frontend builds from `GET /missions/:id` (`mission_commands::compiled_meta_json`).
 ///
 /// The fixture deliberately carries an **authored environment that disagrees with the row**
 /// (row 05:30/clear, payload 21:45/dense_fog). That is not decoration — it is the one field where
@@ -635,8 +636,9 @@ fn client_twin_is_byte_identical_to_the_compiled_route() {
         "weatherPreset": m.weather.as_str(),
     })
     .to_string();
-    let previewed = flatten::flatten_mod_document_json(meta_json.as_bytes(), payload.as_bytes())
-        .expect("client path compiles");
+    let previewed =
+        mission_compiler::flatten_mod_document_json(meta_json.as_bytes(), payload.as_bytes())
+            .expect("client path compiles");
 
     assert_eq!(
         String::from_utf8_lossy(&previewed),

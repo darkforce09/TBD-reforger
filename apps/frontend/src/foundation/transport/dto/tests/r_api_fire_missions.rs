@@ -2,9 +2,8 @@
 //! and the solution, save-body and stored-mission shapes of the catalog model.
 
 use super::*;
-use map_engine::data::scenario::ballistics::{
-    fire_mission::FireMissionSolution, fuze::FuzeRefusal, solver::SolutionRefusal,
-};
+use ballistics_solver::SolutionRefusal;
+use fire_mission_planning::{fire_mission::FireMissionSolution, fuze::FuzeRefusal};
 
 /// The saved fire missions of one event. The capture holds a row stored before the charge,
 /// azimuth in mils and flight time were recorded (all three `null`) and one that records them, so

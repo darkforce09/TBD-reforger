@@ -3,8 +3,8 @@
 The `/tools/mortar` page: pick a weapon, shell and charge from a ballistics catalog, place a
 battery of one to twelve guns (the contract's cap on a saved battery) and a target by grid
 reference, give the wind and, for a time-fuzed shell, the
-burst height, and the page solves every gun's firing solution on the device with the map engine's
-solver. The page is open to every viewer; a signed-in viewer also sees the
+burst height, and the page solves every gun's firing solution on the device with the ballistics
+crates' solver. The page is open to every viewer; a signed-in viewer also sees the
 [event](/documentation/glossary/a_to_f.md#event) picker and the fire missions saved against the
 selected event.
 
@@ -20,7 +20,7 @@ apps/frontend/src/pages/field_tools/mortar/
 ├── page.rs             `MortarCalculatorPage`: signals, catalog loading, Calculate, the layout
 ├── saved_fires/        the save area: event picker, save request, saved list, restore, hydration
 ├── solution/           the solution panel: battery summary, charge tables, dispersion, fuze, crest
-├── solve_bridge.rs     drafts → `FireMissionInputs` → the map engine's `solve_fire_mission`; rows worded by its `solution_wording`
+├── solve_bridge.rs     drafts → `FireMissionInputs` → `fire_mission_planning`'s `solve_fire_mission`; rows worded by its `solution_wording`
 └── tests/              unit tests: inputs and catalog source, solve bridge, map picker, solution, saved fire missions, offline line, shared test mission and catalog
 ```
 
@@ -133,9 +133,10 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   `crate::foundation::offline` (`offline_status`), `crate::foundation::map_view` (`mount`,
   `handles`, `navigation_math`, `terrain_height`, `terrain_preferences`, `engine_mount`),
   `crate::foundation::ui` (`AuthGate`, `PageHeader`), `crate::foundation::utils::datefmt`;
-  `map_coordinates::grid_reference`; `map_engine` (`data::scenario::ballistics::fire_mission`,
-  `battery`, `solver`, `dispersion`, `fuze` and `crest_clearance`,
-  `editing::tools::line_of_sight::terrain_survey::everon_manifest`);
+  `map_coordinates::grid_reference`; `fire_mission_planning` (`fire_mission`,
+  `battery`, `fuze`, `solution_wording`), `ballistics_solver` (`dispersion`, `crest_clearance`
+  and the charge rows), `ballistics_model` (`angular_units`); `map_engine`
+  (`editing::tools::line_of_sight::terrain_survey::everon_manifest`);
   `overlay_instances::fire_mission_marks`, `unit_symbology::markers`,
   `terrain_line_of_sight::elevation_profile`, `terrain_elevation::manifest` and
   `map_draw_lanes::lane_roles`.
@@ -166,7 +167,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
 
 - [Mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
   — the page's behaviour and design.
-- [Firing solver](/legacy/map_engine/src/data/scenario/ballistics/solver/README.md) — the
+- [Firing solver](/crates/ballistics/ballistics_solver/src/README.md) — the
   solver the page runs.
 - [Offline core](/apps/frontend/src/foundation/offline/README.md) — the offline pack and
   its state.

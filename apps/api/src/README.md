@@ -48,7 +48,7 @@ user lookup of `identity_and_access`, the [mission](/documentation/glossary/g_to
 lookups and cargo catalog of `missions`, the audit writer of `administration`, the modpack lookup
 of `community_content`, the status broadcast of `server_infrastructure`, and the
 [event](/documentation/glossary/a_to_f.md#event) status rules of `operations`. Mortar ballistics live
-in the map engine's `legacy/map_engine/src/data/scenario/ballistics/`.
+in the ballistics crates under `crates/ballistics/`.
 
 A new endpoint is a handler in `<domain>/handlers/` carrying its `/// @route <METHOD> <path>` tag,
 a registration in that domain's `routes.rs`, and, for anything a second caller needs, a function

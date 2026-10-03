@@ -38,7 +38,7 @@ matching the key and never the name.
 - Depends on: the node model through `super::*` (`OutlinerNode`, `NodeKind`, the row types,
   `DEFAULT_LAYER_ID`, `DEFAULT_LAYER_NAME`); and, in the browser build, the editor context in
   `bridge::host_state::editor_context`, `ensure_layer` from
-  `map_engine::data::store::operations::entity`, and `create_layer` and `delete_layer`
+  `mission_operations::entity`, and `create_layer` and `delete_layer`
   from `map_engine::editing::hosted_commands`.
 - Used by:
   - the tree renderer in `apps/frontend/src/workspaces/editor/ui/outliner/tree/`

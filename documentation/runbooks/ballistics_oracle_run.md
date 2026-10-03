@@ -110,10 +110,10 @@ the trim and the checks a few minutes.
 10. Prove the flight model reproduces the new bundle.
 
     ```bash
-    cargo test -p map_engine --all-features --locked data::scenario::ballistics::calibration
+    cargo test -p ballistics_calibration --locked
     ```
 
-    Expected: every `data::scenario::ballistics::calibration::tests::…` case `ok`, the seven
+    Expected: every `tests::…` case `ok`, the seven
     per-shell committed-bundle tests included; a red case is a model finding, never a reason to
     widen a tolerance.
 

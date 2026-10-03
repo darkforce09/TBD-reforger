@@ -257,9 +257,9 @@ pub(super) fn make_pointer_up_handler(
                     }
                     let single_comment_drag = ids.len() == 1
                         && doc.borrow().as_ref().is_some_and(|c| {
-                            map_engine::data::store::operations::entity::comment_details(c)
+                            mission_operations::entity::comment_details(c)
                                 .iter()
-                                .any(|d| d.id == ids[0])
+                                .any(|d| d.id == *ids[0])
                         });
                     let regrouped = if (ev.ctrl_key() || ev.meta_key())
                         && ids.len() == 1
@@ -296,9 +296,9 @@ pub(super) fn make_pointer_up_handler(
                             .as_ref()
                             .map(|c| {
                                 let members: std::collections::HashSet<String> =
-                                    map_engine::data::store::operations::entity::comment_details(c)
+                                    mission_operations::entity::comment_details(c)
                                         .into_iter()
-                                        .map(|d| d.id)
+                                        .map(|d| d.id.into_inner())
                                         .collect();
                                 ids.iter()
                                     .filter(|id| members.contains(*id))
@@ -342,7 +342,7 @@ pub(super) fn make_pointer_up_handler(
                                 .map(|id| {
                                     z_rows
                                         .as_ref()
-                                        .and_then(|rows| attrs::slot_z(rows, id))
+                                        .and_then(|rows| attrs::slot_z(rows, id.as_str()))
                                         .unwrap_or(0.0)
                                 })
                                 .collect();

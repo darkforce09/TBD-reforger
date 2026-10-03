@@ -75,10 +75,11 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
   and tactical graphics of `bridge/`, the pick and lane helpers `mission_editor.rs` re-exports,
   `mission_editor::transform`, the insets of `session::layout`, the context menu of
   `apps/frontend/src/workspaces/editor/ui/docks/`;
-  `map_engine` (`editing::hosted_commands`, `editing::tools`, `data::store`,
-  `streaming::host`, `frame`); the line of sight crates (`terrain_line_of_sight`,
-  `interior_line_of_sight`, `world_line_of_sight`), `spatial_indexes`, `terrain_elevation::grid`,
-  `overlay_instances::drag`, `unit_symbology::squad_links` and `map_draw_lanes::lane_roles`;
+  `map_engine` (`editing::hosted_commands`, `editing::tools`, `streaming::host`, `frame`);
+  `mission_document` and `mission_operations`; the line of sight crates
+  (`terrain_line_of_sight`, `interior_line_of_sight`, `world_line_of_sight`), `spatial_indexes`,
+  `terrain_elevation::grid`, `overlay_instances::drag`, `unit_symbology::squad_links` and
+  `map_draw_lanes::lane_roles`;
   `crate::foundation::ui::modal_stack`; `web_sys`, `js_sys` and `wasm_bindgen`.
 - Used by:
   - the canvas mount in `apps/frontend/src/workspaces/editor/mission_editor/` and the editor
@@ -86,7 +87,7 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
   - `viewport.rs` and `world_assets.rs` in `apps/frontend/src/workspaces/editor/bridge/`;
   - the source pins that read these files, in `apps/frontend/src/workspaces/editor/tests/`,
     `apps/frontend/src/workspaces/editor/ui/modals/tests/help_modal/` and
-    `legacy/map_engine/src/data/store/rows/tests/cases_1.rs`;
+    `crates/mission/mission_document/src/rows/tests/cases_1.rs`;
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
     canvas and the keyboard.
 - Rules:

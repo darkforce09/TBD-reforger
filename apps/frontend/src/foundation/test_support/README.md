@@ -63,7 +63,7 @@ All `pub(crate)`, for the crate's tests alone:
   under `apps/api/src/`; the Mission Creator's
   `apps/frontend/src/workspaces/editor/bridge/host_state/`; the map engine's
   `legacy/map_engine/src/editing/hosted_commands/` and
-  `legacy/map_engine/src/data/store/operations/entity/`; and the production files of this
+  `crates/mission/mission_operations/src/entity/`; and the production files of this
   crate that `pins.rs` names.
 - Used by: the unit tests of the whole crate: the golden round trips in
   `apps/frontend/src/foundation/transport/dto/tests/`, the route checks in

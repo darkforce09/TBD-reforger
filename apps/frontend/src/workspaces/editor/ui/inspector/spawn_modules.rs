@@ -15,10 +15,10 @@
 use leptos::prelude::*;
 use serde_json::Value;
 
-use map_engine::data::scenario::spawn_modules::validate;
-use map_engine::data::scenario::spawn_modules::FACTION_KEYS;
-use map_engine::data::scenario::spawn_modules::KINDS;
-use map_engine::data::scenario::spawn_modules::MAX_ALIVE;
+use mission_model::spawn_modules::validate;
+use mission_model::spawn_modules::FACTION_KEYS;
+use mission_model::spawn_modules::KINDS;
+use mission_model::spawn_modules::MAX_ALIVE;
 
 /// The reader chain for `meta.environment.spawnModules`, end to end.
 #[cfg(test)]
@@ -266,7 +266,7 @@ pub fn with_field(
 fn refuse_list(rows: &[Value]) -> Result<(), String> {
     match block_from_modules(rows) {
         None => Ok(()),
-        Some(block) => validate(&block),
+        Some(block) => validate(&block).map_err(String::from),
     }
 }
 

@@ -6,7 +6,7 @@
 //! Every case needs `TEST_DATABASE_URL`; without it the suite fails with that cause. The
 //! committed vanilla catalog is stored straight into `ballistics_catalogs` (the upload route and
 //! its calibration have their own suite, `tests/game_ballistics_catalog_upload.rs`), and each
-//! client solution is computed here with the same map-engine assembler the calculator runs.
+//! client solution is computed here with the same `fire_mission_planning` assembler the calculator runs.
 //! Numbers are asserted on the database rows read back with direct queries, not only on the
 //! answer, and answers are checked against `fire-mission.schema.json`.
 
@@ -16,12 +16,12 @@ mod contract_support;
 
 use api::core::database::postgres_errors::is_foreign_key_violation;
 use axum::http::StatusCode;
-use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use ballistics_model::catalog::BallisticsCatalog;
+use fire_mission_planning::fire_mission::{
     FireMissionGunPosition, FireMissionInputs, FireMissionPoint, FireMissionSolution,
     FireMissionWind, HeightSource, SOLVER_REVISION, solve_fire_mission,
 };
-use map_engine::data::scenario::ballistics::fire_mission_comparison::compare_solutions;
+use fire_mission_planning::fire_mission_comparison::compare_solutions;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -103,10 +103,10 @@ fn gun(label: &str, x: f64, y: f64, height_m: f64) -> FireMissionGunPosition {
 /// M252 firing M821 HE from `guns` onto (2200, 1800, 40 m DEM) in calm air.
 fn he_inputs(guns: Vec<FireMissionGunPosition>) -> FireMissionInputs {
     FireMissionInputs {
-        catalog_id: "vanilla_mortars".to_owned(),
+        catalog_id: "vanilla_mortars".into(),
         catalog_version: 1,
-        weapon_id: "m252".to_owned(),
-        shell_id: "m821".to_owned(),
+        weapon_id: "m252".into(),
+        shell_id: "m821".into(),
         charge_rings: None,
         target: FireMissionPoint {
             x: 2200.0,
@@ -532,7 +532,7 @@ async fn game_ballistics_fire_mission_refusals_and_retired_shapes() {
 async fn game_ballistics_fire_mission_operator_inputs_round_trip() {
     let suite = fixture().await;
     let mut inputs = he_inputs(vec![gun("Lead", 1000.0, 2000.0, 50.0)]);
-    inputs.shell_id = "m853a1".to_owned();
+    inputs.shell_id = "m853a1".into();
     inputs.charge_rings = Some(2);
     inputs.wind = Some(FireMissionWind {
         speed_m_s: 3.0,

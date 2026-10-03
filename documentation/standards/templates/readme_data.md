@@ -115,7 +115,7 @@ name.
     `contracts/`; `cargo xtask mod dev-server` only names `valid/bridgehead-at-levie.json` in its
     usage text, as the offline `--artifact-file` for `cargo xtask mod playtest`;
   - tests that load one mission by name: the map engine's compiler flatten tests
-    (`legacy/map_engine/src/data/scenario/compiler/flatten/tests/`), the API's schema
+    (`crates/mission/mission_compiler/src/game_document/tests/`), the API's schema
     validator test (`apps/api/src/missions/contract/tests/schema_validators.rs`), and the
     xtask schema and mission-test tests, which reach `valid/` through `mission_fixtures_valid_dir`.
 

@@ -8,6 +8,7 @@ reproduce within tolerance before a catalog is accepted, and the bundles that mu
 
 ```text
 contracts/fixtures/ballistics/
+├── minimal_catalog.json  the hand-written test catalog: three shells, two weapons, read by every ballistics crate's tests
 └── vanilla_mortars.v1/  the calibration bundle of the vanilla mortar catalog, and its refused variants
 ```
 
@@ -24,7 +25,7 @@ a row that no forward sample (or the lattice-end rule) matches.
 A bundle passes when every native table row, wind table row and oracle sample agrees with the
 flight model within 1 mil (6400 convention) and 0.1 s, its game build equals the catalog's, its
 `catalog_sha256` is the SHA-256 of the catalog's bytes, and every charge of every shell has a native
-table and a simulation sample. The map engine's calibration evaluator applies these rules; the
+table and a simulation sample. The `ballistics_calibration` evaluator applies these rules; the
 catalog upload runs the same evaluator.
 
 ## Format
@@ -39,7 +40,7 @@ catalog upload runs the same evaluator.
 
 - Producer: `cargo xtask ballistics trim-export` (`tools/xtask/src/commands/ballistics/`).
 - Consumers: `cargo xtask schema validate`, which validates each bundle and cross-checks its
-  provenance and coverage against its catalog; the map engine's calibration tests, which run every
+  provenance and coverage against its catalog; the `ballistics_calibration` tests, which run every
   case and require each negative variant to fail for its own reason; the catalog upload of
   `POST /api/v1/ballistics-catalogs`.
 
@@ -47,6 +48,6 @@ catalog upload runs the same evaluator.
 
 - Depends on: `contracts/definitions/ballistics-calibration.schema.json` and the catalog each
   bundle pins.
-- Used by: the schema gate, the map engine's calibration tests and the catalog upload.
+- Used by: the schema gate, the `ballistics_calibration` tests and the catalog upload.
 - Rules: a bundle and its catalog change together; a negative variant carries one defect only, so
   its refusal names that defect.

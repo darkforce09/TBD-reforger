@@ -8,12 +8,11 @@
 //! VERBATIM: the mod caps it at render time and the compiler caps it at emit, and capping here
 //! would destroy the authored value in the one place its author can still see and fix it.
 
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_operations::entity as entity_ops;
 
-/// One briefing marker, as the palette's row needs it.
-pub use crate::data::store::operations::entity::MarkerRow;
+use mission_operations::entity::MarkerRow;
 
 /// Every briefing marker the document carries, across all factions.
 #[must_use]

@@ -46,7 +46,7 @@ run       GET /api/v1/game-runtime/deployment, then GET /api/v1/game-runtime/art
 
 Submission writes the artifact, the review, the status and the audit row in one transaction, under
 the mission write lock that the metadata patch, the delete and review comments also take. The
-compile itself lives in `map_engine::data::scenario`; `services/mission_compile.rs` only
+compile itself lives in the `mission_compiler` crate; `services/mission_compile.rs` only
 adapts a mission row and its payload to it. An approved artifact stays the one
 [deployments](/documentation/glossary/a_to_f.md#deployment) load while its author saves later versions.
 A deployment runs as a `load_mission` or `restart_with_mission`
@@ -129,7 +129,8 @@ with the artifact's compiled slots, which the event roster in `operations` reads
     locks and administrator authority, `server_infrastructure` for `MachineCaller` and the fleet
     command ledger, `fleet_wire_contract` for `ExecutorKind` and `FleetAction`, `operations::services` for the ORBAT template a
     deployment binds, and `community_content::models` for the modpack a registry belongs to;
-  - `map_engine::data::scenario`, which compiles and checks mission documents;
+  - the mission crates `mission_compiler`, `mission_payload`, `mission_validation`,
+    `mission_model` and `mission_wire_safety`, which compile and check mission documents;
   - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
   - `core::http_router`, which merges the route table;

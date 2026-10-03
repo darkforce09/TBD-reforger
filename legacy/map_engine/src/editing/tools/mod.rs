@@ -10,9 +10,6 @@ pub mod ruler;
 /// Selection: the left-button gesture model, picking, marquee and drag previews.
 pub mod selection;
 
-/// The placement vocabulary interactive tools speak.
-pub mod placement;
-
 /// Line of sight: the ray, the viewshed disc, and the object layer over both.
 pub mod line_of_sight;
 

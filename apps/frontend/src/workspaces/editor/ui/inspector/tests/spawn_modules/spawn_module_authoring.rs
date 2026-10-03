@@ -1,7 +1,7 @@
 //! Tests the spawn modules subject.
 
 use super::*;
-use map_engine::data::scenario::spawn_modules::placement_is_exclusive;
+use mission_model::spawn_modules::placement_is_exclusive;
 use serde_json::json;
 
 fn wave() -> Value {

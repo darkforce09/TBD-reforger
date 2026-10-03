@@ -69,9 +69,9 @@ save a draft (host)
 
 ## Boundaries
 
-- Depends on: `crate::editing::host::DocHandle`; `crate::data::store::MissionDocCore` (`hydrate`,
+- Depends on: `crate::editing::host::DocHandle`; `mission_document::MissionDocCore` (`hydrate`,
   `apply_update`, `encode_state`, `has_content`, `materialize`, `apply_row_meta`, the init origin);
-  `crate::data::scenario::compile::compile_payload` for the authored comparison; `serde_json`.
+  `mission_payload::compile_payload` for the authored comparison; `serde_json`.
 - Used by: the Mission Creator's shell (`apps/frontend/src/workspaces/editor/session/hydrate.rs`,
   `apps/frontend/src/workspaces/editor/session/persist.rs` and
   `apps/frontend/src/workspaces/editor/session/review_mode.rs`), its review restore
@@ -93,6 +93,6 @@ save a draft (host)
 
 ## Related documentation
 
-- [Mission document store](/legacy/map_engine/src/data/store/README.md) — the document, its
+- [Mission document](/crates/mission/mission_document/README.md) — the document, its
   origins, hydrate and undo scope.
 - [Mission Creator feature inventory: data persistence and compile](/documentation/apps/frontend/workspaces/editor/feature_inventory/data_persistence_and_compile.md) — the local draft, the reconciliation and the conflict scope.

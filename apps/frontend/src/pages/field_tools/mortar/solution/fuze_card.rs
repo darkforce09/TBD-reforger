@@ -14,12 +14,12 @@
 
 #[cfg(any(target_arch = "wasm32", test))]
 use crate::pages::field_tools::mortar::solve_bridge::mils_and_degrees;
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::fire_mission::FireMissionFuze;
+#[cfg(any(target_arch = "wasm32", test))]
+use fire_mission_planning::fuze::FuzeRefusal;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fire_mission::FireMissionFuze;
-#[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::fuze::FuzeRefusal;
 
 /// The fuze lines, in the order the card shows them.
 #[cfg(any(target_arch = "wasm32", test))]

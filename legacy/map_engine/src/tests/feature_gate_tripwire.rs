@@ -1,7 +1,9 @@
-//! Role: feature gate tripwire.
-//! Position: `tests` in the map engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+//! **Role:** the map engine's feature-floor tripwire: its test fails unless the test build has
+//! every feature tier.
+//! **Position:** `tests` in the map engine, declared from `lib.rs`.
+//! **Signals & state:** none.
+//! **Invariants:** the assertion names every feature the manifest declares, so a test build that
+//! leaves one out fails instead of passing over modules it never compiled.
 
 #[test]
 #[expect(
@@ -9,18 +11,15 @@
     reason = "Compile-time feature floor is the test subject"
 )]
 fn map_engine_tests_require_all_features() {
-    // T-0xx Phase 2A merged `website-mission-core`'s own tripwire (which asserted
-    // `compiler && doc`) into this one. Two crates meant two floors; one crate gets one
-    // assertion, and it names every axis. A merged crate with an unmerged tripwire re-opens
-    // exactly the vacuous-pass hole `tools/xtask/src/commands/platform/wave_execution/gate.rs` and `wave/touch.rs` document:
-    // a bare `cargo test -p map_engine` compiles almost none of these modules and
-    // passes on code it never read.
+    // Every module of this crate sits behind a feature tier, so a bare `cargo test -p map_engine`
+    // compiles almost none of them and passes on code it never read — the vacuous-pass hole
+    // `tools/xtask/src/commands/platform/wave_execution/gate/gate_dispatch.rs` and
+    // `tools/xtask/src/commands/platform/wave_execution/touch.rs` guard by passing
+    // `--all-features`. One assertion names every tier.
     assert!(
         cfg!(feature = "render")
             && cfg!(feature = "world")
             && cfg!(feature = "streaming")
-            && cfg!(feature = "scenario")
-            && cfg!(feature = "store")
             && cfg!(feature = "editing"),
         "map_engine tests require --all-features to include every suite"
     );

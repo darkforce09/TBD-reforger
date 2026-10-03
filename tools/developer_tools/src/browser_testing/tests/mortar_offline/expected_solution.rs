@@ -14,7 +14,7 @@ fn committed_catalog() -> BallisticsCatalog {
 }
 
 fn mission_at(catalog: &BallisticsCatalog, distance_m: f64) -> TypedMission {
-    let weapon_id = catalog.weapons[0].weapon_id.clone();
+    let weapon_id = catalog.weapons[0].weapon_id.to_string();
     let shell_id = high_explosive_shell(catalog, &weapon_id).unwrap();
     TypedMission {
         weapon_id,

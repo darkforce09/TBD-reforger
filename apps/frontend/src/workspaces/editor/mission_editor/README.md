@@ -73,14 +73,15 @@ Everything reaches the rest of the editor through the page module's declarations
   commands in `session/`, the top strip's Arrange commands and the validation panel in `ui/`, and the
   asset catalog and rules of `arsenal/`; `crate::foundation` (the
   [API](/documentation/glossary/a_to_f.md#api) client, `AuthStore`, the `RegistryItem` DTOs);
-  `map_engine` (`frame`, `streaming::host`, `editing`, `data::store`, `camera`);
+  `map_engine` (`frame`, `streaming::host`, `editing`, `camera`);
+  `mission_document`, `mission_crdt`, `mission_payload` and `mission_operations`;
   `unit_symbology` (`classification`, `markers`) and `terrain_elevation::grid`; over HTTP, `GET /api/v1/registry` and `GET /api/v1/registry/compat`.
 - Used by: the page module `apps/frontend/src/workspaces/editor/mission_editor.rs`, and through
   its re-exports the bridge, the input layer and the top strip; the source pins in
   `apps/frontend/src/workspaces/editor/tests/`, the keymap census in
   `apps/frontend/src/workspaces/editor/ui/modals/tests/help_modal/keymap_census/`, and
   `mission_editor_move_commit_names_the_atomic_mix_api` in
-  `legacy/map_engine/src/data/store/rows/tests/cases_1.rs`, which reads `canvas_mount.rs`.
+  `crates/mission/mission_document/src/rows/tests/cases_1.rs`, which reads `canvas_mount.rs`.
 - Rules:
   - `canvas_mount.rs` sits at the 500-line ceiling that `cargo xtask verify file-length` holds, so a
     new install goes into a part under `canvas_mount/`;

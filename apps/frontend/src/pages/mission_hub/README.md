@@ -42,7 +42,7 @@ under it, never inside it.
 - Depends on: `crate::foundation` (the [API](/documentation/glossary/a_to_f.md#api) client, its DTOs,
   the `AuthStore` session and [role](/documentation/glossary/n_to_z.md#role) checks, the UI
   primitives, `format_bytes` for the upload size); `crate::features::mission_review_record`
-  (`MissionReviewRecord`, `SubmitForReview`); `map_engine::data::scenario::compile` for the upload
+  (`MissionReviewRecord`, `SubmitForReview`); `mission_payload` for the upload
   body; it imports no workspace and links to the review workspace only by its route; over HTTP, the API's `missions`
   domain (`/api/v1/missions` and its children).
 - Used by: the route table in `apps/frontend/src/app_routes.rs`, whose tiers and layout

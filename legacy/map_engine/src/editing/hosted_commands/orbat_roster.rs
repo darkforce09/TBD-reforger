@@ -8,18 +8,17 @@
 //! filed under is the HOST's answer and crosses as a closure, because which folder is active is
 //! host state. Refusals that a surface renders are named sentences, never a silent `false`.
 
-use crate::data::store::MissionDocCore;
-use crate::data::store::operations::cargo::seed_cargo_for_asset;
-use crate::data::store::operations::entity as entity_ops;
-use crate::data::store::operations::faction_library::FactionDoc;
-use crate::data::store::operations::rows::{FactionRow, SquadRow};
 use crate::editing::history::after_local_edit;
 use crate::editing::host::{with_doc, with_host};
+use mission_document::MissionDocCore;
+use mission_operations::cargo::seed_cargo_for_asset;
+use mission_operations::entity as entity_ops;
+use mission_operations::faction_library::FactionDoc;
+use mission_operations::rows::{FactionRow, SquadRow};
 
 use super::document_edit::commit_document_edit;
 
-/// The live ORBAT rows plus each slot's loadout and identity, read once.
-pub use crate::data::store::operations::entity::OrbatManagerSnapshot;
+use mission_operations::entity::OrbatManagerSnapshot;
 
 /// The whole roster in one read: factions, squads, and each slot's identity and loadout.
 #[must_use]
@@ -33,7 +32,7 @@ pub fn orbat_manager_snapshot() -> OrbatManagerSnapshot {
 #[must_use]
 pub fn census_input() -> (Vec<FactionRow>, Vec<SquadRow>, Vec<String>) {
     let snap = orbat_manager_snapshot();
-    let slot_squad_ids = snap.slots.iter().map(|s| s.squad_id.clone()).collect();
+    let slot_squad_ids = snap.slots.iter().map(|s| s.squad_id.to_string()).collect();
     (snap.factions, snap.squads, slot_squad_ids)
 }
 
@@ -62,7 +61,9 @@ pub fn orbat_add_slot(
             role,
             &host.next_id,
             ensure_layer,
-            seed_cargo_for_asset,
+            |core, slot_id, asset_id, loadout| {
+                seed_cargo_for_asset(core, slot_id, asset_id, loadout)
+            },
         )
     })
     .flatten();
@@ -75,7 +76,7 @@ pub fn orbat_add_slot(
 /// Make `slot_id` the leader of `squad_id`. The slot keeps whatever medic / engineer tag it
 /// already carries — leadership and speciality are separate authored fields.
 pub fn orbat_set_leader(squad_id: String, slot_id: String) -> bool {
-    commit_document_edit(|core| core.set_leader(&squad_id, &slot_id))
+    commit_document_edit(|core| core.set_leader(squad_id.as_str(), slot_id.as_str()))
 }
 
 /// Remove a slot, detaching it from any vehicle seat, garbage-collecting a squad it leaves empty
@@ -90,12 +91,12 @@ pub fn orbat_remove_slot(slot_id: String) -> bool {
 
 /// Remove a squad and every slot in it.
 pub fn orbat_remove_squad(squad_id: String) -> bool {
-    commit_document_edit(|core| core.remove_squad(&squad_id))
+    commit_document_edit(|core| core.remove_squad(squad_id.as_str()))
 }
 
 /// Rename a squad.
 pub fn orbat_rename_squad(squad_id: String, name: String) -> bool {
-    commit_document_edit(|core| core.rename_squad(&squad_id, &name))
+    commit_document_edit(|core| core.rename_squad(squad_id.as_str(), &name))
 }
 
 /// Write a whole faction library document onto `side`: its name, its roles as slots, and its
@@ -110,7 +111,15 @@ pub fn orbat_apply_faction(
         let Some(core) = borrowed.as_ref() else {
             return Err("No mission document is loaded.".to_string());
         };
-        entity_ops::orbat_apply_faction(core, side, doc, ensure_layer, seed_cargo_for_asset)
+        entity_ops::orbat_apply_faction(
+            core,
+            side,
+            doc,
+            ensure_layer,
+            |core, slot_id, asset_id, loadout| {
+                seed_cargo_for_asset(core, slot_id, asset_id, loadout)
+            },
+        )
     })
     .unwrap_or_else(|| Err("No mission editor is open.".to_string()));
     if res.is_ok() {
@@ -176,7 +185,7 @@ pub fn cancel_refile() {
 
 /// Complete an armed refile onto a squad. `false` when nothing was armed.
 pub fn complete_refile_onto_squad(dest_squad_id: String) -> bool {
-    let did = with_doc(|core| entity_ops::complete_refile_onto_squad(core, &dest_squad_id))
+    let did = with_doc(|core| entity_ops::complete_refile_onto_squad(core, dest_squad_id.as_str()))
         .unwrap_or(false);
     if did {
         after_local_edit();
@@ -187,7 +196,9 @@ pub fn complete_refile_onto_squad(dest_squad_id: String) -> bool {
 /// Move one slot into another squad. Squad membership is the document's own link, so this is one
 /// transaction and one undo step.
 pub fn refile_slot(slot_id: String, dest_squad_id: String) -> bool {
-    commit_document_edit(|core| entity_ops::refile_slot(core, &slot_id, &dest_squad_id))
+    commit_document_edit(|core| {
+        entity_ops::refile_slot(core, slot_id.as_str(), dest_squad_id.as_str())
+    })
 }
 
 /// Drop one slot onto another so it joins that slot's squad. Refused — with no tail — when the

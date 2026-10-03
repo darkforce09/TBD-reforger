@@ -27,7 +27,7 @@ The native build renders nothing.
 
 - Depends on: the parent module (`modules_from_block`, `add_module`, `remove_module`, `with_field`,
   `block_from_modules` and the write through the bridge's `editor_context::update_environment`),
-  whose vocabularies and limits come from `map_engine::data::scenario::spawn_modules`.
+  whose vocabularies and limits come from `mission_model::spawn_modules`.
 - Used by: the parent module, which re-exports `spawn_modules_panel`; the Mission Settings dialog,
   which renders it after the win conditions card
   (`apps/frontend/src/workspaces/editor/ui/modals/settings_modal/mission_dialog.rs`).

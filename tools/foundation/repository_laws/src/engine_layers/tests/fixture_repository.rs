@@ -1,10 +1,10 @@
 //! The fixture checkout every engine-layer test starts from.
 //!
-//! **Role:** writes a minimal repository in a temporary directory that passes all eight rules —
+//! **Role:** writes a minimal repository in a temporary directory that passes all seven rules —
 //! a root manifest whose `crates/*/*` glob makes one CPU-only `crates/graphics` member, a clean
 //! parked renderer with its manifest, the map engine's pinned residue at exactly the pinned
-//! counts, a clean `data/`, `data/scenario/`, `world/` and `editing/`, and a clean frontend with
-//! its manifest — so each test plants one defect and asserts on the exact report.
+//! counts, a clean `world/` and `editing/`, and a clean frontend with its manifest — so each test
+//! plants one defect and asserts on the exact report.
 //! **Position:** test support for the sibling test modules of [`super`].
 //! **Signals & state:** each [`Repo`] owns one temporary directory and removes it on drop.
 //! **Invariants:** the fixture mirrors the real shapes rather than stubbing the pins out, so the
@@ -80,47 +80,22 @@ pub use graphics_engine::r#loop::FrameTarget;
 pub use graphics_engine::r#loop::RafPump;
 ";
 
-/// The authored document, clean: `data/` names `crate::data` and nothing else in the crate.
-/// The `store -> scenario` line is deliberate — that direction is legal and rule 4 does not
-/// scan `data/store/`, so a matcher that fired on it would be a false positive on the very
-/// first file.
-pub(super) const MAP_DATA_STORE: &str = "\
-use crate::data::store::{MissionDocCore, SlotSoa};
-let b = crate::data::scenario::compile::terrain_bounds(&terrain);
-";
-/// The authored mission, clean: `data/scenario/` names only itself.
-pub(super) const MAP_SCENARIO: &str = "\
-use crate::data::scenario::ast::entities;
-use crate::data::scenario::validate::{Finding, Severity};
-";
-/// Rule 4's two pinned sites, one per file, both cfg-gated exactly as the real ones are.
-pub(super) const MAP_SCENARIO_FLATTEN_TEST: &str = "\
-#[cfg(feature = \"store\")]
-fn vehicles_from_writer_json_roundtrip() -> serde_json::Value {
-    use crate::data::store::MissionDocCore;
-}
-";
-pub(super) const MAP_SCENARIO_PAYLOAD_TEST: &str = "\
-#[cfg(feature = \"store\")]
-#[test]
-fn briefing_prose_round_trips_through_the_document_core() {
-    use crate::data::store::MissionDocCore;
-}
-";
 /// The static world, clean: it names the world, the format layer and the streamer, and never
-/// the document. Those three are what a `world/` file legitimately imports.
+/// the document. Those three are what a `world/` file legitimately imports; the mission model
+/// line is the domain crate that is not the document, which rule 7 must not fire on.
 pub(super) const MAP_WORLD: &str = "\
 use terrain_elevation::sampling::uint16_to_meters;
 use world_file_formats::archives::codec::to_bytes;
 use crate::streaming::scheduler::state::WorldResidency;
 use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
+use mission_model::orbat::OrbatSlot;
 ";
 
 /// Rule 5's root, green: the editor's decisions, named in `crate::` and `std::` terms only.
 pub(super) const MAP_EDITING: &str = "\
 //! The two-click ray capture.
 
-use crate::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
 use std::cell::RefCell;
 
 /// A host supplies its own clock; this module asks for one rather than reaching for a window.
@@ -166,18 +141,8 @@ impl Repo {
         r.manifest(MANIFEST);
         r.map("frame/mod.rs", MAP_FRAME_MOD);
         r.map("frame/pump.rs", MAP_FRAME_PUMP);
-        // Rules 4 and 7's roots. They are seeded on every fixture, not only the tests that
-        // exercise them, because an absent root is a hard FAIL — which is the point.
-        r.map("data/store/rows/merge.rs", MAP_DATA_STORE);
-        r.map("data/scenario/compiler/flatten/mod.rs", MAP_SCENARIO);
-        r.map(
-            "data/scenario/compiler/flatten/tests/mod.rs",
-            MAP_SCENARIO_FLATTEN_TEST,
-        );
-        r.map(
-            "data/scenario/compiler/payload/tests/cases_1.rs",
-            MAP_SCENARIO_PAYLOAD_TEST,
-        );
+        // Rule 7's root. It is seeded on every fixture, not only the tests that exercise it,
+        // because an absent root is a hard FAIL — which is the point.
         r.map("world/terrain/dem/loader.rs", MAP_WORLD);
         // Rules 5 and 6's roots, seeded on every fixture for the same reason: an absent root is
         // a hard FAIL, and every other test would trip over it.

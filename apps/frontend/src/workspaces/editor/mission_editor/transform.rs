@@ -1,7 +1,7 @@
 //! Transform.
 #[cfg(test)]
-pub use map_engine::data::store::operations::rotation::snap_value;
-pub use map_engine::data::store::operations::rotation::ROTATE_LADDER_DEG;
+pub use mission_operations::rotation::snap_value;
+pub use mission_operations::rotation::ROTATE_LADDER_DEG;
 
 /// Discrete translation grid sizes in metres; zero leaves translation free.
 pub const TRANSLATE_LADDER_M: [f64; 4] = [0.0, 1.0, 5.0, 10.0];

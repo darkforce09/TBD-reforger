@@ -7,10 +7,10 @@ use super::dispersion_card::{dispersion_lines, DISPERSION_CAVEAT};
 use super::fuze_card::fuze_lines;
 use crate::pages::field_tools::mortar::solve_bridge::{laid_rings, mils_and_degrees};
 use crate::pages::field_tools::mortar::test_mission::solved_mission;
-use map_engine::data::scenario::ballistics::crest_clearance::CrestClearance;
-use map_engine::data::scenario::ballistics::fire_mission::{FireMissionFuze, FuzeBurstAim};
-use map_engine::data::scenario::ballistics::fuze::FuzeRefusal;
-use map_engine::data::scenario::ballistics::solver::SolutionRefusal;
+use ballistics_solver::crest_clearance::CrestClearance;
+use ballistics_solver::SolutionRefusal;
+use fire_mission_planning::fire_mission::{FireMissionFuze, FuzeBurstAim};
+use fire_mission_planning::fuze::FuzeRefusal;
 
 /// Each gun's line is its laid charge's own figures, in the weapon's mils and degrees.
 #[test]

@@ -119,7 +119,7 @@ fn pick_takes_the_nearest_and_refuses_beyond_the_tolerance() {
 fn comment_pick_px_is_the_slot_pick_radius() {
     let store = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/data/store/selection.rs"
+        "/../../crates/mission/mission_document/src/selection.rs"
     ));
     let needle = ["PICK_RADIUS", "_PX: f64 = "].concat();
     assert_eq!(
@@ -287,7 +287,7 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                "/../../crates/mission/mission_operations/src/compositions.rs"
             )),
             crate::foundation::test_support::editor_operations::CONTEXT,
             crate::foundation::test_support::editor_operations::ENTITY,

@@ -14,7 +14,7 @@ use crate::workspaces::editor::ui::outliner::node_model::{FactionRow, SquadRow};
 /// the id, so any id works — the test proves that by using the real shape.
 fn faction(id: &str, key: &str) -> FactionRow {
     FactionRow {
-        id: id.to_string(),
+        id: id.into(),
         key: key.to_string(),
         name: key.to_string(),
         squad_ids: Vec::new(),
@@ -23,11 +23,11 @@ fn faction(id: &str, key: &str) -> FactionRow {
 
 fn squad(id: &str, faction_id: &str) -> SquadRow {
     SquadRow {
-        id: id.to_string(),
+        id: id.into(),
         name: id.to_string(),
-        faction_id: faction_id.to_string(),
+        faction_id: faction_id.into(),
         slot_ids: Vec::new(),
-        leader_slot_id: String::new(),
+        leader_slot_id: String::new().into(),
         vehicle_ids: Vec::new(),
     }
 }

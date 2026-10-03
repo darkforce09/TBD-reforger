@@ -112,7 +112,7 @@ cloned.
   `crate::foundation::ui` (`AuthGate`, `Sheet`, `Dialog`, `MaterialIcon`, `badge_class`, the toasts),
   the overview page's `dossier_body` and formatters, the review record's `MissionReviewRecord` and
   `SubmitForReview`, the create dialog's `CreateMissionDialog`,
-  `map_engine::data::scenario::compile::version_body_to_writer`, and
+  `mission_payload::version_body_to_writer`, and
   `crate::foundation::utils::byte_formatting::format_bytes` for the upload size; it imports no
   workspace.
 - Used by: the `/missions` route in `apps/frontend/src/app_routes.rs`;

@@ -283,7 +283,7 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                "/../../crates/mission/mission_operations/src/compositions.rs"
             )),
             crate::foundation::test_support::editor_operations::CONTEXT,
             crate::foundation::test_support::editor_operations::ENTITY,
@@ -473,7 +473,7 @@ fn connection_pins_are_load_bearing() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+                "/../../crates/mission/mission_operations/src/compositions.rs"
             )),
             crate::foundation::test_support::editor_operations::CONTEXT,
             crate::foundation::test_support::editor_operations::ENTITY,

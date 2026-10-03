@@ -27,7 +27,7 @@ use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::Json;
-use map_engine::data::scenario::ballistics::fire_mission::{
+use fire_mission_planning::fire_mission::{
     FireMissionGunPosition, FireMissionInputs, FireMissionPoint, FireMissionSolution,
     FireMissionWind,
 };
@@ -143,10 +143,10 @@ pub async fn save_fire_mission(
         super::require_full_event_access(&state, &user, event).await?;
     }
     let inputs = FireMissionInputs {
-        catalog_id: body.catalog_id,
+        catalog_id: body.catalog_id.into(),
         catalog_version: body.catalog_version,
-        weapon_id: body.weapon_id,
-        shell_id: body.shell_id,
+        weapon_id: body.weapon_id.into(),
+        shell_id: body.shell_id.into(),
         charge_rings: body.charge_rings,
         target: body.target,
         guns: body.guns,

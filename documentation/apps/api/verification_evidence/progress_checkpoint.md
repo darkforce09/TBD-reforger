@@ -25,7 +25,7 @@ Migrations 0057–0060 are pinned (B adds 0060); the next migration is 0061. Ver
 
 ## B in brief
 
-- **Engine.** `legacy/map_engine/src/data/scenario/ballistics/`: the flight model is the engine's own
+- **Engine.** `crates/ballistics/`: the flight model is the engine's own
   integrator, identified from 4,185 oracle simulations (fixed 1/30 s step, gravity first,
   quadratic air-relative drag, mean-velocity position, linear crossing; `f32` state as the
   engine); per-ring solver with typed refusals and wind-corrected aim; dispersion as a documented

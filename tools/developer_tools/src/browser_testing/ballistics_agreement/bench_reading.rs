@@ -14,9 +14,7 @@
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
-use map_engine::data::scenario::ballistics::fire_mission::{
-    FireMissionInputs, FireMissionSolution,
-};
+use fire_mission_planning::fire_mission::{FireMissionInputs, FireMissionSolution};
 use serde::{Deserialize, Serialize};
 
 /// One run of the bench.

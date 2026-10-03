@@ -10,15 +10,12 @@
 
 use std::cell::RefCell;
 
-use crate::data::store::ConnectionKind;
-use crate::data::store::operations::entity as entity_ops;
 use crate::editing::history::after_local_edit;
 use crate::editing::host::with_doc;
+use mission_document::ConnectionKind;
+use mission_operations::entity as entity_ops;
 
-/// One connection as the panel's row needs it, and one rule finding over the connection graph.
-pub use crate::data::store::operations::entity::{
-    ConnectionFindingRow, ConnectionListRow, OwnerOption,
-};
+use mission_operations::entity::{ConnectionFindingRow, ConnectionListRow, OwnerOption};
 
 thread_local! {
     static ARMED_CONNECT: RefCell<Option<(String, String)>> = const { RefCell::new(None) };

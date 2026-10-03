@@ -18,9 +18,9 @@ use crate::pages::field_tools::mortar::inputs::positions::MortarTerrain;
 #[cfg(any(target_arch = "wasm32", test))]
 use crate::pages::field_tools::mortar::inputs::positions::PositionDraft;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_coordinates::grid_reference::parse_grid;
+use ballistics_solver::crest_clearance::{TerrainProfile, TerrainSample};
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::data::scenario::ballistics::crest_clearance::{TerrainProfile, TerrainSample};
+use map_coordinates::grid_reference::parse_grid;
 #[cfg(any(target_arch = "wasm32", test))]
 use map_engine::editing::tools::line_of_sight::terrain_survey::everon_manifest;
 #[cfg(any(target_arch = "wasm32", test))]

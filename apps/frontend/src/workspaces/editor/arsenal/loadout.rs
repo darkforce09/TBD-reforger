@@ -4,9 +4,9 @@
 //! The module exports the domain operations consumed by the Arsenal UI.
 
 #[cfg(test)]
-pub use map_engine::data::store::operations::cargo::commit_writes;
-pub use map_engine::data::store::operations::cargo::BufferedLoadout;
-pub use map_engine::data::store::operations::cargo::LoadoutWrite;
+pub use mission_operations::cargo::commit_writes;
+pub use mission_operations::cargo::BufferedLoadout;
+pub use mission_operations::cargo::LoadoutWrite;
 use std::collections::{HashMap, HashSet};
 
 use crate::foundation::transport::dto::RegistryItem;

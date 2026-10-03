@@ -54,7 +54,7 @@ fn fixtures(
     if let Some(document) = document {
         std::fs::write(
             dir.join(document_golden(
-                &catalog.catalog_id,
+                catalog.catalog_id.as_str(),
                 catalog.catalog_version,
             )),
             document,
@@ -133,11 +133,11 @@ fn a_list_without_the_version_fails() {
     catalog.catalog_version += 1;
     std::fs::copy(
         dir.join(document_golden(
-            &catalog.catalog_id,
+            catalog.catalog_id.as_str(),
             catalog.catalog_version - 1,
         )),
         dir.join(document_golden(
-            &catalog.catalog_id,
+            catalog.catalog_id.as_str(),
             catalog.catalog_version,
         )),
     )

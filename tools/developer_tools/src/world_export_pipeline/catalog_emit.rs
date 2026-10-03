@@ -15,13 +15,14 @@
 //! JSON decode **by construction** rather than by coincidence — including the drops: a row the
 //! loader rejects is absent from both.
 //!
-//! # Why the row encoding lives in `map_engine`, not here
+//! # Why the row encoding lives in the world crates, not here
 //!
-//! `row_to_archive` and `region_to_archive` are in `world/prefab.rs` and `world/regions.rs`,
-//! next to the readers that invert them. The wire rows have no `Option`s while the parser rows
-//! have eight, so "absent" needs a sentinel (NaN / `""` / alpha 0 / `u32::MAX`) and a sentinel
-//! written in one crate and read in another is a contract with nobody holding both halves. This
-//! module is therefore only the *file* half: which paths, read-back, refusals, sizes.
+//! `row_to_archive` and `region_to_archive` are in `prefab_catalog::prefab_rows` and
+//! `vegetation::regions`, next to the readers that invert them. The wire rows have no `Option`s
+//! while the parser rows have eight, so "absent" needs a sentinel (NaN / `""` / alpha 0 /
+//! `u32::MAX`) and a sentinel written in one crate and read in another is a contract with nobody
+//! holding both halves. This module is therefore only the *file* half: which paths, read-back,
+//! refusals, sizes.
 //!
 //! # Three files, two of them versioned
 //!

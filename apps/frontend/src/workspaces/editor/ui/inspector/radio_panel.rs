@@ -17,12 +17,12 @@
 use leptos::prelude::*;
 use serde_json::Value;
 
-use map_engine::data::scenario::radio_plan::freq_key;
-use map_engine::data::scenario::radio_plan::validate;
-use map_engine::data::scenario::radio_plan::FREQ_MAX_MHZ;
-use map_engine::data::scenario::radio_plan::FREQ_MIN_MHZ;
-use map_engine::data::scenario::radio_plan::MAX_NETS;
-use map_engine::data::scenario::radio_plan::RANGES;
+use mission_model::radio_plan::freq_key;
+use mission_model::radio_plan::validate;
+use mission_model::radio_plan::FREQ_MAX_MHZ;
+use mission_model::radio_plan::FREQ_MIN_MHZ;
+use mission_model::radio_plan::MAX_NETS;
+use mission_model::radio_plan::RANGES;
 
 /// The reader chain for `meta.environment.radioPlan`, end to end.
 #[cfg(test)]
@@ -215,10 +215,10 @@ pub fn with_field(
             if trimmed.is_empty() {
                 return Err("label cannot be blank".into());
             }
-            if trimmed.chars().count() > map_engine::data::scenario::radio_plan::MAX_LABEL_CHARS {
+            if trimmed.chars().count() > mission_model::radio_plan::MAX_LABEL_CHARS {
                 return Err(format!(
                     "label is longer than {} characters — the mod would truncate it",
-                    map_engine::data::scenario::radio_plan::MAX_LABEL_CHARS
+                    mission_model::radio_plan::MAX_LABEL_CHARS
                 ));
             }
             obj.insert(key.to_string(), Value::String(trimmed.to_string()));

@@ -1,12 +1,13 @@
-//! Role: zone round trip.
-//! Position: `legacy/map_engine/tests` in the map engine.
-//! Signals & state: explicit data inputs; no UI or graphics state.
-//! Invariants: preserve authored order, numeric precision, and wire representations.
+//! **Role:** zone round trip.
+//! **Position:** an integration suite of the map engine's `editing` tier, over the mission crates
+//! that tier links.
+//! **Signals & state:** explicit data inputs; no UI or graphics state.
+//! **Invariants:** preserve authored order, numeric precision, and wire representations.
 
-#![cfg(feature = "store")]
+#![cfg(feature = "editing")]
 
-use map_engine::data::scenario::compile::compile_payload;
-use map_engine::data::store::MissionDocCore;
+use mission_document::MissionDocCore;
+use mission_payload::compile_payload;
 use serde_json::Value;
 
 const DEFAULT_LAYER: &str = "layer-1";

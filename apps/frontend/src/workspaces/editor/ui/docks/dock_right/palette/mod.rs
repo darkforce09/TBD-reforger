@@ -116,7 +116,7 @@ pub(super) fn palette_rows(
                 }
                 Some(payload) => {
                     let star =
-                        favourite_star(favourites, payload.asset_id.clone(), payload.role.clone());
+                        favourite_star(favourites, payload.asset_id.to_string(), payload.role.clone());
                     view! {
                     <div class="group relative flex items-center gap-1">
                     <button
@@ -256,11 +256,11 @@ pub(super) fn faction_palette_rows(
                 }
                 Some(payload) => {
                     let star =
-                        favourite_star(favourites, payload.asset_id.clone(), payload.role.clone());
+                        favourite_star(favourites, payload.asset_id.to_string(), payload.role.clone());
                     let glyph_kind = registry_items
                         .with_untracked(|opt| {
                             opt.as_ref().and_then(|items| {
-                                crate::workspaces::editor::arsenal::asset_catalog::find_catalog_item(items, &payload.asset_id)
+                                crate::workspaces::editor::arsenal::asset_catalog::find_catalog_item(items, payload.asset_id.as_str())
                                     .and_then(crate::workspaces::editor::arsenal::asset_catalog::placeable_palette)
                                     .map(PaletteKind::from_catalog)
                             })
@@ -280,7 +280,7 @@ pub(super) fn faction_palette_rows(
                                     opt.as_ref().and_then(|items| {
                                         crate::workspaces::editor::arsenal::asset_catalog::find_catalog_item(
                                             items,
-                                            &press_payload.asset_id,
+                                            press_payload.asset_id.as_str(),
                                         )
                                         .and_then(crate::workspaces::editor::arsenal::asset_catalog::placeable_palette)
                                     })
@@ -289,7 +289,7 @@ pub(super) fn faction_palette_rows(
                                     arm_favourite_place(palette, press_payload.clone());
                                     record_recent(
                                         recent,
-                                        press_payload.asset_id.clone(),
+                                        press_payload.asset_id.to_string(),
                                         press_payload.role.clone(),
                                     );
                                 }

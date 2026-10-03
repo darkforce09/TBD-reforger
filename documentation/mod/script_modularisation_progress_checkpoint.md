@@ -225,7 +225,7 @@ a deleted file); ticket ids in four runtime log strings and one attribute desc; 
 Remaining, outside P3-C's paths:
 
 - `TBD_MissionLoader.GetSpawnZoneForFaction` has no callers; kept (the loader's static read API keeps its names), ticketed as T-1219.
-- Stale member names in files no slice owns: `.world-boot-warning-baseline:41` (`TBD_FrameworkManager.ArmRoundClock`), `legacy/map_engine/src/data/scenario/compiler/flatten/tests/cases_4.rs` lines 256, 264 and 268 (assert messages naming `OnEnterBriefing`, `ArmRoundClock`, the JIP door on `TBD_SpawnManager`), `apps/frontend/src/workspaces/editor/ui/inspector/env.rs:154` (`TBD_FrameworkManager.ArmRoundClock`), `legacy/map_engine/src/data/scenario/extensions/modules/spawns.rs:11` (`SpawnManager's EngineFactionKey`, now `TBD_SlotBodyMaterializer`).
+- Stale member names in files no slice owns: `.world-boot-warning-baseline:41` (`TBD_FrameworkManager.ArmRoundClock`), `crates/mission/mission_compiler/src/game_document/tests/cases_4.rs` lines 256, 264 and 268 (assert messages naming `OnEnterBriefing`, `ArmRoundClock`, the JIP door on `TBD_SpawnManager`), `apps/frontend/src/workspaces/editor/ui/inspector/env.rs:154` (`TBD_FrameworkManager.ArmRoundClock`), `crates/mission/mission_model/src/spawn_modules/spawns.rs:11` (`SpawnManager's EngineFactionKey`, now `TBD_SlotBodyMaterializer`).
 - All slices: run `hcargo fmt --check -p xtask` or format only owned files; never plain `fmt -p xtask` while another session has xtask edits.
 
 ## Ticket batch

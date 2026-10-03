@@ -10,12 +10,12 @@ use std::rc::Rc;
 
 use idb::DatabaseEvent; // brings `VersionChangeEvent::database()` into scope for the upgrade handler
 use leptos::task::spawn_local;
-use map_engine::data::store::MissionDocCore;
 use map_engine::editing::persist::record_key::{
     owner_prefix, owner_token_or_anonymous, scoped_key, split_scoped_key,
 };
 use map_engine::editing::persist::stored_blob::restores_to_authored_content;
 use map_engine::editing::persist::{merge_policy, record_read_retry, slot_fingerprint};
+use mission_document::MissionDocCore;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 

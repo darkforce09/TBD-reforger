@@ -11,7 +11,7 @@
 //!
 //! **Position:** Called by `contract_validation::validate_all`; reads the schemas through the
 //! suite's `schema` loader and prints `PASS`, `FAIL` or `NOT RUN` lines in the suite's format. The
-//! flight-model tolerances are not checked here: the map engine's calibration evaluator owns them.
+//! flight-model tolerances are not checked here: the `ballistics_calibration` evaluator owns them.
 //!
 //! **Signals & state:** none; each call reads the two documents from disk.
 //!

@@ -315,7 +315,7 @@ fn marker_writes_go_to_the_briefing_not_the_root_map() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/data/store/operations/compositions.rs"
+            "/../../crates/mission/mission_operations/src/compositions.rs"
         )),
         crate::foundation::test_support::editor_operations::CONTEXT,
         crate::foundation::test_support::editor_operations::ENTITY,
@@ -388,7 +388,7 @@ fn marker_attributes_selects_by_faction_id_and_id() {
         .nth(1)
         .and_then(|t| t.split("fn marker_attributes(").next())
         .expect("markers_panel must precede marker_attributes");
-    let find = format!("r.faction_id == {} && r.id == {}", "faction_id", "id");
+    let find = format!("r.faction_id == {} && r.id == {}", "*faction_id", "*id");
     assert!(
         panel.contains(&find),
         "Attributes lookup must match on (factionId, id); got no `{find}` in markers_panel"
@@ -402,9 +402,9 @@ fn marker_attributes_selects_by_faction_id_and_id() {
         "marker_selected must be Option<(factionId, id)>"
     );
     // wave-136 F4 — pin selection addr construction at the click site. Pair-find alone greened
-    // when the write used `(String::new(), m.id.clone())`.
+    // when the write used `(String::new(), m.id.to_string())`.
     assert!(
-        panel.contains("let addr = (m.faction_id.clone(), m.id.clone())"),
+        panel.contains("let addr = (m.faction_id.to_string(), m.id.to_string())"),
         "markers_panel click must build addr from both faction_id and id"
     );
 }

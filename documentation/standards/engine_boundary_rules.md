@@ -7,7 +7,7 @@ may name which, where state lives, how the map engine hands frames to the render
 inside the map engine. `cargo xtask verify engine-layers` enforces the rules section 5 numbers,
 and its failure messages, the CI step and the `ci-local` task cite this document by section. The
 code is the final word: the gate's matchers and pins in
-`tools/xtask/src/verifications/architecture/` define each rule exactly, and this document
+`tools/foundation/repository_laws/src/engine_layers/` define each rule exactly, and this document
 states them and the reasons behind them.
 
 ## 1. Layers and dependency direction
@@ -17,19 +17,21 @@ The web platform draws its map with three crates, each with one job:
 | Crate | Code | Job |
 |---|---|---|
 | `graphics_engine` | [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | the renderer: device buffers, pipelines, the WGSL shader, draw batching, text packing, sprite culling and the animation-frame pump; it knows no map concept |
-| `map_engine` | [`legacy/map_engine/`](/legacy/map_engine/README.md) | the [mission](/documentation/glossary/g_to_m.md#mission) domain, the static world's loaders and belts, streaming, the viewshed and symbology uploads, the camera viewport, the headless editing layer and `RenderEngine`, which builds each frame; the world's data models, spatial queries and the overlay's lanes and symbology are crates under `crates/` it imports |
+| `map_engine` | [`legacy/map_engine/`](/legacy/map_engine/README.md) | the editing layer over the [mission](/documentation/glossary/g_to_m.md#mission) crates, the static world's loaders and belts, streaming, the viewshed and symbology uploads, the camera viewport, the headless editing layer and `RenderEngine`, which builds each frame; the world's data models, spatial queries and the overlay's lanes and symbology are crates under `crates/` it imports |
 | `frontend` | [`apps/frontend/`](/apps/frontend/README.md) | the single-page app, including the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): pages, UI, input and the browser shell |
 
-The [API](/documentation/glossary/a_to_f.md#api) (`api`) links the map engine too, for the
-mission compiler and validator alone.
+The [API](/documentation/glossary/a_to_f.md#api) (`api`) links none of the three: it compiles and
+validates missions with the mission crates of `crates/mission/`, and `API_RULE` of
+`tools/foundation/repository_laws/src/crate_dependencies.rs` forbids its edge to the map engine.
 
 ### Dependency direction — non-negotiable
 
 ```text
-api      ──► map_engine {scenario}                  native, no GPU crate
-frontend ──► map_engine {world, store, editing}      every target
+api      ──► crates/mission, crates/ballistics       native, no map engine, no GPU crate
+frontend ──► map_engine {world, editing}             every target
                                         {render, streaming}          wasm32
                      map_engine ──► graphics_engine  from the world tier up
+                     map_engine ──► crates/mission   the editing tier
 ```
 
 - The arrow runs from the map engine to the graphics layer and never back. The graphics layer is
@@ -58,7 +60,7 @@ in its [README](/legacy/map_engine/README.md) and [source README](/legacy/map_en
 
 | Survives a reload: `map_engine` | Dies with the tab: `frontend` |
 |---|---|
-| the mission document, its entities and its undo stack (`data/store/`, `editing/history/`) | hover and drag in progress |
+| the mission document, its entities and its undo stack (`crates/mission/mission_document/`, `editing/history/`) | hover and drag in progress |
 | the selection (`editing/host.rs`) | the pointer gesture state machine (`editor/input/`) |
 | the tool command definitions (`editing/commands/`, `editing/tools/`) | the keybind map |
 | the line-of-sight, ruler and viewshed algorithms (`editing/tools/` and the line of sight crates under `crates/line_of_sight/`) | panels open or closed, dock sizes |
@@ -75,31 +77,35 @@ A consumer takes only the tier it needs; the feature table and its consumers are
 engine README's [Configuration](/legacy/map_engine/README.md#configuration). Three facts of
 the tiers are boundary rules:
 
-- `scenario`, the default, is the tier the API links, and it pulls no graphics crate, PNG
-  decoder, `rkyv` or `flate2`. [Rule 4](#rule-4-the-mission-compiler-imports-nothing-outside-itself)
-  keeps it that way.
+- No tier is on by default, and the mission domain is no tier at all: it is the crates of
+  `crates/mission/`, which the API links directly and the `editing` tier links for the Mission
+  Creator ([2A](#2a-the-mission-crates-stand-outside-the-map-engine)).
 - `world` turns the graphics engine and `render_primitives` on, not `render` alone
-  (`legacy/map_engine/Cargo.toml:27`): the upload belts of `world/`, `overlay/` and `spatial/`
+  (`legacy/map_engine/Cargo.toml`): the upload belts of `world/`, `overlay/` and `spatial/`
   import the renderer's byte layouts and geometry helpers directly (Kind B in
   [2C.1](#2c1-what-may-name-a-graphics-type)), and `world/mesh.rs` composes meshes with
   `render_primitives::draw::{compose, triangulate}`.
-- `editing` takes `store`, `world` and `streaming`, because the line-of-sight tool tests cells
-  against the streamed world's occluder, the `world_line_of_sight` crate `streaming` links
-  (`legacy/map_engine/Cargo.toml:35`).
+- `editing` takes `world`, `streaming` and the six mission crates it hosts and drives, because
+  the line-of-sight tool tests cells against the streamed world's occluder, the
+  `world_line_of_sight` crate `streaming` links (`legacy/map_engine/Cargo.toml`).
 
 ## 2. Walls inside the map engine
 
-The map engine is one crate of ten top-level modules (`legacy/map_engine/src/lib.rs`).
-Four walls inside it replace the crate boundaries a split into more crates would have drawn.
+The map engine is one crate of nine top-level modules (`legacy/map_engine/src/lib.rs`).
+Three walls inside it, and one crate boundary beside it, replace the crate boundaries a split into
+more crates would have drawn.
 
-### 2A The API's thin tier
+### 2A The mission crates stand outside the map engine
 
-`data/scenario/` is the mission compiler and validator, the only part of the crate the API
-compiles. It names nothing outside itself: no other top-level module, not `data::store`, not the
-graphics engine. One import of `crate::streaming` inside it would drag the streaming tier, and
-with it `rkyv`, `flate2`, `png` and the graphics engine, into an HTTP server. A value it needs
-from elsewhere is passed in as an argument. [Rule 4](#rule-4-the-mission-compiler-imports-nothing-outside-itself)
-enforces it.
+The mission compiler, the validator, the document and its authoring commands are the crates of
+`crates/mission/`, not modules of the map engine. The API links them with no map engine, GPU,
+image or archive crate in its tree; the map engine's `editing` tier links the ones it drives. A
+mission crate reaches no world, streaming or graphics code because the crate-tier law forbids the
+edge: a `crates/mission` crate depends on foundation, mission and geometry crates only and on
+nothing under `legacy/` (`cargo xtask verify crate-tiers`;
+`crate_tiers_a_mission_crate_reaching_world_or_graphics_is_rule_5` pins both edges). A value a
+mission crate needs from the world is passed in as an argument. No engine-layer rule repeats the
+edge, so section 5 has no rule 4.
 
 ### 2B The headless editing layer
 
@@ -175,18 +181,20 @@ rule:
 
 ### 2D Static world and authored document
 
-`world/` is immutable, streamed from `assets/terrains/`, cacheable and never persisted. `data/`
-is mutable, undoable, CRDT-synced and persisted. They share the spatial index and nothing else: a
-`world/` type never gains a dirty flag, and a `data/` type never gains a chunk id. Inside the
-crate the two meet only in `editing/`, which drives the document and asks the `spatial_indexes`
-and line of sight crates where a click or a sight line lands.
+`world/` is immutable, streamed from `assets/terrains/`, cacheable and never persisted. The
+mission document (`mission_crdt`, `mission_document`, `mission_operations`, hosted by `editing/`)
+is mutable, undoable, CRDT-synced and persisted. They share nothing: a `world/` type never gains a
+dirty flag, and a document type never gains a chunk id. The two meet only in `editing/`, which
+hosts and drives the document and asks the `spatial_indexes` and line of sight crates where a
+click or a sight line lands.
 
-[Rule 7](#rule-7-the-static-world-and-the-authored-document-share-nothing) gates the import wall,
-which is what can be checked exactly: a `world/` type cannot gain undo, persistence or CRDT state
-without naming `crate::data` or `yrs`, and a `data/` type cannot gain a chunk id, tile coordinate,
-level of detail or residency handle without naming the module that declares it. The gate does not
-see a local `dirty: bool` on a world struct that imports nothing; it catches the flag when
-anything tries to persist it.
+[Rule 7](#rule-7-the-static-world-names-no-home-of-the-authored-document) gates the world's side
+of the import wall, which is what can be checked exactly: a `world/` type cannot gain undo,
+persistence or CRDT state without naming `yrs`, a mission document crate or `crate::editing`. The
+document's side is a crate boundary ([2A](#2a-the-mission-crates-stand-outside-the-map-engine)): a
+mission crate cannot name a chunk id, tile coordinate, level of detail or residency handle because
+it cannot depend on the crate that declares it. The gate does not see a local `dirty: bool` on a
+world struct that imports nothing; it catches the flag when anything tries to persist it.
 
 ## 3. The graphics engine: a pure renderer
 
@@ -237,10 +245,10 @@ all three architecture gates.
   graphics crates, which is built from their crate names. Before any matcher judges source it
   runs over subjects whose answer is known, positive and negative. A probe that answers wrongly fails the
   gate: a check whose matcher is broken is not a pass.
-- **Matching.** Each matcher is a line matcher over source text. Rules 1, 3a, 3b, 4, 5 and 7 see
+- **Matching.** Each matcher is a line matcher over source text. Rules 1, 3a, 3b, 5 and 7 see
   prose as well as code, on purpose; rules 2 and 6 match syntax, so prose describing the boundary
   passes.
-- **Pins.** Rules 3a, 3b and 4 allow enumerated sites: a file, its exact count and the reason. A
+- **Pins.** Rules 3a and 3b allow enumerated sites: a file, its exact count and the reason. A
   pin is a ratchet. An unpinned file that matches fails; a pinned file whose count rises or falls
   fails; a pinned file that no longer exists fails.
 - **Exit codes.** 0 when every rule holds; 1 when a rule is broken, a self-probe fails, a
@@ -254,12 +262,13 @@ all three architecture gates.
 | 2 | `legacy/graphics_engine` and each `crates/graphics` member | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
 | 3a | `legacy/map_engine/src` | `graphics_engine::frame` appears only in `frame/mod.rs`, exactly 5 times |
 | 3b | `legacy/map_engine/src` | `graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
-| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted), outside two pinned `cfg(feature = "store")` test files |
 | 5 | `editing` | no `web_sys`, `leptos` or `wasm_bindgen`, prose included |
 | 6 | `apps/frontend` | no `graphics_engine::` path or `extern crate`, no `graphics_engine` edge in `Cargo.toml`; the same for each `crates/graphics` member declaring `targets = "wasm32"` |
-| 7 | `data` and `world` | `data/` names none of the nine sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
+| 7 | `world` | no `yrs::` path, no `mission_crdt::`, `mission_document::` or `mission_operations::` path, no `crate::editing` and no `super::` chain ending on `editing` |
 
-The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
+The paths of rules 5 and 7 are under `legacy/map_engine/src/`. Number 4 is unassigned: the
+mission crates' isolation is the crate-tier law's
+([2A](#2a-the-mission-crates-stand-outside-the-map-engine)).
 
 ### Rule 1: the graphics layer never imports the map engine
 
@@ -325,27 +334,6 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
     impls.
   Moving `RenderEngine` into the graphics engine is the only change that empties this list.
 
-### Rule 4: the mission compiler imports nothing outside itself
-
-- Subject: the `.rs` files under `legacy/map_engine/src/data/scenario`.
-- Forbids (`RULE4_RE`): `crate::` followed by `camera`, `diagnostics`, `doll`, `editing`,
-  `frame`, `overlay`, `spatial`, `streaming`, `world` or `data::store`;
-  `graphics_engine`; and a `super::` chain of any length ending on `store`, `camera`,
-  `doll`, `editing`, `frame`, `overlay`, `spatial`, `streaming` or `world`. `diagnostics` is left out of the `super::` arm because
-  `data/scenario/compiler/flatten/diagnostics.rs` is a module inside the tree.
-- The list is the map engine's ten top-level modules minus `data`. Code that left the map engine
-  for a crate of its own (`world_file_formats`, `camera_math`, `map_coordinates`) is no module
-  of it, so no arm names it: the crate-tier law and the map engine's feature gates judge those
-  edges.
-- Why: [2A](#2a-the-apis-thin-tier). The `super::` arm exists because a `crate::`-only matcher
-  would leave a one-line bypass, and a depth count would be unsound where `#[path]` separates file
-  depth from module depth.
-- Pins (`RULE4_PIN`), both `#[cfg(feature = "store")]` test code the API never compiles:
-  `data/scenario/compiler/flatten/tests/mod.rs` (1, `vehicles_from_writer_json_roundtrip`) and
-  `data/scenario/compiler/payload/tests/cases_1.rs` (1,
-  `briefing_prose_round_trips_through_the_document_core`). An ungated import would satisfy the
-  count and still be wrong, which is why each pin carries its reason.
-
 ### Rule 5: no browser crate in the editing layer
 
 - Subject: the `.rs` files under `legacy/map_engine/src/editing`.
@@ -369,19 +357,19 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
   packing the frontend may link.
 - Exemptions and pins: none.
 
-### Rule 7: the static world and the authored document share nothing
+### Rule 7: the static world names no home of the authored document
 
-- Subject: the `.rs` files under `legacy/map_engine/src/data` and
-  `legacy/map_engine/src/world`, judged as one rule with one findings list.
-- Forbids: under `data/` (`RULE7_DATA_RE`), `crate::` followed by `camera`, `diagnostics`, `doll`,
-  `editing`, `frame`, `overlay`, `spatial`, `streaming` or `world`,
-  `graphics_engine`, or a `super::` chain ending on one of them but `diagnostics`; under
-  `world/` (`RULE7_WORLD_RE`), `crate::data`, `yrs::` or a `super::` chain ending on `data`.
-  `yrs::` rather than the bare word, so "3 yrs" in prose passes.
-- Why: [2D](#2d-static-world-and-authored-document). A build of `--features store` alone compiles
-  `data/` without the world modules, but the `--all-features` build CI runs does not, and nothing
-  in the compiler stops `world/` naming `data/`.
-- Exemptions and pins: none. Both sides count their files, and an empty `data/` or `world/` fails.
+- Subject: the `.rs` files under `legacy/map_engine/src/world`.
+- Forbids (`RULE7_WORLD_RE`): a `yrs::` path; a `mission_crdt::`, `mission_document::` or
+  `mission_operations::` path; `crate::editing`; and a `super::` chain of any length ending on
+  `editing`. `yrs::` rather than the bare word, so "3 yrs" in prose passes; `mission_model` and
+  the other mission crates are not the document and pass.
+- Why: [2D](#2d-static-world-and-authored-document). The `world` tier alone links no mission
+  crate, but the `--all-features` build CI runs does, and nothing in the compiler stops `world/`
+  naming the document there. The `super::` arm exists because a `crate::`-only matcher would leave
+  a one-line bypass, and a depth count would be unsound where `#[path]` separates file depth from
+  module depth.
+- Exemptions and pins: none. The rule counts its files, and an empty `world/` fails.
 
 ### Changing a rule or a pin
 
@@ -390,7 +378,7 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
   exact count and reason; the unit tests in
   `tools/foundation/repository_laws/src/engine_layers/tests/` hold each rule's shape (`naming_the_frame_vocabulary_outside_the_boundary_fails`,
   `a_new_gpu_module_import_in_the_map_engine_fails`,
-  `the_scenario_tree_reaching_outside_itself_fails`,
+  `the_world_naming_the_document_breaches_the_wall`,
   `inputs_that_were_never_read_do_not_pass`).
 - A new rule gets a number in this section, a matcher with its self-probes, a head line and a tail
   message citing this document, and a row in the table above.

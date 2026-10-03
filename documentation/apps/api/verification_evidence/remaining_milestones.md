@@ -43,11 +43,14 @@ other rows).
 | C | content_wiki_features | content_wiki_features (+ frontend_quality, browser_acceptance) | db test-it | 15 | `wiki_features*` | passing (15 cases, 2026-09-27) |
 | C | content_content_storage | content_content_storage | db test-it | 15 | `content_storage*` | passing (15 cases, 2026-09-27) |
 | B | verification_game_ballistics | verification_game_ballistics (+ backend_regression, route acceptance, contract parity) | db test-it | 29 | `game_ballistics*` | passing (29 cases, 2026-09-28) |
-| B | game_ballistics_flight_model | game_ballistics_flight_model | map-engine `data::scenario::ballistics::` | 51 | modules flight_model, wind, angular_units, catalog | passing (51 cases, 2026-09-28) |
-| B | game_ballistics_calibration | game_ballistics_calibration | map-engine `data::scenario::ballistics::` | 34 | module calibration | passing (34 cases, 2026-09-28) |
-| B | game_ballistics_elevation_wind_dispersion | game_ballistics_elevation_wind_dispersion | map-engine `data::scenario::ballistics::` | 81 | modules solver, dispersion, fuze, crest_clearance, tests_* | passing (81 cases, 2026-09-28) |
-| B | game_ballistics_battery | game_ballistics_battery | map-engine `data::scenario::ballistics::` | 29 | modules battery, fire_mission, fire_mission_comparison | passing (29 cases, 2026-09-28) |
-| B | game_ballistics_wasm_agreement | game_ballistics_shared_solution_cases | map-engine `data::scenario::ballistics::` | 18 | modules agreement_cases, solution_wording | passing (18 cases, 2026-09-28) |
+| B | game_ballistics_flight_model | game_ballistics_flight_model | test -p ballistics_model | 51 | modules flight_model, wind, angular_units, catalog | passing (51 cases, 2026-10-03) |
+| B | game_ballistics_calibration | game_ballistics_calibration | test -p ballistics_calibration | 34 | modules tests, report, tests_catalog_digest | passing (34 cases, 2026-10-03) |
+| B | game_ballistics_elevation_wind_dispersion | game_ballistics_elevation_wind_dispersion | test -p ballistics_solver | 64 | modules tests, wind_corrected_aim, dispersion, crest_clearance, tests_* | passing (64 cases, 2026-10-03) |
+| B | game_ballistics_elevation_wind_dispersion | game_ballistics_fuze_and_end_to_end | test -p fire_mission_planning | 9 | modules fuze, tests_end_to_end | passing (9 cases, 2026-10-03) |
+| B | game_ballistics_elevation_wind_dispersion | game_ballistics_oracle_elevation_and_wind | test -p ballistics_calibration | 8 | module tests_oracle_elevation_and_wind | passing (8 cases, 2026-10-03) |
+| B | game_ballistics_battery | game_ballistics_battery | test -p fire_mission_planning | 29 | modules battery, fire_mission, fire_mission_comparison | passing (29 cases, 2026-10-03) |
+| B | game_ballistics_wasm_agreement | game_ballistics_shared_solution_cases | test -p ballistics_agreement_cases | 11 | module case_lattice | passing (11 cases, 2026-10-03) |
+| B | game_ballistics_wasm_agreement | game_ballistics_solution_wording | test -p fire_mission_planning | 7 | module solution_wording | passing (7 cases, 2026-10-03) |
 | B | game_ballistics_wasm_agreement | game_ballistics_wasm_agreement | mk ballistics-wasm-agreement | 32 | `case ballistics_wasm_agreement_*` | passing (32 of 32, bit-identical, 2026-09-28) |
 | B | game_ballistics_offline_page | game_ballistics_offline_page (+ frontend_quality, browser_acceptance) | mk mortar-offline-gate | 15 | `case mortar_offline_*` | passing (15 cases, 2026-09-28) |
 | V | verification_route_acceptance | verification_route_acceptance | db test-it | 66 | `route_acceptance*` | passing (66 cases, 2026-09-28) |
