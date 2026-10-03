@@ -21,7 +21,8 @@ own `TBD_MissionJsonPass` read into `TBD_WinConditionsStruct`; `endOn` is left t
 `TBD_MissionLoader.HasEndTrigger`.
 
 At the first `LIVE` tick `TBD_WinConditionModes.ReportRule` logs the mode once and warns when the
-mission cannot satisfy it: `objective` without an objective trigger in `endOn`, `timeout` without
+mission cannot satisfy it: `objective` without the end trigger of any objective kind in `endOn`
+(the kinds and their triggers come from `TBD_ObjectiveKindBehaviour.Count` and `At`), `timeout` without
 `time_limit`, an `extraction` or `vip` zone id that names no usable zone. `attrition`, `objective`
 and `timeout` then end through `TBD_FactionElimination`, `TBD_ObjectiveRegistry` and
 `TBD_RoundClock`. `extraction` ends the round when every living player of one side stands in the
@@ -42,8 +43,9 @@ is set before `SetStage(END)`, so a condition that stays true ends the round onc
 ## Boundaries
 
 - Depends on: `TBD_FrameworkManager` (the stage and `SetStage`) and `TBD_MissionFlow` under
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`; `TBD_ObjectiveRegistry`'s
-  trigger names under `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`;
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`; the objective kinds' end
+  triggers from `TBD_ObjectiveKindBehaviour` under
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`;
   `TBD_SpawnManager`, `TBD_MissionLoader`, `TBD_MissionJsonPass` and `TBD_ZoneRegistry` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`; `TBD_Log` and `TBD_AnnounceOnce` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the `winConditions` definition in

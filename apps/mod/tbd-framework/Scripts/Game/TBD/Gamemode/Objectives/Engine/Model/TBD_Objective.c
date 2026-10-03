@@ -4,8 +4,8 @@
  *
  * Role: the runtime record of one objective zone, and the presence, ownership and role queries
  * the objective runtime asks of it.  Position: built by `TBD_ObjectiveRegistry` and its binders;
- * advanced by `TBD_ObjectiveProgression`; read by the HUD publisher, `TBD_ObjectiveText`,
- * `TBD_ZoneVolume` and `TBD_TriggerRuntime`.
+ * advanced by its kind's `TBD_ObjectiveKindBehaviour` through `TBD_ObjectiveProgression`; read
+ * by the HUD publisher, `TBD_ObjectiveText`, `TBD_ZoneVolume` and `TBD_TriggerRuntime`.
  * State: every field is server state for the world that built it.  Invariants: containment is
  * never tested here (`m_Zone` owns the shape); an untyped objective leaves every typed field
  * empty; presence is sampled at 1 Hz against each body's origin, footprint only (Y ignored).
@@ -53,7 +53,7 @@ class TBD_Objective
 	bool m_bComplete; //!< DESTROY or HOLD_UNTIL finished; a CAPTURE objective is never complete, ownership can flip all round
 	float m_fSinceAnnounce; //!< Seconds since the last progress message to the players standing on this objective.
 	bool m_bAnnouncedContested; //!< contested state last logged, so only a transition is logged
-	int m_iHoldMarkIndex; //!< next rung of the hold announcement ladder (`TBD_ObjectiveProgression.NextHoldMark`)
+	int m_iHoldMarkIndex; //!< next rung of the hold announcement ladder (`TBD_ObjectiveHoldUntilBehaviour.NextHoldMark`)
 
 	ref array<string> m_aPresentFactions; //!< this tick's present faction keys, parallel to `m_aPresentCounts`; reused every tick
 	ref array<int> m_aPresentCounts; //!< this tick's living-body count per present faction

@@ -11,7 +11,7 @@ mission's `tasks[]`.
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/
 ├── Model/     the prepared objective record, its kind, empty-zone and viewer-role enums, board text
-├── Registry/  builds objectives from zones and objectives[], destroy targets, the end triggers
+├── Registry/  builds objectives from zones and objectives[], answers the end triggers
 ├── Runtime/   the game mode component: the 1 Hz tick, presence, progress, chat and HUD delivery
 └── Tasks/     tasks[]: assigned, succeeded or failed from triggers and schedule windows
 ```
@@ -24,8 +24,8 @@ apart, sharing no class with the other three.
 
 ```text
 Model/     TBD_Objective, its enums, TBD_ObjectiveText  ◀── built, read and advanced by the two below
-Registry/  zones + objectives[] ──▶ TBD_Objective list, destroy targets, end triggers
-Runtime/   1 Hz tick ──▶ TBD_ObjectiveRegistry.Build ──▶ advance each TBD_Objective ──▶ chat, HUD
+Registry/  zones + objectives[] ──▶ TBD_Objective list, end triggers
+Runtime/   1 Hz tick ──▶ TBD_ObjectiveRegistry.Build ──▶ each kind behaviour advances its TBD_Objective ──▶ chat, HUD
 Tasks/     tasks[] ──▶ TBD_Task states, ticked by TBD_RuntimeHeartbeat
 ```
 
@@ -33,8 +33,10 @@ Tasks/     tasks[] ──▶ TBD_Task states, ticked by TBD_RuntimeHeartbeat
 
 [`Registry/`](Registry/README.md) builds the objectives once per world, after the mission has
 loaded and validated: `TBD_ObjectiveRegistry.Build()` makes a `TBD_Objective`
-([`Model/`](Model/README.md)) of every prepared zone of type `objective_capture`,
-`objective_destroy` or `objective_hold_until` in `TBD_ZoneRegistry`, with the rules
+([`Model/`](Model/README.md)) of every prepared zone in `TBD_ZoneRegistry` whose type a capture,
+destroy or hold kind behaviour in
+[`Types/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/README.md) claims,
+each run by that behaviour, with the rules
 `TBD_ObjectiveRulesReader` reads for that zone and the height, count and starting-owner rules
 `TBD_ZoneVolume` reads. `TBD_ObjectiveEntityReader` joins each top-level `objectives[]` row onto
 its zone by `zoneId`: its label and per-side `framing` give each viewer attacker or defender text,
@@ -48,9 +50,9 @@ and acts only while the stage is `LIVE`:
 ```text
 tick ──▶ Build (until the mission is ready) ──▶ stage LIVE? ──no──▶ hide every HUD
                                                    │ yes
-   first LIVE tick: arm destroy targets, seed hold announcements
+   first LIVE tick: each behaviour's OnEnterLive (arm destroy targets, seed hold announcements)
                                                    ▼
-   sample presence ──▶ advance capture | hold | destroy ──▶ chat on completion, HUD on change
+   sample presence ──▶ behaviour Advance per objective ──▶ chat on completion, HUD on change
 ```
 
 - Presence counts each connected player with a living body, a life left and a side, at the body's
@@ -67,9 +69,9 @@ tick ──▶ Build (until the mission is ready) ──▶ stage LIVE? ──no
 
 Each tick sends a player the `TBD_ObjectiveHud` board and capture bar only when that player's
 rendered snapshot differs from the last one sent, and puts only `CAPTURED`, `DESTROYED` and `HELD`
-lines in chat. `TBD_ObjectiveRegistry.EvaluateEndTriggers` answers `all_objectives_captured`,
-`objective_destroyed` and `hold_expired`, each only when `winConditions.endOn` declares it, with
-the winning side; `TBD_FrameworkManager` asks it every 2 s and ends the round.
+lines in chat. `TBD_ObjectiveRegistry.EvaluateEndTriggers` answers each kind behaviour's end
+trigger, each only when `winConditions.endOn` declares it, with the winning side;
+`TBD_FactionElimination` asks it every 2 s and ends the round.
 
 ### Tasks
 
@@ -106,17 +108,21 @@ it asks for the snapshot each second.
   `TBD_PlayerFaction`, `TBD_DeclaredFactions`, `TBD_PlayerChat` and `TBD_Rounding` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_ObjectiveHud` and `TBD_TaskHud` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; the `zone`, `zoneRules`, `objective`, `task`
-  and `winConditions` definitions in `contracts/definitions/mission.schema.json`.
+  and `winConditions` definitions in `contracts/definitions/mission.schema.json`; the kind
+  behaviours (`TBD_ObjectiveKindBehaviour` and its subclasses) in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/`, which `Runtime/` calls to
+  advance, prepare and render each objective and `Model/` calls for the status text.
 - Used by: `TBD_FactionElimination` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Stage/`,
   which calls `EvaluateEndTriggers` to end the round, and `TBD_EndBanner`, which infers an admin end;
   `TBD_TriggerRuntime` (the `objective_complete` condition and `set_objective` effect) and
-  `TBD_ZoneVolume`; `TBD_MissionValidator`, which reads the objective vocabulary; the HUD scripts in
+  `TBD_ZoneVolume`; the HUD scripts in
   `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`; `TBD_AudioEmitter`, which follows task states;
   `TBD_RuntimeHeartbeat`, which ticks and clears the task machine; and
   `apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et`, which attaches
   `TBD_ObjectivesComponent`.
 - Rules: objectives advance only while `LIVE`; containment comes only from `TBD_Zone`, never a
-  second test here; the component's `OnDelete` clears the registry and its readers, and
+  second test here; the component's `OnDelete` clears the registry, its readers and the shared
+  kind behaviours, and
   `TBD_RuntimeHeartbeat` clears the task machine, because statics outlive a world; a nested JSON
   block's presence is tested with a sentinel, never a null test; sources stay ASCII, and
   `cargo xtask mod compile` checks that the scripts compile, while capture, hold and destroy

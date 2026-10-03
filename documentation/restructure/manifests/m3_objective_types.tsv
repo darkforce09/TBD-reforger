@@ -1,0 +1,5 @@
+# Stage M3 — the objective kind behaviours. Paths name the tree before the move.
+kind	from	to	scope
+#
+# the destroy target search and count belong to the destroy kind, so they move beside its behaviour
+path	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/TBD_ObjectiveDestroyTargets.c	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/Destroy/TBD_ObjectiveDestroyTargets.c

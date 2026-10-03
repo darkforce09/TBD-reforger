@@ -82,8 +82,11 @@ cargo xtask setup server-profile  # writes the profile under apps/mod/.local-tes
 cargo xtask mod playtest --mission=<uuid> --admin=<identityId>  # a local server; stays in the foreground
 ```
 
-`mod compile` exits 1 as well when `Scripts/WorkbenchGame/` exists here, and 3 when
-`resourceDatabase.rdb` is stale: then open the addon in Workbench once and commit the rewritten rdb.
+`mod compile` exits 1 as well when `Scripts/WorkbenchGame/` exists here, and 3 when the engine
+loads fewer script files than the tree holds (for example a missing or unreadable
+`resourceDatabase.rdb`). New or moved `.c` files compile without a regenerated rdb, but Workbench
+and server packaging need one that matches the tree: open the addon in Workbench once and commit
+the rewritten rdb.
 `mod world-boot` also fails when a component on the game mode prefab does not instantiate.
 `mod playtest` needs the API running (`cargo xtask db up`, then `cargo xtask mk rust-api`): it has
 the platform deploy the mission's approved artifact to the playtest server row, links the addon into

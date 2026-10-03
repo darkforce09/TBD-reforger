@@ -5,11 +5,13 @@
  * Role: copies a typed row's identity, side, label, per-side framing, `lock` and `autoLose` onto
  * the objective, reports every disagreement with the zone by name, and logs the typed coverage
  * of the build.  Position: called by `TBD_ObjectiveRegistry.Prepare`, `LogPrepared` and `Build`;
- * reads `TBD_ObjectiveEntityReader` and `TBD_DeclaredFactions`.
+ * reads `TBD_ObjectiveEntityReader`, `TBD_DeclaredFactions` and the objective's
+ * `TBD_ObjectiveKindBehaviour`.
  * State: none; writes only the objective it is given.  Invariants: an objective without a row is
  * left untouched; the zone wins every kind disagreement, because it is what the runtime
  * enforces; `lock` and `autoLose` are carried and reported, never enforced (their meaning in the
- * source missions is inferred); a side supplies a holder only to a hold zone that names none.
+ * source missions is inferred); what a side supplies beyond the row is the kind behaviour's
+ * `SeedFromSide` (a hold zone that names no holder takes it).
  */
 
 //! Typed-row binding and reporting for prepared objectives.
@@ -47,12 +49,15 @@ class TBD_ObjectiveTypedBinder
 
 	//! Join the `objectives[]` row naming this objective's zone, if any, and validate it. An absent
 	//! `type` keeps the side role of the zone's own kind.
+	//! @param objective the objective being prepared
 	//! @param subject the zone id, or `zones[<index>]`, for log lines
 	static void Bind(notnull TBD_Objective objective, string subject)
 	{
 		TBD_ObjectiveEntityStruct row = TBD_ObjectiveEntityReader.ForZone(objective.m_sId);
 		if (!row)
 			return;
+
+		TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.For(objective.m_eKind);
 
 		TBD_ObjectiveEntityReader.MarkClaimed(objective.m_sId);
 
@@ -66,7 +71,7 @@ class TBD_ObjectiveTypedBinder
 		// An absent `type` leaves the framing on the zone's own kind rather than silently reading
 		// as an attacker task: a hold zone is held by its faction whatever the row forgot to say.
 		if (row.type.IsEmpty())
-			objective.m_bSideDefends = objective.m_eKind == TBD_EObjectiveKind.HOLD_UNTIL;
+			objective.m_bSideDefends = behaviour.SideDefendsByDefault();
 		else
 			objective.m_bSideDefends = TBD_ObjectiveEntityReader.IsDefenderFraming(row.type);
 
@@ -75,7 +80,7 @@ class TBD_ObjectiveTypedBinder
 		CheckTypedKind(objective, row, subject);
 		CheckTypedSide(objective, row, subject);
 		CheckAutoLose(objective, subject);
-		SeedHolderFromSide(objective, subject);
+		behaviour.SeedFromSide(objective, subject);
 	}
 
 	//! Copy both framing halves onto the objective. Each half is copied on its own, because both
@@ -126,16 +131,16 @@ class TBD_ObjectiveTypedBinder
 			return;
 		}
 
-		TBD_EObjectiveKind declared = TBD_ObjectiveEntityReader.KindOfTaskType(row.type);
+		TBD_ObjectiveKindBehaviour declared = TBD_ObjectiveKindBehaviour.ForTaskType(row.type);
 
-		if (declared == TBD_EObjectiveKind.NONE)
+		if (declared.Kind() == TBD_EObjectiveKind.NONE)
 		{
 			TBD_Log.Warn(TBD_ObjectiveRegistry.CH, string.Format("objectives[] row for zone '%1' has type='%2', which is not one of capture|destroy|hold|defend. The zone's own type still decides what runs.",
 				subject, row.type));
 			return;
 		}
 
-		if (declared == objective.m_eKind)
+		if (declared.Kind() == objective.m_eKind)
 			return;
 
 		TBD_Log.Warn(TBD_ObjectiveRegistry.CH, string.Format("objectives[] row for zone '%1' declares type='%2' but the zone is type='%3'. THE ZONE WINS -- it is what the runtime enforces. Fix one of the two, or a player is given a task that does not match the rules being applied to them.",
@@ -182,26 +187,6 @@ class TBD_ObjectiveTypedBinder
 
 		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "note", string.Format("objective '%1' declares autoLose='%2'. CARRIED AND REPORTED ONLY -- nothing in this build ends a round on it. WOG's `_AutoLose` semantics are INFERRED and the round-end authority is TBD_FrameworkManager, not this file.",
 			subject, objective.m_sAutoLoseFaction));
-	}
-
-	//! Let an authored `side` supply the holder of a hold zone that names no `faction`, which
-	//! would otherwise be inert. Capture zones are excluded: an empty faction there means anyone
-	//! may own it.
-	protected static void SeedHolderFromSide(notnull TBD_Objective objective, string subject)
-	{
-		if (objective.m_eKind != TBD_EObjectiveKind.HOLD_UNTIL)
-			return;
-
-		if (!objective.m_sFaction.IsEmpty() || objective.m_sSide.IsEmpty())
-			return;
-
-		if (!TBD_DeclaredFactions.Exists(objective.m_sSide))
-			return;
-
-		objective.m_sFaction = objective.m_sSide;
-
-		TBD_Log.Kv(TBD_ObjectiveRegistry.CH, "note", string.Format("objective_hold_until '%1' names no zones[].faction; objectives[].side='%2' supplies the holder. Without it this objective would be INERT and 'hold_expired' could never fire.",
-			subject, objective.m_sSide));
 	}
 
 	//! Log what the typed pass produced, always, even at zero: rows, bound, framed, locked and

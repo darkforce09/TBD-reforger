@@ -4,7 +4,8 @@
  *
  * Role: renders an objective's title and status as a viewer on one side reads them.
  * Position: called by `TBD_ObjectiveHudPublisher` for the HUD rows and by
- * `TBD_ObjectivesComponent.BuildBoardForPlayer`; reads `TBD_Objective`.
+ * `TBD_ObjectivesComponent.BuildBoardForPlayer`; reads `TBD_Objective` and takes each usable
+ * objective's status from its kind's `TBD_ObjectiveKindBehaviour.StatusText`.
  * State: none; pure functions.  Invariants: output is ASCII (`--`, never an arrow glyph); the
  * viewer's side always comes from server-owned slot state, never from a client; an unframed
  * objective renders exactly its label and status.
@@ -26,88 +27,16 @@ class TBD_ObjectiveText
 	}
 
 	//! The status half of a board line.
-	//! @return `inactive` for an inert objective, else the kind's status text
+	//! @param objective the objective
+	//! @param viewerFaction the viewer's side from server-owned state; may be empty
+	//! @return `inactive` for an inert objective, else its kind behaviour's status text
 	static string StatusText(notnull TBD_Objective objective, string viewerFaction)
 	{
 		if (!objective.m_bUsable)
 			return "inactive";
 
-		if (objective.m_eKind == TBD_EObjectiveKind.DESTROY)
-			return DestroyStatusText(objective);
-
-		if (objective.m_eKind == TBD_EObjectiveKind.HOLD_UNTIL)
-			return HoldStatusText(objective);
-
-		return CaptureStatusText(objective, viewerFaction);
-	}
-
-	//! DESTROY status: `DESTROYED`, or `intact <destroyed>/<required>`.
-	protected static string DestroyStatusText(notnull TBD_Objective objective)
-	{
-		if (objective.m_bComplete)
-			return "DESTROYED";
-
-		string text = "intact ";
-		text += objective.m_iTargetsDestroyed.ToString();
-		text += "/";
-		text += objective.RequiredKills().ToString();
-		return text;
-	}
-
-	//! HOLD_UNTIL status: `HELD`, or `hold <n>s left`, with ` (PAUSED)` while the clock stands.
-	protected static string HoldStatusText(notnull TBD_Objective objective)
-	{
-		if (objective.m_bComplete)
-			return "HELD";
-
-		// Rounded into an int first, so the text never shows float precision ("600.000000").
-		int remaining = Math.Round(objective.HoldRemaining());
-
-		string text = "hold ";
-		text += remaining.ToString();
-		text += "s left";
-		if (objective.m_bHoldPaused)
-			text += " (PAUSED)";
-
-		return text;
-	}
-
-	//! CAPTURE status: `neutral`, `OURS` or `held by <side>`, then ` -- CONTESTED` or the
-	//! partial progress percentage and the side banking it.
-	protected static string CaptureStatusText(notnull TBD_Objective objective, string viewerFaction)
-	{
-		string text;
-
-		if (objective.m_sOwner.IsEmpty())
-		{
-			text = "neutral";
-		}
-		else if (!viewerFaction.IsEmpty() && objective.m_sOwner == viewerFaction)
-		{
-			text = "OURS";
-		}
-		else
-		{
-			text = "held by ";
-			text += objective.m_sOwner;
-		}
-
-		if (objective.m_bContested)
-		{
-			text += " -- CONTESTED";
-			return text;
-		}
-
-		int percent = objective.ProgressPercent();
-		if (percent > 0 && percent < 100)
-		{
-			text += " -- ";
-			text += percent.ToString();
-			text += "% ";
-			text += objective.m_sProgressFaction;
-		}
-
-		return text;
+		TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.For(objective.m_eKind);
+		return behaviour.StatusText(objective, viewerFaction);
 	}
 
 	//! The whole board as `factionKey` reads it: each objective's line, and under it, indented,

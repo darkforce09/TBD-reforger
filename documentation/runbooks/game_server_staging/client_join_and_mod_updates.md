@@ -117,9 +117,12 @@ not Steam build ids, which differ between the client's app and the server app, 1
 Every instance loads the synced checkout through `-addonsDir`, so a script change reaches the
 fleet with a redeploy:
 
-1. Compile the mod headless; exit 3 means `apps/mod/tbd-framework/resourceDatabase.rdb` is stale
-   and does not register a new `.c` file, which [Workbench](/documentation/glossary/n_to_z.md#workbench)
-   fixes when it next loads the addon.
+1. Compile the mod headless; exit 3 means the engine loaded fewer script files than the tree
+   holds, for example through a missing or unreadable `apps/mod/tbd-framework/resourceDatabase.rdb`.
+   A clean compile does not prove the rdb is current: the headless compile loads new and moved
+   `.c` files without a regenerated rdb, while [Workbench](/documentation/glossary/n_to_z.md#workbench)
+   and server packaging need one that matches the tree, which Workbench writes when it next loads
+   the addon.
 
    ```bash
    cargo xtask mod compile
@@ -167,7 +170,7 @@ host of `TBD_SSH_HOST`, or says to set it when `deploy.env` names none.
 | the server "passes" but behaves like old code | a Workshop copy won over the checkout | [boot verdict](/documentation/runbooks/game_server_staging/boot_and_log_verification.md); the unit must carry `-addonsDir` and `-config` |
 | `#tbd` answers "TBD: admin only." to every player | `game.admins[]` is empty | set `TBD_ADMIN_IDENTITY_IDS` and redeploy; `passwordAdmin` does not feed that list |
 | the join is refused for a version mismatch | client and server game versions differ | update the server with `cargo xtask staging update-game-server`, or the client through Steam |
-| `Unknown class TBD_…` on the server | the synced `resourceDatabase.rdb` does not register the class | `cargo xtask mod compile` (exit 3 names a stale rdb), then redeploy |
+| `Unknown class TBD_…` on the server | the synced `resourceDatabase.rdb` does not register the class | load the addon in Workbench to regenerate the rdb, commit it, then redeploy; a clean `cargo xtask mod compile` does not prove the rdb is current |
 | "High ping server" warning from a server on Wi-Fi | the host is on Wi-Fi | harmless on the same subnet when `ping` answers |
 | no client `console.log` | the client runs under Proton, so its log sits in its app's compatdata prefix | the path in step 4 |
 | Workbench shows `tbd-framework` read-only | a publish left `data.pak` and `meta` in the addon folder | the `rm` above, then restart the launcher |

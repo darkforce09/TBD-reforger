@@ -6,7 +6,7 @@
  * own side's view and pushes it over the Reliable Owner RPC behind
  * `SCR_PlayerController.TBD_PushObjectiveHud`.  Position: owned by `TBD_ObjectivesComponent`,
  * which calls `Replicate` every LIVE tick, `HideAll` when LIVE ends, and `PushTo` for a client's
- * pull; reads `TBD_ObjectiveText` and `TBD_PlayerFaction`.
+ * pull; reads `TBD_ObjectiveText`, `TBD_ObjectiveKindBehaviour` and `TBD_PlayerFaction`.
  * State: the signature of the snapshot each player was last sent, keyed by player id, owned by
  * the component on the server.  Invariants: the 1 Hz push is sent only when a player's rendered
  * snapshot differs from their last one; a player with no record is always sent a full board; a
@@ -197,8 +197,8 @@ class TBD_ObjectiveHudPublisher : Managed
 	}
 
 	//! Render one player's snapshot: per objective the glyph, the side's title, and the status
-	//! followed by the side's task text; the capture bar belongs to the first capture objective the
-	//! player stands in, and a contested one takes it over.
+	//! followed by the side's task text; the capture bar belongs to the first objective the player
+	//! stands in whose kind behaviour claims the bar, and a contested one takes it over.
 	protected void FillHudSnapshot(int playerId, notnull array<ref TBD_Objective> board,
 		notnull array<string> icons, notnull array<string> titles, notnull array<string> details,
 		out string barLabel, out int barPercent, out int barVisible)
@@ -230,7 +230,8 @@ class TBD_ObjectiveHudPublisher : Managed
 			}
 			details.Insert(detail);
 
-			if (objective.m_eKind != TBD_EObjectiveKind.CAPTURE)
+			TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.For(objective.m_eKind);
+			if (!behaviour.ClaimsCaptureBar())
 				continue;
 			if (objective.m_aPresentPlayers.Find(playerId) == -1)
 				continue;
@@ -245,8 +246,8 @@ class TBD_ObjectiveHudPublisher : Managed
 		}
 	}
 
-	//! One ASCII row glyph: `.` inert, `v` complete, `!` contested, `#` destroy, `H` hold, `o`
-	//! neutral, `+` ours, `-` theirs.
+	//! One ASCII row glyph: `.` inert, `v` complete, `!` contested, else the kind behaviour's
+	//! glyph (`#` destroy, `H` hold, `o` neutral, `+` ours, `-` theirs for capture).
 	protected string HudIcon(notnull TBD_Objective objective, string factionKey)
 	{
 		if (!objective.m_bUsable)
@@ -255,14 +256,8 @@ class TBD_ObjectiveHudPublisher : Managed
 			return "v";
 		if (objective.m_bContested)
 			return "!";
-		if (objective.m_eKind == TBD_EObjectiveKind.DESTROY)
-			return "#";
-		if (objective.m_eKind == TBD_EObjectiveKind.HOLD_UNTIL)
-			return "H";
-		if (objective.m_sOwner.IsEmpty())
-			return "o";
-		if (!factionKey.IsEmpty() && objective.m_sOwner == factionKey)
-			return "+";
-		return "-";
+
+		TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.For(objective.m_eKind);
+		return behaviour.HudIcon(objective, factionKey);
 	}
 }

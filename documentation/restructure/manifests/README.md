@@ -12,6 +12,7 @@ committed afterwards so the verification keeps proving that no live file spells 
 documentation/restructure/manifests/
 ├── example.tsv               the commented format sample the tests run; never judged as a stage manifest
 ├── m2_objectives_engine.tsv  stage M2: the mod's four objectives engine folders into Objectives/Engine/
+├── m3_objective_types.tsv    stage M3: the destroy target search beside the destroy objective behaviour
 ├── s1_global_renames.tsv     stage S1: top-level folder and tool package renames, archived records
 ├── s2_apps_and_deploy.tsv    stage S2: website crates to apps/ and legacy/, snake_case packages, deploy/
 ├── s2_brief_archive.tsv      stage S2: the executed S1 agent briefs into the archive

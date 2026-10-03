@@ -32,7 +32,8 @@ the manager passed in, and cancelled from its `OnDelete` through `CancelCallback
   world has created its entities, and it is the only place the loaded document reaches the world:
   the parse and the platform's answers never spawn or apply anything.
 - `TBD_FactionElimination.Arm` runs at `LIVE` when `winConditions.endOn` declares
-  `faction_eliminated` or an objective trigger. Every 2 s it ends the round on the first
+  `faction_eliminated` or the end trigger of any objective kind (`TBD_ObjectiveKindBehaviour.Count`
+  and `At`). Every 2 s it ends the round on the first
   `TBD_ObjectiveRegistry.EvaluateEndTriggers` answer, else when at least two sides fielded players
   and at most one still has a living one. `CountSurvivors` is the survivor count the banner and the
   clock also use.
@@ -63,7 +64,7 @@ the manager passed in, and cancelled from its `OnDelete` through `CancelCallback
 - Depends on: `TBD_FrameworkManager` (the stage, `SetStage`, `EndRound`, the night-vision latch);
   `TBD_MissionFlow` and `TBD_MissionFlowReport` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Flow/`; `TBD_ObjectiveRegistry`
-  under `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_MissionLoader`,
+  and `TBD_ObjectiveKindBehaviour` under `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_MissionLoader`,
   `TBD_MissionWorldApplier`, `TBD_RosterLoader` and `TBD_SpawnManager` under
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`;
   `TBD_EndScreen`, `TBD_DebriefScreen` and `TBD_DebriefScoreboard` under

@@ -57,9 +57,7 @@ class TBD_ObjectiveEntityDocStruct
 class TBD_ObjectiveEntityReader
 {
 	static const string CH = "ObjTyped"; //!< log channel of the typed pass
-	static const string TASK_CAPTURE = "capture"; //!< `objectives[].type` task vocabulary, distinct from the zone types and end triggers
-	static const string TASK_DESTROY = "destroy"; //!< `objectives[].type` value
-	static const string TASK_HOLD    = "hold"; //!< `objectives[].type` value
+	static const string TASK_HOLD    = "hold"; //!< `objectives[].type` value that frames its side as the defender; the kind behaviours own the full task vocabulary
 	static const string TASK_DEFEND  = "defend"; //!< `objectives[].type` value: the defender side of a capture
 
 	protected static ref array<ref TBD_ObjectiveEntityStruct> s_aRows; //!< rows that passed variant gating; null until `Read`
@@ -181,6 +179,8 @@ class TBD_ObjectiveEntityReader
 		if (!s_aRows)
 			return;
 
+		string zoneTypes = ObjectiveZoneTypes();
+
 		foreach (TBD_ObjectiveEntityStruct row : s_aRows)
 		{
 			if (!row)
@@ -196,10 +196,25 @@ class TBD_ObjectiveEntityReader
 			if (s_aClaimedZoneIds && s_aClaimedZoneIds.Find(row.zoneId) != -1)
 				continue;
 
-			TBD_Log.Warn(CH, string.Format("objectives[] row id='%1' names zoneId '%2', which no prepared objective zone matched -- either no zone carries that id, or that zone's type is not one of %3 / %4 / %5. The row is inert.",
-				row.id, row.zoneId,
-				TBD_ObjectiveRegistry.TYPE_CAPTURE, TBD_ObjectiveRegistry.TYPE_DESTROY, TBD_ObjectiveRegistry.TYPE_HOLD_UNTIL));
+			TBD_Log.Warn(CH, string.Format("objectives[] row id='%1' names zoneId '%2', which no prepared objective zone matched -- either no zone carries that id, or that zone's type is not one of %3. The row is inert.",
+				row.id, row.zoneId, zoneTypes));
 		}
+	}
+
+	//! Every objective zone type, in the lookup's kind order, joined by ` / `.
+	//! @return the zone types of the kind behaviours
+	protected static string ObjectiveZoneTypes()
+	{
+		string zoneTypes;
+		for (int i = 0; i < TBD_ObjectiveKindBehaviour.Count(); i++)
+		{
+			if (i > 0)
+				zoneTypes += " / ";
+
+			zoneTypes += TBD_ObjectiveKindBehaviour.At(i).ZoneType();
+		}
+
+		return zoneTypes;
 	}
 
 	//! Warn for every second row naming the same `zoneId`, which the schema forbids (one entity,
@@ -225,22 +240,6 @@ class TBD_ObjectiveEntityReader
 
 			seen.Insert(row.zoneId);
 		}
-	}
-
-	//! The zone kind a task type belongs on; `defend` is the far side of a capture.
-	//! @return the kind, or NONE for an unknown type
-	static TBD_EObjectiveKind KindOfTaskType(string taskType)
-	{
-		if (taskType == TASK_CAPTURE || taskType == TASK_DEFEND)
-			return TBD_EObjectiveKind.CAPTURE;
-
-		if (taskType == TASK_DESTROY)
-			return TBD_EObjectiveKind.DESTROY;
-
-		if (taskType == TASK_HOLD)
-			return TBD_EObjectiveKind.HOLD_UNTIL;
-
-		return TBD_EObjectiveKind.NONE;
 	}
 
 	//! Whether the task type frames `side` as the defender (`hold`, `defend`).

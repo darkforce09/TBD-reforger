@@ -17,7 +17,7 @@ tools/xtask/src/verifications/mod_scripts/destroy_target_diagnostics/
 ## How it works
 
 `verify_destroy_target_diagnostics` reads five files:
-`Engine/Registry/TBD_ObjectiveDestroyTargets.c`, `Engine/Runtime/TBD_ObjectivesComponent.c` and
+`Types/Destroy/TBD_ObjectiveDestroyTargets.c`, `Engine/Runtime/TBD_ObjectivesComponent.c` and
 `Engine/Registry/TBD_ObjectiveRulesReader.c` under
 `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, `TBD_MissionUnconsumedKeyCheck.c`
 under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation/`, and

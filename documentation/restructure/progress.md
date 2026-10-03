@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S7 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5 and S6 landed |
-| Last green commit | the S5 stage commit (S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Current stage | S7 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6 and M3 landed |
+| Last green commit | the M3 stage commit (S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
@@ -165,12 +165,14 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [ ] Stage commit — pending
 
 ### M3 Objective behaviours
-- [ ] M3a (S) switch-site catalogue — pending
-- [ ] M3b (M) behaviour base and types — pending
-- [ ] M3c (M) Registry rewiring — pending
-- [ ] M3d (M) Runtime and systems rewiring — pending
-- [ ] OC-mod playtest of capture, destroy and hold-until — pending
-- [ ] Stage commit — pending
+- [x] M3a (S) switch-site catalogue — done — no `switch` exists; 22 kind-branching methods in 11 files, catalogued by the planning explorer (stage log)
+- [x] M3b (L) behaviour base, lookup and the Capture, Destroy, HoldUntil types — done — destroy targets moved by manifest `m3_objective_types.tsv`
+- [x] M3c (M) Registry rewiring — done
+- [x] M3d (M) Runtime and systems rewiring — done
+- [x] M3e (S) old registry kind API removed, closing fixes — done — duplication ledger 45 opened, 45 closed
+- [ ] OC-rdb: the operator regenerates `resourceDatabase.rdb` in Workbench on `main` right after M3 lands, as a follow-up commit — pending
+- [ ] OC-mod playtest of capture, destroy and hold-until — pending (S12; per-kind checklist in the M3 stage log)
+- [x] Stage commit — done — the M3 stage commit
 
 ### S12 Close
 - [ ] G1… closing-fix batches — pending
@@ -325,6 +327,13 @@ three map engine integration suites that test only mission crates, the seed gene
 pre-existing rustdoc warnings in the map engine) are in
 [stage_logs/s5.md](/documentation/restructure/stage_logs/s5.md).
 
+M3 is on `main`: each objective kind is a behaviour class under
+`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/` (the `TBD_ObjectiveKindBehaviour`
+base and its kind lookup, Capture, Destroy, HoldUntil), and no code outside it branches on the kind.
+The operator regenerates `apps/mod/tbd-framework/resourceDatabase.rdb` in Workbench on `main` as a
+follow-up commit; `cargo xtask mod compile` is clean without it. Findings F-M3-01..05 and the S12
+per-kind playtest checklist are in [stage_logs/m3.md](/documentation/restructure/stage_logs/m3.md).
+
 Every remaining stage (S3–S12, M3) has its own worktree and orchestrator, managed by the
 "Restructure coordinator" session (decision D22; inputs per stage in the stage logs protocol). The
 launch prompts live in the gitignored run folders; if a worktree is lost, rebuild it with
@@ -333,7 +342,7 @@ and the stage logs protocol.
 
 Operator items left from S2: the server-side moves and `deploy staging --migrate-single-instance`
 before the next deploy, and the GitHub required checks `api (Rust 1.95 + Postgres 18)` and
-`frontend (Leptos SPA)`. M3 (objective behaviours) can run any time.
+`frontend (Leptos SPA)`.
 
 Machine notes (this workstation). Each worktree's `env.sh` puts two shims from
 `~/.cache/tbd-bin/restructure-shims/` first on PATH: a `cargo` that runs host cargo with git-lfs on

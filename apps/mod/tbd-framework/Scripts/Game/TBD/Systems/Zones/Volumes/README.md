@@ -31,8 +31,13 @@ any zone whose `minHeight` is above its `maxHeight` (that volume contains nobody
   acts, and must pass `acting * 100 >= others * (100 + advantagePercent)` when the percent is
   authored). With no volume keys the answer equals presence-only capture.
 - Hold: `EnemyContestsHold` and `HolderPresent` apply `defenderCount` to the enemy and the holder.
-- Starting owner: `ApplyStartingOwner` starts a capture objective held (full progress) by a declared
-  faction the objective may be owned by; anything else is logged and left neutral.
+- Starting owner: `ApplyStartingOwner` finds the zone's non-empty `startingOwner` and hands it to
+  the objective's kind behaviour (`TBD_ObjectiveKindBehaviour.ApplyStartingOwner`): the capture
+  behaviour starts the objective held (full progress) by a declared faction the objective may be
+  owned by and logs and leaves anything else neutral; the hold behaviour logs and ignores an owner
+  other than the holder; the destroy behaviour ignores it. The behaviours log on this folder's
+  `ZoneVol` channel, and the capture and hold behaviours ask `ResolveActingFaction`,
+  `EnemyContestsHold` and `HolderPresent` each tick.
 
 ## Authority
 
@@ -47,11 +52,12 @@ any zone whose `minHeight` is above its `maxHeight` (that volume contains nobody
 
 - Depends on: `TBD_Zone` beside this folder; `TBD_MissionLoader` and `TBD_MissionZoneRulesStruct`
   under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/`; `TBD_Objective` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_DeclaredFactions` and
-  `TBD_Log` under `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `#/$defs/zoneRules` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_ObjectiveKindBehaviour` in
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/`; `TBD_Log` under
+  `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `#/$defs/zoneRules` in
   `contracts/definitions/mission.schema.json`.
-- Used by: `TBD_ObjectiveRegistry` and `TBD_ObjectivesComponent` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_EntityQuery` in
+- Used by: `TBD_ObjectiveRegistry`, `TBD_ObjectivesComponent` and the capture and hold
+  behaviours in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`; `TBD_EntityQuery` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/World/`.
 - Rules: absent keys leave presence-only capture and holding unchanged; a contested or tied capture
   resolves to no side; `cargo xtask mod compile` checks that the scripts compile.

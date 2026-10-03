@@ -19,9 +19,11 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Model/
 `TBD_Objective` is plain server state. `TBD_ObjectiveRegistry` fills it at build time: the zone it
 lives on (`m_Zone`, a strong reference that owns the shape and the containment test), its kind,
 its resolved rules, and, when an `objectives[]` row names its zone, the typed fields (entity id,
-task type, side, `lock`, `autoLose`, per-side framing). `TBD_ObjectiveProgression` then writes its
-live fields every tick: the presence sample (`BeginSample`, `AddPresence`), owner, banked progress,
-hold clock, contest state and completion.
+task type, side, `lock`, `autoLose`, per-side framing). Every tick `TBD_ObjectivesComponent`
+writes the presence sample (`BeginSample`, `AddPresence`), and the objective's kind behaviour,
+called through `TBD_ObjectiveProgression`, writes the owner, banked progress, hold clock, contest
+state and completion. The behaviours hold no state of their own; every field they read or
+write is here.
 
 The role queries decide what each viewer reads. `RoleOf` takes the viewer's side, which callers
 resolve from the player's assigned slot: the objective is for `objectives[].side` when that names
@@ -29,9 +31,9 @@ a faction, else for `zones[].faction`; the side it is for defends it under `hold
 an untyped hold zone) and attacks it otherwise, and every other side takes the opposite role.
 `TitleFor` and `TaskTextFor` return that side's framing, falling back to the label for the title
 and to nothing for the task text. `TBD_ObjectiveText` renders a board line as
-`<title> [<status>]`, where the status is `inactive`, `DESTROYED` or `intact n/m`, `HELD` or
-`hold ns left (PAUSED)`, or `neutral`, `OURS` or `held by <side>` with ` -- CONTESTED` or the
-partial percentage.
+`<title> [<status>]`, where the status is `inactive` for an inert objective and otherwise the kind
+behaviour's `StatusText`: `DESTROYED` or `intact n/m`, `HELD` or `hold ns left (PAUSED)`, or
+`neutral`, `OURS` or `held by <side>` with ` -- CONTESTED` or the partial percentage.
 
 ## Authority
 
@@ -44,7 +46,9 @@ partial percentage.
 
 ## Boundaries
 
-- Depends on: `TBD_Zone` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`.
+- Depends on: `TBD_Zone` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`;
+  `TBD_ObjectiveKindBehaviour` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/`,
+  which `TBD_ObjectiveText` asks for each kind's status text.
 - Used by: every script under `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`;
   `TBD_ZoneVolume` and `TBD_TriggerRuntime` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`; `TBD_MissionValidator`, which uses

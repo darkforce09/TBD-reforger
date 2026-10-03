@@ -61,8 +61,8 @@ class TBD_TriggerConditions
 	}
 
 	//! `objective_complete`: with a `zoneId`, that one objective; without one, every usable
-	//! objective, and at least one must exist. Unusable objectives are excluded, as
-	//! `TBD_ObjectiveRegistry.AreAllObjectivesCaptured` excludes them.
+	//! objective, and at least one must exist. Unusable objectives are excluded, as the capture
+	//! behaviour's `HasEnded` excludes them when `TBD_ObjectiveRegistry.EvaluateEndTriggers` asks it.
 	//! @param trigger the trigger whose `m_sZoneId` names the objective, or is empty
 	//! @return true when the named objective, or every usable one, is complete
 	protected static bool ObjectiveComplete(notnull TBD_Trigger trigger)

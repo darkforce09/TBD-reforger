@@ -32,8 +32,9 @@ before the session; it takes about 30 minutes.
    cargo xtask mod compile
    ```
 
-   Expected: exit 0. A non-zero exit names a `file:line` in a `.c` file, and exit 3 means
-   `apps/mod/tbd-framework/resourceDatabase.rdb` is stale; do not go on.
+   Expected: exit 0. A non-zero exit names a `file:line` in a `.c` file, and exit 3 means the
+   engine loaded fewer script files than the tree holds (for example a missing or unreadable
+   `apps/mod/tbd-framework/resourceDatabase.rdb`); do not go on.
 
 2. Boot the world headless with no mission and read the component roll-call.
 

@@ -66,8 +66,10 @@ pub(super) fn report_compile_errors(
 /// The check is `loaded >= vanilla + ours`, not `==`: the baseline is calibrated once
 /// per machine and only ever goes stale LOW as the vanilla game grows (this box: 5633 calibrated
 /// 2026-07; green runs already reported 5761), and `--probe` adds files of its own. Anything below
-/// the sum means the engine skipped part or all of the addon — the stale-rdb failure this guard
-/// exists for, now including the partial case the union count could never see.
+/// the sum means the engine skipped part or all of the addon, for example through a missing or
+/// unreadable `resourceDatabase.rdb`, including the partial case the union count could never see.
+/// New or moved `.c` files do not trip it on their own: the headless compile loads them without a
+/// regenerated rdb.
 pub(super) fn load_count_guard(
     root: &Path,
     mod_src: &Path,
@@ -155,7 +157,7 @@ pub(super) fn load_count_guard(
                 vanilla + ours
             ),
             Some(
-                "Almost always a stale or unreadable apps/mod/tbd-framework/resourceDatabase.rdb (it IS committed, but the engine rejects it once it drifts from the script tree). Fix: open apps/mod/tbd-export/addon.gproj in Workbench (it loads tbd-framework as a dependency and regenerates the rdb), then re-run. If the vanilla game shrank instead, delete .compile-vanilla-baseline to recalibrate.",
+                "The engine loaded fewer script files than the tree holds, usually through a missing or unreadable apps/mod/tbd-framework/resourceDatabase.rdb (new or moved .c files alone do not cause this; the headless compile loads them without a regenerated rdb). Fix: open apps/mod/tbd-export/addon.gproj in Workbench (it loads tbd-framework as a dependency and regenerates the rdb), then re-run. If the vanilla game shrank instead, delete .compile-vanilla-baseline to recalibrate.",
             ),
         )));
     }

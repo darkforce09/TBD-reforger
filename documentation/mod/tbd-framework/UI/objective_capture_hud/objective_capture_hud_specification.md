@@ -12,9 +12,11 @@ only paints it.
 - Code: [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/README.md)
   (`TBD_ObjectiveHud.c`, the panel and its RPC pair) and
   [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/README.md)
-  (`Runtime/TBD_ObjectivesComponent.c`, which ticks the objectives;
-  `Runtime/TBD_ObjectiveHudPublisher.c`, which builds each player's board;
-  `Model/TBD_ObjectiveText.c`, the status texts).
+  (`Engine/Runtime/TBD_ObjectivesComponent.c`, which ticks the objectives;
+  `Engine/Runtime/TBD_ObjectiveHudPublisher.c`, which builds each player's board;
+  `Engine/Model/TBD_ObjectiveText.c`, the board lines; and the kind behaviours under `Types/`
+  (`Capture/`, `Destroy/`, `HoldUntil/`), which supply each kind's status text and row glyph and
+  say which kind claims the capture bar).
 - Layout: [`apps/mod/tbd-framework/UI/layouts/Hud/`](/apps/mod/tbd-framework/UI/layouts/Hud/README.md),
   `TBD_ObjectiveHud.layout`, whose README gives the geometry and every widget the handler binds.
 - Entry: `TBD_ObjectivesComponent.Deliver`, run by the component's 1 s server tick while the round

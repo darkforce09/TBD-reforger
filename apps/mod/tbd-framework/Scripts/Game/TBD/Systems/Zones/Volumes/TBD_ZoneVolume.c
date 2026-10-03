@@ -3,9 +3,11 @@
  * @brief The objective system's questions about a zone volume: height, capture, hold, owner.
  *
  * Role: answers whether a body is inside a zone's height band, which side acts on a capture,
- * whether an enemy contests or the holder holds, and applies `startingOwner`.  Position: called
- * by `TBD_ObjectiveRegistry`, `TBD_ObjectivesComponent` and `TBD_EntityQuery` on the server; reads
- * `TBD_ZoneVolumeBounds` and resolves captures through `TBD_ZoneContestResolver`.
+ * whether an enemy contests or the holder holds, and hands `startingOwner` to the objective's kind
+ * behaviour.  Position: called by `TBD_ObjectiveRegistry`, `TBD_ObjectivesComponent`,
+ * `TBD_EntityQuery` and the capture and hold behaviours on the server; reads
+ * `TBD_ZoneVolumeBounds`, resolves captures through `TBD_ZoneContestResolver`, and applies
+ * `startingOwner` through `TBD_ObjectiveKindBehaviour.ApplyStartingOwner`.
  * State: none of its own; the bounds live in `TBD_ZoneVolumeBounds`.  Invariants: height is
  * above ground at the body's own XZ, not sea level; absent bounds and counts leave presence-only
  * behaviour unchanged.
@@ -17,9 +19,10 @@ class TBD_ZoneVolume
 {
 	static const string CH = "ZoneVol"; //!< log channel
 
-	//! Start a capture objective HELD (full progress) by its zone's `startingOwner` when that is a
-	//! declared faction the objective may be owned by; otherwise log and leave it neutral. On a
-	//! hold-until objective a `startingOwner` other than the holder is logged and ignored.
+	//! Hand the zone's non-empty `startingOwner` to the objective's kind behaviour: a capture
+	//! objective starts HELD by it when that is a declared faction the objective may be owned by,
+	//! a hold-until objective logs and ignores one other than the holder, and every other kind
+	//! ignores it. An absent bound or an empty `startingOwner` changes nothing.
 	//! @param objective the objective being prepared
 	static void ApplyStartingOwner(notnull TBD_Objective objective)
 	{
@@ -30,39 +33,8 @@ class TBD_ZoneVolume
 		if (bound.startingOwner.IsEmpty())
 			return;
 
-		if (objective.m_eKind == TBD_EObjectiveKind.HOLD_UNTIL)
-		{
-			if (bound.startingOwner != objective.m_sFaction)
-			{
-				TBD_Log.Warn(CH, string.Format("objective '%1' rules.startingOwner='%2' is ignored on objective_hold_until (holder is zones[].faction='%3')",
-					objective.m_sId, bound.startingOwner, objective.m_sFaction));
-			}
-			return;
-		}
-
-		if (objective.m_eKind != TBD_EObjectiveKind.CAPTURE)
-			return;
-
-		if (!TBD_DeclaredFactions.Exists(bound.startingOwner))
-		{
-			TBD_Log.Warn(CH, string.Format("objective '%1' rules.startingOwner='%2' names no factions[].key -- leaving the objective NEUTRAL",
-				objective.m_sId, bound.startingOwner));
-			return;
-		}
-
-		if (!objective.MayOwn(bound.startingOwner))
-		{
-			TBD_Log.Warn(CH, string.Format("objective '%1' rules.startingOwner='%2' is excluded by zones[].faction='%3' -- leaving the objective NEUTRAL",
-				objective.m_sId, bound.startingOwner, objective.m_sFaction));
-			return;
-		}
-
-		objective.m_sOwner = bound.startingOwner;
-		objective.m_sProgressFaction = bound.startingOwner;
-		objective.m_fProgress = objective.m_fCaptureSeconds;
-
-		TBD_Log.Kv(CH, "startingOwner", string.Format("id=%1 owner=%2",
-			objective.m_sId, bound.startingOwner));
+		TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.For(objective.m_eKind);
+		behaviour.ApplyStartingOwner(objective, bound.startingOwner);
 	}
 
 	//! Whether `origin` is inside the zone's height band: height above the ground at its own XZ,

@@ -4,8 +4,8 @@
  * it needs to fire.
  *
  * Role: the win-condition checks of mission validation.  Position: called by
- * `TBD_MissionValidator.Run` with the slot census from `TBD_MissionSlotChecks`; asks
- * `TBD_ObjectiveRegistry` for the objective triggers, zone types and kinds, and
+ * `TBD_MissionValidator.Run` with the slot census from `TBD_MissionSlotChecks`; asks the
+ * `TBD_ObjectiveKindBehaviour` lookup for the objective triggers, zone types and kinds, and
  * `TBD_MissionFlow.ResolveSeconds` for the flow duration rule; writes into a
  * `TBD_MissionValidationFindings`.
  * State: none.  Invariants: an ERROR means the mission cannot be played, a WARNING that it can be
@@ -20,6 +20,8 @@ class TBD_MissionWinConditionChecks
 {
 	protected static const string TRIGGER_TIME_LIMIT         = "time_limit";         //!< `endOn` value `TBD_RoundClock` evaluates.
 	protected static const string TRIGGER_FACTION_ELIMINATED = "faction_eliminated"; //!< `endOn` value `TBD_FactionElimination` evaluates.
+	protected static const int TIME_LIMIT_SCHEMA_POSITION         = 0; //!< index of `time_limit` in the mission.schema.json `endOn` enum
+	protected static const int FACTION_ELIMINATED_SCHEMA_POSITION = 2; //!< index of `faction_eliminated` in the mission.schema.json `endOn` enum
 
 	//! End triggers must be schema values, and each must be reachable: `faction_eliminated` needs
 	//! two sides holding slots, `time_limit` needs `flow.timeLimitSeconds`, and the three objective
@@ -82,8 +84,9 @@ class TBD_MissionWinConditionChecks
 			if (!IsKnownEndTrigger(trigger))
 			{
 				findings.AddError(subject, string.Format(
-					"'%1' is not a mission.schema.json end trigger (time_limit, all_objectives_captured, faction_eliminated, objective_destroyed, hold_expired)",
-					trigger));
+					"'%1' is not a mission.schema.json end trigger (%2)",
+					trigger,
+					SchemaEndTriggerList()));
 				continue;
 			}
 
@@ -122,15 +125,14 @@ class TBD_MissionWinConditionChecks
 		if (trigger == TRIGGER_TIME_LIMIT)
 			return CheckTimeLimitReachable(findings, subject, mission);
 
-		string zoneType;
-		TBD_EObjectiveKind kind = ObjectiveKindFor(trigger, zoneType);
+		TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.ForEndTrigger(trigger);
 
 		// IsKnownEndTrigger admits five values and all five are mapped, so this answers only for a
 		// trigger added to the schema without a case here; it is not evidence the round cannot end.
-		if (kind == TBD_EObjectiveKind.NONE)
+		if (behaviour.Kind() == TBD_EObjectiveKind.NONE)
 			return true;
 
-		return CheckObjectiveTriggerReachable(findings, subject, trigger, zoneType, kind, mission);
+		return CheckObjectiveTriggerReachable(findings, subject, trigger, behaviour.ZoneType(), behaviour.Kind(), mission);
 	}
 
 	//! `faction_eliminated` needs two sides holding slots; `TBD_FactionElimination`
@@ -202,8 +204,8 @@ class TBD_MissionWinConditionChecks
 		return true;
 	}
 
-	//! `all_objectives_captured`, `objective_destroyed` and `hold_expired` each need at least one
-	//! zone of their kind carrying geometry something can be inside.
+	//! Each objective end trigger needs at least one zone of the kind that fires it, carrying
+	//! geometry something can be inside.
 	//! @param findings receives the findings
 	//! @param subject the trigger's finding subject
 	//! @param trigger the trigger
@@ -239,7 +241,7 @@ class TBD_MissionWinConditionChecks
 	}
 
 	//! How many zones of `kind` the document declares, and how many carry geometry. The kind comes
-	//! from `TBD_ObjectiveRegistry.KindOf`, so no zone-type string is spelled here. A circle counts
+	//! from `TBD_ObjectiveKindBehaviour.ForZoneType`, so no zone-type string is spelled here. A circle counts
 	//! when `r > 0` and a polygon when it has vertices; the parse allocates `circle` regardless.
 	//! @param mission the document
 	//! @param kind the objective kind
@@ -260,7 +262,8 @@ class TBD_MissionWinConditionChecks
 			if (!zone)
 				continue;
 
-			if (TBD_ObjectiveRegistry.KindOf(zone.type) != kind)
+			TBD_ObjectiveKindBehaviour zoneBehaviour = TBD_ObjectiveKindBehaviour.ForZoneType(zone.type);
+			if (zoneBehaviour.Kind() != kind)
 				continue;
 
 			total++;
@@ -277,45 +280,51 @@ class TBD_MissionWinConditionChecks
 		return total;
 	}
 
-	//! The objective kind a trigger needs at least one of, and the zone type to name in a finding.
-	//! Trigger and zone-type names come from `TBD_ObjectiveRegistry`; the pairing is the one fact it
-	//! exposes no accessor for, and it matches `TBD_ObjectiveRegistry.ReportTriggerCoverage`.
-	//! @param trigger the trigger
-	//! @param zoneType receives the schema zone type, or empty
-	//! @return the kind, or `TBD_EObjectiveKind.NONE` when the trigger watches no objective
-	protected static TBD_EObjectiveKind ObjectiveKindFor(string trigger, out string zoneType)
+	//! Every mission.schema.json `endOn` value in the schema's enum order, joined by ", ": the two
+	//! triggers this file spells at their schema positions, and the objective kinds' triggers in the
+	//! kind lookup's order CAPTURE, DESTROY, HOLD_UNTIL, which is their relative schema order.
+	//! @return the joined list
+	protected static string SchemaEndTriggerList()
 	{
-		if (trigger == TBD_ObjectiveRegistry.TRIGGER_ALL_CAPTURED)
+		string list = string.Empty;
+		int total = TBD_ObjectiveKindBehaviour.Count() + 2; // the kinds' triggers, time_limit and faction_eliminated
+		int kindIndex = 0;
+
+		for (int position = 0; position < total; position++)
 		{
-			zoneType = TBD_ObjectiveRegistry.TYPE_CAPTURE;
-			return TBD_EObjectiveKind.CAPTURE;
+			string trigger;
+			if (position == TIME_LIMIT_SCHEMA_POSITION)
+			{
+				trigger = TRIGGER_TIME_LIMIT;
+			}
+			else if (position == FACTION_ELIMINATED_SCHEMA_POSITION)
+			{
+				trigger = TRIGGER_FACTION_ELIMINATED;
+			}
+			else
+			{
+				trigger = TBD_ObjectiveKindBehaviour.At(kindIndex).EndTrigger();
+				kindIndex++;
+			}
+
+			if (position > 0)
+				list += ", ";
+
+			list += trigger;
 		}
 
-		if (trigger == TBD_ObjectiveRegistry.TRIGGER_DESTROYED)
-		{
-			zoneType = TBD_ObjectiveRegistry.TYPE_DESTROY;
-			return TBD_EObjectiveKind.DESTROY;
-		}
-
-		if (trigger == TBD_ObjectiveRegistry.TRIGGER_HOLD_EXPIRED)
-		{
-			zoneType = TBD_ObjectiveRegistry.TYPE_HOLD_UNTIL;
-			return TBD_EObjectiveKind.HOLD_UNTIL;
-		}
-
-		zoneType = string.Empty;
-		return TBD_EObjectiveKind.NONE;
+		return list;
 	}
 
 	//! Membership of the schema's `winConditions.endOn` enum; legality only.
 	//! @param trigger the trigger
-	//! @return true for the five schema values
+	//! @return true for the two non-objective schema values and every trigger an objective kind fires
 	protected static bool IsKnownEndTrigger(string trigger)
 	{
-		return trigger == TRIGGER_TIME_LIMIT
-			|| trigger == TRIGGER_FACTION_ELIMINATED
-			|| trigger == TBD_ObjectiveRegistry.TRIGGER_ALL_CAPTURED
-			|| trigger == TBD_ObjectiveRegistry.TRIGGER_DESTROYED
-			|| trigger == TBD_ObjectiveRegistry.TRIGGER_HOLD_EXPIRED;
+		if (trigger == TRIGGER_TIME_LIMIT || trigger == TRIGGER_FACTION_ELIMINATED)
+			return true;
+
+		TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.ForEndTrigger(trigger);
+		return behaviour.Kind() != TBD_EObjectiveKind.NONE;
 	}
 }

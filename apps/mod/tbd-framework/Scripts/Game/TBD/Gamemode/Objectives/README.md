@@ -9,7 +9,8 @@ triggers.
 
 ```text
 apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/
-└── Engine/  the objective record, registry, 1 Hz runtime and end triggers, and the task machine
+├── Engine/  the objective record, registry, 1 Hz runtime and end triggers, and the task machine
+└── Types/   the capture, destroy and hold behaviours and the lookup by objective kind
 ```
 
 ## How it works
@@ -18,9 +19,15 @@ apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/
 objectives once per world from the mission's zones and `objectives[]`, advances capture, hold and
 destroy progress once a second while the stage is `LIVE`, sends each player their objective board,
 answers the objective end triggers `TBD_FrameworkManager` asks for every 2 s, and moves each task
-of `tasks[]` from `assigned` to `succeeded` or `failed`. An objective kind's own behaviour class sits
-in a Types folder beside `Engine/`, never inside the engine; the folder exists once the first such
-class does, since Git tracks no empty folder.
+of `tasks[]` from `assigned` to `succeeded` or `failed`.
+
+[`Types/`](Types/README.md) holds what differs between the kinds, never inside the engine:
+`TBD_ObjectiveCaptureBehaviour`, `TBD_ObjectiveDestroyBehaviour` and
+`TBD_ObjectiveHoldUntilBehaviour`, each a `TBD_ObjectiveKindBehaviour` with the kind's vocabulary,
+rules, end condition, per-tick advance and board text. The engine asks
+`TBD_ObjectiveKindBehaviour.For` (or the lookup by zone type, end trigger or task type) for an
+objective's behaviour and calls its hooks; every other zone gets the NONE behaviour, which does
+nothing.
 
 ## Authority
 

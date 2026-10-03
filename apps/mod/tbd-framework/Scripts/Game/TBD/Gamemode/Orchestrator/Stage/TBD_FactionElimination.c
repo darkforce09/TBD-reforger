@@ -33,18 +33,18 @@ class TBD_FactionElimination : Managed
 			queue.Remove(Tick);
 	}
 
-	//! Start the 2 s poll when `winConditions.endOn` declares `faction_eliminated` or any objective
-	//! trigger; a mission that declares none runs until an admin ends it.
+	//! Start the 2 s poll when `winConditions.endOn` declares `faction_eliminated` or the end
+	//! trigger of any objective kind; a mission that declares none runs until an admin ends it.
 	//! @authority server
 	void Arm()
 	{
 		bool anyTrigger = TBD_MissionLoader.HasEndTrigger(TBD_MissionFlow.TRIGGER_FACTION_ELIMINATED);
-		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_ALL_CAPTURED))
-			anyTrigger = true;
-		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_DESTROYED))
-			anyTrigger = true;
-		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_HOLD_EXPIRED))
-			anyTrigger = true;
+		for (int i = 0; i < TBD_ObjectiveKindBehaviour.Count(); i++)
+		{
+			TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.At(i);
+			if (TBD_MissionLoader.HasEndTrigger(behaviour.EndTrigger()))
+				anyTrigger = true;
+		}
 
 		if (!anyTrigger)
 		{

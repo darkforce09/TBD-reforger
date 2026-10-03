@@ -6,10 +6,11 @@
  * is LIVE samples who stands on which objective, advances every objective, delivers completion
  * lines to chat and the board to each player's HUD, and logs a met end trigger.
  * Position: attached by `Prefabs/Systems/TBD_GameMode.et`; drives `TBD_ObjectiveRegistry`,
- * `TBD_ObjectiveProgression` and `TBD_ObjectiveHudPublisher`; read by `TBD_ObjectiveHud` for a
- * client's pull.
+ * `TBD_ObjectiveProgression`, `TBD_ObjectiveHudPublisher` and, on entering LIVE, each kind's
+ * `TBD_ObjectiveKindBehaviour`; read by `TBD_ObjectiveHud` for a client's pull.
  * State: the LIVE edge, the end-trigger latch and the two owned helpers, on the server; one
- * repeating `CallLater` tick per world, cancelled in `OnDelete`.  Invariants: nothing advances
+ * repeating `CallLater` tick per world, cancelled in `OnDelete`, which also drops the shared kind
+ * behaviours.  Invariants: nothing advances
  * outside LIVE (safe start is no land grab); progress survives a stage change and is cleared only
  * with the world; one tick re-reads the live player list, so no deferred call carries a
  * recycled player id; every word players see is composed on the server.
@@ -74,6 +75,7 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 		// to `TBD_PlayAreaComponent`, and two components racing to tear down one static buys nothing.
 		// `TBD_Objective.m_Zone` is a strong reference so the teardown order cannot matter.
 		TBD_ObjectiveRegistry.Clear();
+		TBD_ObjectiveKindBehaviour.Clear();
 
 		if (m_HudPublisher)
 		{
@@ -162,14 +164,18 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//! when it is armed.
 	protected int UsableCount()
 	{
-		int total = TBD_ObjectiveRegistry.GetCaptureCount();
-		total += TBD_ObjectiveRegistry.GetDestroyCount();
-		total += TBD_ObjectiveRegistry.GetHoldCount();
+		int total = 0;
+		for (int i = 0; i < TBD_ObjectiveKindBehaviour.Count(); i++)
+		{
+			total += TBD_ObjectiveRegistry.UsableCountOf(TBD_ObjectiveKindBehaviour.At(i).Kind());
+		}
+
 		return total;
 	}
 
 	//! Log once per world, when the registry is built, either the armed counts or that the
-	//! mission has no usable objective.
+	//! mission has no usable objective. The counts are `TBD_ObjectiveRegistry.UsableCountsSummary`,
+	//! in the lookup's kind order CAPTURE, DESTROY, HOLD_UNTIL.
 	protected void AnnounceBuilt()
 	{
 		if (UsableCount() == 0)
@@ -179,17 +185,15 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			return;
 		}
 
-		TBD_AnnounceOnce.Kv(TBD_ObjectiveRegistry.CH, ANNOUNCE_ARMED_KEY, "armed", string.Format("capture=%1 destroy=%2 hold=%3 cadence=%4ms",
-			TBD_ObjectiveRegistry.GetCaptureCount(),
-			TBD_ObjectiveRegistry.GetDestroyCount(),
-			TBD_ObjectiveRegistry.GetHoldCount(),
-			TICK_MS));
+		TBD_AnnounceOnce.Kv(TBD_ObjectiveRegistry.CH, ANNOUNCE_ARMED_KEY, "armed", string.Format("%1 cadence=%2ms",
+			TBD_ObjectiveRegistry.UsableCountsSummary(), TICK_MS));
 	}
 
-	//! The round just went LIVE: arm every destroy objective's target search (a search at load
-	//! could run before `TBD_MissionWorldApplier.SpawnMissionEntities` and other subsystems place the
-	//! targets), and skip the hold ladder rungs at or above each hold's length so a short hold
-	//! does not log them all at once.
+	//! The round just went LIVE: let each usable objective's kind behaviour prepare it. The destroy
+	//! behaviour arms its target search here, because a search at load could run before
+	//! `TBD_MissionWorldApplier.SpawnMissionEntities` and other subsystems place the targets; the
+	//! hold behaviour skips the announcement rungs at or above the hold's length.
+	//! @authority server
 	protected void OnEnterLive()
 	{
 		array<ref TBD_Objective> objectives = TBD_ObjectiveRegistry.GetAll();
@@ -201,21 +205,8 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 			if (!objective || !objective.m_bUsable)
 				continue;
 
-			if (objective.m_eKind == TBD_EObjectiveKind.DESTROY && !objective.m_bArmed)
-			{
-				TBD_ObjectiveDestroyTargets.ArmDestroyTargets(objective);
-				continue;
-			}
-
-			if (objective.m_eKind != TBD_EObjectiveKind.HOLD_UNTIL)
-				continue;
-
-			// Skip every announcement mark that is at or above the total hold length.
-			while (TBD_ObjectiveProgression.NextHoldMark(objective.m_iHoldMarkIndex) > 0
-				&& TBD_ObjectiveProgression.NextHoldMark(objective.m_iHoldMarkIndex) >= objective.m_fHoldSeconds)
-			{
-				objective.m_iHoldMarkIndex = objective.m_iHoldMarkIndex + 1;
-			}
+			TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.For(objective.m_eKind);
+			behaviour.OnEnterLive(objective);
 		}
 	}
 

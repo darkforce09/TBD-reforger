@@ -31,14 +31,28 @@ class TBD_WinConditionModes
 
 		if (mode == MODE_OBJECTIVE)
 		{
-			bool anyObjectiveTrigger = TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_ALL_CAPTURED);
-			if (!anyObjectiveTrigger)
-				anyObjectiveTrigger = TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_DESTROYED);
-			if (!anyObjectiveTrigger)
-				anyObjectiveTrigger = TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_HOLD_EXPIRED);
+			bool anyObjectiveTrigger = false;
+			for (int i = 0; i < TBD_ObjectiveKindBehaviour.Count() && !anyObjectiveTrigger; i++)
+			{
+				TBD_ObjectiveKindBehaviour behaviour = TBD_ObjectiveKindBehaviour.At(i);
+				anyObjectiveTrigger = TBD_MissionLoader.HasEndTrigger(behaviour.EndTrigger());
+			}
 
+			// The objective triggers in the kind lookup's order CAPTURE, DESTROY, HOLD_UNTIL.
 			if (!anyObjectiveTrigger)
-				TBD_Log.Warn(TBD_WinConditionEvaluator.CH, "winConditions.mode is 'objective' but endOn declares none of all_objectives_captured / objective_destroyed / hold_expired - the objective registry drives those three, so this rule can NEVER end the round.");
+			{
+				string objectiveTriggers = string.Empty;
+				for (int k = 0; k < TBD_ObjectiveKindBehaviour.Count(); k++)
+				{
+					if (k > 0)
+						objectiveTriggers += " / ";
+
+					objectiveTriggers += TBD_ObjectiveKindBehaviour.At(k).EndTrigger();
+				}
+
+				TBD_Log.Warn(TBD_WinConditionEvaluator.CH, string.Format("winConditions.mode is 'objective' but endOn declares none of %1 - the objective registry drives those three, so this rule can NEVER end the round.",
+					objectiveTriggers));
+			}
 
 			return;
 		}

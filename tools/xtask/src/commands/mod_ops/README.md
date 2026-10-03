@@ -211,7 +211,8 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 - Does: compiles the Game scripts of `apps/mod/tbd-framework` with the headless dedicated server
   and prints each error as `file:line`; `--probe` also compiles a throwaway addon of `.c` files.
 - Exit codes: 0 clean; 1 compile errors, or `tbd-framework/Scripts/WorkbenchGame` exists; 2 no
-  verdict; 3 environment, including a stale `resourceDatabase.rdb`.
+  verdict; 3 environment, including the engine loading fewer script files than the tree holds (a
+  missing or unreadable `resourceDatabase.rdb`).
 - Example: `cargo xtask mod compile`
 
 ### compile-selftest
