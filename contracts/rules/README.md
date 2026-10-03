@@ -68,7 +68,7 @@ policy's digest.
   a documentation string (`description` or `$comment`); `equipment-gameplay/` is a folder of
   tables with a manifest, described in its README.
 - Schema: no JSON Schema. `prefab-classify.json` is read by the classifier in
-  `tools/developer_tools/src/world_export_pipeline/classify.rs`, and its `kind` and `class`
+  `tools/map_assets/world_export_pipeline/src/classify.rs`, and its `kind` and `class`
   values must belong to the enums of `contracts/definitions/map-object-enums.schema.json`.
   `kit-aliases.json` is read into the `KitAliasesRaw` structure of
   `crates/mission/mission_payload/src/kit_aliases/aliases.rs`.
@@ -81,7 +81,7 @@ policy's digest.
   spawn registry, and the `vehicles` rows from the `vehicle` items of
   `contracts/catalogs/registry-items.workbench.json`.
 - Consumers:
-  - the world export's classifier, `tools/developer_tools/src/world_export_pipeline/classify.rs`,
+  - the world export's classifier, `tools/map_assets/world_export_pipeline/src/classify.rs`,
     which reads `prefab-classify.json` through `prefab_classify_path`
     (`tools/foundation/repository_layout/src/contracts.rs`), and its `reclassify` command;
   - `cargo xtask schema map-object-enums`

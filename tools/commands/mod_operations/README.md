@@ -12,7 +12,7 @@ Workbench equipment and vehicle export, and drives the mod program's
 
 ```text
 tools/commands/mod_operations/
-├── Cargo.toml  the `mod_operations` library package: `platform_execution`, the command crates it delegates to and the tool foundations, layout tier 8
+├── Cargo.toml  the `mod_operations` library package: `platform_execution`, the command crates it delegates to and the tool foundations, layout tier 10
 └── src/        the compile gate, the world boot, the playtest server, the equipment export, the website API client, the mod wave driver and the errors
 ```
 
@@ -43,7 +43,7 @@ The commands themselves are described in the
   `walkdir`; the Arma Reforger dedicated server and Workbench, `curl`, `git`, `npm` and `cargo`
   as subprocesses.
 - Used by: the xtask binary's `mod` group.
-- Rules: tier 8 of `tools/commands` (`cargo xtask verify crate-tiers`); `compile-selftest`
+- Rules: tier 10 of `tools/commands` (`cargo xtask verify crate-tiers`); `compile-selftest`
   passes only on the gate's exit 1 (`run_selftest` in `src/compile/execution.rs`); an
   environment fault never exits 1 (`no_server_is_rc3` in `src/tests/compile/tests.rs`).
 

@@ -7,7 +7,7 @@
 Resolved: fixed in the gate harness, which launches the full Chromium build against a font cache
 it owns and checks both before any smoke runs. Severity high while it lasted: no editor gate could
 run, `cargo xtask mk leptos-gates` included. Area: the browser gate harness in
-`tools/developer_tools/src/browser_testing/` and the Chromium it launches.
+`tools/browser_testing/browser_gate_suites/` and the Chromium it launches.
 
 ## Symptom
 

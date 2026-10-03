@@ -60,7 +60,7 @@ instead of letting malformed missions through until one reaches a live
   `ballistics/`, which `cargo xtask ballistics trim-export` writes.
 - Consumers:
   - the xtask schema gates in `tools/commands/schema_tooling/src/schema_checks/` and the
-    map-object golden gates in `tools/developer_tools/src/map_verification/object_goldens/`,
+    map-object golden gates in `tools/map_assets/map_asset_verification/src/object_goldens/`,
     which reach these folders through `tools/foundation/repository_layout/src/contracts.rs`;
   - the xtask mod commands `world-boot`, `test-mission` and `dev-server`;
   - tests in `apps/api/`, `apps/frontend/`, `legacy/map_engine/` and

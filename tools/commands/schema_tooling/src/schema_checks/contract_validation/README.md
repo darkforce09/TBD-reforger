@@ -38,8 +38,8 @@ repeated slot id. It prints `ok` and exits 0 otherwise.
 
 ## Boundaries
 
-- Depends on: the parent module's imports (`read_json`, `schema_root`, the `developer_tools`
-  repository layout functions for the contract, catalog, fixture and terrain paths);
+- Depends on: the parent module's imports (`read_json`, `schema_root`, the
+  `repository_layout` functions for the contract, catalog, fixture and terrain paths);
   `jsonschema`; `serde_json`.
 - Used by: `tools/xtask/src/commands/schema/dispatch.rs` (`schema validate`,
   `schema validate-file`); the `schema-validate` row of

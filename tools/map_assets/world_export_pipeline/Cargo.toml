@@ -1,0 +1,52 @@
+# The world-export pipeline behind the `world` binary: it stages a Workbench world export, builds
+# the committed object chunks, prefab catalogue, census, density tiles, forest regions, road network
+# and elevation files of a terrain from it and the game's archives, and runs the gates that prove
+# them; it also drives `cargo xtask map export-terrain` and writes a terrain's map tile index.
+# `clap` parses `world`; `serde` reads the terrain manifest and writes the tile index; `serde_json`
+# keeps the emitted key order; `jsonschema` validates the artifacts; `flate2`, `png` and `bcdec_rs`
+# write gzip, read PNG and decode BC7 cells; `process_runner` runs the `cargo xtask` gates and the
+# `world` stages; `thiserror` carries the error.
+[package]
+name = "world_export_pipeline"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The world-export pipeline: a terrain's object chunks, catalogue, census, density, regions, roads and elevation from a Workbench export, and their gates"
+
+[package.metadata.layout]
+category = "tools/map_assets"
+tier = 6
+targets = "any"
+
+[dependencies]
+bcdec_rs = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+enfusion_pak = { workspace = true }
+flate2 = { workspace = true }
+jsonschema = { workspace = true }
+png = { workspace = true }
+prefab_catalog = { workspace = true }
+process_runner = { workspace = true }
+repository_layout = { workspace = true }
+road_network = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# Every f64 parses back to the same bits (`float_roundtrip`) and objects keep their key order
+# (`preserve_order`): the emitted artifacts are byte-compared with the committed ones.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+terrain_elevation = { workspace = true }
+thiserror = { workspace = true }
+time_source = { workspace = true }
+vegetation = { workspace = true }
+verification_core = { workspace = true }
+world_chunks = { workspace = true }
+world_file_formats = { workspace = true }
+world_store = { workspace = true }
+
+[dev-dependencies]
+# The process-variable lock the export driver's argument tests hold while they set `TERRAIN`.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

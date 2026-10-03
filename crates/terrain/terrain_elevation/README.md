@@ -82,10 +82,10 @@ cargo test -p terrain_elevation   # sampling, vector grid, PNG, raw grid and ful
     apron, the spot heights and the terrain line of sight, which take a `DemManifest`;
   - the Mission Creator's canvas and pointer handlers in `apps/frontend/src/workspaces/editor/`,
     which read heights with `sample_grid_meters`;
-  - the world export in `tools/developer_tools/src/world_export_pipeline/`, which writes
+  - the world export in `tools/map_assets/world_export_pipeline/src/`, which writes
     `dem/elevation.dem` with `raw::to_bytes`, and the label and alignment checks in
-    `tools/developer_tools/src/map_raster_pipeline/` and
-    `tools/developer_tools/src/map_verification/`.
+    `tools/map_assets/map_raster_pipeline/src/` and
+    `tools/map_assets/map_asset_verification/src/`.
 - Rules: the raw grid decodes the same in any chunk size and from a misaligned buffer
   (`streamed_in_any_chunk_size_matches_the_whole_buffer`,
   `misaligned_payload_decodes_identically_to_the_aligned_one` in `src/tests/raw_tests.rs`);

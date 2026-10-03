@@ -1,0 +1,48 @@
+# The map raster pipeline behind the `map` binary: it turns the game's archives and the Workbench
+# exports into a terrain's satellite container, tile pyramids, cartographic render, label sets and
+# archives, water archives, and the world-glyph atlas, and verifies each against its manifest.
+# `clap` parses `map`; `serde_json` keeps the key order and the exact float spelling of the JSON it
+# rewrites; `image`, `png`, `image-webp`, `webp` and `resvg` decode, encode and rasterise;
+# `process_runner` runs the `cargo` gates the cartographic aggregator calls; `thiserror` carries the
+# error. It is never in xtask's dependency closure: xtask runs the `map` binary as a child process.
+[package]
+name = "map_raster_pipeline"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The map raster pipeline: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives and the glyph atlas"
+
+[package.metadata.layout]
+category = "tools/map_assets"
+tier = 7
+targets = "any"
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+content_digest = { workspace = true }
+enfusion_pak = { workspace = true }
+image = { workspace = true, features = ["png", "tga"] }
+image-webp = { workspace = true }
+place_names = { workspace = true }
+png = { workspace = true }
+prefab_catalog = { workspace = true }
+process_runner = { workspace = true }
+repository_layout = { workspace = true }
+resvg = { workspace = true }
+road_network = { workspace = true }
+# Every f64 parses back to the same bits (`float_roundtrip`) and objects keep their key order
+# (`preserve_order`): the manifests and label files this crate rewrites are byte-compared with the
+# committed ones.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+terrain_elevation = { workspace = true }
+thiserror = { workspace = true }
+time_source = { workspace = true }
+water_bodies = { workspace = true }
+webp = { workspace = true }
+world_export_pipeline = { workspace = true }
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

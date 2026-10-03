@@ -1,0 +1,24 @@
+# Stage S11b, agent J3e1 — the world-export pipeline leaves developer_tools.
+# developer_tools' world_export_pipeline module becomes the world_export_pipeline crate under
+# tools/map_assets; its module root becomes the crate root, its command line `command_line.rs`, and
+# its census kind test follows INSTANCE_KINDS into the prefab_catalog crate. The crate's error,
+# prelude, empty-write refusal and export locations modules are written by hand, as are the
+# INSTANCE_KINDS module of prefab_catalog and the cut of map_pipeline_layout.rs.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the module root becomes the crate root; the command line and the module tests take their names
+path	tools/developer_tools/src/world_export_pipeline/mod.rs	tools/map_assets/world_export_pipeline/src/lib.rs
+path	tools/developer_tools/src/world_export_pipeline/cli.rs	tools/map_assets/world_export_pipeline/src/command_line.rs
+path	tools/developer_tools/src/world_export_pipeline/tests/module/refuse_empty_tests.rs	tools/map_assets/world_export_pipeline/src/tests/empty_write_refusal/tests.rs
+path	tools/developer_tools/src/world_export_pipeline/tests/module/instance_kind_tests.rs	crates/world_formats/prefab_catalog/src/tests/instance_kinds_tests.rs
+path	tools/developer_tools/src/world_export_pipeline	tools/map_assets/world_export_pipeline/src
+#
+# the moved code names its own crate and its own export locations
+rust_path	crate::world_export_pipeline::	crate::	tools/developer_tools/src/world_export_pipeline
+rust_path	crate::map_pipeline_layout::	crate::export_locations::	tools/developer_tools/src/world_export_pipeline
+#
+# the raster pipeline, the map verification and the `world` binary name the crate
+rust_path	crate::world_export_pipeline::	world_export_pipeline::	tools/developer_tools/src/map_raster_pipeline
+rust_path	crate::world_export_pipeline::	world_export_pipeline::	tools/developer_tools/src/map_verification
+rust_path	developer_tools::world_export_pipeline::cli::	world_export_pipeline::command_line::	tools/developer_tools/src/bin/world.rs

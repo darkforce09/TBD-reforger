@@ -19,8 +19,8 @@ repeat it.
 
   | Job | Runs | Rules |
   |---|---|---|
-  | `api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, `mk rust-build`, `ci developer-tools-test`, then `ci api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, GO-9, TEST-1 |
-  | `map-engine` | `cargo xtask mk wasm-ci`: format, clippy with `-D warnings` on the host and `wasm32`, tests | FMT-1 |
+  | `api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, `mk rust-build`, then `ci api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, GO-9, TEST-1 |
+  | `map-engine` | `cargo xtask mk wasm-ci`: format, clippy with `-D warnings` on the host, clippy with `-D warnings` for `wasm32` over every crate the workspace marks `targets = "wasm32"` plus the engines and the offline worker, tests | FMT-1 |
   | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy with `-D warnings` for `wasm32` and natively, tests, release Trunk build | TEST-2, TS-6 |
   | `schema` | `cargo xtask ci ci-local-schema`: generated types current, schema validation, `@contract` citations | TEST-3, ENF-3, ENF-4 |
   | `editorconfig` | `cargo xtask ci verify-editorconfig` | FMT-2 |

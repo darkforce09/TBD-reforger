@@ -1,6 +1,5 @@
 use super::cli::{DocumentationGateArgs, VerifyCmd};
 use anyhow::Result;
-use ci_task_catalog::map_asset_checks;
 use documentation_checks::{GateRequest, UntrackedFiles};
 use repository_checks::architecture::workspace_laws;
 use repository_layout::find_repository_root;
@@ -15,7 +14,7 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
                 repository_checks::language_bans::node_and_file_limits::verify_file_length()?
             }
             VerifyCmd::BlasManifest => {
-                map_asset_checks::verify_blas_manifest(&find_repository_root()?)?
+                map_asset_verification::blas_manifest::verify_blas_manifest(&find_repository_root()?)?
             }
             VerifyCmd::NoNode => {
                 repository_checks::language_bans::node_and_file_limits::verify_no_node()?

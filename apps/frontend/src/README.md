@@ -70,7 +70,7 @@ walks every production file below this folder.
   `console_error_panic_hook`; `map_engine`, never the graphics engine; the browser bindings
   `apps/frontend/Cargo.toml` names.
 - Used by: `apps/frontend/index.html`, whose `rust` link has Trunk build this binary; the headless
-  browser gates of `tools/developer_tools/src/browser_testing/`, which drive the built app by its
+  browser gates of `tools/browser_testing/browser_gate_suites/`, which drive the built app by its
   routes.
 - Rules:
   - every production file opens with a `//!` header, stays within 500 lines, documents every

@@ -51,7 +51,7 @@ Workbench, apps/mod/tbd-export/addon.gproj open
 - [Export addon](/apps/mod/tbd-export/) — the addon project, its scripts, world, mission header
   and prefabs.
 - [Map commands](/tools/xtask/src/commands/map/) and the
-  [world export pipeline](/tools/developer_tools/src/world_export_pipeline/) — the tools that
+  [world export pipeline](/tools/map_assets/world_export_pipeline/src/) — the tools that
   read the map exports.
 - [Equipment and vehicle validation](/tools/commands/mod_operations/src/equipment_vehicle_export/)
   — `cargo xtask mod validate-equipment-vehicle-export` and `publish-equipment-vehicle-export`.

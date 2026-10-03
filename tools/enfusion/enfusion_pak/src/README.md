@@ -52,10 +52,10 @@ file falls through to the next source but a read error in the chosen source does
 
 - Depends on: `flate2` for zlib and raw deflate, and `thiserror` for `Error`; no workspace crate.
 - Used by:
-  - the `developer_tools` library's `blueprint` module (`archive_emission::library_reader`,
+  - the `blueprint_compiler` crate (`archive_emission::library_reader`,
     `bvh::batch_processing`, `bvh::prefab_catalog`, `mesh_decoding::archive_inspection`), through
     `PakSet`, `AssetSource` and the loose sources;
-  - its `world_export_pipeline` (`cli`, `chunk_partitioner`, `topo`, `enfusion_texture_decoder`,
+  - the `world_export_pipeline` crate (`cli`, `chunk_partitioner`, `topo`, `enfusion_texture_decoder`,
     `export_preparation::aerial_cell_catalog`) and `map_raster_pipeline` (the orthophoto stitch,
     the cartographic render and the water classifier), through `PakVfs`;
   - the `enf` command line of the `enfusion_script_index` crate, for `enf extract` and

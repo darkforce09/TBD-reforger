@@ -66,7 +66,7 @@ them, which makes the output deterministic: two builds emit the same bytes.
   `world_line_of_sight`'s occluder and its box tree); `building_interiors` (blueprints, compounds
   and sections); the map engine's occluder loader; the debug benches and the line-of-sight tool
   of the single-page app; the blueprint tooling in
-  `tools/developer_tools/src/blueprint/`, whose emitters write the sidecars.
+  `tools/map_assets/blueprint_compiler/src/`, whose emitters write the sidecars.
 - Rules:
   - the queries agree with brute force (`bvh_matches_brute_force_on_box_grid`,
     `first_hit_matches_min_t_brute_force_on_box_grid`), and `first_hit` finds nothing exactly when

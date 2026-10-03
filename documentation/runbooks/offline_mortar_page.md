@@ -101,7 +101,7 @@ response header, COOP and COEP included.
   quota check and the offline state.
 - [Offline service worker](/apps/offline_service_worker/README.md) — the request classes,
   the caches and the Range answers.
-- [Mortar offline gate](/tools/developer_tools/src/browser_testing/mortar_offline/README.md) —
+- [Mortar offline gate](/tools/browser_testing/browser_gate_suites/src/mortar_offline/README.md) —
   what each gate step checks.
 - [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md#offline-design)
   — the offline design and the operator decisions behind it.

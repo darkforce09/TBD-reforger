@@ -72,7 +72,7 @@ Mission Creator itself in its read-only review mode, not a copy of it.
     `apps/frontend/src/foundation/test_support/editor_operations.rs`,
     `apps/frontend/src/foundation/ui/tests/ui.rs` and two map-engine tests under
     `legacy/map_engine/src/`;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     `/missions/:id/edit` route, and `cargo xtask verify editor-orbat-coherency`, which scans named
     files under `arsenal/`, `bridge/`, `session/` and `ui/modals/`.
 - Rules: a document mutation goes through the hosted commands of `mission_editing_commands`,

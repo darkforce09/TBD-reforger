@@ -1,8 +1,8 @@
 //! `cargo xtask schema type-inventory`: the type inventories and the instance-kind lockstep.
 //!
-//! **Role:** [`type_inventory`] checks `INSTANCE_KINDS` against the map-object schema and the
-//! world-export pipeline's list, then every committed type inventory against its schema and the
-//! invariants I1 to I5 and I7.
+//! **Role:** [`type_inventory`] checks the prefab catalogue's `INSTANCE_KINDS` against the
+//! map-object schema, then every committed type inventory against its schema and the invariants
+//! I1 to I5 and I7.
 //! **Position:** a gate entry re-exported by the crate root; reads `contracts/definitions/` and
 //! the terrain inventories.
 //! **Signals & state:** none; reads files and prints its report.
@@ -15,13 +15,10 @@ use repository_layout::{map_scratch_dir, terrain_assets_dir, terrain_dir, terrai
 /// Shared by the runtime gate and the unit test so the two can never disagree about what "in
 /// lockstep" means. `enums` is a parsed `map-object-enums.schema.json`.
 ///
-/// Two comparisons, because they fail differently:
-///   1. against `$defs.kind` minus `$defs.regionKind` — the single source of truth. This is what
-///      catches the NEXT kind addition on the day it lands.
-///   2. against `developer_tools::world_export_pipeline::INSTANCE_KINDS`, order included — the two
-///      copies exist because `developer_tools` owns the export pipeline, and a divergence between
-///      them is precisely the defect. Order matters: it is the emitted `byKind` key
-///      order, so a reordering here would silently change the artifact on the next rebuild.
+/// The comparison is against `$defs.kind` minus `$defs.regionKind` — the single source of truth.
+/// This is what catches the NEXT kind addition on the day it lands. The world export mints its
+/// census buckets from the same `prefab_catalog` list, so the gate and the export cannot disagree
+/// about the kinds or their order.
 ///
 /// Missing enum `$defs` are a FAILURE, not a skip: a schema that could not be read must not let
 /// this report "in lockstep" over a comparison it never made.
@@ -50,7 +47,7 @@ pub(super) fn instance_kinds_lockstep_failures(enums: &Value) -> Vec<String> {
                     .map(|s| s.as_str())
                     .collect();
                 out.push(format!(
-                    "INSTANCE_KINDS (tools/commands/schema_tooling/src/schema_checks.rs) drifted from \
+                    "INSTANCE_KINDS (crates/world_formats/prefab_catalog/src/instance_kinds.rs) drifted from \
                      map-object-enums.schema.json $defs.kind minus $defs.regionKind — \
                      missing {missing:?}, spurious {spurious:?}. I1 sums only the kinds named \
                      there, so a missing bucket makes the sum come up short by that bucket's \
@@ -63,21 +60,6 @@ pub(super) fn instance_kinds_lockstep_failures(enums: &Value) -> Vec<String> {
              missing or empty — refusing to report lockstep over a comparison never made"
                 .to_string(),
         ),
-    }
-    // Compared as SLICES, not arrays, and that is not a style choice. `[&str; N] == [&str; M]` for
-    // N != M is a hard type error (E0277), so an array-to-array comparison here turns the most
-    // likely drift — someone adds or drops a kind in one copy — into a raw "can't compare
-    // [&str; 8] with [&str; 9]" instead of the explanation below. Measured while perturbing this
-    // very check: the length-changing case never reached the assertion at all. Slices compare
-    // across lengths, so every drift shape lands on one legible message.
-    if INSTANCE_KINDS[..] != developer_tools::world_export_pipeline::INSTANCE_KINDS[..] {
-        out.push(format!(
-            "INSTANCE_KINDS (tools/commands/schema_tooling/src/schema_checks.rs) {:?} != \
-             developer_tools::world_export_pipeline::INSTANCE_KINDS {:?} — the two census kind lists must stay \
-             identical INCLUDING ORDER (it is the emitted byKind key order)",
-            INSTANCE_KINDS,
-            developer_tools::world_export_pipeline::INSTANCE_KINDS
-        ));
     }
     out
 }

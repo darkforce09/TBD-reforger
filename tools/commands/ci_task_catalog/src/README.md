@@ -17,13 +17,13 @@ tools/commands/ci_task_catalog/src/
 ├── editor_api.rs        the `editor-api-boot`, `verify-codegen-fresh` and `verify-editorconfig` tasks
 ├── error.rs             `Error`, `Result` and `cause_chain`, the text an in-process step's error prints
 ├── lib.rs               the crate root: module header, `mod` lines and the re-exports
-├── map_asset_checks/    the map asset checks, forwarded to the developer tools' map verification
 ├── prelude.rs           `Error`, `Result`, `cause_chain`, `Task`, `Step`, `Lane` and `TASKS` for glob import
 ├── task_definitions/    the step macros, the map-lane step lists and the in-process verification adapters
 ├── task_definitions.rs  `TASKS`: every task with its help line, group, lane and steps
 ├── task_runner/         the runner, the child environment, `help`, the gate list
 ├── task_runner.rs       the `Task`, `Step` and `Lane` types, re-exports
-├── tests/               unit tests for the frozen `ci-local` set, composite failure, `help`, parity, member coverage and the target pin
+├── tests/               unit tests for the frozen `ci-local` set, composite failure, `help`, parity, member coverage, the wasm32 lint and the target pin
+├── wasm32_lint_lane.rs  the packages the wasm32 lint covers, derived from the workspace, and the `wasm-ci` row's lint step
 ├── workflow_checks/     the `verify ci-shell` and `verify ci-schema-parity` gates
 └── workspace_member_tests.rs  the `workspace-member-tests` task: `cargo test -p` for every member no dedicated task tests
 ```
@@ -57,22 +57,32 @@ Each row carries a lane, which `help` prints as a tag:
 
 `ci-local` runs, in this order: `verify-editorconfig`, `verify-no-python`, `verify-no-node`,
 `verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `verify-workspace-laws`, `rust-ci`,
-`developer-tools-test`, `workspace-member-tests`, `verify-coding-standards`,
+`workspace-member-tests`, `verify-coding-standards`,
 `verify-documentation`, `ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
 `verify-mission-rest-size-limits`, and `cargo xtask verify ci-schema-parity` in process.
 `ci_local_step_set_is_frozen` in `tests/task_runner.rs` fails when a step is added, dropped or
 moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
 
 Every workspace member is tested. `DEDICATED_TEST_TASKS` in `workspace_member_tests.rs` names the
-members a dedicated task tests (`api` by `api-test`, `developer_tools` by `developer-tools-test`,
-`frontend` by `ci-local-leptos`, and `graphics_engine`, `map_engine` and `offline_service_worker`
-by `wasm-ci`); `workspace-member-tests` reads the root `Cargo.toml` workspace and runs
-`cargo test -p <package>` once for every other member, so a member the workspace gains is tested
-from the moment the manifest names it. A dedicated entry that names no member, or a workspace that
+members a dedicated task tests (`api` by `api-test`, `frontend` by `ci-local-leptos`, and
+`graphics_engine`, `map_engine` and `offline_service_worker` by `wasm-ci`); `workspace-member-tests`
+reads the root `Cargo.toml` workspace and runs `cargo test -p <package>` once for every other
+member, so a member the workspace gains is tested from the moment the manifest names it (the
+binary-only `xtask` and `developer_tools` packages among them, whose run builds every binary). A dedicated entry that names no member, or a workspace that
 cannot be read, fails the task. `every_dedicated_test_task_tests_its_package`,
 `ci_local_tests_every_workspace_member` and `the_ci_workflow_tests_every_workspace_member` fail
 when a dedicated task stops testing its package, or when `ci-local` or `.github/workflows/ci.yml`
 leaves a member untested.
+
+Every crate that ships to the browser is linted for `wasm32-unknown-unknown`.
+`wasm32_lint_lane.rs` derives the set from the workspace: each member whose
+`[package.metadata.layout]` declares `targets = "wasm32"`, the `frontend` and
+`offline_service_worker` applications, and the parked `graphics_engine` and `map_engine` while they
+are members. `ci-local-leptos` lints the frontend with every target; the `wasm-ci` recipe and row
+lint the rest in one `cargo clippy --target wasm32-unknown-unknown`, the row through a native step
+that derives the same line. `wasm_ci_and_the_own_lanes_partition_the_lint` fails when the two lanes
+stop covering the set, and `wasm_ci_lints_every_derived_wasm32_package` when the recipe line drifts
+from it.
 
 ## Commands
 
@@ -102,7 +112,6 @@ leaves a member untested.
   | `map-cartographic-verify` | map, ci | `map verify-pyramid --terrain everon --view-map` |
   | `lfs-dem`, `lfs-sat` | map, ci | `git lfs pull` of the Everon elevation raster or satellite container |
   | `api-test` | build, ci | `cargo test` in `apps/api`, honouring `TEST_DATABASE_URL` |
-  | `developer-tools-test` | build, ci | `cargo test -p developer_tools --lib` |
   | `workspace-member-tests` | build, ci | `cargo test -p <package>`, one run per workspace member outside `DEDICATED_TEST_TASKS`, derived from the root `Cargo.toml`; every package runs, and the exit is the first red package's code |
   | `test` | build, ci | `rust-test` |
   | `build` | build, ci | `cargo build --release --bin api` in `apps/api`, then `leptos-build` |
@@ -128,7 +137,7 @@ leaves a member untested.
 
 - Depends on: the check crates `repository_checks`, `mod_script_checks` and
   `documentation_checks`, the `database_operations`, `deployment` and `schema_tooling` crates,
-  and this crate's `workflow_checks/` and `map_asset_checks/`, called in process; the
+  `map_asset_verification` and this crate's `workflow_checks/`, called in process; the
   `map` binary of `developer_tools`, cargo, trunk, podman, git-lfs, go, curl, unzip and apt-get as
   subprocesses; `TARGETS` of `tools/commands/ci_task_catalog/src/build_lane/recipes.rs` and `LANE_COMMANDS` of
   `tools/commands/database_operations/src/local_database.rs` for `help`;
@@ -143,7 +152,7 @@ leaves a member untested.
     `ci-local`, `ci-local-schema` and `verify-mission-rest-size-limits` rows;
   - `tools/commands/platform_execution/src/wave_execution/gate/gate_dispatch.rs`, whose
     `test workspace members` step derives its packages through `member_packages_except`;
-  - `.github/workflows/ci.yml` (`developer-tools-test`, `api-test`, `workspace-member-tests`,
+  - `.github/workflows/ci.yml` (`api-test`, `workspace-member-tests`, `wasm-ci` and `ci-local-leptos` through `mk`,
     `ci-local-schema`, `verify-editorconfig`; its `language-gates` job runs the `verify` commands of the
     `verify-documentation` row one step each), `.github/workflows/contracts.yml` (`verify-codegen-fresh`) and
     `.github/workflows/editor-gates.yml` (`ci-chrome`, `editor-api-boot`).

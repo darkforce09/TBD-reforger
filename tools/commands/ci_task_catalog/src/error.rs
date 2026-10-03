@@ -8,8 +8,8 @@
 //! in-process step's error through [`cause_chain`], the same text. A gate's verdict is its exit
 //! code, not an error: an error means the step could not run.
 //! **Signals & state:** none; plain data.
-//! **Invariants:** a wrapped error of another crate keeps its own text and source chain; a map
-//! asset check's failure keeps the cause chain the developer tools library gave it.
+//! **Invariants:** a wrapped error of another crate keeps its own text and source chain, a map
+//! asset check's failure included.
 
 /// Why a CI task step, an `mk` recipe or a CI workflow check could not run.
 #[derive(Debug, thiserror::Error)]
@@ -17,9 +17,9 @@ pub enum Error {
     /// A refusal with its whole explanation.
     #[error("{0}")]
     Message(String),
-    /// A map asset check of the developer tools library failed: its whole text, causes included.
-    #[error("{0}")]
-    MapAssetCheck(String),
+    /// A map asset check could not run to its verdict; its causes follow as the source chain.
+    #[error(transparent)]
+    MapAssetVerification(#[from] map_asset_verification::Error),
     /// A file could not be read, written or removed, or a child could not be started.
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -56,11 +56,6 @@ impl Error {
     /// A refusal carrying `text` as its whole message.
     pub fn msg(text: impl Into<String>) -> Self {
         Error::Message(text.into())
-    }
-
-    /// A map asset check's failure, rendered with `{:#}` so its causes stay in the text.
-    pub(crate) fn map_asset_check(failure: impl std::fmt::Display) -> Self {
-        Error::MapAssetCheck(format!("{failure:#}"))
     }
 
     /// The database operator stop this error carries, or `None`.

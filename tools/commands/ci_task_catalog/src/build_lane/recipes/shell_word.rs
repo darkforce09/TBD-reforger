@@ -147,13 +147,21 @@ pub(crate) fn rust_clippy() -> Vec<Step> {
 
 /// Fmt / clippy / test for the engine crates and the offline service worker.
 ///
-/// Every crate that ships to the browser is named in every step, wasm32 included: a crate the
-/// lane does not name reaches CI only as a dependency of the frontend, so nothing fmt-checks it,
-/// nothing clippies it and its tests never run. Kept in lockstep with the `wasm-ci` row in
-/// `crate::task_definitions` — the two are the same lane spelled twice, and
-/// `mk_build_tests` pins the wasm32 line's echo and the two spellings against drift.
-pub(crate) fn wasm_ci() -> Vec<Step> {
-    vec![
+/// The engine crates and the offline service worker are named in every step: a crate the lane
+/// does not name reaches CI only as a dependency of the frontend, so nothing fmt-checks it,
+/// nothing clippies it and its tests never run. The wasm32 lint lints every package
+/// [`crate::wasm32_lint_lane::wasm_ci_lint_packages`] derives from the workspace under
+/// `repo_root`, so a crate declaring `targets = "wasm32"` is linted from its first commit. Kept in
+/// lockstep with the `wasm-ci` row in `crate::task_definitions` — the two are the same lane
+/// spelled twice, and `wasm_ci_recipe_and_ci_task_row_run_the_same_lines` pins them.
+///
+/// # Errors
+/// The wasm32 lint's packages cannot be derived from the workspace.
+pub(crate) fn wasm_ci(repo_root: &Path) -> Result<Vec<Step>> {
+    let wasm32_packages = crate::wasm32_lint_lane::wasm_ci_lint_packages(repo_root)?;
+    let wasm32_argv = crate::wasm32_lint_lane::wasm32_clippy_argv(&wasm32_packages);
+    let wasm32_words: Vec<&str> = wasm32_argv.iter().map(String::as_str).collect();
+    Ok(vec![
         Step::new(&[
             "cargo",
             "fmt",
@@ -180,21 +188,7 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "-D",
             "warnings",
         ]),
-        Step::new(&[
-            "cargo",
-            "clippy",
-            "-p",
-            "map_engine",
-            "-p",
-            "graphics_engine",
-            "-p",
-            "offline_service_worker",
-            "--target",
-            "wasm32-unknown-unknown",
-            "--",
-            "-D",
-            "warnings",
-        ]),
+        Step::new(&wasm32_words),
         Step::new(&["cargo", "test", "-p", "map_engine", "--all-features"]),
         Step::new(&["cargo", "test", "-p", "graphics_engine", "--all-features"]),
         Step::new(&[
@@ -204,7 +198,7 @@ pub(crate) fn wasm_ci() -> Vec<Step> {
             "offline_service_worker",
             "--all-features",
         ]),
-    ]
+    ])
 }
 
 pub(crate) fn leptos() -> Vec<Step> {
@@ -353,15 +347,30 @@ fn rust_test_it() -> Result<u8> {
 }
 
 /// The four step lists `rust-ci` runs before [`rust_test_it`], in order.
-fn rust_ci_recipes() -> [Vec<Step>; 4] {
-    [rust_fmt(), rust_clippy(), rust_build(), wasm_ci()]
+///
+/// # Errors
+/// As [`wasm_ci`].
+fn rust_ci_recipes() -> Result<[Vec<Step>; 4]> {
+    Ok([
+        rust_fmt(),
+        rust_clippy(),
+        rust_build(),
+        wasm_ci(&cwd_root())?,
+    ])
 }
 
 /// The lines `rust-ci` runs, in order, as `--dry-run` prints them.
-pub(crate) fn rust_ci_lines() -> Vec<String> {
-    let mut lines: Vec<String> = rust_ci_recipes().iter().flatten().map(Step::echo).collect();
+///
+/// # Errors
+/// As [`wasm_ci`].
+pub(crate) fn rust_ci_lines() -> Result<Vec<String>> {
+    let mut lines: Vec<String> = rust_ci_recipes()?
+        .iter()
+        .flatten()
+        .map(Step::echo)
+        .collect();
     lines.push(RUST_TEST_IT_COMMAND.to_string());
-    lines
+    Ok(lines)
 }
 
 /// `rust-ci` — fmt + clippy + build + wasm-ci + test-it, in that order, stopping at the first red.
@@ -369,7 +378,7 @@ pub(crate) fn rust_ci_lines() -> Vec<String> {
 /// Composed from the same leaf functions the individual targets use, which is what makes a hollow
 /// composite structurally impossible: there is no second copy of the recipe to fall out of date.
 pub(super) fn rust_ci() -> Result<u8> {
-    for steps in rust_ci_recipes() {
+    for steps in rust_ci_recipes()? {
         let rc = run_steps(&steps)?;
         if rc != 0 {
             return Ok(rc);

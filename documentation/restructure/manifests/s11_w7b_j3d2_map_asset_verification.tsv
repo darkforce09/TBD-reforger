@@ -1,0 +1,15 @@
+# Stage S11b, agent J3d2 — the map asset verification leaves developer_tools.
+# developer_tools' map_verification module becomes the map_asset_verification crate under
+# tools/map_assets: the module root becomes the crate root (rewritten by hand into a thin lib.rs),
+# the folder becomes the crate's sources with its tests/ folder, and the CI task catalogue's map
+# asset checks and xtask's world line-of-sight adapter name the crate. The error module, the
+# prelude and the crate README are written by hand. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the module root becomes the crate root; the folder becomes the crate's sources
+path	tools/developer_tools/src/map_verification/mod.rs	tools/map_assets/map_asset_verification/src/lib.rs
+path	tools/developer_tools/src/map_verification	tools/map_assets/map_asset_verification/src
+#
+# consumers name the crate
+rust_path	developer_tools::map_verification::	map_asset_verification::	tools/xtask
+rust_path	developer_tools::map_verification::	map_asset_verification::	tools/commands/ci_task_catalog

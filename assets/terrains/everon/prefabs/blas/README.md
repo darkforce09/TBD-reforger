@@ -35,7 +35,7 @@ assets/terrains/everon/prefabs/blas/
 ## Producers and consumers
 
 - Producers: `cargo xtask map bvh-batch`, through the blueprint compiler in
-  `tools/developer_tools/src/blueprint/` (`bvh/batch_processing/` and `bvh/construction.rs`),
+  `tools/map_assets/blueprint_compiler/src/` (`bvh/batch_processing/` and `bvh/construction.rs`),
   which reads the models from the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) game paks.
 - Consumers:
   - the map engine's occluder loader

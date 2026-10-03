@@ -1,8 +1,7 @@
 # `cargo xtask ci`, `cargo xtask help` and `cargo xtask mk`: the CI task table and its runner, the
 # build lane's recipes, the shared cargo target pin and its checks, the workflow and CI schema
 # parity checks, and the map asset checks the schema and terrain tasks run. `thiserror` carries
-# its errors. The map asset checks call the `developer_tools` library until its map verification
-# becomes a crate of its own.
+# its errors.
 [package]
 name = "ci_task_catalog"
 version = "0.1.0"
@@ -14,7 +13,7 @@ description = "The CI task table and runner, the build lane recipes, the cargo t
 
 [package.metadata.layout]
 category = "tools/commands"
-tier = 6
+tier = 8
 targets = "any"
 
 [dependencies]
@@ -24,12 +23,12 @@ clap = { workspace = true }
 database_operations = { workspace = true }
 # The `verify-staging-compose-paths` task.
 deployment = { workspace = true }
-# The map asset checks (map-object goldens, terrain manifest, labels, BLAS manifest).
-developer_tools = { workspace = true }
 # The three documentation gates of `verify-documentation`.
 documentation_checks = { workspace = true }
 # The glibc version the target-directory stamp records.
 libc = { workspace = true }
+# The map asset checks (map-object goldens, terrain manifest, labels, BLAS manifest).
+map_asset_verification = { workspace = true }
 # The Enfusion comment card and the mission REST size check.
 mod_script_checks = { workspace = true }
 process_runner = { workspace = true }

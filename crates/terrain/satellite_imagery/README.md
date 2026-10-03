@@ -44,7 +44,7 @@ level.
 
 Everon's container, `assets/terrains/everon/satellite/everon-sat.tbd-sat`, is version 1: a
 12 800 × 12 800 base in 14 levels, about 153 MB, stored in Git LFS. The `build-unified` command of
-the `map` binary (`tools/developer_tools/src/map_raster_pipeline/`) writes either version.
+the `map` binary (`tools/map_assets/map_raster_pipeline/src/`) writes either version.
 
 ## Getting started
 

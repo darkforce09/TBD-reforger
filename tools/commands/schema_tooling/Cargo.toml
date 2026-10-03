@@ -19,13 +19,12 @@ targets = "any"
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
 content_digest = { workspace = true }
-# Temporary edge: the world-export pipeline's census kind list the type-inventory gate pins its own
-# copy against (`world_export_pipeline::INSTANCE_KINDS`).
-developer_tools = { workspace = true }
 # The built glyph atlas is read gzip-compressed.
 flate2 = { workspace = true }
 heck = { workspace = true }
 jsonschema = { workspace = true }
+# The census kind list the type-inventory gate sums (`prefab_catalog::instance_kinds`).
+prefab_catalog = { workspace = true }
 prettyplease = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }

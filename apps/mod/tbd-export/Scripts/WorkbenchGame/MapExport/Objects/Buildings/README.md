@@ -105,7 +105,7 @@ None: Workbench runs these scripts in the editor.
 - Used by:
   - `cargo xtask mcp wbcall` (`tools/commands/enfusion_mcp/src/netapi.rs`), which calls the
     handler over the Net API;
-  - `cargo xtask map ingest-blueprints` (`tools/developer_tools/src/blueprint/ingest.rs`), which
+  - `cargo xtask map ingest-blueprints` (`tools/map_assets/blueprint_compiler/src/ingest.rs`), which
     copies `prefabs/buildings/*.json` from the profile into
     `assets/terrains/everon/prefabs/buildings/`, validated against the `BuildingBlueprint`
     contract;
@@ -115,7 +115,7 @@ None: Workbench runs these scripts in the editor.
 - Rules: the handler stays in this addon, out of any `EnfusionMCP/` folder, which the MCP's
   `wb_cleanup` deletes; a blueprint number comes from a trace against the building's own collision,
   never a constant, in the measured path; the dump stays uninterpreted, so extraction rules change
-  in `tools/developer_tools/src/blueprint/`, not here. Lines added stay ASCII.
+  in `tools/map_assets/blueprint_compiler/src/`, not here. Lines added stay ASCII.
   `cargo xtask mod compile` compiles only the framework addon, so these scripts compile only when
   Workbench loads `tbd-export`, and a changed handler answers only after Workbench recompiles it.
 
@@ -123,7 +123,7 @@ None: Workbench runs these scripts in the editor.
 
 - [Building blueprints](/assets/terrains/everon/prefabs/buildings/README.md) — the committed
   blueprints and sidecars, and their consumers.
-- [Blueprint compiler](/tools/developer_tools/src/blueprint/README.md) — the offline
+- [Blueprint compiler](/tools/map_assets/blueprint_compiler/src/README.md) — the offline
   interpretation of the dumps and the parity tools.
 - [Map commands](/tools/xtask/src/commands/map/README.md) — the `cargo xtask map` blueprint and
   parity commands.

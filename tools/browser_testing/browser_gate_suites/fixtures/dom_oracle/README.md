@@ -15,7 +15,7 @@ tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/
 ## How it works
 
 Two gates of the `gate` binary read this folder, both from
-`tools/developer_tools/src/browser_testing/`. `gate v-suite verify` captures each route of the
+`tools/browser_testing/browser_gate_suites/`. `gate v-suite verify` captures each route of the
 built app with its API calls answered from `contracts/fixtures/api_goldens/` and diffs the
 page's DOM against `oracle-freeze/`; `gate s-routes` compares the router's route table with
 `manifests/routes.csv`. Neither gate regenerates the folder: `gate v-suite accept` replaces one

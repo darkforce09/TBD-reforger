@@ -20,7 +20,7 @@ compiled into the crate, so `cargo test -p developer_tools` does not read this t
 
 - Encoding: JSON, PNG, CSV and plain text, laid out per gate; each subfolder's README gives its
   format.
-- Schema: set by the gate code in `tools/developer_tools/src/browser_testing/`, which reads these
+- Schema: set by the gate code in `tools/browser_testing/browser_gate_suites/`, which reads these
   paths directly.
 - Adding a file: through the gate that owns the subfolder (`gate v-suite accept`), or by hand for
   the route table.
@@ -34,7 +34,7 @@ compiled into the crate, so `cargo test -p developer_tools` does not read this t
 
 - Depends on: the single-page app's built output, router and API fixtures in
   `apps/frontend/`.
-- Used by: `tools/developer_tools/src/browser_testing/`.
+- Used by: `tools/browser_testing/browser_gate_suites/`.
 - Rules: the prose rules of `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` exempt this tree from
   the ticket-id and Rust-file-name rules, since the goldens are captured pages; the gates address it
   by its full path, so a move updates

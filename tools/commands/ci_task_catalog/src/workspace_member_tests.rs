@@ -28,11 +28,10 @@ use repository_layout::find_repository_root;
 use verification_core::NotRun;
 
 /// The members a dedicated task of [`super::task_runner::TASKS`] tests, with that task, as
-/// `(package, task)`: the API against its database, the developer tools' library, the frontend
-/// and the three crates the `wasm-ci` lane tests with every feature on.
-pub const DEDICATED_TEST_TASKS: [(&str, &str); 6] = [
+/// `(package, task)`: the API against its database, the frontend and the three crates the
+/// `wasm-ci` lane tests with every feature on.
+pub const DEDICATED_TEST_TASKS: [(&str, &str); 5] = [
     ("api", "api-test"),
-    ("developer_tools", "developer-tools-test"),
     ("frontend", "ci-local-leptos"),
     ("graphics_engine", "wasm-ci"),
     ("map_engine", "wasm-ci"),

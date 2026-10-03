@@ -161,7 +161,7 @@ now maps to a page:
   `tools/commands/ci_task_catalog/src/task_definitions.rs`,
   `tools/checks/repository_checks/src/architecture/route_tags.rs`,
   `tools/checks/repository_checks/src/language_bans/shell_scripts.rs` and
-  `tools/developer_tools/src/map_raster_pipeline/satellite_archive_container.rs`; the READMEs of
+  `tools/map_assets/map_raster_pipeline/src/satellite_archive_container.rs`; the READMEs of
   the language ban, file length, architecture and verify folders; the
   [Testing and CI](/documentation/runbooks/testing_and_ci.md) runbook, whose gate matrix uses
   the codes; the [commit checklist](/documentation/standards/commit_checklist.md).

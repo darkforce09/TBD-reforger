@@ -74,7 +74,7 @@ None: Workbench runs these scripts in the editor.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   No committed tool reads these files: the road archive the map engine draws
   (`assets/terrains/everon/roads/`) comes from `world build-roads`, which decodes the road
-  topology from the game paks (`tools/developer_tools/src/world_export_pipeline/roads_emit.rs`).
+  topology from the game paks (`tools/map_assets/world_export_pipeline/src/roads_emit.rs`).
 - Rules: each class exporter returns its records to the coordinator and keeps the shared dataset
   format; a class's classifier decides membership alone, and nothing stops two classifiers accepting
   one entity. Lines added stay ASCII, and the scripts compile only when Workbench loads

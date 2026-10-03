@@ -69,6 +69,11 @@ ballistics_model = { path = "crates/ballistics/ballistics_model" }
 ballistics_oracle_tooling = { path = "tools/commands/ballistics_oracle_tooling" }
 # The firing solver, crest clearance and impact dispersion (`crates/ballistics/ballistics_solver`).
 ballistics_solver = { path = "crates/ballistics/ballistics_solver" }
+# BC7 block decoding of the game's supertexture cells (the world-export pipeline).
+bcdec_rs = "0.2"
+# The building-blueprint compiler: mesh decode, voxel interpretation, occlusion sidecars,
+# blueprint archives (`tools/map_assets/blueprint_compiler`).
+blueprint_compiler = { path = "tools/map_assets/blueprint_compiler" }
 # The browser gates of the single-page app: static server, DOM oracle, route drift, editor smokes,
 # data viewer gate, screen capture, doctor (`tools/browser_testing/browser_gate_suites`).
 browser_gate_suites = { path = "tools/browser_testing/browser_gate_suites" }
@@ -111,9 +116,6 @@ deploy_settings = { path = "tools/foundation/deploy_settings" }
 # The website and staging deploy drivers and the staging compose-path check
 # (`tools/commands/deployment`).
 deployment = { path = "tools/commands/deployment" }
-# The developer tool library (map pipelines, browser gates, Enfusion tooling); a tool crate's
-# temporary edge into it is listed in the S11 stage log (`tools/developer_tools`).
-developer_tools = { path = "tools/developer_tools" }
 # SplitMix64, the seeded deterministic generator (`crates/foundation/deterministic_random`).
 deterministic_random = { path = "crates/foundation/deterministic_random" }
 # The documentation gates: README coverage, Markdown placement and the link check
@@ -151,6 +153,8 @@ heck = "0.5"
 http_url_guard = { path = "crates/foundation/http_url_guard" }
 # Default features off; members select the codecs they decode and encode.
 image = { version = "0.25", default-features = false }
+# Lossless WebP encoding and decoding in pure Rust.
+image-webp = "0.2"
 js-sys = "0.3"
 # The `string_id!`, `integer_id!` and `uuid_id!` newtype identifier macros
 # (`crates/foundation/newtype_ids`).
@@ -169,6 +173,10 @@ label_layout = { path = "crates/map_overlay/label_layout" }
 libc = "0.2"
 # Pure-Rust transcendentals: the same bits on native and wasm32.
 libm = "0.2"
+# The gates over a terrain's committed map assets and the map golden fixtures: terrain manifest,
+# BLAS library, labels, elevation anchors, map-object goldens, world line of sight
+# (`tools/map_assets/map_asset_verification`).
+map_asset_verification = { path = "tools/map_assets/map_asset_verification" }
 # Terrain centres and bounds, the chunk grid, JavaScript rounding and grid references
 # (`crates/geometry/map_coordinates`).
 map_coordinates = { path = "crates/geometry/map_coordinates" }
@@ -178,6 +186,9 @@ map_draw_lanes = { path = "crates/map_overlay/map_draw_lanes" }
 # The Mission Creator's headless map tools: selection, ruler, line of sight and the viewshed job
 # scheduler (`crates/mission_editing/map_editing_tools`).
 map_editing_tools = { path = "crates/mission_editing/map_editing_tools" }
+# A terrain's satellite container, tile pyramids, cartographic render, labels, water archives and
+# the glyph atlas (`tools/map_assets/map_raster_pipeline`).
+map_raster_pipeline = { path = "tools/map_assets/map_raster_pipeline" }
 # The wire-safety and cargo capacity scans of a mission editor payload
 # (`crates/mission/mission_wire_safety`).
 mission_wire_safety = { path = "crates/mission/mission_wire_safety" }
@@ -267,6 +278,8 @@ repository_relocation = { path = "tools/commands/repository_relocation" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
 # speaks HTTPS enables `rustls-no-provider` and installs the ring provider.
 reqwest = { version = "0.13.4", default-features = false }
+# SVG rasterisation; default features off drop the text and raster-image support no glyph uses.
+resvg = { version = "0.45", default-features = false }
 # A terrain's road network: segments, styling, road meshes, cartographic strips and the airfield
 # (`crates/terrain/road_network`).
 road_network = { path = "crates/terrain/road_network" }
@@ -357,6 +370,8 @@ wasm-bindgen-futures = "0.4"
 # (`crates/terrain/water_bodies`).
 water_bodies = { path = "crates/terrain/water_bodies" }
 web-sys = "0.3"
+# Lossy WebP encoding through the vendored libwebp.
+webp = "0.3"
 # Default features off: each member selects the browser backends (`webgpu`, `webgl`) and `wgsl`.
 wgpu = { version = "29", default-features = false }
 # The workstation setup commands: server profiles, the Workbench link, the MCP game root, client
@@ -372,6 +387,9 @@ world_chunks = { path = "crates/world_formats/world_chunks" }
 # The headless world store: manifest, prefab table, roads, regions and one chunk at a time
 # (`crates/world_formats/world_store`).
 world_store = { path = "crates/world_formats/world_store" }
+# A terrain's committed map data from a Workbench world export, and its gates
+# (`tools/map_assets/world_export_pipeline`).
+world_export_pipeline = { path = "tools/map_assets/world_export_pipeline" }
 # The CRDT behind the mission document (`mission_crdt`, `mission_document`, the map engine).
 yrs = "0.27"
 

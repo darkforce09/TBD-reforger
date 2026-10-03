@@ -19,7 +19,7 @@ assets/terrains/everon/prefabs/scenes/
   frame (metres, y up), and optionally `anglesDeg` as `[pitch, yaw, roll]` in degrees (default all
   zero) and a uniform `scale` (default 1).
 - Schema: no JSON Schema; the reader is `SceneSpec` in
-  `tools/developer_tools/src/blueprint/bvh/batch_processing.rs`, which ignores `$comment`.
+  `tools/map_assets/blueprint_compiler/src/bvh/batch_processing.rs`, which ignores `$comment`.
 - Adding a file: a person writes it, then
   `cargo xtask map bvh-batch --prefab <Prefabs/…/X.et> --scene <spec>` walks each entry's prefab
   out of the game paks, writes the meshes it needs to `prefabs/blas/` and writes

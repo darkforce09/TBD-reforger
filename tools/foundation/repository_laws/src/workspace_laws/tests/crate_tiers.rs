@@ -256,6 +256,39 @@ fn crate_tiers_axum_from_a_harness_server_in_the_xtask_closure_is_rule_6() {
     );
 }
 
+/// The xtask binary sits at `tools/xtask` with no layout table, outside the judged set; its
+/// dependency closure is judged all the same, its own edges included.
+#[test]
+fn crate_tiers_the_unjudged_xtask_binary_has_its_closure_judged() {
+    let mut workspace = green_workspace("tiers-xtask-binary");
+    workspace.layout_crate(
+        "tools/staging/staging_load_generator",
+        0,
+        "any",
+        &[normal("tokio")],
+    );
+    workspace.member(
+        "tools/xtask",
+        &application_manifest(
+            "xtask",
+            "staging_load_generator = { path = \"../staging/staging_load_generator\" }\n\
+             reqwest = \"0.13\"\n",
+        ),
+    );
+    let found = findings(&workspace);
+    assert_eq!(found.len(), 2, "{found:#?}");
+    for (manifest, banned) in [
+        ("tools/staging/staging_load_generator/Cargo.toml", "tokio"),
+        ("tools/xtask/Cargo.toml", "reqwest"),
+    ] {
+        assert!(
+            found.iter().any(|f| f.contains(manifest)
+                && f.contains(&format!("{banned} enters the dependency closure of xtask"))),
+            "{manifest}: {found:#?}"
+        );
+    }
+}
+
 #[test]
 fn crate_tiers_browser_leptos_and_map_noun_firewalls_hold() {
     let mut workspace = green_workspace("tiers-browser");

@@ -58,7 +58,7 @@ the instanced glyph pass.
 ## Producers and consumers
 
 - Producers: people write `manifest.json` and the SVGs; `build_glyph_atlas` in
-  `tools/developer_tools/src/map_raster_pipeline/glyphs.rs` writes `atlas/`.
+  `tools/map_assets/map_raster_pipeline/src/glyphs.rs` writes `atlas/`.
 - Consumers:
   - the API's `/map-assets/glyphs` mount in `apps/api/src/core/http_router.rs`, whose
     folder comes from `GLYPH_ASSETS_DIR` (default `../../../assets/glyphs`, from the API's

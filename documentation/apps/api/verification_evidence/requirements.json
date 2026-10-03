@@ -1706,7 +1706,7 @@
         "crates/ballistics/fire_mission_planning/src/solution_wording.rs",
         "apps/frontend/src/workspaces/debug/ballistics_agreement.rs",
         "apps/frontend/src/workspaces/debug/ballistics_agreement",
-        "tools/developer_tools/src/browser_testing/ballistics_agreement"
+        "tools/browser_testing/browser_gate_suites/src/ballistics_agreement"
       ],
       "checks": [
         "game_ballistics_wasm_agreement",
@@ -1727,8 +1727,8 @@
         "apps/frontend/service_worker.js",
         "apps/frontend/manifest.webmanifest",
         "apps/offline_service_worker",
-        "tools/developer_tools/src/browser_testing/mortar_offline",
-        "tools/xtask/src/commands/map/tile_index.rs"
+        "tools/browser_testing/browser_gate_suites/src/mortar_offline",
+        "tools/map_assets/world_export_pipeline/src/map_tile_index.rs"
       ],
       "checks": [
         "game_ballistics_offline_page",

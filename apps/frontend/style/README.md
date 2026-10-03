@@ -36,7 +36,7 @@ apps/frontend/style/
   `apps/frontend/index.html`, which runs Tailwind CSS 4.3.2, the version
   `apps/frontend/Trunk.toml` pins, and writes the compiled stylesheet into the ignored
   `apps/frontend/dist/`; the headless editor gates of
-  `tools/developer_tools/src/browser_testing/`, which measure the compiled styles in the built
+  `tools/browser_testing/browser_gate_suites/`, which measure the compiled styles in the built
   app.
 
 ## Boundaries

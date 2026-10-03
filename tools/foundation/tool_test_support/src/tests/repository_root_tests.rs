@@ -10,7 +10,7 @@ fn nested_tooling_directories_resolve_repository_and_fixtures() {
         assert_eq!(resolved, root);
         for fixture in [
             "contracts/definitions/mission.schema.json",
-            "tools/developer_tools/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_children.json",
+            "tools/map_assets/blueprint_compiler/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_children.json",
             "tools/commands/platform_execution/src/wave_execution/schema.rs",
             "tools/enfusion_mcp_node_package/package.json",
         ] {

@@ -32,8 +32,10 @@ selftest; the deploys read the repository root's `deploy/`. The `repository_layo
 The crate owns repository operations and the orchestration of checks. Ticket storage and the wave
 lock belong to the ticket crates in `tools/tickets/`, verdict primitives to `verification_core`, child processes, the
 host bridge and the ssh transport to `process_runner`, the structural laws to `repository_laws`, and
-engine-backed map, world and blueprint work to `developer_tools`, which alone reaches the map
-engine; xtask passes them the checkout root and keeps their results and exit codes.
+building blueprints to `blueprint_compiler`, the map asset gates to `map_asset_verification`, the
+terrain export driver and the map tile index to `world_export_pipeline`, and the world export
+stages to the `world` binary of `developer_tools`, which that driver runs as a child process;
+xtask passes them the checkout root and keeps their results and exit codes.
 
 ## Getting started
 
@@ -81,11 +83,13 @@ The crate has no features and reads no configuration file of its own. What it re
 
 ## Boundaries
 
-- Depends on: `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry`,
-  `developer_tools`, and the `tools/foundation` crates
-  `verification_core`, `process_runner` and `repository_laws`, by path; clap, serde,
-  `jsonschema`, and `typify`, `schemars`, `syn` and `prettyplease` for the contract codegen; at
-  run time cargo, trunk, podman, git and the other host tools each group names.
+- Depends on: the tool crates `tools/xtask/Cargo.toml` lists (the ticket crates, the check and
+  command crates, `blueprint_compiler`, `map_asset_verification`, `world_export_pipeline`,
+  `enfusion_script_index` and the
+  `tools/foundation` crates), all by workspace path; anyhow, clap and serde, and `jsonschema` in
+  its tests; at run time cargo, trunk, podman, git and the other host tools each group names. No
+  tokio, axum, reqwest, resvg or image enters its dependency closure (rule 6 of
+  `cargo xtask verify crate-tiers`).
 - Used by:
   - people and AI agents, through the alias;
   - the workflows in `.github/workflows/` (`ci.yml`, `contracts.yml`, `editor-gates.yml`,
@@ -94,8 +98,8 @@ The crate has no features and reads no configuration file of its own. What it re
   - the PreToolUse hook in `.claude/settings.json`, which runs the built binary's `ai guard`;
   - the ticketboard in `apps/ticketboard/`, which runs `cargo xtask ticket` commands.
 - Rules:
-  - xtask never depends on `map_engine` or `graphics_engine`, `developer_tools`
-    never depends on xtask, a `tools/foundation` crate depends only on lower `tools/foundation`
+  - xtask and `developer_tools` are binary-only packages over tool crates, neither depends on
+    the other or on a member under `legacy/`, and no member depends on either; a `tools/foundation` crate depends only on lower `tools/foundation`
     crates, and a `tools/tickets` crate only on `tools/foundation` crates, three
     `crates/foundation` crates and lower ticket crates
     (`tooling_dependency_direction_is_enforced`,
@@ -107,7 +111,7 @@ The crate has no features and reads no configuration file of its own. What it re
     `tooling_test_modules_live_in_separate_files`);
   - tests read fixtures from the checkout they run in: the execution receipts in
     `tools/tickets/ticket_metrics/tests/fixtures/execution_receipts/` and the blueprint fixtures in
-    `tools/developer_tools/test_fixtures/blueprint/`.
+    `tools/map_assets/blueprint_compiler/test_fixtures/blueprint/`.
 
 ## Related documentation
 

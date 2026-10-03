@@ -61,16 +61,16 @@ reads it yet.
 ## Producers and consumers
 
 - Producers: the developer tools in `tools/developer_tools/`: the world export pipeline
-  (`tools/developer_tools/src/world_export_pipeline/`), the map raster pipeline, which also
-  builds the glyph atlas (`tools/developer_tools/src/map_raster_pipeline/`), and the blueprint
-  compiler (`tools/developer_tools/src/blueprint/`), which resolve these paths through
+  (`tools/map_assets/world_export_pipeline/src/`), the map raster pipeline, which also
+  builds the glyph atlas (`tools/map_assets/map_raster_pipeline/src/`), and the blueprint
+  compiler (`tools/map_assets/blueprint_compiler/src/`), which resolve these paths through
   `tools/foundation/repository_layout/src/map_assets.rs`. The glyph SVG sources are hand-authored.
 - Consumers:
   - the API's `/map-assets` and `/map-assets/glyphs` mounts, in
     `apps/api/src/core/http_router.rs`;
   - the map engine in `legacy/map_engine/`, which fetches and decodes the datasets in the
     browser and reads them from disk in its native tests;
-  - the developer tools' map verifications (`tools/developer_tools/src/map_verification/`) and
+  - the developer tools' map verifications (`tools/map_assets/map_asset_verification/src/`) and
     the xtask schema gates;
   - `cargo xtask ci lfs-dem` and `cargo xtask ci lfs-sat`, which pull the Everon height map and
     satellite bundle from LFS;

@@ -60,7 +60,7 @@ scenes `Scene`, `cube` and `concat`) for the tests of other crates and is enable
   engine (`legacy/map_engine`, behind its `world` feature): its picking and line-of-sight tool,
   the slot cluster lane, the occluder loader and the world object index; the single-page app's
   Mission Creator input and debug building benches in `apps/frontend/`; and the developer tools,
-  whose BVH emitters in `tools/developer_tools/src/blueprint/bvh/` write the sidecars.
+  whose BVH emitters in `tools/map_assets/blueprint_compiler/src/bvh/` write the sidecars.
 - Rules: geometry category, tier 1 (`cargo xtask verify crate-tiers`); no map, GPU or browser
   concept; the sidecar format and the triangle tree's build are deterministic, so the committed
   sidecars stay byte-identical (`double_emit_is_byte_identical`, and the developer tools'

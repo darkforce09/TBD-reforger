@@ -4,9 +4,8 @@
 //! group with the gate's GPU flags and font cache ([`launch`], [`launch_with_gpu`]), opens pages
 //! over one WebSocket each ([`new_page`]) and speaks the protocol on them ([`Page`]): calls,
 //! events, navigation, evaluation, input, screenshots and request interception.
-//! **Position:** tier 1 of `tools/browser_testing`, over `newtype_ids`; `browser_gate_suites` and
-//! the ballistics
-//! agreement and offline mortar suites of `developer_tools` drive every browser through it.
+//! **Position:** tier 1 of `tools/browser_testing`, over `newtype_ids`; the suites of
+//! `browser_gate_suites` drive every browser through it.
 //! **Signals & state:** a [`Browser`] owns the Chromium process group, its profile folder and the
 //! tail of its output; a [`Page`] owns its socket reader task, the pending calls and the event
 //! waiters; the gate font cache folder is decided once per process ([`resolved_font_cache`]).

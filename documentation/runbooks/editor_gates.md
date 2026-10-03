@@ -8,7 +8,7 @@ frozen DOM oracle (`gate v-suite verify`) and the `gate doctor` preflight that r
 and shows how to diagnose a gate that hangs or fails. `cargo xtask mk leptos-gates` runs all three;
 after the release build, the doctor takes about 15 seconds and the whole suite a few minutes. What
 each gate asserts is in the
-[browser testing README](/tools/developer_tools/src/browser_testing/README.md); this runbook
+[browser gate suites README](/tools/browser_testing/browser_gate_suites/README.md); this runbook
 does not repeat it.
 
 ## Prerequisites
@@ -256,7 +256,7 @@ check first.
 
 ## Related
 
-- [Browser testing](/tools/developer_tools/src/browser_testing/README.md) — every `gate`
+- [Browser gate suites](/tools/browser_testing/browser_gate_suites/README.md) — every `gate`
   command, what it asserts and its exit codes.
 - [Gate doctor and font cache](/tools/browser_testing/browser_gate_suites/src/diagnostics/README.md)
   — each doctor check and the font cache.

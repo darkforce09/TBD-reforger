@@ -36,7 +36,7 @@ Two gates read this folder, both steps of the `schema-validate` CI task:
   cross-file `$ref`s through each map-object schema's `$id`. Row files are checked row by row:
   each prefab, instance, chunk row, region and resolved object.
 - `cargo xtask schema map-object-golden`
-  (`tools/developer_tools/src/map_verification/object_goldens/`) runs the semantic gates:
+  (`tools/map_assets/map_asset_verification/src/object_goldens/`) runs the semantic gates:
   S2 to S7 over the prefab, instance, road and catalogue tables (resolvable kind and class, one
   example per kind, road classes, prefab deduplication, prefab references, required AI and
   gameplay fields), S8 over the resolved rows, S9 for full closed-enum coverage, S11 over the chunk
@@ -62,7 +62,7 @@ read the prefab and region samples, and `cargo xtask schema type-inventory` read
   layout in `crates/world_formats/world_file_formats/src/`.
 - Adding a file: add the sample, name it in the gate that must read it
   (`tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs` or
-  `tools/developer_tools/src/map_verification/object_goldens/map_object_golden.rs` names each
+  `tools/map_assets/map_asset_verification/src/object_goldens/map_object_golden.rs` names each
   file by path), and run both gates.
 
 ## Producers and consumers

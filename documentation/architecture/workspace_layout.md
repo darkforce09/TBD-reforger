@@ -119,17 +119,23 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`tools/enfusion/enfusion_mcp_broker/`](/tools/enfusion/enfusion_mcp_broker/README.md) | `enfusion_mcp_broker` | the `mcpd` broker over one enfusion-mcp server behind a Unix socket, and its offline stub |
 | [`tools/enfusion/enfusion_pak/`](/tools/enfusion/enfusion_pak/README.md) | `enfusion_pak` | the Enfusion `.pak` archive reader: the merged virtual file system under the blueprint and world policies, the loose and layered sources |
 | [`tools/enfusion/enfusion_script_index/`](/tools/enfusion/enfusion_script_index/README.md) | `enfusion_script_index` | the Enfusion script oracle behind `enf` (symbol indexes, lookups, citation and capability checks, vanilla extraction) and the vanilla page mirrors behind `cargo xtask fetch` |
+| [`tools/map_assets/blueprint_compiler/`](/tools/map_assets/blueprint_compiler/README.md) | `blueprint_compiler` | the building-blueprint compiler: voxel dumps and game models to blueprints, occlusion sidecars and the blueprint archive, behind `cargo xtask map` |
+| [`tools/map_assets/map_asset_verification/`](/tools/map_assets/map_asset_verification/README.md) | `map_asset_verification` | the gates over a terrain's committed map assets and the map golden fixtures behind `cargo xtask schema` and `verify blas-manifest`, and the world line-of-sight probe behind `cargo xtask map world-los` |
+| [`tools/map_assets/map_raster_pipeline/`](/tools/map_assets/map_raster_pipeline/README.md) | `map_raster_pipeline` | the map raster pipeline behind the `map` binary: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives and the world-glyph atlas |
+| [`tools/map_assets/world_export_pipeline/`](/tools/map_assets/world_export_pipeline/README.md) | `world_export_pipeline` | the world-export pipeline behind the `world` binary: a terrain's object chunks, catalogue, census, density tiles, forest regions, roads and elevation from a Workbench export, and the gates that prove them |
 | [`tools/browser_testing/chrome_devtools_protocol/`](/tools/browser_testing/chrome_devtools_protocol/README.md) | `chrome_devtools_protocol` | the Chrome DevTools Protocol client of the browser gates: Chromium discovery and launch, pages over WebSockets, the gate font cache |
-| [`tools/browser_testing/browser_gate_suites/`](/tools/browser_testing/browser_gate_suites/README.md) | `browser_gate_suites` | the browser gates of the single-page app behind `gate` and `capture`: the static server, the DOM oracle, route drift, the Mission Creator smokes, the data viewer gate, the capture rig, the doctor |
+| [`tools/browser_testing/browser_gate_suites/`](/tools/browser_testing/browser_gate_suites/README.md) | `browser_gate_suites` | the browser gates of the single-page app and the `gate` and `capture` command lines: the static server, the DOM oracle, route drift, the Mission Creator smokes, the data viewer gate, the ballistics agreement and offline mortar gates, the capture rig, the doctor |
 | [`tools/staging/staging_load_plan/`](/tools/staging/staging_load_plan/README.md) | `staging_load_plan` | the staging member load's plan, request catalog, pacing, records, report and their JSON codec, without tokio |
 | [`tools/staging/staging_load_generator/`](/tools/staging/staging_load_generator/README.md) | `staging_load_generator` | the staging member load's virtual clients and the `staging-load` executable's command line |
 | [`tools/staging/acknowledgement_dropping_relay/`](/tools/staging/acknowledgement_dropping_relay/README.md) | `acknowledgement_dropping_relay` | the loopback relay that withholds one fleet executor answer, and the `acknowledgement-dropping-relay` command line |
-| [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the heavy executables: script index, browser gates, MCP broker, world export, map assets, capture, the staging load and relay entry points |
+| [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the eight tool binaries, each a one-line `main` over one tool crate (script index, browser gates, MCP broker, world export, map assets, capture, the staging load and relay); no library |
 
 Every package is named after its folder, in snake_case. A crate under `crates/` sits in the
-folder of its category and declares its tier in its manifest, and none depends on a crate in
-`legacy/` (`cargo xtask verify crate-tiers`,
-`cargo xtask verify strangler`). The mod suite under `apps/mod/` is not
+folder of its category and declares its tier in its manifest, and no crate outside `apps/`, the
+tools included, depends on a crate in `legacy/` (`cargo xtask verify crate-tiers`,
+`cargo xtask verify strangler`). The two tool binaries, `tools/xtask` and
+`tools/developer_tools`, depend only on tool crates, and no tokio, axum, reqwest, resvg or image
+enters xtask's dependency closure. The mod suite under `apps/mod/` is not
 Cargo code: its three Enfusion addons are built by Workbench and checked by `cargo xtask mod compile`.
 
 ## Where things live

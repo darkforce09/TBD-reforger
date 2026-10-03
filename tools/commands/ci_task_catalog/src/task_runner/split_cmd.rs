@@ -140,6 +140,13 @@ pub(super) fn run_step(s: &Step, all: &[Task]) -> i32 {
     }
 }
 
+/// Echoes and runs one command line a [`Step::Native`] step derives at run time, exactly as the
+/// runner echoes and spawns a [`Step::Cmd`] line from the repository root.
+pub(crate) fn run_derived_line(argv: &[&str]) -> i32 {
+    echo(&argv.join(" "));
+    spawn(None, argv)
+}
+
 pub(super) fn echo(line: &str) {
     println!("{line}");
     flush();

@@ -27,8 +27,8 @@ validate, validate-file,   ─▶ tools/commands/schema_tooling/src/schema_check
 citations, map-glyphs,
 map-object-enums, type-inventory
 map-object-golden, height-labels, terrain-alignment, locations,
-town-labels, road-names, terrain-manifest ─▶ tools/commands/ci_task_catalog/src/map_asset_checks/
-                                              (developer_tools map_verification)
+town-labels, road-names, terrain-manifest ─▶ tools/map_assets/map_asset_verification/src/
+                                              (called with the checkout root)
 flatten-orbat-slots        ─▶ tools/commands/schema_tooling/src/mission_flattening.rs
 ```
 
@@ -94,7 +94,7 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   to `-2` for town labels and `0` for road names.
 - Does: the map-object semantic goldens, the height-label, location, town-label and road-name
   gates, the elevation-to-anchor alignment, and the terrain manifest against its schema and the
-  terrains contract, all run by the map verification code of `developer_tools`.
+  terrains contract, all run by the `map_asset_verification` crate.
 - Exit codes: 0 pass; 1 fail; `terrain-manifest` exits 2 for a terrain other than `everon` or
   `arland`.
 - Example: `cargo xtask schema terrain-manifest --terrain everon`
@@ -115,7 +115,8 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 ## Boundaries
 
 - Depends on: the `schema_tooling` crate for the contract gates, `codegen` and the flattening;
-  `tools/commands/ci_task_catalog/src/map_asset_checks/` for the map asset gates;
+  the `map_asset_verification` crate (`tools/map_assets/map_asset_verification/`) for the map
+  asset gates;
   `tools/commands/ci_task_catalog/src/task_runner/` for `list-gates`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, which mounts the group;

@@ -83,14 +83,14 @@ towns and road names from the archive and finds the spot heights on the elevatio
 ## Producers and consumers
 
 - Producers:
-  - the world export pipeline (`tools/developer_tools/src/world_export_pipeline/`), run by
+  - the world export pipeline (`tools/map_assets/world_export_pipeline/src/`), run by
     `cargo xtask map export-terrain everon --phase <phase>` from a staged
     [Workbench](/documentation/glossary/n_to_z.md#workbench) export: `objects/`, `roads/` and the
     manifest's `objects` block;
-  - the map raster pipeline (`tools/developer_tools/src/map_raster_pipeline/`): the satellite
+  - the map raster pipeline (`tools/map_assets/map_raster_pipeline/src/`): the satellite
     container, `map export-locations` for `locations.json`, `map export-height-labels` for
     `height-labels.json` and `map labels-rkyv` for the label archive;
-  - the blueprint compiler (`tools/developer_tools/src/blueprint/`), run by
+  - the blueprint compiler (`tools/map_assets/blueprint_compiler/src/`), run by
     `cargo xtask map bvh-batch` and `cargo xtask map blueprint-from-voxels`: `prefabs/`;
   - the `tbd-export` addon's Workbench plugins
     (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`), for the raw exports behind the
@@ -103,7 +103,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
     the anchors sample and the census), `schema terrain-manifest`, `schema terrain-alignment`,
     `schema height-labels`, `schema locations`, `schema town-labels`, `schema road-names`,
     `schema type-inventory` and `schema map-object-golden`, and `cargo xtask verify blas-manifest`;
-  - the developer tools' map verifications (`tools/developer_tools/src/map_verification/`) and
+  - the developer tools' map verifications (`tools/map_assets/map_asset_verification/src/`) and
     headless editor checks;
   - `cargo xtask ci lfs-dem` and `cargo xtask ci lfs-sat`, the `map-engine` and `schema` jobs of
     `.github/workflows/ci.yml` (the DEM only) and `.github/workflows/editor-gates.yml` (every LFS
@@ -130,7 +130,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
 - [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the browser
   fetches and streams these files.
 - [Map streaming host](/legacy/map_engine/src/streaming/host/README.md) — the boot order.
-- [World Export Pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — the
+- [World Export Pipeline](/tools/map_assets/world_export_pipeline/src/README.md) — the
   object export commands.
-- [Map Raster Pipeline](/tools/developer_tools/src/map_raster_pipeline/README.md) — the raster,
+- [Map Raster Pipeline](/tools/map_assets/map_raster_pipeline/src/README.md) — the raster,
   satellite and label commands.

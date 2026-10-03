@@ -10,14 +10,14 @@ products they build, check and deploy live in `apps/`.
 
 ```text
 tools/
-├── browser_testing/            the headless browser gate crates: the DevTools protocol client and the gate suites
+├── browser_testing/            the headless browser gate crates: the DevTools protocol client, and the gate suites with the `gate` and `capture` command lines
 ├── checks/                     the repository verification crates: repository checks, mod script checks and documentation checks
 ├── commands/                   the crates behind the `cargo xtask` command groups: ci, platform, mod, db, deploy, staging, schema, relocation and the rest
-├── developer_tools/            the heavy executables, blueprints, the world export and map pipelines, the ballistics and mortar gate suites
+├── developer_tools/            the eight one-line tool binaries: enf, gate, mcpd, world, map, capture, the staging relay and load
 ├── enfusion/                   the Enfusion crates: the `.pak` reader, the script index, the MCP broker
 ├── enfusion_mcp_node_package/  the npm package that pins the `enfusion-mcp` server
 ├── foundation/                 verdicts and the verification lock, child processes, the repository laws, the layout, the deploy settings, the test locks
-├── map_assets/                 the folder of the map asset pipeline and verification crates (README only, no crate yet)
+├── map_assets/                 the map asset crates: the blueprint compiler, the world export, raster and verification pipelines
 ├── staging/                    the staging crates: the load plan, the load generator, the acknowledgement-dropping relay
 ├── tickets/                    the ticket registry crates: model, metrics, wave lock, registry, the ticketboard's headless model
 └── xtask/                      the `cargo xtask` command line and dispatch, and the groups without a crate of their own
@@ -82,43 +82,61 @@ groups as modules of its own. It passes each crate the checkout root:
 - The [browser testing crates](/tools/browser_testing/README.md) hold the headless browser gates of
   the single-page app: `chrome_devtools_protocol` the client that launches Chromium and drives its
   pages, and `browser_gate_suites` the static server, the DOM oracle, the route drift check, the
-  Mission Creator smokes, the data viewer gate, the capture rig and the doctor, which the `gate`
-  and `capture` binaries of `developer_tools` run.
+  Mission Creator smokes, the data viewer gate, the offline mortar and ballistics agreement gates,
+  the capture rig, the doctor and the `gate` and `capture` command lines, which the `gate` and
+  `capture` binaries of `developer_tools` call.
 - The [staging crates](/tools/staging/README.md) hold the engines of the staging verification
   receipts: `staging_load_plan` the member load's plan, report and their JSON codec, which the
   `staging_procedures` load procedure builds and judges; `staging_load_generator` the load itself,
   which the procedure runs as `developer_tools`' `staging-load` child process; and
   `acknowledgement_dropping_relay` the fault-injecting relay behind
   `acknowledgement-dropping-relay` on the staging host.
-- `developer_tools` holds the heavy work in eight executables (`enf`, `gate`, `mcpd`, `world`,
-  `map`, `capture`, `acknowledgement-dropping-relay`, `staging-load`) and a library: the headless browser gates, the
-  blueprint compiler, the world export and raster pipelines, and engine-backed map verification.
-  It is the one tooling crate that links `map_engine`.
+- `developer_tools` holds eight executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
+  `acknowledgement-dropping-relay`, `staging-load`), each a one-line `main` over one tool crate;
+  it has no library and no crate depends on it. The map asset verification is
+  `map_asset_verification` (tools/map_assets), which the CI task catalogue's map asset steps and
+  the `cargo xtask schema`, `verify` and `map world-los` commands call. The world-export pipeline
+  is `world_export_pipeline` (tools/map_assets), which the `world` binary runs and whose export
+  driver and map tile index writer the `cargo xtask map export-terrain` and `tile-index` commands
+  call, and the map raster
+  pipeline is `map_raster_pipeline` (tools/map_assets), which the `map` binary runs. The
+  building-blueprint compiler is `blueprint_compiler` (tools/map_assets), which the `cargo xtask
+  map` commands call. No tool crate links a member under `legacy/` (the strangler law).
+- xtask and `developer_tools` are the two binary packages; both depend only on tool crates
+  (`tooling_dependency_direction_is_enforced`), and no tokio, axum, reqwest, resvg or image enters
+  xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`): the async servers and
+  the raster crates run behind the `developer_tools` binaries, which xtask starts as child
+  processes.
 - `enfusion_mcp_node_package` is data, not a crate: `npm ci` there installs the pinned server that
   `mcpd` and `cargo xtask mcp` start. It sits outside every crate root, so no crate-scoped walk
   reads its `node_modules/`.
 
 ```text
-xtask ──▶ developer_tools ──▶ map_engine (legacy/map_engine)
-  │               │
+xtask ──runs──▶ developer_tools (binaries only)
   │               ├── mcpd ──▶ enfusion_mcp_broker (tools/enfusion) ──starts──▶ enfusion_mcp_node_package
   │               ├── enf, map pipelines ──▶ enfusion_script_index, enfusion_pak (tools/enfusion)
+  │               ├── world, map pipelines ──▶ world_export_pipeline (tools/map_assets) ──▶ enfusion_pak, prefab_catalog
+  │               ├── map ──▶ map_raster_pipeline (tools/map_assets) ──▶ world_export_pipeline, enfusion_pak
   │               ├── gate, capture ──▶ browser_gate_suites ──▶ chrome_devtools_protocol (tools/browser_testing)
   │               └── staging-load, acknowledgement-dropping-relay ──▶ staging_load_generator, acknowledgement_dropping_relay (tools/staging)
   ├────▶ staging_procedures (tools/commands), the staging group ──▶ staging_load_plan (tools/staging), the plan crate under staging_load_generator
   ├────▶ ticket crates (tools/tickets) ◀── ticketboard_model (tools/tickets) ◀── ticketboard (apps/ticketboard)
-  ├────▶ command crates (tools/commands); enfusion_mcp: mcp; schema_tooling ──▶ developer_tools (INSTANCE_KINDS)
-  ├────▶ ci_task_catalog (tools/commands): ci, help, mk ──▶ check crates, command crates, developer_tools (map asset checks)
+  ├────▶ command crates (tools/commands); enfusion_mcp: mcp; schema_tooling ──▶ prefab_catalog (INSTANCE_KINDS)
+  ├────▶ ci_task_catalog (tools/commands): ci, help, mk ──▶ check crates, command crates, map_asset_verification (map asset steps)
   ├────▶ platform_execution (tools/commands): platform ──▶ ci_task_catalog, ticket crates
   ├────▶ mod_operations (tools/commands): mod ──▶ platform_execution, command crates, mod_script_checks
   ├────▶ enfusion_script_index (tools/enfusion): cargo xtask fetch
+  ├────▶ blueprint_compiler (tools/map_assets): map blueprint, BVH and model commands ──▶ enfusion_pak
+  ├────▶ map_asset_verification (tools/map_assets): map world-los, the schema and verify map asset gates ──▶ world_export_pipeline
+  ├────▶ world_export_pipeline (tools/map_assets): map export-terrain (runs the world binary), map tile-index
   ├────▶ check crates (tools/checks)
   └────▶ process_runner, repository_laws ──▶ verification_core   (tools/foundation)
 ```
 
 The repository paths more than one tool names, and the one walk that finds the checkout root, live
 in `tools/foundation/repository_layout`. Each tool spells the paths only it uses in its own layout
-module: `tools/developer_tools/src/map_pipeline_layout.rs`,
+module: `tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs`,
+`tools/map_assets/world_export_pipeline/src/export_locations.rs`,
 `tools/enfusion/enfusion_script_index/src/script_index_layout.rs`,
 `tools/browser_testing/browser_gate_suites/src/gate_layout.rs` and `tools/tickets/ticket_model/src/repository.rs`.
 

@@ -38,14 +38,14 @@ reads an archived identifier through `get`, `as_str` or `to_native`.
 
 | Archive | File under a terrain's folder | Writer | Reader in the map engine |
 |---|---|---|---|
-| `RoadNetworkArchive` | `roads/road_network.rkyv` | `tools/developer_tools/src/world_export_pipeline/roads_emit.rs` | `map_engine::world::terrain::roads` |
-| `MapLabelsArchive` | `locations/map_labels.rkyv` | `tools/developer_tools/src/map_raster_pipeline/map_label_archives.rs` | `map_engine::world::environment::locations` |
-| `WaterVectorsArchive` | `water/water_vectors.rkyv` | `tools/developer_tools/src/map_raster_pipeline/inland_water_archive.rs` | `map_engine::world::terrain::water` |
-| `PrefabCatalogArchive` | `objects/prefabs.rkyv` | `tools/developer_tools/src/world_export_pipeline/catalog_emit.rs` | `map_engine::world::environment::buildings`, `map_engine::streaming::loaders` |
-| `TypeInventory` | `objects/type-inventory.rkyv` | `tools/developer_tools/src/world_export_pipeline/catalog_emit.rs` | none; the same census is embedded in the prefab catalogue |
-| `ForestRegionsArchive` | `objects/forest-regions.rkyv` | `tools/developer_tools/src/world_export_pipeline/catalog_emit.rs` | `map_engine::world::environment::vegetation` |
-| `BuildingBlueprintArchive` | `prefabs/building_blueprints.rkyv` | `tools/developer_tools/src/blueprint/archive_emission/archive_writer.rs` | `map_engine::world::architecture`, `map_engine::spatial::los::world` |
-| `TbdSatIndexV2` | inside `satellite/{terrain}-sat.tbd-sat` | `tools/developer_tools/src/map_raster_pipeline/satellite_archive_container.rs` | `map_engine::world::terrain::satellite` |
+| `RoadNetworkArchive` | `roads/road_network.rkyv` | `tools/map_assets/world_export_pipeline/src/roads_emit.rs` | `map_engine::world::terrain::roads` |
+| `MapLabelsArchive` | `locations/map_labels.rkyv` | `tools/map_assets/map_raster_pipeline/src/map_label_archives.rs` | `map_engine::world::environment::locations` |
+| `WaterVectorsArchive` | `water/water_vectors.rkyv` | `tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs` | `map_engine::world::terrain::water` |
+| `PrefabCatalogArchive` | `objects/prefabs.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | `map_engine::world::environment::buildings`, `map_engine::streaming::loaders` |
+| `TypeInventory` | `objects/type-inventory.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | none; the same census is embedded in the prefab catalogue |
+| `ForestRegionsArchive` | `objects/forest-regions.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | `map_engine::world::environment::vegetation` |
+| `BuildingBlueprintArchive` | `prefabs/building_blueprints.rkyv` | `tools/map_assets/blueprint_compiler/src/archive_emission/archive_writer.rs` | `map_engine::world::architecture`, `map_engine::spatial::los::world` |
+| `TbdSatIndexV2` | inside `satellite/{terrain}-sat.tbd-sat` | `tools/map_assets/map_raster_pipeline/src/satellite_archive_container.rs` | `map_engine::world::terrain::satellite` |
 
 `BinaryError` covers every way a buffer can be wrong: `Truncated`, `BadMagic`,
 `UnsupportedVersion`, `Misaligned` (recoverable by copying into an aligned buffer),

@@ -19,14 +19,14 @@ documentation/assets/
 
 Start with [terrain export and map assets](/documentation/assets/terrain_export_and_map_assets.md),
 the end-to-end flow from a [Workbench](/documentation/glossary/n_to_z.md#workbench) world to a manifest the browser boots; it links the
-[map raster pipeline](/documentation/tools/developer_tools/map_raster_pipeline.md) for the
+[map raster pipeline](/documentation/tools/map_assets/map_raster_pipeline.md) for the
 image, label and water lanes. The [uploaded terrain volume](/documentation/assets/uploaded_terrain_volume.md)
 describes a tier no code implements yet. Both follow the
 [feature doc template](/documentation/standards/templates/feature_doc.md).
 
 | Doc | Covers | Code |
 |---|---|---|
-| [Terrain export and map assets](/documentation/assets/terrain_export_and_map_assets.md) | the world objects export, the other exports, gates, serving, storage | [`assets/terrains/`](/assets/terrains/README.md), [`world_export_pipeline/`](/tools/developer_tools/src/world_export_pipeline/README.md) |
+| [Terrain export and map assets](/documentation/assets/terrain_export_and_map_assets.md) | the world objects export, the other exports, gates, serving, storage | [`assets/terrains/`](/assets/terrains/README.md), [`world_export_pipeline/`](/tools/map_assets/world_export_pipeline/src/README.md) |
 | [Uploaded terrain volume](/documentation/assets/uploaded_terrain_volume.md) | the second tier's layout, ingest gates and operating rules | [`assets/storage_spec/`](/assets/storage_spec/README.md) |
 
 ## Code

@@ -9,6 +9,7 @@ decoding, the crate's error and prelude, and the Everon fixtures other crates' t
 crates/world_formats/prefab_catalog/src/
 ├── error.rs               `Error` and `Result` (the payload and archive errors, wrapped) and `InvalidPrefabId`
 ├── footprint_lookups.rs   the footprint ring and the building and fence lookups
+├── instance_kinds.rs      `INSTANCE_KINDS`, the census buckets in emitted order
 ├── lib.rs                 the crate root: module header, `mod` lines and the re-exports
 ├── numeric_prefab_ids.rs  the prefab a catalogue `prefabId` or a chunk `pid` number names
 ├── prefab_rows.rs         the prefab rows, the prefab map and the catalogue and census archives

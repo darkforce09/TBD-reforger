@@ -76,7 +76,7 @@ compiles every surface.
     `session/eden_chrome.rs`, `session/layout.rs`, `session/document_commands/imp/exports.rs`,
     `arsenal/mod.rs`, the `bridge/` document host, host state, overlays, viewport and world assets,
     and the context menu gesture and the measuring tools under `input/`;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive these
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive these
     surfaces through the DOM;
   - `cargo xtask verify editor-orbat-coherency`
     (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which scans

@@ -31,7 +31,7 @@ resolved and the proof of what resolved it.
 
 - [Mission Creator](/apps/frontend/src/workspaces/editor/) — KB-001: the selection and paste
   paths that replaced the code the defect was seen in.
-- [Browser gate harness](/tools/developer_tools/src/browser_testing/) — KB-002: the Chromium
+- [Browser gate harness](/tools/browser_testing/browser_gate_suites/) — KB-002: the Chromium
   build and font cache it launches with.
 
 ## Boundaries

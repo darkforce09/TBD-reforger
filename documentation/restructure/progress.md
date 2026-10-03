@@ -194,11 +194,12 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [x] G-W5 (M) finish platform_execution — done — commit: (S11a stage commit) — four-point headers on 39 files; the wave gate's tool clippy step lints every tool package derived from the workspace
 - [x] G-RV (M) fast `relocate --verify` — done — commit: (S11a stage commit) — F-M3-06: 8 min 15 s → 5.5 s with byte-identical output; one Aho-Corasick pass over every manifest's retired spellings; oracle test
 - [x] G-S11a (M) S11a records and the last module headers — done — commit: (S11a stage commit) — four-point headers on the 25 `mod_operations` files that lacked them (history wording made present-tense); progress, catalogue, target tree, workspace layout, atlas and `tools/README.md` brought to the S11a tree
-- [ ] J3d (L) blueprint_compiler, map_asset_verification — pending (S11b)
-- [ ] J3e (L) world_export_pipeline, map_raster_pipeline; `INSTANCE_KINDS` → `prefab_catalog` — pending (S11b)
-- [ ] J3f (M) ballistics gate suites into browser_gate_suites — pending (S11b)
-- [ ] J4 (M) thin binaries, firewall, legacy exceptions, anyhow out of libraries — pending (S11b)
-- [ ] S11b stage commit — pending
+- [x] J3d (L) blueprint_compiler, map_asset_verification — done — commit: (S11b stage commit) — split J3d1/J3d2: `blueprint_compiler` (tier 6; 86 + 2 ignored) and `map_asset_verification` (tier 7; 14) born by name; the CI task catalogue's developer_tools edge removed; 22 gate outputs byte-identical
+- [x] J3e (L) world_export_pipeline, map_raster_pipeline; `INSTANCE_KINDS` → `prefab_catalog` — done — commit: (S11b stage commit) — split J3e1/J3e2: `world_export_pipeline` (tier 6; 68) and `map_raster_pipeline` (tier 7; 30) born by name; `INSTANCE_KINDS` once in `prefab_catalog`; old and new `world`/`map` binaries write identical files
+- [x] J3f (M) ballistics gate suites into browser_gate_suites — done — commit: (S11b stage commit) — 39 tests and the `gate`/`capture` command lines moved; developer_tools drops axum, tokio, reqwest; found F-S11-13 (`float_roundtrip`)
+- [x] J4 (M) thin binaries, firewall, legacy exceptions, anyhow out of libraries — done — commit: (S11b stage commit) — developer_tools is eight one-line bins over seven tool crates, no library; xtask drops its developer_tools edge (closure 325 → 229 crates; no tokio, axum, reqwest, resvg, image); crate-tiers rule 6 judges the unjudged xtask binary; the strangler exempts no tool; `map_asset_checks` adapters gone; the `developer-tools-test` lane retired into `workspace-member-tests`; the wasm32 lint derives its packages from `targets = "wasm32"`
+- [x] G-S11b (M) xtask `map` to dispatch only — done — commit: (S11b stage commit) — the terrain export driver and tile index writer into `world_export_pipeline`; 11 help and refusal outputs byte-identical
+- [x] S11b stage commit — done — legacy-empty check handed to S8's gate and S12's sweep (coordinator)
 
 ### M3 Objective behaviours
 - [x] M3a (S) switch-site catalogue — done — no `switch` exists; 22 kind-branching methods in 11 files, catalogued by the planning explorer (stage log)
@@ -370,17 +371,17 @@ The operator regenerates `apps/mod/tbd-framework/resourceDatabase.rdb` in Workbe
 follow-up commit; `cargo xtask mod compile` is clean without it. Findings F-M3-01..05 and the S12
 per-kind playtest checklist are in [stage_logs/m3.md](/documentation/restructure/stage_logs/m3.md).
 
-S11a is on `main`: the tools are 35 crates under `tools/{foundation, tickets, commands, checks,
-enfusion, browser_testing, staging}`; the ticket engine crate is gone (four ticket crates and
-`ticketboard_model`; toml 1.x, the 1725-ticket round trip byte-identical); xtask keeps the command
-line, dispatch and the ticket, wave, verify, schema, fetch, refactor, map and agent-context groups
-(32 tests); every production spawn of the born crates runs through `process_runner` (only async tokio
-sites stay raw); `cargo xtask refactor relocate --verify` takes seconds (one pass). S11b waits for
-S8 only for its legacy-empty check: J3d–f (the map asset crates on S6's world crates, the
-ballistics gate suites on S5's crates), J4 (thin binaries, the xtask dependency firewall green, the
-temporary developer_tools edges in the s11 log removed). Decisions, findings (F-S11-01..12), the
-coordinator rulings pending operator review (the axum harness-server clause) and the relocation
-rules later stages converge on are in [stage_logs/s11.md](/documentation/restructure/stage_logs/s11.md).
+S11 is on `main` (S11a, S11b): the tools are 39 crates under `tools/{foundation, tickets, commands,
+checks, enfusion, browser_testing, staging, map_assets}`; the ticket engine crate is gone (four ticket
+crates and `ticketboard_model`; toml 1.x, the 1725-ticket round trip byte-identical); xtask is the
+command line and dispatch (21 tests) and depends on no tokio, axum, reqwest, resvg or image (the
+closure rule now judges the unjudged binary, F-S11-14); developer_tools is eight one-line binaries;
+every production spawn of the tools runs through `process_runner` (only async tokio sites stay
+raw); `cargo xtask refactor relocate --verify` takes seconds; the wasm32 lint lane derives its
+packages from `targets = "wasm32"` metadata. The check that `legacy/` is empty is S8's gate and
+S12's final sweep. Decisions, findings (F-S11-01..14), the coordinator ruling pending operator
+review (the axum harness-server clause, F-S11-09) and the relocation rules later stages converge on
+are in [stage_logs/s11.md](/documentation/restructure/stage_logs/s11.md).
 
 Every remaining stage (S3–S12, M3) has its own worktree and orchestrator, managed by the
 "Restructure coordinator" session (decision D22; inputs per stage in the stage logs protocol). The

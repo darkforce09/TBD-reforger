@@ -39,7 +39,7 @@ server over another corpus is never affected; `is_api_down` reads it.
 - Depends on: the parent's `respond`, which adds the cross-origin isolation headers; `axum`,
   `tokio` and `serde_json`.
 - Used by: `server.rs`, which consults it before the proxy; `gate mortar-offline`
-  (`tools/developer_tools/src/browser_testing/mortar_offline/`), which serves the recorded
+  (`tools/browser_testing/browser_gate_suites/src/mortar_offline/`), which serves the recorded
   catalog reads through it, names them with `corpus_file_name` and marks the API down for its
   proxy step.
 - Rules: the route and the naming are pinned by
@@ -47,5 +47,5 @@ server over another corpus is never affected; `is_api_down` reads it.
 
 ## Related documentation
 
-- [Headless browser gates and captures](/tools/developer_tools/src/browser_testing/README.md) —
+- [Headless browser gates and captures](/tools/browser_testing/browser_gate_suites/src/command_lines/README.md) —
   the gate server and the gates that use it.

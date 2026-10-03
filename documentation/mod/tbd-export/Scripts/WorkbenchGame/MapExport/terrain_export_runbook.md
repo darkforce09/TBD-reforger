@@ -5,8 +5,9 @@
 Takes one full world-object export of a terrain out of
 [Workbench](/documentation/glossary/n_to_z.md#workbench), stages it, builds the terrain's object and
 road data for one import phase, verifies it and opens the next phase. It follows the operator steps
-`cargo xtask map export-terrain` prints (`tools/xtask/src/commands/map/terrain_export.rs:61-84`)
-and the gate's own refusal text. The build and verify steps run for minutes on a full terrain.
+`cargo xtask map export-terrain` prints
+(`tools/map_assets/world_export_pipeline/src/export_terrain_driver.rs:70-93`) and the gate's own
+refusal text. The build and verify steps run for minutes on a full terrain.
 
 ## Prerequisites
 
@@ -90,7 +91,7 @@ Expected: exit 0 and the `map-verify-phase: OK` line.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `export-terrain: phase P6_roads_highway blocked — registry importPhaseMax=P5_props (advance only after map-verify-phase PASS + registry bump)` | the phase is above the registry's `importPhaseMax` (`tools/developer_tools/src/world_export_pipeline/mathematical_verification/phase_validation.rs:34-39`) | verify the current phase, then raise `importPhaseMax` (step 5) |
+| `export-terrain: phase P6_roads_highway blocked — registry importPhaseMax=P5_props (advance only after map-verify-phase PASS + registry bump)` | the phase is above the registry's `importPhaseMax` (`tools/map_assets/world_export_pipeline/src/mathematical_verification/phase_validation.rs:34-39`) | verify the current phase, then raise `importPhaseMax` (step 5) |
 | `export-terrain: staged raw export missing for 'everon':`, exit 2 | no staged `raw-entities.jsonl` under `assets/scratch/everon/export/` | run steps 1 and 2 |
 | `copy-world-export-profile: source jsonl not found: …` | the profile path is wrong; the default is `$HOME/Documents/Games/ArmaReforgerWorkbench/profile`, not the Proton profile | pass `--profile "$PROFILE_DIR"` or `--src` |
 | `copy-world-export-profile: --full refused — completion-sentinel meta missing: …` | the export crashed or is still running; the meta is written last | rerun step 1 and wait for the meta file |
@@ -102,7 +103,7 @@ Expected: exit 0 and the `map-verify-phase: OK` line.
 
 - [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every exporter, its entry point and the known gaps in this procedure.
-- [World export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — the
+- [World export pipeline](/tools/map_assets/world_export_pipeline/src/README.md) — the
   `world` subcommands this runbook runs.
 - [Map commands](/tools/xtask/src/commands/map/README.md) — `cargo xtask map export-terrain`.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — `cargo xtask mcp call`

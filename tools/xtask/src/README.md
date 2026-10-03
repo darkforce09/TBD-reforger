@@ -21,7 +21,7 @@ main.rs ──▶ cli::dispatch::run ──▶ commands::<group>::dispatch::run 
                                           │                               │
                                           ├──▶ check and command crates   ├──▶ tools/foundation (root,
                                           │    (verify, ci, mk, deploy …) │    layout, settings, host)
-                                          └──▶ ticket crates, developer_tools, tools/foundation crates
+                                          └──▶ ticket crates, map asset crates, tools/foundation crates
 ```
 
 `main.rs` declares the modules, calls `cli::dispatch::run` and exits with the `u8` it returns, or
@@ -46,7 +46,8 @@ limits, test placement, prose) are tests of the `repository_checks` crate
 
 - Depends on: the ticket crates `ticket_model` (the ticket model and store),
   `ticket_metrics` (run receipts), `ticket_wave_lock` (the wave lock) and `ticket_registry`
-  (ticket operations, checks and sync), `developer_tools` (engine-backed map and blueprint work), `verification_core`
+  (ticket operations, checks and sync), `blueprint_compiler`, `map_asset_verification` and
+  `world_export_pipeline` (the map commands and the map asset gates), `verification_core`
   (verdicts, scans), `process_runner` (process runs, the host bridge, the ssh transport, the
   `PATH` guard), `platform_execution` (the platform factory), `repository_layout` (the checkout root
   and the shared locations) and `deploy_settings` (the deploy settings file), and in its tests
@@ -54,8 +55,11 @@ limits, test placement, prose) are tests of the `repository_checks` crate
   `tools/xtask/Cargo.toml`.
 - Used by: `tools/xtask/Cargo.toml`, whose one `[[bin]]` is `src/main.rs`.
 - Rules (tests in `tools/checks/repository_checks/src/tests/`):
-  - xtask never depends on `map_engine` or `graphics_engine`, and
-    `developer_tools` never depends on xtask (`tooling_dependency_direction_is_enforced`);
+  - xtask and `developer_tools` are binary-only packages whose workspace dependencies are tool
+    crates; neither depends on the other or on a member under `legacy/`, and no member depends on
+    either (`tooling_dependency_direction_is_enforced`);
+  - no tokio, axum, reqwest, resvg or image enters xtask's dependency closure (rule 6 of
+    `cargo xtask verify crate-tiers`);
   - a production file stays under 500 lines, `main.rs` under 150 and a separate test file under
     1000 (`tooling_source_files_stay_below_their_structural_limits`), and no test module is inline
     (`tooling_test_modules_live_in_separate_files`);

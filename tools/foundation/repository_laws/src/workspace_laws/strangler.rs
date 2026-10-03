@@ -2,7 +2,7 @@
 //! `legacy/` holds a re-export shim.
 //!
 //! **Role:** finds every dependency edge from a member outside `legacy/` onto a member under it
-//! (apps and the two tool binaries excepted while `legacy/` exists), and every `pub use` of a
+//! (apps excepted while `legacy/` exists; no tool depends on it), and every `pub use` of a
 //! workspace crate outside `legacy/` inside a member under `legacy/` — a shim, which never
 //! survives a commit, whether it re-exports an item, a module or the crate root itself, under its
 //! own name or an alias, on one line or across several.
@@ -29,9 +29,6 @@ use crate::source_roots::repository_relative;
 use crate::workspace_members::{WorkspaceMember, read_workspace_members};
 use verification_core::scan;
 use verification_core::verdict::NotRun;
-
-/// The two tool binaries that may depend on members under `legacy/` while `legacy/` exists.
-pub const LEGACY_DEPENDENT_TOOL_BINARIES: &[&str] = &["tools/xtask", "tools/developer_tools"];
 
 /// The strangler report over the checkout at `repo_root`.
 pub fn check_strangler(repo_root: &Path) -> WorkspaceLawReport {
@@ -64,9 +61,7 @@ pub fn strangler_outcome(repo_root: &Path) -> Result<LawOutcome, NotRun> {
 pub fn legacy_dependency_findings(members: &[WorkspaceMember]) -> Vec<String> {
     let mut findings = Vec::new();
     for member in members {
-        let exempt = is_under(&member.path, LEGACY_ROOT)
-            || is_under(&member.path, APPS_ROOT)
-            || LEGACY_DEPENDENT_TOOL_BINARIES.contains(&member.path.as_str());
+        let exempt = is_under(&member.path, LEGACY_ROOT) || is_under(&member.path, APPS_ROOT);
         if exempt {
             continue;
         }
@@ -74,8 +69,8 @@ pub fn legacy_dependency_findings(members: &[WorkspaceMember]) -> Vec<String> {
             let target = members.iter().find(|m| m.package_name == edge.package);
             if let Some(target) = target.filter(|t| is_under(&t.path, LEGACY_ROOT)) {
                 findings.push(format!(
-                    "{}/Cargo.toml:{}: [{}] depends on {} — only apps and the tool binaries \
-                     may depend on a member under legacy/ while legacy/ exists",
+                    "{}/Cargo.toml:{}: [{}] depends on {} — only apps may depend on a member \
+                     under legacy/ while legacy/ exists",
                     member.path, edge.line_no, edge.table, target.path
                 ));
             }

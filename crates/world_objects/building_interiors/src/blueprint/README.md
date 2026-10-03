@@ -87,7 +87,7 @@ so those come back empty or zero.
   - the debug building viewer and line-of-sight benches in
     `apps/frontend/src/workspaces/debug/`, which fetch the blueprint JSON from
     `/map-assets/everon/prefabs/buildings/`;
-  - the blueprint tooling in `tools/developer_tools/src/blueprint/`:
+  - the blueprint tooling in `tools/map_assets/blueprint_compiler/src/`:
     `cargo xtask map blueprint-from-voxels` writes the blueprint JSON, its `archive` action
     writes the archive, and its parity report compares `annotate_sight_line` with the engine.
 - Rules: the Everon farmhouse JSON parses into the model (`parses_farmhouse_blueprint_json` in

@@ -51,7 +51,7 @@ liveness passes, 1 on either failure, and 1 with `--strict` when any warning was
   `tools/browser_testing/browser_gate_suites/src/dom_oracle/`; `crate::gate_layout` and the
   `repository_layout` crate; the pins in `tools/browser_testing/browser_gate_suites/gate-env.json`.
 - Used by: `diagnostics.rs`, which re-exports `ensure_gate_font_cache` and `run`; the `gate`
-  command line in `tools/developer_tools/src/browser_testing/cli.rs`; `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, and
+  command line in `tools/browser_testing/browser_gate_suites/src/command_lines/gate.rs`; `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, and
   `.github/workflows/editor-gates.yml` through them.
 - Rules: the font probe inherits `XDG_CACHE_HOME` rather than setting its own, so it measures the
   cache the smokes get; it never waits for Chromium to exit or reads its pipes to EOF; a liveness

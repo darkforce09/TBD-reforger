@@ -71,9 +71,8 @@ from `PATH` in the checkout root.
 - Depends on: `repository_layout` (the contract folders), `repository_laws` (the workspace
   members the citation scan derives its roots from), `process_runner` (rustfmt), `content_digest`,
   `ticket_registry` (the empty-write refusal), `typify`, `schemars`, `syn`, `prettyplease`, `heck`,
-  `jsonschema`, `regex`, `walkdir`, `serde_json`, `clap`, `thiserror`, and as a temporary edge the
-  `developer_tools` library (`world_export_pipeline::INSTANCE_KINDS`); `tool_test_support` in
-  tests.
+  `jsonschema`, `regex`, `walkdir`, `serde_json`, `clap`, `thiserror`, and `prefab_catalog` (the
+  census kind list, `instance_kinds::INSTANCE_KINDS`); `tool_test_support` in tests.
 - Used by: `tools/xtask/src/commands/schema/dispatch.rs`, `tools/xtask/src/cli/dispatch.rs`
   (`gen`) and `tools/commands/ci_task_catalog/src/` (`schema-validate`, `schema-codegen`,
   `verify-citations`, `verify-codegen-fresh`, and through them `ci-local-schema` and `ci-local`);

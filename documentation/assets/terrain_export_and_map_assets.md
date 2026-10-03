@@ -13,19 +13,19 @@ AI agents read it before exporting a terrain again or adding a new one.
 - Code: the Workbench export plugins in
   [`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/README.md);
   the world export pipeline in
-  [`tools/developer_tools/src/world_export_pipeline/`](/tools/developer_tools/src/world_export_pipeline/README.md),
+  [`tools/map_assets/world_export_pipeline/src/`](/tools/map_assets/world_export_pipeline/src/README.md),
   the raster pipeline in
-  [`tools/developer_tools/src/map_raster_pipeline/`](/tools/developer_tools/src/map_raster_pipeline/README.md),
+  [`tools/map_assets/map_raster_pipeline/src/`](/tools/map_assets/map_raster_pipeline/src/README.md),
   the blueprint compiler in
-  [`tools/developer_tools/src/blueprint/`](/tools/developer_tools/src/blueprint/README.md)
+  [`tools/map_assets/blueprint_compiler/src/`](/tools/map_assets/blueprint_compiler/src/README.md)
   and the gates in
-  [`tools/developer_tools/src/map_verification/`](/tools/developer_tools/src/map_verification/README.md);
+  [`tools/map_assets/map_asset_verification/src/`](/tools/map_assets/map_asset_verification/src/README.md);
   the datasets in [`assets/terrains/`](/assets/terrains/README.md) and the glyph set in
   [`assets/glyphs/`](/assets/glyphs/README.md).
 - Entry: `cargo xtask map export-terrain <terrain> [--phase <phase>]`
   ([map command group](/tools/xtask/src/commands/map/README.md)); the `world` and `map`
   binaries of `developer_tools`.
-- Related features: the [map raster pipeline](/documentation/tools/developer_tools/map_raster_pipeline.md);
+- Related features: the [map raster pipeline](/documentation/tools/map_assets/map_raster_pipeline.md);
   the [uploaded terrain volume](/documentation/assets/uploaded_terrain_volume.md), the
   designed second tier; the [map streaming](/documentation/legacy/map_engine/map_streaming.md)
   that loads the datasets in the browser.
@@ -74,7 +74,7 @@ follows `contracts/rules/prefab-classify.json`, whose render keys name the glyph
 |---|---|---|---|
 | elevation model `dem/<terrain>-dem-16bit.png` | the Workbench DEM plugin's surface-height grid | `world raw-u16-dem-png` | `cargo xtask schema terrain-alignment` against the anchors |
 | surface anchors `anchors/verification.json` | Workbench height probes at named points, by hand | none | `cargo xtask schema terrain-alignment` |
-| satellite container and pyramids, Map view pyramid | the game's paks and the Workbench satellite export | `map` (the [raster pipeline](/documentation/tools/developer_tools/map_raster_pipeline.md)) | `map verify-unified`, `verify-pyramid` |
+| satellite container and pyramids, Map view pyramid | the game's paks and the Workbench satellite export | `map` (the [raster pipeline](/documentation/tools/map_assets/map_raster_pipeline.md)) | `map verify-unified`, `verify-pyramid` |
 | `locations.json`, `height-labels.json` | the raw entity export, the elevation model | `map export-locations`, `export-height-labels` | `cargo xtask schema locations`, `height-labels`, `town-labels` |
 | `road-names.json` | a curated route list, by hand | `map labels-rkyv` packs it with the two label files | `cargo xtask schema road-names` |
 | water archives | the Workbench water export | `map water` | none of its own |
@@ -101,7 +101,7 @@ asset preflight.
 ### Known discrepancies
 
 - `world validate-exports` gunzips every chunk index path
-  (`tools/developer_tools/src/world_export_pipeline/export_preparation/export_validation/artifact_integrity.rs:74-75`)
+  (`tools/map_assets/world_export_pipeline/src/export_preparation/export_validation/artifact_integrity.rs:74-75`)
   — Everon's committed chunk index lists raw `.bin` paths, while `build-objects` writes `.json.gz`
   paths (`object_partitioning.rs:413`), so the check cannot pass on the committed data.
 - `validate-exports` compares density tiles with raw tree counts (`artifact_integrity.rs:182-183`)
@@ -112,7 +112,7 @@ asset preflight.
   manifest has none.
 - The terrain registry lists Arland as `queued` with no phase shipped
   (`assets/terrains/terrain-registry.json`) — the manifest gate hard-codes both terrains' sizes
-  and heights (`tools/developer_tools/src/map_verification/terrain_manifest.rs:229-246`), and CI
+  and heights (`tools/map_assets/map_asset_verification/src/terrain_manifest.rs:229-246`), and CI
   checks only Everon's manifest.
 
 ## Data

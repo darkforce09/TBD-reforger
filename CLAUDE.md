@@ -309,25 +309,28 @@ tools/                                   <-- Every developer tool in the reposit
 │   └── enfusion_mcp_broker/             <-- The `mcpd` broker over one enfusion-mcp server
 ├── browser_testing/                     <-- Browser gate crates
 │   ├── chrome_devtools_protocol/        <-- DevTools protocol client: Chromium discovery and launch, pages, the gate font cache
-│   └── browser_gate_suites/             <-- Gate suites behind `gate` and `capture`: static server, DOM oracle, route drift, editor smokes
+│   └── browser_gate_suites/             <-- Gate suites and the `gate` and `capture` command lines: static server, DOM oracle, route drift, editor smokes, ballistics and offline mortar gates
 │       └── fixtures/dom_oracle/         <-- DOM goldens, screenshots and route inventories the browser gates compare against
 ├── staging/                             <-- Staging crates
 │   ├── staging_load_plan/               <-- The member load's plan, request catalog, pacing and report, without tokio
 │   ├── staging_load_generator/          <-- The member load's virtual clients behind `staging-load`
 │   └── acknowledgement_dropping_relay/  <-- Relay that withholds one fleet executor answer
-├── map_assets/                          <-- Reserved for the map asset crates (README only, no code)
-├── developer_tools/                     <-- Heavy async CLI suite, blueprint compiler, map verification
-│   ├── src/bin/                         <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay, staging-load
-│   │   ├── enf                          <-- Symbol indexes, lookups and checks over Enfusion scripts
-│   │   ├── gate                         <-- Headless CDP Chrome gates of the single-page app
-│   │   ├── mcpd                         <-- Enfusion MCP broker daemon
-│   │   ├── world                        <-- World-export pipeline and its verification gates
-│   │   ├── map                          <-- Satellite, cartographic, label, water and glyph map assets
-│   │   ├── capture                      <-- Mission Creator screenshots, zoom sweeps, crops
-│   │   ├── acknowledgement-dropping-relay <-- Staging fault injection: withholds one fleet executor answer
-│   │   └── staging-load                 <-- Staging member load: a plan as JSON in, its report as JSON out
-│   └── test_fixtures/blueprint/         <-- Prefab and world-object inputs for the blueprint compiler tests
-├── xtask/                               <-- `cargo xtask` command line and dispatch, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` groups
+├── map_assets/                          <-- Map asset crates
+│   ├── blueprint_compiler/              <-- Building blueprints from voxel dumps and game models, occlusion sidecars, the blueprint archive
+│   ├── map_asset_verification/          <-- Gates over a terrain's committed map assets and the map goldens; the world line-of-sight probe
+│   ├── map_raster_pipeline/             <-- The `map` pipeline: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives and the glyph atlas
+│   └── world_export_pipeline/           <-- The `world` pipeline: a terrain's chunks, catalogue, census, density, regions, roads and elevation from a Workbench export, and their gates
+├── developer_tools/                     <-- The eight tool binaries, each a one-line `main` over one tool crate (no library)
+│   └── src/bin/                         <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay, staging-load
+│       ├── enf                          <-- Symbol indexes, lookups and checks over Enfusion scripts
+│       ├── gate                         <-- Headless CDP Chrome gates of the single-page app
+│       ├── mcpd                         <-- Enfusion MCP broker daemon
+│       ├── world                        <-- World-export pipeline and its verification gates
+│       ├── map                          <-- Satellite, cartographic, label, water and glyph map assets
+│       ├── capture                      <-- Mission Creator screenshots, zoom sweeps, crops
+│       ├── acknowledgement-dropping-relay <-- Staging fault injection: withholds one fleet executor answer
+│       └── staging-load                 <-- Staging member load: a plan as JSON in, its report as JSON out
+├── xtask/                               <-- `cargo xtask` command line and dispatch, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` groups; no tokio, axum, reqwest, resvg or image in its dependency closure
 │   ├── dedicated_server_profiles/       <-- Dedicated-server profile the local mod servers start from
 │   ├── fixtures/mcp/                    <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
 │   └── staging/                         <-- Committed load workload and population of the staging load receipt

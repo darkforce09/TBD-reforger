@@ -79,7 +79,7 @@ None: Workbench runs these scripts in the editor.
   `BaseWorld.QueryEntitiesByAABB` and `WorldEditorAPI.GetTerrainSurfaceY`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   The developer tools' `map water` command
-  (`tools/developer_tools/src/map_raster_pipeline/inland_water_archive.rs`) builds
+  (`tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs`) builds
   `water_vectors.rkyv` and `bathymetry.tbd-bath` from a water export staged in
   `assets/scratch/<terrain>/water/` under other names: `TBD_InlandWaterExport_mask.txt`,
   `_depth.txt`, `_meta.json` (it reads `widthPx`, `heightPx` and `depthScaleToMeters`) and one

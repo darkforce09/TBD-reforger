@@ -63,7 +63,7 @@ headless gates; the pick and the marquee themselves belong to
     preview, object wash);
   - `viewport.rs` and `world_assets.rs` in `apps/frontend/src/workspaces/editor/bridge/` (the
     wash tick, the HUD suffix, the render-context seam);
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through
     `window.__editorSelection`; `window.__editorObjectWash`, the wash's status probe, has no reader
     in the repository.
 - Rules: the decidable half of a tool stays in `map_editing_tools`, and this folder

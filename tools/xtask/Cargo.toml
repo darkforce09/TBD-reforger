@@ -16,7 +16,12 @@ anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order", "raw_value"] }
-developer_tools = { path = "../developer_tools" }
+# The building-blueprint compiler behind the `cargo xtask map` blueprint, BVH and model commands.
+blueprint_compiler = { workspace = true }
+# The world line-of-sight probe behind `cargo xtask map world-los`.
+map_asset_verification = { workspace = true }
+# The `cargo xtask map export-terrain` driver and the `cargo xtask map tile-index` writer.
+world_export_pipeline = { workspace = true }
 # The `cargo xtask mcp` commands: the Enfusion MCP client and the daemon control.
 enfusion_mcp = { workspace = true }
 # The vanilla page mirrors behind `cargo xtask fetch`.

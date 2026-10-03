@@ -47,11 +47,12 @@ id, is refused.
 Run from the repository root:
 
 ```bash
-cargo test -p prefab_catalog   # the rows, classes, lookups and tables over the Everon export
+cargo test -p prefab_catalog   # the rows, classes, lookups, tables and census kinds over the Everon export
 ```
 
 The tests read the committed Everon catalogue (`assets/terrains/everon/objects/prefabs.json.gz`
-and `type-inventory.json`) and build the archive form from it.
+and `type-inventory.json`) and build the archive form from it; the census kind tests read
+`contracts/definitions/map-object-enums.schema.json`.
 
 ## Configuration
 
@@ -70,6 +71,7 @@ enabled only from their `[dev-dependencies]`. The crate reads no environment var
   `BuildingPrefabInfo`, `FencePrefabInfo`.
 - `prefab_tables`: `PrefabTables`, `tables_from_json`, `tables_from_catalog`, `tables_from_bytes`.
 - `world_payload`: `WorldError`, `bytes_to_json`.
+- `instance_kinds`: `INSTANCE_KINDS`, the census buckets (also in `prelude`).
 - `Error`, `Result` and `InvalidPrefabId` (the row the JSON narrowing refuses) at the crate root; the common names in `prelude`; `test_fixtures` under
   `cfg(test)` or the `test_fixtures` feature.
 
@@ -79,7 +81,9 @@ enabled only from their `[dev-dependencies]`. The crate reads no environment var
   `PrefabId`, `TerrainId`), `serde_json`, `flate2`, `rkyv`, `thiserror`.
 - Used by: `world_chunks`, `world_store`, `road_network`, `vegetation` and
   `world_line_of_sight`; the map engine (`legacy/map_engine`, behind `streaming`): its chunk
-  scheduler and draw buffers; the world export and checks in `tools/developer_tools/src/`.
+  scheduler and draw buffers; the world export (`tools/map_assets/world_export_pipeline`), which
+  mints its census buckets from `INSTANCE_KINDS`; the type-inventory gate of
+  `tools/commands/schema_tooling`, which sums them; the checks in `tools/developer_tools/src/`.
 - Rules:
   - world formats category, tier 2 (`cargo xtask verify crate-tiers`);
   - the archive decodes to exactly the rows the JSON gives
@@ -98,6 +102,8 @@ enabled only from their `[dev-dependencies]`. The crate reads no environment var
     `wrong_schema_version_is_refused_even_though_the_bytes_validate`,
     `a_drifted_class_code_is_refused`, `a_census_that_does_not_match_the_row_count_is_refused`,
     `a_catalogue_with_a_duplicate_prefab_id_is_refused`);
+  - `INSTANCE_KINDS` is the enums schema's `kind` set minus its `regionKind` set, `road` last
+    (`instance_kinds_match_enums_schema`, `instance_kinds_keep_the_emitted_by_kind_order`);
   - the render class order is a wire format and never changes (`class_codes_match_wire_order`),
     and a kind the table does not map is never drawn (`render_class_truth_table`);
   - a rotation of 360° equals 0° and keeps the footprint's area

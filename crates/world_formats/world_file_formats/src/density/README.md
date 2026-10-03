@@ -34,10 +34,10 @@ writes version 1 and panics when a channel's length is not `cols × rows` or the
     `objects/density/{cx}_{cy}.bin` for each chunk and skips a tile that fails to decode;
   - `map_engine::streaming::loaders`' store tests;
   - the developer tools: the world export writes tiles
-    (`tools/developer_tools/src/world_export_pipeline/chunk_partitioner/`), and the export
+    (`tools/map_assets/world_export_pipeline/src/chunk_partitioner/`), and the export
     validation, the mathematical verification and the object goldens decode or rebuild them
-    (`tools/developer_tools/src/world_export_pipeline/` and
-    `tools/developer_tools/src/map_verification/object_goldens/`).
+    (`tools/map_assets/world_export_pipeline/src/` and
+    `tools/map_assets/map_asset_verification/src/object_goldens/`).
 - Rules:
   - the header stays 16 bytes and 2-aligned on a little-endian target (compile-time assertions in
     `tbdd.rs`; `header_pod_is_the_on_disk_header` in `tests/tbdd_tests.rs`);
@@ -48,7 +48,7 @@ writes version 1 and panics when a channel's length is not `cols × rows` or the
   - the production decoder has no per-byte loop:
     `production_decode_has_no_per_byte_assembly_loop` scans `tbdd.rs` with the comment and test
     scrubber in `tests/tbdd_class_r_scrub.rs`;
-  - `tools/developer_tools/src/world_export_pipeline/vegetation_density.rs` keeps its own copy
+  - `tools/map_assets/world_export_pipeline/src/vegetation_density.rs` keeps its own copy
     of the header size, the channel names and the version, so a change here changes it too.
 
 ## Related documentation

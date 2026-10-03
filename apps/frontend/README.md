@@ -142,7 +142,7 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
     deploy host that `TBD_SSH_HOST` names in `deploy/deploy.env`;
   - the `frontend` job of `.github/workflows/ci.yml` and the editor gates of
     `.github/workflows/editor-gates.yml`;
-  - the headless browser gates in `tools/developer_tools/src/browser_testing/`, which serve
+  - the headless browser gates in `tools/browser_testing/browser_gate_suites/`, which serve
     `dist/`, read `src/router.rs` and answer the app's requests from
     `contracts/fixtures/api_goldens/`;
   - the API, whose `SPA_DIST_DIR` serves `dist/`.

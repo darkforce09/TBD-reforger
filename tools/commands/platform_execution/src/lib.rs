@@ -7,7 +7,7 @@
 //! worktrees (`platform slice-worktree`, and the mod wave driver in-process); `preflight` asserts
 //! what an unattended run needs before it starts (`platform preflight`). [`PlatformCmd`] is the
 //! group's command line and [`run`] dispatches it.
-//! **Position:** tier 7 of `tools/commands`, over `ci_task_catalog` (the schema gate list, the
+//! **Position:** tier 9 of `tools/commands`, over `ci_task_catalog` (the schema gate list, the
 //! member package list, the glibc stamp guard), the ticket crates, `process_runner`,
 //! `repository_layout`, `repository_laws`, `verification_core` and `time_source`. The xtask
 //! binary's `platform` group, its `ticket run` and its mod wave driver call it.

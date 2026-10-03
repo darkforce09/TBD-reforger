@@ -28,7 +28,7 @@ assets/terrains/everon/roads/
 ## Producers and consumers
 
 - Producers: `world build-roads` and `world roads-rkyv`
-  (`tools/developer_tools/src/world_export_pipeline/roads_emit.rs`).
+  (`tools/map_assets/world_export_pipeline/src/roads_emit.rs`).
 - Consumers:
   - the map engine's world loader, which fetches `/map-assets/everon/roads/road_network.rkyv`
     when the manifest's `objects.binary` block names it and the gzip JSON otherwise, and tells the

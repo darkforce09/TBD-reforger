@@ -30,7 +30,7 @@ failed check ends it with an error.
 - Depends on: `chrome_devtools_protocol` (launch, pages, evaluation, screenshots); `reqwest` for
   the status read; a website already serving the app and the API, by default
   `http://localhost:3000`, with an imported equipment generation.
-- Used by: `gate equipment-data-viewer` in `tools/developer_tools/src/browser_testing/cli.rs`,
+- Used by: `gate equipment-data-viewer` in `tools/browser_testing/browser_gate_suites/src/command_lines/gate.rs`,
   run by hand with `--website` and `--output` (default
   `assets/scratch/equipment-data-viewer-verification`); no gate suite runs it.
 - Rules: the check reads only; it never imports or publishes a generation, and it needs the

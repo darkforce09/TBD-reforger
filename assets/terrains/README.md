@@ -71,7 +71,7 @@ check branches on `status`, which records how far a terrain's export has come.
   entry whose `manifestPath` names that manifest. `cargo xtask schema validate` checks the
   registry against its schema, and `cargo xtask schema terrain-manifest --terrain <id>` checks the
   manifest against its schema and the terrain contract compiled into the gate
-  (`tools/developer_tools/src/map_verification/terrain_manifest.rs`), which knows `everon` and
+  (`tools/map_assets/map_asset_verification/src/terrain_manifest.rs`), which knows `everon` and
   `arland` only and exits 2 for any other id.
 
 ## Producers and consumers
@@ -87,7 +87,7 @@ check branches on `status`, which records how far a terrain's export has come.
     `apps/api/tests/map_assets_rate_limit_exemption.rs`, which fetches
     `terrain-registry.json` to prove the mount is outside the rate limiter;
   - the map engine in the browser, per terrain, over `/map-assets/<terrain>/…`;
-  - the world export steps above (`tools/developer_tools/src/world_export_pipeline/`) and
+  - the world export steps above (`tools/map_assets/world_export_pipeline/src/`) and
     `cargo xtask schema validate`, which read the registry;
   - `cargo xtask deploy website`, whose rsync excludes this folder, so each host keeps its own
     copy, and whose asset preflight treats a host's `assets/terrains/terrain-registry.json` as

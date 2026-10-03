@@ -66,7 +66,7 @@ census.
 
 ## Producers and consumers
 
-- Producers: the world export pipeline in `tools/developer_tools/src/world_export_pipeline/`:
+- Producers: the world export pipeline in `tools/map_assets/world_export_pipeline/src/`:
   `world build-objects` (`chunk_partitioner/`, `catalog_emit.rs`, `binary_emit.rs`,
   `forest_contours.rs`), `world build-roads` (`roads_emit.rs`), `world reclassify` and
   `world redensify`; `cargo xtask map export-terrain` runs the first two.

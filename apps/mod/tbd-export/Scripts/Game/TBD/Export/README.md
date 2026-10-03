@@ -98,7 +98,7 @@ whichever runs last replaces the other's files.
 - Used by: `apps/mod/tbd-export/Prefabs/Systems/TBD_Export_GameMode.et`, which carries the
   component by class. No committed tool reads the files: the road archive the map engine draws
   (`assets/terrains/everon/roads/`) comes from `world build-roads`, which decodes the road
-  topology from the game paks (`tools/developer_tools/src/world_export_pipeline/roads_emit.rs`).
+  topology from the game paks (`tools/map_assets/world_export_pipeline/src/roads_emit.rs`).
 - Rules: the scripts use only vanilla classes and their own `TBD_Road*` helpers, never the
   Workbench `TBD_MapExport*` classes, because a game or server compiles `Scripts/Game/` without
   `Scripts/WorkbenchGame/`; they write only below `$profile:TBD_Export/`; lines added stay ASCII.

@@ -67,7 +67,7 @@ None: Workbench runs these scripts in the editor.
     `roads/`; without `--full` it reads a `TBD_WorldExport_subregion.jsonl` that no script here
     writes;
   - `world raw-u16-dem-png` packs the elevation files into the terrain's elevation model;
-  - the map tool's `water` command (`tools/developer_tools/src/map_raster_pipeline/`) reads
+  - the map tool's `water` command (`tools/map_assets/map_raster_pipeline/src/`) reads
     water rasters from the export scratch, under file names the water layer does not write;
   - `cargo xtask map ingest-blueprints`, `map blueprint-from-voxels`, `map parity-report`,
     `map world-los` and `map instances-verify` read the building and parity outputs;
@@ -84,9 +84,9 @@ None: Workbench runs these scripts in the editor.
 
 - [Terrain datasets](/assets/terrains/README.md) — the committed terrain data these exports
   feed, and the tools between them.
-- [World export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — staging
+- [World export pipeline](/tools/map_assets/world_export_pipeline/src/README.md) — staging
   the full export and building the object and road data.
-- [Blueprint compiler](/tools/developer_tools/src/blueprint/README.md) — the offline building
+- [Blueprint compiler](/tools/map_assets/blueprint_compiler/src/README.md) — the offline building
   blueprint steps.
 - [Map commands](/tools/xtask/src/commands/map/README.md) — the `cargo xtask map` commands that
   read these exports.

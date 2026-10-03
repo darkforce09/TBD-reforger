@@ -58,8 +58,8 @@ chain walk prints `step: cause`, as the gates' `{error:#}` output always has.
 - Depends on: `newtype_ids` (the request id), `tokio`, `reqwest`, `tokio-tungstenite`,
   `futures-util`, `serde_json`, `base64`, `libc` and `thiserror`.
 - Used by: `lib.rs`, which re-exports every public item; through it, every gate and the capture
-  harness in `tools/browser_testing/browser_gate_suites/`, and the ballistics agreement and offline
-  mortar suites in `tools/developer_tools/src/browser_testing/`.
+  harness in `tools/browser_testing/browser_gate_suites/`, the ballistics agreement and offline
+  mortar gates included.
 - Rules: both output pipes are drained from the moment Chromium spawns; the viewport and init
   scripts are applied before the first navigation; every launch gets its own profile directory,
   removed by `Browser::shutdown`; the Chromium child is a `tokio::process` child, with the reason

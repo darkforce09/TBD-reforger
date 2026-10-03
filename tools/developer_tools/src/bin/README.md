@@ -23,19 +23,20 @@ tools/developer_tools/src/bin/
 
 ## How it works
 
-Each file is a three-line `main` that calls one entry function of the `developer_tools` library (or,
-for `mcpd`, `enf`, `acknowledgement-dropping-relay` and `staging-load`, of the `enfusion_mcp_broker`,
-`enfusion_script_index`, `acknowledgement_dropping_relay` and `staging_load_generator` crates) and returns its `ExitCode`; the `[[bin]]` tables of `tools/developer_tools/Cargo.toml` name the
+Each file is a three-line `main` that calls one entry function of a tool crate (the
+`enfusion_script_index`, `browser_gate_suites`, `enfusion_mcp_broker`, `world_export_pipeline`,
+`map_raster_pipeline`, `acknowledgement_dropping_relay` and `staging_load_generator` crates) and
+returns its `ExitCode`; the `[[bin]]` tables of `tools/developer_tools/Cargo.toml` name the
 binaries. Argument parsing, help text and error reporting live in the owning module: seven binaries
 parse with clap's derive API, and `mcpd` reads its few flags itself.
 
 ```text
 enf.rs      ──▶ enfusion_script_index::run_command_line
-gate.rs     ──▶ browser_testing::cli::run
-capture.rs  ──▶ browser_testing::capture_cli::run
+gate.rs     ──▶ browser_gate_suites::command_lines::gate::run
+capture.rs  ──▶ browser_gate_suites::command_lines::capture::run
 mcpd.rs     ──▶ enfusion_mcp_broker::run
-world.rs    ──▶ world_export_pipeline::cli::entrypoint
-map.rs      ──▶ map_raster_pipeline::cli::entrypoint
+world.rs    ──▶ world_export_pipeline::entrypoint
+map.rs      ──▶ map_raster_pipeline::entrypoint
 acknowledgement_dropping_relay.rs ──▶ acknowledgement_dropping_relay::entrypoint
 staging_load.rs ──▶ staging_load_generator::entrypoint
 ```
@@ -156,8 +157,7 @@ a subcommand prints its usage, and a clap usage error exits 2.
 
 ## Boundaries
 
-- Depends on: the `developer_tools` library modules in the diagram, in
-  `tools/developer_tools/src/`.
+- Depends on: the tool crates in the diagram, each its binary's one dependency.
 - Used by:
   - `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, which run `gate doctor`, `gate
     editor-suite` and `gate v-suite verify`;

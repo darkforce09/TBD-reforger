@@ -70,7 +70,7 @@ cargo test -p vegetation   # tree counts, density grid, marching squares and reg
   - `world_store`, which reads the regions;
   - the map engine (`legacy/map_engine`): its forest mass loader and lane, its buffer packer and
     chunk scheduler (the tree counts), its streaming host and its world loader (the regions);
-  - the world export in `tools/developer_tools/src/world_export_pipeline/`, which writes the
+  - the world export in `tools/map_assets/world_export_pipeline/src/`, which writes the
     regions archive and smooths the forest at `CANOPY_MASS_ISO`.
 - Rules: chunk borders stitch without a seam and north is texture row 0
   (`stitch_shared_border_identity`, `y_flip_north_is_tex_row_zero`, `island_dims_pin` in

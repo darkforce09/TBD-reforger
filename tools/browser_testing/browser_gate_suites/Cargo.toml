@@ -1,7 +1,10 @@
 # The headless browser gates of the single-page app: the static server with the gates' isolation
 # headers, the DOM oracle and route drift checks, the Mission Creator smokes, the data viewer
-# gate, the screen capture harness and the gate doctor. axum serves the built app, tokio runs
-# every gate, `image` crops captured screenshots and `regex` scans page text and route sources.
+# gate, the ballistics agreement and offline mortar gates, the screen capture harness, the gate
+# doctor, and the `gate` and `capture` command lines. axum serves the built app, tokio runs every
+# gate, clap parses the command lines, `image` crops and measures captured screenshots, `regex`
+# scans page text and route sources, and the ballistics crates solve the fire missions the two
+# ballistics gates compare the browser's solutions with.
 [package]
 name = "browser_gate_suites"
 version = "0.1.0"
@@ -9,29 +12,37 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "The browser gates of the single-page app: static server, DOM oracle, route drift, editor smokes, data viewer gate, screen capture, doctor"
+description = "The browser gates of the single-page app: static server, DOM oracle, route drift, editor smokes, data viewer gate, ballistics agreement, offline mortar, screen capture, doctor, gate and capture command lines"
 
 [package.metadata.layout]
 category = "tools/browser_testing"
-tier = 2
+tier = 5
 targets = "any"
 
 [dependencies]
 axum = { workspace = true }
+ballistics_agreement_cases = { workspace = true }
+ballistics_model = { workspace = true }
 base64 = { workspace = true }
 chrome_devtools_protocol = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
 content_digest = { workspace = true }
+fire_mission_planning = { workspace = true }
 futures-util = { workspace = true }
 image = { workspace = true, features = ["png"] }
 libc = { workspace = true }
+map_coordinates = { workspace = true }
 newtype_ids = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
 repository_layout = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset"] }
-serde_json = { workspace = true, features = ["preserve_order"] }
+serde = { workspace = true, features = ["derive"] }
+# `float_roundtrip` parses every f64 bit-exactly: the ballistics agreement gate decodes the browser
+# bench's reading and compares its floats bit for bit with the native solves.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["fs", "io-util", "macros", "net", "process", "rt", "rt-multi-thread", "sync", "time"] }
+tokio = { workspace = true, features = ["fs", "io-util", "macros", "net", "process", "rt", "rt-multi-thread", "signal", "sync", "time"] }
 url = { workspace = true }
 
 [lints]

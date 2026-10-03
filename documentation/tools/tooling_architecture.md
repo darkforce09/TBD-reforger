@@ -18,8 +18,9 @@ module to the tooling; each crate's README then says what its own folders hold.
   [`developer_tools/`](/tools/developer_tools/README.md) and
   [`enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md); the
   [ticketboard](/apps/ticketboard/README.md) in `apps/ticketboard/` links `ticket_model`.
-- Entry: `cargo xtask`, the alias `run --package xtask --` in `.cargo/config.toml`; the six
-  `developer_tools` executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`).
+- Entry: `cargo xtask`, the alias `run --package xtask --` in `.cargo/config.toml`; the eight
+  `developer_tools` executables (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
+  `acknowledgement-dropping-relay`, `staging-load`).
 - Related features: the [ticket crates documentation](/documentation/tools/tickets/README.md),
   the [developer tools documentation](/documentation/tools/developer_tools/README.md) and the
   [ticketboard documentation](/documentation/apps/ticketboard/README.md).
@@ -42,10 +43,13 @@ module to the tooling; each crate's README then says what its own folders hold.
 | `deploy_settings` | library, `tools/foundation` tier 2 | the `deploy/deploy.env` reader: the precedence of the file over the process environment, the deploy host, its remote folders and the ssh transport choice |
 | `tool_test_support` | library, `tools/foundation` tier 1, dev-dependency only | the environment and working-directory locks and the test checkout root the tool tests share |
 | `enfusion_pak` | library, `tools/enfusion` tier 0 | the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) `.pak` archive reader: one parser and one decompressor under the blueprint and world policies, the loose and layered sources |
+| `blueprint_compiler` | library, `tools/map_assets` tier 6 | the building-blueprint compiler: voxel dumps and game models to blueprints, occlusion sidecars, the prefab occluder library and the blueprint archive, behind the `cargo xtask map` blueprint, BVH and model commands |
+| `map_asset_verification` | library, `tools/map_assets` tier 7 | the map asset gates: the terrain manifest, the prefab BLAS library, the labels, the elevation anchors and the map-object goldens behind `cargo xtask schema` and `verify blas-manifest`, and the world line-of-sight probe behind `cargo xtask map world-los` |
 | `enfusion_script_index` | library, `tools/enfusion` tier 2 | the script oracle behind `enf`: symbol indexes, lookups, the citation and capability gates, vanilla extraction, and the vanilla page mirrors behind `cargo xtask fetch` |
 | `chrome_devtools_protocol` | library, `tools/browser_testing` tier 1 | the Chrome DevTools Protocol client: Chromium discovery and headless launch in its own process group, pages over one WebSocket each, the gate font cache |
-| `browser_gate_suites` | library, `tools/browser_testing` tier 2 | the headless browser gates of the single-page app: the static server, the DOM oracle, route drift, the Mission Creator smokes, the data viewer gate, the capture rig and the doctor behind `gate` and `capture` |
-| `developer_tools` | library and six binaries | the heavy offline work: the binaries `enf` and `mcpd` over the Enfusion crates, the headless browser gates, the blueprint compiler, the world export and map raster pipelines, map verification |
+| `browser_gate_suites` | library, `tools/browser_testing` tier 5 | the headless browser gates of the single-page app: the static server, the DOM oracle, route drift, the Mission Creator smokes, the data viewer gate, the ballistics agreement and offline mortar gates, the capture rig, the doctor, and the `gate` and `capture` command lines |
+| `map_raster_pipeline` | library, `tools/map_assets` tier 7 | the map raster pipeline behind the `map` binary: the orthophoto stitch, the satellite container and tile pyramids, the cartographic render, the label sets and archives, the water archives and the world-glyph atlas; never in xtask's closure |
+| `developer_tools` | eight binaries, no library | one-line `main`s: `enf` and `mcpd` over the Enfusion crates, `gate` and `capture` over `browser_gate_suites`, `world` and `map` over `world_export_pipeline` and `map_raster_pipeline`, and `acknowledgement-dropping-relay` and `staging-load` over the staging crates |
 | `enfusion_mcp_node_package` | npm data, not a crate | the pinned `enfusion-mcp` server that `mcpd` and `cargo xtask mcp` start |
 
 One word names one thing. A gate is a repository verification that reaches a verdict; the
@@ -60,10 +64,11 @@ verification_core ◀── process_runner, repository_laws        (tools/founda
         │                      │          ticket crates ◀──── ticketboard (apps/ticketboard)
         └──────── xtask ───────┴───────────────┘
                     │
-                    ▼
-             developer_tools ──▶ map_engine (legacy/map_engine)
+                    ▼ runs as child processes
+             developer_tools (binaries only)
                     │
                     ├── mcpd ──▶ enfusion_mcp_broker (tools/enfusion) ──starts──▶ enfusion_mcp_node_package (after npm ci)
+                    ├── world, map ──▶ world_export_pipeline, map_raster_pipeline (tools/map_assets)
                     └── gate, capture ──▶ browser_gate_suites ──▶ chrome_devtools_protocol (tools/browser_testing)
 ```
 
@@ -74,11 +79,13 @@ verification_core ◀── process_runner, repository_laws        (tools/founda
    ticket crates of a lower tier
    (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates`), so each is read, tested
    and reasoned about without the tools above it.
-2. `developer_tools` never depends on `xtask`: the router calls the services, never the reverse
+2. `xtask` and `developer_tools` are binary-only packages whose workspace dependencies are tool
+   crates; neither depends on the other, and no member depends on either
    (`tooling_dependency_direction_is_enforced`).
-3. `xtask` never depends on `map_engine` or `graphics_engine` directly; the map
-   engine reaches it only through `developer_tools`, so a graphics change does not rebuild the
-   command surface (same test).
+3. No tool depends on a member under `legacy/` (the strangler law), and no tokio, axum, reqwest,
+   resvg or image enters xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`):
+   the async servers and the raster crates run behind the `developer_tools` binaries, so neither
+   a server nor an image codec rebuilds the command surface.
 4. Ticket logic has one owner: the xtask `ticket` group delegates to `ticket_registry` and the
    `wave` group to `ticket_wave_lock` (`ticket_implementations_have_one_owner`), and the
    ticketboard reads through the public model of `ticket_model`.
@@ -86,7 +93,7 @@ verification_core ◀── process_runner, repository_laws        (tools/founda
 The five tests live in `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`, a
 test file of the `repository_checks` crate; its structural rules (line limits, sibling test files)
 cover every tool crate found by folder — each `tools/<name>` and `tools/<category>/<name>` holding
-a `Cargo.toml` (`tooling_crate_folders_are_found_by_folder`). The six binary names and the layout
+a `Cargo.toml` (`tooling_crate_folders_are_found_by_folder`). The eight binary names and the layout
 modules are pinned by `the_tooling_tree_holds_its_executables_manifests_and_layout_modules` in the
 same file.
 
@@ -101,7 +108,7 @@ literal. A tool's own layout module declares itself on its first line
 |---|---|
 | `tools/foundation/repository_layout` | the checkout-root walk and the locations more than one tool names: the ticket registry files, the artifact tree, the reference lanes and their folders, the contract and map-asset trees, the enfusion-mcp npm package, the browser gate pins, the documentation root, the roadmap and gap analysis, the deploy tree, the server profiles, the MCP fixtures, the runbooks and documentation areas the commands name, and the build output folder with its purpose subfolders |
 | `tools/tickets/ticket_model/src/repository.rs` | the handoff document, the sparse-checkout sets, and in its `documentation` submodule the documents only the ticket domain names |
-| `tools/developer_tools/src/map_pipeline_layout.rs` | the density fixtures, the export operation logs and type inventories, and the map lanes' decision records |
+| `tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs` | the decision records of the inland-water, aerial-orthophoto and cartographic lanes |
 | `tools/enfusion/enfusion_script_index/src/script_index_layout.rs` | the Enfusion symbol index and the capability verdict table |
 | `tools/browser_testing/browser_gate_suites/src/gate_layout.rs` | the map-asset mounts of the gates' server and the editor gate runbook |
 
@@ -159,7 +166,7 @@ documentation standard sets.
 whole crate folders and the structural walk refuses symlinks under `src/`, so a vendored `.rs`
 inside an installed `node_modules/` would be subject to both. The other data folders
 (`xtask/deploy/`, `xtask/dedicated_server_profiles/`, `xtask/fixtures/`,
-`developer_tools/fixtures/`, `developer_tools/test_fixtures/`, `tickets/ticket_metrics/tests/fixtures/`)
+`developer_tools/fixtures/`, `map_assets/blueprint_compiler/test_fixtures/`, `tickets/ticket_metrics/tests/fixtures/`)
 sit beside the code that reads them, and a layout module names each once.
 
 ### Known discrepancies
@@ -222,8 +229,9 @@ rather than by review.
 
 - The foundational crates take no workspace dependency: they stay fast to build and test, and
   every other crate can use them without a cycle.
-- `xtask` reaches the map engine only through `developer_tools`: the command surface does not
-  rebuild when rendering code changes.
+- `xtask` depends on pure-CPU tool crates only and starts the async and raster work as
+  `developer_tools` child processes: the command surface does not rebuild when a server or an
+  image codec changes.
 - Three outcomes, never two: a missing prerequisite must not pass, so "did not run" has its own
   exit code and outranks a failure.
 - Rules live in tests, not in review: dependency direction, path ownership, limits and prose are

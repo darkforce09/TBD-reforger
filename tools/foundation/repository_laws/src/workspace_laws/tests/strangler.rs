@@ -42,6 +42,39 @@ fn strangler_a_new_crate_depending_on_legacy_is_a_finding() {
     assert!(found[0].contains("depends on legacy/map_engine"));
 }
 
+/// No tool is exempt: a tool binary at `tools/<name>`, which carries no layout table, and a tool
+/// crate both report their edge onto a member under `legacy/`.
+#[test]
+fn strangler_a_tool_depending_on_legacy_is_a_finding() {
+    let mut workspace = workspace("strangler-tool-edge");
+    workspace.member(
+        "tools/xtask",
+        &application_manifest(
+            "xtask",
+            "map_engine = { path = \"../../legacy/map_engine\" }\n",
+        ),
+    );
+    workspace.layout_crate(
+        "tools/commands/ci_task_catalog",
+        0,
+        "any",
+        &[normal("map_engine")],
+    );
+    let found = strangler_outcome(workspace.root()).unwrap().findings;
+    assert_eq!(found.len(), 2, "{found:#?}");
+    for tool in [
+        "tools/xtask/Cargo.toml:",
+        "tools/commands/ci_task_catalog/Cargo.toml:",
+    ] {
+        assert!(
+            found
+                .iter()
+                .any(|f| f.starts_with(tool) && f.contains("depends on legacy/map_engine")),
+            "{tool}: {found:#?}"
+        );
+    }
+}
+
 #[test]
 fn strangler_a_reexport_of_a_new_crate_inside_legacy_is_a_shim() {
     let workspace = workspace("strangler-shim");

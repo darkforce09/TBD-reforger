@@ -35,7 +35,7 @@ assets/terrains/everon/anchors/
 - Producers: a person, from Workbench height probes; the log records the run.
 - Consumers:
   - `cargo xtask schema terrain-alignment --terrain everon`
-    (`tools/developer_tools/src/map_verification/labels/terrain_alignment.rs`): it validates
+    (`tools/map_assets/map_asset_verification/src/labels/terrain_alignment.rs`): it validates
     the manifest and the anchors file against their schemas, checks the PNG's size against the
     manifest, samples the height map bilinearly at every anchor with the map engine's
     `sample_elevation_meters`, and fails when one differs from `surfaceYM` by more

@@ -93,7 +93,7 @@ the document.
   - the source pins in `apps/frontend/src/foundation/test_support/editor_operations.rs`,
     `legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs` and the
     editor's own tests in `apps/frontend/src/workspaces/editor/tests/`;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through the window
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through the window
     gates.
 - Rules: a module that touches `web_sys` or a live engine handle is
   `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line, so the native test build compiles

@@ -1,0 +1,20 @@
+# Stage S11b, agent G-S11b — the map group's export driver and tile index writer leave xtask.
+# xtask's `map` group keeps only its command line and dispatch: the `export-terrain` driver and the
+# `tile-index` writer become modules of the world_export_pipeline crate, which xtask's dependency
+# closure already holds. The tile index is directory and manifest bookkeeping with no raster code,
+# so it stays in process instead of going behind the `map` binary. The crate's `mod` lines, its
+# error conversion and the xtask `mod` lines are edited by hand.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the export-terrain driver and its argument parser tests
+path	tools/xtask/src/commands/map/terrain_export.rs	tools/map_assets/world_export_pipeline/src/export_terrain_driver.rs
+path	tools/xtask/src/commands/map/tests/terrain_export/tests.rs	tools/map_assets/world_export_pipeline/src/tests/export_terrain_driver/tests.rs
+#
+# the map tile index writer and its tests
+path	tools/xtask/src/commands/map/tile_index.rs	tools/map_assets/world_export_pipeline/src/map_tile_index.rs
+path	tools/xtask/src/commands/map/tests/tile_index/tests.rs	tools/map_assets/world_export_pipeline/src/tests/map_tile_index/tests.rs
+#
+# the xtask map dispatch names the crate
+rust_path	crate::commands::map::terrain_export::	world_export_pipeline::export_terrain_driver::	tools/xtask
+rust_path	crate::commands::map::tile_index::	world_export_pipeline::map_tile_index::	tools/xtask

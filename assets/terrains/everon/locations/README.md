@@ -28,7 +28,7 @@ assets/terrains/everon/locations/
 ## Producers and consumers
 
 - Producers: `map labels-rkyv`
-  (`tools/developer_tools/src/map_raster_pipeline/map_label_archives.rs`), which places the
+  (`tools/map_assets/map_raster_pipeline/src/map_label_archives.rs`), which places the
   road names with the same code the browser would, reads the archive back before writing it, and
   refuses to write one with every lane empty or a road-name list without its road file.
 - Consumers:

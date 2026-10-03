@@ -85,7 +85,7 @@ renders padded in a scrolling one.
 - Used by: the route guard in `foundation/auth/`; the frame, the top bar and the sidebar in
   `apps/frontend/src/shell/`; the route drift gate in
   `tools/browser_testing/browser_gate_suites/src/route_drift.rs`, which reads `mod.rs`; the headless
-  browser gates of `tools/developer_tools/src/browser_testing/`, which drive the built app by its
+  browser gates of `tools/browser_testing/browser_gate_suites/`, which drive the built app by its
   routes.
 - Rules:
   - `app_routes.rs` and `ROUTES` list the same paths, `ROUTES` adding the fallback as its `*` row;

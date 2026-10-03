@@ -223,6 +223,7 @@ pub use split_cmd::find;
 pub use split_cmd::help;
 pub use split_cmd::invoked_tasks;
 pub use split_cmd::run;
+pub(crate) use split_cmd::run_derived_line;
 pub use split_cmd::schema_list_gates;
 pub use split_cmd::step_echo;
 pub use split_cmd::validate_gate_names;

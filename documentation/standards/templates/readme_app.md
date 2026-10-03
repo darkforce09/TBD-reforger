@@ -118,7 +118,7 @@ it and every write path refuses.
 - Used by:
   - `apps/frontend/src/app_routes.rs`, the route table;
   - `apps/frontend/src/main.rs`, which registers `purge_local_documents` as a sign-out hook;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     `/missions/:id/edit` route.
 - Rules: a document mutation goes through the hosted commands of `mission_editing_commands`,
   never straight out of a panel; a module that touches `web_sys` or a live engine handle is `#[cfg(target_arch = "wasm32")]`,

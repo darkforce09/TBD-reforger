@@ -32,15 +32,15 @@ assets/terrains/arland/
 
 - Producers: a person. `world build-objects --patch-manifest`, the step
   `cargo xtask map export-terrain` runs, fills an existing `objects` block and requires one
-  (`tools/developer_tools/src/world_export_pipeline/chunk_partitioner/build_world_objects_opt.rs`),
+  (`tools/map_assets/world_export_pipeline/src/chunk_partitioner/build_world_objects_opt.rs`),
   which this manifest does not have.
 - Consumers:
   - `cargo xtask schema terrain-manifest --terrain arland`
-    (`tools/developer_tools/src/map_verification/terrain_manifest.rs`): it validates the file
+    (`tools/map_assets/map_asset_verification/src/terrain_manifest.rs`): it validates the file
     against the schema and the terrain contract compiled into the gate (4,096 m bounds, the height
     range), warns that the zero-size height map declares no raster, and passes;
   - `world validate-exports`
-    (`tools/developer_tools/src/world_export_pipeline/export_preparation/export_validation/artifact_integrity.rs`),
+    (`tools/map_assets/world_export_pipeline/src/export_preparation/export_validation/artifact_integrity.rs`),
     which walks every registry entry and skips Arland because the manifest has no objects export;
   - the map engine, when a [mission](/documentation/glossary/g_to_m.md#mission) names the `arland`
     terrain: the mission library's create dialog offers it
@@ -55,7 +55,7 @@ assets/terrains/arland/
   no phases shipped, world `Worlds/Arland/Arland.ent`), whose bounds this manifest repeats.
 - Used by: the gates and the map engine listed above, over the API's `/map-assets` mount.
 - Rules: `worldBounds` and the height range match the terrain contract in
-  `tools/developer_tools/src/map_verification/terrain_manifest.rs` and the registry entry
+  `tools/map_assets/map_asset_verification/src/terrain_manifest.rs` and the registry entry
   (`cargo xtask schema terrain-manifest --terrain arland`); the registry's `status` is
   informational, since no check branches on it: the checks skip Arland because its manifest has no
   `objects` block, and the gate passes its 0 × 0 height map with a warning.

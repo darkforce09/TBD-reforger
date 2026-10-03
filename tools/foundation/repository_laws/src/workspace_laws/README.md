@@ -78,8 +78,7 @@ braced `use` groups included.
   `UNJUDGED_MEMBERS_FAIL`.
 - `strangler`: `check_strangler`, `strangler_outcome`, `legacy_dependency_findings`,
   `reexported_crates` (every crate root of every re-export statement of a text, with its line),
-  `reexported_crate` (the first crate of one line, which the crate-anatomy law reads),
-  `LEGACY_DEPENDENT_TOOL_BINARIES`.
+  `reexported_crate` (the first crate of one line, which the crate-anatomy law reads).
 - `frontend_layering`: `check_frontend_layering`, `frontend_layering_outcome`, `layering_edges`,
   `FrontendLayer`, `FrontendLayerRow`, `SubAreaOrder`, `FrontendCrateLayers`, `LayeringEdge`,
   `LayeringScan`.

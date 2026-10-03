@@ -29,7 +29,7 @@ assets/terrains/everon/objects/density/
 ## Producers and consumers
 
 - Producers: `world build-objects` and `world redensify`, in
-  `tools/developer_tools/src/world_export_pipeline/chunk_partitioner/`, which encode with
+  `tools/map_assets/world_export_pipeline/src/chunk_partitioner/`, which encode with
   `encode_tbdd`; `cargo xtask map export-terrain` runs the first.
 - Consumers:
   - the map engine's vegetation loader

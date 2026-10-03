@@ -27,6 +27,10 @@ fn rejects_dependency(value: &Value, forbidden: &str) {
     }
 }
 
+/// The two tool binaries ([`TOOL_BINARIES`]) are binary-only packages over tool crates: neither
+/// has a library, every workspace crate either depends on (in any dependency table) is a tool
+/// crate at `tools/<category>/<name>`, neither depends on the other or on a parked engine, and no
+/// workspace member depends on either.
 #[test]
 fn tooling_dependency_direction_is_enforced() {
     let root = tool_test_support::test_repo_root();
@@ -34,13 +38,48 @@ fn tooling_dependency_direction_is_enforced() {
         toml::from_str(&fs::read_to_string(root.join(format!("tools/{name}/Cargo.toml"))).unwrap())
             .unwrap()
     };
+    let members = read_workspace_members(&root).unwrap();
+    for binary in TOOL_BINARIES {
+        let member = members
+            .iter()
+            .find(|member| member.package_name == binary)
+            .unwrap_or_else(|| panic!("{binary} is no workspace member"));
+        assert_eq!(member.path, format!("{TOOLS_ROOT}/{binary}"));
+        assert!(
+            read(binary).get("lib").is_none()
+                && !root.join(&member.path).join("src/lib.rs").exists(),
+            "{binary} declares a library; a tool binary only calls tool crates"
+        );
+        for edge in &member.manifest.dependencies {
+            let Some(dependency) = members.iter().find(|m| m.package_name == edge.package) else {
+                continue;
+            };
+            let segments: Vec<&str> = dependency.path.split('/').collect();
+            assert!(
+                segments.len() == 3 && segments[0] == TOOLS_ROOT,
+                "{binary} depends on {} ({}); a tool binary depends only on tool crates at \
+                 {TOOLS_ROOT}/<category>/<name>",
+                edge.package,
+                dependency.path
+            );
+        }
+    }
     rejects_dependency(&read("xtask"), "map_engine");
     rejects_dependency(&read("xtask"), "graphics_engine");
+    rejects_dependency(&read("xtask"), "developer_tools");
     rejects_dependency(&read("developer_tools"), "xtask");
-    assert_eq!(
-        read("xtask")["dependencies"]["developer_tools"]["path"].as_str(),
-        Some("../developer_tools")
-    );
+    rejects_dependency(&read("developer_tools"), "map_engine");
+    rejects_dependency(&read("developer_tools"), "graphics_engine");
+    for member in &members {
+        for edge in &member.manifest.dependencies {
+            assert!(
+                !TOOL_BINARIES.contains(&edge.package.as_str()),
+                "{} depends on the tool binary {}",
+                member.path,
+                edge.package
+            );
+        }
+    }
 }
 
 #[test]
@@ -89,7 +128,7 @@ fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
         // so no crate walk treats it as source.
         "tools/foundation/repository_layout/src/lib.rs",
         "tools/tickets/ticket_model/src/repository.rs",
-        "tools/developer_tools/src/map_pipeline_layout.rs",
+        "tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs",
         "tools/enfusion/enfusion_script_index/src/script_index_layout.rs",
         "tools/browser_testing/browser_gate_suites/src/gate_layout.rs",
         "tools/enfusion_mcp_node_package/package.json",

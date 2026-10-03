@@ -1,10 +1,13 @@
 # Map asset commands
 
 The `cargo xtask map` group: the terrain export that turns a staged Workbench world export into
-the committed object and road artifacts, the map tile index the offline pack reads, and the building-blueprint and line-of-sight tools that
-build and check the occlusion data the
+the committed object and road artifacts, the map tile index the offline pack reads, and the
+building-blueprint and line-of-sight tools that build and check the occlusion data the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool uses. Map
-and mod developers run them by hand; the work itself lives in the `developer_tools` crate.
+and mod developers run them by hand. This folder holds only the command line and the dispatch: the
+export driver and the tile index writer live in the `world_export_pipeline` crate, the blueprint
+and line-of-sight work in the `blueprint_compiler` and `map_asset_verification` crates, and the
+export runs the `world` binary of `developer_tools`.
 
 ## Contents
 
@@ -12,21 +15,20 @@ and mod developers run them by hand; the work itself lives in the `developer_too
 tools/xtask/src/commands/map/
 ├── cli.rs             the `MapCmd` clap enum: fourteen commands, each taking its arguments raw
 ├── dispatch.rs        routes each `MapCmd` to its adapter
-├── mod.rs             the module tree; one adapter per developer_tools entry, given the checkout root
-├── terrain_export.rs  `export-terrain`: phase gate, staged export check, object and road builds
-├── tile_index.rs      `tile-index`: the map tile pyramid's `index.json`, for the offline pack
-└── tests/             unit tests for the export-terrain parser and the tile index writer
+└── mod.rs             the module tree; one adapter per map asset crate entry, given the checkout root
 ```
 
 ## How it works
 
-`tools/xtask/src/cli/dispatch.rs` passes the parsed `MapCmd` to `dispatch::run`. Every command
-but `export-terrain` and `tile-index` is a one-line adapter in `mod.rs` that finds the checkout root and hands the
-raw arguments to a `developer_tools` entry, which parses them, does the work and returns the exit
-code: `blueprint::run` (`blueprint-from-voxels`), `blueprint::ingest::run`,
-`blueprint::parity_report::run`, `blueprint::run_voxels_from_mesh`, `run_bvh_parity`,
-`run_bvh_emit`, `run_bvh_batch`, `run_xob_inspect`, `run_pak_cat`, `run_instances_verify`,
-`run_rotation_pin`, and `map_verification::world_line_of_sight::run` (`world-los`). The adapters
+`tools/xtask/src/cli/dispatch.rs` passes the parsed `MapCmd` to `dispatch::run`. `export-terrain`
+and `tile-index` go straight to `world_export_pipeline::export_terrain_driver::run` and
+`world_export_pipeline::map_tile_index::run`; every other command is a one-line adapter in
+`mod.rs` that finds the checkout root and hands the raw arguments to a `blueprint_compiler` or
+`map_asset_verification` entry, which parses them, does the
+work and returns the exit code: the `blueprint_compiler` entries `run` (`blueprint-from-voxels`),
+`ingest::run`, `parity_report::run`, `run_voxels_from_mesh`, `run_bvh_parity`, `run_bvh_emit`,
+`run_bvh_batch`, `run_xob_inspect`, `run_pak_cat`, `run_instances_verify` and `run_rotation_pin`,
+and `map_asset_verification`'s `world_line_of_sight::run` (`world-los`). The adapters
 import no map-engine types.
 
 `export-terrain` runs the `world` binary of `developer_tools` three times through
@@ -44,7 +46,8 @@ export-terrain <terrain> [--phase Pn]
 
 The staged export sits under `assets/scratch/<terrain>/`, which git ignores.
 
-`tile-index` runs in-process: it reads the terrain's `manifest.json` for `tiles.map.path`, the
+`tile-index` runs in process (`map_tile_index` is bookkeeping with no raster code, so xtask's
+closure stays free of the raster pipeline): it reads the terrain's `manifest.json` for `tiles.map.path`, the
 tile extension of `tiles.map.urlTemplate` and the zoom range, walks `<z>/<x>/<y>.<extension>`
 under the pyramid, and writes `index.json` (`contracts/definitions/map-tile-index.schema.json`)
 beside it, where `/map-assets/<terrain>/tiles/map/index.json` serves it from the API and the gate
@@ -88,7 +91,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   `blueprint-from-voxels` interprets raw Workbench voxel dumps into blueprint JSON offline;
   `voxels-from-mesh` writes the same voxel dump by ray-marching a game `.xob` model, the fire
   collision geometry by default.
-- Exit codes: those of the `developer_tools` entry: 0 done, non-zero a failure.
+- Exit codes: those of the `blueprint_compiler` entry: 0 done, non-zero a failure.
 - Example: `cargo xtask map ingest-blueprints --filter <substr>`
 
 ### Occlusion sidecars and game files
@@ -102,7 +105,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   walks a prefab, or every catalogue prefab, straight out of the game paks into the shell
   sidecar, one BLAS per child model and the instance list; `xob-inspect` prints what the model
   decoder sees; `pak-cat` reads one entry of the game paks.
-- Exit codes: those of the `developer_tools` entry: 0 done, non-zero a failure.
+- Exit codes: those of the `blueprint_compiler` entry: 0 done, non-zero a failure.
 - Example: `cargo xtask map pak-cat <in-pak path> --head 256`
 
 ### Parity and placement checks
@@ -124,26 +127,28 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
 
 ## Boundaries
 
-- Depends on: `developer_tools::blueprint`, `developer_tools::map_verification` and
-  `repository_layout::map_scratch_dir`; `tool_test_support`;
-  `process_runner`; cargo, for the `world` binary; the game paks and the Workbench
-  exports each command reads.
+- Depends on: the `world_export_pipeline` (`export_terrain_driver`, `map_tile_index`),
+  `blueprint_compiler` and `map_asset_verification` crates and `repository_layout`; cargo, for the
+  `world` binary the export driver runs; the game paks and the Workbench exports each command
+  reads.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; people, following the export and blueprint steps
   in `assets/terrains/README.md` and the `apps/mod/tbd-export/` plugins, whose output these
   commands read.
 - Rules: `export-terrain` runs the phase gate before anything is built, and a missing staged
   export is exit 2, never a build over nothing; the argument parser keeps its defaults and refusals
-  (`parse_phase_and_default`, `parse_unknown_arg` in `tests/terrain_export/tests.rs`); `tile-index`
+  (`parse_phase_and_default`, `parse_unknown_arg` in
+  `tools/map_assets/world_export_pipeline/src/tests/export_terrain_driver/tests.rs`); `tile-index`
   never writes an index over a missing or empty pyramid, and what it writes validates against
-  `map-tile-index.schema.json` (`tests/tile_index/tests.rs`); the crate
-  takes no dependency on `map_engine`
-  (`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`), so engine-backed work stays in
-  `developer_tools`.
+  `map-tile-index.schema.json`
+  (`tools/map_assets/world_export_pipeline/src/tests/map_tile_index/tests.rs`); this folder holds
+  no command logic, and xtask depends only on tool crates
+  (`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`), so the raster
+  work stays in the `map` binary, outside xtask's dependency closure.
 
 ## Related documentation
 
-- [Building blueprint pipeline](/tools/developer_tools/src/blueprint/README.md) — the code
+- [Building blueprint pipeline](/tools/map_assets/blueprint_compiler/src/README.md) — the code
   behind the blueprint, sidecar and parity commands.
-- [World export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — the
-  `world` binary that `export-terrain` runs.
+- [World export pipeline](/tools/map_assets/world_export_pipeline/src/README.md) — the export
+  driver, the tile index writer and the `world` binary that `export-terrain` runs.
 - [Terrains](/assets/terrains/README.md) — the terrain artifacts these commands write.

@@ -44,13 +44,14 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
      not product code; there is no per-crate allowlist;
    - leptos only in frontend crates;
    - no tokio, axum, reqwest, resvg or image in the dependency closure of xtask (this ban stays
-     hard and keeps the harness servers out of xtask);
+     hard and keeps the harness servers out of xtask; the closure is walked from the xtask
+     binary although it sits outside the judged `tools/<category>/<name>` layout);
    - no map nouns in the graphics category (today's engine rule 2);
    - no browser crates in mission editing: no browser crate edge, and no `web_sys`, `leptos` or
      `wasm_bindgen` token, prose included, in any `.rs` file under `crates/mission_editing/`; the
      scan fails closed when that folder holds no `.rs` file (it replaced engine rule 5 in S7).
-7. Nothing outside the legacy folder depends on it, apart from apps and the two tool binaries
-   while legacy exists.
+7. Nothing outside the legacy folder depends on it, apart from apps while legacy exists; no
+   tool is exempt.
 8. Dev-dependencies are exempt from the tier order but never point at apps or legacy.
 
 ### Crate anatomy (`cargo xtask verify crate-anatomy`)

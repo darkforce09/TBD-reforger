@@ -1,0 +1,49 @@
+# Stage S11b, agent J3d1 — the building-blueprint compiler leaves developer_tools.
+# developer_tools' blueprint module becomes the blueprint_compiler crate under tools/map_assets,
+# with its test fixtures. The module root's code (the `blueprint-from-voxels` command) becomes
+# the blueprint_from_voxels module; each source category folder takes its own tests/ folder,
+# named after the module the tests exercise. The crate root, the category module files, the
+# error module, the prelude, the shared test fixture module and the renames of the module
+# aliases to their file names are written by hand. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the module root's command becomes its own module; the folder becomes the crate's sources
+path	tools/developer_tools/src/blueprint/mod.rs	tools/map_assets/blueprint_compiler/src/blueprint_from_voxels.rs
+path	tools/developer_tools/src/blueprint	tools/map_assets/blueprint_compiler/src
+#
+# the tests sit beside the category folder of the module they exercise
+path	tools/developer_tools/src/blueprint/tests/module/tests.rs	tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs
+path	tools/developer_tools/src/blueprint/tests/hull/tests.rs	tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/convex_hulls_tests.rs
+path	tools/developer_tools/src/blueprint/tests/plate/tests.rs	tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/floor_plates_tests.rs
+path	tools/developer_tools/src/blueprint/tests/rings/tests.rs	tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/polygon_rings_tests.rs
+path	tools/developer_tools/src/blueprint/tests/roof/tests.rs	tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/roof_profiles_tests.rs
+path	tools/developer_tools/src/blueprint/tests/surface_kind/tests.rs	tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/surface_classification_tests.rs
+path	tools/developer_tools/src/blueprint/tests/slabs/tests.rs	tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/vertical_slabs_tests.rs
+path	tools/developer_tools/src/blueprint/tests/walls/tests.rs	tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/wall_extraction_tests.rs
+path	tools/developer_tools/src/blueprint/tests/archive_emit/tests.rs	tools/map_assets/blueprint_compiler/src/archive_emission/tests/archive_writer_tests.rs
+path	tools/developer_tools/src/blueprint/tests/emit/tests.rs	tools/map_assets/blueprint_compiler/src/archive_emission/tests/blueprint_assembly_tests.rs
+path	tools/developer_tools/src/blueprint/tests/library_tests.rs	tools/map_assets/blueprint_compiler/src/archive_emission/tests/library_reader_tests.rs
+path	tools/developer_tools/src/blueprint/tests/batch_tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs
+path	tools/developer_tools/src/blueprint/tests/bvh/tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/construction_tests.rs
+path	tools/developer_tools/src/blueprint/tests/bvh/compound_tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/construction_compound_tests.rs
+path	tools/developer_tools/src/blueprint/tests/pair/tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/instance_pairs_tests.rs
+path	tools/developer_tools/src/blueprint/tests/verify/tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/instance_verification_tests.rs
+path	tools/developer_tools/src/blueprint/tests/prefab/tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs
+path	tools/developer_tools/src/blueprint/tests/rotation_pin/tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/rotation_validation_tests.rs
+path	tools/developer_tools/src/blueprint/tests/world_row/tests.rs	tools/map_assets/blueprint_compiler/src/bvh/tests/world_instances_tests.rs
+path	tools/developer_tools/src/blueprint/tests/xob_tests.rs	tools/map_assets/blueprint_compiler/src/mesh_decoding/tests/mesh_format_tests.rs
+path	tools/developer_tools/src/blueprint/tests/xob_nodes/tests.rs	tools/map_assets/blueprint_compiler/src/mesh_decoding/tests/node_records_tests.rs
+path	tools/developer_tools/src/blueprint/tests/params/tests.rs	tools/map_assets/blueprint_compiler/src/voxel_processing/tests/analysis_parameters_tests.rs
+path	tools/developer_tools/src/blueprint/tests/parse/tests.rs	tools/map_assets/blueprint_compiler/src/voxel_processing/tests/dump_parser_tests.rs
+path	tools/developer_tools/src/blueprint/tests/mesh/tests.rs	tools/map_assets/blueprint_compiler/src/voxel_processing/tests/mesh_voxelization_tests.rs
+#
+# the blueprint, prefab and world-parity inputs the unit tests read
+path	tools/developer_tools/test_fixtures	tools/map_assets/blueprint_compiler/test_fixtures
+#
+# the moved code names its own crate
+rust_path	crate::blueprint::	crate::	tools/developer_tools/src/blueprint
+#
+# consumers name the crate
+rust_path	developer_tools::blueprint::	blueprint_compiler::	tools/xtask
+rust_path	crate::blueprint::parity_report::	blueprint_compiler::parity_report::	tools/developer_tools/src/map_verification
+rust_path	crate::blueprint::tests::	blueprint_compiler::test_fixtures::	tools/developer_tools/src/map_verification

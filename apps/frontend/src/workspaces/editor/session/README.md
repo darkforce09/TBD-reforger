@@ -103,7 +103,7 @@ preferences and marker it stores outlive it.
   - `apps/frontend/src/workspaces/editor/review_workspace/page.rs` (review mode) and
     `apps/frontend/src/main.rs`, which registers the sign-out purge as a hook of
     `apps/frontend/src/foundation/auth/logout_hooks.rs`;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through
     `window.__missionPersist` and `window.__editorCommands`;
   - `cargo xtask verify editor-orbat-coherency`, which scans `eden_chrome.rs`.
 - Rules:

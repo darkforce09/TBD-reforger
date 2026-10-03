@@ -20,7 +20,7 @@ re-solves natively when a fire mission is saved.
   [Routes](/apps/frontend/src/workspaces/debug/ballistics_agreement/README.md#routes). No
   navigation entry links it; it is opened by URL.
 - Related: the gate in
-  [`tools/developer_tools/src/browser_testing/ballistics_agreement/`](/tools/developer_tools/src/browser_testing/ballistics_agreement/README.md),
+  [`tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`](/tools/browser_testing/browser_gate_suites/src/ballistics_agreement/README.md),
   run by `cargo xtask mk ballistics-wasm-agreement`; the solver in the
   [ballistics crates](/crates/ballistics/README.md), whose `ballistics_agreement_cases` draws the
   lattice.

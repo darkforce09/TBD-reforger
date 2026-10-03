@@ -37,8 +37,8 @@ an empty payload is zero rows. `instances_to_bytes` is the writer's cast and can
   - `map_engine::streaming::loaders` (`chunk_bin.rs` reads chunk rows into columns, `manifest.rs`
     refuses a manifest whose `pod` or `podBytes` differs from `POD_NAME` and `POD_BYTES`);
   - the developer tools: the world export writes rows in
-    `tools/developer_tools/src/world_export_pipeline/binary_emit.rs`, and the map
-    verifications read them in `tools/developer_tools/src/map_verification/`.
+    `tools/map_assets/world_export_pipeline/src/binary_emit.rs`, and the map
+    verifications read them in `tools/map_assets/map_asset_verification/src/`.
 - Rules: the row stays 32 bytes, 4-aligned and little-endian, with every byte a named field, since
   every committed chunk under `assets/terrains/` places row `i` at byte `32 + 32·i`
   (`pod_is_thirty_two_bytes_and_four_aligned`, `every_byte_is_a_named_field` and

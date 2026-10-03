@@ -117,7 +117,7 @@ Workbench, or a game, loads `tbd-export`.
 - Used by: `cargo xtask mod dev-bootstrap`, which opens this project
   (`tools/commands/mod_operations/src/development_bootstrap.rs`); `cargo xtask mcp wbcall`; the
   map commands and world export pipeline that read the map exports
-  (`tools/xtask/src/commands/map/`, `tools/developer_tools/src/world_export_pipeline/`); the
+  (`tools/xtask/src/commands/map/`, `tools/map_assets/world_export_pipeline/src/`); the
   equipment and vehicle validation in `tools/commands/mod_operations/src/equipment_vehicle_export/`;
   and, through the copied catalogs in `contracts/catalogs/`, `cargo xtask db registry-import`.
 - Rules: the dependencies stay vanilla and `TBD_EMCP`, never `TBD_Framework`, and the addon holds

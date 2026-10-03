@@ -23,7 +23,7 @@ contracts/fixtures/map/phased/
   (engine coordinates: `x` east, `y` altitude, `z` north) and `expected`, what a correct build
   produces after the axis remap and classification.
 - Adding a file: add the bundle, name it in the list of catalogue bundles in
-  `tools/developer_tools/src/map_verification/object_goldens/map_object_golden.rs`, and run
+  `tools/map_assets/map_asset_verification/src/object_goldens/map_object_golden.rs`, and run
   `cargo xtask schema map-object-golden`.
 
 ## Producers and consumers
@@ -31,7 +31,7 @@ contracts/fixtures/map/phased/
 - Producers: people; no tool writes these files.
 - Consumers:
   - `cargo xtask schema map-object-golden`
-    (`tools/developer_tools/src/map_verification/object_goldens/`), which runs the table
+    (`tools/map_assets/map_asset_verification/src/object_goldens/`), which runs the table
     gates S2 and S4 to S7 over both bundles and gate S12 (anchor check, partition consistency and
     exclusions) over `P1-anchor-fixture.json`;
   - `cargo xtask schema validate`
@@ -44,6 +44,6 @@ contracts/fixtures/map/phased/
   `contracts/definitions/map-object-enums.schema.json`.
 - Used by: the two xtask schema gates above, both steps of the `schema-validate` CI task.
 - Rules: the gates name each file by path, so a rename updates
-  `tools/developer_tools/src/map_verification/object_goldens/map_object_golden.rs` and
+  `tools/map_assets/map_asset_verification/src/object_goldens/map_object_golden.rs` and
   `tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs` in the same
   change.

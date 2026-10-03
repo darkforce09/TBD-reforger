@@ -87,8 +87,8 @@ file; a checkout without it fails that case with the `git lfs pull` command that
   - the map engine (`legacy/map_engine`), whose label loader (`world/environment/locations/`)
     fetches the sources and uploads the lanes;
   - the developer tools: the labels archive and the height label export in
-    `tools/developer_tools/src/map_raster_pipeline/` and the label checks in
-    `tools/developer_tools/src/map_verification/`.
+    `tools/map_assets/map_raster_pipeline/src/` and the label checks in
+    `tools/map_assets/map_asset_verification/src/`.
 - Rules:
   - the labels archive reads exactly the JSON it was baked from, including an empty lane, at any
     buffer offset, and a truncated file or another schema version is an error

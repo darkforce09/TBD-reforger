@@ -60,7 +60,7 @@ with it. The crate logs through `browser_platform`'s console macros.
   - the Mission Creator's viewport bridge
     (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`) and canvas boot, and the debug
     benches under `apps/frontend/src/workspaces/debug/`;
-  - the editor gate's smokes in `tools/developer_tools/src/browser_testing/`, which
+  - the editor gate's smokes in `tools/browser_testing/browser_gate_suites/`, which
     `cargo xtask mk leptos-gates` runs.
 - Rules: a check never writes the engine's frame tables, camera uniform or batch list, so it can
   run beside the live render loop; expected pixels are exact bytes, except the ±1 the marquee's

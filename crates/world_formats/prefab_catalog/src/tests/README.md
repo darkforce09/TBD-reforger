@@ -1,11 +1,13 @@
 # prefab_catalog/tests
 
 Unit tests of the prefab rows and their archive, the numeric prefab ids, the footprint lookups,
-the prefab tables of both served forms, and the render classes.
+the prefab tables of both served forms, the render classes, and the census kinds against the
+map-object enums schema.
 
 ## Contents
 
 - `footprint_lookups_tests.rs`
+- `instance_kinds_tests.rs`
 - `numeric_prefab_ids_tests.rs`
 - `prefab_rows_tests.rs`
 - `prefab_tables_tests.rs`

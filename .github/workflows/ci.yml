@@ -28,9 +28,8 @@ jobs:
   # fmt (FMT-1): `cargo fmt --check` on api, then `cargo fmt --all --check` on every
   # workspace member. clippy (GO-2..8 analog): `cargo clippy --all-targets -- -D warnings` on
   # api (host target, default features), so any warning fails the job. build:
-  # `cargo build --all-targets` on api. tests: `cargo test -p developer_tools --lib`,
-  # then api's `cargo test` (unit + integration, TEST-1) against the Postgres service
-  # below.
+  # `cargo build --all-targets` on api. tests: api's `cargo test` (unit + integration,
+  # TEST-1) against the Postgres service below.
   api:
     name: api (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
@@ -84,22 +83,6 @@ jobs:
         run: cargo xtask mk rust-clippy
       - name: build
         run: cargo xtask mk rust-build
-      # The developer_tools library suite. The mod gate scopes itself to the
-      # `enfusion_script_index` crate and the wave gate's `test workspace members` step is
-      # local-only, so this is the only push-triggered check of the density grid and the world
-      # export unit tests.
-      # `working-directory: .` for the same reason as the fmt step: the job default is
-      # apps/api, and `cargo xtask` resolves the repository root from its own cwd.
-      # AHEAD of the DB-backed `test` step deliberately. Steps stop at the first failure, so behind
-      # it a Postgres-service red would decide whether the density invariant was checked at all.
-      # This lane needs no database, no LFS and no wasm target; nothing about it should wait on one
-      # that does.
-      # Quoted like the verify-ci-shell step below: `density:: ` is a colon-space, which YAML
-      # reads as a mapping value inside a plain scalar; `verify ci-shell` fails on unparseable
-      # YAML rather than returning an empty result.
-      - name: "developer_tools lib tests (density:: + world::)"
-        working-directory: .
-        run: cargo xtask ci developer-tools-test
       # `rust_it`, matching the `services.db` POSTGRES_DB above and the `rust-test-it` task.
       - name: test (TEST-1 analog)
         env:
@@ -107,10 +90,13 @@ jobs:
         run: cargo xtask ci api-test
 
   # --- map-engine: map_engine + graphics_engine (`cargo xtask mk wasm-ci`) ---
-  # fmt: `cargo fmt --check` on both crates. clippy, two passes over both crates, each with
-  # `-D warnings` so any warning fails the job: host target with `--all-targets --all-features`,
-  # then `--target wasm32-unknown-unknown` (default features, without `--all-targets`). tests:
-  # `cargo test --all-features` on each crate, host target. No separate build step, no trunk.
+  # fmt: `cargo fmt --check` on both crates and the offline service worker. clippy, two passes,
+  # each with `-D warnings` so any warning fails the job: host target with `--all-targets
+  # --all-features` over the same three crates, then `--target wasm32-unknown-unknown` (default
+  # features, without `--all-targets`) over every package the wasm32 lint derives from the
+  # workspace: each member declaring `targets = "wasm32"`, the offline service worker and the two
+  # engines (the frontend's own wasm32 lint is the frontend job's). tests: `cargo test
+  # --all-features` on each of the three crates, host target. No separate build step, no trunk.
   # map_engine's tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
   # `lfs: true` checkout would drag the 206 MB satellite bundle every run).
   map-engine:
@@ -158,11 +144,11 @@ jobs:
 
   # --- workspace-members: every member the jobs above do not test ---
   # `cargo xtask ci workspace-member-tests` derives its package list from the root Cargo.toml
-  # workspace minus the members a dedicated job tests (api, developer_tools, frontend and the
-  # three wasm-ci crates), and runs `cargo test -p <package>` once per package, so features never
+  # workspace minus the members a dedicated job tests (api, frontend and the three wasm-ci
+  # crates), and runs `cargo test -p <package>` once per package, so features never
   # unify across packages. A member the workspace gains is tested here from the moment the
   # manifest names it; `ci_local_tests_every_workspace_member` and
-  # `the_ci_workflow_tests_every_workspace_member` (tools/xtask) keep every member in a job.
+  # `the_ci_workflow_tests_every_workspace_member` (ci_task_catalog) keep every member in a job.
   workspace-members:
     name: workspace members (cargo test per member)
     runs-on: ubuntu-latest

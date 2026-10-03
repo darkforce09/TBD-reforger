@@ -63,8 +63,7 @@ At the crate root: `Browser`, `Page`, `GpuBackend`, `VIEWPORT`, `launch`, `launc
 - Depends on: `newtype_ids` (the typed request id); `tokio` (the browser child, its output
   drains, the page sockets), `tokio-tungstenite`, `reqwest` (the debugging endpoint), `futures-util`,
   `serde_json`, `base64`, `libc` (process-group signals) and `thiserror`.
-- Used by: `tools/browser_testing/browser_gate_suites`; the ballistics agreement and offline mortar
-  suites in `tools/developer_tools/src/browser_testing/`.
+- Used by: `tools/browser_testing/browser_gate_suites`, every gate and the capture harness in it.
 - Rules: tier 1 of `tools/browser_testing`; Chromium is spawned through `tokio::process`, because
   its output is drained by tasks for the browser's whole life, which the synchronous
   `process_runner` cannot host; both output pipes are drained from spawn; the viewport and the

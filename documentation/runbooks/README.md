@@ -69,7 +69,7 @@ feature folder, rather than here; this index lists it so every procedure is foun
 - [xtask command groups](/tools/xtask/src/commands/) — every `cargo xtask` command the runbooks
   run: `mk`, `ci`, `db`, `deploy`, `mod`, `mcp`, `map`, `ballistics`, `schema`, `platform`, `wave`,
   `ticket` and `setup`.
-- [Browser testing](/tools/developer_tools/src/browser_testing/) — the gate, doctor and
+- [Browser testing](/tools/browser_testing/browser_gate_suites/) — the gate, doctor and
   capture drivers behind the editor gates and editor capture.
 - [Deploy files](/deploy/) — the templates and systemd units the deployment
   runbooks install.

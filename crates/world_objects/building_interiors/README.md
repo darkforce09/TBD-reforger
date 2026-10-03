@@ -71,8 +71,8 @@ cargo test -p building_interiors   # blueprint attribution, instances JSON, sect
     occluder);
   - the debug building viewer, interior bench and world line-of-sight bench in
     `apps/frontend/src/workspaces/debug/`;
-  - the blueprint tooling in `tools/developer_tools/src/blueprint/` and the map checks in
-    `tools/developer_tools/src/map_verification/`.
+  - the blueprint tooling in `tools/map_assets/blueprint_compiler/src/` and the map checks in
+    `tools/map_assets/map_asset_verification/src/`.
 - Rules: the model holds no query of the world and no browser or GPU code; every identifier
   serializes as the string it wraps; world objects tier 2 (`cargo xtask verify crate-tiers`).
 

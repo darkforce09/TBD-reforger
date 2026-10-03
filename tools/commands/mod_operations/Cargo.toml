@@ -12,7 +12,7 @@ description = "The game mod's operations: compile check, world boot, playtest se
 
 [package.metadata.layout]
 category = "tools/commands"
-tier = 8
+tier = 10
 targets = "any"
 
 [dependencies]

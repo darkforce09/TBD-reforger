@@ -40,7 +40,7 @@ assets/terrains/everon/dem/
     at boot (`legacy/map_engine/src/world/terrain/dem/`), and its spot-height and relief
     code;
   - the map raster pipeline's height-label export and inland water analysis
-    (`tools/developer_tools/src/map_raster_pipeline/`);
+    (`tools/map_assets/map_raster_pipeline/src/`);
   - `cargo xtask schema terrain-alignment`, which samples it at every anchor, and
     `cargo xtask schema height-labels`;
   - `cargo xtask ci lfs-dem` and the `map-engine` and `schema` jobs of

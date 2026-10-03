@@ -54,7 +54,7 @@ None: Workbench runs these scripts in the editor.
   The two files are the input of
   `world raw-u16-dem-png --raster <matrix> --meta <meta> --out <png>`, run through
   `cargo run -p developer_tools --bin world --`
-  (`tools/developer_tools/src/world_export_pipeline/export_preparation/dem_elevation.rs`). It
+  (`tools/map_assets/world_export_pipeline/src/export_preparation/dem_elevation.rs`). It
   reads `widthPx`, `heightPx` and the `heightRange*` keys, and writes the 16-bit PNG that
   `assets/terrains/everon/dem/` commits, with an `elevation.dem` beside it. No committed command
   moves the files out of the profile; the operator passes their paths.

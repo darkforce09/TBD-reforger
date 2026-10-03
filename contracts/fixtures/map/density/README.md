@@ -28,16 +28,16 @@ contracts/fixtures/map/density/
 
 - Producers: people write the positions; the `world` binary's `gen-density-fixture` command
   (`gen_density_fixture` in
-  `tools/developer_tools/src/world_export_pipeline/chunk_partitioner/redensify_from_committed.rs`)
+  `tools/map_assets/world_export_pipeline/src/chunk_partitioner/redensify_from_committed.rs`)
   reads them and rewrites `density-fixture.bin`, `expectedCorners` and `expectedFileBytes` in the
-  folder `density_fixtures_dir` names (`tools/developer_tools/src/map_pipeline_layout.rs`).
+  folder `density_fixtures_dir` names (`tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs`).
 - Consumers:
-  - gate S13 in `tools/developer_tools/src/map_verification/object_goldens/spatial_invariants.rs`,
+  - gate S13 in `tools/map_assets/map_asset_verification/src/object_goldens/spatial_invariants.rs`,
     run by `cargo xtask schema map-object-golden` and the `schema-validate` CI task: encoding the
     positions must give exactly `density-fixture.bin`, whose header must match the library
     constants and whose decoded corners must equal `expectedCorners`;
   - the vegetation density tests in
-    `tools/developer_tools/src/world_export_pipeline/tests/vegetation_density/tests.rs`, which
+    `tools/map_assets/world_export_pipeline/src/tests/vegetation_density/tests.rs`, which
     read `density-fixture.bin`.
 
 ## Boundaries

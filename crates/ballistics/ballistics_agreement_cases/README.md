@@ -44,7 +44,7 @@ None: no features and no environment variables.
 
 - Depends on: `ballistics_model`, `ballistics_solver`, `fire_mission_planning`,
   `deterministic_random` and `newtype_ids`; `serde_json` and `libm`.
-- Used by: the agreement gate in `tools/developer_tools/src/browser_testing/ballistics_agreement/`
+- Used by: the agreement gate in `tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`
   and the agreement bench in `apps/frontend/src/workspaces/debug/ballistics_agreement/`, which draw,
   map and walk the same cases from the same seed and count.
 - Rules: the generator reproduces the published SplitMix64 stream; the same seed draws the same

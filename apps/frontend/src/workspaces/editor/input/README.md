@@ -89,7 +89,7 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
   - the source pins that read these files, in `apps/frontend/src/workspaces/editor/tests/`,
     `apps/frontend/src/workspaces/editor/ui/modals/tests/help_modal/` and
     `crates/mission/mission_document/src/rows/tests/cases_1.rs`;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     canvas and the keyboard.
 - Rules:
   - undo and redo go only through `bridge::document_host::history::{undo, redo}`, never the

@@ -3,7 +3,7 @@
 The `repository_layout` crate: the one walk that finds a checkout root, and the repository
 locations more than one tool names, spelled once each. A tool joins these relative paths onto the
 root the walk found; a location only one tool names stays in that tool's own layout module
-(`tools/developer_tools/src/map_pipeline_layout.rs`,
+(`tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs`,
 `tools/enfusion/enfusion_script_index/src/script_index_layout.rs`,
 `tools/browser_testing/browser_gate_suites/src/gate_layout.rs`,
 `tools/tickets/ticket_model/src/repository.rs`).

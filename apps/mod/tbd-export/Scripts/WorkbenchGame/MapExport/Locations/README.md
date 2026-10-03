@@ -47,7 +47,7 @@ None: Workbench runs these scripts in the editor.
   `BaseWorld.QueryEntitiesByAABB`.
 - Used by: `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`.
   No committed tool reads the file: the committed `assets/terrains/everon/locations.json` comes
-  from `map export-locations` in `tools/developer_tools/src/map_raster_pipeline/map_labels/`,
+  from `map export-locations` in `tools/map_assets/map_raster_pipeline/src/map_labels/`,
   which reads the staged full world-object export, not this output.
 - Rules: a place's name and importance are decided in the script, keyed on Everon's prefab names;
   lines added stay ASCII. `cargo xtask mod compile` compiles only the framework addon, so these

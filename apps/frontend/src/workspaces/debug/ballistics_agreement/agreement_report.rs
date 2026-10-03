@@ -8,7 +8,7 @@
 //! **Position:** the pure half of [`super`], called by the browser half once per case. The
 //! case-to-inputs mapping, the lead summary and the bit walk are those of the
 //! `ballistics_agreement_cases` crate, shared with the native
-//! agreement gate of `tools/developer_tools/` (`browser_testing::ballistics_agreement`), which
+//! agreement gate of `tools/browser_testing/browser_gate_suites/` (`ballistics_agreement`), which
 //! decodes this shape and solves the same cases natively.
 //! **Signals & state:** none; pure functions over a borrowed catalog.
 //! **Invariants:**

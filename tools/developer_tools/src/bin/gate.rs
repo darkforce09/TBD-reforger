@@ -1,3 +1,3 @@
 fn main() -> std::process::ExitCode {
-    developer_tools::browser_testing::cli::run()
+    browser_gate_suites::command_lines::gate::run()
 }

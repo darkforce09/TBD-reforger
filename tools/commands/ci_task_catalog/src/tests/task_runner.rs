@@ -53,9 +53,7 @@ fn ci_local_step_set_is_frozen() {
             "verify-engine-layers",
             "verify-workspace-laws",
             "rust-ci",
-            // ci.yml's api job tests the developer tools' library; the derived lane tests every
-            // workspace member no dedicated task tests.
-            "developer-tools-test",
+            // The derived lane tests every workspace member no dedicated task tests.
             "workspace-member-tests",
             "verify-coding-standards",
             "verify-documentation",
@@ -180,9 +178,7 @@ fn ci_local_runs_the_leaves_not_a_copy_of_them() {
             "verify-engine-layers",
             "verify-workspace-laws",
             "rust-ci",
-            // ci.yml's api job tests the developer tools' library; the derived lane tests every
-            // workspace member no dedicated task tests.
-            "developer-tools-test",
+            // The derived lane tests every workspace member no dedicated task tests.
             "workspace-member-tests",
             "verify-coding-standards",
             "verify-documentation",

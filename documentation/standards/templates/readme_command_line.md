@@ -80,18 +80,18 @@ tools/developer_tools/src/bin/
 
 ## How it works
 
-Each file is a three-line `main` that calls one entry function of the `developer_tools` library
+Each file is a three-line `main` that calls one entry function of a tool crate
 and returns its `ExitCode`; the `[[bin]]` tables of `tools/developer_tools/Cargo.toml` name the
 binaries. Argument parsing, help text and error reporting live in the owning module: five binaries
 parse with clap's derive API, and `mcpd` reads its few flags itself.
 
 ```text
 enf.rs      ──▶ enfusion_script_index::run_command_line
-gate.rs     ──▶ browser_testing::cli::run
-capture.rs  ──▶ browser_testing::capture_cli::run
+gate.rs     ──▶ browser_gate_suites::command_lines::gate::run
+capture.rs  ──▶ browser_gate_suites::command_lines::capture::run
 mcpd.rs     ──▶ enfusion_mcp_broker::run
-world.rs    ──▶ world_export_pipeline::cli::entrypoint
-map.rs      ──▶ map_raster_pipeline::cli::entrypoint
+world.rs    ──▶ world_export_pipeline::entrypoint
+map.rs      ──▶ map_raster_pipeline::entrypoint
 ```
 
 ## Commands
@@ -164,8 +164,7 @@ a subcommand prints its usage, and a clap usage error exits 2.
 
 ## Boundaries
 
-- Depends on: the `developer_tools` library modules in the diagram, in
-  `tools/developer_tools/src/`.
+- Depends on: the tool crates in the diagram, each its binary's one dependency.
 - Used by:
   - `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, which run `gate doctor`,
     `gate editor-suite` and `gate v-suite verify`;

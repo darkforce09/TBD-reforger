@@ -55,7 +55,7 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
   warm-session marker in `apps/frontend/src/workspaces/editor/session/warm_session_marker.rs`; the top strip
   in `apps/frontend/src/workspaces/editor/ui/docks/top_strip/`, which reads the last flush time
   through `set_last_flush_signal`; the headless editor gates in
-  `tools/developer_tools/src/browser_testing/`, through `window.__missionPersist`.
+  `tools/browser_testing/browser_gate_suites/`, through `window.__missionPersist`.
 - Rules: the tests in `apps/frontend/src/workspaces/editor/session/tests/` pin these: a stored
   record from another tab is merged, never overwritten, and a read-only tab defers instead of
   writing (`t190_a_foreign_record_is_merged_not_overwritten` and

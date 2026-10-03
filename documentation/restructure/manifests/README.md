@@ -30,9 +30,15 @@ documentation/restructure/manifests/
 ├── s11_w4b_j2h2_ci_task_catalog.tsv  stage S11 J2h2: xtask's ci and mk lanes, the cargo target pin, the CI workflow checks and the map asset checks become ci_task_catalog under tools/commands
 ├── s11_w5_j2i_platform_execution.tsv  stage S11 J2i: xtask's platform group (the wave driver, slice runs, slice worktrees, the preflight) becomes platform_execution under tools/commands
 ├── s11_w6_j2j_mod_operations.tsv  stage S11 J2j: xtask's mod group (the compile gate, world boot, playtest server, equipment export, website API client, mod wave driver) becomes mod_operations under tools/commands
+├── s11_w7a_j3f_ballistics_gate_suites.tsv  stage S11 J3f: the ballistics agreement and offline mortar gates and the `gate` and `capture` command lines leave developer_tools for browser_gate_suites
 ├── s11_w3_j3a_enfusion_crates.tsv  stage S11 J3a: developer_tools' pak reader becomes enfusion_pak; its script oracle and xtask's vanilla page mirrors become enfusion_script_index
 ├── s11_w3_j3b_browser_testing.tsv  stage S11 J3b: developer_tools' DevTools protocol client becomes chrome_devtools_protocol; its gate suites, DOM oracle fixtures and gate pin become browser_gate_suites
 ├── s11_w3_j3c_staging_tools.tsv  stage S11 J3c: developer_tools' staging verification engines become staging_load_plan, staging_load_generator and acknowledgement_dropping_relay under tools/staging
+├── s11_w7a_j3d1_blueprint_compiler.tsv  stage S11 J3d1: developer_tools' blueprint module and its test fixtures become blueprint_compiler under tools/map_assets
+├── s11_w7a_j3e1_world_export_pipeline.tsv  stage S11 J3e1: developer_tools' world-export module becomes world_export_pipeline under tools/map_assets; its census kind test follows INSTANCE_KINDS into prefab_catalog
+├── s11_w7b_j3d2_map_asset_verification.tsv  stage S11 J3d2: developer_tools' map verification becomes map_asset_verification under tools/map_assets; the CI task catalogue's map asset checks and xtask's world line-of-sight adapter call it
+├── s11_w7b_j3e2_map_raster_pipeline.tsv  stage S11 J3e2: developer_tools' map raster module and its decision-record locations become map_raster_pipeline under tools/map_assets
+├── s11_w8_g-s11b_xtask_map_logic.tsv  stage S11 G-S11b: xtask's terrain export driver and map tile index writer become world_export_pipeline modules; the map group keeps only its command line and dispatch
 ├── s1_global_renames.tsv     stage S1: top-level folder and tool package renames, archived records
 ├── s2_apps_and_deploy.tsv    stage S2: website crates to apps/ and legacy/, snake_case packages, deploy/
 ├── s2_brief_archive.tsv      stage S2: the executed S1 agent briefs into the archive

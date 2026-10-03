@@ -1,6 +1,8 @@
+# The developer tool binaries: eight one-line `main`s, each calling one tool crate's entry. The
+# package has no library; every dependency is the crate one binary calls.
 [package]
 name = "developer_tools"
-description = "Browser automation, Enfusion assets, blueprint compilation, and map verification"
+description = "The developer tool binaries: enf, gate, mcpd, world, map, capture, the staging relay and the staging load"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -8,80 +10,20 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-anyhow = { workspace = true }
-axum = { workspace = true }
-base64 = { workspace = true }
-bcdec_rs = "0.2"
-clap = { workspace = true, features = ["derive"] }
-flate2 = { workspace = true }
-jsonschema = { workspace = true }
-libc = { workspace = true }
-image = { version = "0.25", default-features = false, features = ["png", "tga"] }
-image-webp = "0.2"
-png = { workspace = true }
-resvg = { version = "0.45", default-features = false }
-webp = "0.3"
-map_engine = { path = "../../legacy/map_engine", default-features = false, features = [
-    "world",
-    "streaming",
-] }
-# The ballistics crates the agreement and offline mortar browser gates solve and compare with:
-# the catalog, the fire-mission assembler and the seeded agreement cases.
-ballistics_model = { workspace = true }
-fire_mission_planning = { workspace = true }
-ballistics_agreement_cases = { workspace = true }
-# The on-disk world formats the export and verification pipelines write and read, and the
-# geometry crates their blueprint, chunk and line-of-sight code computes with.
-world_file_formats = { workspace = true }
-geometry_primitives = { workspace = true }
-map_coordinates = { workspace = true }
-# The world crates the export, raster and verification pipelines build, write and check: the
-# triangle BVH, the prefab catalogue, the world chunks and store, the elevation model, the water,
-# road, vegetation and place-name data, the building interiors and the line of sight through them
-# and through the streamed world, and the label layout.
-spatial_indexes = { workspace = true }
-prefab_catalog = { workspace = true }
-world_chunks = { workspace = true }
-world_store = { workspace = true }
-terrain_elevation = { workspace = true }
-water_bodies = { workspace = true }
-road_network = { workspace = true }
-vegetation = { workspace = true }
-place_names = { workspace = true }
-building_interiors = { workspace = true }
-interior_line_of_sight = { workspace = true }
-world_line_of_sight = { workspace = true }
-label_layout = { workspace = true }
-futures-util = "0.3"
-regex = { workspace = true }
-# The checkout-root walk and the locations shared with the other tools.
-repository_layout = { workspace = true }
-# The broker the `mcpd` binary runs.
-enfusion_mcp_broker = { workspace = true }
-# The relay the `acknowledgement-dropping-relay` binary runs and the load generator the
-# `staging-load` binary runs.
-acknowledgement_dropping_relay = { workspace = true }
-staging_load_generator = { workspace = true }
-# The pak archive reader the blueprint compiler and the map pipelines read the game through.
-enfusion_pak = { workspace = true }
 # The script oracle the `enf` binary runs.
 enfusion_script_index = { workspace = true }
-# The browser gate suites the `gate` and `capture` binaries run, and the DevTools protocol client
-# the ballistics agreement and offline mortar suites drive Chromium with.
+# The browser gate suites whose command lines the `gate` and `capture` binaries run.
 browser_gate_suites = { workspace = true }
-chrome_devtools_protocol = { workspace = true }
-# The process runner every synchronous child process goes through, and the `NotRun` cause it
-# reports for a child that never ran or died on a signal.
-process_runner = { workspace = true }
-verification_core = { workspace = true }
-# UTC artifact stamps and SHA-256 digests, spelled once in the foundation crates.
-time_source = { workspace = true }
-content_digest = { workspace = true }
-reqwest = { workspace = true, features = ["json", "charset"] }
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true, features = ["preserve_order"] }
-tokio = { version = "1.52", features = ["full"] }
-tokio-tungstenite = "0.30"
+# The broker the `mcpd` binary runs.
+enfusion_mcp_broker = { workspace = true }
+# The world-export pipeline the `world` binary runs.
+world_export_pipeline = { workspace = true }
+# The map raster pipeline the `map` binary runs.
+map_raster_pipeline = { workspace = true }
+# The relay the `acknowledgement-dropping-relay` binary runs.
+acknowledgement_dropping_relay = { workspace = true }
+# The load generator the `staging-load` binary runs.
+staging_load_generator = { workspace = true }
 
 [[bin]]
 name = "enf"
@@ -114,7 +56,3 @@ path = "src/bin/acknowledgement_dropping_relay.rs"
 [[bin]]
 name = "staging-load"
 path = "src/bin/staging_load.rs"
-
-[lib]
-name = "developer_tools"
-path = "src/lib.rs"

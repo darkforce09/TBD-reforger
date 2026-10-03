@@ -44,7 +44,7 @@ and the app already running.
   the `image` and `base64` crates; a running stack from `cargo xtask db up`,
   `cargo xtask mk rust-api` and `cargo xtask mk leptos` or `cargo xtask mk leptos-debug`.
 - Used by: `screen_capture.rs`, which re-exports `shot`, `zoomsweep` and `crop`; the `capture`
-  command line in `tools/developer_tools/src/browser_testing/capture_cli.rs`; people.
+  command line in `tools/browser_testing/browser_gate_suites/src/command_lines/capture.rs`; people.
 - Rules: the capture runs on ANGLE over Vulkan, never SwiftShader; the map is read from the canvas,
   never from the compositor; the capture debug port stays apart from the gate ports (9337, 9341,
   9399).

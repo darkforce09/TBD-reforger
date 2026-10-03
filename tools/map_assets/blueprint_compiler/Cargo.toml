@@ -1,0 +1,47 @@
+# The building-blueprint compiler: decodes Reforger `.xob` meshes and Workbench voxel dumps,
+# interprets them into building blueprints (slabs, walls, floor plates, roofs), builds the
+# per-prefab collision BVHs and their instance tables, and folds the emitted library into the
+# rkyv archives the map engine streams. `jsonschema` validates each blueprint against its
+# contract, `flate2` reads and writes the gzipped dumps and JSON, `thiserror` carries the error.
+[package]
+name = "blueprint_compiler"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Building-blueprint compiler: mesh decode, voxel interpretation, collision BVHs, blueprint archives"
+
+[package.metadata.layout]
+category = "tools/map_assets"
+tier = 6
+targets = "any"
+
+[features]
+# The shared fixture locator for the test suites of other crates; enabled only from
+# `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+# The building blueprint model, the BVH sidecars, the occluder descriptors and interior owners,
+# the on-disk archive layouts and the vector maths the compiler builds them with.
+building_interiors = { workspace = true }
+spatial_indexes = { workspace = true }
+world_line_of_sight = { workspace = true }
+interior_line_of_sight = { workspace = true }
+world_file_formats = { workspace = true }
+geometry_primitives = { workspace = true }
+# The pak archive reader the compiler reads the game through.
+enfusion_pak = { workspace = true }
+# The checkout-root walk and the shared contract and terrain locations.
+repository_layout = { workspace = true }
+flate2 = { workspace = true }
+jsonschema = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# Every f64 parses back to the same bits (`float_roundtrip`), as the blueprint, descriptor and
+# parity documents were always read, and objects keep their key order (`preserve_order`).
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

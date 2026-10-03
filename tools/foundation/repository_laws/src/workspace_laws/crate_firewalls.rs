@@ -10,7 +10,9 @@
 //! frontend crates; no tokio, axum, reqwest, resvg or image in the dependency closure of xtask
 //! (which keeps the harness servers out of it); and no map noun in a declared name of a graphics
 //! crate.
-//! **Position:** called by [`super::crate_tiers`] over the judged members.
+//! **Position:** called by [`super::crate_tiers`] over the judged members; the xtask closure is
+//! walked from the xtask member wherever it sits, judged or not (the binary lives at
+//! `tools/xtask`, outside the `tools/<category>/<name>` layout).
 //! **Signals & state:** none; reads parsed manifests, the graphics crates' sources and the mission
 //! editing category's sources.
 //! **Invariants:** only normal and build edges count (dev-dependencies never ship), an edge is
@@ -83,12 +85,12 @@ pub(super) fn firewall_findings(
                 ));
             }
         }
-        if member.package_name == XTASK_PACKAGE {
-            findings.extend(xtask_closure_findings(member, members));
-        }
         if class == Some(CategoryClass::Graphics) {
             findings.extend(map_noun_findings(repo_root, member)?);
         }
+    }
+    if let Some(xtask) = members.iter().find(|m| m.package_name == XTASK_PACKAGE) {
+        findings.extend(xtask_closure_findings(xtask, members));
     }
     findings.extend(mission_editing_browser_token_findings(repo_root, members)?);
     Ok(findings)

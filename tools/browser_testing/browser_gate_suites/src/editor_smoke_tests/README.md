@@ -92,7 +92,7 @@ smoke name and a driver fault surface as errors, which the `gate` binary exits 3
   `dom_oracle/` (`seed_script`, `js_len`); `crate::gate_layout` for the map assets; the
   fixture corpus in `contracts/fixtures/api_goldens/`; the Mission Creator's window hooks
   in `apps/frontend/src/workspaces/editor/`; a live API for `hydrate` and `mutations`.
-- Used by: the `gate` command line in `tools/developer_tools/src/browser_testing/cli.rs`;
+- Used by: the `gate` command line in `tools/browser_testing/browser_gate_suites/src/command_lines/gate.rs`;
   `cargo xtask mk leptos-gates`, which runs `gate editor-suite`, and
   `.github/workflows/editor-gates.yml` through it.
 - Rules:

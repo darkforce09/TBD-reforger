@@ -983,6 +983,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "blueprint_compiler"
+version = "0.1.0"
+dependencies = [
+ "building_interiors",
+ "enfusion_pak",
+ "flate2",
+ "geometry_primitives",
+ "interior_line_of_sight",
+ "jsonschema",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "spatial_indexes",
+ "thiserror 2.0.18",
+ "world_file_formats",
+ "world_line_of_sight",
+]
+
+[[package]]
 name = "borrow-or-share"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1017,17 +1036,23 @@ name = "browser_gate_suites"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "ballistics_agreement_cases",
+ "ballistics_model",
  "base64",
  "chrome_devtools_protocol",
+ "clap",
  "content_digest",
+ "fire_mission_planning",
  "futures-util",
  "image",
  "libc",
+ "map_coordinates",
  "newtype_ids",
  "process_runner",
  "regex",
  "repository_layout",
  "reqwest",
+ "serde",
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
@@ -1331,9 +1356,9 @@ dependencies = [
  "clap",
  "database_operations",
  "deployment",
- "developer_tools",
  "documentation_checks",
  "libc",
+ "map_asset_verification",
  "mod_script_checks",
  "process_runner",
  "regex",
@@ -1915,57 +1940,12 @@ name = "developer_tools"
 version = "0.1.0"
 dependencies = [
  "acknowledgement_dropping_relay",
- "anyhow",
- "axum",
- "ballistics_agreement_cases",
- "ballistics_model",
- "base64",
- "bcdec_rs",
  "browser_gate_suites",
- "building_interiors",
- "chrome_devtools_protocol",
- "clap",
- "content_digest",
  "enfusion_mcp_broker",
- "enfusion_pak",
  "enfusion_script_index",
- "fire_mission_planning",
- "flate2",
- "futures-util",
- "geometry_primitives",
- "image",
- "image-webp",
- "interior_line_of_sight",
- "jsonschema",
- "label_layout",
- "libc",
- "map_coordinates",
- "map_engine",
- "place_names",
- "png 0.17.16",
- "prefab_catalog",
- "process_runner",
- "regex",
- "repository_layout",
- "reqwest",
- "resvg",
- "road_network",
- "serde",
- "serde_json",
- "spatial_indexes",
+ "map_raster_pipeline",
  "staging_load_generator",
- "terrain_elevation",
- "time_source",
- "tokio",
- "tokio-tungstenite",
- "vegetation",
- "verification_core",
- "water_bodies",
- "webp",
- "world_chunks",
- "world_file_formats",
- "world_line_of_sight",
- "world_store",
+ "world_export_pipeline",
 ]
 
 [[package]]
@@ -4412,6 +4392,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "map_asset_verification"
+version = "0.1.0"
+dependencies = [
+ "blueprint_compiler",
+ "building_interiors",
+ "flate2",
+ "geometry_primitives",
+ "jsonschema",
+ "label_layout",
+ "map_coordinates",
+ "place_names",
+ "png 0.17.16",
+ "prefab_catalog",
+ "regex",
+ "repository_layout",
+ "road_network",
+ "serde",
+ "serde_json",
+ "spatial_indexes",
+ "terrain_elevation",
+ "thiserror 2.0.18",
+ "world_chunks",
+ "world_export_pipeline",
+ "world_file_formats",
+ "world_line_of_sight",
+ "world_store",
+]
+
+[[package]]
 name = "map_coordinates"
 version = "0.1.0"
 dependencies = [
@@ -4484,6 +4493,32 @@ dependencies = [
  "world_file_formats",
  "world_line_of_sight",
  "world_store",
+]
+
+[[package]]
+name = "map_raster_pipeline"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "content_digest",
+ "enfusion_pak",
+ "image",
+ "image-webp",
+ "place_names",
+ "png 0.17.16",
+ "prefab_catalog",
+ "process_runner",
+ "repository_layout",
+ "resvg",
+ "road_network",
+ "serde_json",
+ "terrain_elevation",
+ "thiserror 2.0.18",
+ "time_source",
+ "water_bodies",
+ "webp",
+ "world_export_pipeline",
+ "world_file_formats",
 ]
 
 [[package]]
@@ -7049,10 +7084,10 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "content_digest",
- "developer_tools",
  "flate2",
  "heck",
  "jsonschema",
+ "prefab_catalog",
  "prettyplease",
  "process_runner",
  "regex",
@@ -10138,6 +10173,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "world_export_pipeline"
+version = "0.1.0"
+dependencies = [
+ "bcdec_rs",
+ "clap",
+ "enfusion_pak",
+ "flate2",
+ "jsonschema",
+ "png 0.17.16",
+ "prefab_catalog",
+ "process_runner",
+ "repository_layout",
+ "road_network",
+ "serde",
+ "serde_json",
+ "terrain_elevation",
+ "thiserror 2.0.18",
+ "time_source",
+ "tool_test_support",
+ "vegetation",
+ "verification_core",
+ "world_chunks",
+ "world_file_formats",
+ "world_store",
+]
+
+[[package]]
 name = "world_file_formats"
 version = "0.1.0"
 dependencies = [
@@ -10283,15 +10345,16 @@ dependencies = [
  "anyhow",
  "api_readiness_checks",
  "ballistics_oracle_tooling",
+ "blueprint_compiler",
  "ci_task_catalog",
  "clap",
  "database_operations",
  "deployment",
- "developer_tools",
  "documentation_checks",
  "enfusion_mcp",
  "enfusion_script_index",
  "jsonschema",
+ "map_asset_verification",
  "mod_operations",
  "mod_script_checks",
  "platform_execution",
@@ -10310,6 +10373,7 @@ dependencies = [
  "ticket_wave_lock",
  "verification_core",
  "workstation_setup",
+ "world_export_pipeline",
 ]
 
 [[package]]

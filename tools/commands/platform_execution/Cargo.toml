@@ -12,7 +12,7 @@ description = "The platform factory: the wave driver, slice execution, slice wor
 
 [package.metadata.layout]
 category = "tools/commands"
-tier = 7
+tier = 9
 targets = "any"
 
 [dependencies]

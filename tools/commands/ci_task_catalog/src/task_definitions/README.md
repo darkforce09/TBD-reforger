@@ -32,8 +32,8 @@ and for `link-check` the first breaks in full, as the bare `cargo xtask verify` 
 
 ## Boundaries
 
-- Depends on: `Step` from `tools/commands/ci_task_catalog/src/task_runner.rs`; the checks of this
-  crate (`map_asset_checks`, `workflow_checks`), the `database_operations` and `deployment`
+- Depends on: `Step` from `tools/commands/ci_task_catalog/src/task_runner.rs`; this crate's
+  `workflow_checks`, the `map_asset_verification`, `database_operations` and `deployment`
   crates, and the check crates `repository_checks`, `mod_script_checks` and
   `documentation_checks`; `find_repository_root` in
   `tools/foundation/repository_layout/src/repository_root.rs`.

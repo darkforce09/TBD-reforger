@@ -47,8 +47,8 @@ cargo test -p enfusion_pak   # synthetic archives under both policies; the real-
 ## Boundaries
 
 - Depends on: `flate2` (zlib and raw deflate), `thiserror`; no workspace crate.
-- Used by: the `developer_tools` library (the blueprint compiler, the world export and map raster
-  pipelines) and the `enfusion_script_index` crate (`enf extract`, `enf dump-entry`).
+- Used by: the `blueprint_compiler`, `world_export_pipeline` and `map_raster_pipeline` crates
+  and the `enfusion_script_index` crate (`enf extract`, `enf dump-entry`).
 - Rules: tier 0 of `tools/enfusion`; both consumers share one parser and one decompressor and
   differ only through the crate-private read policy; every failure is an `Error`, never a panic.
 

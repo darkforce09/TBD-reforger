@@ -10,8 +10,9 @@ start here before changing a command, a check or a tooling crate.
 
 ```text
 documentation/tools/
-├── developer_tools/          the map raster pipeline and the executables' index
+├── developer_tools/          the executables' index
 ├── enfusion/                 the Enfusion script oracle behind `enf`
+├── map_assets/               the map raster pipeline behind `map`
 ├── staging/                  the member load and the acknowledgement-dropping relay, end to end
 ├── tickets/                  the token estimate factor behind the ticket registry's estimates
 └── tooling_architecture.md   the crates, their dependency direction, invariants and verification surface
@@ -30,7 +31,8 @@ hold those rules. The subfolders mirror the crate folders that have documents of
 | `verification_core`, `process_runner` and `repository_laws`, the foundation crates: verdicts and the lock, child processes, the repository laws | [`tools/foundation/`](/tools/foundation/README.md) | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
 | `enfusion_pak`, `enfusion_script_index` and `enfusion_mcp_broker`, the Enfusion crates: the pak reader, the script oracle, the MCP broker | [`tools/enfusion/`](/tools/enfusion/README.md) | [`enfusion/`](/documentation/tools/enfusion/README.md) |
 | `staging_load_plan`, `staging_load_generator` and `acknowledgement_dropping_relay`, the staging crates: the member load's plan and its generator, the fault-injecting relay | [`tools/staging/`](/tools/staging/README.md) | [`staging/`](/documentation/tools/staging/README.md) |
-| `developer_tools`, the six heavy executables | [`tools/developer_tools/`](/tools/developer_tools/README.md) | [`developer_tools/`](/documentation/tools/developer_tools/README.md) |
+| `map_raster_pipeline`, the map asset crate behind `map`: satellite, Map view, labels, water archives and the glyph atlas | [`tools/map_assets/`](/tools/map_assets/README.md) | [`map_assets/`](/documentation/tools/map_assets/README.md) |
+| `developer_tools`, the eight tool executables | [`tools/developer_tools/`](/tools/developer_tools/README.md) | [`developer_tools/`](/documentation/tools/developer_tools/README.md) |
 | `enfusion_mcp_node_package`, the pinned MCP server | [`tools/enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md) | [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md) |
 
 The [ticketboard](/documentation/apps/ticketboard/README.md), the desktop viewer that links

@@ -10,7 +10,6 @@ pub(crate) use verification_dispatch::run_database_test_suite;
 mod workspace_law_steps;
 
 use super::{Lane, Step, Task};
-use crate::map_asset_checks::map_object_golden;
 use crate::workflow_checks::workflow_shell::verify_ci_shell;
 use map_asset_steps::{MAP_CARTOGRAPHIC_EVERON_STEPS, MAP_WATER_EVERON_STEPS};
 use repository_checks::language_bans::node_and_file_limits::{verify_file_length, verify_no_node};
@@ -21,9 +20,9 @@ use schema_tooling::codegen;
 use schema_tooling::{citations, map_glyphs, map_object_enums, type_inventory, validate_all};
 use verification_dispatch::{
     run_ci_schema_parity, run_enfusion_comments, run_engine_layers, run_height_labels,
-    run_link_check, run_markdown_placement, run_mission_rest_size_limits, run_no_select_star,
-    run_readme_coverage, run_route_tags, run_staging_compose_paths, run_terrain_alignment,
-    run_terrain_alignment_strict, run_terrain_manifest,
+    run_link_check, run_map_object_golden, run_markdown_placement, run_mission_rest_size_limits,
+    run_no_select_star, run_readme_coverage, run_route_tags, run_staging_compose_paths,
+    run_terrain_alignment, run_terrain_alignment_strict, run_terrain_manifest,
 };
 use workspace_law_steps::WORKSPACE_LAW_STEPS;
 
@@ -49,7 +48,6 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-engine-layers"),
             Step::Task("verify-workspace-laws"),
             Step::Task("rust-ci"),
-            Step::Task("developer-tools-test"),
             Step::Task("workspace-member-tests"),
             Step::Task("verify-coding-standards"),
             Step::Task("verify-documentation"),
@@ -85,7 +83,7 @@ pub static TASKS: &[Task] = &[
             xt!(
                 "cargo xtask schema map-object-golden",
                 false,
-                map_object_golden
+                run_map_object_golden
             ),
             xt!("cargo xtask schema map-glyphs", false, || Ok(map_glyphs()?)),
             xt!("cargo xtask schema height-labels", false, run_height_labels),
@@ -196,14 +194,6 @@ pub static TASKS: &[Task] = &[
         group: "build",
         lane: Lane::Ci,
         steps: &[sh!("cd apps/api && cargo test")],
-    },
-    // The library suite runs without database, browser, or asset prerequisites.
-    Task {
-        name: "developer-tools-test",
-        help: "cargo test -p developer_tools --lib (density:: + world:: unit tests; no DB/LFS)",
-        group: "build",
-        lane: Lane::Ci,
-        steps: &[sh!("cargo test -p developer_tools --lib")],
     },
     // Derived from the workspace: every member no task above tests, one `cargo test -p` each.
     Task {
@@ -435,20 +425,22 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "wasm-ci",
-        help: "Fmt + clippy + test the map-engine, graphics-engine and offline service worker crates",
+        help: "Fmt + clippy + test the map-engine, graphics-engine and offline service worker crates; clippy every wasm32 crate for wasm32",
         group: "build",
         lane: Lane::Borrowed,
         // A crate these steps do not name goes ungated: built only as a dependency, never
         // formatted, linted or tested. Both engine crates and the offline service worker are
-        // named in every step, wasm32 included, because the browser half is where they ship.
+        // named in every step because the browser half is where they ship; the wasm32 lint
+        // derives its packages from the workspace (`crate::wasm32_lint_lane`), so every crate
+        // declaring `targets = "wasm32"` is linted for the browser too.
         steps: &[
             sh!("cargo fmt --check -p map_engine -p graphics_engine -p offline_service_worker"),
             sh!(
                 "cargo clippy -p map_engine -p graphics_engine -p offline_service_worker --all-targets --all-features -- -D warnings"
             ),
-            sh!(
-                "cargo clippy -p map_engine -p graphics_engine -p offline_service_worker --target wasm32-unknown-unknown -- -D warnings"
-            ),
+            Step::Native {
+                run: crate::wasm32_lint_lane::run_wasm_ci_lint,
+            },
             sh!("cargo test -p map_engine --all-features"),
             sh!("cargo test -p graphics_engine --all-features"),
             sh!("cargo test -p offline_service_worker --all-features"),

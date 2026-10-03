@@ -72,7 +72,7 @@ that places its model.
 
 ## Producers and consumers
 
-- Producers: the blueprint compiler in `tools/developer_tools/src/blueprint/`, run through
+- Producers: the blueprint compiler in `tools/map_assets/blueprint_compiler/src/`, run through
   `cargo xtask map bvh-batch` (`bvh/batch_processing/`, `bvh/prefab_catalog/`, and
   `archive_emission/library_reader/` for the manifest) and
   `cargo xtask map blueprint-from-voxels archive` (`archive_emission/archive_writer.rs`).
@@ -82,11 +82,11 @@ that places its model.
     `world_line_of_sight` crate in `crates/line_of_sight/world_line_of_sight/`), over
     `/map-assets/everon/prefabs/…`;
   - `cargo xtask verify blas-manifest`
-    (`tools/developer_tools/src/map_verification/blas_manifest.rs`), which checks every listed
+    (`tools/map_assets/map_asset_verification/src/blas_manifest.rs`), which checks every listed
     mesh and every catalogue descriptor, and `cargo xtask map world-los`;
   - `cargo xtask schema terrain-manifest --terrain everon`, which checks that the `buildings` block's
     paths exist;
-  - the blueprint compiler's archive tests (`tools/developer_tools/src/blueprint/tests/`), which
+  - the blueprint compiler's archive tests (`tools/map_assets/blueprint_compiler/src/tests/`), which
     rebuild the archive from the committed manifest, descriptors and blueprints.
 
 ## Boundaries
@@ -107,7 +107,7 @@ that places its model.
 
 - [Prefab occluder descriptors](/crates/line_of_sight/world_line_of_sight/src/occluder_library/README.md)
   — the descriptor, manifest and archive model.
-- [Blueprint compilation](/tools/developer_tools/src/blueprint/README.md) — the commands that
+- [Blueprint compilation](/tools/map_assets/blueprint_compiler/src/README.md) — the commands that
   write this folder.
 - [Building interiors](/crates/world_objects/building_interiors/README.md) — the
   blueprint and compound model the building files feed.

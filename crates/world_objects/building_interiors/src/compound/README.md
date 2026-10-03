@@ -78,9 +78,9 @@ transformed box.
     `InstanceRecord`s, and its coverage reads `Instance` and `InstanceKind`;
   - the debug building viewer and interior bench in `apps/frontend/src/workspaces/debug/`,
     which assemble a compound from `<slug>.instances.json` and open and close its doors;
-  - the blueprint tooling in `tools/developer_tools/src/blueprint/`, where
+  - the blueprint tooling in `tools/map_assets/blueprint_compiler/src/`, where
     `cargo xtask map bvh-batch` writes `<slug>.instances.json`, and the world line-of-sight checks
-    in `tools/developer_tools/src/map_verification/tests/world_line_of_sight.rs`.
+    in `tools/map_assets/map_asset_verification/src/tests/world_line_of_sight.rs`.
 - Rules: assembly is all or nothing and `append` keeps the instances already placed
   (`assemble_is_atomic_and_append_adds_scene_trees` in
   `crates/line_of_sight/interior_line_of_sight/src/tests/compound_walk_tests.rs`); a door fraction clamps to

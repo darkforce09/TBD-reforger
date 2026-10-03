@@ -22,7 +22,7 @@ the committed terrain data is built from. Developers and agents rebuilding a ter
   started by playing `apps/mod/tbd-export/Missions/TBD_Export_Everon.conf`. Every other exporter is
   a `WorkbenchPlugin` class with no menu entry (see [Entry points](#entry-points)).
 - Related: the [terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md),
-  the [world export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) that
+  the [world export pipeline](/tools/map_assets/world_export_pipeline/src/README.md) that
   turns the full export into object and road data, and the
   [terrain datasets](/assets/terrains/README.md) it feeds.
 
@@ -122,13 +122,13 @@ committed elevation image keeps that order.
 ### Known discrepancies
 
 - The operator steps `cargo xtask map export-terrain` prints
-  (`tools/xtask/src/commands/map/terrain_export.rs:61-84`) say to run the full export from the
-  menu "Plugins > TBD > Export TBD World Objects (full)" or through `mcp call wb_execute_action`
-  with that menu path — the plugin's attribute is commented out
+  (`tools/map_assets/world_export_pipeline/src/export_terrain_driver.rs:70-93`) say to run the
+  full export from the menu "Plugins > TBD > Export TBD World Objects (full)" or through
+  `mcp call wb_execute_action` with that menu path — the plugin's attribute is commented out
   (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldFullExportPlugin.c:19`),
   so neither path runs it.
 - `world copy-export-profile` without `--full` reads `TBD_WorldExport_subregion.jsonl`
-  (`tools/developer_tools/src/world_export_pipeline/export_preparation/export_profile.rs:28`) —
+  (`tools/map_assets/world_export_pipeline/src/export_preparation/export_profile.rs:28`) —
   no script in the addon writes that file.
 - `copy-export-profile` tells a missing export to "Run the TBD_TerrainWorldExportPlugin"
   (`export_profile.rs:49`) — no such plugin exists; the full export is `TBD_WorldFullExportPlugin`.
@@ -136,16 +136,16 @@ committed elevation image keeps that order.
   (`export_profile.rs:20-23`) — Workbench under Proton writes to
   `compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile`,
   the path `cargo xtask map ingest-blueprints` defaults to
-  (`tools/developer_tools/src/blueprint/ingest.rs:24`), so the stage step needs `--profile`.
+  (`tools/map_assets/blueprint_compiler/src/ingest.rs:24`), so the stage step needs `--profile`.
 - No command stages the other layers: `map water` reads
   `assets/scratch/<terrain>/water/TBD_InlandWaterExport_{vectors,meta}.json` and `_mask.txt`,
-  `_depth.txt` (`tools/developer_tools/src/map_raster_pipeline/inland_water_archive.rs:61-67`)
+  `_depth.txt` (`tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs:61-67`)
   — the water layer writes `bathymetry_mask.txt`, `bathymetry_depth.txt`, `lakes.json`,
   `rivers.json` and `ponds.json` to the profile
   (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water/TBD_MapExportWater.c:94-97`),
   and nothing copies or renames them into the scratch.
 - `dem_elevation.rs` says the elevation file's row 0 is the north edge
-  (`tools/developer_tools/src/world_export_pipeline/export_preparation/dem_elevation.rs:4`) —
+  (`tools/map_assets/world_export_pipeline/src/export_preparation/dem_elevation.rs:4`) —
   the exporter writes row 0 at z = 0, the south edge (`TBD_MapExportDEM.c:127-130`).
 - The runtime road export and the Workbench road layer write the same file names under
   `everon/roads/`, so whichever runs last replaces the other's files.
@@ -163,7 +163,7 @@ committed elevation image keeps that order.
   `maxEntities`, `cx`, `cy`, `seed` and the probe endpoints; the response is `status`, `action` and
   `message`. The [building blueprint README](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/README.md)
   lists what each action writes.
-- The [blueprint compiler](/tools/developer_tools/src/blueprint/README.md) reads the voxel dumps
+- The [blueprint compiler](/tools/map_assets/blueprint_compiler/src/README.md) reads the voxel dumps
   and parity pairs offline; the [map commands](/tools/xtask/src/commands/map/README.md) list
   every command that reads these files.
 
@@ -209,7 +209,7 @@ beyond Workbench's own plugin dialogs.
 - The full export writes its meta file last, as a completion sentinel: a crashed run leaves no meta,
   so `copy-export-profile --full` never stages a partial file.
 - Blueprint extraction stays uninterpreted in the addon: the handler dumps raw trace data, and every
-  heuristic runs offline in `tools/developer_tools/src/blueprint/`, so rules change without a
+  heuristic runs offline in `tools/map_assets/blueprint_compiler/src/`, so rules change without a
   Workbench recompile.
 - The Net API handler lives outside `EnfusionMCP/`, which the MCP's `wb_cleanup` deletes.
 - The elevation matrix quantises against the terrain's own height range when it dips below zero,

@@ -54,7 +54,7 @@ handle compiles for `wasm32` only, so the native test build covers each workspac
     reuses the Mission Creator's payload-size formatter;
   - `crate::foundation`: the auth store and the search box, select and slider reuse the Mission
     Creator's `session` module;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/`.
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/`.
 - Rules: a workspace imports from `crate::foundation`, `crate::features` and `map_engine`, never
   from a page or a sibling workspace (`cargo xtask verify frontend-layering`); nothing here imports `graphics_engine`
   (`cargo xtask verify engine-layers`); a workspace's module line in `mod.rs` carries the same `cfg`

@@ -24,7 +24,7 @@ tools/commands/schema_tooling/src/schema_checks/
 
 ## How it works
 
-`schema_checks.rs` holds the constants several modules read (`CODE_EXTS`, `SCAN_ROOTS`, `INSTANCE_KINDS`,
+`schema_checks.rs` holds the constants several modules read (`CODE_EXTS`, `SCAN_ROOTS`, the imported `INSTANCE_KINDS`,
 `KNOWN_UNRESOLVABLE_KITS`) and wires the unit tests; each module takes the checkout root from
 `repository_layout` and prints its own report.
 
@@ -33,7 +33,7 @@ tools/commands/schema_tooling/src/schema_checks/
 | `schema citations` | walks `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under the top-level folder of every workspace member of the root `Cargo.toml` and of `apps/mod/` (skipping `node_modules`, `dist`, `.git`, `build`, `coverage`, `vendor`) for `@contract <file>.schema.json#<pointer>`, and resolves each against `contracts/definitions/`; an unreadable workspace, a missing root or zero citations fails as an unexamined scan |
 | `schema validate` | the suite in `contract_validation/`, with the [mission](/documentation/glossary/g_to_m.md#mission), registry and ballistics sections here; the ballistics section prints `NOT RUN`, never `PASS`, while neither the catalog nor its calibration bundle is committed, and fails when only one is |
 | `schema map-object-enums` | the golden prefabs, `contracts/rules/prefab-classify.json`, the Everon region sample and the glyph manifest keys use only the kinds and classes of `map-object-enums.schema.json` |
-| `schema type-inventory` | `INSTANCE_KINDS` matches the schema's kinds and the world-export pipeline's list, then every committed type inventory passes its schema and invariants I1 to I5 and I7 (kind sums, class sums, closed class keys, a complete census, manifest counts) |
+| `schema type-inventory` | the prefab catalogue's `INSTANCE_KINDS` matches the schema's kinds, then every committed type inventory passes its schema and invariants I1 to I5 and I7 (kind sums, class sums, closed class keys, a complete census, manifest counts) |
 | `schema map-glyphs` | every icon key the golden prefabs and the committed Everon catalog use has a glyph, each glyph's SVG exists with a view box and sane render fields, and a built atlas, when present, matches the manifest |
 
 Two pins inside the suite fail on purpose when the [mod](/documentation/glossary/g_to_m.md#mod) changes: `UNREAD_WIRE_FIELDS` requires each
@@ -56,7 +56,7 @@ error, which exits 1.
 ## Boundaries
 
 - Depends on: `repository_layout` (contract, definition, catalog, fixture, glyph
-  and terrain paths) and `developer_tools::world_export_pipeline::INSTANCE_KINDS`;
+  and terrain paths) and `prefab_catalog::instance_kinds::INSTANCE_KINDS`;
   `repository_laws::workspace_members` for the citation roots; `jsonschema`;
   `regex`; `walkdir`; `serde_json`.
 - Used by: `schema_checks.rs`, and through the crate root the `schema` command group and the `schema-validate` and
@@ -66,7 +66,7 @@ error, which exits 1.
     member in a new top-level folder is scanned from the moment the root manifest names it; the
     scope is printed from `CODE_EXTS` and those roots, and a scan that read nothing fails
     (`tools/commands/schema_tooling/src/tests/schema_checks/citation_scope_tests.rs`).
-  - `INSTANCE_KINDS` stays in lockstep with the schema and the export pipeline, checked at run
+  - `INSTANCE_KINDS` stays in lockstep with the schema, checked at run
     time and by `tools/commands/schema_tooling/src/tests/schema_checks/instance_kind_lockstep_tests.rs`.
   - The unread-field gate must fire when a reader appears
     (`unread_gate_fires_when_a_reader_appears` in

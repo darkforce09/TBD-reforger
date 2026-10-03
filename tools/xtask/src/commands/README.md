@@ -34,8 +34,9 @@ which returns the process exit code as `Result<u8>`.
 Groups that wrap a library pass it the checkout root and keep its result: `ticket` and `wave` call
 the ticket crates in `tools/tickets/` for [ticket](/documentation/glossary/n_to_z.md#ticket)
 storage and the [wave](/documentation/glossary/n_to_z.md#wave) lock; `map` calls
-`developer_tools` for engine-backed map work and blueprint compilation, as a library or through its
-binaries; `refactor` calls `repository_relocation` in `tools/commands/` for the relocation
+`blueprint_compiler`, `map_asset_verification` and `world_export_pipeline` in `tools/map_assets/`
+for blueprint compilation, the line-of-sight probe, the terrain export driver (which runs the
+`world` binary of `developer_tools`) and the map tile index; `refactor` calls `repository_relocation` in `tools/commands/` for the relocation
 modes; `ballistics` and `gen` dispatch straight to `ballistics_oracle_tooling` and
 `schema_tooling` in `tools/commands/`, and `schema` calls `schema_tooling` for the codegen, the
 contract gates and the flattening; the `setup` command line dispatches straight to the `workstation_setup` crate in
@@ -57,8 +58,9 @@ README gives its commands, flags and exit codes.
   checkout root and layout, the deploy settings, child processes and host execution);
   the check and command crates under `tools/checks/` and `tools/commands/` (`ticket run` calls
   `platform_execution`'s slice runner); the ticket crates in
-  `tools/tickets/`, the
-  `developer_tools` and `verification_core` crates; the host tools each group names in its README.
+  `tools/tickets/`, the map asset crates `blueprint_compiler`, `map_asset_verification` and
+  `world_export_pipeline`, and `verification_core`; the host
+  tools each group names in its README.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; and, through the command line, people, the GitHub workflows in
   `.github/workflows/`, the systemd units in `deploy/systemd/` and the agent hook in
   `.claude/settings.json`.

@@ -4,7 +4,7 @@
 //! the step that failed to an error or turns a missing value into a refusal, and the
 //! crate-private `refusal!` macro that builds a refusal like `format!`.
 //! **Position:** returned by every fallible call of the client; `browser_gate_suites` wraps it in
-//! its own error, and the suites still in `developer_tools` carry it inside `anyhow`.
+//! its own error.
 //! **Signals & state:** none; plain data.
 //! **Invariants:** an [`Error::Context`] displays its step alone and exposes the failure
 //! underneath as its source, so `{error}` prints the outermost step and a chain walk

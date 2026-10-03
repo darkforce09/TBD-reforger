@@ -1,0 +1,23 @@
+# Stage S11b, agent J3e2 — the map raster pipeline leaves developer_tools.
+# developer_tools' map_raster_pipeline module becomes the map_raster_pipeline crate under
+# tools/map_assets; its module root becomes the crate root, its command line `command_line.rs`, and
+# the decision-record locations of map_pipeline_layout.rs (all that is left of it) its
+# `decision_record_locations` module. The crate's error, prelude and empty-write refusal modules are
+# written by hand, as are the `map` binary and the refusal's callers.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the module root becomes the crate root; the command line and the module tests take their names
+path	tools/developer_tools/src/map_raster_pipeline/mod.rs	tools/map_assets/map_raster_pipeline/src/lib.rs
+path	tools/developer_tools/src/map_raster_pipeline/cli.rs	tools/map_assets/map_raster_pipeline/src/command_line.rs
+path	tools/developer_tools/src/map_raster_pipeline/tests/module/refuse_empty_tests.rs	tools/map_assets/map_raster_pipeline/src/tests/empty_write_refusal/tests.rs
+path	tools/developer_tools/src/map_pipeline_layout.rs	tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs
+path	tools/developer_tools/src/tests/map_pipeline_layout.rs	tools/map_assets/map_raster_pipeline/src/tests/decision_record_locations/tests.rs
+path	tools/developer_tools/src/map_raster_pipeline	tools/map_assets/map_raster_pipeline/src
+#
+# the feature document follows the crate into the map_assets mirror
+path	documentation/tools/developer_tools/map_raster_pipeline.md	documentation/tools/map_assets/map_raster_pipeline.md
+#
+# the moved code names its own crate and its own decision-record locations
+rust_path	crate::map_raster_pipeline::	crate::	tools/developer_tools/src/map_raster_pipeline
+rust_path	crate::map_pipeline_layout::	crate::decision_record_locations::	tools/developer_tools/src/map_raster_pipeline

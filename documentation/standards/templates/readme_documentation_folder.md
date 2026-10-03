@@ -96,7 +96,7 @@ status set to resolved.
 
 - [Mission Creator](/apps/frontend/src/workspaces/editor/) — KB-001, selection and paste at
   extreme scale.
-- [Browser gate harness](/tools/developer_tools/src/browser_testing/) — KB-002, the Chromium
+- [Browser gate harness](/tools/browser_testing/browser_gate_suites/) — KB-002, the Chromium
   build and font cache it launches with.
 
 ## Boundaries

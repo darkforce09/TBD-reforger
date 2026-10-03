@@ -100,16 +100,16 @@ checks them.
 | S11a | enfusion_pak | `tools/enfusion/enfusion_pak/` | 0 |
 | S11a | enfusion_script_index | `tools/enfusion/enfusion_script_index/` | 2 |
 | S11a | chrome_devtools_protocol | `tools/browser_testing/chrome_devtools_protocol/` | 1 |
-| S11a | browser_gate_suites | `tools/browser_testing/browser_gate_suites/` | 2 |
+| S11a | browser_gate_suites | `tools/browser_testing/browser_gate_suites/` | 5 |
 | S11a | staging_load_plan | `tools/staging/staging_load_plan/` | 1 |
 | S11a | staging_load_generator | `tools/staging/staging_load_generator/` | 2 |
 | S11a | acknowledgement_dropping_relay | `tools/staging/acknowledgement_dropping_relay/` | 1 |
 | S11a | staging_procedures | `tools/commands/staging_procedures/` | 6 |
 | S11a | remote_debugging | `tools/commands/remote_debugging/` | 6 |
 | S11a | documentation_checks | `tools/checks/documentation_checks/` | 2 |
-| S11a | ci_task_catalog | `tools/commands/ci_task_catalog/` | 6 |
-| S11a | platform_execution | `tools/commands/platform_execution/` | 7 |
-| S11a | mod_operations | `tools/commands/mod_operations/` | 8 |
+| S11a | ci_task_catalog | `tools/commands/ci_task_catalog/` | 8 |
+| S11a | platform_execution | `tools/commands/platform_execution/` | 9 |
+| S11a | mod_operations | `tools/commands/mod_operations/` | 10 |
 | S7 | orbat_slot_ids | `crates/foundation/orbat_slot_ids/` | 1 |
 | S7 | chunk_scheduler | `crates/streaming/chunk_scheduler/` | 4 |
 | S7 | chunk_draw_buffers | `crates/streaming/chunk_draw_buffers/` | 5 |
@@ -117,6 +117,10 @@ checks them.
 | S7 | mission_editing_commands | `crates/mission_editing/mission_editing_commands/` | 7 |
 | S7 | mission_persistence | `crates/mission_editing/mission_persistence/` | 7 |
 | S7 | map_editing_tools | `crates/mission_editing/map_editing_tools/` | 7 |
+| S11b | blueprint_compiler | `tools/map_assets/blueprint_compiler/` | 6 |
+| S11b | world_export_pipeline | `tools/map_assets/world_export_pipeline/` | 6 |
+| S11b | map_asset_verification | `tools/map_assets/map_asset_verification/` | 7 |
+| S11b | map_raster_pipeline | `tools/map_assets/map_raster_pipeline/` | 7 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -249,24 +253,24 @@ The api app (apps/api) keeps the router composition, the `api` and `import_regis
 
 ## tools/
 
-Built in S11a unless marked planned; planned crates are S11b's and their folders do not exist yet.
+Built in S11a, and the map asset crates in S11b.
 
 | Family | Crates |
 |---|---|
 | foundation | `repository_layout` (the one root finder, the shared layout modules, root walkers, `target/` subdirectories) · `process_runner` (vc `proc`, the host bridge, `secure_shell_transport`, the terminal, binary, file, detached and streaming modes) · `verification_core` (verdict, scan, pattern, gate, lock, report) · `repository_laws` (all laws; `source_scrub` dev helper) · `deploy_settings` (`xt core/deploy_environment*`) · `tool_test_support` (dev-only: the test env lock, the working-directory guard, the test repository root) |
 | tickets | `ticket_model` (with `commit_subjects`, `TicketId`) · `ticket_metrics` · `ticket_wave_lock` · `ticket_registry` (store, registry, ops, sync, validation, verbs; sits above metrics) · `ticketboard_model` (ticketboard's headless half) |
-| commands | `ci_task_catalog` (`commands/{ci,build}`, `verifications/ci`, the cargo-target verification, the map asset checks over the developer_tools library until S11b) · `database_operations` (`commands/db`, `verifications/database`, `deploy/database_*`) · `deployment` (`commands/deploy`, `verifications/deployment`; → database_operations) · `staging_procedures` (`commands/staging`) · `api_readiness_checks` (`verifications/api_readiness`, property test configuration) · `mod_operations` (`commands/mod_ops`) · `platform_execution` (`commands/platform`; `wprintln!` internal) · `schema_tooling` (`commands/{generate,schema}`, `verifications/schemas`, with the font table) · `enfusion_mcp` (xt `mcp` plus dt `enfusion_mcp_entrypoint`) · `ballistics_oracle_tooling` (`commands/ballistics`) · `workstation_setup` (`commands/setup`) · `remote_debugging` (`commands/{debug,reproduction}`) · `repository_relocation` (`commands/refactor`) |
+| commands | `ci_task_catalog` (`commands/{ci,build}`, `verifications/ci`, the cargo-target verification, the map asset steps over `map_asset_verification`, the wasm32 lint derived from the workspace) · `database_operations` (`commands/db`, `verifications/database`, `deploy/database_*`) · `deployment` (`commands/deploy`, `verifications/deployment`; → database_operations) · `staging_procedures` (`commands/staging`) · `api_readiness_checks` (`verifications/api_readiness`, property test configuration) · `mod_operations` (`commands/mod_ops`) · `platform_execution` (`commands/platform`; `wprintln!` internal) · `schema_tooling` (`commands/{generate,schema}`, `verifications/schemas`, with the font table) · `enfusion_mcp` (xt `mcp` plus dt `enfusion_mcp_entrypoint`) · `ballistics_oracle_tooling` (`commands/ballistics`) · `workstation_setup` (`commands/setup`) · `remote_debugging` (`commands/{debug,reproduction}`) · `repository_relocation` (`commands/refactor`) |
 | checks | `documentation_checks` (`verifications/documentation`; the bin injects the `clap::Command` factory) · `mod_script_checks` (`verifications/mod_scripts`) · `repository_checks` (`verifications/{architecture,language_bans,licensing,registry}` and the cross-cutting tooling tests) |
 | enfusion | `enfusion_pak` (dt `enfusion_pak`) · `enfusion_script_index` (dt `enfusion_tooling` plus xt `fetch`) · `enfusion_mcp_broker` (dt `mcp_broker`; the `mcpd` bin calls it) |
-| map_assets (planned, S11b) | blueprint_compiler · world_export_pipeline · map_raster_pipeline · map_asset_verification |
-| browser_testing | `chrome_devtools_protocol` (dt `browser_testing/cdp`) · `browser_gate_suites` (`dom_oracle`, gate server, capture; the ballistics and mortar suites join in S11b) |
+| map_assets (S11b) | `blueprint_compiler` (dt `blueprint`, its test fixtures) · `world_export_pipeline` (dt `world_export_pipeline`; the `world` bin) · `map_raster_pipeline` (dt `map_raster_pipeline`; the `map` bin; never in xtask's closure) · `map_asset_verification` (dt `map_verification`; xtask `schema`, `verify` and `map world-los`) |
+| browser_testing | `chrome_devtools_protocol` (dt `browser_testing/cdp`) · `browser_gate_suites` (`dom_oracle`, gate server, capture, the ballistics and mortar suites (S11b), the `gate` and `capture` command lines) |
 | staging | `staging_load_plan` (the tokio-free plan and report types) · `staging_load_generator` (dt `load_generation`; the `staging-load` bin) · `acknowledgement_dropping_relay` · staging_fixtures (bin; S9 K4, decision S11-D5) |
 
 - `tools/xtask` holds the command line and the dispatch plus the command groups that are still its
   own modules (`agent_context`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify`, `wave`;
-  most of them thin command lines over the crates above); planned (S11b, J4): the CLI and
-  dispatch only, the `TopCmd` tests moved.
-- `tools/developer_tools` holds 8 bins (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
-  `acknowledgement-dropping-relay`, `staging-load`) and the library parts S11b moves (map assets,
-  blueprints, the ballistics and mortar gate suites); planned (S11b, J4): one-line bins, the library
-  deleted.
+  thin command lines over the crates above; the `map` group's terrain export driver and tile
+  index writer live in `world_export_pipeline`); it depends only on tool crates, and no tokio, axum, reqwest, resvg or image
+  enters its dependency closure (crate-tiers rule 6, judged from the unjudged binary).
+- `tools/developer_tools` holds 8 one-line bins (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
+  `acknowledgement-dropping-relay`, `staging-load`) over the tool crates and no library; no member
+  depends on it and it depends on no member under `legacy/` (S11b).

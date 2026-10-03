@@ -52,7 +52,7 @@ cargo test -p label_layout   # declutter, importance, glyph sizing, packing and 
   (`legacy/map_engine`): its location loader in `world/environment/locations/`, its draw buffers
   and glyph lookup in `streaming/buffers/`, and its streaming host and residency; and the
   town-label verification of the developer tools
-  (`tools/developer_tools/src/map_verification/labels/`).
+  (`tools/map_assets/map_asset_verification/src/labels/`).
 - Rules: the committed Everon label data draws without a tofu glyph
   (`g3_committed_label_data_no_tofu`) and keeps its location id bytes through a typed round trip
   (`the_committed_location_rows_keep_their_id_bytes`); a world rotation covers the whole compass

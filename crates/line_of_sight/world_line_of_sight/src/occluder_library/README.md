@@ -55,9 +55,9 @@ come back separately through `archived_blas_paths`.
   descriptors into traceable occluders; the occluder loader
   (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), which boots from the
   archive and fetches the manifest and the blocking descriptors; the blueprint tooling in
-  `tools/developer_tools/src/blueprint/archive_emission/`, which writes the descriptors, the
+  `tools/map_assets/blueprint_compiler/src/archive_emission/`, which writes the descriptors, the
   manifest and the archive; and the library checks in
-  `tools/developer_tools/src/map_verification/`.
+  `tools/map_assets/map_asset_verification/src/`.
 - Rules: `blocks` is true exactly when `localBounds` is present, and the projection refuses a
   descriptor that breaks this or names a BLAS outside the library
   (`projection_refuses_bounds_that_disagree_with_blocks_and_an_unknown_blas` in
@@ -65,7 +65,7 @@ come back separately through `archived_blas_paths`.
   (`a_future_archive_schema_is_refused_rather_than_read`); a row whose BLAS list does not fully
   resolve is dropped whole, never placed with a part missing (`archived_blas_paths`); the JSON
   shapes follow the two schemas below, which
-  `tools/developer_tools/src/map_verification/blas_manifest.rs` checks the committed library
+  `tools/map_assets/map_asset_verification/src/blas_manifest.rs` checks the committed library
   against.
 
 ## Related documentation

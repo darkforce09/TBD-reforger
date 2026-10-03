@@ -12,7 +12,7 @@ slice agents run it.
 
 ```text
 tools/commands/platform_execution/
-├── Cargo.toml  the `platform_execution` library package: `ci_task_catalog`, the ticket crates and the tool foundations, layout tier 7
+├── Cargo.toml  the `platform_execution` library package: `ci_task_catalog`, the ticket crates and the tool foundations, layout tier 9
 └── src/        the wave driver, the slice runner, the slice worktree lifecycle, the preflight and the errors
 ```
 
@@ -42,7 +42,7 @@ The commands themselves are described in the
   `clap`, `regex`, `serde`, `serde_json`, `thiserror`, `walkdir`; `git`, `cargo`, `trunk`, the
   local Postgres container and the agent CLI as subprocesses.
 - Used by: the xtask binary's `platform` group, its `ticket run` and its mod wave driver.
-- Rules: tier 7 of `tools/commands` (`cargo xtask verify crate-tiers`); a slice-run that exits 0
+- Rules: tier 9 of `tools/commands` (`cargo xtask verify crate-tiers`); a slice-run that exits 0
   without a usage object writes no receipt (`exit_zero_without_usage_fails_and_writes_no_file`);
   `land` refuses a slice without a green verdict at its head (`cmd_land_refuses_before_it_merges`);
   the schema step's build stamp covers xtask's whole build closure

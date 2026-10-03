@@ -113,7 +113,7 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 
 - Synopsis: `verify blas-manifest`
 - Does: the prefab BLAS library is complete and matches its manifest. Body:
-  `tools/commands/ci_task_catalog/src/map_asset_checks/`, which calls `developer_tools`.
+  `verify_blas_manifest` in `tools/map_assets/map_asset_verification/src/blas_manifest.rs`.
 - Example: `cargo xtask verify blas-manifest`
 
 ### api-readiness

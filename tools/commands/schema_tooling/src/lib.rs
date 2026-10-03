@@ -8,8 +8,8 @@
 //! [`flatten_orbat_slots`] turns a mission's ORBAT template into its `slots[]`; [`GenCmd`] and
 //! [`run_gen_command`] are the `gen` group (the Spleen font table).
 //! **Position:** tier 5 of `tools/commands`, over `repository_layout`, `repository_laws`,
-//! `process_runner` (rustfmt), `ticket_registry` (the empty-write refusal) and, as a temporary
-//! edge, the `developer_tools` library (the world-export census kind list). The xtask binary's
+//! `process_runner` (rustfmt), `ticket_registry` (the empty-write refusal) and `prefab_catalog`
+//! (the census kind list). The xtask binary's
 //! `schema`, `gen` and `ci` groups call it; the `schema` command line stays in the binary.
 //! **Signals & state:** none; each call reads the checkout and prints its own report.
 //! **Invariants:** a gate's verdict is its exit code (0 pass, 1 findings) and a gate that examined

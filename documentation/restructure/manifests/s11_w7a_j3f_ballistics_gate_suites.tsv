@@ -1,0 +1,35 @@
+# Stage S11b, agent J3f — the last of developer_tools' browser_testing module joins the
+# browser_gate_suites crate: the ballistics agreement and offline mortar suites with their unit
+# tests, and the `gate` and `capture` command lines, which become the crate's command_lines module
+# (the old module root becomes that module's file, the old README its folder README). The
+# references to the retired browser_testing folder itself are pointed at the crate by hand (the
+# crate folder exists, so no row can name it); the command lines' module tree and the
+# developer_tools `mod` line are written by hand. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the two suites and their unit tests
+path	tools/developer_tools/src/browser_testing/ballistics_agreement	tools/browser_testing/browser_gate_suites/src/ballistics_agreement
+path	tools/developer_tools/src/browser_testing/mortar_offline	tools/browser_testing/browser_gate_suites/src/mortar_offline
+path	tools/developer_tools/src/browser_testing/tests/ballistics_agreement	tools/browser_testing/browser_gate_suites/src/tests/ballistics_agreement
+path	tools/developer_tools/src/browser_testing/tests/mortar_offline	tools/browser_testing/browser_gate_suites/src/tests/mortar_offline
+#
+# the `gate` and `capture` command lines
+path	tools/developer_tools/src/browser_testing/mod.rs	tools/browser_testing/browser_gate_suites/src/command_lines.rs
+path	tools/developer_tools/src/browser_testing/README.md	tools/browser_testing/browser_gate_suites/src/command_lines/README.md
+path	tools/developer_tools/src/browser_testing/cli.rs	tools/browser_testing/browser_gate_suites/src/command_lines/gate.rs
+path	tools/developer_tools/src/browser_testing/capture_cli.rs	tools/browser_testing/browser_gate_suites/src/command_lines/capture.rs
+#
+# the moved code names its own crate
+rust_path	crate::browser_testing::	crate::	tools/developer_tools/src/browser_testing/ballistics_agreement
+rust_path	crate::browser_testing::	crate::	tools/developer_tools/src/browser_testing/mortar_offline
+rust_path	crate::browser_testing::	crate::	tools/developer_tools/src/browser_testing/tests/ballistics_agreement
+rust_path	crate::browser_testing::	crate::	tools/developer_tools/src/browser_testing/tests/mortar_offline
+rust_path	crate::browser_testing::	crate::	tools/developer_tools/src/browser_testing/cli.rs
+rust_path	browser_gate_suites::	crate::	tools/developer_tools/src/browser_testing/ballistics_agreement
+rust_path	browser_gate_suites::	crate::	tools/developer_tools/src/browser_testing/mortar_offline
+rust_path	browser_gate_suites::	crate::	tools/developer_tools/src/browser_testing/cli.rs
+rust_path	browser_gate_suites::	crate::	tools/developer_tools/src/browser_testing/capture_cli.rs
+#
+# the `gate` and `capture` binaries call the crate
+rust_path	developer_tools::browser_testing::cli::	browser_gate_suites::command_lines::gate::	tools/developer_tools/src/bin
+rust_path	developer_tools::browser_testing::capture_cli::	browser_gate_suites::command_lines::capture::	tools/developer_tools/src/bin

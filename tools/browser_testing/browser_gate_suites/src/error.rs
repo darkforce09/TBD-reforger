@@ -5,13 +5,13 @@
 //! crate-private macros `refusal!` (a refusal built like `format!`), `bail!` (return one) and
 //! `ensure!` (return one when a condition does not hold).
 //! **Position:** returned by every fallible entry of the crate; the `gate` and `capture` command
-//! lines of `developer_tools` print it with `gate: driver error: {error:#}` or `capture:
-//! {error:#}` and exit 3 or 2. A gate's verdict is its exit code, not an error: an error means
+//! lines ([`crate::command_lines`]) print it with [`Error::with_causes`] after `gate: driver
+//! error: ` or `capture: ` and exit 3 or 1. A gate's verdict is its exit code, not an error: an error means
 //! the gate could not run.
 //! **Signals & state:** none; plain data.
 //! **Invariants:** an [`Error::Context`] displays its step alone and exposes the failure
 //! underneath as its source, so `{error}` prints the outermost step and a chain walk
-//! (`anyhow`'s `{error:#}`) prints `step: cause: …`, each cause exactly once; a wrapped library
+//! ([`Error::with_causes`]) prints `step: cause: …`, each cause exactly once; a wrapped library
 //! error displays and chains exactly as that library's error does.
 
 use std::fmt::Display;
@@ -61,12 +61,29 @@ pub enum Error {
     /// A captured payload's base64 does not decode.
     #[error(transparent)]
     Base64(#[from] base64::DecodeError),
+    /// A ballistics catalog document does not decode.
+    #[error(transparent)]
+    Catalog(#[from] ballistics_model::catalog::CatalogDecodeError),
 }
 
 impl Error {
     /// A refusal carrying `text` as its whole message.
     pub fn msg(text: impl Into<String>) -> Self {
         Error::Message(text.into())
+    }
+
+    /// This error followed by each of its causes after `: `, outermost first: the text the
+    /// command lines print and the verdict lines that record a whole failure.
+    #[must_use]
+    pub fn with_causes(&self) -> String {
+        let mut text = self.to_string();
+        let mut cause = std::error::Error::source(self);
+        while let Some(next) = cause {
+            text.push_str(": ");
+            text.push_str(&next.to_string());
+            cause = next.source();
+        }
+        text
     }
 }
 

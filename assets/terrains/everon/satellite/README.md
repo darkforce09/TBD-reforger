@@ -35,7 +35,7 @@ assets/terrains/everon/satellite/
 
 ## Producers and consumers
 
-- Producers: `map build-unified` (`tools/developer_tools/src/map_raster_pipeline/`, the
+- Producers: `map build-unified` (`tools/map_assets/map_raster_pipeline/src/`, the
   container in `satellite_archive_container.rs`), fed by the map raster pipeline's stitching and
   water composite steps.
 - Consumers:

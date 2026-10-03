@@ -3,6 +3,17 @@
 //! dispatch to are tested beside them, in `crate::cargo_target_verification`.
 
 use super::*;
+use crate::wasm32_lint_lane::{run_wasm_ci_lint, wasm_ci_lint_packages};
+
+/// The checkout the test binary was built from, whose workspace the derived lines read.
+fn checkout() -> std::path::PathBuf {
+    tool_test_support::test_repo_root()
+}
+
+/// The `wasm-ci` recipe of this checkout.
+fn wasm_ci_steps() -> Vec<Step> {
+    wasm_ci(&checkout()).expect("the wasm-ci recipe derives its lint packages")
+}
 
 /// The echoed lines, pinned against the strings `make -n` printed on 2026-08-12.
 #[test]
@@ -32,10 +43,11 @@ fn echo_matches_make() {
         ci_local_leptos()[4].echo(),
         "cd apps/frontend && trunk build --release"
     );
-    assert_eq!(
-        wasm_ci()[2].echo(),
-        "cargo clippy -p map_engine -p graphics_engine \
-         -p offline_service_worker --target wasm32-unknown-unknown -- -D warnings"
+    let wasm32_lint = wasm_ci_steps()[2].echo();
+    assert!(
+        wasm32_lint.starts_with("cargo clippy -p ")
+            && wasm32_lint.ends_with(" --target wasm32-unknown-unknown -- -D warnings"),
+        "{wasm32_lint}"
     );
     // An argument holding whitespace: make echoed the recipe TEXT, quotes included.
     assert_eq!(
@@ -43,7 +55,10 @@ fn echo_matches_make() {
         "psql -qc \"CREATE DATABASE rust_it;\""
     );
     assert_eq!(
-        rust_ci_lines().last().map(String::as_str),
+        rust_ci_lines()
+            .expect("the rust-ci lines derive")
+            .last()
+            .map(String::as_str),
         Some("cargo xtask db test-it")
     );
     assert_eq!(
@@ -59,7 +74,7 @@ fn echo_matches_make() {
 /// `wasm-ci`: a browser crate the lane does not name is never gated.
 #[test]
 fn wasm_ci_gates_the_offline_service_worker_in_every_step() {
-    let lines: Vec<String> = wasm_ci().iter().map(|s| s.echo()).collect();
+    let lines: Vec<String> = wasm_ci_steps().iter().map(|s| s.echo()).collect();
     for prefix in [
         "cargo fmt --check",
         "cargo clippy",
@@ -90,8 +105,25 @@ fn wasm_ci_gates_the_offline_service_worker_in_every_step() {
     );
 }
 
+/// The wasm32 lint of `wasm-ci` names exactly the packages the workspace derivation gives, so a
+/// crate declaring `targets = "wasm32"` is linted from its first commit.
+#[test]
+fn wasm_ci_lints_every_derived_wasm32_package() {
+    let packages = wasm_ci_lint_packages(&checkout()).expect("the lint packages derive");
+    let wasm32_lint = wasm_ci_steps()[2].echo();
+    let named: Vec<&str> = wasm32_lint
+        .split(' ')
+        .collect::<Vec<_>>()
+        .windows(2)
+        .filter(|pair| pair[0] == "-p")
+        .map(|pair| pair[1])
+        .collect();
+    assert_eq!(named, packages, "{wasm32_lint}");
+    assert!(named.contains(&"browser_platform"), "{wasm32_lint}");
+}
+
 /// `mk wasm-ci` and the `wasm-ci` row of `cargo xtask ci` are the same lane spelled twice; the two
-/// spellings run the same lines in the same order.
+/// spellings run the same lines in the same order, the row's derived wasm32 lint included.
 #[test]
 fn wasm_ci_recipe_and_ci_task_row_run_the_same_lines() {
     use crate::task_runner::{Step as CiStep, TASKS};
@@ -104,10 +136,18 @@ fn wasm_ci_recipe_and_ci_task_row_run_the_same_lines() {
         .iter()
         .map(|step| match step {
             CiStep::Cmd { line, .. } => (*line).to_string(),
-            _ => panic!("the wasm-ci row runs only command lines"),
+            CiStep::Native { run }
+                if std::ptr::fn_addr_eq(*run, run_wasm_ci_lint as fn() -> i32) =>
+            {
+                crate::wasm32_lint_lane::wasm32_clippy_argv(
+                    &wasm_ci_lint_packages(&checkout()).expect("the lint packages derive"),
+                )
+                .join(" ")
+            }
+            _ => panic!("the wasm-ci row runs command lines and the derived wasm32 lint"),
         })
         .collect();
-    let mk_lines: Vec<String> = wasm_ci().iter().map(|s| s.echo()).collect();
+    let mk_lines: Vec<String> = wasm_ci_steps().iter().map(|s| s.echo()).collect();
     assert_eq!(ci_lines, mk_lines);
 }
 
@@ -184,7 +224,10 @@ const CONTAINER_RUNTIMES: &[&str] = &["podman", "docker", "podman-compose", "doc
 fn bare_container_runtime_lines(targets: &[&str]) -> Vec<String> {
     let mut offences = Vec::new();
     for target in targets {
-        for line in recipe_lines(target).unwrap_or_default() {
+        for line in recipe_lines(target)
+            .expect("the recipe lines derive")
+            .unwrap_or_default()
+        {
             let named = line
                 .split(|c: char| c.is_whitespace() || ";|&()<>\"'`\\".contains(c))
                 .any(|word| CONTAINER_RUNTIMES.contains(&word));
@@ -208,7 +251,9 @@ fn no_recipe_line_names_a_bare_container_runtime() {
             "print-cargo-target-dir" | "verify-cargo-target" | "reclaim-target-ci"
         );
         assert_eq!(
-            recipe_lines(target).is_some(),
+            recipe_lines(target)
+                .expect("the recipe lines derive")
+                .is_some(),
             !computed,
             "{target}: every recipe target, and only those, lists its lines"
         );
@@ -237,5 +282,11 @@ fn rust_ci_and_the_ci_rust_test_it_row_run_the_database_lane() {
         *run,
         crate::task_runner::run_database_test_suite as fn() -> Result<u8>
     ));
-    assert_eq!(rust_ci_lines().last().map(String::as_str), Some(*echo));
+    assert_eq!(
+        rust_ci_lines()
+            .expect("the rust-ci lines derive")
+            .last()
+            .map(String::as_str),
+        Some(*echo)
+    );
 }

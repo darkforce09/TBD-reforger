@@ -160,7 +160,7 @@ fn layout_modules(root: &Path, files: &[String]) -> BTreeSet<String> {
 /// captured pages the browser oracle compares against.
 const FIXTURE_TREES: [&str; 4] = [
     "tools/browser_testing/browser_gate_suites/fixtures/",
-    "tools/developer_tools/test_fixtures/",
+    "tools/map_assets/blueprint_compiler/test_fixtures/",
     "tools/tickets/ticket_metrics/tests/fixtures/",
     "tools/tickets/ticket_model/tests/fail/",
 ];

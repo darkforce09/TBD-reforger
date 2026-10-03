@@ -1,0 +1,61 @@
+# The gates over a terrain's committed map assets and the map golden fixtures: the terrain
+# manifest, the prefab BLAS library, the height, location, town and road labels, the elevation
+# anchors, the map-object goldens and the world line-of-sight probe. Each gate runs the world
+# crates' own readers and geometry; `jsonschema` validates the documents against their contracts,
+# `flate2` and `png` read the gzipped JSON and the elevation rasters, `thiserror` carries the
+# error.
+[package]
+name = "map_asset_verification"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Map asset gates: terrain manifest, BLAS library, labels, elevation anchors, map-object goldens, world line of sight"
+
+[package.metadata.layout]
+category = "tools/map_assets"
+tier = 7
+targets = "any"
+
+[dependencies]
+# The world crates whose readers and geometry the gates run: the terrain grid, the prefab
+# catalogue, the occlusion sidecars, the elevation model, the chunk containers and the world
+# store, the road network, the place names and label layout, the world occluder and the on-disk
+# record layouts.
+map_coordinates = { workspace = true }
+prefab_catalog = { workspace = true }
+spatial_indexes = { workspace = true }
+terrain_elevation = { workspace = true }
+world_chunks = { workspace = true }
+world_store = { workspace = true }
+road_network = { workspace = true }
+place_names = { workspace = true }
+label_layout = { workspace = true }
+world_line_of_sight = { workspace = true }
+world_file_formats = { workspace = true }
+# The chunk emitter, the forest contours, the polygon geometry and the density grids the golden
+# gate checks the committed fixtures against.
+world_export_pipeline = { workspace = true }
+# The contract and terrain locations.
+repository_layout = { workspace = true }
+flate2 = { workspace = true }
+jsonschema = { workspace = true }
+png = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# Every f64 parses back to the same bits (`float_roundtrip`), as the manifests, labels, anchors
+# and oracle pairs were always read, and objects keep their key order (`preserve_order`) in the
+# schema findings the gates print.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The blueprint compiler's parity file and fixture locator, the building instance kinds and the
+# rigid transforms the pinned line-of-sight replays read.
+blueprint_compiler = { workspace = true, features = ["test_fixtures"] }
+building_interiors = { workspace = true }
+geometry_primitives = { workspace = true }
+
+[lints]
+workspace = true

@@ -47,10 +47,10 @@ writes `$profile:TBD_WorldExport_full_meta.json` last, as the completion sentine
 `exportVersion` 2, `worldSizeM`, `cellSizeM`, `cells`, `aabbHitCount`, `keptCount`, `withPrefab`,
 `withScale`, `outOfBounds`, `elapsedMs`, and the angle, scale and partition rules as text. A failed
 write deletes the partial file and writes no meta. The cell rule matches `cell_of` in
-`tools/developer_tools/src/world_export_pipeline/polygon_geometry.rs`.
+`tools/map_assets/world_export_pipeline/src/polygon_geometry.rs`.
 
 `world copy-export-profile --full`
-(`tools/developer_tools/src/world_export_pipeline/export_preparation/export_profile.rs`) refuses
+(`tools/map_assets/world_export_pipeline/src/export_preparation/export_profile.rs`) refuses
 to stage the file without the meta, or when `keptCount` differs from the file's line count, and
 stages it as `raw-entities.jsonl` for `cargo xtask map export-terrain`. The plugin's
 `[WorkbenchPluginAttribute]` (menu "Export TBD World Objects (full)") is commented out and no Net
@@ -107,7 +107,7 @@ None: Workbench runs these scripts in the editor.
   - `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`;
   - `world copy-export-profile --full`, which stages the full export, and through it
     `cargo xtask map export-terrain` and `map export-locations`
-    (`tools/developer_tools/src/map_raster_pipeline/map_labels/importance_by_name.rs`);
+    (`tools/map_assets/map_raster_pipeline/src/map_labels/importance_by_name.rs`);
   - `cargo xtask map world-los`, which replays the world parity file. No committed tool reads the
     classified export.
 - Rules: both world sweeps here keep an entity only in the cell of its origin, with the same clamp
@@ -117,7 +117,7 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [World export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — staging
+- [World export pipeline](/tools/map_assets/world_export_pipeline/src/README.md) — staging
   the full export and building the object and road data from it.
 - [Everon object data](/assets/terrains/everon/objects/README.md) — the committed chunks and
   catalogue the full export feeds.

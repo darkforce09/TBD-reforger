@@ -1,3 +1,3 @@
 fn main() -> std::process::ExitCode {
-    developer_tools::world_export_pipeline::cli::entrypoint()
+    world_export_pipeline::entrypoint()
 }

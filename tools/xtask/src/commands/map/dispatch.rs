@@ -4,8 +4,10 @@ use anyhow::Result;
 
 pub(crate) fn run(cmd: MapCmd) -> Result<u8> {
     match cmd {
-        MapCmd::ExportTerrain { args } => crate::commands::map::terrain_export::run(&args),
-        MapCmd::TileIndex { args } => crate::commands::map::tile_index::run(&args),
+        MapCmd::ExportTerrain { args } => {
+            Ok(world_export_pipeline::export_terrain_driver::run(&args)?)
+        }
+        MapCmd::TileIndex { args } => Ok(world_export_pipeline::map_tile_index::run(&args)?),
         MapCmd::IngestBlueprints { args } => commands::map::ingest_blueprints(&args),
         MapCmd::ParityReport { args } => commands::map::parity_report(&args),
         MapCmd::BlueprintFromVoxels { args } => commands::map::run(&args),

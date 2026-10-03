@@ -52,7 +52,7 @@ loader's own narrowing.
 
 ## Producers and consumers
 
-- Producers: `world build-objects` (`tools/developer_tools/src/world_export_pipeline/`, the
+- Producers: `world build-objects` (`tools/map_assets/world_export_pipeline/src/`, the
   binary rows in `binary_emit.rs`), which `cargo xtask map export-terrain` runs after its phase
   gate.
 - Consumers:
@@ -61,8 +61,8 @@ loader's own narrowing.
     `residency.rs` in `legacy/map_engine/src/streaming/loaders/`), fetched as
     `/map-assets/everon/objects/chunks/…`;
   - the developer tools' world line-of-sight verification and blueprint instance checks
-    (`tools/developer_tools/src/map_verification/world_line_of_sight/`,
-    `tools/developer_tools/src/blueprint/bvh/instance_verification/`);
+    (`tools/map_assets/map_asset_verification/src/world_line_of_sight/`,
+    `tools/map_assets/blueprint_compiler/src/bvh/instance_verification/`);
   - tests that read the committed chunks: the map engine's chunk and residency tests
     (`everon_chunk_bin_columns_equal_the_gz_decode`, `ingest_chunk_bin_matches_ingest_chunk_gz`)
     and the world export's binary emission tests.

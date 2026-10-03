@@ -51,7 +51,7 @@ what was ruled out.>
 ## Worked sample
 
 Written from `documentation/known_bugs/kb_002_editor_gate_boot_wedge.md`, the editor gate
-runbook's wedge modes and the gate harness in `tools/developer_tools/src/browser_testing/`,
+runbook's wedge modes and the gate harness in `tools/browser_testing/browser_gate_suites/`,
 checked against the code as it stands. The sample sits in a fenced block, so no gate reads its
 links.
 
@@ -63,7 +63,7 @@ links.
 ## Status
 
 Resolved. Severity high while it lasted: no editor gate could run, `cargo xtask mk leptos-gates`
-included. Area: the browser gate harness in `tools/developer_tools/src/browser_testing/` and the
+included. Area: the browser gate harness in `tools/browser_testing/browser_gate_suites/` and the
 Chromium it launches.
 
 ## Symptom

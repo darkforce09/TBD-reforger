@@ -61,11 +61,11 @@ tile offsets count from `tiles_offset()`, the end of the index.
     `map_engine::world::terrain::dem::raw` (`TBDE`), `map_engine::world::terrain::water` (`TBDB`) and
     `map_engine::world::terrain::satellite::streamer` (`TBDS`); `map_engine::streaming::loaders::manifest`
     compares the manifest's `containerVersion` with `CONTAINER_VERSION`;
-  - the developer tools' writers: `tools/developer_tools/src/world_export_pipeline/binary_emit.rs`
-    (`TBDC`), `tools/developer_tools/src/world_export_pipeline/export_preparation/dem_elevation.rs`
-    (`TBDE`), `tools/developer_tools/src/map_raster_pipeline/inland_water_archive.rs` (`TBDB`)
-    and `tools/developer_tools/src/map_raster_pipeline/satellite_archive_container.rs`
-    (`TBDS`), plus the map verifications in `tools/developer_tools/src/map_verification/`.
+  - the developer tools' writers: `tools/map_assets/world_export_pipeline/src/binary_emit.rs`
+    (`TBDC`), `tools/map_assets/world_export_pipeline/src/export_preparation/dem_elevation.rs`
+    (`TBDE`), `tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs` (`TBDB`)
+    and `tools/map_assets/map_raster_pipeline/src/satellite_archive_container.rs`
+    (`TBDS`), plus the map verifications in `tools/map_assets/map_asset_verification/src/`.
 - Rules:
   - every header is 32 bytes (a compile-time assertion in each file, and
     `all_headers_are_thirty_two_bytes` in `tests/container_header_tests.rs`);

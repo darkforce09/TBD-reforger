@@ -34,7 +34,7 @@ Each case of the reading holds its `case_id`, the `inputs` it was solved from, t
 (or the assembler's `refusal`), the lead gun's recommended rings and time of flight, and
 `bit_patterns`: every `f64` of `{"inputs", "solution"}` by JSON pointer, as the 16 hexadecimal
 digits of its IEEE 754 bits. The gate `gate ballistics-agreement` of
-`tools/developer_tools/src/browser_testing/ballistics_agreement/` compares those with its own
+`tools/browser_testing/browser_gate_suites/src/ballistics_agreement/` compares those with its own
 native solves.
 
 ## Routes
@@ -70,7 +70,7 @@ newest listed version of that catalog; needs `catalog`). A malformed parameter f
   and `web_sys` in the browser build.
 - Used by: the `/debug/ballistics-agreement` route in `apps/frontend/src/app_routes.rs`,
   with its row in `apps/frontend/src/foundation/route_table/mod.rs`; the gate
-  `tools/developer_tools/src/browser_testing/ballistics_agreement/`, which mirrors the
+  `tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`, which mirrors the
   reading's shape.
 - Rules: the case-to-inputs mapping, the lead summary and the bit walk live once, in the map
   engine's `agreement_cases.rs`, and are tested there; the reading's shape must stay equal to its

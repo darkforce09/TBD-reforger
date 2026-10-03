@@ -15,6 +15,25 @@ use std::path::{Path, PathBuf};
 use crate::error::{Result, ResultExt};
 use serde_json::Value;
 
+// The census kinds the I1 sum gate adds up: the prefab catalogue's one list,
+// `map-object-enums.schema.json` `$defs.kind` minus `$defs.regionKind`, which is exactly
+// `byKind`'s property set, in `byKind`'s emitted key order.
+//
+// A kind missing from this list is not cosmetic: I1 sums ONLY the kinds named here, so an
+// inventory carrying `byKind.vehicle.instances = 176` for an absent `vehicle` row comes up short
+// by exactly 176, and the gate reads as a data fault in the artifact rather than as a hole in
+// the gate itself.
+//
+// The invariant is pinned two ways, deliberately:
+//   * at RUNTIME inside `type_inventory()` (see `instance_kinds_lockstep_failures`) — the
+//     load-bearing one, because `xtask schema type-inventory` runs in every slice gate and every
+//     wave gate via `gate_schema`;
+//   * by `#[cfg(test)] instance_kind_lockstep_tests` for local `cargo test -p schema_tooling`
+//     feedback.
+//
+// A `#[test]` alone is decorative: it proves the list it can see, not the schema the gate reads.
+use prefab_catalog::instance_kinds::INSTANCE_KINDS;
+
 use repository_laws::workspace_members::read_workspace_members;
 
 use repository_layout::{
@@ -79,37 +98,6 @@ mod citation_scope_tests;
 /* ─────────────────────────── map-object enums ─────────────────────────── */
 
 /* ─────────────────────────── type inventory (I1–I7) ─────────────────────────── */
-
-/// The census kinds the I1 sum gate adds up — `map-object-enums.schema.json` `$defs.kind` minus
-/// `$defs.regionKind`, which is exactly `byKind`'s property set.
-///
-/// A kind missing from this array is not cosmetic: I1 sums ONLY the kinds named here, so an
-/// inventory carrying `byKind.vehicle.instances = 176` for an absent `vehicle` row comes up short
-/// by exactly 176, and the gate reads as a data fault in the artifact rather than as a hole in
-/// the gate itself.
-///
-/// The invariant is pinned two ways, deliberately:
-///   * at RUNTIME inside `type_inventory()` (see `instance_kinds_lockstep_failures`) — the
-///     load-bearing one, because `xtask schema type-inventory` runs in every slice gate and every
-///     wave gate via `gate_schema`;
-///   * by `#[cfg(test)] instance_kind_lockstep_tests` for local `cargo test -p xtask` feedback.
-///
-/// A `#[test]` alone is decorative: it proves the copy it can see, not the copy the gate reads.
-///
-/// Order is `byKind`'s emitted key order (serde_json is built with `preserve_order`): `vehicle`
-/// goes after `water`, `road` stays last, matching its twin
-/// `developer_tools::world_export_pipeline::INSTANCE_KINDS` and every committed inventory.
-const INSTANCE_KINDS: [&str; 9] = [
-    "building",
-    "tree",
-    "vegetation",
-    "rock",
-    "prop",
-    "utility",
-    "water",
-    "vehicle",
-    "road",
-];
 
 /// The developer-feedback half of the `INSTANCE_KINDS` pin. The gate-enforced half is the
 /// `instance_kinds_lockstep_failures` call inside `type_inventory()`; both call the same function,

@@ -20,7 +20,7 @@ documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/
   each layer folder's README gives its output format.
 - [Runtime road export](/apps/mod/tbd-export/Scripts/Game/TBD/Export/) — the game-side road
   exporter the feature doc covers with the Workbench layers.
-- [World export pipeline](/tools/developer_tools/src/world_export_pipeline/) — the `world`
+- [World export pipeline](/tools/map_assets/world_export_pipeline/src/) — the `world`
   commands the runbook runs.
 - [Map commands](/tools/xtask/src/commands/map/) — `cargo xtask map export-terrain` and the
   blueprint and parity commands.

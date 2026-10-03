@@ -62,7 +62,7 @@ route exits 2, never 0.
   goldens in `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/`.
 - Used by: `dom_oracle.rs`, which re-exports `routes`, `capture_route`, `diff_node`, `js_len`,
   `validate_accept_dom`, `MissingFixture`, `run` and, to the crate, `seed_script`; `gate v-suite`
-  in `tools/developer_tools/src/browser_testing/cli.rs`, run as `gate v-suite verify` by
+  in `tools/browser_testing/browser_gate_suites/src/command_lines/gate.rs`, run as `gate v-suite verify` by
   `cargo xtask mk leptos-gates`; `seed_script` also seeds `gate render-check --seed-auth` and the
   doctor's liveness probe.
 - Rules: the router answers nothing with a placeholder
