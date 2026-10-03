@@ -4,7 +4,7 @@
 //! Invariants: the oracle is a linear scan over the same rows, so an index that disagrees with it is wrong — not merely different.
 
 use crate::data::store::SlotSoa;
-use crate::spatial::indexing::point_index::PointIndex;
+use spatial_indexes::point_indexes::point_index::PointIndex;
 
 use super::gesture::GRID_CELL_M;
 use super::pick::{box_nearest, d2_to};

@@ -58,8 +58,9 @@ layer. `show_satellite_basemap` sets that layer's opacity back to 1.
 
 ## Boundaries
 
-- Depends on: `crate::world::terrain::satellite::streamer` (the index parsers and level picks);
-  `crate::streaming` (Range fetches, boot progress, the statistics bridge, the memory budget);
+- Depends on: `satellite_imagery` (the index parsers and level picks); `browser_platform` (Range
+  fetches and the console macros); `crate::streaming` (boot progress, the Range split, the
+  statistics bridge, the memory budget);
   `crate::frame` (the render engine and its texture-layer methods, defined in
   `crate::world::terrain::satellite::textures`); the browser's fetch, image bitmap and offscreen
   canvas.

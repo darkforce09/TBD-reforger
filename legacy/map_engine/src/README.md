@@ -16,26 +16,26 @@ legacy/map_engine/src/
 ├── editing/      the live mission document, its undo drive and the headless map tools
 ├── frame/        the render engine, its batch list and upload belts, the frame vocabulary
 ├── lib.rs        the crate root: each module behind its feature
-├── overlay/      what the map draws on top, and in what order: the 48 lanes and the symbology
+├── overlay/      the lane preferences and the symbology's GPU bridges
 ├── shaders/      the doll renderer's WGSL program
-├── spatial/      BVHs, point indexes, and line of sight over terrain, the world and buildings
+├── spatial/      the viewshed lane upload
 ├── streaming/    served map data into the map: fetch, chunk residency, draw buffers, memory
 ├── tests/        unit tests for the feature floor, and the source scrub the guards share
-└── world/        the static world: terrain, what stands on it, and the inside of its buildings
+└── world/        the static world's browser loaders, GPU belts and CPU meshes
 ```
 
 ## How it works
 
 ```text
-static side     /map-assets/<terrain>/ ──▶ streaming ──▶ world (formats decoded by world_file_formats)
-                                                           │
+static side     /map-assets/<terrain>/ ──▶ streaming ──▶ world (decoded by the world format,
+                                                           │   terrain and world-object crates)
                                                            ▼
-                                               spatial: picking, line of sight
+                                               spatial_indexes, line of sight crates
                                                            │
                                                            ▼
 authored side   data::scenario ──▶ data::store ──▶ editing: tools, selection, undo
 
-draw path       overlay: lanes, symbols ──▶ frame ◀── camera
+draw path       map overlay crates ──▶ overlay ──▶ frame ◀── camera
                                               │
                                               ▼
                                    graphics_engine
@@ -45,12 +45,14 @@ draw path       overlay: lanes, symbols ──▶ frame ◀── camera
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) edits; it reads no other module
 of the crate. `world` holds the static ground and never names `data`, so inside the crate the
 authored mission and the streamed world meet only in `editing`, which drives the document and the
-map tools with no browser in reach and asks `spatial` where a click or a sight line lands.
-`streaming` fetches a terrain's served files and chunks, the
-[`world_file_formats`](/crates/world_formats/world_file_formats/README.md) crate decodes their
-binary formats, `world`
-composes the ground and what stands on it, and `spatial` answers geometric queries over them.
-`overlay` decides the lanes, in paint order, and the symbols drawn in them; `frame` holds the
+map tools with no browser in reach and asks the
+[`spatial_indexes`](/crates/geometry/spatial_indexes/README.md) and line of sight crates where a
+click or a sight line lands. `streaming` fetches a terrain's served files and chunks, the
+[`world_file_formats`](/crates/world_formats/world_file_formats/README.md) crate and the world
+format, terrain and world-object crates under `crates/` decode them, `world` composes and uploads
+the ground and what stands on it, and `spatial` shows a viewshed as a lane. The map overlay crates
+under `crates/map_overlay/` decide the lanes, in paint order, and the symbols drawn in them;
+`overlay` keeps the lane preferences and uploads the symbology; `frame` holds the
 render engine, which uploads the lanes both sides produce and hands the graphics engine a frame
 packet whenever something changed; `camera` moves the render engine's view, with the cameras
 themselves in `camera_math`. `diagnostics` measures the render
@@ -64,7 +66,7 @@ engine, and `doll` is a second, small renderer for the
 | `camera` | always; its one file, `viewport.rs`, only for wasm32 with `render` |
 | `data` | always; its `scenario` half with `scenario`, its `store` half with `store` |
 | `world`, `spatial`, `overlay`, `frame` | `world`; the GPU half of `frame` only for wasm32 with `render` |
-| `streaming` | `io`; most of it with `streaming`, its browser host only for wasm32 with `render` |
+| `streaming` | `streaming`; its browser host and loaders only for wasm32 with `render` |
 | `editing` | `editing` |
 | `diagnostics`, `doll` | `render` |
 
@@ -75,18 +77,21 @@ engine, and `doll` is a second, small renderer for the
   Creator.
 - `data::store` and `editing`: the mission's Yjs document and the headless editing layer, for the
   Mission Creator.
-- `frame` (`RenderEngine`, `RafPump`, `EngineHandle`), `streaming::host`, `camera`, `overlay`,
-  `spatial` and `world`: the map canvas of the Mission Creator and the debug benches.
+- `frame` (`RenderEngine`, `RafPump`, `EngineHandle`), `streaming` (`host`, `bridge`, the
+  occluder loader, the residency) and `camera`: the map canvas of the Mission Creator and the
+  debug benches.
 - `doll`: the arsenal's preview.
-- `world`, `spatial`, `streaming` and `overlay`: the offline tools in `tools/developer_tools/`.
+- `data::scenario` and `frame`: the offline tools in `tools/developer_tools/`.
 
 ## Boundaries
 
-- Depends on: `graphics_engine` and `render_primitives` from the `world` tier up;
-  `world_file_formats` from the `io` tier up; `map_coordinates` and `camera_math` always;
-  `geometry_primitives` from the `bvh` tier up; `serde`, `serde_json` and
-  `thiserror`; `yrs` for `store`; `png`, `rkyv` and `flate2` for the world, archive and streaming
-  tiers; `bytemuck` always; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` on wasm32 and
+- Depends on: `map_coordinates`, `camera_math` and `bytemuck` always; `serde`, `serde_json`,
+  `thiserror` and `libm` for `scenario`; `yrs` for `store`; for `world`, `graphics_engine`,
+  `render_primitives`, `terrain_elevation`, `terrain_relief`, `map_draw_lanes`, `label_layout`,
+  `unit_symbology`, `overlay_instances`, `road_network`, `vegetation`, `place_names`,
+  `spatial_indexes` and `terrain_line_of_sight`; for `streaming`, `rkyv`, `world_file_formats`,
+  `flate2`, `prefab_catalog`, `world_chunks`, `satellite_imagery`, `water_bodies`, `world_store`,
+  `interior_line_of_sight` and `world_line_of_sight`; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` on wasm32 and
   `browser_platform` on wasm32 for `render`; `contracts/rules/kit-aliases.json`, embedded at build time; the terrain
   assets in `assets/terrains/`, fetched as `/map-assets` at run time and read by the tests.
 - Used by: the API's missions and operations domains under `apps/api/src/` (`data`
@@ -100,7 +105,7 @@ engine, and `doll` is a second, small renderer for the
     - 3a and 3b: only `frame/mod.rs` names `graphics_engine::frame` (five lines), and the
       graphics engine's GPU modules are named only in `frame/mod.rs` and `frame/pump.rs`;
     - 4: `data/scenario/` names neither `data::store`, the graphics engine nor any of the nine
-      names the gate lists (every top-level module but `data` and `editing`, and `io`), so the API's
+      sibling modules the gate lists (every top-level module but `data`), so the API's
       `scenario` build pulls no graphics crate, `png`, `rkyv` or `flate2`; two store-gated tests
       are pinned exceptions;
     - 5: no `web_sys`, `leptos` or `wasm_bindgen` anywhere under `editing/`;

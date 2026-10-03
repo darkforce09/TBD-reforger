@@ -78,7 +78,8 @@ the document.
 
 - Depends on: `map_engine` (`data::store`, `editing` for the history, host, hosted commands,
   lanes and tools, `frame` for `RenderEngine`, `EngineHandle` and `RafPump`, `streaming` for the
-  host, the progress events and the memory budget, `overlay::symbology`); in the editor, the
+  host, the progress events and the memory budget); `unit_symbology` (side tints, squad links),
+  `map_draw_lanes` (lane ids) and `terrain_elevation` (the full-resolution heights); in the editor, the
   outliner, the asset catalog and rules of `arsenal/`, the toolbelt's scale helpers, the zones
   panel's predicates and validation seam, the ruler tool's `install_seam`, the line-of-sight world
   wash, and the session's review mode, draft writer, hydrate and world-layer preferences;
@@ -88,7 +89,7 @@ the document.
     `apps/frontend/src/workspaces/editor/mission_editor/`;
   - `input/`, `session/`, `ui/` and `arsenal/` under `apps/frontend/src/workspaces/editor/`;
   - the source pins in `apps/frontend/src/foundation/test_support/editor_operations.rs`,
-    `legacy/map_engine/src/overlay/tests/tests/draw_order_t748_comments_bind_feed.rs` and the
+    `legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs` and the
     editor's own tests in `apps/frontend/src/workspaces/editor/tests/`;
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through the window
     gates.

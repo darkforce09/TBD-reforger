@@ -1,0 +1,52 @@
+# Stage S6 P5 — the spot heights, town and road names become the place_names crate, and the headless world store becomes the world_store crate. Paths name the tree before the move.
+kind	from	to	scope
+#
+# the spot heights, towns, road name placement and label glyph packing without their browser
+# loader become place_names; the road name tests leave the deleted `routes/` re-export module
+path	legacy/map_engine/src/world/environment/locations/peaks.rs	crates/world_objects/place_names/src/peaks.rs
+path	legacy/map_engine/src/world/environment/locations/towns.rs	crates/world_objects/place_names/src/towns.rs
+path	legacy/map_engine/src/world/environment/locations/route_geometry.rs	crates/world_objects/place_names/src/route_geometry.rs
+path	legacy/map_engine/src/world/environment/locations/route_labels.rs	crates/world_objects/place_names/src/route_labels.rs
+path	legacy/map_engine/src/world/environment/locations/route_placement.rs	crates/world_objects/place_names/src/route_placement.rs
+path	legacy/map_engine/src/world/environment/locations/label_packing.rs	crates/world_objects/place_names/src/label_packing.rs
+path	legacy/map_engine/src/world/environment/locations/tests/peaks_tests.rs	crates/world_objects/place_names/src/tests/peaks_tests.rs
+path	legacy/map_engine/src/world/environment/locations/tests/towns_tests.rs	crates/world_objects/place_names/src/tests/towns_tests.rs
+path	legacy/map_engine/src/world/environment/locations/tests/README.md	crates/world_objects/place_names/src/tests/README.md
+path	legacy/map_engine/src/world/environment/locations/routes/tests/cases_1.rs	crates/world_objects/place_names/src/tests/route_placement_tests.rs
+#
+# the headless world store and its tests become world_store
+path	legacy/map_engine/src/streaming/loaders/store.rs	crates/world_formats/world_store/src/store.rs
+path	legacy/map_engine/src/streaming/loaders/tests/store_tests.rs	crates/world_formats/world_store/src/tests/store_tests.rs
+path	legacy/map_engine/src/streaming/loaders/tests/README.md	crates/world_formats/world_store/src/tests/README.md
+#
+# the moved place-name code names its own items from its crate root, and the elevation model,
+# the label layout and the road network from their crates
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/peaks.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/towns.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/route_geometry.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/route_labels.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/route_placement.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/label_packing.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/tests/peaks_tests.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/tests/towns_tests.rs
+rust_path	crate::world::environment::locations::	crate::	legacy/map_engine/src/world/environment/locations/routes/tests/cases_1.rs
+rust_path	crate::world::terrain::dem::	terrain_elevation::	legacy/map_engine/src/world/environment/locations/peaks.rs
+rust_path	crate::world::terrain::dem::	terrain_elevation::	legacy/map_engine/src/world/environment/locations/tests/peaks_tests.rs
+rust_path	crate::overlay::symbology::labels::	label_layout::	legacy/map_engine/src/world/environment/locations/peaks.rs
+rust_path	crate::overlay::symbology::labels::	label_layout::	legacy/map_engine/src/world/environment/locations/towns.rs
+rust_path	crate::overlay::symbology::labels::	label_layout::	legacy/map_engine/src/world/environment/locations/label_packing.rs
+rust_path	crate::overlay::symbology::text_packing::	label_layout::text_packing::	legacy/map_engine/src/world/environment/locations/label_packing.rs
+rust_path	crate::world::terrain::roads::	road_network::	legacy/map_engine/src/world/environment/locations/route_labels.rs
+rust_path	crate::world::terrain::roads::	road_network::	legacy/map_engine/src/world/environment/locations/route_placement.rs
+#
+# the moved world store names its own items from its crate root, and the chunks, the terrain
+# manifest, the payload decoding, the prefab rows, the land-cover regions and the road network
+# from their crates
+rust_path	crate::streaming::loaders::store::	crate::store::	legacy/map_engine/src/streaming/loaders/tests/store_tests.rs
+rust_path	crate::streaming::loaders::chunk::	world_chunks::world_chunk::	legacy/map_engine/src/streaming/loaders/store.rs
+rust_path	crate::streaming::loaders::manifest::	world_chunks::terrain_manifest::	legacy/map_engine/src/streaming/loaders/store.rs
+rust_path	crate::streaming::loaders::payload::	prefab_catalog::world_payload::	legacy/map_engine/src/streaming/loaders/store.rs
+rust_path	crate::world::environment::buildings::prefab::	prefab_catalog::prefab_rows::	legacy/map_engine/src/streaming/loaders/store.rs
+rust_path	crate::world::environment::vegetation::regions::	vegetation::regions::	legacy/map_engine/src/streaming/loaders/store.rs
+rust_path	crate::world::terrain::roads::	road_network::	legacy/map_engine/src/streaming/loaders/store.rs
+rust_path	crate::world::terrain::roads::	road_network::	legacy/map_engine/src/streaming/loaders/tests/store_tests.rs

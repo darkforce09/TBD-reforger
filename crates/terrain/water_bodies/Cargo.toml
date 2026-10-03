@@ -1,0 +1,32 @@
+# What a terrain's map data says about water, with no browser or GPU code: the bathymetry
+# container read as a water mask, the level suffix a capped load fetches, the inland water
+# archive, and the sea band triangulated into the sea fill mesh.
+[package]
+name = "water_bodies"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Terrain water: the bathymetry water mask and its level suffix, the inland water archive, and the sea fill mesh."
+
+[package.metadata.layout]
+category = "crates/terrain"
+tier = 4
+targets = "any"
+
+[dependencies]
+# The bathymetry's depth and mask blocks are read as little-endian words in place.
+bytemuck = { workspace = true }
+# The fill mesh shape and the ring triangulation of the sea fill.
+render_primitives = { workspace = true }
+# Validation and endian settings are part of the shared on-disk format.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+thiserror = { workspace = true }
+# The sea band geometry the sea fill mesh triangulates.
+terrain_relief = { workspace = true }
+# The `TBDB` header, the water vectors archive and its validating reader.
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

@@ -13,7 +13,7 @@ legacy/map_engine/src/streaming/
 ├── bridge/     what crosses to the page: preference readers, boot progress, statistics, toggles
 ├── buffers/    the draw set and the packed icon, strip and building buffers of resident chunks
 ├── host/       the browser entry point: the boot sequence, settle refreshes and map queries
-├── loaders/    the served-file parsers, and the world and occluder loaders
+├── loaders/    the world and occluder loaders
 ├── memory/     the memory budget ledger and the residency's statistics
 ├── mod.rs      the module tree
 └── scheduler/  the world chunk residency: chunk math, pin, eviction, ingest budget, picking
@@ -28,7 +28,7 @@ Mission Creator
 host/        boot sequence, settle passes, camera, place and occluder queries
    │ also drives the DEM, satellite, water, forest and label loaders of crate::world
    ▼
-loaders/     fetch /map-assets/<terrain>/ and parse it; the world and occluder loaders
+loaders/     fetch /map-assets/<terrain>/ and parse it with the world format crates
    │ missing chunk ids out, parsed chunks in
    ▼
 scheduler/   WorldResidency: pin, in-flight marks, failure cap, LRU eviction, ingest budget
@@ -52,11 +52,9 @@ the line-of-sight occluder.
 
 `WorldResidency`, defined in `scheduler/`, is extended across the children: its loads and ingest
 in `loaders/`, its buffer composers in `buffers/`, its layer toggles in `bridge/` and its
-statistics in `memory/`. The module compiles with the `io` feature, where `bridge/` provides its
-preference and progress types; `buffers/`, `loaders/`, `memory/` and `scheduler/` need
-`streaming`; `host/` and the two browser loaders need wasm32 with `render`. So
-the parsers, the residency, the buffers and the budget also run natively, as the developer tools
-and the crate's tests use them.
+statistics in `memory/`. The module compiles with the `streaming` feature; `host/`, the two
+browser loaders and `bridge/statistics.rs` need wasm32 with `render`. So the residency, the
+buffers and the budget also run natively, as the crate's tests use them.
 
 ## Public surface
 
@@ -66,12 +64,10 @@ and the crate's tests use them.
 - `bridge`: the preference types (`HostPreferences`, `RenderPreferences`, `WorldLayerPrefs`) and
   the progress types (`BootEvent`, `BootSeg`, `ProgressFn`) for the Mission Creator; progress,
   the Range helpers and statistics for the loaders in `crate::world`.
-- `loaders`: the chunk and manifest parsers, `WorldStore`, `bytes_to_json` and `OccluderHost`, for `crate::world`, `crate::spatial::los::world`, the debug world line-of-sight
-  bench and the developer tools.
-- `scheduler`: `WorldResidency` and the chunk math, for `crate::spatial::los::world`,
-  `crate::world`, the debug bench and the developer tools.
-- `buffers::revision`: `BUILDING_MIN_ZOOM` and `norm`, for
-  `crate::world::environment::buildings::footprint`.
+- `loaders`: `WorldHost` and `OccluderHost`, for the host and the debug world line-of-sight
+  bench.
+- `scheduler`: `WorldResidency`, its loads and chunk ingest and its object index, for the host
+  and the debug bench.
 - `memory::budget`: the accounting calls and the satellite floor claim for
   `crate::world::terrain::satellite`, and `hud_suffix` for the Mission Creator's debug HUD.
 
@@ -79,23 +75,25 @@ and the crate's tests use them.
 
 - Depends on:
   - `crate::world` (terrain, environment, meshes and the DEM, satellite, water, forest and label
-    loaders), `world_file_formats` (the `TBDC` container and its rows), `crate::spatial` (the world spatial
-    index, the line-of-sight occluder, BVH sidecars), `crate::overlay` (level-of-detail gates,
-    glyph math, lane ids), `crate::frame` (the render engine handle), `map_coordinates` (the chunk
-    math) and `browser_platform` (the fetch helpers and console macros); nothing of `crate::data`, `crate::editing`,
-    `crate::camera` or `crate::doll`;
+    loaders), `crate::overlay` (the lane preferences), `crate::frame` (the render engine handle);
+    the world format crates `world_chunks`, `prefab_catalog` and `world_store`;
+    `spatial_indexes` and `world_line_of_sight` (the world object index, the line-of-sight
+    occluder, BVH sidecars); `map_draw_lanes`, `label_layout`, `road_network`, `vegetation`,
+    `terrain_elevation`, `terrain_relief` and `water_bodies`; `map_coordinates` (the chunk math) and
+    `browser_platform` (the fetch helpers and console macros); nothing of `crate::data`,
+    `crate::editing`, `crate::camera` or `crate::doll`;
   - `serde`, `serde_json`, `flate2`, `bytemuck`, `thiserror` and `futures`, and on wasm32
     `gloo-net`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures`;
   - the [API](/documentation/glossary/a_to_f.md#api)'s `/map-assets` mount, which serves
     `assets/terrains/` and `assets/glyphs/` unless `MAP_ASSETS_DIR` or `GLYPH_ASSETS_DIR`
     names another folder (`apps/api/src/core/http_router.rs`).
 - Used by:
-  - `crate::world` and `crate::spatial::los::world`;
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/` and the debug world
-    line-of-sight bench in `apps/frontend/src/workspaces/debug/world_los/`;
-  - the developer tools in `tools/developer_tools/src/` (the world export pipeline, the map
-    raster pipeline, the map verifications) and their editor smoke tests, which read
-    `window.__mapAssets`.
+  - the DEM, satellite, water, forest and label loaders of `crate::world`;
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/`, the shared map mount in
+    `apps/frontend/src/foundation/map_view/` and the debug world line-of-sight bench in
+    `apps/frontend/src/workspaces/debug/world_los/`;
+  - the editor smoke tests in `tools/developer_tools/src/browser_testing/editor_smoke_tests/`,
+    which read `window.__mapAssets`.
 - Rules:
   - the tree reaches the render engine only through `crate::frame` and names no
     `graphics_engine` module itself (rules 3a and 3b of `cargo xtask verify engine-layers`),

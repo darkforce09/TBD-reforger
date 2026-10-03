@@ -33,14 +33,14 @@ assets/terrains/everon/roads/
   - the map engine's world loader, which fetches `/map-assets/everon/roads/road_network.rkyv`
     when the manifest's `objects.binary` block names it and the gzip JSON otherwise, and tells the
     two apart by their first bytes (`legacy/map_engine/src/streaming/loaders/`); the reader
-    is `road_network_from_bytes` in `legacy/map_engine/src/world/terrain/roads/`;
+    is `road_network_from_bytes` in `crates/terrain/road_network/src/network.rs`;
   - `WorldStore`, the headless reader the developer tools use;
   - the world export's road emission tests, which rebuild the archive from the committed JSON.
 
 ## Boundaries
 
 - Depends on: `assets/terrains/everon/objects/roads.json.gz`, which holds the same segments;
-  the road class names of the map engine's label placement, which the class codes index.
+  the road class names of `road_network`'s `road_class`, which the class codes index.
 - Used by: the map engine and the developer tools listed above.
 - Rules: the archive and `objects/roads.json.gz` change together and read as the same segments
   (`load_roads_sniffs_gzip_versus_rkyv`); a reader refuses another archive schema version or a
@@ -48,5 +48,5 @@ assets/terrains/everon/roads/
 
 ## Related documentation
 
-- [Roads, runways and cartographic strips](/legacy/map_engine/src/world/terrain/roads/README.md)
+- [Roads, runways and cartographic strips](/crates/terrain/road_network/README.md)
   — the road model, its classes and how it is drawn.

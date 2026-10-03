@@ -10,14 +10,16 @@ so every build of the map engine links them, the API's included.
 crates/geometry/
 ├── camera_math/          `camera_math`: the deck.gl-parity orthographic camera, the doll's orbit camera, gl-matrix 4x4
 ├── geometry_primitives/  `geometry_primitives`: 3D vector products, 2D segment tests, rigid transforms, 3D boxes
-└── map_coordinates/      `map_coordinates`: terrain centres and bounds, the chunk grid, rounding, grid references
+├── map_coordinates/      `map_coordinates`: terrain centres and bounds, the chunk grid, rounding, grid references
+└── spatial_indexes/      `spatial_indexes`: the triangle BVH and its sidecar format, the flat-tree build core, point grid, picks, clusters
 ```
 
 ## Boundaries
 
-- Depends on: external crates only (`serde`, `thiserror`), and one edge inside the category:
-  `camera_math` depends on `map_coordinates` for JavaScript rounding.
-- Used by: the map engine (`legacy/map_engine`); through it, the single-page app and the
-  developer tools.
+- Depends on: external crates only (`serde`, `thiserror`), and two edges inside the category:
+  `camera_math` depends on `map_coordinates` for JavaScript rounding, and `spatial_indexes` on
+  `geometry_primitives` for its vector products.
+- Used by: the map engine (`legacy/map_engine`), the single-page app (`apps/frontend`) and the
+  developer tools (`tools/developer_tools`), each importing the crates directly.
 - Rules: a geometry crate declares `category = "crates/geometry"`, and its dependency edges point
   to lower tiers only (`cargo xtask verify crate-tiers`).

@@ -71,10 +71,10 @@ census.
   `forest_contours.rs`), `world build-roads` (`roads_emit.rs`), `world reclassify` and
   `world redensify`; `cargo xtask map export-terrain` runs the first two.
 - Consumers:
-  - the map engine's world loader, residency and store
-    (`legacy/map_engine/src/streaming/loaders/`), the prefab and region readers under
-    `legacy/map_engine/src/world/environment/`, and the road reader in
-    `legacy/map_engine/src/world/terrain/roads/`, over `/map-assets/everon/objects/…`;
+  - the map engine's world loader and residency (`legacy/map_engine/src/streaming/`), which
+    read the chunks through `world_chunks`, the catalogue through `prefab_catalog`, the regions
+    through `vegetation`, the store through `world_store` and the roads through `road_network`
+    (`crates/terrain/road_network/`), over `/map-assets/everon/objects/…`;
   - the developer tools: the blueprint compiler reads the catalogue and chunks for the prefab
     library, `map labels-rkyv` reads `roads.json.gz`, and the export validation and mathematical
     verification read the whole folder;
@@ -95,5 +95,7 @@ census.
 ## Related documentation
 
 - [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how these
-  files are fetched, parsed and made resident.
+  files are fetched and made resident.
+- [World chunks](/crates/world_formats/world_chunks/README.md) — how the manifest and chunks
+  are parsed.
 - [Map data archives](/crates/world_formats/world_file_formats/src/archives/README.md) — the rkyv archives.

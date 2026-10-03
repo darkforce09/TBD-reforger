@@ -3,14 +3,14 @@
 //! **Role:** answers the ground height at a map position from the full-resolution elevation
 //! raster the terrain boot publishes.
 //! **Position:** wraps the map engine's
-//! [`map_engine::world::terrain::dem::full_resolution::FullResolutionDemHandle`]; a map
+//! [`terrain_elevation::full_resolution::FullResolutionDemHandle`]; a map
 //! view hands one to its terrain boot and reads heights through [`TerrainHeights::height_at`].
 //! **Signals & state:** shares the handle with the boot task, which fills it once.
 //! **Invariants:** answers `None` until the raster has loaded and outside the terrain, never a
 //! guessed or clamped height; a scope that does not keep the raster leaves every answer `None`.
 
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::world::terrain::dem::full_resolution::{
+use terrain_elevation::full_resolution::{
     height_from_handle, new_full_resolution_dem_handle, FullResolutionDemHandle,
 };
 

@@ -26,9 +26,10 @@ A ray that never enters the band returns an empty lane.
 - Depends on: the parent file `apps/frontend/src/workspaces/debug/building_interior.rs`,
   through `use super::*`: the ray colours, `DOOR_HIT_SLACK_M`, the band test for an instance, and
   the building viewer's `geom` helpers it imports (`to_world`, `push_strip`, `quad`,
-  `rect_corners`); from `map_engine::world`, `CompoundBuilding`, `Instance` and `Rigid`
-  under `architecture::compound`, `LosHit`, `LosHitKind` and `clip_t_to_band` under
-  `architecture::blueprint`, and `terrain::roads::styling::expand_polyline_strip`.
+  `rect_corners`); from `building_interiors`, `CompoundBuilding` and `Instance` under
+  `compound`, and `LosHit`, `LosHitKind` and `clip_t_to_band` under `blueprint::sight_line`;
+  `Rigid` from `geometry_primitives::rigid_transform`; and
+  `road_network::styling::expand_polyline_strip`.
 - Used by: `building_interior.rs`, which re-exports both functions; the building viewer's live
   host, `apps/frontend/src/workspaces/debug/building_viewer/live.rs` (`build_ray_lane`) and
   `apps/frontend/src/workspaces/debug/building_viewer/live/wiring.rs` (`door_at`); the unit

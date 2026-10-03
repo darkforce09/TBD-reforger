@@ -19,10 +19,9 @@ base64 = { workspace = true }
 # build as well as wasm32: `MissionDetail::compiled_meta` is the row half of the Mission Creator's
 # server-truth Export, and `compiled_meta_is_the_row_the_server_compiles_from` checks it natively
 # against the captured `GET /missions/:id` golden, so `store` (`scenario` plus yrs) sits in this
-# shared block rather than the wasm32 block. `io` carries `world::architecture` (the building
-# structures and line-of-sight raycaster behind `/debug/building-viewer`); `editing` brings
-# `streaming` with it. The wasm32 block adds `render`.
-map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "io", "store", "editing"] }
+# shared block rather than the wasm32 block; `editing` brings `streaming` with it. The wasm32
+# block adds `render`.
+map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "store", "editing"] }
 # The geometry crates the map views and debug benches name directly: the orthographic and orbit
 # cameras, the grid reference and chunk arithmetic, and the rigid transform of the building
 # interior bench.
@@ -31,6 +30,22 @@ map_coordinates = { workspace = true }
 geometry_primitives = { workspace = true }
 # The ear-clipping triangulation the native building viewer fills footprints with.
 render_primitives = { workspace = true }
+# The world crates the Mission Creator, the mortar map picker and the debug benches import
+# directly: the elevation model and its line of sight, the satellite container reader, the road
+# network and vegetation data, the building interiors and their line of sight, the world line of
+# sight, the triangle BVH, and the overlay's lanes, symbology and instance packers.
+terrain_elevation = { workspace = true }
+terrain_line_of_sight = { workspace = true }
+satellite_imagery = { workspace = true }
+road_network = { workspace = true }
+vegetation = { workspace = true }
+building_interiors = { workspace = true }
+interior_line_of_sight = { workspace = true }
+world_line_of_sight = { workspace = true }
+spatial_indexes = { workspace = true }
+map_draw_lanes = { workspace = true }
+unit_symbology = { workspace = true }
+overlay_instances = { workspace = true }
 gloo-net = { workspace = true }
 js-sys = { workspace = true }
 # Query strings and the offline core's URL parsing. `leptos_router` and
@@ -128,7 +143,7 @@ web-sys = { workspace = true, features = [
 # Rendering and browser asset I/O share the frontend's WebAssembly module.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 gloo-timers = { version = "0.3", features = ["futures"] }
-# The renderer tier of the browser build: `render` reaches `streaming` -> `io` -> `world` -> `bvh`.
+# The renderer tier of the browser build: `render` reaches `streaming` -> `world`.
 # Default features are off, as on every frontend edge to the map engine, so the crate default
 # (`scenario`) never chooses a tier.
 map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["render", "streaming"] }

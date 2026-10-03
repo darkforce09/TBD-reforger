@@ -5,14 +5,14 @@
 
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
-use crate::overlay::lanes::LaneRole;
-use crate::overlay::lanes::lane_id;
+use map_draw_lanes::lane_roles::LaneRole;
+use map_draw_lanes::lane_roles::lane_id;
 
 use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer};
 use crate::overlay::symbology::instances::lanes::ICON_DRAG_OFF;
-use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
-use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
+use overlay_instances::symbols::SLOT_ICON_STRIDE;
 use render_primitives::frame::ids::LaneId;
+use unit_symbology::classification::SIDE_BLUFOR_RGBA;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -81,7 +81,7 @@ impl RenderEngine {
         if !self.slot_bridge.atlas_ready {
             return;
         }
-        let bytes = crate::overlay::symbology::instances::symbols::pack_vehicle_instances(xy);
+        let bytes = overlay_instances::symbols::pack_vehicle_instances(xy);
         let vis = !bytes.is_empty();
         if !vis {
             self.remove_lane(LaneRole::MissionVehicles);
@@ -120,7 +120,7 @@ impl RenderEngine {
                     .map_or(SIDE_BLUFOR_RGBA, |s| [s[0], s[1], s[2], s[3]])
             })
             .collect();
-        let bytes = crate::overlay::symbology::instances::symbols::pack_vehicle_symbology(
+        let bytes = overlay_instances::symbols::pack_vehicle_symbology(
             xy,
             &aliases,
             &tints,
@@ -163,28 +163,25 @@ impl RenderEngine {
                     side_tints_rgba[i * 4 + 3],
                 ]
             } else {
-                crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA
+                unit_symbology::classification::SIDE_BLUFOR_RGBA
             };
             let glyph = icons
                 .get(i)
-                .map_or(crate::overlay::symbology::markers::MarkerGlyph::Disc, |a| {
-                    crate::overlay::symbology::markers::marker_glyph_for_alias(a)
+                .map_or(unit_symbology::markers::MarkerGlyph::Disc, |a| {
+                    unit_symbology::markers::marker_glyph_for_alias(a)
                 }) as u16;
             render_primitives::text::pack::pack_icon_instance(
                 &mut icon_bytes,
                 x,
                 y,
-                crate::overlay::symbology::instances::symbols::SLOT_RING_PX,
+                overlay_instances::symbols::SLOT_RING_PX,
                 glyph,
                 render_primitives::text::pack::pack_rgba_u32(rgba),
             );
         }
 
-        let mut caption_bytes = crate::overlay::symbology::markers::pack_marker_caption_bytes(
-            xy,
-            &captions,
-            self.zoom(),
-        );
+        let mut caption_bytes =
+            unit_symbology::markers::pack_marker_caption_bytes(xy, &captions, self.zoom());
         if !caption_bytes.is_empty() {
             let _ = self.ensure_text_atlas();
         }
@@ -216,7 +213,7 @@ impl RenderEngine {
             })
             .collect();
         let bytes = match self.slot_bridge.symbology_base {
-            Some(base) => crate::overlay::symbology::instances::symbols::pack_comment_instances(
+            Some(base) => overlay_instances::symbols::pack_comment_instances(
                 xy,
                 &selected,
                 self.slot_m_per_px(),
@@ -227,16 +224,16 @@ impl RenderEngine {
                 let mut b = Vec::with_capacity(n * SLOT_ICON_STRIDE);
                 for (i, sel) in selected.iter().enumerate() {
                     let tint = render_primitives::text::pack::pack_rgba_u32(if *sel {
-                        crate::overlay::symbology::instances::symbols::SLOT_SELECTED_RGBA
+                        overlay_instances::symbols::SLOT_SELECTED_RGBA
                     } else {
-                        crate::overlay::symbology::instances::symbols::COMMENT_NOTE_RGBA
+                        overlay_instances::symbols::COMMENT_NOTE_RGBA
                     });
                     render_primitives::text::pack::pack_icon_instance(
                         &mut b,
                         xy[i * 2],
                         xy[i * 2 + 1],
-                        crate::overlay::symbology::instances::symbols::SLOT_RING_PX,
-                        crate::overlay::symbology::instances::symbols::SLOT_GLYPH_RING,
+                        overlay_instances::symbols::SLOT_RING_PX,
+                        overlay_instances::symbols::SLOT_GLYPH_RING,
                         tint,
                     );
                 }

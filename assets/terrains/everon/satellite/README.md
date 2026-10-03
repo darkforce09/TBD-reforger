@@ -26,7 +26,7 @@ assets/terrains/everon/satellite/
   `tbd-sat-v1`, the base size, the level count and the byte size
   (`contracts/definitions/terrain-manifest.schema.json`). The reader, which also reads the
   version 2 layout (a 32-byte header and an rkyv index), is
-  `legacy/map_engine/src/world/terrain/satellite/streamer/`.
+  `crates/terrain/satellite_imagery/src/`.
 - Adding a file: the committed file is written with `map build-unified --container-version 1`.
   `cargo xtask ci map-water-everon` rebuilds the image from the stitched mosaic in the gitignored
   export scratch and patches the manifest's byte count, but it runs `map build-unified` without
@@ -62,5 +62,5 @@ assets/terrains/everon/satellite/
 
 ## Related documentation
 
-- [Satellite container format](/legacy/map_engine/src/world/terrain/satellite/streamer/README.md)
+- [Satellite container format](/crates/terrain/satellite_imagery/src/README.md)
   — both container versions and how a level is picked.

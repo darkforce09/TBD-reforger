@@ -1,0 +1,29 @@
+# The map engine's spatial indexes: the triangle bounding volume hierarchy with its one flat-tree
+# build core and its sidecar file format, the slab test of a segment against a box, and the
+# two-dimensional point grid, picks and zoom-level clusters of map points.
+[package]
+name = "spatial_indexes"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Triangle BVH with its sidecar format and shared flat-tree build core, segment-box slab test, point grid, picks and clusters."
+
+[package.metadata.layout]
+category = "crates/geometry"
+tier = 1
+targets = "any"
+
+[features]
+# Exposes `test_fixtures` (cuboid scenes for BVH tests) to the tests of other crates; enabled only
+# from `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+# Vector products for the triangle test and the traversal's segment direction.
+geometry_primitives = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

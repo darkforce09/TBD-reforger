@@ -47,9 +47,8 @@ nothing.
   reader in `tools/developer_tools/src/enfusion_pak/`; the model decoders in
   `tools/developer_tools/src/blueprint/mesh_decoding/`; the surface classification in
   `tools/developer_tools/src/blueprint/architectural_analysis/surface_classification.rs`;
-  `crate::repository_layout` (`terrain_dir`, `definition_path`); `map_engine::spatial::bvh`
-  for the sidecar codec and `map_engine::world::architecture::compound` for the instance
-  records; `jsonschema`.
+  `crate::repository_layout` (`terrain_dir`, `definition_path`); `spatial_indexes`
+  for the sidecar codec and `building_interiors::compound` for the instance records; `jsonschema`.
 - Used by: `batch_processing.rs`, which re-exports `run_bvh_batch`, `open_sources`,
   `decode_asset`, `classify_prefab` and `cover_for_prefab`; the prefab library and archive writer in
   `tools/developer_tools/src/blueprint/archive_emission/` (`write_if_changed`, `slug_of`,

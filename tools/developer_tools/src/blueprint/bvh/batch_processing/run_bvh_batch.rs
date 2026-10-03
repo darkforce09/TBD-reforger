@@ -139,7 +139,7 @@ pub fn run_bvh_batch(root: &std::path::Path, args: &[String]) -> Result<u8> {
 
     let instances = InstancesFile {
         schema_version: INSTANCES_SCHEMA_VERSION.into(),
-        prefab_id: slug.clone(),
+        prefab_id: slug.clone().into(),
         resource_name: prefab.clone(),
         shell_bvh: format!("{slug}.bvh"),
         instances: walker.instances.clone(),
@@ -149,7 +149,7 @@ pub fn run_bvh_batch(root: &std::path::Path, args: &[String]) -> Result<u8> {
     let scene_doc =
         (!scene_walker_instances.is_empty() || scene.is_some()).then(|| InstancesFile {
             schema_version: INSTANCES_SCHEMA_VERSION.into(),
-            prefab_id: slug.clone(),
+            prefab_id: slug.clone().into(),
             resource_name: prefab.clone(),
             shell_bvh: String::new(),
             instances: scene_walker_instances,

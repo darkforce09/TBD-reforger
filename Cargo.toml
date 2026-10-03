@@ -41,6 +41,9 @@ publish = false
 anyhow = "1"
 axum = "0.8.9"
 base64 = "0.22"
+# Building blueprints, compounds and section cuts
+# (`crates/world_objects/building_interiors`).
+building_interiors = { path = "crates/world_objects/building_interiors" }
 # Browser console macros and same-origin fetch helpers for wasm32 code
 # (`crates/foundation/browser_platform`).
 browser_platform = { path = "crates/foundation/browser_platform" }
@@ -75,17 +78,34 @@ js-sys = "0.3"
 # The `string_id!`, `integer_id!` and `uuid_id!` newtype identifier macros
 # (`crates/foundation/newtype_ids`).
 newtype_ids = { path = "crates/foundation/newtype_ids" }
+# Line of sight inside a building: compound traces, the shared sight-line evaluation and floor
+# washes (`crates/line_of_sight/interior_line_of_sight`).
+interior_line_of_sight = { path = "crates/line_of_sight/interior_line_of_sight" }
 # Default features off drop the HTTP `$ref` resolver (reqwest and the aws-lc-rs C build): every
 # schema is local or embedded, so core draft 2020-12 validation is all a member needs.
 jsonschema = { version = "0.46.10", default-features = false }
+# Map label declutter, town importance, world glyph sizing and label glyph packing
+# (`crates/map_overlay/label_layout`).
+label_layout = { path = "crates/map_overlay/label_layout" }
 libc = "0.2"
 # Terrain centres and bounds, the chunk grid, JavaScript rounding and grid references
 # (`crates/geometry/map_coordinates`).
+# The map's named draw lanes, their paint order and the zoom gates
+# (`crates/map_overlay/map_draw_lanes`).
+map_draw_lanes = { path = "crates/map_overlay/map_draw_lanes" }
 map_coordinates = { path = "crates/geometry/map_coordinates" }
 # The offline cache policy the service worker and the page share
 # (`crates/contracts/offline_cache_policy`).
 offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
+# Slot, vehicle, comment and cluster icon instances and the fire-mission marks
+# (`crates/map_overlay/overlay_instances`).
+overlay_instances = { path = "crates/map_overlay/overlay_instances" }
+# Spot heights, town labels and road names, their declutter, the labels archive and their glyph
+# packing (`crates/world_objects/place_names`).
+place_names = { path = "crates/world_objects/place_names" }
 png = "0.17"
+# A terrain's prefab catalogue and world payload decoding (`crates/world_formats/prefab_catalog`).
+prefab_catalog = { path = "crates/world_formats/prefab_catalog" }
 # Child processes in their own process group, the container-to-host bridge and the ssh transport
 # (`tools/foundation/process_runner`).
 process_runner = { path = "tools/foundation/process_runner" }
@@ -105,15 +125,33 @@ repository_layout = { path = "tools/foundation/repository_layout" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
 # speaks HTTPS enables `rustls-no-provider` and installs the ring provider.
 reqwest = { version = "0.13.4", default-features = false }
+# A terrain's road network: segments, styling, road meshes, cartographic strips and the airfield
+# (`crates/terrain/road_network`).
+road_network = { path = "crates/terrain/road_network" }
 # Default features off; members select `std`, `bytecheck` and `little_endian`, which fix the
 # on-disk archive format.
 rkyv = { version = "0.8.18", default-features = false }
 # Default features off drop the aws-lc-rs provider; members enable `ring`.
 rustls = { version = "0.23.41", default-features = false }
+# The satellite container reader: header, both tile index versions, checks, level picks
+# (`crates/terrain/satellite_imagery`).
+satellite_imagery = { path = "crates/terrain/satellite_imagery" }
 serde = "1"
 serde_json = "1"
+# The triangle BVH, its sidecar format, the point grid and the clusters
+# (`crates/geometry/spatial_indexes`).
+spatial_indexes = { path = "crates/geometry/spatial_indexes" }
 # The SHA-2 hash functions behind `content_digest`.
 sha2 = "0.11"
+# A terrain's elevation model: raster placement, PNG and raw grid decoding, sampling, the vector
+# grid (`crates/terrain/terrain_elevation`).
+terrain_elevation = { path = "crates/terrain/terrain_elevation" }
+# The hillshade, contour rings and sea band drawn from the elevation model
+# (`crates/terrain/terrain_relief`).
+terrain_relief = { path = "crates/terrain/terrain_relief" }
+# Line of sight over the elevation model: elevation profiles and viewsheds
+# (`crates/line_of_sight/terrain_line_of_sight`).
+terrain_line_of_sight = { path = "crates/line_of_sight/terrain_line_of_sight" }
 thiserror = "2.0.18"
 time = "0.3"
 # Wall-clock and monotonic time and RFC 3339 UTC stamps (`crates/foundation/time_source`).
@@ -122,19 +160,35 @@ tokio = "1.52.3"
 toml = "0.8"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
+# Side tints, unit and vehicle classes, the symbol atlas, markers and squad links
+# (`crates/map_overlay/unit_symbology`).
+unit_symbology = { path = "crates/map_overlay/unit_symbology" }
 url = "2.5"
 uuid = "1.23.4"
 # Fail-closed verdicts, pattern scans, the run report and the verification lock
 # (`tools/foundation/verification_core`).
 verification_core = { path = "tools/foundation/verification_core" }
 walkdir = "2"
+# Forest regions, canopy mass, tree counts and density bins (`crates/world_objects/vegetation`).
+vegetation = { path = "crates/world_objects/vegetation" }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
+# The bathymetry water mask, the inland water archive and the sea fill mesh
+# (`crates/terrain/water_bodies`).
+water_bodies = { path = "crates/terrain/water_bodies" }
 web-sys = "0.3"
 # Default features off: each member selects the browser backends (`webgpu`, `webgl`) and `wgsl`.
 wgpu = { version = "29", default-features = false }
+# Line of sight through a terrain's placed objects, chunk by chunk
+# (`crates/line_of_sight/world_line_of_sight`).
+world_line_of_sight = { path = "crates/line_of_sight/world_line_of_sight" }
 # The on-disk formats of a terrain's map data (`crates/world_formats/world_file_formats`).
 world_file_formats = { path = "crates/world_formats/world_file_formats" }
+# A terrain's world object chunks and its terrain manifest (`crates/world_formats/world_chunks`).
+world_chunks = { path = "crates/world_formats/world_chunks" }
+# The headless world store: manifest, prefab table, roads, regions and one chunk at a time
+# (`crates/world_formats/world_store`).
+world_store = { path = "crates/world_formats/world_store" }
 
 # The lint policy a crate adopts with `[lints] workspace = true`; under `-D warnings` every warning
 # fails the build. `clippy::unwrap_used` binds production code only: the root `clippy.toml` sets

@@ -3,9 +3,9 @@
 //! Signals & state: session-local measurement state; never the authored document.
 //! Invariants: both walks are bounded by the same coverage manifest, so a profile and a disc computed from one observer agree about where data exists.
 
-use crate::spatial::los::terrain::sampler::ProfileSample;
-use crate::spatial::los::terrain::viewshed::Viewshed;
-use crate::world::terrain::dem::manifest::DemManifest;
+use terrain_elevation::manifest::DemManifest;
+use terrain_line_of_sight::elevation_profile::ProfileSample;
+use terrain_line_of_sight::viewshed::Viewshed;
 
 use super::capture::LosShot;
 use super::host_registry::read_registered_sampler;
@@ -18,8 +18,7 @@ pub const PROFILE_STEP_M: f64 = 8.0;
 
 /// Default sight radius (metres), named at the tool surface so the host chrome and the compute
 /// agree on one number.
-pub const VIEWSHED_RADIUS_M: f64 =
-    crate::spatial::los::terrain::viewshed::VIEWSHED_DEFAULT_RADIUS_M;
+pub const VIEWSHED_RADIUS_M: f64 = terrain_line_of_sight::viewshed::VIEWSHED_DEFAULT_RADIUS_M;
 
 /// Compute the viewshed raster for an observer at world `(x, y)` from the registered DEM sampler —
 /// the same grid a profile walk reads. `None` when no sampler is registered. The eye is anchored at
@@ -34,7 +33,7 @@ pub fn compute_viewshed_for(obs_x: f64, obs_y: f64) -> Option<Viewshed> {
     let sampler = read_registered_sampler()?;
     let observer_ground_m = sampler(obs_x, obs_y);
     let manifest = everon_manifest();
-    let params = crate::spatial::los::terrain::viewshed::ViewshedParams {
+    let params = terrain_line_of_sight::viewshed::ViewshedParams {
         obs_x,
         obs_y,
         observer_ground_m,
@@ -42,7 +41,7 @@ pub fn compute_viewshed_for(obs_x: f64, obs_y: f64) -> Option<Viewshed> {
         radius_m: VIEWSHED_RADIUS_M,
         cell_m: PROFILE_STEP_M,
     };
-    Some(crate::spatial::los::terrain::viewshed::compute_viewshed(
+    Some(terrain_line_of_sight::viewshed::compute_viewshed(
         &manifest,
         params,
         move |x, y| sampler(x, y),
@@ -61,7 +60,7 @@ pub fn build_profile(shot: &LosShot) -> Vec<ProfileSample> {
         return Vec::new();
     };
     let manifest = everon_manifest();
-    crate::spatial::los::terrain::sampler::sample_segment(
+    terrain_line_of_sight::elevation_profile::sample_segment(
         &manifest,
         (shot.obs_x, shot.obs_y),
         (shot.tgt_x, shot.tgt_y),

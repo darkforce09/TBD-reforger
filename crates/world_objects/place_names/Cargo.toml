@@ -1,0 +1,40 @@
+# A terrain's place names with no browser or GPU code: the spot heights found on the elevation
+# model, the town labels, the road names placed along their roads, the declutter of each at a zoom,
+# the labels archive's three lanes, and the packing of the kept labels into glyph instances.
+[package]
+name = "place_names"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A terrain's place names: spot heights, town labels and road names, their declutter, the labels archive and their glyph packing."
+
+[package.metadata.layout]
+category = "crates/world_objects"
+tier = 4
+targets = "any"
+
+[dependencies]
+# The label spec, the location rows, the town declutter and fade, and the generic glyph packing.
+label_layout = { workspace = true }
+# The identifier of one curated road name.
+newtype_ids = { workspace = true }
+# The glyph metrics and the instance packing of the road and town label bytes.
+render_primitives = { workspace = true }
+# The road segments the names anchor on and the road class codec of the archive's road lane.
+road_network = { workspace = true }
+# The labels archive is read in place through rkyv's `Archived` view.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+# `road-names.json` and the placed road labels derive their JSON form.
+serde = { workspace = true, features = ["derive"] }
+# The label JSON files, read with the map engine's key order and float settings.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+# The raster placement the spot heights are found on, and the PNG decode of their Everon case.
+terrain_elevation = { workspace = true }
+thiserror = { workspace = true }
+# The labels archive, its codec, and the road segment and terrain identifiers.
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

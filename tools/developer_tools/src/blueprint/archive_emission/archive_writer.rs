@@ -4,7 +4,7 @@
 //! Reads what `bvh-batch --all-prefabs` already wrote — `prefabs/blas-manifest.json`,
 //! `prefabs/descriptors/<pid>.json` (1623 files, 19 MB) — plus the extracted blueprints under
 //! `prefabs/buildings/`, and folds them into the
-//! [`BuildingBlueprintArchive`](map_engine::world::binary::archives::BuildingBlueprintArchive):
+//! [`BuildingBlueprintArchive`](world_file_formats::archives::blueprints::BuildingBlueprintArchive):
 //! the descriptor census, the shared BLAS index the descriptors point into, and the tactical
 //! blueprint levels. The loader side is `world::occluder::descriptor` (`BuildingArchiveBytes`,
 //! `PrefabDescriptor::from_archived`) and `building_blueprint::BuildingBlueprint::from_archived`.
@@ -25,10 +25,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 
 use crate::repository_layout::terrain_dir;
-use map_engine::spatial::los::world::descriptor::BlasEntry;
-use map_engine::spatial::los::world::descriptor::BlasManifest;
-use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint as JsonBlueprint;
+use building_interiors::blueprint::structure::BuildingBlueprint as JsonBlueprint;
 use world_file_formats::archives::blueprints::BuildingBlueprintArchive;
 use world_file_formats::archives::blueprints::BuildingLevel as WireLevel;
 use world_file_formats::archives::blueprints::DoorRec as WireDoor;
@@ -41,6 +38,9 @@ use world_file_formats::archives::codec::access_checked;
 use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 use world_file_formats::ids::{DoorId, FurnitureId, PrefabId, StairsId, WallId, WindowId};
+use world_line_of_sight::occluder_library::BlasEntry;
+use world_line_of_sight::occluder_library::BlasManifest;
+use world_line_of_sight::occluder_library::PrefabDescriptor;
 
 use super::batch::write_if_changed;
 
@@ -86,9 +86,9 @@ pub fn build(prefabs: &Path) -> Result<Built> {
     let mut json_pids: Vec<u32> = Vec::new();
     for path in sorted_json_files(&prefabs.join("descriptors"))? {
         let d: PrefabDescriptor = read_json(&path)?;
-        json_pids.push(d.prefab_id);
-        slug_of_pid.insert(d.prefab_id, d.slug.clone());
-        pid_of_slug.insert(d.slug.clone(), d.prefab_id);
+        json_pids.push(d.prefab_id.get());
+        slug_of_pid.insert(d.prefab_id.get(), d.slug.clone());
+        pid_of_slug.insert(d.slug.clone(), d.prefab_id.get());
         descriptors.push(
             d.to_archived(&index_of)
                 .with_context(|| path.display().to_string())?,
@@ -115,7 +115,7 @@ pub fn build(prefabs: &Path) -> Result<Built> {
             continue;
         }
         let b: JsonBlueprint = read_json(&path)?;
-        let pid = *pid_of_slug.get(&b.prefab_id).with_context(|| {
+        let pid = *pid_of_slug.get(b.prefab_id.as_str()).with_context(|| {
             format!(
                 "{}: prefabId {:?} is not in the prefab catalogue — a blueprint the occluder can \
                  never key on",
@@ -123,7 +123,7 @@ pub fn build(prefabs: &Path) -> Result<Built> {
                 b.prefab_id
             )
         })?;
-        blueprint_slugs.push(b.prefab_id.clone());
+        blueprint_slugs.push(b.prefab_id.to_string());
         blueprints.push(wire_blueprint(&b, pid).with_context(|| path.display().to_string())?);
     }
     blueprints.sort_by_key(|b| b.prefab_id);
@@ -241,7 +241,7 @@ fn wire_blueprint(
     Ok(
         world_file_formats::archives::blueprints::BuildingBlueprint {
             prefab_id: PrefabId::new(prefab_id),
-            slug: b.prefab_id.clone(),
+            slug: b.prefab_id.to_string(),
             vertical_profile: WireProfile {
                 pivot_elevation_offset_m: b.vertical_profile.pivot_elevation_offset_m as f32,
                 foundation_skirt_depth_m: b.vertical_profile.foundation_skirt_depth_m as f32,

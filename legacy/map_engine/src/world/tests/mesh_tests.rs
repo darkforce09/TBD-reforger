@@ -4,13 +4,13 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::world::mesh::*;
-use crate::world::terrain::dem::grid::DemVectorGrid;
-use crate::world::terrain::relief::sea_band::SeaBandGeometry;
-use crate::world::terrain::relief::sea_band::build_sea_band_geometry;
-use crate::world::terrain::roads::mesh::RoadInput;
-use crate::world::terrain::roads::mesh::compose_roads_mesh;
-use crate::world::terrain::water::mesh::compose_sea_mesh;
 use render_primitives::draw::compose::retint_fill_alpha;
+use road_network::mesh::RoadInput;
+use road_network::mesh::compose_roads_mesh;
+use terrain_elevation::grid::DemVectorGrid;
+use terrain_relief::sea_band::SeaBandGeometry;
+use terrain_relief::sea_band::build_sea_band_geometry;
+use water_bodies::mesh::compose_sea_mesh;
 
 #[test]
 fn roads_gated_by_zoom() {
@@ -68,7 +68,7 @@ fn retint_fill_alpha_sets_every_fourth_only() {
 
 #[test]
 fn two_tone_contours_split_colour_by_summit_index() {
-    use crate::world::terrain::relief::contours::ContourRing;
+    use terrain_relief::contours::ContourRing;
 
     const BASE: [u8; 4] = [188, 150, 100, 235];
     const SUMMIT: [u8; 4] = [174, 145, 123, 235];

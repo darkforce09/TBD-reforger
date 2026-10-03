@@ -41,7 +41,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
-use map_engine::world::terrain::water::vectors::downsample_index;
+use water_bodies::vectors::downsample_index;
 use world_file_formats::archives::codec::access_checked;
 use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;

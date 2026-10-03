@@ -64,9 +64,10 @@ unreported.
 
 ## Boundaries
 
-- Depends on: `map_engine` (the `world`, `streaming`, `io` and `bvh` features): its
-  manifest, chunk and elevation loaders, label placement, world occluder and container
-  constants; the world export pipeline's emitters and geometry
+- Depends on: the world crates it imports directly: `world_chunks` (the manifest and chunk
+  readers), `prefab_catalog`, `world_store`, `terrain_elevation` (the elevation model),
+  `place_names` and `label_layout` (label placement), `road_network`, `spatial_indexes`,
+  `building_interiors` and `world_line_of_sight` (the world occluder); the world export pipeline's emitters and geometry
   (`tools/developer_tools/src/world_export_pipeline/`), for the golden gate;
   `crate::repository_layout` for every path; `jsonschema` and the schemas in
   `contracts/definitions/`.

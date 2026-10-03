@@ -39,9 +39,7 @@ pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>
             .faction_id
             .strip_prefix("faction-")
             .unwrap_or(&r.faction_id);
-        tints.extend_from_slice(&map_engine::overlay::symbology::roles::classify::side_rgba(
-            side,
-        ));
+        tints.extend_from_slice(&unit_symbology::classification::side_rgba(side));
         aliases.push(r.resource_name);
     }
     (xy, aliases, tints, headings)

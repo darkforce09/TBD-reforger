@@ -3,13 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::lod::class_visible;
+use map_draw_lanes::zoom_gates::class_visible;
 
 use crate::streaming::scheduler::state::ResidencyEvent;
 use crate::streaming::scheduler::state::WorldResidency;
-
-/// Building-footprint LOD gate (`lodGates.ts` `BUILDING_FOOTPRINT_MIN_ZOOM`; manifest agrees).
-pub const BUILDING_MIN_ZOOM: f64 = -2.5;
 
 /// Norm.
 pub(crate) fn norm(c: [u8; 4]) -> [f32; 4] {
@@ -121,8 +118,7 @@ impl WorldResidency {
     /// Tree glyph count.
     #[must_use]
     pub fn tree_glyph_count(&self) -> u32 {
-        (self.tree_glyph_buf.len()
-            / crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE) as u32
+        (self.tree_glyph_buf.len() / label_layout::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 }
 
@@ -130,8 +126,7 @@ impl WorldResidency {
     /// Prop glyph count.
     #[must_use]
     pub fn prop_glyph_count(&self) -> u32 {
-        (self.prop_glyph_buf.len()
-            / crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE) as u32
+        (self.prop_glyph_buf.len() / label_layout::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 }
 
@@ -139,8 +134,7 @@ impl WorldResidency {
     /// Badge glyph count.
     #[must_use]
     pub fn badge_glyph_count(&self) -> u32 {
-        (self.badge_glyph_buf.len()
-            / crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE) as u32
+        (self.badge_glyph_buf.len() / label_layout::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 }
 

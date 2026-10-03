@@ -5,7 +5,7 @@
 //! driving `evaluate_los` interactively: the BVH raycast over the building's `.bvh` occlusion
 //! sidecar, attributed through the blueprint, with a draggable observer and target, elevation
 //! sliders, and the ray coloured along the ordered [`LosHit`] trace. Alt+click instead casts the
-//! multi-floor viewshed wash — `map_engine::spatial::los::interior::wash::level_washes`
+//! multi-floor viewshed wash — `interior_line_of_sight::floor_wash::level_washes`
 //! fires one BVH ray at every 0.25 m cell at eye height on every level — and the floor rail swaps
 //! which level's raster the engine's `Viewshed` texture lane shows.
 //!
@@ -60,7 +60,7 @@
 //! | `INTERIOR_PROBE` (strip)            | the LOS ray, split + coloured at each `LosHit` (cyan past glass, yellow-green past canopy), plus event dots |
 
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
+use building_interiors::blueprint::structure::BuildingBlueprint;
 
 /// Default blueprint when no `?prefab=` override is present — the scanned FarmHouse (roof
 /// heightfield + verbatim plates + attic). The hand-authored pre-scan asset stays reachable

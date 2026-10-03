@@ -1,0 +1,27 @@
+# The reader of a terrain's satellite container (`.tbd-sat`), with no browser or GPU code: its
+# header, its version 1 JSON and version 2 archived tile index, the index checks, and the choice
+# of the base and preview levels.
+[package]
+name = "satellite_imagery"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The satellite container reader: header, version 1 and version 2 tile index, index checks, base and preview level picks."
+
+[package.metadata.layout]
+category = "crates/terrain"
+tier = 2
+targets = "any"
+
+[dependencies]
+# The version 1 tile index is camelCase JSON.
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# The `TBDS` header, the archived version 2 index and its validating reader, the terrain id.
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

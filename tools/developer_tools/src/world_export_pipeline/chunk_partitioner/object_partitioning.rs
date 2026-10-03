@@ -379,7 +379,7 @@ pub(super) fn prepare_world_objects(
     )?;
 
     // The class byte the chunk JSON does not carry, from the catalogue just written.
-    let class_by_pid = binary_emit::class_code_table(&prefabs_doc);
+    let class_by_pid = binary_emit::class_code_table(&prefabs_doc)?;
     let mut cells: Vec<Value> = Vec::new();
     for key in &sorted_chunk_keys {
         let list = &chunks[key];

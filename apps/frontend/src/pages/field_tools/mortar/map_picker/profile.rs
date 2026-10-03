@@ -2,7 +2,7 @@
 //!
 //! **Role:** samples the ground from the lead gun to the target into the map engine's
 //! [`TerrainProfile`] through
-//! [`map_engine::spatial::los::terrain::sampler::sample_segment`].
+//! [`terrain_line_of_sight::elevation_profile::sample_segment`].
 //! **Position:** read by the page on Calculate; the profile goes into the solve bridge's drafts,
 //! and the engine's fire-mission assembler measures the lead gun's clearance over it.
 //! **Signals & state:** none; the height reader is passed in.
@@ -24,9 +24,9 @@ use map_engine::data::scenario::ballistics::crest_clearance::{TerrainProfile, Te
 #[cfg(any(target_arch = "wasm32", test))]
 use map_engine::editing::tools::line_of_sight::terrain_survey::everon_manifest;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::spatial::los::terrain::sampler::sample_segment;
+use terrain_elevation::manifest::DemManifest;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::world::terrain::dem::manifest::DemManifest;
+use terrain_line_of_sight::elevation_profile::sample_segment;
 
 /// Spacing of the profile samples, metres: the elevation model's native resolution, so no crest
 /// narrower than a raster cell falls between two samples.

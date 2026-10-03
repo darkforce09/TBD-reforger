@@ -78,5 +78,5 @@ The map engine links the crate behind its `io` feature (`legacy/map_engine/Cargo
 - [Terrain assets](/assets/terrains/README.md) — the served terrain tree these formats make up.
 - [Terrain manifest schema](/contracts/definitions/terrain-manifest.schema.json) — the manifest
   block that names the container, its version and the row shape.
-- [BVH sidecars](/legacy/map_engine/src/spatial/bvh/README.md) — the `TBVH` building sidecar,
+- [BVH sidecars](/crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/README.md) — the `TBVH` building sidecar,
   a binary format that lives with the spatial index rather than here.

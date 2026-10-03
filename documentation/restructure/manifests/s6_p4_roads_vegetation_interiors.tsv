@@ -1,0 +1,96 @@
+# Stage S6 P4 — the road network, the vegetation data and the building interiors become the road_network, vegetation and building_interiors crates. Paths name the tree before the move.
+kind	from	to	scope
+#
+# the road network, its styling, meshes, strips and airfield become road_network
+path	legacy/map_engine/src/world/terrain/roads/airfield.rs	crates/terrain/road_network/src/airfield.rs
+path	legacy/map_engine/src/world/terrain/roads/cartographic_strip.rs	crates/terrain/road_network/src/cartographic_strip.rs
+path	legacy/map_engine/src/world/terrain/roads/mesh.rs	crates/terrain/road_network/src/mesh.rs
+path	legacy/map_engine/src/world/terrain/roads/network.rs	crates/terrain/road_network/src/network.rs
+path	legacy/map_engine/src/world/terrain/roads/road_class.rs	crates/terrain/road_network/src/road_class.rs
+path	legacy/map_engine/src/world/terrain/roads/styling.rs	crates/terrain/road_network/src/styling.rs
+path	legacy/map_engine/src/world/terrain/roads/tests	crates/terrain/road_network/src/tests
+#
+# the forest regions, canopy mass, canopy counts and density bins without their GPU belts and browser loader become vegetation
+path	legacy/map_engine/src/world/environment/vegetation/canopy.rs	crates/world_objects/vegetation/src/canopy.rs
+path	legacy/map_engine/src/world/environment/vegetation/density.rs	crates/world_objects/vegetation/src/density.rs
+path	legacy/map_engine/src/world/environment/vegetation/mass.rs	crates/world_objects/vegetation/src/mass.rs
+path	legacy/map_engine/src/world/environment/vegetation/regions.rs	crates/world_objects/vegetation/src/regions.rs
+path	legacy/map_engine/src/world/environment/vegetation/tests	crates/world_objects/vegetation/src/tests
+#
+# the building blueprints, compounds and section cuts become building_interiors; the blueprint's
+# sight-line attribution and level annotations take names that say what they hold
+path	legacy/map_engine/src/world/architecture/blueprint/archive.rs	crates/world_objects/building_interiors/src/blueprint/archive.rs
+path	legacy/map_engine/src/world/architecture/blueprint/attribution_1.rs	crates/world_objects/building_interiors/src/blueprint/sight_line.rs
+path	legacy/map_engine/src/world/architecture/blueprint/attribution_2.rs	crates/world_objects/building_interiors/src/blueprint/level_annotations.rs
+path	legacy/map_engine/src/world/architecture/blueprint/footprint.rs	crates/world_objects/building_interiors/src/blueprint/footprint.rs
+path	legacy/map_engine/src/world/architecture/blueprint/structure.rs	crates/world_objects/building_interiors/src/blueprint/structure.rs
+path	legacy/map_engine/src/world/architecture/blueprint/tests/model.rs	crates/world_objects/building_interiors/src/blueprint/tests/sight_line_tests.rs
+path	legacy/map_engine/src/world/architecture/blueprint/tests/README.md	crates/world_objects/building_interiors/src/blueprint/tests/README.md
+path	legacy/map_engine/src/world/architecture/compound/assembly.rs	crates/world_objects/building_interiors/src/compound/assembly.rs
+path	legacy/map_engine/src/world/architecture/compound/doors.rs	crates/world_objects/building_interiors/src/compound/doors.rs
+path	legacy/map_engine/src/world/architecture/compound/instances.rs	crates/world_objects/building_interiors/src/compound/instances.rs
+path	legacy/map_engine/src/world/architecture/compound/scene/tests/cases_1.rs	crates/world_objects/building_interiors/src/compound/tests/instances_tests.rs
+path	legacy/map_engine/src/world/architecture/compound/scene/tests/README.md	crates/world_objects/building_interiors/src/compound/tests/README.md
+path	legacy/map_engine/src/world/architecture/section/cutter.rs	crates/world_objects/building_interiors/src/section/cutter.rs
+path	legacy/map_engine/src/world/architecture/section/index.rs	crates/world_objects/building_interiors/src/section/index.rs
+path	legacy/map_engine/src/world/architecture/section/tests/cutter.rs	crates/world_objects/building_interiors/src/section/tests/cutter_tests.rs
+path	legacy/map_engine/src/world/architecture/section/tests/index_tests.rs	crates/world_objects/building_interiors/src/section/tests/index_tests.rs
+path	legacy/map_engine/src/world/architecture/section/tests/README.md	crates/world_objects/building_interiors/src/section/tests/README.md
+#
+# the moved road code names its own items from its crate root, the elevation grid and the
+# footprint corners from their crates
+rust_path	crate::world::terrain::roads::	crate::	legacy/map_engine/src/world/terrain/roads/airfield.rs
+rust_path	crate::world::terrain::roads::	crate::	legacy/map_engine/src/world/terrain/roads/cartographic_strip.rs
+rust_path	crate::world::terrain::roads::	crate::	legacy/map_engine/src/world/terrain/roads/mesh.rs
+rust_path	crate::world::terrain::roads::	crate::	legacy/map_engine/src/world/terrain/roads/network.rs
+rust_path	crate::world::terrain::roads::	crate::	legacy/map_engine/src/world/terrain/roads/tests
+rust_path	crate::world::terrain::dem::	terrain_elevation::	legacy/map_engine/src/world/terrain/roads/airfield.rs
+rust_path	crate::world::terrain::dem::	terrain_elevation::	legacy/map_engine/src/world/terrain/roads/tests
+rust_path	crate::world::environment::buildings::obb::	prefab_catalog::footprint_lookups::	legacy/map_engine/src/world/terrain/roads/cartographic_strip.rs
+rust_path	crate::world::environment::buildings::obb::	prefab_catalog::footprint_lookups::	legacy/map_engine/src/world/terrain/roads/tests
+#
+# the moved vegetation code names its own items from its crate root, and the zoom gates, the
+# chunk record, the render classes and the payload decoding from their crates
+rust_path	crate::world::environment::vegetation::	crate::	legacy/map_engine/src/world/environment/vegetation/tests
+rust_path	crate::overlay::lod::	map_draw_lanes::zoom_gates::	legacy/map_engine/src/world/environment/vegetation/canopy.rs
+rust_path	crate::streaming::loaders::chunk::	world_chunks::world_chunk::	legacy/map_engine/src/world/environment/vegetation/canopy.rs
+rust_path	crate::streaming::loaders::chunk::	world_chunks::world_chunk::	legacy/map_engine/src/world/environment/vegetation/tests
+rust_path	crate::world::environment::classify::	prefab_catalog::render_classes::	legacy/map_engine/src/world/environment/vegetation/canopy.rs
+rust_path	crate::world::environment::classify::	prefab_catalog::render_classes::	legacy/map_engine/src/world/environment/vegetation/tests
+rust_path	crate::streaming::loaders::payload::	prefab_catalog::world_payload::	legacy/map_engine/src/world/environment/vegetation/tests
+#
+# the moved architecture code names its own items from its crate root (the renamed modules
+# first), its fixtures from the crate's test_fixtures module, and the BVH from spatial_indexes
+rust_path	crate::world::architecture::blueprint::attribution_1::	crate::blueprint::sight_line::	legacy/map_engine/src/world/architecture/blueprint/attribution_2.rs
+rust_path	crate::world::architecture::blueprint::attribution_2::	crate::blueprint::level_annotations::	legacy/map_engine/src/world/architecture/blueprint/attribution_1.rs
+rust_path	crate::world::architecture::blueprint::model::tests::	crate::test_fixtures::	legacy/map_engine/src/world/architecture/section/tests/cutter.rs
+rust_path	crate::world::architecture::blueprint::model::tests::	crate::test_fixtures::	legacy/map_engine/src/world/architecture/section/tests/index_tests.rs
+rust_path	crate::world::architecture::blueprint::model::tests::	building_interiors::test_fixtures::	crates/line_of_sight/interior_line_of_sight/src/tests/floor_wash_tests.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/blueprint/archive.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/blueprint/attribution_1.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/blueprint/attribution_2.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/blueprint/footprint.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/blueprint/structure.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/compound/assembly.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/compound/doors.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/compound/instances.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/section/cutter.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/section/index.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/section/tests/cutter.rs
+rust_path	crate::world::architecture::	crate::	legacy/map_engine/src/world/architecture/section/tests/index_tests.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/blueprint/attribution_1.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/blueprint/tests/model.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/compound/assembly.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/compound/instances.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/section/cutter.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/section/index.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/section/tests/cutter.rs
+rust_path	crate::spatial::bvh::sidecar::	spatial_indexes::bounding_volume_hierarchy::sidecar::	legacy/map_engine/src/world/architecture/section/tests/index_tests.rs
+rust_path	crate::spatial::bvh::traversal::	spatial_indexes::bounding_volume_hierarchy::triangle_tree::	legacy/map_engine/src/world/architecture/blueprint/tests/model.rs
+rust_path	crate::spatial::bvh::traversal::	spatial_indexes::bounding_volume_hierarchy::triangle_tree::	legacy/map_engine/src/world/architecture/compound/assembly.rs
+rust_path	crate::spatial::bvh::traversal::	spatial_indexes::bounding_volume_hierarchy::triangle_tree::	legacy/map_engine/src/world/architecture/section/tests/cutter.rs
+rust_path	crate::spatial::bvh::traversal::	spatial_indexes::bounding_volume_hierarchy::triangle_tree::	legacy/map_engine/src/world/architecture/section/tests/index_tests.rs
+rust_path	crate::spatial::bvh::surface::	spatial_indexes::bounding_volume_hierarchy::surface_kind::	legacy/map_engine/src/world/architecture/compound/assembly.rs
+rust_path	crate::spatial::bvh::tree::tests::	spatial_indexes::test_fixtures::	legacy/map_engine/src/world/architecture/blueprint/tests/model.rs
+rust_path	crate::spatial::bvh::tree::tests::	spatial_indexes::test_fixtures::	legacy/map_engine/src/world/architecture/section/tests/cutter.rs
+rust_path	crate::spatial::bvh::tree::tests::	spatial_indexes::test_fixtures::	legacy/map_engine/src/world/architecture/section/tests/index_tests.rs

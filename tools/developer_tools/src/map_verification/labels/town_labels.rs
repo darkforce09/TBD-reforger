@@ -1,10 +1,10 @@
 use super::*;
 
 pub fn town_labels(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
-    use map_engine::overlay::symbology::labels::importance::LocationLabel;
-    use map_engine::overlay::symbology::labels::importance::declutter_town_labels;
-    use map_engine::overlay::symbology::labels::importance::town_declutter_invariant_holds;
-    use map_engine::overlay::symbology::labels::importance::town_label_fade_alpha;
+    use label_layout::importance::LocationLabel;
+    use label_layout::importance::declutter_town_labels;
+    use label_layout::importance::town_declutter_invariant_holds;
+    use label_layout::importance::town_label_fade_alpha;
     let loc_path = terrain_dir(root, terrain).join("locations.json");
     if !loc_path.exists() {
         eprintln!(
@@ -154,14 +154,14 @@ pub fn town_labels(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
 }
 
 pub fn road_names(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
-    use map_engine::world::environment::locations::route_geometry::perpendicular_dist_to_polyline;
-    use map_engine::world::environment::locations::route_geometry::road_declutter_min_dist_m;
-    use map_engine::world::environment::locations::route_labels::parse_road_names_json;
-    use map_engine::world::environment::locations::route_placement::ROAD_NAME_MAX_ON_SCREEN;
-    use map_engine::world::environment::locations::route_placement::ROAD_NAME_PERP_TOL_M;
-    use map_engine::world::environment::locations::route_placement::declutter_road_labels;
-    use map_engine::world::environment::locations::route_placement::place_road_labels;
-    use map_engine::world::environment::locations::route_placement::road_declutter_invariant_holds;
+    use place_names::route_geometry::perpendicular_dist_to_polyline;
+    use place_names::route_geometry::road_declutter_min_dist_m;
+    use place_names::route_labels::parse_road_names_json;
+    use place_names::route_placement::ROAD_NAME_MAX_ON_SCREEN;
+    use place_names::route_placement::ROAD_NAME_PERP_TOL_M;
+    use place_names::route_placement::declutter_road_labels;
+    use place_names::route_placement::place_road_labels;
+    use place_names::route_placement::road_declutter_invariant_holds;
     let base = terrain_dir(root, terrain);
     let names_path = base.join("road-names.json");
     let roads_path = base.join("objects/roads.json.gz");
@@ -175,7 +175,7 @@ pub fn road_names(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
     let names =
         parse_road_names_json(&names_raw).map_err(|e| anyhow::anyhow!("road-names: {e}"))?;
     let gz = fs::read(&roads_path)?;
-    let mut store = map_engine::streaming::loaders::store::WorldStore::new();
+    let mut store = world_store::store::WorldStore::new();
     let seg_count = store
         .load_roads_gz(&gz)
         .map_err(|e| anyhow::anyhow!("roads.json.gz: {e}"))?;
@@ -217,10 +217,8 @@ pub fn road_names(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
     }
 
     // G5 — placement within perpendicular tolerance of its own segment.
-    let by_id: std::collections::HashMap<
-        &str,
-        &map_engine::world::terrain::roads::network::RoadSegment,
-    > = store.roads.iter().map(|s| (s.id.as_str(), s)).collect();
+    let by_id: std::collections::HashMap<&str, &road_network::network::RoadSegment> =
+        store.roads.iter().map(|s| (s.id.as_str(), s)).collect();
     let mut perp_bad = 0usize;
     for l in &drawn {
         match by_id.get(l.segment_id.as_str()) {

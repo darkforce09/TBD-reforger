@@ -66,10 +66,10 @@ context files in `apps/frontend/src/workspaces/editor/` and the map engine's
 `data/store/operations/` and `editing/hosted_commands/`), `loadout: String::new()` in the slot
 template derive, and the strings Standardization, IFAK or Grenade Complement in the ORBAT manager
 modal and the editor chrome. Three pins require the BLUFOR, OPFOR and INDFOR side colours in
-`legacy/map_engine/src/overlay/symbology/roles/classify.rs`. Then 25 `cargo test` pins run
-named selectors: `map_engine --lib` with the `scenario store` or the `render` features,
-and `frontend` with none; each must exit 0 and pass at least one test. The gate stops at
-the first failure.
+`crates/map_overlay/unit_symbology/src/classification.rs`. Then 25 `cargo test` pins run
+named selectors: `map_engine --lib` with the `scenario store` features, the map overlay crates
+`map_draw_lanes`, `unit_symbology` and `overlay_instances` with none, and `frontend` with none;
+each must exit 0 and pass at least one test. The gate stops at the first failure.
 
 ## Public surface
 

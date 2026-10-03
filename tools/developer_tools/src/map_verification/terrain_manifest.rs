@@ -1,11 +1,11 @@
 //! Terrain manifest validation against schema, spatial dimensions, and binary contracts.
 use crate::repository_layout::{definition_path, terrain_dir, terrain_manifest_path};
 use anyhow::{Context, Result};
-use map_engine::streaming::loaders::chunk_bin::chunk_bin_path;
-use map_engine::streaming::loaders::manifest::parse_manifest_binary;
 use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
+use world_chunks::chunk_container::chunk_bin_path;
+use world_chunks::terrain_manifest::parse_manifest_binary;
 use world_file_formats::containers::header::CONTAINER_VERSION;
 use world_file_formats::pod::instance::POD_BYTES;
 use world_file_formats::pod::instance::POD_NAME;
@@ -169,7 +169,7 @@ fn manifest_binary_failures(manifest: &Value, asset_dir: &Path) -> (usize, Vec<S
         // The chunk path is a TEMPLATE. `chunk_bin_path` is the loader's own filler: it returns
         // None unless BOTH placeholders are present, because a template missing one resolves every
         // chunk in the world to a single URL and the map fills with copies of one tile.
-        match chunk_bin_path(&o.chunks, "0_0") {
+        match chunk_bin_path(&o.chunks, &"0_0".into()) {
             None => errs.push(format!(
                 "objects.binary.chunks '{}' does not carry both {{cx}} and {{cy}}",
                 o.chunks

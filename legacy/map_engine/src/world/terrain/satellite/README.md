@@ -1,16 +1,16 @@
 # Satellite imagery
 
-A terrain's satellite image on the 2D map: the reader of the `.tbd-sat` container that holds it,
-the browser loads of its preview, of its full mip chain and of the cartographic map tiles that can
-replace it, and the render engine's texture layers that show the basemap and the hillshade.
+A terrain's satellite image on the 2D map: the browser loads of its preview, of its full mip chain
+and of the cartographic map tiles that can replace it, and the render engine's texture layers that
+show the basemap and the hillshade. The reader of the `.tbd-sat` container that holds the image is
+the `satellite_imagery` crate, which every caller imports directly.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/world/terrain/satellite/
-├── mod.rs       the module tree
+├── mod.rs       the module tree: `quadtree` and `textures`
 ├── quadtree/    the browser loads: the satellite preview and full mip chain, and the map tiles
-├── streamer/    the `.tbd-sat` container reader: header, index versions, checks and level picks
 └── textures.rs  the render engine's texture layers: the basemap and the hillshade
 ```
 
@@ -18,10 +18,11 @@ legacy/map_engine/src/world/terrain/satellite/
 
 At boot `crate::streaming::host` takes the container's URL from the terrain manifest's
 `tiles.satellite.unified` block and calls `quadtree::load_satellite`, which reads the index through
-`streamer/` and uploads each level through the texture layers.
+the [`satellite_imagery`](/crates/terrain/satellite_imagery/README.md) crate and uploads each
+level through the texture layers.
 
 A texture layer is one of two roles: 0, the basemap (the satellite image or the cartographic map),
-and 1, the hillshade that `crate::world::terrain::relief` computes and the host uploads at opacity
+and 1, the hillshade that `terrain_relief::hillshade` computes and the host uploads at opacity
 0.4. The layers are `RenderEngine` methods exported to JavaScript:
 
 ```text
@@ -40,7 +41,6 @@ bytes than its base level in the diagnostics.
 
 ## Public surface
 
-- `streamer`: the container reader, whose README lists its items.
 - `quadtree`: `load_satellite`, `load_map_basemap`, `show_satellite_basemap` and
   `sat_preview_only`.
 - `textures`: the `RenderEngine` methods `tex_layer_begin`, `tex_layer_write_bitmap`,
@@ -49,9 +49,9 @@ bytes than its base level in the diagnostics.
 
 ## Boundaries
 
-- Depends on: `world_file_formats` (the `TBDS` container and the archived index); `crate::streaming` (Range
-  fetches, boot progress, the statistics bridge, the memory budget); `crate::frame` (the render
-  engine), `crate::overlay::lanes` (lane roles) and `crate::world::scene` (the anchor-relative
+- Depends on: `satellite_imagery` (the container reader); `crate::streaming` (boot progress,
+  the Range split, the statistics bridge, the memory budget); `browser_platform` (Range fetches);
+  `crate::frame` (the render engine), `map_draw_lanes::lane_roles` (lane roles) and `crate::world::scene` (the anchor-relative
   rectangle); `render_primitives` (the quad instance layout), `wgpu` and the browser's image APIs.
 - Used by:
   - `crate::streaming::host`, which loads the basemap at boot, switches the basemap view and
@@ -60,8 +60,7 @@ bytes than its base level in the diagnostics.
     `crate::spatial::los::terrain` and `crate::world::environment::vegetation`, which build
     `TexLane`s for the viewshed overlay and the forest density texture;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tests in
-    `apps/frontend/src/workspaces/editor/tests/`, which parse Everon's index and read the
-    loading code.
-- Rules: `textures.rs` and `quadtree/` compile only for wasm32 with the `render` feature, and
-  `streamer/` with `streaming`; the texture-layer roles are exactly 0 and 1, the numbers the
+    `apps/frontend/src/workspaces/editor/tests/`, which read the loading code by path.
+- Rules: `textures.rs` and `quadtree/` compile only for wasm32 with the `render` feature; the
+  texture-layer roles are exactly 0 and 1, the numbers the
   basemap and hillshade callers pass.

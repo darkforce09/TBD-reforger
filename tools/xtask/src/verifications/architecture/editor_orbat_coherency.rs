@@ -152,7 +152,7 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
 const ORBAT_RS: &str = "legacy/map_engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
 const ORBAT_MGR: &str = "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager.rs";
 const EDEN_CHROME: &str = "apps/frontend/src/workspaces/editor/session/eden_chrome.rs";
-const SLOTS_GPU: &str = "legacy/map_engine/src/overlay/symbology/roles/classify.rs";
+const SLOTS_GPU: &str = "crates/map_overlay/unit_symbology/src/classification.rs";
 
 /// Every UI source that can render the banned ORBAT copy, plus the editor shell.
 const ORBAT_UI_BAN_TARGETS: &[&str] = &[
@@ -196,21 +196,20 @@ const PINS: &[(&str, &str)] = &[
     ("SIDE_INDFOR_RGBA pin missing", r"SIDE_INDFOR_RGBA: \[u8; 4\] = \[34, 197, 94, 255\]"),
 ];
 
-const MEC: &str = "map_engine";
-const MER: &str = "map_engine";
 const FE: &str = "frontend";
-/// `MC` names the same package as `MEC` / `MER`. They stay apart because the FEATURE tier
-/// differs, and that is what these rows actually pin.
+/// The map engine, pinned at its mission-authoring feature tier.
 ///
 /// One argv element, not two, so the failure text reads `--features scenario store`. Rendered by
 /// `shown`.
 const MC: &str = "map_engine";
 /// The mission-authoring feature tier.
 const MSN: Option<&str> = Some("scenario store");
-/// The crate default is `scenario` alone, so the graphics tier has to be named: `render` reaches
-/// streaming -> io -> world -> bvh transitively, which is all of it. Without this the four
-/// graphics pins would select zero tests and pass vacuously.
-const MEF: Option<&str> = Some("render");
+/// The map overlay crates that draw the ORBAT: the lane order (`map_draw_lanes`), the side tints
+/// and squad links (`unit_symbology`) and the slot and vehicle instances (`overlay_instances`).
+/// They have no features, so their pins pass `NOF`.
+const LANES: &str = "map_draw_lanes";
+const SYMBOLOGY: &str = "unit_symbology";
+const INSTANCES: &str = "overlay_instances";
 const NOF: Option<&str> = None;
 
 /// One `cargo_test_pin`: package, `--features` value, `--lib`?, selector, and the `ok` line to
@@ -229,11 +228,11 @@ const CARGO_PINS: &[PinRow] = &[
     (MC, MSN, true, "attach_vehicle_roundtrip", None),
     (MC, MSN, true, "apply_faction_", Some("store-feature place/mutator/apply gates")),
     // C / D / G / vehicle pack.
-    (MEC, MEF, true, "side_tint_three_distinct", None),
-    (MEC, MEF, true, "squad_link_", None),
+    (INSTANCES, NOF, true, "side_tint_three_distinct", None),
+    (SYMBOLOGY, NOF, true, "squad_link_", None),
     (MC, MSN, true, "format_slot_line", None),
-    (MEC, MEF, true, "pack_vehicle_instances", None),
-    (MER, MEF, true, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
+    (INSTANCES, NOF, true, "pack_vehicle_instances", None),
+    (LANES, NOF, true, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
     // I — scenario feature derive / compile.
     (MC, MSN, true, "derive_fills_loadout", None),
     (MC, MSN, true, "derive_empty_loadout", None),
@@ -242,7 +241,7 @@ const CARGO_PINS: &[PinRow] = &[
     // ── THE COMPILE BOUNDARY. Read this before trimming the list above. ─────────────────────
     // Every selector up to here proves the editor can AUTHOR an ORBAT value
     // (data::store::operations::place_orbat, data::store::rows), that the map can DRAW it
-    // (overlay::symbology), or that the ORBAT derive keeps it (data::scenario::ast::factions,
+    // (the map overlay crates), or that the ORBAT derive keeps it (data::scenario::ast::factions,
     // data::scenario::compiler). None of them crosses the edge where the document is handed to
     // the game server: without these two rows, a payload authoring a squad's leaderSlotId, a
     // slot's tag / callsign / rank / stance and the whole vehicle roster could compile to a

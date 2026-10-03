@@ -2,25 +2,27 @@
 
 The CPU-side composers that turn the resident world chunks into the packed buffers the render
 engine draws: the draw set of chunks, the tree, prop and building-badge icon instances, the pier,
-bridge-rail and fence strips, and the accessors the world loader uploads from. Each of its four
-modules adds methods to `WorldResidency`, and each needs the `streaming` feature.
+bridge-rail and fence strips, the building footprint fill and outline, and the accessors the world
+loader uploads from. Each of its five modules adds methods to `WorldResidency`, and each needs the
+`streaming` feature.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/streaming/buffers/
-├── glyphs.rs    the prefab-to-glyph lookup and the tree, prop and badge icon instance buffers
-├── mod.rs       the module tree
-├── packer.rs    the draw set, the glyph and strip memo keys, the tree heatmap switch
-├── revision.rs  `BUILDING_MIN_ZOOM` and the buffer, count and lane accessors the loader uploads
-└── strips.rs    the pier, bridge-rail and fence strips over the pinned chunks, and their memo key
+├── footprint.rs  building fill and outline instances, the footprint and per-class fill colours
+├── glyphs.rs     the prefab-to-glyph lookup and the tree, prop and badge icon instance buffers
+├── mod.rs        the module tree
+├── packer.rs     the draw set, the glyph and strip memo keys, the tree heatmap switch
+├── revision.rs   `norm` and the buffer, count and lane accessors the loader uploads
+└── strips.rs     the pier, bridge-rail and fence strips over the pinned chunks, and their memo key
 ```
 
 ## How it works
 
 ```text
 pin or fill-band change, ingest frame, trees, props or buildings toggle
-  └─ rebuild_buffers (building fill and outline, crate::world::environment::buildings::footprint)
+  └─ rebuild_buffers (footprint.rs: building fill and outline, empty below building_visible)
        ├─ rebuild_strip_buffers        pinned chunks: piers and docks, 2 rails a bridge, fences
        └─ refresh_draw_set_and_glyphs  draw set = strict viewport ∩ chunk index ∩ pinned, sorted
             ├─ glyph memo key changed ─> tree heatmap decision, rebuild_glyph_buffers
@@ -49,15 +51,15 @@ packed.
 ## Boundaries
 
 - Depends on: `crate::streaming::scheduler` (`WorldResidency`, `chunk_math`,
-  `DRAW_CULL_MARGIN_M`, `ResidencyEvent`); `crate::overlay::lod` and
-  `crate::overlay::symbology::labels::glyph_math` (gates, `INSTANCE_BUDGET`, glyph sizes, keys and
-  packing); `crate::world::environment` (class codes, `building_visible`, the tree counts and
-  heatmap rule) and `crate::world::terrain::roads` (airfield structures, strip composers).
+  `DRAW_CULL_MARGIN_M`, `ResidencyEvent`); `map_draw_lanes::zoom_gates` and
+  `label_layout::glyph_math` (gates, `INSTANCE_BUDGET`, glyph sizes, keys and packing,
+  `building_visible`); `prefab_catalog` (class codes, oriented boxes), `vegetation::canopy` (the
+  tree counts and heatmap rule) and `road_network` (airfield structures, strip composers).
 - Used by: the rest of `crate::streaming` (the scheduler's pin, the bridge's toggles, the prefab
   load, the world loader's uploads, the occluder loader's `take_residency_events`, the memory
-  statistics) and `crate::world::environment::buildings::footprint`, which reads
-  `BUILDING_MIN_ZOOM` and `norm`, asks `early_landmark_glyph_active` for the fill de-emphasis and
-  calls the strip and glyph rebuilds after the building fill.
+  statistics) and the residency tests. Inside the folder, `footprint.rs` reads `norm`, asks
+  `early_landmark_glyph_active` for the fill de-emphasis and calls the strip and glyph rebuilds
+  after the building fill, and `strips.rs` reads its `fill_color`.
 - Rules:
   - the draw set equals the strict-viewport reference inside the pinned set
     (`class_s_draw_set_equals_strict_reference`), and `draw_chunk_ids` asserts in debug builds

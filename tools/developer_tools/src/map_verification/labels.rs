@@ -1,7 +1,7 @@
 //! Label gates: height, town, road and location names.
 //! The height-labels port RESTORES the wasm-era branch natively (declutter G5/G6 + the ASL
 //! oracle + G3 completeness) — those gates had retired-skipped when the React wasm pkg died;
-//! `map_engine::dem` is the same math the wasm wrapped, so the Rust gate runs it directly.
+//! `terrain_elevation` is the same math the wasm wrapped, so the Rust gate runs it directly.
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -10,14 +10,14 @@ use serde_json::Value;
 
 use crate::repository_layout::{definition_path, terrain_dir};
 
-use map_engine::world::environment::locations::peaks::HeightLabel;
-use map_engine::world::environment::locations::peaks::HeightLabelKind;
-use map_engine::world::environment::locations::peaks::PEAK_MIN_VALUE_M;
-use map_engine::world::environment::locations::peaks::declutter_height_labels;
-use map_engine::world::environment::locations::peaks::height_label_min_sep_m;
-use map_engine::world::terrain::dem::manifest::DemManifest;
-use map_engine::world::terrain::dem::png::decode_png_to_meters;
-use map_engine::world::terrain::dem::sampling::sample_elevation_from_meters_cache;
+use place_names::peaks::HeightLabel;
+use place_names::peaks::HeightLabelKind;
+use place_names::peaks::PEAK_MIN_VALUE_M;
+use place_names::peaks::declutter_height_labels;
+use place_names::peaks::height_label_min_sep_m;
+use terrain_elevation::manifest::DemManifest;
+use terrain_elevation::png::decode_png_to_meters;
+use terrain_elevation::sampling::sample_elevation_from_meters_cache;
 
 const PEAK_LABEL_MAX: usize = 48;
 

@@ -30,7 +30,7 @@ are released with `forget` and stay attached to the window and the canvas.
 - Depends on: the parent `apps/frontend/src/workspaces/debug/building_viewer/live.rs`,
   through `use super::*` (the URL readers, `load_compound`, the lane uploaders, `sync_cam`, the
   page types, `geom` and `building_interior`); `map_engine::frame` (`RenderEngine`,
-  `RafPump`) and the lane ids of `map_engine::overlay::lanes`; `gloo_net` for the fetches,
+  `RafPump`) and the lane ids of `map_draw_lanes::lane_roles`; `gloo_net` for the fetches,
   `wasm_bindgen` and `web_sys`.
 - Used by: `live.rs`, which re-exports `wire`, and
   `apps/frontend/src/workspaces/debug/building_viewer/page.rs`, which calls it in the browser

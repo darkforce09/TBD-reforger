@@ -46,10 +46,11 @@ cargo test -p geometry_primitives   # the rigid transform and box unit tests
 ## Boundaries
 
 - Depends on: `serde` (the box's JSON form).
-- Used by: the map engine (`legacy/map_engine`), from its `bvh` tier: the BVH node test and
-  traversal and the section cutter (`vector3`), the building blueprints and the interior and
-  world line-of-sight walkers (`segment_geometry`), the compound buildings (`rigid_transform`)
-  and the occluder descriptors (`axis_aligned_box`); the developer tools (`tools/developer_tools`):
+- Used by: the spatial indexes (`crates/geometry/spatial_indexes`: the BVH node test and
+  traversal, `vector3`), the building interiors (`crates/world_objects/building_interiors`: the
+  section cutter, the blueprints and the compound buildings, `vector3`, `segment_geometry`,
+  `rigid_transform`), the interior and world line of sight (`crates/line_of_sight/`:
+  `segment_geometry`, `axis_aligned_box`), the map engine (`legacy/map_engine`); the developer tools (`tools/developer_tools`):
   the blueprint compiler and the world line-of-sight checks; and the single-page app's building
   interior bench (`rigid_transform`).
 - Rules: no map, world, terrain or GPU concept enters this crate; a rigid transform keeps an

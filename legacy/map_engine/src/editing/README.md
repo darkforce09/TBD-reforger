@@ -53,7 +53,7 @@ Every edit through `hosted_commands` ends in `history::after_local_edit`, which 
 the host installed (prune the selection, rebind lanes, mark unsaved, schedule a save); undo and
 redo end in the same hook. `with_batch` closes its undo group through a drop guard, so an early
 return or an unwind never leaves the document grouping. The picks in `picking.rs` turn a frozen
-camera and a pixel into a world query, ask `crate::spatial::indexing::picking` for rows, and let
+camera and a pixel into a world query, ask `spatial_indexes::point_indexes::picking` for rows, and let
 `MissionDocCore` map rows to ids and break ties
 (a [slot](/documentation/glossary/n_to_z.md#slot) beats a vehicle at equal distance).
 `selection_universe.rs` reads membership from the post-change document's raw maps rather than the
@@ -80,9 +80,10 @@ probe and the click with one resolution, so a row is clickable only when a click
 
 - Depends on: `crate::data::store` (`MissionDocCore`, `SlotSoa`, `operations`),
   `crate::data::scenario` (the compile and its findings), `crate::camera` (the frozen ortho camera
-  and the grid reference), `crate::spatial` (the point index, picking rows and the line-of-sight
-  cores), `crate::world::terrain::dem::manifest`, `crate::overlay::symbology` (squad link inputs,
-  side tints), `crate::frame::EngineHandle` on `wasm32` with `render`; `serde_json`. The `editing`
+  and the grid reference), `spatial_indexes` (the point index and picking rows), the line of
+  sight crates (`terrain_line_of_sight`, `interior_line_of_sight`, `world_line_of_sight`),
+  `terrain_elevation::manifest`, `unit_symbology` (squad link inputs, side tints),
+  `crate::frame::EngineHandle` on `wasm32` with `render`; `serde_json`. The `editing`
   feature turns on `store`, `world` and `streaming`.
 - Used by:
   - the Mission Creator in `apps/frontend/src/workspaces/editor/` (canvas mount, bridge,

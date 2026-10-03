@@ -1,0 +1,27 @@
+# The unit symbology of the map: side tints, the unit role and vehicle classes, the symbol atlas
+# cells, the briefing marker vocabulary with its atlas and captions, and the squad link
+# hairlines. No GPU handle, no browser binding.
+[package]
+name = "unit_symbology"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Side tints, unit and vehicle classes, the symbol atlas, briefing markers and squad links."
+
+[package.metadata.layout]
+category = "crates/map_overlay"
+tier = 2
+targets = "any"
+
+[dependencies]
+map_draw_lanes = { workspace = true }
+newtype_ids = { workspace = true }
+render_primitives = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

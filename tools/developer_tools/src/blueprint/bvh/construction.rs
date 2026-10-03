@@ -1,8 +1,8 @@
 //! `cargo xtask map bvh-parity` + `map bvh-emit` — CLI for the 3D-occlusion lane.
 //!
-//! The BVH raycaster and the `.bvh` sidecar codec live in `map_engine::bvh`
-//! (step 2 moved them there; this file kept only the xtask plumbing). `bvh-parity`
-//! replays the Workbench parity oracle over either the COLL trimesh of a `.xob`
+//! The BVH raycaster and the `.bvh` sidecar codec live in
+//! `spatial_indexes::bounding_volume_hierarchy`; this file keeps only the command plumbing.
+//! `bvh-parity` replays the Workbench parity oracle over either the COLL trimesh of a `.xob`
 //! (`--mesh`) or an emitted sidecar (`--sidecar`) — the two lanes must print identical
 //! numbers. `bvh-emit` writes the deterministic sidecar next to the blueprint JSON in
 //! `assets/terrains/everon/prefabs/buildings/`.
@@ -27,20 +27,21 @@ use std::sync::Arc;
 use anyhow::{Context, Result, bail};
 
 use crate::repository_layout::terrain_dir;
+use building_interiors::compound::assembly::CompoundBuilding;
+use building_interiors::compound::doors::DoorState;
+use building_interiors::compound::instances::InstanceKind;
+use building_interiors::compound::instances::InstanceRecord;
+use building_interiors::compound::instances::InstancesFile;
 use geometry_primitives::vector3::dot;
 use geometry_primitives::vector3::sub;
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::bvh::sidecar::emit_bytes;
-use map_engine::spatial::bvh::sidecar::lift_verts;
-use map_engine::spatial::bvh::sidecar::quantize_verts;
-use map_engine::spatial::bvh::surface::SurfaceKind;
-use map_engine::spatial::bvh::traversal::Bvh;
-use map_engine::spatial::los::interior::walker::Owner;
-use map_engine::world::architecture::compound::assembly::CompoundBuilding;
-use map_engine::world::architecture::compound::doors::DoorState;
-use map_engine::world::architecture::compound::instances::InstanceKind;
-use map_engine::world::architecture::compound::instances::InstanceRecord;
-use map_engine::world::architecture::compound::instances::InstancesFile;
+use interior_line_of_sight::compound_walk::CompoundLineOfSight;
+use interior_line_of_sight::compound_walk::Owner;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::emit_bytes;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::lift_verts;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::quantize_verts;
+use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
+use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
 
 use super::xob;
 use crate::blueprint::parity_report::ParityFile;
@@ -240,11 +241,11 @@ pub fn run_bvh_parity(_root: &std::path::Path, args: &[String]) -> Result<u8> {
                     .into_iter()
                     .find(|e| e.kind == SurfaceKind::Opaque)
                     .map_or(
-                        map_engine::spatial::bvh::traversal::Hit {
+                        spatial_indexes::bounding_volume_hierarchy::triangle_tree::Hit {
                             t: f64::NAN,
                             tri: u32::MAX,
                         },
-                        |e| map_engine::spatial::bvh::traversal::Hit {
+                        |e| spatial_indexes::bounding_volume_hierarchy::triangle_tree::Hit {
                             t: e.t,
                             tri: match e.owner {
                                 Owner::Shell => e.tri,
@@ -363,9 +364,9 @@ pub fn load_compound(
     let mut c = CompoundBuilding::assemble(shell, &kept, &blas_by_path)
         .map_err(|e| anyhow::anyhow!("assemble compound: {e}"))?;
     if doors_open {
-        let ids: Vec<String> = c.doors().map(|d| d.record.id.clone()).collect();
+        let ids: Vec<String> = c.doors().map(|d| d.record.id.to_string()).collect();
         for id in ids {
-            c.set_door(&id, DoorState::OPEN);
+            c.set_door(id.as_str(), DoorState::OPEN);
         }
     }
     Ok((c, kept.len(), dropped))
@@ -409,8 +410,8 @@ pub fn run_bvh_emit(root: &std::path::Path, args: &[String]) -> Result<u8> {
 
     let bytes = fs::read(&mesh_path).with_context(|| mesh_path.display().to_string())?;
     let parsed = xob::parse_coll(&bytes)?;
-    // Determinism authority (see map_engine::bvh): quantize to the stored f32s FIRST
-    // and build over their lifted values, so loader-side raycasts are bit-identical.
+    // Determinism authority (see spatial_indexes::bounding_volume_hierarchy): quantize to the
+    // stored f32s FIRST and build over their lifted values, so loader-side raycasts are bit-identical.
     let verts_f32 = quantize_verts(&parsed.verts);
     if verts_f32.iter().flatten().any(|c| !c.is_finite()) {
         bail!("COLL vertex overflows f32 — sidecar v1 cannot carry this mesh");

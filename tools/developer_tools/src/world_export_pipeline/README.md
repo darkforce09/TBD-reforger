@@ -86,10 +86,10 @@ not certify the builder with its own code.
 
 ## Boundaries
 
-- Depends on: `map_engine`'s archives, containers, density codec and POD row
-  (`io::archives`, `io::containers`, `io::density`, `io::pod`), its loaders
-  (`streaming::loaders`) and its prefab, region, road and elevation code (`world::environment`,
-  `world::terrain`); `crate::enfusion_pak`; `crate::repository_layout`;
+- Depends on: the archives, containers, density codec and POD row of `world_file_formats`
+  (`archives`, `containers`, `density`, `pod`); the chunk and manifest readers of `world_chunks`
+  and the store of `world_store`; the prefab, region, road and elevation crates
+  (`prefab_catalog`, `vegetation`, `road_network`, `terrain_elevation`); `crate::enfusion_pak`; `crate::repository_layout`;
   `contracts/rules/prefab-classify.json` and the
   schemas in `contracts/definitions/`; `clap`, `serde_json`, `jsonschema`, `flate2`, `png` and
   `bcdec_rs`; `cargo`, which `census` and `validate-exports` run as a child process.

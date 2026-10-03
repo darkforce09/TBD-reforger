@@ -110,10 +110,10 @@ fn briefing_prose_round_trips_through_the_document_core() {
 /// The static world, clean: it names the world, the format layer and the streamer, and never
 /// the document. Those three are what a `world/` file legitimately imports.
 pub(super) const MAP_WORLD: &str = "\
-use crate::world::terrain::dem::sampling::uint16_to_meters;
+use terrain_elevation::sampling::uint16_to_meters;
 use world_file_formats::archives::codec::to_bytes;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::spatial::bvh::traversal::Bvh;
+use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
 ";
 
 /// Rule 5's root, green: the editor's decisions, named in `crate::` and `std::` terms only.
@@ -178,7 +178,7 @@ impl Repo {
             "data/scenario/compiler/payload/tests/cases_1.rs",
             MAP_SCENARIO_PAYLOAD_TEST,
         );
-        r.map("world/terrain/dem/grid.rs", MAP_WORLD);
+        r.map("world/terrain/dem/loader.rs", MAP_WORLD);
         // Rules 5 and 6's roots, seeded on every fixture for the same reason: an absent root is
         // a hard FAIL, and every other test would trip over it.
         r.map("editing/tools/line_of_sight/capture.rs", MAP_EDITING);

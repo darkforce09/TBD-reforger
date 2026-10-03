@@ -1,0 +1,24 @@
+# The overlay instance packers of the map: slot, vehicle, comment and cluster icon instances,
+# drag previews and in-place row patches of the slot lane, and the fire-mission marks. No GPU
+# handle, no browser binding.
+[package]
+name = "overlay_instances"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Slot, vehicle, comment and cluster icon instances, drag previews, row patches and fire-mission marks."
+
+[package.metadata.layout]
+category = "crates/map_overlay"
+tier = 3
+targets = "any"
+
+[dependencies]
+map_draw_lanes = { workspace = true }
+render_primitives = { workspace = true }
+unit_symbology = { workspace = true }
+
+[lints]
+workspace = true

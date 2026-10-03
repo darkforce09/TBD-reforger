@@ -1,0 +1,40 @@
+# The headless world store with no browser or GPU code: one terrain's manifest `objects` block,
+# prefab lookup, road network, land-cover regions and one object chunk at a time, read from the
+# served gzip JSON or binary payloads.
+[package]
+name = "world_store"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The headless world store: a terrain's manifest, prefab lookup, roads, regions and one chunk at a time."
+
+[package.metadata.layout]
+category = "crates/world_formats"
+tier = 5
+targets = "any"
+
+[dependencies]
+# The airfield box type.
+map_coordinates = { workspace = true }
+# The prefab rows and lookup, and the gzip-or-plain JSON decoding with its error.
+prefab_catalog = { workspace = true }
+# The road segments, their archive reader and the airfield box.
+road_network = { workspace = true }
+# The terrain manifest is parsed as a JSON document.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+thiserror = { workspace = true }
+# The land-cover regions.
+vegetation = { workspace = true }
+# The chunk rows, the terrain manifest's `objects` block and the chunk identifier.
+world_chunks = { workspace = true }
+# The error the road network archive reader reports.
+world_file_formats = { workspace = true }
+
+[dev-dependencies]
+# The gzip encoding of the inline payloads the store tests load.
+prefab_catalog = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

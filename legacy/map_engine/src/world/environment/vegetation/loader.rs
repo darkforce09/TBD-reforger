@@ -3,17 +3,17 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::lod::class_visible;
-use crate::world::environment::vegetation::density::CHUNKS_PER_AXIS;
-use crate::world::environment::vegetation::density::EVERON_DENSITY_BINS;
-use crate::world::environment::vegetation::density::ISLAND_CORNERS;
-use crate::world::environment::vegetation::density::pack_island_r8_yflip;
-use crate::world::environment::vegetation::density::stitch_chunk_into_island;
-use crate::world::environment::vegetation::mass::CANOPY_MASS_ISO;
-use crate::world::environment::vegetation::mass::forest_fill_alpha;
-use crate::world::environment::vegetation::mass::forest_outline_segments_from_corners;
 use crate::world::mesh::FOREST_OUTLINE_RGBA;
 use crate::world::mesh::compose_contour_hairlines;
+use map_draw_lanes::zoom_gates::class_visible;
+use vegetation::density::CHUNKS_PER_AXIS;
+use vegetation::density::EVERON_DENSITY_BINS;
+use vegetation::density::ISLAND_CORNERS;
+use vegetation::density::pack_island_r8_yflip;
+use vegetation::density::stitch_chunk_into_island;
+use vegetation::mass::CANOPY_MASS_ISO;
+use vegetation::mass::forest_fill_alpha;
+use vegetation::mass::forest_outline_segments_from_corners;
 use world_file_formats::density::tbdd::decode_tbdd;
 
 use crate::frame::EngineHandle;
@@ -178,7 +178,7 @@ impl ForestMassHost {
                 return false;
             }
             e.upload_hairline_segments(
-                crate::overlay::lanes::role_id::FOREST_OUTLINE,
+                map_draw_lanes::lane_roles::role_id::FOREST_OUTLINE,
                 &hair.verts,
                 hair.segment_count,
                 false,

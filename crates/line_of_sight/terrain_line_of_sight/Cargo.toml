@@ -1,0 +1,24 @@
+# Line of sight over the bare ground of a terrain's elevation model: the elevation profile along a
+# sight line, and the viewshed around an observer, computed in one call or a ray at a time under a
+# time budget. No browser or GPU code; the viewshed's texture upload stays with the renderer.
+[package]
+name = "terrain_line_of_sight"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Line of sight over a terrain's elevation model: elevation profiles and viewsheds, whole or sliced."
+
+[package.metadata.layout]
+category = "crates/line_of_sight"
+tier = 3
+targets = "any"
+
+[dependencies]
+# The elevation model's manifest, its coverage test, and the samplers the tests read heights with.
+terrain_elevation = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

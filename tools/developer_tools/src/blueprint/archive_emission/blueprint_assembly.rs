@@ -7,15 +7,15 @@
 use std::path::Path;
 
 use anyhow::{Context, Result, bail};
-use map_engine::world::architecture::blueprint::footprint::OverallFootprint;
-use map_engine::world::architecture::blueprint::footprint::PlateGrid;
-use map_engine::world::architecture::blueprint::footprint::VerticalProfile;
-use map_engine::world::architecture::blueprint::structure::BBox2D;
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
-use map_engine::world::architecture::blueprint::structure::BuildingFurniture;
-use map_engine::world::architecture::blueprint::structure::BuildingLevel;
-use map_engine::world::architecture::blueprint::structure::BuildingWall;
-use map_engine::world::architecture::blueprint::structure::FloorPolygon;
+use building_interiors::blueprint::footprint::OverallFootprint;
+use building_interiors::blueprint::footprint::PlateGrid;
+use building_interiors::blueprint::footprint::VerticalProfile;
+use building_interiors::blueprint::structure::BBox2D;
+use building_interiors::blueprint::structure::BuildingBlueprint;
+use building_interiors::blueprint::structure::BuildingFurniture;
+use building_interiors::blueprint::structure::BuildingLevel;
+use building_interiors::blueprint::structure::BuildingWall;
+use building_interiors::blueprint::structure::FloorPolygon;
 
 use super::march::r2;
 use super::params::Params;
@@ -54,7 +54,7 @@ pub fn assemble(
         let mut walls = Vec::new();
         for (w, is_ext) in band.walls.walls.iter().zip(&band.walls.exterior) {
             walls.push(BuildingWall {
-                id: format!("w_scan_{li}_{wall_seq}"),
+                id: format!("w_scan_{li}_{wall_seq}").into(),
                 start: local_pt(w.start),
                 end: local_pt(w.end),
                 thickness: w.thickness,
@@ -68,7 +68,7 @@ pub fn assemble(
             let r = mass.rect;
             let (cx, cz) = ((r[0] + r[2]) * 0.5 + ox, (r[1] + r[3]) * 0.5 + oz);
             furniture.push(BuildingFurniture {
-                id: format!("mass_{li}_{wall_seq}"),
+                id: format!("mass_{li}_{wall_seq}").into(),
                 name: "scanned mass".to_string(),
                 category: "prop".to_string(),
                 prefab_resource: String::new(),
@@ -144,7 +144,7 @@ pub fn assemble(
 
     BuildingBlueprint {
         schema_version: "1.0.0".to_string(),
-        prefab_id: m.slug.clone(),
+        prefab_id: m.slug.clone().into(),
         resource_name: m.resource.clone(),
         model_mesh: None,
         label: Some(m.slug.clone()),
@@ -203,7 +203,7 @@ fn place_furniture(dump: &VoxelDump, levels: &mut [BuildingLevel], p: &Params) {
             f.name.clone()
         };
         let rec = BuildingFurniture {
-            id: format!("furn_scan_{seq}"),
+            id: format!("furn_scan_{seq}").into(),
             name,
             category: "prop".to_string(),
             prefab_resource: f.res.clone(),

@@ -37,7 +37,7 @@ nothing.
   `ROW_ACTIVE`; `begin_place_marker` and `armed_marker_icon` from
   `bridge::host_state::armed_placement`; and, in the browser build, `map_engine`'s
   `editing::hosted_commands` (`marker_rows`, `marker_count`, `set_marker_icon`, `set_marker_label`,
-  `set_marker_position`, `remove_marker`) and `overlay::symbology::markers` (`MarkerGlyph`,
+  `set_marker_position`, `remove_marker`), and `unit_symbology::markers` (`MarkerGlyph`,
   `marker_glyph_for_alias`, `MARKER_GLYPH_COUNT`).
 - Used by: the Markers tab of `DockRight` in
   `apps/frontend/src/workspaces/editor/ui/docks/dock_right/shell/layout.rs`;

@@ -13,7 +13,7 @@ pub(super) fn gunzip_json(path: &Path) -> Result<Value> {
 /// disk. Returns the occluder and the loaded chunk ids.
 pub fn load_cell(assets: &Path, cell: &str) -> Result<(WorldOccluder, Vec<String>)> {
     let prefabs_doc = gunzip_json(&assets.join("objects/prefabs.json.gz"))?;
-    let rows = narrow_prefab_rows(&prefabs_doc);
+    let rows = narrow_prefab_rows(&prefabs_doc)?;
     let (by_id, _) = build_prefab_maps(rows.clone());
     let mut occ = WorldOccluder::new(
         CHUNK_M,
@@ -40,14 +40,14 @@ pub fn load_cell(assets: &Path, cell: &str) -> Result<(WorldOccluder, Vec<String
             let gz = assets.join("objects/chunks").join(format!("{id}.json.gz"));
             if bin.is_file() {
                 let bytes = fs::read(&bin).with_context(|| bin.display().to_string())?;
-                let chunk = parse_chunk_bin_for(&id, &bytes)
+                let chunk = parse_chunk_bin_for(&id.as_str().into(), &bytes)
                     .with_context(|| format!("parse {}", bin.display()))?;
-                occ.insert_chunk(&id, &chunk);
+                occ.insert_chunk(&id.as_str().into(), &chunk);
                 loaded.push(id);
             } else if gz.is_file() {
                 let raw = gunzip_json(&gz)?;
-                if let Some(chunk) = parse_chunk(&id, &raw, &by_id) {
-                    occ.insert_chunk(&id, &chunk);
+                if let Some(chunk) = parse_chunk(&id.as_str().into(), &raw, &by_id) {
+                    occ.insert_chunk(&id.as_str().into(), &chunk);
                     loaded.push(id);
                 }
             }
@@ -56,7 +56,7 @@ pub fn load_cell(assets: &Path, cell: &str) -> Result<(WorldOccluder, Vec<String
     // Every placed pid: descriptor, then every BLAS it names.
     let prefabs = assets.join("prefabs");
     loop {
-        let want = occ.wanted(&loaded, usize::MAX);
+        let want = occ.wanted(&occ.resident_chunk_ids(), usize::MAX);
         if want.descriptors.is_empty() && want.blas.is_empty() {
             break;
         }
@@ -308,7 +308,7 @@ pub fn run(root: &Path, args: &[String]) -> Result<u8> {
                 (n, pids)
             } else if bin.is_file() {
                 let Ok(bytes) = fs::read(&bin) else { continue };
-                let Ok(chunk) = parse_chunk_bin_for(id, &bytes) else {
+                let Ok(chunk) = parse_chunk_bin_for(&id.as_str().into(), &bytes) else {
                     continue;
                 };
                 (chunk.count as usize, chunk.prefab_idx)
@@ -323,7 +323,7 @@ pub fn run(root: &Path, args: &[String]) -> Result<u8> {
             kv.sort();
             println!(
                 "  {id}: {rows} rows {kv:?} · proxy rows {}",
-                occ.proxy_rows(id).unwrap_or(0)
+                occ.proxy_rows(&id.as_str().into()).unwrap_or(0)
             );
         }
     }

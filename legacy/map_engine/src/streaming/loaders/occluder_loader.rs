@@ -6,16 +6,17 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::spatial::bvh::sidecar::BvhSidecar;
-use crate::spatial::los::world::descriptor::ArchiveBoot;
-use crate::spatial::los::world::descriptor::BlasManifest;
-use crate::spatial::los::world::descriptor::BuildingArchiveBytes;
-use crate::spatial::los::world::descriptor::PrefabDescriptor;
-use crate::spatial::los::world::state::WorldOccluder;
-use crate::streaming::loaders::manifest::parse_manifest_binary;
 use crate::streaming::scheduler::state::ResidencyEvent;
 use crate::streaming::scheduler::state::WorldResidency;
 use map_coordinates::chunk_math::TerrainSizeM;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
+use world_chunks::chunk_id::ChunkId;
+use world_chunks::terrain_manifest::parse_manifest_binary;
+use world_line_of_sight::WorldOccluder;
+use world_line_of_sight::occluder_library::ArchiveBoot;
+use world_line_of_sight::occluder_library::BlasManifest;
+use world_line_of_sight::occluder_library::BuildingArchiveBytes;
+use world_line_of_sight::occluder_library::PrefabDescriptor;
 
 use browser_platform::fetch::fetch_bytes;
 use browser_platform::fetch::fetch_text;
@@ -225,12 +226,12 @@ impl OccluderHost {
                     if let Some(c) = residency.chunk(&id)
                         && c.count > 0
                     {
-                        self.occ.insert_chunk(&id, c);
+                        self.occ.insert_chunk(&ChunkId::new(id.as_str()), c);
                         work = true;
                     }
                 }
                 ResidencyEvent::Evicted(id) => {
-                    self.occ.remove_chunk(&id);
+                    self.occ.remove_chunk(&ChunkId::new(id));
                     work = true;
                 }
             }

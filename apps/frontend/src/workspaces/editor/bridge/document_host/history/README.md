@@ -18,7 +18,7 @@ apps/frontend/src/workspaces/editor/bridge/document_host/history/
 - Depends on: the parent module's imports (`MissionDocCore`, `SlotSoa`, `RenderEngine`, `role_id`,
   `build_squad_link_segments`); `map_engine::editing::hosted_commands::vehicle_rows`,
   `map_engine::editing::picking::squad_link_inputs` and
-  `map_engine::overlay::symbology::roles::classify::side_rgba`; the lane readers the page
+  `unit_symbology::classification::side_rgba`; the lane readers the page
   module `apps/frontend/src/workspaces/editor/mission_editor.rs` re-exports from
   `map_engine::editing::lanes`; and `tactical_graphics.rs` and
   `tactical_graphics_authoring.rs` in `apps/frontend/src/workspaces/editor/bridge/`, for the

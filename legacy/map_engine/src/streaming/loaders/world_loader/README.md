@@ -54,8 +54,9 @@ forest fill is in effect, and `metrics.rs` keeps the last eight warm crossings, 
 
 - Depends on: the residency in `crate::streaming::scheduler`, the sibling loaders, the streaming
   bridge (progress, statistics, world-layer preferences), `crate::frame::EngineHandle`,
-  `crate::world` (road, landcover and apron meshes, the region archive), `crate::overlay::lanes`
-  and `crate::spatial::los::world`; `futures`, `serde_json`, `web-sys`, `js-sys` and
+  `crate::world::mesh` (the landcover mesh), `road_network` (road and apron meshes),
+  `vegetation::regions` (the region archive), `world_chunks`, `world_store`,
+  `map_draw_lanes::lane_roles` and, through the occluder loader, `world_line_of_sight`; `futures`, `serde_json`, `web-sys`, `js-sys` and
   `wasm-bindgen-futures`; the files under `/map-assets/<terrain>/` and `/map-assets/glyphs/atlas/`.
 - Used by: `crate::streaming::host`, whose map host owns one `WorldHost`: boot `init`, the boot
   and settle passes, the airfield apron, the road list for labels, the occluder for queries.

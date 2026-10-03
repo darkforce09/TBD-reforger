@@ -85,8 +85,8 @@ chrome layout re-exports. The route guard in `auth/` reads the tiers of `route_t
 ## Boundaries
 
 - Depends on:
-  - `map_engine::data`, in the wire types; `map_engine` `frame`, `camera`,
-    `streaming` and `world::terrain::dem`, in `map_view/`;
+  - `map_engine::data`, in the wire types; `map_engine` `frame`, `camera` and `streaming`, and
+    `terrain_elevation`, in `map_view/`;
   - `offline_cache_policy` (cache names, request classes, the terrain pack list, the saved-copy
     header), in `offline/`;
   - `http_url_guard` (`is_http_url`), in `utils/`;

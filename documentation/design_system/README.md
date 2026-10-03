@@ -42,7 +42,7 @@ folder, in its feature doc and its `visual_references/`; this folder holds only 
   classes and animations.
 - [Shared interface primitives](/apps/frontend/src/foundation/ui/README.md) — the split
   pane, dialog, sheet and status pill the patterns use.
-- [Map symbology](/legacy/map_engine/src/overlay/symbology/README.md) — the role, vehicle and
+- [Unit symbology](/crates/map_overlay/unit_symbology/README.md) — the role, vehicle and
   side tables, the glyph atlases and the marker glyphs.
 - [Mod interface core](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md) —
   `TBD_UITheme`, the mod's copy of the tokens, and `MountRounded`.

@@ -6,19 +6,19 @@ use super::super::world_los_scene::{build_bench_lanes, ray_strip, Footprint};
 use super::{DEFAULT_CENTER, DEFAULT_EYE_M, DEFAULT_RADIUS_M, MAX_CUT_BUILDINGS};
 use browser_platform::fetch::fetch_bytes;
 use browser_platform::fetch::fetch_text;
+use building_interiors::section::cutter::section_at;
 use leptos::prelude::*;
+use map_draw_lanes::lane_roles::role_id;
 use map_engine::frame::engine::RenderEngine;
 use map_engine::frame::RafPump;
-use map_engine::overlay::lanes::role_id;
-use map_engine::spatial::los::world::coverage_1::WorldVerdict;
-use map_engine::spatial::los::world::state::WorldOccluder;
 use map_engine::streaming::loaders::occluder_loader::OccluderHost;
 use map_engine::streaming::scheduler::state::WorldResidency;
-use map_engine::world::architecture::section::cutter::section_at;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use world_line_of_sight::WorldOccluder;
+use world_line_of_sight::WorldVerdict;
 
 type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
 

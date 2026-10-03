@@ -3,12 +3,12 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::streaming::loaders::manifest::WaterBlock;
-use crate::world::terrain::water::vectors::Bathymetry;
-use crate::world::terrain::water::vectors::TBDB_ENCODING_V1;
-use crate::world::terrain::water::vectors::WaterMask;
-use crate::world::terrain::water::vectors::WaterVectors;
-use crate::world::terrain::water::vectors::suffix_plan;
+use water_bodies::vectors::Bathymetry;
+use water_bodies::vectors::TBDB_ENCODING_V1;
+use water_bodies::vectors::WaterMask;
+use water_bodies::vectors::WaterVectors;
+use water_bodies::vectors::suffix_plan;
+use world_chunks::terrain_manifest::WaterBlock;
 use world_file_formats::containers::header::ContainerHeader;
 use world_file_formats::containers::tbdb::TbdbHeader;
 

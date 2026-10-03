@@ -68,7 +68,7 @@ pub(super) fn evaluate(instances: &[&InstanceRecord], recon: &ReconFile, yaw_sig
         child_used[ci] = true;
         let yaw = wrap_deg(instances[ii].local.rigid().yaw_deg());
         report.matches.push(Match {
-            instance: instances[ii].id.clone(),
+            instance: instances[ii].id.to_string(),
             child_index: ci,
             group: locals[ci].2,
             pos_err_m: d,
@@ -128,7 +128,7 @@ pub(super) fn architectural(file: &InstancesFile) -> (Vec<&InstanceRecord>, usiz
         .iter()
         .filter(|i| i.source == PlacementSource::XobSocket)
         .filter(|i| {
-            if under_furniture(&i.id) {
+            if under_furniture(i.id.as_str()) {
                 skipped += 1;
                 false
             } else {
@@ -180,7 +180,12 @@ pub(super) fn enrichment_checks(file: &InstancesFile, recon: &ReconFile, report:
         }
         if !child.pivot_id.is_empty() {
             report.pivot_checks += 1;
-            let tail = inst.id.rsplit('/').next().unwrap_or(&inst.id);
+            let tail = inst
+                .id
+                .as_str()
+                .rsplit('/')
+                .next()
+                .unwrap_or(inst.id.as_str());
             if !tail.eq_ignore_ascii_case(&child.pivot_id) {
                 report.pivot_mismatches.push(format!(
                     "{}: recon pivot {:?} vs id tail {:?}",

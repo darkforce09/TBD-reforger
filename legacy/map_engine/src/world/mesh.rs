@@ -7,10 +7,9 @@
 //! makes it cacheable and damage-gateable independently of drawing, which is the point of
 //! building it on this side of the packet boundary.
 
-use crate::world::environment::vegetation::mass::ForestMassGeometry;
 use render_primitives::color_normalization::u8_rgba_to_f32;
-use render_primitives::draw::compose::{HairlineGpu, PolyMeshGpu, mesh_from_tri};
-use render_primitives::draw::triangulate::{triangulate_region_rings, triangulate_ring_buffer};
+use render_primitives::draw::compose::{HairlineGpu, PolyMeshGpu};
+use render_primitives::draw::triangulate::triangulate_region_rings;
 
 /// Contour interleaved `[x0,y0,x1,y1]…` → hairline verts with fixed rgba.
 #[must_use]
@@ -26,7 +25,7 @@ pub fn compose_contour_hairlines(segments: &[f32], rgba: [u8; 4]) -> HairlineGpu
 /// no business re-deriving that.
 #[must_use]
 pub fn compose_two_tone_contours(
-    rings: &[crate::world::terrain::relief::contours::ContourRing],
+    rings: &[terrain_relief::contours::ContourRing],
     summit_idx: &[usize],
     base_rgba: [u8; 4],
     summit_rgba: [u8; 4],
@@ -42,14 +41,8 @@ pub fn compose_two_tone_contours(
     )
 }
 
-/// Contour stroke colour — `contourLayer.ts` `CONTOUR_RGBA`.
-pub const CONTOUR_RGBA: [u8; 4] = [120, 96, 64, 200];
-
 /// Forest outline — `forestMassLayer.ts` `FOREST_OUTLINE_RGBA`.
 pub const FOREST_OUTLINE_RGBA: [u8; 4] = [24, 90, 45, 230];
-
-/// Forest fill RGB — `forestMass.ts` `FOREST_FILL_RGB`.
-pub const FOREST_FILL_RGB: [u8; 3] = [34, 120, 60];
 
 /// Land-cover fill colours by kind — `landCoverRegions.ts` `LANDCOVER_FILL`.
 #[must_use]
@@ -108,33 +101,6 @@ pub fn compose_landcover_mesh(regions: &[LandcoverInput<'_>]) -> PolyMeshGpu {
         indices,
         polygon_count,
     }
-}
-
-/// Forest mass → fill mesh + outline hairlines.
-#[must_use]
-pub fn compose_forest_mesh(
-    geo: &ForestMassGeometry,
-    fill_alpha: f64,
-) -> (PolyMeshGpu, HairlineGpu) {
-    let fill = if geo.fill_positions.is_empty() || fill_alpha <= 0.0 {
-        PolyMeshGpu::default()
-    } else {
-        let (mesh, _) = triangulate_ring_buffer(&geo.fill_positions, &geo.fill_start_indices, None);
-        let n_verts = mesh.positions.len() / 2;
-        let rgba = [
-            FOREST_FILL_RGB[0],
-            FOREST_FILL_RGB[1],
-            FOREST_FILL_RGB[2],
-            (255.0 * fill_alpha).round().clamp(0.0, 255.0) as u8,
-        ];
-        let mut cols = Vec::with_capacity(n_verts * 4);
-        for _ in 0..n_verts {
-            cols.extend_from_slice(&rgba);
-        }
-        mesh_from_tri(mesh, &cols, 1.0)
-    };
-    let outline = compose_contour_hairlines(&geo.outline_segments, FOREST_OUTLINE_RGBA);
-    (fill, outline)
 }
 
 #[cfg(test)]

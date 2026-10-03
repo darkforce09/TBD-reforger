@@ -66,10 +66,10 @@ because the app's mount chain that names them, `apps/frontend/src/app_routes.rs`
 ## Boundaries
 
 - Depends on: `camera_math` (`ortho`), `geometry_primitives` (`Rigid`), `render_primitives`
-  (triangulation) and `browser_platform` (`fetch`); `map_engine` (`world`, `spatial`,
-  `streaming`, `frame`, `overlay::lanes` and the viewshed texture of
-  `editing::tools::line_of_sight`), with the `io`
-  feature `apps/frontend/Cargo.toml` enables for the blueprint raycaster; `gloo_net`,
+  (triangulation) and `browser_platform` (`fetch`); the world crates `building_interiors`,
+  `interior_line_of_sight`, `world_line_of_sight`, `spatial_indexes`, `terrain_line_of_sight`,
+  `road_network` and `map_draw_lanes`; `map_engine` (`streaming`, `frame` and the viewshed
+  texture of `editing::tools::line_of_sight`); `gloo_net`,
   `futures`, `js_sys`, `wasm_bindgen` and `web_sys` in the browser build. The data viewer depends
   on `crate::foundation::transport` (its anonymous reads and the equipment data viewer DTOs), and the
   ballistics agreement bench on its anonymous reads, the ballistics catalog DTOs and the map
@@ -80,7 +80,7 @@ because the app's mount chain that names them, `apps/frontend/src/app_routes.rs`
   the API anonymously; no bench writes a
   [mission](/documentation/glossary/g_to_m.md#mission) document or persists anything, and none
   imports from a page or a sibling workspace. The native `role_id` mirror in `building_interior.rs` must
-  equal `legacy/map_engine/src/overlay/lanes.rs` (`lane_ids_match_the_render_crate` in
+  equal `crates/map_overlay/map_draw_lanes/src/lane_roles.rs` (`lane_ids_match_the_render_crate` in
   `tests/building_interior.rs`), and no wall may land on a borrowed lane
   (`walls_never_use_borrowed_lanes`). The ballistics agreement bench's reading and case mapping
   are mirrored by the gate `gate ballistics-agreement` in

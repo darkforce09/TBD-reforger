@@ -21,7 +21,7 @@ binary template `objects/chunks/{cx}_{cy}.bin`. The map engine's world loader fe
 fetches each cell the viewport needs: the `.bin` when the manifest's `objects.binary` block
 matches the container, version and row shape the build implements
 (`ObjectsBinaryBlock::matches_this_build` in
-`legacy/map_engine/src/streaming/loaders/manifest.rs`), otherwise the `.json.gz`. Both
+`crates/world_formats/world_chunks/src/terrain_manifest.rs`), otherwise the `.json.gz`. Both
 lanes build the same columns.
 
 315 of the 625 cells of the 25 × 25 grid hold objects, 1,216,066 instances in all; an empty cell
@@ -82,4 +82,5 @@ loader's own narrowing.
 - [Map binary formats](/crates/world_formats/world_file_formats/src/README.md) — the `TBDC` container and the
   instance row.
 - [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the chunks
-  are fetched, parsed and made resident.
+  are fetched and made resident.
+- [World chunks](/crates/world_formats/world_chunks/README.md) — how the chunks are parsed.

@@ -1,17 +1,12 @@
-//! Role: Module boundary for terrain/relief.
-//! Position: `world/terrain/relief` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+//! The terrain relief in the map engine: the GPU host that keeps the contour and sea lanes.
+//!
+//! **Role:** declares the wasm32 relief [`host`]; the relief computation (contours, hillshade,
+//! sea band) is `terrain_relief`, which its callers import directly.
+//! **Position:** `world/terrain/relief`, behind the `world` feature; the streaming host owns the
+//! relief host.
+//! **Signals & state:** none here; the host's lane state is its own.
+//! **Invariants:** the host draws only what `terrain_relief` computes.
 
-/// Contours.
-pub mod contours;
-
-/// Hillshade.
-pub mod hillshade;
-
-/// Sea band.
-pub mod sea_band;
-
-/// Host.
+/// `DemVectors`: the vector grid, and the sea band and contour lanes for each zoom.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod host;

@@ -210,7 +210,7 @@ pub fn build_library(
                     instances.insert(
                         0,
                         InstanceRecord {
-                            id: slug.clone(),
+                            id: slug.clone().into(),
                             kind,
                             prefab: path.clone(),
                             blas: format!("blas/{}.bvh", a.stem),
@@ -231,7 +231,7 @@ pub fn build_library(
         }
         let shell_bvh = instances
             .iter()
-            .find(|i| i.id == slug && i.parent.is_none())
+            .find(|i| i.id.as_str() == slug && i.parent.is_none())
             .map(|i| i.blas.clone())
             .unwrap_or_default();
         // Canopy: Foliage triangles in the COLL, else the visual-LOD0 hull.
@@ -258,7 +258,7 @@ pub fn build_library(
                             canopy_bounds = Some(Bounds3 { min: lo, max: hi });
                             blas.insert(rel.clone(), bytes);
                             instances.push(InstanceRecord {
-                                id: format!("{slug}/canopy"),
+                                id: format!("{slug}/canopy").into(),
                                 kind: InstanceKind::TreeCanopy,
                                 prefab: path.clone(),
                                 blas: rel,
@@ -319,7 +319,7 @@ pub fn build_library(
         }
         descriptors.push(PrefabDescriptor {
             schema_version: DESCRIPTOR_SCHEMA_VERSION.into(),
-            prefab_id: row.pid,
+            prefab_id: row.pid.into(),
             slug,
             resource_name: path,
             kind: row.kind.clone(),

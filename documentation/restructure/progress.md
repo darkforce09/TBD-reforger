@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S5, S6 in parallel (decision D21); S4 landed in two commits (S4a, S4b); S3 landed |
-| Last green commit | the S3 stage commit (S4b: 65b7978ea, S4a: dcfeda907) |
-| Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); S4 lands the relocation tool fix (F-S4-06, F-S4-10) as its own commit |
+| Current stage | S5 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b) and S6 landed |
+| Last green commit | the S6 stage commit (S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -104,15 +104,16 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [ ] Stage commit — pending
 
 ### S6 World CPU
-- [ ] P0c (L) cuts — pending
-- [ ] P1 (M) spatial, prefab, chunks — pending
-- [ ] P2 (L) overlay CPU — pending
-- [ ] P3 (L) elevation, relief, satellite, roads — pending
-- [ ] P4 (M) water, vegetation, interiors — pending
-- [ ] P5 (M) place names, world store — pending
-- [ ] P6 (L) line of sight — pending
-- [ ] X6 (M) switch — pending
-- [ ] Stage commit — pending
+- [x] P0c (M) cuts K1–K12 inside the map engine — done — map engine 1665 library tests equal to the baseline; rebased onto S4a by R6 (30 conflicts)
+- [x] P1 (M) spatial_indexes, prefab_catalog, world_chunks — done — one flat-tree build core shared with the world TLAS; `ChunkId`, `TerrainId`
+- [x] P2 (L) map_draw_lanes, label_layout, unit_symbology, overlay_instances — done — glyph-math copies deleted; ORBAT coherency pins retargeted
+- [x] P3 (L) terrain_elevation, terrain_relief, satellite_imagery, water_bodies — done (water swapped in from P4, operator)
+- [x] P4 (M) road_network, vegetation, building_interiors — done (roads swapped in from P3) — section index on the shared tree core
+- [x] P5 (M) place_names, world_store — done
+- [x] P6 (L) terrain, interior and world line of sight — done — one 3D `evaluate_los`
+- [x] X6 (L) switch — done — 79 shims switched and deleted; `bvh` and `io` features deleted; strangler catches aliased re-exports; rebased onto S4b and S3 by R7 first
+- [x] G6 (M) closing batch — done — `PrefabId` with a typed refusal of bad ids; 498 placeholder field docs rewritten
+- [x] Stage commit — done — `refactor(restructure): S6 world CPU crates`; handoff to S7 and S8 in `stage_logs/s6.md`
 
 ### S7 Streaming CPU and editor
 - [ ] Q0 (M) cuts — pending

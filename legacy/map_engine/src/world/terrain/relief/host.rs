@@ -3,20 +3,20 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::lod::class_visible;
-use crate::overlay::lod::contour_interval_for_zoom;
 use crate::world::mesh::compose_two_tone_contours;
-use crate::world::terrain::dem::grid::DEM_VECTOR_GRID_FACTOR;
-use crate::world::terrain::dem::grid::DemVectorGrid;
-use crate::world::terrain::dem::grid::downsample_dem_grid;
-use crate::world::terrain::dem::grid::reduce_grid_2x;
-use crate::world::terrain::relief::contours::contour_grid_reductions;
-use crate::world::terrain::relief::contours::contour_levels;
-use crate::world::terrain::relief::contours::contour_rings;
-use crate::world::terrain::relief::contours::summit_ring_indices;
-use crate::world::terrain::relief::sea_band::build_sea_band_geometry;
-use crate::world::terrain::relief::sea_band::sea_fill_alpha;
-use crate::world::terrain::water::mesh::compose_sea_mesh;
+use map_draw_lanes::zoom_gates::class_visible;
+use map_draw_lanes::zoom_gates::contour_interval_for_zoom;
+use terrain_elevation::grid::DEM_VECTOR_GRID_FACTOR;
+use terrain_elevation::grid::DemVectorGrid;
+use terrain_elevation::grid::downsample_dem_grid;
+use terrain_elevation::grid::reduce_grid_2x;
+use terrain_relief::contours::contour_grid_reductions;
+use terrain_relief::contours::contour_levels;
+use terrain_relief::contours::contour_rings;
+use terrain_relief::contours::summit_ring_indices;
+use terrain_relief::sea_band::build_sea_band_geometry;
+use terrain_relief::sea_band::sea_fill_alpha;
+use water_bodies::mesh::compose_sea_mesh;
 
 use std::rc::Rc;
 
@@ -79,7 +79,7 @@ impl DemVectors {
         let alpha = sea_fill_alpha(zoom);
         if !class_visible("sea", zoom) || alpha <= 0.0 {
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.clear_vector_lane(crate::overlay::lanes::role_id::SEA);
+                e.clear_vector_lane(map_draw_lanes::lane_roles::role_id::SEA);
             }
             self.sea_built_alpha = -1.0;
             return;
@@ -91,7 +91,7 @@ impl DemVectors {
         let mesh = compose_sea_mesh(&geo, alpha);
         if let Some(e) = engine.borrow_mut().as_mut() {
             e.upload_polygon_mesh(
-                crate::overlay::lanes::role_id::SEA,
+                map_draw_lanes::lane_roles::role_id::SEA,
                 &mesh.positions,
                 &mesh.colors,
                 &mesh.indices,
@@ -105,7 +105,7 @@ impl DemVectors {
     fn push_contours(&mut self, engine: &EngineHandle, zoom: f64, grid: &DemVectorGrid) {
         if !class_visible("contour", zoom) {
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.clear_vector_lane(crate::overlay::lanes::role_id::CONTOURS);
+                e.clear_vector_lane(map_draw_lanes::lane_roles::role_id::CONTOURS);
             }
             self.last_interval = 0.0;
             return;
@@ -127,7 +127,7 @@ impl DemVectors {
         let hair = compose_two_tone_contours(&rings, &summit, CONTOUR_RGBA, CONTOUR_SUMMIT_RGBA);
         if let Some(e) = engine.borrow_mut().as_mut() {
             e.upload_hairline_segments(
-                crate::overlay::lanes::role_id::CONTOURS,
+                map_draw_lanes::lane_roles::role_id::CONTOURS,
                 &hair.verts,
                 hair.segment_count,
                 true,

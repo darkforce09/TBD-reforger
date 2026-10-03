@@ -34,7 +34,7 @@ re-export of those assets re-blesses the matching golden here in the same change
 | Fixture | Test | What the test asserts |
 |---|---|---|
 | `_voxels.jsonl.gz` + `_blueprint.golden.json` | `farmhouse_dump_matches_golden_blueprint` | the full voxel pipeline (segments, default parameters) reproduces the golden exactly |
-| `_blueprint.golden.json` + `.bvh.golden` + `_parity.json` | `farmhouse_golden_parity_is_pinned` | `evaluate_los` agrees with all 400 pairs, none blocked where the engine is clear |
+| `_blueprint.golden.json` + `.bvh.golden` + `_parity.json` | `farmhouse_golden_parity_is_pinned` | `annotate_sight_line` agrees with all 400 pairs, none blocked where the engine is clear |
 | `.bvh.golden` + `_parity.json` | `farmhouse_bvh_sidecar_parity_is_pinned` | byte-identical to the shipped `.bvh`; 3170 vertices, 2883 triangles, 1125 nodes; 400 of 400 agree |
 | `.instances.golden.json` + both parity files | `farmhouse_compound_door_parity_is_pinned` | byte-identical to the shipped `.instances.json`; 120 kept, 49 dropped, 7 closed doors; 3998 of 4000 and 400 of 400 agree |
 | `_children.json` | `farmhouse_sockets_match_the_workbench_recon` | all 88 children match the shipped instances with no extras or failures; 7 door, 88 pivot and at least 60 local checks |
@@ -59,7 +59,7 @@ moves one re-blesses the fixture or the assertion on purpose.
   (`<slug>_<kind>.json`); `.golden` marks a blessed output.
 - Schema:
   - `.bvh.golden`: the `TBVH` binary sidecar that `BvhSidecar` in
-    `legacy/map_engine/src/spatial/bvh/sidecar.rs` parses;
+    `crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/sidecar.rs` parses;
   - `.instances.golden.json`: `contracts/definitions/building-instances.schema.json`;
   - `_blueprint.golden.json`: `contracts/definitions/building-blueprint.schema.json`;
   - `_children.json`: a recon dump: `prefabFilter`, `slug`, the root's pose and bounds,

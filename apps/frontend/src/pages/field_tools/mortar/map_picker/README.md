@@ -23,16 +23,19 @@ terrain-and-imagery preferences and the page's `TerrainHeights`, so a terrain he
 once the map's full 2 m elevation raster has loaded. `picking.rs` turns a click into the chosen placement,
 written as a 10-figure grid reference; a press on a placed marker is grabbed by
 `engine_overlay.rs` and never reaches the map's pan. `marks.rs` builds the guns, the target, the
-gun-to-target lines and each gun's dispersion ellipse on the map engine's
-`overlay::fire_mission_marks` lanes. `profile.rs` samples the ground from the lead gun to the
+gun-to-target lines and each gun's dispersion ellipse on the
+`overlay_instances::fire_mission_marks` lanes. `profile.rs` samples the ground from the lead gun to the
 target into the solver's `TerrainProfile`. Arland has no elevation model, so it gets a note instead
 of a map.
 
 ## Boundaries
 
 - Depends on: `crate::foundation::map_view` (`mount`, `handles`, `navigation`, `navigation_math`,
-  `terrain_height`, `terrain_preferences`, `engine_mount`); `map_engine` (grid references,
-  `overlay::fire_mission_marks`, the terrain sampler, the crest profile type); the mortar inputs.
+  `terrain_height`, `terrain_preferences`, `engine_mount`); `map_coordinates::grid_reference`;
+  `map_engine` (the crest profile type, the Everon terrain manifest);
+  `overlay_instances::fire_mission_marks`, `unit_symbology::markers`, `map_draw_lanes`, the
+  terrain sampler `terrain_line_of_sight::elevation_profile` and `terrain_elevation::manifest`;
+  the mortar inputs.
 - Used by: the mortar page (`page.rs`).
 - Rules: a click writes only the position chosen in "Place on the map"; the browser-only code
   compiles for wasm32 alone; the picker panel around it is wasm32-only as well.

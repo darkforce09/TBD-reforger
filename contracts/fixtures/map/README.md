@@ -73,9 +73,9 @@ read the prefab and region samples, and `cargo xtask schema type-inventory` read
   - the two gates above, and `cargo xtask schema map-object-enums`, `map-glyphs` and
     `type-inventory` in `tools/xtask/src/verifications/schemas/checks/`;
   - the map engine's native tests:
-    `legacy/map_engine/src/streaming/loaders/tests/chunk_tests.rs` parses the chunk and
+    `crates/world_formats/world_chunks/src/tests/world_chunk_tests.rs` parses the chunk and
     prefab samples, and
-    `legacy/map_engine/src/world/environment/vegetation/tests/regions_tests.rs` parses the
+    `crates/world_objects/vegetation/src/tests/regions_tests.rs` parses the
     region sample.
 
 ## Boundaries

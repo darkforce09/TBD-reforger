@@ -29,7 +29,7 @@ impl WorldHost {
             let futs = batch.iter().map(|id| {
                 let rel = chunks_bin
                     .as_deref()
-                    .and_then(|template| chunk_bin_path(template, id));
+                    .and_then(|template| chunk_bin_path(template, &id.as_str().into()));
                 let binary = rel.is_some();
                 let url = rel.map_or_else(
                     || format!("{base}/{chunks}/{id}.json.gz"),

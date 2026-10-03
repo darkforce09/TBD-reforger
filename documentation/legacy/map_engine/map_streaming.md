@@ -5,9 +5,10 @@
 How the map engine gets a terrain's served map data into the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map and keeps only what the
 view needs: the boot sequence, the viewport passes that pin, fetch, ingest and evict world chunks,
-the memory budget the loads report to, and the loaders that parse the served files. It runs in the
-browser, and its residency, parsers and budget also run natively for the offline tools and the
-tests.
+the memory budget the loads report to, and the loaders that fetch the served files. It runs in the
+browser, and its residency and budget also run natively for the tests; the parsers it reads the
+files with are the world format, terrain and world-object crates under `crates/`, which the
+offline tools share.
 
 ## Where it lives
 
@@ -21,7 +22,9 @@ tests.
   [`budget/`](/legacy/map_engine/src/streaming/memory/budget/README.md), and
   [`bridge/`](/legacy/map_engine/src/streaming/bridge/README.md). The terrain, satellite,
   water, forest and label loaders the host drives live under
-  [`world/`](/legacy/map_engine/src/world/README.md).
+  [`world/`](/legacy/map_engine/src/world/README.md); the chunk, manifest and catalogue parsers
+  are the [`world_chunks`](/crates/world_formats/world_chunks/README.md) and
+  [`prefab_catalog`](/crates/world_formats/prefab_catalog/README.md) crates.
 - Entry: `streaming::host::bootstrap`, which the Mission Creator calls once its render engine
   exists (`apps/frontend/src/workspaces/editor/bridge/world_assets.rs`); the settle and
   `flush_viewport` calls, which its pointer and wheel gestures and camera dock make after the
@@ -118,9 +121,9 @@ The ledger's figures and `decide` answers are in the
 - The doc comment on `note_undelivered` says an undelivered chunk's empty stub is never requested
   again (`legacy/map_engine/src/streaming/scheduler/viewport.rs:126`); `evict`
   (`viewport.rs:169-180`) spares only pinned and known-empty chunks, and only a parsed empty chunk
-  becomes known-empty (`loaders/residency.rs:112-122`), so an evicted stub is fetched again when
+  becomes known-empty (`scheduler/chunk_ingest.rs:119-131`), so an evicted stub is fetched again when
   its chunk is pinned later.
-- `legacy/map_engine/src/streaming/loaders/store.rs:41` names a `super::binary::BinaryError`
+- `crates/world_formats/prefab_catalog/src/world_payload.rs:31` names a `super::binary::BinaryError`
   that does not exist.
 
 ## Data
@@ -192,7 +195,7 @@ read.
   `t152_3_tests/`, and the `t9382` and `__t9386` names, get subject names.
 - [T-1067 — Remove dead map engine code, facades and duplicated constants](/.ai/tickets/T-1067.toml)
   (idea, no plan): the test-only `ingest_budget_exhausted_at`, the callerless `invalidate_chunk`
-  and `release_inflight`, and the duplicated `BUILDING_MIN_ZOOM` go.
+  and `release_inflight` go.
 
 ## Decisions
 
@@ -207,5 +210,4 @@ read.
 - Satellite range fetches refuse a full `200` body: a server that ignores `Range` would otherwise
   send the whole bundle to a page that asked for one level.
 - Streaming names no UI crate: editor state enters only through the preference readers and the
-  progress callback the page supplies, so the residency, parsers and budget run under
-  `cargo test` and in the offline tools.
+  progress callback the page supplies, so the residency and budget run under `cargo test`.

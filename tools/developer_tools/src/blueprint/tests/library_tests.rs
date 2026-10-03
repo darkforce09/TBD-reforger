@@ -140,7 +140,12 @@ fn descriptors_carry_blocks_reasons_kinds_and_canopy() {
         layer_policy: crate::blueprint::batch::LayerPolicy::All,
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
-    let d = |pid: u32| lib.descriptors.iter().find(|d| d.prefab_id == pid).unwrap();
+    let d = |pid: u32| {
+        lib.descriptors
+            .iter()
+            .find(|d| d.prefab_id.get() == pid)
+            .unwrap()
+    };
     // Props keep the walker's kind; the building's root is the shell.
     assert!(d(0).blocks && d(0).instances[0].kind == InstanceKind::Prop);
     assert_eq!(d(0).shell_bvh, "blas/Barrel.bvh");
@@ -298,7 +303,7 @@ fn only_kind_and_limit_select_rows() {
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
     assert_eq!(lib.descriptors.len(), 1);
-    assert_eq!(lib.descriptors[0].prefab_id, 5);
+    assert_eq!(lib.descriptors[0].prefab_id.get(), 5);
 }
 
 /// The committed library reproduces the farmhouse compound: the descriptor's root is the shell
@@ -306,7 +311,7 @@ fn only_kind_and_limit_select_rows() {
 /// record of `FarmHouse_E_1L01_Wood.instances.json` is in the descriptor unchanged.
 #[test]
 fn committed_farmhouse_descriptor_reproduces_its_instances_file() {
-    use map_engine::world::architecture::compound::instances::InstancesFile;
+    use building_interiors::compound::instances::InstancesFile;
     let root = ::repository_layout::find_repository_root().expect("repository root");
     let prefabs = terrain_dir(&root, "everon").join("prefabs");
     let manifest: BlasManifest =

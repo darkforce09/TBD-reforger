@@ -19,8 +19,8 @@ legacy/map_engine/src/streaming/bridge/
 
 ## How it works
 
-`preferences`, `host_preferences` and `progress` compile in every build of the streaming module;
-`toggles` needs the `streaming` feature, and `statistics` wasm32 with `render`.
+`preferences`, `host_preferences`, `progress` and `toggles` compile in every build of the
+streaming module (the `streaming` feature); `statistics` needs wasm32 with `render`.
 
 - **Preferences in.** `HostPreferences` holds the boot's `BootstrapScope` (`Full`: every layer;
   `TerrainAndImagery`: manifest, DEM with its full-resolution raster kept, hillshade, satellite,
@@ -44,9 +44,8 @@ legacy/map_engine/src/streaming/bridge/
 
 ## Boundaries
 
-- Depends on: `crate::streaming::scheduler`, `crate::overlay::lod`,
-  `crate::world::environment::buildings::footprint` and `crate::world::terrain::roads::airfield`
-  for the toggles; `crate::frame::engine::RenderEngine` for `publish_engine`; `serde`,
+- Depends on: `crate::streaming::scheduler`, `map_draw_lanes::zoom_gates` (`class_visible`,
+  `building_visible`) and `road_network` (`airfield`, `network`) for the toggles; `crate::frame::engine::RenderEngine` for `publish_engine`; `serde`,
   `serde_json`, `wasm-bindgen`, `js-sys` and `web-sys`.
 - Used by: `crate::streaming::host`, `crate::streaming::loaders` and the DEM, water, label,
   vegetation and satellite loaders of `crate::world`; the Mission Creator in

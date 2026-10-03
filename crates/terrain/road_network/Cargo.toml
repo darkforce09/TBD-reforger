@@ -1,0 +1,36 @@
+# A terrain's road network with no browser or GPU code: the segments read from the JSON export or
+# the binary archive, the road class codec, the class styling and zoom gates, the road and runway
+# strip meshes, the cartographic strips and the airfield box and apron.
+[package]
+name = "road_network"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A terrain's road network: segments, the road class codec, styling, road meshes, cartographic strips and the airfield."
+
+[package.metadata.layout]
+category = "crates/terrain"
+tier = 3
+targets = "any"
+
+[dependencies]
+# The airfield's box type and its widening.
+map_coordinates = { workspace = true }
+# The oriented footprint corners the cartographic strips run along.
+prefab_catalog = { workspace = true }
+# The apron fill's triangulation and mesh composition.
+render_primitives = { workspace = true }
+# The road network archive is read in place through rkyv's `Archived` view.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+# The JSON export's `roadSegments`, read with the map engine's key order and float settings.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+# The vector grid the apron's flatness test reads.
+terrain_elevation = { workspace = true }
+thiserror = { workspace = true }
+# The road network archive, its codec and the road segment identifier.
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

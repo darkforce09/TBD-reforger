@@ -31,7 +31,7 @@ pub async fn bootstrap(
     terrain: String,
     host: HostHandle,
     dem_out: DemGridHandle,
-    full_dem_out: map_engine::world::terrain::dem::full_resolution::FullResolutionDemHandle,
+    full_dem_out: terrain_elevation::full_resolution::FullResolutionDemHandle,
     report: map_engine::streaming::bridge::progress::ProgressFn,
 ) {
     use map_engine::streaming::bridge::host_preferences::{

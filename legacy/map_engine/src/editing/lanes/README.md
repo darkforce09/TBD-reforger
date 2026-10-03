@@ -35,13 +35,13 @@ metres on the map plane; a comment's and a marker's stored `{x, z}` is read as e
   [slot](/documentation/glossary/n_to_z.md#slot) pick radius
   `MissionDocCore::PICK_RADIUS_PX`.
 - **Markers.** `marker_lane_fields` parses `briefing_marker_rows_json` once into positions, side
-  tints (from `crate::overlay::symbology::roles::classify::side_rgba`), icon aliases and captions.
+  tints (from `unit_symbology::classification::side_rgba`), icon aliases and captions.
   The alias travels verbatim; the renderer maps it to a glyph. Malformed input yields four empty
   columns.
 
 ## Boundaries
 
-- Depends on: `crate::overlay::symbology::roles::classify::side_rgba` for the marker tints, and
+- Depends on: `unit_symbology::classification::side_rgba` for the marker tints, and
   `serde_json`; the rows come from `crate::data::store::MissionDocCore`'s JSON views, passed in by
   the caller.
 - Used by: the Mission Creator's editor page

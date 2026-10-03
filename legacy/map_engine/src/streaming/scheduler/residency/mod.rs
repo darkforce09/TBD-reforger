@@ -4,12 +4,12 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 #[cfg(test)]
-use crate::world::environment::buildings::obb::building_prefab_lookup;
+use prefab_catalog::footprint_lookups::building_prefab_lookup;
 #[cfg(test)]
-use crate::world::environment::buildings::obb::fence_prefab_lookup;
+use prefab_catalog::footprint_lookups::fence_prefab_lookup;
 
 #[cfg(test)]
-use crate::world::environment::buildings::prefab::narrow_prefab_rows;
+use prefab_catalog::prefab_rows::narrow_prefab_rows;
 
 /// Re-export `crate::streaming::scheduler::viewport::DRAW_CULL_MARGIN_M`.
 pub use crate::streaming::scheduler::viewport::DRAW_CULL_MARGIN_M;
@@ -31,9 +31,6 @@ pub use crate::streaming::scheduler::state::WorldResidency;
 
 /// Re-export `crate::streaming::scheduler::budget::APPLY_BUDGET_MS`.
 pub use crate::streaming::scheduler::budget::APPLY_BUDGET_MS;
-
-/// Re-export `crate::streaming::buffers::revision::BUILDING_MIN_ZOOM`.
-pub use crate::streaming::buffers::revision::BUILDING_MIN_ZOOM;
 
 #[cfg(test)]
 mod t151_11_3_tests;

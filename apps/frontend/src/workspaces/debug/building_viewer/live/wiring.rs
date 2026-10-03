@@ -88,11 +88,12 @@ pub fn wire(
                 match load_compound(&path, shell, scene_mode()).await {
                     Ok((mut c, warning)) => {
                         if doors_open {
-                            let ids: Vec<String> = c.doors().map(|d| d.record.id.clone()).collect();
+                            let ids: Vec<String> =
+                                c.doors().map(|d| d.record.id.to_string()).collect();
                             for id in ids {
                                 c.set_door(
-                                    &id,
-                                    map_engine::world::architecture::compound::doors::DoorState::OPEN,
+                                    id.as_str(),
+                                    building_interiors::compound::doors::DoorState::OPEN,
                                 );
                             }
                         }
@@ -377,8 +378,8 @@ pub fn wire(
                                 Some(id) => {
                                     compound.update(|c| {
                                         if let Some(c) = c.as_mut() {
-                                            if let Some(s) = c.door_state(&id) {
-                                                c.set_door(&id, s.toggled());
+                                            if let Some(s) = c.door_state(id.as_str()) {
+                                                c.set_door(id.as_str(), s.toggled());
                                             }
                                         }
                                     });

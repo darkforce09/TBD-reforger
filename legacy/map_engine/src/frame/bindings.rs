@@ -13,7 +13,7 @@
 //! at upload time in `renderers/text/lanes.rs`, so the routing IS the payload and there is
 //! nothing left to ask.
 
-use crate::overlay::lanes::LaneRole;
+use map_draw_lanes::lane_roles::LaneRole;
 use render_primitives::frame::ids::{BindGroupId, LaneId, PipelineId};
 
 /// `vs_quad` — axis-aligned coloured quads.
@@ -71,15 +71,15 @@ const BIND_TEX_BASE: u16 = 5;
 /// of its lane — stable for the life of the lane, with no allocator and no free list.
 pub(crate) const BIND_SLOTS: usize = BIND_TEX_BASE as usize + 95;
 
-// T-0xx Phase 2B.1: the `95` above is `2·(ALL_LANES.len() - 1) + 1` — the widest `lane_id`
-// the 48 lanes can produce, plus one because the table is indexed by it. `ALL_LANES` now
-// lives one directory away in `overlay/lanes.rs`, and nothing but this arithmetic ties the
-// two together. Arithmetic split across two modules is arithmetic that silently stops being
+// The `95` above is `2·(ALL_LANES.len() - 1) + 1` — the widest `lane_id` the 48 lanes can
+// produce, plus one because the table is indexed by it. `ALL_LANES` lives in another crate,
+// `map_draw_lanes::lane_roles`, and nothing but this arithmetic ties the two together. Arithmetic split across two modules is arithmetic that silently stops being
 // true: a 49th lane would produce `lane_id == 96`, index slot `5 + 96`, and run off the end
 // of a table nobody thought to change. Compile-time, zero runtime cost. If it fires, widen
 // `BIND_SLOTS` — do not delete the assert.
 const _: () = assert!(
-    BIND_SLOTS == BIND_TEX_BASE as usize + 2 * (crate::overlay::lanes::ALL_LANES.len() - 1) + 1,
+    BIND_SLOTS
+        == BIND_TEX_BASE as usize + 2 * (map_draw_lanes::lane_roles::ALL_LANES.len() - 1) + 1,
     "BIND_SLOTS must index the widest lane_id: base + 2·(ALL_LANES.len() - 1), inclusive"
 );
 

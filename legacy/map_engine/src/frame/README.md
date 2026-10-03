@@ -51,7 +51,7 @@ the samplers, the unit quad, the calibration quads and the camera, which opens o
 `surface-unsupported-by-adapter`. The crate's `#[wasm_bindgen(start)]` function, also here,
 installs the panic hook that sends Rust panics to the console.
 
-The batch list stays sorted by lane id (`crate::overlay::lanes::lane_id`, whose order is paint
+The batch list stays sorted by lane id (`map_draw_lanes::lane_roles::lane_id`, whose order is paint
 order). `upsert_lane` adds or replaces a lane's batch and marks the frame damaged, and
 `remove_lane` drops it and marks the frame damaged when there was one to drop; the upload belts,
 the overlay's symbol bridges and the streaming loaders go through them.
@@ -105,8 +105,8 @@ it culls.
     acquiring a frame when nothing is damaged, and the packet borrows the engine's own batch list
     and tables (the tests in `tests/damage_discipline.rs`);
   - `BIND_SLOTS` must index the widest lane id, which a compile-time assert in `bindings.rs` checks
-    against `crate::overlay::lanes::ALL_LANES`;
-  - the overlay's draw-order suites in `legacy/map_engine/src/overlay/tests/tests/` read
+    against `map_draw_lanes::lane_roles::ALL_LANES`;
+  - the lane bind source pins in `legacy/map_engine/src/frame/tests/lane_bind_source_pins/` read
     these files by path, so a moved or renamed file breaks them.
 
 ## Related documentation

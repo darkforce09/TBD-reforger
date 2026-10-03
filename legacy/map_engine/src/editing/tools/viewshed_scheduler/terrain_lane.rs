@@ -5,8 +5,8 @@
 //! never pays for the first. A job whose observer is no longer the placed one is dropped rather than
 //! published, so a dismissed wash cannot resurrect itself.
 
-use crate::spatial::los::terrain::scheduler::ViewshedJob;
-use crate::spatial::los::terrain::viewshed::{Viewshed, ViewshedParams};
+use terrain_line_of_sight::viewshed::{Viewshed, ViewshedParams};
+use terrain_line_of_sight::viewshed_job::ViewshedJob;
 
 use super::host::{host, now_ms};
 use super::lanes::{

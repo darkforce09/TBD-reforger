@@ -1,0 +1,41 @@
+# A terrain's world object chunks as the map reads them: the chunk JSON and TBDC container
+# decoders into one column layout, the chunk identifier, and the terrain manifest blocks that name
+# the chunk, prefab, label, water and elevation files.
+[package]
+name = "world_chunks"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "World object chunk decoding (JSON and TBDC containers), chunk identifiers and the terrain manifest."
+
+[package.metadata.layout]
+category = "crates/world_formats"
+tier = 3
+targets = "any"
+
+[features]
+# Exposes `test_fixtures` (TBDC encoding and column comparison) to the tests of other crates;
+# enabled only from `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+# Realigns a misaligned TBDC payload into 4-byte words.
+bytemuck = { workspace = true }
+# A chunk's identifier is spelled by the chunk grid's `chunk_id`.
+map_coordinates = { workspace = true }
+newtype_ids = { workspace = true }
+# A chunk row's render class comes from the prefab catalogue it was placed from.
+prefab_catalog = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+thiserror = { workspace = true }
+world_file_formats = { workspace = true }
+
+[dev-dependencies]
+# The container tests compare against the JSON lane over the Everon prefab catalogue fixtures.
+prefab_catalog = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

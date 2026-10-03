@@ -49,14 +49,14 @@ pub(super) fn assemble_manifest(
             }
         }
         desc_entries.push(DescEntry {
-            pid: d.prefab_id,
+            pid: d.prefab_id.get(),
             path: format!("descriptors/{}.json", d.prefab_id),
             kind: d.kind.clone(),
             blocks: d.blocks,
             canopy: d.canopy,
             blas: paths,
             instance_count: u32::try_from(d.instances.len()).unwrap_or(u32::MAX),
-            instances_in_world: census.get(&d.prefab_id).copied().unwrap_or(0),
+            instances_in_world: census.get(&d.prefab_id.get()).copied().unwrap_or(0),
         });
     }
     totals.canopy_hull = canopy_hull;
@@ -71,7 +71,7 @@ pub(super) fn assemble_manifest(
     let hot = hot.into_iter().take(hot_n).map(|(_, p)| p).collect();
     Ok(BlasManifest {
         schema_version: MANIFEST_SCHEMA_VERSION.into(),
-        terrain_id: terrain.to_string(),
+        terrain_id: terrain.to_string().into(),
         blas: blas_entries,
         descriptors: desc_entries,
         hot,

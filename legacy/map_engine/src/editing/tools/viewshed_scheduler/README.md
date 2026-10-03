@@ -49,9 +49,9 @@ A refused request records the cap's message in `last_refusal`, which a later suc
 
 ## Boundaries
 
-- Depends on: `crate::spatial::los::terrain::scheduler::ViewshedJob` and
-  `crate::spatial::los::terrain::viewshed` (`ViewshedParams`, `ViewshedCapRefused`);
-  `crate::spatial::los::interior::wash` (`WashJob`, `WashParams`, `LevelWash`); and
+- Depends on: `terrain_line_of_sight::viewshed_job::ViewshedJob` and
+  `terrain_line_of_sight::viewshed` (`ViewshedParams`, `ViewshedCapRefused`);
+  `interior_line_of_sight::floor_wash` (`WashJob`, `WashParams`, `LevelWash`); and
   `crate::editing::tools::line_of_sight` (`host_registry`, `terrain_survey`, `terrain_verdict`).
 - Used by: `crate::editing::tools::line_of_sight::viewshed_texture::place_viewshed`, which submits
   the terrain disc; the Mission Creator's scheduler host

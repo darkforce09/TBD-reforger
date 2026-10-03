@@ -5,8 +5,8 @@
 
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
-use crate::overlay::lanes::lane_id;
-use crate::overlay::lanes::lane_role_from_u32;
+use map_draw_lanes::lane_roles::lane_id;
+use map_draw_lanes::lane_roles::lane_role_from_u32;
 
 use crate::frame::{DrawBatch, DrawPayload};
 use graphics_engine::draw::polygons;

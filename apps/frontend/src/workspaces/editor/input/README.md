@@ -76,7 +76,9 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
   `mission_editor::transform`, the insets of `session::layout`, the context menu of
   `apps/frontend/src/workspaces/editor/ui/docks/`;
   `map_engine` (`editing::hosted_commands`, `editing::tools`, `data::store`,
-  `streaming::host`, `spatial::los`, `overlay::symbology`, `frame`);
+  `streaming::host`, `frame`); the line of sight crates (`terrain_line_of_sight`,
+  `interior_line_of_sight`, `world_line_of_sight`), `spatial_indexes`, `terrain_elevation::grid`,
+  `overlay_instances::drag`, `unit_symbology::squad_links` and `map_draw_lanes::lane_roles`;
   `crate::foundation::ui::modal_stack`; `web_sys`, `js_sys` and `wasm_bindgen`.
 - Used by:
   - the canvas mount in `apps/frontend/src/workspaces/editor/mission_editor/` and the editor

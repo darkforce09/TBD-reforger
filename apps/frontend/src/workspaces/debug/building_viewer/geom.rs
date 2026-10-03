@@ -1,20 +1,20 @@
 //! Pure geometry and lane payloads for the building viewer.
 
 use super::ViewFloor;
+use building_interiors::blueprint::structure::BuildingBlueprint;
+use building_interiors::blueprint::structure::BuildingLevel;
+use building_interiors::section::cutter::through_voids;
+use building_interiors::section::cutter::BuildingDrawing;
+use building_interiors::section::cutter::HeightField;
+use building_interiors::section::cutter::FLOOR_WINDOW_M;
+use building_interiors::section::cutter::PIT_DEPTH_M;
+use building_interiors::section::cutter::PLAN_CELL_M;
+use interior_line_of_sight::floor_wash::LevelWash;
 use map_engine::editing::tools::line_of_sight::viewshed_texture::{pack_rgba_256, ViewshedTexture};
-use map_engine::spatial::los::interior::wash::LevelWash;
-use map_engine::spatial::los::terrain::viewshed::Visibility;
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
-use map_engine::world::architecture::blueprint::structure::BuildingLevel;
-use map_engine::world::architecture::section::cutter::through_voids;
-use map_engine::world::architecture::section::cutter::BuildingDrawing;
-use map_engine::world::architecture::section::cutter::HeightField;
-use map_engine::world::architecture::section::cutter::FLOOR_WINDOW_M;
-use map_engine::world::architecture::section::cutter::PIT_DEPTH_M;
-use map_engine::world::architecture::section::cutter::PLAN_CELL_M;
-use map_engine::world::terrain::roads::styling::expand_polyline_strip;
-use map_engine::world::terrain::roads::styling::StripVertex;
 use render_primitives::draw::triangulate::triangulate_simple;
+use road_network::styling::expand_polyline_strip;
+use road_network::styling::StripVertex;
+use terrain_line_of_sight::viewshed::Visibility;
 
 /// The building is placed at the engine's world anchor so f32 lane coords stay tiny.
 pub const ANCHOR: [f64; 2] = [6400.0, 6400.0];

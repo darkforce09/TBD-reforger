@@ -5,7 +5,7 @@
 
 use crate::frame::engine::BasemapMode;
 use crate::frame::engine::RenderEngine;
-use crate::overlay::lanes::LaneRole;
+use map_draw_lanes::lane_roles::LaneRole;
 
 use render_primitives::draw::instances::QuadInstance;
 use wasm_bindgen::prelude::*;

@@ -54,5 +54,5 @@ assets/terrains/everon/objects/density/
 
 - [Vegetation density tiles](/crates/world_formats/world_file_formats/src/density/README.md) — the `TBDD`
   layout and its decoder.
-- [Vegetation](/legacy/map_engine/src/world/environment/vegetation/README.md) — how the tiles
-  become the forest fill and canopy.
+- [Vegetation](/crates/world_objects/vegetation/README.md) — how the tiles become the forest
+  fill and canopy.

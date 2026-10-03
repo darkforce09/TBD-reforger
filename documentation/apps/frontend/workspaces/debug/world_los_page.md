@@ -21,8 +21,8 @@ line-of-sight tool relies on, over the same loader, without the editor around it
   [Routes](/apps/frontend/src/workspaces/debug/world_los/README.md#routes). No navigation entry
   links it; it is opened by URL.
 - Related: the [building viewer bench](/documentation/apps/frontend/workspaces/debug/building_viewer_page.md),
-  which probes one building in detail; the map engine's world occluder in
-  `legacy/map_engine/src/spatial/los/world/`.
+  which probes one building in detail; the world occluder of the
+  [`world_line_of_sight`](/crates/line_of_sight/world_line_of_sight/README.md) crate.
 
 ## Behaviour
 

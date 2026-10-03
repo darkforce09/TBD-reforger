@@ -3,10 +3,10 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::streaming::loaders::manifest::DemRawBlock;
-use crate::world::terrain::dem::raw::RawDem;
-use crate::world::terrain::dem::raw::RawDemSink;
 use browser_platform::fetch::ByteProgress;
+use terrain_elevation::raw::RawDem;
+use terrain_elevation::raw::RawDemSink;
+use world_chunks::terrain_manifest::DemRawBlock;
 
 const TBDE_ENCODING_V1: &str = "tbde-v1";
 
@@ -22,7 +22,7 @@ pub async fn load_declared_raw(
     block: Option<&DemRawBlock>,
     report_every_bytes: u64,
     progress: &dyn Fn(ByteProgress),
-) -> Option<crate::world::terrain::dem::png::DecodedDem> {
+) -> Option<terrain_elevation::png::DecodedDem> {
     let block = block.filter(|b| raw_block_is_readable(b))?;
     let raw = load_dem_raw(
         &format!("{base}/{}", block.path),
@@ -30,7 +30,7 @@ pub async fn load_declared_raw(
         progress,
     )
     .await?;
-    Some(crate::world::terrain::dem::png::DecodedDem {
+    Some(terrain_elevation::png::DecodedDem {
         meters: raw.metres_grid(),
         width: raw.width(),
         height: raw.height(),

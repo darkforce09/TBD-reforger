@@ -4,9 +4,11 @@ The `map_engine` crate: everything between the platform's map data and the pixel
 the [mission](/documentation/glossary/g_to_m.md#mission) domain the
 [API](/documentation/glossary/a_to_f.md#api) and the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) share. It holds the mission
-compiler and CRDT document, the headless editing tools, the static world streamed from a terrain's
-assets, spatial queries and line of sight, the map's lanes and symbology, the cameras, and the
-render engine that hands frame packets to `graphics_engine`. It depends on no UI
+compiler and CRDT document, the headless editing tools, the browser loaders and GPU belts of the
+static world streamed from a terrain's assets, the viewshed and symbology uploads, the camera
+viewport, and the render engine that hands frame packets to `graphics_engine`. The world's data
+models, the spatial indexes, the line of sight and the map overlay's lanes and symbology are crates
+under `crates/` that every consumer imports directly. It depends on no UI
 framework; the frontend supplies the canvas, the preference readers and the page around them.
 
 ## Contents
@@ -30,22 +32,25 @@ A consumer takes only the tier it needs, because each module compiles under the 
 belongs to (the table in the [source README](/legacy/map_engine/src/README.md)):
 
 ```text
-render ──▶ streaming ──▶ io ──▶ world ──▶ bvh
-   │           │         │        └────▶ png, graphics_engine, render_primitives
-   │           │         └─────▶ scenario, rkyv, world_file_formats
-   │           └──────▶ flate2
-   └──────────▶ graphics_engine
+render ──▶ streaming ──▶ world ──▶ graphics_engine, render_primitives, terrain_elevation,
+   │           │                    terrain_relief, map_draw_lanes, label_layout, unit_symbology,
+   │           │                    overlay_instances, road_network, vegetation, place_names,
+   │           │                    spatial_indexes, terrain_line_of_sight
+   │           └──────▶ scenario, rkyv, world_file_formats, flate2, prefab_catalog, world_chunks,
+   │                    satellite_imagery, water_bodies, world_store, interior_line_of_sight,
+   │                    world_line_of_sight
+   └──────────▶ graphics_engine, browser_platform
 editing ──▶ store ──▶ scenario ──▶ serde, serde_json, thiserror, libm   (store adds yrs)
 editing ──▶ world, streaming
 ```
 
 `scenario`, the default and the tier the API links, is the headless mission compiler and
 validator: it pulls no graphics crate, PNG decoder, rkyv or flate2. `store` adds the Yjs document
-(`yrs`). `world` adds the static world, spatial queries and the overlay, and links the renderer;
-`io` adds the on-disk formats (the `world_file_formats` crate, which callers import directly)
-and rkyv;
-`streaming` adds the loader and scheduler stack (flate2); `render` adds the GPU frame path, the
-diagnostics and the doll. `editing` joins the document to the streamed world, so it takes
+(`yrs`). `world` adds the static world, the viewshed upload, the overlay and the frame
+vocabulary, links the renderer and the terrain, world-object, overlay and spatial crates those
+modules draw; `streaming` adds the loader and scheduler stack with the on-disk formats
+(`world_file_formats`, rkyv, flate2) and the world format and line of sight crates it reads;
+`render` adds the GPU frame path, the diagnostics and the doll. `editing` joins the document to the streamed world, so it takes
 `streaming` too. Browser code (canvas, fetch, image decoding,
 timers, the console) compiles only for wasm32; native builds keep the geometry, codecs and state
 machines and test them without a browser.
@@ -76,11 +81,9 @@ Cargo features, in `Cargo.toml`:
 |---|---|---|
 | `scenario` (default) | `serde`, `serde_json`, `thiserror`, `libm`; `data::scenario` | the API |
 | `store` | `scenario`, `yrs`; `data::store` | the frontend |
-| `bvh` | no crate; gates `spatial::bvh`, which also needs `world` | implied by `world`; `tools/developer_tools` names it too |
-| `world` | `bvh`, `png`, `graphics_engine`, `render_primitives`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools/developer_tools` |
-| `io` | `world`, `scenario`, `world_file_formats`, rkyv and float round trips in `serde_json`; the archive-reading modules and `streaming`'s bridge | the frontend, `tools/developer_tools` |
-| `streaming` | `io`, `flate2`; the loaders, scheduler, buffers and memory ledger | the frontend on wasm32 and in its tests, `tools/developer_tools` |
-| `render` | `streaming`, `graphics_engine`; the GPU frame path, `diagnostics`, `doll` | the frontend on wasm32 |
+| `world` | `graphics_engine`, `render_primitives`, `terrain_elevation`, `terrain_relief`, `map_draw_lanes`, `label_layout`, `unit_symbology`, `overlay_instances`, `road_network`, `vegetation`, `place_names`, `spatial_indexes`, `terrain_line_of_sight`; `world`, `spatial`, `overlay`, `frame` | the frontend, `tools/developer_tools` |
+| `streaming` | `world`, `scenario`, float round trips in `serde_json`, rkyv, `world_file_formats`, `flate2`, `prefab_catalog`, `world_chunks`, `satellite_imagery`, `water_bodies`, `world_store`, `interior_line_of_sight`, `world_line_of_sight`; the `streaming` module: loaders, scheduler, buffers, memory ledger, bridge | the frontend on wasm32 and in its tests, `tools/developer_tools` |
+| `render` | `streaming`, `graphics_engine`, `browser_platform`; the GPU frame path, `diagnostics`, `doll` | the frontend on wasm32 |
 | `editing` | `store`, `world`, `streaming`; `editing` | the frontend |
 
 In the browser the crate also reads the page's query string: `memBudgetMb` sets the streaming
@@ -92,8 +95,8 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
 ## Public surface
 
 - The library `map_engine`: `data::scenario` for the API's missions and operations
-  domains; `data`, `editing`, `world`, `streaming`, `spatial`, `overlay`, `frame`, `camera` and
-  `doll` for the frontend; `world`, `spatial`, `streaming` and `overlay` for the offline tools.
+  domains; `data`, `editing`, `streaming`, `frame`, `camera` and `doll` for the frontend;
+  `data::scenario` and `frame` for the offline tools.
 - The JavaScript-facing methods of `RenderEngine` and `DollEngine` (`#[wasm_bindgen]`), which the
   frontend calls from Rust and the editor gate reaches through the globals the Mission Creator
   publishes (`window.__selfChecks`, `window.__editorBench`, `window.__arsenalDoll`).
@@ -101,22 +104,28 @@ imagery by range requests alone and never fetches the whole bundle, and `t9382=1
 ## Boundaries
 
 - Depends on: `graphics_engine` and `render_primitives` (optional, from the `world` tier up);
-  `world_file_formats` (from the `io` tier up); `serde`,
-  `serde_json`, `thiserror`, `libm`, `yrs`, `png`, `rkyv`, `flate2` and `bytemuck`; on
+  `world_file_formats` (from the `streaming` tier up); `serde`,
+  `serde_json`, `thiserror`, `libm`, `yrs`, `rkyv`, `flate2` and `bytemuck`; from the `world`
+  tier up, the terrain crates `terrain_elevation`, `terrain_relief` and `road_network`, the
+  world-object crates `vegetation` and `place_names`, the map overlay crates `map_draw_lanes`,
+  `label_layout`, `unit_symbology` and `overlay_instances`, `spatial_indexes` and
+  `terrain_line_of_sight`; from the `streaming` tier up, `prefab_catalog`, `world_chunks`,
+  `world_store`, `satellite_imagery`, `water_bodies`, `interior_line_of_sight` and
+  `world_line_of_sight`; on
   wasm32, `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys`, `web-sys`, `futures`,
   `console_error_panic_hook` and `browser_platform` (from the `render` tier up);
   `contracts/rules/kit-aliases.json`; and at run time the terrain assets of `assets/terrains/`,
   which the API serves under `/map-assets`.
-  The geometry crates: `map_coordinates` and `camera_math` on every tier, and
-  `geometry_primitives` from the `bvh` tier up.
+  The geometry crates: `map_coordinates` and `camera_math` on every tier.
   Its tests also use `jsonschema` (dev-dependency), which validates the ballistics catalog sample
-  against `contracts/definitions/ballistics-catalog.schema.json`.
+  against `contracts/definitions/ballistics-catalog.schema.json`, and the `test_fixtures` of
+  `spatial_indexes`, `prefab_catalog` and `world_chunks`.
 - Used by:
   - the API (`apps/api/Cargo.toml`), at the default `scenario` tier;
-  - the frontend (`apps/frontend/Cargo.toml`): `world`, `io`, `store` and `editing` on
-    every target, `render` and `streaming` on wasm32, and `streaming` for its native tests;
-  - `tools/developer_tools/Cargo.toml`: `world`, `streaming`, `io` and `bvh`, for the world
-    export, the blueprint tooling and the map checks;
+  - the frontend (`apps/frontend/Cargo.toml`): `world`, `store` and `editing` on every target,
+    `render` and `streaming` on wasm32, and `streaming` for its native tests;
+  - `tools/developer_tools/Cargo.toml`: `world`, `streaming` and `scenario`, for the mission
+    compiler and the render engine's frame vocabulary;
   - `tools/xtask/`: the `wasm-ci` lane and the `engine-layers` gate.
 - Rules:
   - the arrow is one-way: `legacy/graphics_engine/` never imports this crate (rule 1 of

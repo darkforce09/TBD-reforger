@@ -68,8 +68,8 @@ the harness.
 
 - Depends on:
   - `map_engine`: `data::store` (`MissionDocCore`, `SlotSoa`, the debug seed),
-    `editing::history`, `editing::tools::selection`, `frame` (`RenderEngine`, `EngineHandle`) and
-    `overlay::symbology`;
+    `editing::history`, `editing::tools::selection` and `frame` (`RenderEngine`, `EngineHandle`);
+  - `unit_symbology` (`classification`, `squad_links`) and `map_draw_lanes::lane_roles`;
   - in `apps/frontend/src/workspaces/editor/`: the editor context in
     `apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/`,
     `apps/frontend/src/workspaces/editor/bridge/tactical_graphics.rs` and
@@ -96,11 +96,11 @@ the harness.
     itself; `apps/frontend/src/workspaces/editor/session/tests/review_mode/read_only_review.rs`,
     `apps/frontend/src/workspaces/editor/ui/inspector/tests/attributes_modal/numeric_field_input.rs`,
     `apps/frontend/src/workspaces/editor/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`
-    and `legacy/map_engine/src/overlay/tests/tests/draw_order_t748_comments_bind_feed.rs`.
+    and `legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs`.
 - Rules: both modules hold a live document handle, so each is `#[cfg(target_arch = "wasm32")]`, and
   so is its `pub mod` line; `rebind_engine_from_doc` and `after_doc_change` both bind the comment
   lane (`rebind_and_after_doc_change_both_feed_comments_bind` in
-  `legacy/map_engine/src/overlay/tests/tests/draw_order_t748_comments_bind_feed.rs`); undo and
+  `legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs`); undo and
   redo go through `map_engine::editing::history` and nowhere else.
 
 ## Related documentation

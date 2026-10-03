@@ -1,19 +1,19 @@
 //! The map label exporters: `locations.json` from staged raw JSONL, and `height-labels.json`
 //! computed directly from the terrain elevation model through
-//! `map_engine::world::environment::locations::peaks`.
+//! `place_names::peaks`.
 
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use map_engine::world::environment::locations::peaks::HeightLabel;
-use map_engine::world::environment::locations::peaks::HeightLabelKind;
-use map_engine::world::environment::locations::peaks::PEAK_MIN_VALUE_M;
-use map_engine::world::environment::locations::peaks::declutter_height_labels;
-use map_engine::world::environment::locations::peaks::find_peaks;
-use map_engine::world::terrain::dem::manifest::DemManifest;
-use map_engine::world::terrain::dem::png::decode_png_to_meters;
-use map_engine::world::terrain::dem::sampling::sample_elevation_from_meters_cache;
+use place_names::peaks::HeightLabel;
+use place_names::peaks::HeightLabelKind;
+use place_names::peaks::PEAK_MIN_VALUE_M;
+use place_names::peaks::declutter_height_labels;
+use place_names::peaks::find_peaks;
 use serde_json::{Map, Value, json};
+use terrain_elevation::manifest::DemManifest;
+use terrain_elevation::png::decode_png_to_meters;
+use terrain_elevation::sampling::sample_elevation_from_meters_cache;
 
 use crate::repository_layout::compiled_checkout_root;
 use crate::world_export_pipeline::json_number_formatting::{js_math_round, js_num};

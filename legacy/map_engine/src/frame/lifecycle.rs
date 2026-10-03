@@ -9,12 +9,12 @@ use crate::frame::engine::RenderEngine;
 use crate::frame::packet;
 use crate::frame::present;
 use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
-use crate::overlay::lanes::LaneRole;
-use crate::overlay::lanes::lane_id;
-use crate::overlay::lanes::lane_role_from_u32;
-use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
 use crate::world::terrain::satellite::textures::TexLane;
 use map_coordinates::terrain_frames::ANCHOR;
+use map_draw_lanes::lane_roles::LaneRole;
+use map_draw_lanes::lane_roles::lane_id;
+use map_draw_lanes::lane_roles::lane_role_from_u32;
+use overlay_instances::symbols::SLOT_ICON_STRIDE;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -194,8 +194,8 @@ impl RenderEngine {
             &mut b,
             world_x,
             world_y,
-            crate::overlay::symbology::instances::symbols::SLOT_RING_PX,
-            crate::overlay::symbology::instances::symbols::SLOT_GLYPH_RING,
+            overlay_instances::symbols::SLOT_RING_PX,
+            overlay_instances::symbols::SLOT_GLYPH_RING,
             tint,
         );
         self.upload_slot_role_lane(LaneRole::SlotPlacePreview, &b, true);

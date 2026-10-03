@@ -58,5 +58,5 @@ assets/terrains/everon/dem/
 
 ## Related documentation
 
-- [Elevation model](/legacy/map_engine/src/world/terrain/dem/README.md) — decoding, sampling
+- [Elevation model](/crates/terrain/terrain_elevation/README.md) — decoding, sampling
   and the vector grid.

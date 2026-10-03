@@ -100,7 +100,7 @@ change to both crates.
 
 - A renderer with no domain: the caller decides what to draw, in which order and with which
   pipeline, and keys each batch on an opaque `LaneId` whose value is only compared; lane roles and
-  paint order live in the map engine's `overlay/lanes.rs`.
+  paint order live in the `map_draw_lanes` crate's `lane_roles` module.
 - Damage-driven: nothing is submitted unless something changed or continuous rendering is on,
   and the packet is borrowed, not rebuilt, each frame
   ([engine boundary rules §2C](/documentation/standards/engine_boundary_rules.md#2c-the-packet-boundary)).

@@ -12,28 +12,24 @@ crate-type = ["rlib"]
 
 # Feature tiers, lowest first. `scenario` is the headless mission domain (`data/scenario`) and the
 # crate default, so `api` links the mission compiler and nothing else; `store` adds the
-# yrs CRDT document. `world` adds terrain and buildings, `io` the on-disk formats over those types
-# (the format code depends on the terrain types, never the reverse), `streaming` the served-data
-# loaders and scheduler on top of `io`, and `render` the GPU frame builder. `streaming` is its own
-# tier above `io`, so the on-disk formats compile without the loaders, the scheduler and flate2.
+# yrs CRDT document. `world` adds the static world's meshes, the overlay and the frame
+# vocabulary, `streaming` the served-data loaders, scheduler and buffers with the on-disk formats
+# they read, and `render` the GPU frame builder.
 [features]
 default = ["scenario"]
 scenario = ["dep:serde", "dep:serde_json", "dep:thiserror", "dep:libm"]
 store = ["scenario", "dep:yrs"]
-bvh = ["dep:geometry_primitives"]
 # `dep:graphics_engine` and `dep:render_primitives` sit on `world`, the first tier above
 # `scenario`, because code from `world` upward speaks the renderer's vocabulary: `world::mesh`
-# composes meshes with `render_primitives::draw::{compose, triangulate}`, and the label glyph
-# math the streaming belts reach packs `render_primitives::text` instances. `scenario` is the one
-# tier without them, so `cargo tree -p api` carries no graphics crate, no png, no rkyv and no
-# flate2.
-world = ["bvh", "dep:png", "dep:graphics_engine", "dep:render_primitives"]
-io = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv", "dep:world_file_formats"]
-streaming = ["io", "dep:flate2"]
+# composes meshes with `render_primitives::draw::{compose, triangulate}`, and the frame and overlay
+# modules name the renderer's lanes. `scenario` is the one tier without them, so `cargo tree -p api`
+# carries no graphics crate, no png, no rkyv and no flate2.
+world = ["dep:graphics_engine", "dep:render_primitives", "dep:terrain_elevation", "dep:terrain_relief", "dep:map_draw_lanes", "dep:label_layout", "dep:unit_symbology", "dep:overlay_instances", "dep:road_network", "dep:vegetation", "dep:place_names", "dep:spatial_indexes", "dep:terrain_line_of_sight"]
+streaming = ["world", "scenario", "serde_json/float_roundtrip", "dep:rkyv", "dep:world_file_formats", "dep:flate2", "dep:prefab_catalog", "dep:world_chunks", "dep:satellite_imagery", "dep:water_bodies", "dep:world_store", "dep:interior_line_of_sight", "dep:world_line_of_sight"]
 render = ["streaming", "dep:graphics_engine", "dep:browser_platform"]
 # The editing tier drives the STREAMED world, not just the static one: the line-of-sight tool's
 # object layer washes a viewshed by testing cells against the world occluder, whose frame convention
-# and traversal live under `spatial/los/world` — which is `streaming`'s. So the honest edge for
+# and traversal live in `world_line_of_sight` — which is `streaming`'s. So the honest edge for
 # authored-document editing is "the document plus everything the operator can see", and `streaming`
 # is the tier that names the second half.
 editing = ["store", "world", "streaming"]
@@ -45,13 +41,10 @@ graphics_engine = { path = "../graphics_engine", optional = true }
 # The renderer's GPU-free half: instance layouts, line geometry, mesh composition, glyph text,
 # frame ids, the camera uniform and damage tracking, behind `world`.
 render_primitives = { workspace = true, optional = true }
-# The geometry crates: vector products, segment tests, rigid transforms and boxes behind `bvh`;
-# the map coordinates and the cameras, which every tier links (`camera` is ungated).
-geometry_primitives = { workspace = true, optional = true }
+# The map coordinates and the cameras, which every tier links (`camera` is ungated).
 map_coordinates = { workspace = true }
 camera_math = { workspace = true }
 bytemuck = { workspace = true, features = ["derive", "min_const_generics"] }
-png = { workspace = true, optional = true }
 serde = { workspace = true, features = ["derive"], optional = true }
 serde_json = { workspace = true, optional = true, features = ["preserve_order"] }
 thiserror = { version = "2", optional = true }
@@ -62,8 +55,41 @@ yrs = { version = "0.27", optional = true }
 flate2 = { workspace = true, optional = true }
 # Validation and endian settings are part of the shared on-disk format.
 rkyv = { workspace = true, optional = true, features = ["std", "bytecheck", "little_endian"] }
-# The on-disk formats behind `io`.
+# The on-disk formats behind `streaming`.
 world_file_formats = { workspace = true, optional = true }
+# The triangle BVH, the point grid and the clusters behind `world`.
+spatial_indexes = { workspace = true, optional = true }
+# The prefab catalogue with the world payload decoding, and the world chunks with the terrain
+# manifest, behind `streaming`.
+prefab_catalog = { workspace = true, optional = true }
+world_chunks = { workspace = true, optional = true }
+# The map overlay crates behind `world`: the named draw lanes and zoom gates, the label layout,
+# the unit symbology and the overlay instance packers.
+map_draw_lanes = { workspace = true, optional = true }
+label_layout = { workspace = true, optional = true }
+unit_symbology = { workspace = true, optional = true }
+overlay_instances = { workspace = true, optional = true }
+# The terrain crates: the elevation model and the relief behind `world` (the elevation model
+# reads the `TBDE` header, so `world` links `world_file_formats` through it), the satellite
+# container reader and the water data behind `streaming`.
+terrain_elevation = { workspace = true, optional = true }
+terrain_relief = { workspace = true, optional = true }
+satellite_imagery = { workspace = true, optional = true }
+water_bodies = { workspace = true, optional = true }
+# The road network and the vegetation data behind `world` (the road styling and the forest mass
+# are `world` modules; both crates link the prefab catalogue, so `world` links flate2 through
+# them).
+road_network = { workspace = true, optional = true }
+vegetation = { workspace = true, optional = true }
+# The spot heights, town and road names and their glyph packing behind `world` (the label
+# loader stays here), and the headless world store behind `streaming`.
+place_names = { workspace = true, optional = true }
+world_store = { workspace = true, optional = true }
+# The line of sight over the elevation model behind `world`, and inside one building and through
+# the streamed world behind `streaming` (the viewshed lane upload stays here).
+terrain_line_of_sight = { workspace = true, optional = true }
+interior_line_of_sight = { workspace = true, optional = true }
+world_line_of_sight = { workspace = true, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
@@ -83,6 +109,11 @@ futures = { workspace = true }
 browser_platform = { workspace = true, optional = true }
 
 [dev-dependencies]
+# The BVH cuboid scenes, the Everon prefab catalogue forms and the TBDC chunk encoding the
+# building, line-of-sight and chunk scheduler tests share with the crates that own them.
+spatial_indexes = { workspace = true, features = ["test_fixtures"] }
+prefab_catalog = { workspace = true, features = ["test_fixtures"] }
+world_chunks = { workspace = true, features = ["test_fixtures"] }
 serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
 # The editing layer hands a host-supplied async read to `editing::persist::merge_policy`, so a
 # native test of that ordering needs an executor to drive the future to completion.

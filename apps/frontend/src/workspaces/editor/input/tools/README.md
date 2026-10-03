@@ -47,8 +47,10 @@ headless gates; the pick and the marquee themselves belong to
 ## Boundaries
 
 - Depends on: `map_engine` (`editing::tools` for `ruler`, `line_of_sight`, `selection` and
-  `viewshed_scheduler`, `spatial::los` and `streaming::host` for the world occluder and the camera,
-  `overlay::symbology` for the drag-preview packers, `frame` for the render engine); `install_seam`
+  `viewshed_scheduler`, `streaming::host` for the world occluder and the camera, `frame` for the
+  render engine); the line of sight crates (`terrain_line_of_sight`, `interior_line_of_sight`,
+  `world_line_of_sight`) and `spatial_indexes`; `overlay_instances::drag` for the drag-preview
+  packers, `unit_symbology::squad_links` and `map_draw_lanes::lane_roles`; `install_seam`
   from `apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`; the bridge's
   document handle and vehicle lane in `apps/frontend/src/workspaces/editor/bridge/`; the live
   insets of `session::layout`, which keep the deselect probe off the chrome; `web_sys` and `js_sys`.

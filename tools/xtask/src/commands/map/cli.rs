@@ -23,7 +23,7 @@ pub(crate) enum MapCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
-    /// Replay the Workbench parity oracle through `evaluate_los` (BVH raycast over the `.bvh`
+    /// Replay the Workbench parity oracle through `annotate_sight_line` (BVH raycast over the `.bvh`
     /// sidecar + blueprint attribution) and report agreement
     /// (--pairs <parity.json> --blueprint <blueprint.json> --sidecar <file.bvh>).
     #[command(name = "parity-report")]

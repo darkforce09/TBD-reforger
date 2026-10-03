@@ -1,10 +1,10 @@
 //! Phase B — `cargo xtask map parity-report`: replay the Workbench parity oracle through the
-//! blueprint LOS evaluator (`evaluate_los` over the `.bvh` occlusion sidecar) and report agreement.
+//! blueprint LOS evaluator (`annotate_sight_line` over the `.bvh` occlusion sidecar) and report agreement.
 //!
 //! The oracle (`EMCP_WB_TbdBlueprint` action `parity`) records engine `TraceMove` verdicts for
 //! random observer/target pairs in the building's LOCAL frame — the same frame the blueprint
 //! uses — with glass panes excluded (vision passes glass). This command replays every pair
-//! through `BuildingBlueprint::evaluate_los` — the BVH raycast over the sidecar decides
+//! through `BuildingBlueprint::annotate_sight_line` — the BVH raycast over the sidecar decides
 //! clear/blocked, the blueprint names the hit — and prints where the model and the engine
 //! disagree. Report-only: the number is the instrument, not a gate (the CI pin lives in
 //! `blueprint::tests::farmhouse_golden_parity_is_pinned`).
@@ -16,8 +16,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
+use building_interiors::blueprint::structure::BuildingBlueprint;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
 
 #[derive(serde::Deserialize)]
 pub(crate) struct ParityFile {
@@ -78,7 +78,7 @@ pub fn run(_root: &std::path::Path, args: &[String]) -> Result<u8> {
     let mut model_blocked_engine_clear = 0usize;
     let mut disagreements: Vec<String> = Vec::new();
     for &(ox, oy, oz, tx, ty, tz, engine_clear) in &parity.pairs {
-        let los = bp.evaluate_los(&sidecar, [ox, oy, oz], [tx, ty, tz]);
+        let los = bp.annotate_sight_line(&sidecar, [ox, oy, oz], [tx, ty, tz]);
         if los.is_clear == engine_clear {
             agree += 1;
         } else {

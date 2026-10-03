@@ -1,0 +1,36 @@
+# A terrain's vegetation data with no browser or GPU code: the forest and land-cover regions read
+# from the JSON export or the binary archive, the canopy mass outline, the tree counts that switch
+# the map between instances and the density heatmap, and the density bins the heatmap samples.
+[package]
+name = "vegetation"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A terrain's vegetation data: forest regions, canopy mass, tree counts and density bins."
+
+[package.metadata.layout]
+category = "crates/world_objects"
+tier = 4
+targets = "any"
+
+[dependencies]
+# The viewport box the visible tree count is taken over.
+map_coordinates = { workspace = true }
+# The instance budget and the class zoom gates the tree count follows.
+map_draw_lanes = { workspace = true }
+# The render class codes of trees and vegetation, and the payload decoding the region tests use.
+prefab_catalog = { workspace = true }
+# The forest regions archive is read in place through rkyv's `Archived` view.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+# The JSON export's regions, read with the map engine's key order and float settings.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+thiserror = { workspace = true }
+# The chunk record whose instance rows the tree counts sum.
+world_chunks = { workspace = true }
+# The forest regions archive, its codec and the region identifier.
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

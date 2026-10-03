@@ -1,0 +1,35 @@
+# Line of sight inside one building: every crossing of a sight line through a compound's shell and
+# placed instances, the verdict with each event named, and per-floor visibility rasters around an
+# observer, whole or in budgeted batches. The one sight-line evaluation the world line of sight
+# reuses lives here.
+[package]
+name = "interior_line_of_sight"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Line of sight inside a building: compound traces, the shared sight-line evaluation and floor washes."
+
+[package.metadata.layout]
+category = "crates/line_of_sight"
+tier = 4
+targets = "any"
+
+[dependencies]
+# The compound (shell, instances, doors), the blueprint attribution and the `LosResult` types.
+building_interiors = { workspace = true }
+# Segment points and the rigid transforms instances are placed by.
+geometry_primitives = { workspace = true }
+# The triangle BVH traversal, the sidecar meshes, surface kinds and the segment-box window.
+spatial_indexes = { workspace = true }
+# The `Visibility` classes and the `ViewshedCapRefused` refusal the floor wash shares.
+terrain_line_of_sight = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+building_interiors = { workspace = true, features = ["test_fixtures"] }
+spatial_indexes = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

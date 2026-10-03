@@ -62,7 +62,7 @@ that places its model.
   `assets/terrains/**/*.rkyv`); the manifest is a plain git blob. The children's formats are in
   their READMEs.
 - Schema: `contracts/definitions/blas-manifest.schema.json` for the manifest, read as
-  `BlasManifest` (`legacy/map_engine/src/spatial/los/world/descriptor/manifest.rs`); the
+  `BlasManifest` (`crates/line_of_sight/world_line_of_sight/src/occluder_library/blas_manifest.rs`); the
   archive has no JSON Schema, and its Rust type is the contract. The terrain manifest's
   `buildings` block names the archive and the mesh folder
   (`contracts/definitions/terrain-manifest.schema.json`).
@@ -78,8 +78,9 @@ that places its model.
   `cargo xtask map blueprint-from-voxels archive` (`archive_emission/archive_writer.rs`).
 - Consumers:
   - the map engine's occluder loader and world occluder
-    (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`,
-    `legacy/map_engine/src/spatial/los/world/`), over `/map-assets/everon/prefabs/…`;
+    (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs` and the
+    `world_line_of_sight` crate in `crates/line_of_sight/world_line_of_sight/`), over
+    `/map-assets/everon/prefabs/…`;
   - `cargo xtask verify blas-manifest`
     (`tools/developer_tools/src/map_verification/blas_manifest.rs`), which checks every listed
     mesh and every catalogue descriptor, and `cargo xtask map world-los`;
@@ -104,9 +105,9 @@ that places its model.
 
 ## Related documentation
 
-- [Prefab occluder descriptors](/legacy/map_engine/src/spatial/los/world/descriptor/README.md)
+- [Prefab occluder descriptors](/crates/line_of_sight/world_line_of_sight/src/occluder_library/README.md)
   — the descriptor, manifest and archive model.
 - [Blueprint compilation](/tools/developer_tools/src/blueprint/README.md) — the commands that
   write this folder.
-- [Building architecture](/legacy/map_engine/src/world/architecture/README.md) — the
+- [Building interiors](/crates/world_objects/building_interiors/README.md) — the
   blueprint and compound model the building files feed.

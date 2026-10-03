@@ -26,5 +26,5 @@ legacy/map_engine/src/streaming/scheduler/residency/t151_11_3_tests/
     (`ingest_budget_policy_is_core_owned`);
   - turning buildings off empties the building fill and outline buffers, and turning them back on
     refills them (`buildings_toggle_hides_and_restores_whole_lane`);
-  - a viewport below the building zoom gate (`BUILDING_MIN_ZOOM`, -2.5) hides the buildings
+  - a viewport below the building zoom gate (`BUILDING_FOOTPRINT_MIN_ZOOM`, -2.5) hides the buildings
     (`buildings_visible_respects_zoom_gate`).

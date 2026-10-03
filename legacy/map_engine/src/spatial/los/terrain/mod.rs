@@ -1,36 +1,11 @@
-//! Role: Module boundary for spatial/terrain_los.
-//! Position: `spatial/los/terrain` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+//! Line of sight over the elevation model: the browser upload of a viewshed raster.
+//!
+//! **Role:** owns `overlay`, the GPU upload of a raster as the viewshed lane; the elevation
+//! profile, the viewshed and the sliced viewshed job are `terrain_line_of_sight`.
+//! **Position:** the map engine's `spatial/los`; the overlay writes the render engine.
+//! **Signals & state:** none here; the overlay writes the render engine's viewshed lane.
+//! **Invariants:** only `overlay` touches the GPU or the browser.
 
-/// March.
-pub mod march;
-
-/// Overlay.
+/// The browser upload and removal of the viewshed lane.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod overlay;
-
-/// Sampler.
-pub mod sampler;
-
-/// Scheduler.
-pub mod scheduler;
-
-/// Viewshed.
-pub mod viewshed;
-
-#[cfg(test)]
-#[path = "tests/viewshed_fixtures.rs"]
-mod viewshed_fixtures;
-
-#[cfg(test)]
-#[path = "tests/sampler_tests.rs"]
-mod sampler_tests;
-
-#[cfg(test)]
-#[path = "tests/viewshed_tests.rs"]
-mod viewshed_tests;
-
-#[cfg(test)]
-#[path = "tests/scheduler_tests.rs"]
-mod scheduler_tests;

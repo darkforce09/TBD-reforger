@@ -3,15 +3,15 @@
 use std::fs;
 use std::sync::Arc;
 
+use building_interiors::compound::instances::InstanceKind;
 use geometry_primitives::rigid_transform::Rigid;
 use map_coordinates::chunk_math::TerrainSizeM;
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::los::world::coverage_1::BlockPolicy;
-use map_engine::spatial::los::world::coverage_1::map_to_engine;
-use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
-use map_engine::spatial::los::world::state::WorldOccluder;
-use map_engine::streaming::loaders::chunk::WorldChunk;
-use map_engine::world::architecture::compound::instances::InstanceKind;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
+use world_chunks::world_chunk::WorldChunk;
+use world_line_of_sight::BlockPolicy;
+use world_line_of_sight::WorldOccluder;
+use world_line_of_sight::map_to_engine;
+use world_line_of_sight::occluder_library::PrefabDescriptor;
 
 use super::*;
 use crate::blueprint::parity_report::ParityFile;
@@ -74,7 +74,7 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     c.roll.push(0.0);
     c.scale.push(1.0);
     c.cls_codes.push(255);
-    occ.insert_chunk("1_1", &c);
+    occ.insert_chunk(&"1_1".into(), &c);
     occ.refresh();
     assert_eq!(occ.expanded_count(), 1);
     assert_eq!(occ.root_kind_of(132), Some(InstanceKind::Shell));
@@ -111,11 +111,12 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
     );
     // The verdict names the building.
     let r = occ.evaluate_los(rigid.point([-14.0, 1.6, 0.0]), rigid.point([0.0, 1.6, 0.0]));
-    assert_ne!(
-        r.verdict,
-        map_engine::spatial::los::world::coverage_1::WorldVerdict::Clear
+    assert_ne!(r.verdict, world_line_of_sight::WorldVerdict::Clear);
+    assert!(
+        r.hits[0].id.as_str().starts_with("132:1_1:0"),
+        "{}",
+        r.hits[0].id
     );
-    assert!(r.hits[0].id.starts_with("132:1_1:0"), "{}", r.hits[0].id);
 }
 
 /// The committed cell 18_0 (the farmhouse village) loads end to end: every placed pid resolves
@@ -125,7 +126,11 @@ fn farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture() {
 fn cell_18_0_loads_with_no_proxy_rows_and_names_the_farmhouse() {
     let (occ, loaded) = load_cell(&assets(), "18_0").unwrap();
     assert!(loaded.contains(&"18_0".to_string()), "{loaded:?}");
-    assert_eq!(occ.proxy_rows("18_0"), Some(0), "every placed pid expanded");
+    assert_eq!(
+        occ.proxy_rows(&"18_0".into()),
+        Some(0),
+        "every placed pid expanded"
+    );
     // Recon rootWorldPos (9363.58, 13.05, 285.60), yaw 38.46: a ray from 14 m west into the origin.
     let r = occ.evaluate_los(
         map_to_engine(9350.0, 285.6, 14.6),

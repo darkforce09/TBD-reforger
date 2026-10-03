@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use map_engine::streaming::loaders::chunk::parse_chunk;
-use map_engine::streaming::loaders::store::bytes_to_json;
+use prefab_catalog::world_payload::bytes_to_json;
 use serde_json::json;
+use world_chunks::world_chunk::parse_chunk;
 use world_file_formats::containers::header::HEADER_BYTES;
 use world_file_formats::pod::instance::POD_BYTES;
 
@@ -89,8 +89,9 @@ fn every_everon_chunk_bin_decodes_to_the_json_columns() {
     let objects = objects_dir();
     let prefabs_raw = std::fs::read(objects.join("prefabs.json.gz")).expect("prefabs.json.gz");
     let prefabs_doc = bytes_to_json(&prefabs_raw).expect("prefabs decode");
-    let (prefab_by_id, _) = build_prefab_maps(narrow_prefab_rows(&prefabs_doc));
-    let class_by_pid = class_code_table(&prefabs_doc);
+    let (prefab_by_id, _) =
+        build_prefab_maps(narrow_prefab_rows(&prefabs_doc).expect("Everon ids are whole u32s"));
+    let class_by_pid = class_code_table(&prefabs_doc).expect("Everon ids are whole u32s");
     assert!(!class_by_pid.is_empty(), "empty prefab catalogue");
 
     let files = chunk_files();
@@ -118,7 +119,8 @@ fn every_everon_chunk_bin_decodes_to_the_json_columns() {
         write_chunk_bin(&bin, cx, cy, &pods).expect("write bin");
 
         let bytes = std::fs::read(&bin).expect("read bin");
-        let oracle = parse_chunk(&key, &raw, &prefab_by_id).unwrap_or_else(|| panic!("{key}"));
+        let oracle = parse_chunk(&key.as_str().into(), &raw, &prefab_by_id)
+            .unwrap_or_else(|| panic!("{key}"));
         let n = oracle.count as usize;
         total_rows += n;
 

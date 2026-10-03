@@ -8,9 +8,9 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use crate::spatial::los::interior::wash::WashJob;
-use crate::spatial::los::terrain::scheduler::ViewshedJob;
-use crate::spatial::los::terrain::viewshed::ViewshedCapRefused;
+use interior_line_of_sight::floor_wash::WashJob;
+use terrain_line_of_sight::viewshed::ViewshedCapRefused;
+use terrain_line_of_sight::viewshed_job::ViewshedJob;
 
 /// Per-frame compute budget for ONE batch, milliseconds. Well inside a 16.7 ms frame with a
 /// renderer's own work, and the object wash's own budget, still to pay for.

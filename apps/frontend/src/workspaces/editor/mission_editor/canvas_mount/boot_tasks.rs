@@ -287,7 +287,7 @@ fn start_engine(start: EngineStart) {
                     }
                     {
                         let (rgba, width, height, uv) =
-                            map_engine::overlay::symbology::markers::build_marker_slot_atlas();
+                            unit_symbology::markers::build_marker_slot_atlas();
                         if let Err(e) = eng.ensure_slot_atlas(&rgba, width, height, &uv) {
                             leptos::logging::error!("ensure_slot_atlas: {e:?}");
                         }
@@ -305,9 +305,7 @@ fn start_engine(start: EngineStart) {
                     let (vxy, valiases, vtints, vheadings) = mission_history::vehicle_lane_fields();
                     if let (Some(soa), Some(e)) = (soa.as_ref(), engine.borrow_mut().as_mut()) {
                         let tints =
-                            map_engine::overlay::symbology::roles::classify::side_tints_rgba_bytes(
-                                &soa.side_keys,
-                            );
+                            unit_symbology::classification::side_tints_rgba_bytes(&soa.side_keys);
                         e.slots_bind_symbology(
                             soa.ids.clone(),
                             &soa.xy,

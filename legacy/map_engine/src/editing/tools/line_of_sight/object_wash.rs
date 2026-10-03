@@ -3,9 +3,9 @@
 //! Signals & state: session-local measurement state; never the authored document.
 //! Invariants: a cell the pass has not reached keeps its terrain colour; blocks are tested coarse-to-fine, nearest-first, under an explicit per-frame budget and an injected cell test.
 
-use crate::spatial::los::terrain::viewshed::Viewshed;
-use crate::spatial::los::terrain::viewshed::Visibility;
-use crate::spatial::los::world::map_to_engine;
+use terrain_line_of_sight::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Visibility;
+use world_line_of_sight::map_to_engine;
 
 use super::terrain_verdict::EYE_HEIGHT_TARGET_M;
 use super::wash_palette::{VIEWSHED_HIDDEN_RGBA, VIEWSHED_UNKNOWN_RGBA, VIEWSHED_VISIBLE_RGBA};

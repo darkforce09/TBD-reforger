@@ -343,14 +343,14 @@ pub fn build_static_lanes(
     // Aperture overlays along the wall direction, slightly wider than the wall.
     let wall_of = |id: &str| lvl.walls.iter().find(|w| w.id == id);
     for win in &lvl.windows {
-        let dir = wall_of(&win.wall_id)
+        let dir = wall_of(win.wall_id.as_str())
             .map(|w| {
                 let d = [w.end[0] - w.start[0], w.end[1] - w.start[1]];
                 let l = (d[0] * d[0] + d[1] * d[1]).sqrt().max(1e-9);
                 [d[0] / l, d[1] / l]
             })
             .unwrap_or([1.0, 0.0]);
-        let th = wall_of(&win.wall_id).map_or(0.3, |w| w.thickness) + 0.10;
+        let th = wall_of(win.wall_id.as_str()).map_or(0.3, |w| w.thickness) + 0.10;
         let a = [
             win.pos2_d[0] - dir[0] * win.width_m * 0.5,
             win.pos2_d[1] - dir[1] * win.width_m * 0.5,
@@ -374,7 +374,7 @@ pub fn build_static_lanes(
         out.hairline_count += 1;
     }
     for door in &lvl.doors {
-        let wall = wall_of(&door.wall_id);
+        let wall = wall_of(door.wall_id.as_str());
         let dir = wall
             .map(|w| {
                 let d = [w.end[0] - w.start[0], w.end[1] - w.start[1]];

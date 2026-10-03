@@ -1,0 +1,39 @@
+# Stage S6 P1 — the spatial indexes, the prefab catalogue and the world chunks leave the map engine
+# for the crates spatial_indexes, prefab_catalog and world_chunks. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the point grid, the picks and the zoom-level clusters become spatial_indexes' point indexes
+path	legacy/map_engine/src/spatial/indexing	crates/geometry/spatial_indexes/src/point_indexes
+#
+# the triangle BVH, its build core, its sidecar format, its surface kinds and the slab test become
+# spatial_indexes' bounding volume hierarchy; the legacy `bvh` module root stays as the shim
+path	legacy/map_engine/src/spatial/bvh/node.rs	crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/flat_tree_build.rs
+path	legacy/map_engine/src/spatial/bvh/traversal.rs	crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/triangle_tree.rs
+path	legacy/map_engine/src/spatial/bvh/sidecar.rs	crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/sidecar.rs
+path	legacy/map_engine/src/spatial/bvh/surface.rs	crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/surface_kind.rs
+path	legacy/map_engine/src/spatial/bvh/segment_box_window.rs	crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/segment_box_window.rs
+path	legacy/map_engine/src/spatial/bvh/tests/tree.rs	crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/tests/triangle_tree_tests.rs
+path	legacy/map_engine/src/spatial/bvh/tests/README.md	crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/tests/README.md
+#
+# the prefab rows and their archive form, the footprint lookups, the render classes, the prefab
+# tables and the payload decoding become prefab_catalog
+path	legacy/map_engine/src/world/environment/buildings/prefab.rs	crates/world_formats/prefab_catalog/src/prefab_rows.rs
+path	legacy/map_engine/src/world/environment/buildings/obb.rs	crates/world_formats/prefab_catalog/src/footprint_lookups.rs
+path	legacy/map_engine/src/world/environment/classify.rs	crates/world_formats/prefab_catalog/src/render_classes.rs
+path	legacy/map_engine/src/streaming/loaders/prefab.rs	crates/world_formats/prefab_catalog/src/prefab_tables.rs
+path	legacy/map_engine/src/streaming/loaders/payload.rs	crates/world_formats/prefab_catalog/src/world_payload.rs
+path	legacy/map_engine/src/world/environment/buildings/tests/prefab_tests.rs	crates/world_formats/prefab_catalog/src/tests/prefab_rows_tests.rs
+path	legacy/map_engine/src/world/environment/buildings/tests/obb_tests.rs	crates/world_formats/prefab_catalog/src/tests/footprint_lookups_tests.rs
+path	legacy/map_engine/src/world/environment/buildings/tests/README.md	crates/world_formats/prefab_catalog/src/tests/README.md
+path	legacy/map_engine/src/world/environment/tests/classify_tests.rs	crates/world_formats/prefab_catalog/src/tests/render_classes_tests.rs
+path	legacy/map_engine/src/streaming/loaders/tests/prefab_tests.rs	crates/world_formats/prefab_catalog/src/tests/prefab_tables_tests.rs
+path	legacy/map_engine/src/streaming/loaders/tests/prefab_test_fixtures.rs	crates/world_formats/prefab_catalog/src/test_fixtures.rs
+#
+# the chunk JSON and TBDC decoders and the terrain manifest parse become world_chunks
+path	legacy/map_engine/src/streaming/loaders/chunk.rs	crates/world_formats/world_chunks/src/world_chunk.rs
+path	legacy/map_engine/src/streaming/loaders/chunk_bin.rs	crates/world_formats/world_chunks/src/chunk_container.rs
+path	legacy/map_engine/src/streaming/loaders/manifest.rs	crates/world_formats/world_chunks/src/terrain_manifest.rs
+path	legacy/map_engine/src/streaming/loaders/tests/chunk_tests.rs	crates/world_formats/world_chunks/src/tests/world_chunk_tests.rs
+path	legacy/map_engine/src/streaming/loaders/tests/chunk_bin_tests.rs	crates/world_formats/world_chunks/src/tests/chunk_container_tests.rs
+path	legacy/map_engine/src/streaming/loaders/tests/manifest_tests.rs	crates/world_formats/world_chunks/src/tests/terrain_manifest_tests.rs
+path	legacy/map_engine/src/streaming/loaders/tests/chunk_bin_test_fixtures.rs	crates/world_formats/world_chunks/src/test_fixtures.rs

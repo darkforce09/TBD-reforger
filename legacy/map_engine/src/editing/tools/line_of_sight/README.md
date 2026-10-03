@@ -64,9 +64,9 @@ the ruler's point-capture arm (`crate::editing::tools::ruler::should_begin_ruler
 
 ## Boundaries
 
-- Depends on: `crate::spatial::los::terrain` (the segment sampler, `Viewshed`, `Visibility`,
-  `compute_viewshed`), `crate::spatial::los::world::map_to_engine` for the object pass's engine
-  frame, `crate::world::terrain::dem::manifest::DemManifest`, and
+- Depends on: `terrain_line_of_sight` (the segment sampler in `elevation_profile`, `Viewshed`,
+  `Visibility`, `compute_viewshed`), `world_line_of_sight::map_to_engine` for the object pass's
+  engine frame, `terrain_elevation::manifest::DemManifest`, and
   `crate::editing::tools::viewshed_scheduler` for the viewshed placement.
 - Used by:
   - `crate::editing::tools::viewshed_scheduler`, whose terrain lane reads the sampler, the manifest,

@@ -3,7 +3,7 @@
 //! Signals & state: session-local measurement state; never the authored document.
 //! Invariants: panel identity is the shot's world endpoints quantised to 0.1 m, so re-aiming never retains a stale panel; the chart spans both the ground and the sight line.
 
-use crate::spatial::los::terrain::sampler::ProfileSample;
+use terrain_line_of_sight::elevation_profile::ProfileSample;
 
 use super::capture::LosShot;
 use super::object_verdict::ObjectVerdict;

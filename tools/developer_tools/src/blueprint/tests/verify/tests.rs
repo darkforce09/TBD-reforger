@@ -1,6 +1,6 @@
 use super::*;
-use map_engine::world::architecture::compound::assembly::CoverTier;
-use map_engine::world::architecture::compound::instances::LocalTransform;
+use building_interiors::compound::assembly::CoverTier;
+use building_interiors::compound::instances::LocalTransform;
 
 fn inst(
     id: &str,

@@ -4,8 +4,8 @@
 //! Invariants: a third click starts a fresh capture; escape steps down; a placement replaces rather than appends.
 
 use super::*;
-use crate::spatial::los::terrain::viewshed::Viewshed;
-use crate::spatial::los::terrain::viewshed::Visibility;
+use terrain_line_of_sight::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Visibility;
 
 #[test]
 fn click_captures_observer_then_target() {

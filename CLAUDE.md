@@ -182,12 +182,12 @@ legacy/                                  <-- Parking folder of the two engine mo
 │   └── src/
 │       ├── data/                        <-- Mission domain (`scenario` module: shapes, compiler, checks, game ballistics) + Yjs CRDT store
 │       ├── editing/                     <-- Live mission document, undo history, headless map tools (select, ruler, LOS, viewshed)
-│       ├── world/                       <-- Terrain (DEM, relief, roads, satellite, water), buildings, vegetation, labels
-│       ├── spatial/                     <-- BVHs, point indexes, picking, line of sight (terrain, world, building interiors)
+│       ├── world/                       <-- Scene calibration and the GPU and loader parts of terrain, buildings, vegetation, labels (CPU in crates/terrain, crates/world_objects)
+│       ├── spatial/                     <-- The terrain viewshed's GPU overlay (line of sight is in crates/line_of_sight)
 │       ├── camera/                      <-- The browser viewport the map camera fills (the camera math is in crates/geometry)
 │       ├── streaming/                   <-- Served map data: fetch, world chunk residency, draw buffers, memory budget
-│       ├── overlay/                     <-- Map overlay lanes and draw order
-│       │   └── symbology/               <-- Bespoke unit-role and vehicle glyphs, side tints, labels, marker glyphs
+│       ├── overlay/                     <-- Lane preferences and the GPU symbol bridges (the overlay CPU is in crates/map_overlay)
+│       │   └── symbology/               <-- GPU symbol atlas and slot, vehicle and icon instance bridges
 │       ├── frame/                       <-- Render engine: builds graphics_engine::frame packets, upload belts
 │       ├── doll/                        <-- Arsenal 3D mannequin preview: scene, picking, renderer
 │       ├── shaders/                     <-- The doll renderer's WGSL program
@@ -212,12 +212,35 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── offline_cache_policy/            <-- Offline cache names, request classes, offline pack and network fallback rules the service worker applies
 │   ├── fleet_wire_contract/             <-- Fleet-command wire shapes, executor kinds, the machine-credential format and secret-file limits
 │   └── contract_schema_types/           <-- Rust types generated from contracts/definitions (`cargo xtask ci schema-codegen`)
-├── geometry/                            <-- Engine geometry: vectors, segments, rigid transforms, map coordinates, cameras
+├── geometry/                            <-- Engine geometry: vectors, segments, rigid transforms, map coordinates, cameras, spatial indexes
 │   ├── geometry_primitives/             <-- 3D vector ops, 2D segment geometry, rigid transforms, axis-aligned boxes
 │   ├── map_coordinates/                 <-- Terrain frames (map centres, bounds), chunk math, rounding, grid references
-│   └── camera_math/                     <-- Orthographic map camera, orbit camera, 4x4 matrices
-├── world_formats/                       <-- On-disk world formats
-│   └── world_file_formats/              <-- rkyv archives, containers, density grids, POD layouts, their typed ids
+│   ├── camera_math/                     <-- Orthographic map camera, orbit camera, 4x4 matrices
+│   └── spatial_indexes/                 <-- Triangle BVH and its .bvh sidecar, the flat-tree build core, point grid, picks, clusters
+├── world_formats/                       <-- On-disk world formats and their readers
+│   ├── world_file_formats/              <-- rkyv archives, containers, density grids, POD layouts, their typed ids
+│   ├── prefab_catalog/                  <-- Prefab rows, render classes, footprint lookups, prefab tables, world payload decoding
+│   ├── world_chunks/                    <-- Chunk JSON and TBDC container decoding, chunk ids, the terrain manifest
+│   └── world_store/                     <-- Headless world store: manifest, prefab table, roads, regions, one chunk at a time
+├── terrain/                             <-- The ground the map reads: elevation, relief, satellite container, water, roads
+│   ├── terrain_elevation/               <-- Raster placement, PNG and raw grid decoding, bilinear sampling, the vector grid
+│   ├── terrain_relief/                  <-- Hillshade image, contour rings with summit picks, sea band fills
+│   ├── satellite_imagery/               <-- The .tbd-sat container reader: header, both index versions, checks, level picks
+│   ├── road_network/                    <-- Road segments and class codec, styling and zoom gates, road meshes, cartographic strips, airfield
+│   └── water_bodies/                    <-- Bathymetry water mask, level suffix plan, inland water archive, sea fill mesh
+├── map_overlay/                         <-- What the map draws on the terrain and in what order
+│   ├── map_draw_lanes/                  <-- The 48 lane roles, their paint order and wire ids, the zoom gates
+│   ├── label_layout/                    <-- Label declutter, town importance, world glyph sizing, label glyph packing
+│   ├── unit_symbology/                  <-- Side tints, role and vehicle classes, symbol atlas, markers, squad links
+│   └── overlay_instances/               <-- Slot, vehicle, comment and cluster icon instances, fire-mission marks
+├── world_objects/                       <-- What stands on the ground: vegetation, building interiors, place names
+│   ├── vegetation/                      <-- Forest regions, canopy mass outline, tree counts, island density bins
+│   ├── building_interiors/              <-- Building blueprints and sight-line attribution, compounds with doors, section cuts
+│   └── place_names/                     <-- Spot heights, town and road names, their declutter, the labels archive, glyph packing
+├── line_of_sight/                       <-- Visibility at three scales: the bare ground, inside one building, through the placed world
+│   ├── terrain_line_of_sight/           <-- Elevation profiles along a sight line, viewsheds whole or a ray at a time
+│   ├── interior_line_of_sight/          <-- Compound traces, the one sight-line evaluation, floor washes whole or in batches
+│   └── world_line_of_sight/             <-- The world occluder: chunk box trees, the prefab occluder library, verdicts with coverage
 └── graphics/                            <-- Map-agnostic CPU rendering primitives
     └── render_primitives/               <-- Instance layouts, geometry, triangulation, CPU cull oracle, frame ids, text atlas, the WGSL shader
 

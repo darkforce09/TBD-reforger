@@ -80,7 +80,7 @@ pub(super) fn report_chosen_level(index: &TbdSatIndex, base: usize, limit: Textu
 /// Fetch index head.
 pub(super) async fn fetch_index_head(url: &str, strict: bool) -> Option<(TbdSatIndex, u64)> {
     let head = fetch_range_resilient(url, 0, 11).await?;
-    let end = crate::world::terrain::satellite::streamer::index_range_end(&head.bytes).ok()?;
+    let end = satellite_imagery::index_range_end(&head.bytes).ok()?;
     let full = fetch_range_resilient(url, 0, end).await?;
     let index = if strict {
         parse_tbd_sat_index_strict(&full.bytes, full.total).ok()?

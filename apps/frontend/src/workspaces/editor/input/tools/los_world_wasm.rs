@@ -9,15 +9,15 @@
 
 use std::cell::{Cell, RefCell};
 
+use interior_line_of_sight::compound_walk::Owner;
 use map_engine::frame::engine::RenderEngine;
-use map_engine::spatial::bvh::surface::SurfaceKind;
-use map_engine::spatial::los::interior::walker::Owner;
-use map_engine::spatial::los::terrain::viewshed::Viewshed;
-use map_engine::spatial::los::world::coverage_1::WorldLos;
-use map_engine::spatial::los::world::coverage_1::WorldVerdict;
+use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
+use terrain_line_of_sight::viewshed::Viewshed;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
+use world_line_of_sight::WorldLos;
+use world_line_of_sight::WorldVerdict;
 
 use map_engine::editing::tools::line_of_sight::capture::LosShot;
 use map_engine::editing::tools::line_of_sight::host_registry::{
@@ -32,9 +32,9 @@ use map_engine::editing::tools::line_of_sight::terrain_verdict::{
     EYE_HEIGHT_OBSERVER_M, EYE_HEIGHT_TARGET_M,
 };
 use map_engine::editing::tools::line_of_sight::viewshed_texture::pack_rgba_256;
-use map_engine::spatial::los::world::map_to_engine;
 use map_engine::streaming::host::with_occluder;
 use map_engine::streaming::host::with_occluder_host;
+use world_line_of_sight::map_to_engine;
 
 /// The live wash: the pass, the raster it runs over (cloned once at start), the observer eye.
 struct Wash {
@@ -115,7 +115,7 @@ pub fn object_verdict(shot: &LosShot) -> ObjectVerdict {
                 .0
                 .iter()
                 .filter(|e| e.kind == SurfaceKind::Glass)
-                .map(|e| (e.chunk.clone(), e.row, e.inner))
+                .map(|e| (e.chunk.to_string(), e.row, e.inner))
                 .collect();
             panes.len() as u32
         } else {

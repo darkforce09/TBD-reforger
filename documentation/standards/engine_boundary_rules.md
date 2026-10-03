@@ -17,7 +17,7 @@ The web platform draws its map with three crates, each with one job:
 | Crate | Code | Job |
 |---|---|---|
 | `graphics_engine` | [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | the renderer: device buffers, pipelines, the WGSL shader, draw batching, text packing, sprite culling and the animation-frame pump; it knows no map concept |
-| `map_engine` | [`legacy/map_engine/`](/legacy/map_engine/README.md) | the [mission](/documentation/glossary/g_to_m.md#mission) domain, the static world, streaming, spatial queries, the overlay, the cameras, the headless editing layer and `RenderEngine`, which builds each frame |
+| `map_engine` | [`legacy/map_engine/`](/legacy/map_engine/README.md) | the [mission](/documentation/glossary/g_to_m.md#mission) domain, the static world's loaders and belts, streaming, the viewshed and symbology uploads, the camera viewport, the headless editing layer and `RenderEngine`, which builds each frame; the world's data models, spatial queries and the overlay's lanes and symbology are crates under `crates/` it imports |
 | `frontend` | [`apps/frontend/`](/apps/frontend/README.md) | the single-page app, including the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): pages, UI, input and the browser shell |
 
 The [API](/documentation/glossary/a_to_f.md#api) (`api`) links the map engine too, for the
@@ -27,7 +27,7 @@ mission compiler and validator alone.
 
 ```text
 api      ──► map_engine {scenario}                  native, no GPU crate
-frontend ──► map_engine {world, io, store, editing}  every target
+frontend ──► map_engine {world, store, editing}      every target
                                         {render, streaming}          wasm32
                      map_engine ──► graphics_engine  from the world tier up
 ```
@@ -61,7 +61,7 @@ in its [README](/legacy/map_engine/README.md) and [source README](/legacy/map_en
 | the mission document, its entities and its undo stack (`data/store/`, `editing/history/`) | hover and drag in progress |
 | the selection (`editing/host.rs`) | the pointer gesture state machine (`editor/input/`) |
 | the tool command definitions (`editing/commands/`, `editing/tools/`) | the keybind map |
-| the line-of-sight, ruler and viewshed algorithms (`spatial/`, `editing/tools/`) | panels open or closed, dock sizes |
+| the line-of-sight, ruler and viewshed algorithms (`editing/tools/` and the line of sight crates under `crates/line_of_sight/`) | panels open or closed, dock sizes |
 | the decisions behind serialising and hydrating a draft (`editing/persist/`) | the tab lock, the save-status signal and the title (`editor/shell/`) |
 
 A file whose home is unclear goes where this rule sends it. The frontend paths are under
@@ -79,13 +79,13 @@ the tiers are boundary rules:
   decoder, `rkyv` or `flate2`. [Rule 4](#rule-4-the-mission-compiler-imports-nothing-outside-itself)
   keeps it that way.
 - `world` turns the graphics engine and `render_primitives` on, not `render` alone
-  (`legacy/map_engine/Cargo.toml:30`): the upload belts of `world/`, `overlay/` and `spatial/`
+  (`legacy/map_engine/Cargo.toml:27`): the upload belts of `world/`, `overlay/` and `spatial/`
   import the renderer's byte layouts and geometry helpers directly (Kind B in
   [2C.1](#2c1-what-may-name-a-graphics-type)), and `world/mesh.rs` composes meshes with
   `render_primitives::draw::{compose, triangulate}`.
 - `editing` takes `store`, `world` and `streaming`, because the line-of-sight tool tests cells
-  against the streamed world's occluder under `spatial/los/world/`
-  (`legacy/map_engine/Cargo.toml:39`).
+  against the streamed world's occluder, the `world_line_of_sight` crate `streaming` links
+  (`legacy/map_engine/Cargo.toml:35`).
 
 ## 2. Walls inside the map engine
 
@@ -178,8 +178,8 @@ rule:
 `world/` is immutable, streamed from `assets/terrains/`, cacheable and never persisted. `data/`
 is mutable, undoable, CRDT-synced and persisted. They share the spatial index and nothing else: a
 `world/` type never gains a dirty flag, and a `data/` type never gains a chunk id. Inside the
-crate the two meet only in `editing/`, which drives the document and asks `spatial/` where a
-click or a sight line lands.
+crate the two meet only in `editing/`, which drives the document and asks the `spatial_indexes`
+and line of sight crates where a click or a sight line lands.
 
 [Rule 7](#rule-7-the-static-world-and-the-authored-document-share-nothing) gates the import wall,
 which is what can be checked exactly: a `world/` type cannot gain undo, persistence or CRDT state
@@ -195,7 +195,7 @@ its five modules (`device`, `draw`, `frame`, `loop`, `pipeline`) hold GPU handle
 only; the GPU-free geometry, byte layouts, glyph text and WGSL source it builds on are the
 `render_primitives` crate. The map engine decides what to draw, in which
 order and with which pipeline, and keys every batch on an opaque `LaneId`; the lane roles and
-their paint order live in `legacy/map_engine/src/overlay/lanes.rs`. A map noun in a
+their paint order live in `crates/map_overlay/map_draw_lanes/src/lane_roles.rs`. A map noun in a
 declared name means a domain decision crossed the wall: move the decision to the map engine and
 leave the packing in the renderer. The [graphics engine overview](/documentation/legacy/graphics_engine/graphics_engine_overview.md)
 describes the crate.

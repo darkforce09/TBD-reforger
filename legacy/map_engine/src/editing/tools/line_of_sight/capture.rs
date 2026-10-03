@@ -3,7 +3,7 @@
 //! Signals & state: session-local measurement state; never the authored document.
 //! Invariants: a shot is two points and nothing more; escape steps down from an in-progress capture to a placed result; a placement replaces, never appends.
 
-use crate::spatial::los::terrain::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Viewshed;
 
 // ── Tool-mode arbitration note ──────────────────────────────────────────────────────────────────
 //
@@ -206,7 +206,7 @@ impl ViewshedState {
 
     /// Place a new observer at world `(x, y, z)` — REPLACES any previous observer + raster (a viewshed
     /// is a single disc, not a chain). The raster is left `None` for the host to fill via
-    /// [`compute_viewshed`](crate::spatial::los::terrain::viewshed::compute_viewshed); returns nothing because,
+    /// [`compute_viewshed`](terrain_line_of_sight::viewshed::compute_viewshed); returns nothing because,
     /// unlike the ray, there is no "completed on the second click" event — one click IS the placement.
     pub fn place(&mut self, x: f64, y: f64, z: Option<f64>) {
         self.observer = Some((x, y, z));

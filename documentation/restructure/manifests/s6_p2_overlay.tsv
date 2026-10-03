@@ -1,0 +1,40 @@
+# Stage S6 P2 — the map engine's overlay CPU code becomes the four map_overlay crates: the named draw
+# lanes and zoom gates, the label layout, the unit symbology and the overlay instance packers.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# map_draw_lanes: the 48 lane identities with their paint order and wire ids, the zoom gates
+path	legacy/map_engine/src/overlay/lanes.rs	crates/map_overlay/map_draw_lanes/src/lane_roles.rs
+path	legacy/map_engine/src/overlay/tests/draw_order.rs	crates/map_overlay/map_draw_lanes/src/tests/draw_order_tests.rs
+path	legacy/map_engine/src/overlay/lod.rs	crates/map_overlay/map_draw_lanes/src/zoom_gates.rs
+path	legacy/map_engine/src/overlay/tests/lod_tests.rs	crates/map_overlay/map_draw_lanes/src/tests/zoom_gates_tests.rs
+#
+# label_layout: label declutter, town importance, world glyph sizing and the label glyph packing
+path	legacy/map_engine/src/overlay/symbology/labels/declutter.rs	crates/map_overlay/label_layout/src/declutter.rs
+path	legacy/map_engine/src/overlay/symbology/labels/tests/declutter_tests.rs	crates/map_overlay/label_layout/src/tests/declutter_tests.rs
+path	legacy/map_engine/src/overlay/symbology/labels/importance.rs	crates/map_overlay/label_layout/src/importance.rs
+path	legacy/map_engine/src/overlay/symbology/labels/tests/importance_tests.rs	crates/map_overlay/label_layout/src/tests/importance_tests.rs
+path	legacy/map_engine/src/overlay/symbology/labels/glyph_math.rs	crates/map_overlay/label_layout/src/glyph_math.rs
+path	legacy/map_engine/src/overlay/symbology/labels/tests/glyph_math_tests.rs	crates/map_overlay/label_layout/src/tests/glyph_math_tests.rs
+path	legacy/map_engine/src/overlay/symbology/text_packing.rs	crates/map_overlay/label_layout/src/text_packing.rs
+path	legacy/map_engine/src/overlay/symbology/tests/text_layout.rs	crates/map_overlay/label_layout/src/tests/text_packing_tests.rs
+#
+# unit_symbology: side tints and unit and vehicle classes, map markers, the symbol atlas raster,
+# squad links
+path	legacy/map_engine/src/overlay/symbology/roles/classify.rs	crates/map_overlay/unit_symbology/src/classification.rs
+path	legacy/map_engine/src/overlay/symbology/markers.rs	crates/map_overlay/unit_symbology/src/markers.rs
+path	legacy/map_engine/src/overlay/symbology/tests/markers_tests.rs	crates/map_overlay/unit_symbology/src/tests/markers_tests.rs
+path	legacy/map_engine/src/overlay/symbology/atlas/raster.rs	crates/map_overlay/unit_symbology/src/symbol_atlas.rs
+path	legacy/map_engine/src/overlay/symbology/links/squad_links.rs	crates/map_overlay/unit_symbology/src/squad_links.rs
+path	legacy/map_engine/src/overlay/symbology/links/tests/squad_links_tests.rs	crates/map_overlay/unit_symbology/src/tests/squad_links_tests.rs
+#
+# overlay_instances: slot, vehicle, comment and cluster instance bytes, drag previews, selection
+# patches, the fire-mission marks; the slot instance cases of the deleted slots re-export module
+path	legacy/map_engine/src/overlay/symbology/instances/symbols.rs	crates/map_overlay/overlay_instances/src/symbols.rs
+path	legacy/map_engine/src/overlay/symbology/instances/drag.rs	crates/map_overlay/overlay_instances/src/drag.rs
+path	legacy/map_engine/src/overlay/symbology/instances/patches.rs	crates/map_overlay/overlay_instances/src/patches.rs
+path	legacy/map_engine/src/overlay/symbology/instances/slots/tests/mod.rs	crates/map_overlay/overlay_instances/src/tests/slot_instances/mod.rs
+path	legacy/map_engine/src/overlay/symbology/instances/slots/tests/cases_1.rs	crates/map_overlay/overlay_instances/src/tests/slot_instances/cases_1.rs
+path	legacy/map_engine/src/overlay/symbology/instances/slots/tests/cases_2.rs	crates/map_overlay/overlay_instances/src/tests/slot_instances/cases_2.rs
+path	legacy/map_engine/src/overlay/fire_mission_marks.rs	crates/map_overlay/overlay_instances/src/fire_mission_marks.rs
+path	legacy/map_engine/src/overlay/tests/fire_mission_marks_tests.rs	crates/map_overlay/overlay_instances/src/tests/fire_mission_marks_tests.rs

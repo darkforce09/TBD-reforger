@@ -8,11 +8,11 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
+use map_draw_lanes::lane_roles::role_id;
 use map_engine::data::store::MissionDocCore;
 use map_engine::data::store::SlotSoa;
 use map_engine::frame::engine::RenderEngine;
-use map_engine::overlay::lanes::role_id;
-use map_engine::overlay::symbology::links::squad_links::build_squad_link_segments;
+use unit_symbology::squad_links::build_squad_link_segments;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -228,9 +228,7 @@ pub fn rebind_engine_from_doc() {
         prune_selection(ctx);
         let ids = ctx.selection.borrow().clone();
         if let Some(e) = ctx.engine.borrow_mut().as_mut() {
-            let tints = map_engine::overlay::symbology::roles::classify::side_tints_rgba_bytes(
-                &soa.side_keys,
-            );
+            let tints = unit_symbology::classification::side_tints_rgba_bytes(&soa.side_keys);
             e.slots_bind_symbology(
                 soa.ids.clone(),
                 &soa.xy,
@@ -280,8 +278,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
     let ids = ctx.selection.borrow().clone();
     if let Some(e) = ctx.engine.borrow_mut().as_mut() {
         e.set_drag(Vec::new(), 0.0, 0.0); // clear any live drag overlay
-        let tints =
-            map_engine::overlay::symbology::roles::classify::side_tints_rgba_bytes(&soa.side_keys);
+        let tints = unit_symbology::classification::side_tints_rgba_bytes(&soa.side_keys);
         e.slots_bind_symbology(
             soa.ids.clone(),
             &soa.xy,

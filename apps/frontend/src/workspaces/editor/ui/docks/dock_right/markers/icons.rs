@@ -119,7 +119,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) const CANONICAL_MARKER_
 /// [`canonical_marker_rows`], since `marker_glyph_for_alias` is not a `const fn`.)
 #[cfg(target_arch = "wasm32")]
 const _: () = assert!(
-    CANONICAL_MARKER_GLYPH_COUNT == map_engine::overlay::symbology::markers::MARKER_GLYPH_COUNT,
+    CANONICAL_MARKER_GLYPH_COUNT == unit_symbology::markers::MARKER_GLYPH_COUNT,
     "picker row count must equal scene::MARKER_GLYPH_COUNT (T-790 source of truth)"
 );
 
@@ -127,7 +127,7 @@ const _: () = assert!(
 /// its human label, and every schema alias that folds into this family (the search-match set).
 #[cfg(target_arch = "wasm32")]
 pub(in crate::workspaces::editor::ui::docks::dock_right) struct CanonicalMarkerRow {
-    pub(super) glyph: map_engine::overlay::symbology::markers::MarkerGlyph,
+    pub(super) glyph: unit_symbology::markers::MarkerGlyph,
     /// The canonical slug written to the document on pick — a closed-enum member.
     pub(super) slug: &'static str,
     /// `humanize_token(slug)`, the label that takes the row width.
@@ -148,9 +148,9 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn canonical_marker_row
     filter: &str,
 ) -> Vec<CanonicalMarkerRow> {
     use crate::workspaces::editor::ui::inspector::zones_panel::humanize_token;
-    use map_engine::overlay::symbology::markers::marker_glyph_for_alias;
-    use map_engine::overlay::symbology::markers::MarkerGlyph;
-    use map_engine::overlay::symbology::markers::MARKER_GLYPH_COUNT;
+    use unit_symbology::markers::marker_glyph_for_alias;
+    use unit_symbology::markers::MarkerGlyph;
+    use unit_symbology::markers::MARKER_GLYPH_COUNT;
 
     debug_assert_eq!(
         CANONICAL_MARKER_GLYPH_COUNT, MARKER_GLYPH_COUNT,
@@ -205,9 +205,9 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn canonical_marker_row
 /// Draw a marker glyph preview using the same shape vocabulary as the map.
 #[cfg(target_arch = "wasm32")]
 pub(in crate::workspaces::editor::ui::docks::dock_right) fn marker_glyph_svg(
-    glyph: map_engine::overlay::symbology::markers::MarkerGlyph,
+    glyph: unit_symbology::markers::MarkerGlyph,
 ) -> AnyView {
-    use map_engine::overlay::symbology::markers::MarkerGlyph;
+    use unit_symbology::markers::MarkerGlyph;
 
     let inner = match glyph {
         MarkerGlyph::Ring => view! {

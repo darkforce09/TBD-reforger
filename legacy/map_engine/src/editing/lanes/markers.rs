@@ -44,7 +44,7 @@ pub fn marker_lane_fields(marker_rows_json: &str) -> (Vec<f32>, Vec<u8>, Vec<Str
             .and_then(serde_json::Value::as_str)
             .unwrap_or("");
         let side = faction.strip_prefix("faction-").unwrap_or(faction);
-        tints.extend_from_slice(&crate::overlay::symbology::roles::classify::side_rgba(side));
+        tints.extend_from_slice(&unit_symbology::classification::side_rgba(side));
         let str_field = |k: &str| {
             r.get(k)
                 .and_then(serde_json::Value::as_str)

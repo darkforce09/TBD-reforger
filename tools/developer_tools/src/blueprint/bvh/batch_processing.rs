@@ -23,22 +23,22 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use anyhow::{Context, Result, bail};
+use building_interiors::compound::assembly::CoverTier;
+use building_interiors::compound::assembly::INSTANCES_SCHEMA_VERSION;
+use building_interiors::compound::assembly::PlacementSource;
+use building_interiors::compound::doors::DoorRecord;
+use building_interiors::compound::instances::InstanceKind;
+use building_interiors::compound::instances::InstanceRecord;
+use building_interiors::compound::instances::InstancesFile;
+use building_interiors::compound::instances::LocalTransform;
 use geometry_primitives::rigid_transform::Rigid;
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::bvh::sidecar::emit_bytes;
-use map_engine::spatial::bvh::sidecar::lift_verts;
-use map_engine::spatial::bvh::sidecar::quantize_verts;
-use map_engine::spatial::bvh::surface::SurfaceKind;
-use map_engine::spatial::bvh::traversal::Bvh;
-use map_engine::world::architecture::compound::assembly::CoverTier;
-use map_engine::world::architecture::compound::assembly::INSTANCES_SCHEMA_VERSION;
-use map_engine::world::architecture::compound::assembly::PlacementSource;
-use map_engine::world::architecture::compound::doors::DoorRecord;
-use map_engine::world::architecture::compound::instances::InstanceKind;
-use map_engine::world::architecture::compound::instances::InstanceRecord;
-use map_engine::world::architecture::compound::instances::InstancesFile;
-use map_engine::world::architecture::compound::instances::LocalTransform;
 use serde::Deserialize;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::emit_bytes;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::lift_verts;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::quantize_verts;
+use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
+use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
 
 use super::prefab::{PrefabResolver, ResolvedPrefab};
 use super::surface_kind::{kind_for_gamemat, kind_for_layer, parse_kind_override};
@@ -265,7 +265,7 @@ impl<'a> Walker<'a> {
                         })
                     });
                     self.instances.push(InstanceRecord {
-                        id: id.to_string(),
+                        id: id.into(),
                         kind,
                         prefab: prefab.path.clone(),
                         blas: format!("blas/{}.bvh", a.stem),

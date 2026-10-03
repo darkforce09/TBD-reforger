@@ -1,83 +1,57 @@
 # Map symbology
 
-The map engine's cartographic vocabulary: the bespoke unit-role and vehicle glyphs with their side
-tints, the glyph atlases, the icon instances and [slot](/documentation/glossary/n_to_z.md#slot) GPU
-bridge, map labels, squad tether links,
-briefing marker glyphs and captions, and the label text packing. It holds what the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) and the streamed world draw, so the
-graphics engine only ever sees cells, instances and uniforms.
+The map engine's symbology as the browser draws it: the upload of the symbol glyph atlas, the
+icon instance [slot](/documentation/glossary/n_to_z.md#slot) GPU bridge. The CPU symbology lives
+in the map overlay crates (`label_layout`, `unit_symbology`, `overlay_instances`), which every
+caller imports directly. It holds what the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) and the streamed world draw,
+so the graphics engine only ever sees cells, instances and uniforms.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/overlay/symbology/
-├── atlas/            the slot and symbology glyph atlas raster, and its browser upload
-├── instances/        icon instances for slots, vehicles, comments, clusters; the GPU bridge
-├── labels/           label declutter, town-label bands, glyph sizing and the icon instance packer
-├── links/            the squad leader-to-member tether hairlines, at rest and mid-drag
-├── markers.rs        `MarkerGlyph`: icon aliases to eleven glyphs, their atlas, captions
-├── mod.rs            the module tree; `instances`, `markers` and the text files need `streaming`
-├── roles/            the role, vehicle and side classification tables
-├── tests/            unit tests for the marker vocabulary, its atlas, captions and the text atlas
-├── text_metrics.rs   the height label spacing the text atlas tests measure against
-└── text_packing.rs   label, town, height and road text packed into glyph instances
+├── atlas/      the glyph atlas upload
+├── instances/  the slot GPU bridge, the world icon lanes, and the `symbols` re-export
+└── mod.rs      the module tree: `atlas` and `instances`
 ```
 
 ## How it works
 
 ```text
 document rows / streamed world
-  │ roles/       role, alias, side ──► glyph class, silhouette, tint
-  │ labels/      which labels draw at this zoom; glyph size and yaw
-  │ links/       squad tethers
-  │ markers.rs   marker alias ──► MarkerGlyph cell; caption glyphs
+  │ unit_symbology::classification   role, alias, side ──► glyph class, tint
+  │ label_layout                     which labels draw; glyph size and yaw
+  │ unit_symbology::squad_links      squad tethers
+  │ unit_symbology::markers          marker alias ──► cell; caption glyphs
   ▼
-instances/, text_packing.rs   20-byte icon and text instances
-  │ atlas/       cells the instances index
+overlay_instances, label_layout::text_packing   20-byte icon and text instances
+  │ unit_symbology::symbol_atlas                 cells the instances index
   ▼
-RenderEngine lanes (instances/ bridge, frame/)  ──► graphics_engine draws
+RenderEngine lanes (instances/ bridge, atlas/gpu.rs, frame/)  ──► graphics_engine draws
 ```
 
-The symbology is bespoke: five unit roles, three vehicle kinds and three side tints, with no
-MIL-STD-2525 or APP-6 frames. `markers.rs` maps every marker `icon` alias of the mission schema to
-one of `MARKER_GLYPH_COUNT` (11) glyphs, folding case and separators and falling back to the disc,
-the same downgrade the game [mod](/documentation/glossary/g_to_m.md#mod) makes; its atlas shares cells 0
-and 1 (ring, disc) with the slot
-atlas. Captions and place names go through one text pipeline: `text_packing.rs` lays glyphs of the
-baked ASCII atlas of `render_primitives::text` beside their anchors, and hands `LabelSpec` labels to the
-renderer without their importance, which only decides what reaches it. Nothing here depends on the
-UI framework or editor state; browser I/O (the atlas upload, the lane binds) compiles only on
-`wasm32` with the `render` feature.
+This module holds only the browser half: the atlas upload and the instance lane bridges.
+`instances::symbols` re-exports `overlay_instances::symbols`, the path `crate::camera::viewport`
+reads `cluster_mode` through. Browser I/O (the atlas upload, the lane binds)
+compiles only on `wasm32` with the `render` feature.
 
 ## Public surface
 
-- `roles::classify` (`side_rgba`, `side_tints_rgba_bytes`, the role and alias tables), for
-  `crate::editing::lanes` and the Mission Creator's document host and canvas mount.
-- `links::squad_links`, for `crate::editing::picking` and the Mission Creator's document host and
-  select tool.
-- `markers` (`MarkerGlyph`, `MARKER_GLYPH_COUNT`, `marker_glyph_for_alias`), for the Mission
-  Creator's marker dock and canvas mount.
-- `instances`: the packers, `drag::pack_vehicle_drag_preview` and the `RenderEngine` binds, for
-  `crate::frame`, `crate::camera::viewport`, the streaming world loader and the Mission Creator.
-- `labels`, `text_metrics::height_label_sep_m` and `text_packing`, for `crate::streaming`, the location loaders in
-  `crate::world::environment::locations`, `crate::frame` and `crate::diagnostics`, and the
-  town-label verification in `tools/developer_tools/src/map_verification/labels/`.
+- `atlas` and `instances`: see their READMEs.
 
 ## Boundaries
 
-- Depends on: `crate::frame` (`RenderEngine` and its lanes), `crate::overlay::lanes` and
-  `crate::overlay::lod`, `map_coordinates::terrain_frames` (the anchor and Everon bounds),
-  `render_primitives` (the `text` atlas, font, metrics, layout, scale and pack, and the instance
-  layouts), `serde` and `wasm_bindgen`.
-- Used by: `crate::editing` (lanes, picking), `crate::frame`, `crate::camera`, `crate::streaming`,
-  `crate::world::environment::locations`, `crate::diagnostics`; the Mission Creator in
-  `apps/frontend/src/workspaces/editor/`; `tools/developer_tools/`.
-- Rules: every marker alias of the schema maps to a glyph (`every_schema_alias_maps` in
-  `tests/markers_tests.rs`); marker atlas cells 0 and 1 equal the slot atlas
-  (`marker_atlas_cells_0_and_1_match_slot_atlas`); the committed label data has no glyph without
-  an atlas cell (`g3_committed_label_data_no_tofu` in `tests/text_layout.rs`); the side tints are
-  pinned by `cargo xtask verify editor-orbat-coherency`; no name in the graphics engine may say
-  symbology, which is why this vocabulary lives here (rule 2 of `cargo xtask verify engine-layers`).
+- Depends on: `unit_symbology`, `overlay_instances` (`symbols` re-exported), `map_draw_lanes`,
+  `spatial_indexes`, `crate::frame` (`RenderEngine` and its lanes),
+  `map_coordinates::terrain_frames`, `render_primitives` and `wasm_bindgen`.
+- Used by: `crate::frame` (the atlas and slot GPU state), `crate::camera` (the `symbols`
+  re-export), `crate::streaming` (world icon lanes); the Mission Creator in
+  `apps/frontend/src/workspaces/editor/` through the `RenderEngine` methods.
+- Rules: the symbology's own cases live with the crates (`crates/map_overlay/`); the side tints
+  are pinned by `cargo xtask verify editor-orbat-coherency`; no name in the graphics engine may
+  say symbology, which is why this vocabulary lives with the map (rule 2 of
+  `cargo xtask verify engine-layers`).
 
 ## Related documentation
 

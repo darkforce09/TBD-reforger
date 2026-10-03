@@ -1,0 +1,30 @@
+# A terrain's elevation model with no browser or GPU code: the manifest that places the height
+# raster on the world, the 16-bit PNG and raw `TBDE` decoders, bilinear sampling, the
+# box-averaged vector grid and the full-resolution raster.
+[package]
+name = "terrain_elevation"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A terrain's elevation model: raster placement, PNG and raw grid decoding, bilinear sampling, the vector grid and the full-resolution raster."
+
+[package.metadata.layout]
+category = "crates/terrain"
+tier = 2
+targets = "any"
+
+[dependencies]
+# The raw grid's payload is read as little-endian `u16` words in place when it is aligned.
+bytemuck = { workspace = true }
+# JavaScript's rounding, which sizes the vector grid and its averaging boxes.
+map_coordinates = { workspace = true }
+# The 16-bit grayscale PNG the terrain exports carry their heights in.
+png = { workspace = true }
+thiserror = { workspace = true }
+# The `TBDE` container header and the binary error the raw grid reports.
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

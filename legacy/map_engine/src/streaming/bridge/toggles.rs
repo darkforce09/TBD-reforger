@@ -3,11 +3,11 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::lod::class_visible;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::world::environment::buildings::footprint::building_visible;
-use crate::world::terrain::roads::airfield::compute_airfield_bbox;
 use map_coordinates::chunk_math::Bbox;
+use map_draw_lanes::zoom_gates::building_visible;
+use map_draw_lanes::zoom_gates::class_visible;
+use road_network::airfield::compute_airfield_bbox;
 
 impl WorldResidency {
     /// Register atlas icon keys in UV-table order (must match `upload_glyph_atlas` UV order). Rebuilds the glyph prefab lookup when prefabs are already loaded.
@@ -69,7 +69,7 @@ impl WorldResidency {
     /// Set airfield bbox from runway segments (call after roads load).
     pub fn set_airfield_bbox_from_runways(
         &mut self,
-        runways: &[crate::world::terrain::roads::network::RoadSegment],
+        runways: &[road_network::network::RoadSegment],
     ) {
         self.airfield_bbox = compute_airfield_bbox(runways);
         self.rebuild_glyph_buffers();

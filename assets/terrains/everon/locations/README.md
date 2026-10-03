@@ -51,7 +51,7 @@ assets/terrains/everon/locations/
 
 ## Related documentation
 
-- [Map labels: towns, roads and heights](/legacy/map_engine/src/world/environment/locations/README.md)
+- [Place names: towns, roads and heights](/crates/world_objects/place_names/README.md)
   — how the labels are chosen and placed.
 - [Map data archives](/crates/world_formats/world_file_formats/src/archives/README.md) — the rkyv archives and
   their validating reader.

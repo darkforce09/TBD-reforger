@@ -74,7 +74,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
   `contracts/definitions/locations.schema.json` and
   `contracts/definitions/height-labels.schema.json`; `road-names.json` has no JSON Schema and
   reads as the map engine's route list (`parse_road_names_json` in
-  `legacy/map_engine/src/world/environment/locations/route_labels.rs`).
+  `crates/world_objects/place_names/src/route_labels.rs`).
 - Adding a file: a new kind of asset gets a manifest block, a schema in `contracts/definitions/`
   and an LFS rule in `.gitattributes` before its first file is committed;
   `cargo xtask schema terrain-manifest --terrain everon` then checks that every path the manifest
@@ -128,7 +128,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
 ## Related documentation
 
 - [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the browser
-  fetches, parses and streams these files.
+  fetches and streams these files.
 - [Map streaming host](/legacy/map_engine/src/streaming/host/README.md) — the boot order.
 - [World Export Pipeline](/tools/developer_tools/src/world_export_pipeline/README.md) — the
   object export commands.

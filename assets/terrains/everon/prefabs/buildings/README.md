@@ -36,12 +36,12 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
 
 - Encoding: UTF-8 JSON in camelCase, and one little-endian binary: `FarmHouse_E_1L01_Wood.bvh` is
   a `TBVH` sidecar, version 2, with a surface kind per triangle
-  (`legacy/map_engine/src/spatial/bvh/sidecar.rs`). Every file here is a plain git blob:
+  (`crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/sidecar.rs`). Every file here is a plain git blob:
   the `.gitattributes` BVH rule covers only `prefabs/blas/`.
 - Schema: blueprints follow `contracts/definitions/building-blueprint.schema.json` and read as
-  `BuildingBlueprint` (`legacy/map_engine/src/world/architecture/blueprint/`); the instances
+  `BuildingBlueprint` (`crates/world_objects/building_interiors/src/blueprint/`); the instances
   and scene files follow `contracts/definitions/building-instances.schema.json` and read as
-  `InstancesFile` (`legacy/map_engine/src/world/architecture/compound/instances.rs`). A
+  `InstancesFile` (`crates/world_objects/building_interiors/src/compound/instances.rs`). A
   scene file has an empty `shellBvh`.
 - Adding a file: a blueprint comes from `cargo xtask map blueprint-from-voxels` or
   `cargo xtask map ingest-blueprints`, both of which validate it against `BuildingBlueprint`; the
@@ -65,8 +65,8 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
     tests, which read `FarmHouse_E_1L01.json` from disk;
   - `cargo xtask map blueprint-from-voxels archive`, which folds every blueprint here into
     `prefabs/building_blueprints.rkyv`;
-  - the map engine's blueprint and section tests
-    (`legacy/map_engine/src/world/architecture/`), which read `FarmHouse_E_1L01.json` and
+  - the building interiors' blueprint and section tests
+    (`crates/world_objects/building_interiors/src/`), which read `FarmHouse_E_1L01.json` and
     the shell sidecar;
   - the blueprint compiler's sidecar, compound, instance and world-row tests, which pin the
     wooden farmhouse's sidecar and instances.
@@ -82,7 +82,7 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
 
 ## Related documentation
 
-- [Building architecture](/legacy/map_engine/src/world/architecture/README.md) — the
+- [Building interiors](/crates/world_objects/building_interiors/README.md) — the
   blueprint, compound and section model these files feed.
 - [Building viewer bench](/apps/frontend/src/workspaces/debug/building_viewer/README.md) —
   the debug bench that draws them.

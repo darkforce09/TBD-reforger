@@ -3,19 +3,22 @@
 Decides which world chunks, 512 m squares unless the manifest sets another size, the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map keeps in memory: the
 chunk math that turns a viewport into chunk ids, `WorldResidency` with its pin, in-flight marks,
-fetch-failure cap and LRU eviction, the per-frame ingest budget, and the picking and lookups over
-the resident chunks.
+fetch-failure cap and LRU eviction, the loads and chunk ingest that feed it, the per-frame ingest
+budget, and the object index, picking and lookups over the resident chunks.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/streaming/scheduler/
-├── budget.rs      the per-frame ingest budget (`APPLY_BUDGET_MS`) and the apply-frame accounting
-├── mod.rs         the module tree
-├── queries.rs     picking and lookups over the resident chunks: nearest, rectangle, chunk, sizes
-├── residency/     one path for the residency's types and constants, and the residency tests
-├── state.rs       `WorldResidency`, `IngestOutcome` and `ResidencyEvent`
-└── viewport.rs    the pin, in-flight marks, the fetch-failure cap, chunk insert and LRU eviction
+├── budget.rs              the per-frame ingest budget (`APPLY_BUDGET_MS`), frame accounting
+├── chunk_ingest.rs        manifest, prefab and chunk-index loads, and chunk ingest
+├── mod.rs                 the module tree
+├── queries.rs             picks and lookups over resident chunks: nearest, rect, chunk
+├── residency/             one path for the residency's types and constants, and its tests
+├── state.rs               `WorldResidency`, `IngestOutcome` and `ResidencyEvent`
+├── tests/                 unit tests: object index, chunk ingest
+├── viewport.rs            pin, in-flight marks, failure cap, chunk insert, LRU eviction
+└── world_object_index.rs  `WorldSpatialIndex`: class-filtered picks over resident objects
 ```
 
 ## How it works
@@ -51,10 +54,21 @@ resident; a new pin clears the counts. The ingest budget is `APPLY_BUDGET_MS` (4
 and rebuilds once, and `ingest_budget_exhausted_at` answers whether an open frame has spent it.
 Residency events for inserted and evicted chunks queue until the occluder loader takes them.
 
-The residency's other methods live beside the code they serve: its loads and ingest in
-`crate::streaming::loaders`, its buffer composers in `crate::streaming::buffers`, its toggles in
-`crate::streaming::bridge`, its statistics in `crate::streaming::memory`, and the building fill
-in `crate::world::environment::buildings::footprint`.
+`chunk_ingest.rs` feeds the residency: `load_manifest_json` (the `objects` block and the terrain
+size from `worldBounds`), `load_prefabs` and `load_prefabs_gz` (the prefab tables, the archive
+refusing a catalogue built for another terrain), `load_chunk_index_json` (the cells that bound
+every pin), and `ingest_chunk_gz` and `ingest_chunk_bin`, which answer `Applied`, `ParsedEmpty`
+(known-empty from then on) or a shape mismatch that counts toward the fetch-failure cap.
+
+`WorldSpatialIndex` (`world_object_index.rs`) keeps the resident objects per chunk:
+`insert_chunk` replaces a chunk, drops rows whose class is `NO_CLASS` and names each kept row
+`"{chunk_id}:{row}"`; the grid, of `INDEX_CELL_M` (256 m) cells, is rebuilt on the first query
+after a change, with the chunks in id order. Each pick takes an optional class mask, bit `n` of a
+`u32` admitting class `n`.
+
+The residency's other methods live beside the code they serve: its buffer composers, the building
+fill among them, in `crate::streaming::buffers`, its toggles in `crate::streaming::bridge` and its
+statistics in `crate::streaming::memory`.
 
 ## Public surface
 
@@ -65,28 +79,33 @@ in `crate::world::environment::buildings::footprint`.
   `release_inflight`, `note_fetch_failure`, `note_undelivered`, `invalidate_chunk`,
   `pin_settled`, `inflight_count`), its ingest-frame calls and its queries (`pick_nearest`,
   `pick_rect`, `chunk`, `terrain`, `chunk_size_m`, `prefab_rows`).
+- The loads and ingests of `chunk_ingest.rs`, for the world loader and the debug bench.
 - The constants `LRU_MIN_CHUNKS`, `FETCH_FAILURE_CAP`, `DRAW_CULL_MARGIN_M` and `APPLY_BUDGET_MS`.
 
 ## Boundaries
 
-- Depends on: `crate::streaming::loaders` (`WorldChunk`, `ObjectsManifest`,
-  `DEFAULT_CHUNK_SIZE_M`) and `crate::streaming::buffers` (the rebuilds and `deinterleave`);
-  `crate::spatial::indexing::world::WorldSpatialIndex` for picking;
-  `crate::world::environment` (prefab entries, footprint lookups, class codes,
-  `building_visible`); `map_coordinates::chunk_math` (chunk ids, rectangles and terrain sizes).
+- Depends on: `world_chunks` (`WorldChunk`, `ObjectsManifest`, `DEFAULT_CHUNK_SIZE_M`, the
+  chunk and manifest parsers) and `prefab_catalog` (the prefab tables and rows, the payload
+  reader, footprint lookups, class codes); `crate::streaming::buffers` (the rebuilds and
+  `deinterleave`); `spatial_indexes::point_indexes` (`PointIndex`) for the object index;
+  `map_draw_lanes::zoom_gates` (`building_visible`); `label_layout::glyph_math`;
+  `vegetation::canopy`;
+  `map_coordinates::chunk_math` (chunk ids, rectangles and terrain sizes).
 - Used by:
   - the rest of `crate::streaming`: the loaders, the buffer composers, the bridge's toggles and
     the memory statistics;
-  - `crate::spatial::los::world`, `crate::world::terrain::roads::airfield`,
-    `crate::world::environment::vegetation::canopy` and
-    `crate::world::environment::buildings::footprint`;
-  - the debug world line-of-sight bench in `apps/frontend/src/workspaces/debug/world_los/`,
-    and the world line-of-sight verification and its tests in
-    `tools/developer_tools/src/map_verification/`.
+  - the debug world line-of-sight bench in `apps/frontend/src/workspaces/debug/world_los/`.
 - Rules:
   - the chunk math it relies on clamps to the terrain, keeps the preload margin, lists ids row-major and adds
     the oversized ring (`chunk_rect_pinned_cases`, `preload_margin_pinned_cases`,
     `viewport_ids_length_and_order`, `ids_for_rect_row_major` and `oversized_ring_expands_rect` in
     `crates/geometry/map_coordinates/src/tests/chunk_math.rs`);
   - pinned and known-empty chunks are never evicted, a chunk at the failure cap becomes an empty
-    stub, and a new pin resets the failure counts; the tests in `residency/` hold the lifecycle.
+    stub, and a new pin resets the failure counts; the tests in `residency/` hold the lifecycle;
+  - re-inserting a chunk replaces it and `NO_CLASS` rows are never indexed
+    (`remove_and_reinsert_are_idempotent`, `no_class_rows_are_skipped` in
+    `tests/world_object_index_tests.rs`);
+  - the binary and JSON lanes build the same residency
+    (`everon_archive_lane_builds_the_same_residency_as_the_json_lane` in
+    `tests/chunk_ingest_prefab_lane_tests.rs`, `ingest_chunk_bin_matches_ingest_chunk_gz` in
+    `tests/chunk_ingest_chunk_bin_tests.rs`).

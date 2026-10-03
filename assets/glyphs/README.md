@@ -39,9 +39,10 @@ manifest.json + svg/ ──build-glyph-atlas──▶ atlas/ ──/map-assets/g
 The world export gives every classified prefab a `render.iconKey` from
 `contracts/rules/prefab-classify.json`, and the key names a glyph here. The glyphs are raster,
 not signed-distance fields, so they are rasterised once at 128 px per cell and sized on screen
-around the reference zoom (`displayPx = baseSizePx * 2^(deckZoom - REF_ZOOM)`, in the map engine's
-`overlay/lod.rs`). At world boot the map engine fetches the atlas, maps each key to its cell and
-hands the pixels to the graphics engine's glyph-atlas texture for the instanced glyph pass.
+around the reference zoom (`displayPx = baseSizePx * 2^(deckZoom - REF_ZOOM)`, in the
+`map_draw_lanes` crate's `zoom_gates` module). At world boot the map engine fetches the atlas,
+maps each key to its cell and hands the pixels to the graphics engine's glyph-atlas texture for
+the instanced glyph pass.
 
 ## Format
 
@@ -68,7 +69,7 @@ hands the pixels to the graphics engine's glyph-atlas texture for the instanced 
     `contracts/fixtures/map/map-object-prefabs-sample.json` and in the committed Everon
     catalogue `assets/terrains/everon/objects/prefabs.json.gz` to have a manifest entry, and
     `cargo xtask schema map-object-enums`; both run in the `schema-validate` CI task;
-  - the map engine's native tests in `legacy/map_engine/src/streaming/loaders/tests/` and
+  - the map engine's native tests in
     `legacy/map_engine/src/streaming/scheduler/residency/t152_3_tests/`, which read the
     manifest's keys;
   - the headless-browser test server in `tools/developer_tools/src/browser_testing/server.rs`,

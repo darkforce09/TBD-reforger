@@ -4,15 +4,15 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::frame::engine::RenderEngine;
-use crate::overlay::symbology::instances::drag::DragGpuPhase;
-use crate::overlay::symbology::instances::drag::classify_drag_transition;
-use crate::overlay::symbology::instances::patches::selected_row_patch;
-use crate::overlay::symbology::instances::patches::unselected_row_patch_for;
-use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
-use crate::overlay::symbology::instances::symbols::pack_cluster_instances;
-use crate::overlay::symbology::roles::classify::SIDE_BLUFOR_RGBA;
 use map_coordinates::terrain_frames::EVERON_BOUNDS;
+use overlay_instances::drag::DragGpuPhase;
+use overlay_instances::drag::classify_drag_transition;
+use overlay_instances::patches::selected_row_patch;
+use overlay_instances::patches::unselected_row_patch_for;
+use overlay_instances::symbols::SLOT_ICON_STRIDE;
+use overlay_instances::symbols::pack_cluster_instances;
 use std::collections::HashSet;
+use unit_symbology::classification::SIDE_BLUFOR_RGBA;
 use wasm_bindgen::prelude::*;
 
 /// Slot gpu bridge.
@@ -46,7 +46,7 @@ pub(crate) struct SlotGpuBridge {
     pub(crate) slots_lane_selection_only: bool,
 
     /// Cluster index.
-    pub(crate) cluster_index: Option<crate::spatial::indexing::cluster::ClusterIndex>,
+    pub(crate) cluster_index: Option<spatial_indexes::point_indexes::cluster::ClusterIndex>,
 
     /// Cluster built len.
     pub(crate) cluster_built_len: usize,
@@ -107,9 +107,7 @@ impl RenderEngine {
         height: u32,
         uv: &[f32],
     ) -> Result<(), JsError> {
-        match crate::overlay::symbology::atlas::raster::extend_atlas_with_unit_glyphs(
-            rgba, width, height,
-        ) {
+        match unit_symbology::symbol_atlas::extend_atlas_with_unit_glyphs(rgba, width, height) {
             Some(wide) => {
                 self.upload_slot_atlas(&wide.rgba, wide.width, wide.height, &wide.uv)?;
                 self.slot_bridge.symbology_base = Some(wide.base_cells);
@@ -130,7 +128,7 @@ impl RenderEngine {
 impl RenderEngine {
     /// Slot m per px.
     pub(crate) fn slot_m_per_px(&self) -> f32 {
-        crate::overlay::symbology::instances::symbols::px_to_m_at_zoom(self.zoom())
+        map_draw_lanes::zoom_gates::px_to_m_at_zoom(self.zoom())
     }
 }
 
@@ -138,7 +136,7 @@ impl RenderEngine {
 impl RenderEngine {
     /// Symbology detailed.
     pub(crate) fn symbology_detailed(&self) -> bool {
-        crate::overlay::symbology::instances::symbols::symbology_visible(self.slot_m_per_px())
+        overlay_instances::symbols::symbology_visible(self.slot_m_per_px())
     }
 }
 
@@ -189,8 +187,7 @@ impl RenderEngine {
         let zoom = self.zoom();
         #[allow(clippy::cast_possible_truncation)]
         let n = self.slot_bridge.last_ids.len() as u32;
-        self.slot_bridge.last_cluster_mode =
-            crate::overlay::symbology::instances::symbols::cluster_mode(n, zoom);
+        self.slot_bridge.last_cluster_mode = overlay_instances::symbols::cluster_mode(n, zoom);
         if self.slot_bridge.drag_active && !self.slot_bridge.drag_ids.is_empty() {
             let dx = self
                 .slot_atlas
@@ -220,7 +217,7 @@ impl RenderEngine {
         }
         let n = self.slot_bridge.last_ids.len();
         #[allow(clippy::cast_possible_truncation)]
-        if !crate::overlay::symbology::instances::symbols::cluster_mode(n as u32, self.zoom()) {
+        if !overlay_instances::symbols::cluster_mode(n as u32, self.zoom()) {
             self.upload_cluster_lane(&[], false);
             return;
         }
@@ -232,12 +229,13 @@ impl RenderEngine {
                 .chunks_exact(2)
                 .map(|c| (f64::from(c[0]), f64::from(c[1])))
                 .collect();
-            self.slot_bridge.cluster_index =
-                Some(crate::spatial::indexing::cluster::ClusterIndex::build(
+            self.slot_bridge.cluster_index = Some(
+                spatial_indexes::point_indexes::cluster::ClusterIndex::build(
                     &world,
                     EVERON_BOUNDS[2],
                     EVERON_BOUNDS[3],
-                ));
+                ),
+            );
             self.slot_bridge.cluster_built_len = n;
         }
         let rect = self.camera.visible_world_rect();
@@ -314,7 +312,7 @@ impl RenderEngine {
                 .unwrap_or(SIDE_BLUFOR_RGBA);
 
             let patch = match self.slot_bridge.symbology_base {
-                Some(base) => crate::overlay::symbology::instances::patches::symbology_row_patch(
+                Some(base) => overlay_instances::patches::symbology_row_patch(
                     *now,
                     self.slot_bridge
                         .last_roles
@@ -385,7 +383,7 @@ impl RenderEngine {
         let zoom = self.zoom();
         #[allow(clippy::cast_possible_truncation)]
         let n = self.slot_bridge.last_ids.len() as u32;
-        let cm = crate::overlay::symbology::instances::symbols::cluster_mode(n, zoom);
+        let cm = overlay_instances::symbols::cluster_mode(n, zoom);
         self.slot_bridge.last_cluster_mode = cm;
         if !cm {
             self.upload_cluster_lane(&[], false);

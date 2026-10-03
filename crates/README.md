@@ -10,9 +10,13 @@ them; a library crate never depends on an application.
 crates/
 ├── contracts/   shapes and policies two programs share, such as the offline cache policy
 ├── foundation/  dependency-free building blocks, such as the HTTP URL guard
-├── geometry/  plain geometry, map coordinates and camera arithmetic, such as the orthographic camera
+├── geometry/  plain geometry, map coordinates, camera arithmetic and spatial indexes, such as the BVH
 ├── graphics/  map-agnostic renderer building blocks, such as the render primitives
-└── world_formats/  the files a terrain's map data is stored in, such as the archives and containers
+├── line_of_sight/  visibility over the bare ground, inside one building and through the placed world
+├── map_overlay/  what the map draws on the terrain and in what order, such as the draw lanes and unit symbology
+├── terrain/  the ground the map reads, such as the elevation model and the satellite container reader
+├── world_formats/  the files a terrain's map data is stored in and their readers, such as the chunks
+└── world_objects/  what stands on the ground, such as the vegetation and the building interiors
 ```
 
 ## How it works

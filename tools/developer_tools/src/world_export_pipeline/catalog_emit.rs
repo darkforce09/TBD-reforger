@@ -34,15 +34,15 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use map_engine::streaming::loaders::store::bytes_to_json;
-use map_engine::world::environment::buildings::prefab::catalog_from_bytes;
-use map_engine::world::environment::buildings::prefab::inventory_from_bytes;
-use map_engine::world::environment::buildings::prefab::inventory_to_archive;
-use map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
-use map_engine::world::environment::buildings::prefab::row_to_archive;
-use map_engine::world::environment::vegetation::regions::parse_regions_payload;
-use map_engine::world::environment::vegetation::regions::region_to_archive;
-use map_engine::world::environment::vegetation::regions::regions_from_bytes;
+use prefab_catalog::prefab_rows::catalog_from_bytes;
+use prefab_catalog::prefab_rows::inventory_from_bytes;
+use prefab_catalog::prefab_rows::inventory_to_archive;
+use prefab_catalog::prefab_rows::narrow_prefab_rows;
+use prefab_catalog::prefab_rows::row_to_archive;
+use prefab_catalog::world_payload::bytes_to_json;
+use vegetation::regions::parse_regions_payload;
+use vegetation::regions::region_to_archive;
+use vegetation::regions::regions_from_bytes;
 use world_file_formats::archives::codec::access_checked;
 use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::forest::ForestRegionsArchive;
@@ -58,7 +58,8 @@ pub const TYPE_INVENTORY_JSON: &str = "objects/type-inventory.json";
 pub const FOREST_REGIONS_GZ: &str = "objects/forest-regions.json.gz";
 
 /// The rkyv catalogue. Matches the manifest's `objects.binary.prefabs`
-/// (`map_engine::world::ObjectsBinaryBlock`), which the terrain manifest points the SPA at.
+/// (`world_chunks::terrain_manifest::ObjectsBinaryBlock`), which the terrain manifest points the
+/// SPA at.
 pub const PREFAB_CATALOG_RKYV: &str = "objects/prefabs.rkyv";
 /// The rkyv census — manifest `objects.binary.typeInventory`.
 pub const TYPE_INVENTORY_RKYV: &str = "objects/type-inventory.rkyv";
@@ -120,12 +121,13 @@ write_archive!(
 /// # Errors
 /// When either source is missing or undecodable, when the catalogue narrows to nothing
 /// (an empty catalogue is refused rather than written over a committed one), when the two
-/// documents disagree about which terrain they describe, or when a row cannot be encoded without
+/// documents disagree about which terrain they describe, when a row's `prefabId` is not a whole
+/// number in `0..=u32::MAX`, or when a row cannot be encoded without
 /// changing its meaning (see `row_to_archive`).
 pub fn build_prefab_catalog_archive(terrain_dir: &Path) -> Result<PrefabCatalogArchive> {
     let prefabs_doc = read_doc(terrain_dir, PREFABS_GZ)?;
     let inventory_doc = read_doc(terrain_dir, TYPE_INVENTORY_JSON)?;
-    let rows = narrow_prefab_rows(&prefabs_doc);
+    let rows = narrow_prefab_rows(&prefabs_doc)?;
     super::refuse_empty_write(
         "prefabs-rkyv",
         rows.is_empty(),

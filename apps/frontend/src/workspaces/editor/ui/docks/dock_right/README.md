@@ -72,8 +72,9 @@ registers both at mount, and each cleanup removes only its own registration.
     left dock's `collapse_chevron`;
   - `crate::foundation`: the [API](/documentation/glossary/a_to_f.md#api) client and `RegistryItem`, the
     auth store and `MaterialIcon`;
-  - `map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools::selection`,
-    `streaming::host` and `overlay::symbology::markers`;
+  - `map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools::selection` and
+    `streaming::host`;
+  - `unit_symbology::markers`;
   - `contracts/definitions/mission.schema.json`, through the zones panel's embed, and the
     browser's local storage.
 - Used by: the callers above; the tests in

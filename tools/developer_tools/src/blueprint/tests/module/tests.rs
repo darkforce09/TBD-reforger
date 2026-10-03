@@ -121,7 +121,7 @@ fn farmhouse_dump_matches_golden_blueprint() {
 }
 
 /// The acceptance instrument, pinned: replay the committed 400-pair engine oracle through
-/// the golden blueprint + the golden `.bvh` sidecar. **400/400** since `evaluate_los` moved
+/// the golden blueprint + the golden `.bvh` sidecar. **400/400** since the blueprint attribution (`annotate_sight_line`) moved
 /// onto the BVH raycaster (step 3, measured 2026-09-01). 2.5D: 260/400 pre-roof
 /// (every miss the unmodeled roof) → 384 roof heightfield → 387 attic band + above-roof
 /// wall cap, where the 13 misses were all model-clear/engine-blocked roof-margin leans.
@@ -134,13 +134,12 @@ fn farmhouse_golden_parity_is_pinned() {
     struct ParityFile {
         pairs: Vec<(f64, f64, f64, f64, f64, f64, bool)>,
     }
-    let bp: map_engine::world::architecture::blueprint::structure::BuildingBlueprint =
-        serde_json::from_str(
-            &std::fs::read_to_string(fixture("FarmHouse_E_1L01_Wood_blueprint.golden.json"))
-                .expect("read golden"),
-        )
-        .expect("parse golden");
-    let sidecar = map_engine::spatial::bvh::sidecar::BvhSidecar::parse(
+    let bp: building_interiors::blueprint::structure::BuildingBlueprint = serde_json::from_str(
+        &std::fs::read_to_string(fixture("FarmHouse_E_1L01_Wood_blueprint.golden.json"))
+            .expect("read golden"),
+    )
+    .expect("parse golden");
+    let sidecar = spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar::parse(
         &std::fs::read(fixture("FarmHouse_E_1L01_Wood.bvh.golden")).expect("read sidecar"),
     )
     .expect("parse golden sidecar");
@@ -154,7 +153,7 @@ fn farmhouse_golden_parity_is_pinned() {
     let mut model_blocked_engine_clear = 0usize;
     for &(ox, oy, oz, tx, ty, tz, engine_clear) in &oracle.pairs {
         let model_clear = bp
-            .evaluate_los(&sidecar, [ox, oy, oz], [tx, ty, tz])
+            .annotate_sight_line(&sidecar, [ox, oy, oz], [tx, ty, tz])
             .is_clear;
         if model_clear == engine_clear {
             agree += 1;

@@ -1,60 +1,40 @@
 # World asset loaders
 
-The parsers and browser loaders for a terrain's served files: the manifest's object and binary
-blocks, prefab catalogues, object chunks in gzip JSON or `TBDC` binary form, roads and regions,
-and the two loaders that keep the
+The browser loaders for a terrain's served files. The parsers and the store they feed are crates
+every caller imports directly: [`world_chunks`](/crates/world_formats/world_chunks/README.md) (the
+terrain manifest, object chunks in gzip JSON or `TBDC` binary form),
+[`prefab_catalog`](/crates/world_formats/prefab_catalog/README.md) (prefab tables, payload
+decoding) and [`world_store`](/crates/world_formats/world_store/README.md) (the headless world
+store). The two loaders keep the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map fed: world objects and the
 line-of-sight occluder. The loaders fetch through the `fetch` module of the
-[`browser_platform`](/crates/foundation/browser_platform/README.md) crate. The parsers compile
-natively for the tools and tests; `occluder_loader.rs` and `world_loader/` compile only for
-wasm32 with the `render` feature.
+[`browser_platform`](/crates/foundation/browser_platform/README.md) crate. `occluder_loader.rs`
+and `world_loader/` compile only for wasm32 with the `render` feature.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/streaming/loaders/
-├── chunk.rs            `WorldChunk`, one chunk's instance columns, and the gzip JSON chunk parser
-├── chunk_bin.rs        the `TBDC` binary chunk parser, its tile id check and the path template
-├── manifest.rs         the terrain manifest's `objects` block, binary blocks and chunk index cells
-├── mod.rs              the module tree
+├── mod.rs              the module tree: `world_loader` and `occluder_loader`
 ├── occluder_loader.rs  `OccluderHost`: building descriptors and BVH sidecars for resident chunks
-├── prefab.rs           prefab tables from gzip JSON or the rkyv catalogue, chosen by first bytes
-├── residency.rs        the residency's manifest, prefab and chunk-index loads and its chunk ingest
-├── store.rs            `WorldStore`, `WorldError` and the gzip-or-plain JSON reader
-├── tests/              unit tests for the chunk, binary chunk, manifest, prefab and store parsers
 └── world_loader/       `WorldHost`: fetch, ingest and upload of a terrain's world objects
 ```
 
 ## How it works
 
 ```text
-manifest.json, chunks/manifest.json ──> manifest.rs: objects and binary blocks, index cells
-prefabs.rkyv | prefabs.json.gz ──> prefab.rs ──> PrefabTables ──┐
-chunks/<cx>_<cy>.bin ─────────> chunk_bin.rs ──┐                 ├─> residency.rs ─> WorldResidency
-chunks/<cx>_<cy>.json.gz ─────> chunk.rs ──────┴─> WorldChunk ───┘
-roads, regions (rkyv or gzip JSON) ──> store.rs: WorldStore
+manifest.json, chunks/manifest.json ──> world_chunks::terrain_manifest: blocks, index cells
+prefabs.rkyv | prefabs.json.gz ──> prefab_catalog::prefab_tables ──> PrefabTables ──┐
+chunks/<cx>_<cy>.bin ─────────> world_chunks::chunk_container ──┐                   ├─> scheduler::chunk_ingest
+chunks/<cx>_<cy>.json.gz ─────> world_chunks::world_chunk ──────┴─> WorldChunk ─────┘   ─> WorldResidency
+roads, regions (rkyv or gzip JSON) ──> world_store::store::WorldStore
 blas-manifest.json, descriptors, BVH sidecars ──> occluder_loader.rs ──> WorldOccluder
 ```
 
-A `WorldChunk` holds one chunk's instances as columns (interleaved x and y, prefab id, yaw, z,
-pitch, roll, scale, class code) plus the rows of each render class, and both chunk parsers build
-the same columns. A `TBDC` chunk is a header and 32-byte `ObjectInstancePod` rows: a payload
-whose length disagrees with the header's count is an error, a misaligned buffer is copied into
-aligned words first, and `parse_chunk_bin_for` refuses a well-formed chunk whose header names
-another tile. The manifest parser never fails on a binary block: a missing or malformed block is
-absent, and `ObjectsBinaryBlock::matches_this_build` decides whether chunk binaries are read. The
-`objects` block needs `prefabsPath` and `chunksPath`; `chunkSizeM` defaults to
-`DEFAULT_CHUNK_SIZE_M` (512 m).
-
-Prefab and road payloads are told apart by their first bytes: an empty buffer is
-`WorldError::EmptyPayload`, `1f 8b` is gzip JSON, anything else goes to the validating rkyv
-reader. A prefab catalogue records the terrain it was built for and is refused for another, and
-one that repeats a prefab id is refused. `residency.rs` adds the loads to `WorldResidency`: the
-manifest (and the terrain size from `worldBounds`), the prefab tables, the chunk index whose cells
-bound every pin, and `ingest_chunk_gz` and `ingest_chunk_bin`, which answer `Applied`,
-`ParsedEmpty` (known-empty from then on) or a shape mismatch that counts toward the fetch-failure
-cap. `WorldStore` is the headless reader the tools use: manifest, prefab table, roads, regions and
-one chunk at a time.
+The chunk, manifest, prefab and payload parsers and the world store are described in the three
+crates' READMEs. The chunk scheduler's
+`chunk_ingest.rs` feeds the parsers' output into `WorldResidency`; `WorldHost` keeps a
+`WorldStore` for the roads and regions it draws.
 
 `browser_platform::fetch`'s `fetch_bytes` and `fetch_text` answer `None` on a transport failure or a status outside 2xx;
 `fetch_bytes_streamed` reports `ByteProgress` (the bytes received and the `content-length`) as
@@ -70,51 +50,23 @@ session.
 
 ## Public surface
 
-- `chunk::{WorldChunk, parse_chunk}` and `chunk_bin::{parse_chunk_bin, parse_chunk_bin_for,
-  chunk_bin_path, ChunkBinError}`: the chunk formats, for `crate::spatial::los::world`,
-  `crate::world::environment::vegetation::canopy` and the developer tools' map verification.
-- `manifest`: `parse_manifest_binary` with its blocks, `parse_objects_manifest`, `narrow_cells`
-  and `DEFAULT_CHUNK_SIZE_M`, for the DEM, label and water loaders under `crate::world`, the
-  streaming host and the developer tools.
-- `store::{WorldStore, WorldError, bytes_to_json}`: for the developer tools' export, raster and
-  verification pipelines and the tests under `crate::world`.
-- `occluder_loader::OccluderHost` for the streaming host and the debug bench, and
-  `world_loader::WorldHost` for the streaming host.
-- The `WorldResidency` loads and ingests of `residency.rs`, for the world loader and the debug
-  bench.
+- `occluder_loader::OccluderHost` for the streaming host and the debug world line-of-sight
+  bench, and `world_loader::WorldHost` for the streaming host.
 
 ## Boundaries
 
-- Depends on: `crate::streaming::scheduler` (`WorldResidency`, `IngestOutcome`, `ResidencyEvent`,
-  `TerrainSizeM`) and `crate::streaming::bridge` (progress, statistics, preferences); `world_file_formats`
-  (the `TBDC` container header, `ObjectInstancePod`, `BinaryError`); `crate::world` (prefab rows,
-  catalogues and class codes, footprint lookups, road and region payloads, the airfield box, the
-  road and landcover meshes); `crate::spatial::los::world` and `crate::spatial::bvh::sidecar` for
-  the occluder; `crate::frame::EngineHandle` and `crate::overlay::lanes` for the uploads;
-  `browser_platform` for `fetch` and the console macros; `serde`,
-  `serde_json`, `flate2`, `bytemuck`, `thiserror`, `futures` and the browser bindings; the files under
+- Depends on: `crate::streaming::scheduler` (`WorldResidency` and `ResidencyEvent` for the two
+  browser loaders) and `crate::streaming::bridge` (progress, statistics, preferences);
+  `world_chunks` and `world_store` (the manifest, the chunk paths and the store);
+  `road_network` and `vegetation` (the road meshes and the forest regions); `crate::world::mesh`
+  (the landcover mesh); `world_line_of_sight` and `spatial_indexes` (the occluder library and the
+  BVH sidecar) for the occluder; `crate::frame::EngineHandle` and `map_draw_lanes` for the
+  uploads;
+  `browser_platform` for `fetch` and the console macros; `serde_json`, `futures` and the
+  browser bindings; the files under
   `/map-assets/<terrain>/`, whose manifest follows
   `contracts/definitions/terrain-manifest.schema.json`.
-- Used by:
-  - `crate::streaming::host`; `crate::streaming::scheduler` (`WorldChunk`, `ObjectsManifest`,
-    `DEFAULT_CHUNK_SIZE_M`); `crate::spatial::los::world`; and the DEM, water, label, vegetation
-    and satellite loaders and tests under `crate::world`;
-  - the debug world line-of-sight bench in `apps/frontend/src/workspaces/debug/world_los/`;
-  - the developer tools in `tools/developer_tools/src/`: the world export pipeline, the map
-    raster pipeline and the map verifications.
-- Rules:
-  - the binary and JSON lanes build the same data: chunk columns and residencies
-    (`everon_chunk_bin_columns_equal_the_gz_decode`, `ingest_chunk_bin_matches_ingest_chunk_gz`),
-    prefab residencies (`everon_archive_lane_builds_the_same_residency_as_the_json_lane`) and roads
-    (`load_roads_sniffs_gzip_versus_rkyv`);
-  - a truncated, mis-served or empty payload is an error, never a short chunk or the other
-    parser's input (`truncated_payload_is_err_not_a_short_chunk`,
-    `id_mismatch_is_rejected_even_though_the_bytes_are_perfect`,
-    `truncated_payloads_error_rather_than_reaching_the_wrong_parser`,
-    `an_empty_payload_is_refused_before_the_sniff`);
-  - a catalogue for another terrain or with a repeated prefab id is refused
-    (`a_catalogue_for_another_terrain_is_refused_by_the_sniff`,
-    `a_catalogue_with_a_duplicate_prefab_id_is_refused`);
-  - the tests read the committed Everon export in `assets/terrains/everon/` and the goldens in
-    `contracts/fixtures/map/`, and pin its census (`full_island_census_matches_pinned_inventory`,
-    `everon_manifest_parses_unchanged`).
+- Used by: `crate::streaming::host`; the debug world line-of-sight bench in
+  `apps/frontend/src/workspaces/debug/world_los/`.
+- Rules: the chunk, prefab and road lanes and the Everon census are pinned in the crates; this
+  folder holds no test of its own.

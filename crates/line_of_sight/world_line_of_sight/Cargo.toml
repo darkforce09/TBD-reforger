@@ -1,0 +1,50 @@
+# Line of sight through every object placed on a terrain, over the chunks a host has made resident:
+# the per-chunk box trees, the prefab occluder library (descriptors, BLAS manifest, building
+# archive), proxy boxes until a prefab's meshes arrive, and verdicts that say what they could not
+# see. No browser or GPU code; the browser loader that fetches the library stays with the host.
+[package]
+name = "world_line_of_sight"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Line of sight through a terrain's placed objects: chunk box trees, the prefab occluder library and verdicts."
+
+[package.metadata.layout]
+category = "crates/line_of_sight"
+tier = 5
+targets = "any"
+
+[dependencies]
+# The compound instances a prefab expands into and the `LosHit` types a verdict reports.
+building_interiors = { workspace = true }
+# The 8-aligned building archive buffer.
+bytemuck = { workspace = true }
+# Boxes, segment points and the rigid transforms rows are placed by.
+geometry_primitives = { workspace = true }
+# The compound walk and the one sight-line evaluation every verdict is reduced by.
+interior_line_of_sight = { workspace = true }
+# The chunk grid's identifiers and the terrain size the chunk walk is bounded by.
+map_coordinates = { workspace = true }
+# The prefab catalogue rows the proxy boxes and labels come from.
+prefab_catalog = { workspace = true }
+# The archived descriptor's little-endian floats.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+# The descriptor and BLAS manifest JSON documents.
+serde = { workspace = true, features = ["derive"] }
+# The BLAS sidecars, their traversal and surface kinds, and the flat box-tree build core.
+spatial_indexes = { workspace = true }
+thiserror = { workspace = true }
+# The world object chunks and their identifiers.
+world_chunks = { workspace = true }
+# The building archive records, its schema version and the typed prefab and terrain ids.
+world_file_formats = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+# The `Visibility` classes of the wash the world occluder's blocking test drives.
+terrain_line_of_sight = { workspace = true }
+
+[lints]
+workspace = true

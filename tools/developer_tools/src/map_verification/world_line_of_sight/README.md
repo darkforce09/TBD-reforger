@@ -34,9 +34,9 @@ below it; a missing `--cell` or an unreadable file is an error.
 
 ## Boundaries
 
-- Depends on: `map_engine`'s world occluder (`spatial::los::world`), BVH sidecars
-  (`spatial::bvh::sidecar`), chunk parsers (`streaming::loaders`) and elevation sampling
-  (`world::terrain::dem`); `crate::repository_layout::terrain_dir`.
+- Depends on: the world occluder (`world_line_of_sight`), BVH sidecars
+  (`spatial_indexes::bounding_volume_hierarchy::sidecar`), chunk parsers (`world_chunks`), prefab
+  rows (`prefab_catalog::prefab_rows`) and elevation sampling (`terrain_elevation`); `crate::repository_layout::terrain_dir`.
 - Used by: `cargo xtask map world-los`, through `tools/xtask/src/commands/map/mod.rs`; the
   pinned replays in `tools/developer_tools/src/map_verification/tests/world_line_of_sight.rs`,
   which read the oracle files in `tools/developer_tools/test_fixtures/blueprint/`.

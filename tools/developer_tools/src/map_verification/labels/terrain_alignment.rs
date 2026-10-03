@@ -1,9 +1,9 @@
 use super::*;
 
 pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8> {
-    use map_engine::world::terrain::dem::manifest::{DemManifest, PixelCoord};
-    use map_engine::world::terrain::dem::sampling::sample_elevation_meters;
-    use map_engine::world::terrain::dem::sampling::world_to_pixel;
+    use terrain_elevation::manifest::{DemManifest, PixelCoord};
+    use terrain_elevation::sampling::sample_elevation_meters;
+    use terrain_elevation::sampling::world_to_pixel;
     const MIN_ANCHORS_STRICT: usize = 10;
     let base = terrain_dir(root, terrain);
     let manifest = read_json(&base.join("manifest.json"))?;

@@ -1,17 +1,11 @@
-//! Role: Module boundary for terrain/water.
-//! Position: `world/terrain/water` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
-
-/// Vectors.
-#[cfg(feature = "streaming")]
-pub mod vectors;
-
-/// Triangulated sea-band fills.
-// T-0xx Phase 2A: `graphics_engine` is optional from `streaming` up, so the belts that
-// name a graphics layout type are gated with it.
-#[cfg(feature = "streaming")]
-pub mod mesh;
+//! The terrain's water in the map engine: the browser loader of the water files.
+//!
+//! **Role:** declares the wasm32 water [`loader`]; the water data (bathymetry, mask, inland
+//! archive, sea mesh) is `water_bodies`, which its callers import directly.
+//! **Position:** `world/terrain/water`, behind wasm32 and `render`; the streaming host owns the
+//! loader.
+//! **Signals & state:** none here; the loader's `WaterHost` is its own.
+//! **Invariants:** the loader decodes every water file through `water_bodies`.
 
 /// Loader.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]

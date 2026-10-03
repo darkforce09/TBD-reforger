@@ -5,7 +5,7 @@
 //! cancels the old — while the OWNER supplies the `blocked` closure per step, because that closure
 //! borrows a building's geometry for the call and cannot be parked in a `'static` slot.
 
-use crate::spatial::los::interior::wash::{LevelWash, WashJob, WashParams};
+use interior_line_of_sight::floor_wash::{LevelWash, WashJob, WashParams};
 
 use super::host::now_ms;
 use super::lanes::{

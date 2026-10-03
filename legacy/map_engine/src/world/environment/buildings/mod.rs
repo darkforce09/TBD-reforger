@@ -1,23 +1,9 @@
-//! Role: Module boundary for environment/buildings.
-//! Position: `world/environment/buildings` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
-
-/// Obb.
-#[cfg(feature = "streaming")]
-pub mod obb;
-
-/// Prefab.
-#[cfg(feature = "streaming")]
-pub mod prefab;
+//! **Role:** module boundary for the building footprint belts.
+//! **Position:** `world/environment/buildings` in the map engine; the footprint lookups and the
+//! prefab rows are `prefab_catalog`, which its callers import directly.
+//! **Signals & state:** the belts' GPU buffers, owned by `buffers`.
+//! **Invariants:** preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// Buffers.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
-// T-0xx Phase 2A: `graphics_engine` is optional from `streaming` up, so the belts that
-// name a graphics layout type are gated with it.
-#[cfg(feature = "streaming")]
 pub mod buffers;
-
-/// Footprint.
-#[cfg(feature = "streaming")]
-pub mod footprint;

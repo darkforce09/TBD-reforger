@@ -171,7 +171,7 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
             crate::workspaces::editor::input::tools::los_tool::register_los_sampler(
                 std::rc::Rc::new(move |x: f64, y: f64| {
                     dem_grid.borrow().as_ref().and_then(|g| {
-                        map_engine::world::terrain::dem::grid::sample_grid_meters(g, x, y)
+                        terrain_elevation::grid::sample_grid_meters(g, x, y)
                     })
                 }),
             );

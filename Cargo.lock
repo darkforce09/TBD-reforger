@@ -917,6 +917,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "building_interiors"
+version = "0.1.0"
+dependencies = [
+ "geometry_primitives",
+ "newtype_ids",
+ "rkyv 0.8.18",
+ "serde",
+ "serde_json",
+ "spatial_indexes",
+ "thiserror 2.0.18",
+ "world_file_formats",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1660,28 +1674,41 @@ dependencies = [
  "axum",
  "base64",
  "bcdec_rs",
+ "building_interiors",
  "clap",
  "flate2",
  "futures-util",
  "geometry_primitives",
  "image",
  "image-webp",
+ "interior_line_of_sight",
  "jsonschema",
+ "label_layout",
  "libc",
  "map_coordinates",
  "map_engine",
+ "place_names",
  "png 0.17.16",
+ "prefab_catalog",
  "regex",
  "repository_layout",
  "reqwest",
  "resvg",
+ "road_network",
  "serde",
  "serde_json",
  "sha2 0.11.0",
+ "spatial_indexes",
+ "terrain_elevation",
  "tokio",
  "tokio-tungstenite",
+ "vegetation",
+ "water_bodies",
  "webp",
+ "world_chunks",
  "world_file_formats",
+ "world_line_of_sight",
+ "world_store",
 ]
 
 [[package]]
@@ -2462,6 +2489,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "browser_platform",
+ "building_interiors",
  "camera_math",
  "console_error_panic_hook",
  "futures",
@@ -2470,19 +2498,30 @@ dependencies = [
  "gloo-timers",
  "http_url_guard",
  "idb",
+ "interior_line_of_sight",
  "js-sys",
  "leptos",
  "leptos_router",
  "map_coordinates",
+ "map_draw_lanes",
  "map_engine",
  "offline_cache_policy",
+ "overlay_instances",
  "render_primitives",
+ "road_network",
+ "satellite_imagery",
  "serde",
  "serde_json",
+ "spatial_indexes",
+ "terrain_elevation",
+ "terrain_line_of_sight",
+ "unit_symbology",
  "url",
+ "vegetation",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "world_line_of_sight",
 ]
 
 [[package]]
@@ -3446,6 +3485,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "interior_line_of_sight"
+version = "0.1.0"
+dependencies = [
+ "building_interiors",
+ "geometry_primitives",
+ "spatial_indexes",
+ "terrain_line_of_sight",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "interpolator"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3697,6 +3747,16 @@ dependencies = [
  "euclid",
  "polycool",
  "smallvec",
+]
+
+[[package]]
+name = "label_layout"
+version = "0.1.0"
+dependencies = [
+ "newtype_ids",
+ "render_primitives",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -4005,6 +4065,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "map_draw_lanes"
+version = "0.1.0"
+dependencies = [
+ "render_primitives",
+]
+
+[[package]]
 name = "map_engine"
 version = "0.1.0"
 dependencies = [
@@ -4014,23 +4081,39 @@ dependencies = [
  "console_error_panic_hook",
  "flate2",
  "futures",
- "geometry_primitives",
  "graphics_engine",
+ "interior_line_of_sight",
  "js-sys",
  "jsonschema",
+ "label_layout",
  "libm",
  "map_coordinates",
- "png 0.17.16",
+ "map_draw_lanes",
+ "overlay_instances",
+ "place_names",
+ "prefab_catalog",
  "render_primitives",
  "rkyv 0.8.18",
+ "road_network",
+ "satellite_imagery",
  "serde",
  "serde_json",
+ "spatial_indexes",
+ "terrain_elevation",
+ "terrain_line_of_sight",
+ "terrain_relief",
  "thiserror 2.0.18",
+ "unit_symbology",
+ "vegetation",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "water_bodies",
  "web-sys",
  "wgpu 29.0.4",
+ "world_chunks",
  "world_file_formats",
+ "world_line_of_sight",
+ "world_store",
  "yrs",
 ]
 
@@ -4879,6 +4962,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a80800c0488c3a21695ea981a54918fbb37abf04f4d0720c453632255e2ff0e"
 
 [[package]]
+name = "overlay_instances"
+version = "0.1.0"
+dependencies = [
+ "map_draw_lanes",
+ "render_primitives",
+ "unit_symbology",
+]
+
+[[package]]
 name = "owned_ttf_parser"
 version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5104,6 +5196,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
+name = "place_names"
+version = "0.1.0"
+dependencies = [
+ "label_layout",
+ "newtype_ids",
+ "render_primitives",
+ "rkyv 0.8.18",
+ "road_network",
+ "serde",
+ "serde_json",
+ "terrain_elevation",
+ "thiserror 2.0.18",
+ "world_file_formats",
+]
+
+[[package]]
 name = "plain"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5243,6 +5351,17 @@ name = "precomputed-hash"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
+
+[[package]]
+name = "prefab_catalog"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "rkyv 0.8.18",
+ "serde_json",
+ "thiserror 2.0.18",
+ "world_file_formats",
+]
 
 [[package]]
 name = "presser"
@@ -6036,6 +6155,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "road_network"
+version = "0.1.0"
+dependencies = [
+ "map_coordinates",
+ "prefab_catalog",
+ "render_primitives",
+ "rkyv 0.8.18",
+ "serde_json",
+ "terrain_elevation",
+ "thiserror 2.0.18",
+ "world_file_formats",
+]
+
+[[package]]
 name = "ron"
 version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6260,6 +6393,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "satellite_imagery"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "world_file_formats",
 ]
 
 [[package]]
@@ -6831,6 +6974,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "spatial_indexes"
+version = "0.1.0"
+dependencies = [
+ "geometry_primitives",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "spin"
 version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7279,6 +7430,33 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "terrain_elevation"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "map_coordinates",
+ "png 0.17.16",
+ "thiserror 2.0.18",
+ "world_file_formats",
+]
+
+[[package]]
+name = "terrain_line_of_sight"
+version = "0.1.0"
+dependencies = [
+ "terrain_elevation",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "terrain_relief"
+version = "0.1.0"
+dependencies = [
+ "map_coordinates",
+ "terrain_elevation",
 ]
 
 [[package]]
@@ -7986,6 +8164,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
+name = "unit_symbology"
+version = "0.1.0"
+dependencies = [
+ "map_draw_lanes",
+ "newtype_ids",
+ "render_primitives",
+ "serde_json",
+]
+
+[[package]]
 name = "unsafe-libyaml-norway"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8082,6 +8270,20 @@ name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
+name = "vegetation"
+version = "0.1.0"
+dependencies = [
+ "map_coordinates",
+ "map_draw_lanes",
+ "prefab_catalog",
+ "rkyv 0.8.18",
+ "serde_json",
+ "thiserror 2.0.18",
+ "world_chunks",
+ "world_file_formats",
+]
 
 [[package]]
 name = "vello_common"
@@ -8262,6 +8464,18 @@ dependencies = [
  "quote",
  "sha2 0.10.9",
  "syn 2.0.118",
+]
+
+[[package]]
+name = "water_bodies"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "render_primitives",
+ "rkyv 0.8.18",
+ "terrain_relief",
+ "thiserror 2.0.18",
+ "world_file_formats",
 ]
 
 [[package]]
@@ -9184,6 +9398,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
+name = "world_chunks"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "map_coordinates",
+ "newtype_ids",
+ "prefab_catalog",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "world_file_formats",
+]
+
+[[package]]
 name = "world_file_formats"
 version = "0.1.0"
 dependencies = [
@@ -9192,6 +9420,40 @@ dependencies = [
  "rkyv 0.8.18",
  "serde_json",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "world_line_of_sight"
+version = "0.1.0"
+dependencies = [
+ "building_interiors",
+ "bytemuck",
+ "geometry_primitives",
+ "interior_line_of_sight",
+ "map_coordinates",
+ "prefab_catalog",
+ "rkyv 0.8.18",
+ "serde",
+ "serde_json",
+ "spatial_indexes",
+ "terrain_line_of_sight",
+ "thiserror 2.0.18",
+ "world_chunks",
+ "world_file_formats",
+]
+
+[[package]]
+name = "world_store"
+version = "0.1.0"
+dependencies = [
+ "map_coordinates",
+ "prefab_catalog",
+ "road_network",
+ "serde_json",
+ "thiserror 2.0.18",
+ "vegetation",
+ "world_chunks",
+ "world_file_formats",
 ]
 
 [[package]]

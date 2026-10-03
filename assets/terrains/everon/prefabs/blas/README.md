@@ -20,7 +20,7 @@ assets/terrains/everon/prefabs/blas/
   then `f32` vertices, `u32` triangles, the 32-byte BVH nodes, the triangle order and, when the
   kinds flag is set, one surface kind byte per triangle (opaque, glass or foliage). The mesh is the
   model's fire-collision geometry, in the model's own frame.
-- Schema: the sidecar layout is `legacy/map_engine/src/spatial/bvh/sidecar.rs`; the index of
+- Schema: the sidecar layout is `crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/sidecar.rs`; the index of
   the library is the sibling `prefabs/blas-manifest.json`
   (`contracts/definitions/blas-manifest.schema.json`), which lists 1,687 of the files with
   their byte size, triangle count and triangles per kind. `LightSwitch_01.bvh`,
@@ -41,8 +41,9 @@ assets/terrains/everon/prefabs/blas/
   - the map engine's occluder loader
     (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), which fetches the files
     that resident chunks' descriptors name as `/map-assets/everon/prefabs/blas/<stem>.bvh`, and the
-    world occluder in `legacy/map_engine/src/spatial/los/world/`;
-  - the compound building model (`legacy/map_engine/src/world/architecture/compound/`) and
+    world occluder of the `world_line_of_sight` crate
+    (`crates/line_of_sight/world_line_of_sight/`);
+  - the compound building model (`crates/world_objects/building_interiors/src/compound/`) and
     the debug building viewer, which resolve the `blas/<stem>.bvh` paths of a building's instances
     file;
   - `cargo xtask verify blas-manifest` and `cargo xtask map world-los`, and the blueprint
@@ -51,7 +52,7 @@ assets/terrains/everon/prefabs/blas/
 ## Boundaries
 
 - Depends on: the models in the Enfusion game paks the batch reads; the sidecar format of
-  `legacy/map_engine/src/spatial/bvh/`.
+  `crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/`.
 - Used by: the map engine's occluder, the compound building model, the debug building viewer and
   the gates and tests listed above.
 - Rules: a mesh is shared by every descriptor that places its model, so a file is named by the
@@ -61,7 +62,7 @@ assets/terrains/everon/prefabs/blas/
 
 ## Related documentation
 
-- [Triangle mesh bounding volume hierarchy](/legacy/map_engine/src/spatial/bvh/README.md) —
+- [Triangle mesh bounding volume hierarchy](/crates/geometry/spatial_indexes/src/bounding_volume_hierarchy/README.md) —
   the `TBVH` sidecar format and its queries.
-- [Prefab occluder descriptors](/legacy/map_engine/src/spatial/los/world/descriptor/README.md)
+- [Prefab occluder descriptors](/crates/line_of_sight/world_line_of_sight/src/occluder_library/README.md)
   — the descriptor and manifest model that points into this library.

@@ -4,17 +4,17 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::frame::engine::RenderEngine;
-use crate::overlay::lanes::LaneRole;
 use crate::overlay::symbology::instances::bridge_1::SlotAtlasGpu;
 use crate::overlay::symbology::instances::bridge_1::SlotGpuBridge;
-use crate::overlay::symbology::instances::drag::pack_drag_overlay;
 use crate::overlay::symbology::instances::lanes::ICON_DRAG_OFF;
 use crate::overlay::symbology::instances::lanes::ICON_PXM_OFF;
-use crate::overlay::symbology::instances::patches::hide_slot_row_patch;
-use crate::overlay::symbology::instances::patches::pack_selection_only;
-use crate::overlay::symbology::instances::patches::selected_mask;
-use crate::overlay::symbology::instances::symbols::SLOT_ICON_STRIDE;
-use crate::overlay::symbology::instances::symbols::pack_slot_instances;
+use map_draw_lanes::lane_roles::LaneRole;
+use overlay_instances::drag::pack_drag_overlay;
+use overlay_instances::patches::hide_slot_row_patch;
+use overlay_instances::patches::pack_selection_only;
+use overlay_instances::patches::selected_mask;
+use overlay_instances::symbols::SLOT_ICON_STRIDE;
+use overlay_instances::symbols::pack_slot_instances;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -24,7 +24,7 @@ impl RenderEngine {
     pub fn slots_cluster_mode(&self) -> bool {
         #[allow(clippy::cast_possible_truncation)]
         let n = self.slot_bridge.last_ids.len() as u32;
-        crate::overlay::symbology::instances::symbols::cluster_mode(n, self.zoom())
+        overlay_instances::symbols::cluster_mode(n, self.zoom())
     }
 }
 
@@ -203,7 +203,7 @@ impl RenderEngine {
 impl RenderEngine {
     /// Sync slot zoom uniform.
     pub(crate) fn sync_slot_zoom_uniform(&mut self) {
-        let px = crate::overlay::symbology::instances::symbols::px_to_m_at_zoom(self.zoom());
+        let px = map_draw_lanes::zoom_gates::px_to_m_at_zoom(self.zoom());
         self.set_slot_px_to_m(px);
 
         let detailed = self.symbology_detailed();
@@ -232,7 +232,7 @@ impl RenderEngine {
         let zoom = self.zoom();
         #[allow(clippy::cast_possible_truncation)]
         let n = self.slot_bridge.last_ids.len() as u32;
-        let cm = crate::overlay::symbology::instances::symbols::cluster_mode(n, zoom);
+        let cm = overlay_instances::symbols::cluster_mode(n, zoom);
         self.slot_bridge.last_cluster_mode = cm;
         if cm {
             let bytes = pack_selection_only(&self.slot_bridge.last_xy, &mask);
@@ -241,7 +241,7 @@ impl RenderEngine {
             self.slot_bridge.slots_lane_selection_only = true;
         } else {
             let bytes = match self.slot_bridge.symbology_base {
-                Some(base) => crate::overlay::symbology::instances::symbols::pack_slot_symbology(
+                Some(base) => overlay_instances::symbols::pack_slot_symbology(
                     &self.slot_bridge.last_xy,
                     &mask,
                     &self.slot_bridge.last_side_tints,
@@ -276,7 +276,7 @@ impl RenderEngine {
         self.slot_bridge.drag_active = true;
 
         let (overlay, rows) = match self.slot_bridge.symbology_base {
-            Some(base) => crate::overlay::symbology::instances::drag::pack_drag_overlay_symbology(
+            Some(base) => overlay_instances::drag::pack_drag_overlay_symbology(
                 &drag_ids,
                 &self.slot_bridge.last_ids,
                 &self.slot_bridge.last_xy,

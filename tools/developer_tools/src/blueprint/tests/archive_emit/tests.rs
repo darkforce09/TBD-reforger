@@ -1,7 +1,7 @@
 use super::*;
 use crate::repository_layout::terrain_dir;
-use map_engine::spatial::los::world::descriptor::ArchiveBoot;
-use map_engine::spatial::los::world::descriptor::BuildingArchiveBytes;
+use world_line_of_sight::occluder_library::ArchiveBoot;
+use world_line_of_sight::occluder_library::BuildingArchiveBytes;
 
 fn prefabs_dir() -> PathBuf {
     terrain_dir(
@@ -51,7 +51,7 @@ fn archive_round_trips_every_committed_descriptor() {
     for path in &files {
         let json: PrefabDescriptor = read_json(path).expect("parse descriptor");
         let row = by_pid
-            .get(&json.prefab_id)
+            .get(&json.prefab_id.get())
             .unwrap_or_else(|| panic!("pid {} missing from the archive", json.prefab_id));
 
         assert_eq!(row.slug.as_str(), json.slug, "pid {}", json.prefab_id);
@@ -106,7 +106,7 @@ fn archive_carries_every_committed_blueprint_level() {
         let row = a
             .blueprints
             .iter()
-            .find(|b| b.slug.as_str() == json.prefab_id)
+            .find(|b| b.slug.as_str() == json.prefab_id.as_str())
             .unwrap_or_else(|| panic!("{} missing from the archive", json.prefab_id));
         let back = JsonBlueprint::from_archived(row);
 
@@ -226,7 +226,7 @@ fn archive_boot_splits_the_whole_corpus_and_never_censuses_a_blocking_prefab() {
     let mut with_blas = 0usize;
     for path in sorted_json_files(&prefabs_dir().join("descriptors")).expect("descriptors") {
         let json: PrefabDescriptor = read_json(&path).expect("parse descriptor");
-        let pid = u16::try_from(json.prefab_id).expect("everon pids fit u16");
+        let pid = u16::try_from(json.prefab_id.get()).expect("everon pids fit u16");
         let want: Vec<String> = json.blas_paths().iter().map(|s| (*s).to_string()).collect();
         assert_eq!(
             by_pid.get(&pid).map(|v| v.as_slice()),

@@ -9,7 +9,7 @@ use super::*;
 pub type HostHandle = Rc<RefCell<Option<MapHost>>>;
 
 /// Dem grid handle.
-pub type DemGridHandle = Rc<RefCell<Option<Rc<crate::world::terrain::dem::grid::DemVectorGrid>>>>;
+pub type DemGridHandle = Rc<RefCell<Option<Rc<terrain_elevation::grid::DemVectorGrid>>>>;
 
 /// New dem grid handle.
 pub fn new_dem_grid_handle() -> DemGridHandle {

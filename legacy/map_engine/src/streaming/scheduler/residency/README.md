@@ -18,10 +18,9 @@ legacy/map_engine/src/streaming/scheduler/residency/
 
 `mod.rs` defines no item of its own. It re-exports `WorldResidency`, `IngestOutcome` and
 `ResidencyEvent` from `crate::streaming::scheduler::state`; `LRU_MIN_CHUNKS`, `FETCH_FAILURE_CAP`
-and `DRAW_CULL_MARGIN_M` from `crate::streaming::scheduler::viewport`; `APPLY_BUDGET_MS` from
-`crate::streaming::scheduler::budget`; and `BUILDING_MIN_ZOOM` from
-`crate::streaming::buffers::revision`. In test builds it also imports three prefab readers from
-`crate::world::environment::buildings` and declares the three test modules, which take all of it
+and `DRAW_CULL_MARGIN_M` from `crate::streaming::scheduler::viewport`; and `APPLY_BUDGET_MS` from
+`crate::streaming::scheduler::budget`. In test builds it also imports three prefab readers from
+`prefab_catalog` (`footprint_lookups`, `prefab_rows`) and declares the three test modules, which take all of it
 through `use super::*`.
 
 | Test module | What it drives | Data |
@@ -33,7 +32,7 @@ through `use super::*`.
 ## Public surface
 
 - `WorldResidency`, `IngestOutcome`, `ResidencyEvent`, `LRU_MIN_CHUNKS`, `FETCH_FAILURE_CAP`,
-  `DRAW_CULL_MARGIN_M`, `APPLY_BUDGET_MS` and `BUILDING_MIN_ZOOM` under
+  `DRAW_CULL_MARGIN_M` and `APPLY_BUDGET_MS` under
   `crate::streaming::scheduler::residency`: nothing outside the folder names this path; callers
   import each item from its owning module.
 
@@ -41,9 +40,10 @@ through `use super::*`.
 
 - Depends on: `crate::streaming::scheduler` (`state`, `viewport`, `budget`) and
   `crate::streaming::buffers::revision` for the re-exported items;
-  `crate::world::environment::buildings` for the prefab readers the tests share; in the tests,
-  `crate::overlay` (the class gates and `INSTANCE_BUDGET`), `crate::world::environment::vegetation`
-  (the tree counts and the density grid), `flate2` and `serde_json`.
+  `prefab_catalog` for the prefab readers the tests share; in the tests, `map_draw_lanes` and
+  `label_layout::glyph_math` (the class gates, `INSTANCE_BUDGET` and the icon keys),
+  `vegetation::canopy` (the tree counts and the density grid), `prefab_catalog`'s payload reader
+  and class codes, `flate2` and `serde_json`.
 - Used by: nothing outside the folder names `scheduler::residency`;
   `legacy/map_engine/src/streaming/scheduler/mod.rs` declares the module.
 - Rules:

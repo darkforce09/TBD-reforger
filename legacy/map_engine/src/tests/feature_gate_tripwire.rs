@@ -18,9 +18,7 @@ fn map_engine_tests_require_all_features() {
     assert!(
         cfg!(feature = "render")
             && cfg!(feature = "world")
-            && cfg!(feature = "io")
             && cfg!(feature = "streaming")
-            && cfg!(feature = "bvh")
             && cfg!(feature = "scenario")
             && cfg!(feature = "store")
             && cfg!(feature = "editing"),

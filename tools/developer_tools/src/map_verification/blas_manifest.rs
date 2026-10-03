@@ -22,9 +22,9 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use crate::repository_layout::{contract_definitions_dir, terrain_dir};
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::los::world::descriptor::BlasManifest;
-use map_engine::spatial::los::world::descriptor::PrefabDescriptor;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
+use world_line_of_sight::occluder_library::BlasManifest;
+use world_line_of_sight::occluder_library::PrefabDescriptor;
 
 const TERRAIN: &str = "everon";
 const FARMHOUSE_SLUG: &str = "FarmHouse_E_1L01_Wood";
@@ -152,7 +152,7 @@ pub fn verify_blas_manifest(root: &Path) -> Result<u8> {
                 continue;
             }
         };
-        if d.prefab_id != *pid || d.blocks != entry.blocks || d.kind != entry.kind {
+        if d.prefab_id.get() != *pid || d.blocks != entry.blocks || d.kind != entry.kind {
             errs.push(format!(
                 "pid {pid}: descriptor / manifest entry disagree (pid, blocks or kind)"
             ));

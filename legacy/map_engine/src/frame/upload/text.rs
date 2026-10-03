@@ -6,8 +6,8 @@
 use crate::frame::bindings;
 use crate::frame::engine::RenderEngine;
 use crate::frame::{DrawBatch, DrawPayload, InstanceBuffer, TextRun};
-use crate::overlay::lanes::LaneRole;
-use crate::overlay::lanes::lane_id;
+use map_draw_lanes::lane_roles::LaneRole;
+use map_draw_lanes::lane_roles::lane_id;
 use wasm_bindgen::prelude::*;
 
 /// Re-export `crate::frame::TextAtlasGpu`.

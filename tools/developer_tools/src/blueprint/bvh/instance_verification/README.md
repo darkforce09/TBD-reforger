@@ -35,8 +35,8 @@ and the world-row check passes, and 1 otherwise.
 
 - Depends on: the parent's `ReconFile`, `Group`, `Match` and `Report`; the world-row check in
   `tools/developer_tools/src/blueprint/bvh/world_instances.rs`;
-  `map_engine::world::architecture::compound` (`InstancesFile`, `InstanceRecord`,
-  `InstanceKind`, `PlacementSource`, `Rigid`).
+  `building_interiors::compound` (`InstancesFile`, `InstanceRecord`, `InstanceKind`,
+  `PlacementSource`) and `geometry_primitives::rigid_transform::Rigid`.
 - Used by: `instance_verification.rs`, which re-exports `run_instances_verify`, `load`, `verify`
   and `wrap_deg`; `cargo xtask map instances-verify`, through
   `developer_tools::blueprint::run_instances_verify`; the tests in

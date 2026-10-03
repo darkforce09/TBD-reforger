@@ -3,21 +3,21 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::lod::class_visible;
+use map_draw_lanes::zoom_gates::class_visible;
 
-use crate::world::environment::classify::class_code;
+use prefab_catalog::render_classes::class_code;
 
 use crate::streaming::buffers::revision::norm;
 
 use super::*;
 
-use crate::overlay::symbology::labels::glyph_math::BUILDING_CLASSES;
+use label_layout::glyph_math::BUILDING_CLASSES;
 
-use crate::overlay::symbology::labels::glyph_math::badge_icon_key;
+use label_layout::glyph_math::badge_icon_key;
 
-use crate::overlay::symbology::labels::glyph_math::building_icon_key;
+use label_layout::glyph_math::building_icon_key;
 
-use crate::overlay::symbology::labels::glyph_math::landmark_glyph_icon_key;
+use label_layout::glyph_math::landmark_glyph_icon_key;
 
 use std::collections::{HashMap, HashSet};
 
@@ -73,18 +73,17 @@ fn load_everon_residency() -> WorldResidency {
 
 fn building_class_by_prefab_u16() -> HashMap<u16, String> {
     let everon = map_assets().join("everon");
-    let raw = crate::streaming::loaders::store::bytes_to_json(
+    let raw = prefab_catalog::world_payload::bytes_to_json(
         &std::fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
     )
     .unwrap();
     let mut out = HashMap::new();
-    for row in narrow_prefab_rows(&raw) {
+    for row in narrow_prefab_rows(&raw).expect("Everon ids are whole u32s") {
         if row.kind != "building" {
             continue;
         }
-        let pid = row.prefab_id;
-        if (0.0..65536.0).contains(&pid) && pid.fract() == 0.0 {
-            out.insert(pid as u16, row.class);
+        if let Ok(pid) = u16::try_from(row.prefab_id.get()) {
+            out.insert(pid, row.class);
         }
     }
     out
@@ -92,21 +91,20 @@ fn building_class_by_prefab_u16() -> HashMap<u16, String> {
 
 fn building_importance_by_prefab_u16() -> HashMap<u16, f64> {
     let everon = map_assets().join("everon");
-    let raw = crate::streaming::loaders::store::bytes_to_json(
+    let raw = prefab_catalog::world_payload::bytes_to_json(
         &std::fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
     )
     .unwrap();
     let mut out = HashMap::new();
-    for row in narrow_prefab_rows(&raw) {
+    for row in narrow_prefab_rows(&raw).expect("Everon ids are whole u32s") {
         if row.kind != "building" {
             continue;
         }
-        let pid = row.prefab_id;
-        if !(0.0..65536.0).contains(&pid) || pid.fract() != 0.0 {
+        let Ok(pid) = u16::try_from(row.prefab_id.get()) else {
             continue;
-        }
+        };
         if let Some(iz) = row.importance_zoom {
-            out.insert(pid as u16, iz);
+            out.insert(pid, iz);
         }
     }
     out
@@ -214,7 +212,7 @@ fn oracle_landmark_glyph_count_for_chunk(
 }
 
 fn badge_glyph_indices(buf: &[u8]) -> Vec<u16> {
-    let stride = crate::overlay::symbology::labels::glyph_math::ICON_INSTANCE_STRIDE;
+    let stride = label_layout::glyph_math::ICON_INSTANCE_STRIDE;
     buf.chunks(stride)
         .map(|chunk| u16::from_le_bytes(chunk[14..16].try_into().unwrap()))
         .collect()

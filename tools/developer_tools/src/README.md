@@ -67,7 +67,10 @@ xtask schema` commands call their entry functions directly with the checkout roo
 
 ## Boundaries
 
-- Depends on: `map_engine` with its `world`, `streaming`, `io` and `bvh` features; the image
+- Depends on: `map_engine` with its `world`, `streaming` and `scenario` features; the world
+  crates `spatial_indexes`, `prefab_catalog`, `world_chunks`, `world_store`,
+  `terrain_elevation`, `water_bodies`, `road_network`, `vegetation`, `place_names`,
+  `building_interiors`, `interior_line_of_sight`, `world_line_of_sight` and `label_layout`; the image
   crates (`image`, `png`, `image-webp`, `webp`, `resvg`, `bcdec_rs`); `tokio`, `tokio-tungstenite`,
   `axum` and `reqwest` for the browser harness and its servers; `clap`, `serde_json`, `jsonschema`,
   `flate2` and `sha2`.

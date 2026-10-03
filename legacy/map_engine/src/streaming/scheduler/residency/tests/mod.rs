@@ -3,15 +3,15 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::world::environment::classify::class_code;
+use prefab_catalog::render_classes::class_code;
 
 use super::*;
 
-use crate::world::environment::vegetation::canopy::density_grid_dims;
+use vegetation::canopy::density_grid_dims;
 
-use crate::world::environment::vegetation::canopy::density_texel_sum_for_draw_ids;
+use vegetation::canopy::density_texel_sum_for_draw_ids;
 
-use crate::world::environment::vegetation::canopy::pack_density_grid_r32;
+use vegetation::canopy::pack_density_grid_r32;
 
 use flate2::Compression;
 

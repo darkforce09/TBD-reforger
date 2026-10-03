@@ -65,7 +65,7 @@ pub(super) fn make_pointer_move_handler(
                     .filter(|c| c[0].is_finite() && c[1].is_finite())
                     .map(|c| {
                         let z = dem_grid.borrow().as_ref().and_then(|g| {
-                            map_engine::world::terrain::dem::grid::sample_grid_meters(g, c[0], c[1])
+                            terrain_elevation::grid::sample_grid_meters(g, c[0], c[1])
                         });
                         (c[0], c[1], z)
                     }),

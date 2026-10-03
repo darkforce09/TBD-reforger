@@ -3,17 +3,17 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::world::environment::buildings::obb::BuildingPrefabInfo;
-use crate::world::environment::buildings::obb::FencePrefabInfo;
-use crate::world::environment::buildings::prefab::PrefabEntry;
+use prefab_catalog::footprint_lookups::BuildingPrefabInfo;
+use prefab_catalog::footprint_lookups::FencePrefabInfo;
+use prefab_catalog::prefab_rows::PrefabEntry;
 
-use crate::spatial::indexing::world::WorldSpatialIndex;
-use crate::streaming::loaders::chunk::WorldChunk;
-use crate::streaming::loaders::manifest::ObjectsManifest;
+use crate::streaming::scheduler::world_object_index::WorldSpatialIndex;
 use map_coordinates::chunk_math::Bbox;
 use map_coordinates::chunk_math::TerrainSizeM;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use world_chunks::terrain_manifest::ObjectsManifest;
+use world_chunks::world_chunk::WorldChunk;
 
 /// Glyph prefab info.
 #[derive(Clone, Debug)]

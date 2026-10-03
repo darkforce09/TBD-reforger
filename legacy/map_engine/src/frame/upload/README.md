@@ -29,7 +29,7 @@ arrays in world metres:
 | `upload_marquee` | the rectangle's corners | `Marquee`, `PIPE_POLYGON`; `MarqueeOutline`, `PIPE_LINE` |
 | `upload_text_labels`, `upload_town_labels`, `upload_road_labels` | 20-byte glyph instances | `WorldLabels`, `WorldTownLabels`, `WorldRoadLabels`, `PIPE_TEXT` |
 
-A role id is one of `crate::overlay::lanes::role_id`; a belt ignores an id that names no lane.
+A role id is one of `map_draw_lanes::lane_roles::role_id`; a belt ignores an id that names no lane.
 Coordinates cross to the GPU relative to `map_coordinates::terrain_frames::ANCHOR`, so f32 keeps them precise:
 the graphics engine's `draw::polygons` and `draw::lines` shift meshes and lines, and
 `convert_icon_world_to_anchor` shifts glyph instances. The belt then calls `upsert_lane`, which
@@ -49,15 +49,15 @@ and the adapter's largest 2D texture.
 ## Boundaries
 
 - Depends on: `crate::frame` (the engine, `bindings`, the packet types and the text atlas type),
-  `crate::overlay::lanes` (lane roles and role ids), `crate::overlay::symbology` (the baked text
-  atlas and the glyph shift), `map_coordinates::terrain_frames::ANCHOR`, and `graphics_engine`
+  `map_draw_lanes::lane_roles` (lane roles and role ids), `render_primitives::text` (the baked
+  text atlas and the text uniform), `map_coordinates::terrain_frames::ANCHOR`, and `graphics_engine`
   (`draw::polygons`, `draw::lines`, `draw::geometry::LineVertex` and `layout::pack`).
 - Used by:
   - inside the crate: `crate::streaming::loaders::world_loader` (terrain strips and polygons),
     `crate::world::terrain::relief` and `crate::world::environment::vegetation` (hairlines),
     `crate::world::environment::locations` (the three label lanes),
-    `crate::world::terrain::satellite` (the texture limits), `crate::overlay::symbology` (the text
-    atlas), and `crate::frame` and `crate::diagnostics::readback` (`TextAtlasGpu` and
+    `crate::world::terrain::satellite` (the texture limits), and `crate::frame` and
+    `crate::diagnostics::readback` (`TextAtlasGpu` and
     `text_uniform_bytes`);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input handlers, canvas
     mount and document host under `apps/frontend/src/workspaces/editor/` (the marquee, the
@@ -67,6 +67,6 @@ and the adapter's largest 2D texture.
   (`every_lane_mutation_marks_the_frame_damaged` in
   `legacy/map_engine/src/frame/tests/damage_discipline.rs`); `connections_bind` uploads
   its lane and never touches the pick bridge of the [slot](/documentation/glossary/n_to_z.md#slot)
-  icons (`connections_bind_body_uploads_its_lane_and_skips_the_pick_bridge`), and the overlay's
-  draw-order suites in `legacy/map_engine/src/overlay/tests/tests/` read these files by path,
-  so a moved or renamed file breaks them.
+  icons (`connections_bind_body_uploads_its_lane_and_skips_the_pick_bridge`), and the lane bind
+  source pins in `legacy/map_engine/src/frame/tests/lane_bind_source_pins/` read these files by
+  path, so a moved or renamed file breaks them.

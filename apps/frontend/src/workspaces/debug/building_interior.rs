@@ -15,23 +15,23 @@
 //! natively is the mirror below — `lane_ids_match_the_render_crate` pins the two together, so the
 //! mirror can never drift. Coordinates are the building's local plan frame in metres.
 
+use building_interiors::blueprint::sight_line::clip_t_to_band;
+use building_interiors::blueprint::sight_line::LosHit;
+use building_interiors::blueprint::sight_line::LosHitKind;
+use building_interiors::blueprint::structure::BuildingBlueprint;
+use building_interiors::compound::assembly::CompoundBuilding;
+use building_interiors::compound::assembly::CoverTier;
+use building_interiors::compound::instances::Instance;
+use building_interiors::compound::instances::InstanceKind;
+use building_interiors::section::cutter::section_at_owned;
+use building_interiors::section::cutter::BuildingDrawing;
+use building_interiors::section::cutter::Seg2;
+use building_interiors::section::cutter::CUT_MAX_NY;
 use geometry_primitives::rigid_transform::Rigid;
 #[cfg(all(target_arch = "wasm32", test))]
-use map_engine::overlay::lanes::role_id;
-use map_engine::spatial::bvh::surface::SurfaceKind;
-use map_engine::world::architecture::blueprint::attribution_1::clip_t_to_band;
-use map_engine::world::architecture::blueprint::attribution_1::LosHit;
-use map_engine::world::architecture::blueprint::attribution_1::LosHitKind;
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
-use map_engine::world::architecture::compound::assembly::CompoundBuilding;
-use map_engine::world::architecture::compound::assembly::CoverTier;
-use map_engine::world::architecture::compound::instances::Instance;
-use map_engine::world::architecture::compound::instances::InstanceKind;
-use map_engine::world::architecture::section::cutter::section_at_owned;
-use map_engine::world::architecture::section::cutter::BuildingDrawing;
-use map_engine::world::architecture::section::cutter::Seg2;
-use map_engine::world::architecture::section::cutter::CUT_MAX_NY;
-use map_engine::world::terrain::roads::styling::expand_polyline_strip;
+use map_draw_lanes::lane_roles::role_id;
+use road_network::styling::expand_polyline_strip;
+use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
 
 /// Native mirror of `map_engine_render::draw_order::role_id` — the render crate is a wasm32-only
 /// dependency of the SPA, and this module's tests run natively. Not a hand-copy that can drift:

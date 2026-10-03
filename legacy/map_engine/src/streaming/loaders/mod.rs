@@ -1,26 +1,9 @@
-//! Role: Module boundary for streaming/loaders.
-//! Position: `streaming/loaders` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
-
-/// Chunk.
-pub mod chunk;
-
-/// Chunk bin.
-pub mod chunk_bin;
-
-/// Manifest.
-pub mod manifest;
-
-/// Prefab.
-pub mod prefab;
-
-/// Store.
-pub mod store;
-
-/// Residency.
-#[cfg(feature = "streaming")]
-pub mod residency;
+//! **Role:** module boundary for the browser's world and occluder loaders.
+//! **Position:** `streaming/loaders` in the map engine; the chunk, catalogue, payload and store
+//! formats they decode are crates (`world_chunks`, `prefab_catalog`, `world_store`) their callers
+//! import directly.
+//! **Signals & state:** the loaders' fetch state, owned by each loader.
+//! **Invariants:** preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 /// World loader.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]

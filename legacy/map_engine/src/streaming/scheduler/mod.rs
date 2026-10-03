@@ -21,3 +21,11 @@ pub mod budget;
 /// Queries.
 #[cfg(feature = "streaming")]
 pub mod queries;
+
+/// The chunk-granular, class-filterable point index over the resident world objects.
+#[cfg(feature = "streaming")]
+pub mod world_object_index;
+
+/// The residency's manifest, prefab and chunk-index loads and its chunk ingest.
+#[cfg(feature = "streaming")]
+pub mod chunk_ingest;

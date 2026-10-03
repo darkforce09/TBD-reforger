@@ -5,8 +5,8 @@
 
 use super::*;
 
-use crate::spatial::los::terrain::viewshed::Viewshed;
-use crate::spatial::los::terrain::viewshed::Visibility;
+use terrain_line_of_sight::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Visibility;
 
 /// (`vs_textured`, uv = (x, 1.0 − unit.y)) maps texture ROW 0 to world MAX-Y (north); the
 /// raster's row 0 is world MIN-Y (south). The encoder must therefore emit rows in REVERSE
@@ -16,10 +16,10 @@ use crate::spatial::los::terrain::viewshed::Visibility;
 /// fails with the hidden bytes at offset 0.
 #[test]
 fn encoder_flips_rows_so_north_is_texture_row_zero() {
-    let mut vs = crate::spatial::los::terrain::viewshed::Viewshed {
+    let mut vs = terrain_line_of_sight::viewshed::Viewshed {
         cols: 3,
         rows: 2,
-        cells: vec![crate::spatial::los::terrain::viewshed::Visibility::Visible; 6],
+        cells: vec![terrain_line_of_sight::viewshed::Visibility::Visible; 6],
         min_x: 0.0,
         min_y: 0.0,
         max_x: 16.0,
@@ -28,7 +28,7 @@ fn encoder_flips_rows_so_north_is_texture_row_zero() {
         obs_y: 0.0,
     };
     // South-west corner of the WORLD raster (row 0 = min_y).
-    vs.cells[0] = crate::spatial::los::terrain::viewshed::Visibility::Hidden;
+    vs.cells[0] = terrain_line_of_sight::viewshed::Visibility::Hidden;
     let rgba = encode_viewshed_rgba(&vs);
     let px = |r: usize, c: usize| &rgba[(r * vs.cols + c) * 4..(r * vs.cols + c) * 4 + 4];
     assert_eq!(

@@ -9,8 +9,8 @@ use std::cell::Cell;
 use super::super::object_verdict::*;
 use super::super::terrain_verdict::LosVerdict;
 use super::*;
-use crate::spatial::los::terrain::viewshed::Viewshed;
-use crate::spatial::los::terrain::viewshed::Visibility;
+use terrain_line_of_sight::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Visibility;
 
 fn synth_viewshed() -> Viewshed {
     let (cols, rows) = (9, 9);

@@ -23,16 +23,13 @@ pub mod data;
 pub mod editing;
 
 /// Frame: the engine, its GPU resources, and the belts that build a frame packet.
-// T-0xx Phase 2C: gated on `world`, not `render`, and the widening is what makes gate rule 3a
-// implementable at all. `frame/mod.rs` is now this crate's ONE naming of the renderer's frame
-// vocabulary, and everything else reaches that vocabulary through `crate::frame::…` —
-// but `overlay/lanes.rs` is `cfg(feature = "streaming")` and `lane_id` returns a `LaneId`, so
-// a chokepoint that only existed under `render` would have had to grant it an exception on its
-// first day. `world` is the exact tier that turns `dep:graphics_engine` on, so it is
-// the honest condition for a module whose ungated half is nothing but re-exports of that
-// crate. Everything inside `frame/` that touches a GPU keeps its own
-// `all(target_arch = "wasm32", feature = "render")`, so no code compiles here that did not
-// compile before.
+// Gated on `world`, not `render`: `frame/mod.rs` is this crate's one naming of the renderer's
+// frame vocabulary, and the `world` tier already names a `LaneId` (the overlay crates'
+// `map_draw_lanes::lane_roles::lane_id` returns one), so a chokepoint that existed only under
+// `render` would need an exception for it. `world` is the tier that turns `dep:graphics_engine`
+// on, so it is the honest condition for a module whose ungated half is nothing but re-exports of
+// that crate. Everything inside `frame/` that touches a GPU keeps its own
+// `all(target_arch = "wasm32", feature = "render")`.
 #[cfg(feature = "world")]
 pub mod frame;
 
@@ -48,16 +45,15 @@ pub mod doll;
 #[cfg(feature = "world")]
 pub mod overlay;
 
-/// Spatial.
-// `bvh` alone is not enough: `spatial/terrain_los` reads `crate::world::terrain::dem`. `world` implies `bvh`.
+/// Spatial: the viewshed lane upload.
 #[cfg(feature = "world")]
 pub mod spatial;
 
 /// Streaming.
-#[cfg(feature = "io")]
+#[cfg(feature = "streaming")]
 pub mod streaming;
 
-/// The static world: terrain, environment and architecture — streamed, never authored.
+/// The static world: terrain and environment loaders, belts and meshes — streamed, never authored.
 #[cfg(feature = "world")]
 pub mod world;
 

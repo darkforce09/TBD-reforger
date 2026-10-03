@@ -82,15 +82,20 @@ pub(super) fn chunk_bin_errors(
     let raw = &sample["chunk"];
     let rows = raw["instances"].as_array().cloned().unwrap_or_default();
     let doc = json!({ "prefabs": prefabs_sample.clone() });
-    let (by_id, _) = build_prefab_maps(narrow_prefab_rows(&doc));
-    let Some(oracle) = parse_chunk(&id, raw, &by_id) else {
+    let prefab_tables = narrow_prefab_rows(&doc)
+        .and_then(|prefab_rows| Ok((build_prefab_maps(prefab_rows).0, class_code_table(&doc)?)));
+    let (by_id, class_by_pid) = match prefab_tables {
+        Ok(tables) => tables,
+        Err(e) => return vec![format!("prefab sample: {e}")],
+    };
+    let Some(oracle) = parse_chunk(&id.as_str().into(), raw, &by_id) else {
         return vec![format!("parse_chunk({id}) read no instances")];
     };
     let (n, len) = (oracle.count as usize, committed.len());
 
     // A. BYTE IDENTITY against a fresh emit from the golden JSON.
     let tmp = std::env::temp_dir().join(format!("t935-12-golden-{}.bin", std::process::id()));
-    let pods = pods_from_rows(&rows, &class_code_table(&doc));
+    let pods = pods_from_rows(&rows, &class_by_pid);
     let reemit = (|| -> Result<Vec<u8>> {
         write_chunk_bin(&tmp, cx, cy, &pods)?;
         fs::read(&tmp).map_err(anyhow::Error::from)
@@ -169,7 +174,7 @@ pub(super) fn chunk_bin_errors(
 
     // B. Shipped binary loader vs shipped JSON loader, column for column. E rides on it, because
     // `dec.cx`/`dec.cy` come from the HEADER — not from the file name, not from the golden JSON.
-    match parse_chunk_bin_for(&id, committed) {
+    match parse_chunk_bin_for(&id.as_str().into(), committed) {
         Err(e) => errs.push(format!("parse_chunk_bin_for({id}): {e}")),
         Ok(dec) => {
             let (bid, bn, jn) = (&dec.id, dec.count, oracle.count);

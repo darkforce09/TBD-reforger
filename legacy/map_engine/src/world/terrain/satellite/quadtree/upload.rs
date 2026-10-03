@@ -17,10 +17,7 @@ pub(super) async fn commit_mip(
     terrain_w: f64,
     terrain_h: f64,
     mip: &TbdSatMip,
-    blocks: Vec<(
-        crate::world::terrain::satellite::streamer::TbdSatTile,
-        Vec<u8>,
-    )>,
+    blocks: Vec<(satellite_imagery::TbdSatTile, Vec<u8>)>,
     mode: u32,
     mip_count: u32,
     opacity: f64,

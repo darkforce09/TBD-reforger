@@ -31,7 +31,7 @@ fn everon_density_tiles() -> Vec<std::path::PathBuf> {
 ///
 /// Decode each tile with the new `cast_slice` decoder and re-emit it through the *unchanged*
 /// `encode_tbdd`; the result must be the file, byte for byte. This is the independent half of
-/// the parity pin in `map_engine::world`: that one proves the two decoders agree
+/// the parity pin in `world_file_formats::density`: that one proves the two decoders agree
 /// with each other, this one proves the pair still agrees with what is on disk — the emitter
 /// and the decoder could have drifted together and neither test alone would notice.
 #[test]

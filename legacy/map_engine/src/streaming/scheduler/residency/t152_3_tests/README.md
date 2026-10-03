@@ -17,9 +17,10 @@ legacy/map_engine/src/streaming/scheduler/residency/t152_3_tests/
 
 - Depends on: the parent module's re-exports and test imports through `use super::*`
   (`WorldResidency`, `fence_prefab_lookup`, `building_prefab_lookup`, `narrow_prefab_rows`);
-  `crate::overlay` for the class gates and the glyph keys; `crate::world` for the class codes, the
-  footprint colours, the bridge fills and the strip geometry; `crate::streaming::buffers::revision`
-  for `norm`; and the committed data it reads from disk: the manifest, prefab catalogue, chunk
+  `map_draw_lanes::zoom_gates` for the class gates and `label_layout::glyph_math` for the glyph
+  keys; `prefab_catalog` for the class codes, the footprint corners and the payload reader;
+  `crate::streaming::buffers::footprint` for the bridge fills; `road_network::cartographic_strip`
+  for the strip geometry; `crate::streaming::buffers::revision` for `norm`; and the committed data it reads from disk: the manifest, prefab catalogue, chunk
   index and chunks under `assets/terrains/everon/`, and `assets/glyphs/manifest.json` with
   the atlas key file `assets/glyphs/atlas/world-glyphs.json`.
 - Used by: nothing outside the folder;

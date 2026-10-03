@@ -38,8 +38,8 @@ no manifest, so it never replaces a full one.
   `Asset`, `classify_prefab`, `cover_for_prefab`, `slug_of` and `write_if_changed` in
   `tools/developer_tools/src/blueprint/bvh/batch_processing.rs`; `hull_triangles` in
   `tools/developer_tools/src/blueprint/architectural_analysis/convex_hulls.rs`;
-  `map_engine::spatial::los::world::descriptor` (`PrefabDescriptor`, `BlasManifest`,
-  `BlasEntry`, `DescEntry`, `Totals`) and `map_engine::spatial::bvh`; `jsonschema`.
+  `world_line_of_sight::occluder_library` (`PrefabDescriptor`, `BlasManifest`, `BlasEntry`,
+  `DescEntry`, `Totals`) and `spatial_indexes::bounding_volume_hierarchy`; `jsonschema`.
 - Used by: `library_reader.rs`, which re-exports `build_library`, `load_prefab_rows`,
   `world_census` and `write_library` (and, to its tests, `validate_against` and `hull_sample`);
   the `--all-prefabs` arm in

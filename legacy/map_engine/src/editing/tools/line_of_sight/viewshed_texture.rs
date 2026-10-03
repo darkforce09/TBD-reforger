@@ -3,7 +3,7 @@
 //! Signals & state: session-local measurement state; never the authored document.
 //! Invariants: rows are padded to the 256-byte copy alignment the GPU copy requires; the world rect travels with the bytes so the caller needs no raster arithmetic.
 
-use crate::spatial::los::terrain::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Viewshed;
 
 use super::wash_palette::encode_viewshed_rgba;
 

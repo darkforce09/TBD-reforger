@@ -5,11 +5,11 @@
 //! wall-clock deadline.
 
 use super::*;
-use crate::spatial::los::interior::wash::MAX_WASH_RADIUS_M;
-use crate::spatial::los::interior::wash::WASH_BATCH_CELLS;
-use crate::spatial::los::interior::wash::WashParams;
-use crate::spatial::los::interior::wash::wash_band;
-use crate::spatial::los::terrain::viewshed::Visibility;
+use interior_line_of_sight::floor_wash::MAX_WASH_RADIUS_M;
+use interior_line_of_sight::floor_wash::WASH_BATCH_CELLS;
+use interior_line_of_sight::floor_wash::WashParams;
+use interior_line_of_sight::floor_wash::wash_band;
+use terrain_line_of_sight::viewshed::Visibility;
 
 /// A blocker that hides everything east of the observer (so a wash has all three classes) and
 /// costs ~100 µs a call. The COST is the point: the scheduler's budget is only observable when a

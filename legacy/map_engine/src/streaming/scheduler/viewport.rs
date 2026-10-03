@@ -4,12 +4,12 @@
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
 use crate::streaming::buffers::packer::deinterleave;
-use crate::streaming::loaders::chunk::WorldChunk;
 use crate::streaming::scheduler::state::ResidencyEvent;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::world::environment::buildings::footprint::building_visible;
-use crate::world::environment::classify::class_code;
 use map_coordinates::chunk_math::chunk_ids_for_viewport;
+use map_draw_lanes::zoom_gates::building_visible;
+use prefab_catalog::render_classes::class_code;
+use world_chunks::world_chunk::WorldChunk;
 
 /// Canonical draw cull margin m value.
 pub const DRAW_CULL_MARGIN_M: f64 = 0.0;
@@ -129,7 +129,7 @@ impl WorldResidency {
         self.insert_chunk(
             id,
             WorldChunk {
-                id: id.to_string(),
+                id: id.into(),
                 ..Default::default()
             },
         );

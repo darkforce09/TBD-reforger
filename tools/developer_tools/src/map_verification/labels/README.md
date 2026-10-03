@@ -35,10 +35,10 @@ height). With `strict` set, both cases fail, as does a file with fewer than 10 a
 
 ## Boundaries
 
-- Depends on: `map_engine`'s elevation decoding and sampling
-  (`world::terrain::dem`), peak declutter (`world::environment::locations::peaks`), town-label
-  importance (`overlay::symbology::labels::importance`) and road-name placement
-  (`world::environment::locations::route_*`); the schemas in `contracts/definitions/`;
+- Depends on: elevation decoding and sampling (`terrain_elevation`), peak declutter
+  (`place_names::peaks`), town-label importance (`label_layout::importance`), road-name
+  placement (`place_names::route_placement`, `route_geometry`, `route_labels`) and the road
+  network (`road_network::network`); the schemas in `contracts/definitions/`;
   `crate::repository_layout` for every path.
 - Used by: `cargo xtask schema height-labels`, `locations`, `town-labels`, `road-names` and
   `terrain-alignment`, through `tools/xtask/src/verifications/map_assets/mod.rs`; the CI tasks

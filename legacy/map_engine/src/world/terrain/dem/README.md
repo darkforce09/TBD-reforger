@@ -1,103 +1,30 @@
-# Elevation model
+# Elevation model loader
 
-The terrain's elevation model: the manifest that places the height raster on the world, the
-decoders that turn the 16-bit PNG or the raw `TBDE` grid into a metres cache, bilinear sampling,
-and the downsampled grid that contours, the sea band, the airfield apron and the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s height readout read.
+The map engine's side of the terrain's elevation model: the browser fetch of a raw `TBDE` grid
+that a terrain manifest declares. The model itself (placement, decoders, sampling, the vector grid,
+the full-resolution raster) is the [`terrain_elevation`](/crates/terrain/terrain_elevation/README.md)
+crate, which every caller imports directly.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/world/terrain/dem/
-├── full_resolution.rs  `FullResolutionDem`: the native `u16` raster, its handle, its 2 m lookup
-├── grid.rs             `DemVectorGrid`: the box-averaged metres grid, its 2× reduction, its sampling
-├── loader.rs           the browser fetch of a manifest-declared raw grid, streamed with progress
-├── manifest.rs         `DemManifest`: the raster's world rectangle, size, axis flips and height range
-├── mod.rs              the module tree
-├── png.rs              16-bit PNG decode into samples and into the `f32` metres cache
-├── raw.rs              the `TBDE` raw grid: whole or streamed decode, and the emitter framing
-├── sampling.rs         sample-to-metres conversion, world-to-pixel mapping and bilinear sampling
-└── tests/              unit tests: full-resolution raster, vector grid, PNG decode, raw grid, sampling
+├── loader.rs  the browser fetch of a manifest-declared raw grid, streamed with progress
+└── mod.rs     the module tree: `loader`
 ```
 
 ## How it works
 
-A terrain manifest's `dem` block names the PNG and its encoding. Everon's
-(`assets/terrains/everon/manifest.json`) names `dem/everon-dem-16bit.png`: 6400 × 6400 samples
-at 2 m, `uint16-linear` from −204.78 m to 375.53 m, no axis flip. A manifest may also declare a
-`raw` block (`dem/elevation.dem`, encoding `tbde-v1`). At boot `crate::streaming::host` asks
-`load_declared_raw` for the raw grid first, which streams it only when the block names an encoding
-this build reads; otherwise it fetches the PNG and runs `decode_png_to_meters`. Either path yields
-a `DecodedDem`: one `f32` height in metres per sample, row-major. The `TBDE` header is
-`world_file_formats::containers::tbde::TbdeHeader`.
-
-| Source | Layout | Sample to metres |
-|---|---|---|
-| PNG | 16-bit, channel 0 read big-endian | `min + v / 65535 · (max − min)` (`uint16_to_meters`) |
-| `TBDE` | a `TbdeHeader`, then `width × height` little-endian `u16` | `offset_m + v · scale_m` |
-
-`RawDemSink` decodes the raw grid chunk by chunk as the response arrives: it checks the length the
-header declares against the whole file's length before it allocates, fills one sample vector that
-never moves, carries a sample split across two chunks, and `finish` refuses a payload that is short
-or long.
-
-`world_to_pixel` maps a world `(x, z)` onto continuous pixel coordinates across the manifest's
-rectangle, the far corner landing on the last pixel, mirrored on a flipped axis;
-`sample_elevation_meters` (a `u16` raster) and `sample_elevation_from_meters_cache` (the `f32`
-cache) interpolate bilinearly and answer `None` off the raster. `downsample_dem_grid` box-averages
-the cache by `DEM_VECTOR_GRID_FACTOR` (4), Everon's 6400² samples at 2 m becoming a 1600² grid of
-8 m cells, and records its highest value, which bounds the contour levels; `reduce_grid_2x` halves
-a grid for the coarse contour intervals, and `sample_grid_meters` reads a height from it.
-
-`FullResolutionDem` keeps the source `u16` samples at their native spacing with the linear
-`SampleEncoding` of either source, over the manifest's `worldBounds` footprint, oriented like the
-vector grid (sample `(0, 0)` at the footprint's south-west corner). `height_at` interpolates
-bilinearly and answers `None` off the footprint. The terrain boot publishes it into a
-`FullResolutionDemHandle` only when its scope keeps the raster (the terrain-and-imagery scope a
-fire-planning map uses); the Mission Creator's full scope leaves the handle empty.
-
-## Public surface
-
-- `manifest`: `DemManifest` and `PixelCoord`.
-- `sampling`: `uint16_to_meters`, `meters_cache`, `world_to_pixel`, `bilinear_sample`,
-  `sample_elevation_meters`, `sample_elevation_from_meters_cache` and `in_coverage`.
-- `png`: `decode_png_gray16`, `decode_png_to_meters`, `DecodedDem` and `PngError`.
-- `raw`: `RawDem`, `RawDemSink` and `to_bytes`; `loader::load_declared_raw`.
-- `grid`: `DemVectorGrid`, `DEM_VECTOR_GRID_FACTOR`, `downsample_dem_grid`, `reduce_grid_2x` and
-  `sample_grid_meters`.
-- `full_resolution`: `FullResolutionDem`, `SampleEncoding`, `RasterFootprint`,
-  `FullResolutionDemHandle`, `new_full_resolution_dem_handle` and `height_from_handle`.
+At boot `crate::streaming::host` asks the loader for the raw grid first: `raw_block_is_readable`
+accepts a `raw` block only when it names an encoding this build reads (`tbde-v1`), and the loader
+then streams the file through `terrain_elevation::raw::RawDemSink`, reporting byte progress, into
+the same `DecodedDem` the PNG path produces. Without a readable block the host fetches the PNG and
+runs `terrain_elevation::png::decode_png_to_meters`.
 
 ## Boundaries
 
-- Depends on: `world_file_formats::containers` and `world_file_formats::archives::codec` (the `TBDE` header and its
-  errors); `map_coordinates::rounding` (rounding); the `png` crate; and, for the loader,
-  `crate::streaming` (the manifest's raw block) and `browser_platform::fetch` (the streamed GET
-  and its byte progress, which the streaming host turns into boot progress).
-- Used by:
-  - `crate::streaming::host`, which boots the elevation model and keeps the vector grid;
-  - `crate::world::terrain::relief` (contours, sea band), `crate::world::terrain::roads` (the
-    airfield apron) and `crate::world::environment::locations` (spot heights);
-  - `crate::spatial::los::terrain` and `crate::editing::tools::line_of_sight`, which take a
-    `DemManifest`;
-  - the Mission Creator's canvas and pointer handlers in
-    `apps/frontend/src/workspaces/editor/`, which read heights with `sample_grid_meters`;
-  - the world export in `tools/developer_tools/src/world_export_pipeline/`, which writes
-    `dem/elevation.dem` with `raw::to_bytes`, and the label and alignment checks in
-    `tools/developer_tools/src/map_raster_pipeline/` and
-    `tools/developer_tools/src/map_verification/`.
-- Rules: `png.rs` compiles with the `world` feature, `raw.rs` with `io` and `loader.rs` only for
-  wasm32 with `render`; the raw grid decodes the same in any chunk size and from a misaligned
-  buffer (`streamed_in_any_chunk_size_matches_the_whole_buffer`,
-  `misaligned_payload_decodes_identically_to_the_aligned_one` in `tests/raw_tests.rs`); dimensions
-  the file cannot hold are refused before any allocation
-  (`hostile_dimensions_are_rejected_before_allocating`); the raw grid and the PNG decode to the same
-  samples, and over Everon's height range to metres within 0.1 mm
-  (`dem_and_png_decode_to_the_same_grid_and_metres`,
-  `everon_range_keeps_the_grid_exact_and_metres_within_f32_rounding`); the box average keeps a
-  constant grid constant (`box_average_of_constant_is_constant` in `tests/grid_tests.rs`); a stored
-  0 reads exactly the minimum height and 65 535 the maximum (`zero_is_exact_min`,
-  `full_scale_is_max_within_epsilon` in `tests/sampling_tests.rs`); the world rectangle's corners
-  map to the first and last pixel, mirrored when the manifest flips an axis
-  (`world_to_pixel_endpoints`, `world_to_pixel_axis_flip`); a point off the raster samples as
-  `None` (`sample_elevation_out_of_bounds_is_none`).
+- Depends on: `terrain_elevation`, `world_chunks::terrain_manifest` (the manifest's raw block)
+  and `browser_platform::fetch` (the streamed GET and its byte progress, which the streaming host
+  turns into boot progress).
+- Used by: `crate::streaming::host`, which boots the elevation model.
+- Rules: `loader.rs` compiles only for wasm32 with the `render` feature.

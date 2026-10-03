@@ -14,12 +14,12 @@ use crate::diagnostics::timing::gpu::GpuTimer;
 use crate::frame::bindings;
 use crate::frame::engine::CLEAR_COLOR;
 use crate::frame::engine::RenderEngine;
-use crate::overlay::lanes::LaneRole;
-use crate::overlay::lanes::lane_id;
 use camera_math::ortho::state::OrthoCamera;
 use map_coordinates::terrain_frames::EVERON_BOUNDS;
 use map_coordinates::terrain_frames::INITIAL_TARGET;
 use map_coordinates::terrain_frames::INITIAL_ZOOM;
+use map_draw_lanes::lane_roles::LaneRole;
+use map_draw_lanes::lane_roles::lane_id;
 
 use crate::frame::pipelines::building::create_building_pipeline;
 use crate::frame::pipelines::create_map_shader;

@@ -1,0 +1,29 @@
+# Map label layout: label declutter by distance and importance, town label importance and fade,
+# world object glyph sizing and building icon keys, and the packing of decluttered labels into
+# monospaced glyph instances. No GPU handle, no browser binding.
+[package]
+name = "label_layout"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Map label declutter, town importance, world glyph sizing and label glyph packing."
+
+[package.metadata.layout]
+category = "crates/map_overlay"
+tier = 1
+targets = "any"
+
+[dependencies]
+newtype_ids = { workspace = true }
+render_primitives = { workspace = true }
+# The location rows of a terrain's `locations.json` derive their JSON form.
+serde = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+# The glyph coverage and id cases read the committed Everon label data.
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

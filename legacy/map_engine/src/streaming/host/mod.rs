@@ -29,10 +29,10 @@ use crate::streaming::loaders::world_loader::WorldHost;
 
 /// Re-export `crate::streaming::memory::budget::hud_suffixasmemory_hud_suffix`.
 pub use crate::streaming::memory::budget::hud_suffix as memory_hud_suffix;
-use crate::world::terrain::relief::hillshade::build_hillshade_image;
 use crate::world::terrain::relief::host::DemVectors;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use terrain_relief::hillshade::build_hillshade_image;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::closure::Closure;
 mod queries;

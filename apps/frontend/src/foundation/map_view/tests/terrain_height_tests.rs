@@ -1,9 +1,7 @@
 //! Height reads through a shared full-resolution elevation handle.
 
 use super::TerrainHeights;
-use map_engine::world::terrain::dem::full_resolution::{
-    FullResolutionDem, RasterFootprint, SampleEncoding,
-};
+use terrain_elevation::full_resolution::{FullResolutionDem, RasterFootprint, SampleEncoding};
 
 #[test]
 fn answers_none_until_the_raster_is_published() {

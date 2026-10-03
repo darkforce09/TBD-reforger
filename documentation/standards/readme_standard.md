@@ -121,11 +121,14 @@ The gate checks the grammar; these conventions keep every block readable the sam
   after the heading as the tree.
 
 ```text
-legacy/map_engine/src/spatial/los/interior/
-├── mod.rs     declares both modules, compiled only with the `io` feature
-├── tests/     unit tests for the walker and the wash
-├── walker.rs  observer-to-target traces through a compound building, with blocking and concealment
-└── wash.rs    per-floor visibility rasters around an observer, whole or in budgeted batches
+crates/line_of_sight/interior_line_of_sight/src/
+├── compound_walk.rs          observer-to-target traces through a compound building, with blocking
+├── error.rs                  `Error` and `Result`: a `ViewshedCapRefused` behind one type
+├── floor_wash.rs             per-floor visibility rasters around an observer, whole or in batches
+├── lib.rs                    the crate root: module header, `mod` lines and re-exports
+├── prelude.rs                the names most readers import
+├── sight_line_evaluation.rs  crossings reduced to named hits and concealment
+└── tests/                    unit tests for the compound walk and the floor wash
 ```
 
 ## Kinds
@@ -139,7 +142,7 @@ table, with a skeleton and a worked sample written from a real folder; the
 | area root | Getting started | `readme_area_root.md` | `apps/`, `apps/mod/`, `tools/` |
 | crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `apps/api/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
 | domain or subsystem | Public surface | `readme_domain.md` | `apps/api/src/missions/`, `legacy/map_engine/src/spatial/` |
-| leaf | none | `readme_leaf.md` | `legacy/map_engine/src/spatial/los/interior/` |
+| leaf | none | `readme_leaf.md` | `crates/line_of_sight/interior_line_of_sight/src/` |
 | page | Routes, Data, States | `readme_page.md` | `apps/frontend/src/pages/operations/schedule/` |
 | app | Routes, Public surface | `readme_app.md` | `apps/frontend/src/workspaces/editor/` |
 | command-line | Commands | `readme_command_line.md` | `tools/developer_tools/src/bin/`, `tools/xtask/src/commands/db/` |

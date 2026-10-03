@@ -6,8 +6,8 @@
 use super::super::wash_palette::*;
 use super::*;
 
-use crate::spatial::los::terrain::viewshed::Viewshed;
-use crate::spatial::los::terrain::viewshed::Visibility;
+use terrain_line_of_sight::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Visibility;
 
 // ── T-644 — the engine texture payload (256-row-pad) ─────────────────────────────────────────
 

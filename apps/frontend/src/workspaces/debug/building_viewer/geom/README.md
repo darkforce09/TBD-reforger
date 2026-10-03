@@ -26,10 +26,10 @@ floor's wall centerlines as ghosts.
 
 - Depends on: the parent `geom.rs`, through `use super::*` (`StaticLanes`, the colour constants,
   `ramp`, `to_world`, `rect_corners`, `seg`, `push_strip`, `append_polygon`) and `ViewFloor` from
-  `apps/frontend/src/workspaces/debug/building_viewer.rs`; `map_engine::world`:
-  `architecture::blueprint::structure` (`BuildingBlueprint`, `BuildingLevel`),
-  `architecture::section::cutter` (`BuildingDrawing`, `HeightField`, `through_voids`, the plan cell
-  and floor window constants) and `terrain::roads::styling::expand_polyline_strip`.
+  `apps/frontend/src/workspaces/debug/building_viewer.rs`; `building_interiors`:
+  `blueprint::structure` (`BuildingBlueprint`, `BuildingLevel`) and `section::cutter`
+  (`BuildingDrawing`, `HeightField`, `through_voids`, the plan cell and floor window constants);
+  and `road_network::styling::expand_polyline_strip`.
 - Used by: `geom.rs`, which re-exports `build_static_lanes`;
   `apps/frontend/src/workspaces/debug/building_interior.rs`, whose `build_interior_lanes`
   starts from it and routes the result onto the bench's `INTERIOR_*` lanes; the unit tests in

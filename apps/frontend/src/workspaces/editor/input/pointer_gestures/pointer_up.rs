@@ -418,9 +418,7 @@ pub(super) fn make_pointer_up_handler(
                         let w = cam.unproject_xy(start_x, start_y);
                         if w[0].is_finite() && w[1].is_finite() {
                             let z = dem_grid.borrow().as_ref().and_then(|g| {
-                                map_engine::world::terrain::dem::grid::sample_grid_meters(
-                                    g, w[0], w[1],
-                                )
+                                terrain_elevation::grid::sample_grid_meters(g, w[0], w[1])
                             });
                             if tool_mode.get_untracked().is_los() {
                                 if los_mode.get_untracked().is_viewshed() {

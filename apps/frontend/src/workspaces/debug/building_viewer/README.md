@@ -77,11 +77,12 @@ uses).
 ## Boundaries
 
 - Depends on: `render_primitives::draw::triangulate` (the footprint triangulation);
-  `map_engine`: `world` (the architecture blueprints, the compound building and its doors, the
-  section cutter, and the strip helpers),
-  `spatial::bvh::sidecar` and `spatial::los::interior::wash`,
-  `editing::tools::line_of_sight::viewshed_texture`, `frame` (`RenderEngine`, `RafPump`) and
-  `overlay::lanes::role_id`; the module root's types and the bench's lane set in
+  `building_interiors` (the blueprints, the compound building and its doors, the section
+  cutter); `road_network::styling` (the strip helpers); `spatial_indexes`' BVH sidecar;
+  `interior_line_of_sight::floor_wash`; `terrain_line_of_sight::viewshed`;
+  `map_draw_lanes::lane_roles::role_id`; `map_engine`:
+  `editing::tools::line_of_sight::viewshed_texture` and `frame` (`RenderEngine`, `RafPump`); the
+  module root's types and the bench's lane set in
   `apps/frontend/src/workspaces/debug/building_interior.rs`; `gloo_net`, `wasm_bindgen` and
   `web_sys` in the browser build. Nothing from `crate::foundation`.
 - Used by:

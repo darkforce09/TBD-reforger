@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use map_engine::world::terrain::dem::png::decode_png_gray16;
-use map_engine::world::terrain::dem::raw::RawDem;
+use terrain_elevation::png::decode_png_gray16;
+use terrain_elevation::raw::RawDem;
 use world_file_formats::containers::header::HEADER_BYTES;
 
 use super::*;
@@ -179,7 +179,7 @@ fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
 /// vanishing into an ignore count.
 #[test]
 fn everon_elevation_dem_matches_the_shipped_png() {
-    use map_engine::world::terrain::dem::sampling::uint16_to_meters;
+    use terrain_elevation::sampling::uint16_to_meters;
 
     let root = compiled_checkout_root().expect("repository root");
     let png = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png");

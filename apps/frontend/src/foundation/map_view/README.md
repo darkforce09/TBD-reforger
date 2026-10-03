@@ -77,7 +77,7 @@ runs the full scope, which leaves the heights empty.
 - Depends on: `camera_math` (`ortho::state`); `browser_platform` (`fetch`); `map_engine`
   (`frame::engine::RenderEngine`, `frame::RafPump`, `streaming::host` for the boot, the host and grid handles and the
   camera settle, `streaming::bridge` for the preferences and progress types,
-  `world::terrain::dem::full_resolution` for the heights); `web-sys`, `js-sys`, `wasm-bindgen`,
+  and `terrain_elevation::full_resolution` for the heights); `web-sys`, `js-sys`, `wasm-bindgen`,
   `serde` and `serde_json`.
 - Used by: the Mission Creator's canvas mount, boot tasks, input listeners and frame loop under
   `apps/frontend/src/workspaces/editor/`; map pickers under
@@ -90,5 +90,5 @@ runs the full scope, which leaves the heights empty.
 
 - [Shared foundations](/apps/frontend/src/foundation/README.md) — where the map seam sits
   among the other foundations.
-- [Elevation model](/legacy/map_engine/src/world/terrain/dem/README.md) — the
+- [Elevation model](/crates/terrain/terrain_elevation/README.md) — the
   full-resolution raster and the vector grid the heights come from.

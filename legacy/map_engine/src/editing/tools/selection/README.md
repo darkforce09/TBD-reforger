@@ -48,7 +48,7 @@ when the dragged entity is selected, otherwise that entity alone.
 
 - Depends on: `camera_math::ortho::state::OrthoCamera`, `crate::data::store` (`SlotSoa` and
   `MissionDocCore::GRID_CELL_M`), `crate::editing::picking`,
-  `crate::spatial::indexing::point_index::PointIndex` for the self-checks, and
+  `spatial_indexes::point_indexes::point_index::PointIndex` for the self-checks, and
   `crate::frame::EngineHandle`, re-exported on `wasm32` with the `render` feature.
 - Used by:
   - the Mission Creator's select tool and pointer gestures

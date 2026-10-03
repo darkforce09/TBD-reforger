@@ -6,7 +6,7 @@
 use super::super::capture::LosShot;
 use super::super::terrain_verdict::LosVerdict;
 use super::*;
-use crate::spatial::los::terrain::sampler::ProfileSample;
+use terrain_line_of_sight::elevation_profile::ProfileSample;
 
 /// A profile sample at an along-segment distance and a ground elevation.
 fn s(dist_m: f64, elev_m: f64) -> ProfileSample {

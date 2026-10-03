@@ -2,7 +2,7 @@
 //!
 //! Copies Workbench-exported building blueprints from the profile export dir into
 //! `assets/terrains/everon/prefabs/buildings/`, validating each file by a serde round-trip
-//! through `map_engine::building_blueprint::BuildingBlueprint` (the exact contract the
+//! through `building_interiors::blueprint::structure::BuildingBlueprint` (the exact contract the
 //! `/debug/building-viewer` bench and the LOS raycaster consume — a file that ingests is a file
 //! the viewer can render).
 //!
@@ -85,10 +85,9 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
             }
             matched += 1;
             let text = fs::read_to_string(&path)?;
-            match serde_json::from_str::<
-                map_engine::world::architecture::blueprint::structure::BuildingBlueprint,
-            >(&text)
-            {
+            match serde_json::from_str::<building_interiors::blueprint::structure::BuildingBlueprint>(
+                &text,
+            ) {
                 Ok(bp) => {
                     let walls: usize = bp.levels.iter().map(|l| l.walls.len()).sum();
                     let windows: usize = bp.levels.iter().map(|l| l.windows.len()).sum();

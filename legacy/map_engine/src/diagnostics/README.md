@@ -51,7 +51,7 @@ with it. The crate logs through `browser_platform`'s console macros.
 ## Boundaries
 
 - Depends on: `crate::frame` (the engine, its pipelines, bindings, packet tables and compute cull),
-  `camera_math` (the check cameras), `crate::overlay::lanes` (lane ids), `crate::world::scene`
+  `camera_math` (the check cameras), `map_draw_lanes::lane_roles` (lane ids), `crate::world::scene`
   (the stress quads), `map_coordinates` (the anchor), `crate::doll` (the doll check),
   `render_primitives` (instance layouts, line vertices, text packing) and `graphics_engine`
   (`draw::encode`), and `wgpu`, `wasm-bindgen`, `js-sys` and `web-sys`.

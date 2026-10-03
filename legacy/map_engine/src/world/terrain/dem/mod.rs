@@ -1,28 +1,13 @@
-//! Role: Module boundary for terrain/dem.
-//! Position: `world/terrain/dem` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+//! The terrain's elevation model in the map engine: the browser loader of the raw grid.
+//!
+//! **Role:** declares the wasm32 raw-grid [`loader`]; the elevation model itself (the PNG and raw
+//! decoders, the manifest, the grid and the sampling) is `terrain_elevation`, which its callers
+//! import directly.
+//! **Position:** `world/terrain/dem`, behind the `world` feature; the terrain boot in
+//! `crate::streaming::host` calls the loader.
+//! **Signals & state:** none here; the loader's fetch state is its own.
+//! **Invariants:** the loader hands every grid it fetches to `terrain_elevation`'s decoder.
 
-/// Full-resolution elevation raster: the native `u16` samples and their bilinear height lookup.
-pub mod full_resolution;
-
-/// Grid.
-pub mod grid;
-
-/// Manifest.
-pub mod manifest;
-
-/// Png.
-#[cfg(feature = "world")]
-pub mod png;
-
-/// Raw.
-#[cfg(feature = "io")]
-pub mod raw;
-
-/// Sampling.
-pub mod sampling;
-
-/// Loader.
+/// The browser fetch of a manifest-declared raw grid, streamed with progress.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod loader;

@@ -1,11 +1,9 @@
-//! Role: Module boundary for symbology/atlas.
-//! Position: `overlay/symbology/atlas` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+//! **Role:** the symbol atlas's GPU upload.
+//! **Position:** `overlay/symbology/atlas` in the map engine; the atlas cells it uploads are
+//! `unit_symbology::symbol_atlas`.
+//! **Signals & state:** the atlas texture, owned by `gpu`.
+//! **Invariants:** preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-/// Gpu.
+/// The atlas texture upload.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod gpu;
-
-/// Raster.
-pub mod raster;

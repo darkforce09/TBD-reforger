@@ -14,9 +14,9 @@
 //! straight `[r, g, b, a]` in linear space; a lane is appended to, never cleared, so a caller
 //! composes several producers into one [`InteriorLanes`].
 
-use map_engine::world::architecture::blueprint::attribution_1::LosHit;
-use map_engine::world::architecture::blueprint::attribution_1::LosHitKind;
-use map_engine::world::terrain::roads::styling::expand_polyline_strip;
+use building_interiors::blueprint::sight_line::LosHit;
+use building_interiors::blueprint::sight_line::LosHitKind;
+use road_network::styling::expand_polyline_strip;
 
 use super::building_interior::{InteriorLanes, RAY_FOLIAGE};
 

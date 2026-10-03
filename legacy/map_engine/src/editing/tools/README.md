@@ -56,8 +56,9 @@ set of patterns, edges, axes and thresholds.
 
 - Depends on: `crate::data::store`
   (the [slot](/documentation/glossary/n_to_z.md#slot) projection, the grid cell, the placement algebra),
-  `camera_math::ortho` for the frozen camera, `crate::spatial` (the point index and the terrain,
-  world and interior line-of-sight cores), `crate::world::terrain::dem::manifest`, and
+  `camera_math::ortho` for the frozen camera, `spatial_indexes` (the point index), the terrain,
+  world and interior line-of-sight crates (`terrain_line_of_sight`, `world_line_of_sight`,
+  `interior_line_of_sight`), `terrain_elevation::manifest`, and
   `crate::editing::picking`.
 - Used by:
   - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the tool overlays

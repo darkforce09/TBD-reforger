@@ -2,17 +2,17 @@
 
 use super::super::building_interior::{self, InteriorLanes, LevelCuts};
 use super::{geom, Cam, Drag, RayEnd, ViewFloor, DEFAULT_PREFAB_PATH};
+use building_interiors::blueprint::sight_line::LosResult;
+use building_interiors::blueprint::structure::BuildingBlueprint;
+use building_interiors::compound::assembly::CompoundBuilding;
+use building_interiors::compound::instances::InstancesFile;
+use building_interiors::section::cutter::BuildingDrawing;
+use interior_line_of_sight::floor_wash::LevelWash;
 use leptos::prelude::*;
+use map_draw_lanes::lane_roles::role_id;
 use map_engine::frame::engine::RenderEngine;
 use map_engine::frame::RafPump;
-use map_engine::overlay::lanes::role_id;
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::los::interior::wash::LevelWash;
-use map_engine::world::architecture::blueprint::attribution_1::LosResult;
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
-use map_engine::world::architecture::compound::assembly::CompoundBuilding;
-use map_engine::world::architecture::compound::instances::InstancesFile;
-use map_engine::world::architecture::section::cutter::BuildingDrawing;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;

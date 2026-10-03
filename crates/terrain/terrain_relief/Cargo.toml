@@ -1,0 +1,24 @@
+# The relief the 2D map draws from a terrain's elevation model, with no GPU code: the hillshade
+# image, contour levels and rings with each summit's ring, and the sea band fills.
+[package]
+name = "terrain_relief"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Terrain relief from the elevation model: the hillshade image, contour rings with summit picks, and the sea band fills."
+
+[package.metadata.layout]
+category = "crates/terrain"
+tier = 3
+targets = "any"
+
+[dependencies]
+# JavaScript's rounding, which quantises the hillshade's grey levels.
+map_coordinates = { workspace = true }
+# The vector grid every contour and sea band fill is marched over.
+terrain_elevation = { workspace = true }
+
+[lints]
+workspace = true

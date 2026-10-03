@@ -3,11 +3,11 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::world::environment::buildings::footprint::BRIDGE_CASING_RGBA;
+use crate::streaming::buffers::footprint::BRIDGE_CASING_RGBA;
 
-use crate::world::environment::buildings::footprint::BRIDGE_DECK_RGBA;
+use crate::streaming::buffers::footprint::BRIDGE_DECK_RGBA;
 
-use crate::world::environment::buildings::obb::obb_corners;
+use prefab_catalog::footprint_lookups::obb_corners;
 
 use super::*;
 
@@ -55,11 +55,11 @@ fn glyph_atlas_covers_every_requested_key_and_sources_agree() {
         "world-glyphs.json vs manifest.json glyph keys diverged"
     );
 
-    let raw = crate::streaming::loaders::store::bytes_to_json(
+    let raw = prefab_catalog::world_payload::bytes_to_json(
         &fs::read(map_assets().join("everon/objects/prefabs.json.gz")).unwrap(),
     )
     .unwrap();
-    for row in narrow_prefab_rows(&raw) {
+    for row in narrow_prefab_rows(&raw).expect("Everon ids are whole u32s") {
         if let Some(k) = row.icon_key.as_deref() {
             assert!(atlas.contains(k), "prefab iconKey '{k}' missing from atlas");
         }
@@ -237,7 +237,7 @@ fn t152_21_fill_deemphasis_handoff() {
 
 #[test]
 fn g1_building_icon_key_covers_normative_classes() {
-    use crate::overlay::symbology::labels::glyph_math::building_icon_key;
+    use label_layout::glyph_math::building_icon_key;
     for &cls in BUILDING_CLASSES {
         let key = building_icon_key(cls).expect(cls);
         assert_eq!(key, format!("building-{cls}"));
@@ -247,7 +247,7 @@ fn g1_building_icon_key_covers_normative_classes() {
 #[test]
 fn t152_15_g2_orientation_parity_all_prefabs() {
     let everon = map_assets().join("everon");
-    let raw = crate::streaming::loaders::store::bytes_to_json(
+    let raw = prefab_catalog::world_payload::bytes_to_json(
         &fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
     )
     .unwrap();
@@ -265,9 +265,7 @@ fn t152_15_g2_orientation_parity_all_prefabs() {
     for (hx, hy) in &samples {
         for yaw in [0.0f64, 37.0, 90.0, 123.0] {
             let [p0, p1] =
-                crate::world::terrain::roads::cartographic_strip::obb_long_axis_endpoints(
-                    0.0, 0.0, *hx, *hy, yaw,
-                );
+                road_network::cartographic_strip::obb_long_axis_endpoints(0.0, 0.0, *hx, *hy, yaw);
             let strip_ang = (p1[1] - p0[1]).atan2(p1[0] - p0[0]).to_degrees();
             let c = obb_corners(0.0, 0.0, *hx, *hy, yaw);
             let (e0x, e0y) = (c[1][0] - c[0][0], c[1][1] - c[0][1]);

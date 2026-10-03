@@ -11,9 +11,10 @@ APP-6 frames, no echelon modifiers and no civilian side.
 
 ## Where it lives
 
-- Map: [`legacy/map_engine/src/overlay/symbology/`](/legacy/map_engine/src/overlay/symbology/README.md):
-  the role, vehicle and side tables in `roles/classify.rs`, the glyph atlas in `atlas/`, the
-  marker glyphs in `markers.rs`, and the marker lane's parse in
+- Map: [`crates/map_overlay/unit_symbology/`](/crates/map_overlay/unit_symbology/README.md):
+  the role, vehicle and side tables in `classification.rs`, the glyph atlas in `symbol_atlas.rs`,
+  the marker glyphs in `markers.rs`; the atlas upload in `legacy/map_engine/src/overlay/symbology/`;
+  and the marker lane's parse in
   `legacy/map_engine/src/editing/lanes/markers.rs`.
 - Game: [`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md):
   `TBD_MarkerService.c` (which markers a player may see), `TBD_MarkerWire.c` and
@@ -118,7 +119,7 @@ Its `label` draws as a caption through the map's text pipeline.
 - Slot `role` and kit strings, vehicle aliases and faction keys of the mission document feed the
   unit, vehicle and side tables.
 - `cargo xtask verify editor-orbat-coherency` pins the three side tints to their RGBA literals;
-  `every_schema_alias_maps` in `legacy/map_engine/src/overlay/symbology/tests/markers_tests.rs`
+  `every_schema_alias_maps` in `crates/map_overlay/unit_symbology/src/tests/markers_tests.rs`
   checks that every schema alias maps to a glyph.
 
 ## Design

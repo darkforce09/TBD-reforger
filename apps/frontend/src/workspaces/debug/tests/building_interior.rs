@@ -6,13 +6,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use super::*;
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::bvh::traversal::Bvh;
-use map_engine::world::architecture::compound::assembly::PlacementSource;
-use map_engine::world::architecture::compound::doors::DoorRecord;
-use map_engine::world::architecture::compound::doors::DoorState;
-use map_engine::world::architecture::compound::instances::InstanceRecord;
-use map_engine::world::architecture::compound::instances::LocalTransform;
+use building_interiors::compound::assembly::PlacementSource;
+use building_interiors::compound::doors::DoorRecord;
+use building_interiors::compound::doors::DoorState;
+use building_interiors::compound::instances::InstanceRecord;
+use building_interiors::compound::instances::LocalTransform;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
+use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
 
 fn farmhouse() -> BuildingBlueprint {
     serde_json::from_str(include_str!(concat!(
@@ -179,7 +179,7 @@ fn strip_centroid(packed: &[f32]) -> [f32; 2] {
 fn lane_ids_match_the_render_crate() {
     const SRC: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/overlay/lanes.rs"
+        "/../../crates/map_overlay/map_draw_lanes/src/lane_roles.rs"
     ));
     for (name, value) in [
         ("LANDCOVER", role_id::LANDCOVER),

@@ -3,25 +3,25 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::lod::INSTANCE_BUDGET;
-use crate::overlay::lod::class_visible;
-use crate::world::environment::classify::class_code;
+use map_draw_lanes::zoom_gates::INSTANCE_BUDGET;
+use map_draw_lanes::zoom_gates::class_visible;
+use prefab_catalog::render_classes::class_code;
 
-use crate::overlay::symbology::labels::glyph_math::BADGE_SIZE_MIN_PX;
-use crate::overlay::symbology::labels::glyph_math::DEFAULT_BASE_SIZE_PX;
-use crate::overlay::symbology::labels::glyph_math::GLYPH_SIZE_MIN_PX;
-use crate::overlay::symbology::labels::glyph_math::badge_size_meters;
-use crate::overlay::symbology::labels::glyph_math::deck_angle_for_rotation_deg;
-use crate::overlay::symbology::labels::glyph_math::glyph_size_meters;
-use crate::overlay::symbology::labels::glyph_math::hex_to_rgba;
-use crate::overlay::symbology::labels::glyph_math::landmark_glyph_icon_key;
-use crate::overlay::symbology::labels::glyph_math::pack_icon_instance;
-use crate::overlay::symbology::labels::glyph_math::pack_rgba_u32;
-use crate::overlay::symbology::labels::glyph_math::size_with_min_px;
 use crate::streaming::scheduler::state::GlyphPrefabInfo;
 use crate::streaming::scheduler::state::WorldResidency;
-use crate::world::terrain::roads::airfield::is_airfield_structure_class;
-use crate::world::terrain::roads::airfield::point_in_bbox;
+use label_layout::glyph_math::BADGE_SIZE_MIN_PX;
+use label_layout::glyph_math::DEFAULT_BASE_SIZE_PX;
+use label_layout::glyph_math::GLYPH_SIZE_MIN_PX;
+use label_layout::glyph_math::badge_size_meters;
+use label_layout::glyph_math::deck_angle_for_rotation_deg;
+use label_layout::glyph_math::glyph_size_meters;
+use label_layout::glyph_math::hex_to_rgba;
+use label_layout::glyph_math::landmark_glyph_icon_key;
+use render_primitives::text::pack::pack_icon_instance_yaw;
+use render_primitives::text::pack::pack_rgba_u32;
+use render_primitives::text::scale::size_with_min_px;
+use road_network::airfield::is_airfield_structure_class;
+use road_network::airfield::point_in_bbox;
 
 impl WorldResidency {
     /// Rebuild glyph lookup from prefabs.
@@ -31,10 +31,9 @@ impl WorldResidency {
             return;
         }
         for entry in self.prefab_by_id.values() {
-            let pid = entry.row.prefab_id;
-            if !(0.0..65536.0).contains(&pid) || pid.fract() != 0.0 {
+            let Ok(pid) = u16::try_from(entry.row.prefab_id.get()) else {
                 continue;
-            }
+            };
             let Some(icon_key) = entry.row.icon_key.as_deref() else {
                 continue;
             };
@@ -70,7 +69,7 @@ impl WorldResidency {
                 continue;
             };
             self.glyph_by_u16.insert(
-                pid as u16,
+                pid,
                 GlyphPrefabInfo {
                     glyph_idx,
                     size_m,
@@ -185,7 +184,7 @@ impl WorldResidency {
                         let px = chunk.positions[2 * r];
                         let py = chunk.positions[2 * r + 1];
                         if is_tree_group {
-                            pack_icon_instance(
+                            pack_icon_instance_yaw(
                                 &mut self.tree_glyph_buf,
                                 px,
                                 py,
@@ -195,7 +194,7 @@ impl WorldResidency {
                                 info.tint,
                             );
                         } else {
-                            pack_icon_instance(
+                            pack_icon_instance_yaw(
                                 &mut self.prop_glyph_buf,
                                 px,
                                 py,
@@ -247,7 +246,7 @@ impl WorldResidency {
                         continue;
                     };
                     let size = size_with_min_px(badge_size_meters(), BADGE_SIZE_MIN_PX, z) as f32;
-                    pack_icon_instance(
+                    pack_icon_instance_yaw(
                         &mut self.badge_glyph_buf,
                         chunk.positions[2 * r],
                         chunk.positions[2 * r + 1],

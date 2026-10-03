@@ -5,9 +5,10 @@
 
 use crate::data::store::MissionDocCore;
 use crate::data::store::SlotSoa;
-use crate::overlay::symbology::links::squad_links::SquadLinkInput;
-use crate::spatial::indexing::picking as spatial;
 use camera_math::ortho::state::OrthoCamera;
+use spatial_indexes::point_indexes::picking as spatial;
+use unit_symbology::slot_ids::SlotId;
+use unit_symbology::squad_links::SquadLinkInput;
 
 fn world_query(cam: &OrthoCamera, px: f64, py: f64) -> ([f64; 2], f64) {
     let c = cam.unproject_xy(px, py);
@@ -112,8 +113,8 @@ pub fn squad_link_inputs(doc: &MissionDocCore) -> Vec<SquadLinkInput> {
     doc.squad_link_inputs()
         .into_iter()
         .map(|s| SquadLinkInput {
-            leader_slot_id: s.leader_slot_id,
-            member_slot_ids: s.member_slot_ids,
+            leader_slot_id: SlotId::new(s.leader_slot_id),
+            member_slot_ids: s.member_slot_ids.into_iter().map(SlotId::new).collect(),
             side: s.side,
         })
         .collect()

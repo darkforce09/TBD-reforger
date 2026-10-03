@@ -1,29 +1,17 @@
-//! Role: Module boundary for environment/vegetation.
-//! Position: `world/environment/vegetation` in the graphics engine.
-//! Signals & state: camera, spatial, asset, or GPU data owned by this module.
-//! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
+//! Vegetation in the map engine: the forest density lane and the forest mass loader.
+//!
+//! **Role:** declares the wasm32 GPU belts ([`buffers`]) and browser loader ([`loader`]) of the
+//! forest mass; the vegetation data (canopy, density, mass, regions) is `vegetation`, which its
+//! callers import directly.
+//! **Position:** `world/environment/vegetation`, behind wasm32 and `render`; the streaming host
+//! owns the loader.
+//! **Signals & state:** the loader's fetch state and the belts' GPU buffers are their own.
+//! **Invariants:** the belts draw only what `vegetation` computes.
 
-/// Canopy.
-#[cfg(feature = "streaming")]
-pub mod canopy;
-
-/// Density.
-pub mod density;
-
-/// Mass.
-pub mod mass;
-
-/// Regions.
-#[cfg(feature = "streaming")]
-pub mod regions;
-
-/// Buffers.
+/// The engine's forest density texture lane and its fill and outline settings.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
-// T-0xx Phase 2A: `graphics_engine` is optional from `streaming` up, so the belts that
-// name a graphics layout type are gated with it.
-#[cfg(feature = "streaming")]
 pub mod buffers;
 
-/// Loader.
+/// `ForestMassHost`: fetches the density bins, uploads the forest fill and outline.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod loader;

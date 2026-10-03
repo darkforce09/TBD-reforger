@@ -98,7 +98,7 @@ mod t631_boot_failure_state;
 
 /// Exercise the graphics crate's satellite arithmetic directly from native UI regression tests.
 #[cfg(all(test, not(target_arch = "wasm32")))]
-use map_engine::world::terrain::satellite::streamer as tbd_sat_pure;
+use satellite_imagery as tbd_sat_pure;
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 #[path = "../t629_satellite_resolution.rs"]

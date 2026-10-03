@@ -46,6 +46,25 @@ checks them.
 | S4b | process_runner | `tools/foundation/process_runner/` | 1 |
 | S4b | repository_laws | `tools/foundation/repository_laws/` | 1 |
 | S4b | repository_layout | `tools/foundation/repository_layout/` | 0 |
+| S6 | spatial_indexes | `crates/geometry/spatial_indexes/` | 1 |
+| S6 | prefab_catalog | `crates/world_formats/prefab_catalog/` | 2 |
+| S6 | world_chunks | `crates/world_formats/world_chunks/` | 3 |
+| S6 | world_store | `crates/world_formats/world_store/` | 5 |
+| S6 | terrain_elevation | `crates/terrain/terrain_elevation/` | 2 |
+| S6 | terrain_relief | `crates/terrain/terrain_relief/` | 3 |
+| S6 | satellite_imagery | `crates/terrain/satellite_imagery/` | 2 |
+| S6 | water_bodies | `crates/terrain/water_bodies/` | 4 |
+| S6 | road_network | `crates/terrain/road_network/` | 3 |
+| S6 | building_interiors | `crates/world_objects/building_interiors/` | 2 |
+| S6 | vegetation | `crates/world_objects/vegetation/` | 4 |
+| S6 | place_names | `crates/world_objects/place_names/` | 4 |
+| S6 | terrain_line_of_sight | `crates/line_of_sight/terrain_line_of_sight/` | 3 |
+| S6 | interior_line_of_sight | `crates/line_of_sight/interior_line_of_sight/` | 4 |
+| S6 | world_line_of_sight | `crates/line_of_sight/world_line_of_sight/` | 5 |
+| S6 | map_draw_lanes | `crates/map_overlay/map_draw_lanes/` | 1 |
+| S6 | label_layout | `crates/map_overlay/label_layout/` | 1 |
+| S6 | unit_symbology | `crates/map_overlay/unit_symbology/` | 2 |
+| S6 | overlay_instances | `crates/map_overlay/overlay_instances/` | 3 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -89,26 +108,26 @@ Every other crate in this catalogue is still planned; its From column names the 
 | geometry_primitives | `bvh/node.rs:25-39` vector ops, `blueprint/geometry.rs`, compound `Rigid`, `Bounds3`, both `point_at` | — |
 | map_coordinates | `world/scene.rs` consts + `world_rect_rel`, `APPLY_ANCHOR_X/Y` (`apply_faction/library.rs:11,14`), `probes/runner.rs:87`, `chunk_math.rs`, `camera/math/shaping.rs`, `grid_reference.rs` | — |
 | camera_math | `camera/{math,ortho,orbit}` | map_coordinates |
-| spatial_indexes | `spatial/bvh`, `indexing/{cluster,point_index,picking}`, TLAS build core (`los/world/tlas.rs:51`) unified with `bvh/traversal.rs:50` | geometry_primitives |
+| spatial_indexes | `spatial/bvh` (the triangle tree, sidecar, surface kinds, the segment-box window from the interior walker) and `indexing/{cluster,point_index,picking}`; one flat-tree build core that the world TLAS also uses; dev feature `test_fixtures` | geometry_primitives |
 | world_file_formats | `io/*` (shims `archives/models` and `containers/headers` deleted); typed archive ids | newtype_ids |
-| prefab_catalog | `buildings/{prefab,obb}`, `environment/classify`, `loaders/prefab` | formats |
-| world_chunks | `loaders/{chunk,chunk_bin,manifest,residency}` | prefab, formats |
-| world_store | `loaders/store.rs` (world store over chunks, roads, vegetation regions) | chunks, vegetation, road_network |
-| terrain_elevation | `terrain/dem` without the loader; the `sample/` shim deleted | formats, map_coordinates |
-| terrain_relief | `relief/{contours,sea_band,hillshade}` (host moves to the GPU crate) | elevation, map_coordinates |
-| water_bodies | `water/{vectors,mesh}` | relief, render_primitives, formats |
-| road_network | `terrain/roads`, plus `road_class_name` moved in from `route_placement` | formats, prefab, elevation, render_primitives, map_coordinates, map_draw_lanes |
-| satellite_imagery | `satellite/streamer` | formats |
-| vegetation | `vegetation/{regions,mass,canopy,density}` | formats, prefab, map_draw_lanes, world_chunks |
-| place_names | `environment/locations` without the loader; owns town/peak/route → `LabelSpec`; `routes/` shim deleted | label_layout, elevation, road_network |
-| building_interiors | `architecture/{blueprint,compound,section}` (dev feature `test_fixtures`) | spatial_indexes, formats, geometry_primitives |
-| terrain_line_of_sight | `los/terrain` without `overlay.rs` | elevation |
-| interior_line_of_sight | `los/interior` | building_interiors, terrain_line_of_sight |
-| world_line_of_sight | `los/world`; one `evaluate_los` (replacing the 3 at `attribution_1.rs:119`, `los.rs:24`, `walker.rs:420`); reference `dda.rs:84` moves to tests | world_chunks, interior_line_of_sight, map_coordinates |
-| map_draw_lanes | `overlay/{lanes,lod}`, plus `building_visible` (`footprint.rs:46`) and `BUILDING_MIN_ZOOM` | render_primitives |
-| label_layout | `symbology/{labels,text_packing,text_metrics}`; the glyph-packing copies in `glyph_math` deleted | render_primitives, map_draw_lanes |
-| unit_symbology | `symbology/{roles,markers,atlas/raster,links}` | render_primitives |
-| overlay_instances | `instances/{symbols,drag,patches}`, `fire_mission_marks`; `slots/` shim deleted | unit_symbology, spatial_indexes |
+| prefab_catalog | `buildings/{prefab,obb}`, `environment/classify`, `loaders/prefab`, and the payload decoding (`WorldError`, `bytes_to_json`) that sat in the world store | world_file_formats |
+| world_chunks | `loaders/{chunk,chunk_bin,manifest}` with `ChunkId`; the chunk ingest into the residency (`loaders/residency.rs`) went to the scheduler for chunk_scheduler | prefab_catalog, world_file_formats, map_coordinates, newtype_ids |
+| world_store | `loaders/store.rs` (world store over chunks, roads, vegetation regions) | world_chunks, vegetation, road_network, prefab_catalog, world_file_formats, map_coordinates |
+| terrain_elevation | `terrain/dem` without the loader (S4 deleted the `sample/` shim) | world_file_formats, map_coordinates |
+| terrain_relief | `relief/{contours,sea_band,hillshade}` (host moves to the GPU crate) | terrain_elevation, map_coordinates |
+| water_bodies | `water/{vectors,mesh}` | terrain_relief, render_primitives, world_file_formats |
+| road_network | `terrain/roads`, plus the road-class codec (`ROAD_CLASSES`, `road_class_code`, `road_class_name`) moved in from `route_placement` | world_file_formats, prefab_catalog, terrain_elevation, render_primitives, map_coordinates |
+| satellite_imagery | `satellite/streamer` | world_file_formats |
+| vegetation | `vegetation/{regions,mass,canopy,density}` | world_file_formats, prefab_catalog, map_draw_lanes, world_chunks, map_coordinates |
+| place_names | `environment/locations` without the loader, with the location label packers from `text_packing`; owns town/peak/route → `LabelSpec`; `routes/` shim deleted | label_layout, terrain_elevation, road_network, render_primitives, world_file_formats, newtype_ids |
+| building_interiors | `architecture/{blueprint,compound,section}`; the section index on spatial_indexes' build core; the blueprint's 2D `annotate_sight_line` (dev feature `test_fixtures`) | spatial_indexes, world_file_formats, geometry_primitives, newtype_ids |
+| terrain_line_of_sight | `los/terrain` without `overlay.rs` | terrain_elevation |
+| interior_line_of_sight | `los/interior`, with the one 3D `evaluate_los` over `SightLineScene` (the world crate depends on it) | building_interiors, terrain_line_of_sight, spatial_indexes, geometry_primitives |
+| world_line_of_sight | `los/world`; reference `dda.rs:84` moved to tests | world_chunks, interior_line_of_sight, spatial_indexes, building_interiors, prefab_catalog, map_coordinates, geometry_primitives, world_file_formats |
+| map_draw_lanes | `overlay/{lanes,lod}`, plus `building_visible` on `BUILDING_FOOTPRINT_MIN_ZOOM` (the duplicate `BUILDING_MIN_ZOOM` deleted) and `px_to_m_at_zoom` | render_primitives |
+| label_layout | `symbology/{labels,text_packing}` (generic packing; the location packers went to place_names); the glyph-packing copies in `glyph_math` deleted; `LabelId`, `LocationId` | render_primitives, newtype_ids |
+| unit_symbology | `symbology/{roles,markers,atlas/raster,links}`; `SlotId` (byte-compatible with mission_model's, F-S6-07) | render_primitives, map_draw_lanes, newtype_ids |
+| overlay_instances | `instances/{symbols,drag,patches}`, `fire_mission_marks`; `slots/` shim deleted | unit_symbology, map_draw_lanes, render_primitives |
 | chunk_scheduler | `scheduler/{state,viewport,residency}` plus `deinterleave`, `indexing/world.rs` | world_store, prefab, spatial_indexes, map_draw_lanes |
 | chunk_draw_buffers | `streaming/buffers`, `buildings/footprint.rs` | scheduler, label_layout, road_network, vegetation |
 | mission_editing_session | `editing/{host,history,batch,routing,selection_universe,picking,lanes}` | mission_document, mission_operations, spatial_indexes |

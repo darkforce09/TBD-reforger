@@ -40,7 +40,7 @@ and `clear_vector_lane` call it.
 ## Boundaries
 
 - Depends on: `crate::frame` (the engine, its batch list, bindings, `encode_main_pass` and the
-  compute cull), `crate::overlay::lanes` (lane ids), `map_coordinates::terrain_frames` (the
+  compute cull), `map_draw_lanes::lane_roles` (lane ids), `map_coordinates::terrain_frames` (the
   anchor), `crate::world::scene` (the stress quads), `crate::diagnostics::timing` and `crate::diagnostics::readback::scene` (clocks and
   the async sleep), and `render_primitives::draw::instances::CHUNK_CAPACITY`.
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport bridge

@@ -45,7 +45,7 @@ kind, may leave the section out (README.md not counted).>
 
 ## Worked sample
 
-Written from `legacy/map_engine/src/spatial/los/interior/`, a leaf of three source files and
+Written from `crates/line_of_sight/interior_line_of_sight/src/`, a leaf of six source files and
 a `tests/` folder: it leaves out How it works, and it has no Related documentation because no
 document covers this module. The sample sits in a fenced block, so no gate reads it as a README; the
 folder's own README.md is written from the same code and may differ.
@@ -59,27 +59,29 @@ target past walls, glass panes and foliage, and which cells of each floor an obs
 ## Contents
 
 ```text
-legacy/map_engine/src/spatial/los/interior/
-├── mod.rs     declares both modules, compiled only with the `io` feature
-├── tests/     unit tests for the walker and the wash
-├── walker.rs  observer-to-target traces through a compound building, with blocking and concealment
-└── wash.rs    per-floor visibility rasters around an observer, whole or in budgeted batches
+crates/line_of_sight/interior_line_of_sight/src/
+├── compound_walk.rs          observer-to-target traces through a compound building, with blocking
+├── error.rs                  `Error` and `Result`: a `ViewshedCapRefused` behind one type
+├── floor_wash.rs             per-floor visibility rasters around an observer, whole or in batches
+├── lib.rs                    the crate root: module header, `mod` lines and re-exports
+├── prelude.rs                the names most readers import
+├── sight_line_evaluation.rs  crossings reduced to named hits and concealment
+└── tests/                    unit tests for the compound walk and the floor wash
 ```
 
 ## Boundaries
 
-- Depends on: `crate::spatial::bvh` (surface kinds, traversal hits, the sidecar mesh),
-  `crate::spatial::los::terrain::viewshed` (`Visibility`, `ViewshedCapRefused`) and
-  `crate::world::architecture` (building blueprints, compound buildings, their instances and rigid
-  transforms).
-- Used by: `crate::spatial::los::world`, whose world occluder reuses the walker's trace and
-  concealment helpers; `crate::editing::tools::viewshed_scheduler`, whose building-wash lane runs a
+- Depends on: `building_interiors` (building blueprints, compound buildings and their instances),
+  `spatial_indexes` (surface kinds, traversal hits, the sidecar mesh), `terrain_line_of_sight`
+  (`Visibility`, `ViewshedCapRefused`), `geometry_primitives` (rigid transforms) and `thiserror`.
+- Used by: `world_line_of_sight`, whose world occluder reuses the compound walk's trace and
+  concealment helpers; the map engine's visibility scheduler, whose building-wash lane runs a
   `WashJob` in budgeted steps; the debug building viewer
   (`apps/frontend/src/workspaces/debug/building_viewer.rs`); the Mission Creator's
   line-of-sight tool (`apps/frontend/src/workspaces/editor/input/tools/los_world_wasm.rs`);
   and the blueprint tooling (`tools/developer_tools/src/blueprint/bvh/construction.rs`).
 - Rules: `wash_cap_check` refuses a wash radius above `MAX_WASH_RADIUS_M` (400 m)
-  (`over_cap_wash_radius_is_refused_with_a_message` in `tests/wash.rs`); a `WashJob` may pause at
-  any cell, because each cell's verdict depends only on its index, the observer, the eye height and
-  the blocking test (`sliced_wash_is_bit_identical_to_the_sync_path` holds that).
+  (`over_cap_wash_radius_is_refused_with_a_message` in `tests/floor_wash_tests.rs`); a `WashJob`
+  may pause at any cell, because each cell's verdict depends only on its index, the observer, the
+  eye height and the blocking test (`sliced_wash_is_bit_identical_to_the_sync_path` holds that).
 ````

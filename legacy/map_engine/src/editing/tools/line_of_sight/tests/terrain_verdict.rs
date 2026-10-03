@@ -5,7 +5,7 @@
 
 use super::*;
 
-use crate::spatial::los::terrain::sampler::ProfileSample;
+use terrain_line_of_sight::elevation_profile::ProfileSample;
 
 fn s(dist_m: f64, elev_m: f64) -> ProfileSample {
     ProfileSample { dist_m, elev_m }

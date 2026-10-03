@@ -1,0 +1,44 @@
+# A building's interior model with no browser or GPU code: the blueprint (levels, walls, doors,
+# windows, stairs, furniture, footprint and roof) and its sight-line attribution, the compound of
+# a shell and its placed instances with their doors, and the section cuts and height fields the
+# plan drawings are made of.
+[package]
+name = "building_interiors"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A building's interior model: blueprints and their sight-line attribution, compounds with doors, and section cuts."
+
+[package.metadata.layout]
+category = "crates/world_objects"
+tier = 2
+targets = "any"
+
+[features]
+# The blueprint, sidecar and slab fixtures the line-of-sight tests of other crates build their
+# rooms from; enabled only from `[dev-dependencies]`.
+test_fixtures = ["spatial_indexes/test_fixtures"]
+
+[dependencies]
+# Segment and box geometry, vector products and the rigid transforms instances are placed by.
+geometry_primitives = { workspace = true }
+# The typed identifiers of building prefabs, compound instances and sight-line features.
+newtype_ids = { workspace = true }
+# The archived blueprint's little-endian floats.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+# The blueprint and instances JSON documents.
+serde = { workspace = true, features = ["derive"] }
+# The occlusion sidecar, its triangle BVH and the flat box tree the section index builds on.
+spatial_indexes = { workspace = true }
+thiserror = { workspace = true }
+# The archived blueprint and the wall, door, window, stairs and furniture identifiers.
+world_file_formats = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+spatial_indexes = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

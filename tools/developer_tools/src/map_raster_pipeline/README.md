@@ -67,8 +67,9 @@ read back through the map engine's validating reader before they are written.
     texture decoder, the `.topo` road decoder and the JSON number spelling;
   - `crate::repository_layout` (with `compiled_checkout_root` for the checkout root) and
     `crate::timestamp_formatting`;
-  - `map_engine` (`io::archives`, `io::containers`, `world::terrain`,
-    `world::environment::locations`), which fixes every binary format and the peak rules;
+  - `world_file_formats` (`archives`, `containers`, `ids`), `terrain_elevation`, `water_bodies`,
+    `road_network`, `prefab_catalog::world_payload` and `place_names`, which fix every binary
+    format and the peak rules;
   - the `image`, `png`, `image-webp`, `webp` and `resvg` crates.
 - Used by: `tools/developer_tools/src/bin/map.rs`; the `map-water-everon`,
   `map-cartographic-everon` and `map-cartographic-verify` tasks in

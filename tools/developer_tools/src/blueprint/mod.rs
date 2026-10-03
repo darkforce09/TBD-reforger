@@ -226,7 +226,7 @@ fn interpret_one(
     algo: Algo,
     base_params: &Params,
     debug_dir: Option<&std::path::Path>,
-) -> Result<map_engine::world::architecture::blueprint::structure::BuildingBlueprint> {
+) -> Result<building_interiors::blueprint::structure::BuildingBlueprint> {
     let dump = parse::parse_dump(path)?;
     let m = dump.meta().clone();
     println!(

@@ -1,0 +1,24 @@
+# Stage S6 P0c — the cut wave inside the map engine: the chunk scheduler's object index and chunk ingest,
+# the building footprint buffers, and the frame's source-text bind pins move to the modules that own them.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the chunk scheduler's object index leaves the spatial indexes for the scheduler that fills it
+path	legacy/map_engine/src/spatial/indexing/world.rs	legacy/map_engine/src/streaming/scheduler/world_object_index.rs
+path	legacy/map_engine/src/spatial/indexing/tests/world_tests.rs	legacy/map_engine/src/streaming/scheduler/tests/world_object_index_tests.rs
+rust_path	crate::spatial::indexing::world::	crate::streaming::scheduler::world_object_index::	legacy/map_engine
+#
+# chunk ingest into the residency (impl blocks of the scheduler's WorldResidency) joins the scheduler
+path	legacy/map_engine/src/streaming/loaders/residency.rs	legacy/map_engine/src/streaming/scheduler/chunk_ingest.rs
+rust_path	crate::streaming::loaders::residency::	crate::streaming::scheduler::chunk_ingest::	legacy/map_engine
+#
+# the building footprint fill and outline composition joins the draw buffers it writes
+path	legacy/map_engine/src/world/environment/buildings/footprint.rs	legacy/map_engine/src/streaming/buffers/footprint.rs
+rust_path	crate::world::environment::buildings::footprint::	crate::streaming::buffers::footprint::	legacy/map_engine
+#
+# the render-only source-text pins of the frame's bind functions leave the overlay for the frame
+path	legacy/map_engine/src/overlay/tests/tests	legacy/map_engine/src/frame/tests/lane_bind_source_pins
+path	legacy/map_engine/src/overlay/tests/tests/draw_order_t748_comments_bind_feed.rs	legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs
+path	legacy/map_engine/src/overlay/tests/tests/draw_order_t748_comments_bind_pick_bridge.rs	legacy/map_engine/src/frame/tests/lane_bind_source_pins/comments_bind_skips_pick_bridge.rs
+path	legacy/map_engine/src/overlay/tests/tests/draw_order_t780_connections_bind_pick_bridge.rs	legacy/map_engine/src/frame/tests/lane_bind_source_pins/connections_bind_skips_pick_bridge.rs
+path	legacy/map_engine/src/overlay/tests/tests/draw_order_t808_symbology_bind_paths.rs	legacy/map_engine/src/frame/tests/lane_bind_source_pins/symbology_bind_paths.rs

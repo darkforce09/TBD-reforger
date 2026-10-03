@@ -53,7 +53,7 @@ previews an override. `pak-cat` prints one pak entry of any type to stdout, the 
   `tools/developer_tools/src/blueprint/bvh/batch_processing.rs`; the surface classification and
   convex hulls in `tools/developer_tools/src/blueprint/architectural_analysis/`;
   `geometry_primitives::rigid_transform::Rigid` and
-  `map_engine::spatial::bvh::surface::SurfaceKind`.
+  `spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind`.
 - Used by: the sidecar and prefab commands in `tools/developer_tools/src/blueprint/bvh/`, the
   prefab library in `tools/developer_tools/src/blueprint/archive_emission/`, and
   `voxels-from-mesh` in `tools/developer_tools/src/blueprint/voxel_processing/`; the

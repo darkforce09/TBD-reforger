@@ -46,7 +46,7 @@ natively.
 - Used by:
   - `crate::streaming::host` and `crate::world::terrain::satellite::quadtree` (the budget);
   - `crate::streaming::loaders::world_loader` (`stats_json`), and the tests under
-    `legacy/map_engine/src/streaming/loaders/tests/` and
+    `legacy/map_engine/src/streaming/scheduler/tests/` and
     `legacy/map_engine/src/streaming/scheduler/residency/`;
   - the Mission Creator's frame pump, which shows the HUD tail
     (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`).

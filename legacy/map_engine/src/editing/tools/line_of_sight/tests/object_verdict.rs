@@ -10,8 +10,8 @@ use super::super::wash_palette::{
     VIEWSHED_HIDDEN_RGBA, VIEWSHED_UNKNOWN_RGBA, VIEWSHED_VISIBLE_RGBA,
 };
 use super::*;
-use crate::spatial::los::terrain::viewshed::Visibility;
-use crate::spatial::los::world::map_to_engine;
+use terrain_line_of_sight::viewshed::Visibility;
+use world_line_of_sight::map_to_engine;
 
 fn blocked(d: f64) -> LosVerdict {
     LosVerdict::Blocked {

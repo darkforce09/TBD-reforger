@@ -18,7 +18,7 @@ assets/terrains/everon/prefabs/descriptors/
   `assets/terrains/everon/objects/prefabs.json.gz`, named by the prefab's index in it (the
   `prefabId` of every chunk row). Plain git blobs.
 - Schema: `contracts/definitions/prefab-descriptor.schema.json`; the reader is `PrefabDescriptor`
-  in `legacy/map_engine/src/spatial/los/world/descriptor/model.rs`. A file holds
+  in `crates/line_of_sight/world_line_of_sight/src/occluder_library/prefab_descriptor.rs`. A file holds
   `schemaVersion`, `prefabId`, `slug`, `resourceName` and `kind` (`building`, `prop`, `rock`,
   `tree`, `vehicle` or `water`); `blocks`, whether anything in the prefab collides, with a
   `reason` when it does not (301 prefabs); `canopy`, whether it is a tree with foliage triangles;
@@ -56,5 +56,5 @@ assets/terrains/everon/prefabs/descriptors/
 
 ## Related documentation
 
-- [Prefab occluder descriptors](/legacy/map_engine/src/spatial/los/world/descriptor/README.md)
+- [Prefab occluder descriptors](/crates/line_of_sight/world_line_of_sight/src/occluder_library/README.md)
   — the descriptor model, the manifest lookups and the archive rows.

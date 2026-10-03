@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
-use map_engine::streaming::loaders::store::WorldError;
-use map_engine::streaming::loaders::store::WorldStore;
+use prefab_catalog::world_payload::WorldError;
+use world_store::Error as WorldStoreError;
+use world_store::store::WorldStore;
 
 use super::*;
 
@@ -173,7 +174,7 @@ fn emit_writes_the_manifest_path_and_creates_its_directory() {
 #[test]
 fn unknown_class_is_refused_at_write_time() {
     let seg = RoadSegment {
-        id: "r0".to_string(),
+        id: "r0".into(),
         road_class: "hyperloop".to_string(),
         points: vec![[0.0, 0.0], [1.0, 1.0]],
         width_m: 3.0,
@@ -222,6 +223,6 @@ fn store_accepts_both_sources_and_refuses_nothing_at_all() {
     assert_eq!(store.load_roads(&gz).expect("json route"), EVERON_SEGMENTS);
     assert!(matches!(
         store.load_roads(&[]),
-        Err(WorldError::EmptyPayload)
+        Err(WorldStoreError::Payload(WorldError::EmptyPayload))
     ));
 }

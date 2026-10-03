@@ -56,8 +56,10 @@ guard asking `is_known_dry_land` may refuse a legal spot but never accepts water
 ## Boundaries
 
 - Depends on: `crate::frame::EngineHandle`; the streaming loaders, bridge and memory budget;
-  `crate::world` (DEM decode and grid, hillshade, basemaps, water, forest and label hosts);
-  `crate::spatial::los::world` and `crate::overlay::symbology::labels` for the query types;
+  `crate::world` (the DEM loader, the relief host, basemaps, water, forest and label hosts);
+  `terrain_elevation` (DEM decode and grid), `terrain_relief::hillshade`, `water_bodies`,
+  `vegetation`, `world_chunks::terrain_manifest`; `world_line_of_sight` and
+  `label_layout::importance` for the query types;
   `crate::diagnostics`; `futures`, `serde_json`, `wasm-bindgen-futures`, `web-sys`, `js-sys`.
 - Used by: the shared map seam in `apps/frontend/src/foundation/map_view/` (handles,
   `bootstrap` in the terrain-and-imagery scope, settles); the Mission Creator in

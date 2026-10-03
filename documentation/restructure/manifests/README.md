@@ -29,7 +29,16 @@ documentation/restructure/manifests/
 ├── s4_b4_render_primitives.tsv  stage S4 B4: the graphics engine's GPU-free layouts, geometry, glyphs and shader become render_primitives
 ├── s4_b5_world_file_formats.tsv  stage S4 B5: the map engine's on-disk formats become the world_file_formats crate
 ├── s4_b6b_contract_schema_types.tsv  stage S4 B6b: the API's importers of its generated contract types switch to the contract_schema_types crate
-└── s4_x4a_switch.tsv  stage S4 X4a: every consumer of the S4a crates imports them directly, and the legacy re-export shims go
+├── s4_x4a_switch.tsv  stage S4 X4a: every consumer of the S4a crates imports them directly, and the legacy re-export shims go
+├── s6_p0c_cuts.tsv          stage S6 P0c: chunk ingest, object index, footprint buffers, bind pins move
+├── s6_p1_spatial_prefab_chunks.tsv  stage S6 P1: the BVH, point indexes, prefab catalogue and world chunks become spatial_indexes, prefab_catalog and world_chunks
+├── s6_p2_overlay.tsv  stage S6 P2: the overlay's lanes, zoom gates, labels, symbology and instance packers become the map_overlay crates
+├── s6_p3_satellite_crate_root.tsv  stage S6 P3: the satellite container reader's module root and tests take their crate names
+├── s6_p3_terrain.tsv  stage S6 P3: the elevation model, relief, satellite container reader and water data become the terrain crates
+├── s6_p4_roads_vegetation_interiors.tsv  stage S6 P4: the road network, vegetation data and building interiors become road_network, vegetation and building_interiors
+├── s6_p5_place_names_store.tsv  stage S6 P5: the spot heights, town and road names and the headless world store become place_names and world_store
+├── s6_p6_line_of_sight.tsv  stage S6 P6: line of sight over the elevation model, inside one building and through the streamed world becomes terrain_line_of_sight, interior_line_of_sight and world_line_of_sight
+└── s6_x6_switch.tsv  stage S6 X6: every consumer of the S6 crates imports them directly, and the legacy re-export shims go
 ```
 
 ## How it works

@@ -3,7 +3,7 @@
 //! Signals & state: session-local measurement state; never the authored document.
 //! Invariants: terrain blocks only when it rises strictly above the eye-to-eye line by more than the epsilon; the nearest such sample is the reported block.
 
-use crate::spatial::los::terrain::sampler::ProfileSample;
+use terrain_line_of_sight::elevation_profile::ProfileSample;
 
 // ── Decision 1 — eye-height constants (named, adjustable later) ──────────────────────────────────
 

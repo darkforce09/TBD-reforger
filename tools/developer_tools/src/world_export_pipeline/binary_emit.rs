@@ -40,10 +40,11 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use map_engine::world::environment::buildings::prefab::build_prefab_maps;
-use map_engine::world::environment::buildings::prefab::narrow_prefab_rows;
-use map_engine::world::environment::classify::NO_CLASS;
-use map_engine::world::environment::classify::narrow_instance_row_v2;
+use prefab_catalog::InvalidPrefabId;
+use prefab_catalog::prefab_rows::build_prefab_maps;
+use prefab_catalog::prefab_rows::narrow_prefab_rows;
+use prefab_catalog::render_classes::NO_CLASS;
+use prefab_catalog::render_classes::narrow_instance_row_v2;
 use world_file_formats::containers::header::ContainerHeader;
 use world_file_formats::containers::tbdc::TbdcHeader;
 use world_file_formats::ids::InstancePrefabId;
@@ -56,10 +57,12 @@ use world_file_formats::pod::instance::instances_to_bytes;
 /// Keyed by the f64 bit pattern rather than an index so it matches
 /// `build_prefab_maps` exactly: a chunk row's `pid`
 /// is an f64 and a `Vec` index would silently truncate a non-integral or out-of-range one.
-#[must_use]
-pub fn class_code_table(prefabs_doc: &Value) -> HashMap<u64, u8> {
-    let (by_id, _has_oversized) = build_prefab_maps(narrow_prefab_rows(prefabs_doc));
-    by_id.into_iter().map(|(k, e)| (k, e.code)).collect()
+///
+/// # Errors
+/// [`InvalidPrefabId`] when a catalogue row's `prefabId` is not a whole number in `0..=u32::MAX`.
+pub fn class_code_table(prefabs_doc: &Value) -> Result<HashMap<u64, u8>, InvalidPrefabId> {
+    let (by_id, _has_oversized) = build_prefab_maps(narrow_prefab_rows(prefabs_doc)?);
+    Ok(by_id.into_iter().map(|(k, e)| (k, e.code)).collect())
 }
 
 /// Narrow the chunk's JSON rows to wire rows, in order, skipping exactly what the loader skips.

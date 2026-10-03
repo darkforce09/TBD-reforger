@@ -84,8 +84,9 @@ ci-local` nor the CI workflow runs them.
 
 ## Boundaries
 
-- Depends on: `map_engine` (`legacy/map_engine`, with its `world`, `streaming`, `io`
-  and `bvh` features); the pinned enfusion-mcp npm package in `tools/enfusion_mcp_node_package/`;
+- Depends on: `map_engine` (`legacy/map_engine`, with its `world`, `streaming` and
+  `scenario` features); the world crates under `crates/` it imports directly (spatial indexes,
+  world formats, terrain, world objects, line of sight, label layout); the pinned enfusion-mcp npm package in `tools/enfusion_mcp_node_package/`;
   Chromium for the browser gates; an Arma Reforger install or its cached `addons/` for the pak
   readers; and the crates `Cargo.toml` lists.
 - Used by: `tools/xtask/` (its `Cargo.toml` depends on this crate, and its `mk`, `ci`, `map`,

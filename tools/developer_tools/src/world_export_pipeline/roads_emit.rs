@@ -35,10 +35,10 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use map_engine::streaming::loaders::store::bytes_to_json;
-use map_engine::world::environment::locations::route_placement::road_class_code;
-use map_engine::world::terrain::roads::network::RoadSegment;
-use map_engine::world::terrain::roads::network::parse_roads_payload;
+use prefab_catalog::world_payload::bytes_to_json;
+use road_network::network::RoadSegment;
+use road_network::network::parse_roads_payload;
+use road_network::road_class::road_class_code;
 use world_file_formats::archives::codec::access_checked;
 use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::roads::RoadNetworkArchive;
@@ -53,8 +53,8 @@ use crate::repository_layout::terrain_dir;
 pub const ROADS_GZ: &str = "objects/roads.json.gz";
 
 /// The rkyv road network, relative to a terrain directory. Matches the manifest's
-/// `objects.binary.roads` path (`map_engine::world::ObjectsBinaryBlock`), which the manifest
-/// will point the SPA at.
+/// `objects.binary.roads` path (`world_chunks::terrain_manifest::ObjectsBinaryBlock`), which
+/// the manifest points the SPA at.
 pub const ROAD_NETWORK_RKYV: &str = "roads/road_network.rkyv";
 
 /// Centrelined [`RoadSegment`]s → the wire archive, in file order.

@@ -68,10 +68,11 @@ map (`core::map_view::mount::mount_map_view`, terrain-and-imagery scope) shares 
 position chosen in "Place on the map" as a 10-figure grid reference, and a press on a placed
 marker grabs it and drags it (the press never reaches the map's pan). The overlay draws the guns,
 the target, the gun→target lines and, after a solve, each gun's dispersion ellipse through the
-map engine's `overlay::fire_mission_marks` lanes. Arland has no elevation model: no map, and every
+`overlay_instances::fire_mission_marks` lanes. Arland has no elevation model: no map, and every
 height is typed. A terrain height that is not there yet is an error, never a zero.
 
-Calculate samples the ground from the lead gun to the target (`spatial::los::terrain::sampler`)
+Calculate samples the ground from the lead gun to the target
+(`terrain_line_of_sight::elevation_profile`)
 into a `TerrainProfile`, then `solve_fire_mission` — the one assembler the API re-solves a saved
 fire mission with — returns the whole solution. The panel shows a battery line per gun (the laid
 charge's elevation, aim azimuth and time of flight), the crest check (a warning when the flight
@@ -133,9 +134,11 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   `handles`, `navigation_math`, `terrain_height`, `terrain_preferences`, `engine_mount`),
   `crate::foundation::ui` (`AuthGate`, `PageHeader`), `crate::foundation::utils::datefmt`;
   `map_coordinates::grid_reference`; `map_engine` (`data::scenario::ballistics::fire_mission`,
-  `battery`, `solver`, `dispersion`, `fuze` and `crest_clearance`, `overlay::fire_mission_marks`,
-  `overlay::symbology::markers`, `spatial::los::terrain::sampler`,
-  `editing::tools::line_of_sight::terrain_survey::everon_manifest`).
+  `battery`, `solver`, `dispersion`, `fuze` and `crest_clearance`,
+  `editing::tools::line_of_sight::terrain_survey::everon_manifest`);
+  `overlay_instances::fire_mission_marks`, `unit_symbology::markers`,
+  `terrain_line_of_sight::elevation_profile`, `terrain_elevation::manifest` and
+  `map_draw_lanes::lane_roles`.
 - Used by: the `/tools/mortar` route in `apps/frontend/src/app_routes.rs` and
   `apps/frontend/src/foundation/route_table/mod.rs`; the sidebar's "Mortar Calculator" link in
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; the offline pack trigger in

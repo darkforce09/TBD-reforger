@@ -27,14 +27,14 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use map_engine::streaming::loaders::store::bytes_to_json;
-use map_engine::world::environment::locations::route_labels::parse_road_names_json;
-use map_engine::world::environment::locations::route_labels::road_names_to_archive;
-use map_engine::world::environment::locations::towns::height_labels_to_archive;
-use map_engine::world::environment::locations::towns::parse_height_labels_json;
-use map_engine::world::environment::locations::towns::parse_locations_json;
-use map_engine::world::environment::locations::towns::towns_to_archive;
-use map_engine::world::terrain::roads::network::parse_roads_payload;
+use place_names::route_labels::parse_road_names_json;
+use place_names::route_labels::road_names_to_archive;
+use place_names::towns::height_labels_to_archive;
+use place_names::towns::parse_height_labels_json;
+use place_names::towns::parse_locations_json;
+use place_names::towns::towns_to_archive;
+use prefab_catalog::world_payload::bytes_to_json;
+use road_network::network::parse_roads_payload;
 use world_file_formats::archives::codec::access_checked;
 use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::labels::MapLabelsArchive;

@@ -3,18 +3,18 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::lod::INSTANCE_BUDGET;
-use crate::overlay::lod::class_visible;
-use crate::overlay::symbology::labels::glyph_math::landmark_glyph_icon_key;
 use crate::streaming::scheduler::state::WorldResidency;
 use crate::streaming::scheduler::viewport::DRAW_CULL_MARGIN_M;
-use crate::world::environment::buildings::footprint::building_visible;
-use crate::world::environment::vegetation::canopy::exact_tree_count;
-use crate::world::environment::vegetation::canopy::heatmap_trees;
-use crate::world::environment::vegetation::canopy::visible_tree_count;
+use label_layout::glyph_math::landmark_glyph_icon_key;
 use map_coordinates::chunk_math::Bbox;
 use map_coordinates::chunk_math::chunk_ids_for_rect;
 use map_coordinates::chunk_math::chunk_rect_for_bbox;
+use map_draw_lanes::zoom_gates::INSTANCE_BUDGET;
+use map_draw_lanes::zoom_gates::building_visible;
+use map_draw_lanes::zoom_gates::class_visible;
+use vegetation::canopy::exact_tree_count;
+use vegetation::canopy::heatmap_trees;
+use vegetation::canopy::visible_tree_count;
 
 /// Deinterleave.
 pub(crate) fn deinterleave(positions: &[f32], count: u32) -> (Vec<f32>, Vec<f32>) {

@@ -18,3 +18,7 @@ pub mod glyphs;
 /// Strips.
 #[cfg(feature = "streaming")]
 pub mod strips;
+
+/// The building footprint fill and outline instances and their colours.
+#[cfg(feature = "streaming")]
+pub mod footprint;

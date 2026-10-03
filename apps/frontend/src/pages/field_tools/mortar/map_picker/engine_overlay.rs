@@ -3,7 +3,7 @@
 //! **Role:** uploads [`super::marks::LaneUploads`] into the engine's marker, connection and zone
 //! lanes, and attaches the pointer listeners that grab a placed marker and drag it.
 //! **Position:** called by the map picker component (`super`) once per mounted view; the lanes are
-//! the ones [`map_engine::overlay::fire_mission_marks`] assigns
+//! the ones [`overlay_instances::fire_mission_marks`] assigns
 //! (`FIRE_MISSION_GLYPH_LANE`, `FIRE_MISSION_LINE_LANE`, `FIRE_MISSION_DISPERSION_LANE`).
 //! **Signals & state:** the drag in flight lives in the listeners; the placed positions are the
 //! page's draft signals; the marker atlas is uploaded once per engine.
@@ -21,7 +21,7 @@ use crate::foundation::map_view::navigation_math::map_metres_at;
 use crate::pages::field_tools::mortar::inputs::battery::GunDraft;
 use crate::pages::field_tools::mortar::inputs::positions::PositionDraft;
 use leptos::prelude::*;
-use map_engine::overlay::lanes::role_id::MISSION_ZONES;
+use map_draw_lanes::lane_roles::role_id::MISSION_ZONES;
 use std::cell::Cell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -74,8 +74,7 @@ pub(super) fn upload_overlay(
         return;
     };
     if !atlas_ready.get() {
-        let (rgba, width, height, uv) =
-            map_engine::overlay::symbology::markers::build_marker_slot_atlas();
+        let (rgba, width, height, uv) = unit_symbology::markers::build_marker_slot_atlas();
         match engine.ensure_slot_atlas(&rgba, width, height, &uv) {
             Ok(()) => atlas_ready.set(true),
             Err(_) => leptos::logging::error!("mortar map: the marker atlas did not upload"),

@@ -41,5 +41,5 @@ assets/terrains/everon/prefabs/scenes/
 
 ## Related documentation
 
-- [Building architecture](/legacy/map_engine/src/world/architecture/README.md) — the
+- [Building interiors](/crates/world_objects/building_interiors/README.md) — the
   compound model the emitted scene file is added to.

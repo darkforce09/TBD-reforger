@@ -1,10 +1,11 @@
 # Symbology instances and the slot GPU bridge
 
-Packs the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map entities
-([slots](/documentation/glossary/n_to_z.md#slot), vehicles, comments, briefing markers, clusters) into
-20-byte icon instances, and the browser-side bridge on `RenderEngine` that binds, patches and drags
-those lanes on the GPU. Compiled with the `streaming` feature; the bridge and lane files only on
-`wasm32` with `render`.
+The browser-side bridge on `RenderEngine` that binds, patches and drags the icon lanes of the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s map entities
+([slots](/documentation/glossary/n_to_z.md#slot), vehicles, comments, briefing markers, clusters)
+on the GPU. The 20-byte icon instance packers live in `overlay_instances`; `symbols` is
+re-exported here as the path `crate::camera::viewport` reads `cluster_mode` through. Compiled with
+the `streaming` feature; the bridge and lane files only on `wasm32` with `render`.
 
 ## Contents
 
@@ -13,22 +14,18 @@ legacy/map_engine/src/overlay/symbology/instances/
 ├── bridge_1.rs  `SlotGpuBridge`; atlas setup, slot binds, selection, drag and cluster entry points
 ├── bridge_2.rs  slot stats and clear; atlas upload, zoom uniform, lane rematerialise, drag overlay
 ├── bridge_3.rs  row patches, lane uploads, vehicle, marker and comment binds, icon pools
-├── drag.rs      `DragGpuPhase`, the drag transition rule and the drag overlay and preview packers
 ├── lanes.rs     `upload_icon_lane` for world trees, props and badges, and the icon uniform layout
-├── mod.rs       the module tree
-├── patches.rs   12-byte row patches for selection and hiding, and the selection-only pack
-├── slots/       one re-export surface of this folder's vocabulary, and the tests that pin it
-└── symbols.rs   instance sizes and colours, the cluster gate, slot, vehicle and comment packers
+└── mod.rs       the module tree and the `symbols` re-export of `overlay_instances::symbols`
 ```
 
 ## How it works
 
 ```text
 Mission Creator bridge ──► RenderEngine (bridge_1..3)
-  ensure_slot_atlas        atlas::raster widens the slot atlas, upload_slot_atlas
-  slots_bind_symbology     symbols::pack_slot_symbology ─► slot lane (or cluster discs)
-  set_selection            patches::symbology_row_patch per flipped row (O(changed rows))
-  set_drag                 drag::classify_drag_transition ─► overlay upload | delta uniform | clear
+  ensure_slot_atlas        unit_symbology::symbol_atlas widens the slot atlas, upload_slot_atlas
+  slots_bind_symbology     overlay_instances::symbols::pack_slot_symbology ─► slot lane (or cluster discs)
+  set_selection            overlay_instances::patches::symbology_row_patch per flipped row
+  set_drag                 overlay_instances::drag::classify_drag_transition ─► overlay | delta | clear
   vehicles_bind_symbology, markers_bind, comments_bind_ids ─► their own icon lanes
 ```
 
@@ -46,10 +43,8 @@ which converts world positions to the scene anchor.
 
 ## Public surface
 
-- `symbols`: the instance constants, `cluster_mode`, `px_to_m_at_zoom` and the packers, for
-  `crate::camera::viewport`, `crate::overlay::symbology::markers` and `crate::frame`.
-- `drag::pack_vehicle_drag_preview`, for the Mission Creator's select tool
-  (`apps/frontend/src/workspaces/editor/input/tools/select_tool.rs`).
+- `symbols`: the re-export of `overlay_instances::symbols`, for `crate::camera::viewport`'s
+  `cluster_mode` call.
 - `bridge_1::SlotGpuBridge`, `bridge_1::SlotAtlasGpu` and `lanes::ICON_UNIFORM_BYTES`, for
   `crate::frame`.
 - The `#[wasm_bindgen]` methods on `RenderEngine` (`ensure_slot_atlas`, `slots_bind_symbology`,
@@ -60,23 +55,24 @@ which converts world positions to the scene anchor.
 
 ## Boundaries
 
-- Depends on: `crate::frame` (`RenderEngine`, bindings, draw batches, instance buffers),
-  `crate::overlay::lanes` (`LaneRole`, `lane_id`), `crate::overlay::symbology::atlas` and
-  `crate::overlay::symbology::roles`, `map_coordinates::terrain_frames` (`ANCHOR`,
-  `EVERON_BOUNDS`), `render_primitives` (`text::pack`, `draw::instances::ATLAS_GLYPH_COUNT`) and
-  `wasm_bindgen`.
+- Depends on: `overlay_instances` (`symbols`, `drag`, `patches`; `symbols` re-exported),
+  `unit_symbology` (`symbol_atlas`, `classification`), `map_draw_lanes` (`LaneRole`, `lane_id`,
+  `px_to_m_at_zoom`), `spatial_indexes::point_indexes::cluster`, `crate::frame` (`RenderEngine`, bindings,
+  draw batches, instance buffers, `create_glyph_atlas`), `map_coordinates::terrain_frames` (`ANCHOR`, `EVERON_BOUNDS`), `render_primitives`
+  (`text::pack`, `draw::instances::ATLAS_GLYPH_COUNT`) and `wasm_bindgen`.
 - Used by:
-  - `crate::frame` (boot, encode, engine, lifecycle), `crate::camera::viewport`,
-    `crate::overlay::symbology::markers` and `crate::streaming::loaders::world_loader`;
+  - `crate::frame` (boot, encode, engine, lifecycle), `crate::camera::viewport` and
+    `crate::streaming::loaders::world_loader`;
   - the Mission Creator in `apps/frontend/src/workspaces/editor/` (canvas mount boot tasks,
     document host, entity selection, attributes modal, armed placement, pointer gestures, select
     tool, viewport).
 - Rules: a selection change patches rows and never repacks the lane, and the side tints stay three
   distinct colours with BLUFOR as the default (`selected_overrides_side_tint`,
-  `side_tint_three_distinct`, `missing_side_defaults_blufor` in `slots/tests/cases_1.rs`); the
+  `side_tint_three_distinct`, `missing_side_defaults_blufor` in
+  `crates/map_overlay/overlay_instances/src/tests/slot_instances/cases_1.rs`); the
   symbology degrades to dots past the stated scale
   (`symbology_degrades_to_dots_past_the_stated_m_per_px`); the bind paths are pinned by
-  `legacy/map_engine/src/overlay/tests/tests/draw_order_t808_symbology_bind_paths.rs`.
+  `legacy/map_engine/src/frame/tests/lane_bind_source_pins/symbology_bind_paths.rs`.
 
 ## Related documentation
 

@@ -78,8 +78,8 @@ native test build compiles all five surfaces.
   - `crate::foundation`: the [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the auth
     store, the UI primitives, the modal stack and the toasts;
   - `map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools`,
-    `streaming::host`, `camera`, `overlay::symbology::markers` and
-    `data::store::operations::document_index`;
+    `streaming::host`, `camera` and `data::store::operations::document_index`;
+  - `unit_symbology::markers`;
   - `contracts/definitions/mission.schema.json`, through the zones panel's embed; the browser's
     local storage; over HTTP, `PATCH /api/v1/missions/{id}` and `GET /api/v1/registry`.
 - Used by:

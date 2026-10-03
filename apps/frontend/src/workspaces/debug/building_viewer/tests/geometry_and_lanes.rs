@@ -1,9 +1,9 @@
 use super::*;
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::bvh::traversal::Bvh;
-use map_engine::spatial::los::interior::wash::level_washes;
-use map_engine::spatial::los::interior::wash::WashParams;
-use map_engine::world::architecture::section::cutter::building_drawing;
+use building_interiors::section::cutter::building_drawing;
+use interior_line_of_sight::floor_wash::level_washes;
+use interior_line_of_sight::floor_wash::WashParams;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
+use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
 
 fn farmhouse() -> BuildingBlueprint {
     serde_json::from_str(include_str!(concat!(
@@ -106,7 +106,7 @@ fn roof_view_is_footprint_plus_all_ghost_walls() {
 /// plates still land on the floor lane.
 #[test]
 fn level_view_paints_plate_grid_verbatim() {
-    use map_engine::world::architecture::blueprint::footprint::PlateGrid;
+    use building_interiors::blueprint::footprint::PlateGrid;
     let mut bp = farmhouse();
     bp.levels[0].plate = Some(PlateGrid {
         origin: [-2.0, -2.0],
@@ -135,7 +135,7 @@ fn plate_none_falls_back_to_polygon() {
 /// floorPolygons rings (outer + holes) draw as closed hairline loops over the plate.
 #[test]
 fn floor_rings_draw_closed_hairline_loops() {
-    use map_engine::world::architecture::blueprint::structure::FloorPolygon;
+    use building_interiors::blueprint::structure::FloorPolygon;
     let bp = farmhouse();
     let base = build_static_lanes(&bp, None, ViewFloor::Level(0));
     let mut bp = farmhouse();
@@ -173,7 +173,7 @@ fn attic_third_level_band_math() {
 /// on the floor lane, ramping dark→light with height; nulls skip; ghosts unaffected.
 #[test]
 fn roof_view_paints_the_heightfield() {
-    use map_engine::world::architecture::blueprint::footprint::RoofGrid;
+    use building_interiors::blueprint::footprint::RoofGrid;
     let mut bp = farmhouse();
     let base = build_static_lanes(&bp, None, ViewFloor::Roof);
     bp.roof = Some(RoofGrid {
@@ -238,12 +238,12 @@ fn cube(center: [f64; 3], half: [f64; 3]) -> (Vec<[f64; 3]>, Vec<[u32; 3]>) {
 /// One-level 10 × 10 m box room (band [0, 3]) with a single window hole in the south
 /// wall (x ∈ [-1, 1], y ∈ [1, 2]): the blueprint names it, the 0.2 m slab mesh HAS it.
 fn box_room() -> (BuildingBlueprint, BvhSidecar) {
-    use map_engine::spatial::bvh::traversal::Bvh;
-    use map_engine::world::architecture::blueprint::footprint::OverallFootprint;
-    use map_engine::world::architecture::blueprint::footprint::VerticalProfile;
-    use map_engine::world::architecture::blueprint::structure::BBox2D;
-    use map_engine::world::architecture::blueprint::structure::BuildingWall;
-    use map_engine::world::architecture::blueprint::structure::BuildingWindow;
+    use building_interiors::blueprint::footprint::OverallFootprint;
+    use building_interiors::blueprint::footprint::VerticalProfile;
+    use building_interiors::blueprint::structure::BBox2D;
+    use building_interiors::blueprint::structure::BuildingWall;
+    use building_interiors::blueprint::structure::BuildingWindow;
+    use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
     let wall = |id: &str, start: [f64; 2], end: [f64; 2]| BuildingWall {
         id: id.into(),
         start,

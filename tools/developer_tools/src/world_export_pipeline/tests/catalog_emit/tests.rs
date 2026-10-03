@@ -1,4 +1,5 @@
-use map_engine::streaming::loaders::manifest::parse_manifest_binary;
+use prefab_catalog::prefab_rows::prefab_map_key;
+use world_chunks::terrain_manifest::parse_manifest_binary;
 
 use super::*;
 use crate::repository_layout::compiled_checkout_root;
@@ -74,14 +75,14 @@ fn everon_catalog_archives_emit_and_read_back_as_their_json() {
     // leaves every assertion on `by_id` passing. The reader side of that is pinned in
     // `map_engine`'s `everon_catalogue_archive_equals_the_json_rows`; what is pinned HERE
     // is the writer side, JSON order → archive order → file bytes.
-    let json_rows = narrow_prefab_rows(&read_doc(&dir, PREFABS_GZ).expect("prefabs json"));
+    let json_rows = narrow_prefab_rows(&read_doc(&dir, PREFABS_GZ).expect("prefabs json"))
+        .expect("Everon ids are whole u32s");
     assert_eq!(json_rows.len(), EVERON_PREFABS);
     let rebuilt = build_prefab_catalog_archive(&dir).expect("rebuild");
     assert_eq!(rebuilt.prefabs.len(), json_rows.len());
     for (i, (a, j)) in rebuilt.prefabs.iter().zip(json_rows.iter()).enumerate() {
         assert_eq!(
-            f64::from(a.prefab_id.get()),
-            j.prefab_id,
+            a.prefab_id, j.prefab_id,
             "row {i}: the archive is not in prefabs.json.gz order"
         );
     }
@@ -102,7 +103,7 @@ fn everon_catalog_archives_emit_and_read_back_as_their_json() {
     for row in &json_rows {
         let entry = cat
             .by_id
-            .get(&row.prefab_id.to_bits())
+            .get(&prefab_map_key(row.prefab_id))
             .unwrap_or_else(|| panic!("prefab {} missing from the archive", row.prefab_id));
         assert_eq!(entry.row.kind, row.kind, "prefab {}", row.prefab_id);
         assert_eq!(entry.row.class, row.class, "prefab {}", row.prefab_id);

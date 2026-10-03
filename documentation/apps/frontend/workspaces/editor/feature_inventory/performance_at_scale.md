@@ -10,10 +10,12 @@ document. Each entry states what the code does; none records a measured frame ra
 
 ## Where it lives
 
-- Code: the slot icon lane, its selection patches, drag overlay and clusters in
-  [`legacy/map_engine/src/overlay/symbology/instances/`](/legacy/map_engine/src/overlay/symbology/instances/README.md);
+- Code: the slot icon lane's GPU bridge in
+  [`legacy/map_engine/src/overlay/symbology/instances/`](/legacy/map_engine/src/overlay/symbology/instances/README.md),
+  and its selection patches, drag overlay and clusters in
+  [`crates/map_overlay/overlay_instances/`](/crates/map_overlay/overlay_instances/README.md);
   the picks in `legacy/map_engine/src/editing/picking.rs` and
-  `legacy/map_engine/src/spatial/indexing/picking.rs`; the windowed trees in
+  `crates/geometry/spatial_indexes/src/point_indexes/picking.rs`; the windowed trees in
   [`apps/frontend/src/workspaces/editor/ui/outliner/tree/`](/apps/frontend/src/workspaces/editor/ui/outliner/tree/README.md)
   and `apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/tree_panel.rs`; the undo
   driver's redraw in `apps/frontend/src/workspaces/editor/bridge/document_host/history.rs`;
@@ -63,7 +65,7 @@ pasted slot; no cap limits the count or the selection (`paste_slots`,
 
 With more than 500 slots (`CLUSTER_SLOT_THRESHOLD`) at zoom −4 or farther (`ZOOM_CLUSTER_MAX`),
 the slot lane switches to discs sized by how many slots each covers; the camera re-checks the gate
-on every move (`cluster_mode`, `legacy/map_engine/src/overlay/symbology/instances/symbols.rs:44-56`;
+on every move (`cluster_mode`, `crates/map_overlay/overlay_instances/src/symbols.rs:44-56`;
 `legacy/map_engine/src/camera/viewport.rs:110-128`). The cluster grid is built over Everon's
 bounds whatever the terrain (`instances/bridge_1.rs:228-241`). Clicking a disc does not zoom
 into it; picks still test the slots beneath.
@@ -106,7 +108,7 @@ them with a shader offset; the document is written once, on release (`set_drag` 
 ### PERF-PICK-001 — Picks
 
 1. Click, drag-start, right-click, double-click and marquee picks query a grid point index over
-   the slot positions (`pick_slot_row`, `legacy/map_engine/src/spatial/indexing/picking.rs:9-24`),
+   the slot positions (`pick_slot_row`, `crates/geometry/spatial_indexes/src/point_indexes/picking.rs:9-24`),
    and vehicles are tested in a separate pass.
 2. Partial: every pick first rebuilds the slot table from the whole document
    (`map_render_slot_soa`, `legacy/map_engine/src/editing/selection_universe.rs:107-111`)

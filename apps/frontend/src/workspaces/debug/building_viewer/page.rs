@@ -2,18 +2,19 @@
 
 use std::sync::Arc;
 
+use building_interiors::blueprint::sight_line::LosHitKind;
+use building_interiors::blueprint::sight_line::LosResult;
+use building_interiors::blueprint::structure::BuildingBlueprint;
+use building_interiors::compound::assembly::CompoundBuilding;
+use building_interiors::section::cutter::building_drawing;
+use building_interiors::section::cutter::BuildingDrawing;
+use interior_line_of_sight::compound_walk::CompoundLineOfSight;
+use interior_line_of_sight::floor_wash::level_wash;
+use interior_line_of_sight::floor_wash::level_wash_compound;
+use interior_line_of_sight::floor_wash::LevelWash;
+use interior_line_of_sight::floor_wash::WashParams;
 use leptos::prelude::*;
-use map_engine::spatial::bvh::sidecar::BvhSidecar;
-use map_engine::spatial::los::interior::wash::level_wash;
-use map_engine::spatial::los::interior::wash::level_wash_compound;
-use map_engine::spatial::los::interior::wash::LevelWash;
-use map_engine::spatial::los::interior::wash::WashParams;
-use map_engine::world::architecture::blueprint::attribution_1::LosHitKind;
-use map_engine::world::architecture::blueprint::attribution_1::LosResult;
-use map_engine::world::architecture::blueprint::structure::BuildingBlueprint;
-use map_engine::world::architecture::compound::assembly::CompoundBuilding;
-use map_engine::world::architecture::section::cutter::building_drawing;
-use map_engine::world::architecture::section::cutter::BuildingDrawing;
+use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
 
 use super::super::building_interior::LevelCuts;
 use super::{geom, Cam, Drag, RayEnd, ViewFloor};
@@ -73,7 +74,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
                 (Some(bp), Some(occl)) => Some(compound.with(|c| match c.as_ref() {
                     // The compound walks doors, glass, foliage, and props.
                     Some(c) => c.evaluate_los(Some(bp), [o.x, o.y, o.z], [t.x, t.y, t.z]),
-                    None => bp.evaluate_los(occl, [o.x, o.y, o.z], [t.x, t.y, t.z]),
+                    None => bp.annotate_sight_line(occl, [o.x, o.y, o.z], [t.x, t.y, t.z]),
                 })),
                 _ => None,
             });
@@ -218,11 +219,11 @@ pub fn BuildingViewerPage() -> impl IntoView {
                     </div>
                     {(!windows.is_empty()).then(|| view! { <div>"through glass: "<span class="text-cyan-300">{windows.clone()}</span></div> })}
                     {(!doors.is_empty()).then(|| view! { <div>"through door: "<span class="text-emerald-300">{doors.clone()}</span></div> })}
-                    {r.blocked_by_wall_id.clone().map(|w| view! { <div>"blocked by "<span class="text-red-300">{w}</span></div> })}
+                    {r.blocked_by_wall_id.clone().map(|w| view! { <div>"blocked by "<span class="text-red-300">{w.to_string()}</span></div> })}
                     {r.hits.last().filter(|h| h.kind == LosHitKind::Roof).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("roof @ {:.1} m", h.pos[1])}</span></div> })}
                     {r.hits.last().filter(|h| h.kind == LosHitKind::Solid).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("solid @ {:.1} m", h.pos[1])}</span></div> })}
                     {r.hits.last().filter(|h| h.kind == LosHitKind::Window && h.concealment >= 1.0).map(|h| view! { <div>"blocked by "<span class="text-red-300">{format!("frame of {}", h.id)}</span></div> })}
-                    {r.cover_furniture_id.clone().map(|f| view! { <div>"cover: "<span class="text-yellow-300">{f}</span></div> })}
+                    {r.cover_furniture_id.clone().map(|f| view! { <div>"cover: "<span class="text-yellow-300">{f.to_string()}</span></div> })}
                     {(!canopy.is_empty()).then(|| view! { <div>"through canopy: "<span class="text-lime-300">{canopy.clone()}</span></div> })}
                     {blocker.map(|b| view! { <div>"blocked by "<span class="text-red-300">{b}</span></div> })}
                 </div>
@@ -403,7 +404,7 @@ pub fn BuildingViewerPage() -> impl IntoView {
             <div class="pointer-events-auto absolute left-3 top-3 z-20 max-w-sm space-y-2 rounded-lg border border-border-subtle bg-surface-container/90 p-3 backdrop-blur">
                 <div class="text-sm font-bold">"Building Viewer "<span class="text-on-surface-variant">"(debug bench)"</span></div>
                 <div class="text-xs text-on-surface-variant">
-                    {move || blueprint.with(|bp| bp.as_ref().map(|b| b.label.clone().unwrap_or_else(|| b.prefab_id.clone())).unwrap_or_else(|| "loading…".into()))}
+                    {move || blueprint.with(|bp| bp.as_ref().map(|b| b.label.clone().unwrap_or_else(|| b.prefab_id.to_string())).unwrap_or_else(|| "loading…".into()))}
                 </div>
                 {slider("Observer Y", obs)}
                 {slider("Target Y", tgt)}

@@ -6,7 +6,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::spatial::los::terrain::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Viewshed;
 
 use super::capture::{LosState, ViewshedState};
 

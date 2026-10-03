@@ -1,0 +1,35 @@
+# A terrain's prefab catalogue as the map reads it: the prefab rows and their archive form, the
+# render classes, the building and fence footprint lookups, the prefab tables one load decides, and
+# the gzip-or-plain JSON decoding of every served world payload.
+[package]
+name = "prefab_catalog"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Prefab rows, render classes, footprint lookups, prefab tables and world payload decoding of a terrain's served map data."
+
+[package.metadata.layout]
+category = "crates/world_formats"
+tier = 2
+targets = "any"
+
+[features]
+# Exposes `test_fixtures` (the Everon prefab catalogue in its JSON and archive forms, gzip) to the
+# tests of other crates; enabled only from `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+# Gzip inflation of served payloads (and deflation in the test fixtures).
+flate2 = { workspace = true }
+# The archived prefab entries are read in place through rkyv's `Archived` view.
+rkyv = { workspace = true, features = ["std", "bytecheck", "little_endian"] }
+# The parse keeps every f64 bit (`float_roundtrip`) and object key order (`preserve_order`), the
+# settings the map engine and the developer tools read world JSON with.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+thiserror = { workspace = true }
+world_file_formats = { workspace = true }
+
+[lints]
+workspace = true

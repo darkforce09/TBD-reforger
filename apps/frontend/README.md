@@ -94,7 +94,7 @@ The app reads no environment variable: the settings are the build files'.
 
 | Setting | Value | Read by |
 |---|---|---|
-| map engine features, every build | `world`, `io`, `store`, `editing`, without the defaults | Cargo, from `Cargo.toml` |
+| map engine features, every build | `world`, `store`, `editing`, without the defaults | Cargo, from `Cargo.toml` |
 | map engine features, browser build | adds `render` and `streaming` (the `wasm32` target table) | Cargo, from `Cargo.toml` |
 | map engine features, native tests | adds `streaming` (dev-dependencies) | Cargo, from `Cargo.toml` |
 | `[build]` | `target = "index.html"`, output `dist` | Trunk, from `Trunk.toml` |

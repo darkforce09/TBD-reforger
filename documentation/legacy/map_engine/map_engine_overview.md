@@ -21,8 +21,9 @@ The code READMEs it links hold the exact detail.
     `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`), creates the
     render engine (`RenderEngine::create` in `canvas_mount/boot_tasks.rs`) and starts streaming
     (`streaming::host::bootstrap`, through `apps/frontend/src/workspaces/editor/bridge/world_assets.rs`);
-  - the offline tools in `tools/developer_tools/` link the `world`, `streaming`, `io` and `bvh`
-    tiers for the world export, the blueprint tooling and the map checks.
+  - the offline tools in `tools/developer_tools/` link the `world`, `streaming` and `scenario`
+    tiers, and import the world crates under `crates/` directly for the world export, the
+    blueprint tooling and the map checks.
 - Related features: [map streaming](/documentation/legacy/map_engine/map_streaming.md), the
   [editing layer](/documentation/legacy/map_engine/editing_layer.md),
   [draft persistence](/documentation/legacy/map_engine/draft_persistence.md), the
@@ -43,11 +44,11 @@ never names the document; they meet only in `editing`
 | authored | `data/scenario` | the mission compiler, validator and AST | `scenario` | [README](/legacy/map_engine/src/data/scenario/README.md) |
 | authored | `data/store` | the Yjs (`yrs`) document the Mission Creator edits, its rows and operations | `store` | [README](/legacy/map_engine/src/data/store/README.md) |
 | authored | `editing` | the editing host, hosted commands, undo drive, draft decisions and map tools | `editing` | [editing layer](/documentation/legacy/map_engine/editing_layer.md) |
-| static | `streaming` | fetch, chunk residency, draw buffers and the memory budget | `io`, `streaming` | [map streaming](/documentation/legacy/map_engine/map_streaming.md) |
-| static | `world_file_formats` (crate) | the binary formats: rkyv archives, containers, density grids, POD layouts | `io` | [README](/crates/world_formats/world_file_formats/README.md) |
-| static | `world` | terrain, what stands on it, and building interiors | `world` | [README](/legacy/map_engine/src/world/README.md) |
-| static | `spatial` | BVHs, point indexes, picking and line of sight | `world` | [README](/legacy/map_engine/src/spatial/README.md) |
-| draw | `overlay` | the 48 lanes in paint order and the symbology drawn in them | `world` | [README](/legacy/map_engine/src/overlay/README.md) |
+| static | `streaming` | fetch, chunk residency, draw buffers and the memory budget | `streaming` | [map streaming](/documentation/legacy/map_engine/map_streaming.md) |
+| static | `world_file_formats` (crate) | the binary formats: rkyv archives, containers, density grids, POD layouts | `streaming` | [README](/crates/world_formats/world_file_formats/README.md) |
+| static | `world` | the browser loaders, GPU belts and CPU meshes of the terrain and what stands on it, over the terrain and world-object crates | `world` | [README](/legacy/map_engine/src/world/README.md) |
+| static | `spatial` | the viewshed lane upload; the BVHs, point indexes, picking and line of sight are the `spatial_indexes` and line of sight crates | `world` | [README](/legacy/map_engine/src/spatial/README.md) |
+| draw | `overlay` | the lane preferences and the symbology's GPU bridges; the 48 lanes in paint order and the symbology are the map overlay crates | `world` | [README](/legacy/map_engine/src/overlay/README.md) |
 | draw | `frame` | `RenderEngine`, its batch list and upload belts, the frame vocabulary | `world`; GPU half `render` | [README](/legacy/map_engine/src/frame/README.md) |
 | draw | `camera` | the render engine's viewport; the orthographic and orbit cameras (`camera_math`) and the grid reference (`map_coordinates`) under map engine paths | always | [README](/legacy/map_engine/src/camera/README.md) |
 | support | `diagnostics` | readback checks, the frame benchmark, clocks and console macros | `render` | [README](/legacy/map_engine/src/diagnostics/README.md) |
@@ -88,9 +89,11 @@ encode, submit) are in the [frame README](/legacy/map_engine/src/frame/README.md
 
 A consumer takes the lowest tier that holds what it needs; the map engine README's
 [Configuration](/legacy/map_engine/README.md#configuration) lists each feature, what it
-turns on and who takes it. The chain runs `render → streaming → io → world → bvh`, with `io`
-also taking `scenario`, and `editing → store → scenario` with `editing` also taking `world` and
-`streaming`. The graphics engine arrives with `world`. The API's `scenario` tier carries no
+turns on and who takes it. The chain runs `render → streaming → world`, with `streaming` also
+taking `scenario`, and `editing → store → scenario` with `editing` also taking `world` and
+`streaming`. The graphics engine arrives with `world`, with the terrain, world-object, map overlay
+and spatial crates its modules draw; the on-disk formats, the world format crates and the
+streamed line of sight arrive with `streaming`. The API's `scenario` tier carries no
 graphics crate, PNG decoder, `rkyv` or `flate2`; the gate's rule 4 keeps it so.
 
 The crate's tests need every feature: `cargo test -p map_engine --all-features`, which
@@ -103,8 +106,8 @@ The crate's tests need every feature: `cargo test -p map_engine --all-features`,
   and orbit arithmetic with pan and zoom controls and a 1000 m grid reference, and the crate has
   no MGRS code (`legacy/map_engine/src/camera/README.md`).
 - `CLAUDE.md:162` lists a top-level `symbology/` with NATO MIL-STD-2525 symbols; the symbology is
-  `overlay/symbology/` and implements no MIL-STD-2525 set
-  (`legacy/map_engine/src/overlay/symbology/README.md`). `CLAUDE.md`'s atlas also omits
+  the `unit_symbology` crate, uploaded by `overlay/symbology/`, and implements no MIL-STD-2525 set
+  (`crates/map_overlay/unit_symbology/README.md`). `CLAUDE.md`'s atlas also omits
   `overlay/` and `frame/`'s role as the render engine's home.
 - `legacy/map_engine/src/lib.rs:1-4` calls the crate root a module "in the graphics engine"
   with placeholder role lines; the crate is the map engine.

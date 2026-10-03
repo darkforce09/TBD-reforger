@@ -42,9 +42,9 @@ See: [Identity and access domain](/apps/api/src/identity_and_access/README.md).
 A draw-order layer of the map: the map engine names 48 lanes (`LaneRole`), basemap first; the
 graphics engine sorts draws by an opaque `LaneId`. Other lanes are named in full (wave lanes).
 
-In code: `LaneRole` in `legacy/map_engine/src/overlay/lanes.rs`; `LaneId` in `crates/graphics/render_primitives/src/frame/ids.rs`.
+In code: `LaneRole` in `crates/map_overlay/map_draw_lanes/src/lane_roles.rs`; `LaneId` in `crates/graphics/render_primitives/src/frame/ids.rs`.
 
-See: [frame packet](/documentation/glossary/a_to_f.md#frame-packet), [Map overlay](/legacy/map_engine/src/overlay/README.md).
+See: [frame packet](/documentation/glossary/a_to_f.md#frame-packet), [Map draw lanes](/crates/map_overlay/map_draw_lanes/README.md).
 
 ### load workload
 

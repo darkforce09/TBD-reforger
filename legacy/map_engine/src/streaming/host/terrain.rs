@@ -49,7 +49,7 @@ pub(super) struct DemInfo {
 
     /// Raw.
     #[serde(default)]
-    pub(super) raw: Option<crate::streaming::loaders::manifest::DemRawBlock>,
+    pub(super) raw: Option<world_chunks::terrain_manifest::DemRawBlock>,
 }
 
 /// Tiles block.
@@ -94,16 +94,15 @@ pub(super) struct LoadedTerrain {
     pub(super) hillshade_h: u32,
 
     /// The source `u16` raster, present only when the caller asked to keep it.
-    pub(super) full_resolution:
-        Option<crate::world::terrain::dem::full_resolution::FullResolutionDem>,
+    pub(super) full_resolution: Option<terrain_elevation::full_resolution::FullResolutionDem>,
 }
 
 /// The elevation model as its `u16` samples with their encoding, plus the `f32` metres cache
 /// derived from them.
 type DemSource = (
-    crate::world::terrain::dem::png::DecodedDem,
+    terrain_elevation::png::DecodedDem,
     Vec<u16>,
-    crate::world::terrain::dem::full_resolution::SampleEncoding,
+    terrain_elevation::full_resolution::SampleEncoding,
 );
 
 /// Turns a streamed fetch's [`browser_platform::fetch::ByteProgress`] into the boot bar's events
@@ -146,12 +145,12 @@ async fn load_declared_raw_samples(
         &boot_byte_progress(crate::streaming::bridge::progress::BootSeg::Terrain, report),
     )
     .await?;
-    let decoded = crate::world::terrain::dem::png::DecodedDem {
+    let decoded = terrain_elevation::png::DecodedDem {
         meters: raw.metres_grid(),
         width: raw.width(),
         height: raw.height(),
     };
-    let encoding = crate::world::terrain::dem::full_resolution::SampleEncoding {
+    let encoding = terrain_elevation::full_resolution::SampleEncoding {
         offset_m: f64::from(raw.header.offset_m),
         scale_m: f64::from(raw.header.scale_m),
     };
@@ -161,17 +160,14 @@ async fn load_declared_raw_samples(
 /// Decode the 16-bit PNG into its samples, the `uint16-linear` encoding the manifest declares,
 /// and the metres cache.
 fn decode_png_source(bytes: &[u8], manifest: &ManifestDem) -> Option<DemSource> {
-    let (raster, width, height) = crate::world::terrain::dem::png::decode_png_gray16(bytes).ok()?;
-    let meters = crate::world::terrain::dem::sampling::meters_cache(
-        &raster,
+    let (raster, width, height) = terrain_elevation::png::decode_png_gray16(bytes).ok()?;
+    let meters =
+        terrain_elevation::sampling::meters_cache(&raster, manifest.dem.min_m, manifest.dem.max_m);
+    let encoding = terrain_elevation::full_resolution::SampleEncoding::linear_range(
         manifest.dem.min_m,
         manifest.dem.max_m,
     );
-    let encoding = crate::world::terrain::dem::full_resolution::SampleEncoding::linear_range(
-        manifest.dem.min_m,
-        manifest.dem.max_m,
-    );
-    let decoded = crate::world::terrain::dem::png::DecodedDem {
+    let decoded = terrain_elevation::png::DecodedDem {
         meters,
         width,
         height,
@@ -184,7 +180,7 @@ fn decode_png_source(bytes: &[u8], manifest: &ManifestDem) -> Option<DemSource> 
 fn upload_hillshade(
     engine: &EngineHandle,
     manifest: &ManifestDem,
-    dem: &crate::world::terrain::dem::png::DecodedDem,
+    dem: &terrain_elevation::png::DecodedDem,
 ) -> Option<(u32, u32)> {
     crate::streaming::memory::budget::set_held(
         crate::streaming::memory::budget::Asset::Dem,
@@ -219,7 +215,7 @@ fn upload_hillshade(
 
 /// Load the elevation model (the declared raw grid first, else the 16-bit PNG through the
 /// measured streamed fetch), upload its hillshade, and keep the source raster as a
-/// [`crate::world::terrain::dem::full_resolution::FullResolutionDem`] when
+/// [`terrain_elevation::full_resolution::FullResolutionDem`] when
 /// `keep_full_resolution` is set.
 pub(super) async fn load_dem_and_hillshade(
     engine: &EngineHandle,
@@ -251,12 +247,12 @@ pub(super) async fn load_dem_and_hillshade(
         }
     };
     let full_resolution = if keep_full_resolution {
-        crate::world::terrain::dem::full_resolution::FullResolutionDem::new(
+        terrain_elevation::full_resolution::FullResolutionDem::new(
             samples,
             dem.width,
             dem.height,
             encoding,
-            crate::world::terrain::dem::full_resolution::RasterFootprint::from_world_bounds(
+            terrain_elevation::full_resolution::RasterFootprint::from_world_bounds(
                 manifest.world_bounds,
             ),
         )

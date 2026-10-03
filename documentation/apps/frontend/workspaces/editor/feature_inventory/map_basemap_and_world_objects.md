@@ -12,7 +12,8 @@ the world-object interactions that are not built yet.
 - Code: the basemap in [`legacy/map_engine/src/world/terrain/satellite/`](/legacy/map_engine/src/world/terrain/satellite/README.md);
   world streaming in [`legacy/map_engine/src/streaming/`](/legacy/map_engine/src/streaming/README.md)
   and its [host](/legacy/map_engine/src/streaming/host/README.md); the world-object
-  overlays and their zoom thresholds in [`legacy/map_engine/src/overlay/`](/legacy/map_engine/src/overlay/README.md);
+  overlay layer switches in [`legacy/map_engine/src/overlay/`](/legacy/map_engine/src/overlay/README.md)
+  and their zoom thresholds in [`crates/map_overlay/map_draw_lanes/`](/crates/map_overlay/map_draw_lanes/README.md);
   the per-user switches in `apps/frontend/src/workspaces/editor/session/world_layer_prefs.rs`
   ([shell README](/apps/frontend/src/workspaces/editor/session/README.md)) and the "Editor
   Preferences" dialog in
@@ -65,7 +66,7 @@ Not built: no road overlay is baked onto the satellite image, and its ticket is 
 ### MAP-WORLD-001 — Forest
 
 1. Forest draws as a filled mass up to zoom 1, as an outline from zoom -1.5, and as tree glyphs
-   from zoom 0 (`legacy/map_engine/src/overlay/lod.rs`).
+   from zoom 0 (`crates/map_overlay/map_draw_lanes/src/zoom_gates.rs`).
 2. The "Forest mass" and "Trees" switches hide each part. Forests are drawn areas, not
    first-class region objects a mission maker can select.
 
@@ -96,8 +97,8 @@ both are stored in the mission document.
 
 Buildings appear from zoom -2.5, props from zoom 3, town labels from zoom -4.5 and road names
 from zoom 0 or 1 by road class; unit symbols cluster at zoom -4 and below
-(`legacy/map_engine/src/overlay/lod.rs`,
-`legacy/map_engine/src/overlay/symbology/instances/symbols.rs`).
+(`crates/map_overlay/map_draw_lanes/src/zoom_gates.rs`,
+`crates/map_overlay/overlay_instances/src/symbols.rs`).
 
 ### Known discrepancies
 

@@ -3,8 +3,8 @@
 //! Signals & state: session-local measurement state; never the authored document.
 //! Invariants: hidden ground carries the ink and visible ground stays untouched; off-coverage reads lighter than proven dead ground and never as visible. Texture row 0 is the raster's north edge.
 
-use crate::spatial::los::terrain::viewshed::Viewshed;
-use crate::spatial::los::terrain::viewshed::Visibility;
+use terrain_line_of_sight::viewshed::Viewshed;
+use terrain_line_of_sight::viewshed::Visibility;
 
 // ── T-644 — the viewshed COLOUR LANGUAGE (the hard part; palette + written rationale) ────────────
 //

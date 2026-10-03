@@ -11,9 +11,9 @@
 use map_engine::editing::tools::selection;
 use std::collections::HashMap;
 
+use map_draw_lanes::lane_roles::role_id;
 use map_engine::frame::engine::RenderEngine;
-use map_engine::overlay::lanes::role_id;
-use map_engine::overlay::symbology::links::squad_links::pack_squad_link_drag_preview;
+use unit_symbology::squad_links::pack_squad_link_drag_preview;
 use wasm_bindgen::prelude::*;
 
 use selection::gesture::{EngineHandle, SelectionHandle};
@@ -36,12 +36,7 @@ pub fn push_drag_preview(
     e.set_drag(ids.to_vec(), dx as f32, dy as f32);
     bind_vehicle_preview_lane(
         e,
-        &map_engine::overlay::symbology::instances::drag::pack_vehicle_drag_preview(
-            ids,
-            vehicle_points,
-            dx,
-            dy,
-        ),
+        &overlay_instances::drag::pack_vehicle_drag_preview(ids, vehicle_points, dx, dy),
     );
     bind_squad_link_preview(e, ids, dx, dy);
 }
@@ -51,12 +46,7 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
     e.set_drag(Vec::new(), 0.0, 0.0);
     bind_vehicle_preview_lane(
         e,
-        &map_engine::overlay::symbology::instances::drag::pack_vehicle_drag_preview(
-            &[],
-            vehicle_points,
-            0.0,
-            0.0,
-        ),
+        &overlay_instances::drag::pack_vehicle_drag_preview(&[], vehicle_points, 0.0, 0.0),
     );
     bind_squad_link_preview(e, &[], 0.0, 0.0);
 }

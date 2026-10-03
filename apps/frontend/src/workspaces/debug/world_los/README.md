@@ -62,10 +62,11 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
 
 ## Boundaries
 
-- Depends on: `map_engine`: `streaming::loaders` (`fetch_bytes`, `fetch_text`,
-  `OccluderHost`), `streaming::scheduler::state::WorldResidency`, `spatial::los::world`
-  (`WorldOccluder`, `WorldVerdict`), `world::architecture::section::cutter::section_at`, `frame`
-  (`RenderEngine`, `RafPump`) and `overlay::lanes::role_id`; in
+- Depends on: `map_engine`: `streaming::loaders::occluder_loader::OccluderHost`,
+  `streaming::scheduler::state::WorldResidency` and `frame` (`RenderEngine`, `RafPump`);
+  `world_line_of_sight` (`WorldOccluder`, `WorldVerdict`),
+  `building_interiors::section::cutter::section_at`, `map_draw_lanes::lane_roles::role_id` and
+  `browser_platform::fetch` (`fetch_bytes`, `fetch_text`); in
   `apps/frontend/src/workspaces/debug/`, the module root's defaults, `world_los_scene.rs`
   (`Footprint`, `build_bench_lanes`, `ray_strip`), `InteriorLanes` from `building_interior.rs` and
   `screen_to_world` from `building_viewer/geom.rs`; `futures`, `js_sys`, `wasm_bindgen` and

@@ -146,3 +146,9 @@ pub type EngineHandle = std::rc::Rc<std::cell::RefCell<Option<RenderEngine>>>;
 #[cfg(test)]
 #[path = "tests/damage_discipline.rs"]
 mod damage_discipline;
+
+// Lane bind source pins: what the comment, connection and symbology bind functions upload and
+// what they leave alone, read from the source text. Not gated on `render` for the same reason.
+#[cfg(test)]
+#[path = "tests/lane_bind_source_pins/mod.rs"]
+mod lane_bind_source_pins;

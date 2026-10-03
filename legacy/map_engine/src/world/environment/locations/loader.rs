@@ -3,24 +3,24 @@
 //! Signals & state: camera, spatial, asset, or GPU data owned by this module.
 //! Invariants: preserve coordinates, resource lifetimes, ordering, and binary layouts.
 
-use crate::overlay::symbology::text_packing::pack_height_label_glyphs;
-use crate::overlay::symbology::text_packing::pack_road_label_bytes;
-use crate::overlay::symbology::text_packing::pack_town_label_bytes;
-use crate::streaming::loaders::manifest::LabelsBlock;
-use crate::streaming::loaders::manifest::parse_manifest_binary;
-use crate::world::environment::locations::peaks::HeightLabel;
-use crate::world::environment::locations::peaks::find_peaks;
-use crate::world::environment::locations::route_labels::RoadNamesFile;
-use crate::world::environment::locations::route_labels::build_road_label_draw_set_from_archive;
-use crate::world::environment::locations::route_labels::parse_road_names_json;
-use crate::world::environment::locations::route_placement::RoadLabelPlacement;
-use crate::world::environment::locations::route_placement::build_road_label_draw_set;
-use crate::world::environment::locations::towns::map_labels_from_bytes;
-use crate::world::environment::locations::towns::parse_locations_json;
-use crate::world::terrain::dem::manifest::DemManifest;
-use crate::world::terrain::roads::network::RoadSegment;
+use place_names::label_packing::pack_height_label_glyphs;
+use place_names::label_packing::pack_road_label_bytes;
+use place_names::label_packing::pack_town_label_bytes;
+use place_names::peaks::HeightLabel;
+use place_names::peaks::find_peaks;
+use place_names::route_labels::RoadNamesFile;
+use place_names::route_labels::build_road_label_draw_set_from_archive;
+use place_names::route_labels::parse_road_names_json;
+use place_names::route_placement::RoadLabelPlacement;
+use place_names::route_placement::build_road_label_draw_set;
+use place_names::towns::map_labels_from_bytes;
+use place_names::towns::parse_locations_json;
 use render_primitives::text::layout::pack_text_icon_bytes;
 use render_primitives::text::metrics::text_char_meters;
+use road_network::network::RoadSegment;
+use terrain_elevation::manifest::DemManifest;
+use world_chunks::terrain_manifest::LabelsBlock;
+use world_chunks::terrain_manifest::parse_manifest_binary;
 
 use crate::frame::EngineHandle;
 use crate::streaming::bridge::preferences::WorldLayerPrefs;
@@ -46,7 +46,7 @@ enum RoadLabelSource {
 
 /// Label host.
 pub struct LabelHost {
-    towns: Vec<crate::overlay::symbology::labels::importance::LocationLabel>,
+    towns: Vec<label_layout::importance::LocationLabel>,
     road_names: RoadLabelSource,
     road_segments: Vec<RoadSegment>,
     peaks: Vec<HeightLabel>,
@@ -70,7 +70,7 @@ impl LabelHost {
 
     /// Towns.
     #[must_use]
-    pub(crate) fn towns(&self) -> &[crate::overlay::symbology::labels::importance::LocationLabel] {
+    pub(crate) fn towns(&self) -> &[label_layout::importance::LocationLabel] {
         &self.towns
     }
 

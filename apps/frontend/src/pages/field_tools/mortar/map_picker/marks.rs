@@ -3,7 +3,7 @@
 //!
 //! **Role:** turns the position drafts and the last solution into the map engine's
 //! [`FireMissionPlot`], builds it with
-//! [`map_engine::overlay::fire_mission_marks::build_fire_mission_marks`], and packs the
+//! [`overlay_instances::fire_mission_marks::build_fire_mission_marks`], and packs the
 //! result into the three lane uploads: glyphs for the marker lane, the gun→target lines and
 //! ellipse outlines for the connection lane, the dispersion fills for the zone lane.
 //! **Position:** pure half of the map picker; the browser half (`super::engine_overlay`) hands
@@ -24,7 +24,7 @@ use crate::pages::field_tools::mortar::inputs::positions::PositionDraft;
 #[cfg(any(target_arch = "wasm32", test))]
 use crate::pages::field_tools::mortar::solve_bridge::SolvedMission;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::overlay::fire_mission_marks::{
+use overlay_instances::fire_mission_marks::{
     build_fire_mission_marks, DispersionEllipse, FireMissionGlyph, FireMissionMarks,
     FireMissionPlot, BURST_COLOR,
 };

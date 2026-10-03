@@ -1,21 +1,18 @@
 # Map overlay
 
-What the map draws and in what order: the 48 named lanes and their paint order, the zoom gates
-that decide what is legible at a scale, the lane visibility and tint preferences, and the
-symbology drawn in the lanes. It decides identity and legibility; the GPU buffers and draw calls
-belong to `crate::frame` and `graphics_engine`, which see only an opaque lane key.
+The map engine's half of the map overlay: the lane visibility and tint preferences and the
+symbology's GPU bridges. The lane roles, zoom gates, labels, symbology and instance packers live in
+the map overlay crates under `crates/map_overlay/`, which every caller imports directly. It decides
+identity and legibility; the GPU buffers and draw calls belong to `crate::frame` and
+`graphics_engine`, which see only an opaque lane key.
 
 ## Contents
 
 ```text
 legacy/map_engine/src/overlay/
-├── fire_mission_marks.rs  gun, target and burst glyphs, gun→target lines and dispersion ellipses
-├── lanes.rs        `LaneRole`: 48 lanes, paint order, renderer key, two wire-id sets
 ├── lanes_prefs.rs  layer visibility, texture lane opacity, clear colour, the 1 km grid
-├── lod.rs          zoom gates per world render class, the instance budget and the contour interval
-├── mod.rs          the module tree
-├── symbology/      role, vehicle and marker glyphs, atlases, instances, labels and squad links
-└── tests/          unit tests for the lane order, the wire ids, the zoom gates and the bind paths
+├── mod.rs          the module tree: `lanes_prefs` and `symbology`
+└── symbology/      the glyph atlas upload and the slot instance GPU bridges
 ```
 
 ## How it works
@@ -28,60 +25,32 @@ LaneRole ──lane_order──► rank 0..47 ──lane_id──► frame::Lane
 browser API u32
 ```
 
-`lane_order` ranks every `LaneRole` from the basemap up: satellite, sea, hillshade, landcover and
-contours, roads, buildings, fences and forest, world glyphs and labels, the building interior
-lanes, the viewshed and the interior probe, the 1 km grid, then the
-[mission](/documentation/glossary/g_to_m.md#mission) lanes (zones, markers,
-comments, connections, squad links, vehicles, [slots](/documentation/glossary/n_to_z.md#slot), place
-preview, drag, clusters) and the marquee
-on top. `lane_id` doubles the rank so `Stress` and `Calibration`, which share rank 0, get distinct
-keys. The browser speaks two disjoint `u32` namespaces: `role_id` for the vector-lane uploads and
-`tex_role_id` (`BASEMAP` 0, `HILLSHADE` 1) for the texture lanes, so id 0 is `Sea` in one and
-`Satellite` in the other. `ALL_LANES` lists every variant in declaration order, which differs from
-paint order for `Grid` (declared after `Clusters`, ranked 35).
-
-`lod::class_visible` answers whether a world render class is drawn, and pickable, at a zoom (trees
-from zoom 0, building footprints from −2.5, badges from 1, props from 3, forest fill below 0, and so
-on), `INSTANCE_BUDGET` (150 000) caps drawn world instances, and `contour_interval_for_zoom` picks a
-5 m to 80 m interval that keeps contour spacing near `TARGET_SPACING_PX` on screen. `lanes_prefs.rs`
-adds `RenderEngine` methods on `wasm32` with `render`: `set_world_layer_visible` maps a layer
-name (`roads`, `forest`, `contours`, `sea`, `airfield`, `heights`, `townLabels`, `roadNames`) to
-its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` builds the 1 km grid.
+The lane roles are `map_draw_lanes::lane_roles` and the zoom gates `map_draw_lanes::zoom_gates`.
+`lane_order` ranks every `LaneRole` from the basemap up to the [mission](/documentation/glossary/g_to_m.md#mission) lanes and the marquee;
+`lane_id` doubles the rank so `Stress` and `Calibration`, which share rank 0, get distinct keys.
+`lanes_prefs.rs` adds `RenderEngine` methods on `wasm32` with `render`: `set_world_layer_visible`
+maps a layer name (`roads`, `forest`, `contours`, `sea`, `airfield`, `heights`, `townLabels`,
+`roadNames`) to its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid`
+builds the 1 km grid.
 
 ## Public surface
 
-- `lanes`: `LaneRole`, `lane_order`, `lane_id`, `ALL_LANES`, `role_id`, `tex_role_id` and their
-  `u32` conversions, for `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial`,
-  `crate::diagnostics`, the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
-  document host and tools, and the debug apps in
-  `apps/frontend/src/workspaces/debug/`.
-- `lod`: the zoom gates, `INSTANCE_BUDGET` and the contour interval, for
-  `crate::streaming` (bridge, buffers, scheduler) and `crate::world` (vegetation, relief).
 - `lanes_prefs`: `set_world_layer_visible`, `set_lane_opacity`, `set_grid` and `set_clear_color`
   on `RenderEngine`, for `crate::streaming::host` and `crate::streaming::loaders::world_loader`,
   and the debug apps' clear colour.
-- `fire_mission_marks`: `build_fire_mission_marks` turns a `FireMissionPlot` (guns, target, burst,
-  dispersion ellipses in world metres) into anchor-relative glyph quads for `MissionMarkers`, one
-  `LineList` of gun→target lines trimmed to the glyph edges plus ellipse outlines for
-  `MissionConnections`, and ellipse polygon rings for `MissionZones`; `dispersion_ring` builds one
-  ring. Non-finite inputs are skipped, so every emitted coordinate is finite.
 - `symbology`: see its README.
 
 ## Boundaries
 
-- Depends on: `crate::frame` (`RenderEngine`, draw batches and payloads, bindings),
-  `render_primitives` (`LaneId`, the grid and line vertices), `map_coordinates::terrain_frames::ANCHOR`
-  for the grid, `graphics_engine` (`draw::lines`) and `wasm_bindgen`. The module needs the crate's `world` feature;
-  `lanes` and `lod` also need `streaming`, `lanes_prefs` needs `wasm32` with `render`, and
-  `symbology` gates its own files.
-- Used by: `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial::los::terrain`,
-  `crate::diagnostics`, `crate::editing`, `crate::camera`; the Mission Creator and the debug apps
-  under `apps/frontend/src/workspaces/`; the architecture tests in
-  `tools/xtask/src/verifications/architecture/tests/`.
-- Rules: the `role_id` and `tex_role_id` wire ids never change (`wire_ids_are_pinned`,
-  `tex_wire_ids_are_pinned` in `tests/draw_order.rs`); `ALL_LANES` covers every variant
-  (`all_lanes_covers_every_variant`); each lane keeps its neighbours in paint order (the `*_sit_*`
-  tests there, such as `grid_sits_between_world_glyphs_and_mission_lanes`); the renderer names no
-  lane (rule 2 of `cargo xtask verify engine-layers`). `BUILDING_FOOTPRINT_MIN_ZOOM` (−2.5) is also
-  written as `BUILDING_MIN_ZOOM` in `legacy/map_engine/src/streaming/buffers/revision.rs`,
-  so a change here must change both.
+- Depends on: `map_draw_lanes`, `crate::frame`
+  (`RenderEngine`, draw batches and payloads, bindings), `render_primitives` (`LaneId`, the grid
+  and line vertices), `map_coordinates::terrain_frames::ANCHOR` for the grid, `graphics_engine`
+  (`draw::lines`) and `wasm_bindgen`. The module needs the crate's `world` feature, and `lanes_prefs` needs
+  `wasm32` with `render`.
+- Used by: `crate::streaming` (the host preferences and the world loader's viewport) and
+  `crate::camera` (the `symbols` re-export under `symbology::instances`); the
+  [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) and the debug apps under
+  `apps/frontend/src/workspaces/` reach the GPU bridges through `RenderEngine`.
+- Rules: the lane order, the wire ids and the zoom gates are pinned in `map_draw_lanes`
+  (`crates/map_overlay/map_draw_lanes/src/tests/`); the renderer names no lane (rule 2 of
+  `cargo xtask verify engine-layers`).

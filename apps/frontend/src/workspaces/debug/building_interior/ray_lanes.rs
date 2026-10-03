@@ -17,7 +17,7 @@ pub fn door_at(c: &CompoundBuilding, p: [f64; 2], band: [f64; 2]) -> Option<Stri
     c.doors()
         .filter(|inst| instance_in_band(inst, band))
         .find(|inst| inside(inst, &inst.placement()) || inside(inst, &inst.local))
-        .map(|inst| inst.record.id.clone())
+        .map(|inst| inst.record.id.to_string())
 }
 
 /// Ray strip + event dots for `INTERIOR_PROBE`, clipped to the ACTIVE view's elevation band
