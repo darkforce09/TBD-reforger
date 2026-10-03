@@ -20,7 +20,7 @@ apps/frontend/src/workspaces/editor/bridge/
 ├── pointer_hover.rs                the hover-cursor state machine, throttled and transition-driven
 ├── tactical_graphics.rs            the tactical-graphic rows: parse, curve, pack for the lane, pick
 ├── tactical_graphics_authoring.rs  the tactical-graphic draw, vertex drag and delete
-├── tests/                          unit tests for the Z arm, elevation drag and graphic geometry
+├── tests/                          unit tests for the Z arm, elevation drag and graphic geometry; the history rebind source pin
 ├── viewport.rs                     frame-pump readouts, harness gates, registry cache
 └── world_assets.rs                 preferences and registration for the engine's streaming host
 ```
@@ -78,9 +78,9 @@ the document.
 
 - Depends on: `mission_document`, `mission_crdt` and `mission_operations` (the document, its slot
   columns and its authoring commands); `mission_editing_session` (the history, host and lanes),
-  `mission_editing_commands` (the hosted commands) and `map_editing_tools`; `map_engine` (`frame`
-  for `RenderEngine`, `EngineHandle` and `RafPump`, `streaming` for the host, the progress events
-  and the memory budget); `unit_symbology` (side tints, squad links),
+  `mission_editing_commands` (the hosted commands) and `map_editing_tools`; `map_renderer` (`RenderEngine`,
+  `EngineHandle`), `gpu_frame` (`RafPump`), `map_streaming_host` (the host),
+  `map_streaming_model` (the progress events) and `map_asset_loading` (the memory budget); `unit_symbology` (side tints, squad links),
   `map_draw_lanes` (lane ids) and `terrain_elevation` (the full-resolution heights); in the editor, the
   outliner, the asset catalog and rules of `arsenal/`, the toolbelt's scale helpers, the zones
   panel's predicates and validation seam, the ruler tool's `install_seam`, the line-of-sight world
@@ -91,7 +91,7 @@ the document.
     `apps/frontend/src/workspaces/editor/mission_editor/`;
   - `input/`, `session/`, `ui/` and `arsenal/` under `apps/frontend/src/workspaces/editor/`;
   - the source pins in `apps/frontend/src/foundation/test_support/editor_operations.rs`,
-    `legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs` and the
+    `apps/frontend/src/workspaces/editor/bridge/tests/document_host/history_rebind_feeds_comments.rs` and the
     editor's own tests in `apps/frontend/src/workspaces/editor/tests/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through the window
     gates.

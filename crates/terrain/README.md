@@ -20,9 +20,10 @@ crates/terrain/
 - Depends on: the world formats crate (`world_file_formats`), the geometry crate
   `map_coordinates`, the graphics crate `render_primitives`, and external crates (`png`, `rkyv`,
   `bytemuck`, `serde`, `thiserror`).
-- Used by: the map engine (`legacy/map_engine`), whose terrain modules keep the browser loaders,
-  the relief host and the texture layers over these crates; the single-page app and the
-  developer tools, which import the crates directly.
+- Used by: the streaming crates, whose `map_asset_loading` keeps the browser loaders and the
+  relief host over these crates and whose `map_streaming_host` answers terrain queries;
+  `world_layers_gpu`, whose texture layers draw them; the line of sight, world object and mission
+  editing crates; the single-page app and the developer tools, which import the crates directly.
 - Rules: a terrain crate declares `category = "crates/terrain"`, depends only on lower engine
   categories and on lower terrain crates, and holds no browser or GPU code
   (`cargo xtask verify crate-tiers`).

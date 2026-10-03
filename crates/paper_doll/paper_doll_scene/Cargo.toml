@@ -1,0 +1,25 @@
+# The Arsenal paper doll's scene: the soldier's part instances and its 14 clickable equipment
+# regions, the region state colours, the unit cube and cylinder meshes, and the orbit-camera
+# picking and callout anchors over them. No GPU and no browser, so every target builds it and the
+# native tests cover it.
+[package]
+name = "paper_doll_scene"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Arsenal paper doll's soldier parts, equipment regions, state colours, unit meshes and orbit-camera picking."
+
+[package.metadata.layout]
+category = "crates/paper_doll"
+tier = 2
+targets = "any"
+
+[dependencies]
+# The 4x4 matrix helpers the part matrices are built with, and the orbit camera's projections the
+# picks and anchors project with.
+camera_math = { workspace = true }
+
+[lints]
+workspace = true

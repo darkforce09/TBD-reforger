@@ -142,11 +142,12 @@ fn grid_lines_in_range_are_the_drawn_positions() {
 }
 
 /// The distinct vertical grid-line X positions the engine DRAWS on Everon (12800). This mirrors
-/// `map_engine_render::lanes::grid_lines` **operation-for-operation**: its loop is `x from 0 to
+/// `symbology_layers_gpu::lane_preferences::grid_lines` (over `render_primitives::draw::grid`)
+/// **operation-for-operation**: its loop is `x from 0 to
 /// width, step GRID_STEP (1000), inclusive` (`x <= width`), so the line set is `{0, 1000, …,
 /// 12000}` (12800 is never hit by the step-1000 loop — Deck's behaviour, per that module's own
-/// doc). `lanes` is a wasm32-only dependency of this crate (the GPU render engine), so a native
-/// `cargo test` cannot link `grid_lines()` directly; the set is reconstructed from the identical
+/// doc). `symbology_layers_gpu` is reached only through the wasm32-only map renderer, so a native
+/// `cargo test` does not call `grid_lines()`; the set is reconstructed from the identical
 /// rule instead, and `GRID_STEP_M` is documented to equal that module's `GRID_STEP`. The
 /// invariant below then proves every label lands on one of THESE positions.
 fn drawn_vertical_lines() -> Vec<f64> {

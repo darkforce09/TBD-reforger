@@ -10,37 +10,37 @@ fn the_terrain_dem_is_streamed_against_its_content_length() {
     let src = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/mod.rs"
+            "/../../crates/streaming/map_streaming_host/src/lib.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/queries.rs"
+            "/../../crates/streaming/map_streaming_host/src/queries.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/state.rs"
+            "/../../crates/streaming/map_streaming_host/src/map_host.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/preferences.rs"
+            "/../../crates/streaming/map_streaming_host/src/view_preferences.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/viewport.rs"
+            "/../../crates/streaming/map_streaming_host/src/viewport.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/bootstrap.rs"
+            "/../../crates/streaming/map_streaming_host/src/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/terrain.rs"
+            "/../../crates/streaming/map_streaming_host/src/terrain_load.rs"
         ))
     ));
     let body = only_body(&src, "async fn load_dem_and_hillshade(");

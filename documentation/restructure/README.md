@@ -48,8 +48,8 @@ tree. The research the plan rests on is archived in
 
 ## Code
 
-- [Map engine](/legacy/map_engine/) and [graphics engine](/legacy/graphics_engine/) —
-  the monoliths the program dissolves into tiered crates.
+- [Map engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/map_engine) and [graphics engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/graphics_engine) —
+  the monoliths the program dissolved into tiered crates (deleted in S8).
 - [API](/apps/api/), [frontend](/apps/frontend/) and
   [tooling](/tools/) — the other monoliths split into kernel, domain, page and tool crates.
 - [Mod](/apps/mod/) — the reference-folder consolidation and the objective behaviour classes.
@@ -58,7 +58,7 @@ tree. The research the plan rests on is archived in
 
 - Depends on: [CLAUDE.md](/CLAUDE.md) laws; the
   [documentation standards](/documentation/standards/documentation_standards.md); the
-  [engine boundary rules](/documentation/standards/engine_boundary_rules.md) the program
+  [engine boundary rules](/documentation/standards/crate_boundary_rules.md) the program
   replaces with crate-level laws.
 - Used by: the program's orchestrator and agents; `CLAUDE.md`, `AGENTS.md` and the documentation
   entry README, which point here while the program runs.

@@ -1,7 +1,7 @@
 //! Stores and migrates the editor world-layer visibility preferences.
 
-/// Re-export `map_engine::streaming::bridge::preferences::WorldLayerPrefs`.
-pub use map_engine::streaming::bridge::preferences::WorldLayerPrefs;
+/// Re-export `map_streaming_model::world_layer_preferences::WorldLayerPrefs`.
+pub use map_streaming_model::world_layer_preferences::WorldLayerPrefs;
 use serde::{Deserialize, Serialize};
 
 #[cfg(target_arch = "wasm32")]

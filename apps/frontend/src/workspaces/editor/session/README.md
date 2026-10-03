@@ -87,7 +87,7 @@ preferences and marker it stores outlive it.
 
 - Depends on: `mission_persistence` (record keys, stored blobs, merge policy,
   local-versus-server verdict, server adoption, snapshot slots) and
-  `mission_editing_commands::document_text`; `map_engine`'s `streaming::bridge` for the boot
+  `mission_editing_commands::document_text`; `map_streaming_model` for the boot
   progress and the preference types; `mission_payload` and `mission_compiler` for the compile;
   `mission_document::MissionDocCore` and `mission_operations::slot_ids::duplicate_slot_ids`; the
   `DocHandle` and undo driver of

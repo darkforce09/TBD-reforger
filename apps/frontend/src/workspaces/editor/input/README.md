@@ -75,8 +75,8 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
   and tactical graphics of `bridge/`, the pick and lane helpers `mission_editor.rs` re-exports,
   `mission_editor::transform`, the insets of `session::layout`, the context menu of
   `apps/frontend/src/workspaces/editor/ui/docks/`;
-  `mission_editing_commands::hosted_commands`; `map_editing_tools`; `map_engine`
-  (`streaming::host`, `frame`);
+  `mission_editing_commands::hosted_commands`; `map_editing_tools`; `map_streaming_host`
+  and `map_renderer`;
   `mission_document` and `mission_operations`; the line of sight crates
   (`terrain_line_of_sight`, `interior_line_of_sight`, `world_line_of_sight`), `spatial_indexes`,
   `terrain_elevation::grid`, `overlay_instances::drag`, `unit_symbology::squad_links` and

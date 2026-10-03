@@ -21,8 +21,8 @@ crates/world_objects/
   crates (`terrain_elevation`, `road_network`), the overlay crates (`map_draw_lanes`,
   `label_layout`), `render_primitives`, `newtype_ids`, and external crates (`rkyv`, `serde`,
   `serde_json`, `thiserror`).
-- Used by: the map engine (`legacy/map_engine`), whose vegetation and locations modules keep the
-  browser loaders and the GPU lanes over these crates; the world store and the line of sight
+- Used by: `map_asset_loading`, whose forest and location label loaders read these crates, and
+  `chunk_draw_buffers`, which packs their lanes; the world store and the line of sight
   crates; the Mission Creator's debug benches and the developer tools, which import the crates
   directly.
 - Rules: a world object crate declares `category = "crates/world_objects"`, depends only on lower

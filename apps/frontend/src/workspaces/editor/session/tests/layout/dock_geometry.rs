@@ -12,7 +12,7 @@
 //!
 //! These pins close that loop end to end: the mount class parses back to the const ([`tw_width_px`]),
 //! the const is what the live accessor reports, and the accessor is what a real
-//! `map_engine_core::camera::OrthoCamera` unprojects with. The perturbation fires the rule on the
+//! `camera_math::ortho::state::OrthoCamera` unprojects with. The perturbation fires the rule on the
 //! exact half-edit it exists to catch — the pre-T-637 `w-64` class left behind while the const moved.
 
 use super::{

@@ -84,8 +84,9 @@ file; a checkout without it fails that case with the `git lfs pull` command that
   `RoadSegmentId`, `TerrainId`); `render_primitives` (glyph metrics and instance packing);
   `newtype_ids`, `rkyv`, `serde`, `serde_json` and `thiserror`.
 - Used by:
-  - the map engine (`legacy/map_engine`), whose label loader (`world/environment/locations/`)
-    fetches the sources and uploads the lanes;
+  - `map_asset_loading`, whose label loader
+    (`crates/streaming/map_asset_loading/src/environment/location_labels/`) fetches the sources
+    and uploads the lanes;
   - the developer tools: the labels archive and the height label export in
     `tools/map_assets/map_raster_pipeline/src/` and the label checks in
     `tools/map_assets/map_asset_verification/src/`.

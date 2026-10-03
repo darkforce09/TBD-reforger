@@ -169,11 +169,11 @@ pub(crate) fn rust_clippy(repo_root: &Path) -> Result<Vec<Step>> {
     api_package_step(repo_root, ApiLine::Clippy)
 }
 
-/// Fmt / clippy / test for the engine crates and the offline service worker.
+/// Fmt / clippy / test for the offline service worker, and the wasm32 lint.
 ///
-/// The engine crates and the offline service worker are named in every step: a crate the lane
-/// does not name reaches CI only as a dependency of the frontend, so nothing fmt-checks it,
-/// nothing clippies it and its tests never run. The wasm32 lint lints every package
+/// The offline service worker is named in every step: a crate the lane does not name reaches CI
+/// only as a dependency of the frontend, so nothing fmt-checks it, nothing clippies it and its
+/// tests never run with every feature on. The wasm32 lint lints every package
 /// [`crate::wasm32_lint_lane::wasm_ci_lint_packages`] derives from the workspace under
 /// `repo_root`, so a crate declaring `targets = "wasm32"` is linted from its first commit. Kept in
 /// lockstep with the `wasm-ci` row in `crate::task_definitions` — the two are the same lane
@@ -186,24 +186,10 @@ pub(crate) fn wasm_ci(repo_root: &Path) -> Result<Vec<Step>> {
     let wasm32_argv = crate::wasm32_lint_lane::wasm32_clippy_argv(&wasm32_packages);
     let wasm32_words: Vec<&str> = wasm32_argv.iter().map(String::as_str).collect();
     Ok(vec![
-        Step::new(&[
-            "cargo",
-            "fmt",
-            "--check",
-            "-p",
-            "map_engine",
-            "-p",
-            "graphics_engine",
-            "-p",
-            "offline_service_worker",
-        ]),
+        Step::new(&["cargo", "fmt", "--check", "-p", "offline_service_worker"]),
         Step::new(&[
             "cargo",
             "clippy",
-            "-p",
-            "map_engine",
-            "-p",
-            "graphics_engine",
             "-p",
             "offline_service_worker",
             "--all-targets",
@@ -213,8 +199,6 @@ pub(crate) fn wasm_ci(repo_root: &Path) -> Result<Vec<Step>> {
             "warnings",
         ]),
         Step::new(&wasm32_words),
-        Step::new(&["cargo", "test", "-p", "map_engine", "--all-features"]),
-        Step::new(&["cargo", "test", "-p", "graphics_engine", "--all-features"]),
         Step::new(&[
             "cargo",
             "test",

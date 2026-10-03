@@ -29,8 +29,8 @@ it renders without the sidebar and the top bar:
 | `debug/` | `/debug/building-viewer`, `/debug/world-los`, `/debug/ballistics-agreement` | `none`; no navigation entry |
 | `aar/`, `planner/` | no route; `mod.rs` declares no module for them | not routed |
 
-A workspace creates its own `RenderEngine` from `map_engine::frame` and reaches the
-graphics engine only through the map engine. The [mission](/documentation/glossary/g_to_m.md#mission)
+A workspace creates its own `RenderEngine` from `map_renderer` and reaches the GPU crates
+only through the map renderer. The [mission](/documentation/glossary/g_to_m.md#mission)
 document lives in the map engine's store, which the Mission Creator hosts in `editor/bridge/`; a
 workspace keeps the view and session state around it. Code that touches `web_sys` or a live engine
 handle compiles for `wasm32` only, so the native test build covers each workspace's pure half.
@@ -47,7 +47,8 @@ handle compiles for `wasm32` only, so the native test build covers each workspac
 ## Boundaries
 
 - Depends on: `crate::foundation` (the Mission Creator only; the debug benches use none of it),
-  `crate::features` (the review workspace's review wording), `map_engine`, and the browser bindings in the browser build.
+  `crate::features` (the review workspace's review wording), the map crates (`map_renderer`,
+  `map_streaming_host`, `map_streaming_model`), and the browser bindings in the browser build.
 - Used by:
   - `apps/frontend/src/app_routes.rs`, which routes to the components above;
   - the mission library in `apps/frontend/src/pages/mission_hub/library/`, whose upload panel
@@ -55,9 +56,8 @@ handle compiles for `wasm32` only, so the native test build covers each workspac
   - `crate::foundation`: the auth store and the search box, select and slider reuse the Mission
     Creator's `session` module;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`.
-- Rules: a workspace imports from `crate::foundation`, `crate::features` and `map_engine`, never
-  from a page or a sibling workspace (`cargo xtask verify frontend-layering`); nothing here imports `graphics_engine`
-  (`cargo xtask verify engine-layers`); a workspace's module line in `mod.rs` carries the same `cfg`
+- Rules: a workspace imports from `crate::foundation`, `crate::features` and the map crates, never
+  from a page or a sibling workspace (`cargo xtask verify frontend-layering`); a workspace's module line in `mod.rs` carries the same `cfg`
   gate as the code it declares; a route added for a workspace needs its row in
   `apps/frontend/src/foundation/route_table/mod.rs` with a recognised tier
   (`every_route_declares_a_recognised_tier` in

@@ -3,25 +3,17 @@
 
 use super::*;
 use crate::cargo_manifest::parse_manifest;
-use crate::temporary_checkout::TemporaryCheckout;
+use crate::temporary_checkout::{TemporaryCheckout, this_repository};
+use crate::workspace_members::read_workspace_members;
 
-/// A checkout whose five website crates declare only the edges the layer order allows.
+/// A checkout whose three website applications declare only the edges the layer order allows.
 fn layered_checkout(name: &str) -> TemporaryCheckout {
     let checkout = TemporaryCheckout::empty(name);
     checkout.write(
-        "legacy/graphics_engine/Cargo.toml",
-        "[package]\nname = \"graphics_engine\"\n\n[dependencies]\nwgpu = \"29\"\n",
-    );
-    checkout.write(
-        "legacy/map_engine/Cargo.toml",
-        "[package]\nname = \"map_engine\"\n\n[dependencies]\n\
-         graphics_engine = { path = \"../graphics_engine\", optional = true }\n",
-    );
-    checkout.write(
         "apps/frontend/Cargo.toml",
         "[package]\nname = \"frontend\"\n\n[dependencies]\n\
-         map_engine = { path = \"../../legacy/map_engine\" }\n\
-         # graphics_engine is reached through the map engine\n",
+         map_renderer = { path = \"../../crates/map_rendering/map_renderer\" }\n\
+         # the server is reached over HTTP\n",
     );
     checkout.write(
         "apps/api/Cargo.toml",
@@ -50,22 +42,16 @@ fn the_layer_order_holds_with_no_finding() {
 fn a_forbidden_edge_in_any_table_or_spelling_is_a_finding() {
     for (crate_rel, package_name, edge, forbidden) in [
         (
-            "legacy/graphics_engine",
-            "graphics_engine",
-            "[dependencies]\nm = { package = \"map_engine\", path = \"../map_engine\" }",
-            "map_engine",
-        ),
-        (
-            "legacy/map_engine",
-            "map_engine",
-            "[dev-dependencies]\napi = { path = \"../../apps/api\" }",
+            "apps/frontend",
+            "frontend",
+            "[target.'cfg(target_arch = \"wasm32\")'.dependencies]\nserver = { package = \"api\", path = \"../api\" }",
             "api",
         ),
         (
             "apps/frontend",
             "frontend",
-            "[target.'cfg(target_arch = \"wasm32\")'.dependencies]\ngraphics_engine = { path = \"../../legacy/graphics_engine\" }",
-            "graphics_engine",
+            "[dev-dependencies]\napi = { path = \"../api\" }",
+            "api",
         ),
         (
             "apps/api",
@@ -76,14 +62,14 @@ fn a_forbidden_edge_in_any_table_or_spelling_is_a_finding() {
         (
             "apps/api",
             "api",
-            "[build-dependencies]\ngraphics_engine = { path = \"../../legacy/graphics_engine\" }",
-            "graphics_engine",
+            "[build-dependencies]\ngpu_device = { path = \"../../crates/graphics/gpu_device\" }",
+            "gpu_device",
         ),
         (
             "apps/api",
             "api",
-            "[dependencies]\nmap_engine = { path = \"../../legacy/map_engine\" }",
-            "map_engine",
+            "[dependencies]\nmap_renderer = { path = \"../../crates/map_rendering/map_renderer\" }",
+            "map_renderer",
         ),
     ] {
         let checkout = layered_checkout("directions-breach");
@@ -109,7 +95,7 @@ fn the_offline_service_worker_may_link_none_of_the_server_page_or_renderer() {
     for (forbidden, path) in [
         ("api", "../api"),
         ("frontend", "../frontend"),
-        ("graphics_engine", "../../legacy/graphics_engine"),
+        ("gpu_frame", "../../crates/graphics/gpu_frame"),
     ] {
         let checkout = layered_checkout("directions-offline-worker");
         checkout.write(
@@ -130,6 +116,27 @@ fn the_offline_service_worker_may_link_none_of_the_server_page_or_renderer() {
         assert_eq!(findings[0].reason, OFFLINE_SERVICE_WORKER_RULE.reason);
     }
     assert!(CRATE_DEPENDENCY_RULES.contains(&OFFLINE_SERVICE_WORKER_RULE));
+}
+
+/// A rule naming a package no member carries guards nothing: a deleted or renamed crate would
+/// leave its row passing forever.
+#[test]
+fn every_forbidden_package_is_a_member_of_this_workspace() {
+    let members = read_workspace_members(&this_repository()).unwrap();
+    for rule in CRATE_DEPENDENCY_RULES {
+        assert!(
+            members.iter().any(|m| rule.crate_rel == m.path),
+            "{} is not a workspace member",
+            rule.crate_rel
+        );
+        for package in rule.forbidden_packages {
+            assert!(
+                members.iter().any(|m| m.package_name == *package),
+                "{}: {package} names no workspace member",
+                rule.crate_rel
+            );
+        }
+    }
 }
 
 #[test]

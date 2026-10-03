@@ -157,10 +157,9 @@ pub(crate) fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 /// The frontend crate directory, and every WORKSPACE crate it depends on, transitively.
 ///
 /// THE PATH PREFIX WAS NEVER THE RIGHT QUESTION. `wasm_changed` and the `trunk build` step
-/// both asked "did anything under `apps/frontend/` change", but the SPA compiles half the
-/// engine into its own wasm binary. Wave 237 changed `legacy/map_engine` — a rewritten
-/// `geometry/tbdd.rs` and a dependency that stopped being optional — touched no frontend path, and
-/// the gate printed `wasm32 (frontend) PASS` alongside `trunk build SKIP (frontend untouched this
+/// both asked "did anything under `apps/frontend/` change", but the SPA compiles the renderer
+/// crates into its own wasm binary. A wave that rewrites one of them — a source file and a
+/// dependency that stops being optional — touches no frontend path, and the gate printed `wasm32 (frontend) PASS` alongside `trunk build SKIP (frontend untouched this
 /// wave)`. Neither had compiled a line of it. `Runner::run` discards a passing step's output, so
 /// the reason never even reached the log: the vacuity was invisible in the transcript.
 ///
@@ -168,10 +167,9 @@ pub(crate) fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 /// walk the dependency edges out of `apps/frontend/Cargo.toml` and keep walking. An edge leads to
 /// a workspace crate when it names a `path`, or when it takes its source from
 /// `[workspace.dependencies]` (`workspace = true`) and names a workspace member's package — the
-/// shared crates under `crates/` are reached that way. Today the walk reaches
-/// `legacy/map_engine` and, through it, `legacy/graphics_engine`, plus every `crates/` member the
-/// frontend depends on; when it reaches more, this follows without an edit. Every dependency
-/// table counts: the target-specific tables carry the engine, and the development tables carry
+/// shared crates under `crates/` are reached that way. The walk reaches every `crates/` member
+/// the frontend depends on, transitively; when it reaches more, this follows without an edit.
+/// Every dependency table counts: the target-specific tables carry the renderers, and the development tables carry
 /// what the frontend's test suite compiles. A manifest that cannot be read contributes nothing;
 /// the scope always holds the frontend itself, and a workspace whose manifests do not parse fails
 /// the gate's `cargo check` step before this scope matters.
@@ -290,7 +288,7 @@ pub(crate) fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 /// "the gate does not run the tests" is not a longer brief.
 ///
 /// **Scope is [`wasm_scope_touched`] PLUS the SPA's `include_str!`/`include_bytes!` inputs.**
-/// `wasm_scope_touched` walks the SPA's `Cargo.toml` path dependencies, so `map_engine` is
+/// `wasm_scope_touched` walks the SPA's `Cargo.toml` dependencies, so every renderer crate is
 /// inside it — which is precisely how a core-crate edit reaches a frontend test, and why a
 /// literal `apps/frontend/` prefix would have missed the very case this step exists for.
 ///

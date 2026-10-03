@@ -10,7 +10,7 @@
 use std::cell::{Cell, RefCell};
 
 use interior_line_of_sight::compound_walk::Owner;
-use map_engine::frame::engine::RenderEngine;
+use map_renderer::engine::RenderEngine;
 use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
 use terrain_line_of_sight::viewshed::Viewshed;
 use wasm_bindgen::prelude::Closure;
@@ -32,8 +32,8 @@ use map_editing_tools::line_of_sight::terrain_verdict::{
     EYE_HEIGHT_OBSERVER_M, EYE_HEIGHT_TARGET_M,
 };
 use map_editing_tools::line_of_sight::viewshed_texture::pack_rgba_256;
-use map_engine::streaming::host::with_occluder;
-use map_engine::streaming::host::with_occluder_host;
+use map_streaming_host::with_occluder;
+use map_streaming_host::with_occluder_host;
 use world_line_of_sight::map_to_engine;
 
 /// The live wash: the pass, the raster it runs over (cloned once at start), the observer eye.
@@ -214,16 +214,18 @@ pub fn tick_object_wash(e: &mut RenderEngine) {
             let tight = encode_viewshed_rgba_merged(&wash.vs, &wash.pass);
             let (rgba, stride) = pack_rgba_256(&tight, wash.vs.cols, wash.vs.rows);
             #[allow(clippy::cast_possible_truncation)]
-            let _ = e.viewshed_upload(
-                wash.vs.min_x,
-                wash.vs.min_y,
-                wash.vs.max_x,
-                wash.vs.max_y,
-                wash.vs.cols as u32,
-                wash.vs.rows as u32,
-                &rgba,
-                stride,
-            );
+            let _ = e.with_terrain_line_of_sight_overlay(|overlay| {
+                overlay.viewshed_upload(
+                    wash.vs.min_x,
+                    wash.vs.min_y,
+                    wash.vs.max_x,
+                    wash.vs.max_y,
+                    wash.vs.cols as u32,
+                    wash.vs.rows as u32,
+                    &rgba,
+                    stride,
+                )
+            });
             LAST_UPLOAD_MS.with(|l| l.set(t));
         }
         if wash.pass.done {

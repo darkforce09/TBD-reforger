@@ -7,15 +7,13 @@
 //! the fire-planning map picker; the Mission Creator supplies its own live readers instead.
 //! **Signals & state:** none; the readers return constants.
 //! **Invariants:** the scope is always
-//! [`map_engine::streaming::bridge::host_preferences::BootstrapScope::TerrainAndImagery`],
+//! [`map_streaming_model::host_preferences::BootstrapScope::TerrainAndImagery`],
 //! so world objects, forest, water and labels are never fetched through these preferences.
 
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::streaming::bridge::host_preferences::{
-    BootstrapScope, HostPreferences, RenderPreferences,
-};
+use map_streaming_model::host_preferences::{BootstrapScope, HostPreferences, RenderPreferences};
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::streaming::bridge::preferences::WorldLayerPrefs;
+use map_streaming_model::world_layer_preferences::WorldLayerPrefs;
 
 /// Hillshade opacity a terrain-and-imagery view draws with (the engine's default lane opacity).
 #[cfg(any(target_arch = "wasm32", test))]

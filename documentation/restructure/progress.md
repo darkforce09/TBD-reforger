@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S8 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3, S11a, S7, S11b and S9 landed |
-| Last green commit | the S9 stage commit (S11b: 2a105fa4f, S7: 17985220a, S11a: ffb5fe74d, M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Current stage | S8 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3, S11a, S7, S11b, S9 and S8 landed |
+| Last green commit | the S8 stage commit (S9: bc453ae94, S11b: 2a105fa4f, S7: 17985220a, S11a: ffb5fe74d, M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
@@ -128,17 +128,17 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [x] Stage commit — done — `refactor(restructure): S7 streaming CPU and editor`; handoff to S8 in `stage_logs/s7.md`
 
 ### S8 Rendering
-- [ ] V0 (L) exports stripped, renderer redesign in place — pending
-- [ ] V1 (L) GPU device, frame, core — pending
-- [ ] V2 (M) symbology layers — pending
-- [ ] V3 (M) paper doll — pending
-- [ ] V4 (L) asset loading, streaming host — pending
-- [ ] V5 (M) world layers — pending
-- [ ] V6 (L) renderer and diagnostics — pending
-- [ ] X8 (M) switch, legacy engines deleted — pending
-- [ ] V7 (S) engine layer rules deleted — pending
-- [ ] OC-web walkthrough online and with the API stopped — pending
-- [ ] Stage commit — pending
+- [x] V0 (L) exports stripped, renderer redesign in place — done — split into V0a (exports, hooks, pins), V0s (streaming model and sink), V0b (symbology layers), V0c (world layers), V0d (diagnostics accessors)
+- [x] V1 (L) GPU device, frame, core — done — V1 (gpu_device, gpu_frame), V1c (renderer_core)
+- [x] V2 (M) symbology layers — done — symbology_layers_gpu
+- [x] V3 (M) paper doll — done — paper_doll_scene, paper_doll_renderer
+- [x] V4 (L) asset loading, streaming host — done — map_asset_loading, map_streaming_host (plus map_streaming_model, D-S8-2)
+- [x] V5 (M) world layers — done — world_layers_gpu
+- [x] V6 (L) renderer and diagnostics — done — V6a map_renderer, V6b map_render_diagnostics
+- [x] X8 (M) switch, legacy engines deleted — done — X8, X8b (stale prose, `crate_boundary_rules.md`)
+- [x] V7 (S) engine layer rules deleted — done — plus the `#[wasm_bindgen` scan
+- [ ] OC-web walkthrough online and with the API stopped — moved to S12 (decision D20)
+- [x] Stage commit — done — `refactor(restructure): S8 rendering`; handoff in `stage_logs/s8.md`
 
 ### S9 API
 - [x] K0 (L) kernel cuts — done as K0a, K0b and K0c (the relocation tool's climbing-token rule, F-S9-04) — in place, then the layer ratchet
@@ -423,3 +423,12 @@ firewall scan and matrix arm, and the prefab maps are keyed by `PrefabId`. The h
 loaders, host and memory that stay in `legacy/map_engine/src/streaming/`, the
 `map_streaming_host` row without `toggles.rs` and `stats_json`) is in
 [stage_logs/s7.md](/documentation/restructure/stage_logs/s7.md).
+
+S8 is on `main`: the legacy engines are gone. Twelve crates hold their code:
+`crates/graphics/{gpu_device, gpu_frame, renderer_core}`, `crates/streaming/{map_streaming_model,
+map_asset_loading, map_streaming_host}`, `crates/map_rendering/{symbology_layers_gpu,
+world_layers_gpu, map_renderer, map_render_diagnostics}` and `crates/paper_doll/{paper_doll_scene,
+paper_doll_renderer}`. The map engine's JS exports are stripped (the only export is `start_app`), the
+engine layer rules are deleted in favour of the crate firewalls (with a `#[wasm_bindgen` placement
+scan), and the S11 legacy-empty check passes. Decisions, findings (F-S8-01..18) and the handoff to
+S10 and S12 are in [stage_logs/s8.md](/documentation/restructure/stage_logs/s8.md).

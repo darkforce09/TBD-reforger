@@ -11,8 +11,8 @@ Abbreviations in code spans:
 
 | Prefix | Path |
 |---|---|
-| `me` | `legacy/map_engine/src/` |
-| `ge` | `legacy/graphics_engine/src/` |
+| `me` | the map engine source folder: legacy/map_engine/src/ until S8, which dissolved it into crates and deleted it |
+| `ge` | the graphics engine source folder: legacy/graphics_engine/src/ until S8, which dissolved it into crates and deleted it |
 | `api` | `apps/api/src/` |
 | `fe` | `apps/frontend/src/` |
 | `xt` | `tools/xtask/src/` |
@@ -145,6 +145,18 @@ checks them.
 | S9 | api_command_center | `crates/api/api_command_center/` | 10 |
 | S9 | api_background_workers | `crates/api/api_background_workers/` | 10 |
 | S9 | staging_fixtures | `tools/staging/staging_fixtures/` | 10 |
+| S8 | gpu_device | `crates/graphics/gpu_device/` | 0 |
+| S8 | gpu_frame | `crates/graphics/gpu_frame/` | 1 |
+| S8 | renderer_core | `crates/graphics/renderer_core/` | 2 |
+| S8 | map_streaming_model | `crates/streaming/map_streaming_model/` | 1 |
+| S8 | map_asset_loading | `crates/streaming/map_asset_loading/` | 6 |
+| S8 | map_streaming_host | `crates/streaming/map_streaming_host/` | 7 |
+| S8 | symbology_layers_gpu | `crates/map_rendering/symbology_layers_gpu/` | 4 |
+| S8 | world_layers_gpu | `crates/map_rendering/world_layers_gpu/` | 3 |
+| S8 | map_renderer | `crates/map_rendering/map_renderer/` | 5 |
+| S8 | map_render_diagnostics | `crates/map_rendering/map_render_diagnostics/` | 6 |
+| S8 | paper_doll_scene | `crates/paper_doll/paper_doll_scene/` | 2 |
+| S8 | paper_doll_renderer | `crates/paper_doll/paper_doll_renderer/` | 3 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -216,20 +228,21 @@ Every other crate in this catalogue is still planned; its From column names the 
 | mission_persistence | `editing/persist` | session, mission_document, mission_model, mission_payload |
 | map_editing_tools | `editing/tools/*` (selection, ruler, line of sight, viewshed scheduler) with the source scrub their guards read; the LOS↔viewshed cycle stays internal; the placement math is formation_geometry's (S5) | session, the 3 LOS crates, terrain_elevation, camera_math, mission_crdt, mission_document, spatial_indexes, time_source; dev: terrain_relief |
 
-## crates/graphics (map-agnostic), crates/map_rendering, crates/paper_doll
+## crates/graphics (map-agnostic), the browser half of crates/streaming, crates/map_rendering, crates/paper_doll
 
 | Crate | From | Notes |
 |---|---|---|
 | render_primitives | `ge draw::{instances,geometry,compose,grid,triangulate,cull::oracle}`, `frame::{ids,damage,camera}`, `text/*`, WGSL consts | One home for colour normalisation and glyph packing |
-| gpu_device (W) | `ge device/*`; `GpuContext` replacing both bootstraps (`frame/boot.rs:57-112`, `doll/renderer/lifecycle_1.rs:123-166`); `instance_descriptor` | — |
-| gpu_frame (W) | `ge pipeline`, `draw::{encode,lines,polygons,cull::compute}`, `frame::{packet,present,batch,buffers,atlas,text}`, `loop` | — |
-| renderer_core (W) | new, plus the `frame/bindings.rs` registries | `LaneSink`, `LayerContext`, `RenderStats`, `FrameHook` |
-| symbology_layers_gpu (W) | `bridge_1/2/3` merged, `instances/lanes`, `atlas/gpu`, `lanes_prefs` | `SlotSymbologyGpu`, `GlyphAtlasGpu`, `IconCullGpu` |
-| world_layers_gpu (W) | buildings/vegetation `buffers.rs`, `satellite/{textures,quadtree}`, `relief/host.rs`, `los/terrain/overlay.rs` | typed layers own their GPU state |
-| map_asset_loading (W) | `loaders/{world_loader,occluder_loader}`, the world `*/loader.rs` files, `bridge/progress` | in `streaming/` |
-| map_streaming_host (W) | `streaming/{host,memory}`, `bridge/{preferences,statistics}` (the layer toggles and `stats_json` are chunk_draw_buffers') | in `streaming/` |
-| map_renderer (W) | `frame/*`, `camera/viewport.rs`, `publish_engine` | owns `RenderEngine` |
-| map_render_diagnostics (W) | `diagnostics/{readback,bench,probes}` (`frame_1/2` merged) | functions over accessors |
+| gpu_device (W) | `ge device/*`; `GpuContext` (create, resize, acquire, adapter limits, typed error), which both renderers adopt in place of their bootstraps; `instance_descriptor`, `WebDisplay`, `GpuTimer` | — |
+| gpu_frame (W) | `ge pipeline`, `draw::{encode,lines,polygons,cull::compute}`, `frame::{packet,present,batch,buffers,atlas,text}`, `loop` as `frame_pump` | render_primitives |
+| renderer_core (W) | new, plus the generic half of `frame/bindings.rs` (`packet_bindings`) | gpu_frame, render_primitives; `LaneSink`, `LayerContext`, `FrameHook`, `RenderStats` and its JSON |
+| map_streaming_model | `bridge/{preferences,host_preferences,progress}`, the memory budget model with its tests; the `MapAssetSink` contract and its payload types (D-S8-2: the native build's model types, and the trait that keeps the streaming crates off the renderer) | render_primitives |
+| map_asset_loading (W) | `loaders/*`, the world `*/loader.rs` files, `world/mesh.rs`, `satellite/quadtree`, `relief/host.rs`, the live memory budget and the asset statistics; writes the renderer only through `MapAssetSink` | map_streaming_model, chunk_scheduler, chunk_draw_buffers, the terrain, world format, world object, overlay and line of sight crates, browser_platform |
+| map_streaming_host (W) | `streaming/host` | map_asset_loading, map_streaming_model, terrain_elevation, terrain_relief, world_chunks, world_line_of_sight, water_bodies, label_layout, browser_platform |
+| symbology_layers_gpu (W) | `bridge_1/2/3` split by concern, `instances/{lanes,icon_cull_gpu,icon_uniforms,world_icon_lanes}`, `atlas/gpu`, `lanes_prefs` | renderer_core, gpu_frame, gpu_device, overlay_instances, unit_symbology, map_draw_lanes; `SlotSymbologyGpu`, `GlyphAtlasGpu`, `IconCullGpu` |
+| world_layers_gpu (W) | buildings and vegetation `buffers.rs`, `satellite/textures`, `los/terrain/overlay.rs`, the textured lane record | renderer_core, gpu_frame, map_draw_lanes; typed layers own their GPU state |
+| map_renderer (W) | `frame/*`, `camera/viewport.rs`, the calibration scene of `world/scene.rs`, the `MapAssetSink` implementation | renderer_core, gpu_frame, gpu_device, symbology_layers_gpu, world_layers_gpu, map_streaming_model; owns `RenderEngine` |
+| map_render_diagnostics (W) | `diagnostics/{readback,bench,probes}` (`frame_1` split into the frame benchmark and the stress pool; `frame_2` became the renderer's statistics) | map_renderer, symbology_layers_gpu; functions over the renderer's diagnostic accessors |
 | paper_doll_scene | `doll/scene` and interaction | camera_math |
 | paper_doll_renderer (W) | `doll/renderer` (`lifecycle_1/2` merged), `doll.wgsl`, `readback/doll.rs` | gpu_device, paper_doll_scene, camera_math |
 

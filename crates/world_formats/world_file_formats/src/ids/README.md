@@ -49,8 +49,8 @@ the two are separate types: `PrefabId::from(InstancePrefabId)` always widens, an
 - Used by:
   - `crate::archives` (`prefabs`, `roads`, `forest`, `water`, `blueprints`) and
     `crate::pod::instance`, whose records hold the identifiers;
-  - the developer tools' writers, which construct them, and the map engine's readers, which read
-    them through the accessors (`map_engine::io::ids`).
+  - the developer tools' writers, which construct them, and the readers in the world format,
+    terrain, line of sight and streaming crates, which read them through the accessors.
 - Rules:
   - an identifier's bytes in rkyv, in the `Pod` row and in JSON are exactly its inner value's
     (`archive_wire_identity_tests.rs` under `../archives/tests/`, the row identity test in

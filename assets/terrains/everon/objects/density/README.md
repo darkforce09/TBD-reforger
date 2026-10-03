@@ -33,7 +33,7 @@ assets/terrains/everon/objects/density/
   `encode_tbdd`; `cargo xtask map export-terrain` runs the first.
 - Consumers:
   - the map engine's vegetation loader
-    (`legacy/map_engine/src/world/environment/vegetation/loader.rs`), which fetches all 625
+    (`crates/streaming/map_asset_loading/src/environment/forest_mass_loader.rs`), which fetches all 625
     tiles as `/map-assets/everon/objects/density/{cx}_{cy}.bin`, skips one that fails to decode,
     and uploads the stitched tree plane once;
   - the density codec's tests, which decode every committed tile against a byte-by-byte reference

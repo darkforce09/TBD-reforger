@@ -33,8 +33,8 @@ an exact number, command or tool, it is not a rule yet.
 **Authority.** Running code wins over every document, then `CLAUDE.md` (its laws), then these
 standards. Comment and tag rules (`@route`, `@contract`, `@authority`, doc-comment presence) belong
 to the [documentation standards](/documentation/standards/documentation_standards.md); the
-layer walls between the map engine, the graphics engine and the app belong to the
-[engine boundary rules](/documentation/standards/engine_boundary_rules.md). A code rule that
+layer walls between the map crates, the graphics crates and the apps belong to the
+[crate boundary rules](/documentation/standards/crate_boundary_rules.md). A code rule that
 depends on one of those links to it and does not restate it.
 
 **Rule codes are stable.** Code comments, help strings and CI step names cite rules by code
@@ -97,7 +97,7 @@ predictable contract for the consumer; Debuggability (De), a failure that says w
 | TEST-2 | De | non-trivial app logic has a unit test | CI-BLOCK, the `frontend` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
 | TEST-3 | Us | a schema change ships a fixture and a green schema gate | CI-BLOCK, the `schema` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
 | TS-1 | De | the compiler runs in its strictest mode | retired; the Rust compiler carries it | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
-| TS-2 | Sc | layer boundaries hold | CI-SCRIPT, `cargo xtask verify frontend-layering` and the engine wall (`cargo xtask verify engine-layers`) | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
+| TS-2 | Sc | layer boundaries hold | CI-SCRIPT, `cargo xtask verify frontend-layering` and the crate firewalls (`cargo xtask verify crate-tiers`) | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-3 | De | contract data is fully typed | retired; the Rust type system carries it | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-4 | Us | a failed request shows the user an error | live, unenforced | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-5 | Re | every exported contract item has a doc comment | retired; the documentation standards own it | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
@@ -126,7 +126,7 @@ now maps to a page:
 ### Before a commit
 
 - Rust in any crate: `cargo xtask mk rust-fmt` and `cargo xtask mk rust-clippy` for the API,
-  `cargo xtask mk wasm-ci` for the engines, `cargo xtask mk ci-local-leptos` for the app; files
+  `cargo xtask mk wasm-ci` for the wasm32 crates, `cargo xtask mk ci-local-leptos` for the app; files
   within SIZE-3; unit tests in sibling `tests/` files.
 - The API: handlers thin, errors through `ApiError`, a `409` for a unique violation, a `@route`
   tag on every routed handler; `cargo xtask db test-it` green.
@@ -155,7 +155,7 @@ now maps to a page:
 
 - Depends on: `CLAUDE.md` laws 3, 7 and 9; the gates named in each rule, as the code under Code
   implements them; the [documentation standards](/documentation/standards/documentation_standards.md)
-  and [engine boundary rules](/documentation/standards/engine_boundary_rules.md) for the rules
+  and [crate boundary rules](/documentation/standards/crate_boundary_rules.md) for the rules
   they own.
 - Used by: rule codes and this README's path in `.github/workflows/ci.yml`, `.editorconfig`,
   `tools/commands/ci_task_catalog/src/task_definitions.rs`,
@@ -175,8 +175,8 @@ now maps to a page:
   each runs.
 - [Documentation standards](/documentation/standards/documentation_standards.md) — comment and
   tag rules, and where Markdown lives.
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the layer walls
-  `cargo xtask verify engine-layers` holds.
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the crate walls
+  `cargo xtask verify crate-tiers` holds.
 - [Where does X go?](/documentation/standards/where_does_x_go.md) — the home of each kind of
   file.
 - [Commit checklist](/documentation/standards/commit_checklist.md) — what a commit carries.

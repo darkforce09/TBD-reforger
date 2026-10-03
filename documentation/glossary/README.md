@@ -114,7 +114,7 @@ across the repository.
 ## Code
 
 - [Applications](/apps/README.md) — the API domains, pages, Mission Creator, host agent and
-  ticketboard most entries name; the engines are in [legacy/](/legacy/README.md).
+  ticketboard most entries name; the map crates are in [crates/](/crates/README.md).
 - [Mod suite](/apps/mod/README.md) — the addons, EnfScript, safe start and the game runtime.
 - [Developer tools](/tools/README.md) — tickets, waves, slices, gates and the oracles.
 - [Fleet host agent](/apps/fleet_host_agent/README.md) — the fleet host agent and RCON.

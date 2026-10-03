@@ -67,8 +67,8 @@ cargo test -p interior_line_of_sight   # compound walk, verdicts, washes, sliced
   `thiserror`.
 - Used by:
   - `world_line_of_sight`, which traces expanded prefabs and evaluates its verdicts through it;
-  - the map engine (`legacy/map_engine`): its line-of-sight tool and visibility scheduler's
-    wash lane under `crates/mission_editing/map_editing_tools/src/`;
+  - `map_editing_tools`: its line-of-sight tool and visibility scheduler's wash lane
+    (`crates/mission_editing/map_editing_tools/src/`);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input handlers,
     the debug building viewer and interior bench in `apps/frontend/`, and the blueprint tooling
     in `tools/map_assets/blueprint_compiler/src/`.

@@ -1,0 +1,134 @@
+//! **Role:** `DemVectors`: the 8 m vector grid built from the elevation model, and the sea band and
+//! contour lanes it keeps for each zoom.
+//! **Position:** `terrain::relief` in `map_asset_loading`; the map host builds the grid at boot and
+//! syncs the lanes on each settle.
+//! **Signals & state:** the grid and the last uploaded zoom bands.
+//! **Invariants:** the contour interval follows `2^(-zoom)` metres per pixel with nothing in
+//! between.
+
+use crate::mesh_composition::compose_two_tone_contours;
+use map_draw_lanes::zoom_gates::class_visible;
+use map_draw_lanes::zoom_gates::contour_interval_for_zoom;
+use terrain_elevation::grid::DEM_VECTOR_GRID_FACTOR;
+use terrain_elevation::grid::DemVectorGrid;
+use terrain_elevation::grid::downsample_dem_grid;
+use terrain_elevation::grid::reduce_grid_2x;
+use terrain_relief::contours::contour_grid_reductions;
+use terrain_relief::contours::contour_levels;
+use terrain_relief::contours::contour_rings;
+use terrain_relief::contours::summit_ring_indices;
+use terrain_relief::sea_band::build_sea_band_geometry;
+use terrain_relief::sea_band::sea_fill_alpha;
+use water_bodies::mesh::compose_sea_mesh;
+
+use std::rc::Rc;
+
+use crate::browser_asset_sink::BrowserAssetSinkHandle;
+
+use terrain_relief::contours::{CONTOUR_RGBA, CONTOUR_SUMMIT_RGBA};
+
+const TERRAIN_M: f64 = 12_800.0;
+
+/// Dem vectors.
+pub struct DemVectors {
+    grid: Option<Rc<DemVectorGrid>>,
+    last_interval: f64,
+    sea_built_alpha: f64,
+}
+
+impl DemVectors {
+    /// New.
+    pub fn new() -> Self {
+        Self {
+            grid: None,
+            last_interval: 0.0,
+            sea_built_alpha: -1.0,
+        }
+    }
+
+    /// Ensure grid.
+    pub fn ensure_grid(&mut self, meters: &[f32], width: u32, height: u32) {
+        if self.grid.is_some() {
+            return;
+        }
+        self.grid = Some(Rc::new(downsample_dem_grid(
+            meters,
+            width as usize,
+            height as usize,
+            DEM_VECTOR_GRID_FACTOR,
+            TERRAIN_M,
+            TERRAIN_M,
+        )));
+        self.last_interval = 0.0;
+        self.sea_built_alpha = -1.0;
+    }
+
+    /// Grid.
+    pub fn grid(&self) -> Option<Rc<DemVectorGrid>> {
+        self.grid.clone()
+    }
+
+    /// Sync.
+    pub fn sync(&mut self, engine: &BrowserAssetSinkHandle, zoom: f64) {
+        let Some(grid) = self.grid.clone() else {
+            return;
+        };
+        self.push_sea(engine, zoom, &grid);
+        self.push_contours(engine, zoom, &grid);
+    }
+
+    fn push_sea(&mut self, engine: &BrowserAssetSinkHandle, zoom: f64, grid: &DemVectorGrid) {
+        let alpha = sea_fill_alpha(zoom);
+        if !class_visible("sea", zoom) || alpha <= 0.0 {
+            if let Some(e) = engine.borrow_mut().sink_mut() {
+                e.clear_vector_lane(map_draw_lanes::lane_roles::role_id::SEA);
+            }
+            self.sea_built_alpha = -1.0;
+            return;
+        }
+        if (self.sea_built_alpha - alpha).abs() < f64::EPSILON {
+            return;
+        }
+        let geo = build_sea_band_geometry(grid);
+        let mesh = compose_sea_mesh(&geo, alpha);
+        if let Some(e) = engine.borrow_mut().sink_mut() {
+            e.upload_polygon_mesh(map_draw_lanes::lane_roles::role_id::SEA, &mesh, true);
+        }
+        self.sea_built_alpha = alpha;
+    }
+
+    fn push_contours(&mut self, engine: &BrowserAssetSinkHandle, zoom: f64, grid: &DemVectorGrid) {
+        if !class_visible("contour", zoom) {
+            if let Some(e) = engine.borrow_mut().sink_mut() {
+                e.clear_vector_lane(map_draw_lanes::lane_roles::role_id::CONTOURS);
+            }
+            self.last_interval = 0.0;
+            return;
+        }
+
+        let m_per_px = 2.0_f64.powf(-zoom);
+        let interval = contour_interval_for_zoom(m_per_px);
+        if (interval - self.last_interval).abs() < f64::EPSILON {
+            return;
+        }
+        let mut g = grid.clone();
+        for _ in 0..contour_grid_reductions(interval) {
+            g = reduce_grid_2x(&g);
+        }
+        let levels = contour_levels(interval, g.max_elev_m);
+
+        let rings = contour_rings(&g, &levels);
+        let summit = summit_ring_indices(&rings);
+        let hair = compose_two_tone_contours(&rings, &summit, CONTOUR_RGBA, CONTOUR_SUMMIT_RGBA);
+        if let Some(e) = engine.borrow_mut().sink_mut() {
+            e.upload_hairline_segments(map_draw_lanes::lane_roles::role_id::CONTOURS, &hair, true);
+        }
+        self.last_interval = interval;
+    }
+}
+
+impl Default for DemVectors {
+    fn default() -> Self {
+        Self::new()
+    }
+}

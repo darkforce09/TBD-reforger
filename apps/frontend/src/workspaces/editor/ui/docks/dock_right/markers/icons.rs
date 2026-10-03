@@ -77,7 +77,7 @@ pub fn filter_marker_icons(query: &str) -> Vec<&'static str> {
         .collect()
 }
 
-/// One representative schema alias per canonical [`map_engine_render::scene::MarkerGlyph`] family,
+/// One representative schema alias per canonical [`unit_symbology::markers::MarkerGlyph`] family,
 /// in the schema-order the families first appear in (the browse order the picker keeps).
 ///
 /// Each entry is (a) a member of the closed `$defs/marker.icon` enum — so a pick validates and saves —
@@ -106,8 +106,8 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) const CANONICAL_MARKER_
 ];
 
 /// The picker's row count: the number of canonical marker glyphs. Mirrors
-/// `map_engine_render::scene::MARKER_GLYPH_COUNT` (the source of truth, a wasm32-only dep this native
-/// const cannot reference directly); the wasm-side [`canonical_marker_rows`] asserts they agree.
+/// `unit_symbology::markers::MARKER_GLYPH_COUNT` (the source of truth); the wasm-side
+/// [`canonical_marker_rows`] asserts they agree.
 /// The row count is lower than the alias count because aliases share glyphs.
 pub(in crate::workspaces::editor::ui::docks::dock_right) const CANONICAL_MARKER_GLYPH_COUNT: usize =
     11;
@@ -137,7 +137,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) struct CanonicalMarkerR
 }
 
 /// The canonical picker rows, built by folding the live schema alias list through the real
-/// [`map_engine_render::scene::marker_glyph_for_alias`] so DISPLAY and MAP can never disagree.
+/// [`unit_symbology::markers::marker_glyph_for_alias`] so DISPLAY and MAP can never disagree.
 ///
 /// Row order is schema-first-seen (the same browse order [`marker_icons`] documents). Each row's
 /// `slug` is [`CANONICAL_MARKER_SLUGS`] chosen for that glyph, its `aliases` are every schema alias

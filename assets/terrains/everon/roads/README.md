@@ -32,7 +32,7 @@ assets/terrains/everon/roads/
 - Consumers:
   - the map engine's world loader, which fetches `/map-assets/everon/roads/road_network.rkyv`
     when the manifest's `objects.binary` block names it and the gzip JSON otherwise, and tells the
-    two apart by their first bytes (`legacy/map_engine/src/streaming/loaders/`); the reader
+    two apart by their first bytes (`crates/streaming/map_asset_loading/src/`); the reader
     is `road_network_from_bytes` in `crates/terrain/road_network/src/network.rs`;
   - `WorldStore`, the headless reader the developer tools use;
   - the world export's road emission tests, which rebuild the archive from the committed JSON.

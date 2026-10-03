@@ -29,7 +29,7 @@ area of the feature inventory holds the built behaviour.
 
 ## Code
 
-- [Satellite basemap](/legacy/map_engine/src/world/terrain/satellite/) — the map engine's
+- [Satellite basemap](/crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/) — the map's
   satellite imagery that stands where the render's image is.
 - [Mission Creator](/apps/frontend/src/workspaces/editor/) — the editor that shows the map.
 

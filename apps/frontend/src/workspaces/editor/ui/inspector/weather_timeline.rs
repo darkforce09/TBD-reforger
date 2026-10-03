@@ -4,7 +4,7 @@
 //! ══ Transport ═══════════════════════════════════════════════════════════════════════════════
 //! Every write goes to `meta.environment.weatherTimeline` through [`operations::update_environment`],
 //! the same one-patch-one-undo-step path the  flow controls and the /.2/.3 cards use.
-//! `map_engine_core::mission::extensions` copies the key onto the compiled payload root.
+//! `mission_model::authored_blocks` copies the key onto the compiled payload root.
 //!
 //! ══ Where this renders ══════════════════════════════════════════════════════════════════════
 //! [`weather_timeline_panel`] renders as a section of the Mission Settings dialog, after the radio nets panel

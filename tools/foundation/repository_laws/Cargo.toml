@@ -1,6 +1,5 @@
 # The structural engineering laws as pure checks over a checkout: file length, sibling test
-# placement, no exemption mechanism, the engine layer walls, the website crate directions and the
-# workspace laws. It reads files and nothing else, so `xtask` gates and the `api` engineering-law
+# placement, no exemption mechanism, the website crate directions and the workspace laws. It reads files and nothing else, so `xtask` gates and the `api` engineering-law
 # tests link one implementation.
 [package]
 name = "repository_laws"

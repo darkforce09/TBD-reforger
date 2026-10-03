@@ -1,8 +1,8 @@
 # Repository laws
 
 The `repository_laws` crate: the structural engineering laws of the repository as pure checks over
-a checkout — file length, sibling test placement, no exemption mechanism, the engine layer walls,
-the dependency direction between the website crates, and the workspace laws (crate tiers, crate
+a checkout — file length, sibling test placement, no exemption mechanism, the dependency
+direction between the website crates, and the workspace laws (crate tiers, crate
 anatomy, the strangler rule, frontend layering, Tailwind sources). The `cargo xtask verify` gates
 print these results and the `api` engineering-law tests assert on them, so the two never disagree
 about the tree.
@@ -40,7 +40,7 @@ No feature and no environment variable.
 
 ## Public surface
 
-- The modules `file_length`, `sibling_test_placement`, `exemption_mechanisms`, `engine_layers`,
+- The modules `file_length`, `sibling_test_placement`, `exemption_mechanisms`,
   `crate_dependencies`, `source_roots`, `cargo_manifest`, `workspace_members` and
   `workspace_laws`; `Error` and `Result` at the crate root; `prelude` with each law's entry point.
   The [source README](/tools/foundation/repository_laws/src/README.md) lists their items.
@@ -49,7 +49,7 @@ No feature and no environment variable.
 
 - Depends on: `verification_core` (the `NotRun` vocabulary, the scans and the patterns), `regex`
   and `thiserror`.
-- Used by: `xtask` (`verify file-length`, `verify engine-layers`, the five workspace-law verbs,
+- Used by: `xtask` (`verify file-length`, the five workspace-law verbs,
   and the tooling tests that read the workspace members) and `api` as a dev-dependency
   (`apps/api/tests/engineering_laws.rs`).
 - Rules: tier 1 of `tools/foundation`, depending only on `verification_core` among the workspace
@@ -61,4 +61,5 @@ No feature and no environment variable.
 - [Tooling foundation crates](/tools/foundation/README.md) — the three crates and their tiers.
 - [Laws and gates](/documentation/restructure/laws_and_gates.md) — the crate-tier and crate-anatomy
   laws this crate implements.
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the layer walls.
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the crate-level
+  boundary laws.

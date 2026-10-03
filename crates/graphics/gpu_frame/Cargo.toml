@@ -1,0 +1,33 @@
+# The GPU frame of the renderer: the frame vocabulary a caller describes one frame in (packet,
+# batches, buffers, glyph runs, cell atlases), the swapchain submit, the vertex and index uploads,
+# the frame encoder, the compute sprite cull, the render pipeline constructors and the shared
+# animation-frame pump. Everything that names a GPU or browser type is wasm32 only; the native
+# build keeps the pump's tick and the cull's source check, which the native tests cover.
+[package]
+name = "gpu_frame"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Frame vocabulary, draw encoding, compute sprite cull, render pipelines and the animation-frame pump."
+
+[package.metadata.layout]
+category = "crates/graphics"
+tier = 1
+targets = "wasm32"
+
+[dependencies]
+# Byte views of the vertex, index and indirect-argument arrays the uploads write.
+bytemuck = { workspace = true }
+# The byte layouts, frame ids, camera uniform, text uniform packing, cull oracle and WGSL source.
+render_primitives = { workspace = true }
+thiserror = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = ["Window"] }
+
+[lints]
+workspace = true

@@ -19,7 +19,8 @@
 //! `pub extern crate <crate> as x;` — while restricted visibility (`pub(crate)`, `pub(super)`,
 //! `pub(in …)`), a private `use` and line comments re-export nothing; each root of a use tree is
 //! judged and the finding cites the statement's first line; such a member whose `src` folder is
-//! missing is [`NotRun::TargetMissing`].
+//! missing is [`NotRun::TargetMissing`]; an absent `legacy/` folder is named in a note, never
+//! passed in silence.
 
 use std::path::Path;
 
@@ -46,6 +47,12 @@ pub fn strangler_outcome(repo_root: &Path) -> Result<LawOutcome, NotRun> {
     for member in &parked_members {
         findings.extend(shim_findings(repo_root, member, &members)?);
     }
+    let mut notes = Vec::new();
+    if !repo_root.join(LEGACY_ROOT).exists() {
+        notes.push(format!(
+            "{LEGACY_ROOT}/ is absent: no member is parked, so no source was judged for a shim"
+        ));
+    }
     Ok(LawOutcome {
         summary: format!(
             "{} workspace member(s), {} under {LEGACY_ROOT}/",
@@ -53,7 +60,7 @@ pub fn strangler_outcome(repo_root: &Path) -> Result<LawOutcome, NotRun> {
             parked_members.len()
         ),
         findings,
-        notes: Vec::new(),
+        notes,
     })
 }
 

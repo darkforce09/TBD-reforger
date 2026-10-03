@@ -5,7 +5,7 @@ name: ci
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
-# The api, map-engine and frontend jobs are the cargo gates: each runs a fmt
+# The api, wasm-ci and frontend jobs are the cargo gates: each runs a fmt
 # check, clippy and tests, and the comment above each job lists its exact commands. Every
 # job passes `-D warnings` to clippy, so a warning fails the job.
 # The workspace-members job tests every other workspace member.
@@ -90,24 +90,20 @@ jobs:
           TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/rust_it?sslmode=disable
         run: cargo xtask ci api-test
 
-  # --- map-engine: map_engine + graphics_engine (`cargo xtask mk wasm-ci`) ---
-  # fmt: `cargo fmt --check` on both crates and the offline service worker. clippy, two passes,
-  # each with `-D warnings` so any warning fails the job: host target with `--all-targets
-  # --all-features` over the same three crates, then `--target wasm32-unknown-unknown` (default
-  # features, without `--all-targets`) over every package the wasm32 lint derives from the
-  # workspace: each member declaring `targets = "wasm32"`, the offline service worker and the two
-  # engines (the frontend's own wasm32 lint is the frontend job's). tests: `cargo test
-  # --all-features` on each of the three crates, host target. No separate build step, no trunk.
-  # map_engine's tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
-  # `lfs: true` checkout would drag the 206 MB satellite bundle every run).
-  map-engine:
-    name: map-engine (wasm-ci)
+  # --- wasm-ci: the offline service worker and the wasm32 lint (`cargo xtask mk wasm-ci`) ---
+  # fmt: `cargo fmt --check -p offline_service_worker`. clippy, two passes, each with `-D warnings`
+  # so any warning fails the job: host target with `--all-targets --all-features` over the offline
+  # service worker, then `--target wasm32-unknown-unknown` (default features, without
+  # `--all-targets`) over every package the wasm32 lint derives from the workspace: each member
+  # declaring `targets = "wasm32"` and the offline service worker (the frontend's own wasm32 lint
+  # is the frontend job's). tests: `cargo test --all-features -p offline_service_worker`, host
+  # target. No separate build step, no trunk.
+  wasm-ci:
+    name: wasm-ci (offline service worker, wasm32 lint)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - name: fetch LFS test fixture (Everon DEM only)
-        run: git lfs pull --include assets/terrains/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
@@ -146,16 +142,20 @@ jobs:
   # --- workspace-members: every member the jobs above do not test ---
   # `cargo xtask ci workspace-member-tests` derives its package list from the root Cargo.toml
   # workspace minus the members a dedicated job tests (api with every crates/api package,
-  # frontend and the three wasm-ci crates), and runs `cargo test -p <package>` once per package, so features never
+  # frontend and the offline service worker of wasm-ci), and runs `cargo test -p <package>` once per package, so features never
   # unify across packages. A member the workspace gains is tested here from the moment the
   # manifest names it; `ci_local_tests_every_workspace_member` and
   # `the_ci_workflow_tests_every_workspace_member` (ci_task_catalog) keep every member in a job.
+  # The terrain, world-object and streaming crates' tests read the Everon DEM (LFS, 72 MB) — pull
+  # ONLY that object (a full `lfs: true` checkout would drag the 206 MB satellite bundle every run).
   workspace-members:
     name: workspace members (cargo test per member)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+      - name: fetch LFS test fixture (Everon DEM only)
+        run: git lfs pull --include assets/terrains/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
@@ -176,7 +176,7 @@ jobs:
   # `cargo xtask ci ci-local-schema`, and is itself wired into both wave gate drivers.
   # All steps are Rust (xtask) — no Node in this job.
   # height-labels needs the Everon DEM (LFS, ~72 MB); pull ONLY that object (same pattern
-  # as the map-engine job — a full `lfs: true` checkout would drag the 206 MB sat bundle).
+  # as the workspace-members job — a full `lfs: true` checkout would drag the 206 MB sat bundle).
   schema:
     name: schema + citations
     runs-on: ubuntu-latest
@@ -223,12 +223,12 @@ jobs:
   #                     fails. New tooling goes in xtask (LANG-1).
   #
   # Every step is `cargo xtask`: `verify` no-python, no-node, file-length, enfusion-comments,
-  # no-shell, ci-shell and engine-layers, then `ticket check --strict`, then the documentation
+  # no-shell and ci-shell, then the workspace laws, then `ticket check --strict`, then the documentation
   # gates `verify` readme-coverage, link-check and markdown-placement. It needs cargo but no database, no LFS and
   # no wasm target, so it is a cheap job that fails fast and early rather than riding on the back
   # of the 25-minute API job.
   language-gates:
-    name: language gates (no-python / no-node / no-shell / ci-shell / engine-layers / file-length / enfusion-comments / documentation)
+    name: language gates (no-python / no-node / no-shell / ci-shell / workspace laws / file-length / enfusion-comments / documentation)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -254,18 +254,10 @@ jobs:
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
-      # documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 6 and 7,
-      # judged by tools/foundation/repository_laws/src/engine_layers/. The map engine
-      # depends on legacy/graphics_engine in one direction only (map-engine ->
-      # graphics-engine), and NOTHING in the compiler enforces it: a dependency line pointing back
-      # still builds, and map-domain types would seep into the renderer a type at a time. It runs
-      # here, not on the 25-minute API job, for the same reason the language gates do: it reads
-      # the working tree, needs no DB/LFS/wasm target, and takes seconds.
-      - name: verify-engine-layers (documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 6, 7)
-        run: cargo xtask verify engine-layers
       # The workspace laws of documentation/restructure/laws_and_gates.md, judged by
       # tools/foundation/repository_laws/src/workspace_laws/ over the members the root
-      # manifest names; seconds-long reads of the working tree, like the engine-layer walls.
+      # manifest names; seconds-long reads of the working tree that need no DB, LFS or wasm target,
+      # like the language gates.
       - name: verify-crate-tiers (workspace membership, layout, tiers, category matrix, firewalls)
         run: cargo xtask verify crate-tiers
       - name: verify-crate-anatomy (library crate shape)

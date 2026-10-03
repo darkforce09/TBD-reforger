@@ -10,7 +10,7 @@ the API or the deployed host serves.
 
 ```text
 apps/frontend/
-├── Cargo.toml            the `frontend` package: one binary, the map engine's features per target
+├── Cargo.toml            the `frontend` package: one binary, the map crates it links per target
 ├── index.html            the Trunk entry: the app and worker builds, stylesheet, icon font, web manifest
 ├── manifest.webmanifest  the web app manifest: name, start URL, scope, standalone display, colours
 ├── service_worker.js     the service worker loader: imports the Rust worker and forwards its events
@@ -49,9 +49,9 @@ browser ─▶ dist/index.html ─▶ start_app ─▶ AppLayout ─▶ route �
 The app calls the API on its own origin, under `/api/v1`, and the map engine loads terrain from
 `/map-assets` on the same origin, so whatever serves the bundle also serves or proxies those
 paths: Trunk's proxy in development, the API itself when its `SPA_DIST_DIR` points at `dist/`, and
-Caddy on the deployed host. The dependency on the engines runs one way,
-`frontend ─▶ map_engine ─▶ graphics_engine`: the app hands the map engine
-a canvas and never names the graphics engine.
+Caddy on the deployed host. The dependency on the map crates runs one way,
+`frontend ─▶ map_renderer, map_streaming_host ─▶ gpu_frame, gpu_device`: the app hands the map
+renderer a canvas, the map host feeds it, and the GPU crates never learn a map noun.
 
 The binary's `main` is empty and `start_app` exists only on `wasm32`, so the crate also compiles
 for the host, where `cargo test -p frontend` runs every test of the native half: the route
@@ -94,9 +94,8 @@ The app reads no environment variable: the settings are the build files'.
 
 | Setting | Value | Read by |
 |---|---|---|
-| map engine features, every build | `world` and `streaming`, without the defaults | Cargo, from `Cargo.toml` |
-| map engine features, browser build | adds `render` (the `wasm32` target table) | Cargo, from `Cargo.toml` |
-| map engine features, native tests | `streaming` again (dev-dependencies) | Cargo, from `Cargo.toml` |
+| map crates, every build | `map_streaming_model` (preferences, boot progress) | Cargo, from `Cargo.toml` |
+| map crates, browser build | `map_renderer`, `gpu_frame`, `map_asset_loading`, `map_streaming_host`, `map_render_diagnostics`, `paper_doll_renderer` (the `wasm32` target table) | Cargo, from `Cargo.toml` |
 | `[build]` | `target = "index.html"`, output `dist` | Trunk, from `Trunk.toml` |
 | `[tools]` | `tailwindcss = "4.3.2"` | Trunk |
 | `[watch]` | ignores `dist` and `style/aegis.css`, the paths the build itself writes into, so a build never triggers the next | Trunk |
@@ -124,7 +123,7 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
 ## Boundaries
 
 - Depends on:
-  - `map_engine`, with the features above, and never `graphics_engine`;
+  - the map crates in the table above;
   - the API over HTTP, for `/api/v1` and `/map-assets`;
   - `leptos` and `leptos_router` 0.8 in client-side rendering, `gloo-net`, `web-sys`, `js-sys`,
     `wasm-bindgen`, `serde`, `serde_json`, `futures`, `url`, `base64` and
@@ -150,7 +149,6 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
   - the crate compiles natively as well as for `wasm32`, and `cargo xtask mk ci-local-leptos` is
     the gate CI runs: `cargo fmt --check`, clippy for `wasm32-unknown-unknown` over all targets,
     `cargo test -p frontend`, and a release Trunk build;
-  - no file imports `graphics_engine` (`cargo xtask verify engine-layers`);
   - the captures in `contracts/fixtures/api_goldens/` are taken from a fresh database seeded with
     `crates/api/api_database/seeds/registry_dev.sql` and then
     `crates/api/api_database/seeds/content_golden.sql`, by the recipe that closes

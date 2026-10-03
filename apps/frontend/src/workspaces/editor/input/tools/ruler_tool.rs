@@ -72,7 +72,7 @@ pub fn RulerOverlay(
                 return (Vec::new(), Vec::new(), Vec::new());
             }
             {
-                let Some((tx, ty, zoom)) = map_engine::streaming::host::camera_snapshot() else {
+                let Some((tx, ty, zoom)) = map_streaming_host::camera_snapshot() else {
                     return (Vec::new(), Vec::new(), Vec::new());
                 };
                 let Some(win) = web_sys::window() else {

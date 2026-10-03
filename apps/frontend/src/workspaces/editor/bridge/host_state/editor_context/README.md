@@ -44,7 +44,7 @@ init origin, before the draft restore and the server hydrate replace the documen
 
 - Depends on: `mission_operations` (`projections` for the layer, faction, squad and slot rows,
   `entity` for comment rows and connection ids, `environment::read_env`);
-  `map_editing_tools::selection`; `map_engine` (`frame::EngineHandle`); the undo driver and `DocHandle` in
+  `map_editing_tools::selection`; `map_renderer` (`EngineHandle`); the undo driver and `DocHandle` in
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; the outliner's node builders;
   the asset catalog's `PlacePayload`; `MissionEnv` from `crate::foundation::transport::dto`.
 - Used by:

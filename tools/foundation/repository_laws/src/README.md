@@ -1,10 +1,9 @@
 # Repository laws
 
 The structural engineering laws of the repository as pure checks over a checkout: file length,
-test placement, the absence of any exemption mechanism, the engine layer walls, the dependency
-direction between the website crates, and the workspace laws over the members of the root
-manifest. `cargo xtask verify file-length`, `cargo xtask verify engine-layers` and the five
-workspace-law verbs (`cargo xtask verify crate-tiers` and its siblings) print these results, and
+test placement, the absence of any exemption mechanism, the dependency direction between the
+website applications, and the workspace laws over the members of the root manifest.
+`cargo xtask verify file-length` and the five workspace-law verbs (`cargo xtask verify crate-tiers` and its siblings) print these results, and
 the `engineering_laws` test binary of `api` asserts on them, so the gates and that binary
 never disagree about the tree.
 
@@ -15,7 +14,6 @@ tools/foundation/repository_laws/src/
 ├── cargo_manifest/            the manifest reader's lexical helpers
 ├── cargo_manifest.rs          a `Cargo.toml` reader: package keys, dependency edges in every table, features, layout, lints, targets, workspace
 ├── crate_dependencies.rs      the dependency-direction rules of the website crates and the test-only feature rule
-├── engine_layers/             the six engine-layer walls and the map engine's UI-framework ban
 ├── error.rs                   `Error` and `Result`: a law whose input is missing or unreadable
 ├── exemption_mechanisms.rs    exemption files, comment directives and exemption tables
 ├── file_length.rs             the 500 and 1000 line ceilings and their report lines
@@ -38,9 +36,7 @@ input it needs is missing or unreadable.
 | File length | `file_length::scan_file_lengths` | every `.rs` and `.c` file under the law roots | a production file over 500 lines, a test file over 1000 |
 | Test placement | `sibling_test_placement::scan_inline_test_modules` | every production `.rs` file under the law roots | a `mod <name> {` body named `tests` or `test`, or one a `cfg` enables under test |
 | No exemption | `exemption_mechanisms::scan_exemption_mechanisms` | every file under the law roots, and the files at the repository root | an exemption-list file name, a comment directive switching a structural rule off, a declared exemption table |
-| Engine layers | `engine_layers::check_engine_layers` | the graphics engine and every `crates/graphics` member, the map engine and the frontend | a breach of rule 1, 2, 3a, 3b, 6 or 7 |
-| UI-framework ban | `engine_layers::map_engine_ui_framework_findings` | the map engine's manifest and sources | a UI framework dependency edge or import anywhere in the crate |
-| Crate directions | `crate_dependencies::crate_dependency_findings` | the four website crate manifests | an edge against the layer order, in any dependency table |
+| Crate directions | `crate_dependencies::crate_dependency_findings` | the frontend, api and offline service worker manifests | an edge against the layer order, in any dependency table |
 | Test-only feature | `crate_dependencies::test_only_feature_findings` | one parsed manifest | a feature that a non-test build could carry |
 | Workspace laws | `workspace_laws::{crate_tiers, crate_anatomy, strangler, frontend_layering, tailwind_sources}` | the root manifest's members, their manifests and sources, the app stylesheet | see the [workspace laws README](/tools/foundation/repository_laws/src/workspace_laws/README.md) |
 
@@ -82,9 +78,8 @@ package name, and a `#` comment never produces an edge.
   `BuildTarget`, `WorkspaceDeclaration`.
 - `workspace_members`: `read_workspace_members`, `WorkspaceMember`, `wildcard_matches`.
 - `workspace_laws`: see its [README](/tools/foundation/repository_laws/src/workspace_laws/README.md).
-- `crate_dependencies`: the four rules and `CRATE_DEPENDENCY_RULES`, `rule_findings`,
+- `crate_dependencies`: the three rules and `CRATE_DEPENDENCY_RULES`, `rule_findings`,
   `crate_dependency_findings`, `test_only_feature_findings`, `DependencyFinding`.
-- `engine_layers`: see its [README](/tools/foundation/repository_laws/src/engine_layers/README.md).
 - At the crate root: `Error` and `Result`; `prelude`: each law's entry point,
   `WorkspaceLawReport`, `WorkspaceMember` and `read_workspace_members`.
 
@@ -92,8 +87,7 @@ package name, and a `#` comment never produces an edge.
 
 - Depends on: `verification_core` (`scan`, `pattern` and `verdict`), `regex` and `thiserror`.
 - Used by: `tools/checks/repository_checks/src/language_bans/node_and_file_limits/` (`verify
-  file-length`), `tools/checks/repository_checks/src/architecture/engine_layer_boundaries.rs`
-  (`verify engine-layers`), `tools/checks/repository_checks/src/architecture/workspace_laws.rs`
+  file-length`), `tools/checks/repository_checks/src/architecture/workspace_laws.rs`
   (the five workspace-law verbs), and `apps/api/tests/engineering_laws.rs`.
 - Rules:
   - a missing root or unreadable file is `NotRun`, never zero findings
@@ -106,10 +100,13 @@ package name, and a `#` comment never produces an edge.
     (`the_cfg_predicate_decides_and_not_test_never_counts`,
     `a_sibling_file_declaration_is_not_an_inline_body`);
   - every dependency table and a renamed edge count
-    (`a_forbidden_edge_in_any_table_or_spelling_is_a_finding`).
+    (`a_forbidden_edge_in_any_table_or_spelling_is_a_finding`), and every package a direction
+    rule forbids is a member of this workspace
+    (`every_forbidden_package_is_a_member_of_this_workspace`).
 
 ## Related documentation
 
 - [Coding standards](/documentation/standards/coding_standards/README.md) — the size and test
   placement rules these laws hold.
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the layer walls.
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the crate-level
+  boundary laws.

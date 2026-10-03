@@ -157,7 +157,9 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
                 if !viewshed_active && !viewshed.borrow().is_empty() {
                     viewshed.borrow_mut().clear();
                     if let Some(e) = engine.borrow_mut().as_mut() {
-                        e.viewshed_clear();
+                        e.with_terrain_line_of_sight_overlay(|overlay| {
+                            overlay.viewshed_clear();
+                        });
                     }
                     crate::workspaces::editor::input::tools::los_world_wasm::cancel_object_wash();
                 }
@@ -317,7 +319,7 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
                     *selection.borrow_mut() = vec![subject_id.to_string()];
                     let ids = selection.borrow().clone();
                     if let Some(e) = engine.borrow_mut().as_mut() {
-                        e.set_selection(ids);
+                        e.with_symbology(|symbology| symbology.set_selection(ids));
                     }
                     mission_history::refresh_selection();
                 }

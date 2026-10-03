@@ -77,9 +77,10 @@ cargo test -p road_network   # network, styling, strip and airfield tests
   `render_primitives` (the apron's triangulation and mesh); `map_coordinates` (the box type);
   `rkyv`, `serde_json` and `thiserror`.
 - Used by:
-  - the map engine (`legacy/map_engine`): its loaders read the network and build the road mesh and
-    apron, its strip and glyph packers draw the strips and gate airfield structures, its toggles
-    recompute the box, and its road labels follow `RoadSegment`s and code their gate class with
+  - the streaming crates `map_asset_loading` and `chunk_draw_buffers`: the loaders read the
+    network and build the road mesh and apron, the strip and glyph packers draw the strips and
+    gate airfield structures, and the toggles recompute the box;
+  - `place_names`, whose road labels follow `RoadSegment`s and code their gate class with
     `road_class_code`;
   - the debug benches in `apps/frontend/src/workspaces/debug/`, which stroke lines with
     `expand_polyline_strip`;

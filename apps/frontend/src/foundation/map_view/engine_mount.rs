@@ -13,7 +13,7 @@
 
 use super::camera_fit::{ViewState, WorldBounds};
 use super::device_size::device_size;
-use map_engine::frame::engine::RenderEngine;
+use map_renderer::engine::RenderEngine;
 
 /// A container's CSS size and the device pixel ratio it was measured at.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -70,8 +70,8 @@ pub struct EngineStartup {
 }
 
 /// Create a damage-driven render engine on `canvas` (already sized by [`size_canvas`]) with the
-/// startup camera applied. The error is the engine's own message, or a generic reason when it
-/// carries none.
+/// startup camera applied. The error is the engine's own message, which starts with its stable
+/// code (`canvas-zero-size`, `no-adapter`, …).
 pub async fn create_engine(
     canvas: web_sys::HtmlCanvasElement,
     startup: EngineStartup,
@@ -89,10 +89,6 @@ pub async fn create_engine(
             engine.set_continuous_render(false);
             Ok(engine)
         }
-        Err(e) => Err(js_sys::Error::from(wasm_bindgen::JsValue::from(e))
-            .message()
-            .as_string()
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| "the render engine failed to start".to_string())),
+        Err(error) => Err(error.to_string()),
     }
 }

@@ -30,7 +30,7 @@ pub(super) fn make_pointer_down_handler(
                 ev.prevent_default();
                 let _ = container.set_pointer_capture(ev.pointer_id());
                 pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
-                map_engine::streaming::host::set_camera_gesture(true);
+                map_streaming_host::set_camera_gesture(true);
             } else if ev.button() == 0 {
                 if armed_placement::has_pending() {
                     return;

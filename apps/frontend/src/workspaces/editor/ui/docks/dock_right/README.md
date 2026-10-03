@@ -74,7 +74,7 @@ registers both at mount, and each cleanup removes only its own registration.
     auth store and `MaterialIcon`;
   - `mission_editing_commands::hosted_commands`, `mission_editing_session::host` and
     `map_editing_tools::selection`;
-  - `map_engine`: `streaming::host`;
+  - `map_streaming_host`;
   - `unit_symbology::markers`;
   - `contracts/definitions/mission.schema.json`, through the zones panel's embed, and the
     browser's local storage.

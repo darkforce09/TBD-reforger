@@ -25,7 +25,7 @@ pub fn set_slot_selection(ids: Vec<String>) {
         let ids = ctx.selection.borrow().clone();
         let mut eng = ctx.engine.borrow_mut();
         if let Some(e) = eng.as_mut() {
-            e.set_selection(ids);
+            e.with_symbology(|symbology| symbology.set_selection(ids));
         }
     });
     mission_history::refresh_selection();
@@ -63,7 +63,7 @@ pub fn select_slot(id: String) {
 
             let mut eng = ctx.engine.borrow_mut();
             if let Some(e) = eng.as_mut() {
-                e.set_selection(ids);
+                e.with_symbology(|symbology| symbology.set_selection(ids));
             }
         }
     });
@@ -145,7 +145,7 @@ pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
         *ctx.selection.borrow_mut() = ids;
         let mut eng = ctx.engine.borrow_mut();
         if let Some(e) = eng.as_mut() {
-            e.set_selection(slot_ids);
+            e.with_symbology(|symbology| symbology.set_selection(slot_ids));
         }
         true
     });

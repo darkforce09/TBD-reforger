@@ -69,9 +69,9 @@ enabled only from their `[dev-dependencies]`. The crate reads no environment var
 - Depends on: `prefab_catalog` (the prefab map, `NO_CLASS`, the instance row narrowing),
   `world_file_formats` (the `TBDC` header, `ObjectInstancePod`, `BinaryError`), `map_coordinates`
   (`chunk_id`), `newtype_ids`, `serde`, `serde_json`, `bytemuck`, `thiserror`.
-- Used by: `world_store`, `vegetation` and `world_line_of_sight`; the map engine
-  (`legacy/map_engine`, behind `streaming`): its chunk scheduler, streaming host, world loader
-  and the elevation, label and water loaders; the world export and map checks in
+- Used by: `world_store`, `vegetation` and `world_line_of_sight`; the streaming crates
+  `chunk_scheduler`, `chunk_draw_buffers`, `map_streaming_host` and `map_asset_loading` (the world
+  loader and the elevation, label and water loaders); the world export and map checks in
   `tools/developer_tools/src/`.
 - Rules:
   - world formats category, tier 3 (`cargo xtask verify crate-tiers`);

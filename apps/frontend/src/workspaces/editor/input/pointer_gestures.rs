@@ -56,15 +56,15 @@ pub(crate) struct EditorGestureContext {
     pub(crate) container: web_sys::HtmlDivElement,
     /// The map canvas, whose CSS cursor reflects the hover claim.
     pub(crate) canvas: web_sys::HtmlCanvasElement,
-    pub(crate) engine: map_engine::frame::EngineHandle,
+    pub(crate) engine: map_renderer::EngineHandle,
     pub(crate) doc: crate::workspaces::editor::bridge::document_host::doc_host::DocHandle,
     pub(crate) selection: selection::SelectionHandle,
     /// The in-flight left-button gesture: pending, move, marquee, ruler, or rotate.
     pub(crate) left: Rc<RefCell<Option<selection::LeftGesture>>>,
     /// Last client position while a middle-button pan is active.
     pub(crate) pan_px: Rc<Cell<Option<(f64, f64)>>>,
-    pub(crate) map_host: map_engine::streaming::host::HostHandle,
-    pub(crate) dem_grid: map_engine::streaming::host::DemGridHandle,
+    pub(crate) map_host: map_streaming_host::HostHandle,
+    pub(crate) dem_grid: map_streaming_host::DemGridHandle,
     /// Session-local ruler polyline, separate from the mission document.
     pub(crate) ruler: Rc<RefCell<map_editing_tools::ruler::RulerChain>>,
     /// Two-click line-of-sight capture state.

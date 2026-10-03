@@ -15,7 +15,7 @@ crates/graphics/render_primitives/src/shaders/
 ## How it works
 
 `SHADER_WGSL` is the text of `shader.wgsl`, included by a path relative to `mod.rs`, so the
-source can only live inside this crate. The graphics engine's `pipeline::create_map_shader`
+source can only live inside this crate. The GPU frame's `pipeline::create_render_shader`
 compiles it once into a `wgpu::ShaderModule`, and every pipeline constructor and the compute cull
 use that module.
 
@@ -39,9 +39,9 @@ barrier, and one `atomicAdd` per workgroup reserves the output range.
 
 - Depends on: nothing; the shader's structs must match the byte layouts in `crate::draw::instances`,
   `crate::draw::geometry`, `crate::frame::camera` and `crate::text::pack`.
-- Used by: the graphics engine's `pipeline` and `draw::cull::compute`
-  (`legacy/graphics_engine/src/`), and the source-text checks in `crate::draw::cull::oracle` and
-  the `crate::draw` tests. `map_engine` reaches the shader only through `create_map_shader`.
+- Used by: `gpu_frame`'s `pipeline` and `draw::cull::compute` (`crates/graphics/gpu_frame/src/`),
+  and the source-text checks in `crate::draw::cull::oracle` and the `crate::draw` tests.
+  `map_renderer` reaches the shader only through `gpu_frame`'s `create_render_shader`.
 - Rules: `TextUniforms` is four `f32`s, 16 bytes, with no `vec3` padding, and `vs_text` flips V
   and reads its grid from the uniform (`g1_text_uniforms_is_16_bytes_no_vec3`,
   `g1_vs_text_has_v_flip`, `l2_vs_text_grid_from_uniform`); the sprite UV table is

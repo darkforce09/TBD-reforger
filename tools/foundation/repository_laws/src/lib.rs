@@ -4,14 +4,14 @@
 //! production file at or under 500 lines and every test file at or under 1000
 //! ([`file_length`]); unit tests only in sibling files, never in an inline test-module body
 //! ([`sibling_test_placement`]); no exemption mechanism for either rule
-//! ([`exemption_mechanisms`]); the engine layer walls ([`engine_layers`]); the dependency
+//! ([`exemption_mechanisms`]); the dependency
 //! direction between the website crates ([`crate_dependencies`]); and the workspace laws over the
 //! members the root manifest names ([`workspace_members`], [`workspace_laws`]): crate tiers,
 //! crate anatomy, the strangler rule, frontend layering and Tailwind sources.
 //!
 //! **Position:** tier 1 of `tools/foundation`, over `verification_core` (the outcome
-//! vocabulary, the scans and the patterns) and `regex`. `cargo xtask verify file-length` and
-//! `cargo xtask verify engine-layers` render these results as their gate output, as do the five
+//! vocabulary, the scans and the patterns) and `regex`. `cargo xtask verify file-length` renders
+//! these results as its gate output, as do the five
 //! workspace-law gates (`cargo xtask verify crate-tiers` and its siblings), and the
 //! `engineering_laws` test binary of `api` asserts on them directly. It reads files and
 //! nothing else: no process, no network, no environment variable.
@@ -28,7 +28,6 @@
 
 pub mod cargo_manifest;
 pub mod crate_dependencies;
-pub mod engine_layers;
 mod error;
 pub mod exemption_mechanisms;
 pub mod file_length;

@@ -118,12 +118,12 @@ See: [Contract catalogs](/contracts/catalogs/README.md).
 
 ### render engine
 
-The map engine's drawing object, owner of the GPU device, canvas surface, camera and draw batches;
-it hands the graphics engine a [frame packet](/documentation/glossary/a_to_f.md#frame-packet) when something changed.
+The map renderer's drawing object, owner of the GPU device, canvas surface, camera and draw batches;
+it hands `gpu_frame`'s encoder a [frame packet](/documentation/glossary/a_to_f.md#frame-packet) when something changed.
 
-In code: `RenderEngine` in `legacy/map_engine/src/frame/engine.rs`.
+In code: `RenderEngine` in `crates/map_rendering/map_renderer/src/engine.rs`.
 
-See: [Render engine and frame packet](/legacy/map_engine/src/frame/README.md).
+See: [Render engine and frame packet](/crates/map_rendering/map_renderer/src/README.md).
 
 ### role
 

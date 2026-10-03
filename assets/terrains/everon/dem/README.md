@@ -25,7 +25,7 @@ assets/terrains/everon/dem/
 - Schema: the manifest's `dem` block describes the file (`path`, `widthPx`, `heightPx`,
   `encoding` `uint16-linear`, the height range, `source` `mod-getsurfacey-resample` and
   `axisFlip`), following `contracts/definitions/terrain-manifest.schema.json`. The decoder is
-  `decode_png_to_meters` in `legacy/map_engine/src/world/terrain/dem/`.
+  `decode_png_to_meters` in `crates/streaming/map_asset_loading/src/terrain/elevation/`.
 - Adding a file: a re-export replaces the image and the manifest's `dem` block together, then
   `cargo xtask schema terrain-alignment --terrain everon --strict` checks it against the anchors.
 
@@ -37,14 +37,14 @@ assets/terrains/everon/dem/
   raw-u16-dem-png --raster <grid> --meta <meta> --out <png>` packs them into this image.
 - Consumers:
   - the map engine's elevation loader, which fetches `/map-assets/everon/dem/everon-dem-16bit.png`
-    at boot (`legacy/map_engine/src/world/terrain/dem/`), and its spot-height and relief
+    at boot (`crates/streaming/map_asset_loading/src/terrain/elevation/`), and its spot-height and relief
     code;
   - the map raster pipeline's height-label export and inland water analysis
     (`tools/map_assets/map_raster_pipeline/src/`);
   - `cargo xtask schema terrain-alignment`, which samples it at every anchor, and
     `cargo xtask schema height-labels`;
-  - `cargo xtask ci lfs-dem` and the `map-engine` and `schema` jobs of
-    `.github/workflows/ci.yml`, which pull only this LFS object, and the map engine's spot-height
+  - `cargo xtask ci lfs-dem` and the `workspace-members` and `schema` jobs of
+    `.github/workflows/ci.yml`, which pull only this LFS object, and `place_names`' spot-height
     tests and the world export's elevation tests, which read it from disk.
 
 ## Boundaries

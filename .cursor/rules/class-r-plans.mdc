@@ -56,7 +56,7 @@ For **each** number or enum the plan will assert:
 | Census counts | Class-R tests in crates + `ls \| wc` on `assets/terrains/` — prefer live over any document |
 | LOD constants | Read `crates/map_overlay/map_draw_lanes/src/zoom_gates.rs` / residency aliases — quote exact values |
 | Default camera | Read the editor mount (`INITIAL_ZOOM`, target, terrain bounds) |
-| Engine counters | Read the stats format string (`stats()` in `legacy/map_engine/src/diagnostics/bench/frame_2.rs`) — **exact snake_case keys** |
+| Engine counters | Read the stats format string (`stats()` in `crates/map_rendering/map_renderer/src/engine_statistics.rs`) — **exact snake_case keys** |
 | Routes | `apps/api/src/<domain>/routes.rs` or `apps/frontend/src/app_routes.rs` + handler signature + query struct fields |
 | Smoke today | Exact assert expressions + line numbers in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/` |
 | Parity with a git-history tip | `git show <tag>:path` — key **lists and orders** separately |
@@ -86,7 +86,7 @@ Re-derive from code each time; do not memorize lore.
 | Wrong (plan smell) | Right |
 |--------------------|-------|
 | CamelCase invent (`roadSegments`) | The live `stats()` keys and bridge keys |
-| Wasm-only type as Leptos host API (`DemGrid`) | What `map_engine` (`legacy/map_engine`) exports (`DemVectorGrid`, …) |
+| Wasm-only type as Leptos host API (`DemGrid`) | What the crates export (`DemVectorGrid` in `terrain_elevation`, the host handles in `map_streaming_host`, …) |
 | A census remembered from an older tree | Live `assets/terrains/` + current Class-R test |
 | Equating two lanes (`landcover_polygons` == `forest_polygons`) | Separate counters, separate uploads |
 | Same keys ⇒ same order (`LOADOUT_ROWS` == `RAIL_REGIONS`) | Lock **both** orders |

@@ -1,0 +1,54 @@
+//! Role: the oriented-quad pipeline: instanced quads that carry their own centre, half extents and basis.
+//! Position: `pipeline` in the GPU frame crate; the map engine's render engine builds its pipelines with these at boot.
+//! Signals & state: none; each constructor builds a `wgpu::RenderPipeline` on the caller's device and returns it.
+//! Invariants: every pipeline compiles against the caller's shader module (from `create_render_shader`) and pipeline layout; its vertex buffer layouts match the `render_primitives` byte layouts and the WGSL vertex inputs; no depth or stencil state, single-sampled.
+
+/// Create the oriented-quad pipeline: a unit quad (8-byte vertices) instanced by 40-byte records
+/// (`center`, `half`, `basis`, `color`), drawn as a triangle strip with alpha blending.
+pub fn create_oriented_quad_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("oriented-quad"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_building"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[
+                wgpu::VertexBufferLayout {
+                    array_stride: 8,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x2],
+                },
+
+                wgpu::VertexBufferLayout {
+                    array_stride: 40,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x4],
+                },
+            ],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fs_building"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleStrip,
+            ..wgpu::PrimitiveState::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
+}

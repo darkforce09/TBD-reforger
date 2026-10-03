@@ -17,8 +17,8 @@ fn rows() -> String {
 
 /// The authored `icon` alias and `label` caption both reach the lane arrays verbatim (the T-790
 /// write-half: before this they were dropped), and the side tints follow the faction. The
-/// alias→glyph mapping is asserted in `map_engine_render::scene`'s own tests (a wasm32-only dep
-/// this native test cannot link); here we prove the ALIAS is carried so the mapper can see it.
+/// alias→glyph mapping is asserted in `unit_symbology::markers`' own tests; here we prove the
+/// ALIAS is carried so the mapper can see it.
 #[test]
 fn all_four_arrays_carry_the_authored_marker() {
     let (xy, tints, icons, captions) = marker_lane_fields(&rows());

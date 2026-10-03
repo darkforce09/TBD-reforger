@@ -44,7 +44,7 @@ use crate::workspaces::editor::mission_editor::AssetPickerState;
 use crate::workspaces::editor::ui::outliner::node_model::build_outliner_with_comments;
 use crate::workspaces::editor::ui::outliner::node_model::OutlinerNode;
 use map_editing_tools::selection;
-use map_engine::frame::EngineHandle;
+use map_renderer::EngineHandle;
 use mission_operations::entity::{comment_rows, connection_id_in_doc};
 use selection::SelectionHandle;
 

@@ -1,0 +1,30 @@
+# The target-neutral model of map streaming: the world-layer and host preferences an embedding
+# frontend hands the map host, the boot progress events, the memory budget ledger and its
+# satellite floor walk, and the `MapAssetSink` contract the loaders write CPU payloads through.
+[package]
+name = "map_streaming_model"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Map streaming preferences, boot progress, the memory budget model and the MapAssetSink contract."
+
+[package.metadata.layout]
+category = "crates/streaming"
+tier = 1
+targets = "any"
+
+[dependencies]
+# The polygon mesh and hairline payloads the sink's vector lane uploads take.
+render_primitives = { workspace = true }
+# The world-layer switches round-trip the frontend's preference store.
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The world-layer preference tests read the stored JSON spelling.
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

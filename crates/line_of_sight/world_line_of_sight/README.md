@@ -81,8 +81,10 @@ The crate root is the public surface:
   `TerrainId`), `map_coordinates`, `geometry_primitives`, `serde`, `rkyv`, `bytemuck` and
   `thiserror`.
 - Used by:
-  - the map engine (`legacy/map_engine`): the occluder loader and host queries in
-    `legacy/map_engine/src/streaming/` and the object wash of its line-of-sight tool;
+  - the streaming crates: the occluder loader
+    (`crates/streaming/map_asset_loading/src/occluder_loader.rs`) and the host queries
+    (`crates/streaming/map_streaming_host/src/queries.rs`);
+  - `map_editing_tools`: the object wash of its line-of-sight tool;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight
     tool and the debug world line-of-sight bench in `apps/frontend/`;
   - the world line-of-sight check and the blueprint tooling in `tools/developer_tools/src/`.

@@ -27,7 +27,7 @@ Local drafts are a separate doc, [draft persistence](/documentation/crates/missi
   and `history::install_host`, through which its document host installs the post-change hook
   (`apps/frontend/src/workspaces/editor/bridge/document_host/history.rs`).
 - Related features: [draft persistence](/documentation/crates/mission_editing/mission_persistence/draft_persistence.md),
-  the [map engine overview](/documentation/legacy/map_engine/map_engine_overview.md), and the
+  the [map engine overview](/documentation/crates/map_rendering/map_rendering_overview.md), and the
   Mission Creator's [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   for the ORBAT, layer, marker, zone, trigger, connection, clipboard and undo features this layer
   backs.
@@ -129,13 +129,13 @@ The grouping clock and the cap are in the
 ## Design
 
 - The layer is the "survives a reload" half of the
-  [engine boundary rules](/documentation/standards/engine_boundary_rules.md#where-state-lives):
+  [crate boundary rules](/documentation/standards/crate_boundary_rules.md#where-state-lives):
   the document, the undo stack, the selection and the tool definitions live here; the pointer
   state machine, hover, keybinds and dock state stay in the Mission Creator.
 - The crate-tier law's firewall (`cargo xtask verify crate-tiers`) keeps the browser out of the
   layer: no mission editing crate may depend on a browser crate, and no `.rs` file under
   `crates/mission_editing/` may spell `web_sys`, `leptos` or `wasm_bindgen`, prose included
-  ([§2B](/documentation/standards/engine_boundary_rules.md#2b-the-headless-editing-layer)). Its
+  ([§2B](/documentation/standards/crate_boundary_rules.md#2b-the-headless-editing-layer)). Its
   category matrix lets these crates depend on foundation crates built for every target, mission,
   mission editing, geometry, world, line of sight and overlay crates only. Engine-layer rule 7
   keeps the map engine's `world/` from naming a mission editing crate, and the mission crates the

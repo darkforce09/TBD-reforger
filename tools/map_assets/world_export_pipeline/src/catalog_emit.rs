@@ -89,7 +89,7 @@ fn read_doc(terrain_dir: &Path, rel: &str) -> Result<serde_json::Value> {
 /// file, so an archive that cannot survive it is a broken file whether or not `to_bytes` returned
 /// `Ok`, and the emitter is the last place that can say so cheaply. (Three concrete functions
 /// rather than one generic: naming the serializer/validator bounds would put `rkyv` in
-/// this crate's dependency list for no gain, and `map_engine` deliberately owns that.)
+/// this crate's dependency list for no gain, and `world_file_formats` deliberately owns that.)
 macro_rules! write_archive {
     ($fn_name:ident, $ty:ty, $what:literal) => {
         /// Serialise `archive`, validate the bytes with `access_checked`, then write them.

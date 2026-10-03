@@ -56,8 +56,8 @@ The graphics engine uploads these results (its `draw/lines.rs` and `draw/polygon
 
 - Depends on: `crate::color_normalization`, `crate::shaders` (read by the instance layout tests
   and the cull oracle); `bytemuck` and `earcutr`.
-- Used by: the graphics engine (`legacy/graphics_engine/`), whose uploads and compute cull build
-  on it and whose `draw` module forwards these modules to the map engine.
+- Used by: `gpu_frame`, whose uploads and compute cull build on it; and the map rendering,
+  streaming and overlay crates, which pack instances and geometry with it directly.
 - Rules: instance layouts are byte-exact (`icon_instance_layout_is_20_bytes`,
   `building_instance_layout_and_bytes_exact`); the shader's cell table stays `ATLAS_GLYPH_COUNT`
   long (`shader_uv_table_tracks_atlas_glyph_count`); triangulation conserves area

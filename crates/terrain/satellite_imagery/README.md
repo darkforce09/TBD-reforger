@@ -67,7 +67,8 @@ cargo test -p satellite_imagery   # both container versions, the refusals and Ev
 - Depends on: `world_file_formats` (the `TBDS` header, the archived version 2 index and its
   validation, the `TerrainId` of a version 1 index); `serde` and `serde_json` for the version 1
   index; `thiserror`.
-- Used by: the map engine's satellite loader (`legacy/map_engine/src/world/terrain/satellite/`),
+- Used by: `map_asset_loading`'s satellite loader
+  (`crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/`),
   which reads the index and picks the levels; and the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tests in
   `apps/frontend/src/workspaces/editor/tests/`, which parse Everon's index and check the level

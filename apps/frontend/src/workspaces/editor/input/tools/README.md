@@ -47,8 +47,8 @@ headless gates; the pick and the marquee themselves belong to
 ## Boundaries
 
 - Depends on: `map_editing_tools` (`ruler`, `line_of_sight`, `selection` and
-  `viewshed_scheduler`); `map_engine` (`streaming::host` for the world occluder and the camera,
-  `frame` for the render engine); the line of sight crates (`terrain_line_of_sight`, `interior_line_of_sight`,
+  `viewshed_scheduler`); `map_streaming_host` (the world occluder and the camera),
+  `map_renderer` (the render engine); the line of sight crates (`terrain_line_of_sight`, `interior_line_of_sight`,
   `world_line_of_sight`) and `spatial_indexes`; `overlay_instances::drag` for the drag-preview
   packers, `unit_symbology::squad_links` and `map_draw_lanes::lane_roles`; `install_seam`
   from `apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`; the bridge's

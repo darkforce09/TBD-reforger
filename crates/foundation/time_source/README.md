@@ -38,7 +38,7 @@ value. Everything the formatters write passes it.
 
 | Replaced code | Item here | Behaviour to know when adopting |
 |---|---|---|
-| map engine `diagnostics/timing/gpu.rs` `now_ms`, `perf_now_ms` | `BrowserClock.now_unix_ms_f64()`, `monotonic_ms` | identical values |
+| map renderer frame timing, render diagnostics benchmark clocks | `monotonic_ms`, `BrowserClock.now_unix_ms_f64()` | `performance.now()` with the `Date.now()` fallback; the wall clock is `Date.now()` |
 | map engine viewshed scheduler host clock | `monotonic_ms` in `SchedulerHost::now_ms` | the wasm fallback advances with real time instead of one tick per call |
 | map engine `streaming/host/viewport.rs`, `world_loader/ingest.rs` `Date.now()` | `BrowserClock.now_unix_ms_f64()` | identical values |
 | map engine CRDT undo-group `RealClock`, `ManualClock`, injected wasm clock | `PlatformClock`, `ManualClock`, `BrowserClock` | the `yrs::sync::Clock` adapter keeps the old floor of 1 ms |
@@ -81,5 +81,5 @@ No features and no environment variables. The browser crates are dependencies on
 
 ## Related documentation
 
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
   directions between the workspace crates.

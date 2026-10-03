@@ -27,7 +27,7 @@ AI agents read it before exporting a terrain again or adding a new one.
   binaries of `developer_tools`.
 - Related features: the [map raster pipeline](/documentation/tools/map_assets/map_raster_pipeline.md);
   the [uploaded terrain volume](/documentation/assets/uploaded_terrain_volume.md), the
-  designed second tier; the [map streaming](/documentation/legacy/map_engine/map_streaming.md)
+  designed second tier; the [map streaming](/documentation/crates/streaming/map_streaming.md)
   that loads the datasets in the browser.
 
 ## Behaviour

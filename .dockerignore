@@ -5,7 +5,7 @@
 # Everything is excluded, then the build's inputs are re-included. Cargo loads every workspace
 # member before it builds one, and `cargo build --locked` holds only when it resolves the member
 # set Cargo.lock records, so the workspace manifest, the lock file and the folders that hold the
-# members (apps, legacy, tools, crates) come along, beside the two contract folders whose files
+# members (apps, tools, crates) come along, beside the two contract folders whose files
 # the API embeds with `include_str!` (the JSON Schemas of contracts/definitions, and
 # contracts/rules: kit-aliases.json and equipment-gameplay/native-matching.json). An exception
 # names a folder literally: the container builders skip an excluded folder unless an exception
@@ -14,7 +14,6 @@
 !Cargo.toml
 !Cargo.lock
 !apps
-!legacy
 !tools
 !crates
 !contracts/definitions

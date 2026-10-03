@@ -14,7 +14,8 @@ centring on the selection, the cursor readout and the terrain the map loads.
   [`apps/frontend/src/workspaces/editor/input/`](/apps/frontend/src/workspaces/editor/input/README.md);
   the canvas boot in
   [`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/`](/apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/README.md);
-  the orthographic camera in [`legacy/map_engine/src/camera/`](/legacy/map_engine/src/camera/README.md);
+  the orthographic camera in [`crates/geometry/camera_math/`](/crates/geometry/camera_math/README.md)
+  and the render engine's viewport methods in `crates/map_rendering/map_renderer/src/viewport.rs`;
   the cursor and selection readout in
   [`apps/frontend/src/workspaces/editor/ui/docks/toolbelt/`](/apps/frontend/src/workspaces/editor/ui/docks/toolbelt/README.md).
 - Entry: `MissionEditorPage` on `/missions/:id/edit`, as the app README's
@@ -117,7 +118,7 @@ The status legend is in the [inventory index](/documentation/apps/frontend/works
 - Centring with Space moves the camera without scheduling the camera-settle refresh that pan,
   wheel and the Locations fly-to run, so streamed world detail can lag behind until the next
   camera move (`entity_selection.rs`; compare `wheel_zoom.rs` and
-  `legacy/map_engine/src/streaming/host/queries.rs`). Centring on a validation finding has
+  `crates/streaming/map_streaming_host/src/queries.rs`). Centring on a validation finding has
   the same gap.
 - The readout's tooltips say "Cursor X/Y/Z" also while the label reads "SEL"
   (`apps/frontend/src/workspaces/editor/ui/docks/toolbelt/toolbar_and_status.rs`).

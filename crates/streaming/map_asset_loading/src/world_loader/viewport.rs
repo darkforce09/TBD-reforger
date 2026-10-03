@@ -1,0 +1,111 @@
+//! **Role:** `WorldHost::run_viewport`: layer preferences, pin, fetch, drain, upload and occluder,
+//! and the read accessors of the host.
+//! **Position:** `world_loader` in `map_asset_loading`; the map host's boot and settle passes call
+//! it.
+//! **Signals & state:** advances the host's residency and uploads through the asset sink.
+//! **Invariants:** a pass reports whether it did work, so the caller's passes stop once nothing new
+//! arrives.
+
+use super::BootEvent;
+use super::BridgeHandle;
+use super::BrowserAssetSinkHandle;
+
+use super::WorldHost;
+
+/// Canonical fetch concurrency value.
+pub(super) const FETCH_CONCURRENCY: usize = 12;
+
+impl WorldHost {
+    /// Run viewport.
+    pub async fn run_viewport(
+        &mut self,
+        engine: &BrowserAssetSinkHandle,
+        bridge: &BridgeHandle,
+        report: &dyn Fn(BootEvent),
+    ) -> bool {
+        if !self.ready {
+            return false;
+        }
+        self.crossing_allocs.reset_pass();
+        self.ensure_atlas(engine, bridge);
+        let (bounds, zoom) = {
+            let g = engine.borrow();
+            let Some(e) = g.sink() else {
+                return false;
+            };
+            (e.visible_bounds(), e.zoom())
+        };
+        let Some(bounds) = bounds else {
+            return false;
+        };
+
+        self.apply_layer_prefs(engine);
+        let roads_changed = self.push_roads(engine, zoom);
+        let had_resident = self.residency.chunks_resident() > 0;
+        let missing = self
+            .residency
+            .set_viewport(bounds[0], bounds[1], bounds[2], bounds[3], zoom);
+
+        let landcover_changed = self.push_landcover(engine);
+
+        let fetched = !missing.is_empty();
+        if fetched {
+            self.fetch_and_queue(missing, report).await;
+        }
+        let drained = self.drain(engine, bridge);
+        let pushed = self.push_to_engine(engine, bridge);
+        if fetched && had_resident {
+            self.crossing_allocs.commit_warm();
+        }
+
+        let occluded = self.occluder.run_viewport(&mut self.residency).await;
+        roads_changed || landcover_changed || fetched || drained || pushed || occluded
+    }
+}
+
+impl WorldHost {
+    /// Apply layer prefs.
+    pub(super) fn apply_layer_prefs(&mut self, engine: &BrowserAssetSinkHandle) {
+        let p = (self.world_layers)();
+
+        self.residency
+            .set_glyph_toggles(p.trees, p.props, p.buildings);
+        self.residency.set_fences_toggle(p.fences);
+        self.residency.set_airfield_toggle(p.airfield);
+
+        if let Some(e) = engine.borrow_mut().sink_mut() {
+            e.set_world_layer_visible("roads", p.roads);
+            e.set_world_layer_visible("forest", p.forest);
+            e.set_world_layer_visible("contours", p.contours);
+            e.set_world_layer_visible("sea", p.sea);
+            e.set_world_layer_visible("airfield", p.airfield);
+            e.set_world_layer_visible("heights", p.heights);
+            e.set_world_layer_visible("townLabels", p.town_labels);
+            e.set_world_layer_visible("roadNames", p.road_names);
+        }
+    }
+}
+
+impl WorldHost {
+    /// Occluder.
+    #[must_use]
+    pub fn occluder(&self) -> &world_line_of_sight::WorldOccluder {
+        self.occluder.occluder()
+    }
+}
+
+impl WorldHost {
+    /// The occluder host itself (fetch bookkeeping: the failed set).
+    #[must_use]
+    pub fn occluder_host(&self) -> &crate::occluder_loader::OccluderHost {
+        &self.occluder
+    }
+}
+
+impl WorldHost {
+    /// Road segments clone.
+    #[must_use]
+    pub fn road_segments_clone(&self) -> Vec<road_network::network::RoadSegment> {
+        self.store.roads.clone()
+    }
+}

@@ -135,7 +135,7 @@ fn the_flow_block_is_the_four_schema_fields() {
 /// this module's own `pub const`s, so it compared `flatten.rs`'s literals to a copy of
 /// `flatten.rs`'s literals and passed whatever the compiler actually held. It is now a real
 /// cross-crate pin by construction: the names are `pub use`d straight out of
-/// `map_engine_core::mission::flatten`, so these five assertions read the compiling crate's
+/// `mission_compiler::game_document::flow`, so these five assertions read the compiling crate's
 /// constants across the crate boundary. Editing `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from
 /// 600 to 900 — the wave-115 verifier's experiment, which used to leave this suite fully green —
 /// now fails here with `left: 900, right: 600`.

@@ -68,8 +68,8 @@ cargo test -p vegetation   # tree counts, density grid, marching squares and reg
   box); `rkyv`, `serde_json` and `thiserror`.
 - Used by:
   - `world_store`, which reads the regions;
-  - the map engine (`legacy/map_engine`): its forest mass loader and lane, its buffer packer and
-    chunk scheduler (the tree counts), its streaming host and its world loader (the regions);
+  - the streaming crates: `map_asset_loading`'s forest mass loader and world loader (the
+    regions) and `chunk_draw_buffers`' buffer packer (the tree counts);
   - the world export in `tools/map_assets/world_export_pipeline/src/`, which writes the
     regions archive and smooths the forest at `CANOPY_MASS_ISO`.
 - Rules: chunk borders stitch without a seam and north is texture row 0

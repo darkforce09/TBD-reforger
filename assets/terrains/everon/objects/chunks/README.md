@@ -57,8 +57,8 @@ loader's own narrowing.
   gate.
 - Consumers:
   - the map engine's world loader and residency
-    (`legacy/map_engine/src/streaming/loaders/world_loader/`, `chunk_bin.rs`, `chunk.rs` and
-    `residency.rs` in `legacy/map_engine/src/streaming/loaders/`), fetched as
+    (`crates/streaming/map_asset_loading/src/world_loader/`, `chunk_bin.rs`, `chunk.rs` and
+    `residency.rs` in `crates/streaming/map_asset_loading/src/`), fetched as
     `/map-assets/everon/objects/chunks/…`;
   - the developer tools' world line-of-sight verification and blueprint instance checks
     (`tools/map_assets/map_asset_verification/src/world_line_of_sight/`,
@@ -81,6 +81,6 @@ loader's own narrowing.
 
 - [Map binary formats](/crates/world_formats/world_file_formats/src/README.md) — the `TBDC` container and the
   instance row.
-- [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the chunks
+- [World asset loaders](/crates/streaming/map_asset_loading/src/README.md) — how the chunks
   are fetched and made resident.
 - [World chunks](/crates/world_formats/world_chunks/README.md) — how the chunks are parsed.

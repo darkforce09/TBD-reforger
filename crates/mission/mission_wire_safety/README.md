@@ -81,5 +81,5 @@ All also in `prelude`:
 ## Related documentation
 
 - [Mission crates](/crates/mission/README.md) — the category and its dependency rule.
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
   directions between the workspace crates.

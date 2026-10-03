@@ -49,9 +49,11 @@ cargo test -p map_coordinates   # the chunk grid, rounding and grid-reference un
 ## Boundaries
 
 - Depends on: `thiserror`.
-- Used by: `camera_math` (viewport size rounding); the map engine (`legacy/map_engine`): its
-  render path, streaming scheduler, world line of sight, terrain grid and hillshade, and selection
-  digest; the developer tools (`tools/developer_tools`); and the single-page app
+- Used by: `camera_math` (viewport size rounding); the map rendering crates (the render path),
+  the streaming crates (the chunk scheduler, draw buffers and loaders), `world_line_of_sight`,
+  `terrain_elevation` and `terrain_relief` (the terrain grid and hillshade), and the mission and
+  mission editing crates (the selection digest); the developer tools (`tools/developer_tools`);
+  and the single-page app
   (`apps/frontend`): the Mission Creator's toolbelt and the mortar page.
 - Rules: one grid-reference convention, so the edge labels, the clipboard exporters and the
   mortar page agree (`format_six_figure_halves_are_the_edge_label_digits` and the other cases in
@@ -60,5 +62,5 @@ cargo test -p map_coordinates   # the chunk grid, rounding and grid-reference un
 
 ## Related documentation
 
-- [Map streaming](/documentation/legacy/map_engine/map_streaming.md) — how the chunk grid drives
+- [Map streaming](/documentation/crates/streaming/map_streaming.md) — how the chunk grid drives
   the streamed layers.

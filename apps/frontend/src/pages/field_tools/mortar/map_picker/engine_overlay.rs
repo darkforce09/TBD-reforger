@@ -75,17 +75,21 @@ pub(super) fn upload_overlay(
     };
     if !atlas_ready.get() {
         let (rgba, width, height, uv) = unit_symbology::markers::build_marker_slot_atlas();
-        match engine.ensure_slot_atlas(&rgba, width, height, &uv) {
+        match engine
+            .with_symbology(|symbology| symbology.ensure_slot_atlas(&rgba, width, height, &uv))
+        {
             Ok(()) => atlas_ready.set(true),
             Err(_) => leptos::logging::error!("mortar map: the marker atlas did not upload"),
         }
     }
-    engine.markers_bind(
-        &uploads.glyph_xy,
-        &uploads.glyph_rgba,
-        uploads.glyph_icons,
-        uploads.glyph_captions,
-    );
+    engine.with_symbology(|symbology| {
+        symbology.markers_bind(
+            &uploads.glyph_xy,
+            &uploads.glyph_rgba,
+            uploads.glyph_icons,
+            uploads.glyph_captions,
+        );
+    });
     engine.connections_bind(&uploads.line_packed, uploads.line_segments);
     if uploads.fill_indices.is_empty() {
         engine.clear_vector_lane(MISSION_ZONES);

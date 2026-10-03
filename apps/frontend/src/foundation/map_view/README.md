@@ -74,10 +74,11 @@ runs the full scope, which leaves the heights empty.
 
 ## Boundaries
 
-- Depends on: `camera_math` (`ortho::state`); `browser_platform` (`fetch`); `map_engine`
-  (`frame::engine::RenderEngine`, `frame::RafPump`, `streaming::host` for the boot, the host and grid handles and the
-  camera settle, `streaming::bridge` for the preferences and progress types,
-  and `terrain_elevation::full_resolution` for the heights); `web-sys`, `js-sys`, `wasm-bindgen`,
+- Depends on: `camera_math` (`ortho::state`); `browser_platform` (`fetch`); `map_renderer`
+  (`engine::RenderEngine`, `EngineHandle`); `gpu_frame` (`frame_pump::RafPump`);
+  `map_streaming_host` (the boot, the host and grid handles and the camera settle);
+  `map_streaming_model` (the preferences and progress types); `terrain_elevation::full_resolution`
+  (the heights); `web-sys`, `js-sys`, `wasm-bindgen`,
   `serde` and `serde_json`.
 - Used by: the Mission Creator's canvas mount, boot tasks, input listeners and frame loop under
   `apps/frontend/src/workspaces/editor/`; map pickers under

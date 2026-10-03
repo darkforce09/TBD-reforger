@@ -90,9 +90,6 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **The shared cache replays verdicts.** Under lock contention the sign is `Blocking waiting for
   file lock`, then `Finished` with no `Compiling` or `Checking` line. `--quiet` hides that line,
   so a hand-run `cargo check --quiet` has no tell at all.
-- **Feature-gated crates.** `map_engine` turns no feature tier on by default; a bare
-  `cargo test -p map_engine` compiles almost none of the crate. Pass `--all-features`;
-  `platform wave test --slice` isolates the folder but does not add features.
 - **Editions differ.** The frontend crate is edition 2021 and the other workspace crates 2024,
   and their import orders differ; the gate runs rustfmt on each changed file with its own crate's
   edition.

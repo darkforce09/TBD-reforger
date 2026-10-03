@@ -86,8 +86,8 @@ TBD-reforger/
 │   ├── world_objects/         vegetation · place_names · building_interiors
 │   ├── line_of_sight/         terrain_line_of_sight · interior_line_of_sight · world_line_of_sight
 │   ├── map_overlay/           map_draw_lanes · label_layout · unit_symbology · overlay_instances
-│   ├── streaming/             chunk_scheduler · chunk_draw_buffers · map_asset_loading
-│   │                          map_streaming_host
+│   ├── streaming/             chunk_scheduler · chunk_draw_buffers · map_streaming_model
+│   │                          map_asset_loading · map_streaming_host
 │   ├── graphics/              render_primitives · gpu_device · gpu_frame · renderer_core
 │   ├── map_rendering/         symbology_layers_gpu · world_layers_gpu · map_renderer
 │   │                          map_render_diagnostics
@@ -170,8 +170,8 @@ places:
   `crates/foundation/` (the one URL predicate the API and the single-page app link, with its case
   table as the `cases` module) and `offline_cache_policy` in `crates/contracts/` (the cache names,
   request classes, network fallback and offline pack list the service worker and the page share).
-- `legacy/` parks the two engine crates, `legacy/map_engine/` and `legacy/graphics_engine/`
-  (decision D12), until S8 deletes them; no crate under `crates/` depends on them.
+- The two engine crates were parked in a `legacy/` folder (decision D12) from S2 until S8
+  dissolved them into the crates above and deleted the folder.
 - `apps/` holds the end-state app folders; the frontend's `src/` holds the `foundation/`,
   `features/`, `pages/`, `workspaces/` and `shell/` layers in one crate until S10 splits them into
   crates, and `apps/offline_service_worker/` is already the binary-only crate of the end state.

@@ -1,0 +1,47 @@
+# The browser map host: the mount-time boot of the terrain, imagery and world layers, the host
+# state one map view owns, the debounced camera settle that refreshes the loaders, the layer
+# switches and the queries the Mission Creator asks of the mounted map. It drives the loaders of
+# `map_asset_loading` and writes the renderer only through `map_streaming_model`'s `MapAssetSink`.
+# The whole host is wasm32 only; the native build is the crate root and its prelude.
+[package]
+name = "map_streaming_host"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Browser map host: terrain and world boot, camera settle, layer switches and map queries over the asset loaders."
+
+[package.metadata.layout]
+category = "crates/streaming"
+tier = 7
+targets = "wasm32"
+
+[dependencies]
+# The loaders the host owns and drives, the asset sink handle and the live memory budget.
+map_asset_loading = { workspace = true }
+# The asset sink, the boot progress, the host preferences and the memory budget rows.
+map_streaming_model = { workspace = true }
+# The elevation model, the hillshade and the terrain manifest's raw grid block.
+terrain_elevation = { workspace = true }
+terrain_relief = { workspace = true }
+world_chunks = { workspace = true }
+# The occluder, the water mask and the town labels the host's queries answer from.
+world_line_of_sight = { workspace = true }
+water_bodies = { workspace = true }
+label_layout = { workspace = true }
+# The browser console macros and fetch helpers the boot loads through.
+browser_platform = { workspace = true }
+# The terrain manifest the boot reads.
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+futures = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = ["Window"] }
+
+[lints]
+workspace = true

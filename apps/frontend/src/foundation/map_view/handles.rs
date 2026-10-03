@@ -12,10 +12,8 @@
 
 use super::camera_fit::ViewState;
 use super::terrain_height::TerrainHeights;
-use map_engine::frame::EngineHandle;
-use map_engine::streaming::host::{
-    new_dem_grid_handle, new_host_handle, DemGridHandle, HostHandle,
-};
+use map_renderer::EngineHandle;
+use map_streaming_host::{new_dem_grid_handle, new_host_handle, DemGridHandle, HostHandle};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 

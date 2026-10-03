@@ -1,6 +1,7 @@
 # The website single-page app: Leptos client-side rendering compiled to WebAssembly (dev:
 # `cargo xtask mk leptos`; production: the built bundle served from `SPA_DIST_DIR`). It links the
-# map engine directly for the Mission Creator canvas and the mission compiler.
+# map rendering and streaming crates directly for the Mission Creator canvas, and the mission
+# compiler.
 [package]
 name = "frontend"
 version = "0.1.0"
@@ -15,10 +16,10 @@ futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 base64 = { workspace = true }
-# The map engine on every target: the static world, the overlay and the streamed world's loaders
-# run on the native build as well as wasm32, for the page and editor tests. The wasm32 block adds
-# `render`.
-map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "streaming"] }
+# The streaming model on every target: the world layer and host preferences, the boot progress
+# events and the memory budget model the editor's session and the map view mount read on the
+# native build as well as wasm32, for the page and editor tests.
+map_streaming_model = { workspace = true }
 # The mission crates on every target. The compiler runs on the native build as well as wasm32:
 # `MissionDetail::compiled_meta` is the row half of the Mission Creator's server-truth Export, and
 # `compiled_meta_is_the_row_the_server_compiles_from` checks it natively against the captured
@@ -172,12 +173,21 @@ web-sys = { workspace = true, features = [
 # Rendering and browser asset I/O share the frontend's WebAssembly module.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 gloo-timers = { version = "0.3", features = ["futures"] }
-# The renderer tier of the browser build: `render` reaches `streaming` -> `world`.
-# Default features are off, as on every frontend edge to the map engine, so no crate default ever
-# chooses a tier.
-map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["render", "streaming"] }
+# The map renderer (the render engine, its handle and the GPU frame pump of `gpu_frame`) every
+# map view and debug bench mounts, and the browser streaming half: the asset loaders and live
+# memory budget of `map_asset_loading` and the map host of `map_streaming_host` that feeds the
+# renderer.
+map_renderer = { workspace = true }
+gpu_frame = { workspace = true }
+map_asset_loading = { workspace = true }
+map_streaming_host = { workspace = true }
 # The same-origin fetch helpers the map view mount and the world line-of-sight bench load with.
 browser_platform = { workspace = true }
+# The Arsenal's 3D paper doll renderer the doll panel mounts (`arsenal/doll.rs`).
+paper_doll_renderer = { workspace = true }
+# The map renderer's readback self-checks, frame benchmark and stress pool the viewport bridge
+# publishes on `window.__selfChecks` and `window.__editorBench` (`bridge/viewport.rs`).
+map_render_diagnostics = { workspace = true }
 # The mission document's IndexedDB persistence (database `tbd-mission-yrs`, store `doc-state`, the
 # whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default features pull
 # `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on wasm32-unknown-unknown, and
@@ -190,12 +200,7 @@ wasm-bindgen-futures = { workspace = true }
 # Member manifests carry no [profile.*]: Cargo reads profiles from the workspace root only. trunk
 # applies wasm-opt via the index.html data-wasm-opt attribute.
 
-# Native UI tests call the map engine's satellite selection and archive arithmetic (the
-# `streaming` tier).
 [dev-dependencies]
-map_engine = { path = "../../legacy/map_engine", default-features = false, features = [
-    "streaming",
-] }
 # The guard's case table (`http_url_guard::cases`), which every page test that renders a stored
 # link or image runs through its render path.
 http_url_guard = { workspace = true, features = ["test_fixtures"] }

@@ -116,8 +116,8 @@ Implement <slice id> — <one-line title>.
 Agents edit the file they already have open. On an engine ticket that is the Leptos component, so
 streaming, LOD and camera policy grows a second home in `apps/frontend/src/` and the two
 copies disagree. The boundary is `CLAUDE.md` law 6, detailed in the
-[engine boundary rules](/documentation/standards/engine_boundary_rules.md) and enforced by
-`cargo xtask verify engine-layers`.
+[crate boundary rules](/documentation/standards/crate_boundary_rules.md) and enforced by
+`cargo xtask verify crate-tiers`.
 
 Whoever writes the prompt:
 

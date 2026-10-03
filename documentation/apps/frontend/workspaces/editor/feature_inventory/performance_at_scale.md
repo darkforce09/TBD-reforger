@@ -11,7 +11,7 @@ document. Each entry states what the code does; none records a measured frame ra
 ## Where it lives
 
 - Code: the slot icon lane's GPU bridge in
-  [`legacy/map_engine/src/overlay/symbology/instances/`](/legacy/map_engine/src/overlay/symbology/instances/README.md),
+  [`crates/map_rendering/symbology_layers_gpu/src/slot_symbology/`](/crates/map_rendering/symbology_layers_gpu/src/slot_symbology/README.md),
   and its selection patches, drag overlay and clusters in
   [`crates/map_overlay/overlay_instances/`](/crates/map_overlay/overlay_instances/README.md);
   the picks in `crates/mission_editing/mission_editing_session/src/picking.rs` and
@@ -66,8 +66,9 @@ pasted slot; no cap limits the count or the selection (`paste_slots`,
 With more than 500 slots (`CLUSTER_SLOT_THRESHOLD`) at zoom −4 or farther (`ZOOM_CLUSTER_MAX`),
 the slot lane switches to discs sized by how many slots each covers; the camera re-checks the gate
 on every move (`cluster_mode`, `crates/map_overlay/overlay_instances/src/symbols.rs:44-56`;
-`legacy/map_engine/src/camera/viewport.rs:110-128`). The cluster grid is built over Everon's
-bounds whatever the terrain (`instances/bridge_1.rs:228-241`). Clicking a disc does not zoom
+`crates/map_rendering/symbology_layers_gpu/src/slot_symbology/clusters.rs:16-36`). The cluster
+grid is built over Everon's bounds whatever the terrain
+(`crates/map_rendering/symbology_layers_gpu/src/slot_symbology/clusters.rs:51-64`). Clicking a disc does not zoom
 into it; picks still test the slots beneath.
 
 ### PERF-WORKER-001 — Compile worker

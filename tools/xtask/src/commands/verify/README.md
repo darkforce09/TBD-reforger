@@ -43,12 +43,12 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 
 ### Architecture gates
 
-- Synopsis: `verify engine-layers`; `verify route-tags`; `verify editor-orbat-coherency`
-- Does: the layer rules between the graphics engine and the map engine; every `@route` tag matches
+- Synopsis: `verify route-tags`; `verify editor-orbat-coherency`
+- Does: every `@route` tag matches
   a registered Axum route and back; the [ORBAT](/documentation/glossary/n_to_z.md#orbat) and Eden
   lock coherency of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator).
   Body: `tools/checks/repository_checks/src/architecture/`.
-- Example: `cargo xtask verify engine-layers`
+- Example: `cargo xtask verify route-tags`
 
 ### Workspace laws
 

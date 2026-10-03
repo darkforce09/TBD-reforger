@@ -3,7 +3,7 @@
 //! ══ Transport ═══════════════════════════════════════════════════════════════════════════════
 //! Every write goes to `meta.environment.audio` through [`operations::update_environment`],
 //! the same one-patch-one-undo-step path the .4 cards use.
-//! `map_engine_core::mission::extensions` copies the key onto the compiled payload root.
+//! `mission_model::authored_blocks` copies the key onto the compiled payload root.
 //!
 //! ══ Place on map ════════════════════════════════════════════════════════════════════════════
 //! Placement reuses the existing marker gesture: [`arm_place_on_map`] calls

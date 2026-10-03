@@ -66,8 +66,8 @@ environment variable.
   `prefab_catalog` (the prefab tables, rows, footprint lookups, class codes, payload decoding),
   `world_file_formats` (`PrefabId`), `spatial_indexes` (the point index), `map_draw_lanes`
   (`building_visible`), `map_coordinates` (the chunk math), `serde_json`, `thiserror`.
-- Used by: `chunk_draw_buffers`, whose `WorldResidency` owns a `ChunkResidency`; the map engine
-  (`legacy/map_engine`, behind `streaming`), directly, for the occluder loader's `ResidencyEvent`.
+- Used by: `chunk_draw_buffers`, whose `WorldResidency` owns a `ChunkResidency`;
+  `map_asset_loading`, directly, for the occluder loader's `ResidencyEvent`.
 - Rules:
   - streaming category, tier 4 (`cargo xtask verify crate-tiers`);
   - nothing here names the draw buffers; every change they must see leaves as a `DrawRebuild`;

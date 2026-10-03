@@ -1,0 +1,43 @@
+# The streamed world's typed GPU layers: the building footprints, outlines and fence strips, the
+# forest density lane, the satellite basemap and hillshade texture lanes and the terrain line of
+# sight overlay (the viewshed lane), with the textured lane record they share, all written
+# through the renderer contracts' lane sink. Everything that names a GPU type is wasm32 only; the
+# native build keeps the basemap mode, the error type and the textured quad and raster rules,
+# which the native tests cover.
+[package]
+name = "world_layers_gpu"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Typed GPU layers of the streamed world: buildings, forest density, satellite and hillshade textures, terrain line of sight overlay."
+
+[package.metadata.layout]
+category = "crates/map_rendering"
+tier = 3
+targets = "wasm32"
+
+[dependencies]
+# The lane sink and layer context the layers write through, and the frame packet's pipeline ids.
+renderer_core = { workspace = true }
+# The draw batches and instance buffers, and the hairline and indexed mesh uploads.
+gpu_frame = { workspace = true }
+# The building and quad instance layouts, the line vertex, the anchor-relative rectangle and the
+# opaque pipeline id.
+render_primitives = { workspace = true }
+# The lane roles and their lane ids.
+map_draw_lanes = { workspace = true }
+# The scene anchor the instances are measured from.
+map_coordinates = { workspace = true }
+# Byte views of the instances and tints written into GPU buffers.
+bytemuck = { workspace = true }
+thiserror = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+# The browser bitmap the satellite loads copy into a texture.
+web-sys = { workspace = true, features = ["ImageBitmap"] }
+
+[lints]
+workspace = true

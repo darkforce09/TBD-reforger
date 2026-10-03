@@ -1,0 +1,17 @@
+# Stage S8 V2 — the map engine's overlay half becomes the symbology_layers_gpu crate: the lane preferences, the
+# glyph atlas layer, the compute cull of the icon lanes, the icon uniform layout, the world icon lane uploads and
+# the slot symbology layer move under names that say what they hold. Paths name the tree before the moves; the
+# map engine keeps re-export shims at its overlay module paths until the stage switch.
+kind	from	to	scope
+#
+# the lane preferences and the glyph atlas layer
+path	legacy/map_engine/src/overlay/lanes_prefs.rs	crates/map_rendering/symbology_layers_gpu/src/lane_preferences.rs
+path	legacy/map_engine/src/overlay/symbology/atlas/gpu.rs	crates/map_rendering/symbology_layers_gpu/src/glyph_atlas_gpu.rs
+#
+# the icon lane cull, the icon uniform layout and the world icon lanes
+path	legacy/map_engine/src/overlay/symbology/instances/icon_cull_gpu.rs	crates/map_rendering/symbology_layers_gpu/src/icon_cull_gpu.rs
+path	legacy/map_engine/src/overlay/symbology/instances/icon_uniforms.rs	crates/map_rendering/symbology_layers_gpu/src/icon_uniforms.rs
+path	legacy/map_engine/src/overlay/symbology/instances/world_icon_lanes.rs	crates/map_rendering/symbology_layers_gpu/src/world_icon_lanes.rs
+#
+# the slot symbology layer
+path	legacy/map_engine/src/overlay/symbology/instances/slot_symbology	crates/map_rendering/symbology_layers_gpu/src/slot_symbology

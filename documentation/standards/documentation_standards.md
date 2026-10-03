@@ -11,9 +11,8 @@ than repeats.
 
 ## 1. Scope and authority
 
-- The rules apply to every comment in `apps/`, `crates/`, `legacy/` and `tools/` and to every
-  document under
-  `documentation/`; the audience is developers and AI agents.
+- The rules apply to every comment in `apps/`, `crates/` and `tools/` and to every document
+  under `documentation/`; the audience is developers and AI agents.
 - When sources disagree, the running code wins, then `CLAUDE.md`, then the rest of the
   [authority ladder](/documentation/README.md#authority-ladder) in the entry README.
 - A comment or document the code contradicts is a defect, fixed by the next change that touches
@@ -119,8 +118,7 @@ invariant that follows from it
 
 ## 5. Rust comments
 
-These rules cover every Rust crate of the workspace, under `apps/`, `crates/`, `legacy/` and
-`tools/`.
+These rules cover every Rust crate of the workspace, under `apps/`, `crates/` and `tools/`.
 
 **Module header.** A non-trivial module opens with a `//!` summary line and the four-point
 contract: `**Role:**` (its responsibility), `**Position:**` (its boundary layer, what feeds it and
@@ -315,13 +313,12 @@ documentation/
 ├── product_roadmap.md     the operator-curated plan
 ├── apps/                  mirrors apps/: api/, frontend/ (pages/<area>/, apps/editor/ for the
 │                          Mission Creator), fleet_host_agent/, ticketboard/
-├── legacy/                mirrors legacy/: map_engine/, graphics_engine/
 ├── mod/                   mirrors apps/mod/: tbd-framework/, tbd-export/, tbd-emcp/
 ├── tools/<crate>/  crates/<tier>/<crate>/  contracts/  assets/
 ├── design_system/         tokens, typography, colour, symbology, token exports
 ├── runbooks/              every operator procedure
 ├── standards/             this document, the README standard, templates/, coding standards,
-│                          placement, the commit checklist, ticket identifiers, engine boundaries
+│                          placement, the commit checklist, ticket identifiers, crate boundaries
 ├── known_bugs/            the live bug registry
 ├── restructure/           the active workspace restructure program, archived when it closes
 ├── tickets/               specs/ and plans/, flat and frozen once their ticket closes

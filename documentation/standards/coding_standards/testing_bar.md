@@ -27,8 +27,9 @@ the integration test database and its options are in
   `cargo xtask ci ci-local-schema`, the `schema` job; `cargo xtask ci verify-codegen-fresh` in the
   same task fails when the generated types are stale.
 
-The map and graphics engines have no rule code of their own; `cargo xtask mk wasm-ci` runs their
-tests in the `map-engine` job. The browser gates of the
+The map crates have no rule code of their own; `cargo xtask ci workspace-member-tests` runs their
+tests in the `workspace-members` job, and `cargo xtask mk wasm-ci` lints the wasm32 ones in the
+`wasm-ci` job. The browser gates of the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) (`cargo xtask mk leptos-gates`) run
 outside `ci-local`, as described in [Editor gates](/documentation/runbooks/editor_gates.md).
 
@@ -46,6 +47,8 @@ forbidden (CLAUDE.md law 7). Three test suites hold the rule, each in the crate'
 - the four `tools` crates: `tooling_test_modules_live_in_separate_files` in
   `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`.
 
-The map engine, the graphics engine, the ticketboard and the fleet host agent are unenforced. A
+The library crates under `crates/`, the ticketboard and the fleet host agent have no suite of
+their own; the API's `engineering_laws_unit_tests_live_in_sibling_files`
+(`apps/api/tests/engineering_laws.rs`) scans the whole repository. A
 test file may hold 1000 lines; see
 [File size and complexity](/documentation/standards/coding_standards/file_size_and_complexity.md).

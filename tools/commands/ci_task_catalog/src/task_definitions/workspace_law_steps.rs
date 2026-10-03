@@ -4,7 +4,7 @@
 //! [`super::TASKS`], one per law of
 //! [`repository_checks::architecture::workspace_laws`], each echoing its own command.
 //! **Position:** Pulled into `task_definitions.rs` by `#[path]`; read only by that row, which
-//! `ci-local` runs right after `verify-engine-layers`.
+//! `ci-local` runs right after `verify-ci-shell`.
 //! **Signals & state:** None; constant data.
 //! **Invariants:** The steps run in the order the laws build on each other — membership and
 //! tiers first, then anatomy, the strangler rule, frontend layering and Tailwind sources — and

@@ -1,0 +1,13 @@
+# Stage S8 V1c — the renderer contracts crate is born beside the frame: the render engine's statistics report
+# (the stats JSON and the vector-lane counts) leaves the diagnostics bench for the frame that owns the counters,
+# and the GPU frame's oriented-quad pipeline takes a module name that says what it draws instead of the map
+# subject it was first written for. The renderer contracts themselves are new code; the generic half of the
+# frame's binding ids moves into them by hand. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the statistics report moves into the frame beside the counters it reads
+path	legacy/map_engine/src/diagnostics/bench/frame_2.rs	legacy/map_engine/src/frame/engine_statistics.rs
+#
+# the oriented-quad pipeline module, and the map engine's imports of it
+path	crates/graphics/gpu_frame/src/pipeline/building.rs	crates/graphics/gpu_frame/src/pipeline/oriented_quad.rs
+rust_path	crate::frame::pipelines::building::	crate::frame::pipelines::oriented_quad::	legacy/map_engine/src

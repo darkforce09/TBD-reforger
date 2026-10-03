@@ -288,7 +288,9 @@ fn start_engine(start: EngineStart) {
                     {
                         let (rgba, width, height, uv) =
                             unit_symbology::markers::build_marker_slot_atlas();
-                        if let Err(e) = eng.ensure_slot_atlas(&rgba, width, height, &uv) {
+                        if let Err(e) = eng.with_symbology(|symbology| {
+                            symbology.ensure_slot_atlas(&rgba, width, height, &uv)
+                        }) {
                             leptos::logging::error!("ensure_slot_atlas: {e:?}");
                         }
                     }
@@ -306,14 +308,18 @@ fn start_engine(start: EngineStart) {
                     if let (Some(soa), Some(e)) = (soa.as_ref(), engine.borrow_mut().as_mut()) {
                         let tints =
                             unit_symbology::classification::side_tints_rgba_bytes(&soa.side_keys);
-                        e.slots_bind_symbology(
-                            soa.ids.clone(),
-                            &soa.xy,
-                            &tints,
-                            mission_history::soa_roles(soa),
-                            &soa.rotations,
-                        );
-                        e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
+                        e.with_symbology(|symbology| {
+                            symbology.slots_bind_symbology(
+                                soa.ids.clone(),
+                                &soa.xy,
+                                &tints,
+                                mission_history::soa_roles(soa),
+                                &soa.rotations,
+                            );
+                        });
+                        e.with_symbology(|symbology| {
+                            symbology.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings)
+                        });
                     }
                     engine_mounted.set(true);
                     if restore_settled.get() {

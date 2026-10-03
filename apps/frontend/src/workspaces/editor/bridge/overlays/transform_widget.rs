@@ -43,7 +43,7 @@ pub(crate) fn TransformWidgetOverlay(
         let var = variant.get();
         let (wx, wy) = read_widget_pivot()?;
         {
-            let (tx, ty, zoom) = map_engine::streaming::host::camera_snapshot()?;
+            let (tx, ty, zoom) = map_streaming_host::camera_snapshot()?;
             let win = web_sys::window()?;
             let vw = win
                 .inner_width()

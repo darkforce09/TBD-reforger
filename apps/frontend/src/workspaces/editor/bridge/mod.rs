@@ -7,11 +7,11 @@
 //! terrain and imagery in, the hosted document with its undo drive, and the host signal state the
 //! engine's hosted commands read.
 //! **Position:** between the canvas mount (`mission_editor/canvas_mount.rs`, which creates the
-//! engine, document and host handles) and `map_engine`; the document commands
-//! (`session/document_commands.rs`) and the pointer gestures (`input/pointer_gestures.rs`) hold
-//! those handles too. The docked chrome under [`super::ui`] and the interactive tools under
-//! [`super::input::tools`] reach the map through [`host_state`] and the command layers, never
-//! through a handle of their own.
+//! engine, document and host handles) and the map crates (`map_renderer`, `map_streaming_host`);
+//! the document commands (`session/document_commands.rs`) and the pointer gestures
+//! (`input/pointer_gestures.rs`) hold those handles too. The docked chrome under [`super::ui`]
+//! and the interactive tools under [`super::input::tools`] reach the map through [`host_state`]
+//! and the command layers, never through a handle of their own.
 //! **Signals & state:** the boot phase, the frame-timing samples, the widget-pivot registry and
 //! the hover cursor are all tab-local — they die with the browser tab and never reach the
 //! document. Anything an operator authored travels through the editing crates of

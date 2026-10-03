@@ -2,8 +2,7 @@
 //!
 //! **Role:** names every workspace package that `cargo clippy --target wasm32-unknown-unknown`
 //! lints: each member whose `[package.metadata.layout]` declares `targets = "wasm32"`, the two
-//! browser applications that carry no layout table, and the engines parked under `legacy/` while
-//! they are workspace members; and splits that set between the two lanes that run it.
+//! browser applications that carry no layout table; and splits that set between the two lanes that run it.
 //! **Position:** the `wasm-ci` recipe of [`crate::build_lane`] and the `wasm-ci` row of
 //! [`crate::task_runner::TASKS`] lint [`wasm_ci_lint_packages`]; the frontend's own lint runs in
 //! `ci-local-leptos` with every target. Reads [`repository_laws::workspace_members`].
@@ -26,10 +25,6 @@ pub const WASM32_LAYOUT_TARGETS: &str = "wasm32";
 /// The browser applications that ship to wasm32 without a layout table: the single-page app and
 /// the offline service worker. Each must be a workspace member.
 pub const BROWSER_APPLICATIONS: [&str; 2] = ["frontend", "offline_service_worker"];
-
-/// The engines parked under `legacy/`, which build for the browser without a layout table; each is linted
-/// while it is a workspace member and leaves the lint with its folder.
-pub const LEGACY_BROWSER_ENGINES: [&str; 2] = ["graphics_engine", "map_engine"];
 
 /// The packages whose wasm32 lint runs in a lane of their own, with that lane: the frontend in
 /// `ci-local-leptos`, which lints every target of it.
@@ -115,7 +110,7 @@ pub(crate) fn run_wasm_ci_lint() -> i32 {
 }
 
 /// True when `member` builds for wasm32: its layout declares the target, or it is one of the
-/// browser applications or the engines under `legacy/`, which carry no layout table.
+/// browser applications, which carry no layout table.
 fn is_linted_for_wasm32(member: &WorkspaceMember) -> bool {
     let declared = member
         .manifest
@@ -123,9 +118,7 @@ fn is_linted_for_wasm32(member: &WorkspaceMember) -> bool {
         .as_ref()
         .and_then(|layout| layout.targets.as_deref());
     let package = member.package_name.as_str();
-    declared == Some(WASM32_LAYOUT_TARGETS)
-        || BROWSER_APPLICATIONS.contains(&package)
-        || LEGACY_BROWSER_ENGINES.contains(&package)
+    declared == Some(WASM32_LAYOUT_TARGETS) || BROWSER_APPLICATIONS.contains(&package)
 }
 
 #[cfg(test)]

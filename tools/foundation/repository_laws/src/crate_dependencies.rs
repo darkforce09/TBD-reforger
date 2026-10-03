@@ -1,16 +1,12 @@
-//! The dependency-direction law between the website crates, and the test-only feature rule.
+//! The dependency-direction law between the website applications, and the test-only feature rule.
 //!
-//! **Role:** checks that no website crate declares a dependency edge against the layer order of
-//! `CLAUDE.md` law 6 — the renderer knows no map, page or server; the map engine knows no page or
-//! server; the frontend reaches the renderer only through the map engine and never links the
-//! server; the server links the map engine's mission domain and neither the renderer nor the
-//! frontend; the offline service worker links none of the server, the frontend or the renderer —
-//! and that a test-only feature is declared, off by default and enabled only by the
-//! crate's own dev-dependency on itself. The `crates/graphics` members have no row here: the
-//! crate-tier law already forbids every edge such a row would (its category matrix lets a
-//! graphics crate depend on foundation and graphics crates only, and its strangler rule forbids
-//! any edge into `legacy/`), so [`GRAPHICS_ENGINE_RULE`] covers the parked renderer alone, which
-//! that law does not judge.
+//! **Role:** checks that no website application declares a dependency edge against the layer
+//! order of `CLAUDE.md` law 6 — the frontend never links the server; the server links the mission
+//! and ballistics crates and neither a GPU crate nor the frontend; the offline service worker links
+//! none of the server, the frontend or a GPU crate — and that a test-only feature is declared, off
+//! by default and enabled only by the crate's own dev-dependency on itself. The library crates have
+//! no row here: the crate-tier law judges every edge of theirs (its category matrix and its
+//! firewalls), while the applications under `apps/` carry no layout declaration it could judge.
 //! **Position:** reads manifests through [`super::cargo_manifest`]; consumed by the
 //! `engineering_laws` test binary of `api`.
 //! **Signals & state:** none; pure functions over the checkout.
@@ -34,55 +30,57 @@ pub struct CrateDependencyRule {
     pub reason: &'static str,
 }
 
-/// The renderer: pure GPU primitives, no map concept, no page, no server.
-pub const GRAPHICS_ENGINE_RULE: CrateDependencyRule = CrateDependencyRule {
-    crate_rel: "legacy/graphics_engine",
-    forbidden_packages: &["map_engine", "frontend", "api"],
-    reason: "the renderer knows no map concept, no page and no server; the arrow runs \
-             map-engine -> graphics-engine only",
-};
-
-/// The map engine: map graphics and the mission domain, no page and no server.
-pub const MAP_ENGINE_RULE: CrateDependencyRule = CrateDependencyRule {
-    crate_rel: "legacy/map_engine",
-    forbidden_packages: &["frontend", "api"],
-    reason: "the map engine serves the frontend and the server and depends on neither",
-};
-
-/// The frontend: presentation over the map engine, never the renderer or the server directly.
+/// The frontend: presentation over the map and paper-doll renderers, never the server directly.
 pub const FRONTEND_RULE: CrateDependencyRule = CrateDependencyRule {
     crate_rel: "apps/frontend",
-    forbidden_packages: &["graphics_engine", "api"],
-    reason: "the frontend reaches the renderer through map_engine and the server over \
-             HTTP, never by linking either",
+    forbidden_packages: &["api"],
+    reason: "the frontend reaches the server over HTTP, never by linking it",
 };
 
-/// The server: the mission and ballistics crates, never the map engine, the renderer or the
-/// frontend.
+/// The server: the mission and ballistics crates, never a GPU crate or the frontend.
+///
+/// The GPU crates are the eight that may depend on wgpu (the crate-tier firewall's GPU packages
+/// and the `crates/map_rendering` members).
 pub const API_RULE: CrateDependencyRule = CrateDependencyRule {
     crate_rel: "apps/api",
-    forbidden_packages: &["map_engine", "graphics_engine", "frontend"],
+    forbidden_packages: &[
+        "frontend",
+        "gpu_device",
+        "gpu_frame",
+        "renderer_core",
+        "map_renderer",
+        "symbology_layers_gpu",
+        "world_layers_gpu",
+        "map_render_diagnostics",
+        "paper_doll_renderer",
+    ],
     reason: "the server links the mission and ballistics crates for the mission domain and links \
-             neither the map engine, the renderer nor the frontend",
+             neither a GPU crate nor the frontend",
 };
 
 /// The offline service worker: cache policy the page also links, never the server, the page or
-/// the renderer.
+/// a GPU crate.
 pub const OFFLINE_SERVICE_WORKER_RULE: CrateDependencyRule = CrateDependencyRule {
     crate_rel: "apps/offline_service_worker",
-    forbidden_packages: &["api", "frontend", "graphics_engine"],
+    forbidden_packages: &[
+        "api",
+        "frontend",
+        "gpu_device",
+        "gpu_frame",
+        "renderer_core",
+        "map_renderer",
+        "symbology_layers_gpu",
+        "world_layers_gpu",
+        "map_render_diagnostics",
+        "paper_doll_renderer",
+    ],
     reason: "the offline service worker is a leaf the frontend links; it reaches the server over \
-             HTTP and links neither the page nor the renderer",
+             HTTP and links neither the page nor a GPU crate",
 };
 
-/// Every dependency-direction rule of the website crates.
-pub const CRATE_DEPENDENCY_RULES: &[CrateDependencyRule] = &[
-    GRAPHICS_ENGINE_RULE,
-    MAP_ENGINE_RULE,
-    FRONTEND_RULE,
-    API_RULE,
-    OFFLINE_SERVICE_WORKER_RULE,
-];
+/// Every dependency-direction rule of the website applications.
+pub const CRATE_DEPENDENCY_RULES: &[CrateDependencyRule] =
+    &[FRONTEND_RULE, API_RULE, OFFLINE_SERVICE_WORKER_RULE];
 
 /// One forbidden dependency edge.
 #[derive(Debug, Clone, PartialEq, Eq)]

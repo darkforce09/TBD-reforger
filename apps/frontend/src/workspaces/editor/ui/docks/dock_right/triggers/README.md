@@ -42,7 +42,7 @@ the native `triggers_panel` draws nothing.
   `project_owner_line`); the outliner's `ROW` and `ROW_ACTIVE`;
   `bridge::host_state::armed_placement` for the draw; the trigger reads and writes and
   `placed_owner_options` in `mission_editing_commands::hosted_commands`, `camera_snapshot` in
-  `map_engine`'s `streaming::host` and `frozen_camera` in `map_editing_tools::selection`.
+  `map_streaming_host` and `frozen_camera` in `map_editing_tools::selection`.
 - Used by: the Triggers tab of `DockRight` in
   `apps/frontend/src/workspaces/editor/ui/docks/dock_right/shell/layout.rs`; the tests in
   `apps/frontend/src/workspaces/editor/ui/docks/tests/dock_right/`.

@@ -72,7 +72,7 @@ fn readout_never_goes_backwards_as_you_zoom_in() {
 
 /// **Reconciliation with T-639 (wave 101 + T-755).** The summary says this readout is the
 /// on-screen check for the zoom-adaptive contour ladder, so it must print the ladder's OWN
-/// scale, not a lookalike. `legacy/map_engine/src/world/terrain/relief/host.rs`
+/// scale, not a lookalike. `crates/streaming/map_asset_loading/src/terrain/relief/dem_vectors.rs`
 /// `push_contours` computes `2.0_f64.powf(-zoom)` and hands it — with nothing in between — to
 /// `contour_interval_for_zoom`; [`m_per_px`] is that same expression (param name `deck_zoom`).
 ///
@@ -99,7 +99,7 @@ fn the_printed_scale_is_the_contour_ladders_own_scale() {
     // an upstream re-based zoom goes RED.
     let dem = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/world/terrain/relief/host.rs"
+        "/../../crates/streaming/map_asset_loading/src/terrain/relief/dem_vectors.rs"
     )));
     let push = only_body(&dem, &format!("fn {}", "push_contours("));
     let bind = format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf");

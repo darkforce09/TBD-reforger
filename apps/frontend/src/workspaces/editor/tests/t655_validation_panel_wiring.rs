@@ -32,7 +32,8 @@ fn the_validation_panel_is_mounted_and_wired_to_doc_tick() {
     // The router routes through the SAME selection seam the rest of the editor uses (engine
     // set_selection + centre + refresh_selection), keyed on the finding's subject_id.
     assert!(
-        ed.contains("e.set_selection(ids)") && ed.contains("mission_history::refresh_selection()"),
+        ed.contains("symbology.set_selection(ids)")
+            && ed.contains("mission_history::refresh_selection()"),
         "T-655: click-to-select must replace the selection + refresh mirrors (the open_attributes \
          seam), not a bespoke path"
     );

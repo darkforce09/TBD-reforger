@@ -42,8 +42,8 @@ These are binding; the design below implements them and nothing else.
 Design constraints taken from the plan review:
 
 - The new crate `offline_service_worker` (`apps/offline_service_worker/`) has its
-  own crate-direction rule: it may not depend on api, frontend or
-  graphics_engine. Its wasm-only code sits behind `cfg(target_arch = "wasm32")` with a
+  own crate-direction rule: it may not depend on api, frontend or a GPU crate (the eight crates
+  the wgpu firewall admits). Its wasm-only code sits behind `cfg(target_arch = "wasm32")` with a
   native no-op `main`, so workspace builds and clippy compile it on the host, and it joins the
   `wasm-ci` lane (fmt, clippy host and wasm32, tests).
 - Tile pyramids and tbd-sat are gitignored local build output. The offline gate fails closed

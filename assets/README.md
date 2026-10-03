@@ -28,7 +28,7 @@ developer tools ──write──▶ terrains/   glyphs/
                                 │         │
              API  /map-assets ◀─┘         └─▶ /map-assets/glyphs
                          │
-browser: frontend ─▶ map_engine (fetch, decode, stream) ─▶ graphics_engine
+browser: frontend ─▶ streaming crates (fetch, decode, stream) ─▶ map rendering crates
 ```
 
 A terrain is reached only through the manifest its registry entry names, so a dataset may ship a
@@ -68,8 +68,9 @@ reads it yet.
 - Consumers:
   - the API's `/map-assets` and `/map-assets/glyphs` mounts, in
     `apps/api/src/router.rs`;
-  - the map engine in `legacy/map_engine/`, which fetches and decodes the datasets in the
-    browser and reads them from disk in its native tests;
+  - the streaming crates in `crates/streaming/` (with the terrain, world object and world format
+    crates they decode through), which fetch and decode the datasets in the browser, and those
+    crates' native tests, which read them from disk;
   - the developer tools' map verifications (`tools/map_assets/map_asset_verification/src/`) and
     the xtask schema gates;
   - `cargo xtask ci lfs-dem` and `cargo xtask ci lfs-sat`, which pull the Everon height map and

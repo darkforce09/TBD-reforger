@@ -19,7 +19,10 @@ on:
       - "apps/frontend/**"
       - "tools/developer_tools/**"
       - "tools/browser_testing/**"
-      - "legacy/map_engine/**"
+      - "crates/streaming/**"
+      - "crates/map_rendering/**"
+      - "crates/paper_doll/**"
+      - "crates/graphics/**"
       - ".github/workflows/editor-gates.yml"
 
 concurrency:

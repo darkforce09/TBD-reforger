@@ -40,7 +40,7 @@ assets/terrains/everon/satellite/
   water composite steps.
 - Consumers:
   - the map engine's satellite loader
-    (`legacy/map_engine/src/world/terrain/satellite/quadtree/`), which reads the header and
+    (`crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/`), which reads the header and
     the index with HTTP Range requests on `/map-assets/everon/satellite/everon-sat.tbd-sat`, shows
     a preview level first, then fetches every tile from the first level that fits the device's
     texture limit and memory budget down to 1 × 1; the

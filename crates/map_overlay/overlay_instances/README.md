@@ -50,9 +50,9 @@ cargo test -p overlay_instances   # slot instance cases and fire-mission mark ca
 
 - Depends on: `unit_symbology` (tints, classes, atlas cells), `map_draw_lanes` (`LaneRole`),
   `render_primitives` (`text::pack`, `draw::geometry::LineVertex`).
-- Used by: the map engine (`legacy/map_engine`): its slot, vehicle and comment GPU bridges, the
-  frame encoder, and the camera viewport through the `symbols` re-export in
-  `overlay/symbology/instances/`; the Mission Creator's select tool and the mortar page's map
+- Used by: `symbology_layers_gpu`, whose slot symbology packs the slot, vehicle, comment, drag
+  and cluster lanes with it (`crates/map_rendering/symbology_layers_gpu/src/slot_symbology/`);
+  the Mission Creator's select tool and the mortar page's map
   picker (`apps/frontend/src/pages/field_tools/mortar/map_picker/`).
 - Rules: the side tints stay three distinct colours with BLUFOR as the default
   (`side_tint_three_distinct`, `missing_side_defaults_blufor`); the symbology degrades to dots

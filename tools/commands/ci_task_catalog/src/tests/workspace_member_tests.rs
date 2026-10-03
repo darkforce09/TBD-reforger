@@ -90,8 +90,6 @@ fn the_api_family_is_left_to_the_api_lane() {
             ("apps/api", "api"),
             ("apps/frontend", "frontend"),
             ("apps/offline_service_worker", "offline_service_worker"),
-            ("apps/graphics_engine", "graphics_engine"),
-            ("apps/map_engine", "map_engine"),
             ("apps/agent", "agent"),
             ("crates/api/api_state", "api_state"),
             ("crates/foundation/guard", "guard"),

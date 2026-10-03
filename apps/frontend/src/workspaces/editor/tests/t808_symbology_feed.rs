@@ -268,7 +268,7 @@ fn every_comment_feed_names_its_rows() {
         );
     }
     assert!(
-        !hist.contains("e.comments_bind(&"),
+        !hist.contains(".comments_bind(&"),
         "T-808: the id-less comment bind cannot remain a feed — it silently un-selects"
     );
     // Both columns are projections of `comment_points`, which is also what `pick_comment`

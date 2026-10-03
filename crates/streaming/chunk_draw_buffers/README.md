@@ -61,9 +61,8 @@ feature from `[dev-dependencies]` to set the viewport, the zoom and resident chu
   `map_coordinates` (`Bbox`, `TerrainSizeM`), `render_primitives` (colour normalisation, icon
   packing, pixel-size floors), `vegetation` (tree counts and the heatmap rule), `road_network`
   (airfield structures and box, strip composers), `thiserror`.
-- Used by: the map engine (`legacy/map_engine`, behind `streaming`), directly: the world loader
-  and the occluder loader; the frontend's debug
-  world line-of-sight bench (`apps/frontend/src/workspaces/debug/world_los/`).
+- Used by: `map_asset_loading`, directly: the world loader and the occluder loader; the
+  frontend's debug world line-of-sight bench (`apps/frontend/src/workspaces/debug/world_los/`).
 - Rules:
   - streaming category, tier 5 (`cargo xtask verify crate-tiers`);
   - every rebuild request is applied before the call that produced it returns

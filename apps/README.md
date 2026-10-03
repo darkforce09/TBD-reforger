@@ -50,9 +50,9 @@ ticketboard ──▶ ticket_model (tools/tickets/) ──▶ .ai/tickets/
 The five Rust crates (`api`, `frontend`, `offline_service_worker`, `fleet_host_agent` and
 `ticketboard`) are members of the root Cargo workspace. The API is a thin application: its router
 and composition root assemble the domain, kernel and worker crates in `crates/api/`, and its
-integration suites stay in `apps/api/tests/`. The frontend links the map and graphics engines
-parked in `legacy/`. The mod is Enfusion script and data, built and checked by
-the xtask `mod` commands.
+integration suites stay in `apps/api/tests/`. The frontend links the map rendering, streaming,
+graphics, mission and mission editing crates in `crates/`. The mod is Enfusion script and data,
+built and checked by the xtask `mod` commands.
 
 ## Getting started
 
@@ -86,10 +86,10 @@ cargo run -p ticketboard          # opens the ticket registry viewer; stays in t
 - Rules: the products share data only over the API and through the schemas in `contracts/`: no
   crate here depends on a crate of another product, apart from the website's three (the frontend
   links `offline_service_worker`); the path dependencies leaving `apps/` go to `crates/` (the
-  API's crates in `crates/api/` among them), `legacy/` (the engines, for the frontend only) and
-  `tools/` (`repository_layout`, `repository_laws` and `verification_core` for the API's tests;
-  `repository_layout`, `ticket_model`, `ticket_wave_lock` and `ticketboard_model` for
-  ticketboard); the engine layer rules are held by `cargo xtask verify engine-layers`.
+  API's crates in `crates/api/` among them) and `tools/` (`repository_layout`, `repository_laws`
+  and `verification_core` for the API's tests; `repository_layout`, `ticket_model`,
+  `ticket_wave_lock` and `ticketboard_model` for ticketboard); the crate tiers law and its
+  firewalls hold the edges between the apps and the crates (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 

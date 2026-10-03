@@ -35,10 +35,7 @@ pub(super) fn make_wheel_handler(
                     pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
                 }
                 e.on_camera_changed();
-                map_engine::streaming::host::schedule_camera_settle(
-                    map_host.clone(),
-                    engine.clone(),
-                );
+                map_streaming_host::schedule_camera_settle(map_host.clone(), engine.clone());
             }
         }
     });

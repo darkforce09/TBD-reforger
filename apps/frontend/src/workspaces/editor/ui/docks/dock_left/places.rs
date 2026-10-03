@@ -9,8 +9,8 @@ pub enum LeftTab {
     Places,
 }
 
-/// `map_engine_core::world::LocationLabel` so the list/filter logic compiles (and is tested) on the
-/// native build, where map-engine-core's `world` feature is off.
+/// A place row of the Places list: the fields of `label_layout`'s `LocationLabel` that the list
+/// and its filter read, so that logic compiles and is tested on the native build.
 #[derive(Clone, Debug, PartialEq)]
 pub struct NamedPlace {
     pub name: String,

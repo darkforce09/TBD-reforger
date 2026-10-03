@@ -28,7 +28,7 @@ assets/terrains/<terrain>/   served under /map-assets
    │ objects/chunks/*.bin (TBDC)   objects/density/*.bin (TBDD)   *.rkyv   *.tbd-sat (TBDS)
    │ dem/elevation.dem (TBDE)      water/bathymetry.tbd-bath (TBDB)
    ▼
-legacy/map_engine (streaming::loaders, world, spatial::los::world)
+terrain, world object, world format, line of sight and streaming crates (the readers)
      ContainerHeader::read, TbdcHeader::instances, access_checked, decode_tbdd
 ```
 
@@ -42,8 +42,8 @@ panic: `BinaryError` from `archives/` for the containers, the row and the archiv
 container reader checks the magic, then the version, and
 refuses a version it does not implement; the density decoder checks the magic only.
 
-The map engine links the crate behind its `io` feature (`legacy/map_engine/Cargo.toml`), so the
-`scenario` build the API links carries neither the crate nor `rkyv`.
+No mission crate depends on this crate, so the mission build the API links carries neither the
+crate nor `rkyv`.
 
 ## Public surface
 

@@ -48,9 +48,9 @@ cargo test -p label_layout   # declutter, importance, glyph sizing, packing and 
 
 - Depends on: `render_primitives` (`text::layout`, `text::metrics`, `text::pack`, `text::scale`),
   `newtype_ids` (the ids), `serde` (the location rows); `serde_json` in tests.
-- Used by: `place_names`, whose packers lay out the town, road and height labels; the map engine
-  (`legacy/map_engine`): its location loader in `world/environment/locations/`, its draw buffers
-  and glyph lookup in `streaming/buffers/`, and its streaming host and residency; and the
+- Used by: `place_names`, whose packers lay out the town, road and height labels;
+  `map_asset_loading`'s location loader (`crates/streaming/map_asset_loading/src/environment/location_labels/`);
+  `chunk_draw_buffers`' draw buffers and glyph lookup; `map_streaming_host`; and the
   town-label verification of the developer tools
   (`tools/map_assets/map_asset_verification/src/labels/`).
 - Rules: the committed Everon label data draws without a tofu glyph

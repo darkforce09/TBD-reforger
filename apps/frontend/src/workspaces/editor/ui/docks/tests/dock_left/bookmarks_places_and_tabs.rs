@@ -320,7 +320,7 @@ fn the_index_and_the_fly_to_reuse_the_shipped_paths() {
         "the index must read world_assets::named_locations, not re-fetch locations.json"
     );
     assert!(
-        code.contains("map_engine::streaming::host::fly_to"),
+        code.contains("map_streaming_host::fly_to"),
         "fly-to must call the world_assets::fly_to RENDER_CTX seam"
     );
     // Delete-prod RED: production must not couple to the smoke-hook name.
@@ -353,37 +353,37 @@ fn fly_to_and_named_locations_bodies_are_live() {
     let src = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/mod.rs"
+            "/../../crates/streaming/map_streaming_host/src/lib.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/queries.rs"
+            "/../../crates/streaming/map_streaming_host/src/queries.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/state.rs"
+            "/../../crates/streaming/map_streaming_host/src/map_host.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/preferences.rs"
+            "/../../crates/streaming/map_streaming_host/src/view_preferences.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/viewport.rs"
+            "/../../crates/streaming/map_streaming_host/src/viewport.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/bootstrap.rs"
+            "/../../crates/streaming/map_streaming_host/src/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/terrain.rs"
+            "/../../crates/streaming/map_streaming_host/src/terrain_load.rs"
         ))
     ));
     let fly = only_body(&src, "pub fn fly_to");

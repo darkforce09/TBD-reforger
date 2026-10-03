@@ -66,7 +66,7 @@ pub(super) fn make_pointer_up_handler(
                 } else if button == 2 {
                     armed_placement::cancel_pending();
                     if let Some(e) = engine.borrow_mut().as_mut() {
-                        e.clear_place_preview();
+                        e.with_symbology(|symbology| symbology.clear_place_preview());
                     }
                     return;
                 } else if button != 0 {
@@ -119,7 +119,7 @@ pub(super) fn make_pointer_up_handler(
                         | armed_place::ArmedUp::Ignore => {}
                     }
                     if let Some(e) = engine.borrow_mut().as_mut() {
-                        e.clear_place_preview();
+                        e.with_symbology(|symbology| symbology.clear_place_preview());
                     }
                     return;
                 }
@@ -129,11 +129,8 @@ pub(super) fn make_pointer_up_handler(
                 if container.has_pointer_capture(ev.pointer_id()) {
                     let _ = container.release_pointer_capture(ev.pointer_id());
                 }
-                map_engine::streaming::host::set_camera_gesture(false);
-                map_engine::streaming::host::schedule_camera_settle(
-                    map_host.clone(),
-                    engine.clone(),
-                );
+                map_streaming_host::set_camera_gesture(false);
+                map_streaming_host::schedule_camera_settle(map_host.clone(), engine.clone());
             }
             let taken = left.borrow_mut().take();
             let Some(g) = taken else { return };
@@ -155,7 +152,9 @@ pub(super) fn make_pointer_up_handler(
                                     comment_lane_ids(&c.comments_json()),
                                 )
                             }) {
-                                e.comments_bind_ids(&cxy, cids);
+                                e.with_symbology(|symbology| {
+                                    symbology.comments_bind_ids(&cxy, cids)
+                                });
                             }
                         }
                     }
@@ -244,7 +243,8 @@ pub(super) fn make_pointer_up_handler(
                                 .filter(|i| !engine_ops::is_vehicle_id(i.as_str()))
                                 .cloned()
                                 .collect();
-                            e.set_selection(slot_ids); // tint lane (slots only)
+                            // tint lane (slots only)
+                            e.with_symbology(|symbology| symbology.set_selection(slot_ids));
                         }
                         mission_history::refresh_selection();
                     }
@@ -364,7 +364,7 @@ pub(super) fn make_pointer_up_handler(
                                 comment_lane_ids(&c.comments_json()),
                             )
                         }) {
-                            e.comments_bind_ids(&cxy, cids);
+                            e.with_symbology(|symbology| symbology.comments_bind_ids(&cxy, cids));
                         }
                     }
                 }
@@ -401,7 +401,7 @@ pub(super) fn make_pointer_up_handler(
                                 .filter(|i| !engine_ops::is_vehicle_id(i.as_str()))
                                 .cloned()
                                 .collect();
-                            e.set_selection(slot_ids);
+                            e.with_symbology(|symbology| symbology.set_selection(slot_ids));
                         }
                         mission_history::refresh_selection();
                     }
@@ -426,16 +426,19 @@ pub(super) fn make_pointer_up_handler(
                                     viewshed.borrow_mut().place(w[0], w[1], z);
                                     if let Some(tex) = place_viewshed(w[0], w[1]) {
                                         if let Some(e) = engine.borrow_mut().as_mut() {
-                                            let _ = e.viewshed_upload(
-                                                tex.min_x,
-                                                tex.min_y,
-                                                tex.max_x,
-                                                tex.max_y,
-                                                tex.tex_w,
-                                                tex.tex_h,
-                                                &tex.rgba,
-                                                tex.stride_bytes,
-                                            );
+                                            let _ =
+                                                e.with_terrain_line_of_sight_overlay(|overlay| {
+                                                    overlay.viewshed_upload(
+                                                        tex.min_x,
+                                                        tex.min_y,
+                                                        tex.max_x,
+                                                        tex.max_y,
+                                                        tex.tex_w,
+                                                        tex.tex_h,
+                                                        &tex.rgba,
+                                                        tex.stride_bytes,
+                                                    )
+                                                });
                                         }
                                     }
                                     crate::workspaces::editor::input::tools::los_world_wasm::start_object_wash();

@@ -47,7 +47,7 @@ impl MarkerRow {
     }
 }
 
-/// The parse, taking the core directly. Split out because the Mission Creator's `place_at_impl` (in the `frontend` app's armed placement) already holds the doc borrow when it needs the list (to mint an unused id), and re-entering through `marker_rows` (in the `map_engine` crate's hosted commands) there would re-open a borrow the place path is in the middle of.
+/// The parse, taking the core directly. Split out because the Mission Creator's `place_at_impl` (in the `frontend` app's armed placement) already holds the doc borrow when it needs the list (to mint an unused id), and re-entering through `marker_rows` (in `mission_editing_commands`' hosted commands) there would re-open a borrow the place path is in the middle of.
 pub fn marker_rows_of(core: &MissionDocCore) -> Vec<MarkerRow> {
     let Ok(rows) = serde_json::from_str::<serde_json::Value>(&core.briefing_marker_rows_json())
     else {

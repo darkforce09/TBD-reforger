@@ -67,7 +67,7 @@ RULES
 5. Check, clippy and build share the warm cache. Run ad-hoc tests only through
    `cargo xtask platform wave test --slice <ticket id> -p <package> [cargo test arguments]`, which
    builds into a private folder, and compare the `--list` count with the run count every time:
-   a mismatch means the binary is not yours. `map_engine` needs `--all-features`.
+   a mismatch means the binary is not yours.
 6. A binary you launch (an API instance, a CLI you exercise) builds into its own
    CARGO_TARGET_DIR=<repo>/target/slice-<ticket id>-api, a purpose subfolder of the build output
    folder with its own cargo lock; before trusting an HTTP or CLI result, find a string unique to

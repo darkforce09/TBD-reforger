@@ -57,9 +57,10 @@ cargo test -p water_bodies   # bathymetry levels, mask, suffix plan and archive 
 - Depends on: `terrain_relief` (the sea band), `render_primitives` (the fill mesh and ring
   triangulation), `world_file_formats` (the `TBDB` header, the vectors archive and its validating
   reader), `rkyv`, `bytemuck` and `thiserror`.
-- Used by: the map engine (`legacy/map_engine`): its water loader (`world/terrain/water/loader.rs`)
-  and its streaming host, which answers `is_water` and `is_known_dry_land` from the mask, and its
-  relief host, which draws the sea mesh; and the inland water pipeline in
+- Used by: `map_asset_loading`'s water loader
+  (`crates/streaming/map_asset_loading/src/terrain/water/loader.rs`) and relief host, which draws
+  the sea mesh; `map_streaming_host`, which answers `is_water` and `is_known_dry_land` from the
+  mask; and the inland water pipeline in
   `tools/map_assets/map_raster_pipeline/src/`, which writes both files with
   `downsample_index` and reads them back in its tests.
 - Rules: every level agrees with level 0 (`every_mip_level_agrees_with_level_zero` in

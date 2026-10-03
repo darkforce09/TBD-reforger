@@ -33,7 +33,7 @@ browser: mission's terrain id ──▶ /map-assets/<terrain>/manifest.json ◀�
 
 The browser reaches a terrain by the id its [mission](/documentation/glossary/g_to_m.md#mission)
 names: the Mission Creator boots `/map-assets/<terrain>/manifest.json` directly
-(`legacy/map_engine/src/streaming/host/bootstrap.rs`) and never reads the registry. Inside a
+(`crates/streaming/map_streaming_host/src/bootstrap.rs`) and never reads the registry. Inside a
 terrain the manifest names every asset, so a dataset may ship a subset and the map engine loads
 what the manifest lists; the few names the readers fix themselves are listed in the
 [Everon README](/assets/terrains/everon/README.md). Coordinates are world metres from `0, 0`,

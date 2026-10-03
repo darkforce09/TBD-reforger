@@ -134,7 +134,6 @@ fn purpose_subfolders_nest_inside_the_build_output_folder() {
             "gate-check",
             "gate-schema",
             "gate-api",
-            "gate-map-engine",
             "gate-frontend",
             "gate-tools",
             "ci",

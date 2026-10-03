@@ -129,7 +129,7 @@ fn the_icon_search_narrows_the_closed_list() {
 /// `canonical_marker_rows`, and the row COUNT is tied to `scene::MARKER_GLYPH_COUNT` by a
 /// compile-time `const _` assert in the wasm build.
 ///
-/// Source of truth for the count is `map_engine_render::scene::MARKER_GLYPH_COUNT`; the mirrored
+/// Source of truth for the count is `unit_symbology::markers::MARKER_GLYPH_COUNT`; the mirrored
 /// [`CANONICAL_MARKER_GLYPH_COUNT`] carries a comment saying so and the wasm build asserts they
 /// agree.
 ///

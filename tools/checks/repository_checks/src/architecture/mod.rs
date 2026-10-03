@@ -1,6 +1,4 @@
-//! The structural gates: engine layers, workspace laws, route tags and ORBAT coherency.
-
-pub mod engine_layer_boundaries;
+//! The structural gates: workspace laws, route tags and ORBAT coherency.
 
 pub mod route_tags;
 

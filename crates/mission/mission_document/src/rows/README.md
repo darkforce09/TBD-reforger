@@ -104,8 +104,9 @@ is added.
   - the crate root, which re-exports `MissionDocCore`, `EntityTransformPatch`,
     `SquadMembership`, `MergeOpts`, `MergeReport`, the connection types,
     `validate_connection_rows` and `formation_offsets`;
-  - `mission_operations`, and the map engine's editing layer (the host, history, hosted commands, persistence, picking, lanes and
-    tools), and the integration tests in `legacy/map_engine/tests/`;
+  - `mission_operations` and its integration tests (`crates/mission/mission_operations/tests/`),
+    and the mission editing crates (`crates/mission_editing/`: the host, history, hosted
+    commands, persistence, picking, lanes and tools);
   - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the document host, editor
     context, overlays and tactical-graphics lane in `bridge/`, the canvas mount and the document
     helpers in `mission_editor/`, the hydrate, persistence and document commands in `session/`,

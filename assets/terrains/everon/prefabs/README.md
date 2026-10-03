@@ -31,7 +31,7 @@ writes them. The building models in
 `buildings/` and their meshes come from single-building runs of the same compiler.
 
 In the browser the occluder loader
-(`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`) boots from the archive the
+(`crates/streaming/map_asset_loading/src/occluder_loader.rs`) boots from the archive the
 terrain manifest's `buildings.archive` names, taking the non-blocking prefabs from its census. It
 then fetches `blas-manifest.json`, prefetches the `hot` descriptors and their meshes, and as chunks
 become resident fetches the descriptors of the blocking prefabs they place, then the meshes those
@@ -78,7 +78,7 @@ that places its model.
   `cargo xtask map blueprint-from-voxels archive` (`archive_emission/archive_writer.rs`).
 - Consumers:
   - the map engine's occluder loader and world occluder
-    (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs` and the
+    (`crates/streaming/map_asset_loading/src/occluder_loader.rs` and the
     `world_line_of_sight` crate in `crates/line_of_sight/world_line_of_sight/`), over
     `/map-assets/everon/prefabs/…`;
   - `cargo xtask verify blas-manifest`

@@ -132,7 +132,7 @@ pub(super) fn render_prefs_section(env: &crate::foundation::transport::dto::Miss
                             let on = event_target_checked(&ev);
                             author_env("showHillshade", on.into());
                             let op = crate::workspaces::editor::bridge::host_state::editor_context::read_env().hillshade_opacity;
-                            map_engine::streaming::host::apply_hillshade(on, op);
+                            map_streaming_host::apply_hillshade(on, op);
                         }
                         class="accent-primary"
                     />
@@ -150,7 +150,7 @@ pub(super) fn render_prefs_section(env: &crate::foundation::transport::dto::Miss
                             let pct: f64 = event_target_value(&ev).parse().unwrap_or(40.0);
                             let op = (pct / 100.0).clamp(0.0, 1.0);
                             author_env("hillshadeOpacity", op.into());
-                            map_engine::streaming::host::apply_hillshade(true, op);
+                            map_streaming_host::apply_hillshade(true, op);
                         }
                         class="accent-primary"
                     />
@@ -164,7 +164,7 @@ pub(super) fn render_prefs_section(env: &crate::foundation::transport::dto::Miss
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
                             author_env("showGrid", on.into());
-                            map_engine::streaming::host::apply_grid(on);
+                            map_streaming_host::apply_grid(on);
                         }
                         class="accent-primary"
                     />

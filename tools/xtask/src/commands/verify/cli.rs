@@ -97,23 +97,12 @@ pub(crate) enum VerifyCmd {
     /// CI schema parity + hollow recipe tripwire
     #[command(name = "ci-schema-parity")]
     CiSchemaParity,
-    /// documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 6 and 7:
-    /// legacy/graphics_engine and the crates/graphics members may not import map_engine, and
-    /// may not declare a type/fn/mod name containing terrain, symbology, mission, orbat or arma;
-    /// under legacy/map_engine only the enumerated packet boundary may name
-    /// graphics_engine::frame, only the pinned seams may name its device / pipeline /
-    /// shaders / r#loop modules, and world/ names no mission document or mission editing crate;
-    /// and apps/frontend neither imports nor depends on graphics_engine or a wasm-only
-    /// crates/graphics member. (§5 spells it
-    /// `verify-engine-layers`; every sibling here is `verify <name>`, and the
-    /// `verify-engine-layers` task row aliases both.)
-    #[command(name = "engine-layers")]
-    EngineLayers,
     /// Crate-tier law (documentation/restructure/laws_and_gates.md): every manifest under
-    /// apps/, crates/, tools/, tools/ and legacy/ is a workspace member; each judged crate
+    /// apps/, crates/, tools/ and legacy/ is a workspace member; each judged crate
     /// declares [package.metadata.layout], sits at its category plus its name, and declares the
     /// tier its dependencies give it; edges point strictly down and follow the category matrix;
-    /// the external-crate firewalls hold; nothing new depends on a member under legacy/
+    /// the external-crate firewalls hold (#[wasm_bindgen] only in the frontend, browser_platform
+    /// and the offline service worker); nothing new depends on a member under legacy/
     #[command(name = "crate-tiers")]
     CrateTiers,
     /// Crate-anatomy law: every judged library crate keeps a lib.rs of at most 80 lines of

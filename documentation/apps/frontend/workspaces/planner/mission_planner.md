@@ -51,8 +51,8 @@ planner's first design draft. No visual reference set exists.
   published mission and never changes it.
 - Players draw tactical markers as in the Arma 3 SWT markers mod: lines, arrows, phase lines,
   objective markers, boundaries and ingress and egress routes. The draft names NATO
-  MIL-STD-2525 tactical graphics; the map engine's symbology today is its own unit-role and vehicle
-  glyph set (`legacy/map_engine/src/overlay/symbology/`), not a 2525 set.
+  MIL-STD-2525 tactical graphics; the map's symbology today is its own unit-role and vehicle
+  glyph set (`crates/map_overlay/unit_symbology/`), not a 2525 set.
 - Markup is collaborative and live between the planners of one event.
 - A briefing view pairs the plan with slides and a squad assignment dossier.
 - Identity sync: because a member's Discord account is linked to their Arma identity, "Save Plan

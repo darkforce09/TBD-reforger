@@ -34,7 +34,6 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── crates/                      the tiered library crates, grouped by category
 ├── deploy/                      the release Dockerfile, compose files, Caddy site, deploy settings template, systemd units
 ├── documentation/               all documentation: feature docs, runbooks, standards, glossary, archive
-├── legacy/                      the map and graphics engines, parked while their code moves into crates/
 ├── rust-toolchain.toml          the pinned Rust toolchain with rustfmt, clippy and the wasm32 target
 └── tools/                       the developer tools: `xtask`, the ticket crates, `developer_tools`, the tool foundations
 ```

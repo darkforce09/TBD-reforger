@@ -32,9 +32,9 @@ assets/glyphs/atlas/
   the WebP header before writing, and refuses to overwrite the atlas with an empty image.
 - Consumers:
   - the map engine's world boot, `load_glyph_atlas` in
-    `legacy/map_engine/src/streaming/loaders/world_loader/atlas.rs`, which fetches
+    `crates/streaming/map_asset_loading/src/world_loader/atlas.rs`, which fetches
     `/map-assets/glyphs/atlas/world-glyphs.json` and `world-glyphs.webp`, turns each rectangle into
-    a UV quad in sorted key order and uploads the pixels through `RenderEngine::upload_glyph_atlas`;
+    a UV quad in sorted key order and uploads the pixels through `GlyphAtlasGpu::upload`;
   - `cargo xtask schema map-glyphs`
     (`tools/commands/schema_tooling/src/schema_checks/map_glyphs.rs`), which checks the canvas size,
     every rectangle and anchor, and the WebP header;

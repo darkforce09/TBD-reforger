@@ -35,10 +35,9 @@ mod doc_audit;
 
 /// Mounts the app frame into the document body.
 ///
-/// The wasm entry is a `#[wasm_bindgen(start)]`, not the bin `main`, because linking the map
-/// engine pulls in ITS `#[wasm_bindgen(start)]` (the panic hook); wasm-bindgen runs every
-/// registered start, but a bare bin `main` is NOT one of them, so it would be skipped and the app
-/// would never mount. Declaring our mount as a start makes both run.
+/// The wasm entry is this `#[wasm_bindgen(start)]` function, the only start function in the
+/// linked module, so wasm-bindgen runs it when the module instantiates; the bin `main` stays empty.
+/// It installs the panic hook before anything else runs, and no linked library installs one.
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen::prelude::wasm_bindgen(start)]
 pub fn start_app() {

@@ -49,10 +49,12 @@ atlas grid size.
 ## Boundaries
 
 - Depends on: nothing outside the crate; `std` only.
-- Used by: the graphics engine (`legacy/graphics_engine/`), whose `frame/atlas.rs` writes
-  `text_uniform_bytes`; and `map_engine` (`legacy/map_engine/src/`): `overlay/symbology/`
-  declutters, places and packs labels through `layout`, `metrics` and `pack`, the label glyph math
-  sizes against `REF_ZOOM`, and the text-lane upload `frame/upload/text.rs` bakes the atlas.
+- Used by: `gpu_frame`, whose `frame/atlas.rs` writes `text_uniform_bytes`; `label_layout`,
+  `overlay_instances`, `unit_symbology` and `place_names`, which declutter, place and pack labels
+  through `layout`, `metrics` and `pack` and size the label glyph math against `REF_ZOOM`;
+  `chunk_draw_buffers` and `map_asset_loading`, which pack streamed labels; and `map_renderer`,
+  whose text-atlas upload (`crates/map_rendering/map_renderer/src/upload/text_atlas.rs`) bakes the
+  atlas.
 - Rules: every character maps to a cell, the fallback included; the declutter keeps the first of
   overlapping specs (`width_declutter_drops_overlapping_long_names`); the `TextUniforms` block
   stays 16 bytes, matching `shader.wgsl` (tested in `crate::shaders`); nothing here owns a GPU

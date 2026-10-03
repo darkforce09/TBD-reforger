@@ -9,7 +9,7 @@ code-leak gate (`licensing/`) and the object registry alias gate (`registry/`). 
 
 ```text
 tools/checks/repository_checks/src/
-├── architecture/   engine layers, the five workspace laws, route tags, ORBAT coherency and the wave-gate linkage pins
+├── architecture/   the five workspace laws, route tags, ORBAT coherency and the wave-gate linkage pins
 ├── error.rs        `Error` and `Result`: a check that could not find the checkout, read a file or start a program
 ├── language_bans/  the shell, Python and Node bans and the file-length gate
 ├── lib.rs          the crate root: the checks' shared contract, `mod` lines and the re-exports
@@ -23,7 +23,7 @@ tools/checks/repository_checks/src/
 
 | Group | Verbs | README |
 |---|---|---|
-| `architecture` | `engine-layers`, `route-tags`, `editor-orbat-coherency`, `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | [architecture](/tools/checks/repository_checks/src/architecture/README.md) |
+| `architecture` | `route-tags`, `editor-orbat-coherency`, `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | [architecture](/tools/checks/repository_checks/src/architecture/README.md) |
 | `language_bans` | `no-shell`, `no-python`, `no-node`, `file-length` | [language bans](/tools/checks/repository_checks/src/language_bans/README.md) |
 | `licensing` | `no-crf-leak` | [licensing](/tools/checks/repository_checks/src/licensing/README.md) |
 | `registry` | `object-registry-aliases` | [registry](/tools/checks/repository_checks/src/registry/README.md) |

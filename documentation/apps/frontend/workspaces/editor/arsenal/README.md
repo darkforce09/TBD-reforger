@@ -34,7 +34,7 @@ Forge" dialog; each set's README says what it shows and how the built tab differ
   domain, its rules and the loadout commands.
 - [Arsenal panels](/apps/frontend/src/workspaces/editor/ui/arsenal/) — the doll host with its
   SVG paper doll, the compatibility panel and the cargo editor.
-- [Doll preview](/legacy/map_engine/src/doll/) — the map engine's 3D doll the tab mounts.
+- [Doll preview](/crates/paper_doll/) — the paper doll crates' 3D doll the tab mounts.
 
 ## Boundaries
 

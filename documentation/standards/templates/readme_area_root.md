@@ -106,12 +106,13 @@ cargo xtask mod compile  # compile-checks the mod's scripts in a headless Enfusi
 ## Boundaries
 
 - Depends on: `contracts/`, the schemas shared across the API, the mod and the host agent;
-  `assets/`, the map data the API serves; the engines in `legacy/`; Postgres, Discord and the Arma
-  Reforger dedicated server.
+  `assets/`, the map data the API serves; the library crates in `crates/`; Postgres, Discord and
+  the Arma Reforger dedicated server.
 - Used by: the members' browsers and the game servers at run time; the xtask commands that build,
   test, check and deploy the products.
 - Rules: the products share data only over the API and through the schemas in `contracts/`; the
-  engine layer rules are held by `cargo xtask verify engine-layers`.
+  crate tiers law and its firewalls hold the edges between the apps and the crates
+  (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 

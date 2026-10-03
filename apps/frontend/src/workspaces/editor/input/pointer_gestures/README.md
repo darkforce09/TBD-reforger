@@ -68,8 +68,8 @@ None: the handlers are private to the parent module, which exposes `EditorGestur
   preview and the line-of-sight world wash in
   `apps/frontend/src/workspaces/editor/input/tools/`; the insets of `session::layout`; the
   context menu's `resolve_target` and `open`; `map_editing_tools` (`selection`, `ruler` and
-  `line_of_sight`); `mission_editing_commands::hosted_commands`; `map_engine` (`streaming::host`
-  for the camera settle).
+  `line_of_sight`); `mission_editing_commands::hosted_commands`; `map_streaming_host` (the
+  camera settle).
 - Used by: the parent module, whose `attach_canvas_gestures` the input listeners of
   `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/` call; the source pins that
   read these files: the gesture pins in `apps/frontend/src/workspaces/editor/tests/`, the Z-arm

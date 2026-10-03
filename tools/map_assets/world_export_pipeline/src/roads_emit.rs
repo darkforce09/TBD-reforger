@@ -26,8 +26,8 @@
 //!
 //! `road_class` is a byte on the wire. The table is
 //! `road_class_code` /
-//! `road_class_name` in `map_engine` — *one*
-//! table, linked by both the writer here and the reader in `world::roads`, so they cannot drift
+//! `road_class_name` in `road_network` — *one*
+//! table, linked by both the writer here and the reader in `road_network`, so they cannot drift
 //! into disagreeing about what a byte means. A class the table cannot code is a hard error here
 //! and a hard error there; neither side invents a fallback.
 //!

@@ -78,8 +78,9 @@ cargo test -p terrain_elevation   # sampling, vector grid, PNG, raw grid and ful
   `bytemuck` and `thiserror`.
 - Used by:
   - `terrain_relief` (contours, sea band), which marches the vector grid;
-  - the map engine (`legacy/map_engine`): its terrain boot and raw grid loader, the airfield
-    apron, the spot heights and the terrain line of sight, which take a `DemManifest`;
+  - the streaming crates (`map_streaming_host`'s terrain boot and `map_asset_loading`'s raw grid
+    loader and airfield apron), `place_names` (the spot heights), `road_network`,
+    `terrain_line_of_sight` and `map_editing_tools`, which take a `DemManifest`;
   - the Mission Creator's canvas and pointer handlers in `apps/frontend/src/workspaces/editor/`,
     which read heights with `sample_grid_meters`;
   - the world export in `tools/map_assets/world_export_pipeline/src/`, which writes

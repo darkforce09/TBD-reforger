@@ -12,11 +12,11 @@ use map_editing_tools::selection;
 use std::collections::HashMap;
 
 use map_draw_lanes::lane_roles::role_id;
-use map_engine::frame::engine::RenderEngine;
+use map_renderer::engine::RenderEngine;
 use unit_symbology::squad_links::pack_squad_link_drag_preview;
 use wasm_bindgen::prelude::*;
 
-use map_engine::frame::EngineHandle;
+use map_renderer::EngineHandle;
 use selection::gesture::SelectionHandle;
 use selection::marquee::marquee_ids;
 use selection::pick::frozen_camera;
@@ -34,7 +34,7 @@ pub fn push_drag_preview(
     dy: f64,
 ) {
     #[allow(clippy::cast_possible_truncation)]
-    e.set_drag(ids.to_vec(), dx as f32, dy as f32);
+    e.with_symbology(|symbology| symbology.set_drag(ids.to_vec(), dx as f32, dy as f32));
     bind_vehicle_preview_lane(
         e,
         &overlay_instances::drag::pack_vehicle_drag_preview(ids, vehicle_points, dx, dy),
@@ -44,7 +44,7 @@ pub fn push_drag_preview(
 
 /// Restores authored positions in all drag preview lanes after cancellation or completion.
 pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, f64)]) {
-    e.set_drag(Vec::new(), 0.0, 0.0);
+    e.with_symbology(|symbology| symbology.set_drag(Vec::new(), 0.0, 0.0));
     bind_vehicle_preview_lane(
         e,
         &overlay_instances::drag::pack_vehicle_drag_preview(&[], vehicle_points, 0.0, 0.0),
@@ -59,9 +59,11 @@ fn bind_vehicle_preview_lane(e: &mut RenderEngine, xy: &[f32]) {
     let (doc_xy, aliases, tints, headings) =
         crate::workspaces::editor::bridge::document_host::history::vehicle_lane_fields();
     if doc_xy.len() == xy.len() {
-        e.vehicles_bind_symbology(xy, aliases, &tints, &headings);
+        e.with_symbology(|symbology| {
+            symbology.vehicles_bind_symbology(xy, aliases, &tints, &headings)
+        });
     } else {
-        e.vehicles_bind(xy);
+        e.with_symbology(|symbology| symbology.vehicles_bind(xy));
     }
 }
 

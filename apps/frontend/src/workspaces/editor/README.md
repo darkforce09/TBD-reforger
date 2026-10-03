@@ -63,15 +63,15 @@ Mission Creator itself in its read-only review mode, not a copy of it.
   auth store, the UI primitives and utilities, the test support), `crate::features` (the review
   workspace banner's review wording), the editing crates of `crates/mission_editing/`
   (`mission_editing_session`, `mission_editing_commands`, `mission_persistence`,
-  `map_editing_tools`), `map_engine` (its `streaming`, `overlay`, `frame`, `camera`, `spatial`,
-  `world` and `doll` modules) and `web_sys` in the browser build.
+  `map_editing_tools`), the map crates (`map_renderer`, `gpu_frame`, `map_streaming_host`,
+  `map_streaming_model`, `map_asset_loading`, `map_render_diagnostics`, `paper_doll_renderer`) and `web_sys` in the browser build.
 - Used by:
   - `apps/frontend/src/app_routes.rs`, the route table;
   - `apps/frontend/src/main.rs`, which registers `purge_local_documents` as a sign-out hook;
   - source pins that read this folder's files:
     `apps/frontend/src/foundation/test_support/editor_operations.rs`,
-    `apps/frontend/src/foundation/ui/tests/ui.rs` and two map-engine tests under
-    `legacy/map_engine/src/`;
+    `apps/frontend/src/foundation/ui/tests/ui.rs` and a mission document test in
+    `crates/mission/mission_document/src/rows/tests/cases_1.rs`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     `/missions/:id/edit` route, and `cargo xtask verify editor-orbat-coherency`, which scans named
     files under `arsenal/`, `bridge/`, `session/` and `ui/modals/`.

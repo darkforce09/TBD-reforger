@@ -59,7 +59,6 @@ fn the_wave_gate_tests_every_workspace_member() {
         .join(" ");
     for wired in [
         r#"r.run("test api", || db::gate_test_api(ctx));"#,
-        r#""cargo", "test", "-p", "map_engine","#,
         r#""cargo", "test", "-p", "frontend","#,
         r#"r.run("test workspace members", ||"#,
     ] {
@@ -102,7 +101,7 @@ fn the_wave_gate_lints_every_tool_crate_of_the_workspace() {
             "the lint misses `{expected}`"
         );
     }
-    for outside in ["api", "frontend", "map_engine", "ticketboard"] {
+    for outside in ["api", "frontend", "map_renderer", "ticketboard"] {
         assert!(
             !derived.iter().any(|package| package == outside),
             "the lint names `{outside}`, which is no tool crate"

@@ -37,9 +37,9 @@ text.
 
 ## Boundaries
 
-- Depends on: `camera_math` (the ortho camera); `map_coordinates::grid_reference`; `map_engine` (the ruler's
-  `EditorTool` and the line-of-sight `LosMode`, and in the browser build `frozen_camera`,
-  `read_attrs` and `camera_snapshot`); `crate::workspaces::editor::session::layout` for the insets
+- Depends on: `camera_math` (the ortho camera); `map_coordinates::grid_reference`; `map_editing_tools` (the
+  ruler's `EditorTool` and the line-of-sight `LosMode`, and in the browser build `frozen_camera`
+  and `read_attrs`); `map_streaming_host::camera_snapshot` in the browser build; `crate::workspaces::editor::session::layout` for the insets
   and toggle classes; `format_bytes` from `crate::foundation::utils::byte_formatting`; `cn` and
   `MaterialIcon` from `crate::foundation::ui`.
 - Used by: `apps/frontend/src/workspaces/editor/mission_editor.rs`, which mounts

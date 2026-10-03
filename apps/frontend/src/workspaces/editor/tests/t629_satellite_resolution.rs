@@ -120,47 +120,47 @@ fn no_call_site_may_guess_a_texture_limit() {
     let src = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/mod.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/mod.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/selection.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/selection.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/preview.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/preview.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/decode.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/decode.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/retry.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/retry.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/downloads.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/downloads.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/upload.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/upload.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/bootstrap.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/basemap.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/basemap.rs"
         ))
     ));
 
@@ -223,47 +223,47 @@ fn a_downscaled_basemap_warns_and_a_stuck_placeholder_warns() {
     let src = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/mod.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/mod.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/selection.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/selection.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/preview.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/preview.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/decode.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/decode.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/retry.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/retry.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/downloads.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/downloads.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/upload.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/upload.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/bootstrap.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/basemap.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/basemap.rs"
         ))
     ));
 

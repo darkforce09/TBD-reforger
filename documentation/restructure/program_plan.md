@@ -46,8 +46,8 @@ Each finding was checked against the code. The evidence is in the
 2. **Unused JS exports.** The map engine's 143 `#[wasm_bindgen]` attributes are exports no
    JavaScript calls. Every caller is Rust, through `EngineHandle` (`me/frame/mod.rs:148`) and
    `DollEngine`. `me/frame/boot.rs:442` is a start hook that duplicates the frontend's panic hook.
-   The real users that stay are the offline service worker's lifecycle exports and one start hook
-   in the editor bridge.
+   The real users that stay are the offline service worker's lifecycle exports and the frontend
+   app's start function (S5 removed the editor bridge's start hook).
 3. **Feature consumers.** The API uses only `data::scenario`. developer_tools uses world, io,
    spatial, streaming and scenario natively. The frontend uses everything. `earcutr` is unused in
    the map engine only.
@@ -107,7 +107,7 @@ Each finding was checked against the code. The evidence is in the
 | D7 | Rejected: a shared DTO crate replacing the frontend DTOs (a serde-only contract crate for byte-identical shapes such as fleet commands is allowed); merging API test binaries; a missions addon. |
 | D8 | Dev-only features only for `test_fixtures` and `failpoints`; addon folders stay kebab-case; trunk, wasm-bindgen-cli and the Chromium variable are set up in the container. |
 | D9 | About 148 workspace members, accepted as designed. |
-| D10 | Strip the unused `#[wasm_bindgen]` exports; no JS facade crate; proven by a JS-glue export diff. |
+| D10 | Strip the unused `#[wasm_bindgen]` exports; no JS facade crate; proven by a JS-glue export diff. End state: `#[wasm_bindgen]` only in the frontend app (its start function), `browser_platform` and the offline service worker (S5 removed the editor bridge's start hook). |
 | D11 | Extracted frontend crates move to edition 2024 in their own wave. |
 | D12 | The dying monoliths park in a top-level legacy folder from S2; no new crate may depend on it. |
 | D13 | The parking folder keeps the name `legacy/`; the repository's prose rule exempts that folder name (the path segment and identifiers naming the folder), while the word stays banned as history vocabulary. |

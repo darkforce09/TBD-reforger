@@ -9,10 +9,10 @@ the world-object interactions that are not built yet.
 
 ## Where it lives
 
-- Code: the basemap in [`legacy/map_engine/src/world/terrain/satellite/`](/legacy/map_engine/src/world/terrain/satellite/README.md);
-  world streaming in [`legacy/map_engine/src/streaming/`](/legacy/map_engine/src/streaming/README.md)
-  and its [host](/legacy/map_engine/src/streaming/host/README.md); the world-object
-  overlay layer switches in [`legacy/map_engine/src/overlay/`](/legacy/map_engine/src/overlay/README.md)
+- Code: the basemap in [`crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/`](/crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/README.md);
+  world streaming in [`crates/streaming/map_asset_loading/`](/crates/streaming/map_asset_loading/README.md)
+  and its [host](/crates/streaming/map_streaming_host/src/README.md); the world-object
+  overlay layer switches in [`crates/map_rendering/symbology_layers_gpu/`](/crates/map_rendering/symbology_layers_gpu/README.md)
   and their zoom thresholds in [`crates/map_overlay/map_draw_lanes/`](/crates/map_overlay/map_draw_lanes/README.md);
   the per-user switches in `apps/frontend/src/workspaces/editor/session/world_layer_prefs.rs`
   ([shell README](/apps/frontend/src/workspaces/editor/session/README.md)) and the "Editor
@@ -46,8 +46,8 @@ MAP-HILLSHADE-001 and MAP-DETAIL-001 are rows this inventory adds for shipped co
 ### MAP-BASEMAP-001 — Satellite basemap
 
 1. At boot the streaming host loads a small satellite preview first, then the full-resolution
-   image, under the grid (`legacy/map_engine/src/world/terrain/satellite/quadtree/basemap.rs`,
-   `legacy/map_engine/src/streaming/host/bootstrap.rs`).
+   image, under the grid (`crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/basemap.rs`,
+   `crates/streaming/map_streaming_host/src/bootstrap.rs`).
 2. The boot overlay's "Loading satellite…" segment tracks it.
 
 ### MAP-BASEMAP-002 — Map basemap and the switch
@@ -105,7 +105,7 @@ from zoom 0 or 1 by road class; unit symbols cluster at zoom -4 and below
 - The "Satellite" button promises the satellite image back — `load_map_basemap` replaces the
   satellite texture in the basemap slot, and `show_satellite_basemap` only resets its opacity,
   so the map tiles stay until a reload (`basemap.rs`,
-  `legacy/map_engine/src/streaming/host/preferences.rs`).
+  `crates/streaming/map_streaming_host/src/view_preferences.rs`).
 
 ## Data
 

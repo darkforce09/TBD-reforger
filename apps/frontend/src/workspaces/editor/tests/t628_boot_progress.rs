@@ -3,7 +3,7 @@ use super::boot_progress::{
     PLANNED_SATELLITE_BYTES, PLANNED_TERRAIN_BYTES, PLANNED_WORLD_BYTES,
 };
 use super::BOOT_HANDOVER_MS;
-use map_engine::streaming::bridge::progress::{
+use map_streaming_model::boot_progress::{
     split_range, Ordered, SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY, STREAM_REPORT_BYTES,
 };
 
@@ -496,47 +496,47 @@ fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
     let src = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/mod.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/mod.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/selection.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/selection.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/preview.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/preview.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/decode.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/decode.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/retry.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/retry.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/downloads.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/downloads.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/upload.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/upload.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/bootstrap.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/world/terrain/satellite/quadtree/basemap.rs"
+            "/../../crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/basemap.rs"
         ))
     ));
     let body = only_body(&src, "async fn fetch_tiles(");
@@ -634,47 +634,47 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
     let world = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/mod.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/mod.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/viewport.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/viewport.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/atlas.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/atlas.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/state.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/state.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/metrics.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/metrics.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/bootstrap.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/upload.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/upload.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/terrain.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/terrain.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/loaders/world_loader/ingest.rs"
+            "/../../crates/streaming/map_asset_loading/src/world_loader/ingest.rs"
         ))
     ));
     let queue = only_body(&world, "async fn fetch_and_queue(");
@@ -697,37 +697,37 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
     let boot = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/mod.rs"
+            "/../../crates/streaming/map_streaming_host/src/lib.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/queries.rs"
+            "/../../crates/streaming/map_streaming_host/src/queries.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/state.rs"
+            "/../../crates/streaming/map_streaming_host/src/map_host.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/preferences.rs"
+            "/../../crates/streaming/map_streaming_host/src/view_preferences.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/viewport.rs"
+            "/../../crates/streaming/map_streaming_host/src/viewport.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/bootstrap.rs"
+            "/../../crates/streaming/map_streaming_host/src/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/terrain.rs"
+            "/../../crates/streaming/map_streaming_host/src/terrain_load.rs"
         ))
     ));
     let bootstrap = only_body(&boot, "pub async fn bootstrap(");
@@ -748,7 +748,7 @@ fn every_world_batch_declares_its_files_before_it_fetches_them() {
     // retried bin advance a unit that was already declared and spent.
     let forest = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/world/environment/vegetation/loader.rs"
+        "/../../crates/streaming/map_asset_loading/src/environment/forest_mass_loader.rs"
     )));
     let upload = only_body(&forest, "async fn boot_upload(");
     let done_at = upload
@@ -773,37 +773,37 @@ fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
     let boot = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/mod.rs"
+            "/../../crates/streaming/map_streaming_host/src/lib.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/queries.rs"
+            "/../../crates/streaming/map_streaming_host/src/queries.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/state.rs"
+            "/../../crates/streaming/map_streaming_host/src/map_host.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/preferences.rs"
+            "/../../crates/streaming/map_streaming_host/src/view_preferences.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/viewport.rs"
+            "/../../crates/streaming/map_streaming_host/src/viewport.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/bootstrap.rs"
+            "/../../crates/streaming/map_streaming_host/src/bootstrap.rs"
         )),
         "\n",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/streaming/host/terrain.rs"
+            "/../../crates/streaming/map_streaming_host/src/terrain_load.rs"
         ))
     ));
     let bootstrap = only_body(&boot, "pub async fn bootstrap(");

@@ -55,7 +55,7 @@ chromeless: they render without the sidebar and the top bar.
 
 - Depends on: `crate::foundation` (the [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the
   session and route guard, the UI primitives, the utilities), `crate::features` (the mission review
-  record) and the map engine (`map_engine`); no workspace.
+  record); no workspace.
 - Used by: the route table in `apps/frontend/src/app_routes.rs`; nothing under
   `apps/frontend/src/foundation/` or `apps/frontend/src/features/` imports from here.
 - Rules: a page may import from `foundation`, `features` and the map engine, never a workspace or

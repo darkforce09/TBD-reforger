@@ -19,8 +19,8 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 5. **Categorize Variants & Primitives (Avoid Flat Dumps)**:
    Avoid flat dumping of dozens of files or variant variations into a single folder. Related variants, numerical sets (e.g. column counts, rounded radius variants), and functional primitives should be grouped into dedicated, well-named subfolders to maintain clean directory comprehension.
 6. **Strict Boundary Layers**:
-   - `graphics_engine` (`legacy/graphics_engine/`): Pure GPU rendering primitives (pipelines, shaders, draw batching). Knows **zero** map concepts.
-   - `map_engine` (`legacy/map_engine/`): Map graphics, spatial computation, terrain formats, asset streaming, camera math, and the editing seam over the mission crates (the mission domain itself — compilation, validation, Yjs CRDT document model — lives in `crates/mission/`). Speaks graphics engine frame vocabulary; zero UI/Leptos dependencies.
+   - Graphics crates (`crates/graphics/`: `render_primitives`, `gpu_device`, `gpu_frame`, `renderer_core`): Map-agnostic rendering — byte layouts, the GPU context, the frame vocabulary, pipelines, draw encoding, the renderer contracts. Knows **zero** map concepts.
+   - Map crates (`crates/streaming/`, `crates/map_rendering/`, `crates/paper_doll/` over the engine categories `crates/geometry/`, `crates/terrain/`, `crates/world_objects/`, `crates/line_of_sight/`, `crates/map_overlay/`): streaming, spatial computation, terrain formats, the render engine and its typed GPU layers. Streaming crates never depend on rendering crates or `wgpu`; the mission domain lives in `crates/mission/` and the editing layer in `crates/mission_editing/`. Zero UI/Leptos dependencies ([crate boundary rules](/documentation/standards/crate_boundary_rules.md)).
    - `frontend` (`apps/frontend/`): Presentation, navigation, and CAD workspaces, in five layers under `src/` (foundation < features < pages, workspaces < shell); consumes engine crates.
    - `api` (`apps/api/`): Axum REST API and SSE realtime hub.
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
@@ -32,7 +32,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 8. **In-Code Documentation Standards (Rust & Enfusion)**:
    - **Present-Tense, Context-Free Invariants (Universal)**:
      Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, engine/hardware constraints, failure modes). Never document historical transitions (no "rewritten from X", "fixed in Y"), ticket references in source comments, or references to retired codebases (no "mirrors old TS file"). Commit history owns history.
-   - **Rust Code Standards (`rustdoc` — `apps/`, `crates/`, `legacy/`, `tools/`)**:
+   - **Rust Code Standards (`rustdoc` — `apps/`, `crates/`, `tools/`)**:
      - **Module Headers (`//!`)**: Non-trivial modules must carry a 4-point architectural contract header:
        - `**Role:**` Primary responsibility of this module in the subsystem.
        - `**Position:**` Boundary layer and data flow context (what feeds it, who consumes it).
@@ -168,27 +168,6 @@ apps/
 │       └── playable_selector/           <-- PlayableSelector checkout (design-mirror only)
 └── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets; its models live in tools/tickets/ticketboard_model
 
-legacy/                                  <-- Parking folder of the two engine monoliths while their code moves into crates/; no new crate depends on it
-├── map_engine/                          <-- The static world's browser loaders and GPU belts, map streaming, the render engine
-│   └── src/
-│       ├── world/                       <-- Scene calibration and the GPU and loader parts of terrain, buildings, vegetation, labels (CPU in crates/terrain, crates/world_objects)
-│       ├── spatial/                     <-- The terrain viewshed's GPU overlay (line of sight is in crates/line_of_sight)
-│       ├── camera/                      <-- The browser viewport the map camera fills (the camera math is in crates/geometry)
-│       ├── streaming/                   <-- Served map data: boot host, loaders, memory budget (residency and draw buffers in crates/streaming)
-│       ├── overlay/                     <-- Lane preferences and the GPU symbol bridges (the overlay CPU is in crates/map_overlay)
-│       │   └── symbology/               <-- GPU symbol atlas and slot, vehicle and icon instance bridges
-│       ├── frame/                       <-- Render engine: builds graphics_engine::frame packets, upload belts
-│       ├── doll/                        <-- Arsenal 3D mannequin preview: scene, picking, renderer
-│       ├── shaders/                     <-- The doll renderer's WGSL program
-│       └── diagnostics/                 <-- Readback checks, benchmarks, timing, probes
-└── graphics_engine/                     <-- Pure GPU rendering primitives (knows zero map concepts)
-    └── src/
-        ├── device/                      <-- Pooled per-lane GPU buffers, readback fences
-        ├── draw/                        <-- Line and polygon uploads, GPU culling, the frame encoder
-        ├── frame/                       <-- Frame packet, batches, present, atlases
-        ├── loop/                        <-- Shared requestAnimationFrame pump and its FrameTarget trait
-        └── pipeline/                    <-- Render pipeline constructors
-
 crates/                                  <-- Library crates grouped by category (crates/<category>/<crate>); every manifest under it is a workspace member declaring its tier
 ├── foundation/                          <-- Base crates: tier 0 leaves, plus orbat_slot_ids on newtype_ids
 │   ├── http_url_guard/                  <-- The HTTP(S) URL check the API and the single-page app share, with its one case table
@@ -233,7 +212,10 @@ crates/                                  <-- Library crates grouped by category 
 │   └── world_line_of_sight/             <-- The world occluder: chunk box trees, the prefab occluder library, verdicts with coverage
 ├── streaming/                           <-- The streamed world's CPU half: chunk residency and the draw buffers composed over it
 │   ├── chunk_scheduler/                 <-- Viewport pin, in-flight marks, LRU eviction, chunk and prefab ingest, object index, rebuild requests
-│   └── chunk_draw_buffers/              <-- Draw set, glyph, strip and footprint buffers, layer toggles, the world residency owner
+│   ├── chunk_draw_buffers/              <-- Draw set, glyph, strip and footprint buffers, layer toggles, the world residency owner
+│   ├── map_asset_loading/               <-- Browser loaders (world, occluder, terrain, satellite, forest, labels), mesh composition, live memory budget, asset statistics
+│   ├── map_streaming_host/              <-- Browser map host: terrain and world boot, camera settle, view preferences, map queries
+│   └── map_streaming_model/             <-- World-layer and host preferences, boot progress, the memory budget model, the MapAssetSink contract
 ├── mission/                             <-- The mission domain: model, editor payload, validation, compilation, mergeable document, authoring commands
 │   ├── mission_wire_safety/             <-- Control-character scan of authored names, cargo capacity scan of slot loadouts
 │   ├── mission_model/                   <-- Compiled rows, ORBAT projection, authored extension blocks, slot line, typed mission ids
@@ -279,7 +261,18 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── api_operations/                  <-- Domain: events, ORBAT slotting, reservations, service records, fire missions, ballistics catalogs
 │   ├── api_command_center/              <-- Domain: dashboard, leaderboards, per-player statistics
 │   └── api_background_workers/          <-- Workers: the interval tasks the API binary arms at boot
-└── graphics/                            <-- Map-agnostic CPU rendering primitives
+├── map_rendering/                       <-- The map's typed GPU layers and its renderer (may name map things; wgpu)
+│   ├── map_render_diagnostics/          <-- The renderer's byte-exact readback self-checks, scene readback, frame benchmark, stress pool
+│   ├── map_renderer/                    <-- The render engine: GPU context, pipelines, camera, batch list, lane sinks, upload belts, statistics, asset sink
+│   ├── symbology_layers_gpu/            <-- Slot symbology (atlas, binds, selection, drag, clusters), glyph atlas, icon lane cull, world icon lanes, lane preferences
+│   └── world_layers_gpu/                <-- Building, forest density, satellite and hillshade texture, terrain line of sight overlay layers; textured lane record
+├── paper_doll/                          <-- The Arsenal's 3D paper doll: its scene and its renderer
+│   ├── paper_doll_scene/                <-- Soldier parts, 14 equipment regions, state colours, unit meshes, orbit-camera picks and callout anchors
+│   └── paper_doll_renderer/             <-- wgpu renderer of the doll on its own canvas: damage-driven frames, instance packing, readback self-check
+└── graphics/                            <-- Map-agnostic rendering: CPU primitives, the GPU device, the GPU frame and the renderer contracts
+    ├── gpu_device/                      <-- GPU context of a canvas (create, resize, acquire), pooled lane buffers, readback guards, frame timer
+    ├── gpu_frame/                       <-- Frame vocabulary, draw encoding, compute sprite cull, render pipelines, animation-frame pump
+    ├── renderer_core/                   <-- Renderer contracts: lane sink, layer context, frame hooks, render statistics and their JSON, packet binding ids
     └── render_primitives/               <-- Instance layouts, geometry, triangulation, CPU cull oracle, frame ids, text atlas, the WGSL shader
 
 deploy/                                  <-- Release Dockerfile (context narrowed by the root .dockerignore), dev and staging compose files, deploy.env.example
@@ -366,7 +359,7 @@ assets/                                  <-- Terrain datasets and the world-obje
 
 documentation/                           <-- All documentation; entry, map and authority ladder: README.md
 ├── architecture/                        <-- Workspace layout as it stands: top-level folders, members, where code, contracts, assets and docs live
-├── apps/ legacy/ mod/ tools/ contracts/ assets/
+├── apps/ crates/ mod/ tools/ contracts/ assets/
 │                                        <-- Feature docs at the code's path minus src/ (mod docs drop apps/ and Scripts/Game/TBD/)
 ├── restructure/                         <-- Active workspace restructure program: plan, target tree, crate catalogue, relocation manifests, shared agent brief, progress
 ├── runbooks/                            <-- Procedures: local development, deployment, gates, playtests

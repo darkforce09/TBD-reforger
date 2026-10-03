@@ -53,7 +53,7 @@ cargo test -p world_store   # payload loads, the road sniff, and the Everon cens
   the airfield box); `vegetation` (land-cover regions); `world_file_formats` (`BinaryError`);
   `map_coordinates` (`Bbox`); `serde_json` and `thiserror`.
 - Used by:
-  - the map engine's browser world loader (`legacy/map_engine/src/streaming/loaders/world_loader/`);
+  - the map engine's browser world loader (`crates/streaming/map_asset_loading/src/world_loader/`);
   - the developer tools: the world export, map raster and map verification pipelines in
     `tools/developer_tools/src/`.
 - Rules:

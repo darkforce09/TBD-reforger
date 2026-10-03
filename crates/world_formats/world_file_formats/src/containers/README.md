@@ -47,20 +47,21 @@ tile offsets count from `tiles_offset()`, the end of the index.
 ## Public surface
 
 - `header`: `ContainerHeader` (with `read`), `HEADER_BYTES` and `CONTAINER_VERSION`, for the readers
-  in `map_engine::streaming::loaders` and `map_engine::world::terrain` and the writers in the developer tools.
-- `tbdc::TbdcHeader` for `map_engine::streaming::loaders::chunk_bin`; `tbde::TbdeHeader` for
-  `map_engine::world::terrain::dem`; `tbdb::TbdbHeader` for `map_engine::world::terrain::water`;
-  `tbds::TbdsHeader` and `TBDS_VERSION_V2` for `map_engine::world::terrain::satellite`.
+  in the world format, terrain and streaming crates and the writers in the developer tools.
+- `tbdc::TbdcHeader` for `world_chunks::chunk_container`; `tbde::TbdeHeader` for
+  `terrain_elevation::raw`; `tbdb::TbdbHeader` for `water_bodies::vectors` and
+  `map_asset_loading`'s water loader; `tbds::TbdsHeader` and `TBDS_VERSION_V2` for
+  `satellite_imagery::header`.
 
 ## Boundaries
 
 - Depends on: `crate::archives::codec::BinaryError`, `crate::pod::instance` (the `TBDC`
   row) and `bytemuck`.
 - Used by:
-  - the map engine's readers: `map_engine::streaming::loaders::chunk_bin` (`TBDC`),
-    `map_engine::world::terrain::dem::raw` (`TBDE`), `map_engine::world::terrain::water` (`TBDB`) and
-    `map_engine::world::terrain::satellite::streamer` (`TBDS`); `map_engine::streaming::loaders::manifest`
-    compares the manifest's `containerVersion` with `CONTAINER_VERSION`;
+  - the readers: `world_chunks::chunk_container` (`TBDC`), `terrain_elevation::raw` (`TBDE`),
+    `water_bodies::vectors` and `map_asset_loading`'s water loader (`TBDB`) and
+    `satellite_imagery::header` (`TBDS`); `world_chunks::terrain_manifest` compares the
+    manifest's `containerVersion` with `CONTAINER_VERSION`;
   - the developer tools' writers: `tools/map_assets/world_export_pipeline/src/binary_emit.rs`
     (`TBDC`), `tools/map_assets/world_export_pipeline/src/export_preparation/dem_elevation.rs`
     (`TBDE`), `tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs` (`TBDB`)
@@ -77,5 +78,5 @@ tile offsets count from `tiles_offset()`, the end of the index.
 ## Related documentation
 
 - [Terrain assets](/assets/terrains/README.md) — the served terrain tree the containers sit in.
-- [Map loaders](/legacy/map_engine/src/streaming/loaders/README.md) — the chunk and manifest
+- [Map loaders](/crates/streaming/map_asset_loading/src/README.md) — the chunk and manifest
   parsers that read `TBDC`.

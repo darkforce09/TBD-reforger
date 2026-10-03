@@ -73,7 +73,8 @@ once `cargo xtask db up` has started it.
     the contract test suites;
   - `apps/frontend/`: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
     schema embeds for zones and loadout export;
-  - `legacy/map_engine/`: the embedded kit-alias table and the compiler's fixture tests;
+  - `crates/mission/`: the embedded kit-alias table (`mission_payload`) and the compiler's
+    fixture tests (`mission_compiler`, `mission_model`, `mission_document`);
   - `apps/mod/`: DTO classes whose `@contract` tags cite the mission, loadout and registry schemas;
   - `apps/fleet_host_agent/`, whose ledger client follows the fleet-command schema;
   - `tools/xtask/` (the schema gates, codegen, `db registry-import` and the `mod` commands that

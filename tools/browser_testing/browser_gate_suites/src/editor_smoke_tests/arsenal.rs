@@ -187,7 +187,7 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
                 json!(h.page.wait_for("(() => { const s=(JSON.parse(window.__editorCommands.compile_save_json()).editor?.slots||[]).find(s=>s.loadout); return !!(s && s.loadout.weapons && s.loadout.weapons[0] && s.loadout.weapons[0].optic) })()", 40, 250).await?),
             );
 
-            // R7 (3D doll) — the DollEngine canvas mounts (long wait: SwiftShader
+            // R7 (3D doll) — the `paper_doll_renderer` canvas mounts (long wait: SwiftShader
             // create is slow headless); its window hooks report a live backend, the active-region
             // anchor projects, and a CPU pick at that anchor resolves a region. If create failed
             // (no GL at all), the SVG paper-doll fallback must be up instead — the fallback contract.
@@ -246,7 +246,9 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
                 );
                 checks.insert("r7_dollAnchorPick".into(), json!(true));
                 checks.insert("r7_dollCallout".into(), json!(true));
-                eprintln!("smoke_arsenal: DollEngine unavailable — verified the SVG fallback");
+                eprintln!(
+                    "smoke_arsenal: the paper_doll_renderer is unavailable — verified the SVG fallback"
+                );
             }
 
             // R8 (weight) — the honest weight readout renders (contains a kg figure).

@@ -33,7 +33,7 @@ and `/debug/ballistics-agreement` are apps, in `apps/frontend/src/workspaces/deb
 - Depends on: `crate::foundation::transport`, `crate::foundation::auth` (the `AuthStore` context),
   `crate::foundation::map_view`, `crate::foundation::offline`, `crate::foundation::ui` and
   `crate::foundation::utils`; `fire_mission_planning`, `ballistics_solver` and `ballistics_model`
-  (the ballistics solver); `map_coordinates` (grid references); `map_engine` (the map views);
+  (the ballistics solver); `map_coordinates` (grid references); the map view mount of `crate::foundation::map_view` (the map views);
   over HTTP, the ballistics-catalog reads, the event list and the fire-mission routes of the
   operations domain.
 - Used by: the route table in `apps/frontend/src/app_routes.rs` and

@@ -37,8 +37,9 @@ slices under a time budget and produces the identical raster.
   `prefab_catalog`, `world_file_formats`), the world object crate `building_interiors`, the
   geometry crates (`spatial_indexes`, `geometry_primitives`, `map_coordinates`), and external
   crates (`serde`, `rkyv`, `bytemuck`, `thiserror`).
-- Used by: the map engine (`legacy/map_engine`), whose line-of-sight tool, visibility scheduler
-  and occluder loader import them directly; the Mission Creator's line-of-sight tool, the mortar
+- Used by: `map_editing_tools`, whose line-of-sight tool and visibility scheduler import them
+  directly; `map_asset_loading`'s occluder loader and `map_streaming_host`'s queries; the Mission
+  Creator's line-of-sight tool, the mortar
   map picker and the debug benches in `apps/frontend/`; the developer tools' world check and
   blueprint tooling.
 - Rules: a line of sight crate declares `category = "crates/line_of_sight"`, depends only on

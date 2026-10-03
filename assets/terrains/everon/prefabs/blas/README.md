@@ -39,7 +39,7 @@ assets/terrains/everon/prefabs/blas/
   which reads the models from the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) game paks.
 - Consumers:
   - the map engine's occluder loader
-    (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), which fetches the files
+    (`crates/streaming/map_asset_loading/src/occluder_loader.rs`), which fetches the files
     that resident chunks' descriptors name as `/map-assets/everon/prefabs/blas/<stem>.bvh`, and the
     world occluder of the `world_line_of_sight` crate
     (`crates/line_of_sight/world_line_of_sight/`);

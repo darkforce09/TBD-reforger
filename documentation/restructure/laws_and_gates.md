@@ -48,10 +48,14 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
    - no tokio, axum, reqwest, resvg or image in the dependency closure of xtask (this ban stays
      hard and keeps the harness servers out of xtask; the closure is walked from the xtask
      binary although it sits outside the judged `tools/<category>/<name>` layout);
-   - no map nouns in the graphics category (today's engine rule 2);
+   - no map nouns in the graphics category: no declaration keyword followed by a name holding
+     `terrain`, `symbology`, `mission`, `orbat` or `arma` in a graphics crate's sources;
    - no browser crates in mission editing: no browser crate edge, and no `web_sys`, `leptos` or
      `wasm_bindgen` token, prose included, in any `.rs` file under `crates/mission_editing/`; the
-     scan fails closed when that folder holds no `.rs` file (it replaced engine rule 5 in S7).
+     scan fails closed when that folder holds no `.rs` file (it replaced engine rule 5 in S7);
+   - no `#[wasm_bindgen]` attribute (plain, path-qualified or under `cfg_attr`) in any `.rs` file
+     of a workspace member outside `apps/frontend/`, `crates/foundation/browser_platform/` and
+     `apps/offline_service_worker/`; the scan fails closed when it walks no `.rs` file (S8).
 7. Nothing outside the legacy folder depends on it, apart from apps while legacy exists; no
    tool is exempt.
 8. Dev-dependencies are exempt from the tier order but never point at apps or legacy.
@@ -120,12 +124,14 @@ the deploy Dockerfile, and the operator-run `cargo xtask mod compile` and
 
 | Today | After the program |
 |---|---|
-| Engine layer rules 1, 3a, 3b, 6 and 7, with source pins | Manifest firewalls and category edges of the crate tiers law; deleted with the legacy engines in S8 |
-| Engine layer rule 2 (no map nouns in graphics) | Kept as a source regex over the graphics category |
+| Engine layer rules 1, 3a, 3b, 6 and 7, with source pins | Manifest firewalls and category edges of the crate tiers law; deleted with the legacy engines (done in S8) |
+| Engine layer rule 2 (no map nouns in graphics) | Kept as a source regex over the graphics category in the crate firewalls; `verify engine-layers` deleted (done in S8) |
+| The map engine's UI-framework ban | Deleted with the map engine; the crate firewalls keep leptos in frontend crates (done in S8) |
+| No check on JavaScript exports | The crate firewalls' `#[wasm_bindgen]` source scan, failing closed on an empty walk (done in S8) |
 | Engine layer rule 5 (no browser crates in editing), retired in S7 with the editing module | The narrowed mission editing matrix arm plus the crate firewalls' source scan over `crates/mission_editing/` (done in S7) |
-| The forbidden-edge list in `tools/foundation/repository_laws/src/crate_dependencies.rs` | The allowed-edge category matrix and tier numbers |
+| The forbidden-edge list in `tools/foundation/repository_laws/src/crate_dependencies.rs` | The allowed-edge category matrix and tier numbers for the library crates; the list keeps the three website applications, which carry no layout table (narrowed in S8) |
 | Source roots skip missing folders silently | Fail-closed roots derived from the workspace members (S0) |
-| The map engine's feature gate tripwire test | Replaced by the anatomy law's features rule; deleted in S8 |
+| The map engine's feature gate tripwire test | Replaced by the anatomy law's features rule; deleted with the map engine (done in S8) |
 | No standards gate | Crate anatomy, strangler, frontend layering, tailwind sources |
 | 84 frontend paths pinned by the editor ORBAT coherency check | Rewritten by the relocation tool at every move |
 
@@ -145,8 +151,9 @@ The program closes when all of these hold, with logs named in
   `website-` package prefix, or the website folder path.
 - **Duplicates:** the repository-root marker, the deterministic generator, the clock, the SHA-256
   helper and glyph packing are each defined once.
-- **JS exports:** `#[wasm_bindgen]` appears only in the frontend app, `browser_platform`, the
-  offline service worker and the editor bridge's start hook.
+- **JS exports:** `#[wasm_bindgen]` appears only in the frontend app (its start function),
+  `browser_platform` and the offline service worker (the crate firewalls' scan,
+  `cargo xtask verify crate-tiers`).
 - **Dependency trees:**
   - the API's tree has no yrs, wgpu, rkyv, png or leptos;
   - xtask's tree has no tokio, axum, reqwest or resvg;

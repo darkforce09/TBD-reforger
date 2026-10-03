@@ -1,0 +1,4 @@
+# Stage S8 X8b — the boundary rules document holds the crate-level laws between the map, graphics,
+# streaming, mission and editing crates, so it takes the crate name the target tree gives it.
+kind	from	to	scope
+path	documentation/standards/engine_boundary_rules.md	documentation/standards/crate_boundary_rules.md

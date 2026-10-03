@@ -33,9 +33,9 @@ use map_draw_lanes::lane_roles::role_id;
 use road_network::styling::expand_polyline_strip;
 use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
 
-/// Native mirror of `map_engine_render::draw_order::role_id` — the render crate is a wasm32-only
-/// dependency of the SPA, and this module's tests run natively. Not a hand-copy that can drift:
-/// `lane_ids_match_the_render_crate` pins every value against the render crate's source.
+/// Native mirror of `map_draw_lanes::lane_roles::role_id`, which the wasm32 build imports; this
+/// module's tests run natively. Not a hand-copy that can drift: `lane_ids_match_the_render_crate`
+/// pins every value against `map_draw_lanes`' source.
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) mod role_id {
     /// Terrain landcover fill.

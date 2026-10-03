@@ -47,7 +47,7 @@ sign-out deletes every local document of the departing account (`purge_local_doc
 
 - Depends on: `mission_persistence` (`local_versus_server`, `server_adoption`,
   `snapshot_slot`, `record_key`, `mission_id`) and the boot progress events of
-  `map_engine::streaming::bridge`; the `DocHandle` and undo driver in
+  `map_streaming_model::boot_progress`; the `DocHandle` and undo driver in
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; in
   `apps/frontend/src/workspaces/editor/session/`, the draft store of `persist`, the time labels
   of `tab_lock`, `session::purge_legacy_markers` and `document_commands::set_row_meta`;

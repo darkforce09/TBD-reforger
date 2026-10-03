@@ -16,9 +16,11 @@ crates/
 ├── graphics/  map-agnostic renderer building blocks, such as the render primitives
 ├── line_of_sight/  visibility over the bare ground, inside one building and through the placed world
 ├── map_overlay/  what the map draws on the terrain and in what order, such as the draw lanes and unit symbology
+├── map_rendering/  the map's typed GPU layers and its renderer, such as the symbology layers
 ├── mission/   the mission domain's shared crates, such as the wire-safety scans
 ├── mission_editing/  the Mission Creator's editing layer over the mission document, such as the editing session
-├── streaming/  the streamed world's CPU half, such as the chunk scheduler and the draw buffers
+├── paper_doll/  the Arsenal's 3D paper doll: its scene and picking, and its renderer
+├── streaming/  the streamed world: the chunk scheduler and draw buffers, the browser loaders and the map host
 ├── terrain/  the ground the map reads, such as the elevation model and the satellite container reader
 ├── world_formats/  the files a terrain's map data is stored in and their readers, such as the chunks
 └── world_objects/  what stands on the ground, such as the vegetation and the building interiors
@@ -59,5 +61,5 @@ cargo xtask verify crate-anatomy                       # lib.rs, prelude, error,
 
 - [Laws and gates](/documentation/restructure/laws_and_gates.md) — the crate-tier and
   crate-anatomy laws in full.
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
   directions between the workspace crates.

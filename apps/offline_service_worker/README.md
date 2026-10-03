@@ -86,7 +86,8 @@ build `unversioned`. `Cargo.toml` pins edition 2024 and Rust 1.95.
 - Used by: `apps/frontend/index.html`, which builds the binary as a Trunk worker, and
   `apps/frontend/service_worker.js`, which loads it.
 - Rules:
-  - the crate depends on none of `api`, `frontend` or `graphics_engine`
+  - the crate depends on none of `api`, `frontend` or the eight GPU crates (`gpu_device`,
+    `gpu_frame`, `renderer_core`, the four map rendering crates and `paper_doll_renderer`)
     (`OFFLINE_SERVICE_WORKER_RULE` in
     `tools/foundation/repository_laws/src/crate_dependencies.rs`, test
     `the_offline_service_worker_may_link_none_of_the_server_page_or_renderer`);
@@ -95,5 +96,5 @@ build `unversioned`. `Cargo.toml` pins edition 2024 and Rust 1.95.
 
 ## Related documentation
 
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
   directions between the website crates.

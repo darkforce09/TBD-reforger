@@ -21,7 +21,7 @@ use super::{
 use serde_json::Value;
 
 /// Mission "Bridgehead at Levie" v0.1.0 — three slots in one squad, one objective, one
-/// loadout. Shapes copied from `map_engine_core::mission::flatten`'s own fixtures so the
+/// loadout. Shapes copied from `mission_compiler::game_document`'s own fixtures so the
 /// differ is tested against the rows this editor really writes.
 fn levie_v1() -> Value {
     json!({

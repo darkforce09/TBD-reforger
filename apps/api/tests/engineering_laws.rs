@@ -2,12 +2,14 @@
 //!
 //! **Role:** asserts that the checkout keeps the structural laws: production files at or under
 //! 500 lines and test files at or under 1000, unit tests only in sibling files, no exemption
-//! mechanism for either rule, the engine layer walls, the dependency direction between the
-//! website crates, and a `failpoints` feature that only test builds compile.
+//! mechanism for either rule, the dependency direction between the website crates, and a
+//! `failpoints` feature that only test builds compile. The crate firewalls (wgpu, browser crates,
+//! the graphics category's map nouns, `#[wasm_bindgen` placement) are `cargo xtask verify
+//! crate-tiers`.
 //! **Position:** an integration binary of `api`, run by
 //! `cargo xtask db test-it --test engineering_laws`; it needs no database. Every law is judged by
-//! `repository_laws`, the same code `cargo xtask verify file-length` and
-//! `verify engine-layers` print, so the gates and this binary never disagree about the tree.
+//! `repository_laws`, the same code `cargo xtask verify file-length` prints, so the gates and
+//! this binary never disagree about the tree.
 //! **Signals & state:** none; each case reads the checkout and asserts.
 //! **Invariants:** the repository root comes from `CARGO_MANIFEST_DIR`; every case asserts that
 //! its scan read something before it asserts that the scan found nothing, so a moved or empty
@@ -17,11 +19,8 @@ use std::path::{Path, PathBuf};
 
 use repository_laws::cargo_manifest::read_manifest;
 use repository_laws::crate_dependencies::{
-    API_RULE, DependencyFinding, FRONTEND_RULE, GRAPHICS_ENGINE_RULE, MAP_ENGINE_RULE,
-    crate_dependency_findings, rule_findings, test_only_feature_findings,
-};
-use repository_laws::engine_layers::{
-    EngineLayerReport, EngineLayerRule, check_engine_layers, map_engine_ui_framework_findings,
+    API_RULE, DependencyFinding, FRONTEND_RULE, crate_dependency_findings, rule_findings,
+    test_only_feature_findings,
 };
 use repository_laws::exemption_mechanisms::scan_exemption_mechanisms;
 use repository_laws::file_length::scan_file_lengths;
@@ -52,29 +51,6 @@ fn api_manifests(root: &Path) -> Vec<PathBuf> {
     );
     manifests.extend(crate_manifests);
     manifests
-}
-
-/// The engine-layer judgement of this checkout, with every rule judged.
-fn engine_layer_report() -> EngineLayerReport {
-    let report = check_engine_layers(&repository_root());
-    assert!(
-        report.judged_every_rule(),
-        "the engine-layer walls did not judge every rule:\n{}",
-        report.lines.join("\n")
-    );
-    report
-}
-
-/// Assert that `rule` holds in `report`, printing its findings when it does not.
-fn assert_rule_holds(report: &EngineLayerReport, rule: EngineLayerRule) {
-    let result = report.rule(rule).expect("every rule is judged");
-    assert_eq!(
-        result.findings,
-        0,
-        "engine-layer rule {} is breached:\n{}",
-        rule.number(),
-        result.detail.join("\n")
-    );
 }
 
 /// Render dependency findings one per line.
@@ -141,30 +117,7 @@ fn engineering_laws_unit_tests_live_in_sibling_files() {
 }
 
 #[test]
-fn engineering_laws_graphics_engine_knows_no_map_concepts() {
-    let report = engine_layer_report();
-    assert_rule_holds(&report, EngineLayerRule::GraphicsEngineImportsNoMapEngine);
-    assert_rule_holds(&report, EngineLayerRule::GraphicsEngineDeclaresNoMapNoun);
-    let edges = rule_findings(&repository_root(), &GRAPHICS_ENGINE_RULE)
-        .expect("the graphics-engine manifest reads");
-    assert!(edges.is_empty(), "{}", rendered(&edges));
-}
-
-#[test]
-fn engineering_laws_map_engine_has_no_ui_framework_dependency() {
-    let scan = map_engine_ui_framework_findings(&repository_root())
-        .expect("the map-engine manifest and sources read");
-    assert!(
-        scan.source_files > 0,
-        "the UI-framework ban read no map-engine source"
-    );
-    assert!(scan.findings.is_empty(), "{}", scan.findings.join("\n"));
-}
-
-#[test]
-fn engineering_laws_frontend_does_not_depend_on_the_graphics_engine() {
-    let report = engine_layer_report();
-    assert_rule_holds(&report, EngineLayerRule::FrontendImportsNoRenderer);
+fn engineering_laws_frontend_does_not_link_the_api() {
     let edges =
         rule_findings(&repository_root(), &FRONTEND_RULE).expect("the frontend manifest reads");
     assert!(edges.is_empty(), "{}", rendered(&edges));
@@ -207,12 +160,8 @@ fn engineering_laws_api_depends_on_no_graphics_or_frontend_crate() {
 }
 
 #[test]
-fn engineering_laws_engine_layer_walls_and_crate_directions_hold() {
-    let report = engine_layer_report();
-    assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
+fn engineering_laws_crate_directions_hold() {
     let root = repository_root();
-    let edges = rule_findings(&root, &MAP_ENGINE_RULE).expect("the map-engine manifest reads");
-    assert!(edges.is_empty(), "{}", rendered(&edges));
     let all = crate_dependency_findings(&root).expect("every website manifest reads");
     assert!(all.is_empty(), "{}", rendered(&all));
 }

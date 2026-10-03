@@ -1,0 +1,30 @@
+# The renderer contracts a map renderer and its typed layers meet at: the lane sink a layer writes
+# its draw batches through, the borrowed layer context, the per-frame hooks, the render statistics
+# with their JSON writer, and the fixed pipeline and bind-group ids a frame packet's tables are
+# indexed by. Everything that names a GPU type is wasm32 only; the native build keeps the
+# statistics, the JSON writer, the frame hooks and the binding ids, which the native tests cover.
+[package]
+name = "renderer_core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Renderer contracts: lane sink, layer context, frame hooks, render statistics and frame packet binding ids."
+
+[package.metadata.layout]
+category = "crates/graphics"
+tier = 2
+targets = "wasm32"
+
+[dependencies]
+# The frame vocabulary a lane sink stores (`DrawBatch`) and the frame-cost moving average.
+gpu_frame = { workspace = true }
+# The opaque lane, pipeline and bind-group ids.
+render_primitives = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+
+[lints]
+workspace = true

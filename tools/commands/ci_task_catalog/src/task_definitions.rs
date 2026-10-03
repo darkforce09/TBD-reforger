@@ -19,8 +19,8 @@ use repository_layout::find_repository_root;
 use schema_tooling::codegen;
 use schema_tooling::{citations, map_glyphs, map_object_enums, type_inventory, validate_all};
 use verification_dispatch::{
-    run_ci_schema_parity, run_enfusion_comments, run_engine_layers, run_height_labels,
-    run_link_check, run_map_object_golden, run_markdown_placement, run_mission_rest_size_limits,
+    run_ci_schema_parity, run_enfusion_comments, run_height_labels, run_link_check,
+    run_map_object_golden, run_markdown_placement, run_mission_rest_size_limits,
     run_no_select_star, run_readme_coverage, run_route_tags, run_staging_compose_paths,
     run_terrain_alignment, run_terrain_alignment_strict, run_terrain_manifest,
 };
@@ -42,10 +42,6 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-no-node"),
             Step::Task("verify-no-shell"),
             Step::Task("verify-ci-shell"),
-            // A seconds-long source scan, like the language gates, guarding the one-way
-            // map-engine -> graphics-engine wall the compiler does not see; required here and in
-            // ci.yml by documentation/standards/engine_boundary_rules.md §5.
-            Step::Task("verify-engine-layers"),
             Step::Task("verify-workspace-laws"),
             Step::Task("rust-ci"),
             Step::Task("workspace-member-tests"),
@@ -233,7 +229,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "lfs-dem",
-        help: "Pull the Everon DEM from LFS (72 MB — map-engine tests + hillshade)",
+        help: "Pull the Everon DEM from LFS (72 MB — terrain and world-object tests + hillshade)",
         group: "map",
         lane: Lane::Ci,
         steps: &[sh!(
@@ -285,17 +281,6 @@ pub static TASKS: &[Task] = &[
         steps: &[xt!("cargo xtask verify no-node", false, || Ok(
             verify_no_node()?
         ))],
-    },
-    Task {
-        name: "verify-engine-layers",
-        help: "§5 rules 1, 2, 3a, 3b, 6, 7 of documentation/standards/engine_boundary_rules.md — the graphics layer imports no map engine and declares no map noun; map-engine names the frame vocabulary at one enumerated seam and GPU modules only at the pinned seams; the frontend does not reach graphics-engine or a wasm-only graphics crate; world/ names no mission document or mission editing crate",
-        group: "verify",
-        lane: Lane::Alias,
-        steps: &[xt!(
-            "cargo xtask verify engine-layers",
-            false,
-            run_engine_layers
-        )],
     },
     Task {
         name: "verify-workspace-laws",
@@ -431,24 +416,22 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "wasm-ci",
-        help: "Fmt + clippy + test the map-engine, graphics-engine and offline service worker crates; clippy every wasm32 crate for wasm32",
+        help: "Fmt + clippy + test the offline service worker crate; clippy every wasm32 crate for wasm32",
         group: "build",
         lane: Lane::Borrowed,
         // A crate these steps do not name goes ungated: built only as a dependency, never
-        // formatted, linted or tested. Both engine crates and the offline service worker are
-        // named in every step because the browser half is where they ship; the wasm32 lint
+        // formatted, linted or tested. The offline service worker is named in every step
+        // because the browser half is where it ships; the wasm32 lint
         // derives its packages from the workspace (`crate::wasm32_lint_lane`), so every crate
         // declaring `targets = "wasm32"` is linted for the browser too.
         steps: &[
-            sh!("cargo fmt --check -p map_engine -p graphics_engine -p offline_service_worker"),
+            sh!("cargo fmt --check -p offline_service_worker"),
             sh!(
-                "cargo clippy -p map_engine -p graphics_engine -p offline_service_worker --all-targets --all-features -- -D warnings"
+                "cargo clippy -p offline_service_worker --all-targets --all-features -- -D warnings"
             ),
             Step::Native {
                 run: crate::wasm32_lint_lane::run_wasm_ci_lint,
             },
-            sh!("cargo test -p map_engine --all-features"),
-            sh!("cargo test -p graphics_engine --all-features"),
             sh!("cargo test -p offline_service_worker --all-features"),
         ],
     },

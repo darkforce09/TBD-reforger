@@ -22,8 +22,7 @@ stage; this document follows each stage's commit, and its last section says what
 TBD-reforger/
 ├── apps/            the products: API, single-page app, service worker, Enfusion mod suite,
 │                    fleet host agent, ticketboard
-├── crates/          the tiered library crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, graphics/, api/)
-├── legacy/          the map and graphics engines, parked while their code moves into crates/
+├── crates/          the tiered library crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, streaming/, map_rendering/, graphics/, api/, …)
 ├── deploy/          the release Dockerfile, compose files, Caddy site (caddy/), deploy settings,
 │                    systemd units
 ├── tools/           the developer tools: xtask, developer_tools, the crates by category
@@ -55,8 +54,6 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 |---|---|---|
 | [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub: the thin application (router, composition root, the `api` server and the `import-registry` tool) the 23 crates under `crates/api/` are assembled into, and its 150 integration binaries |
 | [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk; its `src/` holds five layers: `foundation/`, `features/`, `pages/`, `workspaces/` and `shell/` |
-| [`legacy/map_engine/`](/legacy/map_engine/README.md) | `map_engine` | map graphics, spatial computation, terrain formats, streaming and the editing seam over the mission crates |
-| [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | `graphics_engine` | GPU rendering primitives with no map concept |
 | [`apps/offline_service_worker/`](/apps/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs |
 | [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md) | `fleet_host_agent` | the agent beside each game-server instance that carries out fleet commands |
 | [`apps/ticketboard/`](/apps/ticketboard/README.md) | `ticketboard` | the egui desktop viewer of the ticket registry; its headless models are `ticketboard_model` in `tools/tickets/` |
@@ -72,6 +69,18 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`crates/geometry/camera_math/`](/crates/geometry/camera_math/README.md) | `camera_math` | the orthographic map camera, the orbit camera, 4x4 matrices |
 | [`crates/world_formats/world_file_formats/`](/crates/world_formats/world_file_formats/README.md) | `world_file_formats` | the on-disk world formats and their typed ids |
 | [`crates/graphics/render_primitives/`](/crates/graphics/render_primitives/README.md) | `render_primitives` | map-agnostic CPU rendering primitives: instances, geometry, triangulation, cull oracle, text, the WGSL shader |
+| [`crates/graphics/gpu_device/`](/crates/graphics/gpu_device/README.md) | `gpu_device` | the GPU context of a canvas (create, resize, acquire), pooled lane buffers, readback guards, the frame timer (wasm32) |
+| [`crates/graphics/gpu_frame/`](/crates/graphics/gpu_frame/README.md) | `gpu_frame` | the frame vocabulary, draw encoding, compute sprite cull, render pipelines and the animation-frame pump (wasm32) |
+| [`crates/graphics/renderer_core/`](/crates/graphics/renderer_core/README.md) | `renderer_core` | the renderer contracts: lane sink, layer context, frame hooks, render statistics and their JSON, packet binding ids (wasm32) |
+| [`crates/streaming/map_streaming_model/`](/crates/streaming/map_streaming_model/README.md) | `map_streaming_model` | world layer and host preferences, boot progress, the memory budget model and the `MapAssetSink` contract |
+| [`crates/streaming/map_asset_loading/`](/crates/streaming/map_asset_loading/README.md) | `map_asset_loading` | the browser loaders (world, occluder, terrain, satellite, forest, labels), mesh composition, the live memory budget and asset statistics (wasm32) |
+| [`crates/streaming/map_streaming_host/`](/crates/streaming/map_streaming_host/README.md) | `map_streaming_host` | the browser map host: terrain and world boot, camera settle, view preferences, map queries (wasm32) |
+| [`crates/map_rendering/symbology_layers_gpu/`](/crates/map_rendering/symbology_layers_gpu/README.md) | `symbology_layers_gpu` | the slot symbology, glyph atlas, icon lane cull and world icon lane GPU layers (wasm32) |
+| [`crates/map_rendering/world_layers_gpu/`](/crates/map_rendering/world_layers_gpu/README.md) | `world_layers_gpu` | the building, forest density, terrain texture and terrain line of sight overlay GPU layers (wasm32) |
+| [`crates/map_rendering/map_renderer/`](/crates/map_rendering/map_renderer/README.md) | `map_renderer` | the render engine: GPU context, pipelines, camera, batch list, lane sinks, upload belts, statistics, asset sink (wasm32) |
+| [`crates/map_rendering/map_render_diagnostics/`](/crates/map_rendering/map_render_diagnostics/README.md) | `map_render_diagnostics` | the renderer's readback self-checks, scene readback, frame benchmark and stress pool (wasm32) |
+| [`crates/paper_doll/paper_doll_scene/`](/crates/paper_doll/paper_doll_scene/README.md) | `paper_doll_scene` | the Arsenal paper doll's parts, equipment regions, state colours, meshes, picks and callout anchors |
+| [`crates/paper_doll/paper_doll_renderer/`](/crates/paper_doll/paper_doll_renderer/README.md) | `paper_doll_renderer` | the wgpu renderer of the paper doll on its own canvas, with its readback self-check (wasm32) |
 | [`crates/contracts/fleet_wire_contract/`](/crates/contracts/fleet_wire_contract/README.md) | `fleet_wire_contract` | the fleet-command wire shapes the API and the fleet host agent share |
 | [`crates/contracts/contract_schema_types/`](/crates/contracts/contract_schema_types/README.md) | `contract_schema_types` | the Rust types generated from the JSON Schemas |
 | [`crates/mission/mission_wire_safety/`](/crates/mission/mission_wire_safety/README.md) | `mission_wire_safety` | the control-character scan of authored names and the cargo capacity scan of slot loadouts |
@@ -163,9 +172,11 @@ infrastructure (`api_identifiers`, `api_foundation`, `api_failpoints`, `api_conf
 suites of `staging_fixtures`.
 
 Every package is named after its folder, in snake_case. A crate under `crates/` sits in the
-folder of its category and declares its tier in its manifest, and no crate outside `apps/`, the
-tools included, depends on a crate in `legacy/` (`cargo xtask verify crate-tiers`,
-`cargo xtask verify strangler`). The two tool binaries, `tools/xtask` and
+folder of its category and declares its tier in its manifest (`cargo xtask verify crate-tiers`).
+The map's streaming crates (`crates/streaming/`), its renderer and typed GPU layers
+(`crates/map_rendering/`), the Arsenal's paper doll (`crates/paper_doll/`) and the map-agnostic
+GPU crates (`crates/graphics/`) are crates like any other; the
+[crate catalogue](/documentation/restructure/crate_catalogue.md) lists them. The two tool binaries, `tools/xtask` and
 `tools/developer_tools`, depend only on tool crates, and no tokio, axum, reqwest, resvg or image
 enters xtask's dependency closure. The mod suite under `apps/mod/` is not
 Cargo code: its three Enfusion addons are built by Workbench and checked by `cargo xtask mod compile`.
@@ -175,7 +186,6 @@ Cargo code: its three Enfusion addons are built by Workbench and checked by `car
 ```text
 code ─────────── apps/<product>/            products, one folder each
                  crates/<category>/<crate>/ library crates, by category
-                 legacy/<engine>/           the two engines while their code moves to crates/
                  tools/<category>/<crate>/  repository tooling (xtask and developer_tools directly under tools/)
 deploy ───────── deploy/                    release image, compose files, Caddy, systemd units
 shapes ───────── contracts/definitions/     JSON Schemas, the source of generated contract types
@@ -190,7 +200,7 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
 - **Code.** A product's code and its README sit in its folder under `apps/`; every folder carries
   a README.md built to the [README standard](/documentation/standards/readme_standard.md), and
   the code trees hold no other Markdown. Engine and layer boundaries are in the
-  [engine boundary rules](/documentation/standards/engine_boundary_rules.md).
+  [crate boundary rules](/documentation/standards/crate_boundary_rules.md).
 - **Contracts.** Every shape that crosses a network, process or language boundary is a schema in
   `contracts/definitions/`; `cargo xtask ci schema-codegen` generates the Rust contract types
   from it, and the backend models stay the snake_case source of truth of the API.
@@ -198,7 +208,7 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
   equipment exports and terrain tiles are ignored and rebuilt by the export tools.
 - **Documentation.** Every document lives under `documentation/`. A feature doc sits at the
   documentation root plus its code path without `src/`: `documentation/apps/api/` for `apps/api/`,
-  `documentation/legacy/map_engine/` for `legacy/map_engine/`, `documentation/apps/frontend/workspaces/`
+  `documentation/crates/streaming/` for `crates/streaming/`, `documentation/apps/frontend/workspaces/`
   for `apps/frontend/src/workspaces/`. One mirror keeps a shorter path until a stage reshapes its
   code: the mod's documents leave out `apps/` and `Scripts/Game/TBD/` and sit in
   `documentation/mod/` (until M1), as the
@@ -229,8 +239,8 @@ the frontend's former domain tree in place into the `foundation/`, `features/`, 
 session and review workspace named for what they hold. The stages after it:
 
 - S4 to S11 build the tiered crates under `crates/`, from the foundations through the
-  mission, world, streaming, rendering, API, frontend and tool crates, and delete `legacy/` and
-  the ticket engine.
+  mission, world, streaming, rendering, API, frontend and tool crates, and delete `legacy/` (S8,
+  once the rendering crates hold both engines' code) and the ticket engine.
 - M1 and M2 reshape the mod suite's folders; M1 also brings its documents to the full code path.
 - S12 closes the program; this document then describes its end state.
 

@@ -20,11 +20,11 @@ repeat it.
   | Job | Runs | Rules |
   |---|---|---|
   | `api` | `cargo xtask mk rust-fmt`, `mk rust-clippy`, `mk rust-build`, then `ci api-test` (the API's `cargo test`) against a Postgres 18 service | FMT-1, GO-2, GO-8, GO-9, TEST-1 |
-  | `map-engine` | `cargo xtask mk wasm-ci`: format, clippy with `-D warnings` on the host, clippy with `-D warnings` for `wasm32` over every crate the workspace marks `targets = "wasm32"` plus the engines and the offline worker, tests | FMT-1 |
+  | `wasm-ci` | `cargo xtask mk wasm-ci`: format, clippy with `-D warnings` on the host, clippy with `-D warnings` for `wasm32` over every crate the workspace marks `targets = "wasm32"` plus the offline worker, tests | FMT-1 |
   | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy with `-D warnings` for `wasm32` and natively, tests, release Trunk build | TEST-2, TS-6 |
   | `schema` | `cargo xtask ci ci-local-schema`: generated types current, schema validation, `@contract` citations | TEST-3, ENF-3, ENF-4 |
   | `editorconfig` | `cargo xtask ci verify-editorconfig` | FMT-2 |
-  | `language-gates` | `verify no-python`, `no-node`, `file-length`, `enfusion-comments`, `no-shell`, `ci-shell`, `engine-layers`, `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources`, `ticket check --strict`, then `verify readme-coverage`, `link-check`, `markdown-placement` | LANG-1, LANG-2, LANG-3, SIZE-3, WS-1 to WS-5 |
+  | `language-gates` | `verify no-python`, `no-node`, `file-length`, `enfusion-comments`, `no-shell`, `ci-shell`, `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources`, `ticket check --strict`, then `verify readme-coverage`, `link-check`, `markdown-placement` | LANG-1, LANG-2, LANG-3, SIZE-3, WS-1 to WS-5 |
   | `mod-gates-hosted` | `mod world-boot --selftest`, `verify staging-compose-paths`, `mission-rest-size-limits`, `ci-schema-parity` | none |
 
   `cargo xtask ci ci-local` replays the same gates locally, with the integration tests run by
@@ -58,7 +58,7 @@ the wave and slice gates, but in no workflow.
 
 `cargo xtask ci verify-workspace-laws` runs the five workspace laws of the
 [laws and gates](/documentation/restructure/laws_and_gates.md#new-laws) in order and stops at
-the first failure; `ci-local` runs it right after `verify-engine-layers`, and the
+the first failure; `ci-local` runs it right after `verify-ci-shell`, and the
 `language-gates` job of `ci.yml` runs the five commands as separate steps. The laws live in
 `tools/foundation/repository_laws/src/workspace_laws/`
 ([README](/tools/foundation/repository_laws/src/workspace_laws/README.md)); xtask passes

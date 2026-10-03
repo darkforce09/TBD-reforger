@@ -19,8 +19,8 @@ use super::frame_pump::start_plain_frame_pump;
 use super::handles::MapViewHandles;
 use super::navigation::{attach_navigation, MapClick};
 use super::resize::observe_container_resize;
-use map_engine::streaming::bridge::host_preferences::HostPreferences;
-use map_engine::streaming::bridge::progress::ProgressFn;
+use map_streaming_model::boot_progress::ProgressFn;
+use map_streaming_model::host_preferences::HostPreferences;
 use std::rc::Rc;
 
 /// Everything a map view mount needs from its page.
@@ -95,7 +95,7 @@ pub async fn mount_map_view(
     start_plain_frame_pump(handles.engine.clone(), handles.disposed.clone());
     observe_container_resize(&container, &canvas, &handles);
     attach_navigation(&container, &handles, on_click);
-    map_engine::streaming::host::bootstrap(
+    map_streaming_host::bootstrap(
         handles.engine.clone(),
         terrain,
         handles.map_host.clone(),

@@ -1,0 +1,18 @@
+# Stage S8 V5 — the map engine's world and spatial typed GPU layers become the world_layers_gpu crate: the
+# textured lane record, the building layer, the forest layer, the terrain texture layer and the terrain line of
+# sight overlay move under names that say what they hold. Paths name the tree before the moves; the map engine
+# keeps re-export shims at its world and spatial module paths until the stage switch.
+kind	from	to	scope
+#
+# the textured lane record the texture, forest and overlay layers share
+path	legacy/map_engine/src/world/textured_lane.rs	crates/map_rendering/world_layers_gpu/src/textured_lane.rs
+#
+# the building and forest layers
+path	legacy/map_engine/src/world/environment/buildings/buffers.rs	crates/map_rendering/world_layers_gpu/src/building_layer.rs
+path	legacy/map_engine/src/world/environment/vegetation/buffers.rs	crates/map_rendering/world_layers_gpu/src/forest_layer.rs
+#
+# the satellite basemap and hillshade texture layer
+path	legacy/map_engine/src/world/terrain/satellite/textures.rs	crates/map_rendering/world_layers_gpu/src/terrain_texture_layer.rs
+#
+# the terrain line of sight overlay (the viewshed lane)
+path	legacy/map_engine/src/spatial/los/terrain/overlay.rs	crates/map_rendering/world_layers_gpu/src/terrain_line_of_sight_overlay.rs

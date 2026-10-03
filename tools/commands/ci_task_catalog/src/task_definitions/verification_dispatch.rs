@@ -81,14 +81,6 @@ pub(super) fn run_enfusion_comments() -> crate::Result<u8> {
     )
 }
 
-pub(super) fn run_engine_layers() -> crate::Result<u8> {
-    Ok(
-        repository_checks::architecture::engine_layer_boundaries::verify_engine_layers(
-            &find_repository_root()?,
-        )?,
-    )
-}
-
 pub(super) fn run_staging_compose_paths() -> crate::Result<u8> {
     Ok(
         deployment::deployment_checks::staging_compose_paths::verify_staging_compose_paths(

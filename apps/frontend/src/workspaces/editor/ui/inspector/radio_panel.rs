@@ -4,7 +4,7 @@
 //! ══ Transport ═══════════════════════════════════════════════════════════════════════════════
 //! Every write goes to `meta.environment.radioPlan` through [`operations::update_environment`],
 //! the same one-patch-one-undo-step path the  flow controls and the /.2 cards use.
-//! `map_engine_core::mission::extensions` copies the key onto the compiled payload root;
+//! `mission_model::authored_blocks` copies the key onto the compiled payload root;
 //! flatten honours the authored nets when present and derives only when this key is absent.
 //!
 //! ══ Where this renders ══════════════════════════════════════════════════════════════════════

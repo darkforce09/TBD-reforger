@@ -208,8 +208,8 @@ fn roof_view_paints_the_heightfield() {
     assert_eq!(lanes.hairline_count, base.hairline_count);
 }
 
-/// Axis-aligned cuboid as 12 triangles — the same quad table as `map_engine_core`'s
-/// `bvh_tests::cube` (crate-private there).
+/// Axis-aligned cuboid as 12 triangles — the same quad table as
+/// `spatial_indexes::test_fixtures::cube` (behind that crate's `test_fixtures` feature).
 fn cube(center: [f64; 3], half: [f64; 3]) -> (Vec<[f64; 3]>, Vec<[u32; 3]>) {
     let mut verts = Vec::new();
     for corner in 0..8u32 {

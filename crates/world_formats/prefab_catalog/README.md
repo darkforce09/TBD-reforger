@@ -80,8 +80,8 @@ enabled only from their `[dev-dependencies]`. The crate reads no environment var
 - Depends on: `world_file_formats` (the catalogue and census archives, `access_checked`,
   `PrefabId`, `TerrainId`), `serde_json`, `flate2`, `rkyv`, `thiserror`.
 - Used by: `world_chunks`, `world_store`, `road_network`, `vegetation` and
-  `world_line_of_sight`; the map engine (`legacy/map_engine`, behind `streaming`): its chunk
-  scheduler and draw buffers; the world export (`tools/map_assets/world_export_pipeline`), which
+  `world_line_of_sight`; the streaming crates `chunk_scheduler` and `chunk_draw_buffers`; the
+  world export (`tools/map_assets/world_export_pipeline`), which
   mints its census buckets from `INSTANCE_KINDS`; the type-inventory gate of
   `tools/commands/schema_tooling`, which sums them; the checks in `tools/developer_tools/src/`.
 - Rules:

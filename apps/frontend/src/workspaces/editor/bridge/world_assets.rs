@@ -7,13 +7,14 @@
 //! cannot clear a newer mount.
 
 #![cfg(target_arch = "wasm32")]
-use map_engine::frame::EngineHandle;
-/// Re-export `map_engine::streaming::host::*`.
-pub use map_engine::streaming::host::*;
+use map_asset_loading::browser_asset_sink::BrowserAssetSinkHandle;
+use map_renderer::EngineHandle;
+/// Re-export `map_streaming_host::*`.
+pub use map_streaming_host::*;
 use std::rc::Rc;
 
 impl crate::workspaces::editor::ui::inspector::validation_panel::SeamRegistration
-    for (EngineHandle, HostHandle)
+    for (BrowserAssetSinkHandle, HostHandle)
 {
     fn is_same_registration(&self, live: &Self) -> bool {
         Rc::ptr_eq(&self.0, &live.0) && Rc::ptr_eq(&self.1, &live.1)
@@ -32,9 +33,9 @@ pub async fn bootstrap(
     host: HostHandle,
     dem_out: DemGridHandle,
     full_dem_out: terrain_elevation::full_resolution::FullResolutionDemHandle,
-    report: map_engine::streaming::bridge::progress::ProgressFn,
+    report: map_streaming_model::boot_progress::ProgressFn,
 ) {
-    use map_engine::streaming::bridge::host_preferences::{
+    use map_streaming_model::host_preferences::{
         BootstrapScope, HostPreferences, RenderPreferences,
     };
     let preferences = HostPreferences {
@@ -50,7 +51,7 @@ pub async fn bootstrap(
             }
         },
     };
-    map_engine::streaming::host::bootstrap(
+    map_streaming_host::bootstrap(
         engine,
         terrain,
         host,

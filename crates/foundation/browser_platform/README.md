@@ -55,15 +55,15 @@ No feature and no environment variable.
 
 - Depends on: `web-sys` (`console`, `ReadableStream`, `ReadableStreamDefaultReader`), `js-sys`,
   `wasm-bindgen`, `wasm-bindgen-futures` and `gloo-net`, all on wasm32 only.
-- Used by: the map engine's `render` tier (`legacy/map_engine`): its satellite imagery, streaming
-  host and occluder loader log through the console macros, and its streaming host, loaders and DEM
-  loader fetch through `fetch`; the single-page app's map view mount and world line-of-sight bench
-  (`apps/frontend`) fetch through `fetch` too.
+- Used by: the streaming crates `map_asset_loading` and `map_streaming_host`: the satellite
+  quadtree, the streaming host and the occluder loader log through the console macros, and the
+  host, the loaders and the elevation loader fetch through `fetch`; the single-page app's map view
+  mount and world line-of-sight bench (`apps/frontend`) fetch through `fetch` too.
 - Rules: foundation tier, so the crate depends on no workspace crate
   (`cargo xtask verify crate-tiers`); `targets = "wasm32"`, so `lib.rs` gates every item on
   `target_arch = "wasm32"` and a native crate reaches it only from its wasm32 dependency table.
 
 ## Related documentation
 
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
   directions between the workspace crates.

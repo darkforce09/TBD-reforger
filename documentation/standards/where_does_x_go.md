@@ -22,8 +22,11 @@ is drawn in the directory atlas of `CLAUDE.md`, and every code folder's README s
 | an API binary | `apps/api/src/bin/` |
 | a database migration | `crates/api/api_database/migrations/NNNN_<subject>.sql` (sqlx, embedded, applied at boot) |
 | a development seed | `crates/api/api_database/seeds/`; `cargo xtask db seed` applies the files its `SEEDS` list names, and `mock_data.sql` is applied by hand |
-| map graphics, spatial computation, terrain formats, streaming, camera math, the [mission](/documentation/glossary/g_to_m.md#mission) document model | `legacy/map_engine/src/` |
-| GPU rendering primitives with no map concept | `legacy/graphics_engine/src/` |
+| the [mission](/documentation/glossary/g_to_m.md#mission) document model, compiler and validation | `crates/mission/` |
+| terrain, world-object and world formats, spatial indexes, line of sight, camera math | `crates/terrain/`, `crates/world_objects/`, `crates/world_formats/`, `crates/geometry/`, `crates/line_of_sight/` |
+| map streaming: chunk residency, draw buffers, browser loaders, the map host | `crates/streaming/` |
+| map rendering: the render engine, its typed GPU layers and readback self-checks | `crates/map_rendering/` |
+| GPU rendering primitives with no map concept | `crates/graphics/` |
 
 The API has eight domains: `administration`, `command_center`, `community_content`,
 `identity_and_access`, `match_telemetry`, `missions`, `operations` and `server_infrastructure`.
@@ -32,8 +35,8 @@ nests them under `/api/v1`, so a public URL is the literal in the domain's `rout
 `/api/v1` in front. `core` imports no domain except its composition root, a domain's handlers
 never import another domain's handlers, and `background_workers` is imported only by
 `apps/api/src/bin/api.rs`; the tests in
-`apps/api/src/tests/architecture_rules.rs` enforce all three. The walls between the two
-engines and the app are in the [engine boundary rules](/documentation/standards/engine_boundary_rules.md).
+`apps/api/src/tests/architecture_rules.rs` enforce all three. The walls between the map
+crates and the app are in the [crate boundary rules](/documentation/standards/crate_boundary_rules.md).
 
 ## Contracts, data and assets
 

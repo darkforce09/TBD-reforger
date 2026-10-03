@@ -159,7 +159,7 @@ Each crate's README lists its own commands and checks.
 
 ## Boundaries
 
-- Depends on: `legacy/map_engine/`, through `developer_tools` alone; the checkout's data
+- Depends on: the library crates under `crates/` whose `targets` is `any`; the checkout's data
   (`.ai/tickets/`, `contracts/`, `assets/`, `documentation/`); and the external tools
   individual commands run: git, Docker or Podman, Postgres, Chromium, Trunk, npm and Node.js, ssh
   and rsync, the Arma Reforger tools.
@@ -170,7 +170,7 @@ Each crate's README lists its own commands and checks.
 - Rules: each held by a test in `tools/checks/repository_checks/src/tests/`, over every tool crate
   found by folder (each `tools/<name>` and `tools/<category>/<name>` holding a `Cargo.toml`):
   - `developer_tools` never depends on `xtask`, and `xtask` never depends on
-    `map_engine` or `graphics_engine` directly
+    `developer_tools`
     (`tooling_dependency_direction_is_enforced` in `tooling_dependency_boundaries.rs`);
   - a `tools/foundation` crate depends only on lower `tools/foundation` crates
     (`foundation_crates_depend_only_on_lower_foundation_crates`); a `tools/tickets` crate depends

@@ -424,22 +424,22 @@ nothing, and the arming helpers fail, fail once and pause exactly as named.
 ## Engineering laws
 
 `tests/engineering_laws.rs` checks the repository laws through `repository_laws`,
-which shares its roots and rules with `cargo xtask verify file-length` and
-`cargo xtask verify engine-layers`:
+which shares its roots and rules with `cargo xtask verify file-length`; the crate firewalls
+(wgpu, the browser crates, the graphics category's map nouns, `#[wasm_bindgen]` placement) are
+`cargo xtask verify crate-tiers`'s:
 
 - production files stay at or under 500 lines, test files at or under 1000;
 - the law-7 rules (size and test placement) have no exemption mechanism: no allowlist files, no
   allowlist comments and no grandfather tables; the frontend `doc_audit` grandfather table is
   gone;
 - unit tests live only in sibling files; no inline test-module body exists;
-- `graphics_engine` knows no map concept and has no `map_engine` dependency,
-  `map_engine` has no UI framework dependency anywhere in the crate, and
-  `frontend` does not depend on `graphics_engine`;
-- `api` depends on neither `graphics_engine` nor `frontend`; its one
-  engine dependency is `map_engine` with the mission tier alone;
-- the engine-layer walls of the
-  [engine boundary rules](/documentation/standards/engine_boundary_rules.md) and the crate
-  directions hold;
+- `frontend` does not link `api`;
+- neither `api` nor any API crate depends on a GPU crate (the eight crates the wgpu firewall
+  admits) or on `frontend`; the mission domain reaches the mission crates through
+  `api_missions`' `mission_compiler` edge;
+- the crate directions of the
+  [crate boundary rules](/documentation/standards/crate_boundary_rules.md) hold for the
+  frontend, the API and the offline service worker;
 - the `failpoints` feature is test-only: not a default feature, enabled only by the self
   dev-dependency, and the deploy build passes no feature flags.
 

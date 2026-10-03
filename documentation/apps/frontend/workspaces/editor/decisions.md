@@ -311,7 +311,7 @@ slots, and each was fixed until the editor held about 360,000 slots at interacti
 
 **Decision:** That scale is good enough. The outliner is virtualised (`virtual_tree`,
 `ui/outliner/tree/virtual_tree.rs`), picking uses spatial indexes
-(`/legacy/map_engine/src/spatial/`), and deeper optimisation waits for a regression:
+(`/crates/geometry/spatial_indexes/`), and deeper optimisation waits for a regression:
 T-094 is deferred, and T-111 and T-112 are cancelled.
 
 **Consequences:** A change that slows these paths at that scale is a regression.

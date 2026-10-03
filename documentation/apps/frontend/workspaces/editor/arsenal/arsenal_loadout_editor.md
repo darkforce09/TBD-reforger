@@ -21,7 +21,7 @@ with cargo, and copies loadouts across a selection. It is the
   [panels](/apps/frontend/src/workspaces/editor/ui/arsenal/README.md) and
   [cargo editor](/apps/frontend/src/workspaces/editor/ui/arsenal/panels/README.md) in
   `apps/frontend/src/workspaces/editor/ui/arsenal/`; the 3D doll in the map engine's
-  [doll preview](/legacy/map_engine/src/doll/README.md).
+  [doll preview](/crates/paper_doll/README.md).
 - Entry: the Attributes dialog
   (`apps/frontend/src/workspaces/editor/ui/inspector/attributes_modal.rs`) mounts
   `ArsenalTab` on its fourth tab, "Arsenal". `open_arsenal(id)` in

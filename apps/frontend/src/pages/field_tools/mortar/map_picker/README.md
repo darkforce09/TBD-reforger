@@ -32,7 +32,8 @@ of a map.
 
 - Depends on: `crate::foundation::map_view` (`mount`, `handles`, `navigation`, `navigation_math`,
   `terrain_height`, `terrain_preferences`, `engine_mount`); `map_coordinates::grid_reference`;
-  `map_engine` (the crest profile type, the Everon terrain manifest);
+  `terrain_line_of_sight::elevation_profile` (the crest profile) and `terrain_elevation::manifest`
+  (the Everon terrain manifest);
   `overlay_instances::fire_mission_marks`, `unit_symbology::markers`, `map_draw_lanes`, the
   terrain sampler `terrain_line_of_sight::elevation_profile` and `terrain_elevation::manifest`;
   the mortar inputs.

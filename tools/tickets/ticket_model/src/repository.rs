@@ -28,10 +28,10 @@ pub fn handoff_doc(slug: &str) -> String {
 /// aliases that make `cargo xtask` resolve at all.
 ///
 /// A `website` slice carries the three website applications, everything they depend on through
-/// `path =` dependencies (the parked engines under `legacy/` and the shared crates under
-/// `crates/`), the deployment folder that builds and serves them, and every `contracts/` file
-/// those crates compile in through `include_str!` or `include_bytes!`: the JSON Schemas (which
-/// the API's typed models are also generated from), the API golden responses, the ballistics
+/// `path =` dependencies (the shared crates under `crates/`), the deployment folder that builds
+/// and serves them, and every `contracts/` file those crates compile in through `include_str!`
+/// or `include_bytes!`: the JSON Schemas (which the API's typed models are also generated from),
+/// the API golden responses, the ballistics
 /// catalog and calibration fixtures, the mission and registry fixtures, the equipment matching
 /// rules and the kit aliases. A `website` or `mod` slice checks out its documentation mirror
 /// beside the code, because documentation ships with the code it describes.
@@ -42,7 +42,6 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
             "apps/api",
             "apps/frontend",
             "apps/offline_service_worker",
-            "legacy",
             "crates",
             "deploy",
             "contracts/definitions",
@@ -54,7 +53,7 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
             "contracts/rules/equipment-gameplay",
             "contracts/rules/kit-aliases.json",
             documentation::APPS_DOCUMENTATION_DIR,
-            documentation::LEGACY_DOCUMENTATION_DIR,
+            documentation::CRATES_DOCUMENTATION_DIR,
         ],
     ),
     ("mod", &["apps/mod", documentation::MOD_DOCUMENTATION_DIR]),
@@ -87,10 +86,9 @@ pub mod documentation {
     /// at [`MOD_DOCUMENTATION_DIR`]). A `website` slice checks it out beside the code.
     pub const APPS_DOCUMENTATION_DIR: &str = "documentation/apps";
 
-    /// The parked engines' documentation, which mirrors `legacy/`, spelled as a folder prefix. A
-    /// `website` slice checks it out beside the code, because the website's applications depend on
-    /// those engines.
-    pub const LEGACY_DOCUMENTATION_DIR: &str = "documentation/legacy/";
+    /// The library crates' documentation, which mirrors `crates/`. A `website` slice checks it out
+    /// beside the code, because the website's applications depend on those crates.
+    pub const CRATES_DOCUMENTATION_DIR: &str = "documentation/crates";
 
     /// The game mod's documentation, which mirrors `apps/mod`. A `mod` slice checks it out beside
     /// the code.

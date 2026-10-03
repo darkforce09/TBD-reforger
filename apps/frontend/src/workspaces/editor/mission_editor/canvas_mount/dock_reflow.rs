@@ -12,7 +12,7 @@
 //! hide-chrome toggle.
 
 use leptos::prelude::*;
-use map_engine::frame::EngineHandle;
+use map_renderer::EngineHandle;
 
 /// Install the chrome and dock reflow effect for the mounted engine and container.
 pub(super) fn install(

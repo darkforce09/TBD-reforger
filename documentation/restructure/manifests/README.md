@@ -86,6 +86,18 @@ documentation/restructure/manifests/
 ├── s7_x7a_switch.tsv  stage S7 X7a: every consumer of the S7 streaming and mission editing crates imports them directly, and the map engine's re-export shims go
 ├── s7_x7b_documentation.tsv  stage S7 X7b, first of two: the editing layer and draft persistence feature docs into the mirror of the mission editing crates
 ├── s7_x7b_engine_layer_results.tsv  stage S7 X7b, second of two: with engine rule 5 retired, the engine-layer report results tests take that subject's name
+├── s8_w00_v0a_frontend_pin.tsv  stage S8 V0a: the source pin over the frontend's document history host leaves the map engine for the frontend's bridge tests
+├── s8_w00_v1_gpu_crates.tsv  stage S8 V1: the graphics engine's device code becomes gpu_device and its frame, draw, pipeline and loop code gpu_frame; its documentation moves to the graphics crates' mirror
+├── s8_w01_v0s_streaming_model.tsv  stage S8 V0s: the streaming preferences, boot progress and the pure memory budget with its tests become map_streaming_model
+├── s8_w01_v1c_renderer_core.tsv  stage S8 V1c: the render engine's statistics report leaves the diagnostics bench for the frame; the GPU frame's building pipeline module becomes oriented_quad
+├── s8_w01_v3_paper_doll.tsv  stage S8 V3: the map engine's doll becomes paper_doll_scene (scene, picking) and paper_doll_renderer (renderer, shader, readback self-check)
+├── s8_w02_v4_streaming_crates.tsv  stage S8 V4: the map engine's loaders, live memory budget, asset statistics and world loaders become map_asset_loading; its host becomes map_streaming_host; the streaming doc moves to the streaming crates' mirror
+├── s8_w03_v2_symbology_layers.tsv  stage S8 V2: the map engine's lane preferences, glyph atlas layer, icon lane cull, icon uniform layout, world icon lanes and slot symbology become symbology_layers_gpu
+├── s8_w04_v5_world_layers.tsv  stage S8 V5: the map engine's textured lane record, building layer, forest layer, terrain texture layer and terrain line of sight overlay become world_layers_gpu
+├── s8_w05_v6a_map_renderer.tsv  stage S8 V6a: the map engine's frame and camera viewport become map_renderer (engine, boot, frame path, statistics, diagnostic views, asset sink, lane sinks, typed layer doors, upload belts, tests); the map engine overview becomes the map rendering overview
+├── s8_w06_v6b_render_diagnostics.tsv  stage S8 V6b: the map engine's diagnostics become map_render_diagnostics (readback checks with the calibration check beside them, scene readback, frame benchmark, stress pool, stress scene); the frontend's browser hooks import them from the crate
+├── s8_w07_x8_switch.tsv  stage S8 X8: the single-page app imports the map renderer, the GPU frame pump and the streaming crates directly, and the map engine's re-export shims go with both legacy crates
+├── s8_w09_x8b_crate_boundary_rules.tsv  stage S8 X8b: the boundary rules standard, which holds the crate-level laws, takes the name crate_boundary_rules.md
 ├── s9_w01_k0a_kernel_cuts.tsv  stage S9 K0a: the audit writers, member activity and caller identity files into the API's kernel staging folders
 ├── s9_w02_k0b_kernel_cuts.tsv  stage S9 K0b: the Discord clients and the equipment datasets into the API's kernel staging folders
 ├── s9_w05_1_api_foundation.tsv  stage S9 K1a, first of five: the handler error, wire formats, text and request primitives become api_foundation

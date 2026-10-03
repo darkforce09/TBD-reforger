@@ -50,7 +50,7 @@ cargo test -p geometry_primitives   # the rigid transform and box unit tests
   traversal, `vector3`), the building interiors (`crates/world_objects/building_interiors`: the
   section cutter, the blueprints and the compound buildings, `vector3`, `segment_geometry`,
   `rigid_transform`), the interior and world line of sight (`crates/line_of_sight/`:
-  `segment_geometry`, `axis_aligned_box`), the map engine (`legacy/map_engine`); the developer tools (`tools/developer_tools`):
+  `segment_geometry`, `axis_aligned_box`); the developer tools (`tools/developer_tools`):
   the blueprint compiler and the world line-of-sight checks; and the single-page app's building
   interior bench (`rigid_transform`).
 - Rules: no map, world, terrain or GPU concept enters this crate; a rigid transform keeps an
@@ -60,5 +60,5 @@ cargo test -p geometry_primitives   # the rigid transform and box unit tests
 
 ## Related documentation
 
-- [Map engine overview](/documentation/legacy/map_engine/map_engine_overview.md) — the map
+- [Map engine overview](/documentation/crates/map_rendering/map_rendering_overview.md) — the map
   engine's tiers and the modules that call these primitives.

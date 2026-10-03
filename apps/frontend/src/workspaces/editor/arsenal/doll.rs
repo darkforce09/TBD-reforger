@@ -1,4 +1,4 @@
-//! The 3D paper-doll mount — the browser host for the map engine's `DollEngine`.
+//! The 3D paper-doll mount — the browser host for `paper_doll_renderer`'s `PaperDollRenderer`.
 //!
 //! **Role:** sizes the canvas in device pixels before the engine is created, forwards pointer
 //! deltas as character turns and sub-threshold clicks as part picks, pushes the region state
@@ -6,8 +6,8 @@
 //! the one DOM layer the engine does not draw: a cursor tooltip for the hovered part and a
 //! pinned name chip with a leader line for the active one.
 //! **Position:** a leaf of `workspaces::editor::arsenal`, mounted by the Arsenal's doll panel.
-//! Every scene, camera, pick and anchor decision belongs to `map_engine::doll`; this
-//! module holds none of them.
+//! Every scene, camera, pick and anchor decision belongs to the paper doll crates
+//! (`paper_doll_scene`, `paper_doll_renderer`); this module holds none of them.
 //! **Signals & state:** the engine handle, the last pointer position and the hovered and active
 //! region live in cells owned by the mounted component, never in globals. Anchor pixels come
 //! back from the engine each frame and are written straight onto the chip's style, so the rAF
@@ -31,7 +31,7 @@ const CLICK_SLOP_PX: f64 = 4.0; // same bar as the map's drag threshold
 const CALLOUT_DX: f64 = 52.0; // chip offset from the anchor (up-right)
 const CALLOUT_DY: f64 = -44.0;
 
-type EngineHandle = Rc<RefCell<Option<map_engine::doll::renderer::lifecycle_1::DollEngine>>>;
+type EngineHandle = Rc<RefCell<Option<paper_doll_renderer::PaperDollRenderer>>>;
 /// The animation-frame callback's own slot: the closure reads it to queue the next frame.
 type FrameCallbackSlot = Rc<RefCell<Option<Closure<dyn FnMut()>>>>;
 /// The drag in progress, `(last_x, start_x, start_y, moved)`, while the left button is down.
@@ -117,11 +117,8 @@ pub fn ArsenalDoll(
             let engine = engine.clone();
             let disposed = disposed.clone();
             leptos::task::spawn_local(async move {
-                match map_engine::doll::renderer::lifecycle_1::DollEngine::create(
-                    canvas.clone(),
-                    force_webgl,
-                )
-                .await
+                match paper_doll_renderer::PaperDollRenderer::create(canvas.clone(), force_webgl)
+                    .await
                 {
                     Ok(mut eng) => {
                         if disposed.load(std::sync::atomic::Ordering::Relaxed) {
@@ -171,11 +168,7 @@ pub fn ArsenalDoll(
                                 {
                                     let chip: web_sys::HtmlElement = chip.unchecked_into();
                                     let leader: web_sys::HtmlElement = leader.unchecked_into();
-                                    if anchor.len() != 2 {
-                                        set_style(&chip, "display", "none");
-                                        set_style(&leader, "display", "none");
-                                    } else {
-                                        let (ax, ay) = (anchor[0], anchor[1]);
+                                    if let Some((ax, ay)) = anchor {
                                         let cx = (ax + CALLOUT_DX)
                                             .clamp(8.0, (rect.width() - 8.0).max(8.0));
                                         let cy = (ay + CALLOUT_DY)
@@ -198,6 +191,9 @@ pub fn ArsenalDoll(
                                                 dy.atan2(dx)
                                             ),
                                         );
+                                    } else {
+                                        set_style(&chip, "display", "none");
+                                        set_style(&leader, "display", "none");
                                     }
                                 }
                             }
@@ -213,7 +209,7 @@ pub fn ArsenalDoll(
                         }
                     }
                     Err(e) => {
-                        leptos::logging::error!("DollEngine::create: {e:?}");
+                        leptos::logging::error!("PaperDollRenderer::create: {e}");
                         unavailable.set(true);
                     }
                 }
@@ -433,8 +429,8 @@ pub fn ArsenalDoll(
     }
 }
 
-/// `window.__arsenalDoll` — the smoke's proof surface: backend string, active-anchor px, and a
-/// CPU pick at css px (all straight off the live engine).
+/// `window.__arsenalDoll` — the smoke's proof surface: backend string, active-anchor px, a CPU
+/// pick at css px and the `doll_self_check` readback (all straight off the live engine).
 fn register_doll_hooks(engine: &EngineHandle) {
     let obj = js_sys::Object::new();
     let backend = Closure::wrap(Box::new({
@@ -443,7 +439,7 @@ fn register_doll_hooks(engine: &EngineHandle) {
             engine
                 .borrow()
                 .as_ref()
-                .map(|e| JsValue::from_str(&e.backend()))
+                .map(|e| JsValue::from_str(e.backend()))
                 .unwrap_or(JsValue::NULL)
         }
     }) as Box<dyn FnMut() -> JsValue>);
@@ -454,10 +450,10 @@ fn register_doll_hooks(engine: &EngineHandle) {
                 .borrow()
                 .as_ref()
                 .map(|e| {
-                    let v = e.anchor_px(idx);
                     let arr = js_sys::Array::new();
-                    for x in v {
+                    if let Some((x, y)) = e.anchor_px(idx) {
                         arr.push(&JsValue::from_f64(x));
+                        arr.push(&JsValue::from_f64(y));
                     }
                     arr.into()
                 })
@@ -474,12 +470,30 @@ fn register_doll_hooks(engine: &EngineHandle) {
                 .unwrap_or(JsValue::NULL)
         }
     }) as Box<dyn FnMut(f64, f64) -> JsValue>);
+    let self_check = Closure::wrap(Box::new({
+        let engine = engine.clone();
+        move || match engine.borrow().as_ref() {
+            Some(e) => {
+                let check = e.self_check();
+                wasm_bindgen_futures::future_to_promise(async move {
+                    check
+                        .await
+                        .map(|readout| JsValue::from_str(&readout))
+                        .map_err(|error| JsValue::from_str(&error.to_string()))
+                })
+            }
+            None => js_sys::Promise::reject(&JsValue::from_str("engine not ready")),
+        }
+    }) as Box<dyn FnMut() -> js_sys::Promise>);
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("backend"), backend.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("anchor"), anchor.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("pick"), pick.as_ref());
+    let self_check_key = JsValue::from_str("doll_self_check");
+    let _ = js_sys::Reflect::set(&obj, &self_check_key, self_check.as_ref());
     backend.forget();
     anchor.forget();
     pick.forget();
+    self_check.forget();
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__arsenalDoll"), &obj);
     }

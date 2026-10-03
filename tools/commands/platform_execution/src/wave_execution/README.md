@@ -63,7 +63,7 @@ verified <sha> ─▶ wave --close ─▶ marker commit ─▶ next wave
   receipted; `land --wave` waits for the whole wave.
 - Private target folders: each gate step that builds gets its own `CARGO_TARGET_DIR` (or trunk
   dist folder) under `<main checkout>/target/` — `gate-check`, `gate-schema`, `gate-trunk`,
-  `gate-dist-frontend`, `gate-api`, `gate-map-engine`, `gate-frontend`, `gate-tools`, and
+  `gate-dist-frontend`, `gate-api`, `gate-frontend`, `gate-tools`, and
   `gate-slice-frontend-<slice>` per slice — named in `tools/foundation/repository_layout/src/build_output.rs`;
   `TBD_GATE_CHECK_TARGET`, `TBD_GATE_SCHEMA_TARGET`, `TBD_GATE_TRUNK_TARGET` and
   `TBD_GATE_TRUNK_DIST` override the first four. `test --slice <id>` builds into

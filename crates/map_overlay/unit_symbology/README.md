@@ -51,8 +51,9 @@ cargo test -p unit_symbology   # marker vocabulary, atlas and caption cases, squ
 - Depends on: `map_draw_lanes` (`zoom_gates::px_to_m_at_zoom` for captions),
   `render_primitives` (`text` layout and metrics), `orbat_slot_ids` (`SlotUid`, the
   squad link inputs' slot ids).
-- Used by: `overlay_instances`; the map engine (`legacy/map_engine`): its editing lanes and
-  picking, slot and marker bridges; the Mission Creator's document host, marker dock, canvas
+- Used by: `overlay_instances`; `symbology_layers_gpu` (the slot and marker lanes);
+  `mission_editing_session` (the editing lanes and picking); the Mission Creator's document host,
+  marker dock, canvas
   mount and select tool, and the mortar map picker, in `apps/frontend/`.
 - Rules: every marker alias of the schema maps to a glyph (`every_schema_alias_maps`); marker
   atlas cells 0 and 1 equal the slot atlas (`marker_atlas_cells_0_and_1_match_slot_atlas`); the

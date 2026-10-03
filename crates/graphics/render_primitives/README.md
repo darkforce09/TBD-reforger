@@ -4,8 +4,8 @@ The `render_primitives` crate: the building blocks of the renderer that hold no 
 per-instance vertex layouts and the line vertex, colour normalisation, ear-clipping
 triangulation, fill and hairline composition, the procedural grid, the CPU reference of sprite
 culling, the frame ids, damage tracking and camera uniform, the bitmap font with its atlas bake,
-glyph layout and sprite packing, and the WGSL source. The graphics engine
-(`legacy/graphics_engine/`) uploads, binds and draws what these produce.
+glyph layout and sprite packing, and the WGSL source. The GPU crates (`gpu_frame` and the map
+rendering crates) upload, bind and draw what these produce.
 
 ## Contents
 
@@ -59,17 +59,18 @@ None: no feature, no environment variable. Every target builds the whole crate.
 ## Boundaries
 
 - Depends on: `bytemuck` and `earcutr`.
-- Used by: the graphics engine (`legacy/graphics_engine/`), which builds its uploads, pipelines,
-  encoder and compute cull on this crate; the map engine (`legacy/map_engine/`), whose upload
-  belts, label packers, mesh composers and frame path import it directly from the `world` tier
-  up; and the single-page app's building viewer (`apps/frontend`), which triangulates with it.
+- Used by: `gpu_frame`, which builds its uploads, pipelines, encoder and compute cull on this
+  crate; `renderer_core`; the map rendering crates (`crates/map_rendering/`), whose uploads,
+  typed layers and readback checks import it directly; the streaming, overlay, terrain and world
+  object crates, whose draw buffers, label packers and mesh composers pack its layouts; and the
+  single-page app's building viewer (`apps/frontend`), which triangulates with it.
 - Rules: graphics tier 0 with no workspace dependency (`cargo xtask verify crate-tiers`); no GPU
   handle and no browser API, so every test runs natively; no name or document names a thing in
   the world being drawn; every byte layout matches `shaders/shader.wgsl`, pinned by tests.
 
 ## Related documentation
 
-- [Graphics engine overview](/documentation/legacy/graphics_engine/graphics_engine_overview.md)
+- [Graphics engine overview](/documentation/crates/graphics/gpu_rendering_overview.md)
   — one frame across the renderer's modules.
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
   directions between the workspace crates.

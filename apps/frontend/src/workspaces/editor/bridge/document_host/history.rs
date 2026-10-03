@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_draw_lanes::lane_roles::role_id;
-use map_engine::frame::engine::RenderEngine;
+use map_renderer::engine::RenderEngine;
 use mission_crdt::soa::SlotSoa;
 use mission_document::MissionDocCore;
 use unit_symbology::squad_links::build_squad_link_segments;
@@ -18,7 +18,7 @@ use wasm_bindgen::JsCast;
 
 use crate::workspaces::editor::bridge::document_host::doc_host::DocHandle;
 use crate::workspaces::editor::bridge::tactical_graphics_authoring;
-use map_engine::frame::EngineHandle;
+use map_renderer::EngineHandle;
 use selection::SelectionHandle;
 
 struct HistoryCtx {
@@ -229,21 +229,29 @@ pub fn rebind_engine_from_doc() {
         let ids = ctx.selection.borrow().clone();
         if let Some(e) = ctx.engine.borrow_mut().as_mut() {
             let tints = unit_symbology::classification::side_tints_rgba_bytes(&soa.side_keys);
-            e.slots_bind_symbology(
-                soa.ids.clone(),
-                &soa.xy,
-                &tints,
-                soa_roles(&soa),
-                &soa.rotations,
-            );
-            e.set_selection(ids);
+            e.with_symbology(|symbology| {
+                symbology.slots_bind_symbology(
+                    soa.ids.clone(),
+                    &soa.xy,
+                    &tints,
+                    soa_roles(&soa),
+                    &soa.rotations,
+                );
+            });
+            e.with_symbology(|symbology| symbology.set_selection(ids));
             if let Some(doc) = ctx.doc.borrow().as_ref() {
                 upload_squad_links(e, doc, &soa);
                 let (vxy, valiases, vtints, vheadings) = vehicle_lane_fields();
-                e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
+                e.with_symbology(|symbology| {
+                    symbology.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings)
+                });
                 let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
-                e.markers_bind(&mxy, &mtints, micons, mcaptions);
-                e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
+                e.with_symbology(|symbology| {
+                    symbology.markers_bind(&mxy, &mtints, micons, mcaptions)
+                });
+                e.with_symbology(|symbology| {
+                    symbology.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc))
+                });
                 upload_tactical_graphics(e, doc);
             }
         }
@@ -277,23 +285,30 @@ fn after_doc_change(ctx: &HistoryCtx) {
     prune_selection(ctx);
     let ids = ctx.selection.borrow().clone();
     if let Some(e) = ctx.engine.borrow_mut().as_mut() {
-        e.set_drag(Vec::new(), 0.0, 0.0); // clear any live drag overlay
+        // clear any live drag overlay
+        e.with_symbology(|symbology| symbology.set_drag(Vec::new(), 0.0, 0.0));
         let tints = unit_symbology::classification::side_tints_rgba_bytes(&soa.side_keys);
-        e.slots_bind_symbology(
-            soa.ids.clone(),
-            &soa.xy,
-            &tints,
-            soa_roles(&soa),
-            &soa.rotations,
-        );
-        e.set_selection(ids);
+        e.with_symbology(|symbology| {
+            symbology.slots_bind_symbology(
+                soa.ids.clone(),
+                &soa.xy,
+                &tints,
+                soa_roles(&soa),
+                &soa.rotations,
+            );
+        });
+        e.with_symbology(|symbology| symbology.set_selection(ids));
         if let Some(doc) = ctx.doc.borrow().as_ref() {
             upload_squad_links(e, doc, &soa);
             let (vxy, valiases, vtints, vheadings) = vehicle_lane_fields();
-            e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
+            e.with_symbology(|symbology| {
+                symbology.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings)
+            });
             let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
-            e.markers_bind(&mxy, &mtints, micons, mcaptions);
-            e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
+            e.with_symbology(|symbology| symbology.markers_bind(&mxy, &mtints, micons, mcaptions));
+            e.with_symbology(|symbology| {
+                symbology.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc))
+            });
             upload_tactical_graphics(e, doc);
         }
     }

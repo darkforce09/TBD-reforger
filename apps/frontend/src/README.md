@@ -20,10 +20,9 @@ apps/frontend/src/
 
 ## How it works
 
-`start_app` in `main.rs` is a `#[wasm_bindgen(start)]` function rather than the binary's `main`,
-because the map engine registers a start function of its own and wasm-bindgen runs every
-registered start but never a binary's `main`. It registers the offline service worker, installs
-the panic hook and mounts `<div id="root"><Router><AppLayout/></Router></div>` into the body;
+`start_app` in `main.rs` is the module's only `#[wasm_bindgen(start)]` function, which
+wasm-bindgen runs when the module instantiates; the binary's `main` stays empty. It installs the
+panic hook (no linked library installs one), registers the offline service worker and mounts `<div id="root"><Router><AppLayout/></Router></div>` into the body;
 `AppLayout`, in `shell/`, provides the session store and the toast queue, restores a stored
 session, and renders `AppRoutes` inside the frame the route asks for. On a native build `main` is
 empty and nothing mounts.
@@ -38,10 +37,10 @@ The layers stack in one order, and a layer imports only the layers below it:
 
 | Layer | Imports |
 |---|---|
-| `foundation/` | `map_engine`, in the wire types and the map seam |
+| `foundation/` | the map crates (`map_renderer`, `map_streaming_host`, `map_streaming_model`), in the map seam |
 | `features/` | `foundation/` |
-| `pages/` | `foundation/`, `features/` and `map_engine`; never a workspace, never another page area |
-| `workspaces/` | `foundation/`, `features/` and `map_engine`; never a page, never a sibling workspace |
+| `pages/` | `foundation/` and `features/`; never a workspace, never another page area |
+| `workspaces/` | `foundation/`, `features/` and the map crates; never a page, never a sibling workspace |
 | `shell/`, `main.rs`, `app_routes.rs` | every layer below |
 
 `cargo xtask verify frontend-layering` counts the imports that break this order against a ceiling;
@@ -67,7 +66,7 @@ walks every production file below this folder.
 ## Boundaries
 
 - Depends on: `leptos` and `leptos_router` for the router, `wasm-bindgen` for the start function,
-  `console_error_panic_hook`; `map_engine`, never the graphics engine; the browser bindings
+  `console_error_panic_hook`; the map crates; the browser bindings
   `apps/frontend/Cargo.toml` names.
 - Used by: `apps/frontend/index.html`, whose `rust` link has Trunk build this binary; the headless
   browser gates of `tools/browser_testing/browser_gate_suites/`, which drive the built app by its
@@ -76,9 +75,6 @@ walks every production file below this folder.
   - every production file opens with a `//!` header, stays within 500 lines, documents every
     visible item, holds no inline test module and names no ticket or wave in a comment
     (`frontend_production_files_meet_the_documentation_standard` in `tests/doc_audit/mod.rs`);
-  - nothing imports `graphics_engine` (`cargo xtask verify engine-layers`, rule 6 of the
-    [engine boundary rules](/documentation/standards/engine_boundary_rules.md); the map engine's
-    packet boundary, section 2C there, is the only path to the renderer);
   - the layer order above, checked by `cargo xtask verify frontend-layering`.
 
 ## Related documentation

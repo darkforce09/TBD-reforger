@@ -84,7 +84,7 @@ pub(super) fn render_editor_prefs_body() -> AnyView {
                                 let mut p = wlp::load_prefs();
                                 p.set(key, checked);
                                 wlp::save_prefs(&p);
-                                map_engine::streaming::host::refresh_world_layers();
+                                map_streaming_host::refresh_world_layers();
                             }
                             class="accent-primary"
                         />
@@ -111,7 +111,7 @@ pub(super) fn render_editor_prefs_body() -> AnyView {
                                     }
                                     on:click=move |_| {
                                         wlp::save_basemap_view(v);
-                                        map_engine::streaming::host::apply_basemap_view(v);
+                                        map_streaming_host::apply_basemap_view(v);
                                         basemap.set(v.to_string());
                                     }
                                 >

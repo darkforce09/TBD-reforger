@@ -165,7 +165,8 @@ collision hierarchies (`*.bvh`) and the `*.rkyv` archives. The 625 forest-densit
 `objects/density/` are ordinary git blobs. A clone without the LFS objects has pointer files
 instead: manifests and JSON load, and the elevation, satellite and object layers do not.
 
-1. Pull the elevation raster, which the `map_engine` tests and the hillshade need.
+1. Pull the elevation raster, which the terrain and world-object crates' tests and the hillshade
+   need.
 
    ```bash
    cargo xtask ci lfs-dem

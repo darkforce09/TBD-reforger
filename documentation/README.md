@@ -24,7 +24,6 @@ documentation/
 ├── design_system/           design tokens, symbology and interaction patterns the website and mod share
 ├── glossary/                the project's terms and abbreviations, split by first letter
 ├── known_bugs/              the live registry of known bugs
-├── legacy/                  documents on the map and graphics engines parked in legacy/
 ├── mod/                     documents on the Enfusion mod suite in apps/mod/
 ├── product_roadmap.md       the planned product items by area and the open product questions
 ├── restructure/             the active workspace restructure program: plan, target tree, progress
@@ -90,7 +89,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 | a web page's behaviour, design, open work and decisions | `apps/frontend/pages/<area>/<page>/`, indexed by the [frontend README](/documentation/apps/frontend/README.md) |
 | the Mission Creator: features, roadmap, UX decisions, Eden reference | [apps/frontend/apps/editor/](/documentation/apps/frontend/workspaces/editor/README.md) |
 | the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [apps/api/](/documentation/apps/api/README.md), starting at the [API overview](/documentation/apps/api/api_overview.md) |
-| the map engine and the graphics engine | [legacy/](/documentation/legacy/README.md) |
+| the map's streaming, rendering and GPU crates, the paper doll and the editing layer | [crates/](/documentation/crates/README.md) |
 | the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [mod/](/documentation/mod/README.md) |
 | how a terrain becomes the map data the platform serves | [assets/](/documentation/assets/README.md) |
 | how a game host carries out server commands | [apps/fleet_host_agent/](/documentation/apps/fleet_host_agent/README.md) |
@@ -110,7 +109,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 
 - [Applications](/apps/README.md) — the API, the app, the service worker, the host agent and
   ticketboard, documented under `apps/`.
-- [Parked engines](/legacy/README.md) — the map and graphics engines, documented under `legacy/`.
+- [Library crates](/crates/README.md) — documented under `documentation/crates/`.
 - [Mod suite](/apps/mod/README.md) — documented under `mod/`.
 - [Developer tools](/tools/README.md) — documented under `documentation/tools/`.
 - [Contracts](/contracts/README.md) — documented under `documentation/contracts/`.

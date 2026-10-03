@@ -37,14 +37,14 @@ does. Read the editing layer first. Each document follows the
   code of the mission editing crates and of the Mission Creator that calls them; the ticket
   registry in `.ai/tickets/` for open work; the glossary for its terms.
 - Used by: the READMEs of the mission editing crates, the
-  [map engine documentation](/documentation/legacy/map_engine/README.md) and its overview, and the
-  [engine boundary rules](/documentation/standards/engine_boundary_rules.md).
+  [map rendering documentation](/documentation/crates/map_rendering/README.md) and its overview, and the
+  [crate boundary rules](/documentation/standards/crate_boundary_rules.md).
 - Rules: a document describes the committed code and stays within 500 lines; a document of one
   crate sits in that crate's folder here, with a README at each level.
 
 ## Related documentation
 
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the headless
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the headless
   editing layer and the browser ban the crate-tier law enforces on it.
-- [Map engine documentation](/documentation/legacy/map_engine/README.md) — the crate that draws
-  what the layer edits.
+- [Map rendering documentation](/documentation/crates/map_rendering/README.md) — the renderer that
+  draws what the layer edits.

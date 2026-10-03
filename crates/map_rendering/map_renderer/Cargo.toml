@@ -1,0 +1,60 @@
+# The map's renderer: `RenderEngine`, which creates the GPU of the Mission Creator's map canvas
+# through the GPU device's context, owns the shader, layouts, pipelines, camera and the persistent
+# batch list, holds the symbology and world typed layers as fields and lends them its lanes, writes
+# the vector, marquee and label lanes, encodes one frame packet per damaged frame, reports its
+# statistics and serves the streaming host as its asset sink. Everything that names a GPU or
+# browser type is wasm32 only; the native build keeps the error type, the surface size policy, the
+# statistics report and the calibration scene, which the native tests cover.
+[package]
+name = "map_renderer"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The map renderer: the render engine, its pipelines, batch list, lane sinks, upload belts, statistics and asset sink."
+
+[package.metadata.layout]
+category = "crates/map_rendering"
+tier = 5
+targets = "wasm32"
+
+[dependencies]
+# The lane sink, the layer context, the frame hooks, the render statistics with their JSON writer
+# and the frame packet's binding ids.
+renderer_core = { workspace = true }
+# The frame vocabulary (batches, payloads, the packet, the text atlas), the line and mesh uploads,
+# the packet encoder, the compute cull, the pipeline constructors and the frame pump.
+gpu_frame = { workspace = true }
+# The GPU context of the canvas (create, resize, acquire) and the timestamp frame timer.
+gpu_device = { workspace = true }
+# The instance layouts, the opaque ids, the camera uniform, damage tracking and the text uniform
+# block and baked atlas.
+render_primitives = { workspace = true }
+# The orthographic camera the engine moves.
+camera_math = { workspace = true }
+# The scene anchor, the opening view, the island bounds and JavaScript's rounding rule.
+map_coordinates = { workspace = true }
+# The lane roles, their lane ids and the lane list the bind table is sized from.
+map_draw_lanes = { workspace = true }
+# The symbology's typed GPU layers the engine holds: slot symbology, glyph atlas, icon lane cull,
+# world icon lanes, lane preferences.
+symbology_layers_gpu = { workspace = true }
+# The streamed world's typed GPU layers the engine holds: buildings, forest density, terrain
+# textures, terrain line of sight overlay, and their textured lane record.
+world_layers_gpu = { workspace = true }
+# The asset sink and viewport contracts the engine implements for the streaming host.
+map_streaming_model = { workspace = true }
+# The monotonic clock of the frame timing.
+time_source = { workspace = true }
+# Byte views of the camera matrix, the unit quad and the calibration quads.
+bytemuck = { workspace = true }
+thiserror = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+# The canvas the engine is created on and the browser bitmap a texture write copies from.
+web-sys = { workspace = true, features = ["HtmlCanvasElement", "ImageBitmap"] }
+
+[lints]
+workspace = true

@@ -53,7 +53,7 @@ come back separately through `archived_blas_paths`.
   `geometry_primitives` (`Bounds3`), `serde`, `rkyv`, `bytemuck` and `thiserror`.
 - Used by: the rest of the crate, which re-exports the types from its root and expands
   descriptors into traceable occluders; the occluder loader
-  (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), which boots from the
+  (`crates/streaming/map_asset_loading/src/occluder_loader.rs`), which boots from the
   archive and fetches the manifest and the blocking descriptors; the blueprint tooling in
   `tools/map_assets/blueprint_compiler/src/archive_emission/`, which writes the descriptors, the
   manifest and the archive; and the library checks in

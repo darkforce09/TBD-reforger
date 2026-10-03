@@ -64,7 +64,7 @@ the instanced glyph pass.
     folder comes from `GLYPH_ASSETS_DIR` (default `../../../assets/glyphs`, from the API's
     working directory) and sits below the rate limiter;
   - the map engine's world boot in
-    `legacy/map_engine/src/streaming/loaders/world_loader/atlas.rs`, which reads `atlas/`;
+    `crates/streaming/map_asset_loading/src/world_loader/atlas.rs`, which reads `atlas/`;
   - `cargo xtask schema map-glyphs`, which also requires every `render.iconKey` in
     `contracts/fixtures/map/map-object-prefabs-sample.json` and in the committed Everon
     catalogue `assets/terrains/everon/objects/prefabs.json.gz` to have a manifest entry, and

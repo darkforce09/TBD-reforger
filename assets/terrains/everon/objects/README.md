@@ -71,7 +71,8 @@ census.
   `forest_contours.rs`), `world build-roads` (`roads_emit.rs`), `world reclassify` and
   `world redensify`; `cargo xtask map export-terrain` runs the first two.
 - Consumers:
-  - the map engine's world loader and residency (`legacy/map_engine/src/streaming/`), which
+  - the world loader and residency of the streaming crates
+    (`crates/streaming/map_asset_loading/src/world_loader/`, `crates/streaming/chunk_draw_buffers/`), which
     read the chunks through `world_chunks`, the catalogue through `prefab_catalog`, the regions
     through `vegetation`, the store through `world_store` and the roads through `road_network`
     (`crates/terrain/road_network/`), over `/map-assets/everon/objects/…`;
@@ -94,7 +95,7 @@ census.
 
 ## Related documentation
 
-- [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how these
+- [World asset loaders](/crates/streaming/map_asset_loading/src/README.md) — how these
   files are fetched and made resident.
 - [World chunks](/crates/world_formats/world_chunks/README.md) — how the manifest and chunks
   are parsed.

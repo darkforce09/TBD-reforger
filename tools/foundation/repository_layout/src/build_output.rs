@@ -33,8 +33,6 @@ pub const GATE_CHECK_SUBFOLDER: &str = "gate-check";
 pub const GATE_SCHEMA_SUBFOLDER: &str = "gate-schema";
 /// The wave gate's `api` test `CARGO_TARGET_DIR`.
 pub const GATE_API_SUBFOLDER: &str = "gate-api";
-/// The wave gate's `map_engine` test `CARGO_TARGET_DIR`.
-pub const GATE_MAP_ENGINE_SUBFOLDER: &str = "gate-map-engine";
 /// The wave gate's `frontend` test `CARGO_TARGET_DIR`.
 pub const GATE_FRONTEND_SUBFOLDER: &str = "gate-frontend";
 /// The wave gate's `xtask` and `developer_tools` test `CARGO_TARGET_DIR`.
@@ -64,7 +62,6 @@ pub const PURPOSE_SUBFOLDERS: &[&str] = &[
     GATE_CHECK_SUBFOLDER,
     GATE_SCHEMA_SUBFOLDER,
     GATE_API_SUBFOLDER,
-    GATE_MAP_ENGINE_SUBFOLDER,
     GATE_FRONTEND_SUBFOLDER,
     GATE_TOOLS_SUBFOLDER,
     CONTINUOUS_INTEGRATION_SUBFOLDER,

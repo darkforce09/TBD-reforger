@@ -9,8 +9,8 @@ streams, the single-page app with every page and the
 [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) and
 [ticketboard](/documentation/glossary/n_to_z.md#ticketboard). Developers and AI agents read it below
 the code READMEs, for behaviour, design, open work and decisions. The mod's documents are in
-[mod/](/documentation/mod/README.md), and the map and graphics engines' in
-[legacy/](/documentation/legacy/README.md).
+[mod/](/documentation/mod/README.md), and the library crates' in
+[crates/](/documentation/crates/README.md).
 
 ## Contents
 
@@ -38,7 +38,8 @@ decisions behind them.
 | `ticketboard` | [`apps/ticketboard/`](/apps/ticketboard/README.md): the native egui viewer of `.ai/tickets/` | [ticketboard documentation](/documentation/apps/ticketboard/README.md) |
 
 The browser runs the app, which calls the API over `/api/v1` and SSE and streams terrain from
-`/map-assets`; both link the map engine in `legacy/`. The service worker in
+`/map-assets`; the app links the map rendering, streaming and mission crates in `crates/`, the
+API the mission crates. The service worker in
 `apps/offline_service_worker/` is documented with the app's offline support in
 [frontend/](/documentation/apps/frontend/README.md). The
 [applications README](/apps/README.md) draws the whole picture and gives the commands that run

@@ -1,4 +1,4 @@
-**Status:** archived — see [documentation_v2/standards/engine_boundary_rules.md](/documentation/standards/engine_boundary_rules.md)
+**Status:** archived — see [documentation_v2/standards/engine_boundary_rules.md](/documentation/standards/crate_boundary_rules.md)
 
 # Engine Split Program — graphics-engine / map-engine / editor app
 

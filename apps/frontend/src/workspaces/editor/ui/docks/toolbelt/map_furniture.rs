@@ -22,7 +22,7 @@ pub fn ScaleBar(
         }
         let mut deck_zoom = -2.0_f64;
         {
-            if let Some((_, _, z)) = map_engine::streaming::host::camera_snapshot() {
+            if let Some((_, _, z)) = map_streaming_host::camera_snapshot() {
                 deck_zoom = z;
             }
         }
@@ -59,7 +59,7 @@ pub fn MapGridRefs(
             use crate::workspaces::editor::session::layout::{
                 DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX,
             };
-            let Some((tx, ty, zoom)) = map_engine::streaming::host::camera_snapshot() else {
+            let Some((tx, ty, zoom)) = map_streaming_host::camera_snapshot() else {
                 return (Vec::new(), Vec::new());
             };
             let Some(win) = web_sys::window() else {

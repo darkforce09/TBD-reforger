@@ -1,7 +1,7 @@
 //! The fixed preferences of a terrain-and-imagery view.
 
 use super::{terrain_and_imagery_preferences, HILLSHADE_OPACITY, SATELLITE_BASEMAP};
-use map_engine::streaming::bridge::host_preferences::BootstrapScope;
+use map_streaming_model::host_preferences::BootstrapScope;
 
 #[test]
 fn the_scope_keeps_heights_and_skips_every_world_layer() {

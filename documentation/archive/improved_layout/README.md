@@ -26,7 +26,7 @@ held into its plan and target tree. A record here is never edited after it lands
 
 ## Code
 
-- [API](/apps/api/), [frontend](/apps/frontend/), [legacy engines](/legacy/) and
+- [API](/apps/api/), [frontend](/apps/frontend/), [legacy engines](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy) and
   [mod suite](/apps/mod/) — the code trees the proposals described.
 
 ## Boundaries

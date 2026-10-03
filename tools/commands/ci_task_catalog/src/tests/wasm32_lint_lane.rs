@@ -44,17 +44,16 @@ fn every_declared_wasm32_member_is_linted() {
     }
 }
 
-/// The browser applications and the engines still under `legacy/` are linted too, and
-/// nothing else is.
+/// The browser applications are linted too, and nothing else is.
 #[test]
-fn the_lint_covers_exactly_the_wasm32_members_the_applications_and_the_engines() {
+fn the_lint_covers_exactly_the_wasm32_members_and_the_applications() {
     let members: Vec<String> = read_workspace_members(&root())
         .expect("the workspace members read")
         .into_iter()
         .map(|member| member.package_name)
         .collect();
     let mut expected = declared_wasm32_packages();
-    for package in BROWSER_APPLICATIONS.iter().chain(&LEGACY_BROWSER_ENGINES) {
+    for package in &BROWSER_APPLICATIONS {
         if members.iter().any(|member| member == package) {
             expected.push((*package).to_string());
         }

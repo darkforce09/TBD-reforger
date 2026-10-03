@@ -1,0 +1,28 @@
+# The GPU device of a browser canvas: one bootstrap (instance, surface, adapter, device, queue and
+# surface configuration) with its resize and swapchain acquire, the web display handle, the pooled
+# per-lane buffers, the one-mapping-at-a-time readback guard and the timestamp-query frame timer.
+# Everything that names a GPU or browser type is wasm32 only; the native build keeps the pool
+# arithmetic, the readback guard and the surface policy, which the native tests cover.
+[package]
+name = "gpu_device"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "GPU context bootstrap for a browser canvas, pooled lane buffers, readback guards and the frame timer."
+
+[package.metadata.layout]
+category = "crates/graphics"
+tier = 0
+targets = "wasm32"
+
+[dependencies]
+thiserror = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+web-sys = { workspace = true, features = ["HtmlCanvasElement"] }
+
+[lints]
+workspace = true

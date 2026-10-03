@@ -4,9 +4,10 @@
 //! **Role:** canvas sizing, render engine creation, the camera fitted to a terrain manifest's
 //! `worldBounds`, the damage-driven frame pump, resize tracking, drag-pan, wheel-zoom and
 //! click-to-pick in map metres, and 2 m ground heights from the full-resolution elevation raster.
-//! **Position:** under `core`, between the pages and `map_engine`. The Mission Creator
-//! (`apps/editor`) builds its canvas mount from these parts and keeps its tools to itself; map
-//! pickers call [`mount::mount_map_view`] with [`terrain_preferences`].
+//! **Position:** under `core`, between the pages and the map crates (`map_renderer`,
+//! `map_streaming_host`). The Mission Creator (`apps/editor`) builds its canvas mount from these
+//! parts and keeps its tools to itself; map pickers call [`mount::mount_map_view`] with
+//! [`terrain_preferences`].
 //! **Signals & state:** per mount, the shared slots of [`handles::MapViewHandles`]; no
 //! module-level state.
 //! **Invariants:** nothing here imports from `pages` or `apps`; the pure half (sizing, camera

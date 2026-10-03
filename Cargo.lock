@@ -3248,16 +3248,21 @@ dependencies = [
  "geometry_primitives",
  "gloo-net",
  "gloo-timers",
+ "gpu_frame",
  "http_url_guard",
  "idb",
  "interior_line_of_sight",
  "js-sys",
  "leptos",
  "leptos_router",
+ "map_asset_loading",
  "map_coordinates",
  "map_draw_lanes",
  "map_editing_tools",
- "map_engine",
+ "map_render_diagnostics",
+ "map_renderer",
+ "map_streaming_host",
+ "map_streaming_model",
  "mission_compiler",
  "mission_crdt",
  "mission_document",
@@ -3270,6 +3275,7 @@ dependencies = [
  "mission_validation",
  "offline_cache_policy",
  "overlay_instances",
+ "paper_doll_renderer",
  "render_primitives",
  "road_network",
  "satellite_imagery",
@@ -3682,11 +3688,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "graphics_engine"
+name = "gpu_device"
+version = "0.1.0"
+dependencies = [
+ "thiserror 2.0.18",
+ "web-sys",
+ "wgpu 29.0.4",
+]
+
+[[package]]
+name = "gpu_frame"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
  "render_primitives",
+ "thiserror 2.0.18",
  "wasm-bindgen",
  "web-sys",
  "wgpu 29.0.4",
@@ -4797,6 +4813,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "map_asset_loading"
+version = "0.1.0"
+dependencies = [
+ "browser_platform",
+ "chunk_draw_buffers",
+ "chunk_scheduler",
+ "futures",
+ "js-sys",
+ "label_layout",
+ "map_coordinates",
+ "map_draw_lanes",
+ "map_streaming_model",
+ "place_names",
+ "render_primitives",
+ "road_network",
+ "satellite_imagery",
+ "serde_json",
+ "spatial_indexes",
+ "terrain_elevation",
+ "terrain_relief",
+ "vegetation",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "water_bodies",
+ "web-sys",
+ "world_chunks",
+ "world_file_formats",
+ "world_line_of_sight",
+ "world_store",
+]
+
+[[package]]
 name = "map_asset_verification"
 version = "0.1.0"
 dependencies = [
@@ -4857,50 +4905,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "map_engine"
-version = "0.1.0"
-dependencies = [
- "browser_platform",
- "bytemuck",
- "camera_math",
- "chunk_draw_buffers",
- "chunk_scheduler",
- "console_error_panic_hook",
- "flate2",
- "futures",
- "graphics_engine",
- "interior_line_of_sight",
- "js-sys",
- "label_layout",
- "map_coordinates",
- "map_draw_lanes",
- "overlay_instances",
- "place_names",
- "prefab_catalog",
- "render_primitives",
- "rkyv 0.8.18",
- "road_network",
- "satellite_imagery",
- "serde",
- "serde_json",
- "spatial_indexes",
- "terrain_elevation",
- "terrain_line_of_sight",
- "terrain_relief",
- "unit_symbology",
- "vegetation",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "water_bodies",
- "web-sys",
- "wgpu 29.0.4",
- "world_chunks",
- "world_file_formats",
- "world_line_of_sight",
- "world_store",
-]
-
-[[package]]
 name = "map_raster_pipeline"
 version = "0.1.0"
 dependencies = [
@@ -4924,6 +4928,80 @@ dependencies = [
  "webp",
  "world_export_pipeline",
  "world_file_formats",
+]
+
+[[package]]
+name = "map_render_diagnostics"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera_math",
+ "gpu_frame",
+ "js-sys",
+ "map_coordinates",
+ "map_draw_lanes",
+ "map_renderer",
+ "render_primitives",
+ "renderer_core",
+ "symbology_layers_gpu",
+ "time_source",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "wgpu 29.0.4",
+]
+
+[[package]]
+name = "map_renderer"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera_math",
+ "gpu_device",
+ "gpu_frame",
+ "map_coordinates",
+ "map_draw_lanes",
+ "map_streaming_model",
+ "render_primitives",
+ "renderer_core",
+ "symbology_layers_gpu",
+ "thiserror 2.0.18",
+ "time_source",
+ "web-sys",
+ "wgpu 29.0.4",
+ "world_layers_gpu",
+]
+
+[[package]]
+name = "map_streaming_host"
+version = "0.1.0"
+dependencies = [
+ "browser_platform",
+ "futures",
+ "js-sys",
+ "label_layout",
+ "map_asset_loading",
+ "map_streaming_model",
+ "serde",
+ "serde_json",
+ "terrain_elevation",
+ "terrain_relief",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "water_bodies",
+ "web-sys",
+ "world_chunks",
+ "world_line_of_sight",
+]
+
+[[package]]
+name = "map_streaming_model"
+version = "0.1.0"
+dependencies = [
+ "render_primitives",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -6003,6 +6081,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "paper_doll_renderer"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera_math",
+ "gpu_device",
+ "js-sys",
+ "paper_doll_scene",
+ "thiserror 2.0.18",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "wgpu 29.0.4",
+]
+
+[[package]]
+name = "paper_doll_scene"
+version = "0.1.0"
+dependencies = [
+ "camera_math",
+]
+
+[[package]]
 name = "parking"
 version = "2.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6975,6 +7075,15 @@ name = "renderdoc-sys"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
+
+[[package]]
+name = "renderer_core"
+version = "0.1.0"
+dependencies = [
+ "gpu_frame",
+ "render_primitives",
+ "wgpu 29.0.4",
+]
 
 [[package]]
 name = "repository_checks"
@@ -8406,6 +8515,25 @@ checksum = "68c7541fff44b35860c1a7a47a7cadf3e4a304c457b58f9870d9706ece028afc"
 dependencies = [
  "kurbo 0.11.3",
  "siphasher",
+]
+
+[[package]]
+name = "symbology_layers_gpu"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera_math",
+ "gpu_device",
+ "gpu_frame",
+ "map_coordinates",
+ "map_draw_lanes",
+ "overlay_instances",
+ "render_primitives",
+ "renderer_core",
+ "spatial_indexes",
+ "thiserror 2.0.18",
+ "unit_symbology",
+ "wgpu 29.0.4",
 ]
 
 [[package]]
@@ -10606,6 +10734,21 @@ dependencies = [
  "rkyv 0.8.18",
  "serde_json",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "world_layers_gpu"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "gpu_frame",
+ "map_coordinates",
+ "map_draw_lanes",
+ "render_primitives",
+ "renderer_core",
+ "thiserror 2.0.18",
+ "web-sys",
+ "wgpu 29.0.4",
 ]
 
 [[package]]

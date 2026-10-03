@@ -184,7 +184,7 @@ fault point to nothing. The `engineering_laws` suite holds both halves.
   `src/bin/api.rs` names `api_background_workers` (`src/tests/architecture_rules.rs` reads the
   API crates' manifests and sources); an applied migration never changes
   (`tests/migrations_are_immutable.rs`); neither the application nor any API crate depends on
-  `map_engine`, `graphics_engine` or `frontend`, and
+  a GPU crate (the eight crates the wgpu firewall admits) or `frontend`, and
   `api_failpoints`' `failpoints` stays a test-only feature (`tests/engineering_laws.rs`); the
   crate builds with
   the workspace root's `rust-toolchain.toml` and `rustfmt.toml`; the local Postgres 18 service

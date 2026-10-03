@@ -79,7 +79,7 @@ native test build compiles all five surfaces.
     store, the UI primitives, the modal stack and the toasts;
   - `mission_editing_commands::hosted_commands`, `mission_editing_session::host` and
     `map_editing_tools`;
-  - `map_engine`: `streaming::host` and `camera`;
+  - `map_streaming_host`;
   - `mission_operations::document_index`;
   - `unit_symbology::markers`;
   - `contracts/definitions/mission.schema.json`, through the zones panel's embed; the browser's

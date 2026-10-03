@@ -22,7 +22,7 @@ use super::*;
 ///
 /// ## Why the answer can be trusted
 ///
-/// This runs `flatten_mod_document_json`  the same `map_engine` compile the artifact
+/// This runs `flatten_mod_document_json`  the same `mission_compiler` compile the artifact
 /// compile runs, over the same two inputs:
 ///
 ///   * the **row** ([`ROW_META`]): `GET /missions/:id` in the Mission Creator, which is where the
@@ -60,7 +60,7 @@ pub fn compiled_document_json() -> Result<String, String> {
 /// `flatten_mod_document_json_full` exists to forbid  two compiles are two things that can
 /// disagree about what was compiled.
 ///
-/// The findings are `map_engine_core::mission::validate::Finding`s  the  vocabulary
+/// The findings are `mission_validation`'s `Finding`s  the  vocabulary
 /// (`rule_id` / `severity` / `primitive` / `message` / `subject` / `subject_id`), reused so the
 ///  panel renders a compile finding through exactly the same row as a validation finding
 /// and click-to-select works on both.

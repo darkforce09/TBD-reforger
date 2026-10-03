@@ -1,0 +1,39 @@
+# The Arsenal paper doll's renderer: a wgpu renderer on its own canvas that draws the soldier of
+# `paper_doll_scene` as instanced cubes and one cylinder with depth testing, damage-driven, plus
+# its byte-exact offscreen readback self-check. Everything that names a GPU or browser type is
+# wasm32 only; the native build keeps the instance stream packing and the error type, which the
+# native tests cover.
+[package]
+name = "paper_doll_renderer"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Arsenal paper doll's wgpu renderer, its instance stream packing and its readback self-check."
+
+[package.metadata.layout]
+category = "crates/paper_doll"
+tier = 3
+targets = "wasm32"
+
+[dependencies]
+# The soldier's parts, regions, state colours, unit meshes, picks and anchors.
+paper_doll_scene = { workspace = true }
+# The GPU context of the canvas (create, resize, acquire) and its typed error.
+gpu_device = { workspace = true }
+# The orbit camera's wgpu and GL projections the frame and the self-check draw and probe with.
+camera_math = { workspace = true }
+# The instance stream's byte packing and the uniform upload.
+bytemuck = { workspace = true }
+thiserror = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+# The canvas the renderer draws into and the timer the self-check's readback polls with.
+web-sys = { workspace = true, features = ["HtmlCanvasElement", "Window"] }
+js-sys = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+
+[lints]
+workspace = true

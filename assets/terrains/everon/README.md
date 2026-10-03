@@ -26,7 +26,7 @@ assets/terrains/everon/
 ## How it works
 
 Every reader starts at `manifest.json`. The map engine's host fetches
-`/map-assets/everon/manifest.json` first (`legacy/map_engine/src/streaming/host/bootstrap.rs`)
+`/map-assets/everon/manifest.json` first (`crates/streaming/map_streaming_host/src/bootstrap.rs`)
 and from it loads the elevation model its `dem` block names, the satellite container of
 `tiles.satellite.unified`, the objects its `objects` block and `objects.binary` block name (the
 archive of a pair when the binary block names it, the gzip JSON otherwise), the label archive of
@@ -97,18 +97,19 @@ towns and road names from the archive and finds the spot heights on the elevatio
     elevation model, the objects and the building blueprints;
   - people: the anchors, `road-names.json`, the scene specs and the hand-kept manifest blocks.
 - Consumers:
-  - the map engine in the browser (`legacy/map_engine/src/streaming/` and
-    `legacy/map_engine/src/world/`), over `/map-assets/everon/…`;
+  - the streaming crates in the browser (`crates/streaming/map_asset_loading/` and
+    `crates/streaming/map_streaming_host/`), over `/map-assets/everon/…`;
   - the xtask schema gates: `schema validate` (the manifest, `locations.json`, `height-labels.json`,
     the anchors sample and the census), `schema terrain-manifest`, `schema terrain-alignment`,
     `schema height-labels`, `schema locations`, `schema town-labels`, `schema road-names`,
     `schema type-inventory` and `schema map-object-golden`, and `cargo xtask verify blas-manifest`;
   - the developer tools' map verifications (`tools/map_assets/map_asset_verification/src/`) and
     headless editor checks;
-  - `cargo xtask ci lfs-dem` and `cargo xtask ci lfs-sat`, the `map-engine` and `schema` jobs of
+  - `cargo xtask ci lfs-dem` and `cargo xtask ci lfs-sat`, the `workspace-members` and `schema` jobs of
     `.github/workflows/ci.yml` (the DEM only) and `.github/workflows/editor-gates.yml` (every LFS
     object here);
-  - the map engine's and developer tools' native tests, which read the committed files from disk.
+  - the terrain, world object and streaming crates' and developer tools' native tests, which read
+    the committed files from disk.
 
 ## Boundaries
 
@@ -127,9 +128,9 @@ towns and road names from the archive and finds the spot heights on the elevatio
 
 ## Related documentation
 
-- [World asset loaders](/legacy/map_engine/src/streaming/loaders/README.md) — how the browser
+- [World asset loaders](/crates/streaming/map_asset_loading/src/README.md) — how the browser
   fetches and streams these files.
-- [Map streaming host](/legacy/map_engine/src/streaming/host/README.md) — the boot order.
+- [Map streaming host](/crates/streaming/map_streaming_host/src/README.md) — the boot order.
 - [World Export Pipeline](/tools/map_assets/world_export_pipeline/src/README.md) — the
   object export commands.
 - [Map Raster Pipeline](/tools/map_assets/map_raster_pipeline/src/README.md) — the raster,

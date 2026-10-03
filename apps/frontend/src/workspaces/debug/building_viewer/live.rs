@@ -7,11 +7,11 @@ use building_interiors::blueprint::structure::BuildingBlueprint;
 use building_interiors::compound::assembly::CompoundBuilding;
 use building_interiors::compound::instances::InstancesFile;
 use building_interiors::section::cutter::BuildingDrawing;
+use gpu_frame::frame_pump::RafPump;
 use interior_line_of_sight::floor_wash::LevelWash;
 use leptos::prelude::*;
 use map_draw_lanes::lane_roles::role_id;
-use map_engine::frame::engine::RenderEngine;
-use map_engine::frame::RafPump;
+use map_renderer::engine::RenderEngine;
 use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -130,25 +130,27 @@ fn upload_wash(e: &mut RenderEngine, wash: Option<&LevelWash>) {
     match wash {
         Some(w) => {
             let t = geom::wash_texture(w);
-            if let Err(err) = e.viewshed_upload(
-                t.min_x,
-                t.min_y,
-                t.max_x,
-                t.max_y,
-                t.tex_w,
-                t.tex_h,
-                &t.rgba,
-                t.stride_bytes,
-            ) {
-                let err: JsValue = err.into();
+            if let Err(err) = e.with_terrain_line_of_sight_overlay(|overlay| {
+                overlay.viewshed_upload(
+                    t.min_x,
+                    t.min_y,
+                    t.max_x,
+                    t.max_y,
+                    t.tex_w,
+                    t.tex_h,
+                    &t.rgba,
+                    t.stride_bytes,
+                )
+            }) {
+                let err: JsValue = JsError::from(err).into();
                 web_sys::console::warn_2(
                     &"building-viewer: viewshed wash upload failed".into(),
                     &err,
                 );
-                e.viewshed_clear();
+                e.with_terrain_line_of_sight_overlay(|overlay| overlay.viewshed_clear());
             }
         }
-        None => e.viewshed_clear(),
+        None => e.with_terrain_line_of_sight_overlay(|overlay| overlay.viewshed_clear()),
     }
     e.mark_dirty();
 }

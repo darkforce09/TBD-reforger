@@ -1,0 +1,67 @@
+# The browser loaders of the served map assets: the world chunk and occluder loaders, the
+# elevation, water, relief, satellite, forest and label loaders, the live memory budget, the asset
+# statistics published to the page and the CPU mesh composition they share. Every loader writes the
+# renderer only through `map_streaming_model`'s `MapAssetSink`. Everything that fetches or names a
+# browser type is wasm32 only; the native build keeps the mesh composition and the live budget,
+# which the native tests cover.
+[package]
+name = "map_asset_loading"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Browser loaders of the served map assets writing through the MapAssetSink, the live memory budget and the asset statistics."
+
+[package.metadata.layout]
+category = "crates/streaming"
+tier = 6
+targets = "wasm32"
+
+[dependencies]
+# The asset sink, the boot progress, the world-layer switches and the memory budget model.
+map_streaming_model = { workspace = true }
+# The chunk residency and the draw buffers the world and occluder loaders feed.
+chunk_scheduler = { workspace = true }
+chunk_draw_buffers = { workspace = true }
+# The terrain crates: the elevation model, the relief, the satellite container and the water data.
+terrain_elevation = { workspace = true }
+terrain_relief = { workspace = true }
+satellite_imagery = { workspace = true }
+water_bodies = { workspace = true }
+# The world format crates: the chunk containers and terrain manifest, the on-disk formats and the
+# headless world store.
+world_chunks = { workspace = true }
+world_file_formats = { workspace = true }
+world_store = { workspace = true }
+# The road network, the vegetation data and the place names the loaders decode.
+road_network = { workspace = true }
+vegetation = { workspace = true }
+place_names = { workspace = true }
+# The named draw lanes and the label layout of the uploads.
+map_draw_lanes = { workspace = true }
+label_layout = { workspace = true }
+# The streamed-world occluder, its bounding volume hierarchy and the terrain size it reads.
+world_line_of_sight = { workspace = true }
+spatial_indexes = { workspace = true }
+map_coordinates = { workspace = true }
+# The mesh payloads and their composition.
+render_primitives = { workspace = true }
+# The browser console macros and fetch helpers every loader logs and loads through.
+browser_platform = { workspace = true }
+# The served-data descriptors and the statistics JSON, with the map engine's float and key order.
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+futures = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window", "Location", "UrlSearchParams", "console", "ImageBitmap", "ImageBitmapOptions",
+    "ColorSpaceConversion", "OffscreenCanvas", "OffscreenCanvasRenderingContext2d", "ImageData",
+    "Blob", "BlobPropertyBag", "Response",
+] }
+
+[lints]
+workspace = true

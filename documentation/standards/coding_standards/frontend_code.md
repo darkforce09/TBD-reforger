@@ -44,11 +44,11 @@ states its Rust form and whether anything checks it. Where the app's files go is
   `apps/frontend/src/app_routes.rs`. A layer imports only the layers below it (foundation <
   features < pages, workspaces < shell); inside the foundation a sub-area imports only the
   sub-areas before it (ui < utils < transport < route_table < auth < {offline, map_view}, the
-  last two peers), and only test files import `foundation/test_support`. The app never names the
-  graphics engine: it reaches the GPU only through the map engine. Gate: CI-SCRIPT, `cargo xtask
-  verify frontend-layering` for the layer and sub-area order (any edge fails) and rule 6 of
-  `cargo xtask verify engine-layers` for the engine wall
-  ([Engine boundary rules](/documentation/standards/engine_boundary_rules.md)).
+  last two peers), and only test files import `foundation/test_support`. The app never names
+  `wgpu`: it reaches the GPU only through `map_renderer`, `paper_doll_renderer` and `gpu_frame`'s
+  frame pump. Gate: CI-SCRIPT, `cargo xtask verify frontend-layering` for the layer and sub-area
+  order (any edge fails) and the wgpu firewall of `cargo xtask verify crate-tiers` for the crate
+  wall ([Crate boundary rules](/documentation/standards/crate_boundary_rules.md)).
 
 ## Errors and logging
 

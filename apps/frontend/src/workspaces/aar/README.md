@@ -25,7 +25,7 @@ compiles.
 - Used by: nothing.
 - Rules: a workspace added here follows the rules of
   `apps/frontend/src/workspaces/`: it declares its module in that folder's `mod.rs`, imports
-  from `crate::foundation` and `map_engine`, and never from a page or a sibling workspace;
+  from `crate::foundation` and the map crates, and never from a page or a sibling workspace;
   its route needs a row in both `apps/frontend/src/app_routes.rs` and
   `apps/frontend/src/foundation/route_table/mod.rs`.
 

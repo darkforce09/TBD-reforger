@@ -41,13 +41,13 @@ pub(crate) const BOOT_HANDOVER_MS: i32 = 220;
 
 /// Boot progress.
 pub mod boot_progress {
-    /// Re-export `map_engine::streaming::bridge::progress::BootEvent`.
-    pub use map_engine::streaming::bridge::progress::BootEvent;
-    /// Re-export `map_engine::streaming::bridge::progress::BootSeg`.
-    pub use map_engine::streaming::bridge::progress::BootSeg;
-    /// Re-export `map_engine::streaming::bridge::progress::ProgressFn`.
+    /// Re-export `map_streaming_model::boot_progress::BootEvent`.
+    pub use map_streaming_model::boot_progress::BootEvent;
+    /// Re-export `map_streaming_model::boot_progress::BootSeg`.
+    pub use map_streaming_model::boot_progress::BootSeg;
+    /// Re-export `map_streaming_model::boot_progress::ProgressFn`.
     #[cfg(target_arch = "wasm32")]
-    pub use map_engine::streaming::bridge::progress::ProgressFn;
+    pub use map_streaming_model::boot_progress::ProgressFn;
 
     /// What the boot overlay needs of a [`BootSeg`]: its place in the caption order, its slot in
     /// the progress accumulator, and the words the operator reads while it runs.

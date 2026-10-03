@@ -10,7 +10,7 @@ use super::*;
 #[must_use]
 pub fn live_camera() -> Option<(f64, f64, f64)> {
     {
-        map_engine::streaming::host::camera_snapshot()
+        map_streaming_host::camera_snapshot()
     }
 }
 
@@ -25,7 +25,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
         let Some(z) = zoom.or_else(|| live_camera().map(|(_, _, z)| z)) else {
             return; // no engine yet — nothing to fly.
         };
-        map_engine::streaming::host::fly_to(x, y, z);
+        map_streaming_host::fly_to(x, y, z);
     }
 }
 
@@ -34,7 +34,7 @@ pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
 #[cfg(target_arch = "wasm32")]
 pub(super) fn load_named_places() -> Vec<NamedPlace> {
     {
-        let mut out: Vec<NamedPlace> = map_engine::streaming::host::named_locations()
+        let mut out: Vec<NamedPlace> = map_streaming_host::named_locations()
             .into_iter()
             .filter(|l| !l.name.trim().is_empty())
             .map(|l| NamedPlace {

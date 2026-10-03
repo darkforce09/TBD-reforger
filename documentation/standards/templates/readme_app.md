@@ -113,8 +113,9 @@ it and every write path refuses.
 
 - Depends on: `crate::foundation` (the API client and DTOs, the auth store, the UI primitives and
   utilities, the test support), `crate::features` (the review wording), the editing crates of
-  `crates/mission_editing/`, `map_engine` (its `streaming`, `overlay`, `frame`, `camera`,
-  `spatial`, `world` and `doll` modules) and `web_sys` in the browser build.
+  `crates/mission_editing/`, the map crates (`map_renderer`, `gpu_frame`, `map_streaming_host`,
+  `map_streaming_model`, `map_asset_loading`, `map_render_diagnostics`, `paper_doll_renderer`)
+  and `web_sys` in the browser build.
 - Used by:
   - `apps/frontend/src/app_routes.rs`, the route table;
   - `apps/frontend/src/main.rs`, which registers `purge_local_documents` as a sign-out hook;

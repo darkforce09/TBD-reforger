@@ -1,0 +1,36 @@
+# Stage S8 V4 — the browser half of the map engine's streaming becomes two streaming crates: the loaders folder
+# (the world and occluder loaders and the asset sink handle) becomes map_asset_loading with its module root
+# that crate's root, joined by the asset statistics, the live memory budget, the world's elevation, water,
+# relief, satellite, forest and label loaders and the CPU mesh composition with its tests; the host folder
+# becomes map_streaming_host with its module root that crate's root, its files under names that say what they
+# hold; the streaming documentation moves to the mirror of the streaming crates. Paths name the tree before
+# the moves; the map engine keeps re-export shims at its streaming module paths until the stage switch.
+kind	from	to	scope
+#
+# the world and occluder loaders, the asset sink handle, the asset statistics and the live memory budget
+path	legacy/map_engine/src/streaming/loaders	crates/streaming/map_asset_loading/src
+path	legacy/map_engine/src/streaming/loaders/mod.rs	crates/streaming/map_asset_loading/src/lib.rs
+path	legacy/map_engine/src/streaming/bridge/statistics.rs	crates/streaming/map_asset_loading/src/asset_statistics.rs
+path	legacy/map_engine/src/streaming/memory/budget	crates/streaming/map_asset_loading/src/live_memory_budget
+path	legacy/map_engine/src/streaming/memory/budget/stats.rs	crates/streaming/map_asset_loading/src/live_memory_budget/published_snapshot.rs
+#
+# the world's terrain and environment loaders, the satellite loads and the CPU mesh composition
+path	legacy/map_engine/src/world/terrain/dem	crates/streaming/map_asset_loading/src/terrain/elevation
+path	legacy/map_engine/src/world/terrain/water	crates/streaming/map_asset_loading/src/terrain/water
+path	legacy/map_engine/src/world/terrain/relief	crates/streaming/map_asset_loading/src/terrain/relief
+path	legacy/map_engine/src/world/terrain/relief/host.rs	crates/streaming/map_asset_loading/src/terrain/relief/dem_vectors.rs
+path	legacy/map_engine/src/world/terrain/satellite/quadtree	crates/streaming/map_asset_loading/src/terrain/satellite_quadtree
+path	legacy/map_engine/src/world/environment/vegetation/loader.rs	crates/streaming/map_asset_loading/src/environment/forest_mass_loader.rs
+path	legacy/map_engine/src/world/environment/locations	crates/streaming/map_asset_loading/src/environment/location_labels
+path	legacy/map_engine/src/world/mesh.rs	crates/streaming/map_asset_loading/src/mesh_composition.rs
+path	legacy/map_engine/src/world/tests/mesh_tests.rs	crates/streaming/map_asset_loading/src/tests/mesh_composition_tests.rs
+#
+# the map host: boot, host state, camera settle, layer switches and queries
+path	legacy/map_engine/src/streaming/host	crates/streaming/map_streaming_host/src
+path	legacy/map_engine/src/streaming/host/mod.rs	crates/streaming/map_streaming_host/src/lib.rs
+path	legacy/map_engine/src/streaming/host/state.rs	crates/streaming/map_streaming_host/src/map_host.rs
+path	legacy/map_engine/src/streaming/host/preferences.rs	crates/streaming/map_streaming_host/src/view_preferences.rs
+path	legacy/map_engine/src/streaming/host/terrain.rs	crates/streaming/map_streaming_host/src/terrain_load.rs
+#
+# the streaming documentation into the mirror of the streaming crates
+path	documentation/legacy/map_engine/map_streaming.md	documentation/crates/streaming/map_streaming.md

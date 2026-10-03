@@ -31,7 +31,7 @@ is the identity, so a packet built before the caller has a camera still submits.
 ## Boundaries
 
 - Depends on: `bytemuck`.
-- Used by: the graphics engine (`legacy/graphics_engine/src/frame/`), whose batches, glyph runs,
+- Used by: the graphics engine (`crates/graphics/gpu_frame/src/frame/`), whose batches, glyph runs,
   packet and encoder carry these types and whose `frame` module forwards `damage`,
   `CameraUniform` and the three ids to the map engine.
 - Rules: fields name geometry and opaque keys only; a clean frame skips its submit and a

@@ -15,11 +15,11 @@ use super::*;
 async fn get_mission_measured(
     auth: AuthStore,
     path: &str,
-    report: &dyn Fn(map_engine::streaming::bridge::progress::BootEvent),
+    report: &dyn Fn(map_streaming_model::boot_progress::BootEvent),
 ) -> Result<MissionDetail, crate::foundation::transport::client::ApiErr> {
-    use map_engine::streaming::bridge::progress::BootEvent;
-    use map_engine::streaming::bridge::progress::BootSeg;
-    use map_engine::streaming::bridge::progress::STREAM_REPORT_BYTES;
+    use map_streaming_model::boot_progress::BootEvent;
+    use map_streaming_model::boot_progress::BootSeg;
+    use map_streaming_model::boot_progress::STREAM_REPORT_BYTES;
     use wasm_bindgen::JsCast;
 
     let measured = async {
@@ -103,7 +103,7 @@ pub async fn hydrate_from_server(
     loaded_from_idb: bool,
     current_semver: RwSignal<Option<String>>,
     conflict: RwSignal<Option<crate::workspaces::editor::mission_editor::ConflictInfo>>,
-    report: map_engine::streaming::bridge::progress::ProgressFn,
+    report: map_streaming_model::boot_progress::ProgressFn,
 ) {
     // The recovery surface is bound on every editor boot, not only when a conflict fires: after a
     // reload the in-session snapshot is gone and the stored record is the only copy, and that

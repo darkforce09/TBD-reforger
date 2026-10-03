@@ -123,7 +123,7 @@ pub(super) fn attach(ctx: InputContext) {
             hover_state.set(HoverState::default());
             set_map_cursor(&canvas, false);
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.clear_place_preview();
+                e.with_symbology(|symbology| symbology.clear_place_preview());
             }
         }
     });
@@ -160,7 +160,7 @@ pub(super) fn attach(ctx: InputContext) {
                                 comment_lane_ids(&c.comments_json()),
                             )
                         }) {
-                            e.comments_bind_ids(&cxy, cids);
+                            e.with_symbology(|symbology| symbology.comments_bind_ids(&cxy, cids));
                         }
                     }
                 }

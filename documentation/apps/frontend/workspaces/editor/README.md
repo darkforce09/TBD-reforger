@@ -87,7 +87,7 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
   editor beside the debug benches and the planned planner and after-action review.
 - [Review workspace page](/documentation/apps/frontend/workspaces/editor/review_workspace/review_workspace_page.md)
   — the read-only review mode that mounts the editor.
-- [Map engine documentation](/documentation/legacy/map_engine/README.md) — the engine the
+- [Map rendering documentation](/documentation/crates/map_rendering/README.md) — the renderer the
   editor drives.
 - [Editor gates runbook](/documentation/runbooks/editor_gates.md) — the headless browser gates
   that drive the editor route.

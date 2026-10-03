@@ -147,8 +147,7 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     r.run("wasm32 (frontend)", || changed::wasm_changed(ctx, &range));
     r.run("fmt (changed)", || changed::fmt_changed(ctx, &range));
     // Clippy is scoped per-crate, NOT --workspace: each crate is linted with the flags its ci.yml
-    // job uses (the api job, the map-engine job with --all-features, the frontend job on wasm32
-    // and natively), every one with `-D warnings`. The `clippy xtask+developer_tools` step below
+    // job uses (the api job, the frontend job on wasm32 and natively), every one with `-D warnings`. The `clippy xtask+developer_tools` step below
     // covers what ci.yml has no job for at all.
     r.run("clippy api", || {
         checkrun(
@@ -158,27 +157,6 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "clippy",
                 "-p",
                 "api",
-                "--all-targets",
-                "--quiet",
-                "--",
-                "-D",
-                "warnings",
-            ],
-        )
-    });
-    // --all-features is the floor: without it clippy compiles none of the feature-gated modules
-    // and passes on code it never read. `lib.rs` gates every module and the default feature is
-    // `scenario` alone, so a bare clippy would read the mission compiler and nothing else. The
-    // gate's test step uses the same flag.
-    r.run("clippy map-engine", || {
-        checkrun(
-            ctx,
-            &[
-                "cargo",
-                "clippy",
-                "-p",
-                "map_engine",
-                "--all-features",
                 "--all-targets",
                 "--quiet",
                 "--",
@@ -245,30 +223,6 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         migrate::gate_db_migrate_persist(ctx, &state, "advance") as i32
     });
     r.run("test api", || db::gate_test_api(ctx));
-    // --all-features is REQUIRED. `map_engine` turns no feature tier on by default, so
-    // a bare `cargo test -p map_engine` compiles a fraction of the crate and is a vacuous
-    // pass; the feature-floor tripwire REDs on it. `ci-local` and this gate must match. Private target
-    // dir for the same reason as `test api` and `test frontend`: this step RUNS test binaries.
-    let mapengine_dir = format!(
-        "CARGO_TARGET_DIR={}",
-        gate_folder(&ctx.main_root, build_output::GATE_MAP_ENGINE_SUBFOLDER)
-    );
-    r.run("test map-engine", || {
-        hostrun(
-            ctx,
-            &[
-                "env",
-                &mapengine_dir,
-                "CARGO_INCREMENTAL=0",
-                "cargo",
-                "test",
-                "-p",
-                "map_engine",
-                "--all-features",
-                "--quiet",
-            ],
-        )
-    });
     // Frontend tests get a PRIVATE target dir. With a shared CARGO_TARGET_DIR,
     // `cargo test -p frontend` runs a stale `frontend-<hash>` test binary built by
     // ANOTHER worktree, reporting that worktree's test count. Same package name + version across
@@ -435,9 +389,9 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
 }
 
 /// The members whose tests a step of [`cmd_gate`] other than `test workspace members` runs:
-/// `test api` against the gate database (with every API crate, which the step derives),
-/// `test map-engine` with every feature on and `test frontend`.
-pub(super) const WAVE_GATE_DEDICATED_TEST_PACKAGES: [&str; 3] = ["api", "map_engine", "frontend"];
+/// `test api` against the gate database (with every API crate, which the step derives)
+/// and `test frontend`.
+pub(super) const WAVE_GATE_DEDICATED_TEST_PACKAGES: [&str; 2] = ["api", "frontend"];
 
 /// `test workspace members`: `cargo test -p <package>` in `target_dir_assignment`'s private target
 /// directory for every workspace member outside [`WAVE_GATE_DEDICATED_TEST_PACKAGES`] and the API

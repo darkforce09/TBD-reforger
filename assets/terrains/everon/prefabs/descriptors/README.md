@@ -35,7 +35,7 @@ assets/terrains/everon/prefabs/descriptors/
   `tools/map_assets/blueprint_compiler/src/` (`bvh/prefab_catalog/` and `archive_emission/`).
 - Consumers:
   - the map engine's occluder loader
-    (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`), which fetches
+    (`crates/streaming/map_asset_loading/src/occluder_loader.rs`), which fetches
     `/map-assets/everon/prefabs/descriptors/<pid>.json` for the blocking prefabs that resident
     chunks place, after booting from the building archive;
   - `cargo xtask map blueprint-from-voxels archive`, which folds every descriptor into

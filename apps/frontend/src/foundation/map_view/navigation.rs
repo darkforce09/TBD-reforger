@@ -47,10 +47,7 @@ fn camera_moved(handles: &MapViewHandles) {
     if let Some(e) = handles.engine.borrow_mut().as_mut() {
         e.on_camera_changed();
     }
-    map_engine::streaming::host::schedule_camera_settle(
-        handles.map_host.clone(),
-        handles.engine.clone(),
-    );
+    map_streaming_host::schedule_camera_settle(handles.map_host.clone(), handles.engine.clone());
 }
 
 /// Attach drag-pan, wheel-zoom and click-to-pick listeners to `container`.
@@ -96,7 +93,7 @@ pub fn attach_navigation(
             }
             if !p.dragging {
                 p.dragging = true;
-                map_engine::streaming::host::set_camera_gesture(true);
+                map_streaming_host::set_camera_gesture(true);
             }
             if let Some(e) = handles.engine.borrow_mut().as_mut() {
                 e.pan(at.0 - p.last.0, at.1 - p.last.1);
@@ -119,7 +116,7 @@ pub fn attach_navigation(
                 let _ = container.release_pointer_capture(ev.pointer_id());
             }
             if p.dragging {
-                map_engine::streaming::host::set_camera_gesture(false);
+                map_streaming_host::set_camera_gesture(false);
                 camera_moved(&handles);
                 return;
             }
@@ -146,7 +143,7 @@ pub fn attach_navigation(
         let press = press.clone();
         move |_ev: web_sys::PointerEvent| {
             if press.take().is_some_and(|p| p.dragging) {
-                map_engine::streaming::host::set_camera_gesture(false);
+                map_streaming_host::set_camera_gesture(false);
             }
         }
     });

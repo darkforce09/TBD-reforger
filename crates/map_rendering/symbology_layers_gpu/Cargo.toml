@@ -1,0 +1,51 @@
+# The map symbology's typed GPU layers: the slot symbology (slot atlas, slot bridge, pooled sprite
+# lanes, selection, drag and clusters), the glyph atlas the world icon lanes sample, the compute
+# cull of the icon lanes, the world icon lane uploads and the lane visibility, tint and grid
+# preferences, all written through the renderer contracts' lane sink. Everything that names a GPU
+# type is wasm32 only; the native build keeps the icon uniform layout and the error type, which
+# the native tests cover.
+[package]
+name = "symbology_layers_gpu"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Typed GPU layers of the map symbology: slot symbology, glyph atlas, icon cull, world icon lanes, lane preferences."
+
+[package.metadata.layout]
+category = "crates/map_rendering"
+tier = 4
+targets = "wasm32"
+
+[dependencies]
+# The lane sink and layer context the layers write through, and the frame packet's binding ids.
+renderer_core = { workspace = true }
+# The draw batches, instance buffers and glyph runs, the line upload, the compute cull and the
+# glyph atlas builder.
+gpu_frame = { workspace = true }
+# The pooled lane buffers the slot symbology's sprite lanes draw from.
+gpu_device = { workspace = true }
+# The opaque lane and bind-group ids, the glyph text packing, the grid lines and the cull oracle.
+render_primitives = { workspace = true }
+# The slot, vehicle, comment, cluster and drag instance packers and the selection patches.
+overlay_instances = { workspace = true }
+# The symbol atlas widening, the side tints and the marker glyphs.
+unit_symbology = { workspace = true }
+# The lane roles, their lane ids and the zoom gates.
+map_draw_lanes = { workspace = true }
+# The cluster index over the slot positions.
+spatial_indexes = { workspace = true }
+# The scene anchor and the island bounds.
+map_coordinates = { workspace = true }
+# The orthographic camera whose zoom gates the symbology and clusters.
+camera_math = { workspace = true }
+# Byte views of the lane tint written into a live instance buffer.
+bytemuck = { workspace = true }
+thiserror = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+
+[lints]
+workspace = true

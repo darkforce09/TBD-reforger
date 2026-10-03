@@ -141,7 +141,7 @@ table, with a skeleton and a worked sample written from a real folder; the
 |---|---|---|---|
 | area root | Getting started | `readme_area_root.md` | `apps/`, `apps/mod/`, `tools/` |
 | crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `apps/api/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
-| domain or subsystem | Public surface | `readme_domain.md` | `crates/api/api_missions/src/`, `legacy/map_engine/src/spatial/` |
+| domain or subsystem | Public surface | `readme_domain.md` | `crates/api/api_missions/src/`, `crates/streaming/map_asset_loading/src/terrain/` |
 | leaf | none | `readme_leaf.md` | `crates/line_of_sight/interior_line_of_sight/src/` |
 | page | Routes, Data, States | `readme_page.md` | `apps/frontend/src/pages/operations/schedule/` |
 | app | Routes, Public surface | `readme_app.md` | `apps/frontend/src/workspaces/editor/` |

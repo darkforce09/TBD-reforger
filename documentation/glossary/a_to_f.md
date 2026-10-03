@@ -178,14 +178,14 @@ The rendering rule of every map canvas and of the Arsenal's doll: a frame is enc
 only while something that would be drawn has changed (the damage flag) or continuous rendering is
 on, so an idle `requestAnimationFrame` tick returns without touching the GPU.
 
-In code: `RenderDamage` and `FrameDecision` in `crates/graphics/render_primitives/src/frame/damage.rs`; `mark_dirty` and `set_continuous_render` on the [render engine](/documentation/glossary/n_to_z.md#render-engine) in `legacy/map_engine/src/frame/lifecycle.rs`; the frame pump in `legacy/graphics_engine/src/loop/`; the pins in `legacy/map_engine/src/frame/tests/damage_discipline.rs`.
+In code: `RenderDamage` and `FrameDecision` in `crates/graphics/render_primitives/src/frame/damage.rs`; `mark_dirty` and `set_continuous_render` on the [render engine](/documentation/glossary/n_to_z.md#render-engine) in `crates/map_rendering/map_renderer/src/lifecycle.rs`; the frame pump in `crates/graphics/gpu_frame/src/frame_pump/`; the pins in `crates/map_rendering/map_renderer/src/tests/damage_discipline.rs`.
 
-See: [frame packet](#frame-packet), [Engine boundary rules](/documentation/standards/engine_boundary_rules.md).
+See: [frame packet](#frame-packet), [Crate boundary rules](/documentation/standards/crate_boundary_rules.md).
 
 ### DEM
 
 Digital elevation model: a terrain's ground height as a raster. Everon's is one 6400 × 6400 16-bit
-greyscale image at 2 m per pixel, which the map engine decodes into metres for the hillshade, the
+greyscale image at 2 m per pixel, which `terrain_elevation` decodes into metres for the hillshade, the
 contour lines, the sea band, the height readout and line-of-sight walks.
 
 In code: `crates/terrain/terrain_elevation/src/` (`DemVectorGrid` in `grid.rs`); `crates/mission_editing/map_editing_tools/src/line_of_sight/terrain_survey.rs`; `assets/terrains/everon/dem/everon-dem-16bit.png`.
@@ -330,9 +330,9 @@ See: [scenario](/documentation/glossary/n_to_z.md#scenario), [server control](/d
 
 ### frame packet
 
-One frame's whole draw list for the graphics engine: camera, clear colour, batches, glyph runs and
+One frame's whole draw list for the GPU frame encoder (`gpu_frame`): camera, clear colour, batches, glyph runs and
 indirect draws in ascending [lane](/documentation/glossary/g_to_m.md#lane) order, and the pipelines and bind groups they use.
 
-In code: `FramePacket` in `legacy/graphics_engine/src/frame/packet.rs`.
+In code: `FramePacket` in `crates/graphics/gpu_frame/src/frame/packet.rs`.
 
-See: [Graphics engine frame](/legacy/graphics_engine/src/frame/README.md).
+See: [GPU frame vocabulary](/crates/graphics/gpu_frame/src/frame/README.md).

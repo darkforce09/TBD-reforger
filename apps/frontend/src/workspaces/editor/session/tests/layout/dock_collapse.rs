@@ -171,7 +171,7 @@ fn pane_centre_uses_live_insets() {
     reset();
 }
 
-/// CENTRE-HOLD, fired against the engine's OWN camera (map_engine_core `OrthoCamera` — the exact
+/// CENTRE-HOLD, fired against the engine's OWN camera (camera_math `OrthoCamera` — the exact
 /// type `select_tool::frozen_camera` builds). This is the perturb/fail/restore proof the ticket
 /// asks for: with the nudge applied, the world point under the pane centre is INVARIANT across the
 /// collapse reflow (RESTORE); without it, that point MOVES by the pane-centre delta in world units

@@ -30,7 +30,7 @@ the 32-byte storage records the compute shader reads.
 ## Boundaries
 
 - Depends on: `bytemuck`; the WGSL source in `crate::shaders`, read by relative path.
-- Used by: the graphics engine's compute cull (`legacy/graphics_engine/src/draw/cull/`), which
+- Used by: the graphics engine's compute cull (`crates/graphics/gpu_frame/src/draw/cull/`), which
   packs with it, compares its debug count against it and forwards it as `draw::cull::oracle`.
 - Rules: the modelled reduce and the CPU count agree
   (`t938_3_gpu_visible_count_equals_cpu_on_fixture`, `class_r_1k_random_frusta_count_stable`);

@@ -45,7 +45,7 @@ mod t750_registry_fetch_failure_signal;
 ///
 /// **Why a source pin here and a behavioural test elsewhere.** The proof that the preview moves the
 /// right vehicles is a real unit test on the real function —
-/// `map_engine_core::slots_gpu::pack_vehicle_drag_preview`, native, driven directly. What cannot be
+/// `overlay_instances::drag::pack_vehicle_drag_preview`, native, driven directly. What cannot be
 /// proven that way is the *wiring*: `mod select_tool` is `#[cfg(target_arch = "wasm32")]`
 /// (`main.rs`) and `editor_ops` is `#![cfg(target_arch = "wasm32")]`, so no native test can call the
 /// drag path, and `RenderEngine` needs a GPU device besides. That leaves "the host hands the WHOLE

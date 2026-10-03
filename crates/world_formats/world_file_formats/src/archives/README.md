@@ -36,16 +36,16 @@ their readers refuse any other value with `UnsupportedVersion`; `TypeInventory` 
 the building element ids), which archives exactly as the bare `u32` or `String` it wraps; a reader
 reads an archived identifier through `get`, `as_str` or `to_native`.
 
-| Archive | File under a terrain's folder | Writer | Reader in the map engine |
+| Archive | File under a terrain's folder | Writer | Reader |
 |---|---|---|---|
-| `RoadNetworkArchive` | `roads/road_network.rkyv` | `tools/map_assets/world_export_pipeline/src/roads_emit.rs` | `map_engine::world::terrain::roads` |
-| `MapLabelsArchive` | `locations/map_labels.rkyv` | `tools/map_assets/map_raster_pipeline/src/map_label_archives.rs` | `map_engine::world::environment::locations` |
-| `WaterVectorsArchive` | `water/water_vectors.rkyv` | `tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs` | `map_engine::world::terrain::water` |
-| `PrefabCatalogArchive` | `objects/prefabs.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | `map_engine::world::environment::buildings`, `map_engine::streaming::loaders` |
+| `RoadNetworkArchive` | `roads/road_network.rkyv` | `tools/map_assets/world_export_pipeline/src/roads_emit.rs` | `road_network::network` |
+| `MapLabelsArchive` | `locations/map_labels.rkyv` | `tools/map_assets/map_raster_pipeline/src/map_label_archives.rs` | `place_names::towns`, `place_names::route_labels` |
+| `WaterVectorsArchive` | `water/water_vectors.rkyv` | `tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs` | `water_bodies::vectors` |
+| `PrefabCatalogArchive` | `objects/prefabs.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | `prefab_catalog::prefab_rows` |
 | `TypeInventory` | `objects/type-inventory.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | none; the same census is embedded in the prefab catalogue |
-| `ForestRegionsArchive` | `objects/forest-regions.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | `map_engine::world::environment::vegetation` |
-| `BuildingBlueprintArchive` | `prefabs/building_blueprints.rkyv` | `tools/map_assets/blueprint_compiler/src/archive_emission/archive_writer.rs` | `map_engine::world::architecture`, `map_engine::spatial::los::world` |
-| `TbdSatIndexV2` | inside `satellite/{terrain}-sat.tbd-sat` | `tools/map_assets/map_raster_pipeline/src/satellite_archive_container.rs` | `map_engine::world::terrain::satellite` |
+| `ForestRegionsArchive` | `objects/forest-regions.rkyv` | `tools/map_assets/world_export_pipeline/src/catalog_emit.rs` | `vegetation::regions` |
+| `BuildingBlueprintArchive` | `prefabs/building_blueprints.rkyv` | `tools/map_assets/blueprint_compiler/src/archive_emission/archive_writer.rs` | `world_line_of_sight::occluder_library::building_archive` |
+| `TbdSatIndexV2` | inside `satellite/{terrain}-sat.tbd-sat` | `tools/map_assets/map_raster_pipeline/src/satellite_archive_container.rs` | `satellite_imagery::header`, `satellite_imagery::archive` |
 
 `BinaryError` covers every way a buffer can be wrong: `Truncated`, `BadMagic`,
 `UnsupportedVersion`, `Misaligned` (recoverable by copying into an aligned buffer),
@@ -66,8 +66,8 @@ magic as a byte string (`b"TBDC"`).
   `crate::ids` for the identifier fields.
 - Used by:
   - `crate::containers` and `crate::pod`, which report `BinaryError`;
-  - the readers in the table, and `map_engine::streaming::loaders` and
-    `map_engine::world::terrain::dem`, which report `BinaryError`;
+  - the readers in the table, and `world_chunks`, `world_store` and `terrain_elevation::raw`,
+    which report `BinaryError`;
   - the developer tools' writers in the table and their tests.
 - Rules:
   - an archive is read only through `access_checked`, never unchecked;
@@ -83,5 +83,5 @@ magic as a byte string (`b"TBDC"`).
 ## Related documentation
 
 - [Terrain assets](/assets/terrains/README.md) — the served terrain tree the archives sit in.
-- [Satellite terrain](/legacy/map_engine/src/world/terrain/satellite/README.md) — the
-  satellite streamer that reads the index.
+- [Satellite basemap loader](/crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/README.md)
+  — the satellite loader that reads the index.

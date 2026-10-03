@@ -18,7 +18,7 @@ documentation/archive/engine_split/
 
 ## Code
 
-- [Graphics engine](/legacy/graphics_engine/) and [map engine](/legacy/map_engine/) —
+- [Graphics engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/graphics_engine) and [map engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/map_engine) —
   the crates the split produced.
 - [Frontend](/apps/frontend/) — the browser app the editing logic left.
 - [Engine layer gate](/tools/checks/repository_checks/src/architecture/) —
@@ -27,15 +27,15 @@ documentation/archive/engine_split/
 ## Boundaries
 
 - Depends on: nothing live; the records quote the code of their time.
-- Used by: the [engine boundary rules](/documentation/standards/engine_boundary_rules.md), which
+- Used by: the [engine boundary rules](/documentation/standards/crate_boundary_rules.md), which
   link the program as the history of its rules; the documentation program's own records.
 - Rules: never reworded, only links change; a rule still in force lives in the engine boundary
   rules, not here.
 
 ## Related documentation
 
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the live layer
+- [Engine boundary rules](/documentation/standards/crate_boundary_rules.md) — the live layer
   rules and the gate that holds them.
-- [Map engine documentation](/documentation/legacy/map_engine/README.md) and
-  [graphics engine documentation](/documentation/legacy/graphics_engine/README.md) — the crates
+- [Map engine documentation](https://github.com/darkforce09/TBD-reforger/blob/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/documentation/legacy/map_engine/README.md) and
+  [graphics engine documentation](/documentation/crates/graphics/README.md) — the crates
   as they are.

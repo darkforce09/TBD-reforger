@@ -1,7 +1,6 @@
 //! The names a gate imports with `use repository_laws::prelude::*;`: each law's entry point and
 //! the member reader they share.
 
-pub use crate::engine_layers::check_engine_layers;
 pub use crate::exemption_mechanisms::scan_exemption_mechanisms;
 pub use crate::file_length::scan_file_lengths;
 pub use crate::sibling_test_placement::scan_inline_test_modules;

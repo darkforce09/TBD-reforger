@@ -37,7 +37,7 @@ verdict line `<LAW>: PASS`, `<LAW>: FAIL (<n> finding(s))` (exit 1) or `<LAW>: F
 |---|---|---|
 | Crate tiers | `crate_tiers::check_crate_tiers(root, sweep_roots)` | 1 every `Cargo.toml` under the sweep roots (outside `tests`, `fixtures`, `test_fixtures`, `target`, `node_modules`) is a member; 2 the layout is declared; 3 category equals the parent folder, package equals the folder name; 4 declared tier equals 1 plus the highest judged dependency tier (0 with none), edges strictly down; 5 the category matrix, and a wasm-only crate reached from an `any` crate only through a wasm32 table; 6 the firewalls; 7 no edge onto a member under `legacy/`; 8 no dev-dependency onto `apps/` or `legacy/` |
 | Crate anatomy | `crate_anatomy::check_crate_anatomy(root)` | each judged library crate: `lib.rs` ≤ 80 lines of doc comments, attributes, `mod` and `pub use` lines; `pub mod prelude`; a `thiserror` `error.rs` when a `pub fn` returns `Result`; no `anyhow`; a README Contents block; inherited `edition`, `rust-version`, `[lints]` and dependencies; only `test_fixtures` and `failpoints`, enabled only by dev-dependencies; no primitive public `id` / `*_id` outside `generated/` and `#[wasm_bindgen]`; no `pub use` of another workspace crate outside the crate's prelude module |
-| Strangler | `strangler::check_strangler(root)` | no member outside `legacy/` (apps and `tools/xtask`, `tools/developer_tools` excepted) depends on a member under `legacy/`; no source under `legacy/` re-exports a workspace crate outside `legacy/` in any form — an item, a module or the crate root: `pub use <crate>::…`, `pub use <crate>;`, an alias (`pub use satellite_imagery as streamer;`), a leading `::`, a group at the top or nested (`pub use {<crate> as x};`, `pub use <crate>::{self as x};`), a statement over several lines, `pub extern crate <crate> as x;` |
+| Strangler | `strangler::check_strangler(root)` | no member outside `legacy/` (apps excepted) depends on a member under `legacy/`, and an absent `legacy/` folder is named in a note; no source under `legacy/` re-exports a workspace crate outside `legacy/` in any form — an item, a module or the crate root: `pub use <crate>::…`, `pub use <crate>;`, an alias (`pub use satellite_imagery as streamer;`), a leading `::`, a group at the top or nested (`pub use {<crate> as x};`, `pub use <crate>::{self as x};`), a statement over several lines, `pub extern crate <crate> as x;` |
 | Frontend layering | `frontend_layering::check_frontend_layering(root, crates)` | import edges where a lower layer names a higher one, pages and workspaces name each other, one page area names another, a sub-area of an ordered folder names a sibling at or above its own tier, or a production file names a test-only sub-area; one finding per (file, target place), production and test apart; hard at zero, so any edge fails, as does a source no row maps or a child of an ordered folder in no tier |
 | Tailwind sources | `tailwind_sources::check_tailwind_sources(root, stylesheet)` | every member with a `leptos` dependency has an `@source` glob, resolved from the stylesheet's folder, ending in `/**/*.rs` over its `src` folder or an ancestor |
 
@@ -52,11 +52,17 @@ api → foundation, contracts, mission, ballistics, api; frontend → any `crate
 tools → foundation, contracts, mission, ballistics, engine crates whose `targets` is `any`, and
 tools, never a wasm-only crate, with the staging fixtures tool (tools/staging/staging_fixtures) also reaching api.
 
-The firewalls (`crate_firewalls`, rule 6) read sources twice besides the manifests: no declared
-name with a map noun in a graphics crate, and no `web_sys`, `leptos` or `wasm_bindgen` token,
-prose included, in any `.rs` file under `crates/mission_editing/`. The second scan runs whenever
-that folder exists or a member declares the category, and a folder holding no `.rs` file is a
-finding (`crate_tiers_an_empty_mission_editing_root_is_not_a_clean_scan`).
+The firewalls (`crate_firewalls`, rule 6) read sources three times besides the manifests: no
+declared name with a map noun in a graphics crate (a declaration keyword, then an identifier
+holding `terrain`, `symbology`, `mission`, `orbat` or `arma`); no `web_sys`, `leptos` or
+`wasm_bindgen` token, prose included, in any `.rs` file under `crates/mission_editing/`; and no
+`#[wasm_bindgen]` attribute (plain, path-qualified or under `cfg_attr`, at the start of a line) in
+any `.rs` file of a workspace member outside `apps/frontend/`,
+`crates/foundation/browser_platform/` and `apps/offline_service_worker/`. The mission editing scan
+runs whenever that folder exists or a member declares the category, and a folder holding no `.rs`
+file is a finding (`crate_tiers_an_empty_mission_editing_root_is_not_a_clean_scan`); the export
+scan walking no `.rs` file is a finding too
+(`crate_firewalls_a_workspace_without_rust_sources_is_not_a_clean_scan`).
 
 The frontend layer table is the caller's: xtask passes the table for
 `apps/frontend` (`src/foundation` foundation, `src/features` features, `src/pages` pages,
@@ -88,7 +94,7 @@ braced `use` groups included.
 ## Boundaries
 
 - Depends on: `super::workspace_members`, `super::cargo_manifest`, `super::source_roots`,
-  `super::engine_layers` (rule 2's map-noun matcher), `crate::scan`, `crate::pattern`,
+  `crate::scan`, `crate::pattern`,
   `crate::verdict`; `regex`.
 - Used by: `tools/checks/repository_checks/src/architecture/workspace_laws.rs`.
 - Rules:

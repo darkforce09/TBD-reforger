@@ -57,7 +57,7 @@ Each row carries a lane, which `help` prints as a tag:
   `wasm-ci`, `ci-local-leptos` and `leptos-build`, and the `rust-test-it` integration run.
 
 `ci-local` runs, in this order: `verify-editorconfig`, `verify-no-python`, `verify-no-node`,
-`verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `verify-workspace-laws`, `rust-ci`,
+`verify-no-shell`, `verify-ci-shell`, `verify-workspace-laws`, `rust-ci`,
 `workspace-member-tests`, `verify-coding-standards`,
 `verify-documentation`, `ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
 `verify-mission-rest-size-limits`, and `cargo xtask verify ci-schema-parity` in process.
@@ -66,7 +66,7 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
 
 Every workspace member is tested. `DEDICATED_TEST_TASKS` in `workspace_member_tests.rs` names the
 members a dedicated task tests (`api` by `api-test`, `frontend` by `ci-local-leptos`, and
-`graphics_engine`, `map_engine` and `offline_service_worker` by `wasm-ci`). The API crates go with
+`offline_service_worker` by `wasm-ci`). The API crates go with
 `api`: `api_package_lane.rs` derives `api`, every member under `crates/api` and every member that uses an
 API crate, such as `staging_fixtures` (through
 `database_operations`' `api_test_packages`, the list `cargo xtask db test-it` runs over), and
@@ -83,8 +83,7 @@ leaves a member untested.
 Every crate that ships to the browser is linted for `wasm32-unknown-unknown`.
 `wasm32_lint_lane.rs` derives the set from the workspace: each member whose
 `[package.metadata.layout]` declares `targets = "wasm32"`, the `frontend` and
-`offline_service_worker` applications, and the parked `graphics_engine` and `map_engine` while they
-are members. `ci-local-leptos` lints the frontend with every target; the `wasm-ci` recipe and row
+`offline_service_worker` applications. `ci-local-leptos` lints the frontend with every target; the `wasm-ci` recipe and row
 lint the rest in one `cargo clippy --target wasm32-unknown-unknown`, the row through a native step
 that derives the same line. `wasm_ci_and_the_own_lanes_partition_the_lint` fails when the two lanes
 stop covering the set, and `wasm_ci_lints_every_derived_wasm32_package` when the recipe line drifts
@@ -110,7 +109,7 @@ from it.
   | `verify-coding-standards` | verify, ci | `verify file-length`, `verify enfusion-comments` (the pinned mod Scripts roots), `verify no-select-star` and `verify route-tags`, in process |
   | `verify-documentation` | verify, ci | `verify readme-coverage`, `verify link-check` and `verify markdown-placement` over the committed tree, in process |
   | `verify-editorconfig` | verify, ci | `editorconfig-checker` from the root, installing the pinned v3.4.0 with `go install` when absent |
-  | `verify-no-python`, `verify-no-node`, `verify-no-shell`, `verify-ci-shell`, `verify-engine-layers`, `verify-staging-compose-paths`, `verify-mission-rest-size-limits` | verify, alias | the `cargo xtask verify` command of the same name |
+  | `verify-no-python`, `verify-no-node`, `verify-no-shell`, `verify-ci-shell`, `verify-staging-compose-paths`, `verify-mission-rest-size-limits` | verify, alias | the `cargo xtask verify` command of the same name |
   | `verify-terrain` | verify, ci | `schema terrain-manifest` and `schema terrain-alignment` for Everon |
   | `verify-terrain-strict` | verify, ci | the same with `terrain-alignment --strict` |
   | `map-water-everon` | map, ci | restores the pre-water Everon ortho from `assets/scratch/`, resets the water metadata, analyses and composites the water, rebuilds the satellite container and tile pyramid, then verifies all three |

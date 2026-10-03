@@ -10,7 +10,7 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
     )));
     let push = only_body(&tool, "pub fn push_drag_preview(");
     assert!(
-        push.contains("e.set_drag(ids.to_vec()"),
+        push.contains("symbology.set_drag(ids.to_vec()"),
         "the slot lane must get the WHOLE id list — set_drag skips ids it cannot resolve, so \
          filtering vehicles out first only ever cost the vehicle preview"
     );
@@ -31,7 +31,8 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
     // The un-committed exits must put the vehicle lane back: it is live state during a drag now.
     let clear = only_body(&tool, "pub fn clear_drag_preview(");
     assert!(
-        clear.contains("e.set_drag(Vec::new()") && clear.contains("bind_vehicle_preview_lane("),
+        clear.contains("symbology.set_drag(Vec::new()")
+            && clear.contains("bind_vehicle_preview_lane("),
         "clearing the preview must drop BOTH lanes, not just the slot overlay"
     );
 
@@ -67,7 +68,7 @@ fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
         "the pointermove drag branch must push the preview through the shared helper"
     );
     assert!(
-        !editor.contains("e.set_drag(slot_ids"),
+        !editor.contains(".set_drag(slot_ids"),
         "the drag branch must no longer feed set_drag a vehicle-filtered id list"
     );
     assert!(

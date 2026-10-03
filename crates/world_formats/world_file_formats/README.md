@@ -61,8 +61,9 @@ the committed Everon tiles under `assets/terrains/everon/objects/density/`; fetc
 ## Boundaries
 
 - Depends on: `newtype_ids` (the identifier macros), `bytemuck`, `rkyv` and `thiserror`.
-- Used by: the map engine (`legacy/map_engine`, behind its `io` feature), whose loaders read the
-  files, and the developer tools (`tools/developer_tools`), whose export, raster and blueprint
+- Used by: the streaming crates `chunk_scheduler` and `map_asset_loading`, the terrain, world
+  object and line of sight crates, whose loaders and decoders read the files, and the developer
+  tools (`tools/developer_tools`), whose export, raster and blueprint
   pipelines write and verify them.
 - Rules:
   - a committed file under `assets/terrains/` or `contracts/fixtures/map/` keeps reading, so a

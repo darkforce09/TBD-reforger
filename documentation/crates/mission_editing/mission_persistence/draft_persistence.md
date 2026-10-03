@@ -112,7 +112,7 @@ Terrain, environment and row fields never raise the prompt: only the authored ke
 - The decisions are in the map engine and the transport is in the Mission Creator: the engine
   names no storage or network API, so every decision has a native test
   (`crates/mission_editing/mission_persistence/src/tests/`), and the
-  [engine boundary rules](/documentation/standards/engine_boundary_rules.md#where-state-lives)
+  [crate boundary rules](/documentation/standards/crate_boundary_rules.md#where-state-lives)
   place serialise and hydrate decisions on the engine side.
 - The prompt appears only on a real difference in authored content: a save followed by a reopen
   compares equal and shows no unsaved mark.

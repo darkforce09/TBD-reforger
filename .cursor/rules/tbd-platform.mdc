@@ -13,8 +13,8 @@ alwaysApply: true
   mode a message asks for, and when to stop and ask.
 - Layout: `apps/api/` (Axum, package `api`) · `apps/frontend/` (Leptos
   and Trunk, package `frontend`) · `apps/offline_service_worker/` · `apps/fleet_host_agent/` ·
-  `legacy/map_engine/` (package `map_engine`) · `legacy/graphics_engine/` (package
-  `graphics_engine`) · `crates/` (library crates by tier) · `deploy/` (Dockerfile, compose,
+  `crates/` (library crates by category and tier, the map's streaming, rendering and GPU crates
+  among them) · `deploy/` (Dockerfile, compose,
   Caddy, systemd units) · `apps/mod/` (the Enfusion addons) · `tools/` (packages `xtask`,
   `verification_core`, `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry`,
   `developer_tools`) · `contracts/` · `assets/`; the

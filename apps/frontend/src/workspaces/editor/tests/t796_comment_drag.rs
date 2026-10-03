@@ -219,7 +219,7 @@ fn abandoned_drags_re_bind_the_comment_lane() {
     // id-less `comments_bind` would restore the note's POSITION while stripping its selection
     // ring — the T-796 defect with a different last step. `comments_bind_ids` delegates to
     // `comments_bind`, so this is the same claim about the same upload, one call deeper.
-    let authored = ["e.comments_bind", "_ids(&cxy, cids)"].concat();
+    let authored = ["symbology.comments_bind", "_ids(&cxy, cids)"].concat();
     assert!(
         code.matches("comment_lane_xy(&c.comments_json())").count() >= 3,
         "T-796: the three non-commit exits (zero delta, wrong button, cancel) must each re-bind \

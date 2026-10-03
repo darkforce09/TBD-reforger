@@ -1,7 +1,7 @@
 # The TBD Reforger workspace: the website applications (API, single-page app, offline service
-# worker), the library crates under `crates/` (the mission domain among them), the map engine
-# with the Mission Creator's editing layer, the pure GPU renderer, the fleet host agent, the
-# ticketboard and the repository tooling.
+# worker), the library crates under `crates/` (the mission domain, the Mission Creator's editing
+# layer, the map streaming and rendering crates and the GPU crates among them), the fleet host
+# agent, the ticketboard and the repository tooling.
 [workspace]
 resolver = "3"
 members = [
@@ -9,8 +9,6 @@ members = [
     "apps/ticketboard",
     "apps/api",
     "apps/frontend",
-    "legacy/map_engine",
-    "legacy/graphics_engine",
     "apps/offline_service_worker",
     # The library crates, one folder per category (`crates/<category>/<name>`): every manifest
     # under `crates/` is a member.
@@ -216,6 +214,12 @@ futures-util = "0.3"
 geometry_primitives = { path = "crates/geometry/geometry_primitives" }
 governor = "0.10.4"
 gloo-net = "0.6"
+# The GPU context of a browser canvas, pooled lane buffers, readback guards and the frame timer
+# (`crates/graphics/gpu_device`).
+gpu_device = { path = "crates/graphics/gpu_device" }
+# The frame vocabulary, draw encoding, compute sprite cull, render pipelines and the frame pump
+# (`crates/graphics/gpu_frame`).
+gpu_frame = { path = "crates/graphics/gpu_frame" }
 heck = "0.5"
 hex = "0.4.3"
 # The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).
@@ -244,6 +248,9 @@ label_layout = { path = "crates/map_overlay/label_layout" }
 libc = "0.2"
 # Pure-Rust transcendentals: the same bits on native and wasm32.
 libm = "0.2"
+# The browser loaders of the served map assets, the live memory budget and the asset statistics
+# (`crates/streaming/map_asset_loading`).
+map_asset_loading = { path = "crates/streaming/map_asset_loading" }
 # The gates over a terrain's committed map assets and the map golden fixtures: terrain manifest,
 # BLAS library, labels, elevation anchors, map-object goldens, world line of sight
 # (`tools/map_assets/map_asset_verification`).
@@ -260,6 +267,18 @@ map_editing_tools = { path = "crates/mission_editing/map_editing_tools" }
 # A terrain's satellite container, tile pyramids, cartographic render, labels, water archives and
 # the glyph atlas (`tools/map_assets/map_raster_pipeline`).
 map_raster_pipeline = { path = "tools/map_assets/map_raster_pipeline" }
+# The map renderer's diagnostics: readback self-checks, the scene readback, the frame benchmark
+# and the stress pool (`crates/map_rendering/map_render_diagnostics`).
+map_render_diagnostics = { path = "crates/map_rendering/map_render_diagnostics" }
+# The map renderer: the render engine, its pipelines, batch list, lane sinks, upload belts,
+# statistics and asset sink (`crates/map_rendering/map_renderer`).
+map_renderer = { path = "crates/map_rendering/map_renderer" }
+# Map streaming preferences, boot progress, the memory budget model and the `MapAssetSink`
+# contract (`crates/streaming/map_streaming_model`).
+map_streaming_model = { path = "crates/streaming/map_streaming_model" }
+# The browser map host: terrain and world boot, camera settle, layer switches and map queries
+# (`crates/streaming/map_streaming_host`).
+map_streaming_host = { path = "crates/streaming/map_streaming_host" }
 # The wire-safety and cargo capacity scans of a mission editor payload
 # (`crates/mission/mission_wire_safety`).
 mission_wire_safety = { path = "crates/mission/mission_wire_safety" }
@@ -311,6 +330,12 @@ orbat_slot_ids = { path = "crates/foundation/orbat_slot_ids" }
 # Slot, vehicle, comment and cluster icon instances and the fire-mission marks
 # (`crates/map_overlay/overlay_instances`).
 overlay_instances = { path = "crates/map_overlay/overlay_instances" }
+# The Arsenal paper doll's wgpu renderer, its instance packing and its readback self-check
+# (`crates/paper_doll/paper_doll_renderer`).
+paper_doll_renderer = { path = "crates/paper_doll/paper_doll_renderer" }
+# The Arsenal paper doll's soldier parts, equipment regions, state colours, unit meshes and
+# picking (`crates/paper_doll/paper_doll_scene`).
+paper_doll_scene = { path = "crates/paper_doll/paper_doll_scene" }
 # Spot heights, town labels and road names, their declutter, the labels archive and their glyph
 # packing (`crates/world_objects/place_names`).
 place_names = { path = "crates/world_objects/place_names" }
@@ -333,6 +358,9 @@ regex = "1"
 regress = "0.10"
 # The renderer building blocks with no GPU handle (`crates/graphics/render_primitives`).
 render_primitives = { path = "crates/graphics/render_primitives" }
+# The renderer contracts: lane sink, layer context, frame hooks, render statistics and the frame
+# packet's binding ids (`crates/graphics/renderer_core`).
+renderer_core = { path = "crates/graphics/renderer_core" }
 # The staging server-join probes, the remote log verdict and the mission upload reproduction
 # (`tools/commands/remote_debugging`).
 remote_debugging = { path = "tools/commands/remote_debugging" }
@@ -389,6 +417,9 @@ staging_load_plan = { path = "tools/staging/staging_load_plan" }
 # them (`tools/commands/staging_procedures`).
 staging_procedures = { path = "tools/commands/staging_procedures" }
 syn = "2"
+# The map symbology's typed GPU layers: slot symbology, glyph atlas, icon lane cull, world icon
+# lanes and lane preferences (`crates/map_rendering/symbology_layers_gpu`).
+symbology_layers_gpu = { path = "crates/map_rendering/symbology_layers_gpu" }
 # The tar archive writer of the equipment export upload bundle.
 tar = "0.4"
 subtle = "2.6.1"
@@ -470,6 +501,9 @@ world_store = { path = "crates/world_formats/world_store" }
 # A terrain's committed map data from a Workbench world export, and its gates
 # (`tools/map_assets/world_export_pipeline`).
 world_export_pipeline = { path = "tools/map_assets/world_export_pipeline" }
+# The streamed world's typed GPU layers: buildings, forest density, satellite and hillshade
+# textures, terrain line of sight overlay (`crates/map_rendering/world_layers_gpu`).
+world_layers_gpu = { path = "crates/map_rendering/world_layers_gpu" }
 # The CRDT behind the mission document (`mission_crdt`, `mission_document`, the map engine).
 yrs = "0.27"
 

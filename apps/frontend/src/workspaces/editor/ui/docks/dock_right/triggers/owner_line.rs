@@ -55,7 +55,7 @@ pub(super) fn TriggerOwnerLine(
             let _ = tick.get();
             let sel = selected.get();
             let (world_a, world_b) = engine_ops::owner_line_world(sel.as_deref())?;
-            let (tx, ty, zoom) = map_engine::streaming::host::camera_snapshot()?;
+            let (tx, ty, zoom) = map_streaming_host::camera_snapshot()?;
             let win = web_sys::window()?;
             let vw = win.inner_width().ok().and_then(|v| v.as_f64())?;
             let vh = win.inner_height().ok().and_then(|v| v.as_f64())?;

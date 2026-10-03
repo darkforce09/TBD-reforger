@@ -1,0 +1,55 @@
+# The map renderer's diagnostics: byte-exact readback self-checks of each pipeline and of the
+# engine's calibration quads, the one-pixel readback of the live scene, the frame benchmark and the
+# stress pool, all functions over the render engine's diagnostic views. Everything that names a GPU
+# or browser type is wasm32 only; the native build keeps the stress scene generator, which the
+# native tests cover.
+[package]
+name = "map_render_diagnostics"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The map renderer's diagnostics: readback self-checks, scene readback, frame benchmark and stress pool."
+
+[package.metadata.layout]
+category = "crates/map_rendering"
+tier = 6
+targets = "wasm32"
+
+[dependencies]
+# The render engine and the views the diagnostics read it through: device, pipeline resources,
+# scene, stress pool, the untimed main pass, the packet's pipeline table and the clear colour.
+map_renderer = { workspace = true }
+# The frame vocabulary (batches, payloads, the packet), the packet encoder, the compute cull and
+# the pipeline constructors the offscreen checks build their own pipelines with.
+gpu_frame = { workspace = true }
+# The frame packet's pipeline and camera binding ids.
+renderer_core = { workspace = true }
+# The icon uniform block and the pooled sprite lane test of the slot symbology.
+symbology_layers_gpu = { workspace = true }
+# The stress lane's id.
+map_draw_lanes = { workspace = true }
+# The fixed cameras of the offscreen checks.
+camera_math = { workspace = true }
+# The scene anchor every check and the stress scene measure from.
+map_coordinates = { workspace = true }
+# The instance layouts, line vertices, the CPU cull oracle, the camera uniform and the baked text
+# atlas and uniform block.
+render_primitives = { workspace = true }
+# The monotonic and wall clocks of the benchmark and the stress pool.
+time_source = { workspace = true }
+# Byte views of the camera matrices, instances and uniform blocks.
+bytemuck = { workspace = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
+# The promises the checks resolve to their JSON reports and the values they reject with.
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+# The page's `setTimeout`, which a readback sleeps on between map polls.
+web-sys = { workspace = true, features = ["Window"] }
+
+[lints]
+workspace = true

@@ -94,11 +94,6 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
             VerifyCmd::CiSchemaParity => {
                 ci_task_catalog::workflow_checks::schema_parity::verify_ci_schema_parity(&find_repository_root()?)?
             }
-            VerifyCmd::EngineLayers => {
-                repository_checks::architecture::engine_layer_boundaries::verify_engine_layers(
-                    &find_repository_root()?,
-                )?
-            }
             VerifyCmd::CrateTiers => workspace_laws::verify_crate_tiers()?,
             VerifyCmd::CrateAnatomy => workspace_laws::verify_crate_anatomy()?,
             VerifyCmd::Strangler => workspace_laws::verify_strangler()?,

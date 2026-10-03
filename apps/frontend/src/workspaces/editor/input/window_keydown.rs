@@ -88,7 +88,7 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             let place_acted = if armed_placement::has_pending() {
                                 armed_placement::cancel_pending();
                                 if let Some(e) = engine.borrow_mut().as_mut() {
-                                    e.clear_place_preview();
+                                    e.with_symbology(|symbology| symbology.clear_place_preview());
                                 }
                                 true
                             } else {
@@ -118,7 +118,9 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                             let viewshed_acted = viewshed.borrow_mut().escape();
                             if viewshed_acted {
                                 if let Some(e) = engine.borrow_mut().as_mut() {
-                                    e.viewshed_clear();
+                                    e.with_terrain_line_of_sight_overlay(|overlay| {
+                                        overlay.viewshed_clear();
+                                    });
                                 }
                             }
                             place_acted

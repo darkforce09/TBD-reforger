@@ -8,8 +8,9 @@
 //! check [`validate_rfc3339_utc`].
 //! **Position:** foundation tier; `time` (parsing) on every target, `js-sys` and `web-sys` on
 //! `wasm32` only. The clocks and formatters it replaces map onto it as follows:
-//! - map engine `diagnostics/timing/gpu.rs`: `now_ms` is `BrowserClock.now_unix_ms_f64()`,
-//!   `perf_now_ms` is [`monotonic_ms`] (same `performance.now()` with the `Date.now()` fallback);
+//! - the map renderer's frame timing and the render diagnostics' benchmark read [`monotonic_ms`]
+//!   (`performance.now()` with the `Date.now()` fallback), and the benchmark's wall clock is
+//!   `BrowserClock.now_unix_ms_f64()`;
 //! - map engine viewshed scheduler host: [`monotonic_ms`] is a `fn() -> f64`, so it fills
 //!   `SchedulerHost::now_ms` and replaces both fallbacks (native `SystemTime`, wasm tick counter)
 //!   with a clock that advances on every target; tests keep injecting their own `fn`;

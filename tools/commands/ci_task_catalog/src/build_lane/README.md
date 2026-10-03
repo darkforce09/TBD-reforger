@@ -49,7 +49,7 @@ recipes dispatch to are tested beside them, in `tools/commands/ci_task_catalog/s
   | `rust-fmt` | `cargo fmt --check` in `apps/api`, then `cargo fmt --all --check` |
   | `rust-clippy` | `cargo clippy -p api -p <every crates/api package> --all-targets -- -D warnings` |
   | `rust-ci` | `rust-fmt`, `rust-clippy`, `rust-build`, `wasm-ci`, then `cargo xtask db test-it` in process: the API's complete integration suite against a fresh database; needs `cargo xtask db up` |
-  | `wasm-ci` | fmt, native clippy with all features and tests of `map_engine`, `graphics_engine` and `offline_service_worker`; clippy for `wasm32-unknown-unknown` of every package `wasm32_lint_lane.rs` derives (the frontend's is `ci-local-leptos`'s) |
+  | `wasm-ci` | fmt, native clippy with all features and tests of `offline_service_worker`; clippy for `wasm32-unknown-unknown` of every package `wasm32_lint_lane.rs` derives (the frontend's is `ci-local-leptos`'s) |
   | `leptos` | `trunk serve --release` in `apps/frontend`; stays in the foreground on :3000 |
   | `leptos-debug` | `trunk serve`, a debug build; stays in the foreground |
   | `leptos-build` | `trunk build --release` into `apps/frontend/dist` |

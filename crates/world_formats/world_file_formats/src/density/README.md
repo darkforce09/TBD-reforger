@@ -30,9 +30,10 @@ writes version 1 and panics when a channel's length is not `cols × rows` or the
 
 - Depends on: `bytemuck`.
 - Used by:
-  - `map_engine::world::environment::vegetation::loader`, which fetches
+  - `map_asset_loading`'s forest mass loader
+    (`crates/streaming/map_asset_loading/src/environment/forest_mass_loader.rs`), which fetches
     `objects/density/{cx}_{cy}.bin` for each chunk and skips a tile that fails to decode;
-  - `map_engine::streaming::loaders`' store tests;
+  - `world_store`'s store tests;
   - the developer tools: the world export writes tiles
     (`tools/map_assets/world_export_pipeline/src/chunk_partitioner/`), and the export
     validation, the mathematical verification and the object goldens decode or rebuild them

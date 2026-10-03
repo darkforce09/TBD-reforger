@@ -228,6 +228,29 @@ fn strangler_reads_a_reexport_spread_over_several_lines() {
 }
 
 #[test]
+fn strangler_an_absent_legacy_folder_is_named_in_a_note() {
+    let mut workspace = FixtureWorkspace::new("strangler-absent-parking-folder");
+    workspace.layout_crate("crates/mission/mission_model", 0, "any", &[]);
+    let report = check_strangler(workspace.root());
+    assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
+    assert!(
+        report
+            .lines
+            .iter()
+            .any(|line| line.starts_with("note: legacy/ is absent")),
+        "{}",
+        report.lines.join("\n")
+    );
+    let parked = check_strangler(workspace_with_legacy().root());
+    assert!(!parked.lines.iter().any(|line| line.contains("is absent")));
+}
+
+/// The green fixture of [`strangler_apps_may_depend_on_legacy_while_it_exists`].
+fn workspace_with_legacy() -> FixtureWorkspace {
+    workspace("strangler-parked-member")
+}
+
+#[test]
 fn strangler_this_checkout_passes() {
     let report = check_strangler(&this_repository());
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));

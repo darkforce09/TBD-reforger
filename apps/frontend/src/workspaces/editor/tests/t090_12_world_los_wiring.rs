@@ -81,7 +81,9 @@ fn raf_loop_ticks_the_object_wash_and_shows_its_progress() {
 #[test]
 fn leaving_the_viewshed_cancels_the_object_wash_with_the_lane() {
     let ed = editor_live();
-    let clear = ed.find("e.viewshed_clear()").expect("T-644 lane clear");
+    let clear = ed
+        .find("overlay.viewshed_clear()")
+        .expect("T-644 lane clear");
     let cancel = ed
         .find("los_world_wasm::cancel_object_wash()")
         .expect("T-090.12.5: the wash must be cancelled with the lane");

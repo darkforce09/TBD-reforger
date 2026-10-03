@@ -32,7 +32,7 @@ assets/terrains/everon/locations/
   road names with the same code the browser would, reads the archive back before writing it, and
   refuses to write one with every lane empty or a road-name list without its road file.
 - Consumers:
-  - the map engine's label host (`legacy/map_engine/src/world/environment/locations/`),
+  - the map engine's label host (`crates/streaming/map_asset_loading/src/environment/location_labels/`),
     which fetches `/map-assets/everon/locations/map_labels.rkyv` when the manifest's `labels`
     block names it, and takes the towns and road names from it (spot heights it finds on the
     elevation model itself);

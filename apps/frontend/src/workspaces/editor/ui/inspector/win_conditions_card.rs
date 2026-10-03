@@ -12,7 +12,7 @@
 //! controls use. That bag is the transport and the table is the contract — `ui/inspector/env.rs`'s own
 //! words — and it is the ONLY part of `meta` with a read/write pair the editor can drive plus a
 //! `hydrate` that loads it back verbatim, which is what makes an authored rule survive Save →
-//! reload. `map_engine_core::mission::extensions` reads the key back out of that bag on the compile
+//! reload. `mission_model::authored_blocks` reads the key back out of that bag on the compile
 //! side; its header carries the full argument.
 //!
 //! **The  gate does not run on this key, and that is deliberate rather than an oversight.**

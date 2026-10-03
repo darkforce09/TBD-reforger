@@ -66,7 +66,7 @@ when a dock reflow moves the pane centre, shifts the camera so the world under i
   `apps/frontend/src/workspaces/editor/mission_editor/registry_loading.rs`; the asset catalog
   and compatibility rules of `apps/frontend/src/workspaces/editor/arsenal/`; the validation
   panel's compile findings; the input layer;
-  `map_engine` (`frame::engine::RenderEngine`); `mission_persistence::server_adoption`;
+  `map_renderer` (`engine::RenderEngine`); `mission_persistence::server_adoption`;
   `mission_editing_commands::hosted_commands`; `mission_document` and `mission_payload`;
   `unit_symbology` (`classification`, `markers`).
 - Used by: the parent's `install_canvas_mount`, which the editor page

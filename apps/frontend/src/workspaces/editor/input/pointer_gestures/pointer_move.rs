@@ -77,10 +77,7 @@ pub(super) fn make_pointer_move_handler(
                     e.on_camera_changed();
                 }
                 pan_px.set(Some((cx, cy)));
-                map_engine::streaming::host::schedule_camera_settle(
-                    map_host.clone(),
-                    engine.clone(),
-                );
+                map_streaming_host::schedule_camera_settle(map_host.clone(), engine.clone());
                 return;
             }
             let z_arm = z_drag.borrow().clone();
@@ -114,7 +111,9 @@ pub(super) fn make_pointer_move_handler(
             if armed_placement::has_pending() {
                 if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
                     if let Some(e) = engine.borrow_mut().as_mut() {
-                        e.set_place_preview(c[0] as f32, c[1] as f32);
+                        e.with_symbology(|symbology| {
+                            symbology.set_place_preview(c[0] as f32, c[1] as f32)
+                        });
                     }
                 }
                 return;
@@ -257,7 +256,9 @@ pub(super) fn make_pointer_move_handler(
                                             .filter(|i| !engine_ops::is_vehicle_id(i.as_str()))
                                             .cloned()
                                             .collect();
-                                        e.set_selection(slot_ids);
+                                        e.with_symbology(|symbology| {
+                                            symbology.set_selection(slot_ids)
+                                        });
                                     }
                                 }
                                 LG::Move {
@@ -306,7 +307,7 @@ pub(super) fn make_pointer_move_handler(
                             )
                         });
                         if let Some((cxy, cids)) = lane {
-                            e.comments_bind_ids(&cxy, cids);
+                            e.with_symbology(|symbology| symbology.comments_bind_ids(&cxy, cids));
                         }
                     }
                     LG::Move {

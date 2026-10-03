@@ -379,23 +379,6 @@ pub(crate) fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
             // as somebody else's problem and blocks the whole group. They fall through to the
             // default arm below, like every other crate.
             //
-            // --all-features is REQUIRED (same floor as the gate test step). lib.rs gates every
-            // module behind a feature tier and no tier is on by default, so a featureless clippy
-            // COMPILES ALMOST NONE OF THEM and reports success on code it never read: a lint
-            // injected into a gated module passes `clippy (changed crates)` without features and
-            // fails with them.
-            engine @ ("map_engine" | "graphics_engine") => vec![host::v(&[
-                "cargo",
-                "clippy",
-                "-p",
-                engine,
-                "--all-features",
-                "--all-targets",
-                "--quiet",
-                "--",
-                "-D",
-                "warnings",
-            ])],
             other => vec![host::v(&[
                 "cargo",
                 "clippy",

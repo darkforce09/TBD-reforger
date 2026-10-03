@@ -59,7 +59,9 @@ pub(crate) fn rebind_vehicle_lane_after_place() {
         let Some(e) = engine.as_mut() else {
             return;
         };
-        e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
+        e.with_symbology(|symbology| {
+            symbology.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings)
+        });
         e.mark_dirty();
     });
 }

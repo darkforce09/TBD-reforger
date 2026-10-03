@@ -15,7 +15,7 @@ use leptos::prelude::*;
 /// Starts the damage-driven editor render loop.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn start_raf(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine::frame::engine::RenderEngine>>>,
+    engine: std::rc::Rc<std::cell::RefCell<Option<map_renderer::engine::RenderEngine>>>,
     disposed: std::sync::Arc<std::sync::atomic::AtomicBool>,
     debug_hud: RwSignal<String>,
     scale_mpp: RwSignal<f64>,
@@ -54,7 +54,7 @@ pub(crate) fn start_raf(
                         "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq){}{}",
                         e.zoom(),
                         crate::workspaces::editor::input::tools::los_world_wasm::hud_suffix(),
-                        map_engine::streaming::memory::budget::hud_suffix()
+                        map_asset_loading::live_memory_budget::hud_suffix()
                     ));
                     frames_at_sample = frames;
                     last_sample = now;
@@ -67,7 +67,7 @@ pub(crate) fn start_raf(
 /// Exposes GPU readback self-checks to the browser gate.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_self_checks(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine::frame::engine::RenderEngine>>>,
+    engine: std::rc::Rc<std::cell::RefCell<Option<map_renderer::engine::RenderEngine>>>,
 ) {
     use wasm_bindgen::prelude::*;
 
@@ -79,7 +79,7 @@ pub(crate) fn register_self_checks(
             engine
                 .borrow()
                 .as_ref()
-                .map(|e| e.self_check())
+                .map(map_render_diagnostics::readback::calibration::calibration_self_check)
                 .unwrap_or_else(|| js_sys::Promise::reject(&JsValue::from_str("engine not ready")))
         }) as Box<dyn FnMut() -> js_sys::Promise>)
     };
@@ -89,7 +89,7 @@ pub(crate) fn register_self_checks(
             engine
                 .borrow()
                 .as_ref()
-                .map(|e| e.texture_self_check())
+                .map(map_render_diagnostics::readback::texture::texture_self_check)
                 .unwrap_or_else(|| js_sys::Promise::reject(&JsValue::from_str("engine not ready")))
         }) as Box<dyn FnMut() -> js_sys::Promise>)
     };
@@ -108,11 +108,15 @@ pub(crate) fn register_self_checks(
                 .as_mut()
                 .map(|e| {
                     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                    e.render_bench(n.max(1.0) as u32)
+                    map_render_diagnostics::benchmark::frame_benchmark::render_bench(
+                        e,
+                        n.max(1.0) as u32,
+                    )
                 })
                 .unwrap_or_else(|| js_sys::Promise::reject(&JsValue::from_str("engine not ready")))
         }) as Box<dyn FnMut(f64) -> js_sys::Promise>)
     };
+    register_engine_diagnostics(&engine, &obj, bench.as_ref());
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__selfChecks"), &obj);
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorBench"), bench.as_ref());
@@ -122,11 +126,187 @@ pub(crate) fn register_self_checks(
     bench.forget();
 }
 
+/// The shared render engine cell every browser diagnostics hook reads.
+#[cfg(target_arch = "wasm32")]
+type EngineCell = std::rc::Rc<std::cell::RefCell<Option<map_renderer::engine::RenderEngine>>>;
+
+/// Sets `name` on `target` to the JavaScript function behind `closure`, kept for the page's
+/// lifetime.
+#[cfg(target_arch = "wasm32")]
+fn set_hook<T: ?Sized + wasm_bindgen::closure::WasmClosure>(
+    target: &wasm_bindgen::JsValue,
+    name: &str,
+    closure: wasm_bindgen::closure::Closure<T>,
+) {
+    let _ = js_sys::Reflect::set(
+        target,
+        &wasm_bindgen::JsValue::from_str(name),
+        closure.as_ref(),
+    );
+    closure.forget();
+}
+
+/// Adds the remaining engine diagnostics to the browser hooks, each entry named after the
+/// diagnostics function or engine method it calls and returning what that call returns.
+///
+/// The readback self-checks and `readback_rgba` join `window.__selfChecks` and resolve to their
+/// JSON reports; the stress pool (`seed_stress`, `clear_stress`) and the compute-cull instruments
+/// (`compute_cull_enabled`, `compute_cull_cpu_count`, `compute_cull_gpu_count`,
+/// `compute_cull_gpu_sampled`, `compute_cull_cpu_count_for_frustum`,
+/// `set_compute_cull_debug_hud`) become properties of the `window.__editorBench` function, which
+/// stays callable as before. Before the engine exists a promise entry rejects with
+/// "engine not ready", a reading entry returns `undefined` and a command entry does nothing.
+#[cfg(target_arch = "wasm32")]
+fn register_engine_diagnostics(
+    engine: &EngineCell,
+    self_checks: &wasm_bindgen::JsValue,
+    bench: &wasm_bindgen::JsValue,
+) {
+    use js_sys::Promise;
+    use map_render_diagnostics::benchmark::stress_pool::{clear_stress, seed_stress};
+    use map_render_diagnostics::readback::{
+        compute_cull::compute_cull_self_check, marquee::marquee_self_check,
+        road_centerline::road_centerline_self_check, scene::readback_rgba,
+        sea_band::sea_band_self_check, text::text_self_check, tree_glyph::tree_glyph_self_check,
+        world_building::world_building_self_check,
+    };
+    use map_renderer::engine::RenderEngine;
+    use wasm_bindgen::prelude::*;
+
+    /// A reading of the engine a hook entry calls with no argument.
+    type EngineReading<T> = fn(&RenderEngine) -> T;
+
+    fn not_ready() -> Promise {
+        Promise::reject(&JsValue::from_str("engine not ready"))
+    }
+
+    let readback_checks: [(&str, EngineReading<Promise>); 7] = [
+        ("text_self_check", text_self_check),
+        ("world_building_self_check", world_building_self_check),
+        ("marquee_self_check", marquee_self_check),
+        ("road_centerline_self_check", road_centerline_self_check),
+        ("compute_cull_self_check", compute_cull_self_check),
+        ("sea_band_self_check", sea_band_self_check),
+        ("tree_glyph_self_check", tree_glyph_self_check),
+    ];
+    for (name, check) in readback_checks {
+        let engine = engine.clone();
+        let hook = move || engine.borrow().as_ref().map_or_else(not_ready, check);
+        set_hook(
+            self_checks,
+            name,
+            Closure::wrap(Box::new(hook) as Box<dyn FnMut() -> Promise>),
+        );
+    }
+    let readback = {
+        let engine = engine.clone();
+        move |x_px: u32, y_px: u32| match engine.borrow().as_ref() {
+            Some(e) => readback_rgba(e, x_px, y_px),
+            None => not_ready(),
+        }
+    };
+    set_hook(
+        self_checks,
+        "readback_rgba",
+        Closure::wrap(Box::new(readback) as Box<dyn FnMut(u32, u32) -> Promise>),
+    );
+
+    let seed = {
+        let engine = engine.clone();
+        move |n: u32, seed: u32| {
+            if let Some(e) = engine.borrow_mut().as_mut() {
+                seed_stress(e, n, seed);
+            }
+        }
+    };
+    set_hook(
+        bench,
+        "seed_stress",
+        Closure::wrap(Box::new(seed) as Box<dyn FnMut(u32, u32)>),
+    );
+    let clear = {
+        let engine = engine.clone();
+        move || {
+            if let Some(e) = engine.borrow_mut().as_mut() {
+                clear_stress(e);
+            }
+        }
+    };
+    set_hook(
+        bench,
+        "clear_stress",
+        Closure::wrap(Box::new(clear) as Box<dyn FnMut()>),
+    );
+    let debug_hud = {
+        let engine = engine.clone();
+        move |on: bool| {
+            if let Some(e) = engine.borrow_mut().as_mut() {
+                e.set_compute_cull_debug_hud(on);
+            }
+        }
+    };
+    set_hook(
+        bench,
+        "set_compute_cull_debug_hud",
+        Closure::wrap(Box::new(debug_hud) as Box<dyn FnMut(bool)>),
+    );
+
+    let flags: [(&str, EngineReading<bool>); 2] = [
+        ("compute_cull_enabled", RenderEngine::compute_cull_enabled),
+        (
+            "compute_cull_gpu_sampled",
+            RenderEngine::compute_cull_gpu_sampled,
+        ),
+    ];
+    for (name, read) in flags {
+        let engine = engine.clone();
+        let hook = move || engine.borrow().as_ref().map(read);
+        set_hook(
+            bench,
+            name,
+            Closure::wrap(Box::new(hook) as Box<dyn FnMut() -> Option<bool>>),
+        );
+    }
+    let counts: [(&str, EngineReading<u32>); 2] = [
+        (
+            "compute_cull_cpu_count",
+            RenderEngine::compute_cull_cpu_count,
+        ),
+        (
+            "compute_cull_gpu_count",
+            RenderEngine::compute_cull_gpu_count,
+        ),
+    ];
+    for (name, read) in counts {
+        let engine = engine.clone();
+        let hook = move || engine.borrow().as_ref().map(read);
+        set_hook(
+            bench,
+            name,
+            Closure::wrap(Box::new(hook) as Box<dyn FnMut() -> Option<u32>>),
+        );
+    }
+    let frustum = {
+        let engine = engine.clone();
+        move |min_x: f64, min_y: f64, max_x: f64, max_y: f64| {
+            engine
+                .borrow()
+                .as_ref()
+                .map(|e| e.compute_cull_cpu_count_for_frustum(min_x, min_y, max_x, max_y))
+        }
+    };
+    set_hook(
+        bench,
+        "compute_cull_cpu_count_for_frustum",
+        Closure::wrap(Box::new(frustum) as Box<dyn FnMut(f64, f64, f64, f64) -> Option<u32>>),
+    );
+}
+
 /// Exposes editor camera state to browser diagnostics.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_editor_cam(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine::frame::engine::RenderEngine>>>,
-    map_host: map_engine::streaming::host::HostHandle,
+    engine: std::rc::Rc<std::cell::RefCell<Option<map_renderer::engine::RenderEngine>>>,
+    map_host: map_streaming_host::HostHandle,
 ) {
     use wasm_bindgen::prelude::*;
 
@@ -157,7 +337,7 @@ pub(crate) fn register_editor_cam(
                 e.set_view(tx, ty, z);
                 e.on_camera_changed();
             }
-            map_engine::streaming::host::flush_viewport(map_host.clone(), engine.clone());
+            map_streaming_host::flush_viewport(map_host.clone(), engine.clone());
         }
     }) as Box<dyn FnMut(f64, f64, f64)>);
 
@@ -172,7 +352,7 @@ pub(crate) fn register_editor_cam(
 /// Exposes slot rendering statistics to browser diagnostics.
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn register_slot_stats(
-    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine::frame::engine::RenderEngine>>>,
+    engine: std::rc::Rc<std::cell::RefCell<Option<map_renderer::engine::RenderEngine>>>,
 ) {
     use wasm_bindgen::prelude::*;
 

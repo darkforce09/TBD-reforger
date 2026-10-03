@@ -39,8 +39,8 @@ See: [Identity and access domain](/crates/api/api_identity_and_access/src/README
 
 ### lane
 
-A draw-order layer of the map: the map engine names 48 lanes (`LaneRole`), basemap first; the
-graphics engine sorts draws by an opaque `LaneId`. Other lanes are named in full (wave lanes).
+A draw-order layer of the map: `map_draw_lanes` names 48 lanes (`LaneRole`), basemap first; the
+graphics crates sort draws by an opaque `LaneId`. Other lanes are named in full (wave lanes).
 
 In code: `LaneRole` in `crates/map_overlay/map_draw_lanes/src/lane_roles.rs`; `LaneId` in `crates/graphics/render_primitives/src/frame/ids.rs`.
 

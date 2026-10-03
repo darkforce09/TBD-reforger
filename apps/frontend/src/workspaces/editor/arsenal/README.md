@@ -12,7 +12,7 @@ of the Mission Creator reads.
 apps/frontend/src/workspaces/editor/arsenal/
 ├── asset_catalog/       the catalog tree builders and their search grammar
 ├── asset_catalog.rs     `CatalogNode`, `CatalogState`, palette classification; re-exports the trees
-├── doll.rs              `ArsenalDoll`: the 3D paper doll over the map engine's doll renderer
+├── doll.rs              `ArsenalDoll`: the 3D paper doll over `paper_doll_renderer`'s `PaperDollRenderer`
 ├── loadout/             loadout JSON, export and import gates, the copy buffer, receipts
 ├── loadout.rs           the kind-sourced loadout rows; re-exports the loadout items
 ├── loadout_commands.rs  the document writes: one slot, Apply to a selection, Remove Everything
@@ -77,7 +77,7 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
     `session::document_commands::download_json` for the export download;
   - `mission_editing_commands::hosted_commands` (the loadout reads and writes, the copy buffer,
     the cargo seed) and `mission_editing_session::host::with_doc`;
-  - `map_engine`: `doll`;
+  - `paper_doll_renderer` (`PaperDollRenderer`, the browser build only);
   - `mission_operations` (`assets`, `cargo`, `cargo_rules`);
   - `contracts/definitions/loadout-export.schema.json` and
     `apps/mod/tbd-framework/Data/registry.json`, embedded at compile time; `web_sys` in the browser

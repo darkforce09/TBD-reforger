@@ -27,7 +27,7 @@ pub(in crate::workspaces::editor::bridge::host_state::editor_context) fn open_at
             let ids = ctx.selection.borrow().clone();
             let mut eng = ctx.engine.borrow_mut();
             if let Some(e) = eng.as_mut() {
-                e.set_selection(ids);
+                e.with_symbology(|symbology| symbology.set_selection(ids));
             }
         }
         if arsenal_tab {

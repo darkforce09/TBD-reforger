@@ -1,8 +1,8 @@
 use super::*;
 
-/// The wasm scope reaches the engine crates the SPA compiles, not just its own path.
+/// The wasm scope reaches the renderer crates the SPA compiles, not just its own path.
 ///
-/// Wave 237 changed `legacy/map_engine` only, and the gate printed
+/// A wave that changes only a crate the SPA compiles must not print
 /// `wasm32 (frontend) PASS` next to `trunk build SKIP (frontend untouched this wave)` — a
 /// success reported over code neither step had compiled. The scope is derived from
 /// `path = "…"` dependencies, so it follows the graph instead of a hand-kept list.
@@ -15,20 +15,29 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
         scope.iter().any(|d| d == FRONTEND_DIR),
         "the frontend itself is always in scope: {scope:?}"
     );
-    for engine in ["legacy/map_engine", "legacy/graphics_engine"] {
+    for engine in [
+        "crates/map_rendering/map_renderer",
+        "crates/graphics/gpu_frame",
+    ] {
         assert!(
             scope.iter().any(|d| d == engine),
             "{engine} is compiled into the SPA's wasm and must be in scope: {scope:?}"
         );
     }
-    // A map engine source file the SPA compiles into its wasm.
+    // A renderer source file the SPA compiles into its wasm.
     assert!(
-        wasm_scope_touched(&root, ["legacy/map_engine/src/frame/encode.rs"].into_iter()),
-        "a map_engine source change must put the SPA in scope"
+        wasm_scope_touched(
+            &root,
+            ["crates/map_rendering/map_renderer/src/encode.rs"].into_iter()
+        ),
+        "a map_renderer source change must put the SPA in scope"
     );
     assert!(
-        wasm_scope_touched(&root, ["legacy/map_engine/Cargo.toml"].into_iter()),
-        "and so must its manifest — wave 237 made a dependency unconditional there"
+        wasm_scope_touched(
+            &root,
+            ["crates/map_rendering/map_renderer/Cargo.toml"].into_iter()
+        ),
+        "and so must its manifest — a dependency made unconditional there reaches the SPA"
     );
     // Something the SPA genuinely does not compile stays out.
     assert!(
@@ -109,17 +118,21 @@ fn the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not() {
 
 #[test]
 fn join_rel_resolves_dotdot_and_refuses_to_climb_out() {
-    // The subjects are real `path = "../…"` values out of the workspace manifests: the frontend
-    // climbs out of `apps/` to reach the map engine, and the map engine reaches the renderer
-    // beside it. Each expected half is the join of its own inputs, so the test is about `..`
+    // The subjects are `path = "../…"` values of the workspace's shape: an application climbs out
+    // of `apps/` to reach a renderer crate, and that crate reaches a graphics crate in a sibling
+    // category. Each expected half is the join of its own inputs, so the test is about `..`
     // resolution rather than about a crate name.
     assert_eq!(
-        join_rel("apps/frontend", "../../legacy/map_engine").as_deref(),
-        Some("legacy/map_engine")
+        join_rel("apps/frontend", "../../crates/map_rendering/map_renderer").as_deref(),
+        Some("crates/map_rendering/map_renderer")
     );
     assert_eq!(
-        join_rel("legacy/map_engine", "../graphics_engine").as_deref(),
-        Some("legacy/graphics_engine")
+        join_rel(
+            "crates/map_rendering/map_renderer",
+            "../../graphics/gpu_frame"
+        )
+        .as_deref(),
+        Some("crates/graphics/gpu_frame")
     );
     assert_eq!(
         join_rel("crates", "../../elsewhere"),

@@ -34,7 +34,7 @@ an empty payload is zero rows. `instances_to_bytes` is the writer's cast and can
   `bytemuck`.
 - Used by:
   - `crate::containers::tbdc`, whose `TbdcHeader::instances` casts the payload;
-  - `map_engine::streaming::loaders` (`chunk_bin.rs` reads chunk rows into columns, `manifest.rs`
+  - `world_chunks` (`chunk_container.rs` reads chunk rows into columns, `terrain_manifest.rs`
     refuses a manifest whose `pod` or `podBytes` differs from `POD_NAME` and `POD_BYTES`);
   - the developer tools: the world export writes rows in
     `tools/map_assets/world_export_pipeline/src/binary_emit.rs`, and the map

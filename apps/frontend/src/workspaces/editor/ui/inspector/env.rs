@@ -123,7 +123,7 @@ pub const ENV_UNCARRIED_NOTE: &str =
 /// the mod, the editor→mod chain is live for `meta.environment` up to the compiler (the saved
 /// payload carries these keys out as top-level `environment`, and `mission_compile.rs` reads that
 /// block for `time`/`weather`), and `ModFlow` no longer splices in four hardcoded constants:
-/// `map_engine_core::mission::flatten::derive_flow` calls `authored_flow_seconds(env, key, default)`
+/// `mission_compiler::game_document::flow::derive_flow` calls `authored_flow_seconds(env, key, default)`
 /// per duration plus `authored_flow_jip(env)`, reading exactly the four key names in the first
 /// column below, unprefixed, off the payload's top-level `environment`. So an authored 3600 is
 /// stored, saved, reloaded, shown back AND compiled as 3600 — the old note here said it "still says
@@ -177,7 +177,7 @@ pub const SETTINGS_UNREAD_NOTE: &str = "Respawn, spectator policy, night vision 
 #[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
 #[doc = ""]
 #[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
-#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " (`mission_compiler::game_document::flow::derive_flow`), so an unauthored mission's dialog shows the"]
 #[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
 #[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
 #[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]
@@ -202,7 +202,7 @@ pub use mission_compiler::FLOW_DEFAULT_BRIEFING_S;
 #[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
 #[doc = ""]
 #[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
-#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " (`mission_compiler::game_document::flow::derive_flow`), so an unauthored mission's dialog shows the"]
 #[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
 #[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
 #[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]
@@ -227,7 +227,7 @@ pub use mission_compiler::FLOW_DEFAULT_JIP;
 #[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
 #[doc = ""]
 #[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
-#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " (`mission_compiler::game_document::flow::derive_flow`), so an unauthored mission's dialog shows the"]
 #[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
 #[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
 #[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]
@@ -252,7 +252,7 @@ pub use mission_compiler::FLOW_DEFAULT_SAFESTART_S;
 #[doc = " What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**."]
 #[doc = ""]
 #[doc = " These are what `ModFlow` splices in when the payload authors nothing"]
-#[doc = " (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the"]
+#[doc = " (`mission_compiler::game_document::flow::derive_flow`), so an unauthored mission's dialog shows the"]
 #[doc = " duration it will actually run with rather than a UI-invented zero. They are also the fallback the"]
 #[doc = " compiler keeps now that it reads the authored keys, which is why the dialog and the compiled"]
 #[doc = " document have to agree about them: if they disagree, the dialog is lying about an unauthored"]

@@ -3,7 +3,7 @@
 //! ══ Transport ═══════════════════════════════════════════════════════════════════════════════
 //! Every write goes to `meta.environment.spawnModules` through [`operations::update_environment`],
 //! the same one-patch-one-undo-step path the .5 cards use.
-//! `map_engine_core::mission::extensions` copies the key onto the compiled payload root.
+//! `mission_model::authored_blocks` copies the key onto the compiled payload root.
 //!
 //! ══ Where this renders ══════════════════════════════════════════════════════════════════════
 //! [`spawn_modules_panel`] belongs in the Mission Settings dialog

@@ -28,7 +28,7 @@ and the reviewer read one record in the same words.
 ## Boundaries
 
 - Depends on: `apps/frontend/src/foundation/` (the transport, the interface primitives, the
-  utilities) and `map_engine` through the wire types.
+  utilities).
 - Used by: the pages under `apps/frontend/src/pages/` and the workspaces under
   `apps/frontend/src/workspaces/`.
 - Rules: a feature never imports a page, a workspace or the shell (`cargo xtask verify

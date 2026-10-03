@@ -47,10 +47,6 @@ fn ci_local_step_set_is_frozen() {
             "verify-no-node",
             "verify-no-shell",
             "verify-ci-shell",
-            // All eight rules of documentation/standards/engine_boundary_rules.md §5 (1, 2,
-            // 3a, 3b, 4, 5, 6 and 7). Sits with the language gates because it is the same
-            // shape: a seconds-long source scan of a wall the compiler cannot see.
-            "verify-engine-layers",
             "verify-workspace-laws",
             "rust-ci",
             // The derived lane tests every workspace member no dedicated task tests.
@@ -175,7 +171,6 @@ fn ci_local_runs_the_leaves_not_a_copy_of_them() {
             "verify-no-node",
             "verify-no-shell",
             "verify-ci-shell",
-            "verify-engine-layers",
             "verify-workspace-laws",
             "rust-ci",
             // The derived lane tests every workspace member no dedicated task tests.

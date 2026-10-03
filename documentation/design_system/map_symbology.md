@@ -13,7 +13,9 @@ APP-6 frames, no echelon modifiers and no civilian side.
 
 - Map: [`crates/map_overlay/unit_symbology/`](/crates/map_overlay/unit_symbology/README.md):
   the role, vehicle and side tables in `classification.rs`, the glyph atlas in `symbol_atlas.rs`,
-  the marker glyphs in `markers.rs`; the atlas upload in `legacy/map_engine/src/overlay/symbology/`;
+  the marker glyphs in `markers.rs`; the atlas upload in
+  `crates/map_rendering/symbology_layers_gpu/src/slot_symbology/atlas.rs` and
+  `crates/map_rendering/symbology_layers_gpu/src/glyph_atlas_gpu.rs`;
   and the marker lane's parse in
   `crates/mission_editing/mission_editing_session/src/lanes/markers.rs`.
 - Game: [`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md):

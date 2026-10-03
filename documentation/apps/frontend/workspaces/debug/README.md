@@ -38,7 +38,7 @@ a row in the table.
 
 - [Debug benches](/apps/frontend/src/workspaces/debug/) — both route components, the shared
   interior lanes and each bench's pure and browser halves.
-- [Map engine line of sight](/legacy/map_engine/src/spatial/los/) — the building and world
+- [Line of sight crates](/crates/line_of_sight/README.md) — the building and world
   occluders the benches probe.
 
 ## Boundaries

@@ -53,8 +53,8 @@ cargo test -p terrain_line_of_sight   # profile, viewshed, sliced job, cell cap
 - Used by:
   - `interior_line_of_sight`, whose floor wash reuses `Visibility` and `ViewshedCapRefused`;
   - `world_line_of_sight`;
-  - the map engine (`legacy/map_engine`): its line-of-sight tool and visibility scheduler under
-    `crates/mission_editing/map_editing_tools/src/`;
+  - `map_editing_tools`: its line-of-sight tool and visibility scheduler
+    (`crates/mission_editing/map_editing_tools/src/`);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input handlers,
     the debug building viewer and the mortar map picker in `apps/frontend/`.
 - Rules: a raster over `MAX_VIEWSHED_CELLS` (300 000) cells is refused, `ViewshedJob::new`

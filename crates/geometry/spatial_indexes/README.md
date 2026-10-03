@@ -56,9 +56,10 @@ scenes `Scene`, `cube` and `concat`) for the tests of other crates and is enable
 ## Boundaries
 
 - Depends on: `geometry_primitives::vector3` (`sub`, `cross`, `dot`), `thiserror`.
-- Used by: `building_interiors`, `interior_line_of_sight` and `world_line_of_sight`; the map
-  engine (`legacy/map_engine`, behind its `world` feature): its picking and line-of-sight tool,
-  the slot cluster lane, the occluder loader and the world object index; the single-page app's
+- Used by: `building_interiors`, `interior_line_of_sight` and `world_line_of_sight`;
+  `map_editing_tools` and `mission_editing_session` (picking and the line-of-sight tool),
+  `symbology_layers_gpu` (the slot cluster lane), `map_asset_loading` (the occluder loader) and
+  `chunk_scheduler` (the world object index); the single-page app's
   Mission Creator input and debug building benches in `apps/frontend/`; and the developer tools,
   whose BVH emitters in `tools/map_assets/blueprint_compiler/src/bvh/` write the sidecars.
 - Rules: geometry category, tier 1 (`cargo xtask verify crate-tiers`); no map, GPU or browser
@@ -68,5 +69,5 @@ scenes `Scene`, `cube` and `concat`) for the tests of other crates and is enable
 
 ## Related documentation
 
-- [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the dependency
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
   directions between the workspace crates.

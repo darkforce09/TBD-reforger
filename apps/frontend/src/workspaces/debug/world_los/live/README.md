@@ -29,7 +29,7 @@ pans, a click without movement places A and then B in turn, and the wheel zooms.
   `use super::*` (`Signals`, the URL readers, `load`, `scene_of`, `upload_lanes`, `probe`, the
   bench defaults), and through it `build_bench_lanes` from
   `apps/frontend/src/workspaces/debug/world_los_scene.rs` and `screen_to_world` from the
-  building viewer's `geom`; `map_engine::frame` (`RenderEngine`, `RafPump`); `js_sys`,
+  building viewer's `geom`; `map_renderer` (`RenderEngine`) and `gpu_frame` (`RafPump`); `js_sys`,
   `wasm_bindgen` and `web_sys`.
 - Used by: `live.rs`, which re-exports `mount`, and
   `apps/frontend/src/workspaces/debug/world_los.rs`, whose `WorldLosPage` calls it in the

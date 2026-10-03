@@ -1,0 +1,7 @@
+# Stage S8 V0a — the frame source pin that reads the frontend's document history host leaves the map engine
+# for the frontend's own tests, beside the host it reads.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# both document rebinds of the history host feed the comment lane: the pin reads only the frontend's history.rs
+path	legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs	apps/frontend/src/workspaces/editor/bridge/tests/document_host/history_rebind_feeds_comments.rs

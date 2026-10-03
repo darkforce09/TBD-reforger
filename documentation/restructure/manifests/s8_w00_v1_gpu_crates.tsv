@@ -1,0 +1,24 @@
+# Stage S8 V1 — the graphics engine's GPU code becomes two graphics crates: its device folder (the pooled lane
+# buffers and the readback guard) becomes gpu_device, its module root that crate's root, and its frame, draw,
+# pipeline and loop folders become gpu_frame, the loop folder as frame_pump (`loop` is a keyword, and a module
+# name says what it holds); the graphics engine documentation moves to the mirror of the graphics crates, the
+# overview under a name that says what it covers. Paths name the tree before the moves; the graphics engine
+# keeps re-export shims at its module paths until the stage switch.
+kind	from	to	scope
+#
+# the pooled lane buffers and the readback guard become gpu_device
+path	legacy/graphics_engine/src/device	crates/graphics/gpu_device/src
+path	legacy/graphics_engine/src/device/mod.rs	crates/graphics/gpu_device/src/lib.rs
+#
+# the frame vocabulary, the draw path, the pipelines and the frame pump become gpu_frame
+path	legacy/graphics_engine/src/frame	crates/graphics/gpu_frame/src/frame
+path	legacy/graphics_engine/src/draw	crates/graphics/gpu_frame/src/draw
+path	legacy/graphics_engine/src/pipeline	crates/graphics/gpu_frame/src/pipeline
+path	legacy/graphics_engine/src/loop	crates/graphics/gpu_frame/src/frame_pump
+#
+# the graphics engine documentation into the mirror of the graphics crates
+path	documentation/legacy/graphics_engine/README.md	documentation/crates/graphics/README.md
+path	documentation/legacy/graphics_engine/graphics_engine_overview.md	documentation/crates/graphics/gpu_rendering_overview.md
+#
+# the moved device code names its own crate root (the scope names the files before the move)
+rust_path	crate::device::	crate::	legacy/graphics_engine/src/device

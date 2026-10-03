@@ -11,8 +11,8 @@ fn required_documentation_locations() -> Vec<(&'static str, Vec<&'static str>)> 
             vec![documentation::APPS_DOCUMENTATION_DIR],
         ),
         (
-            "LEGACY_DOCUMENTATION_DIR",
-            vec![documentation::LEGACY_DOCUMENTATION_DIR],
+            "CRATES_DOCUMENTATION_DIR",
+            vec![documentation::CRATES_DOCUMENTATION_DIR],
         ),
         (
             "MOD_DOCUMENTATION_DIR",
@@ -78,7 +78,7 @@ fn the_root_sparse_set_carries_the_task_surface() {
 
 /// A website slice checks out the three website applications, the trees they reach through
 /// `path =` dependencies, the deployment folder, the API golden responses its contract tests read,
-/// and the documentation mirrors of `apps/` and `legacy/`.
+/// and the documentation mirrors of `apps/` and `crates/`.
 #[test]
 fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_mirrors() {
     let (_, website_set) = SPARSE_CHECKOUT_SETS
@@ -89,12 +89,11 @@ fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_
         "apps/api",
         "apps/frontend",
         "apps/offline_service_worker",
-        "legacy",
         "crates",
         "deploy",
         "contracts/fixtures/api_goldens",
         documentation::APPS_DOCUMENTATION_DIR,
-        documentation::LEGACY_DOCUMENTATION_DIR,
+        documentation::CRATES_DOCUMENTATION_DIR,
     ] {
         assert!(
             website_set.contains(&expected),

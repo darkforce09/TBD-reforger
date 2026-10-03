@@ -19,7 +19,8 @@ crates/geometry/
 - Depends on: external crates only (`serde`, `thiserror`), and two edges inside the category:
   `camera_math` depends on `map_coordinates` for JavaScript rounding, and `spatial_indexes` on
   `geometry_primitives` for its vector products.
-- Used by: the map engine (`legacy/map_engine`), the single-page app (`apps/frontend`) and the
-  developer tools (`tools/developer_tools`), each importing the crates directly.
+- Used by: the streaming, map rendering, paper doll, terrain, world object, line of sight,
+  mission and mission editing crates, the single-page app (`apps/frontend`) and the map asset
+  tools (`tools/map_assets/`), each importing the crates directly.
 - Rules: a geometry crate declares `category = "crates/geometry"`, and its dependency edges point
   to lower tiers only (`cargo xtask verify crate-tiers`).
