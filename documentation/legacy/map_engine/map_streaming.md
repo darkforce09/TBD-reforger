@@ -16,11 +16,11 @@ offline tools share.
   and its children: [`host/`](/legacy/map_engine/src/streaming/host/README.md) (the boot
   sequence and settle passes), [`loaders/`](/legacy/map_engine/src/streaming/loaders/README.md)
   with [`world_loader/`](/legacy/map_engine/src/streaming/loaders/world_loader/README.md),
-  [`scheduler/`](/legacy/map_engine/src/streaming/scheduler/README.md) (the chunk
-  residency), [`buffers/`](/legacy/map_engine/src/streaming/buffers/README.md),
   [`memory/`](/legacy/map_engine/src/streaming/memory/README.md) with
   [`budget/`](/legacy/map_engine/src/streaming/memory/budget/README.md), and
-  [`bridge/`](/legacy/map_engine/src/streaming/bridge/README.md). The terrain, satellite,
+  [`bridge/`](/legacy/map_engine/src/streaming/bridge/README.md), over the streaming crates
+  [`chunk_scheduler`](/crates/streaming/chunk_scheduler/src/README.md) (the chunk residency) and
+  [`chunk_draw_buffers`](/crates/streaming/chunk_draw_buffers/src/README.md). The terrain, satellite,
   water, forest and label loaders the host drives live under
   [`world/`](/legacy/map_engine/src/world/README.md); the chunk, manifest and catalogue parsers
   are the [`world_chunks`](/crates/world_formats/world_chunks/README.md) and
@@ -84,7 +84,7 @@ work. Each pass of the world loader:
    session.
 
 The residency's lifecycle, constants and events are in the
-[scheduler README](/legacy/map_engine/src/streaming/scheduler/README.md#how-it-works). The
+[scheduler README](/crates/streaming/chunk_scheduler/src/README.md#how-it-works). The
 ingest frame records its apply time against a 4 ms budget (`APPLY_BUDGET_MS`) for the statistics;
 the 24-chunk count is what bounds a pass.
 
@@ -119,7 +119,7 @@ The ledger's figures and `decide` answers are in the
 ### Known discrepancies
 
 - The doc comment on `note_undelivered` says an undelivered chunk's empty stub is never requested
-  again (`legacy/map_engine/src/streaming/scheduler/viewport.rs:126`); `evict`
+  again (`crates/streaming/chunk_scheduler/src/viewport.rs:126`); `evict`
   (`viewport.rs:169-180`) spares only pinned and known-empty chunks, and only a parsed empty chunk
   becomes known-empty (`scheduler/chunk_ingest.rs:119-131`), so an evicted stub is fetched again when
   its chunk is pinned later.
@@ -191,8 +191,8 @@ read.
   (queued, [plan](/documentation/tickets/plans/t-938_plan.md)): measured chunk-crossing uploads
   and a wasm memory budget guard, among the render findings.
 - [T-1042 — Rename ticket ids out of code names and UI strings](/.ai/tickets/T-1042.toml) (idea,
-  no plan): the test folders `memory/budget/t938_6/`, `scheduler/residency/t151_11_3_tests/` and
-  `t152_3_tests/`, and the `t9382` and `__t9386` names, get subject names.
+  no plan): the test folder `memory/budget/t938_6/` and the `t9382` and `__t9386` names get
+  subject names.
 - [T-1067 — Remove dead map engine code, facades and duplicated constants](/.ai/tickets/T-1067.toml)
   (idea, no plan): the test-only `ingest_budget_exhausted_at`, the callerless `invalidate_chunk`
   and `release_inflight` go.

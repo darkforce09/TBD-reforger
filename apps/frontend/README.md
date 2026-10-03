@@ -94,9 +94,9 @@ The app reads no environment variable: the settings are the build files'.
 
 | Setting | Value | Read by |
 |---|---|---|
-| map engine features, every build | `world`, `store`, `editing`, without the defaults | Cargo, from `Cargo.toml` |
-| map engine features, browser build | adds `render` and `streaming` (the `wasm32` target table) | Cargo, from `Cargo.toml` |
-| map engine features, native tests | adds `streaming` (dev-dependencies) | Cargo, from `Cargo.toml` |
+| map engine features, every build | `world` and `streaming`, without the defaults | Cargo, from `Cargo.toml` |
+| map engine features, browser build | adds `render` (the `wasm32` target table) | Cargo, from `Cargo.toml` |
+| map engine features, native tests | `streaming` again (dev-dependencies) | Cargo, from `Cargo.toml` |
 | `[build]` | `target = "index.html"`, output `dist` | Trunk, from `Trunk.toml` |
 | `[tools]` | `tailwindcss = "4.3.2"` | Trunk |
 | `[watch]` | ignores `dist` and `style/aegis.css`, the paths the build itself writes into, so a build never triggers the next | Trunk |

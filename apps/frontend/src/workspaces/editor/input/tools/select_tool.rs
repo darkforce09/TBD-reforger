@@ -3,12 +3,12 @@
 //! Position: `editor/input/tools` in the frontend editor.
 //! Signals & state: the leaked selection / engine / document handles the editor owns.
 //! Invariants: the gesture model, the pick, the marquee and their brute-force oracles belong to
-//! `map_engine::editing::tools::selection`. What remains here is what needs a `window`, a
+//! `map_editing_tools::selection`. What remains here is what needs a `window`, a
 //! container element, or the host's live document: the preview lanes that keep the tether
 //! hairlines and vehicle symbology attached to provisional positions, and the probe closures the
 //! headless gates read.
 
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 use std::collections::HashMap;
 
 use map_draw_lanes::lane_roles::role_id;
@@ -16,7 +16,8 @@ use map_engine::frame::engine::RenderEngine;
 use unit_symbology::squad_links::pack_squad_link_drag_preview;
 use wasm_bindgen::prelude::*;
 
-use selection::gesture::{EngineHandle, SelectionHandle};
+use map_engine::frame::EngineHandle;
+use selection::gesture::SelectionHandle;
 use selection::marquee::marquee_ids;
 use selection::pick::frozen_camera;
 use selection::self_check::{marquee_selfcheck, pick_selfcheck};
@@ -79,7 +80,7 @@ fn bind_squad_link_preview(e: &mut RenderEngine, drag_ids: &[String], dx: f64, d
     for (i, id) in soa.ids.iter().enumerate() {
         xy_by_slot.insert(id.clone(), (soa.xy[i * 2], soa.xy[i * 2 + 1]));
     }
-    let inputs = map_engine::editing::picking::squad_link_inputs(doc);
+    let inputs = mission_editing_session::picking::squad_link_inputs(doc);
     #[allow(clippy::cast_possible_truncation)]
     let verts = pack_squad_link_drag_preview(&inputs, &xy_by_slot, drag_ids, dx as f32, dy as f32);
     #[allow(clippy::cast_possible_truncation)]

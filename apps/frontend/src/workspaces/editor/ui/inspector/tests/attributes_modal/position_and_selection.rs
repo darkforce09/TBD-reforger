@@ -137,7 +137,7 @@ fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
     let ops_raw = [
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -145,11 +145,11 @@ fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -160,7 +160,7 @@ fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
         crate::foundation::test_support::editor_operations::DOMAIN_ENTITY,
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
         )),
     ]
     .concat();
@@ -275,8 +275,8 @@ fn modal_view_routes_multi_subtitle_through_the_honesty_helper() {
         );
     let host = only_body(&src, "pub fn AttributesModal(");
     assert!(
-            host.contains("let selection_n = map_engine::editing::host::selection_len()"),
-            "AttributesModal must bind `let selection_n = map_engine::editing::host::selection_len()` (not a discarded call); body was:\n{host}"
+            host.contains("let selection_n = mission_editing_session::host::selection_len()"),
+            "AttributesModal must bind `let selection_n = mission_editing_session::host::selection_len()` (not a discarded call); body was:\n{host}"
         );
     let compact = host.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(
@@ -308,16 +308,19 @@ fn multi_edit_copy_names_slots_not_every_selected_entity() {
 fn attrs_multi_ids_still_filters_selection_to_slot_soa() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
     )));
-    let body = only_body(&ops, "pub fn attrs_multi_ids(open_id: &str) -> Vec<String>");
+    let body = only_body(
+        &ops,
+        "pub fn attrs_multi_ids(open_id: impl Into<SlotUid>) -> Vec<String>",
+    );
     assert!(
         body.contains("soa.ids.iter().any(|r| r == s)"),
         "attrs_multi_ids must keep filtering to slot SoA ids; body was:\n{body}"
     );
     let host = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/host.rs"
+        "/../../crates/mission_editing/mission_editing_session/src/host.rs"
     )));
     let sel = only_body(&host, "pub fn selection_len() -> usize");
     assert!(

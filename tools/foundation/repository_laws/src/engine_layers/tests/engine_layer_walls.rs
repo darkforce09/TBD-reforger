@@ -1,4 +1,4 @@
-//! Tests for [`super`] — the engine-layer walls, §5 rules 1, 2, 3a, 3b, 5, 6 and 7.
+//! Tests for [`super`] — the engine-layer walls, §5 rules 1, 2, 3a, 3b, 6 and 7.
 //!
 //! Every rule is pinned red and green against a fixture checkout, every matcher line by line,
 //! and every refusal path by its exit code. The module reaches the private matchers and `run()`
@@ -23,13 +23,12 @@ fn a_pure_renderer_passes_and_prose_does_not_trip_it() {
             "  OK — 5 pinned site(s) in 1 file(s), 0 unpinned.",
             "  OK — 5 pinned site(s), 0 unpinned.",
             "  OK — 0 site(s) across 1 .rs file(s) under world/: the static world names \
-                 neither yrs, nor a mission document crate, nor the editing module.",
-            "  OK — 0 site(s) across 1 .rs file(s) under editing/:",
+                 neither yrs, nor a mission document crate, nor a mission-editing crate.",
             "  OK — 0 import(s) across 1 .rs file(s) and the manifest:",
             "  scanned 1 .rs file(s) + legacy/graphics_engine/Cargo.toml, \
                  1 .rs file(s) + Cargo.toml across 1 crates/graphics member(s) (0 wasm-only), \
-                 4 .rs file(s) under legacy/map_engine/src — of those 1 under world/ and 1 \
-                 under editing/ — plus 1 .rs file(s) + Cargo.toml under apps/frontend",
+                 3 .rs file(s) under legacy/map_engine/src — of those 1 under world/ — \
+                 plus 1 .rs file(s) + Cargo.toml under apps/frontend",
             "ENGINE-LAYERS: PASS",
         ],
     );
@@ -49,8 +48,7 @@ fn importing_the_map_engine_fails() {
             RULE1_TAIL[0],
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world-document \
-                 finding(s)",
+                 0 direct-renderer import(s), 0 world-document finding(s)",
         ],
     );
 }
@@ -81,8 +79,7 @@ fn a_dependency_edge_is_a_breach_and_a_comment_is_not() {
             "  legacy/graphics_engine/Cargo.toml:6:me = { package = \"map_engine\" }",
             "ENGINE-LAYERS: FAIL — 1 wall breach(es), 0 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world-document \
-                 finding(s)",
+                 0 direct-renderer import(s), 0 world-document finding(s)",
         ],
     );
     r.manifest(&format!(
@@ -108,8 +105,7 @@ fn map_nouns_in_declared_names_fail() {
             RULE2_TAIL[0],
             "ENGINE-LAYERS: FAIL — 0 wall breach(es), 2 map-noun declaration(s), \
                  0 frame-vocab finding(s), 0 GPU-module finding(s), \
-                 0 browser-in-editing site(s), 0 direct-renderer import(s), 0 world-document \
-                 finding(s)",
+                 0 direct-renderer import(s), 0 world-document finding(s)",
         ],
     );
 }
@@ -209,7 +205,7 @@ fn an_absent_world_tree_is_not_a_clean_rule_7() {
     );
 }
 
-/// RULE 7, RED — the CRDT crate, a mission document crate and the editing module reaching
+/// RULE 7, RED — the CRDT crate, a mission document crate and a mission-editing crate reaching
 /// `world/`, each reported with its exact line.
 #[test]
 fn the_world_naming_the_document_breaches_the_wall() {
@@ -217,7 +213,7 @@ fn the_world_naming_the_document_breaches_the_wall() {
     r.map(
         "world/terrain/dem/edited.rs",
         "use yrs::Doc;\nlet t = mission_document::MissionDocCore::new();\n\
-         use crate::editing::history::UndoStack;\n",
+         use mission_editing_session::history::UndoStack;\n",
     );
     r.expect(
         1,
@@ -228,7 +224,7 @@ fn the_world_naming_the_document_breaches_the_wall() {
             "  world/ names the document — legacy/map_engine/src/world/terrain/dem/\
                  edited.rs:2:let t = mission_document::MissionDocCore::new();",
             "  world/ names the document — legacy/map_engine/src/world/terrain/dem/\
-                 edited.rs:3:use crate::editing::history::UndoStack;",
+                 edited.rs:3:use mission_editing_session::history::UndoStack;",
             RULE7_TAIL[0],
             "3 world-document finding(s)",
         ],
@@ -239,8 +235,8 @@ fn the_world_naming_the_document_breaches_the_wall() {
 ///
 /// The `ok` list carries the false positives that would each, on their own, make the rule
 /// unusable: "3 yrs" is the English word the CRDT crate is spelled as, `my_mission_document` and
-/// `crate::editing_notes` are one affix away from a hit, and `mission_model` is the mission domain
-/// crate that is not the document.
+/// `mission_document_notes` are one affix away from a hit, and `mission_model` is the mission
+/// domain crate that is not the document.
 #[test]
 fn rule_7_matches_the_document_and_not_the_legal_traffic() {
     let world = Pattern::regex(RULE7_WORLD_RE).unwrap();
@@ -250,15 +246,15 @@ fn rule_7_matches_the_document_and_not_the_legal_traffic() {
         "    let ids = mission_operations::entity::paste_at_cursor(&core, &buffer);",
         "use yrs::{Doc, Transact};",
         "fn tx(d: &yrs::Doc) -> yrs::TransactionMut<'_> { d.transact_mut() }",
-        "use crate::editing::history::UndoStack;",
-        "    let s = crate::editing::hosted_commands::summarise(&doc);",
-        "use super::super::super::super::editing::history::UndoStack;",
+        "use mission_editing_session::history::UndoStack;",
+        "    let s = mission_editing_commands::hosted_commands::summarise(&doc);",
     ] {
         assert!(world.is_match(bad), "should fail the gate: {bad}");
     }
     for ok in [
         "use crate::editing_notes::Note;",
         "use my_mission_document::Row;",
+        "use mission_document_notes::Note;",
         "use mission_model::orbat::OrbatSlot;",
         "// resurveyed 3 yrs after the original DEM pass",
         "// the editing tools read this module; it never reads them",
@@ -269,6 +265,60 @@ fn rule_7_matches_the_document_and_not_the_legal_traffic() {
         "pub struct DemVectorGrid { pub cells: Vec<u16> }",
     ] {
         assert!(!world.is_match(ok), "should pass the gate: {ok}");
+    }
+}
+
+/// RULE 7, RED — the static world naming each mission-editing crate that hosts the live document:
+/// the session with its undo drive, the hosted commands, the draft decisions and the map tools.
+#[test]
+fn the_world_naming_a_mission_editing_crate_breaches_the_wall() {
+    let r = Repo::new("rule7-mission-editing");
+    r.map(
+        "world/terrain/dem/undo.rs",
+        "use mission_editing_session::history::UndoStack;\n\
+         let s = mission_editing_commands::hosted_commands::summarise(&doc);\n\
+         use mission_persistence::draft::DraftDecision;\n\
+         use map_editing_tools::ruler::RulerTool;\n",
+    );
+    r.expect(
+        1,
+        &[
+            "FAIL: the static world names the authored document:",
+            "  world/ names the document — legacy/map_engine/src/world/terrain/dem/undo.rs:1:\
+             use mission_editing_session::history::UndoStack;",
+            "  world/ names the document — legacy/map_engine/src/world/terrain/dem/undo.rs:2:\
+             let s = mission_editing_commands::hosted_commands::summarise(&doc);",
+            "  world/ names the document — legacy/map_engine/src/world/terrain/dem/undo.rs:3:\
+             use mission_persistence::draft::DraftDecision;",
+            "  world/ names the document — legacy/map_engine/src/world/terrain/dem/undo.rs:4:\
+             use map_editing_tools::ruler::RulerTool;",
+            RULE7_TAIL[0],
+            "4 world-document finding(s)",
+        ],
+    );
+}
+
+/// Rule 7's matcher over the mission-editing crates, one line at a time: each crate's path
+/// matches, and a crate whose name only ends or starts with one, a crate-local module whose name
+/// starts with `editing`, or prose naming the editing layer does not.
+#[test]
+fn rule_7_matches_the_mission_editing_crates_and_nothing_adjacent() {
+    let p = Pattern::regex(RULE7_WORLD_RE).unwrap();
+    for bad in [
+        "use mission_editing_session::history::UndoStack;",
+        "    let s = mission_editing_commands::hosted_commands::summarise(&doc);",
+        "use mission_persistence::draft::DraftDecision;",
+        "use map_editing_tools::ruler::RulerTool;",
+    ] {
+        assert!(p.is_match(bad), "rule 7 must match {bad:?}");
+    }
+    for ok in [
+        "use crate::editing_notes::Note;",
+        "use my_mission_editing_session::Row;",
+        "use map_editing_tools_settings::Panel;",
+        "// the mission editing tools read this module; it never reads them",
+    ] {
+        assert!(!p.is_match(ok), "rule 7 must not match {ok:?}");
     }
 }
 
@@ -491,69 +541,6 @@ fn build_output_is_pruned_but_only_below_the_root() {
     );
     assert!(!is_source(root, &root.join("src/target-container/x.rs")));
     assert!(!is_source(root, &root.join("target/debug/x.rs")));
-}
-
-/// RULE 5, RED — each of the three names, each reported with its exact line, and each on a
-/// different shape: an import, a bare path in an expression, and a mention in a comment.
-///
-/// The comment case is the one worth being explicit about. Everywhere else in this gate a prose
-/// hit is a false positive to be designed out; inside `editing/` it is a finding, because a
-/// comment telling the next reader to reach for a signal here is how the browser gets back in.
-#[test]
-fn a_browser_name_inside_the_engines_editing_tree_fails() {
-    let r = Repo::new("rule5-red");
-    r.map(
-        "editing/tools/ruler/chain.rs",
-        "use web_sys::window;\npub fn n() -> f64 { wasm_bindgen::JsValue::TRUE.as_f64().unwrap() }\n\
-         // park the leptos signal here\n",
-    );
-    let all = r.expect(
-        1,
-        &[
-            "FAIL: the browser reached into the engine's editing tree:",
-            "  legacy/map_engine/src/editing/tools/ruler/chain.rs:1:use web_sys::window;",
-            "  legacy/map_engine/src/editing/tools/ruler/chain.rs:3:// park the leptos \
-             signal here",
-            RULE5_TAIL[0],
-            "0 direct-renderer import(s)",
-        ],
-    );
-    assert!(
-        all.contains("3 browser-in-editing site(s)"),
-        "every site counts, not just the file:\n{all}"
-    );
-}
-
-/// RULE 5's SCOPE — the rule is `editing/` and nothing else, which is what makes it satisfiable.
-///
-/// `map-engine` is a wasm crate: `streaming/host`, `diagnostics/readback` and `frame/*` all name
-/// these three on purpose. A crate-wide rule 5 could never be green, so this proves the same
-/// tokens outside `editing/` are not the rule's subject.
-#[test]
-fn rule_5_is_scoped_to_editing_and_not_the_whole_crate() {
-    let r = Repo::new("rule5-scope");
-    r.map(
-        "streaming/host.rs",
-        "use wasm_bindgen::prelude::*;\nuse web_sys::window;\n",
-    );
-    r.expect(0, &["ENGINE-LAYERS: PASS"]);
-}
-
-/// RULE 5's ANTI-VACUITY CASE. "No file under `editing/` names a browser" and "there is no
-/// `editing/` any more" are the same sentence to a matcher, and this rule's green state is zero
-/// sites — so the count is the only thing that tells them apart.
-#[test]
-fn an_absent_editing_tree_is_not_a_clean_rule_5() {
-    let r = Repo::new("rule5-empty");
-    std::fs::remove_dir_all(r.0.join("legacy/map_engine/src/editing")).unwrap();
-    let all = r.expect(
-        1,
-        &[
-            "FAIL: engine-layers walked 0 .rs file(s) under legacy/map_engine/src/editing",
-            "ENGINE-LAYERS: FAIL (no inputs)",
-        ],
-    );
-    assert!(!all.contains("ENGINE-LAYERS: PASS"), "{all}");
 }
 
 /// RULE 6, RED — both import shapes and the dependency edge, each reported with its line.

@@ -41,7 +41,7 @@ same undo step. A placed vehicle rebinds the vehicle lane in the same frame, and
 composition joins the right dock's recently placed list. A zone draw keeps its draft on the same
 armed value, so "is a draw in flight" has one source: `cancel_pending` leaves it armed,
 `close_zone_polygon` refuses a ring under three vertices, and only a closed shape writes, as one row
-through `map_engine::editing::hosted_commands`; `cancel_zone_draw` abandons it with no
+through `mission_editing_commands::hosted_commands`; `cancel_zone_draw` abandons it with no
 write. An arm itself is never document state and never an undo step.
 
 ## Boundaries
@@ -50,8 +50,8 @@ write. An arm itself is never document state and never an undo step.
   `apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/` (`EDITOR_CONTEXT`,
   `Pending`, `bump_doc_tick`, `place_with_crew`); the undo driver in
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; `mission_operations::entity` for the
-  arm gate, the placement commit and the zone draft; `map_engine` (`editing::hosted_commands` for
-  the zone and trigger rows); the asset catalog's `PlacePayload`; the
+  arm gate, the placement commit and the zone draft; `mission_editing_commands::hosted_commands`
+  for the zone and trigger rows; the asset catalog's `PlacePayload`; the
   right dock's `marker_icon_is_authorable` and `record_placed`; the zone predicates re-exported by
   `apps/frontend/src/workspaces/editor/session/eden_chrome.rs`; the outliner's
   `ensure_active_layer`.

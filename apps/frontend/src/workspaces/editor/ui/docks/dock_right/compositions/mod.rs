@@ -65,7 +65,7 @@ pub(crate) fn compositions_panel(
 
         {move || {
             let _ = doc_tick.get();
-            if map_engine::editing::host::selection_len() == 0 {
+            if mission_editing_session::host::selection_len() == 0 {
                 return view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">
                         "Select one or more placed entities to save a composition."
@@ -146,7 +146,7 @@ pub(crate) fn compositions_panel(
                         class="mt-3 w-full rounded-md border border-primary/40 px-2 py-1.5 text-label-sm text-primary transition-colors hover:bg-primary/15"
                         on:click=move |_| save_open.set(true)
                     >
-                        {move || format!("Save composition… ({} selected)", map_engine::editing::host::selection_len())}
+                        {move || format!("Save composition… ({} selected)", mission_editing_session::host::selection_len())}
                     </button>
                 }
                     .into_any()

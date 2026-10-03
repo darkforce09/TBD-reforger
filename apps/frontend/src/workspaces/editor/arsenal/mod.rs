@@ -62,7 +62,7 @@ use crate::workspaces::editor::ui::arsenal::panels::cargo_panel;
 #[cfg(target_arch = "wasm32")]
 use crate::workspaces::editor::ui::arsenal::panels::{compat_panel, doll_view};
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 /// Explains the immediate commit and undo contract to the author.
 const PERSIST_ALWAYS: &str = "Every pick and cargo edit here is written to the mission document the moment you make it — the Arsenal has no Save button by design, and Ctrl+Z undoes one pick.";
@@ -135,7 +135,7 @@ pub fn ArsenalTab(
     compat: RwSignal<CompatFeed>,
 ) -> impl IntoView {
     // Seed character cargo only when the slot loadout has no cargo key.
-    let loadout_json = engine_ops::seed_slot_cargo(&slot_id).or(loadout_json);
+    let loadout_json = engine_ops::seed_slot_cargo(slot_id.as_str()).or(loadout_json);
     // The slot prefab identifies its catalogued default cargo throughout this modal.
     let asset_id = StoredValue::new(slot_asset_id(&slot_id));
     let id = StoredValue::new(slot_id);

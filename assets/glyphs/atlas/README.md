@@ -39,7 +39,7 @@ assets/glyphs/atlas/
     (`tools/commands/schema_tooling/src/schema_checks/map_glyphs.rs`), which checks the canvas size,
     every rectangle and anchor, and the WebP header;
   - the map engine's native residency tests in
-    `legacy/map_engine/src/streaming/scheduler/residency/t152_3_tests/`, which require the
+    `crates/streaming/chunk_draw_buffers/src/tests/everon_glyphs_and_strips/`, which require the
     index keys to equal the manifest keys.
 
 ## Boundaries

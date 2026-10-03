@@ -33,6 +33,7 @@ use world_chunks::terrain_manifest::ObjectsManifest;
 use world_chunks::terrain_manifest::parse_objects_manifest;
 use world_chunks::world_chunk::WorldChunk;
 use world_chunks::world_chunk::parse_chunk;
+use world_file_formats::ids::PrefabId;
 
 use crate::error::Result;
 
@@ -43,8 +44,8 @@ pub struct WorldStore {
     /// The terrain manifest's `objects` block, once loaded.
     pub manifest: Option<ObjectsManifest>,
 
-    /// The prefab rows, keyed by the bits of their `f64` prefab id.
-    pub prefab_by_id: HashMap<u64, PrefabEntry>,
+    /// The prefab rows, keyed by their prefab id.
+    pub prefab_by_id: HashMap<PrefabId, PrefabEntry>,
 
     /// Whether any classified prefab has a half-extent of 64 m or more.
     pub has_oversized: bool,

@@ -4,7 +4,7 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use crate::ids::{EntityId, VehicleId};
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::EntityTransformPatch;
 use super::MissionDocCore;
@@ -92,8 +92,8 @@ impl MissionDocCore {
 
 impl MissionDocCore {
     /// Set slot position using the supplied domain data.
-    pub fn set_slot_position(&self, id: impl Into<SlotId>, x: f64, y: f64, z: f64, rotation: f64) {
-        let id: SlotId = id.into();
+    pub fn set_slot_position(&self, id: impl Into<SlotUid>, x: f64, y: f64, z: f64, rotation: f64) {
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
@@ -112,7 +112,7 @@ impl MissionDocCore {
     #[allow(clippy::too_many_arguments)]
     pub fn update_slot_position(
         &self,
-        id: impl Into<SlotId>,
+        id: impl Into<SlotUid>,
         x: Option<f64>,
         y: Option<f64>,
         z: Option<f64>,
@@ -120,7 +120,7 @@ impl MissionDocCore {
         width: f64,
         height: f64,
     ) {
-        let id: SlotId = id.into();
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         let _ = update_slot_position_in_txn(

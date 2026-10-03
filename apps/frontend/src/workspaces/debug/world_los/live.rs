@@ -7,12 +7,12 @@ use super::{DEFAULT_CENTER, DEFAULT_EYE_M, DEFAULT_RADIUS_M, MAX_CUT_BUILDINGS};
 use browser_platform::fetch::fetch_bytes;
 use browser_platform::fetch::fetch_text;
 use building_interiors::section::cutter::section_at;
+use chunk_draw_buffers::world_residency::WorldResidency;
 use leptos::prelude::*;
 use map_draw_lanes::lane_roles::role_id;
 use map_engine::frame::engine::RenderEngine;
 use map_engine::frame::RafPump;
 use map_engine::streaming::loaders::occluder_loader::OccluderHost;
-use map_engine::streaming::scheduler::state::WorldResidency;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
@@ -294,7 +294,7 @@ async fn load(
     let mut ingested = 0usize;
     for (id, bytes) in futures::future::join_all(futs).await {
         if let Some(b) = bytes {
-            if residency.ingest_chunk_gz(&id, &b).is_ok() {
+            if residency.ingest_chunk_gz(&id.as_str().into(), &b).is_ok() {
                 ingested += 1;
             }
         }

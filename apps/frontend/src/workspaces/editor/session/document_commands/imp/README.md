@@ -48,7 +48,7 @@ store, the mission id and the current-semver signal), which the canvas mount ins
 ## Boundaries
 
 - Depends on: the parent's context cells and its re-exports of
-  `map_engine::editing::commands` (export text, merge report, selection digest);
+  `mission_editing_commands::document_text` (export text, merge report, selection digest);
   `mission_payload`, `mission_compiler` and `mission_validation`; the `DocHandle` and the
   undo driver in `apps/frontend/src/workspaces/editor/bridge/document_host/`;
   `session::review_mode` and `session::hydrate::clear_local_backups`; the validation panel's

@@ -9,7 +9,7 @@
 use super::*;
 use crate::workspaces::editor::session::review_mode::ReviewedVersion;
 use leptos::task::spawn_local;
-use map_engine::editing::persist::server_adoption::{adopt_payload, Adopt};
+use mission_persistence::server_adoption::{adopt_payload, Adopt};
 use std::cell::Cell;
 use std::rc::Rc;
 

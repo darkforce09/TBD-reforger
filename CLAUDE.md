@@ -178,13 +178,12 @@ apps/
 └── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets; its models live in tools/tickets/ticketboard_model
 
 legacy/                                  <-- Parking folder of the two engine monoliths while their code moves into crates/; no new crate depends on it
-├── map_engine/                          <-- World, spatial computation, formats, and the mission editing seam
+├── map_engine/                          <-- The static world's browser loaders and GPU belts, map streaming, the render engine
 │   └── src/
-│       ├── editing/                     <-- Live mission document, undo history, headless map tools (select, ruler, LOS, viewshed)
 │       ├── world/                       <-- Scene calibration and the GPU and loader parts of terrain, buildings, vegetation, labels (CPU in crates/terrain, crates/world_objects)
 │       ├── spatial/                     <-- The terrain viewshed's GPU overlay (line of sight is in crates/line_of_sight)
 │       ├── camera/                      <-- The browser viewport the map camera fills (the camera math is in crates/geometry)
-│       ├── streaming/                   <-- Served map data: fetch, world chunk residency, draw buffers, memory budget
+│       ├── streaming/                   <-- Served map data: boot host, loaders, memory budget (residency and draw buffers in crates/streaming)
 │       ├── overlay/                     <-- Lane preferences and the GPU symbol bridges (the overlay CPU is in crates/map_overlay)
 │       │   └── symbology/               <-- GPU symbol atlas and slot, vehicle and icon instance bridges
 │       ├── frame/                       <-- Render engine: builds graphics_engine::frame packets, upload belts
@@ -200,9 +199,10 @@ legacy/                                  <-- Parking folder of the two engine mo
         └── pipeline/                    <-- Render pipeline constructors
 
 crates/                                  <-- Library crates grouped by category (crates/<category>/<crate>); every manifest under it is a workspace member declaring its tier
-├── foundation/                          <-- Leaf crates with no workspace dependency
+├── foundation/                          <-- Base crates: tier 0 leaves, plus orbat_slot_ids on newtype_ids
 │   ├── http_url_guard/                  <-- The HTTP(S) URL check the API and the single-page app share, with its one case table
 │   ├── newtype_ids/                     <-- Macros declaring serde-transparent typed ids (string, integer, uuid; an sqlx form expanded at the call site)
+│   ├── orbat_slot_ids/                  <-- An ORBAT slot's two ids: SlotUid (durable editor id) and SlotId (derived wire id)
 │   ├── time_source/                     <-- Wall-clock and monotonic time sources, RFC 3339 UTC formatting and validation
 │   ├── deterministic_random/            <-- The seeded SplitMix64 generator
 │   ├── content_digest/                  <-- SHA-256 and SHA-384 hex digests, framed hashing
@@ -240,6 +240,9 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── terrain_line_of_sight/           <-- Elevation profiles along a sight line, viewsheds whole or a ray at a time
 │   ├── interior_line_of_sight/          <-- Compound traces, the one sight-line evaluation, floor washes whole or in batches
 │   └── world_line_of_sight/             <-- The world occluder: chunk box trees, the prefab occluder library, verdicts with coverage
+├── streaming/                           <-- The streamed world's CPU half: chunk residency and the draw buffers composed over it
+│   ├── chunk_scheduler/                 <-- Viewport pin, in-flight marks, LRU eviction, chunk and prefab ingest, object index, rebuild requests
+│   └── chunk_draw_buffers/              <-- Draw set, glyph, strip and footprint buffers, layer toggles, the world residency owner
 ├── mission/                             <-- The mission domain: model, editor payload, validation, compilation, mergeable document, authoring commands
 │   ├── mission_wire_safety/             <-- Control-character scan of authored names, cargo capacity scan of slot loadouts
 │   ├── mission_model/                   <-- Compiled rows, ORBAT projection, authored extension blocks, slot line, typed mission ids
@@ -250,6 +253,11 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── mission_compiler/                <-- Game-document compiler, its compile findings and the compiler identity
 │   ├── mission_document/                <-- Mergeable Yjs mission document: rows, hydrate and export, merge, selection, undo
 │   └── mission_operations/              <-- Authoring commands and row projections the Mission Creator applies to the document
+├── mission_editing/                     <-- The Mission Creator's editing layer over the mission document (no browser code)
+│   ├── map_editing_tools/               <-- Headless map tools: selection gesture and picks, ruler, line of sight, viewshed job scheduler
+│   ├── mission_editing_commands/        <-- Hosted document commands (ORBAT, layers, markers, zones, triggers, ...) and pure export, report and selection texts
+│   ├── mission_editing_session/         <-- Hosted document and its borrow chain, undo drive, grouping, routing, selection, picks, overlay lanes
+│   └── mission_persistence/             <-- Local draft decisions: record keys, blob verdicts, merge, local-versus-server, adoption, snapshots
 ├── ballistics/                          <-- Mortar ballistics: catalog and flight model, firing solver, fire-mission planner, calibration
 │   ├── ballistics_model/                <-- Ballistics catalog, shell flight model, surface wind, angular units, typed catalog ids
 │   ├── ballistics_solver/               <-- High-angle firing solver per charge, wind-corrected aim, crest clearance, impact dispersion

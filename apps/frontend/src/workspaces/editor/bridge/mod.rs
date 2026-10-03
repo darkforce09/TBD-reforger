@@ -14,7 +14,8 @@
 //! through a handle of their own.
 //! **Signals & state:** the boot phase, the frame-timing samples, the widget-pivot registry and
 //! the hover cursor are all tab-local — they die with the browser tab and never reach the
-//! document. Anything an operator authored travels through `map_engine::editing` instead.
+//! document. Anything an operator authored travels through the editing crates of
+//! `crates/mission_editing/` instead.
 //! **Invariants:** a module that touches `web_sys` or a live engine handle is
 //! `#[cfg(target_arch = "wasm32")]` and its `pub mod` line carries the same gate, so the native
 //! test build still compiles the pure half of the seam. What the canvas draws and what a click can

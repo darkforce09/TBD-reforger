@@ -22,7 +22,7 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 
 /// Builds vehicle glyph positions, labels, colors, and headings.
 pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
-    let rows = map_engine::editing::hosted_commands::vehicle_rows();
+    let rows = mission_editing_commands::hosted_commands::vehicle_rows();
     let mut xy = Vec::with_capacity(rows.len() * 2);
     let mut aliases = Vec::with_capacity(rows.len());
     let mut tints = Vec::with_capacity(rows.len() * 4);
@@ -61,7 +61,7 @@ pub(super) fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa
         let y = soa.xy[i * 2 + 1];
         xy_by_slot.insert(id.clone(), (x, y));
     }
-    let inputs = map_engine::editing::picking::squad_link_inputs(doc);
+    let inputs = mission_editing_session::picking::squad_link_inputs(doc);
     let verts = build_squad_link_segments(&inputs, &xy_by_slot);
     #[allow(clippy::cast_possible_truncation)]
     let segment_count = (verts.len() / 12) as u32;

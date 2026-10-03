@@ -52,7 +52,7 @@ forest fill is in effect, and `metrics.rs` keeps the last eight warm crossings, 
 
 ## Boundaries
 
-- Depends on: the residency in `crate::streaming::scheduler`, the sibling loaders, the streaming
+- Depends on: the residency in `crate::streaming::buffers`, the sibling loaders, the streaming
   bridge (progress, statistics, world-layer preferences), `crate::frame::EngineHandle`,
   `crate::world::mesh` (the landcover mesh), `road_network` (road and apron meshes),
   `vegetation::regions` (the region archive), `world_chunks`, `world_store`,

@@ -4,7 +4,7 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use mission_document::ids::{CommentId, FactionId, LayerId, SquadId};
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 /// An `editorLayers` row, as carried by the doc's `small_maps_json()` → `editorLayersById`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -32,7 +32,7 @@ pub struct LayerRow {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SlotRow {
     /// Id.
-    pub id: SlotId,
+    pub id: SlotUid,
 
     /// Role.
     pub role: String,
@@ -83,7 +83,7 @@ pub struct SquadRow {
     pub slot_ids: Vec<String>,
 
     /// Leader slot id.
-    pub leader_slot_id: SlotId,
+    pub leader_slot_id: SlotUid,
 
     /// Vehicle ids.
     pub vehicle_ids: Vec<String>,

@@ -86,7 +86,7 @@ ring below three vertices.
     the pointer release in `apps/frontend/src/workspaces/editor/input/pointer_gestures/`, the
     zones panel in `apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/` and the
     outliner in `apps/frontend/src/workspaces/editor/ui/outliner/`;
-  - `legacy/map_engine/tests/operation_boundaries.rs` and the prelude-surface tests in
+  - `crates/mission/mission_operations/tests/operation_boundaries.rs` and the prelude-surface tests in
     `crates/mission/mission_operations/src/tests/prelude_surface.rs`.
 - Rules:
   - a release commits at most one placement, and a refused one writes nothing

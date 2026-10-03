@@ -114,8 +114,8 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
 
         let selection: selection::SelectionHandle = Rc::new(RefCell::new(Vec::new()));
         let left: Rc<RefCell<Option<selection::LeftGesture>>> = Rc::new(RefCell::new(None));
-        let ruler: Rc<RefCell<map_engine::editing::tools::ruler::RulerChain>> = Rc::new(
-            RefCell::new(map_engine::editing::tools::ruler::RulerChain::new()),
+        let ruler: Rc<RefCell<map_editing_tools::ruler::RulerChain>> = Rc::new(
+            RefCell::new(map_editing_tools::ruler::RulerChain::new()),
         );
         let sync_ruler = {
             let ruler = ruler.clone();
@@ -330,7 +330,7 @@ pub(super) fn install_canvas_mount(signals: PageMountSignals) {
         }
 
         let restore_settled = Rc::new(Cell::new(false));
-        map_engine::editing::host::install(doc.clone(), selection.clone());
+        mission_editing_session::host::install(doc.clone(), selection.clone());
         mission_history::set_ctx(
             doc.clone(),
             engine.clone(),

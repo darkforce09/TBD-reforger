@@ -2,7 +2,7 @@
 
 use crate::workspaces::editor::test_support::production_half;
 
-use map_engine::editing::persist::server_adoption::{payload_title_nonblank, prefer_payload_title};
+use mission_persistence::server_adoption::{payload_title_nonblank, prefer_payload_title};
 
 /// The prefer helper must keep the authored title when the row is stale.
 ///
@@ -45,7 +45,7 @@ fn payload_title_nonblank_trim() {
 fn adopt_payload_wires_prefer_helper() {
     const SRC: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/persist/server_adoption.rs"
+        "/../../crates/mission_editing/mission_persistence/src/server_adoption.rs"
     ));
     let production = production_half(SRC);
     let adopt = production

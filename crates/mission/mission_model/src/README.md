@@ -16,7 +16,7 @@ crates/mission/mission_model/src/
 ├── compiled/           the compiled rows: entities, vehicles, slots, ORBAT groups, nets, mission sections
 ├── environment/        the weather timeline and audio blocks
 ├── error.rs            `Error` and `Result`: the refusal sentence of every check
-├── ids.rs              the newtype ids: mission, template, preset, zone, slot, net, task, trigger…
+├── ids.rs              the newtype ids: mission, template, preset, zone, net, task, trigger…
 ├── lib.rs              the crate root: module header, `mod` lines and the error re-exports
 ├── objectives/         the tasks and win rule blocks
 ├── orbat/              the ORBAT squad and slot templates, derived from the editor graph
@@ -60,9 +60,9 @@ the blocks compiles to a document that spends not one byte on them: an absent or
 copies nothing, and an empty carrier emits nothing.
 
 The compiled rows in `compiled/` and the parsed blocks name their ids through `ids.rs`: one
-serde-transparent type per referent, so a slot's durable identity (`SlotUid`, which seats, squad
-leaders and the VIP rule reference) cannot be passed where its derived wire id (`SlotId`) belongs,
-and every serialised shape stays the bare string.
+serde-transparent type per referent, and every serialised shape stays the bare string. Slot rows
+name `orbat_slot_ids` directly, so a slot's durable identity (`SlotUid`, which seats, squad
+leaders and the VIP rule reference) cannot be passed where its derived wire id (`SlotId`) belongs.
 
 ### Adding a block
 

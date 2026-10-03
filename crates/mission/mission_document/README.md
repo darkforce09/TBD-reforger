@@ -11,7 +11,7 @@ selection policy and local undo.
 
 ```text
 crates/mission/mission_document/
-├── Cargo.toml  the package: `mission_crdt`, `mission_model`, `mission_validation`, `yrs`, layout tier 4
+├── Cargo.toml  the package: `mission_crdt`, `mission_model`, `mission_validation`, `orbat_slot_ids`, `yrs`, layout tier 5
 └── src/        the document's rows, selection policy, ids, error, test clock and whole-document tests
 ```
 
@@ -52,11 +52,12 @@ engine's). No environment variables.
 
 ## Boundaries
 
-- Depends on: `mission_crdt`, `mission_model`, `mission_validation`, `newtype_ids`, `time_source`,
-  `yrs`, `serde_json`, `thiserror`; dev: `mission_payload`, `mission_compiler`.
+- Depends on: `mission_crdt`, `mission_model`, `mission_validation`, `newtype_ids`,
+  `orbat_slot_ids`, `time_source`, `yrs`, `serde_json`, `thiserror`; dev: `mission_payload`,
+  `mission_compiler`.
 - Used by: `mission_operations`, the map engine's editing layer, its integration tests, and the
   Mission Creator in `apps/frontend/src/workspaces/editor/`.
-- Rules: mission tier 4 (`cargo xtask verify crate-tiers`); the Yjs maps and the exported editor
+- Rules: mission tier 5 (`cargo xtask verify crate-tiers`); the Yjs maps and the exported editor
   payload stay byte-identical (the hydrate and compile round-trip tests); a local write is one
   undo step and a batch is one.
 

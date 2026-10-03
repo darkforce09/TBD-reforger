@@ -50,7 +50,7 @@ pub struct WinConditionParams {
 
     /// `mode: vip` — the `slots[].uid` of the protected player.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub vip_slot_id: Option<crate::ids::SlotUid>,
+    pub vip_slot_id: Option<orbat_slot_ids::SlotUid>,
 
     /// `mode: timeout` — the round length in whole minutes. Projected onto `flow.timeLimitSeconds` by the emitter; it never becomes a second clock.
     #[serde(skip_serializing_if = "Option::is_none")]

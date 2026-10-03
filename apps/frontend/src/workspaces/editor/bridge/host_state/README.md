@@ -19,8 +19,8 @@ apps/frontend/src/workspaces/editor/bridge/host_state/
 ## How it works
 
 The canvas mount creates the selected-id set, a `SelectionHandle`, and hands the same cell to the
-map engine's `editing::host::install` and to `editor_context::install`, so the set lives in the
-frontend while engine commands read and write it. Every other part of this folder reaches the
+editing session's `mission_editing_session::host::install` and to `editor_context::install`, so
+the set lives in the frontend while engine commands read and write it. Every other part of this folder reaches the
 installed context through the `EDITOR_CONTEXT` thread-local, because the document, engine and
 selection handles are `!Send` `Rc`s, and each entry point opens exactly one borrow of it.
 
@@ -31,7 +31,7 @@ since it grabs the set for a drag, and an empty id list is refused rather than r
 also selects a folder's direct slots or its whole subtree, selects every slot and vehicle in view
 (Ctrl+A), and moves the camera to the selection's centroid at the same zoom.
 `undo_grouped_gestures.rs` wraps a delete, a paste and an align in
-`map_engine::editing::batch::with_batch`, so a gesture the operator made as one act is one
+`mission_editing_session::batch::with_batch`, so a gesture the operator made as one act is one
 Ctrl+Z, and supplies the engine with `confirm_bulk`, a browser confirmation the engine calls before
 a bulk move above its threshold. The undo grouping times gestures on the document's platform clock,
 `Date.now()` in the browser, so the host installs no clock.
@@ -57,8 +57,9 @@ rather than an error.
 
 ## Boundaries
 
-- Depends on: `map_engine` (`editing::host`, `editing::batch`, `editing::hosted_commands`,
-  `editing::tools` for selection); `formation_geometry` for the arrange vocabulary;
+- Depends on: `mission_editing_session` (`host`, `batch`), `mission_editing_commands`
+  (`hosted_commands`) and `map_editing_tools` (selection); `formation_geometry` for the arrange
+  vocabulary;
   `mission_operations` for the placement commit, the zone draft, the projections and the selection
   centroid; the undo driver in
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; the outliner's node builders and
@@ -74,8 +75,8 @@ rather than an error.
     `apps/frontend/src/workspaces/editor/ui/`, the overlays and the undo driver in
     `apps/frontend/src/workspaces/editor/bridge/`, and the loadout commands in
     `apps/frontend/src/workspaces/editor/arsenal/`;
-  - `map_engine::editing`, which reads the selection cell and calls the closures it is
-    handed (`confirm_bulk`, `ensure_active_layer`);
+  - the editing crates (`mission_editing_session`, `mission_editing_commands`), which read the
+    selection cell and call the closures they are handed (`confirm_bulk`, `ensure_active_layer`);
   - the source pins in `apps/frontend/src/foundation/test_support/editor_operations.rs`.
 - Rules: every module is `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line; a
   confirmation is the host's, handed to the engine as a closure, so no browser dialog lives inside

@@ -18,7 +18,7 @@ pub fn set_menu_signal(sig: RwSignal<Option<MenuState>>) {
 /// Opens the context menu at a viewport point.
 #[cfg(target_arch = "wasm32")]
 pub fn open(x: f64, y: f64, target: MenuTarget) {
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     if let Some(id) = target.retarget_to.clone() {
         entity_selection::select_slot(id);
@@ -66,7 +66,7 @@ pub fn close() {
 /// Runs the enabled action represented by a menu row.
 #[cfg(target_arch = "wasm32")]
 pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f64)>) {
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     match item {
         ContextItem::GoHere => {
@@ -93,12 +93,12 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         }
         ContextItem::ConnectStart(kind) => {
             if let Some(id) = target_ids.first() {
-                let _ = engine_ops::arm_connect(kind.token(), id);
+                let _ = engine_ops::arm_connect(kind.token(), id.as_str());
             }
         }
         ContextItem::ConnectComplete => {
             if let Some(id) = target_ids.first() {
-                let _ = engine_ops::complete_connect(id);
+                let _ = engine_ops::complete_connect(id.as_str());
             }
         }
         ContextItem::ConnectCancel => engine_ops::cancel_connect(),
@@ -107,7 +107,7 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         }
         ContextItem::MoveToFormation(f) => {
             if let Some(id) = target_ids.first() {
-                let _ = engine_ops::force_to_formation(id, f.token());
+                let _ = engine_ops::force_to_formation(id.as_str(), f.token());
             }
         }
         ContextItem::ArrangeRun(kind) => {

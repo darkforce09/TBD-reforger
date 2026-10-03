@@ -4,8 +4,8 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use mission_document::ids::LayerId;
-use mission_model::ids::SlotId;
 use mission_validation::AssetId;
+use orbat_slot_ids::SlotUid;
 
 use super::MissionDocCore;
 use super::Value;
@@ -19,7 +19,7 @@ pub(super) const VALID_SIDES: &[&str] = &["BLUFOR", "OPFOR", "INDFOR"];
 pub fn place_character_under_side(
     doc: &MissionDocCore,
     side: &str,
-    slot_id: impl Into<SlotId>,
+    slot_id: impl Into<SlotUid>,
     layer_id: impl Into<LayerId>,
     role: &str,
     tag: Option<String>,
@@ -32,7 +32,7 @@ pub fn place_character_under_side(
     let asset_id = asset_id.map(AssetId::into_inner);
     let layer_id: LayerId = layer_id.into();
     let layer_id = layer_id.as_str();
-    let slot_id: SlotId = slot_id.into();
+    let slot_id: SlotUid = slot_id.into();
     let slot_id = slot_id.as_str();
     if !VALID_SIDES.contains(&side) {
         return Err(Error::InvalidSide(side.to_string()));

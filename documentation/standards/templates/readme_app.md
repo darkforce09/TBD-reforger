@@ -112,16 +112,16 @@ it and every write path refuses.
 ## Boundaries
 
 - Depends on: `crate::foundation` (the API client and DTOs, the auth store, the UI primitives and
-  utilities, the test support), `crate::features` (the review wording), `map_engine` (its `data`,
-  `editing`, `streaming`, `overlay`, `frame`, `camera`, `spatial`, `world` and `doll` modules) and
-  `web_sys` in the browser build.
+  utilities, the test support), `crate::features` (the review wording), the editing crates of
+  `crates/mission_editing/`, `map_engine` (its `streaming`, `overlay`, `frame`, `camera`,
+  `spatial`, `world` and `doll` modules) and `web_sys` in the browser build.
 - Used by:
   - `apps/frontend/src/app_routes.rs`, the route table;
   - `apps/frontend/src/main.rs`, which registers `purge_local_documents` as a sign-out hook;
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
     `/missions/:id/edit` route.
-- Rules: a document mutation goes through `map_engine::editing`, never straight out of a
-  panel; a module that touches `web_sys` or a live engine handle is `#[cfg(target_arch = "wasm32")]`,
+- Rules: a document mutation goes through the hosted commands of `mission_editing_commands`,
+  never straight out of a panel; a module that touches `web_sys` or a live engine handle is `#[cfg(target_arch = "wasm32")]`,
   and so is its `pub mod` line; no page, feature, foundation module or sibling workspace imports
   from this folder.
 

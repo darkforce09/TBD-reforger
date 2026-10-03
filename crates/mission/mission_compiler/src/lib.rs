@@ -6,10 +6,11 @@
 //! a payload for type errors before a save ([`scan_editor_payload_types`]) and lists the authored
 //! gameplay data a document cannot carry ([`unsupported_authored_data`]); holds the compiler
 //! identity an artifact records ([`COMPILER_PACKAGE_VERSION`]).
-//! **Position:** mission tier 4, over `mission_model` (the compiled rows and authored blocks),
-//! `mission_payload` (terrain bounds, kit aliases), `mission_validation` (the finding vocabulary)
-//! and `mission_wire_safety`. The API compiles on submit and preview; the Mission Creator compiles
-//! its export and shows the findings in its validation panel.
+//! **Position:** mission tier 5, over `mission_model` (the compiled rows and authored blocks),
+//! `mission_payload` (terrain bounds, kit aliases), `mission_validation` (the finding vocabulary),
+//! `mission_wire_safety` and `orbat_slot_ids` (the slot ids a kit substitution names). The API
+//! compiles on submit and preview; the Mission Creator compiles its export and shows the findings
+//! in its validation panel.
 //! **Signals & state:** none beyond the kit alias table `mission_payload` parses once; pure
 //! functions.
 //! **Invariants:** the compiled document keeps the authored faction, squad and slot order and

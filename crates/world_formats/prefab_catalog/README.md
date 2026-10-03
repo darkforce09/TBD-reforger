@@ -21,8 +21,9 @@ numeric `prefabId` and a string `kind` (a missing `class` reads `unknown`) as a 
 id is a `PrefabId` (u32); a numeric `prefabId` that is not a whole number in `0..=u32::MAX`
 refuses the catalogue with `InvalidPrefabId` (`WorldError::InvalidPrefabId` on the byte lane), never
 a cast. `build_prefab_maps` gives each row its render-class code (`render_class_for_prefab`), keyed
-by `prefab_map_key` (the bits of the id as an f64) so a chunk's numeric `pid` finds it exactly, and
-reports whether any classified prefab has a
+by its `PrefabId`; a chunk's numeric `pid` finds it through `prefab_id_from_f64`, which names a
+prefab only for the exact `f64` of a `u32` (a fractional or negative `pid`, `-0.0` included, names
+none), and `build_prefab_maps` also reports whether any classified prefab has a
 half extent of `OVERSIZED_HALF_EXTENT_M` (64 m) or more. `catalog_from_bytes` yields the same pair
 from the archive after validating it and checking its schema version, its terrain and that its
 census counts every row; `row_to_archive` writes a row and refuses one it cannot encode
@@ -60,8 +61,9 @@ enabled only from their `[dev-dependencies]`. The crate reads no environment var
 
 ## Public surface
 
-- `prefab_rows`: `PrefabRow`, `PrefabEntry`, `PrefabCatalog`, `narrow_prefab_rows`, `prefab_map_key`, `build_prefab_maps`, `catalog_from_bytes`, `from_archive`, `rows_from_archive`,
+- `prefab_rows`: `PrefabRow`, `PrefabEntry`, `PrefabCatalog`, `narrow_prefab_rows`, `build_prefab_maps`, `catalog_from_bytes`, `from_archive`, `rows_from_archive`,
   `row_to_archive`, `inventory_to_archive`, `inventory_from_bytes`, `PREFAB_CATALOG_ALIGN`.
+- `numeric_prefab_ids`: `prefab_id_from_f64`.
 - `render_classes`: `RENDER_CLASS_CODES`, `class_code`, `NO_CLASS`, `render_class_for_prefab`,
   `OVERSIZED_HALF_EXTENT_M`, `narrow_instance_row`, `narrow_instance_row_v2`, `InstanceRowV2`.
 - `footprint_lookups`: `obb_corners`, `building_prefab_lookup`, `fence_prefab_lookup`,
@@ -88,6 +90,8 @@ enabled only from their `[dev-dependencies]`. The crate reads no environment var
   - a `prefabId` that is fractional, negative or above `u32::MAX` is a typed error
     (`narrowing_refuses_a_prefab_id_that_is_not_a_whole_u32`,
     `a_json_catalogue_with_a_fractional_prefab_id_is_refused`);
+  - a chunk `pid` names a prefab only when it is the exact `f64` of a `u32`
+    (`prefab_id_from_f64_names_a_prefab_only_for_the_exact_f64_of_a_u32`);
   - a catalogue built for another terrain, of another schema version, with a drifted class code,
     with a census that does not count its rows or with a repeated prefab id is refused
     (`a_catalogue_for_another_terrain_is_refused`,

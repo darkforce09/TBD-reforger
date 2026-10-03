@@ -46,7 +46,8 @@ cargo test -p terrain_relief   # contour, hillshade and sea band unit tests
 ## Public surface
 
 - `contours`: `ContourRing`, `contour_grid_reductions`, `contour_levels`, `contour_rings`,
-  `summit_ring_indices` and `contour_segments`.
+  `summit_ring_indices` and `contour_segments`; the hairline colours `CONTOUR_RGBA` and
+  `CONTOUR_SUMMIT_RGBA`.
 - `hillshade`: `Hillshade` and `build_hillshade_image`.
 - `sea_band`: `SeaBandGeometry`, `build_sea_band_geometry` and `sea_fill_alpha`.
 - `prelude`, which re-exports the items above but `contour_segments`.
@@ -56,7 +57,9 @@ cargo test -p terrain_relief   # contour, hillshade and sea band unit tests
 - Depends on: `terrain_elevation` (the vector grid) and `map_coordinates` (rounding).
 - Used by: the map engine (`legacy/map_engine`): its terrain boot builds the hillshade, its relief
   host (`world/terrain/relief/host.rs`) keeps the contour and sea lanes, and its mesh composer
-  (`world/mesh.rs`) draws the `ContourRing`s; and `water_bodies`, which triangulates the `SeaBandGeometry`.
+  (`world/mesh.rs`) draws the `ContourRing`s in `CONTOUR_RGBA` and `CONTOUR_SUMMIT_RGBA`, which
+  the tests of its line-of-sight tool's viewshed wash palette read; and `water_bodies`, which
+  triangulates the `SeaBandGeometry`.
 - Rules: flat ground shades one uniform grey (`flat_grid_is_uniform_cos_zenith` in
   `src/tests/hillshade_tests.rs`); each peak gets exactly one summit ring, its highest closed one,
   and an open chain never counts (`per_peak_selects_one_highest_closed_ring_each`,

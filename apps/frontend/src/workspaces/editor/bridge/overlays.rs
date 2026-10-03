@@ -1,7 +1,7 @@
 //! Floating editor controls and dialogs.
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 
 use crate::workspaces::editor::mission_editor::transform;
 

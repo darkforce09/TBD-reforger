@@ -17,11 +17,8 @@ targets = "any"
 
 [dependencies]
 map_draw_lanes = { workspace = true }
-newtype_ids = { workspace = true }
+orbat_slot_ids = { workspace = true }
 render_primitives = { workspace = true }
-
-[dev-dependencies]
-serde_json = { workspace = true }
 
 [lints]
 workspace = true

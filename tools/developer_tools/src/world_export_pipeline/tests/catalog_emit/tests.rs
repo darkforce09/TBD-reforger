@@ -1,4 +1,3 @@
-use prefab_catalog::prefab_rows::prefab_map_key;
 use world_chunks::terrain_manifest::parse_manifest_binary;
 
 use super::*;
@@ -100,7 +99,7 @@ fn everon_catalog_archives_emit_and_read_back_as_their_json() {
     for row in &json_rows {
         let entry = cat
             .by_id
-            .get(&prefab_map_key(row.prefab_id))
+            .get(&row.prefab_id)
             .unwrap_or_else(|| panic!("prefab {} missing from the archive", row.prefab_id));
         assert_eq!(entry.row.kind, row.kind, "prefab {}", row.prefab_id);
         assert_eq!(entry.row.class, row.class, "prefab {}", row.prefab_id);

@@ -86,6 +86,12 @@ camera_math = { path = "crates/geometry/camera_math" }
 # over WebSockets, the gate font cache (`tools/browser_testing/chrome_devtools_protocol`).
 chrome_devtools_protocol = { path = "tools/browser_testing/chrome_devtools_protocol" }
 chrono = "0.4.45"
+# The world draw buffers and the world residency that owns them
+# (`crates/streaming/chunk_draw_buffers`).
+chunk_draw_buffers = { path = "crates/streaming/chunk_draw_buffers" }
+# The world chunk residency: pin, LRU eviction, chunk ingest, object index
+# (`crates/streaming/chunk_scheduler`).
+chunk_scheduler = { path = "crates/streaming/chunk_scheduler" }
 # The CI task table and runner, the build lane recipes, the cargo target pin and the CI workflow
 # checks (`tools/commands/ci_task_catalog`).
 ci_task_catalog = { path = "tools/commands/ci_task_catalog" }
@@ -169,6 +175,9 @@ map_coordinates = { path = "crates/geometry/map_coordinates" }
 # The map's named draw lanes, their paint order and the zoom gates
 # (`crates/map_overlay/map_draw_lanes`).
 map_draw_lanes = { path = "crates/map_overlay/map_draw_lanes" }
+# The Mission Creator's headless map tools: selection, ruler, line of sight and the viewshed job
+# scheduler (`crates/mission_editing/map_editing_tools`).
+map_editing_tools = { path = "crates/mission_editing/map_editing_tools" }
 # The wire-safety and cargo capacity scans of a mission editor payload
 # (`crates/mission/mission_wire_safety`).
 mission_wire_safety = { path = "crates/mission/mission_wire_safety" }
@@ -196,6 +205,15 @@ mission_document = { path = "crates/mission/mission_document" }
 # The authoring commands and row projections of the mission document
 # (`crates/mission/mission_operations`).
 mission_operations = { path = "crates/mission/mission_operations" }
+# The Mission Creator's editing commands: the hosted document commands and the pure export, report
+# and selection texts (`crates/mission_editing/mission_editing_commands`).
+mission_editing_commands = { path = "crates/mission_editing/mission_editing_commands" }
+# The Mission Creator's editing session: the hosted document, undo, routing, selection, picks and
+# overlay lanes (`crates/mission_editing/mission_editing_session`).
+mission_editing_session = { path = "crates/mission_editing/mission_editing_session" }
+# The decidable half of the Mission Creator's local drafts
+# (`crates/mission_editing/mission_persistence`).
+mission_persistence = { path = "crates/mission_editing/mission_persistence" }
 # The Enfusion mod script checks: comment card, identity comments, layouts, spawn runs
 # (`tools/checks/mod_script_checks`).
 mod_script_checks = { path = "tools/checks/mod_script_checks" }
@@ -205,6 +223,9 @@ mod_operations = { path = "tools/commands/mod_operations" }
 # The offline cache policy the service worker and the page share
 # (`crates/contracts/offline_cache_policy`).
 offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
+# The durable editor id and the derived wire id of an ORBAT slot
+# (`crates/foundation/orbat_slot_ids`).
+orbat_slot_ids = { path = "crates/foundation/orbat_slot_ids" }
 # Slot, vehicle, comment and cluster icon instances and the fire-mission marks
 # (`crates/map_overlay/overlay_instances`).
 overlay_instances = { path = "crates/map_overlay/overlay_instances" }

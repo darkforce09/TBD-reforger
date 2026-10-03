@@ -45,10 +45,18 @@ The category matrix (`crate_layout::category_edge_allowed`): foundation → foun
 foundation, contracts; mission → foundation, mission, the `geometry` crate; ballistics → foundation,
 ballistics; graphics → foundation, graphics; the other engine categories → foundation, contracts,
 engine; map rendering and paper doll → foundation, contracts, mission, ballistics, engine, map
-rendering, paper doll; mission editing → foundation, mission, ballistics, engine, mission editing;
+rendering, paper doll; mission editing → foundation crates whose `targets` is not `wasm32`,
+mission, mission editing, and the geometry, world formats, terrain, world objects, line of sight
+and map overlay categories (never ballistics, streaming or graphics);
 api → foundation, contracts, mission, ballistics, api; frontend → any `crates/` category but api;
 tools → foundation, contracts, mission, ballistics, engine crates whose `targets` is `any`, and
 tools, never a wasm-only crate, with the staging fixtures tool (tools/staging/staging_fixtures) also reaching api.
+
+The firewalls (`crate_firewalls`, rule 6) read sources twice besides the manifests: no declared
+name with a map noun in a graphics crate, and no `web_sys`, `leptos` or `wasm_bindgen` token,
+prose included, in any `.rs` file under `crates/mission_editing/`. The second scan runs whenever
+that folder exists or a member declares the category, and a folder holding no `.rs` file is a
+finding (`crate_tiers_an_empty_mission_editing_root_is_not_a_clean_scan`).
 
 The frontend layer table is the caller's: xtask passes the table for
 `apps/frontend` (`src/foundation` foundation, `src/features` features, `src/pages` pages,

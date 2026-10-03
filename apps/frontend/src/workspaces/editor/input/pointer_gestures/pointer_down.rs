@@ -86,7 +86,7 @@ pub(super) fn make_pointer_down_handler(
                     let sy = ev.client_y() as f64 - rect.top();
                     left_pointer.set(Some(ev.pointer_id()));
                     *left.borrow_mut() = Some(
-                        if map_engine::editing::tools::ruler::should_begin_ruler(
+                        if map_editing_tools::ruler::should_begin_ruler(
                             tool_mode.get_untracked(),
                             ev.button(),
                         ) {

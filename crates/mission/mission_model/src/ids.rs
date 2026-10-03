@@ -1,8 +1,9 @@
 //! The identifiers a mission's compiled rows and authored blocks name.
 //!
 //! **Role:** declares one newtype identifier per referent: a mission, its template, a faction
-//! preset, a zone, a slot (its derived wire id and its durable editor identity), a radio net, a
-//! task, a trigger, a marker, a spawn module, an audio emitter, a music cue and a tactical graphic.
+//! preset, a zone, a radio net, a task, a trigger, a marker, a spawn module, an audio emitter, a
+//! music cue and a tactical graphic. A slot's two ids, its derived wire id and its durable editor
+//! identity, are `orbat_slot_ids`'s, which the rows name directly.
 //! **Position:** the leaf of `mission_model`; every compiled row and authored block names its ids
 //! through these types, and the payload compiler, the game-document compiler, the API and the
 //! Mission Creator construct them from the strings they read.
@@ -31,18 +32,6 @@ newtype_ids::string_id! {
 newtype_ids::string_id! {
     /// A zone's identifier (`zones[].id`), which spawn modules and the extraction win rule name.
     pub struct ZoneId;
-}
-
-newtype_ids::string_id! {
-    /// A slot's derived wire identifier (`slots[].id`, `faction:callsign:role:occurrence`), which
-    /// shifts under role renames and reorders.
-    pub struct SlotId;
-}
-
-newtype_ids::string_id! {
-    /// A slot's durable identity (`slots[].uid`): the editor's own slot id, which vehicle seats,
-    /// squad leaders and the VIP win rule reference.
-    pub struct SlotUid;
 }
 
 newtype_ids::string_id! {

@@ -279,7 +279,7 @@ fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
     assert!(
         up.contains("engine_ops::regroup_slot_onto(")
             && up.contains("ids.len() == 1")
-            && up.contains("!engine_ops::is_vehicle_id(&ids[0])"),
+            && up.contains("!engine_ops::is_vehicle_id(ids[0].as_str())"),
         "CONN-GROUP-001: an unarmed Ctrl-drag of a SINGLE character onto another must regroup"
     );
 
@@ -362,7 +362,7 @@ fn regroup_reuses_the_refile_seam_and_noops_off_squad() {
     let ops = ops_live();
     let body = only_body(&ops, "pub fn regroup_slot_onto(");
     assert!(
-        body.contains("read_attrs(target_id)") && body.contains("read_attrs(slot_id)"),
+        body.contains("read_attrs(target_id)") && body.contains("read_attrs(slot_id.clone())"),
         "CONN-GROUP-001: regroup must read the target's (and source's) squad off the SoA"
     );
     assert!(

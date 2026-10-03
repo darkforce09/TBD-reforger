@@ -3,8 +3,8 @@
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
-use mission_model::ids::SlotId;
 use mission_validation::AssetId;
+use orbat_slot_ids::SlotUid;
 
 use super::entity::terrain_bounds_of;
 use mission_crdt::soa::NONE_IDX;
@@ -14,7 +14,7 @@ use mission_document::{EntityTransformPatch, MissionDocCore};
 #[derive(Clone, Debug, PartialEq)]
 pub struct SlotAttrs {
     /// Id.
-    pub id: SlotId,
+    pub id: SlotUid,
 
     /// X.
     pub x: f64,
@@ -58,10 +58,10 @@ pub fn raw_slot_rows(core: &MissionDocCore) -> serde_json::Map<String, serde_jso
 /// Row str using the supplied domain data.
 pub fn row_str(
     rows: &serde_json::Map<String, serde_json::Value>,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
     key: &str,
 ) -> String {
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     rows.get(id)
         .and_then(|r| r.get(key))
@@ -73,9 +73,9 @@ pub fn row_str(
 /// Slot z using the supplied domain data.
 pub fn slot_z(
     rows: &serde_json::Map<String, serde_json::Value>,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
 ) -> Option<f64> {
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     rows.get(id)?
         .get("position")?
@@ -97,9 +97,9 @@ pub fn keep_z_rows(
 /// Slot attrs from raw using the supplied domain data.
 pub fn slot_attrs_from_raw(
     rows: &serde_json::Map<String, serde_json::Value>,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
 ) -> SlotAttrs {
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     let pos = rows.get(id).and_then(|r| r.get("position"));
     let num = |key: &str| -> f64 {
@@ -178,8 +178,8 @@ impl AttrDiff {
 }
 
 /// Apply read_attrs to explicit document state.
-pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotId>) -> Option<SlotAttrs> {
-    let id: SlotId = id.into();
+pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotUid>) -> Option<SlotAttrs> {
+    let id: SlotUid = id.into();
     let id = id.as_str();
     let rows = raw_slot_rows(core);
 
@@ -228,13 +228,13 @@ pub fn attrs_locked_count(core: &MissionDocCore, ids: &[String]) -> usize {
 /// Apply attrs_update_position to explicit document state.
 pub fn attrs_update_position(
     core: &MissionDocCore,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
     x: Option<f64>,
     y: Option<f64>,
     z: Option<f64>,
     rotation: Option<f64>,
 ) -> bool {
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     if core.slot_layer_is_locked(id) {
         return false;
@@ -280,7 +280,7 @@ pub fn attrs_update_position_multi(
 /// Apply attrs_update_slot to explicit document state.
 pub fn attrs_update_slot(
     core: &MissionDocCore,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
     role: Option<String>,
     tag: Option<String>,
     stance: Option<String>,
@@ -288,7 +288,7 @@ pub fn attrs_update_slot(
     description: Option<String>,
 ) -> bool {
     let asset_id = asset_id.map(AssetId::into_inner);
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     if !raw_slot_rows(core).contains_key(id) {
         return false;

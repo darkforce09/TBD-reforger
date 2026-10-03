@@ -3,9 +3,9 @@ use camera_math::ortho::state::OrthoCamera;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::line_of_sight::capture::LosMode;
+use map_editing_tools::line_of_sight::capture::LosMode;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 
 #[cfg(target_arch = "wasm32")]
 use crate::foundation::ui::{cn, MaterialIcon};

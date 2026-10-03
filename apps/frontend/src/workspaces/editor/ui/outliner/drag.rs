@@ -90,7 +90,7 @@ pub fn cancel_layer_drag() {
     // Rows arm the legacy latch alongside the set (including ORBAT's separate refile latch).
     // Every completion/cancellation must consume all of them before a later click can see one.
     {
-        use map_engine::editing::hosted_commands as engine_ops;
+        use mission_editing_commands::hosted_commands as engine_ops;
         engine_ops::cancel_layer_drag();
         engine_ops::cancel_refile();
     }
@@ -117,7 +117,7 @@ pub fn complete_multi_drop_onto_folder(
     folder_descendants: impl Fn(&str) -> Vec<String>,
 ) -> bool {
     use crate::workspaces::editor::bridge::host_state::undo_grouped_gestures;
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
         return false;
@@ -142,15 +142,15 @@ pub fn complete_multi_drop_onto_folder(
                 // drop as well, so `plan_drop`'s refusal is the affordance, not the only guard).
                 LayerDrag::Folder(_) => {
                     if id != dest_folder_id {
-                        engine_ops::reparent_layer(id, Some(dest_folder_id.to_string()));
+                        engine_ops::reparent_layer(id.as_str(), Some(dest_folder_id.to_string()));
                     }
                 }
                 // A slot / comment REFILES into it — same latch, different mutator.
                 LayerDrag::Slot(_) => {
-                    engine_ops::refile_slot_to_layer(id, dest_folder_id);
+                    engine_ops::refile_slot_to_layer(id.as_str(), dest_folder_id);
                 }
                 LayerDrag::Comment(_) => {
-                    engine_ops::refile_comment_to_layer(id, dest_folder_id);
+                    engine_ops::refile_comment_to_layer(id.as_str(), dest_folder_id);
                 }
             };
         }
@@ -171,7 +171,7 @@ pub fn complete_multi_drop_onto_folder(
 #[cfg(target_arch = "wasm32")]
 pub fn complete_multi_refile_onto_squad(dest_squad_id: &str) -> bool {
     use crate::workspaces::editor::bridge::host_state::undo_grouped_gestures;
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     let Some(drag) = PENDING_DRAG.with(|p| p.borrow_mut().take()) else {
         return false;

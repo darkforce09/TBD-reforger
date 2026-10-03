@@ -112,10 +112,10 @@ where
 #[cfg(target_arch = "wasm32")]
 #[must_use]
 pub fn add_whole_terrain_zone() -> Option<String> {
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
     use mission_operations::entity::{terrain_bounds_of, terrain_key_of};
 
-    let (terrain, bounds) = map_engine::editing::host::with_doc(|core| {
+    let (terrain, bounds) = mission_editing_session::host::with_doc(|core| {
         (terrain_key_of(core), terrain_bounds_of(core))
     })?;
     let ring = terrain_rect_ring(&terrain, bounds)?;

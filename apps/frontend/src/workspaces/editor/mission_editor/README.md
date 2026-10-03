@@ -32,7 +32,7 @@ apps/frontend/src/workspaces/editor/mission_editor/
 size the canvas ──> seed the document (canvas_mount/document_setup.rs)
 ──> selection set, ruler, line-of-sight and viewshed state ──> register the tool seams,
     the widget pivot, the toolbar dispatch and the validation panel's seams
-──> map_engine::editing::host::install, history set_ctx, editor_context::install,
+──> mission_editing_session::host::install, history set_ctx, editor_context::install,
     the side signals, __editorHistory, the undo and redo keys, the unload guard
 ──> effects: the connection lane on each document tick; chrome and dock changes into
     session::layout, an engine resize, and the pane centre held while a dock collapses
@@ -73,7 +73,7 @@ Everything reaches the rest of the editor through the page module's declarations
   commands in `session/`, the top strip's Arrange commands and the validation panel in `ui/`, and the
   asset catalog and rules of `arsenal/`; `crate::foundation` (the
   [API](/documentation/glossary/a_to_f.md#api) client, `AuthStore`, the `RegistryItem` DTOs);
-  `map_engine` (`frame`, `streaming::host`, `editing`, `camera`);
+  `map_engine` (`frame`, `streaming::host`, `camera`); `mission_editing_session` (`host`);
   `mission_document`, `mission_crdt`, `mission_payload` and `mission_operations`;
   `unit_symbology` (`classification`, `markers`) and `terrain_elevation::grid`; over HTTP, `GET /api/v1/registry` and `GET /api/v1/registry/compat`.
 - Used by: the page module `apps/frontend/src/workspaces/editor/mission_editor.rs`, and through

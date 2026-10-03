@@ -19,7 +19,7 @@ use crate::workspaces::editor::ui::outliner::node_model::{
 };
 use crate::workspaces::editor::ui::outliner::node_model::{LayerRow, NodeKind, OutlinerNode};
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 mod comment_row;
 mod row_actions;

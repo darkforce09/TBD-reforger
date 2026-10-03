@@ -15,9 +15,9 @@ with the mission and read by nothing outside the editor.
   `crates/mission/mission_document/src/rows/connections.rs` and `connection_types.rs` beside it
   ([rows README](/crates/mission/mission_document/src/rows/README.md)); the id minting, the
   panel list and the delete in `crates/mission/mission_operations/src/entity/connections.rs`;
-  the armed connect in `legacy/map_engine/src/editing/hosted_commands/entity_connections.rs`;
+  the armed connect in `crates/mission_editing/mission_editing_commands/src/hosted_commands/entity_connections.rs`;
   the map lane and its pick in
-  [`legacy/map_engine/src/editing/lanes/`](/legacy/map_engine/src/editing/lanes/README.md)
+  [`crates/mission_editing/mission_editing_session/src/lanes/`](/crates/mission_editing/mission_editing_session/src/lanes/README.md)
   (`connections.rs`); the "Connect" submenu in
   [`apps/frontend/src/workspaces/editor/ui/docks/context_menu/`](/apps/frontend/src/workspaces/editor/ui/docks/context_menu/README.md)
   (`connection_types.rs`, `menu_entries.rs`, `menu_dispatch.rs`); the panel in

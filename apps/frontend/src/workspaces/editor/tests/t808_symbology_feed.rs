@@ -20,7 +20,7 @@ fn glyph_block() -> String {
     let anchor = format!("pub struct Comment{}", "Point");
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/lanes/comments.rs"
+        "/../../crates/mission_editing/mission_editing_session/src/lanes/comments.rs"
     ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])

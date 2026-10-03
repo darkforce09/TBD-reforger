@@ -10,13 +10,11 @@ page. It hands finished data to the render engine and depends on no UI crate.
 
 ```text
 legacy/map_engine/src/streaming/
-├── bridge/     what crosses to the page: preference readers, boot progress, statistics, toggles
-├── buffers/    the draw set and the packed icon, strip and building buffers of resident chunks
+├── bridge/     what crosses to the page: preference readers, boot progress, statistics
 ├── host/       the browser entry point: the boot sequence, settle refreshes and map queries
 ├── loaders/    the world and occluder loaders
-├── memory/     the memory budget ledger and the residency's statistics
-├── mod.rs      the module tree
-└── scheduler/  the world chunk residency: chunk math, pin, eviction, ingest budget, picking
+├── memory/     the memory budget ledger
+└── mod.rs      the module tree
 ```
 
 ## How it works
@@ -31,13 +29,13 @@ host/        boot sequence, settle passes, camera, place and occluder queries
 loaders/     fetch /map-assets/<terrain>/ and parse it with the world format crates
    │ missing chunk ids out, parsed chunks in
    ▼
-scheduler/   WorldResidency: pin, in-flight marks, failure cap, LRU eviction, ingest budget
-   │
+chunk_scheduler      ChunkResidency: pin, in-flight marks, failure cap, LRU eviction, ingest budget
+   │ rebuild requests (DrawRebuild)
    ▼
-buffers/     draw set; icon, strip and building buffers ─> render engine uploads (crate::frame)
+chunk_draw_buffers   WorldResidency: draw set; icon, strip and building buffers ─> render engine uploads
 
 bridge/      the preference and progress types; statistics back to the page (window.__mapAssets)
-memory/      the budget ledger the loads report to; the residency's statistics
+memory/      the budget ledger the loads report to
 ```
 
 The page mounts a render engine, registers it with the host's render context and calls
@@ -50,11 +48,14 @@ at a time as `TBDC` binaries or gzip JSON, ingests up to 24 a pass, and uploads 
 buffers when their revision changes, while the occluder loader mirrors the resident chunks into
 the line-of-sight occluder.
 
-`WorldResidency`, defined in `scheduler/`, is extended across the children: its loads and ingest
-in `loaders/`, its buffer composers in `buffers/`, its layer toggles in `bridge/` and its
-statistics in `memory/`. The module compiles with the `streaming` feature; `host/`, the two
-browser loaders and `bridge/statistics.rs` need wasm32 with `render`. So the residency, the
-buffers and the budget also run natively, as the crate's tests use them.
+`WorldResidency`, defined in the `chunk_draw_buffers` crate (`crates/streaming/chunk_draw_buffers`),
+owns the `chunk_scheduler` crate's `ChunkResidency` (pin, LRU, ingest, object index) and the draw
+buffers composed over it, with the layer toggles and the statistics; the scheduler names nothing
+of the draw buffers and returns a rebuild request from each change the buffers must see, which the
+world residency applies at once; the loaders and the debug bench import both crates directly.
+The module compiles with the `streaming` feature;
+`host/`, the two browser loaders and `bridge/statistics.rs` need wasm32 with `render`. So the
+budget also runs natively, as the crate's tests use it.
 
 ## Public surface
 
@@ -66,8 +67,6 @@ buffers and the budget also run natively, as the crate's tests use them.
   the Range helpers and statistics for the loaders in `crate::world`.
 - `loaders`: `WorldHost` and `OccluderHost`, for the host and the debug world line-of-sight
   bench.
-- `scheduler`: `WorldResidency`, its loads and chunk ingest and its object index, for the host
-  and the debug bench.
 - `memory::budget`: the accounting calls and the satellite floor claim for
   `crate::world::terrain::satellite`, and `hud_suffix` for the Mission Creator's debug HUD.
 
@@ -76,12 +75,13 @@ buffers and the budget also run natively, as the crate's tests use them.
 - Depends on:
   - `crate::world` (terrain, environment, meshes and the DEM, satellite, water, forest and label
     loaders), `crate::overlay` (the lane preferences), `crate::frame` (the render engine handle);
-    the world format crates `world_chunks`, `prefab_catalog` and `world_store`;
+    the streaming crates `chunk_scheduler` and `chunk_draw_buffers`; the world format crates
+    `world_chunks`, `prefab_catalog` and `world_store`;
     `spatial_indexes` and `world_line_of_sight` (the world object index, the line-of-sight
     occluder, BVH sidecars); `map_draw_lanes`, `label_layout`, `road_network`, `vegetation`,
     `terrain_elevation`, `terrain_relief` and `water_bodies`; `map_coordinates` (the chunk math) and
-    `browser_platform` (the fetch helpers and console macros); nothing of `crate::editing`,
-    `crate::camera` or `crate::doll`, and no mission crate;
+    `browser_platform` (the fetch helpers and console macros); nothing of `crate::camera` or
+    `crate::doll`, and no mission crate;
   - `serde`, `serde_json`, `flate2`, `bytemuck`, `thiserror` and `futures`, and on wasm32
     `gloo-net`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures`;
   - the [API](/documentation/glossary/a_to_f.md#api)'s `/map-assets` mount, which serves

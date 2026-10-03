@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S7 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3 and S11a landed |
-| Last green commit | the S11a stage commit (M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Current stage | S8 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3, S11a and S7 landed |
+| Last green commit | the S7 stage commit (S11a: ffb5fe74d, M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
@@ -117,12 +117,15 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [x] Stage commit — done — `refactor(restructure): S6 world CPU crates`; handoff to S7 and S8 in `stage_logs/s6.md`
 
 ### S7 Streaming CPU and editor
-- [ ] Q0 (M) cuts — pending
-- [ ] Q1 (M) scheduler and draw buffers — pending
-- [ ] Q2 (L) editing session, commands, persistence — pending
-- [ ] Q3 (M) editing tools — pending
-- [ ] X7 (M) switch — pending
-- [ ] Stage commit — pending
+- [x] Q0a (L) streaming state split in place — done — S7 stage commit — `ChunkResidency`, `DrawBuffers`, composed `WorldResidency`, `DrawRebuild` requests
+- [x] Q0b (M) editing cuts and `orbat_slot_ids` — done — S7 stage commit — editor slot ids retyped `SlotUid` (F-S7-01)
+- [x] Q1 (L) chunk_scheduler, chunk_draw_buffers, prefab rekey — done — S7 stage commit — F-S6-16 closed
+- [x] Q2a (M) mission_editing_session, mission_persistence, operation suites — done — S7 stage commit
+- [x] Q2b (L) mission_editing_commands — done — S7 stage commit — 78 parameters on typed ids
+- [x] Q3 (M) map_editing_tools — done — S7 stage commit
+- [x] X7a (L) switch, shims, `editing` feature deleted — done — S7 stage commit
+- [x] X7b (M) engine rule 5 retired into the crate-tier firewall scan and matrix arm — done — S7 stage commit
+- [x] Stage commit — done — `refactor(restructure): S7 streaming CPU and editor`; handoff to S8 in `stage_logs/s7.md`
 
 ### S8 Rendering
 - [ ] V0 (L) exports stripped, renderer redesign in place — pending
@@ -396,3 +399,13 @@ the PATH, and a `podman` that reaches the host. Each worktree builds in its own 
 the xtask binary another worktree linked last (finding F-S6-03). `git push` runs in the container. Prune
 the build folder's `debug/incremental` and stale API test executables before a full
 `db test-it`.
+
+S7 is on `main`: seven crates — `orbat_slot_ids` (foundation, tier 1: the durable editor id
+`SlotUid` and the derived wire id `SlotId`), `chunk_scheduler` and `chunk_draw_buffers`
+(`crates/streaming/`), and `mission_editing_session`, `mission_persistence`,
+`mission_editing_commands`, `map_editing_tools` (`crates/mission_editing/`); the map engine has no
+`editing` module or feature, engine rule 5 is retired into the crate-tier law's mission editing
+firewall scan and matrix arm, and the prefab maps are keyed by `PrefabId`. The handoff to S8 (the
+loaders, host and memory that stay in `legacy/map_engine/src/streaming/`, the
+`map_streaming_host` row without `toggles.rs` and `stats_json`) is in
+[stage_logs/s7.md](/documentation/restructure/stage_logs/s7.md).

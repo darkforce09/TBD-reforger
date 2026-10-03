@@ -26,7 +26,7 @@ apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/
 zone labelled "Play Area" over the terrain's bounds. Selecting a zone opens its attributes block,
 where "Redraw circle" and "Redraw polygon" reshape it and keep its label, faction and rules. The
 "Tactical graphics" section arms, finishes and cancels a tactical graphic draw through the bridge's
-`tactical_graphics_authoring`. Writes go through `map_engine::editing::hosted_commands`,
+`tactical_graphics_authoring`. Writes go through `mission_editing_commands::hosted_commands`,
 and each bumps the document tick so the panel re-reads.
 
 The vocabulary comes from `contracts/definitions/mission.schema.json`, embedded at compile time
@@ -37,7 +37,7 @@ held to the document's 0.1 m grid (`ZONE_GRID_M`): a circle radius must survive 
 
 ## Boundaries
 
-- Depends on: `map_engine::editing::hosted_commands` and `host`,
+- Depends on: `mission_editing_commands::hosted_commands` and `host`,
   `mission_operations::{zones, entity}` (`DrawTarget`, `ZoneShape`, the
   terrain bounds), `mission_payload` and `mission_model::tactical_graphics`; the bridge's
   `armed_placement` and `tactical_graphics_authoring` in

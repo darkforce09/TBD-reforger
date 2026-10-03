@@ -15,7 +15,7 @@ tools/foundation/repository_laws/src/
 ├── cargo_manifest/            the manifest reader's lexical helpers
 ├── cargo_manifest.rs          a `Cargo.toml` reader: package keys, dependency edges in every table, features, layout, lints, targets, workspace
 ├── crate_dependencies.rs      the dependency-direction rules of the website crates and the test-only feature rule
-├── engine_layers/             the eight engine-layer walls and the map engine's UI-framework ban
+├── engine_layers/             the six engine-layer walls and the map engine's UI-framework ban
 ├── error.rs                   `Error` and `Result`: a law whose input is missing or unreadable
 ├── exemption_mechanisms.rs    exemption files, comment directives and exemption tables
 ├── file_length.rs             the 500 and 1000 line ceilings and their report lines
@@ -38,7 +38,7 @@ input it needs is missing or unreadable.
 | File length | `file_length::scan_file_lengths` | every `.rs` and `.c` file under the law roots | a production file over 500 lines, a test file over 1000 |
 | Test placement | `sibling_test_placement::scan_inline_test_modules` | every production `.rs` file under the law roots | a `mod <name> {` body named `tests` or `test`, or one a `cfg` enables under test |
 | No exemption | `exemption_mechanisms::scan_exemption_mechanisms` | every file under the law roots, and the files at the repository root | an exemption-list file name, a comment directive switching a structural rule off, a declared exemption table |
-| Engine layers | `engine_layers::check_engine_layers` | the graphics engine and every `crates/graphics` member, the map engine and the frontend | a breach of rule 1, 2, 3a, 3b, 4, 5, 6 or 7 |
+| Engine layers | `engine_layers::check_engine_layers` | the graphics engine and every `crates/graphics` member, the map engine and the frontend | a breach of rule 1, 2, 3a, 3b, 6 or 7 |
 | UI-framework ban | `engine_layers::map_engine_ui_framework_findings` | the map engine's manifest and sources | a UI framework dependency edge or import anywhere in the crate |
 | Crate directions | `crate_dependencies::crate_dependency_findings` | the four website crate manifests | an edge against the layer order, in any dependency table |
 | Test-only feature | `crate_dependencies::test_only_feature_findings` | one parsed manifest | a feature that a non-test build could carry |

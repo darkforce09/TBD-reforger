@@ -17,10 +17,7 @@ fn map_engine_tests_require_all_features() {
     // `tools/commands/platform_execution/src/wave_execution/touch.rs` guard by passing
     // `--all-features`. One assertion names every tier.
     assert!(
-        cfg!(feature = "render")
-            && cfg!(feature = "world")
-            && cfg!(feature = "streaming")
-            && cfg!(feature = "editing"),
+        cfg!(feature = "render") && cfg!(feature = "world") && cfg!(feature = "streaming"),
         "map_engine tests require --all-features to include every suite"
     );
 }

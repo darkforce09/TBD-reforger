@@ -820,29 +820,21 @@ fn rust_lexical_scrubber_eats_comments_and_literals_but_not_code() {
 
 #[test]
 fn mission_editor_move_commit_names_the_atomic_mix_api() {
-    let select = strip_rust_lexical_noise(concat!(
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../../legacy/map_engine/src/editing/tools/selection/pick.rs"
-        )),
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../../legacy/map_engine/src/editing/tools/selection/marquee.rs"
-        )),
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../../legacy/map_engine/src/editing/picking.rs"
-        ))
-    ));
+    // The selection tool's pick and marquee forward to the picking adapter, which is the one
+    // place that joins the spatial queries to the document's mixed resolution.
+    let select = strip_rust_lexical_noise(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../mission_editing/mission_editing_session/src/picking.rs"
+    )));
     assert!(
         select.contains("MissionDocCore::pick_slot_or_vehicle("),
-        "the selection tool has no `MissionDocCore::pick_slot_or_vehicle(` call token outside \
+        "the picking adapter has no `MissionDocCore::pick_slot_or_vehicle(` call token outside \
              comments/strings — the mixed pick was forked or deleted"
     );
     assert!(
         select.contains("MissionDocCore::marquee_ids_with_vehicles("),
-        "the selection tool has no `MissionDocCore::marquee_ids_with_vehicles(` call token outside \
-             comments/strings — the mixed marquee was forked or deleted"
+        "the picking adapter has no `MissionDocCore::marquee_ids_with_vehicles(` call token \
+             outside comments/strings — the mixed marquee was forked or deleted"
     );
 
     let editor = strip_rust_lexical_noise(concat!(

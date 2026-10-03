@@ -193,7 +193,7 @@ pub(super) fn make_pointer_up_handler(
                         });
                         if engine_ops::pending_connect().is_some() {
                             if let Some(ref id) = hit {
-                                let _ = engine_ops::complete_connect(id);
+                                let _ = engine_ops::complete_connect(id.as_str());
                             }
                         }
                         let hit = hit.or_else(|| {
@@ -241,7 +241,7 @@ pub(super) fn make_pointer_up_handler(
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             let slot_ids: Vec<String> = ids
                                 .iter()
-                                .filter(|i| !engine_ops::is_vehicle_id(i))
+                                .filter(|i| !engine_ops::is_vehicle_id(i.as_str()))
                                 .cloned()
                                 .collect();
                             e.set_selection(slot_ids); // tint lane (slots only)
@@ -263,7 +263,7 @@ pub(super) fn make_pointer_up_handler(
                         });
                     let regrouped = if (ev.ctrl_key() || ev.meta_key())
                         && ids.len() == 1
-                        && !engine_ops::is_vehicle_id(&ids[0])
+                        && !engine_ops::is_vehicle_id(ids[0].as_str())
                         && !single_comment_drag
                     {
                         let target = doc.borrow().as_ref().and_then(|c| {
@@ -271,7 +271,8 @@ pub(super) fn make_pointer_up_handler(
                         });
                         match target {
                             Some(tid) if tid != ids[0] => {
-                                let ok = engine_ops::regroup_slot_onto(&ids[0], &tid);
+                                let ok =
+                                    engine_ops::regroup_slot_onto(ids[0].as_str(), tid.as_str());
                                 if ok {
                                     if let Some(e) = engine.borrow_mut().as_mut() {
                                         crate::workspaces::editor::input::tools::select_tool::clear_drag_preview(
@@ -316,7 +317,7 @@ pub(super) fn make_pointer_up_handler(
                                         &comment_ids,
                                     )
                                     .into_iter()
-                                    .map(|p| (p.id, p.x + dx, p.y + dy))
+                                    .map(|p| (p.id.into_inner(), p.x + dx, p.y + dy))
                                     .collect()
                                 })
                                 .unwrap_or_default();
@@ -328,7 +329,7 @@ pub(super) fn make_pointer_up_handler(
                             .iter()
                             .filter(|id| !comment_ids.iter().any(|c| c == *id))
                             .cloned()
-                            .partition(|id| engine_ops::is_vehicle_id(id));
+                            .partition(|id| engine_ops::is_vehicle_id(id.as_str()));
                         if !slot_ids.is_empty() || !veh_ids.is_empty() {
                             let mut guard = doc.borrow_mut();
                             let Some(core) = guard.as_mut() else {
@@ -397,7 +398,7 @@ pub(super) fn make_pointer_up_handler(
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             let slot_ids: Vec<String> = ids
                                 .iter()
-                                .filter(|i| !engine_ops::is_vehicle_id(i))
+                                .filter(|i| !engine_ops::is_vehicle_id(i.as_str()))
                                 .cloned()
                                 .collect();
                             e.set_selection(slot_ids);

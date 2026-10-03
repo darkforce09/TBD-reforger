@@ -33,7 +33,7 @@ use crate::workspaces::editor::ui::outliner::node_model::OutlinerNode;
 #[cfg(target_arch = "wasm32")]
 use crate::workspaces::editor::ui::outliner::tree::virtual_tree;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 /// EXPANDED (points out of the dock — `chevron_left` for the left dock, `chevron_right` for the
 /// right); the collapsed state shows the OTHER chevron in the SAME 24×24 box (the "flip the glyph"

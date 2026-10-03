@@ -28,7 +28,7 @@ schedule) shows its reason. The native build renders nothing.
 
 - Depends on: the parent module (`tasks_from_block`, `add_task`, `move_task`, `remove_task`,
   `with_field`, `with_schedule`, the trigger and marker options read through
-  `map_engine::editing::hosted_commands`, and the write through the bridge's
+  `mission_editing_commands::hosted_commands`, and the write through the bridge's
   `editor_context::update_environment`), whose tiers, states and schedule check come from
   `mission_model::objectives::tasks`; `read_flow_seconds` and `FLOW_DEFAULT_TIMELIMIT_S`
   of the sibling `env` module.

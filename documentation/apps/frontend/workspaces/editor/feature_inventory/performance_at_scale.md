@@ -14,7 +14,7 @@ document. Each entry states what the code does; none records a measured frame ra
   [`legacy/map_engine/src/overlay/symbology/instances/`](/legacy/map_engine/src/overlay/symbology/instances/README.md),
   and its selection patches, drag overlay and clusters in
   [`crates/map_overlay/overlay_instances/`](/crates/map_overlay/overlay_instances/README.md);
-  the picks in `legacy/map_engine/src/editing/picking.rs` and
+  the picks in `crates/mission_editing/mission_editing_session/src/picking.rs` and
   `crates/geometry/spatial_indexes/src/point_indexes/picking.rs`; the windowed trees in
   [`apps/frontend/src/workspaces/editor/ui/outliner/tree/`](/apps/frontend/src/workspaces/editor/ui/outliner/tree/README.md)
   and `apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/tree_panel.rs`; the undo
@@ -111,7 +111,7 @@ them with a shader offset; the document is written once, on release (`set_drag` 
    the slot positions (`pick_slot_row`, `crates/geometry/spatial_indexes/src/point_indexes/picking.rs:9-24`),
    and vehicles are tested in a separate pass.
 2. Partial: every pick first rebuilds the slot table from the whole document
-   (`map_render_slot_soa`, `legacy/map_engine/src/editing/selection_universe.rs:107-111`)
+   (`map_render_slot_soa`, `crates/mission_editing/mission_editing_session/src/selection_universe.rs:107-111`)
    and then builds the index afresh, so a single click costs work in proportion to every slot.
 
 ### PERF-BIND-001 — Redraw after an edit

@@ -1,0 +1,47 @@
+# The Mission Creator's headless interactive map tools: the selection gesture model with its picks,
+# marquees and self-checks, the session-local ruler, the line-of-sight ray and viewshed disc with
+# the object layer over both, and the budgeted viewshed job scheduler. No browser or GPU code; the
+# Mission Creator injects every clock, pump and report sink and draws what the tools hold.
+[package]
+name = "map_editing_tools"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's headless map tools: selection, ruler, line of sight and the viewshed job scheduler."
+
+[package.metadata.layout]
+category = "crates/mission_editing"
+tier = 7
+targets = "any"
+
+[dependencies]
+# The frozen orthographic camera every gesture, pick and marquee unprojects through.
+camera_math = { workspace = true }
+# The building-level visibility wash the scheduler's wash lane steps.
+interior_line_of_sight = { workspace = true }
+# The slot columns the picks, marquees and self-checks read.
+mission_crdt = { workspace = true }
+# The point index grid cell the self-checks build their index with.
+mission_document = { workspace = true }
+# The picks and marquees joined to document ids, which the selection tool forwards to.
+mission_editing_session = { workspace = true }
+# The point index the pick and marquee self-checks prove against a brute-force scan.
+spatial_indexes = { workspace = true }
+# The Everon elevation manifest the line-of-sight profile and the viewshed disc sample.
+terrain_elevation = { workspace = true }
+# The elevation profile, the viewshed raster and its budgeted job.
+terrain_line_of_sight = { workspace = true }
+# The monotonic clock the viewshed scheduler measures its budgets against until a host installs
+# its own.
+time_source = { workspace = true }
+# The map-to-engine frame conversion the object wash tests world cells through.
+world_line_of_sight = { workspace = true }
+
+[dev-dependencies]
+# The relief contour colours the viewshed wash palette is checked against.
+terrain_relief = { workspace = true }
+
+[lints]
+workspace = true

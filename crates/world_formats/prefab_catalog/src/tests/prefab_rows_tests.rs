@@ -50,10 +50,9 @@ fn build_maps_codes_and_oversized() {
     ];
     let (by_id, oversized) = build_prefab_maps(rows);
     assert!(oversized);
-    assert_eq!(by_id.get(&0.0_f64.to_bits()).unwrap().code, 1);
-    assert_eq!(by_id.get(&9.0_f64.to_bits()).unwrap().code, 0);
-    assert_eq!(by_id.get(&3.0_f64.to_bits()).unwrap().code, NO_CLASS);
-    assert_eq!(prefab_map_key(PrefabId::new(9)), 9.0_f64.to_bits());
+    assert_eq!(by_id.get(&PrefabId::new(0)).unwrap().code, 1);
+    assert_eq!(by_id.get(&PrefabId::new(9)).unwrap().code, 0);
+    assert_eq!(by_id.get(&PrefabId::new(3)).unwrap().code, NO_CLASS);
 }
 
 #[test]

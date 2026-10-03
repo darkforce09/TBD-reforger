@@ -2,7 +2,7 @@
 #![cfg(target_arch = "wasm32")]
 
 use crate::workspaces::editor::bridge::host_state::editor_context;
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -74,7 +74,7 @@ pub fn set_ctx(
             restore_settled,
         });
     });
-    map_engine::editing::history::install_host(map_engine::editing::history::HistoryHost {
+    mission_editing_session::history::install_host(mission_editing_session::history::HistoryHost {
         after_document_change: after_local_edit,
     });
 }
@@ -158,12 +158,12 @@ pub fn unregister_unload_guard() {
 
 /// Applies one undo step and refreshes editor state.
 pub fn undo() -> bool {
-    map_engine::editing::history::undo()
+    mission_editing_session::history::undo()
 }
 
 /// Applies one redo step and refreshes editor state.
 pub fn redo() -> bool {
-    map_engine::editing::history::redo()
+    mission_editing_session::history::redo()
 }
 
 /// Refreshes history and presentation state after a local edit.

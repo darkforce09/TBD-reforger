@@ -1,0 +1,25 @@
+# The two identifiers of one ORBAT slot: the durable editor id the Mission Creator keys its slot
+# rows by (`slots[].uid`), and the derived wire id the compiled document names it by
+# (`slots[].id`). The mission crates and the map's squad links name both through this crate.
+[package]
+name = "orbat_slot_ids"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The durable editor id and the derived wire id of an ORBAT slot, as serde-transparent string newtypes."
+
+[package.metadata.layout]
+category = "crates/foundation"
+tier = 1
+targets = "any"
+
+[dependencies]
+newtype_ids = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

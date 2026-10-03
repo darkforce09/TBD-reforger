@@ -11,9 +11,9 @@ its read-outs and scale bar, and the grid references along the map's edges.
 - Code: [`apps/frontend/src/workspaces/editor/ui/docks/toolbelt/`](/apps/frontend/src/workspaces/editor/ui/docks/toolbelt/README.md)
   (`ModeToolbar`, `StatusBar`, `MapGridRefs`); the tool gestures in
   [`apps/frontend/src/workspaces/editor/input/tools/`](/apps/frontend/src/workspaces/editor/input/tools/README.md);
-  the tool state machines in [`legacy/map_engine/src/editing/tools/ruler/`](/legacy/map_engine/src/editing/tools/ruler/README.md),
-  [`line_of_sight/`](/legacy/map_engine/src/editing/tools/line_of_sight/README.md) and
-  [`viewshed_scheduler/`](/legacy/map_engine/src/editing/tools/viewshed_scheduler/README.md).
+  the tool state machines in [`crates/mission_editing/map_editing_tools/src/ruler/`](/crates/mission_editing/map_editing_tools/src/ruler/README.md),
+  [`line_of_sight/`](/crates/mission_editing/map_editing_tools/src/line_of_sight/README.md) and
+  [`viewshed_scheduler/`](/crates/mission_editing/map_editing_tools/src/viewshed_scheduler/README.md).
 - Entry: `apps/frontend/src/workspaces/editor/mission_editor.rs` mounts the three
   components.
 - Related features: [map viewport and camera](/documentation/apps/frontend/workspaces/editor/feature_inventory/map_viewport_and_camera.md)

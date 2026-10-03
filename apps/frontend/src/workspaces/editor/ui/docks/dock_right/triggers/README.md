@@ -40,9 +40,9 @@ the native `triggers_panel` draws nothing.
   `apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/` (`DrawTarget`, `ZoneShape`,
   `polygon_is_committable`, `zone_rule_fields`, `ZoneRuleKind`, `humanize_token`, `humanize_key`,
   `project_owner_line`); the outliner's `ROW` and `ROW_ACTIVE`;
-  `bridge::host_state::armed_placement` for the draw; and `map_engine`: the trigger reads
-  and writes and `placed_owner_options` in `editing::hosted_commands`, `camera_snapshot` in
-  `streaming::host` and `frozen_camera` in `editing::tools::selection`.
+  `bridge::host_state::armed_placement` for the draw; the trigger reads and writes and
+  `placed_owner_options` in `mission_editing_commands::hosted_commands`, `camera_snapshot` in
+  `map_engine`'s `streaming::host` and `frozen_camera` in `map_editing_tools::selection`.
 - Used by: the Triggers tab of `DockRight` in
   `apps/frontend/src/workspaces/editor/ui/docks/dock_right/shell/layout.rs`; the tests in
   `apps/frontend/src/workspaces/editor/ui/docks/tests/dock_right/`.

@@ -15,7 +15,7 @@ from triggering them, and the in-editor list that documents them.
   ([page parts README](/apps/frontend/src/workspaces/editor/mission_editor/README.md)); the
   field guard `in_editable_field` and undo in
   [`apps/frontend/src/workspaces/editor/bridge/document_host/history/`](/apps/frontend/src/workspaces/editor/bridge/document_host/history/README.md)
-  and [`legacy/map_engine/src/editing/history/`](/legacy/map_engine/src/editing/history/README.md);
+  and [`crates/mission_editing/mission_editing_session/src/history/`](/crates/mission_editing/mission_editing_session/src/history/README.md);
   the shortcut list in
   [`apps/frontend/src/workspaces/editor/ui/modals/help_modal/`](/apps/frontend/src/workspaces/editor/ui/modals/help_modal/README.md).
 - Entry: the canvas mount installs the chord listeners
@@ -120,7 +120,7 @@ new binding cannot ship undocumented.", and the tests in
 ## Data
 
 - No API call. Every chord that changes the mission runs a hosted command through
-  `map_engine::editing` as one undo step; the copy buffer holds slot rows in page memory,
+  `mission_editing_commands` as one undo step; the copy buffer holds slot rows in page memory,
   not the system clipboard.
 
 ## Design

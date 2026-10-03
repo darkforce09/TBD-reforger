@@ -448,3 +448,134 @@ fn crate_tiers_this_checkout_passes() {
     let report = check_crate_tiers(&this_repository(), &["apps", "crates", "tools", "legacy"]);
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
 }
+
+/// The mission editing arm of the category matrix: foundation crates built for every target,
+/// mission, mission editing, geometry, the static world's data, line of sight and overlay crates
+/// are allowed; ballistics, streaming, graphics and a wasm-only foundation crate are not, even
+/// from a wasm32 target table.
+#[test]
+fn crate_tiers_a_mission_editing_crate_reaches_only_its_matrix_categories() {
+    let allowed = [
+        "crates/geometry/camera_math",
+        "crates/world_formats/world_file_formats",
+        "crates/terrain/terrain_elevation",
+        "crates/world_objects/building_interiors",
+        "crates/line_of_sight/terrain_line_of_sight",
+        "crates/map_overlay/unit_symbology",
+    ];
+    let mut workspace = green_workspace("tiers-mission-editing-allowed");
+    for path in allowed {
+        workspace.layout_crate(path, 0, "any", &[]);
+    }
+    workspace.layout_crate(
+        "crates/mission_editing/mission_editing_session",
+        0,
+        "any",
+        &[],
+    );
+    let mut dependencies = vec![
+        normal("time_source"),
+        normal("mission_model"),
+        normal("mission_editing_session"),
+    ];
+    dependencies.extend(allowed.map(|path| normal(path.rsplit_once('/').unwrap().1)));
+    workspace.layout_crate(
+        "crates/mission_editing/map_editing_tools",
+        3,
+        "any",
+        &dependencies,
+    );
+    assert_eq!(findings(&workspace), Vec::<String>::new());
+
+    let mut workspace = green_workspace("tiers-mission-editing-refused");
+    workspace.layout_crate("crates/ballistics/ballistic_flight", 0, "any", &[]);
+    workspace.layout_crate("crates/streaming/chunk_scheduler", 0, "any", &[]);
+    workspace.layout_crate("crates/graphics/render_primitives", 0, "any", &[]);
+    workspace.layout_crate("crates/foundation/browser_platform", 0, "wasm32", &[]);
+    workspace.layout_crate(
+        "crates/mission_editing/map_editing_tools",
+        1,
+        "any",
+        &[
+            normal("ballistic_flight"),
+            normal("chunk_scheduler"),
+            normal("render_primitives"),
+            Dependency {
+                package: "browser_platform",
+                table: "target.'cfg(target_arch = \"wasm32\")'.dependencies",
+            },
+        ],
+    );
+    let found = findings(&workspace);
+    for refused in [
+        "crates/ballistics/ballistic_flight",
+        "crates/streaming/chunk_scheduler",
+        "crates/graphics/render_primitives",
+        "crates/foundation/browser_platform",
+    ] {
+        assert!(
+            found.iter().any(|f| f
+                .starts_with("rule 5: crates/mission_editing/map_editing_tools/Cargo.toml:")
+                && f.contains(&format!(
+                    "crates/mission_editing may not depend on {refused}"
+                ))),
+            "{refused} must be refused: {found:#?}"
+        );
+    }
+    assert_eq!(found.len(), 4, "{found:#?}");
+}
+
+/// The mission editing browser scan: a green tree passes, and the bare word `web_sys`, `leptos`
+/// or `wasm_bindgen` in any `.rs` file under the category — source, test or comment — is one
+/// finding per line, while a crate whose name only starts with one is not.
+#[test]
+fn crate_tiers_a_browser_token_in_a_mission_editing_source_is_rule_6() {
+    let mut workspace = green_workspace("tiers-mission-editing-scan");
+    workspace.layout_crate("crates/mission_editing/map_editing_tools", 0, "any", &[]);
+    workspace.write(
+        "crates/mission_editing/map_editing_tools/src/ruler.rs",
+        "//! The ruler takes its clock from the host.\nuse web_sysfs::open;\n\
+         use leptosaur::prelude::*;\npub fn step(now: &dyn Fn() -> f64) -> f64 { now() }\n",
+    );
+    assert_eq!(findings(&workspace), Vec::<String>::new());
+
+    workspace.write(
+        "crates/mission_editing/map_editing_tools/src/ruler.rs",
+        "use web_sys::window;\npub fn n() -> f64 { wasm_bindgen::JsValue::TRUE.as_f64().unwrap() }\n",
+    );
+    workspace.write(
+        "crates/mission_editing/map_editing_tools/tests/ruler_cases.rs",
+        "// park the leptos signal here\n",
+    );
+    let found = findings(&workspace);
+    assert_eq!(
+        found,
+        [
+            "rule 6: crates/mission_editing/map_editing_tools/src/ruler.rs:1: mission editing names \
+             no browser crate, prose included: use web_sys::window;",
+            "rule 6: crates/mission_editing/map_editing_tools/src/ruler.rs:2: mission editing names \
+             no browser crate, prose included: pub fn n() -> f64 { \
+             wasm_bindgen::JsValue::TRUE.as_f64().unwrap() }",
+            "rule 6: crates/mission_editing/map_editing_tools/tests/ruler_cases.rs:1: mission \
+             editing names no browser crate, prose included: // park the leptos signal here",
+        ]
+    );
+}
+
+/// The mission editing browser scan's anti-vacuity case: a category folder holding no `.rs` file
+/// is a finding, because "no source names a browser" and "there is no source" read alike; a
+/// checkout with no mission editing layer at all has nothing to judge.
+#[test]
+fn crate_tiers_an_empty_mission_editing_root_is_not_a_clean_scan() {
+    let workspace = green_workspace("tiers-mission-editing-empty");
+    workspace.write("crates/mission_editing/README.md", "# Mission editing\n");
+    assert_eq!(
+        findings(&workspace),
+        [
+            "rule 6: walked 0 .rs file(s) under crates/mission_editing — the mission editing \
+          browser scan refuses a vacuous pass"
+        ]
+    );
+    let workspace = green_workspace("tiers-mission-editing-absent");
+    assert_eq!(findings(&workspace), Vec::<String>::new());
+}

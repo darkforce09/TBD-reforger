@@ -5,8 +5,8 @@
 //! **Invariants:** preserve authored order, numeric precision, and wire representations.
 
 use super::is_wire_unsafe;
-use mission_model::ids::{SlotId, SlotUid};
 use mission_validation::AssetId;
+use orbat_slot_ids::{SlotId, SlotUid};
 
 /// One character the author placed that `kit-aliases.json` has no row for, and the faction default the compile used instead.
 #[derive(Debug, Clone, PartialEq, Eq)]

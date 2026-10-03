@@ -1,6 +1,6 @@
 # Map engine source
 
-The source of the `map_engine` library: nine top-level modules, each but `camera` compiled only
+The source of the `map_engine` library: eight top-level modules, each but `camera` compiled only
 under the crate feature it needs, and the crate's own unit tests. It holds no UI framework: browser code
 compiles only for wasm32, most of it only with the `render` feature as well, and everything else
 builds and tests natively.
@@ -12,14 +12,13 @@ legacy/map_engine/src/
 ├── camera/       the render engine's viewport: resize, pan and zoom, world and screen answers
 ├── diagnostics/  readback checks, the benchmark and statistics, and the GPU and frame clocks
 ├── doll/         the arsenal's 3D mannequin preview: scene, picking and its own renderer
-├── editing/      the live mission document, its undo drive and the headless map tools
 ├── frame/        the render engine, its batch list and upload belts, the frame vocabulary
 ├── lib.rs        the crate root: each module behind its feature
 ├── overlay/      the lane preferences and the symbology's GPU bridges
 ├── shaders/      the doll renderer's WGSL program
 ├── spatial/      the viewshed lane upload
-├── streaming/    served map data into the map: fetch, chunk residency, draw buffers, memory
-├── tests/        unit tests for the feature floor, and the source scrub the guards share
+├── streaming/    served map data into the map: the host, the loaders, the bridge, memory
+├── tests/        the feature-floor tripwire
 └── world/        the static world's browser loaders, GPU belts and CPU meshes
 ```
 
@@ -30,9 +29,8 @@ static side     /map-assets/<terrain>/ ──▶ streaming ──▶ world (deco
                                                            │   terrain and world-object crates)
                                                            ▼
                                                spatial_indexes, line of sight crates
-                                                           │
-                                                           ▼
-authored side   mission crates (crates/mission/) ──▶ editing: hosted document, tools, selection, undo
+
+authored side   mission crates (crates/mission/) ──▶ mission editing crates (crates/mission_editing/)
 
 draw path       map overlay crates ──▶ overlay ──▶ frame ◀── camera
                                               │
@@ -43,11 +41,12 @@ draw path       map overlay crates ──▶ overlay ──▶ frame ◀── c
 The [mission](/documentation/glossary/g_to_m.md#mission) domain and the CRDT document the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) edits are the
 [mission crates](/crates/mission/README.md), which reach no module of this crate. `world` holds the
-static ground and never names the document, so inside the crate the authored mission and the
-streamed world meet only in `editing`, which hosts the document, drives it and the map tools with
-no browser in reach and asks the
+static ground and never names the document; the authored mission and the streamed world meet
+outside this crate, in the [mission editing crates](/crates/mission_editing/README.md), which host
+the document, drive it and the map tools with no browser in reach and ask the
 [`spatial_indexes`](/crates/geometry/spatial_indexes/README.md) and line of sight crates where a
-click or a sight line lands. `streaming` fetches a terrain's served files and chunks, the
+click or a sight line lands. `streaming` fetches a terrain's served files and chunks into the
+[chunk scheduler and draw buffers](/crates/streaming/README.md), the
 [`world_file_formats`](/crates/world_formats/world_file_formats/README.md) crate and the world
 format, terrain and world-object crates under `crates/` decode them, `world` composes and uploads
 the ground and what stands on it, and `spatial` shows a viewshed as a lane. The map overlay crates
@@ -66,15 +65,12 @@ engine, and `doll` is a second, small renderer for the
 | `camera` | always; its one file, `viewport.rs`, only for wasm32 with `render` |
 | `world`, `spatial`, `overlay`, `frame` | `world`; the GPU half of `frame` only for wasm32 with `render` |
 | `streaming` | `streaming`; its browser host and loaders only for wasm32 with `render` |
-| `editing` | `editing` |
 | `diagnostics`, `doll` | `render` |
 
 ## Public surface
 
-- `editing`: the hosted mission document and the headless editing layer, for the Mission
-  Creator.
 - `frame` (`RenderEngine`, `RafPump`, `EngineHandle`), `streaming` (`host`, `bridge`, the
-  occluder loader, the residency) and `camera`: the map canvas of the Mission Creator and the
+  occluder loader) and `camera`: the map canvas of the Mission Creator and the
   debug benches.
 - `doll`: the arsenal's preview.
 - `frame`: the offline tools in `tools/developer_tools/`.
@@ -86,9 +82,8 @@ engine, and `doll` is a second, small renderer for the
   `unit_symbology`, `overlay_instances`, `road_network`, `vegetation`, `place_names`,
   `spatial_indexes` and `terrain_line_of_sight`; for `streaming`, `serde`, `serde_json`, `rkyv`,
   `world_file_formats`, `flate2`, `prefab_catalog`, `world_chunks`, `satellite_imagery`,
-  `water_bodies`, `world_store`, `interior_line_of_sight` and `world_line_of_sight`; for
-  `editing`, `mission_payload`, `mission_validation`, `formation_geometry`, `mission_crdt`,
-  `mission_document` and `mission_operations`; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` on
+  `water_bodies`, `world_store`, `interior_line_of_sight`, `world_line_of_sight`,
+  `chunk_scheduler` and `chunk_draw_buffers`; `wgpu`, `wasm-bindgen`, `js-sys`, `web-sys` on
   wasm32 and `browser_platform` on wasm32 for `render`; the terrain assets in `assets/terrains/`,
   fetched as `/map-assets` at run time and read by the tests.
 - Used by: the Mission Creator, the mission library and the debug benches under

@@ -173,7 +173,7 @@ fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
 fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
     let tool = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/tools/selection/marquee.rs"
+        "/../../crates/mission_editing/map_editing_tools/src/selection/marquee.rs"
     )));
     let view_fn = fn_source(&tool, "pub fn view_ids_with_vehicles(");
     // The near corner is the top-left CSS pixel unprojected; the far corner is the viewport
@@ -228,7 +228,7 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
         &[
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -236,11 +236,11 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -250,7 +250,7 @@ fn multi_selection_no_longer_suppresses_the_attributes_modal() {
             crate::foundation::test_support::editor_operations::ENTITY,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
             )),
         ]
         .concat(),
@@ -384,7 +384,7 @@ fn multi_edit_commits_fan_out_to_every_selected_id() {
     )));
     let host = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
     )));
     // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
     // update_slot_position). F-26 (T-788) — identity multi is now ATOMIC too, via

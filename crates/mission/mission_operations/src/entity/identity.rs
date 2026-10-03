@@ -3,7 +3,7 @@
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::MissionDocCore;
 use super::layer_rows;
@@ -51,8 +51,8 @@ pub fn live_slot_ids(core: &MissionDocCore) -> std::collections::HashSet<String>
 }
 
 /// Slot attrs exists using the supplied domain data.
-pub fn slot_attrs_exists(core: &MissionDocCore, id: impl Into<SlotId>) -> bool {
-    let id: SlotId = id.into();
+pub fn slot_attrs_exists(core: &MissionDocCore, id: impl Into<SlotUid>) -> bool {
+    let id: SlotUid = id.into();
     let id = id.as_str();
     core.slot_exists(id)
 }

@@ -7,7 +7,7 @@ use mission_operations::reassign::plan_reassign;
 
 const REASSIGN_RS: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../legacy/map_engine/src/editing/hosted_commands/squad_reassignment.rs"
+    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/squad_reassignment.rs"
 ));
 
 fn rows() -> (Vec<FactionRow>, Vec<SquadRow>) {
@@ -173,7 +173,7 @@ fn the_batch_uses_the_keep_source_core_path_not_the_garbage_collecting_one() {
     let ops = live_code(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/squad_reassignment.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/squad_reassignment.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),

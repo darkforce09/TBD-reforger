@@ -27,7 +27,7 @@ and hands each its signal; the editor context in
 picker, the comment editor and the Connections panel through those signals. The picker opens where
 the operator double-clicks empty ground, lists the active side's catalog leaves under its search,
 and arms a place through `armed_placement::begin_place`. The comment editor and the Connections
-panel read and write through `map_engine::editing::hosted_commands`, one undo step per
+panel read and write through `mission_editing_commands::hosted_commands`, one undo step per
 write. The conflict dialog shows while the hydrate's conflict signal holds a `ConflictInfo`, and its
 two buttons call the hydrate's `resolve_conflict_local` and `resolve_conflict_server`. The picker,
 the comment editor and the Connections panel close on Escape only while they are the topmost entry
@@ -46,8 +46,9 @@ dragged [slot](/documentation/glossary/n_to_z.md#slot) and vehicle height inside
   `bridge::gizmo_z` for the arm geometry; the editor context and armed placement in
   `apps/frontend/src/workspaces/editor/bridge/host_state/`; the hydrate in
   `apps/frontend/src/workspaces/editor/session/hydrate/`; the asset catalog tree in
-  `apps/frontend/src/workspaces/editor/arsenal/asset_catalog/`; `map_engine`
-  (`editing::hosted_commands`, `editing::tools::selection`, `streaming::host::camera_snapshot`);
+  `apps/frontend/src/workspaces/editor/arsenal/asset_catalog/`;
+  `mission_editing_commands::hosted_commands`; `map_editing_tools::selection`; `map_engine`
+  (`streaming::host::camera_snapshot`);
   `mission_document::MissionDocCore`; `crate::foundation::ui::modal_stack` and the `RegistryItem` DTO.
 - Used by:
   - the editor page `apps/frontend/src/workspaces/editor/mission_editor.rs`, which mounts the

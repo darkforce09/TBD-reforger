@@ -55,7 +55,7 @@ fn lookup_keeps_buildings_and_piers_only() {
     let lu = building_prefab_lookup(&raw);
     assert_eq!(lu.len(), 2);
     assert_eq!(
-        lu.get(&0.0_f64.to_bits()),
+        lu.get(&PrefabId::new(0)),
         Some(&BuildingPrefabInfo {
             building_class: "residential".into(),
             half_x: 5.0,
@@ -64,7 +64,7 @@ fn lookup_keeps_buildings_and_piers_only() {
         })
     );
     assert_eq!(
-        lu.get(&400.0_f64.to_bits()),
+        lu.get(&PrefabId::new(400)),
         Some(&BuildingPrefabInfo {
             building_class: "pier".into(),
             half_x: 10.0,
@@ -72,8 +72,8 @@ fn lookup_keeps_buildings_and_piers_only() {
             importance_zoom: None
         })
     );
-    assert!(!lu.contains_key(&331.0_f64.to_bits()));
-    assert!(!lu.contains_key(&401.0_f64.to_bits()));
+    assert!(!lu.contains_key(&PrefabId::new(331)));
+    assert!(!lu.contains_key(&PrefabId::new(401)));
     assert_eq!(building_prefab_lookup(&Value::Null).len(), 0);
 }
 
@@ -84,7 +84,7 @@ fn lookup_defaults_half_extents_to_two() {
     ]});
     let lu = building_prefab_lookup(&raw);
     assert_eq!(
-        lu.get(&7.0_f64.to_bits()),
+        lu.get(&PrefabId::new(7)),
         Some(&BuildingPrefabInfo {
             building_class: "hut".into(),
             half_x: 2.0,
@@ -104,8 +104,8 @@ fn lookup_parses_importance_zoom() {
     ]});
     let lu = building_prefab_lookup(&raw);
     assert_eq!(
-        lu.get(&12.0_f64.to_bits()).unwrap().importance_zoom,
+        lu.get(&PrefabId::new(12)).unwrap().importance_zoom,
         Some(-4.0)
     );
-    assert_eq!(lu.get(&13.0_f64.to_bits()).unwrap().importance_zoom, None);
+    assert_eq!(lu.get(&PrefabId::new(13)).unwrap().importance_zoom, None);
 }

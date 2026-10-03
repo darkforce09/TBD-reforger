@@ -13,16 +13,16 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::classification::side_rgba;
-use crate::slot_ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 /// One squad's link inputs for [`build_squad_link_segments`].
 #[derive(Clone, Debug)]
 pub struct SquadLinkInput {
-    /// The squad leader's slot.
-    pub leader_slot_id: SlotId,
+    /// The squad leader's slot, by its durable editor id.
+    pub leader_slot_id: SlotUid,
 
-    /// Every member's slot, the leader's included.
-    pub member_slot_ids: Vec<SlotId>,
+    /// Every member's slot by its durable editor id, the leader's included.
+    pub member_slot_ids: Vec<SlotUid>,
 
     /// Faction `key` (`BLUFOR` / `OPFOR` / `INDFOR`) → [`side_rgba`].
     pub side: String,

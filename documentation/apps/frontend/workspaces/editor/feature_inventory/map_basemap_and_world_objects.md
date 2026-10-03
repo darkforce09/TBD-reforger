@@ -84,7 +84,7 @@ Not built: no road overlay is baked onto the satellite image, and its ticket is 
 Not built. Hovering the map changes only the mouse cursor, and only over slots, vehicles and
 comments; no world object can be hovered, inspected, filtered, searched, explained by a legend,
 badged for height trust or sent to an AI. The streaming scheduler's `pick_nearest`
-(`legacy/map_engine/src/streaming/scheduler/queries.rs`) is the only world-object picking
+(`crates/streaming/chunk_scheduler/src/queries.rs`) is the only world-object picking
 code, and nothing calls it.
 
 ### MAP-HILLSHADE-001 — Hillshade

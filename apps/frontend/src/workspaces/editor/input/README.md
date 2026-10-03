@@ -28,7 +28,7 @@ to `attach_canvas_gestures` and `attach_editor_hotkeys`; the canvas mount regist
 ```text
 DOM event ──> pointer_gestures/ or window_keydown.rs
                  ├── host signals and host state (bridge/host_state/): arm, selection, dialogs
-                 ├── map_engine::editing (hosted commands, tools) ──> document
+                 ├── mission_editing_commands, map_editing_tools ──> document
                  ├── bridge/document_host::history: undo, redo, after_local_edit
                  └── tools/: ruler, line of sight, viewshed, drag preview
 ```
@@ -75,7 +75,8 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
   and tactical graphics of `bridge/`, the pick and lane helpers `mission_editor.rs` re-exports,
   `mission_editor::transform`, the insets of `session::layout`, the context menu of
   `apps/frontend/src/workspaces/editor/ui/docks/`;
-  `map_engine` (`editing::hosted_commands`, `editing::tools`, `streaming::host`, `frame`);
+  `mission_editing_commands::hosted_commands`; `map_editing_tools`; `map_engine`
+  (`streaming::host`, `frame`);
   `mission_document` and `mission_operations`; the line of sight crates
   (`terrain_line_of_sight`, `interior_line_of_sight`, `world_line_of_sight`), `spatial_indexes`,
   `terrain_elevation::grid`, `overlay_instances::drag`, `unit_symbology::squad_links` and

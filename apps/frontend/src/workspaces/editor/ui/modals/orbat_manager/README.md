@@ -46,7 +46,7 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
 
 ## Boundaries
 
-- Depends on: `map_engine::editing::hosted_commands` (the snapshot and the `orbat_*`
+- Depends on: `mission_editing_commands::hosted_commands` (the snapshot and the `orbat_*`
   commands, refiling, `orbat_apply_faction`, `faction_doc_from_side`) and
   `mission_model::slot_line`; the outliner in
   `apps/frontend/src/workspaces/editor/ui/outliner/` (the node model, `flatten_visible`, the

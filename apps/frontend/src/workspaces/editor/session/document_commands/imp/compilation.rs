@@ -102,7 +102,9 @@ pub fn compiled_document_json_with_diagnostics() -> Result<CompiledWithDiagnosti
     let (doc, findings) = flatten_mod_document_json_with_diagnostics(&meta_bytes, &payload_bytes)?;
     // ship the compact wire bytes (byte-identical to the artifact document). Do not re-parse to
     // `serde_json::Value` for a "pretty" download  that is not whitespace-only vs the artifact.
-    compiled_export_text(&doc).map(|text| (text, findings))
+    compiled_export_text(&doc)
+        .map(|text| (text, findings))
+        .map_err(|e| e.to_string())
 }
 
 /// `MissionMeta` is a plain data carrier in core and deliberately not `Clone` (it is an input type

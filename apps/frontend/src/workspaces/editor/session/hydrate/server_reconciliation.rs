@@ -121,7 +121,7 @@ pub async fn hydrate_from_server(
     // **Do not move this below a branch, a `return`, or the fetch.** Nothing else clears the
     // residue, so a boot this line misses is a browser that keeps it.
     crate::workspaces::editor::session::warm_session_marker::purge_legacy_markers();
-    if !is_uuid(&id) {
+    if !is_uuid(id.as_str()) {
         return;
     }
     let path = format!("/missions/{id}");

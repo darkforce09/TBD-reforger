@@ -63,7 +63,7 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
 ## Boundaries
 
 - Depends on: `map_engine`: `streaming::loaders::occluder_loader::OccluderHost`,
-  `streaming::scheduler::state::WorldResidency` and `frame` (`RenderEngine`, `RafPump`);
+  `streaming::buffers::world_residency::WorldResidency` and `frame` (`RenderEngine`, `RafPump`);
   `world_line_of_sight` (`WorldOccluder`, `WorldVerdict`),
   `building_interiors::section::cutter::section_at`, `map_draw_lanes::lane_roles::role_id` and
   `browser_platform::fetch` (`fetch_bytes`, `fetch_text`); in

@@ -64,7 +64,7 @@ checks every such editor binding against the others and against the shortcut cat
     environment gate, the win conditions and spawn modules sections, the zone schema, the
     validation router), the outliner (the ORBAT node model, the drag latch) and the top strip's
     row mirror;
-  - `map_engine::editing::hosted_commands` for every document write;
+  - `mission_editing_commands::hosted_commands` for every document write;
   - the editor's shell in `apps/frontend/src/workspaces/editor/session/` (`layout` classes,
     `document_commands`, `review_mode`, `world_layer_prefs`) and its bridge (`editor_context`,
     `entity_selection`, the document handle);

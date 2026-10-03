@@ -17,7 +17,7 @@ use crate::workspaces::editor::session::eden_chrome::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
 };
 use crate::workspaces::editor::ui::inspector::zones_panel::DrawTarget;
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 use mission_operations::entity::ZoneDrawStep;
 
 /// Is a zone draw in flight?

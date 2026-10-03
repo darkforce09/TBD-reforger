@@ -1,4 +1,4 @@
-//! The engine-layer judgement: rules 1, 2, 3a, 3b, 5, 6 and 7 over the walked files, in report
+//! The engine-layer judgement: rules 1, 2, 3a, 3b, 6 and 7 over the walked files, in report
 //! order.
 //!
 //! **Role:** runs each rule's matcher over its subset of the walked files, writes the rule's
@@ -35,7 +35,6 @@ pub(super) fn evaluate(
         vocab,
         gpu,
         world_side,
-        dom,
         graphics_import,
     } = patterns;
     let BoundarySources {
@@ -43,7 +42,6 @@ pub(super) fn evaluate(
         manifest_files,
         wasm_only_graphics,
         map_sources,
-        editing_files,
         front_sources,
         front_manifest,
         world_files,
@@ -158,33 +156,6 @@ pub(super) fn evaluate(
         &gpu_bad,
     ));
 
-    // ── rule 5 ───────────────────────────────────────────────────────────────────────────────
-    //
-    // Hard zero, no allowlist. See the module docs for why the subject is one directory and not
-    // the crate, and why the matcher is the bare word inside it.
-    o.push(RULE5_HEAD.to_string());
-    let dom_hits: Vec<String> = match scan::matching_lines(&dom, &editing_files) {
-        Ok(hits) => hits.iter().map(|h| rel(repo_root, h)).collect(),
-        Err(cause) => return refuse(&mut o, "engine-layers rule 5 scan", cause),
-    };
-    if dom_hits.is_empty() {
-        o.push(format!(
-            "  OK — 0 site(s) across {} .rs file(s) under editing/: the editor's decisions name \
-             no browser, so `cargo test` can answer every one of them.",
-            editing_files.len()
-        ));
-    } else {
-        o.push("FAIL: the browser reached into the engine's editing tree:".to_string());
-        o.extend(dom_hits.iter().map(|h| format!("  {h}")));
-        say(&mut o, RULE5_TAIL);
-    }
-
-    results.push(EngineLayerRuleResult::new(
-        EngineLayerRule::EditingTreeNamesNoBrowser,
-        dom_hits.len(),
-        &dom_hits,
-    ));
-
     // ── rule 6 ───────────────────────────────────────────────────────────────────────────────
     o.push(RULE6_HEAD.to_string());
     let mut direct: Vec<String> = Vec::new();
@@ -270,7 +241,7 @@ pub(super) fn evaluate(
     if wall.is_empty() {
         o.push(format!(
             "  OK — 0 site(s) across {} .rs file(s) under world/: the static world names neither \
-             yrs, nor a mission document crate, nor the editing module.",
+             yrs, nor a mission document crate, nor a mission-editing crate.",
             world_files.len()
         ));
     } else {
@@ -290,7 +261,6 @@ pub(super) fn evaluate(
         && nouns.is_empty()
         && vocab_bad.is_empty()
         && gpu_bad.is_empty()
-        && dom_hits.is_empty()
         && direct.is_empty()
         && wall.is_empty()
     {
@@ -300,37 +270,33 @@ pub(super) fn evaluate(
     o.push(format!(
         "ENGINE-LAYERS: FAIL — {} wall breach(es), {} map-noun declaration(s), \
          {vocab_findings} frame-vocab finding(s), {gpu_findings} GPU-module finding(s), \
-         {} browser-in-editing site(s), {} direct-renderer import(s), {} world-document \
-         finding(s)",
+         {} direct-renderer import(s), {} world-document finding(s)",
         breaches.len(),
         nouns.len(),
-        dom_hits.len(),
         direct.len(),
         wall.len(),
     ));
     (1, o)
 }
 
-/// The seven proved matchers, one per rule scan (rule 1's manifest arm matches literals).
+/// The six proved matchers, one per rule scan (rule 1's manifest arm matches literals).
 pub(super) struct BoundaryPatterns {
     pub(super) map_engine_import: Pattern,
     pub(super) decl: Pattern,
     pub(super) vocab: Pattern,
     pub(super) gpu: Pattern,
     pub(super) world_side: Pattern,
-    pub(super) dom: Pattern,
     pub(super) graphics_import: Pattern,
 }
 
 /// The walked files each rule scans: the graphics layer (the parked graphics engine and every
-/// graphics-category member) with its manifests, the map engine and its `world/` and `editing/`
-/// subsets, and the frontend with its manifest.
+/// graphics-category member) with its manifests, the map engine and its `world/` subset, and the
+/// frontend with its manifest.
 pub(super) struct BoundarySources {
     pub(super) sources: Vec<std::path::PathBuf>,
     pub(super) manifest_files: Vec<std::path::PathBuf>,
     pub(super) wasm_only_graphics: Vec<WasmOnlyGraphicsCrate>,
     pub(super) map_sources: Vec<std::path::PathBuf>,
-    pub(super) editing_files: Vec<std::path::PathBuf>,
     pub(super) front_sources: Vec<std::path::PathBuf>,
     pub(super) front_manifest: Vec<std::path::PathBuf>,
     pub(super) world_files: Vec<std::path::PathBuf>,

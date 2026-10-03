@@ -27,14 +27,14 @@
 //! is the key dispatch.
 
 use leptos::prelude::*;
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use crate::workspaces::editor::bridge::document_host::history as mission_history;
 use crate::workspaces::editor::bridge::host_state::undo_grouped_gestures;
 use crate::workspaces::editor::mission_editor::plain_paste_anchor;
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 use super::pointer_gestures::{make_sync_los, make_sync_ruler, EditorGestureContext};
 use crate::workspaces::editor::bridge::host_state::armed_placement;
@@ -180,8 +180,8 @@ pub(crate) fn attach_editor_hotkeys(ctx: &EditorGestureContext) {
                         if armed.is_some() {
                             selected_connection.set(None);
                         }
-                        match armed.filter(|id| engine_ops::connection_exists(id)) {
-                            Some(id) => engine_ops::delete_connection(&id),
+                        match armed.filter(|id| engine_ops::connection_exists(id.as_str())) {
+                            Some(id) => engine_ops::delete_connection(id.as_str()),
                             None => {
                                 tactical_graphics_authoring::delete_selected_tactical_graphic()
                                     || undo_grouped_gestures::delete_selection()

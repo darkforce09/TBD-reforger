@@ -45,7 +45,7 @@ Enter) act only while it is the topmost surface of `crate::foundation::ui::modal
   in `apps/frontend/src/workspaces/editor/ui/docks/top_strip/`; the bridge's
   `entity_selection` and `editor_context`; the outliner's `ensure_active_layer`;
   `crate::foundation::ui::modal_stack`; and, in the browser build,
-  `map_engine::editing::hosted_commands` (the connection, comment and formation commands).
+  `mission_editing_commands::hosted_commands` (the connection, comment and formation commands).
 - Used by: `apps/frontend/src/workspaces/editor/mission_editor.rs`, which owns the menu signal
   and mounts `ContextMenuOverlay`, and its canvas mount, which registers the signal; the right-click
   handler in `apps/frontend/src/workspaces/editor/input/pointer_gestures/context_menu.rs`; the

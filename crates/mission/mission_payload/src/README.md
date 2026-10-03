@@ -56,8 +56,8 @@ terrain.
 - Used by:
   - `mission_compiler` (`terrain_bounds`, the kit aliases) and `mission_validation`
     (`terrain_bounds`);
-  - the document operations in `mission_operations` (`terrain_bounds`), and the map engine's
-    `editing::persist`, which compares a local draft with the server's version through
+  - the document operations in `mission_operations` (`terrain_bounds`), and
+    `mission_persistence`, which compares a local draft with the server's version through
     `compile_payload`;
   - the API, which reads the kit aliases (`apps/api/src/missions/contract/mod.rs`);
   - the Mission Creator's Save and Export

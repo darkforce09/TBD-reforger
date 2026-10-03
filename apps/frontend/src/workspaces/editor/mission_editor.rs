@@ -3,9 +3,9 @@
 use crate::workspaces::editor::bridge::boot::boot_progress::BootSegView;
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::line_of_sight::capture::{LosMode, LosState, ViewshedState};
+use map_editing_tools::line_of_sight::capture::{LosMode, LosState, ViewshedState};
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 
 #[cfg(target_arch = "wasm32")]
 use crate::workspaces::editor::bridge::document_host::doc_host as mission_doc;
@@ -24,33 +24,33 @@ use crate::workspaces::editor::ui::docks::top_strip;
 #[cfg(target_arch = "wasm32")]
 use crate::workspaces::editor::ui::inspector::validation_panel;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 #[cfg(any(test, target_arch = "wasm32"))]
 pub(crate) use crate::workspaces::editor::bridge::pointer_hover::{
     hover_cursor_css, hover_due, hover_next, hover_suppressed, HoverState,
 };
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use map_engine::editing::lanes::comments::{
+pub(crate) use mission_editing_session::lanes::comments::{
     comment_drag_lane_xy, comment_lane_xy, comment_points, dragged_comment_points, pick_comment,
     COMMENT_PICK_PX,
 };
 #[cfg(target_arch = "wasm32")]
-pub(crate) use map_engine::editing::lanes::comments::{comment_lane_ids, CommentPoint};
+pub(crate) use mission_editing_session::lanes::comments::{comment_lane_ids, CommentPoint};
 #[cfg(target_arch = "wasm32")]
-pub(crate) use map_engine::editing::lanes::connections::CONN_PICK_PX;
+pub(crate) use mission_editing_session::lanes::connections::CONN_PICK_PX;
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use map_engine::editing::lanes::connections::{
+pub(crate) use mission_editing_session::lanes::connections::{
     connection_lane_verts, connection_segments, pick_connection, ConnSegment,
 };
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use map_engine::editing::lanes::markers::marker_lane_fields;
+pub(crate) use mission_editing_session::lanes::markers::marker_lane_fields;
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use map_engine::editing::routing::{route_availability, route_target, RouteTarget};
+pub(crate) use mission_editing_session::routing::{route_availability, route_target, RouteTarget};
 #[cfg(target_arch = "wasm32")]
-pub(crate) use map_engine::editing::selection_universe::map_render_slot_soa;
+pub(crate) use mission_editing_session::selection_universe::map_render_slot_soa;
 #[cfg(any(test, target_arch = "wasm32"))]
-pub(crate) use map_engine::editing::selection_universe::{plain_paste_anchor, selectable_ids};
+pub(crate) use mission_editing_session::selection_universe::{plain_paste_anchor, selectable_ids};
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) use crate::workspaces::editor::bridge::overlays::{
@@ -133,7 +133,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     let debug_hud = RwSignal::new(String::new());
     let debug_hud_shown = RwSignal::new(false);
     let scale_mpp = RwSignal::new(toolbelt::m_per_px(-2.0));
-    let tool_mode = RwSignal::new(map_engine::editing::tools::ruler::EditorTool::Select);
+    let tool_mode = RwSignal::new(map_editing_tools::ruler::EditorTool::Select);
     let los_mode = RwSignal::new(LosMode::default());
     let ruler_status = RwSignal::new(None::<String>);
     let ruler_tick = RwSignal::new(0u64);

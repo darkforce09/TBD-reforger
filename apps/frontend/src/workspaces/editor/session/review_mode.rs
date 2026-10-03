@@ -19,7 +19,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::foundation::transport::dto::{ArtifactMetadata, ReviewWorkspace};
-use map_engine::editing::persist::server_adoption::RowMeta;
+use mission_persistence::server_adoption::RowMeta;
 
 /// The version a review workspace shows, and the artifact it compiled into.
 #[derive(Clone)]

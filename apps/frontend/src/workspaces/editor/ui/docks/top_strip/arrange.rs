@@ -330,7 +330,7 @@ pub fn run_arrange(kind: ArrangeKind) {
 pub(super) fn run_arrange_action(action: MenuAction) {
     {
         use crate::workspaces::editor::bridge::host_state::undo_grouped_gestures;
-        use map_engine::editing::hosted_commands::selection_transform;
+        use mission_editing_commands::hosted_commands::selection_transform;
         match action {
             MenuAction::Pattern(kind) => {
                 selection_transform::apply_pattern_to_selection(

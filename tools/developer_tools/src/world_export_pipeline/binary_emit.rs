@@ -41,6 +41,7 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 
 use prefab_catalog::InvalidPrefabId;
+use prefab_catalog::numeric_prefab_ids::prefab_id_from_f64;
 use prefab_catalog::prefab_rows::build_prefab_maps;
 use prefab_catalog::prefab_rows::narrow_prefab_rows;
 use prefab_catalog::render_classes::NO_CLASS;
@@ -48,19 +49,20 @@ use prefab_catalog::render_classes::narrow_instance_row_v2;
 use world_file_formats::containers::header::ContainerHeader;
 use world_file_formats::containers::tbdc::TbdcHeader;
 use world_file_formats::ids::InstancePrefabId;
+use world_file_formats::ids::PrefabId;
 use world_file_formats::pod::instance::ObjectInstancePod;
 use world_file_formats::pod::instance::instances_to_bytes;
 
-/// Prefab id (`pid.to_bits()`, the loader's key) → render-class code, for the prefab catalogue
-/// document `build-objects` is about to write.
+/// Prefab id → render-class code, for the prefab catalogue document `build-objects` is about to
+/// write.
 ///
-/// Keyed by the f64 bit pattern rather than an index so it matches
-/// `build_prefab_maps` exactly: a chunk row's `pid`
-/// is an f64 and a `Vec` index would silently truncate a non-integral or out-of-range one.
+/// Keyed by [`PrefabId`] exactly as `build_prefab_maps` is, rather than by an index: a chunk row's
+/// `pid` is an f64 that joins the table only through `prefab_id_from_f64`, so a non-integral,
+/// negative or out-of-range one joins nothing instead of being truncated onto another prefab.
 ///
 /// # Errors
 /// [`InvalidPrefabId`] when a catalogue row's `prefabId` is not a whole number in `0..=u32::MAX`.
-pub fn class_code_table(prefabs_doc: &Value) -> Result<HashMap<u64, u8>, InvalidPrefabId> {
+pub fn class_code_table(prefabs_doc: &Value) -> Result<HashMap<PrefabId, u8>, InvalidPrefabId> {
     let (by_id, _has_oversized) = build_prefab_maps(narrow_prefab_rows(prefabs_doc)?);
     Ok(by_id.into_iter().map(|(k, e)| (k, e.code)).collect())
 }
@@ -70,7 +72,10 @@ pub fn class_code_table(prefabs_doc: &Value) -> Result<HashMap<u64, u8>, Invalid
 /// `class_by_pid` comes from `class_code_table`; an unknown prefab takes
 /// `NO_CLASS`, which is what `parse_chunk` stores.
 #[must_use]
-pub fn pods_from_rows(rows: &[Value], class_by_pid: &HashMap<u64, u8>) -> Vec<ObjectInstancePod> {
+pub fn pods_from_rows(
+    rows: &[Value],
+    class_by_pid: &HashMap<PrefabId, u8>,
+) -> Vec<ObjectInstancePod> {
     let mut out = Vec::with_capacity(rows.len());
     for row in rows {
         let Some(r) = narrow_instance_row_v2(row) else {
@@ -87,8 +92,8 @@ pub fn pods_from_rows(rows: &[Value], class_by_pid: &HashMap<u64, u8>) -> Vec<Ob
             // `pid as u16` is the loader's `prefab_idx` store verbatim (JS `Uint16Array`); everon
             // pids top out at 1623, three orders of magnitude below the wrap.
             prefab_id: InstancePrefabId::new(r.pid as u16),
-            class_code: class_by_pid
-                .get(&r.pid.to_bits())
+            class_code: prefab_id_from_f64(r.pid)
+                .and_then(|prefab_id| class_by_pid.get(&prefab_id))
                 .copied()
                 .unwrap_or(NO_CLASS),
             _pad: 0,

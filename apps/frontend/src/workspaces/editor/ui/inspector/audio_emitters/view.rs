@@ -173,7 +173,7 @@ fn emitter_row(style: PanelStyle, index: usize, row: &Value, edit: AudioBlockEdi
                 <button type="button" class="text-label-sm"
                     on:click=move |_| {
                         refusal.set(String::new());
-                        let markers: Vec<(f64, f64)> = map_engine::editing::hosted_commands::marker_rows()
+                        let markers: Vec<(f64, f64)> = mission_editing_commands::hosted_commands::marker_rows()
                             .into_iter()
                             .map(|m| (m.x, m.z))
                             .collect();

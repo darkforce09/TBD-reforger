@@ -72,8 +72,8 @@ fn tables_agree_on_a_real_zero_half_extent() {
     let from_rkyv = tables_from_bytes(&bytes, "probe").expect("archive lane");
     assert_eq!(from_rkyv, from_json, "zero is a value, not an absence");
 
-    assert_eq!(from_rkyv.by_id[&4.0_f64.to_bits()].row.half_x, Some(0.0));
-    assert_eq!(from_rkyv.by_id[&6.0_f64.to_bits()].row.half_x, None);
+    assert_eq!(from_rkyv.by_id[&PrefabId::new(4)].row.half_x, Some(0.0));
+    assert_eq!(from_rkyv.by_id[&PrefabId::new(6)].row.half_x, None);
 
     let zero = &from_rkyv.building_by_u16[&4];
     assert_eq!((zero.half_x, zero.half_y), (2.0, 2.0));
@@ -174,7 +174,7 @@ fn a_catalogue_with_a_duplicate_prefab_id_is_refused() {
     let rows = narrow_prefab_rows(&doc).expect("whole u32 ids");
 
     let json = tables_from_json(&doc).expect("json lane");
-    assert_eq!(json.by_id[&3.0_f64.to_bits()].row.kind, "tree");
+    assert_eq!(json.by_id[&PrefabId::new(3)].row.kind, "tree");
     assert_eq!(json.building_by_u16[&3].building_class, "hut");
 
     let archive = PrefabCatalogArchive {

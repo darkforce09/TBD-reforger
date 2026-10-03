@@ -61,9 +61,10 @@ Mission Creator itself in its read-only review mode, not a copy of it.
 
 - Depends on: `crate::foundation` (the [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the
   auth store, the UI primitives and utilities, the test support), `crate::features` (the review
-  workspace banner's review wording), `map_engine` (its
-  `data`, `editing`, `streaming`, `overlay`, `frame`, `camera`, `spatial`, `world` and `doll`
-  modules) and `web_sys` in the browser build.
+  workspace banner's review wording), the editing crates of `crates/mission_editing/`
+  (`mission_editing_session`, `mission_editing_commands`, `mission_persistence`,
+  `map_editing_tools`), `map_engine` (its `streaming`, `overlay`, `frame`, `camera`, `spatial`,
+  `world` and `doll` modules) and `web_sys` in the browser build.
 - Used by:
   - `apps/frontend/src/app_routes.rs`, the route table;
   - `apps/frontend/src/main.rs`, which registers `purge_local_documents` as a sign-out hook;
@@ -74,8 +75,8 @@ Mission Creator itself in its read-only review mode, not a copy of it.
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive the
     `/missions/:id/edit` route, and `cargo xtask verify editor-orbat-coherency`, which scans named
     files under `arsenal/`, `bridge/`, `session/` and `ui/modals/`.
-- Rules: a document mutation goes through `map_engine::editing`, never straight out of a
-  panel; a module that touches `web_sys` or a live engine handle is
+- Rules: a document mutation goes through the hosted commands of `mission_editing_commands`,
+  never straight out of a panel; a module that touches `web_sys` or a live engine handle is
   `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line, which the native
   `cargo test -p frontend` build holds; no sibling workspace, page, feature or foundation
   module imports from this folder, and only the application root (`main.rs`, `app_routes.rs`)

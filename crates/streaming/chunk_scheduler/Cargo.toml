@@ -1,0 +1,45 @@
+# The chunk scheduler: which world chunks the map keeps resident (the viewport pin, the in-flight
+# marks, the fetch-failure cap, LRU eviction), the chunk and prefab ingest that feeds it, the object
+# index over the resident chunks, and the rebuild requests it hands to the draw buffers.
+[package]
+name = "chunk_scheduler"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "World chunk residency: viewport pin, LRU eviction, chunk ingest, object index and draw rebuild requests."
+
+[package.metadata.layout]
+category = "crates/streaming"
+tier = 4
+targets = "any"
+
+[features]
+# Exposes the test-only residency writers of `test_hooks.rs` to the draw buffer tests of
+# `chunk_draw_buffers`; enabled only from `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+# The world chunks, their identifier, and the manifest, chunk-index and chunk parsers.
+world_chunks = { workspace = true }
+# The prefab tables, rows, footprint lookups, class codes and the world payload decoding.
+prefab_catalog = { workspace = true }
+# The prefab identifier the prefab tables are keyed by.
+world_file_formats = { workspace = true }
+# The point grid under the object index.
+spatial_indexes = { workspace = true }
+# The building zoom gate that decides whether a viewport pins chunks.
+map_draw_lanes = { workspace = true }
+# The chunk grid math: chunk ids, rectangles and terrain sizes.
+map_coordinates = { workspace = true }
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The chunk lane tests read the Everon prefab catalogue and encode TBDC chunks.
+prefab_catalog = { workspace = true, features = ["test_fixtures"] }
+world_chunks = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

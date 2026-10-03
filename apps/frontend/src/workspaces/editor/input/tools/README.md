@@ -4,7 +4,7 @@ The browser half of the [Mission Creator](/documentation/glossary/g_to_m.md#miss
 and selection tools: the ruler and line-of-sight overlays, the seam between the line-of-sight object
 layer and the streamed world occluder, the frame pump of the viewshed scheduler, and the select
 tool's drag preview and smoke bridge. Each tool's state machine, geometry and verdicts live in
-`map_engine::editing::tools`.
+`map_editing_tools`.
 
 ## Contents
 
@@ -42,13 +42,13 @@ tether hairlines and vehicle symbology on their provisional positions during a d
 (`push_drag_preview`, `clear_drag_preview`) and publishes `window.__editorSelection` (`count`,
 `ids`, `pick_selfcheck`, `probe`, `marquee_selfcheck`, `probe_marquee`, `probe_move`) for the
 headless gates; the pick and the marquee themselves belong to
-`map_engine::editing::tools::selection`.
+`map_editing_tools::selection`.
 
 ## Boundaries
 
-- Depends on: `map_engine` (`editing::tools` for `ruler`, `line_of_sight`, `selection` and
-  `viewshed_scheduler`, `streaming::host` for the world occluder and the camera, `frame` for the
-  render engine); the line of sight crates (`terrain_line_of_sight`, `interior_line_of_sight`,
+- Depends on: `map_editing_tools` (`ruler`, `line_of_sight`, `selection` and
+  `viewshed_scheduler`); `map_engine` (`streaming::host` for the world occluder and the camera,
+  `frame` for the render engine); the line of sight crates (`terrain_line_of_sight`, `interior_line_of_sight`,
   `world_line_of_sight`) and `spatial_indexes`; `overlay_instances::drag` for the drag-preview
   packers, `unit_symbology::squad_links` and `map_draw_lanes::lane_roles`; `install_seam`
   from `apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`; the bridge's
@@ -66,7 +66,7 @@ headless gates; the pick and the marquee themselves belong to
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through
     `window.__editorSelection`; `window.__editorObjectWash`, the wash's status probe, has no reader
     in the repository.
-- Rules: the decidable half of a tool stays in `map_engine::editing::tools`, and this folder
+- Rules: the decidable half of a tool stays in `map_editing_tools`, and this folder
   holds only its drawing, transport and installs; a seam is unregistered when its owner is cleaned
   up, and an older owner's cleanup never clobbers a newer registration
   (`a_seam_is_unregistered_when_its_owner_is_cleaned_up` and

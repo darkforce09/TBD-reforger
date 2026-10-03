@@ -14,6 +14,6 @@ pub use crate::compiled::mission::{
 };
 pub use crate::ids::{
     AudioEmitterId, FactionPresetId, MarkerId, MissionId, MissionTemplateId, MusicCueId, NetId,
-    SlotId, SlotUid, SpawnModuleId, TacticalGraphicId, TaskId, TriggerId, ZoneId,
+    SpawnModuleId, TacticalGraphicId, TaskId, TriggerId, ZoneId,
 };
 pub use crate::{Error, Result};

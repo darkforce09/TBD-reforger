@@ -50,11 +50,11 @@ order during one materialize, and `NONE_IDX` marks a slot with no tag or no laye
 - Used by:
   - `MissionDocCore`, which builds its rows, materialised columns and undo manager from all three;
   - the map engine's document operations, selection and editing layer, which read `SlotSoa`
-    columns, `NONE_IDX` and the stance codes (`legacy/map_engine/src/editing/picking.rs`,
-    `legacy/map_engine/src/editing/selection_universe.rs`, the selection tools in
-    `legacy/map_engine/src/editing/tools/selection/`, the slot fingerprint in
-    `legacy/map_engine/src/editing/persist/` and the slot attributes command in
-    `legacy/map_engine/src/editing/hosted_commands/`);
+    columns, `NONE_IDX` and the stance codes (`crates/mission_editing/mission_editing_session/src/picking.rs`,
+    `crates/mission_editing/mission_editing_session/src/selection_universe.rs`, the selection tools in
+    `crates/mission_editing/map_editing_tools/src/selection/`, the slot fingerprint in
+    `crates/mission_editing/mission_persistence/src/` and the slot attributes command in
+    `crates/mission_editing/mission_editing_commands/src/hosted_commands/`);
   - the Mission Creator in `apps/frontend/src/workspaces/editor/` through `SlotSoa`: the
     document handle, the undo driver and its render lanes in
     `apps/frontend/src/workspaces/editor/bridge/document_host/`, the select-in-view of

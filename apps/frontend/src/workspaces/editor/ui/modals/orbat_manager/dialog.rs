@@ -195,7 +195,7 @@ pub fn OrbatManagerDialog(
                                     Ok(()) => status.set("Template applied.".into()),
                                     Err(msg) => {
                                         leptos::logging::warn!("Apply Template refused: {msg}");
-                                        status.set(msg);
+                                        status.set(msg.to_string());
                                     }
                                 }
                             }

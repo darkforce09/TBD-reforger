@@ -3,7 +3,8 @@
 //! **Role:** [`MissionDocCore`], the `yrs` document of one mission with its tracked root maps,
 //! row writes and reads, hydrate and export, merge, materialised slot columns, selection policy
 //! and local undo history; the connection, formation and transform vocabulary it speaks.
-//! **Position:** mission tier 2, over `mission_crdt`, `time_source`, `yrs` and `serde_json`. The
+//! **Position:** mission tier 5, over `mission_crdt`, `mission_model`, `mission_validation`,
+//! `orbat_slot_ids` (the slot rows' editor ids), `time_source`, `yrs` and `serde_json`. The
 //! document operations of `mission_operations`, the map engine's editing layer and the Mission
 //! Creator drive it; the payload compiler reads the editor payload it exports.
 //! **Signals & state:** a [`MissionDocCore`] owns its `yrs` document, undo manager and grouping

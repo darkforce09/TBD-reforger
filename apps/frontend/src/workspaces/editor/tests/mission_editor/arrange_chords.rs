@@ -85,7 +85,7 @@ fn a_chord_below_the_selection_floor_does_nothing_and_keeps_the_key() {
          Body:\n{body}"
     );
     assert!(
-        body.contains("map_engine::editing::host::selection_len()"),
+        body.contains("mission_editing_session::host::selection_len()"),
         "T-939.4: the floor must be measured against the LIVE selection, not a mirror that can \
          go stale between a click and a keypress. Body:\n{body}"
     );

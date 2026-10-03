@@ -3,7 +3,8 @@
 //! **Role:** chooses the grid reduction and the levels for an interval
 //! ([`contour_grid_reductions`], [`contour_levels`]), marches each level into chained rings
 //! ([`contour_rings`]) or loose segments ([`contour_segments`]), and picks every closed ring with
-//! no higher closed ring inside it ([`summit_ring_indices`]).
+//! no higher closed ring inside it ([`summit_ring_indices`]); names the two hairline colours the
+//! rings are drawn in ([`CONTOUR_RGBA`], [`CONTOUR_SUMMIT_RGBA`]).
 //! **Position:** marches `terrain_elevation`'s [`DemVectorGrid`]; the map engine's relief host
 //! rebuilds the contour lane from it when the zoom's interval changes, and its mesh composer
 //! draws the summit rings in a second colour.
@@ -12,6 +13,15 @@
 //! ring, its highest closed one, and an open chain never counts.
 
 use terrain_elevation::grid::DemVectorGrid;
+
+/// The base contour hairline's colour, straight RGBA8 `[r, g, b, a]`: a warm brown (`r > g > b`)
+/// at alpha 235, nearly opaque. The relief host draws every ring but the summit rings in it, and
+/// the Mission Creator's viewshed wash derives its own alpha and hue against it.
+pub const CONTOUR_RGBA: [u8; 4] = [188, 150, 100, 235];
+
+/// The summit ring's colour, straight RGBA8: a paler warm brown at the base contour's alpha, so
+/// each peak's highest closed ring reads apart from the rings below it.
+pub const CONTOUR_SUMMIT_RGBA: [u8; 4] = [174, 145, 123, 235];
 
 /// Coarse intervals march a coarser grid (plan R8). Mirror of `contourGridReductions`.
 #[must_use]

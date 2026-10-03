@@ -64,8 +64,8 @@ to the top level through the map engine's single-folder latch.
 ## Boundaries
 
 - Depends on: `mission_operations` (the row types of `rows`, `entity::ensure_layer`);
-  `map_engine` (the layer, refile, drag, selection and vehicle commands of
-  `editing::hosted_commands`); in the editor, `bridge::host_state`
+  `mission_editing_commands::hosted_commands` (the layer, refile, drag, selection and vehicle
+  commands); in the editor, `bridge::host_state`
   (`editor_context`, `entity_selection`, `undo_grouped_gestures`), the validation panel's subject
   router and the asset catalog's `classname_tail`; `MaterialIcon` from `crate::foundation::ui`.
 - Used by:

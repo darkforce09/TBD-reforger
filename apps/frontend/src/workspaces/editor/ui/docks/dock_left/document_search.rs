@@ -214,7 +214,7 @@ pub fn apply_selection(ids: Vec<String>) -> bool {
 #[cfg(target_arch = "wasm32")]
 pub fn document_rows() -> Vec<DocEntity> {
     {
-        map_engine::editing::hosted_commands::document_entities()
+        mission_editing_commands::hosted_commands::document_entities()
     }
 }
 

@@ -24,7 +24,7 @@ use mission_model::objectives::tasks::TIERS;
 use super::env::read_flow_seconds;
 use super::env::FLOW_DEFAULT_TIMELIMIT_S;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 /// The reader chain for `meta.environment.tasks`, end to end.
 #[cfg(test)]
@@ -307,7 +307,7 @@ fn trigger_options() -> Vec<(String, String)> {
 
 #[cfg(target_arch = "wasm32")]
 fn marker_options() -> Vec<(String, String)> {
-    map_engine::editing::hosted_commands::marker_rows()
+    mission_editing_commands::hosted_commands::marker_rows()
         .into_iter()
         .map(|r| {
             let label = if r.label.is_empty() {

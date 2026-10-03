@@ -2,7 +2,7 @@
 //!
 //! **Role:** the oriented footprint ring of a placed object ([`obb_corners`]) and the per-prefab
 //! footprint lookups read from the prefab catalogue JSON: buildings and piers keyed by
-//! `prefabId.to_bits()` ([`building_prefab_lookup`]), fences keyed by the `u16` instance prefab id
+//! [`PrefabId`] ([`building_prefab_lookup`]), fences keyed by the `u16` instance prefab id
 //! ([`fence_prefab_lookup`]).
 //! **Position:** under `prefab_catalog`; read by [`crate::prefab_tables`], the map engine's
 //! footprint buffers, scheduler and road strips.
@@ -14,6 +14,9 @@
 use std::collections::HashMap;
 
 use serde_json::Value;
+use world_file_formats::ids::PrefabId;
+
+use crate::numeric_prefab_ids::catalogue_prefab_id;
 
 /// `obbCorners(x, y, halfX, halfY, rotationDeg)` (`buildingLayer.ts:47`). Returns the 4-corner ring (unclosed) in world meters, order `(−hX,−hY) (hX,−hY) (hX,hY) (−hX,hY)`.
 #[must_use]
@@ -97,15 +100,19 @@ pub fn fence_prefab_lookup(raw: &Value) -> HashMap<u16, FencePrefabInfo> {
     lookup
 }
 
-/// `buildingPrefabLookup(raw)` (`:69`). Keeps a prefab iff it has a numeric `prefabId` **and** is a `building`, or a `water` pier/dock. `halfX`/`halfY` fall back to `2.0` when absent or `≤ 0`. Keyed by `prefabId.to_bits()` (matches the JS `Map<number,…>`).
+/// `buildingPrefabLookup(raw)` (`:69`). Keeps a prefab iff it has a numeric `prefabId` that is a whole number in `0..=u32::MAX` **and** is a `building`, or a `water` pier/dock. `halfX`/`halfY` fall back to `2.0` when absent or `≤ 0`. Keyed by [`PrefabId`].
 #[must_use]
-pub fn building_prefab_lookup(raw: &Value) -> HashMap<u64, BuildingPrefabInfo> {
+pub fn building_prefab_lookup(raw: &Value) -> HashMap<PrefabId, BuildingPrefabInfo> {
     let mut lookup = HashMap::new();
     let Some(rows) = raw.get("prefabs").and_then(Value::as_array) else {
         return lookup;
     };
     for row in rows {
-        let Some(prefab_id) = row.get("prefabId").and_then(Value::as_f64) else {
+        let Some(prefab_id) = row
+            .get("prefabId")
+            .and_then(Value::as_f64)
+            .and_then(catalogue_prefab_id)
+        else {
             continue;
         };
         let cls = row
@@ -126,7 +133,7 @@ pub fn building_prefab_lookup(raw: &Value) -> HashMap<u64, BuildingPrefabInfo> {
             .and_then(|r| r.get("importanceZoom"))
             .and_then(Value::as_f64);
         lookup.insert(
-            prefab_id.to_bits(),
+            prefab_id,
             BuildingPrefabInfo {
                 building_class: cls.to_string(),
                 half_x: hx.filter(|&v| v > 0.0).unwrap_or(2.0),

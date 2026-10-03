@@ -3,22 +3,28 @@
 //! **Role:** keeps each heavy or platform-bound external crate inside the categories built for
 //! it: wgpu in the GPU device, frame and core crates, the map renderers and the paper-doll
 //! renderer; the browser crates in wasm-only crates, `time_source` behind a target table and the
-//! frontend, and never in mission editing; sqlx and axum in api crates, with axum (never sqlx)
-//! also in the `tools/browser_testing` and `tools/staging` crates, which are test and staging
-//! harness servers rather than product code; leptos in frontend crates; no tokio, axum, reqwest,
-//! resvg or image in the dependency closure of xtask (which keeps the harness servers out of it);
-//! and no map noun in a declared name of a graphics crate.
+//! frontend, and never in mission editing — neither as a manifest edge nor as the bare word
+//! `web_sys`, `leptos` or `wasm_bindgen` in any `.rs` file under the category; sqlx and axum in
+//! api crates, with axum (never sqlx) also in the `tools/browser_testing` and `tools/staging`
+//! crates, which are test and staging harness servers rather than product code; leptos in
+//! frontend crates; no tokio, axum, reqwest, resvg or image in the dependency closure of xtask
+//! (which keeps the harness servers out of it); and no map noun in a declared name of a graphics
+//! crate.
 //! **Position:** called by [`super::crate_tiers`] over the judged members.
-//! **Signals & state:** none; reads parsed manifests and the graphics crates' sources.
+//! **Signals & state:** none; reads parsed manifests, the graphics crates' sources and the mission
+//! editing category's sources.
 //! **Invariants:** only normal and build edges count (dev-dependencies never ship), an edge is
 //! external when no workspace member has its package name, and a graphics crate whose `src`
-//! folder is missing is [`NotRun::TargetMissing`].
+//! folder is missing is [`NotRun::TargetMissing`]. The mission editing scan runs whenever the
+//! category folder exists or a member declares the category; a declared category with no folder
+//! is [`NotRun::TargetMissing`], and a folder holding no `.rs` file is a finding, never a pass.
 
 use std::collections::BTreeSet;
 use std::path::Path;
 
 use super::crate_layout::{
-    CategoryClass, TargetPlatforms, category_class, declared_targets, effective_category,
+    CategoryClass, MISSION_EDITING_CATEGORY, TargetPlatforms, category_class, declared_targets,
+    effective_category,
 };
 use crate::cargo_manifest::DependencyEdge;
 use crate::engine_layers::MAP_NOUN_DECLARATION_PATTERN;
@@ -42,6 +48,11 @@ pub(crate) const BROWSER_CRATES: &[&str] = &[
     "wasm-bindgen-futures",
     "gloo",
 ];
+/// The bare words a browser arrives under in Rust source, which no `.rs` file under
+/// [`MISSION_EDITING_CATEGORY`] may spell, in code or prose: inside the editing layer a comment
+/// telling the next reader to reach for `leptos` is the breach the scan exists to stop. `\b` on
+/// both sides, so `web_sysfs` or `leptosaur` is not caught by its prefix.
+pub(crate) const BROWSER_SOURCE_TOKEN_PATTERN: &str = r"\b(web_sys|leptos|wasm_bindgen)\b";
 /// The one foundation package that may reach the browser, from a target table only.
 pub(crate) const TIME_SOURCE_PACKAGE: &str = "time_source";
 /// The tool categories whose crates are test and staging harness servers (the gate's static
@@ -79,6 +90,7 @@ pub(super) fn firewall_findings(
             findings.extend(map_noun_findings(repo_root, member)?);
         }
     }
+    findings.extend(mission_editing_browser_token_findings(repo_root, members)?);
     Ok(findings)
 }
 
@@ -158,6 +170,44 @@ fn xtask_closure_findings(xtask: &WorkspaceMember, members: &[WorkspaceMember]) 
         }
     }
     findings
+}
+
+/// Every line spelling [`BROWSER_SOURCE_TOKEN_PATTERN`] in a `.rs` file under
+/// [`MISSION_EDITING_CATEGORY`], or one finding when that folder holds no `.rs` file at all: "no
+/// source names a browser" and "there is no source" read alike to a matcher, so a walk of zero
+/// files is refused rather than passed. A checkout with neither the folder nor a member declaring
+/// the category has no mission editing layer to judge.
+fn mission_editing_browser_token_findings(
+    repo_root: &Path,
+    members: &[WorkspaceMember],
+) -> Result<Vec<String>, NotRun> {
+    let root = repo_root.join(MISSION_EDITING_CATEGORY);
+    let declared = members
+        .iter()
+        .any(|member| effective_category(member) == MISSION_EDITING_CATEGORY);
+    if !declared && !root.exists() {
+        return Ok(Vec::new());
+    }
+    let files = scan::walk_files(&[root.as_path()], scan::with_extension(&["rs"]))?;
+    if files.is_empty() {
+        return Ok(vec![format!(
+            "rule 6: walked 0 .rs file(s) under {MISSION_EDITING_CATEGORY} — the mission editing \
+             browser scan refuses a vacuous pass"
+        )]);
+    }
+    let pattern =
+        Pattern::regex(BROWSER_SOURCE_TOKEN_PATTERN).expect("the browser token pattern compiles");
+    Ok(scan::matching_lines(&pattern, &files)?
+        .iter()
+        .map(|hit| {
+            format!(
+                "rule 6: {}:{}: mission editing names no browser crate, prose included: {}",
+                crate::source_roots::repository_relative(repo_root, &hit.path),
+                hit.line_no,
+                hit.line.trim()
+            )
+        })
+        .collect())
 }
 
 /// Every declared name with a map noun in the sources of the graphics crate `member`.

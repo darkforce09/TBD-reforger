@@ -10,7 +10,7 @@ compiler resolves [registry](/documentation/glossary/n_to_z.md#registry) aliases
 
 ```text
 crates/mission/mission_payload/
-├── Cargo.toml  the package: `mission_model`, `serde`, `serde_json`, `thiserror`; layout tier 2
+├── Cargo.toml  the package: `mission_model`, `serde`, `serde_json`, `thiserror`; layout tier 3
 └── src/        the payload compiler, the envelope and version body, the bounds, the kit aliases
 ```
 
@@ -60,11 +60,11 @@ All also in `prelude`:
   through `include_str!`.
 - Used by:
   - `mission_compiler` and `mission_validation` (`terrain_bounds`, the kit aliases);
-  - `mission_operations` and `mission_document`'s tests, and the map engine's `editing::persist`;
+  - `mission_operations` and `mission_document`'s tests, and `mission_persistence`;
   - the API, which reads the kit aliases;
   - the Mission Creator's Save and Export, its validation panel and zone inspector, and the
     mission library's document upload.
-- Rules: mission tier 2, one above `mission_model` (`cargo xtask verify crate-tiers`); the
+- Rules: mission tier 3, one above `mission_model` (`cargo xtask verify crate-tiers`); the
   round trip of a briefing through the CRDT store is the store's test
   (`crates/mission/mission_document/src/tests/payload_round_trips.rs`), since this crate never depends
   on the store.

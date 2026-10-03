@@ -4,7 +4,7 @@
 //! Signals & state: two host heartbeats (pan cursor, zoom sampler) plus a mutation tick, and the
 //! leaked chain this module hands to the engine's registry.
 //! Invariants: every decidable thing — the leg quantities, the readout shapes, the capture machine
-//! and the projection — belongs to `map_engine::editing::tools::ruler`. What lives here is
+//! and the projection — belongs to `map_editing_tools::ruler`. What lives here is
 //! the drawing and the ownership.
 //!
 //! The overlay re-runs off the same cursor and zoom heartbeats the LoS overlay and scale bar use —
@@ -13,16 +13,16 @@
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
-use map_engine::editing::tools::ruler::chain::RulerChain;
+use map_editing_tools::ruler::chain::RulerChain;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::ruler::host_registry::read_registered_chain;
-use map_engine::editing::tools::ruler::host_registry::RULER_CHAIN;
+use map_editing_tools::ruler::host_registry::read_registered_chain;
+use map_editing_tools::ruler::host_registry::RULER_CHAIN;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::ruler::projection::{
+use map_editing_tools::ruler::projection::{
     project_legs, project_vertices, ProjectedLeg, ProjectedVertex,
 };
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 
 pub(crate) use crate::workspaces::editor::ui::inspector::validation_panel::install_seam;
 

@@ -154,7 +154,7 @@ fn the_move_commit_partitions_comments_to_their_own_mutator() {
     );
     // The slot/vehicle partition must EXCLUDE the comment ids, or a note double-commits.
     let veh_part = region
-        .find("partition(|id| engine_ops::is_vehicle_id(id))")
+        .find("partition(|id| engine_ops::is_vehicle_id(id.as_str()))")
         .expect("T-796: the veh/slot partition must survive");
     assert!(
         region[..veh_part].contains("!comment_ids"),

@@ -75,8 +75,9 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
     `host_state::undo_grouped_gestures::confirm_bulk_n_step`, and
     `host_state::editor_context::slots_json`), the three views of `ui::arsenal::panels`, and
     `session::document_commands::download_json` for the export download;
-  - `map_engine`: `editing::hosted_commands` (the loadout reads and writes, the copy
-    buffer, the cargo seed), `editing::host::with_doc` and `doll`;
+  - `mission_editing_commands::hosted_commands` (the loadout reads and writes, the copy buffer,
+    the cargo seed) and `mission_editing_session::host::with_doc`;
+  - `map_engine`: `doll`;
   - `mission_operations` (`assets`, `cargo`, `cargo_rules`);
   - `contracts/definitions/loadout-export.schema.json` and
     `apps/mod/tbd-framework/Data/registry.json`, embedded at compile time; `web_sys` in the browser

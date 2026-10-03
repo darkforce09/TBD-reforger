@@ -46,7 +46,7 @@ pub(super) fn layer_flag_toggles(
             on:click=move |ev: web_sys::MouseEvent| {
                 ev.stop_propagation();
                 if !hidden_inherited {
-                    engine_ops::set_layer_hidden(&eye_id, !hidden);
+                    engine_ops::set_layer_hidden(eye_id.as_str(), !hidden);
                 }
             }
         >
@@ -79,7 +79,7 @@ pub(super) fn layer_flag_toggles(
             on:click=move |ev: web_sys::MouseEvent| {
                 ev.stop_propagation();
                 if !locked_inherited {
-                    engine_ops::set_layer_locked(&lock_id, !locked);
+                    engine_ops::set_layer_locked(lock_id.as_str(), !locked);
                 }
             }
         >

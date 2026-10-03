@@ -5,7 +5,7 @@
 //! release anywhere that is not a valid target leaves the document untouched and the cell empty.
 
 use mission_document::ids::{CommentId, LayerId};
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use std::cell::RefCell;
 
@@ -38,8 +38,8 @@ pub fn begin_layer_drag(layer_id: impl Into<LayerId>) {
 }
 
 /// Arm a slot for a refile into a folder.
-pub fn begin_layer_slot_drag(slot_id: impl Into<SlotId>) {
-    let slot_id: SlotId = slot_id.into();
+pub fn begin_layer_slot_drag(slot_id: impl Into<SlotUid>) {
+    let slot_id: SlotUid = slot_id.into();
     let slot_id = slot_id.into_inner();
     PENDING_LAYER_DRAG.with(|pending| *pending.borrow_mut() = Some(LayerDrag::Slot(slot_id)));
 }

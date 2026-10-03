@@ -80,7 +80,7 @@ fn compositions_tab_is_wired_not_stubbed() {
         &[
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -125,7 +125,7 @@ fn a_composition_captures_comments_and_authored_elevation() {
     let ops_all = [
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),

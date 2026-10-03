@@ -15,7 +15,7 @@ Manager dialog.
   with the tree builders in [`outliner/`](/apps/frontend/src/workspaces/editor/ui/outliner/node_model/README.md)
   and the rows in [`tree/`](/apps/frontend/src/workspaces/editor/ui/outliner/tree/README.md);
   the ORBAT Manager in [`apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/`](/apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/README.md);
-  the document writes in [`legacy/map_engine/src/editing/hosted_commands/`](/legacy/map_engine/src/editing/hosted_commands/README.md)
+  the document writes in [`crates/mission_editing/mission_editing_commands/src/hosted_commands/`](/crates/mission_editing/mission_editing_commands/src/hosted_commands/README.md)
   and [`crates/mission/mission_operations/src/entity/`](/crates/mission/mission_operations/src/entity/README.md).
 - Entry: the dock mounts with the page; the top strip's "ORBAT Manager" button (title "Open the
   ORBAT Manager") opens the ORBAT tree.
@@ -178,7 +178,7 @@ The chevron ("Collapse panel" / "Expand panel") or the E key collapses and expan
   (`apps/frontend/src/workspaces/editor/ui/outliner/tree/row_actions.rs`) — the store keeps
   the folder, while the hosted `delete_layer` still reports success and marks the mission unsaved
   (`crates/mission/mission_document/src/rows/layers.rs`,
-  `legacy/map_engine/src/editing/hosted_commands/editor_layers.rs`).
+  `crates/mission_editing/mission_editing_commands/src/hosted_commands/editor_layers.rs`).
 - The default folder is "Layer 1" when a placement creates it
   (`apps/frontend/src/workspaces/editor/ui/outliner/node_model.rs`) — it is "Default Layer"
   when a delete or a server load creates it (`rows/layers.rs`,
@@ -192,7 +192,7 @@ The chevron ("Collapse panel" / "Expand panel") or the E key collapses and expan
 - No API call. Every tree action writes the mission document through a hosted command
   (`create_layer`, `rename_layer`, `delete_layer`, `reparent_layer`, `refile_slot_to_layer`,
   `refile_comment_to_layer`, `orbat_add_squad`, `refile_slot`), each one undo step; the
-  [hosted commands README](/legacy/map_engine/src/editing/hosted_commands/README.md) lists
+  [hosted commands README](/crates/mission_editing/mission_editing_commands/src/hosted_commands/README.md) lists
   them.
 - The document keeps editor layers under `editorLayers` (id, name, parent, filed entity ids,
   hidden, locked, colour, collapsed); the active folder is page state, not document state.

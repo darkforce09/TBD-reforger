@@ -17,9 +17,11 @@ use serde_json::Value;
 
 use crate::chunk_id::ChunkId;
 
+use prefab_catalog::numeric_prefab_ids::prefab_id_from_f64;
 use prefab_catalog::prefab_rows::PrefabEntry;
 use prefab_catalog::render_classes::NO_CLASS;
 use prefab_catalog::render_classes::narrow_instance_row_v2;
+use world_file_formats::ids::PrefabId;
 
 /// SoA for one parsed chunk. Numeric columns are **truncated to `count`** — the JS master arrays are allocated at `instances.length` but only `[0, count)` is ever read, so the truncated form is the faithful byte-comparable one. `positions` is `[x0,y0,x1,y1,…]`.
 #[derive(Default, Clone)]
@@ -76,12 +78,12 @@ fn number_of(s: Option<&str>) -> f64 {
     s.and_then(|v| v.parse::<f64>().ok()).unwrap_or(f64::NAN)
 }
 
-/// `parseChunk(id, raw)` (`:571`). `raw` is the gunzipped chunk JSON; `prefab_by_id` is the `buildPrefabMaps` table (keyed by `pid.to_bits()`). Returns `None` when `raw.instances` is not an array (the JS early return).
+/// `parseChunk(id, raw)` (`:571`). `raw` is the gunzipped chunk JSON; `prefab_by_id` is the `buildPrefabMaps` table, which a row's numeric `pid` joins through [`prefab_id_from_f64`] (a fractional or negative `pid` joins nothing and the row is [`NO_CLASS`]). Returns `None` when `raw.instances` is not an array (the JS early return).
 #[must_use]
 pub fn parse_chunk(
     id: &ChunkId,
     raw: &Value,
-    prefab_by_id: &HashMap<u64, PrefabEntry>,
+    prefab_by_id: &HashMap<PrefabId, PrefabEntry>,
 ) -> Option<WorldChunk> {
     let instances = raw.get("instances")?.as_array()?;
     let mut parts = id.as_str().split('_');
@@ -115,8 +117,8 @@ pub fn parse_chunk(
         pitch.push(row.pitch as f32);
         roll.push(row.roll as f32);
         scale.push(row.scale as f32);
-        let code = prefab_by_id
-            .get(&pid.to_bits())
+        let code = prefab_id_from_f64(pid)
+            .and_then(|prefab_id| prefab_by_id.get(&prefab_id))
             .map_or(NO_CLASS, |e| e.code);
         cls_codes.push(code);
         if code != NO_CLASS {

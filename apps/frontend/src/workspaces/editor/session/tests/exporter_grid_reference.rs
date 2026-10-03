@@ -5,7 +5,7 @@
 //! import the engine while the engine may never import the frontend.
 
 use camera_math::ortho::state::OrthoCamera;
-use map_engine::editing::commands::selection_digest::format_grid_ref;
+use mission_editing_commands::document_text::selection_digest::format_grid_ref;
 
 use crate::workspaces::editor::session::layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
 use crate::workspaces::editor::ui::docks::toolbelt::{edge_eastings, edge_northings, GRID_STEP_M};

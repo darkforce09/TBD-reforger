@@ -4,7 +4,7 @@ use super::*;
 #[cfg(target_arch = "wasm32")]
 use crate::workspaces::editor::bridge::host_state::editor_context;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 #[cfg(target_arch = "wasm32")]
 struct ConnRowView {
@@ -103,7 +103,7 @@ pub(crate) fn ConnectionsPanelOverlay(
                                 class="shrink-0 cursor-pointer rounded px-2 py-0.5 font-label-sm text-[11px] text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
                                 on:click=move |_| {
                                     {
-                                        engine_ops::delete_connection(&del_id);
+                                        engine_ops::delete_connection(del_id.as_str());
                                     }
                                 }
                             >

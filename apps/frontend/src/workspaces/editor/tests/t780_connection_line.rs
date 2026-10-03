@@ -31,14 +31,14 @@ fn placed_edges_become_segments_in_listing_order() {
         segs,
         vec![
             ConnSegment {
-                id: "k2".to_string(),
+                id: "k2".into(),
                 ax: 0.0,
                 ay: 0.0,
                 bx: 100.0,
                 by: 0.0
             },
             ConnSegment {
-                id: "k1".to_string(),
+                id: "k1".into(),
                 ax: 100.0,
                 ay: 0.0,
                 bx: 0.0,
@@ -267,7 +267,7 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
         &[
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -275,11 +275,11 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -289,7 +289,7 @@ fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
             crate::foundation::test_support::editor_operations::ENTITY,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
             )),
         ]
         .concat(),
@@ -375,14 +375,14 @@ fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
     let docks = ["editor_context", "::", "refresh_docks()"].concat();
     let tail = ["after_doc", "_change(ctx)"].concat();
 
-    // Undo and redo step the document's own stack in the engine, and the tail they run on the way
-    // out is whatever this host installed as `after_document_change`. So the pin follows the
-    // install: it must be `after_local_edit`, whose body is the tail below.
-    let drive = ["editing", "::history::"].concat();
+    // Undo and redo step the document's own stack in the editing session, and the tail they run
+    // on the way out is whatever this host installed as `after_document_change`. So the pin
+    // follows the install: it must be `after_local_edit`, whose body is the tail below.
+    let drive = ["mission_editing_session", "::history::"].concat();
     for (name, marker) in [("undo", "pub fn undo"), ("redo", "pub fn redo")] {
         assert!(
             only_body(&hist, marker).contains(&drive),
-            "T-780: {name} must go through the engine's undo drive, which runs the installed tail"
+            "T-780: {name} must go through the editing session's undo drive, which runs the installed tail"
         );
     }
     assert!(
@@ -457,7 +457,7 @@ fn connection_pins_are_load_bearing() {
         &[
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -465,11 +465,11 @@ fn connection_pins_are_load_bearing() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -479,7 +479,7 @@ fn connection_pins_are_load_bearing() {
             crate::foundation::test_support::editor_operations::ENTITY,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
             )),
         ]
         .concat(),

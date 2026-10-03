@@ -116,8 +116,8 @@ pub(super) fn cargo_checks(root: &Path) -> Result<(), String> {
     Ok(())
 }
 
-/// The pin's arguments joined by a space, quoting dropped, so `--features "world editing"`
-/// renders as `--features world editing`.
+/// The pin's arguments joined by a space, quoting dropped, so `--features "world streaming"`
+/// renders as `--features world streaming`.
 pub(super) fn shown(args: &[&str]) -> String {
     args[1..].join(" ")
 }

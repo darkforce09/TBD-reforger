@@ -1,6 +1,6 @@
 //! The engine-layer walls' matchers, pinned residues and scanned roots.
 //!
-//! **Role:** every regular expression, path and pin the seven engine-layer rules judge with.
+//! **Role:** every regular expression, path and pin the six engine-layer rules judge with.
 //! **Position:** the constants half of [`super`], which owns the rules; the report text lives in
 //! [`super::report_text`].
 //! **Signals & state:** none; every item here is a `const` a reviewer can read end to end.
@@ -101,20 +101,8 @@ pub(super) const RULE3B_PIN: &[(&str, usize, &str)] = &[
 pub(crate) const DECL_RE: &str =
     r"\b(struct|enum|trait|type|fn|const|static|mod)\s+\w*(terrain|symbology|mission|orbat|arma)";
 
-/// The editor's decisions, inside the engine — rule 5's root and nothing else.
-pub(super) const EDITING_REL: &str = "legacy/map_engine/src/editing";
-
 /// The presentation crate — rule 6 is scoped to it and nothing else.
 pub(super) const FRONTEND_REL: &str = "apps/frontend";
-
-/// Rule 5's matcher — the three names a browser arrives under.
-///
-/// The bare word, on purpose: this is the same question the program's acceptance line asks
-/// (`rg 'web_sys|leptos|wasm_bindgen' …/editing`), and inside this one directory a mention in
-/// prose is as much a breach as an import. `\b` on both sides so a future `web_sysfs` or
-/// `leptosaur` is not caught by its prefix — a rule that fires on a name it was not written for
-/// is a rule that gets suppressed.
-pub(super) const DOM_RE: &str = r"\b(web_sys|leptos|wasm_bindgen)\b";
 
 /// Rule 6's source matcher — the two shapes that are an import rather than a mention.
 ///
@@ -135,32 +123,23 @@ pub(super) const WORLD_REL: &str = "legacy/map_engine/src/world";
 //
 // The static world may name no home of the authored document: the CRDT crate (`yrs`), the mission
 // crates that hold the document (`mission_crdt`, `mission_document`, `mission_operations`), and
-// the crate's own `editing` module, which hosts the live document and its undo drive. That is the
-// whole list written out, because an enumeration is cheaper to read — and impossible to widen by
-// accident — than a negation would be. The mission crates' own edges are the crate-tier law's
-// (a `crates/mission` crate depends on foundation, mission and geometry crates only), so this
-// matcher judges the one direction that law cannot see: a module of this crate reaching the
-// document.
+// the mission-editing crates that host the live document and drive its undo, commands, drafts and
+// tools (`mission_editing_session`, `mission_editing_commands`, `mission_persistence`,
+// `map_editing_tools`). That is the whole list written out, because an enumeration is cheaper to
+// read — and impossible to widen by accident — than a negation would be. The mission and
+// mission-editing crates' own edges are the crate-tier law's (neither category may depend on the
+// map engine or on a streaming or graphics crate), so this matcher judges the one direction that
+// law cannot see: a module of this crate reaching the document.
 //
 // `yrs::` and not `\byrs\b`: the bare word would match prose ("3 yrs"), and a matcher that fires
 // on prose gets suppressed. Every real shape is a path — `use yrs::Doc`, `-> yrs::TransactionMut`,
 // `yrs::Transact::transact` — so the `::` is free precision, not a loophole. `\b` before each crate
-// name keeps `my_mission_document::` from matching on a suffix, and `\b` after `editing` keeps a
-// future `crate::editing_notes` from matching on a prefix.
-//
-// ── THE `super::` ARM ────────────────────────────────────────────────────────────────────────
-//
-// `crate::editing::x` is not the only way to spell an escape. `use super::super::super::
-// editing::x;` reaches the same module and a `crate::`-anchored matcher never sees it. How many
-// `super`s it takes to escape depends on the file's depth, and file depth is not module depth in
-// this repo — `#[path = "../../tests/cases_1.rs"] mod tests;` is used throughout — so a depth
-// calculation would be unsound, and an unsound gate rule is worse than none. What IS sound is the
-// destination: no module inside `world/` is named `editing`, so a `super::` chain of any length
-// that lands on that name has escaped the tree.
+// name keeps `my_mission_document::` from matching on a suffix, and the `::` after it keeps a
+// `mission_document_notes::` from matching on a prefix.
 //
 // A raw string processes no escapes, so the matcher stays one line: a `\` continuation inside
 // `r"…"` would put a literal backslash and the next line's indentation into the pattern.
 
-/// Rule 7's matcher — the static world may name neither the CRDT crate, nor the mission document
-/// crates, nor the `editing` module that hosts the live document.
-pub(super) const RULE7_WORLD_RE: &str = r"\byrs::|\b(mission_crdt|mission_document|mission_operations)\s*::|crate::editing\b|\bsuper::(super::)*editing\b";
+/// Rule 7's matcher — the static world may name neither the CRDT crate, nor a mission document
+/// crate, nor a mission-editing crate that hosts the live document.
+pub(super) const RULE7_WORLD_RE: &str = r"\byrs::|\b(mission_crdt|mission_document|mission_operations|mission_editing_session|mission_editing_commands|mission_persistence|map_editing_tools)\s*::";

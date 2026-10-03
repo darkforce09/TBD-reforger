@@ -11,8 +11,8 @@
 
 use crate::workspaces::editor::bridge::document_host::history as mission_history;
 use crate::workspaces::editor::bridge::host_state::undo_grouped_gestures::confirm_bulk_n_step;
-use map_engine::editing::host::with_doc;
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
+use mission_editing_session::host::with_doc;
 
 /// Set or clear one slot's `loadout` and take the tail only on an acknowledged write. `None` or an
 /// empty document clears the key. Returns the document's answer so a panel can surface a refusal.

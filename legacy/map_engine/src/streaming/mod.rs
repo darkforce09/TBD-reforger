@@ -6,17 +6,11 @@
 /// Bridge.
 pub mod bridge;
 
-/// Buffers.
-pub mod buffers;
-
 /// Loaders.
 pub mod loaders;
 
 /// Memory.
 pub mod memory;
-
-/// Scheduler.
-pub mod scheduler;
 
 /// Host.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]

@@ -65,9 +65,9 @@ view and selection state: none of them edits the document or adds an undo step.
     `bridge::host_state::entity_selection::set_selection_ids`;
   - `crate::foundation::ui` (`MaterialIcon`);
   - `mission_operations::document_index`: `DocEntity` and `DocKind`;
-  - `map_engine`: `document_entities`, `selection_entities`,
-    `complete_layer_drop_onto_root` and `cancel_layer_drag` from `editing::hosted_commands`;
-    `camera_snapshot`, `fly_to` and `named_locations` from `streaming::host`;
+  - `mission_editing_commands::hosted_commands`: `document_entities`, `selection_entities`,
+    `complete_layer_drop_onto_root` and `cancel_layer_drag`;
+  - `map_engine`: `camera_snapshot`, `fly_to` and `named_locations` from `streaming::host`;
   - the browser's local storage, through `web_sys`.
 - Used by: the chrome re-export and the editor page above; the tests in
   `apps/frontend/src/workspaces/editor/ui/docks/tests/dock_left/`; and the outliner smoke

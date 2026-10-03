@@ -6,9 +6,9 @@
 use crate::workspaces::editor::bridge::host_state::editor_context;
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use map_editing_tools::selection;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::selection;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 use serde::{Deserialize, Serialize};
 

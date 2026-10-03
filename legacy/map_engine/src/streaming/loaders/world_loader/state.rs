@@ -10,11 +10,12 @@ use super::RoadMeshGpu;
 use super::VecDeque;
 use super::WorldResidency;
 use super::WorldStore;
+use world_chunks::ChunkId;
 
 /// Pending chunk.
 pub(super) struct PendingChunk {
     /// Id.
-    pub(super) id: String,
+    pub(super) id: ChunkId,
 
     /// Bytes.
     pub(super) bytes: Option<Vec<u8>>,

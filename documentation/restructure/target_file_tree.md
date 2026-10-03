@@ -72,7 +72,7 @@ TBD-reforger/
 ├── crates/
 │   ├── README.md              category index and the tier DAG
 │   ├── foundation/            newtype_ids · time_source · deterministic_random · content_digest
-│   │                          http_url_guard · browser_platform
+│   │                          http_url_guard · browser_platform · orbat_slot_ids
 │   ├── contracts/             fleet_wire_contract · contract_schema_types · offline_cache_policy
 │   ├── mission/               mission_wire_safety · mission_model · mission_payload · mission_validation
 │   │                          mission_compiler · formation_geometry · mission_crdt · mission_document

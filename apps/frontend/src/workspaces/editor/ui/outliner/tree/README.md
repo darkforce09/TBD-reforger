@@ -47,7 +47,7 @@ window blur or unmounting the tree cancels them at once.
   and the drag latch in `apps/frontend/src/workspaces/editor/ui/outliner/drag.rs`; the
   bridge's `entity_selection` and `editor_context`; the validation panel's subject router; the
   asset catalog's `classname_tail`; `MaterialIcon`; and, in the browser build,
-  `map_engine::editing::hosted_commands` (the layer, drag, refile and vehicle commands).
+  `mission_editing_commands::hosted_commands` (the layer, drag, refile and vehicle commands).
 - Used by: the left dock's `full_dock!` in
   `apps/frontend/src/workspaces/editor/ui/docks/dock_left/view/full_dock.rs`, the only caller
   of `virtual_tree`; the right dock (`apps/frontend/src/workspaces/editor/ui/docks/dock_right.rs`

@@ -3,7 +3,7 @@
 //! Signals & state: three host heartbeats (pan cursor, zoom sampler, state tick) and the leaked
 //! tool state this module hands to the engine's registry.
 //! Invariants: every decidable thing — the occlusion rule, the capture machine, the projection and
-//! the chart geometry — belongs to `map_engine::editing::tools::line_of_sight`. What lives
+//! the chart geometry — belongs to `map_editing_tools::line_of_sight`. What lives
 //! here is the drawing and the ownership: an absolutely positioned, `pointer-events-none` SVG plus
 //! one inline profile panel anchored by the target, and the mount-scoped installs that make the
 //! engine's registry answer "nothing here" once this surface is gone.
@@ -15,20 +15,18 @@
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 
-use map_engine::editing::tools::line_of_sight::capture::{LosState, ViewshedState};
+use map_editing_tools::line_of_sight::capture::{LosState, ViewshedState};
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::line_of_sight::host_registry::read_registered_state;
-use map_engine::editing::tools::line_of_sight::host_registry::{
-    LOS_SAMPLER, LOS_STATE, VIEWSHED_STATE,
-};
+use map_editing_tools::line_of_sight::host_registry::read_registered_state;
+use map_editing_tools::line_of_sight::host_registry::{LOS_SAMPLER, LOS_STATE, VIEWSHED_STATE};
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::line_of_sight::object_verdict;
+use map_editing_tools::line_of_sight::object_verdict;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::line_of_sight::projection::{ProfileChart, ProjectedShot};
+use map_editing_tools::line_of_sight::projection::{ProfileChart, ProjectedShot};
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::line_of_sight::terrain_verdict::LosVerdict;
+use map_editing_tools::line_of_sight::terrain_verdict::LosVerdict;
 
 use crate::workspaces::editor::input::tools::ruler_tool::install_seam;
 
@@ -107,11 +105,11 @@ pub fn LosOverlay(
             return (Vec::new(), Vec::new(), Vec::new());
         }
         {
-            use map_engine::editing::tools::line_of_sight::projection::{
+            use map_editing_tools::line_of_sight::projection::{
                 profile_chart, project_shot,
             };
-            use map_engine::editing::tools::line_of_sight::terrain_survey::build_profile;
-            use map_engine::editing::tools::line_of_sight::terrain_verdict::{
+            use map_editing_tools::line_of_sight::terrain_survey::build_profile;
+            use map_editing_tools::line_of_sight::terrain_verdict::{
                 EYE_HEIGHT_OBSERVER_M, EYE_HEIGHT_TARGET_M,
             };
 

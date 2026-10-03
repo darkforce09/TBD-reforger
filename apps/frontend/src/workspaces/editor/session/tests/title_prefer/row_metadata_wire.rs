@@ -42,7 +42,7 @@ use std::process::Command;
 /// The engine's half of the wire — the adoption policy — verbatim, at compile time.
 const ADOPTION_SRC: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../legacy/map_engine/src/editing/persist/server_adoption.rs"
+    "/../../crates/mission_editing/mission_persistence/src/server_adoption.rs"
 ));
 /// The frontend's half — the one place the API's row shape is read.
 const HYDRATE_SRC: &str = include_str!(concat!(

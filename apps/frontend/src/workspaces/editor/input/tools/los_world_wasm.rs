@@ -19,19 +19,19 @@ use wasm_bindgen::JsValue;
 use world_line_of_sight::WorldLos;
 use world_line_of_sight::WorldVerdict;
 
-use map_engine::editing::tools::line_of_sight::capture::LosShot;
-use map_engine::editing::tools::line_of_sight::host_registry::{
+use map_editing_tools::line_of_sight::capture::LosShot;
+use map_editing_tools::line_of_sight::host_registry::{
     read_registered_sampler, read_registered_viewshed,
 };
-use map_engine::editing::tools::line_of_sight::object_verdict::ObjectVerdict;
-use map_engine::editing::tools::line_of_sight::object_wash::{
+use map_editing_tools::line_of_sight::object_verdict::ObjectVerdict;
+use map_editing_tools::line_of_sight::object_wash::{
     encode_viewshed_rgba_merged, ObjectCell, ObjectPass, OBJECT_PASS_BUDGET_MS,
     OBJECT_UPLOAD_INTERVAL_MS,
 };
-use map_engine::editing::tools::line_of_sight::terrain_verdict::{
+use map_editing_tools::line_of_sight::terrain_verdict::{
     EYE_HEIGHT_OBSERVER_M, EYE_HEIGHT_TARGET_M,
 };
-use map_engine::editing::tools::line_of_sight::viewshed_texture::pack_rgba_256;
+use map_editing_tools::line_of_sight::viewshed_texture::pack_rgba_256;
 use map_engine::streaming::host::with_occluder;
 use map_engine::streaming::host::with_occluder_host;
 use world_line_of_sight::map_to_engine;

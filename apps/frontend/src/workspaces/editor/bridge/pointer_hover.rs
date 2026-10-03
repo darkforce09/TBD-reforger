@@ -17,7 +17,7 @@
 // Every shipping caller is a `#[cfg(target_arch = "wasm32")]` closure and every other caller is a
 // `#[cfg(test)]` pin, so the native non-test build reaches none of this.
 
-use map_engine::editing::lanes::comments::COMMENT_PICK_PX;
+use mission_editing_session::lanes::comments::COMMENT_PICK_PX;
 
 /// The CSS `cursor` over a pickable entity. `pointer`, not `grab`, because it is the vocabulary
 /// the rest of this editor already speaks: every clickable chrome row wears `cursor-pointer`, and

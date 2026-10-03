@@ -14,7 +14,7 @@ pub(super) fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String
         return ().into_any();
     }
     let rows: Vec<mission_operations::entity::VehicleRow> =
-        map_engine::editing::hosted_commands::vehicle_rows()
+        mission_editing_commands::hosted_commands::vehicle_rows()
             .into_iter()
             .filter(|v| v.xy.is_some()) // on-the-map vehicles only
             .collect();

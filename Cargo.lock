@@ -1293,6 +1293,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "chunk_draw_buffers"
+version = "0.1.0"
+dependencies = [
+ "chunk_scheduler",
+ "flate2",
+ "label_layout",
+ "map_coordinates",
+ "map_draw_lanes",
+ "prefab_catalog",
+ "render_primitives",
+ "road_network",
+ "serde_json",
+ "thiserror 2.0.18",
+ "vegetation",
+ "world_chunks",
+]
+
+[[package]]
+name = "chunk_scheduler"
+version = "0.1.0"
+dependencies = [
+ "map_coordinates",
+ "map_draw_lanes",
+ "prefab_catalog",
+ "serde_json",
+ "spatial_indexes",
+ "thiserror 2.0.18",
+ "world_chunks",
+ "world_file_formats",
+]
+
+[[package]]
 name = "ci_task_catalog"
 version = "0.1.0"
 dependencies = [
@@ -2799,6 +2831,7 @@ dependencies = [
  "browser_platform",
  "building_interiors",
  "camera_math",
+ "chunk_draw_buffers",
  "console_error_panic_hook",
  "fire_mission_planning",
  "formation_geometry",
@@ -2814,13 +2847,17 @@ dependencies = [
  "leptos_router",
  "map_coordinates",
  "map_draw_lanes",
+ "map_editing_tools",
  "map_engine",
  "mission_compiler",
  "mission_crdt",
  "mission_document",
+ "mission_editing_commands",
+ "mission_editing_session",
  "mission_model",
  "mission_operations",
  "mission_payload",
+ "mission_persistence",
  "mission_validation",
  "offline_cache_policy",
  "overlay_instances",
@@ -4389,15 +4426,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "map_editing_tools"
+version = "0.1.0"
+dependencies = [
+ "camera_math",
+ "interior_line_of_sight",
+ "mission_crdt",
+ "mission_document",
+ "mission_editing_session",
+ "spatial_indexes",
+ "terrain_elevation",
+ "terrain_line_of_sight",
+ "terrain_relief",
+ "time_source",
+ "world_line_of_sight",
+]
+
+[[package]]
 name = "map_engine"
 version = "0.1.0"
 dependencies = [
  "browser_platform",
  "bytemuck",
  "camera_math",
+ "chunk_draw_buffers",
+ "chunk_scheduler",
  "console_error_panic_hook",
  "flate2",
- "formation_geometry",
  "futures",
  "graphics_engine",
  "interior_line_of_sight",
@@ -4405,11 +4460,6 @@ dependencies = [
  "label_layout",
  "map_coordinates",
  "map_draw_lanes",
- "mission_crdt",
- "mission_document",
- "mission_operations",
- "mission_payload",
- "mission_validation",
  "overlay_instances",
  "place_names",
  "prefab_catalog",
@@ -4554,6 +4604,7 @@ dependencies = [
  "mission_payload",
  "mission_validation",
  "mission_wire_safety",
+ "orbat_slot_ids",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -4577,6 +4628,7 @@ dependencies = [
  "mission_payload",
  "mission_validation",
  "newtype_ids",
+ "orbat_slot_ids",
  "serde_json",
  "thiserror 2.0.18",
  "time_source",
@@ -4584,10 +4636,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "mission_editing_commands"
+version = "0.1.0"
+dependencies = [
+ "formation_geometry",
+ "map_coordinates",
+ "mission_document",
+ "mission_editing_session",
+ "mission_model",
+ "mission_operations",
+ "mission_validation",
+ "orbat_slot_ids",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "mission_editing_session"
+version = "0.1.0"
+dependencies = [
+ "camera_math",
+ "mission_crdt",
+ "mission_document",
+ "mission_operations",
+ "mission_validation",
+ "serde_json",
+ "spatial_indexes",
+ "unit_symbology",
+]
+
+[[package]]
 name = "mission_model"
 version = "0.1.0"
 dependencies = [
  "newtype_ids",
+ "orbat_slot_ids",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -4604,6 +4687,7 @@ dependencies = [
  "mission_model",
  "mission_payload",
  "mission_validation",
+ "orbat_slot_ids",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -4617,6 +4701,18 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "mission_persistence"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "mission_document",
+ "mission_editing_session",
+ "mission_model",
+ "mission_payload",
+ "serde_json",
 ]
 
 [[package]]
@@ -5380,6 +5476,14 @@ name = "or_poisoned"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c04f5d74368e4d0dfe06c45c8627c81bd7c317d52762d118fb9b3076f6420fd"
+
+[[package]]
+name = "orbat_slot_ids"
+version = "0.1.0"
+dependencies = [
+ "newtype_ids",
+ "serde_json",
+]
 
 [[package]]
 name = "orbclient"
@@ -8786,9 +8890,8 @@ name = "unit_symbology"
 version = "0.1.0"
 dependencies = [
  "map_draw_lanes",
- "newtype_ids",
+ "orbat_slot_ids",
  "render_primitives",
- "serde_json",
 ]
 
 [[package]]

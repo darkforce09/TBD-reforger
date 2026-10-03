@@ -217,7 +217,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn marker_attributes(
                 class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
                 on:change=move |ev| {
                     let next = event_target_value(&ev);
-                    if engine_ops::set_marker_icon(&f_icon, &i_icon, &next, marker_icon_is_authorable) {
+                    if engine_ops::set_marker_icon(f_icon.as_str(), i_icon.as_str(), &next, marker_icon_is_authorable) {
                         bump();
                     }
                 }
@@ -242,7 +242,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn marker_attributes(
                 prop:value=label_value
                 on:change=move |ev| {
                     let next = event_target_value(&ev);
-                    if engine_ops::set_marker_label(&f_label, &i_label, &next) {
+                    if engine_ops::set_marker_label(f_label.as_str(), i_label.as_str(), &next) {
                         bump();
                     }
                 }
@@ -262,7 +262,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn marker_attributes(
                         let Ok(next) = event_target_value(&ev).trim().parse::<f64>() else {
                             return;
                         };
-                        if engine_ops::set_marker_position(&f_x, &i_x, next, z_value) {
+                        if engine_ops::set_marker_position(f_x.as_str(), i_x.as_str(), next, z_value) {
                             bump();
                         }
                     }
@@ -277,7 +277,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn marker_attributes(
                         let Ok(next) = event_target_value(&ev).trim().parse::<f64>() else {
                             return;
                         };
-                        if engine_ops::set_marker_position(&f_z, &i_z, x_value, next) {
+                        if engine_ops::set_marker_position(f_z.as_str(), i_z.as_str(), x_value, next) {
                             bump();
                         }
                     }
@@ -288,7 +288,7 @@ pub(in crate::workspaces::editor::ui::docks::dock_right) fn marker_attributes(
                 type="button"
                 class="mt-2 rounded-md px-2 py-1 text-label-sm text-error transition-colors hover:bg-error/10"
                 on:click=move |_| {
-                    if engine_ops::remove_marker(&f_del, &i_del) {
+                    if engine_ops::remove_marker(f_del.as_str(), i_del.as_str()) {
                         selected.set(None);
                         bump();
                     }

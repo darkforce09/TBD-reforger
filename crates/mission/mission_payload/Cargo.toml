@@ -12,7 +12,7 @@ description = "The editor payload, export envelope and version body compiler of 
 
 [package.metadata.layout]
 category = "crates/mission"
-tier = 2
+tier = 3
 targets = "any"
 
 [dependencies]

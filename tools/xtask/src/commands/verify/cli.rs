@@ -97,14 +97,14 @@ pub(crate) enum VerifyCmd {
     /// CI schema parity + hollow recipe tripwire
     #[command(name = "ci-schema-parity")]
     CiSchemaParity,
-    /// documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7:
-    /// legacy/graphics_engine may not import map_engine, and may not declare a
-    /// type/fn/mod name containing terrain, symbology, mission, orbat or arma; under
-    /// legacy/map_engine only the enumerated packet boundary may name
+    /// documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 6 and 7:
+    /// legacy/graphics_engine and the crates/graphics members may not import map_engine, and
+    /// may not declare a type/fn/mod name containing terrain, symbology, mission, orbat or arma;
+    /// under legacy/map_engine only the enumerated packet boundary may name
     /// graphics_engine::frame, only the pinned seams may name its device / pipeline /
-    /// shaders / r#loop modules, data/scenario imports nothing outside itself, editing/ names no
-    /// web_sys / leptos / wasm_bindgen, and data/ and world/ name each other nowhere; and
-    /// apps/frontend neither imports nor depends on graphics_engine. (§5 spells it
+    /// shaders / r#loop modules, and world/ names no mission document or mission editing crate;
+    /// and apps/frontend neither imports nor depends on graphics_engine or a wasm-only
+    /// crates/graphics member. (§5 spells it
     /// `verify-engine-layers`; every sibling here is `verify <name>`, and the
     /// `verify-engine-layers` task row aliases both.)
     #[command(name = "engine-layers")]

@@ -99,7 +99,7 @@ fn trigger_draw_is_second_consumer_of_the_zone_tool() {
     let ops = [
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -107,11 +107,11 @@ fn trigger_draw_is_second_consumer_of_the_zone_tool() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -121,7 +121,7 @@ fn trigger_draw_is_second_consumer_of_the_zone_tool() {
         crate::foundation::test_support::editor_operations::ENTITY,
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
         )),
     ]
     .concat();

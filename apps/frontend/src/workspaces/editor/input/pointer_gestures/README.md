@@ -53,7 +53,7 @@ left by the docks, the top strip and the toolbelt band, read from `session::layo
 (`dock_left_px`, `dock_right_px`, `strip_top_px`, `toolbelt_band_px`). A committed move writes
 dragged comments through `move_comment` and the [slots](/documentation/glossary/n_to_z.md#slot) and
 vehicles with one `move_entities_and_vehicles` call inside one undo group, then runs
-`after_local_edit`; the other commits go through `map_engine::editing::hosted_commands`.
+`after_local_edit`; the other commits go through `mission_editing_commands::hosted_commands`.
 
 ## Public surface
 
@@ -67,9 +67,9 @@ None: the handlers are private to the parent module, which exposes `EditorGestur
   `apps/frontend/src/workspaces/editor/mission_editor.rs` re-exports; the select tool's drag
   preview and the line-of-sight world wash in
   `apps/frontend/src/workspaces/editor/input/tools/`; the insets of `session::layout`; the
-  context menu's `resolve_target` and `open`; `map_engine` (`editing::tools::selection`,
-  `editing::tools::ruler` and `editing::tools::line_of_sight`, `editing::hosted_commands`,
-  `streaming::host` for the camera settle).
+  context menu's `resolve_target` and `open`; `map_editing_tools` (`selection`, `ruler` and
+  `line_of_sight`); `mission_editing_commands::hosted_commands`; `map_engine` (`streaming::host`
+  for the camera settle).
 - Used by: the parent module, whose `attach_canvas_gestures` the input listeners of
   `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/` call; the source pins that
   read these files: the gesture pins in `apps/frontend/src/workspaces/editor/tests/`, the Z-arm

@@ -16,7 +16,7 @@ apps/frontend/src/workspaces/editor/session/document_commands/
 ## How it works
 
 `document_commands.rs` re-exports the map engine's pure command helpers
-(`map_engine::editing::commands`: the export text, the merge report, the selection digest)
+(`mission_editing_commands::document_text`: the export text, the merge report, the selection digest)
 in every build, and declares `mod imp` for the `wasm32` build only; Rust reads the children of that
 inline module from `imp/`, so this folder holds nothing else. The parent's `imp`
 keeps the command context (`EDITOR_CTX`), the [mission](/documentation/glossary/g_to_m.md#mission) row
@@ -37,7 +37,7 @@ None: the items of `imp/` cross the boundary only through the parent's `pub use 
 - Used by: the parent module `apps/frontend/src/workspaces/editor/session/document_commands.rs`.
 - Rules: a command file joins `imp/` and is declared inside the parent's `mod imp`, which stays
   `#[cfg(target_arch = "wasm32")]`; what a command decides belongs to
-  `map_engine::editing::commands`, never to this folder.
+  `mission_editing_commands::document_text`, never to this folder.
 
 ## Related documentation
 

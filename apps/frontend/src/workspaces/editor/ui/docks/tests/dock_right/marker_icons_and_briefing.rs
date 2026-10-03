@@ -299,7 +299,7 @@ fn marker_writes_go_to_the_briefing_not_the_root_map() {
     let ops_all = [
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -307,11 +307,11 @@ fn marker_writes_go_to_the_briefing_not_the_root_map() {
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -322,7 +322,7 @@ fn marker_writes_go_to_the_briefing_not_the_root_map() {
         crate::foundation::test_support::editor_operations::DOMAIN_ENTITY,
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+            "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
         )),
     ]
     .concat();

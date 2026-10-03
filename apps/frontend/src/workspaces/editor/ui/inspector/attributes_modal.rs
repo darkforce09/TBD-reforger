@@ -3,7 +3,7 @@
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 #[cfg(any(test, target_arch = "wasm32"))]
 pub use mission_operations::reassign::faction_label;
 
@@ -78,7 +78,7 @@ pub fn AttributesModal(
                         ids = vec![id.to_string()];
                     }
                     ids.iter()
-                        .filter_map(|i| engine_ops::read_attrs(i))
+                        .filter_map(|i| engine_ops::read_attrs(i.as_str()))
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
@@ -89,10 +89,10 @@ pub fn AttributesModal(
         let id = attrs_open.get()?;
         let _ = doc_tick.get(); // re-read fields on every doc change (undo/redo/drag)
         {
-            match engine_ops::read_attrs(&id) {
+            match engine_ops::read_attrs(id.as_str()) {
                 Some(attrs) => {
-                    let multi = engine_ops::attrs_multi_ids(&id);
-                    let selection_n = map_engine::editing::host::selection_len();
+                    let multi = engine_ops::attrs_multi_ids(id.as_str());
+                    let selection_n = mission_editing_session::host::selection_len();
                     let diff = engine_ops::read_attrs_diff(&multi);
                     Some(modal_view(
                         attrs,
@@ -107,7 +107,7 @@ pub fn AttributesModal(
                     ))
                 }
                 None => {
-                    if engine_ops::is_vehicle_id(&id) {
+                    if engine_ops::is_vehicle_id(id.as_str()) {
                         Some(vehicle_attrs_view(id, registry_items))
                     } else {
                         crate::workspaces::editor::bridge::host_state::editor_context::close_attributes();

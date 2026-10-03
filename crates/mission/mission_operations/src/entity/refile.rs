@@ -5,7 +5,7 @@
 //! release outside a squad row leaves the order of battle untouched and the cell empty.
 
 use mission_document::ids::SquadId;
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use std::cell::RefCell;
 
@@ -16,8 +16,8 @@ thread_local! {
 }
 
 /// Arm a slot for a refile into another squad.
-pub fn begin_refile(slot_id: impl Into<SlotId>) {
-    let slot_id: SlotId = slot_id.into();
+pub fn begin_refile(slot_id: impl Into<SlotUid>) {
+    let slot_id: SlotUid = slot_id.into();
     let slot_id = slot_id.into_inner();
     PENDING_REFILE.with(|pending| *pending.borrow_mut() = Some(slot_id));
 }
@@ -45,12 +45,12 @@ pub fn complete_refile_onto_squad(
 /// member list is the document's to splice, never a caller's.
 pub fn refile_slot(
     core: &MissionDocCore,
-    slot_id: impl Into<SlotId>,
+    slot_id: impl Into<SlotUid>,
     dest_squad_id: impl Into<SquadId>,
 ) {
     let dest_squad_id: SquadId = dest_squad_id.into();
     let dest_squad_id = dest_squad_id.as_str();
-    let slot_id: SlotId = slot_id.into();
+    let slot_id: SlotUid = slot_id.into();
     let slot_id = slot_id.as_str();
     core.move_slot_to_squad(slot_id, dest_squad_id);
 }

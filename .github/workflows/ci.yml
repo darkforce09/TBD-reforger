@@ -267,14 +267,14 @@ jobs:
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
-      # documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6 and 7,
+      # documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 6 and 7,
       # judged by tools/foundation/repository_laws/src/engine_layers/. The map engine
       # depends on legacy/graphics_engine in one direction only (map-engine ->
       # graphics-engine), and NOTHING in the compiler enforces it: a dependency line pointing back
       # still builds, and map-domain types would seep into the renderer a type at a time. It runs
       # here, not on the 25-minute API job, for the same reason the language gates do: it reads
       # the working tree, needs no DB/LFS/wasm target, and takes seconds.
-      - name: verify-engine-layers (documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 4, 5, 6, 7)
+      - name: verify-engine-layers (documentation/standards/engine_boundary_rules.md §5 rules 1, 2, 3a, 3b, 6, 7)
         run: cargo xtask verify engine-layers
       # The workspace laws of documentation/restructure/laws_and_gates.md, judged by
       # tools/foundation/repository_laws/src/workspace_laws/ over the members the root

@@ -26,7 +26,9 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
    - mission and ballistics depend on foundation and `map_coordinates`;
    - engine CPU categories depend on lower engine categories and the graphics CPU primitives;
    - rendering may depend on any engine crate;
-   - mission editing depends on mission, geometry, world, line of sight and overlay;
+   - mission editing depends on foundation crates whose targets are not wasm32 only, and on
+     mission, mission editing, geometry, world formats, terrain, world objects, line of sight and
+     overlay crates (never ballistics, streaming or graphics);
    - api depends on foundation, contracts, mission, ballistics and api;
    - frontend depends on anything except api;
    - tools never depend on wasm-only, api or frontend crates, except that `staging_fixtures` may
@@ -44,7 +46,9 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
    - no tokio, axum, reqwest, resvg or image in the dependency closure of xtask (this ban stays
      hard and keeps the harness servers out of xtask);
    - no map nouns in the graphics category (today's engine rule 2);
-   - no browser crates in mission editing (today's engine rule 5).
+   - no browser crates in mission editing: no browser crate edge, and no `web_sys`, `leptos` or
+     `wasm_bindgen` token, prose included, in any `.rs` file under `crates/mission_editing/`; the
+     scan fails closed when that folder holds no `.rs` file (it replaced engine rule 5 in S7).
 7. Nothing outside the legacy folder depends on it, apart from apps and the two tool binaries
    while legacy exists.
 8. Dev-dependencies are exempt from the tier order but never point at apps or legacy.
@@ -113,9 +117,9 @@ the deploy Dockerfile, and the operator-run `cargo xtask mod compile` and
 
 | Today | After the program |
 |---|---|
-| Engine layer rules 1, 3a, 3b, 4, 6 and 7, with source pins | Manifest firewalls and category edges of the crate tiers law; deleted with the legacy engines in S8 |
+| Engine layer rules 1, 3a, 3b, 6 and 7, with source pins | Manifest firewalls and category edges of the crate tiers law; deleted with the legacy engines in S8 |
 | Engine layer rule 2 (no map nouns in graphics) | Kept as a source regex over the graphics category |
-| Engine layer rule 5 (no browser crates in editing) | A category edge plus a source regex over mission editing |
+| Engine layer rule 5 (no browser crates in editing), retired in S7 with the editing module | The narrowed mission editing matrix arm plus the crate firewalls' source scan over `crates/mission_editing/` (done in S7) |
 | The forbidden-edge list in `tools/foundation/repository_laws/src/crate_dependencies.rs` | The allowed-edge category matrix and tier numbers |
 | Source roots skip missing folders silently | Fail-closed roots derived from the workspace members (S0) |
 | The map engine's feature gate tripwire test | Replaced by the anatomy law's features rule; deleted in S8 |

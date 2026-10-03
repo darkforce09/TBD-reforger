@@ -11,7 +11,7 @@
 //! nothing here decides what a command means.
 //! **Signals & state:** the save status, the tab role and peer count, the conflict and semver
 //! signals, the snapshot cache and the collapse latches are all tab-local — they die with the tab.
-//! What an operator authored reaches the document through `map_engine::editing` instead.
+//! What an operator authored reaches the document through the editing crates instead.
 //! **Invariants:** a module that touches `web_sys` or a live document handle is
 //! `#[cfg(target_arch = "wasm32")]` and its `pub mod` line carries the same gate, so the native
 //! test build still compiles the pure half of the session — the save policy, the writer election,
@@ -20,7 +20,7 @@
 
 /// The browser transport behind Save, Export and the clipboard commands: the authed POST, the file
 /// download, the clipboard write, the toast, the merge report and the smoke bridge the headless
-/// harness drives. What a command decides belongs to `map_engine::editing::commands`.
+/// harness drives. What a command decides belongs to `mission_editing_commands::document_text`.
 pub mod document_commands;
 /// The docked chrome's single import path — re-exports the dialog and panel components under
 /// [`super::ui`] so consumers name one module rather than tracking which surface file holds

@@ -15,10 +15,10 @@ futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 base64 = { workspace = true }
-# The map engine on every target: the Mission Creator's editing layer runs on the native build as
-# well as wasm32, for the editor tests; `editing` brings `streaming` with it. The wasm32 block adds
+# The map engine on every target: the static world, the overlay and the streamed world's loaders
+# run on the native build as well as wasm32, for the page and editor tests. The wasm32 block adds
 # `render`.
-map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "editing"] }
+map_engine = { path = "../../legacy/map_engine", default-features = false, features = ["world", "streaming"] }
 # The mission crates on every target. The compiler runs on the native build as well as wasm32:
 # `MissionDetail::compiled_meta` is the row half of the Mission Creator's server-truth Export, and
 # `compiled_meta_is_the_row_the_server_compiles_from` checks it natively against the captured
@@ -66,6 +66,15 @@ spatial_indexes = { workspace = true }
 map_draw_lanes = { workspace = true }
 unit_symbology = { workspace = true }
 overlay_instances = { workspace = true }
+# The Mission Creator's editing crates on every target, for the editor tests: the editing session
+# (host, undo, grouping, routing, selection, picks, overlay lanes), the hosted commands with the
+# export, report and selection texts, the local draft decisions and the headless map tools. The
+# world line-of-sight bench reads the draw buffers' world residency.
+mission_editing_session = { workspace = true }
+mission_editing_commands = { workspace = true }
+mission_persistence = { workspace = true }
+map_editing_tools = { workspace = true }
+chunk_draw_buffers = { workspace = true }
 gloo-net = { workspace = true }
 js-sys = { workspace = true }
 # Query strings and the offline core's URL parsing. `leptos_router` and

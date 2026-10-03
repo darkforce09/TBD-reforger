@@ -9,16 +9,14 @@ use std::rc::Rc;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use map_engine::editing::persist::local_versus_server::{
+use mission_document::MissionDocCore;
+use mission_persistence::local_versus_server::{
     classify_local_draft, server_slot_count, LocalDraftVerdict,
 };
-use map_engine::editing::persist::mission_id::is_uuid;
-use map_engine::editing::persist::record_key::snapshot_key;
-use map_engine::editing::persist::server_adoption::{
-    adopt_payload, apply_row_meta_only, Adopt, RowMeta,
-};
-use map_engine::editing::persist::snapshot_slot::{capture_document_snapshot, SnapshotSlot};
-use mission_document::MissionDocCore;
+use mission_persistence::mission_id::is_uuid;
+use mission_persistence::record_key::snapshot_key;
+use mission_persistence::server_adoption::{adopt_payload, apply_row_meta_only, Adopt, RowMeta};
+use mission_persistence::snapshot_slot::{capture_document_snapshot, SnapshotSlot};
 use wasm_bindgen::prelude::*;
 
 use crate::foundation::auth::AuthStore;

@@ -13,8 +13,6 @@ decisions.
 
 ```text
 documentation/legacy/map_engine/
-├── draft_persistence.md    local drafts: keys, merge, classify, adopt and the snapshot pair
-├── editing_layer.md        the editing host, hosted commands, undo drive and map tools
 ├── map_engine_overview.md  the crate's layers, feature tiers and consumers, from canvas to frame
 └── map_streaming.md        boot, chunk residency, the memory budget and the loaders
 ```
@@ -23,15 +21,17 @@ documentation/legacy/map_engine/
 
 Start with the [overview](/documentation/legacy/map_engine/map_engine_overview.md): it lays
 out the modules by side (authored, static, draw, support), the feature tier each compiles under,
-and the path from a mounted canvas to a drawn frame, and it leads to the three feature docs. Each
+and the path from a mounted canvas to a drawn frame, and it leads to the streaming feature doc here
+and to the two feature docs of the mission editing crates, which live at those crates' mirror under
+[`documentation/crates/mission_editing/`](/documentation/crates/mission_editing/README.md). Each
 follows the [feature doc template](/documentation/standards/templates/feature_doc.md).
 
 | Doc | Covers | Code |
 |---|---|---|
 | [Map engine overview](/documentation/legacy/map_engine/map_engine_overview.md) | layers, tiers, consumers, crate-wide open work | [`legacy/map_engine/`](/legacy/map_engine/README.md) |
 | [Map streaming](/documentation/legacy/map_engine/map_streaming.md) | boot sequence, viewport passes, residency, memory budget, loaders | [`src/streaming/`](/legacy/map_engine/src/streaming/README.md) |
-| [Editing layer](/documentation/legacy/map_engine/editing_layer.md) | editing host, hosted commands, undo, tools and picks | [`src/editing/`](/legacy/map_engine/src/editing/README.md) |
-| [Draft persistence](/documentation/legacy/map_engine/draft_persistence.md) | draft keys, merge, classify, adopt, snapshot pair | [`src/editing/persist/`](/legacy/map_engine/src/editing/persist/README.md) |
+| [Editing layer](/documentation/crates/mission_editing/editing_layer.md) | editing host, hosted commands, undo, tools and picks | [`crates/mission_editing/`](/crates/mission_editing/README.md) |
+| [Draft persistence](/documentation/crates/mission_editing/mission_persistence/draft_persistence.md) | draft keys, merge, classify, adopt, snapshot pair | [`mission_persistence`](/crates/mission_editing/mission_persistence/src/README.md) |
 
 The code READMEs state what each folder declares (files, constants, public surface, the tests
 that hold its rules); the documents here link them rather than repeat them. The layer rules the
@@ -44,8 +44,8 @@ at the module's path mirror under this folder, with a README at each level.
 
 - [Map engine](/legacy/map_engine/) — the crate the overview describes.
 - [Streaming](/legacy/map_engine/src/streaming/) — described in `map_streaming.md`.
-- [Editing](/legacy/map_engine/src/editing/) — described in `editing_layer.md` and
-  `draft_persistence.md`.
+- [Mission editing crates](/crates/mission_editing/) — described by the
+  [mission editing documentation](/documentation/crates/mission_editing/README.md).
 - [Render engine](/legacy/map_engine/src/frame/) — the frame path the overview follows.
 
 ## Boundaries
@@ -53,8 +53,8 @@ at the module's path mirror under this folder, with a README at each level.
 - Depends on: the code of `legacy/map_engine/` and the Mission Creator code that calls it,
   which every claim is checked against; the feature doc template; the ticket registry in
   `.ai/tickets/` for open work; the glossary for its terms.
-- Used by: the READMEs of `legacy/map_engine/` and its `streaming/`, `editing/` and `frame/`
-  folders, which link these documents under Related documentation; the mortar calculator and
+- Used by: the READMEs of `legacy/map_engine/` and its `streaming/` and `frame/` folders, the
+  mission editing crates' READMEs, which link these documents under Related documentation; the mortar calculator and
   ballistics catalogs page docs; the
   [website documentation](/documentation/apps/README.md) index; the engine boundary rules
   and the graphics engine documentation.

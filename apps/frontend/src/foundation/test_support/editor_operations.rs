@@ -34,57 +34,57 @@ pub(crate) const ENTITY: &str = concat!(
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/document_edit.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/document_edit.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/document_search.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/document_search.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/entity_clipboard.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/entity_clipboard.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/orbat_roster.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/orbat_roster.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/placed_vehicles.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/placed_vehicles.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/entity_connections.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/entity_connections.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/map_markers.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/map_markers.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/zone_authoring.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/zone_authoring.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/map_comments.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/map_comments.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/editor_layers.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/editor_layers.rs"
     )),
     "\n",
     include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/map_triggers.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/map_triggers.rs"
     )),
     "\n",
 );

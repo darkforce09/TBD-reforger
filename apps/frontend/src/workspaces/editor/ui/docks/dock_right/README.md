@@ -37,9 +37,9 @@ and the collapse flag) and draws one tab body at a time:
 | Favourites | `favourites/`, whose second list reads the session list of `recent/` |
 
 A leaf press arms a placement through `bridge::host_state::armed_placement`, and the canvas
-release commits it into the document. Every panel that reads the document asks the map engine's
-`editing::hosted_commands` and reads again whenever `doc_tick` moves; every write goes through
-the same module and bumps `doc_tick`. Those panels compile for the browser build only, each with a
+release commits it into the document. Every panel that reads the document asks
+`mission_editing_commands::hosted_commands` and reads again whenever `doc_tick` moves; every write
+goes through the same module and bumps `doc_tick`. Those panels compile for the browser build only, each with a
 native sibling that draws nothing, so the native tests compile the whole dock.
 
 Two hooks let code outside the dock reach state that lives inside `DockRight`: the zone selection
@@ -72,8 +72,9 @@ registers both at mount, and each cleanup removes only its own registration.
     left dock's `collapse_chevron`;
   - `crate::foundation`: the [API](/documentation/glossary/a_to_f.md#api) client and `RegistryItem`, the
     auth store and `MaterialIcon`;
-  - `map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools::selection` and
-    `streaming::host`;
+  - `mission_editing_commands::hosted_commands`, `mission_editing_session::host` and
+    `map_editing_tools::selection`;
+  - `map_engine`: `streaming::host`;
   - `unit_symbology::markers`;
   - `contracts/definitions/mission.schema.json`, through the zones panel's embed, and the
     browser's local storage.

@@ -102,7 +102,7 @@ fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
     )));
     let body = only_body(
         &ops,
-        "pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotId>) -> Option<SlotAttrs>",
+        "pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotUid>) -> Option<SlotAttrs>",
     );
     assert!(
         body.contains("raw_slot_rows(core)"),
@@ -121,7 +121,7 @@ fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
     )));
     let body = only_body(
         &ops,
-        "pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotId>) -> Option<SlotAttrs>",
+        "pub fn read_attrs(core: &MissionDocCore, id: impl Into<SlotUid>) -> Option<SlotAttrs>",
     );
     let raw_gate = "!rows.contains_key(id)";
     assert!(
@@ -164,7 +164,7 @@ fn attributes_modal_none_arm_still_closes_on_true_absence() {
     let code = live_code(super::ATTRIBUTES_MODAL_SOURCE);
     let host = only_body(&code, "pub fn AttributesModal(");
     assert!(
-        host.contains("read_attrs(&id)"),
+        host.contains("read_attrs(id.as_str())"),
         "AttributesModal must ask read_attrs for existence; body was:
 {host}"
     );
@@ -177,7 +177,8 @@ fn attributes_modal_none_arm_still_closes_on_true_absence() {
     let src = live_source(super::ATTRIBUTES_MODAL_SOURCE);
     let host_src = only_body(&src, "pub fn AttributesModal(");
     assert!(
-        host_src.contains("read_attrs(&id)") && host_src.matches("close_attributes()").count() >= 2,
+        host_src.contains("read_attrs(id.as_str())")
+            && host_src.matches("close_attributes()").count() >= 2,
         "live_source pin: read_attrs + dual close_attributes must remain real call sites"
     );
 }
@@ -203,7 +204,7 @@ fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
 fn attrs_update_slot_noops_when_all_none_or_id_missing() {
     let ops = live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+        "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
     )));
     let body = only_body(&ops, "pub fn attrs_update_slot(");
 

@@ -1,0 +1,46 @@
+# Stage S7 X7a — the S7 switch: every consumer of the streaming and mission editing crates imports them directly, and the map engine's `streaming::{scheduler, buffers}` and `editing` re-export shims go. Paths name the tree before the moves.
+# One module prefix of the S7 shim ledger per block, as a `crate::` row scoped to the map engine
+# and a `map_engine::` row scoped to the single-page app, the one outside consumer. The shims were
+# aliases, so the rows carry the alias: `editing::commands` is `mission_editing_commands::document_text`,
+# `editing::persist` is `mission_persistence`, `editing::tools` is `map_editing_tools`,
+# `streaming::scheduler` is `chunk_scheduler`, `streaming::buffers` is `chunk_draw_buffers`. Prose
+# spellings without a trailing segment (`map_engine::editing`) and Markdown are rewritten by hand.
+kind	from	to	scope
+#
+# chunk_scheduler (Q1)
+rust_path	crate::streaming::scheduler::	chunk_scheduler::	legacy/map_engine
+rust_path	map_engine::streaming::scheduler::	chunk_scheduler::	apps/frontend
+#
+# chunk_draw_buffers (Q1)
+rust_path	crate::streaming::buffers::	chunk_draw_buffers::	legacy/map_engine
+rust_path	map_engine::streaming::buffers::	chunk_draw_buffers::	apps/frontend
+#
+# mission_editing_session (Q2a)
+rust_path	crate::editing::batch::	mission_editing_session::batch::	legacy/map_engine
+rust_path	map_engine::editing::batch::	mission_editing_session::batch::	apps/frontend
+rust_path	crate::editing::history::	mission_editing_session::history::	legacy/map_engine
+rust_path	map_engine::editing::history::	mission_editing_session::history::	apps/frontend
+rust_path	crate::editing::host::	mission_editing_session::host::	legacy/map_engine
+rust_path	map_engine::editing::host::	mission_editing_session::host::	apps/frontend
+rust_path	crate::editing::lanes::	mission_editing_session::lanes::	legacy/map_engine
+rust_path	map_engine::editing::lanes::	mission_editing_session::lanes::	apps/frontend
+rust_path	crate::editing::picking::	mission_editing_session::picking::	legacy/map_engine
+rust_path	map_engine::editing::picking::	mission_editing_session::picking::	apps/frontend
+rust_path	crate::editing::routing::	mission_editing_session::routing::	legacy/map_engine
+rust_path	map_engine::editing::routing::	mission_editing_session::routing::	apps/frontend
+rust_path	crate::editing::selection_universe::	mission_editing_session::selection_universe::	legacy/map_engine
+rust_path	map_engine::editing::selection_universe::	mission_editing_session::selection_universe::	apps/frontend
+#
+# mission_persistence (Q2a)
+rust_path	crate::editing::persist::	mission_persistence::	legacy/map_engine
+rust_path	map_engine::editing::persist::	mission_persistence::	apps/frontend
+#
+# mission_editing_commands (Q2b)
+rust_path	crate::editing::commands::	mission_editing_commands::document_text::	legacy/map_engine
+rust_path	map_engine::editing::commands::	mission_editing_commands::document_text::	apps/frontend
+rust_path	crate::editing::hosted_commands::	mission_editing_commands::hosted_commands::	legacy/map_engine
+rust_path	map_engine::editing::hosted_commands::	mission_editing_commands::hosted_commands::	apps/frontend
+#
+# map_editing_tools (Q3)
+rust_path	crate::editing::tools::	map_editing_tools::	legacy/map_engine
+rust_path	map_engine::editing::tools::	map_editing_tools::	apps/frontend

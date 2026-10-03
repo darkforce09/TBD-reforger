@@ -22,7 +22,7 @@ use ballistics_solver::crest_clearance::{TerrainProfile, TerrainSample};
 #[cfg(any(target_arch = "wasm32", test))]
 use map_coordinates::grid_reference::parse_grid;
 #[cfg(any(target_arch = "wasm32", test))]
-use map_engine::editing::tools::line_of_sight::terrain_survey::everon_manifest;
+use map_editing_tools::line_of_sight::terrain_survey::everon_manifest;
 #[cfg(any(target_arch = "wasm32", test))]
 use terrain_elevation::manifest::DemManifest;
 #[cfg(any(target_arch = "wasm32", test))]

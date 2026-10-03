@@ -11,8 +11,8 @@ marker vocabulary with its atlas and captions, and the squad link hairlines of t
 
 ```text
 crates/map_overlay/unit_symbology/
-├── Cargo.toml  the package: `map_draw_lanes`, `newtype_ids`, `render_primitives`; layout tier 2
-└── src/        the classification, symbol atlas, markers, squad links, slot id and prelude
+├── Cargo.toml  the package: `map_draw_lanes`, `orbat_slot_ids`, `render_primitives`; layout tier 2
+└── src/        the classification, symbol atlas, markers, squad links and prelude
 ```
 
 ## How it works
@@ -44,12 +44,13 @@ cargo test -p unit_symbology   # marker vocabulary, atlas and caption cases, squ
 - `markers::{MarkerGlyph, MARKER_GLYPH_COUNT, marker_glyph_for_alias, build_marker_slot_atlas,
   pack_marker_caption_bytes}`.
 - `squad_links::{SquadLinkInput, build_squad_link_segments, pack_squad_link_drag_preview}`;
-  `slot_ids::SlotId`; `prelude`.
+  `prelude`.
 
 ## Boundaries
 
 - Depends on: `map_draw_lanes` (`zoom_gates::px_to_m_at_zoom` for captions),
-  `render_primitives` (`text` layout and metrics), `newtype_ids` (`SlotId`).
+  `render_primitives` (`text` layout and metrics), `orbat_slot_ids` (`SlotUid`, the
+  squad link inputs' slot ids).
 - Used by: `overlay_instances`; the map engine (`legacy/map_engine`): its editing lanes and
   picking, slot and marker bridges; the Mission Creator's document host, marker dock, canvas
   mount and select tool, and the mortar map picker, in `apps/frontend/`.

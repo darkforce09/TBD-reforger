@@ -26,7 +26,7 @@ SEL counts and the dirty flag; `set_ctx` also installs the map engine's `History
 committed change reaches the same tail:
 
 ```text
-hosted command, undo or redo (map_engine::editing)
+hosted command, undo or redo (mission_editing_commands, mission_editing_session::history)
         │ HistoryHost.after_document_change
         ▼
 after_local_edit ──> after_doc_change
@@ -38,7 +38,7 @@ after_local_edit ──> after_doc_change
         └── refresh can_undo, can_redo, the counts and the dock mirrors
 ```
 
-There is no second undo stack: `undo` and `redo` call `map_engine::editing::history`, whose
+There is no second undo stack: `undo` and `redo` call `mission_editing_session::history`, whose
 document keeps a `yrs` undo manager scoped to the local origin, so only operator gestures undo and a
 seed, a restore or a hydrate never does. `rebind_engine_from_doc` runs the same rebind without
 marking the mission dirty, for a document swapped in by a restore or a hydrate.
@@ -67,8 +67,8 @@ the harness.
 ## Boundaries
 
 - Depends on:
-  - `map_engine`: `editing::history`, `editing::tools::selection` and `frame` (`RenderEngine`,
-    `EngineHandle`);
+  - `mission_editing_session::history` and `map_editing_tools::selection`;
+  - `map_engine`: `frame` (`RenderEngine`, `EngineHandle`);
   - `mission_document` (`MissionDocCore`, the debug seed) and `mission_crdt` (`SlotSoa`);
   - `unit_symbology` (`classification`, `squad_links`) and `map_draw_lanes::lane_roles`;
   - in `apps/frontend/src/workspaces/editor/`: the editor context in
@@ -102,7 +102,7 @@ the harness.
   so is its `pub mod` line; `rebind_engine_from_doc` and `after_doc_change` both bind the comment
   lane (`rebind_and_after_doc_change_both_feed_comments_bind` in
   `legacy/map_engine/src/frame/tests/lane_bind_source_pins/history_rebind_feeds_comments.rs`); undo and
-  redo go through `map_engine::editing::history` and nowhere else.
+  redo go through `mission_editing_session::history` and nowhere else.
 
 ## Related documentation
 

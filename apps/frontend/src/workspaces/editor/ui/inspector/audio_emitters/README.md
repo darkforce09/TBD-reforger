@@ -27,7 +27,7 @@ build renders nothing.
 - Depends on: the parent module (the row model, `apply_marker_xz`, `xz_from_last_marker`,
   `PLACE_MARKER_ICON` and the write through the bridge's `editor_context::update_environment`);
   `armed_placement::begin_place_marker` in `apps/frontend/src/workspaces/editor/bridge/`;
-  `map_engine::editing::hosted_commands::marker_rows`.
+  `mission_editing_commands::hosted_commands::marker_rows`.
 - Used by: the parent module, which re-exports `audio_emitters_panel`; the Mission Settings dialog
   (`apps/frontend/src/workspaces/editor/ui/modals/settings_modal/mission_dialog.rs`), which mounts it
   after the weather timeline.

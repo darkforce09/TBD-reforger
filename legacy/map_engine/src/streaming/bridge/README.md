@@ -2,8 +2,9 @@
 
 What crosses between the streaming layer and the page that embeds it: the preference readers the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) supplies, the boot progress the
-loaders report, the asset counters published at `window.__mapAssets`, and the world-layer
-toggles the residency applies.
+loaders report, and the asset counters published at `window.__mapAssets`. The world-layer
+toggles the residency applies live with the draw buffers they rebuild, in
+`crate::streaming::buffers`.
 
 ## Contents
 
@@ -13,14 +14,12 @@ legacy/map_engine/src/streaming/bridge/
 ├── mod.rs               the module tree
 ├── preferences.rs       `WorldLayerPrefs`: the twelve world-layer switches and their defaults
 ├── progress.rs          boot progress events and segments, the Range split and ordered reassembly
-├── statistics.rs        `MapAssetsBridge`: asset and upload counters for `window.__mapAssets`
-└── toggles.rs           the residency's world-layer toggles and the visibility they derive
+└── statistics.rs        `MapAssetsBridge`: asset and upload counters for `window.__mapAssets`
 ```
 
 ## How it works
 
-`preferences`, `host_preferences`, `progress` and `toggles` compile in every build of the
-streaming module (the `streaming` feature); `statistics` needs wasm32 with `render`.
+`preferences`, `host_preferences` and `progress` compile in every build of the streaming module (the `streaming` feature); `statistics` needs wasm32 with `render`.
 
 - **Preferences in.** `HostPreferences` holds the boot's `BootstrapScope` (`Full`: every layer;
   `TerrainAndImagery`: manifest, DEM with its full-resolution raster kept, hillshade, satellite,
@@ -38,15 +37,11 @@ streaming module (the `streaming` feature); `statistics` needs wasm32 with `rend
   completions back in request order.
 - **Statistics out.** `MapAssetsBridge` merges the render engine's `stats()` and the residency's
   `stats_json()` counters and installs them as `window.__mapAssets`, one bridge per map host.
-- **Toggles.** `WorldResidency` takes the atlas key order, the trees, props, buildings, fences and
-  airfield toggles and the airfield box from the runways; each setter returns early when nothing
-  changed and rebuilds only the buffers its toggle feeds.
 
 ## Boundaries
 
-- Depends on: `crate::streaming::scheduler`, `map_draw_lanes::zoom_gates` (`class_visible`,
-  `building_visible`) and `road_network` (`airfield`, `network`) for the toggles; `crate::frame::engine::RenderEngine` for `publish_engine`; `serde`,
-  `serde_json`, `wasm-bindgen`, `js-sys` and `web-sys`.
+- Depends on: `crate::frame::engine::RenderEngine` for `publish_engine`; `serde`, `serde_json`,
+  `wasm-bindgen`, `js-sys` and `web-sys`.
 - Used by: `crate::streaming::host`, `crate::streaming::loaders` and the DEM, water, label,
   vegetation and satellite loaders of `crate::world`; the Mission Creator in
   `apps/frontend/src/workspaces/editor/` (its world-asset bridge builds the
@@ -61,7 +56,5 @@ streaming module (the `streaming` feature); `statistics` needs wasm32 with `rend
     `a_dropped_completion_fails_instead_of_shifting_the_run` and
     `an_out_of_range_slot_is_refused_rather_than_dropped` in
     `apps/frontend/src/workspaces/editor/tests/t628_boot_progress.rs`);
-  - `strips_visible` follows the toggles and the zoom only, never the buffer contents, so an empty
-    strip buffer mid-hydration uploads as visible instead of blanking the lane;
   - the `window.__mapAssets` keys are the ones the editor smoke tests assert on
     (`tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/fullmap.rs`).

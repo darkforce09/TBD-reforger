@@ -11,10 +11,9 @@ crates/map_overlay/unit_symbology/src/
 ├── lib.rs             the crate root: module header, `mod` lines
 ├── markers.rs         `MarkerGlyph`: icon aliases to eleven glyphs, their atlas, captions
 ├── prelude.rs         the names most callers import
-├── slot_ids.rs        `SlotId`
 ├── squad_links.rs     the squad leader-to-member hairlines, at rest and mid-drag
 ├── symbol_atlas.rs    the slot atlas and the unit, vehicle and comment cells appended to it
-└── tests/             unit tests for the markers, the squad links and the slot id wire form
+└── tests/             unit tests for the markers and the squad links
 ```
 
 ## How it works

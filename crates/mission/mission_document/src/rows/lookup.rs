@@ -3,7 +3,7 @@
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::Any;
 use super::Arc;
@@ -211,8 +211,8 @@ impl MissionDocCore {
 impl MissionDocCore {
     /// One `MapRef::contains_key` on the raw `slots` root map, under a read transaction. It is the existence answer, and the ONLY correct one:.
     #[must_use]
-    pub fn slot_exists(&self, id: impl Into<SlotId>) -> bool {
-        let id: SlotId = id.into();
+    pub fn slot_exists(&self, id: impl Into<SlotUid>) -> bool {
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let txn = self.doc.transact();
         self.slots.contains_key(&txn, id)
@@ -222,8 +222,8 @@ impl MissionDocCore {
 impl MissionDocCore {
     /// Raw membership for authoring operations, including layer-hidden and editor-hidden slots. Like [`Self::slot_exists`], this reads one row without filtering through the render SoA or serialising every slot. Missing slots or missing memberships return `None`.
     #[must_use]
-    pub fn slot_squad_id(&self, id: impl Into<SlotId>) -> Option<String> {
-        let id: SlotId = id.into();
+    pub fn slot_squad_id(&self, id: impl Into<SlotUid>) -> Option<String> {
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let txn = self.doc.transact();
         let Out::YMap(slot) = self.slots.get(&txn, id)? else {
@@ -255,12 +255,12 @@ impl MissionDocCore {
                 continue;
             };
             let leader_slot_id =
-                SlotId::from(read_str(&txn, &sq, "leaderSlotId").unwrap_or_default());
-            let member_slot_ids: Vec<SlotId> =
+                SlotUid::from(read_str(&txn, &sq, "leaderSlotId").unwrap_or_default());
+            let member_slot_ids: Vec<SlotUid> =
                 read_id_array(&txn, &self.squads, squad_id, "slotIds")
                     .iter()
                     .filter_map(|a| match a {
-                        Any::String(s) => Some(SlotId::from(s.as_ref())),
+                        Any::String(s) => Some(SlotUid::from(s.as_ref())),
                         _ => None,
                     })
                     .collect();

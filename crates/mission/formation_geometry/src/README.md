@@ -48,11 +48,11 @@ are. A degenerate spread falls back to a due-east axis, so no result is NaN. Onl
 - Used by:
   - `mission_operations::transform`, which reads the selection's positions and commits the
     patterns, aligns, spacing and orient;
-  - the hosted selection transforms of `map_engine::editing::hosted_commands`, the Mission
+  - the hosted selection transforms of `mission_editing_commands::hosted_commands`, the Mission
     Creator's arrange menu (`apps/frontend/src/workspaces/editor/ui/docks/top_strip/arrange.rs`)
     and its bulk confirmation (`apps/frontend/src/workspaces/editor/bridge/host_state/`), which
     name its vocabulary directly;
-  - `legacy/map_engine/tests/operation_boundaries.rs`.
+  - `crates/mission/mission_operations/tests/operation_boundaries.rs`.
 - Rules:
   - the patterns, aligns, spacing, orient and garrison positions match their goldens, and a move
     needs confirming only above 10 entities (`confirm_threshold_boundary`), in

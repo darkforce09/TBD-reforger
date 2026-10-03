@@ -70,7 +70,7 @@ the instanced glyph pass.
     catalogue `assets/terrains/everon/objects/prefabs.json.gz` to have a manifest entry, and
     `cargo xtask schema map-object-enums`; both run in the `schema-validate` CI task;
   - the map engine's native tests in
-    `legacy/map_engine/src/streaming/scheduler/residency/t152_3_tests/`, which read the
+    `crates/streaming/chunk_draw_buffers/src/tests/everon_glyphs_and_strips/`, which read the
     manifest's keys;
   - the headless-browser test server in `tools/browser_testing/browser_gate_suites/src/server.rs`,
     which serves `/map-assets/glyphs/` itself;

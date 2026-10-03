@@ -123,8 +123,8 @@ mod active_folder {
         EditorContext, EDITOR_CONTEXT,
     };
     use leptos::prelude::{GetUntracked, Set};
-    use map_engine::editing::hosted_commands as engine_ops;
     use mission_document::MissionDocCore;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     /// Focus a folder, or clear the focus. A focused folder is the drop target for the next place.
     pub fn set_active_layer(id: Option<String>) {

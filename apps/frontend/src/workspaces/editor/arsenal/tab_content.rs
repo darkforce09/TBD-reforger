@@ -144,7 +144,7 @@ pub(super) fn loaded_catalog(items: Vec<RegistryItem>, state: ArsenalTabState) -
     };
     // Whole-selection writes refresh this open slot from the document without recommitting.
     let resync_open_slot = move || {
-        let lo = engine_ops::read_loadout(&id.get_value());
+        let lo = engine_ops::read_loadout(id.get_value());
         picks.set(loadout_to_picks(lo.as_deref()));
         let (rows, present) = rules::cargo_from_loadout(lo.as_deref());
         cargo.set(rows);

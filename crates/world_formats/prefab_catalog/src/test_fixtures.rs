@@ -3,8 +3,9 @@
 //! **Role:** builds the committed Everon prefab catalogue in both of its served forms (gzip JSON,
 //! narrowed to f32 like the archive, and the rkyv archive) for the tests that compare the lanes.
 //! **Position:** compiled for this crate's tests and, through the `test_fixtures` feature, for
-//! `world_chunks`' container tests and the map engine's chunk scheduler tests
-//! (`chunk_ingest_prefab_lane_tests.rs`, `chunk_ingest_chunk_bin_tests.rs`).
+//! `world_chunks`' container tests, the chunk draw buffers' prefab lane test
+//! (`prefab_lane_parity.rs`) and the chunk scheduler's binary lane test
+//! (`chunk_ingest_chunk_bin_tests.rs`).
 //! **Signals & state:** none; every call reads `assets/terrains/everon/` afresh.
 //! **Invariants:** the two forms carry the same rows; `EVERON_PREFABS` pins the size of the
 //! committed corpus.

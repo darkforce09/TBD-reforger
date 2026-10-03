@@ -11,7 +11,7 @@ pub(super) fn zone_rule_control(
     rules: serde_json::Value,
     doc_tick: RwSignal<u64>,
 ) -> AnyView {
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     let current = rules.get(&f.key).cloned();
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
@@ -34,7 +34,7 @@ pub(super) fn zone_rule_control(
                         prop:indeterminate=checked.is_none()
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
-                            engine_ops::set_zone_rule(&zone_id, &k, Some(serde_json::Value::Bool(on)));
+                            engine_ops::set_zone_rule(zone_id.as_str(), &k, Some(serde_json::Value::Bool(on)));
                             bump();
                         }
                     />
@@ -61,7 +61,7 @@ pub(super) fn zone_rule_control(
                         on:change=move |ev| {
                             let v = event_target_value(&ev);
                             let next = (!v.is_empty()).then(|| serde_json::Value::String(v));
-                            engine_ops::set_zone_rule(&zone_id, &k, next);
+                            engine_ops::set_zone_rule(zone_id.as_str(), &k, next);
                             bump();
                         }
                     >
@@ -125,7 +125,7 @@ pub(super) fn zone_rule_control(
                                     .map(serde_json::Value::Number)
                             };
                             if next.is_some() || raw.trim().is_empty() {
-                                engine_ops::set_zone_rule(&zone_id, &k, next);
+                                engine_ops::set_zone_rule(zone_id.as_str(), &k, next);
                                 bump();
                             }
                         }
@@ -155,7 +155,7 @@ pub(super) fn zone_rule_control(
                             let v = event_target_value(&ev);
                             let next = (!v.trim().is_empty())
                                 .then(|| serde_json::Value::String(v.trim().to_string()));
-                            engine_ops::set_zone_rule(&zone_id, &k, next);
+                            engine_ops::set_zone_rule(zone_id.as_str(), &k, next);
                             bump();
                         }
                     />

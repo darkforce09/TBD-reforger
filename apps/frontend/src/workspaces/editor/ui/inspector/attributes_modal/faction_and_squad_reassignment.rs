@@ -6,7 +6,7 @@ use super::*;
 /// Renders faction and squad selection for the entire target set.
 #[cfg(target_arch = "wasm32")]
 pub(super) fn reassign_picker(targets: StoredValue<Vec<String>>) -> impl IntoView {
-    use map_engine::editing::hosted_commands as ops;
+    use mission_editing_commands::hosted_commands as ops;
 
     let (factions, squads) = ops::reassign_rows();
     let mut ordered = factions.clone();

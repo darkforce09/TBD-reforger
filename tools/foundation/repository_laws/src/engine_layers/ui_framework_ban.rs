@@ -1,9 +1,9 @@
 //! The map engine's whole-crate UI-framework ban.
 //!
 //! **Role:** checks that `map_engine` depends on no UI framework and imports none, in any
-//! module — rule 5 keeps the browser out of `editing/`, this keeps a component framework out of
-//! the whole crate.
-//! **Position:** a sibling of the seven reported rules in [`super`]; it is not part of the
+//! module — the crate-tier firewall keeps the browser out of the mission-editing crates, this
+//! keeps a component framework out of the whole map engine.
+//! **Position:** a sibling of the six reported rules in [`super`]; it is not part of the
 //! `verify engine-layers` report, and the `engineering_laws` test binary of `api` asserts
 //! on it. Reads the manifest through [`crate::cargo_manifest`].
 //! **Signals & state:** none; pure functions over the checkout.

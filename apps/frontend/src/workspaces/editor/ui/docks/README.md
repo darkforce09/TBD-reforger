@@ -46,7 +46,7 @@ shrinks to a 24 px stub that holds the chevron. The docks' mount classes and the
 which the pointer gestures and the select tool tell the map from the chrome both come from
 `crate::workspaces::editor::session::layout`, which tracks the collapse flags and the hidden chrome.
 
-Every surface reads the document through the map engine's `editing::hosted_commands` or the
+Every surface reads the document through `mission_editing_commands::hosted_commands` or the
 bridge's editor context, reads again when `doc_tick` moves, and writes through those commands, the
 bridge's editor context, placement, selection and history, or the inspector's environment update;
 none edits the document state itself. No component
@@ -77,8 +77,9 @@ native test build compiles all five surfaces.
     update, `ui::modals::help_modal`, and the page's toolbar dispatch in `mission_editor`;
   - `crate::foundation`: the [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the auth
     store, the UI primitives, the modal stack and the toasts;
-  - `map_engine`: `editing::hosted_commands`, `editing::host`, `editing::tools`,
-    `streaming::host` and `camera`;
+  - `mission_editing_commands::hosted_commands`, `mission_editing_session::host` and
+    `map_editing_tools`;
+  - `map_engine`: `streaming::host` and `camera`;
   - `mission_operations::document_index`;
   - `unit_symbology::markers`;
   - `contracts/definitions/mission.schema.json`, through the zones panel's embed; the browser's

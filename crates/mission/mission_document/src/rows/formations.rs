@@ -3,7 +3,7 @@
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::Any;
 use super::MissionDocCore;
@@ -18,8 +18,8 @@ use yrs::Transact;
 
 impl MissionDocCore {
     /// **The leader does not move.** Eden's `ForceToFormation` re-forms the group AROUND its leader; moving the leader too would translate the whole squad and make the action a nobody-asked-for reposition. So the leader is the anchor and the members take the offsets.
-    pub fn force_to_formation(&self, leader_slot_id: impl Into<SlotId>, formation: &str) -> usize {
-        let leader_slot_id: SlotId = leader_slot_id.into();
+    pub fn force_to_formation(&self, leader_slot_id: impl Into<SlotUid>, formation: &str) -> usize {
+        let leader_slot_id: SlotUid = leader_slot_id.into();
         let leader_slot_id = leader_slot_id.as_str();
         let members = self.squad_members_of_leader(leader_slot_id);
         if members.is_empty() {

@@ -14,7 +14,7 @@ pub(crate) struct PageMountSignals {
     pub debug_hud: RwSignal<String>,
     pub debug_hud_shown: RwSignal<bool>,
     pub scale_mpp: RwSignal<f64>,
-    pub tool_mode: RwSignal<map_engine::editing::tools::ruler::EditorTool>,
+    pub tool_mode: RwSignal<map_editing_tools::ruler::EditorTool>,
     pub los_mode: RwSignal<LosMode>,
     pub ruler_status: RwSignal<Option<String>>,
     pub ruler_tick: RwSignal<u64>,

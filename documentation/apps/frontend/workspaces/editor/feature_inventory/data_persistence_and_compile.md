@@ -16,7 +16,7 @@ stands in for collaboration.
   Save Version and the exports in [`apps/frontend/src/workspaces/editor/session/document_commands/`](/apps/frontend/src/workspaces/editor/session/document_commands/README.md);
   the document handle and seed in [`apps/frontend/src/workspaces/editor/bridge/document_host/`](/apps/frontend/src/workspaces/editor/bridge/document_host/README.md);
   the record keys, the local-versus-server classification and the adoption in
-  [`legacy/map_engine/src/editing/persist/`](/legacy/map_engine/src/editing/persist/README.md);
+  [`crates/mission_editing/mission_persistence/src/`](/crates/mission_editing/mission_persistence/src/README.md);
   the CRDT document in [`crates/mission/mission_document/`](/crates/mission/mission_document/README.md);
   the payload compiler in [`crates/mission/mission_payload/`](/crates/mission/mission_payload/README.md)
   and the game-document compiler in [`crates/mission/mission_compiler/`](/crates/mission/mission_compiler/README.md).
@@ -147,7 +147,7 @@ that belong to other accounts.
   default first save of a new mission is refused with "Version 0.1.0 already exists".
 - A draft that differs from the server only in zones, triggers, comments, connections,
   compositions, world objects, the title or the environment is classified as matching and marked
-  clean (`legacy/map_engine/src/editing/persist/local_versus_server.rs`,
+  clean (`crates/mission_editing/mission_persistence/src/local_versus_server.rs`,
   `apps/frontend/src/workspaces/editor/session/hydrate/server_reconciliation.rs`), so the
   unsaved dot and the unload prompt disappear while that work exists only in the browser.
 - "Load server version" adopts with an empty mission row, so a payload without a title leaves the

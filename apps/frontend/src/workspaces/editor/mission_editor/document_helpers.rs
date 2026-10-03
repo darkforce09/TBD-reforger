@@ -77,7 +77,7 @@ pub(crate) type SubjectResolver = std::rc::Rc<dyn Fn(&str) -> Option<(RouteTarge
 #[cfg(target_arch = "wasm32")]
 /// Runs an Arrange command when enough entities are selected.
 pub(crate) fn arrange_chord(kind: top_strip::ArrangeKind) -> bool {
-    if map_engine::editing::host::selection_len() < top_strip::ARRANGE_MIN_SELECTION {
+    if mission_editing_session::host::selection_len() < top_strip::ARRANGE_MIN_SELECTION {
         return false;
     }
     top_strip::run_arrange(kind);

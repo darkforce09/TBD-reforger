@@ -70,7 +70,16 @@ documentation/restructure/manifests/
 ├── s6_p4_roads_vegetation_interiors.tsv  stage S6 P4: the road network, vegetation data and building interiors become road_network, vegetation and building_interiors
 ├── s6_p5_place_names_store.tsv  stage S6 P5: the spot heights, town and road names and the headless world store become place_names and world_store
 ├── s6_p6_line_of_sight.tsv  stage S6 P6: line of sight over the elevation model, inside one building and through the streamed world becomes terrain_line_of_sight, interior_line_of_sight and world_line_of_sight
-└── s6_x6_switch.tsv  stage S6 X6: every consumer of the S6 crates imports them directly, and the legacy re-export shims go
+├── s6_x6_switch.tsv  stage S6 X6: every consumer of the S6 crates imports them directly, and the legacy re-export shims go
+├── s7_q0a_streaming_cut.tsv  stage S7 Q0a: the layer toggles and residency statistics into the draw buffers; the residency tests beside the composed owner, under subject names
+├── s7_q1_streaming.tsv  stage S7 Q1: the chunk scheduler and the draw buffers become the chunk_scheduler and chunk_draw_buffers crates
+├── s7_q2a_operation_suites.tsv  stage S7 Q2a: the map engine's three document integration suites become mission_operations integration suites
+├── s7_q2a_session_persistence.tsv  stage S7 Q2a: the editing host, undo, grouping, routing, selection, picks and lanes become mission_editing_session; local draft decisions become mission_persistence
+├── s7_q2b_commands.tsv  stage S7 Q2b: the hosted editing commands and the pure export, report and selection texts become mission_editing_commands
+├── s7_q3_tools.tsv  stage S7 Q3: the selection, ruler, line-of-sight and viewshed scheduler tools, with the source scrub their guards read, become map_editing_tools
+├── s7_x7a_switch.tsv  stage S7 X7a: every consumer of the S7 streaming and mission editing crates imports them directly, and the map engine's re-export shims go
+├── s7_x7b_documentation.tsv  stage S7 X7b, first of two: the editing layer and draft persistence feature docs into the mirror of the mission editing crates
+└── s7_x7b_engine_layer_results.tsv  stage S7 X7b, second of two: with engine rule 5 retired, the engine-layer report results tests take that subject's name
 ```
 
 ## How it works

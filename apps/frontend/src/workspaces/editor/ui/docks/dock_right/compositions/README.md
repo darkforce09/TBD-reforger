@@ -24,14 +24,14 @@ headings, each with its title and "by <author> · N item(s)". Pressing a row arm
 (`begin_place_composition`); the next map click stamps it at the cursor, and Esc or a right-click
 cancels. A row's hover actions edit its title, category and author inline, or delete it, which also
 cancels an armed placement of that row. Every change is an undoable document edit through
-`map_engine::editing::hosted_commands`, and bumps `doc_tick`. The panel renders only in the
+`mission_editing_commands::hosted_commands`, and bumps `doc_tick`. The panel renders only in the
 browser build; the native `compositions_panel` draws nothing.
 
 ## Boundaries
 
-- Depends on: `map_engine::editing::hosted_commands` (`save_composition`,
+- Depends on: `mission_editing_commands::hosted_commands` (`save_composition`,
   `composition_rows`, `composition_count`, `rename_composition`, `recategorize_composition`,
-  `set_composition_author`, `delete_composition`) and `map_engine::editing::host`
+  `set_composition_author`, `delete_composition`) and `mission_editing_session::host`
   (`selection_len`); `bridge::host_state::armed_placement` and `editor_context` for arming and
   cancelling; the outliner's `ROW` style; `AuthStore` from `crate::foundation::auth` for the author.
 - Used by: the Compositions tab of `DockRight` in

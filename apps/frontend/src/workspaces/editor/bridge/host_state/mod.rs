@@ -5,7 +5,8 @@
 //! mirror the document into the docks), the in-flight placement an operator picked up from a
 //! palette, the selected-entity set, and the host half of undo grouping.
 //! **Position:** inside the engine seam, beside the hosted document. A panel reads and writes this
-//! state; `map_engine::editing` reads it back through the host closures it is handed.
+//! state; the editing session (`mission_editing_session`) reads it back through the host
+//! closures it is handed.
 //! **Signals & state:** thread-local, because the handles are `!Send` `Rc`s and cannot be passed
 //! down a component tree. None of it is document state: an arm is never undoable, a selection
 //! mints no undo step, and an unset signal is silence rather than an error.

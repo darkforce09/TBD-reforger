@@ -83,7 +83,7 @@ handlers, and each view has a native stand-in that renders nothing.
 ## Boundaries
 
 - Depends on:
-  - `map_engine`: `editing::hosted_commands` and `editing::host`;
+  - `mission_editing_commands::hosted_commands` and `mission_editing_session::host`;
   - the mission crates: `mission_validation`; `mission_model`'s `radio_plan`, `tasks`, `audio`,
     `weather`, `spawn_modules`, `win_conditions` and `tactical_graphics`; `mission_compiler`;
     `mission_payload`; `mission_operations`;

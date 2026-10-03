@@ -9,7 +9,8 @@ their code READMEs. Developers and AI agents read it below those READMEs.
 
 ```text
 documentation/crates/
-└── ballistics/  the game ballistics: flight model, solver, calibration, fire-mission assembly
+├── ballistics/       the game ballistics: flight model, solver, calibration, fire-mission assembly
+└── mission_editing/  the headless editing layer of the Mission Creator and its local drafts
 ```
 
 ## Code

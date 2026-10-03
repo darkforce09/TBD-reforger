@@ -45,7 +45,7 @@ sign-out deletes every local document of the departing account (`purge_local_doc
 
 ## Boundaries
 
-- Depends on: `map_engine::editing::persist` (`local_versus_server`, `server_adoption`,
+- Depends on: `mission_persistence` (`local_versus_server`, `server_adoption`,
   `snapshot_slot`, `record_key`, `mission_id`) and the boot progress events of
   `map_engine::streaming::bridge`; the `DocHandle` and undo driver in
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; in

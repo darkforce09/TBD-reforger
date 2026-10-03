@@ -14,8 +14,8 @@ legacy/map_engine/src/world/environment/buildings/
 
 ## How it works
 
-The building fill and outline buffers are composed by `WorldResidency::rebuild_buffers` in
-`crate::streaming::buffers::footprint`. `upload_world_buildings`, `upload_world_building_outlines`
+The building fill and outline buffers are composed by the draw buffers' rebuild,
+`DrawBuffers::rebuild_buffers` in `chunk_draw_buffers::footprint`. `upload_world_buildings`, `upload_world_building_outlines`
 and `upload_world_fence_strips` (`buffers.rs`) turn those buffers into the engine's draw lanes,
 positions made relative to the scene anchor.
 

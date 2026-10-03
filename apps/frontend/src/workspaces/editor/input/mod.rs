@@ -5,8 +5,9 @@
 //! gestures over the canvas, the two window-level keydown dispatches, and the browser half of the
 //! interactive measure and selection tools.
 //! **Position:** the entry edge of the workspace. It reads the live handles [`super::bridge`]
-//! holds, writes through `map_engine::editing`, and flips the host signals under
-//! [`super::bridge::host_state`]; nothing under [`super::ui`] routes events through here.
+//! holds, writes through the hosted commands (`mission_editing_commands`), and flips the host
+//! signals under [`super::bridge::host_state`]; nothing under [`super::ui`] routes events through
+//! here.
 //! **Signals & state:** the gesture context bundles the handles and `Copy` signals every closure
 //! captures, so one build hands the same environment to the pointer closures and the keydown
 //! dispatch. Everything the closures own is tab-local; an authored change reaches the document
@@ -23,7 +24,7 @@
 #[cfg(target_arch = "wasm32")]
 pub mod pointer_gestures;
 /// The browser half of the interactive map tools — ruler, line of sight, viewshed and select.
-/// Each tool's state machine, geometry and verdicts live in `map_engine::editing::tools`;
+/// Each tool's state machine, geometry and verdicts live in `map_editing_tools`;
 /// what sits here is the DOM overlay and the pointer routing that drive them.
 pub mod tools;
 /// The two window-level `keydown` dispatches: the editor's own chords (the shared Escape

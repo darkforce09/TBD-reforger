@@ -30,7 +30,7 @@ from the document on every call, so it is right again after an undo.
   `add_slot`, `set_leader`); `serde_json`.
 - Used by: `crate::entity`, whose armed character release and debug seed place through it; the
   crate prelude re-exports it; tests in
-  `legacy/map_engine/src/editing/tests/picking_selection.rs` and
+  `crates/mission_editing/mission_editing_session/src/tests/picking_selection.rs` and
   `crates/mission/mission_operations/src/apply_faction/tests/`.
 - Rules:
   - placements in a row fill one squad and keep every body

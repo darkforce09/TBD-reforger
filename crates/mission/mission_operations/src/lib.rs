@@ -4,8 +4,9 @@
 //! placement and the ORBAT roster, faction library apply, attribute, transform and rotation edits,
 //! cargo and loadouts, zones and triggers, tactical graphics, Editor Layers, compositions, document
 //! search, slot identity checks, and the plain row projections the docks read.
-//! **Position:** mission tier 5, over `mission_document`, `mission_crdt`, `mission_model`,
-//! `mission_payload`, `mission_validation`, `formation_geometry` and `map_coordinates`. The map
+//! **Position:** mission tier 6, over `mission_document`, `mission_crdt`, `mission_model`,
+//! `mission_payload`, `mission_validation`, `orbat_slot_ids`, `formation_geometry` and
+//! `map_coordinates`. The map
 //! engine's hosted commands borrow the hosted document and call these with host values; the
 //! Mission Creator calls them directly as well.
 //! **Signals & state:** five thread-local session states (the installed cargo defaults with the

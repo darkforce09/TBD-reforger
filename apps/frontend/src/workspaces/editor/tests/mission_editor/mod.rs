@@ -13,9 +13,11 @@ pub(crate) use crate::workspaces::editor::bridge::pointer_hover::{
     HOVER_CURSOR_PICKABLE, HOVER_CURSOR_PLAIN, HOVER_RELEASE_PX, HOVER_THROTTLE_MS,
 };
 #[cfg(test)]
-pub(crate) use map_engine::editing::lanes::connections::{CONN_LINE_RGBA, CONN_LINE_SELECTED_RGBA};
+pub(crate) use mission_editing_session::lanes::connections::{
+    CONN_LINE_RGBA, CONN_LINE_SELECTED_RGBA,
+};
 #[cfg(test)]
-pub(crate) use map_engine::editing::selection_universe::{
+pub(crate) use mission_editing_session::selection_universe::{
     crewed_slot_ids, map_render_keep_indices,
 };
 

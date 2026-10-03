@@ -27,7 +27,7 @@ use crate::workspaces::editor::ui::outliner::node_model::{
     VIRTUAL_SLOT_THRESHOLD,
 };
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 /// Near-fullscreen dialog class shared with the outliner.
 pub const DIALOG_CLASS: &str = ORBAT_MANAGER_DIALOG_CLASS;

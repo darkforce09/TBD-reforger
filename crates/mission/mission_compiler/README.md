@@ -12,7 +12,7 @@ payload a version saves, is the `mission_payload` crate.
 
 ```text
 crates/mission/mission_compiler/
-├── Cargo.toml  the package: `mission_model`, `mission_payload`, `mission_validation`, `mission_wire_safety`, `serde`, `serde_json`, `thiserror`; layout tier 4
+├── Cargo.toml  the package: `mission_model`, `mission_payload`, `mission_validation`, `mission_wire_safety`, `orbat_slot_ids`, `serde`, `serde_json`, `thiserror`; layout tier 5
 └── src/        the game-document compiler, its editor-input structs, its error and the compiler identity
 ```
 
@@ -77,8 +77,8 @@ All also in `prelude`, the rule ids and flow defaults excepted:
 
 - Depends on: `mission_model` (the compiled rows, the authored blocks, the ids), `mission_payload`
   (`terrain_bounds`, the kit aliases), `mission_validation` (`Finding`, `RuleId`, `SubjectId`,
-  `AssetId`), `mission_wire_safety` (`is_wire_unsafe`); `serde`, `serde_json` (`preserve_order`)
-  and `thiserror`.
+  `AssetId`), `mission_wire_safety` (`is_wire_unsafe`), `orbat_slot_ids` (`SlotId`, `SlotUid`);
+  `serde`, `serde_json` (`preserve_order`) and `thiserror`.
 - Used by:
   - the API's compile, save and artifact code in `apps/api/src/missions/`, which stores
     `COMPILER_PACKAGE_VERSION` with every artifact;
@@ -86,7 +86,7 @@ All also in `prelude`, the rule ids and flow defaults excepted:
     `apps/frontend/src/foundation/transport/dto/`;
   - `mission_document`'s payload round-trip tests.
 - Rules:
-  - mission tier 4, one above `mission_validation` (`cargo xtask verify crate-tiers`);
+  - mission tier 5, one above `mission_validation` (`cargo xtask verify crate-tiers`);
   - `contracts/fixtures/missions/valid/compiler-shaped-two-faction.json` is this compiler's output
     byte for byte (`compiler_shaped_golden_is_a_fresh_emitter_output` in
     `src/game_document/tests/cases_3.rs`), and `cargo xtask schema validate` checks it against

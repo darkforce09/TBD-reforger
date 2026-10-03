@@ -10,9 +10,10 @@
 //! **Signals & state:** none; pure functions over their arguments.
 //! **Invariants:** a row's prefab id is a [`PrefabId`] (u32): the JSON narrowing refuses a numeric
 //! `prefabId` that is not a whole number in `0..=u32::MAX` with [`InvalidPrefabId`], never a cast;
-//! the prefab map is keyed by [`prefab_map_key`] (the id's `f64` bit pattern, the key the chunk
-//! decoders derive from a chunk's numeric `pid`), so the JSON lane and the archive lane resolve
-//! the same integer to the same entry; an archive is validated (alignment, schema version,
+//! the prefab map is keyed by [`PrefabId`], and a chunk's numeric `pid` names a prefab only
+//! through [`crate::numeric_prefab_ids::prefab_id_from_f64`] (the exact `f64` of a `u32`), so
+//! the JSON lane and the archive lane resolve the same integer to the same entry and a fractional
+//! or negative `pid` resolves to none; an archive is validated (alignment, schema version,
 //! terrain, census) before any row is read.
 
 use std::collections::HashMap;
@@ -21,6 +22,7 @@ use rkyv::Archived;
 use serde_json::Value;
 
 use crate::error::InvalidPrefabId;
+use crate::numeric_prefab_ids::catalogue_prefab_id;
 use crate::render_classes::NO_CLASS;
 use crate::render_classes::OVERSIZED_HALF_EXTENT_M;
 use crate::render_classes::class_code;
@@ -112,19 +114,7 @@ pub struct PrefabEntry {
 /// The JSON `prefabId` of row `row` → its [`PrefabId`], or [`InvalidPrefabId`] when the number is
 /// fractional, negative, non-finite or above `u32::MAX`.
 fn prefab_id_from_json(row: usize, value: f64) -> Result<PrefabId, InvalidPrefabId> {
-    if value.fract() == 0.0 && (0.0..=f64::from(u32::MAX)).contains(&value) {
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        Ok(PrefabId::new(value as u32))
-    } else {
-        Err(InvalidPrefabId { row, value })
-    }
-}
-
-/// The [`build_prefab_maps`] key of a prefab: the `f64` bit pattern of its id, the key the chunk
-/// decoders derive from an instance's numeric `pid`.
-#[must_use]
-pub fn prefab_map_key(prefab_id: PrefabId) -> u64 {
-    f64::from(prefab_id.get()).to_bits()
+    catalogue_prefab_id(value).ok_or(InvalidPrefabId { row, value })
 }
 
 #[must_use]
@@ -180,9 +170,10 @@ pub fn narrow_prefab_rows(raw: &Value) -> Result<Vec<PrefabRow>, InvalidPrefabId
     Ok(out)
 }
 
-/// `buildPrefabMaps(prefabRows)` (`:381`) → (prefabId→{code,row}, has_oversized). The map is keyed by [`prefab_map_key`] so the chunk lookup matches JS `Map<number,…>` bit-for-bit (both sides turn the same integer into the same f64). `has_oversized` mirrors `cls && Math.max(hx, hy) >= 64` with `hx/hy` defaulting to 0.
+/// `buildPrefabMaps(prefabRows)` (`:381`) → (prefabId→{code,row}, has_oversized). The map is keyed by [`PrefabId`]; a chunk's numeric `pid` finds its entry through
+/// [`crate::numeric_prefab_ids::prefab_id_from_f64`]. `has_oversized` mirrors `cls && Math.max(hx, hy) >= 64` with `hx/hy` defaulting to 0.
 #[must_use]
-pub fn build_prefab_maps(rows: Vec<PrefabRow>) -> (HashMap<u64, PrefabEntry>, bool) {
+pub fn build_prefab_maps(rows: Vec<PrefabRow>) -> (HashMap<PrefabId, PrefabEntry>, bool) {
     let mut by_id = HashMap::with_capacity(rows.len());
     let mut has_oversized = false;
     for row in rows {
@@ -193,7 +184,7 @@ pub fn build_prefab_maps(rows: Vec<PrefabRow>) -> (HashMap<u64, PrefabEntry>, bo
         if cls.is_some() && hx.max(hy) >= OVERSIZED_HALF_EXTENT_M {
             has_oversized = true;
         }
-        by_id.insert(prefab_map_key(row.prefab_id), PrefabEntry { code, row });
+        by_id.insert(row.prefab_id, PrefabEntry { code, row });
     }
     (by_id, has_oversized)
 }
@@ -340,8 +331,8 @@ pub fn rows_from_archive(
 /// What one `objects/prefabs.rkyv` decodes to: the same pair [`build_prefab_maps`] returns, plus the census the catalogue carries about itself.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrefabCatalog {
-    /// [`prefab_map_key`] → render-class code + narrowed row.
-    pub by_id: HashMap<u64, PrefabEntry>,
+    /// Prefab id → render-class code + narrowed row.
+    pub by_id: HashMap<PrefabId, PrefabEntry>,
 
     /// Whether a drawn prefab's larger footprint half-extent reaches [`OVERSIZED_HALF_EXTENT_M`].
     pub has_oversized: bool,
@@ -359,7 +350,7 @@ pub struct PrefabCatalog {
 /// `Archived<PrefabCatalogArchive>` → `(map, has_oversized)`, exactly as `build_prefab_maps(narrow_prefab_rows(json))` would.
 pub fn from_archive(
     archive: &Archived<PrefabCatalogArchive>,
-) -> Result<(HashMap<u64, PrefabEntry>, bool), BinaryError> {
+) -> Result<(HashMap<PrefabId, PrefabEntry>, bool), BinaryError> {
     Ok(build_prefab_maps(rows_from_archive(archive)?))
 }
 

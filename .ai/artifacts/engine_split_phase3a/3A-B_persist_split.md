@@ -22,8 +22,8 @@ reload; the frontend owns state that dies with the tab.*
 ## There is an unfinished start on disk
 
 ```
-legacy/map_engine/src/editing/persist/blob.rs        96 LOC
-legacy/map_engine/src/editing/persist/record_key.rs  43 LOC
+crates/mission_editing/mission_persistence/src/blob.rs        96 LOC
+crates/mission_editing/mission_persistence/src/record_key.rs  43 LOC
 ```
 
 Uncommitted, and **not declared in `editing/mod.rs`**. The previous agent was interrupted

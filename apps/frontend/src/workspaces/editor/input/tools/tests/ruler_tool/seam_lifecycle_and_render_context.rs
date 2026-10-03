@@ -5,11 +5,11 @@ use crate::workspaces::editor::input::tools::los_tool::{
     register_los_sampler, register_los_state, register_viewshed_state,
 };
 use leptos::prelude::*;
-use map_engine::editing::tools::line_of_sight::capture::{LosState, ViewshedState};
-use map_engine::editing::tools::line_of_sight::host_registry::{
+use map_editing_tools::line_of_sight::capture::{LosState, ViewshedState};
+use map_editing_tools::line_of_sight::host_registry::{
     read_registered_sampler, read_registered_state, read_registered_viewshed,
 };
-use map_engine::editing::tools::ruler::{read_registered_chain, RulerChain, RulerPoint};
+use map_editing_tools::ruler::{read_registered_chain, RulerChain, RulerPoint};
 use std::cell::RefCell;
 use std::rc::Rc;
 

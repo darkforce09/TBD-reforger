@@ -11,11 +11,11 @@ description = "Map graphics, spatial computation, terrain formats, and asset str
 crate-type = ["rlib"]
 
 # Feature tiers, lowest first. `world` is the static world's meshes, the overlay and the frame
-# vocabulary, `streaming` adds the served-data loaders, scheduler and buffers with the on-disk
-# formats they read, `render` the GPU frame builder, and `editing` the Mission Creator's editing
-# layer over the mission crates. No tier is on by default: every consumer names the tiers it
-# links, and the mission domain itself is the crates of `crates/mission/`, which a consumer links
-# directly.
+# vocabulary, `streaming` adds the served-data loaders over the chunk scheduler and the draw
+# buffers with the on-disk formats they read, and `render` the GPU frame builder. No tier is on by
+# default: every consumer names the tiers it links, and the mission domain and the Mission
+# Creator's editing layer are the crates of `crates/mission/` and `crates/mission_editing/`, which
+# a consumer links directly.
 [features]
 default = []
 # `dep:graphics_engine` and `dep:render_primitives` sit on `world`, the lowest tier, because every
@@ -23,14 +23,8 @@ default = []
 # `render_primitives::draw::{compose, triangulate}`, and the frame and overlay modules name the
 # renderer's lanes.
 world = ["dep:graphics_engine", "dep:render_primitives", "dep:terrain_elevation", "dep:terrain_relief", "dep:map_draw_lanes", "dep:label_layout", "dep:unit_symbology", "dep:overlay_instances", "dep:road_network", "dep:vegetation", "dep:place_names", "dep:spatial_indexes", "dep:terrain_line_of_sight"]
-streaming = ["world", "dep:serde", "dep:serde_json", "serde_json/float_roundtrip", "dep:rkyv", "dep:world_file_formats", "dep:flate2", "dep:prefab_catalog", "dep:world_chunks", "dep:satellite_imagery", "dep:water_bodies", "dep:world_store", "dep:interior_line_of_sight", "dep:world_line_of_sight"]
+streaming = ["world", "dep:serde", "dep:serde_json", "serde_json/float_roundtrip", "dep:rkyv", "dep:world_file_formats", "dep:flate2", "dep:prefab_catalog", "dep:world_chunks", "dep:satellite_imagery", "dep:water_bodies", "dep:world_store", "dep:interior_line_of_sight", "dep:world_line_of_sight", "dep:chunk_scheduler", "dep:chunk_draw_buffers"]
 render = ["streaming", "dep:graphics_engine", "dep:browser_platform"]
-# The editing tier drives the STREAMED world, not just the static one: the line-of-sight tool's
-# object layer washes a viewshed by testing cells against the world occluder, whose frame convention
-# and traversal live in `world_line_of_sight` — which is `streaming`'s. So the honest edge for
-# authored-document editing is "the document plus everything the operator can see": the mission
-# crates the editing layer hosts and drives, and `streaming` for the second half.
-editing = ["world", "streaming", "dep:serde_json", "dep:mission_payload", "dep:mission_validation", "dep:formation_geometry", "dep:mission_crdt", "dep:mission_document", "dep:mission_operations"]
 
 [dependencies]
 # The pure renderer. The arrow points one way: the map engine speaks the renderer's frame
@@ -42,22 +36,8 @@ render_primitives = { workspace = true, optional = true }
 # The map coordinates and the cameras, which every tier links (`camera` is ungated).
 map_coordinates = { workspace = true }
 camera_math = { workspace = true }
-# The payload compiler the local-versus-server draft comparison compiles each side through,
-# behind `editing`.
-mission_payload = { workspace = true, optional = true }
-# The validator whose findings the editing commands format, behind `editing`.
-mission_validation = { workspace = true, optional = true }
-# The arrange vocabulary (patterns, aligns, spacing, orient) the hosted selection transforms take,
-# behind `editing`.
-formation_geometry = { workspace = true, optional = true }
-# The mission document and the slot columns it materialises, which the editing layer hosts,
-# behind `editing`.
-mission_crdt = { workspace = true, optional = true }
-mission_document = { workspace = true, optional = true }
-# The authoring commands the hosted commands drive against the document, behind `editing`.
-mission_operations = { workspace = true, optional = true }
 bytemuck = { workspace = true, features = ["derive", "min_const_generics"] }
-# The served-data descriptors the streaming tier reads, and the editing layer's JSON views.
+# The served-data descriptors and JSON statistics the streaming tier reads and writes.
 serde = { workspace = true, features = ["derive"], optional = true }
 serde_json = { workspace = true, optional = true, features = ["preserve_order"] }
 flate2 = { workspace = true, optional = true }
@@ -98,6 +78,10 @@ world_store = { workspace = true, optional = true }
 terrain_line_of_sight = { workspace = true, optional = true }
 interior_line_of_sight = { workspace = true, optional = true }
 world_line_of_sight = { workspace = true, optional = true }
+# The chunk residency and the draw buffers composed over it, which the world and occluder loaders
+# feed, behind `streaming`.
+chunk_scheduler = { workspace = true, optional = true }
+chunk_draw_buffers = { workspace = true, optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wgpu = { workspace = true, features = ["webgpu", "webgl", "wgsl"] }
@@ -123,6 +107,3 @@ spatial_indexes = { workspace = true, features = ["test_fixtures"] }
 prefab_catalog = { workspace = true, features = ["test_fixtures"] }
 world_chunks = { workspace = true, features = ["test_fixtures"] }
 serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
-# The editing layer hands a host-supplied async read to `editing::persist::merge_policy`, so a
-# native test of that ordering needs an executor to drive the future to completion.
-futures = { workspace = true }

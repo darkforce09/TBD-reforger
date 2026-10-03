@@ -13,7 +13,7 @@ state, never part of the [mission](/documentation/glossary/g_to_m.md#mission).
   [`apps/frontend/src/workspaces/editor/input/pointer_gestures/`](/apps/frontend/src/workspaces/editor/input/pointer_gestures/README.md)
   (`pointer_up.rs`, `pointer_move.rs`, `double_click.rs`, `context_menu.rs`); the gesture model,
   the picks and the click rule in
-  [`legacy/map_engine/src/editing/tools/selection/`](/legacy/map_engine/src/editing/tools/selection/README.md);
+  [`crates/mission_editing/map_editing_tools/src/selection/`](/crates/mission_editing/map_editing_tools/src/selection/README.md);
   the selection writers of the trees and dialogs in
   `apps/frontend/src/workspaces/editor/bridge/host_state/entity_selection.rs` and
   `bridge/host_state/editor_context/attributes_modal.rs`; the menu in
@@ -54,9 +54,9 @@ SEL-MAP-005 and SEL-CTX-001 are rows added for shipped code.
 2. The click picks the [slot](/documentation/glossary/n_to_z.md#slot) or placed vehicle under the
    cursor: a square box decides slots, a circle decides vehicles, and a tie goes to the slot.
    Slots riding in a vehicle as crew are not on the map and cannot be picked
-   (`map_render_slot_soa` in `legacy/map_engine/src/editing/selection_universe.rs:107`).
+   (`map_render_slot_soa` in `crates/mission_editing/mission_editing_session/src/selection_universe.rs:107`).
 3. A plain click on an entity replaces the selection with it; a plain click on empty ground
-   clears it (`apply_click` in `legacy/map_engine/src/editing/tools/selection/pick.rs:103-119`).
+   clears it (`apply_click` in `crates/mission_editing/map_editing_tools/src/selection/pick.rs:103-119`).
 4. A plain click on an entity that is already part of a multi-selection keeps the whole
    selection, so the next press can drag it (`pointer_up.rs:233-241`).
 5. The map tints a selected slot; a selected vehicle is drawn like an unselected one (the tint

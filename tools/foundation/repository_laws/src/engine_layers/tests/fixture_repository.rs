@@ -1,9 +1,9 @@
 //! The fixture checkout every engine-layer test starts from.
 //!
-//! **Role:** writes a minimal repository in a temporary directory that passes all seven rules —
+//! **Role:** writes a minimal repository in a temporary directory that passes all six rules —
 //! a root manifest whose `crates/*/*` glob makes one CPU-only `crates/graphics` member, a clean
 //! parked renderer with its manifest, the map engine's pinned residue at exactly the pinned
-//! counts, a clean `world/` and `editing/`, and a clean frontend with its manifest — so each test
+//! counts, a clean `world/`, and a clean frontend with its manifest — so each test
 //! plants one defect and asserts on the exact report.
 //! **Position:** test support for the sibling test modules of [`super`].
 //! **Signals & state:** each [`Repo`] owns one temporary directory and removes it on drop.
@@ -86,22 +86,9 @@ pub use graphics_engine::r#loop::RafPump;
 pub(super) const MAP_WORLD: &str = "\
 use terrain_elevation::sampling::uint16_to_meters;
 use world_file_formats::archives::codec::to_bytes;
-use crate::streaming::scheduler::state::WorldResidency;
+use chunk_draw_buffers::world_residency::WorldResidency;
 use spatial_indexes::bounding_volume_hierarchy::triangle_tree::Bvh;
 use mission_model::orbat::OrbatSlot;
-";
-
-/// Rule 5's root, green: the editor's decisions, named in `crate::` and `std::` terms only.
-pub(super) const MAP_EDITING: &str = "\
-//! The two-click ray capture.
-
-use mission_document::MissionDocCore;
-use std::cell::RefCell;
-
-/// A host supplies its own clock; this module asks for one rather than reaching for a window.
-pub fn step(now: &dyn Fn() -> f64) -> f64 {
-    now()
-}
 ";
 
 /// Rule 6's root, green: the frontend reaching the renderer through the map engine, and saying so
@@ -144,9 +131,8 @@ impl Repo {
         // Rule 7's root. It is seeded on every fixture, not only the tests that exercise it,
         // because an absent root is a hard FAIL — which is the point.
         r.map("world/terrain/dem/loader.rs", MAP_WORLD);
-        // Rules 5 and 6's roots, seeded on every fixture for the same reason: an absent root is
-        // a hard FAIL, and every other test would trip over it.
-        r.map("editing/tools/line_of_sight/capture.rs", MAP_EDITING);
+        // Rule 6's root, seeded on every fixture for the same reason: an absent root is a hard
+        // FAIL, and every other test would trip over it.
         r.front("canvas/mount.rs", FRONT_SRC);
         r.front_manifest(FRONT_MANIFEST);
         r

@@ -15,7 +15,7 @@ and loadout, or a vehicle's heading, cargo and crew, for one entity or a whole s
   its [tab content](/apps/frontend/src/workspaces/editor/arsenal/tab_content/README.md) and
   its [panels](/apps/frontend/src/workspaces/editor/ui/arsenal/README.md); the open and close
   state in [`apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/`](/apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/README.md);
-  the document writes in [`legacy/map_engine/src/editing/hosted_commands/`](/legacy/map_engine/src/editing/hosted_commands/README.md).
+  the document writes in [`crates/mission_editing/mission_editing_commands/src/hosted_commands/`](/crates/mission_editing/mission_editing_commands/src/hosted_commands/README.md).
 - Entry: `open_attributes(id)` and `open_arsenal(id)` in the editor context; every way in is
   listed under ATTR-MODAL-001.
 - Related features: [left sidebar and ORBAT tree](/documentation/apps/frontend/workspaces/editor/feature_inventory/left_sidebar.md),
@@ -119,7 +119,7 @@ note reads "Edits apply live." and it has no Revert.
 
 - No API call: every field writes the mission document through a hosted command
   (`attrs_update_position`, `attrs_update_slot`, `reassign_slots`, the loadout writes), each one
-  undo step. The [hosted commands README](/legacy/map_engine/src/editing/hosted_commands/README.md)
+  undo step. The [hosted commands README](/crates/mission_editing/mission_editing_commands/src/hosted_commands/README.md)
   lists them.
 - The Arsenal tab reads the item registry and the compatibility feed the page loads at boot; the
   [arsenal README](/apps/frontend/src/workspaces/editor/arsenal/README.md) gives the calls.

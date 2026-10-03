@@ -16,7 +16,7 @@ pub(super) fn commit_position(
     if ids.len() > 1 {
         engine_ops::attrs_update_position_multi(&ids, x, y, z, rotation);
     } else if let Some(id) = ids.first() {
-        engine_ops::attrs_update_position(id, x, y, z, rotation);
+        engine_ops::attrs_update_position(id.as_str(), x, y, z, rotation);
     }
 }
 
@@ -32,9 +32,23 @@ pub(super) fn commit_slot(
 ) {
     let ids = targets.get_value();
     if ids.len() > 1 {
-        engine_ops::attrs_update_slot_multi(&ids, role, tag, stance, asset_id, description);
+        engine_ops::attrs_update_slot_multi(
+            &ids,
+            role,
+            tag,
+            stance,
+            asset_id.map(Into::into),
+            description,
+        );
     } else if let Some(id) = ids.first() {
-        engine_ops::attrs_update_slot(id, role, tag, stance, asset_id, description);
+        engine_ops::attrs_update_slot(
+            id.as_str(),
+            role,
+            tag,
+            stance,
+            asset_id.map(Into::into),
+            description,
+        );
     }
 }
 
@@ -54,7 +68,7 @@ pub(super) fn revert_to_snapshot(snapshot: StoredValue<Vec<mission_operations::a
             Some(snap.role.clone()),
             Some(snap.tag.clone()),
             Some(snap.stance.clone()),
-            Some(snap.asset_id.to_string()),
+            Some(snap.asset_id.clone()),
             Some(snap.description.clone()),
         );
     }

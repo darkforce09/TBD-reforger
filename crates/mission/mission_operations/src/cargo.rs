@@ -3,8 +3,8 @@
 //! Signals & state: thread-local cargo defaults, loadout buffer and Apply seed; the document is explicit.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
-use mission_model::ids::SlotId;
 use mission_validation::AssetId;
+use orbat_slot_ids::SlotUid;
 
 use super::cargo_rules::{CargoRow, seed_cargo};
 use super::entity::selected_slot_ids;
@@ -16,7 +16,7 @@ use std::collections::HashMap;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BufferedLoadout {
     /// Source id.
-    pub source_id: SlotId,
+    pub source_id: SlotUid,
 
     /// The source's `SlotLoadoutV2` JSON, verbatim. `None` when the source carried no `loadout` key at all — a **bare** entity, which is a legitimate thing to buffer and to apply (it is how you say "make these look like that empty one"), and which is not the same value as `stripped_loadout` (in the `frontend` app's Arsenal loadout module); see there for why the two differ.
     pub loadout_json: Option<String>,
@@ -26,10 +26,10 @@ pub struct BufferedLoadout {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LoadoutWrite {
     /// Target id.
-    pub target_id: SlotId,
+    pub target_id: SlotUid,
 
     /// Which buffered entity this loadout was drawn from; `None` for Remove Everything, which has no source.
-    pub source_id: Option<SlotId>,
+    pub source_id: Option<SlotUid>,
 
     /// Loadout json.
     pub loadout_json: Option<String>,
@@ -50,8 +50,8 @@ pub fn commit_writes(
 }
 
 /// Apply read_loadout to explicit document state.
-pub fn read_loadout(core: &MissionDocCore, id: impl Into<SlotId>) -> Option<String> {
-    let id: SlotId = id.into();
+pub fn read_loadout(core: &MissionDocCore, id: impl Into<SlotUid>) -> Option<String> {
+    let id: SlotUid = id.into();
     let id = id.as_str();
     let map: serde_json::Value = serde_json::from_str(&core.slots_json()).ok()?;
     let lo = map.get(id)?.get("loadout")?;
@@ -93,11 +93,11 @@ pub fn commit_loadout_writes(core: &MissionDocCore, writes: &[LoadoutWrite]) -> 
 /// Document operation over explicit authored state.
 pub fn seed_cargo_in_core(
     core: &MissionDocCore,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
     loadout: Option<&str>,
     defaults: Option<Vec<CargoRow>>,
 ) -> bool {
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     let Some(defaults) = defaults else {
         return false;
@@ -111,10 +111,10 @@ pub fn seed_cargo_in_core(
 /// Apply seed_slot_cargo to explicit document state.
 pub fn seed_slot_cargo(
     core: &MissionDocCore,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
     defaults_for: impl FnOnce(&str) -> Option<Vec<CargoRow>>,
 ) -> Option<String> {
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     let map: serde_json::Value = serde_json::from_str(&core.slots_json()).ok()?;
     let slot = map.get(id)?;
@@ -170,13 +170,13 @@ pub fn cargo_defaults_for(asset_id: impl Into<AssetId>) -> Option<Vec<CargoRow>>
 /// and the loadout carries no `cargo` key of its own.
 pub fn seed_cargo_for_asset(
     core: &MissionDocCore,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
     asset_id: impl Into<AssetId>,
     loadout: Option<&str>,
 ) -> bool {
     let asset_id: AssetId = asset_id.into();
     let asset_id = asset_id.as_str();
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     seed_cargo_in_core(core, id, loadout, cargo_defaults_for(asset_id))
 }
@@ -185,9 +185,9 @@ pub fn seed_cargo_for_asset(
 /// return the seeded loadout JSON so the caller can render it without re-reading the document.
 pub fn seed_slot_cargo_from_defaults(
     core: &MissionDocCore,
-    id: impl Into<SlotId>,
+    id: impl Into<SlotUid>,
 ) -> Option<String> {
-    let id: SlotId = id.into();
+    let id: SlotUid = id.into();
     let id = id.as_str();
     seed_slot_cargo(core, id, |asset_id: &str| cargo_defaults_for(asset_id))
 }

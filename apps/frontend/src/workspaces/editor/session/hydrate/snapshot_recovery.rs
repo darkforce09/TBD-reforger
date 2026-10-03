@@ -290,7 +290,7 @@ async fn restore_snapshot(mission_id: String, want: SnapshotSlot) -> bool {
     let bytes = match recall(&mission_id, want) {
         Some(b) => b,
         None => crate::workspaces::editor::session::persist::load_state(&snapshot_key(
-            &mission_id,
+            mission_id.as_str(),
             want.suffix(),
         ))
         .await

@@ -4,7 +4,7 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use crate::ids::LayerId;
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::Any;
 use super::ENTITY_IDS;
@@ -163,8 +163,8 @@ impl MissionDocCore {
 impl MissionDocCore {
     /// Slot layer is locked using the supplied domain data.
     #[must_use]
-    pub fn slot_layer_is_locked(&self, slot_id: impl Into<SlotId>) -> bool {
-        let slot_id: SlotId = slot_id.into();
+    pub fn slot_layer_is_locked(&self, slot_id: impl Into<SlotUid>) -> bool {
+        let slot_id: SlotUid = slot_id.into();
         let slot_id = slot_id.as_str();
         let txn = self.doc.transact();
         slot_is_transform_locked(&txn, &self.editor_layers, slot_id)
@@ -173,8 +173,8 @@ impl MissionDocCore {
 
 impl MissionDocCore {
     /// Set slot editor hidden using the supplied domain data.
-    pub fn set_slot_editor_hidden(&self, id: impl Into<SlotId>, hidden: bool) {
-        let id: SlotId = id.into();
+    pub fn set_slot_editor_hidden(&self, id: impl Into<SlotUid>, hidden: bool) {
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         set_slot_editor_hidden_in_txn(&mut txn, &self.slots, id, hidden);
@@ -238,10 +238,10 @@ impl MissionDocCore {
     /// Refile a slot into a different Outliner folder (workflow-only; squad unchanged): detach from every folder holding it, then append to the target. Mirrors `ydoc.moveSlotToLayer`.
     pub fn move_slot_to_layer(
         &self,
-        slot_id: impl Into<SlotId>,
+        slot_id: impl Into<SlotUid>,
         target_layer_id: impl Into<LayerId>,
     ) {
-        let slot_id: SlotId = slot_id.into();
+        let slot_id: SlotUid = slot_id.into();
         let slot_id = slot_id.as_str();
         let target_layer_id: LayerId = target_layer_id.into();
         let target_layer_id = target_layer_id.as_str();

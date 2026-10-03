@@ -6,7 +6,7 @@ use super::*;
 /// Renders authored zones and draw controls (wasm32 only).
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView {
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     let types = zone_types();
     let initial = types

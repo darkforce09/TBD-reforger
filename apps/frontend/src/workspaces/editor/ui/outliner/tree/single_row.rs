@@ -171,7 +171,7 @@ pub(super) fn single_row(
                     let id = id.clone();
                     move |text: String| {
                         {
-                            let _ = engine_ops::rename_layer(&id, &text);
+                            let _ = engine_ops::rename_layer(id.as_str(), &text);
                         }
                         renaming.set(None);
                         rename_draft.set(String::new());

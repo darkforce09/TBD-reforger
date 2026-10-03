@@ -22,9 +22,8 @@ use std::rc::Rc;
 
 use crate::frame::EngineHandle;
 
-const CONTOUR_RGBA: [u8; 4] = [188, 150, 100, 235];
+use terrain_relief::contours::{CONTOUR_RGBA, CONTOUR_SUMMIT_RGBA};
 
-const CONTOUR_SUMMIT_RGBA: [u8; 4] = [174, 145, 123, 235];
 const TERRAIN_M: f64 = 12_800.0;
 
 /// Dem vectors.

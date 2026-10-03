@@ -4,9 +4,10 @@
 //! editor graph ([`orbat`]), the authored extension blocks with their parse and validate rules
 //! ([`authored_blocks`] and the block modules), the plain-text slot line ([`slot_line`]) and the
 //! newtype ids all of them name ([`ids`]).
-//! **Position:** mission tier 1, over `newtype_ids`, `serde`, `serde_json` and `thiserror`. The
-//! payload compiler (`mission_payload`), the game-document compiler (`mission_compiler`), the
-//! validator (`mission_validation`), the API and the Mission Creator build on it; it depends on no compiler.
+//! **Position:** mission tier 2, over `newtype_ids`, `orbat_slot_ids` (the slot rows' two ids),
+//! `serde`, `serde_json` and `thiserror`. The payload compiler (`mission_payload`), the
+//! game-document compiler (`mission_compiler`), the validator (`mission_validation`), the API and
+//! the Mission Creator build on it; it depends on no compiler.
 //! **Signals & state:** none; plain data types and pure functions.
 //! **Invariants:** every row serialises to the exact shape of `mission.schema.json` it projects
 //! (ids are serde-transparent); every refusal is one readable sentence ([`Error`]); the

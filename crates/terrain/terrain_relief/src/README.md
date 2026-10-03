@@ -7,7 +7,7 @@ them.
 
 ```text
 crates/terrain/terrain_relief/src/
-├── contours.rs   contour levels, marched rings and segments, and the pick of each summit's ring
+├── contours.rs   contour levels, marched rings and segments, each summit's ring, the ring colours
 ├── hillshade.rs  the hillshade image of the metres cache, at most 1024 pixels a side
 ├── lib.rs        the crate root: module header and `mod` lines
 ├── prelude.rs    the names most readers import

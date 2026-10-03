@@ -10,7 +10,7 @@ pub(super) fn zone_attributes(
     doc_tick: RwSignal<u64>,
     selected: RwSignal<Option<String>>,
 ) -> AnyView {
-    use map_engine::editing::hosted_commands as engine_ops;
+    use mission_editing_commands::hosted_commands as engine_ops;
 
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let zid = z.id.clone();

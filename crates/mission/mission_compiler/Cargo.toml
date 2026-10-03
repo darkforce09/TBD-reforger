@@ -13,7 +13,7 @@ description = "The game-document compiler of a mission, its compile findings and
 
 [package.metadata.layout]
 category = "crates/mission"
-tier = 4
+tier = 5
 targets = "any"
 
 [dependencies]
@@ -21,6 +21,7 @@ mission_model = { workspace = true }
 mission_payload = { workspace = true }
 mission_validation = { workspace = true }
 mission_wire_safety = { workspace = true }
+orbat_slot_ids = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror = { workspace = true }

@@ -1,0 +1,35 @@
+# The decidable half of the Mission Creator's local drafts: owner-scoped record keys, the server id
+# test, stored blob verdicts, the merge before a write, the local-versus-server classification, the
+# server payload adoption and the whole-document snapshots. No storage or network API; the Mission
+# Creator supplies the record store, the reads and the post-edit tail as closures.
+[package]
+name = "mission_persistence"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The decidable half of the Mission Creator's local drafts: record keys, blob verdicts, merge, server reconciliation and snapshots."
+
+[package.metadata.layout]
+category = "crates/mission_editing"
+tier = 7
+targets = "any"
+
+[dependencies]
+# The shared document handle (`host::DocHandle`) every adopt, merge and snapshot goes through.
+mission_editing_session = { workspace = true }
+# The document a draft encodes, replays, merges, hydrates and fingerprints.
+mission_document = { workspace = true }
+# The mission id a record key and the server reconciliation name.
+mission_model = { workspace = true }
+# The payload compiler the local-versus-server comparison compiles each side through.
+mission_payload = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+
+[dev-dependencies]
+# The executor the merge-ordering tests drive the host-supplied async read with.
+futures = { workspace = true }
+
+[lints]
+workspace = true

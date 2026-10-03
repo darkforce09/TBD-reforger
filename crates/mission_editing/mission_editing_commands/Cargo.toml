@@ -1,0 +1,41 @@
+# The Mission Creator's editing commands over the live mission document: the commands that run
+# against the installed editing host (open the hosted document, commit one transaction, run the
+# post-change tail) and the pure document texts (export bytes, report wording, selection digests).
+# No browser or GPU code; the Mission Creator injects folders, confirmations and closed
+# vocabularies as closures.
+[package]
+name = "mission_editing_commands"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's editing commands: hosted document commands and pure export, report and selection texts."
+
+[package.metadata.layout]
+category = "crates/mission_editing"
+tier = 7
+targets = "any"
+
+[dependencies]
+# The arrange vocabulary (patterns, aligns, spacing, orient) the selection transforms take.
+formation_geometry = { workspace = true }
+# The three-digit grid reference every selection digest prints.
+map_coordinates = { workspace = true }
+# The hosted document, the connection vocabulary and the ids of the rows only the document holds.
+mission_document = { workspace = true }
+# The installed host, the post-change tail and undo grouping every hosted command runs through.
+mission_editing_session = { workspace = true }
+# The ids of the zones, triggers and markers a mission declares.
+mission_model = { workspace = true }
+# The authoring commands and row projections the hosted commands drive.
+mission_operations = { workspace = true }
+# The compile findings the export summary counts, and the asset id a slot carries.
+mission_validation = { workspace = true }
+# The durable editor id of a slot.
+orbat_slot_ids = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

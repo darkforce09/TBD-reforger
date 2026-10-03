@@ -68,8 +68,8 @@ because the app's mount chain that names them, `apps/frontend/src/app_routes.rs`
 - Depends on: `camera_math` (`ortho`), `geometry_primitives` (`Rigid`), `render_primitives`
   (triangulation) and `browser_platform` (`fetch`); the world crates `building_interiors`,
   `interior_line_of_sight`, `world_line_of_sight`, `spatial_indexes`, `terrain_line_of_sight`,
-  `road_network` and `map_draw_lanes`; `map_engine` (`streaming`, `frame` and the viewshed
-  texture of `editing::tools::line_of_sight`); `gloo_net`,
+  `road_network` and `map_draw_lanes`; `map_engine` (`streaming` and `frame`); the viewshed
+  texture of `map_editing_tools::line_of_sight`; `gloo_net`,
   `futures`, `js_sys`, `wasm_bindgen` and `web_sys` in the browser build. The data viewer depends
   on `crate::foundation::transport` (its anonymous reads and the equipment data viewer DTOs), and the
   ballistics agreement bench on its anonymous reads, the ballistics catalog DTOs and the

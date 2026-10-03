@@ -10,8 +10,8 @@
 
 use crate::workspaces::editor::bridge::document_host::history as mission_history;
 use crate::workspaces::editor::bridge::host_state::editor_context::EDITOR_CONTEXT;
-use map_engine::editing::hosted_commands::vehicle_points;
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
+use mission_editing_commands::hosted_commands::vehicle_points;
 use mission_operations::projections::layer_rows;
 
 /// Replace the selected ids, rebind the renderer's tint, and refresh the mirrors.

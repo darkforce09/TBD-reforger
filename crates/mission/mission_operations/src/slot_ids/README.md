@@ -29,7 +29,7 @@ repeat an id in a squad, so a duplicate arrives through a hydrated payload.
 - Used by: the Mission Creator's save in
   `apps/frontend/src/workspaces/editor/session/document_commands.rs`, which refuses the save
   before compiling when the list is not empty and shows the pairs through
-  `duplicate_slot_id_report` in `legacy/map_engine/src/editing/commands/merge_report.rs`.
+  `duplicate_slot_id_report` in `crates/mission_editing/mission_editing_commands/src/document_text/merge_report.rs`.
 - Rules: a document built by the store's own writes reports nothing, and a hydrated squad that
   lists an existing id twice reports it with its callsign (`test_duplicate_slot_ids` in
   `tests/cases_1.rs`); both source files are on the place path that

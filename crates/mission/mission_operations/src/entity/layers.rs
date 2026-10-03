@@ -6,7 +6,7 @@
 //! point is ONE authored transaction, so a host that groups undo steps gets one step per call.
 
 use mission_document::ids::LayerId;
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use std::cell::{Cell, RefCell};
 
@@ -102,12 +102,12 @@ pub fn reparent_layer(core: &MissionDocCore, id: impl Into<LayerId>, new_parent:
 /// the target. Squad membership is untouched — filing is a workflow, not an order of battle.
 pub fn refile_slot_to_layer(
     core: &MissionDocCore,
-    slot_id: impl Into<SlotId>,
+    slot_id: impl Into<SlotUid>,
     layer_id: impl Into<LayerId>,
 ) {
     let layer_id: LayerId = layer_id.into();
     let layer_id = layer_id.as_str();
-    let slot_id: SlotId = slot_id.into();
+    let slot_id: SlotUid = slot_id.into();
     let slot_id = slot_id.as_str();
     core.move_slot_to_layer(slot_id, layer_id);
 }

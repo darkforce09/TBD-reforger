@@ -4,7 +4,7 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use mission_document::ids::{FactionId, SquadId};
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::MissionDocCore;
 use super::Value;
@@ -88,7 +88,7 @@ pub struct ApplyFactionResult {
     pub squad_id: SquadId,
 
     /// Leader slot id.
-    pub leader_slot_id: SlotId,
+    pub leader_slot_id: SlotUid,
 
     /// Roles applied.
     pub roles_applied: usize,

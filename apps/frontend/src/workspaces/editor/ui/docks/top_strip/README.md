@@ -81,8 +81,8 @@ nonzero; both render in a hidden element of the menu row.
     `FactionRow` and `SquadRow`, and `ui::modals::help_modal`;
   - `crate::foundation`: `api_patch` and `MissionEnv` from `api`, `AuthStore`, and `Select`,
     `Slider`, `MaterialIcon`, the toasts and the modal stack from `ui`;
-  - `map_engine`: `editing::hosted_commands` (`census_input`, `selection_transform`),
-    `editing::host::selection_len`;
+  - `mission_editing_commands::hosted_commands` (`census_input`, `selection_transform`) and
+    `mission_editing_session::host::selection_len`;
   - `formation_geometry`: the placement kinds of the arrange menu;
   - over HTTP, `PATCH /api/v1/missions/{id}` of the
     [missions](/documentation/glossary/g_to_m.md#missions) domain.

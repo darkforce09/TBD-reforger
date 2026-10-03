@@ -39,7 +39,7 @@ matching the key and never the name.
   `DEFAULT_LAYER_ID`, `DEFAULT_LAYER_NAME`); and, in the browser build, the editor context in
   `bridge::host_state::editor_context`, `ensure_layer` from
   `mission_operations::entity`, and `create_layer` and `delete_layer`
-  from `map_engine::editing::hosted_commands`.
+  from `mission_editing_commands::hosted_commands`.
 - Used by:
   - the tree renderer in `apps/frontend/src/workspaces/editor/ui/outliner/tree/`
     (`flatten_visible`, `FlatRow`, `set_active_layer`, `delete_layer`);

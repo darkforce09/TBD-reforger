@@ -169,7 +169,7 @@ fn attributes_modal_routes_vehicles_to_the_vehicle_editor() {
     let code = live_code(super::ATTRIBUTES_MODAL_SOURCE);
     let host = only_body(&code, "pub fn AttributesModal(");
     assert!(
-            host.contains("is_vehicle_id(&id)") && host.contains("vehicle_attrs_view("),
+            host.contains("is_vehicle_id(id.as_str())") && host.contains("vehicle_attrs_view("),
             "T-818: AttributesModal None arm must route vehicles to vehicle_attrs_view; body was:\n{host}"
         );
     assert!(

@@ -77,9 +77,10 @@ the document.
 ## Boundaries
 
 - Depends on: `mission_document`, `mission_crdt` and `mission_operations` (the document, its slot
-  columns and its authoring commands); `map_engine` (`editing` for the history, host, hosted commands,
-  lanes and tools, `frame` for `RenderEngine`, `EngineHandle` and `RafPump`, `streaming` for the
-  host, the progress events and the memory budget); `unit_symbology` (side tints, squad links),
+  columns and its authoring commands); `mission_editing_session` (the history, host and lanes),
+  `mission_editing_commands` (the hosted commands) and `map_editing_tools`; `map_engine` (`frame`
+  for `RenderEngine`, `EngineHandle` and `RafPump`, `streaming` for the host, the progress events
+  and the memory budget); `unit_symbology` (side tints, squad links),
   `map_draw_lanes` (lane ids) and `terrain_elevation` (the full-resolution heights); in the editor, the
   outliner, the asset catalog and rules of `arsenal/`, the toolbelt's scale helpers, the zones
   panel's predicates and validation seam, the ruler tool's `install_seam`, the line-of-sight world

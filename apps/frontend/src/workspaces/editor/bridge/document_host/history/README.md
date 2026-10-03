@@ -16,11 +16,11 @@ apps/frontend/src/workspaces/editor/bridge/document_host/history/
 ## Boundaries
 
 - Depends on: the parent module's imports (`MissionDocCore`, `SlotSoa`, `RenderEngine`, `role_id`,
-  `build_squad_link_segments`); `map_engine::editing::hosted_commands::vehicle_rows`,
-  `map_engine::editing::picking::squad_link_inputs` and
+  `build_squad_link_segments`); `mission_editing_commands::hosted_commands::vehicle_rows`,
+  `mission_editing_session::picking::squad_link_inputs` and
   `unit_symbology::classification::side_rgba`; the lane readers the page
   module `apps/frontend/src/workspaces/editor/mission_editor.rs` re-exports from
-  `map_engine::editing::lanes`; and `tactical_graphics.rs` and
+  `mission_editing_session::lanes`; and `tactical_graphics.rs` and
   `tactical_graphics_authoring.rs` in `apps/frontend/src/workspaces/editor/bridge/`, for the
   graphic rows, the drag preview and the selected graphic.
 - Used by:

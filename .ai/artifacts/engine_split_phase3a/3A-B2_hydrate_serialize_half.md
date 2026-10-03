@@ -5,7 +5,7 @@ nothing else. `state/persist.rs` was split by `3A-B1` — **do not revisit it.**
 
 ## You are inheriting a settled module
 
-`3A-B1` landed `legacy/map_engine/src/editing/persist/`, declared in `editing/mod.rs`:
+`3A-B1` landed `crates/mission_editing/mission_persistence/src/`, declared in `editing/mod.rs`:
 
 | file | holds |
 |---|---|

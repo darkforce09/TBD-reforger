@@ -21,7 +21,7 @@ document.
   the Arrange list in `apps/frontend/src/workspaces/editor/ui/docks/top_strip/arrange.rs`
   ([top strip README](/apps/frontend/src/workspaces/editor/ui/docks/top_strip/README.md));
   the document edits in
-  [`legacy/map_engine/src/editing/hosted_commands/`](/legacy/map_engine/src/editing/hosted_commands/README.md)
+  [`crates/mission_editing/mission_editing_commands/src/hosted_commands/`](/crates/mission_editing/mission_editing_commands/src/hosted_commands/README.md)
   (`selection_transform.rs`, `entity_clipboard.rs`, `entity_connections.rs`) and
   `crates/mission/mission_operations/src/` (`transform.rs`, `placement/`,
   `entity/clipboard.rs`).
@@ -79,7 +79,7 @@ into the target's squad instead of moving it on the map (`regroup_slot_onto`,
    Shift drag that starts on a selected entity (`pointer_move.rs:179-192`, `:242-249`).
 2. On release, every selected slot and vehicle turns to face the release point, rounded to the
    rotate rung while snap is on (`rotate_selection_to_face`,
-   `legacy/map_engine/src/editing/hosted_commands/selection_transform.rs:17-31`;
+   `crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs:17-31`;
    `pointer_up.rs:456-469`). The rotation is absolute, toward the point, with no live preview;
    comments do not rotate.
 3. Typed rotation and vehicle heading stay in the Attributes dialog.

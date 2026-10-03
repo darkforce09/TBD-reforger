@@ -6,7 +6,7 @@ use crate::workspaces::editor::bridge::host_state::editor_context;
 #[cfg(target_arch = "wasm32")]
 use crate::workspaces::editor::ui::outliner::node_model;
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands as engine_ops;
 
 /// Renders fields and actions for the selected map comment.
 #[cfg(target_arch = "wasm32")]
@@ -37,7 +37,7 @@ pub(crate) fn CommentEditorOverlay(
     move || {
         let id = open.get()?;
         let _ = doc_tick.get();
-        let row = engine_ops::read_comment(&id);
+        let row = engine_ops::read_comment(id.as_str());
         let (title, tooltip, x, z) = match &row {
             Some(c) => (c.title.clone(), c.tooltip.clone(), c.x, c.z),
             None => return None,
@@ -136,7 +136,7 @@ pub(crate) fn CommentEditorOverlay(
                         on:click=move |_| {
                             if let Some(new_id) =
                                 engine_ops::duplicate_comment(
-                                    &id_dup,
+                                    id_dup.as_str(),
                                     COMMENT_COPY_OFFSET_M,
                                     node_model::ensure_active_layer,
                                 )

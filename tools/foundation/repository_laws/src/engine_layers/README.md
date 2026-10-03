@@ -1,8 +1,8 @@
 # Engine layer walls
 
-The seven engine-layer rules of the
+The six engine-layer rules of the
 [engine boundary rules](/documentation/standards/engine_boundary_rules.md) §5 (numbers 1, 2, 3a,
-3b, 5, 6 and 7; number 4 is unassigned), judged over a
+3b, 6 and 7; numbers 4 and 5 are unassigned), judged over a
 checkout, with the report text `cargo xtask verify engine-layers` prints; and the map engine's
 whole-crate UI-framework ban, which the `engineering_laws` test binary of `api` asserts.
 
@@ -10,8 +10,8 @@ whole-crate UI-framework ban, which the `engineering_laws` test binary of `api` 
 
 ```text
 tools/foundation/repository_laws/src/engine_layers/
-├── crate_walks.rs        walks the graphics layer, the map engine and the frontend, splits the map engine into its rule subsets, writes the scanned counts
-├── evaluation.rs         judges the seven rules in report order and records each rule's finding count
+├── crate_walks.rs        walks the graphics layer, the map engine and the frontend, splits off the map engine's `world/` subset, writes the scanned counts
+├── evaluation.rs         judges the six rules in report order and records each rule's finding count
 ├── matcher_probes.rs     compiles every matcher and proves it on subjects with known answers
 ├── mod.rs                the rule catalogue and why each rule is shaped so; `check_engine_layers` and its report types
 ├── report_text.rs        rule headlines, remedy paragraphs and refusal blocks
@@ -34,14 +34,19 @@ tools/foundation/repository_laws/src/engine_layers/
 | 2 | `legacy/graphics_engine` and each `crates/graphics` member | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
 | 3a | `legacy/map_engine/src` | `graphics_engine::frame` appears only in `frame/mod.rs`, exactly 5 times |
 | 3b | `legacy/map_engine/src` | `graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
-| 5 | `editing` | no `web_sys`, `leptos` or `wasm_bindgen`, prose included |
 | 6 | `apps/frontend` | no `graphics_engine::` path or `extern crate`, no `graphics_engine` edge in `Cargo.toml`; the same for each `crates/graphics` member declaring `targets = "wasm32"` (a `targets = "any"` member is CPU code the frontend may link) |
-| 7 | `world` | no `yrs::` path, no `mission_crdt::`, `mission_document::` or `mission_operations::` path, no `crate::editing` and no `super::` chain ending on `editing` |
+| 7 | `world` | no `yrs::` path; no `mission_crdt::`, `mission_document::` or `mission_operations::` path; no `mission_editing_session::`, `mission_editing_commands::`, `mission_persistence::` or `map_editing_tools::` path |
 
 The mission crates' isolation from the world, streaming and graphics code is a dependency edge,
 which no line matcher here judges; the crate-tier law holds it from the manifests: a
 `crates/mission` crate depends on foundation, mission and geometry crates only and on nothing
 under `legacy/` (`crate_tiers_a_mission_crate_reaching_world_or_graphics_is_rule_5` in
+`workspace_laws/tests/crate_tiers.rs`).
+
+Number 5 is unassigned too. The mission editing crates' browser ban is the crate-tier law's
+firewall: a mission editing crate may depend on no browser crate, and no `.rs` file under
+`crates/mission_editing/` may spell `web_sys`, `leptos` or `wasm_bindgen`, prose included
+(`crate_tiers_a_browser_token_in_a_mission_editing_source_is_rule_6` in
 `workspace_laws/tests/crate_tiers.rs`).
 
 A graphics category with no member, or a member whose `src` holds no `.rs` file, is a failure
@@ -82,14 +87,13 @@ frameworks.
   - the report text is the gate's output contract and is byte-stable;
   - a root that is missing is "did not run" (exit 2) and an empty root or subset is a failure
     (`inputs_that_were_never_read_do_not_pass`, `an_absent_world_tree_is_not_a_clean_rule_7`,
-    `an_absent_editing_tree_is_not_a_clean_rule_5`,
     `an_absent_graphics_category_is_not_a_clean_wall`);
   - every pin carries its file, exact count and reason, and changing one is a reviewed edit
     (`the_rule_3a_pin_is_a_ratchet_in_both_directions`,
     `the_rule_3b_pin_is_a_ratchet_in_both_directions`);
-  - rule 7 covers the mission document crates and the `editing` module
+  - rule 7 covers the mission document crates and the mission editing crates
     (`the_world_naming_the_document_breaches_the_wall`,
-    `the_world_naming_the_editing_module_breaches_the_wall`).
+    `the_world_naming_a_mission_editing_crate_breaches_the_wall`).
 
 ## Related documentation
 

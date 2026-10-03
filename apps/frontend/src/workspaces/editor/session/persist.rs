@@ -10,12 +10,12 @@ use std::rc::Rc;
 
 use idb::DatabaseEvent; // brings `VersionChangeEvent::database()` into scope for the upgrade handler
 use leptos::task::spawn_local;
-use map_engine::editing::persist::record_key::{
+use mission_document::MissionDocCore;
+use mission_persistence::record_key::{
     owner_prefix, owner_token_or_anonymous, scoped_key, split_scoped_key,
 };
-use map_engine::editing::persist::stored_blob::restores_to_authored_content;
-use map_engine::editing::persist::{merge_policy, record_read_retry, slot_fingerprint};
-use mission_document::MissionDocCore;
+use mission_persistence::stored_blob::restores_to_authored_content;
+use mission_persistence::{merge_policy, record_read_retry, slot_fingerprint};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -207,7 +207,8 @@ fn merge_stored(mission_id: &str, stored: &[u8]) -> bool {
     let Some((owner_id, doc)) = MERGE_DOC.with(|d| d.borrow().clone()) else {
         return false;
     };
-    let applied = merge_policy::apply_update_into_document(&doc, &owner_id, mission_id, stored);
+    let applied =
+        merge_policy::apply_update_into_document(&doc, owner_id.as_str(), mission_id, stored);
     if applied {
         crate::workspaces::editor::bridge::document_host::history::refresh_hud();
         crate::workspaces::editor::bridge::document_host::history::rebind_engine_from_doc();

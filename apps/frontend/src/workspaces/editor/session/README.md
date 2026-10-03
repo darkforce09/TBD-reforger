@@ -85,10 +85,10 @@ preferences and marker it stores outlive it.
 
 ## Boundaries
 
-- Depends on: `map_engine::editing::persist` (record keys, stored blobs, merge policy,
-  local-versus-server verdict, server adoption, snapshot slots) and `editing::commands`,
-  `streaming::bridge` for the boot progress and the
-  preference types; `mission_payload` and `mission_compiler` for the compile;
+- Depends on: `mission_persistence` (record keys, stored blobs, merge policy,
+  local-versus-server verdict, server adoption, snapshot slots) and
+  `mission_editing_commands::document_text`; `map_engine`'s `streaming::bridge` for the boot
+  progress and the preference types; `mission_payload` and `mission_compiler` for the compile;
   `mission_document::MissionDocCore` and `mission_operations::slot_ids::duplicate_slot_ids`; the
   `DocHandle` and undo driver of
   `apps/frontend/src/workspaces/editor/bridge/document_host/`; `crate::foundation` (the
@@ -115,7 +115,7 @@ preferences and marker it stores outlive it.
   - a module that touches `web_sys` or a live document handle is `#[cfg(target_arch = "wasm32")]`,
     and so is its `pub mod` line, so the save policy, the election, the size arithmetic and the
     layout are tested natively;
-  - what a command decides belongs to `map_engine::editing::commands`, and nothing here
+  - what a command decides belongs to `mission_editing_commands::document_text`, and nothing here
     draws a frame.
 
 ## Related documentation

@@ -12,10 +12,11 @@ use super::PendingChunk;
 use super::WorldHost;
 use super::chunk_bin_path;
 use super::fetch_bytes;
+use world_chunks::ChunkId;
 
 impl WorldHost {
     /// Fetch and queue.
-    pub(super) async fn fetch_and_queue(&mut self, ids: Vec<String>, report: &dyn Fn(BootEvent)) {
+    pub(super) async fn fetch_and_queue(&mut self, ids: Vec<ChunkId>, report: &dyn Fn(BootEvent)) {
         report(BootEvent::Files(BootSeg::World, ids.len() as u64));
 
         self.residency.mark_inflight(&ids);
@@ -29,7 +30,7 @@ impl WorldHost {
             let futs = batch.iter().map(|id| {
                 let rel = chunks_bin
                     .as_deref()
-                    .and_then(|template| chunk_bin_path(template, &id.as_str().into()));
+                    .and_then(|template| chunk_bin_path(template, id));
                 let binary = rel.is_some();
                 let url = rel.map_or_else(
                     || format!("{base}/{chunks}/{id}.json.gz"),

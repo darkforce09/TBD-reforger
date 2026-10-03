@@ -32,9 +32,9 @@ blas-manifest.json, descriptors, BVH sidecars ──> occluder_loader.rs ──>
 ```
 
 The chunk, manifest, prefab and payload parsers and the world store are described in the three
-crates' READMEs. The chunk scheduler's
-`chunk_ingest.rs` feeds the parsers' output into `WorldResidency`; `WorldHost` keeps a
-`WorldStore` for the roads and regions it draws.
+crates' READMEs. The chunk scheduler's `chunk_ingest.rs` feeds the parsers' output into the
+`ChunkResidency` that `WorldResidency` owns; `WorldHost` keeps a `WorldStore` for the roads and
+regions it draws.
 
 `browser_platform::fetch`'s `fetch_bytes` and `fetch_text` answer `None` on a transport failure or a status outside 2xx;
 `fetch_bytes_streamed` reports `ByteProgress` (the bytes received and the `content-length`) as
@@ -55,8 +55,8 @@ session.
 
 ## Boundaries
 
-- Depends on: `crate::streaming::scheduler` (`WorldResidency` and `ResidencyEvent` for the two
-  browser loaders) and `crate::streaming::bridge` (progress, statistics, preferences);
+- Depends on: `crate::streaming::buffers` (`WorldResidency`) and `crate::streaming::scheduler`
+  (`ResidencyEvent`) for the two browser loaders, and `crate::streaming::bridge` (progress, statistics, preferences);
   `world_chunks` and `world_store` (the manifest, the chunk paths and the store);
   `road_network` and `vegetation` (the road meshes and the forest regions); `crate::world::mesh`
   (the landcover mesh); `world_line_of_sight` and `spatial_indexes` (the occluder library and the

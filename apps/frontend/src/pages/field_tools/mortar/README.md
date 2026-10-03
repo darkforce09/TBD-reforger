@@ -135,8 +135,8 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   `crate::foundation::ui` (`AuthGate`, `PageHeader`), `crate::foundation::utils::datefmt`;
   `map_coordinates::grid_reference`; `fire_mission_planning` (`fire_mission`,
   `battery`, `fuze`, `solution_wording`), `ballistics_solver` (`dispersion`, `crest_clearance`
-  and the charge rows), `ballistics_model` (`angular_units`); `map_engine`
-  (`editing::tools::line_of_sight::terrain_survey::everon_manifest`);
+  and the charge rows), `ballistics_model` (`angular_units`);
+  `map_editing_tools::line_of_sight::terrain_survey::everon_manifest`;
   `overlay_instances::fire_mission_marks`, `unit_symbology::markers`,
   `terrain_line_of_sight::elevation_profile`, `terrain_elevation::manifest` and
   `map_draw_lanes::lane_roles`.

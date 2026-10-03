@@ -10,6 +10,7 @@
 use crate::Error;
 use crate::store::*;
 use world_chunks::ChunkId;
+use world_file_formats::ids::PrefabId;
 
 fn gzip(text: &str) -> Vec<u8> {
     prefab_catalog::test_fixtures::gzip(text.as_bytes())
@@ -23,7 +24,7 @@ fn gunzip_and_plain_both_parse() {
     assert_eq!(store.load_prefabs_gz(&gzip(json)).unwrap(), 1);
 
     assert_eq!(store.load_prefabs_gz(json.as_bytes()).unwrap(), 1);
-    assert_eq!(store.prefab_by_id.get(&9.0_f64.to_bits()).unwrap().code, 0);
+    assert_eq!(store.prefab_by_id.get(&PrefabId::new(9)).unwrap().code, 0);
 }
 
 #[test]

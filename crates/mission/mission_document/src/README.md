@@ -21,8 +21,9 @@ crates/mission/mission_document/src/
 
 `lib.rs` re-exports `MissionDocCore` and the rows, patches and connection vocabulary its methods
 take; `rows/` holds the `impl MissionDocCore` blocks by concern and `selection.rs` the picking and
-marquee policy. A command takes the mission model's ids (`SlotId`, `ZoneId`, `TriggerId`,
-`MarkerId`, `MissionId`), `mission_validation::AssetId` and this crate's ids, and writes their bare
+marquee policy. A command takes a slot's durable editor id (`orbat_slot_ids::SlotUid`), the
+mission model's ids (`ZoneId`, `TriggerId`, `MarkerId`, `MissionId`), `mission_validation::AssetId`
+and this crate's ids, and writes their bare
 strings into the maps, so the Yjs maps and every exported payload keep their exact shapes.
 `MissionDocCore::with_undo_clock` is the host clock seam (a `time_source::Clock`); `new` reads the
 platform clock, or `SteppingClock` in this crate's unit tests.

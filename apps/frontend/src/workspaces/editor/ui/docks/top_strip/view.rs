@@ -132,7 +132,7 @@ pub fn TopCommandStrip(
         }
         {
             let (factions, squads, slot_squad_ids) =
-                map_engine::editing::hosted_commands::census_input();
+                mission_editing_commands::hosted_commands::census_input();
             census_from_rows(&factions, &squads, &slot_squad_ids)
         }
     });

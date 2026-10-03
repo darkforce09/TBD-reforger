@@ -64,8 +64,8 @@ compiles every surface.
 
 ## Boundaries
 
-- Depends on: `map_engine` (`editing::hosted_commands` and `editing::host`); the mission crates
-  (`mission_model`, `mission_payload`, `mission_compiler`, `mission_validation`,
+- Depends on: `mission_editing_commands::hosted_commands` and `mission_editing_session::host`; the
+  mission crates (`mission_model`, `mission_payload`, `mission_compiler`, `mission_validation`,
   `mission_document`, `mission_operations`, `formation_geometry`); the editor's `arsenal/`, `bridge/` and `session/` in
   `apps/frontend/src/workspaces/editor/`; `crate::foundation` (the
   [API](/documentation/glossary/a_to_f.md#api) client and DTOs, the auth store, `modal_stack` and the

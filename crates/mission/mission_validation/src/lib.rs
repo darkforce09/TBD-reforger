@@ -4,7 +4,7 @@
 //! rules and answers every finding of every rule ([`default_registry`],
 //! [`Registry::evaluate_with_context`], [`validate_editor_payload`]); proves each rule can fire on
 //! its own trip fixture ([`Registry::self_check`]).
-//! **Position:** mission tier 3, over `mission_payload` (`terrain_bounds`) and
+//! **Position:** mission tier 4, over `mission_payload` (`terrain_bounds`) and
 //! `mission_wire_safety` (the cargo capacity scan). The Mission Creator's validation panel
 //! evaluates the payload it compiles; the game-document compiler of `mission_compiler` reports its
 //! compile findings as [`Finding`] values; the API re-exports [`Finding`] and [`Severity`] for its

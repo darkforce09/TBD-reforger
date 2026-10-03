@@ -6,11 +6,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::streaming::scheduler::state::ResidencyEvent;
-use crate::streaming::scheduler::state::WorldResidency;
+use chunk_draw_buffers::world_residency::WorldResidency;
+use chunk_scheduler::state::ResidencyEvent;
 use map_coordinates::chunk_math::TerrainSizeM;
 use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
-use world_chunks::chunk_id::ChunkId;
 use world_chunks::terrain_manifest::parse_manifest_binary;
 use world_line_of_sight::WorldOccluder;
 use world_line_of_sight::occluder_library::ArchiveBoot;
@@ -226,12 +225,12 @@ impl OccluderHost {
                     if let Some(c) = residency.chunk(&id)
                         && c.count > 0
                     {
-                        self.occ.insert_chunk(&ChunkId::new(id.as_str()), c);
+                        self.occ.insert_chunk(&id, c);
                         work = true;
                     }
                 }
                 ResidencyEvent::Evicted(id) => {
-                    self.occ.remove_chunk(&ChunkId::new(id));
+                    self.occ.remove_chunk(&id);
                     work = true;
                 }
             }

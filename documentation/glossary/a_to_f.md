@@ -188,7 +188,7 @@ Digital elevation model: a terrain's ground height as a raster. Everon's is one 
 greyscale image at 2 m per pixel, which the map engine decodes into metres for the hillshade, the
 contour lines, the sea band, the height readout and line-of-sight walks.
 
-In code: `crates/terrain/terrain_elevation/src/` (`DemVectorGrid` in `grid.rs`); `legacy/map_engine/src/editing/tools/line_of_sight/terrain_survey.rs`; `assets/terrains/everon/dem/everon-dem-16bit.png`.
+In code: `crates/terrain/terrain_elevation/src/` (`DemVectorGrid` in `grid.rs`); `crates/mission_editing/map_editing_tools/src/line_of_sight/terrain_survey.rs`; `assets/terrains/everon/dem/everon-dem-16bit.png`.
 
 See: [Elevation model](/crates/terrain/terrain_elevation/README.md), [Everon elevation model](/assets/terrains/everon/dem/README.md).
 

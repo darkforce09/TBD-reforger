@@ -12,7 +12,7 @@ description = "The mergeable mission document: rows, hydrate and export, merge, 
 
 [package.metadata.layout]
 category = "crates/mission"
-tier = 4
+tier = 5
 targets = "any"
 
 [features]
@@ -25,6 +25,7 @@ mission_crdt = { workspace = true }
 mission_model = { workspace = true }
 mission_validation = { workspace = true }
 newtype_ids = { workspace = true }
+orbat_slot_ids = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror = { workspace = true }
 time_source = { workspace = true }

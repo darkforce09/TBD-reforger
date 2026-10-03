@@ -77,7 +77,7 @@ pub struct ModVehicle {
 #[serde(rename_all = "camelCase")]
 pub struct ModVehicleSeat {
     /// References `slots[].uid` — the DURABLE identity, never the derived `slots[].id`, which shifts under role renames and reorders (the same rule `leaderSlotId` follows). Always emitted: every seat here came from a crew entry, so it always names an occupant.
-    pub slot_id: crate::ids::SlotUid,
+    pub slot_id: orbat_slot_ids::SlotUid,
 
     /// A token of `VEHICLE_SEAT_ROLES` (in the `mission_compiler` crate), the schema's own closed enum.
     pub role: String,
@@ -92,10 +92,10 @@ pub struct ModVehicleSeat {
 #[serde(rename_all = "camelCase")]
 pub struct ModSlot {
     /// Id.
-    pub id: crate::ids::SlotId,
+    pub id: orbat_slot_ids::SlotId,
 
     /// Uid.
-    pub uid: crate::ids::SlotUid,
+    pub uid: orbat_slot_ids::SlotUid,
     /// Faction.
     pub faction: String,
     /// Group callsign.
@@ -258,7 +258,7 @@ pub struct ModOrbatGroup {
 
     /// Squad leader identity, authored once at `/editor/squads/*/leaderSlotId` and emitted on the group so per-seat copies cannot disagree.
     #[serde(rename = "leaderSlotId", skip_serializing_if = "Option::is_none")]
-    pub leader_slot_id: Option<crate::ids::SlotUid>,
+    pub leader_slot_id: Option<orbat_slot_ids::SlotUid>,
 }
 
 /// Domain representation of mod orbat faction.

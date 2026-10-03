@@ -16,8 +16,6 @@ pub(super) const RULE3A_HEAD: &str = "==> engine-layers rule 3a — only the enu
      name graphics_engine::frame under legacy/map_engine/src";
 pub(super) const RULE3B_HEAD: &str = "==> engine-layers rule 3b — no GPU-resource module of \
      graphics_engine named under legacy/map_engine/src";
-pub(super) const RULE5_HEAD: &str = "==> engine-layers rule 5 — no web_sys / leptos / wasm_bindgen under \
-     legacy/map_engine/src/editing";
 pub(super) const RULE6_HEAD: &str = "==> engine-layers rule 6 — apps/frontend must not import graphics_engine \
      or a wasm-only crates/graphics member";
 pub(super) const RULE7_HEAD: &str = "==> engine-layers rule 7 — legacy/map_engine/src/world names no home \
@@ -47,13 +45,6 @@ pub(super) const RULE3B_TAIL: &[&str] = &[
     "      the construction; do not add a row to RULE3B_PIN",
     "      (documentation/standards/engine_boundary_rules.md §5 rule 3b).",
 ];
-pub(super) const RULE5_TAIL: &[&str] = &[
-    "      editing/ holds the editor's DECISIONS — tool state machines, the undo drive, the",
-    "      command formatting — and every one of them must be answerable by `cargo test` with no",
-    "      browser. Take what only a host can supply as an injected closure or fn pointer, and",
-    "      leave the window, the signal and the element on the frontend side of the wall",
-    "      (documentation/standards/engine_boundary_rules.md §5 rule 5).",
-];
 pub(super) const RULE6_TAIL: &[&str] = &[
     "      The frontend reaches the renderer through map_engine and only through it —",
     "      that crate owns the frame vocabulary (rule 3a) and the GPU resources (rule 3b). Ask",
@@ -63,9 +54,9 @@ pub(super) const RULE6_TAIL: &[&str] = &[
 ];
 pub(super) const RULE7_TAIL: &[&str] = &[
     "      world/ is streamed, immutable and never persisted; the mission document (yrs,",
-    "      mission_crdt, mission_document, mission_operations and the editing module that hosts",
-    "      it) is authored, undoable and persisted. A document handle in world/ fuses them back",
-    "      together — hand the world's answer to the editing layer instead",
+    "      mission_crdt, mission_document, mission_operations and the mission-editing crates",
+    "      that host it) is authored, undoable and persisted. A document handle in world/ fuses",
+    "      them back together — hand the world's answer to the editing layer instead",
     "      (documentation/standards/engine_boundary_rules.md §2D).",
 ];
 pub(super) const PROBE_FAIL: &[&str] = &[

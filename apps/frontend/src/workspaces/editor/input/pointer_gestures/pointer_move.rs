@@ -254,7 +254,7 @@ pub(super) fn make_pointer_move_handler(
                                     if let Some(e) = engine.borrow_mut().as_mut() {
                                         let slot_ids: Vec<String> = ids
                                             .iter()
-                                            .filter(|i| !engine_ops::is_vehicle_id(i))
+                                            .filter(|i| !engine_ops::is_vehicle_id(i.as_str()))
                                             .cloned()
                                             .collect();
                                         e.set_selection(slot_ids);

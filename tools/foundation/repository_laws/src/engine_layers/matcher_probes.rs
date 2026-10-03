@@ -1,6 +1,6 @@
 //! The engine-layer matchers, compiled and proved before any of them judges source.
 //!
-//! **Role:** compiles the seven constant matchers of the engine-layer rules and runs each over
+//! **Role:** compiles the six constant matchers of the engine-layer rules and runs each over
 //! subjects whose answers are known: the shapes it must match and the legitimate spellings it
 //! must not; and does the same for rule 6's matcher over the wasm-only graphics crates, which is
 //! built from their names.
@@ -127,9 +127,10 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
         Err(cause) => return Err(refuse(o, "engine-layers rule 3b self-probe", cause)),
     }
 
-    // Rule 7. The bare word "yrs", a crate whose name ends in a document crate's, a module whose
-    // name starts with `editing` and the mission crates outside the document are the false
-    // positives that would make this matcher noise rather than a rule.
+    // Rule 7. The bare word "yrs", a crate whose name ends in a document or mission-editing
+    // crate's, a crate-local module whose name starts with `editing` and the mission crates
+    // outside the document are the false positives that would make this matcher noise rather than
+    // a rule.
     let world_side = probed(
         o,
         "engine-layers rule 7 pattern",
@@ -140,38 +141,17 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
             "use mission_operations::entity::paste_at_cursor;",
             "use yrs::{Doc, Transact};",
             "fn tx(d: &yrs::Doc) -> yrs::TransactionMut<'_> { d.transact_mut() }",
-            "use crate::editing::history::UndoStack;",
-            "use super::super::super::editing::history::UndoStack;",
+            "use mission_editing_session::history::UndoStack;",
+            "    let n = map_editing_tools::ruler::chain_length(&points);",
         ],
         &[
             "use crate::editing_notes::Note;",
+            "use my_mission_editing_session::Row;",
             "use my_mission_document::Row;",
             "use mission_model::orbat::OrbatSlot;",
             "// resurveyed 3 yrs after the original DEM pass",
             "use world_file_formats::archives::codec::to_bytes;",
             "use crate::world::terrain::dem::grid::DemVectorGrid;",
-        ],
-    )?;
-
-    // Rule 5. The negatives are what keep it a rule rather than noise: every legitimate line in
-    // `editing/` is a `crate::` path or a `std::` one, and the two prefix subjects prove the `\b`
-    // — a wall that can be walked through by appending letters to a crate name is not a wall.
-    let dom = probed(
-        o,
-        "engine-layers rule 5 pattern",
-        DOM_RE,
-        &[
-            "use web_sys::window;",
-            "use leptos::prelude::RwSignal;",
-            "use wasm_bindgen::prelude::*;",
-            "    let _ = wasm_bindgen::JsValue::from_f64(1.0);",
-            "// the host installs its leptos signal here",
-        ],
-        &[
-            "use mission_document::MissionDocCore;",
-            "use std::cell::RefCell;",
-            "use web_sysfs::open;",
-            "use leptosaur::prelude::*;",
         ],
     )?;
 
@@ -202,7 +182,6 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
         vocab,
         gpu,
         world_side,
-        dom,
         graphics_import,
     })
 }

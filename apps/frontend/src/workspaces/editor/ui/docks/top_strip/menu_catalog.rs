@@ -98,6 +98,6 @@ pub(super) const MENUS: [(&str, &[MenuItem]); 6] = [
 #[must_use]
 pub(super) fn selection_count() -> usize {
     {
-        map_engine::editing::host::selection_len()
+        mission_editing_session::host::selection_len()
     }
 }

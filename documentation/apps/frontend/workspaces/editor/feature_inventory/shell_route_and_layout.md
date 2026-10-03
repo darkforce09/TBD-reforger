@@ -70,7 +70,7 @@ SHELL-LAYOUT-001, SHELL-MAPDOWN-001 and SHELL-REVIEW-001 are rows added for ship
 Not built. No banner warns about an id that is not a UUID. The boot skips the server fetch for
 such an id and keeps the seeded document as a local draft
 (`session/hydrate/server_reconciliation.rs:124`, `is_uuid` in
-`legacy/map_engine/src/editing/persist/mission_id.rs:16`); Save Version still posts to
+`crates/mission_editing/mission_persistence/src/mission_id.rs:16`); Save Version still posts to
 `/missions/{id}/versions`, and the server's refusal shows in the save status.
 
 ### SHELL-CONFLICT-001 — Load conflict dialog

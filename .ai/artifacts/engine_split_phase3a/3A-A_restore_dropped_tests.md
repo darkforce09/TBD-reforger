@@ -81,12 +81,12 @@ These read as lies today:
 
 | site | cites |
 |---|---|
-| `legacy/map_engine/src/editing/tools/line_of_sight/tests/capture.rs:152` | `no_los_doc_writes` |
-| `legacy/map_engine/src/editing/tools/line_of_sight/tests/capture.rs:158` | `no_los_doc_writes` |
+| `crates/mission_editing/map_editing_tools/src/line_of_sight/tests/capture.rs:152` | `no_los_doc_writes` |
+| `crates/mission_editing/map_editing_tools/src/line_of_sight/tests/capture.rs:158` | `no_los_doc_writes` |
 | `apps/frontend/src/editor/panels/toolbelt.rs:1369` | `no_ruler_doc_writes` |
 
 Repoint them at the live engine test names. A fourth,
-`legacy/map_engine/src/editing/commands/selection_digest.rs:24`, cites the test from item 1
+`crates/mission_editing/mission_editing_commands/src/document_text/selection_digest.rs:24`, cites the test from item 1
 — it becomes true once you restore that test, so leave the citation and make it accurate.
 
 **Then sweep the whole repo**: no comment anywhere may cite a `#[test]` name that does not exist.

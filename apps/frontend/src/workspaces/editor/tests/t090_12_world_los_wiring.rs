@@ -40,7 +40,7 @@ fn adapter_live() -> String {
 fn projection_live() -> String {
     live_code(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/tools/line_of_sight/projection.rs"
+        "/../../crates/mission_editing/map_editing_tools/src/line_of_sight/projection.rs"
     )))
 }
 

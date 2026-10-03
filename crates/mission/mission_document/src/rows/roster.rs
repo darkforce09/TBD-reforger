@@ -4,8 +4,8 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use crate::ids::{FactionId, LayerId, SquadId};
-use mission_model::ids::SlotId;
 use mission_validation::AssetId;
+use orbat_slot_ids::SlotUid;
 
 use super::Any;
 use super::HashSet;
@@ -31,7 +31,7 @@ impl MissionDocCore {
     #[allow(clippy::too_many_arguments)]
     pub fn add_slot(
         &self,
-        id: impl Into<SlotId>,
+        id: impl Into<SlotUid>,
         squad_id: impl Into<SquadId>,
         layer_id: impl Into<LayerId>,
         index: u32,
@@ -44,7 +44,7 @@ impl MissionDocCore {
         rotation: f64,
     ) {
         let asset_id: Option<String> = asset_id.map(AssetId::into_inner);
-        let id: SlotId = id.into();
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let squad_id: SquadId = squad_id.into();
         let squad_id = squad_id.as_str();
@@ -130,10 +130,10 @@ impl MissionDocCore {
 
 impl MissionDocCore {
     /// Set leader using the supplied domain data.
-    pub fn set_leader(&self, squad_id: impl Into<SquadId>, slot_id: impl Into<SlotId>) {
+    pub fn set_leader(&self, squad_id: impl Into<SquadId>, slot_id: impl Into<SlotUid>) {
         let squad_id: SquadId = squad_id.into();
         let squad_id = squad_id.as_str();
-        let slot_id: SlotId = slot_id.into();
+        let slot_id: SlotUid = slot_id.into();
         let slot_id = slot_id.as_str();
         let mut txn = self.begin();
         set_leader_in_txn(&mut txn, &self.squads, squad_id, slot_id);
@@ -180,10 +180,10 @@ impl MissionDocCore {
     /// Emptying the source squad **deletes it** — the row, its place in `faction.squadIds`, and every vehicle attached to it (see the private `garbage_collect_squad_in_txn` of the `slot_rows` module). That is the drag-refile contract and every existing caller depends on it; a batch reassign wants the opposite and takes [`Self::move_slot_to_squad_keep_source`].
     pub fn move_slot_to_squad(
         &self,
-        slot_id: impl Into<SlotId>,
+        slot_id: impl Into<SlotUid>,
         dest_squad_id: impl Into<SquadId>,
     ) {
-        let slot_id: SlotId = slot_id.into();
+        let slot_id: SlotUid = slot_id.into();
         let slot_id = slot_id.as_str();
         let dest_squad_id: SquadId = dest_squad_id.into();
         let dest_squad_id = dest_squad_id.as_str();
@@ -195,10 +195,10 @@ impl MissionDocCore {
     /// The one thing the kept squad does *not* keep is a now-dangling `leaderSlotId`: the leader left with the last slot, and a squad pointing at a member it no longer has is the state the private `ensure_leader_invariant_in_txn` (in the `slot_rows` module) exists to prevent. An empty squad with no leader key is exactly what [`Self::add_squad`] mints, so the kept row lands back in that shape.
     pub fn move_slot_to_squad_keep_source(
         &self,
-        slot_id: impl Into<SlotId>,
+        slot_id: impl Into<SlotUid>,
         dest_squad_id: impl Into<SquadId>,
     ) {
-        let slot_id: SlotId = slot_id.into();
+        let slot_id: SlotUid = slot_id.into();
         let slot_id = slot_id.as_str();
         let dest_squad_id: SquadId = dest_squad_id.into();
         let dest_squad_id = dest_squad_id.as_str();

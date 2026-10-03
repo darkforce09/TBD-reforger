@@ -62,7 +62,7 @@ All `pub(crate)`, for the crate's tests alone:
   `contracts/fixtures/api_goldens/`; the route tables `routes.rs` of the eight domains
   under `apps/api/src/`; the Mission Creator's
   `apps/frontend/src/workspaces/editor/bridge/host_state/`; the map engine's
-  `legacy/map_engine/src/editing/hosted_commands/` and
+  `crates/mission_editing/mission_editing_commands/src/hosted_commands/` and
   `crates/mission/mission_operations/src/entity/`; and the production files of this
   crate that `pins.rs` names.
 - Used by: the unit tests of the whole crate: the golden round trips in

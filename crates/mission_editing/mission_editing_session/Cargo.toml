@@ -1,0 +1,40 @@
+# The Mission Creator's editing session over the live mission document: the installed host and its
+# one borrow chain, the undo drive, undo grouping, the subject router, the selection universe, the
+# picks joined to document ids and the editor-authored overlay lanes. No browser or GPU code; the
+# Mission Creator injects every clock, prompt and transport as a closure or a function pointer.
+[package]
+name = "mission_editing_session"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's editing session: the hosted mission document, undo, routing, selection, picks and overlay lanes."
+
+[package.metadata.layout]
+category = "crates/mission_editing"
+tier = 6
+targets = "any"
+
+[dependencies]
+# The frozen orthographic camera the picks unproject a pixel through.
+camera_math = { workspace = true }
+# The slot columns the picks and the map-render filter read.
+mission_crdt = { workspace = true }
+# The hosted document, its undo stack and grouping, its tie policy and its comment and connection
+# ids.
+mission_document = { workspace = true }
+# The subject id a finding, a search hit or an outliner row routes a click by.
+mission_validation = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+# The point grid and the slot and point rows the picks and marquees ask for.
+spatial_indexes = { workspace = true }
+# The squad link input the picks translate, and the side tints of the marker lane.
+unit_symbology = { workspace = true }
+
+[dev-dependencies]
+# The ORBAT placement the squad-link pick test builds its document with.
+mission_operations = { workspace = true }
+
+[lints]
+workspace = true

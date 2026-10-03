@@ -233,7 +233,7 @@ mod t699 {
             &[
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
@@ -241,11 +241,11 @@ mod t699 {
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
@@ -255,7 +255,7 @@ mod t699 {
                 crate::foundation::test_support::editor_operations::ENTITY,
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
                 )),
             ]
             .concat(),
@@ -438,7 +438,7 @@ mod t739 {
         [
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -446,11 +446,11 @@ mod t739 {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -460,7 +460,7 @@ mod t739 {
             crate::foundation::test_support::editor_operations::ENTITY,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
             )),
         ]
         .concat()
@@ -672,7 +672,7 @@ mod t779 {
             &[
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
@@ -680,11 +680,11 @@ mod t779 {
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
@@ -694,7 +694,7 @@ mod t779 {
                 crate::foundation::test_support::editor_operations::ENTITY,
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+                    "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
                 )),
             ]
             .concat(),

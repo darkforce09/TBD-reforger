@@ -13,7 +13,7 @@ description = "The ordered validation rules of a mission editor payload, their f
 
 [package.metadata.layout]
 category = "crates/mission"
-tier = 3
+tier = 4
 targets = "any"
 
 [dependencies]

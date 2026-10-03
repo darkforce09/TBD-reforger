@@ -9,8 +9,8 @@
 //! it, and no sibling workspace does either.
 //! **Signals & state:** the document handle, the undo history, the selection and the armed
 //! placement live under [`bridge`]; the session signals live under [`session`]; every panel reads
-//! those signals and writes back through the map engine's hosted commands.
-//! **Invariants:** a document mutation travels through `map_engine::editing`, never
+//! those signals and writes back through the hosted commands of `mission_editing_commands`.
+//! **Invariants:** a document mutation travels through the editing crates, never
 //! straight out of a panel. A module that touches `web_sys` or a live engine handle is
 //! `#[cfg(target_arch = "wasm32")]`, and its `pub mod` line carries the same gate, so the native
 //! test build still compiles the pure half of the workspace.

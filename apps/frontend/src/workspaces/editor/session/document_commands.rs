@@ -3,13 +3,13 @@
 //! clipboard promises, toasts, and the editor command bridge.
 
 #[cfg(target_arch = "wasm32")]
-pub use map_engine::editing::commands::export_text::{
+pub use mission_editing_commands::document_text::export_text::{
     apply_row_metadata_to_export, compile_diagnostics_summary, compiled_export_text,
     export_gesture_is_duplicate, live_doc_title, row_meta_missing_message,
 };
-pub use map_engine::editing::commands::merge_report::duplicate_slot_id_report;
+pub use mission_editing_commands::document_text::merge_report::duplicate_slot_id_report;
 #[cfg(target_arch = "wasm32")]
-pub use map_engine::editing::commands::selection_digest::{
+pub use mission_editing_commands::document_text::selection_digest::{
     classnames_text, grid_position_text, resolve_selected_entities, selection_summary_text,
     SelectedEntity,
 };

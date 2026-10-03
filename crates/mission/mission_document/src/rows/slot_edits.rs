@@ -3,8 +3,8 @@
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
-use mission_model::ids::SlotId;
 use mission_validation::AssetId;
+use orbat_slot_ids::SlotUid;
 
 use super::MapPrelim;
 use super::MissionDocCore;
@@ -18,8 +18,8 @@ use yrs::Map;
 
 impl MissionDocCore {
     /// Remove one slot (mirrors `slots.delete(id)`; layer detach is out of the spike mutator set).
-    pub fn remove_slot(&self, id: impl Into<SlotId>) {
-        let id: SlotId = id.into();
+    pub fn remove_slot(&self, id: impl Into<SlotUid>) {
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         self.slots.remove(&mut txn, id);
@@ -58,12 +58,12 @@ impl MissionDocCore {
     /// Patch scalar slot fields; `None` leaves a field unchanged. Mirrors `ydoc.updateSlot`.
     pub fn update_slot(
         &self,
-        id: impl Into<SlotId>,
+        id: impl Into<SlotUid>,
         role: Option<String>,
         tag: Option<String>,
         stance: Option<String>,
     ) {
-        let id: SlotId = id.into();
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         update_slot_in_txn(&mut txn, &self.slots, id, role, tag, stance);
@@ -74,13 +74,13 @@ impl MissionDocCore {
     /// B2 — mutate an existing slot's role/tag/character in place (ORBAT Apply mutate semantics: the slot id — and with it every downstream `uid` reference — survives the re-apply). `tag` / `asset_id`: `Some(non-empty)` sets, `None`/empty clears (library rows are authoritative on Apply). Position, stance and identity fields are deliberately untouched — an operator-moved slot stays where it was moved.
     pub fn update_slot_role_character(
         &self,
-        id: impl Into<SlotId>,
+        id: impl Into<SlotUid>,
         role: &str,
         tag: Option<String>,
         asset_id: Option<AssetId>,
     ) {
         let asset_id: Option<String> = asset_id.map(AssetId::into_inner);
-        let id: SlotId = id.into();
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
@@ -109,11 +109,11 @@ impl MissionDocCore {
     /// Update slot identity using the supplied domain data.
     pub fn update_slot_identity(
         &self,
-        id: impl Into<SlotId>,
+        id: impl Into<SlotUid>,
         callsign: Option<String>,
         rank: Option<String>,
     ) {
-        let id: SlotId = id.into();
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
@@ -141,12 +141,12 @@ impl MissionDocCore {
     /// Update slot object using the supplied domain data.
     pub fn update_slot_object(
         &self,
-        id: impl Into<SlotId>,
+        id: impl Into<SlotUid>,
         asset_id: Option<AssetId>,
         description: Option<String>,
     ) {
         let asset_id: Option<String> = asset_id.map(AssetId::into_inner);
-        let id: SlotId = id.into();
+        let id: SlotUid = id.into();
         let id = id.as_str();
         if asset_id.is_none() && description.is_none() {
             return;
@@ -200,8 +200,12 @@ impl MissionDocCore {
 
 impl MissionDocCore {
     /// Update slot loadout using the supplied domain data.
-    pub fn update_slot_loadout(&self, id: impl Into<SlotId>, loadout_json: Option<String>) -> bool {
-        let id: SlotId = id.into();
+    pub fn update_slot_loadout(
+        &self,
+        id: impl Into<SlotUid>,
+        loadout_json: Option<String>,
+    ) -> bool {
+        let id: SlotUid = id.into();
         let id = id.as_str();
         let mut txn = self.begin();
         let Some(Out::YMap(slot)) = self.slots.get(&txn, id) else {

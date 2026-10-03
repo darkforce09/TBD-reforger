@@ -12,7 +12,7 @@ plain-text slot line, and the newtype ids every one of them names.
 
 ```text
 crates/mission/mission_model/
-├── Cargo.toml  the package: `newtype_ids`, `serde`, `serde_json`, `thiserror`; layout tier 1
+├── Cargo.toml  the package: `newtype_ids`, `orbat_slot_ids`, serde, `thiserror`; layout tier 2
 └── src/        the compiled rows, the ORBAT projection, the authored blocks, the slot line, the ids
 ```
 
@@ -27,7 +27,8 @@ editor's environment bag to the payload root and on to the compiled document; ea
 `spawn_modules`, `tactical_graphics`) parses its block into typed rows and answers the first
 problem as one readable sentence, an `Error::Refused`. `ids` declares one serde-transparent newtype
 per referent, so every JSON shape, stored payload, API golden and artifact digest stays
-byte-identical while a slot's durable `SlotUid` and its derived `SlotId` cannot be confused.
+byte-identical; the slot rows name a slot's durable `SlotUid` and its derived `SlotId` from
+`orbat_slot_ids`, so the two cannot be confused.
 
 The [source README](/crates/mission/mission_model/src/README.md) has the block table and the steps
 for adding a block.
@@ -62,14 +63,14 @@ rows and the block registry):
 - the block modules' `parse`, `validate`, typed rows and vocabulary constants (`KINDS`,
   `MAX_POINTS`, `FREQ_MIN_MHZ`, `AUTHORED_MODES`, `WEATHER_PRESETS`, `MUSIC_EVENTS`, …).
 - `slot_line::format_slot_line`.
-- `ids`: `MissionId`, `MissionTemplateId`, `FactionPresetId`, `ZoneId`, `SlotId`, `SlotUid`,
-  `NetId`, `TaskId`, `TriggerId`, `MarkerId`, `SpawnModuleId`, `AudioEmitterId`, `MusicCueId`,
-  `TacticalGraphicId`.
+- `ids`: `MissionId`, `MissionTemplateId`, `FactionPresetId`, `ZoneId`, `NetId`, `TaskId`,
+  `TriggerId`, `MarkerId`, `SpawnModuleId`, `AudioEmitterId`, `MusicCueId`, `TacticalGraphicId`.
 - `Error` (`Refused`, `FactionJoinKeyMissing`, `FactionJoinKeyPadded`) and `Result`.
 
 ## Boundaries
 
-- Depends on: `newtype_ids` (foundation), `serde`, `serde_json` (`preserve_order`) and `thiserror`.
+- Depends on: `newtype_ids` and `orbat_slot_ids` (foundation), `serde`, `serde_json`
+  (`preserve_order`) and `thiserror`.
 - Used by:
   - `mission_payload`, which copies the authored blocks onto the payload root and derives the
     export payload's ORBAT;
@@ -81,7 +82,7 @@ rows and the block registry):
   - the API's operations domain (`validate_faction_join_key`, the ORBAT templates);
   - the Mission Creator's inspector panels and ORBAT manager
     (`apps/frontend/src/workspaces/editor/ui/`).
-- Rules: mission tier 1, so the crate depends on no compiler and no map engine
+- Rules: mission tier 2, so the crate depends on no compiler and no map engine
   (`cargo xtask verify crate-tiers`); no primitive public id field
   (`cargo xtask verify crate-anatomy`); the round trips through the payload compiler live in
   `mission_payload`, never as a dev-dependency here.

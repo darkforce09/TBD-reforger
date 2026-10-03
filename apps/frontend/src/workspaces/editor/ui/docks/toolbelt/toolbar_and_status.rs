@@ -36,10 +36,10 @@ pub(super) fn fmt_coord_eden(v: Option<f64>) -> String {
 #[cfg(target_arch = "wasm32")]
 #[component]
 pub fn ModeToolbar(
-    tool_mode: RwSignal<map_engine::editing::tools::ruler::EditorTool>,
+    tool_mode: RwSignal<map_editing_tools::ruler::EditorTool>,
     los_mode: RwSignal<LosMode>,
 ) -> impl IntoView {
-    use map_engine::editing::tools::ruler::EditorTool;
+    use map_editing_tools::ruler::EditorTool;
     let cls = move |mine: EditorTool| {
         if tool_mode.get() == mine {
             cn(&[TOOL_BASE, TOGGLED_PLATE])
@@ -118,7 +118,7 @@ pub fn StatusBar(
         let ids = selected_ids.get();
         if ids.len() == 1 {
             {
-                return map_engine::editing::hosted_commands::read_attrs(&ids[0])
+                return mission_editing_commands::hosted_commands::read_attrs(ids[0].as_str())
                     .map(|a| (a.x, a.y, a.z));
             }
         }

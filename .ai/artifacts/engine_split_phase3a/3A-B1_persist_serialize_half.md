@@ -5,7 +5,7 @@ nothing else. `state/hydrate.rs` belongs to `3A-B2` — do not touch it.
 
 ## The cut
 
-**Crosses into `legacy/map_engine/src/editing/persist/`:** serialization, deserialization,
+**Crosses into `crates/mission_editing/mission_persistence/src/`:** serialization, deserialization,
 key arithmetic, and the merge / conflict policy. Everything decidable without a browser, so it
 becomes natively `cargo test`-able.
 
@@ -44,9 +44,9 @@ Everything naming `idb::` — `open_db`, `put_raw`, `read_raw`, `get_raw`, `has_
 ## There is an unfinished start on disk — you own the decision
 
 ```
-legacy/map_engine/src/editing/persist/blob.rs         96 LOC
-legacy/map_engine/src/editing/persist/record_key.rs   43 LOC
-legacy/map_engine/src/editing/persist/tests/          EMPTY
+crates/mission_editing/mission_persistence/src/blob.rs         96 LOC
+crates/mission_editing/mission_persistence/src/record_key.rs   43 LOC
+crates/mission_editing/mission_persistence/src/tests/          EMPTY
 ```
 
 Untracked, and **`persist` is not declared in `editing/mod.rs`**. A previous agent was interrupted

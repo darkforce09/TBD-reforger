@@ -5,7 +5,7 @@
 //! ([`compile_export`]) and the version body of `POST /missions/:id/versions` ([`version_body`],
 //! [`version_body_to_writer`]), stamps the terrain bounds ([`terrain_bounds`]) and holds the kit
 //! alias table the game-document compiler resolves registry aliases through ([`kit_aliases`]).
-//! **Position:** mission tier 2, over `mission_model` (the ORBAT projection and the authored
+//! **Position:** mission tier 3, over `mission_model` (the ORBAT projection and the authored
 //! block registry), `serde` and `serde_json`. The Mission Creator compiles through it on Save and
 //! Export; the game-document compiler, the validator and the document operations call it; the
 //! API reads the kit aliases.

@@ -9,9 +9,6 @@ pub mod preferences;
 /// Progress.
 pub mod progress;
 
-/// Toggles.
-pub mod toggles;
-
 /// Statistics.
 #[cfg(all(target_arch = "wasm32", feature = "render"))]
 pub mod statistics;

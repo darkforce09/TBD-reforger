@@ -71,7 +71,7 @@ command strip.
 
 - [Mission Creator](/apps/frontend/src/workspaces/editor/) — every area: the page, docks,
   inspectors, input and browser session.
-- [Map engine editing](/legacy/map_engine/src/editing/) — the hosted commands, undo history,
+- [Mission editing crates](/crates/mission_editing/) — the hosted commands, undo history,
   tools and persistence the areas call.
 - [Mission crates](/crates/mission/) — the mission document, its authoring commands and the
   payload compiler.
@@ -82,8 +82,8 @@ command strip.
   and the [feature doc template](/documentation/standards/templates/feature_doc.md); the
   committed code under the folders above; the ticket registry in `.ai/tickets/` for Open work.
 - Used by: the Related documentation of the in-code READMEs under
-  `apps/frontend/src/workspaces/editor/`, of `legacy/map_engine/src/editing/` and of the mission
-  crates in `crates/mission/`; the
+  `apps/frontend/src/workspaces/editor/`, of the mission editing crates in
+  `crates/mission_editing/` and of the mission crates in `crates/mission/`; the
   [Eden gap analysis](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md),
   which pairs its rows with Eden's by ID; the [roadmap](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md)
   and the [decisions log](/documentation/apps/frontend/workspaces/editor/decisions.md).

@@ -1,22 +1,20 @@
 # Map engine integration suites
 
-The crate-root integration suites of the map engine: three headless document suites that run the
-authoring commands, paste and zone save and reload against the mission document, through the same
-mission crates the `editing` tier hosts for the Mission Creator.
+The map engine's crate-root integration test folder. It holds no suite: the three headless document
+suites it held drive only the mission crates and run as integration suites of `mission_operations`
+([its suites](/crates/mission/mission_operations/tests/README.md)). The folder stays until the map
+engine's remaining tiers leave the crate.
 
 ## Contents
 
 ```text
 legacy/map_engine/tests/
-├── operation_boundaries.rs    authoring commands at the edges of the document
-├── paste_keeps_authored_z.rs  paste keeps each authored height
-└── zone_round_trip.rs         zones survive a save and a reload
+└── README.md  this file
 ```
 
 ## Boundaries
 
-- Depends on: the crate's `editing` tier (the suites are gated on it), which links
-  `mission_document`, `mission_operations`, `mission_payload` and `formation_geometry`.
-- Used by: `cargo test -p map_engine --all-features`.
-- Rules: the suites keep their assertions and fixtures. The camera suites run in their own crate
-  (`crates/geometry/camera_math/tests/`).
+- Depends on: nothing; the folder holds no test.
+- Used by: nobody; `cargo test -p map_engine --all-features` runs the crate's unit tests only.
+- Rules: an integration suite that drives only crates under `crates/` lives with the crate it
+  drives, not here. The camera suites run in their own crate (`crates/geometry/camera_math/tests/`).

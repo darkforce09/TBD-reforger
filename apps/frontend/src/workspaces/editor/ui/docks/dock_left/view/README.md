@@ -21,7 +21,7 @@ apps/frontend/src/workspaces/editor/ui/docks/dock_left/view/
   `virtual_tree` from `apps/frontend/src/workspaces/editor/ui/outliner/tree.rs` and the
   outliner's `create_layer`; `MaterialIcon` from `crate::foundation::ui`; and, in the browser build,
   `complete_layer_drop_onto_root` and `cancel_layer_drag` from
-  `map_engine::editing::hosted_commands`.
+  `mission_editing_commands::hosted_commands`.
 - Used by: `DockLeft` in `apps/frontend/src/workspaces/editor/ui/docks/dock_left/view.rs`, the
   only place that expands either macro.
 - Rules: both macros take the same 28 named arguments, and

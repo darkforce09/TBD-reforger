@@ -93,17 +93,17 @@ abandoned drag costs no undo step and a finished one costs one.
   bounds), `mission_validation` (`AssetId`), `formation_geometry`, `map_coordinates` (the Apply
   anchors); `serde` and `serde_json`.
 - Used by:
-  - the map engine: `legacy/map_engine/src/editing/hosted_commands/`,
-    and `legacy/map_engine/src/editing/commands/merge_report.rs`;
+  - the map engine: `crates/mission_editing/mission_editing_commands/src/hosted_commands/`,
+    and `crates/mission_editing/mission_editing_commands/src/document_text/merge_report.rs`;
   - the Mission Creator in `apps/frontend/src/workspaces/editor/` (`arsenal/`, `bridge/`,
     `input/`, `mission_editor/`, `shell/` and `ui/`) and the DTOs of
     `apps/frontend/src/foundation/transport/dto/`;
-  - `legacy/map_engine/tests/operation_boundaries.rs`.
+  - `crates/mission/mission_operations/tests/operation_boundaries.rs`.
 - Rules:
   - a refused transform leaves the document and its undo depth unchanged, and a paste keeps unknown
     fields and the authored elevation (`refused_transform_leaves_document_and_history_unchanged`,
     `clipboard_paste_preserves_unknown_fields_and_authored_elevation` in
-    `legacy/map_engine/tests/operation_boundaries.rs`);
+    `crates/mission/mission_operations/tests/operation_boundaries.rs`);
   - a Copy that finds nothing keeps the previous buffer, and every Apply draws a new seed
     (`a_copy_that_finds_nothing_leaves_the_previous_buffer_standing`,
     `every_apply_draws_a_seed_the_previous_apply_did_not` in `tests/cargo.rs`);

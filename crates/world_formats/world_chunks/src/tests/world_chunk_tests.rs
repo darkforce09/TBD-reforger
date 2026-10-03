@@ -122,3 +122,34 @@ fn parse_chunk_v2_columns_default_to_identity_on_v1_rows() {
     assert_eq!(c.scale, vec![1.0_f32, 1.15, 0.5]);
     assert_eq!(c.rows_by_class.get(&1), Some(&vec![0u32, 1, 2]));
 }
+
+#[test]
+fn a_fractional_or_negative_pid_joins_no_prefab() {
+    let tree = |prefab_id: u32| PrefabRow {
+        prefab_id: PrefabId::new(prefab_id),
+        kind: "tree".into(),
+        class: "conifer".into(),
+        ..Default::default()
+    };
+    let (by_id, _) = build_prefab_maps(vec![tree(0), tree(14)]);
+    let tree_code = by_id[&PrefabId::new(14)].code;
+    assert_ne!(tree_code, NO_CLASS, "the joined rows carry a render class");
+    let raw: Value = serde_json::from_str(
+        r#"{ "instances": [
+            [14, 1.0, 1.0, 0, 0],
+            [14.5, 2.0, 2.0, 0, 0],
+            [-14, 3.0, 3.0, 0, 0],
+            [0, 4.0, 4.0, 0, 0],
+            [-0.0, 5.0, 5.0, 0, 0]
+        ] }"#,
+    )
+    .expect("chunk JSON");
+    let c = parse_chunk(&ChunkId::from("0_0"), &raw, &by_id).unwrap();
+    assert_eq!(c.count, 5, "every row is kept, joined or not");
+    assert_eq!(
+        c.cls_codes,
+        vec![tree_code, NO_CLASS, NO_CLASS, tree_code, NO_CLASS],
+        "only the exact f64 of a catalogue id joins its prefab"
+    );
+    assert_eq!(c.rows_by_class.get(&tree_code), Some(&vec![0_u32, 3]));
+}

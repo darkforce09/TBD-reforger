@@ -70,8 +70,9 @@ the panel can select it.
     the compiled payload with `known_asset_ids` from the item
     [registry](/documentation/glossary/n_to_z.md#registry) and no other fact, and renders every
     `Finding`, compile findings included;
-  - `mission_compiler`, whose compile findings are `Finding` values, and the map engine's
-    `editing::commands`, which summarises those findings for the compiled export;
+  - `mission_compiler`, whose compile findings are `Finding` values, and
+    `mission_editing_commands::document_text`, which summarises those findings for the compiled
+    export;
   - the [API](/documentation/glossary/a_to_f.md#api), which re-exports `Finding` and `Severity` from
     `apps/api/src/missions/services/mission_compile.rs` and runs no rule.
 - Rules:

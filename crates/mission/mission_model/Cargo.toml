@@ -13,11 +13,12 @@ description = "The compiled rows, ORBAT projection, authored extension blocks, s
 
 [package.metadata.layout]
 category = "crates/mission"
-tier = 1
+tier = 2
 targets = "any"
 
 [dependencies]
 newtype_ids = { workspace = true }
+orbat_slot_ids = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }

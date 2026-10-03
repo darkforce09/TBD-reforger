@@ -32,7 +32,7 @@ fn glyph_block() -> String {
     let anchor = format!("pub struct Comment{}", "Point");
     let raw = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../legacy/map_engine/src/editing/lanes/comments.rs"
+        "/../../crates/mission_editing/mission_editing_session/src/lanes/comments.rs"
     ));
     assert_eq!(raw.matches(anchor.as_str()).count(), 1);
     live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
@@ -271,7 +271,7 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
         &[
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_attributes.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_attributes.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -279,11 +279,11 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/slot_loadouts.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/slot_loadouts.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/composition_library.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/composition_library.rs"
             )),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -293,7 +293,7 @@ fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
             crate::foundation::test_support::editor_operations::ENTITY,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../legacy/map_engine/src/editing/hosted_commands/selection_transform.rs"
+                "/../../crates/mission_editing/mission_editing_commands/src/hosted_commands/selection_transform.rs"
             )),
         ]
         .concat(),

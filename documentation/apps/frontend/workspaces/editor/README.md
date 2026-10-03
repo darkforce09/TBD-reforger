@@ -57,8 +57,8 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
 - [Mission Creator](/apps/frontend/src/workspaces/editor/) — the editor page, its docks,
   dialogs, input, canvas bridge, browser session and the Arsenal, which every document here
   describes.
-- [Mission crates](/crates/mission/) and the map engine's
-  [editing](/legacy/map_engine/src/editing/) — the mission document, its compiler and
+- [Mission crates](/crates/mission/) and the
+  [mission editing crates](/crates/mission_editing/) — the mission document, its compiler and
   validation, and the editing commands and tools the editor drives.
 - [Missions domain](/apps/api/src/missions/) — the mission versions the editor loads
   and saves, and the item [registry](/documentation/glossary/n_to_z.md#registry) the palettes and the

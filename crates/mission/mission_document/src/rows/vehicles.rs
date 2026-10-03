@@ -4,7 +4,7 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use crate::ids::{CrewSeatId, FactionId, SquadId, VehicleId};
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::Any;
 use super::Arc;
@@ -174,13 +174,13 @@ impl MissionDocCore {
         &self,
         vehicle_id: impl Into<VehicleId>,
         seat_id: impl Into<CrewSeatId>,
-        slot_id: impl Into<SlotId>,
+        slot_id: impl Into<SlotUid>,
     ) {
         let vehicle_id: VehicleId = vehicle_id.into();
         let vehicle_id = vehicle_id.as_str();
         let seat_id: CrewSeatId = seat_id.into();
         let seat_id = seat_id.as_str();
-        let slot_id: SlotId = slot_id.into();
+        let slot_id: SlotUid = slot_id.into();
         let slot_id = slot_id.as_str();
         if seat_id.is_empty() || slot_id.is_empty() {
             return;

@@ -42,7 +42,7 @@ pub fn marker_icons() -> &'static [String] {
 
 /// Is `icon` one of the closed `$defs/marker.icon` aliases?
 ///
-/// Every marker write in [`map_engine::editing::hosted_commands::map_markers`] passes through this. It is exact and
+/// Every marker write in [`mission_editing_commands::hosted_commands::map_markers`] passes through this. It is exact and
 /// case-SENSITIVE: the enum is lower-case and `additionalProperties`-style validators do not
 /// case-fold, so accepting `"Objective"` here would author a value the schema rejects at save time,
 /// far from the control that produced it.

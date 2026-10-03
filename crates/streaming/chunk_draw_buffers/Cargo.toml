@@ -1,0 +1,48 @@
+# The draw buffers composed from the resident world chunks (draw set, tree, prop and badge glyphs,
+# pier, bridge-rail and fence strips, building fills and outlines), the world-layer toggles, the
+# residency statistics, and the world residency that owns the chunk residency and these buffers.
+[package]
+name = "chunk_draw_buffers"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "World draw buffers composed from the chunk residency, the layer toggles and the world residency owner."
+
+[package.metadata.layout]
+category = "crates/streaming"
+tier = 5
+targets = "any"
+
+[dependencies]
+# The chunk residency, its read accessors and its rebuild requests.
+chunk_scheduler = { workspace = true }
+# The class gates, the instance budget and the building zoom gate.
+map_draw_lanes = { workspace = true }
+# Glyph sizes, icon keys and colour parsing.
+label_layout = { workspace = true }
+# Class codes and the oriented footprint boxes.
+prefab_catalog = { workspace = true }
+# The chunk identifier and the resident chunk columns.
+world_chunks = { workspace = true }
+# The viewport box and the terrain size.
+map_coordinates = { workspace = true }
+# Colour normalisation, icon instance packing and pixel-size floors.
+render_primitives = { workspace = true }
+# The tree counts and the heatmap hand-over rule.
+vegetation = { workspace = true }
+# The airfield structures and box, and the strip composers.
+road_network = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The draw buffer tests set the viewport, the zoom and resident chunk rows directly.
+chunk_scheduler = { workspace = true, features = ["test_fixtures"] }
+# The tests build gzip chunks and read the Everon prefab catalogue in both forms.
+flate2 = { workspace = true }
+prefab_catalog = { workspace = true, features = ["test_fixtures"] }
+serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
+
+[lints]
+workspace = true

@@ -11,7 +11,7 @@ stores or compiles a version live in the `mission_wire_safety` crate, which the 
 
 ```text
 crates/mission/mission_validation/
-├── Cargo.toml  the package: `mission_payload`, `mission_wire_safety`, `newtype_ids`, `serde_json`, `thiserror`; layout tier 3
+├── Cargo.toml  the package: `mission_payload`, `mission_wire_safety`, `newtype_ids`, `serde_json`, `thiserror`; layout tier 4
 └── src/        the rules, the registry and its self-check, the context, the findings and their ids
 ```
 
@@ -59,13 +59,13 @@ All also in `prelude`:
 - Used by:
   - `mission_compiler`, whose compile findings are `Finding` values and whose kit substitutions
     name an `AssetId`;
-  - the map engine's `editing::commands`, which summarises compile findings for the compiled
-    export;
+  - `mission_editing_commands::document_text`, which summarises compile findings for the
+    compiled export;
   - the Mission Creator's validation panel
     (`apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`) and compiled export;
   - the API, which re-exports `Finding` and `Severity` for its compile and artifact code and runs
     no rule.
-- Rules: mission tier 3, one above `mission_payload` (`cargo xtask verify crate-tiers`); every rule
+- Rules: mission tier 4, one above `mission_payload` (`cargo xtask verify crate-tiers`); every rule
   fires on its own trip fixture (`engine_self_check_passes_for_the_seed_registry` in
   `src/tests/cases_1.rs`); the capacity rule and the capacity scan agree
   (`cargo_over_capacity_agrees_with_the_standalone_scanner` in `src/tests/cases_2.rs`).

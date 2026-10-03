@@ -48,7 +48,7 @@ the leader slot, and counts the roles and vehicles applied.
   loadout, leader and vehicle mutators); `map_coordinates` (the anchors); `serde_json`.
 - Used by: `crate::entity`, whose `orbat_apply_faction` maps a faction
   document onto `FactionLibraryInput` and runs the apply for the hosted command in
-  `legacy/map_engine/src/editing/hosted_commands/orbat_roster.rs`, and whose placement and
+  `crates/mission_editing/mission_editing_commands/src/hosted_commands/orbat_roster.rs`, and whose placement and
   roster code falls back on the anchors; the crate prelude re-exports the surface.
 - Rules:
   - a refusal writes nothing (`apply_refuses_to_collapse_squads_and_writes_nothing` in

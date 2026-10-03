@@ -29,7 +29,7 @@ surviving `3A-C1` shim) are different files — do not confuse them.
 
 ## Follow D1's landing pattern
 
-`3A-D1` put the adapter bodies in `legacy/map_engine/src/editing/hosted_commands/`, reaching
+`3A-D1` put the adapter bodies in `crates/mission_editing/mission_editing_commands/src/hosted_commands/`, reaching
 `editing::host::{with_host, with_doc, selection_ids}`, `editing::batch::with_batch` and
 `editing::history::after_local_edit` instead of `OPS_CTX` + `mission_history`. It is a sibling of
 `editing/commands/` rather than part of it, because that module's invariant is "every function

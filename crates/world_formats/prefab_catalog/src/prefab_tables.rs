@@ -32,12 +32,6 @@ use crate::world_payload::bytes_to_json;
 use world_file_formats::ids::PrefabId;
 
 #[must_use]
-#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-fn prefab_u16(prefab_id: f64) -> Option<u16> {
-    ((0.0..65536.0).contains(&prefab_id) && prefab_id.fract() == 0.0).then_some(prefab_id as u16)
-}
-
-#[must_use]
 fn prefab_id_u16(prefab_id: PrefabId) -> Option<u16> {
     u16::try_from(prefab_id.get()).ok()
 }
@@ -45,8 +39,8 @@ fn prefab_id_u16(prefab_id: PrefabId) -> Option<u16> {
 /// Everything one prefab load decides. The residency assigns these fields and rebuilds its glyph lookup from `by_id`; nothing else in a load is lane-dependent.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct PrefabTables {
-    /// `prefabId.to_bits()` → render-class code + narrowed row.
-    pub by_id: HashMap<u64, PrefabEntry>,
+    /// Prefab id → render-class code + narrowed row.
+    pub by_id: HashMap<PrefabId, PrefabEntry>,
 
     /// §6 oversized-ring flag.
     pub has_oversized: bool,
@@ -69,7 +63,7 @@ pub struct PrefabTables {
 
 impl PrefabTables {
     fn derive(
-        by_id: HashMap<u64, PrefabEntry>,
+        by_id: HashMap<PrefabId, PrefabEntry>,
         has_oversized: bool,
         building_by_u16: HashMap<u16, BuildingPrefabInfo>,
         fence_by_u16: HashMap<u16, FencePrefabInfo>,
@@ -151,8 +145,8 @@ fn fence_lookup_from_rows<'a>(
 pub fn tables_from_json(raw: &Value) -> Result<PrefabTables, InvalidPrefabId> {
     let (by_id, has_oversized) = build_prefab_maps(narrow_prefab_rows(raw)?);
     let mut building_by_u16 = HashMap::new();
-    for (bits, info) in building_prefab_lookup(raw) {
-        if let Some(key) = prefab_u16(f64::from_bits(bits)) {
+    for (prefab_id, info) in building_prefab_lookup(raw) {
+        if let Some(key) = prefab_id_u16(prefab_id) {
             building_by_u16.insert(key, info);
         }
     }

@@ -43,8 +43,8 @@ it was on screen. `pan` and `zoom_at` keep the target within the bounds too.
 
 - `state::OrthoCamera` with `new`, `resize` and the accessors `target_x`, `target_y`, `zoom`,
   `scale` and `size_px`, and `state::{NEAR, FAR, MIN_ZOOM, MAX_ZOOM}`: the camera of the map
-  engine's `frame`, `editing` and `diagnostics`, and of the Mission Creator's toolbelt and the
-  debug benches.
+  engine's `frame` and `diagnostics`, of the editing crates' picks and tools, and of the Mission
+  Creator's toolbelt and the debug benches.
 - From the private `controllers.rs`: `set_bounds`, `set_view`, `pan` and `zoom_at`.
 - From the private `projection.rs`: `view_matrix`, `projection_matrix`, `view_projection`, `pixel_projection`, `project`
   and `wgpu_clip_matrix`.
@@ -57,8 +57,8 @@ it was on screen. `pan` and `zoom_at` keep the target within the bounds too.
 - Depends on: `crate::matrix4` and the crate's private scalar rules (`dimensions.rs`).
 - Used by:
   - the map engine, through its `camera::ortho` re-export: `frame` (the render engine's camera),
-    `camera::viewport`, `editing` (picking and the selection tools) and `diagnostics` (the probe
-    runner and the readback checks);
+    `camera::viewport` and `diagnostics` (the probe runner and the readback checks);
+  - `mission_editing_session` (picking) and `map_editing_tools` (the selection tools);
   - the Mission Creator's toolbelt and document helpers
     (`apps/frontend/src/workspaces/editor/ui/docks/toolbelt.rs`,
     `apps/frontend/src/workspaces/editor/mission_editor/document_helpers.rs`) and the debug

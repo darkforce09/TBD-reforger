@@ -9,7 +9,7 @@
 //! exist and calls [`attach_canvas_gestures`].
 //! **Signals & state:** the in-flight gesture (the frozen camera, the pending promotion, the drag
 //! preview) is tab-local and lives only for the duration of the gesture. A committed change
-//! reaches the document through `map_engine::editing`'s hosted commands, so one gesture
+//! reaches the document through the hosted commands of `mission_editing_commands`, so one gesture
 //! files one undo step.
 //! **Invariants:** everything here touches `web_sys` over live engine and document handles, so
 //! the module is wasm-only and its `pub mod` line carries the same gate. What the canvas draws and
@@ -19,13 +19,13 @@
 //! `pointercancel` / `pointerleave` / `resize` (page-side, beside the boot tasks), and the view
 //! template.
 
-use map_engine::editing::tools::selection;
+use map_editing_tools::selection;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use leptos::prelude::*;
-use map_engine::editing::tools::line_of_sight::capture::{LosMode, LosState, ViewshedState};
-use map_engine::editing::tools::line_of_sight::viewshed_texture::place_viewshed;
+use map_editing_tools::line_of_sight::capture::{LosMode, LosState, ViewshedState};
+use map_editing_tools::line_of_sight::viewshed_texture::place_viewshed;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -42,8 +42,8 @@ use crate::workspaces::editor::mission_editor::{
     read_widget_pivot, set_map_cursor, transform, HoverPoints, HoverState, COMMENT_PICK_PX,
     CONN_PICK_PX,
 };
-use map_engine::editing::hosted_commands as engine_ops;
-use map_engine::editing::hosted_commands::selection_transform;
+use mission_editing_commands::hosted_commands as engine_ops;
+use mission_editing_commands::hosted_commands::selection_transform;
 use mission_operations::attrs;
 
 /// Every handle the six gesture closures capture, bundled so the page hands them over in one
@@ -66,7 +66,7 @@ pub(crate) struct EditorGestureContext {
     pub(crate) map_host: map_engine::streaming::host::HostHandle,
     pub(crate) dem_grid: map_engine::streaming::host::DemGridHandle,
     /// Session-local ruler polyline, separate from the mission document.
-    pub(crate) ruler: Rc<RefCell<map_engine::editing::tools::ruler::RulerChain>>,
+    pub(crate) ruler: Rc<RefCell<map_editing_tools::ruler::RulerChain>>,
     /// Two-click line-of-sight capture state.
     pub(crate) los: Rc<RefCell<LosState>>,
     /// Session-local viewshed observer and raster.
@@ -78,7 +78,7 @@ pub(crate) struct EditorGestureContext {
     /// World point displayed by the cursor readout.
     pub(crate) cursor: RwSignal<Option<(f64, f64, Option<f64>)>>,
     /// Active editor tool: Select, Ruler, or Line of Sight.
-    pub(crate) tool_mode: RwSignal<map_engine::editing::tools::ruler::EditorTool>,
+    pub(crate) tool_mode: RwSignal<map_editing_tools::ruler::EditorTool>,
     /// Line-of-sight submode: ray or viewshed.
     pub(crate) los_mode: RwSignal<LosMode>,
     /// Snap grid state used by transform commits.

@@ -4,8 +4,7 @@ Graphics modules and native regression suites for rendering contracts and camera
 
 ## Contents
 
-- `feature_gate_tripwire.rs` — `map_engine_tests_require_all_features`: fails unless the test build has every feature (`world`, `streaming`, `render`, `editing`).
-- `source_scrub.rs` — reduces Rust source to the text a build compiles, for the guards that read this crate's own source; compiled only with `editing`, where its callers live.
+- `feature_gate_tripwire.rs` — `map_engine_tests_require_all_features`: fails unless the test build has every feature (`world`, `streaming`, `render`).
 
 ## Boundaries
 

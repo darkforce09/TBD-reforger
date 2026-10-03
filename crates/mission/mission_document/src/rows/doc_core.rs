@@ -10,16 +10,16 @@ use super::MapRef;
 use super::SideKeyMemo;
 use super::UndoManager;
 use crate::ids::EntityId;
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 /// Authored leader, membership order, and faction side for one squad.
 #[derive(Clone, Debug)]
 pub struct SquadMembership {
     /// The squad leader's slot.
-    pub leader_slot_id: SlotId,
+    pub leader_slot_id: SlotUid,
 
     /// The member slots in authored order.
-    pub member_slot_ids: Vec<SlotId>,
+    pub member_slot_ids: Vec<SlotUid>,
 
     /// Side.
     pub side: String,

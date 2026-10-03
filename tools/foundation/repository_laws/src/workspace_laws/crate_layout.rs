@@ -34,6 +34,21 @@ pub const ENGINE_CATEGORIES: &[&str] = &[
     "crates/graphics",
 ];
 
+/// The mission editing category: the headless editing layer of the Mission Creator.
+pub const MISSION_EDITING_CATEGORY: &str = "crates/mission_editing";
+
+/// The engine categories a mission editing crate may depend on: the geometry, the static world's
+/// data (formats, terrain, world objects), line of sight and the overlay. Streaming and graphics
+/// are not among them — the editing layer decides, it never streams or draws.
+pub const MISSION_EDITING_ENGINE_CATEGORIES: &[&str] = &[
+    "crates/geometry",
+    "crates/world_formats",
+    "crates/terrain",
+    "crates/world_objects",
+    "crates/line_of_sight",
+    "crates/map_overlay",
+];
+
 /// The one tool crate that may depend on api crates: it seeds a staging database.
 pub const STAGING_FIXTURES_PATH: &str = "tools/staging/staging_fixtures";
 
@@ -91,7 +106,7 @@ pub fn category_class(category: &str) -> Option<CategoryClass> {
         "crates/ballistics" => CategoryClass::Ballistics,
         "crates/graphics" => CategoryClass::Graphics,
         "crates/map_rendering" | "crates/paper_doll" => CategoryClass::Rendering,
-        "crates/mission_editing" => CategoryClass::MissionEditing,
+        MISSION_EDITING_CATEGORY => CategoryClass::MissionEditing,
         "crates/api" => CategoryClass::Api,
         other if ENGINE_CATEGORIES.contains(&other) => CategoryClass::Engine,
         _ => return None,
@@ -176,9 +191,12 @@ pub fn category_edge_allowed(from: EdgeEnd<'_>, to: EdgeEnd<'_>) -> bool {
                 Foundation | Contracts | Mission | Ballistics | Rendering
             ) || to_class.is_engine()
         }
+        // Foundation crates built for every target only: a wasm-only one would tie the layer to
+        // the browser it must be testable without.
         MissionEditing => {
-            matches!(to_class, Foundation | Mission | Ballistics | MissionEditing)
-                || to_class.is_engine()
+            (to_class == Foundation && to.targets != Some(TargetPlatforms::Wasm32))
+                || matches!(to_class, Mission | MissionEditing)
+                || MISSION_EDITING_ENGINE_CATEGORIES.contains(&to.category)
         }
         Api => matches!(
             to_class,

@@ -66,14 +66,14 @@ checks them.
 | S6 | unit_symbology | `crates/map_overlay/unit_symbology/` | 2 |
 | S6 | overlay_instances | `crates/map_overlay/overlay_instances/` | 3 |
 | S5 | mission_wire_safety | `crates/mission/mission_wire_safety/` | 0 |
-| S5 | mission_model | `crates/mission/mission_model/` | 1 |
-| S5 | mission_payload | `crates/mission/mission_payload/` | 2 |
-| S5 | mission_validation | `crates/mission/mission_validation/` | 3 |
-| S5 | mission_compiler | `crates/mission/mission_compiler/` | 4 |
+| S5 | mission_model | `crates/mission/mission_model/` | 2 |
+| S5 | mission_payload | `crates/mission/mission_payload/` | 3 |
+| S5 | mission_validation | `crates/mission/mission_validation/` | 4 |
+| S5 | mission_compiler | `crates/mission/mission_compiler/` | 5 |
 | S5 | formation_geometry | `crates/mission/formation_geometry/` | 1 |
 | S5 | mission_crdt | `crates/mission/mission_crdt/` | 1 |
-| S5 | mission_document | `crates/mission/mission_document/` | 4 |
-| S5 | mission_operations | `crates/mission/mission_operations/` | 5 |
+| S5 | mission_document | `crates/mission/mission_document/` | 5 |
+| S5 | mission_operations | `crates/mission/mission_operations/` | 6 |
 | S5 | ballistics_model | `crates/ballistics/ballistics_model/` | 1 |
 | S5 | ballistics_solver | `crates/ballistics/ballistics_solver/` | 2 |
 | S5 | fire_mission_planning | `crates/ballistics/fire_mission_planning/` | 3 |
@@ -110,6 +110,13 @@ checks them.
 | S11a | ci_task_catalog | `tools/commands/ci_task_catalog/` | 6 |
 | S11a | platform_execution | `tools/commands/platform_execution/` | 7 |
 | S11a | mod_operations | `tools/commands/mod_operations/` | 8 |
+| S7 | orbat_slot_ids | `crates/foundation/orbat_slot_ids/` | 1 |
+| S7 | chunk_scheduler | `crates/streaming/chunk_scheduler/` | 4 |
+| S7 | chunk_draw_buffers | `crates/streaming/chunk_draw_buffers/` | 5 |
+| S7 | mission_editing_session | `crates/mission_editing/mission_editing_session/` | 6 |
+| S7 | mission_editing_commands | `crates/mission_editing/mission_editing_commands/` | 7 |
+| S7 | mission_persistence | `crates/mission_editing/mission_persistence/` | 7 |
+| S7 | map_editing_tools | `crates/mission_editing/map_editing_tools/` | 7 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -118,6 +125,7 @@ Every other crate in this catalogue is still planned; its From column names the 
 | Crate | From | Fixes |
 |---|---|---|
 | newtype_ids | new | `string_id!`/`integer_id!`/`uuid_id!` macros: serde-transparent, `Borrow<str>`, an optional `sqlx,` macro arm that expands `#[sqlx(transparent)]` in the calling crate (the crate has no sqlx dependency) |
+| orbat_slot_ids | new (tier 1, on newtype_ids): the ORBAT slot ids `SlotUid` and `SlotId`, whose declarations in mission_model and unit_symbology were deleted | One declaration of each slot id; serde-transparent, so every serialized byte stays equal |
 | time_source | the 5 clocks (`me diagnostics/timing/gpu.rs:11`, `editing/tools/viewshed_scheduler/host.rs:89`, `streaming/host/viewport.rs:80`, `world_loader/ingest.rs:59,92`, `data/store/crdt/undo_groups/clocks.rs`), `dt timestamp_formatting.rs`, `te timestamp.rs` | One `Clock` trait (system/browser/fixed) and UTC formatting |
 | deterministic_random | SplitMix64 (`store/operations/placement/geometry.rs`, `ballistics/agreement_cases.rs:81`), the LCG (`rows/slot_edits.rs:31`) | One generator |
 | content_digest | `dt content_digest.rs`, 11 ad-hoc SHA helpers, hand-rolled `ballistics/calibration/sha256_digest.rs:32` | sha2 0.11 only |
@@ -132,14 +140,14 @@ Every other crate in this catalogue is still planned; its From column names the 
 | Crate | T | From | Deps |
 |---|---|---|---|
 | mission_wire_safety | 0 | `scenario/validation/wire_safety` | — |
-| mission_model | 1 | `scenario/{ast,extensions,slot_line}` | newtype_ids |
-| mission_payload | 2 | `compiler/{payload,kit}` | model |
-| mission_validation | 3 | `validation/validator` | payload, wire_safety, newtype_ids |
-| mission_compiler | 4 | `compiler/flatten`, `ast/authoring.rs` as a private module; `COMPILER_PACKAGE_VERSION` pinned as a literal | model, payload, validation, wire_safety |
+| mission_model | 2 | `scenario/{ast,extensions,slot_line}` | newtype_ids, orbat_slot_ids |
+| mission_payload | 3 | `compiler/{payload,kit}` | model |
+| mission_validation | 4 | `validation/validator` | payload, wire_safety, newtype_ids |
+| mission_compiler | 5 | `compiler/flatten`, `ast/authoring.rs` as a private module; `COMPILER_PACKAGE_VERSION` pinned as a literal | model, payload, validation, wire_safety |
 | formation_geometry | 1 | `store/operations/placement` | deterministic_random |
 | mission_crdt | 1 | `store/crdt` (no `js_sys`; clock injected) | time_source |
-| mission_document | 4 | `store/{rows,selection}` plus `crdt/id_arrays/mission_doc_tests` | crdt, model, validation, newtype_ids, time_source; dev: payload, compiler (round-trip and former RULE4 tests) |
-| mission_operations | 5 | all of `store/operations` (entity + the rest + `assets, cargo_rules, environment, projections, reassign, rotation, rows, slot_ids, zones`) | document, crdt, validation, payload, model, formation_geometry, map_coordinates |
+| mission_document | 5 | `store/{rows,selection}` plus `crdt/id_arrays/mission_doc_tests` | crdt, model, validation, newtype_ids, time_source; dev: payload, compiler (round-trip and former RULE4 tests) |
+| mission_operations | 6 | all of `store/operations` (entity + the rest + `assets, cargo_rules, environment, projections, reassign, rotation, rows, slot_ids, zones`) | document, crdt, validation, payload, model, formation_geometry, map_coordinates |
 | ballistics_model | 1 | `ballistics/{angular_units,catalog,wind,flight_model}` | newtype_ids |
 | ballistics_solver | 2 | `solver, crest_clearance, dispersion` | model; dev: deterministic_random |
 | fire_mission_planning | 3 | `fire_mission, fire_mission_comparison, fuze, battery, solution_wording` | model, solver |
@@ -171,14 +179,14 @@ Every other crate in this catalogue is still planned; its From column names the 
 | world_line_of_sight | `los/world`; reference `dda.rs:84` moved to tests | world_chunks, interior_line_of_sight, spatial_indexes, building_interiors, prefab_catalog, map_coordinates, geometry_primitives, world_file_formats |
 | map_draw_lanes | `overlay/{lanes,lod}`, plus `building_visible` on `BUILDING_FOOTPRINT_MIN_ZOOM` (the duplicate `BUILDING_MIN_ZOOM` deleted) and `px_to_m_at_zoom` | render_primitives |
 | label_layout | `symbology/{labels,text_packing}` (generic packing; the location packers went to place_names); the glyph-packing copies in `glyph_math` deleted; `LabelId`, `LocationId` | render_primitives, newtype_ids |
-| unit_symbology | `symbology/{roles,markers,atlas/raster,links}`; `SlotId` (byte-compatible with mission_model's, F-S6-07) | render_primitives, map_draw_lanes, newtype_ids |
+| unit_symbology | `symbology/{roles,markers,atlas/raster,links}`; its squad links take `SlotUid` from orbat_slot_ids, which also holds `SlotId` | render_primitives, map_draw_lanes, newtype_ids, orbat_slot_ids |
 | overlay_instances | `instances/{symbols,drag,patches}`, `fire_mission_marks`; `slots/` shim deleted | unit_symbology, map_draw_lanes, render_primitives |
-| chunk_scheduler | `scheduler/{state,viewport,residency}` plus `deinterleave`, `indexing/world.rs` | world_store, prefab, spatial_indexes, map_draw_lanes |
-| chunk_draw_buffers | `streaming/buffers`, `buildings/footprint.rs` | scheduler, label_layout, road_network, vegetation |
-| mission_editing_session | `editing/{host,history,batch,routing,selection_universe,picking,lanes}` | mission_document, mission_operations, spatial_indexes |
-| mission_editing_commands | `editing/{hosted_commands,commands}` | session, mission_validation, camera_math |
-| mission_persistence | `editing/persist` | session, mission_compiler |
-| map_editing_tools | `editing/tools/*`; the LOS↔viewshed cycle stays internal; `editing/tools/placement.rs` deleted | commands, the 3 LOS crates, camera_math |
+| chunk_scheduler | `scheduler/{state,viewport,residency}` plus `deinterleave` and the revision queries, `indexing/world.rs`; the residency core returns rebuild requests | world_chunks, prefab_catalog, world_file_formats, spatial_indexes, map_draw_lanes, map_coordinates |
+| chunk_draw_buffers | `streaming/buffers`, `buildings/footprint.rs`, the layer toggles (`toggles.rs`) and the residency statistics (`stats_json`); `WorldResidency`, the composed owner over the scheduler | chunk_scheduler, label_layout, road_network, vegetation, render_primitives, map_draw_lanes, prefab_catalog, world_chunks, map_coordinates |
+| mission_editing_session | `editing/{host,history,batch,routing,selection_universe,picking,lanes}` | mission_document, mission_crdt, mission_validation, camera_math, spatial_indexes, unit_symbology; dev: mission_operations |
+| mission_editing_commands | `editing/{hosted_commands,commands}` (`commands` as `document_text`) | session, mission_operations, mission_document, mission_model, mission_validation, formation_geometry, map_coordinates, orbat_slot_ids |
+| mission_persistence | `editing/persist` | session, mission_document, mission_model, mission_payload |
+| map_editing_tools | `editing/tools/*` (selection, ruler, line of sight, viewshed scheduler) with the source scrub their guards read; the LOS↔viewshed cycle stays internal; the placement math is formation_geometry's (S5) | session, the 3 LOS crates, terrain_elevation, camera_math, mission_crdt, mission_document, spatial_indexes, time_source; dev: terrain_relief |
 
 ## crates/graphics (map-agnostic), crates/map_rendering, crates/paper_doll
 
@@ -191,7 +199,7 @@ Every other crate in this catalogue is still planned; its From column names the 
 | symbology_layers_gpu (W) | `bridge_1/2/3` merged, `instances/lanes`, `atlas/gpu`, `lanes_prefs` | `SlotSymbologyGpu`, `GlyphAtlasGpu`, `IconCullGpu` |
 | world_layers_gpu (W) | buildings/vegetation `buffers.rs`, `satellite/{textures,quadtree}`, `relief/host.rs`, `los/terrain/overlay.rs` | typed layers own their GPU state |
 | map_asset_loading (W) | `loaders/{world_loader,occluder_loader}`, the world `*/loader.rs` files, `bridge/progress` | in `streaming/` |
-| map_streaming_host (W) | `streaming/{host,memory}`, `bridge/{preferences,toggles,statistics}` | in `streaming/` |
+| map_streaming_host (W) | `streaming/{host,memory}`, `bridge/{preferences,statistics}` (the layer toggles and `stats_json` are chunk_draw_buffers') | in `streaming/` |
 | map_renderer (W) | `frame/*`, `camera/viewport.rs`, `publish_engine` | owns `RenderEngine` |
 | map_render_diagnostics (W) | `diagnostics/{readback,bench,probes}` (`frame_1/2` merged) | functions over accessors |
 | paper_doll_scene | `doll/scene` and interaction | camera_math |

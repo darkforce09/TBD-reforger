@@ -4,7 +4,7 @@
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use mission_document::ids::SquadId;
-use mission_model::ids::SlotId;
+use orbat_slot_ids::SlotUid;
 
 use super::ANCHOR;
 use super::MissionDocCore;
@@ -16,7 +16,7 @@ use super::squad_rows;
 #[derive(Clone, Debug, PartialEq)]
 pub struct OrbatSlotDetail {
     /// Id.
-    pub id: SlotId,
+    pub id: SlotUid,
 
     /// Role.
     pub role: String,
@@ -144,8 +144,8 @@ pub fn mint_squad_id_for_side(core: &MissionDocCore, side: &str) -> String {
 pub const ORBAT_SLOT_SPACING_X: f64 = 15.0;
 
 /// One slot's map position out of a parsed `slots_json`. `None` when the id is stale (the slot was removed) or the stored position is malformed.
-pub fn slot_xy(root: &serde_json::Value, id: impl Into<SlotId>) -> Option<(f64, f64)> {
-    let id: SlotId = id.into();
+pub fn slot_xy(root: &serde_json::Value, id: impl Into<SlotUid>) -> Option<(f64, f64)> {
+    let id: SlotUid = id.into();
     let id = id.as_str();
     let pos = root.get(id)?.get("position")?;
     Some((pos.get("x")?.as_f64()?, pos.get("y")?.as_f64()?))
@@ -197,7 +197,7 @@ pub struct OrbatManagerSnapshot {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PlacedSlotChoice {
     /// Id.
-    pub id: SlotId,
+    pub id: SlotUid,
 
     /// Label.
     pub label: String,
@@ -230,8 +230,8 @@ pub fn orbat_add_squad(core: &MissionDocCore, side: String) -> Option<String> {
 }
 
 /// Apply orbat_remove_slot to explicit document state.
-pub fn orbat_remove_slot(core: &MissionDocCore, slot_id: impl Into<SlotId>) -> bool {
-    let slot_id: SlotId = slot_id.into();
+pub fn orbat_remove_slot(core: &MissionDocCore, slot_id: impl Into<SlotUid>) -> bool {
+    let slot_id: SlotUid = slot_id.into();
     let slot_id = slot_id.into_inner();
     let Some(detail) = slot_details(core).into_iter().find(|s| s.id == *slot_id) else {
         return false;
@@ -274,13 +274,13 @@ pub fn placed_slot_choices(core: &MissionDocCore) -> Vec<PlacedSlotChoice> {
 /// Apply orbat_update_slot_fields to explicit document state.
 pub fn orbat_update_slot_fields(
     core: &MissionDocCore,
-    slot_id: impl Into<SlotId>,
+    slot_id: impl Into<SlotUid>,
     role: Option<String>,
     tag: Option<String>,
     callsign: Option<String>,
     rank: Option<String>,
 ) -> bool {
-    let slot_id: SlotId = slot_id.into();
+    let slot_id: SlotUid = slot_id.into();
     let slot_id = slot_id.into_inner();
     if role.is_some() || tag.is_some() {
         core.update_slot(slot_id.as_str(), role, tag, None);

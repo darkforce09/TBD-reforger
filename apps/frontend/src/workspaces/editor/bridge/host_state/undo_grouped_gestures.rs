@@ -12,8 +12,8 @@
 
 use crate::workspaces::editor::ui::outliner::node_model;
 use formation_geometry::{needs_confirm, AlignEdge};
-pub use map_engine::editing::batch::with_batch;
-use map_engine::editing::hosted_commands::{entity_clipboard, selection_transform};
+use mission_editing_commands::hosted_commands::{entity_clipboard, selection_transform};
+pub use mission_editing_session::batch::with_batch;
 use node_model::ensure_active_layer;
 
 /// One Ctrl+Z restores a delete that spans comments, a connection cascade and slots.

@@ -10,7 +10,7 @@
 // here has a caller.
 
 #[cfg(target_arch = "wasm32")]
-use map_engine::editing::tools::viewshed_scheduler::{install_host, SchedulerHost};
+use map_editing_tools::viewshed_scheduler::{install_host, SchedulerHost};
 
 #[cfg(target_arch = "wasm32")]
 thread_local! {
@@ -65,7 +65,7 @@ fn start_pump() {
     use wasm_bindgen::prelude::Closure;
     use wasm_bindgen::JsCast;
 
-    use map_engine::editing::tools::viewshed_scheduler::pump_terrain_once;
+    use map_editing_tools::viewshed_scheduler::pump_terrain_once;
 
     if PUMPING.with(Cell::get) {
         return;
