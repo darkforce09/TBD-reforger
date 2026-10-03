@@ -10,8 +10,10 @@ routes, models and rules exactly; this document is the map that leads to them.
 ## Where it lives
 
 - Code: [`apps/api/`](/apps/api/), the package `api` (Axum and sqlx
-  on Postgres). The crate [README](/apps/api/README.md) is the atlas of the crate;
-  [`apps/api/src/core/http_router.rs`](/apps/api/src/core/http_router.rs)
+  on Postgres), the thin application over the 23 [API crates](/crates/api/README.md) in
+  `crates/api/` (the [crate map](#crate-map) below). The crate [README](/apps/api/README.md) is
+  the atlas of the application;
+  [`apps/api/src/router.rs`](/apps/api/src/router.rs)
   assembles every route, mount and middleware layer.
 - Entry: the `api` binary,
   [`apps/api/src/bin/api.rs`](/apps/api/src/bin/api.rs), which
@@ -31,15 +33,16 @@ routes, models and rules exactly; this document is the map that leads to them.
    directory; a required variable that is empty, or a set value that cannot work, stops the boot
    (the [environment variable reference](/documentation/apps/api/environment_variables.md)
    lists each rule).
-2. `core::database::connect` opens the Postgres pool with the `TBD_DB_POOL_*` settings.
-3. `core::database::migrate` applies the embedded migrations of `apps/api/migrations/`
+2. `api_database::connect` opens the Postgres pool with the `TBD_DB_POOL_*` settings.
+3. `api_database::migrate` applies the embedded migrations of `crates/api/api_database/migrations/`
    and logs `migrations applied`, unless `SKIP_MIGRATE` is set.
-4. `AppState::new` builds the one shared state: the pool, the configuration, the token manager,
-   the realtime hub, the rate limiters and the Discord and webhook clients.
-5. `background_workers::spawn_all` arms the twelve
+4. `composition::application_state` builds the one shared state: it constructs the session
+   authority, the Discord and webhook clients and the equipment datasets, and `AppState::new`
+   adds the pool, the configuration, the token manager, the realtime hub and the rate limiters.
+5. `api_background_workers::spawn_all` arms the thirteen
    [background workers](/documentation/glossary/a_to_f.md#background-workers) and logs the interval
    each got.
-6. `http_router::router` builds the application, and the binary serves it on `0.0.0.0:$PORT`
+6. `router::router` builds the application, and the binary serves it on `0.0.0.0:$PORT`
    until SIGINT or SIGTERM, draining requests in flight; shutdown also closes every open event
    stream, so its clients reconnect and the audit log feed replays after their `Last-Event-ID`.
 
@@ -61,7 +64,7 @@ unauthenticated `/api/v1/auth/` family, a stricter one with a second bucket in P
 survives a restart; a refusal is `429` with `Retry-After`. `/api/v1/game-runtime/` and
 `/api/v1/ingest/` stay on the global bucket: every caller there is a game server with its own
 machine credential, several servers can share one host address, and event batches arrive in
-bursts. The [middleware README](/apps/api/src/core/middleware/README.md)
+bursts. The [middleware README](/crates/api/api_http_layer/src/middleware/README.md)
 gives the numbers and the client-address rule behind `TRUSTED_PROXIES`.
 
 Authentication is not a layer. A route's access tier is the extractor its handler takes:
@@ -81,7 +84,7 @@ hand.
 Every refusal answers the `{error, details?}` envelope. A path segment that does not decode into
 its type (a non-UUID id, say) is a 400 whose message names the parameter: every handler reads its
 path through `PathParams`
-([request-shape primitives](/apps/api/src/core/http/README.md)).
+([request-shape primitives](/crates/api/api_foundation/src/http/README.md)).
 
 ### Callers
 
@@ -128,12 +131,12 @@ SSE event once it stops qualifying:
 
 ### Background workers
 
-The binary arms twelve interval tasks, each of which calls a service of the domain that owns the
-data: audit publication, Discord membership reconciliation, Discord role resync, the event
-lifecycle sweep, event reservation re-evaluation, fleet command reconciliation, the leaderboard
+The binary arms thirteen interval tasks, each of which calls a service of the domain that owns the
+data: audit publication, Discord membership reconciliation, Discord role resync, the equipment
+export import, the event lifecycle sweep, event reservation re-evaluation, fleet command reconciliation, the leaderboard
 refresh, mission deployment reconciliation, rate-limit bucket cleanup, runtime session expiry,
 the server status republish and the refresh-token purge. The
-[background workers README](/apps/api/src/background_workers/README.md) gives each
+[background workers README](/crates/api/api_background_workers/src/README.md) gives each
 one's interval and the service it calls; three intervals are set by environment variables.
 
 ## Data
@@ -146,14 +149,14 @@ lists every route with its methods and tier.
 
 | Domain | Paths under `/api/v1` | Tiers |
 |---|---|---|
-| [identity and access](/apps/api/src/identity_and_access/README.md#public-surface) | `/auth/discord/login`, `/auth/discord/callback`, `/auth/refresh`, `/auth/logout`, `/auth/dev-login` (development only), `/me`, `/me/link`, `/me/link/status`, `/ingest/link-confirm` | public, member, machine |
-| [administration](/apps/api/src/administration/README.md#public-surface) | `/admin/users` (searched by `q`, paged by `page` and `per_page`), `/admin/users/{discordId}` with `/ban`, `/warnings` and `/membership-grace`, `/admin/roles/sync`, `/admin/audit-logs` with `/export.csv` and `/stream` (ready, rows, reset) | administrator; the grace route is member with administrator authority checked in its service |
-| [operations](/apps/api/src/operations/README.md#public-surface) | `/events` and `/events/{id}/…` (missions, access, access policy, reservation quotas, groups, fire missions), `/event-missions/{emid}/…` (ORBAT, register, slot assignment, squad reserve and release, waitlist promotion, squad and slot access policies), `/members`, `/me/deployments`, `/me/leave-requests`, `/admin/leave-requests`, `/fire-missions`, `/ballistics-catalogs` and `/ballistics-catalogs/{catalogId}/versions/{version}`, `/game-runtime/events/{id}/roster`, `/game-runtime/sessions/{sessionId}/deployments/…` | public (the catalog reads), member, leader, administrator, machine |
-| [missions](/apps/api/src/missions/README.md#public-surface) | `/missions` and `/missions/{id}/…` (submit, reviews, review comments, artifacts, versions, armory, bookmark, export), `/registry`, `/registry/compat`, `/factions`, `/approvals`, `/admin/mission-default-overrides`, `/servers/{id}/deployments`, `/game-runtime/deployment`, `/game-runtime/deployments`, `/game-runtime/artifacts/{artifactId}`, `/game-runtime/missions` | member, mission maker, author or administrator, administrator, machine |
-| [match telemetry](/apps/api/src/match_telemetry/README.md#public-surface) | `/game-runtime/sessions/{sessionId}/heartbeats`, `/ingest/matches`, `/ingest/match-results`, `/ingest/match-events`, `/matches/{matchId}/events` | machine, member |
-| [command center](/apps/api/src/command_center/README.md#public-surface) | `/dashboard`, `/leaderboards`, `/users/{discordId}/stats` | member |
-| [community content](/apps/api/src/community_content/README.md#public-surface) | `/announcements`, `/wiki`, `/wiki/{slug}` with `/revisions` and `/revisions/{revision}`, `/vehicle-database`, `/vehicle-database/{id}`, `/modpacks` (with `/current` and `/set-current`), `/cms/announcements` (with `/push-discord`), `/cms/uploads` | member to read, administrator to write |
-| [server infrastructure](/apps/api/src/server_infrastructure/README.md#public-surface) | `/servers` and `/servers/{id}/…` (status, status stream, credentials, commands), `/fleet-executor/commands/…`, `/game-runtime/sessions`, `/game-runtime/sessions/{sessionId}/end`, `/fleet/scenarios` | member, administrator, machine |
+| [identity and access](/crates/api/api_identity_and_access/src/README.md#public-surface) | `/auth/discord/login`, `/auth/discord/callback`, `/auth/refresh`, `/auth/logout`, `/auth/dev-login` (development only), `/me`, `/me/link`, `/me/link/status`, `/ingest/link-confirm` | public, member, machine |
+| [administration](/crates/api/api_administration/src/README.md#public-surface) | `/admin/users` (searched by `q`, paged by `page` and `per_page`), `/admin/users/{discordId}` with `/ban`, `/warnings` and `/membership-grace`, `/admin/roles/sync`, `/admin/audit-logs` with `/export.csv` and `/stream` (ready, rows, reset) | administrator; the grace route is member with administrator authority checked in its service |
+| [operations](/crates/api/api_operations/src/README.md#public-surface) | `/events` and `/events/{id}/…` (missions, access, access policy, reservation quotas, groups, fire missions), `/event-missions/{emid}/…` (ORBAT, register, slot assignment, squad reserve and release, waitlist promotion, squad and slot access policies), `/members`, `/me/deployments`, `/me/leave-requests`, `/admin/leave-requests`, `/fire-missions`, `/ballistics-catalogs` and `/ballistics-catalogs/{catalogId}/versions/{version}`, `/game-runtime/events/{id}/roster`, `/game-runtime/sessions/{sessionId}/deployments/…` | public (the catalog reads), member, leader, administrator, machine |
+| [missions](/crates/api/api_missions/src/README.md#public-surface) | `/missions` and `/missions/{id}/…` (submit, reviews, review comments, artifacts, versions, armory, bookmark, export), `/registry`, `/registry/compat`, `/factions`, `/approvals`, `/admin/mission-default-overrides`, `/servers/{id}/deployments`, `/game-runtime/deployment`, `/game-runtime/deployments`, `/game-runtime/artifacts/{artifactId}`, `/game-runtime/missions` | member, mission maker, author or administrator, administrator, machine |
+| [match telemetry](/crates/api/api_match_telemetry/src/README.md#public-surface) | `/game-runtime/sessions/{sessionId}/heartbeats`, `/ingest/matches`, `/ingest/match-results`, `/ingest/match-events`, `/matches/{matchId}/events` | machine, member |
+| [command center](/crates/api/api_command_center/src/README.md#public-surface) | `/dashboard`, `/leaderboards`, `/users/{discordId}/stats` | member |
+| [community content](/crates/api/api_community_content/src/README.md#public-surface) | `/announcements`, `/wiki`, `/wiki/{slug}` with `/revisions` and `/revisions/{revision}`, `/vehicle-database`, `/vehicle-database/{id}`, `/modpacks` (with `/current` and `/set-current`), `/cms/announcements` (with `/push-discord`), `/cms/uploads` | member to read, administrator to write |
+| [server infrastructure](/crates/api/api_server_infrastructure/src/README.md#public-surface) | `/servers` and `/servers/{id}/…` (status, status stream, credentials, commands), `/fleet-executor/commands/…`, `/game-runtime/sessions`, `/game-runtime/sessions/{sessionId}/end`, `/fleet/scenarios` | member, administrator, machine |
 
 A path prefix does not name its owner: `/servers/{id}/deployments` belongs to missions,
 `/game-runtime/events/{id}/roster` to operations and the heartbeats route to match telemetry,
@@ -194,10 +197,10 @@ holds the full rules:
 
 - `GET /healthz`: `{"status": …}` with 200 or 503 for anyone; the version, uptime, pool and
   migration detail for a caller with the `OBSERVABILITY_TOKEN` bearer
-  (`apps/api/src/core/observability/health_probe.rs`); a missing or wrong bearer gets
+  (`crates/api/api_http_layer/src/observability/health_probe.rs`); a missing or wrong bearer gets
   the public answer, not an error.
 - `GET /metrics`: the Prometheus exposition, `OBSERVABILITY_TOKEN` bearer only, 401 while the token
-  is unset (`apps/api/src/core/observability/observability_auth.rs`).
+  is unset (`crates/api/api_http_layer/src/observability/observability_auth.rs`).
 - `/uploads`: the files the CMS upload wrote into `UPLOAD_DIR`.
 - `/map-assets` and `/map-assets/glyphs`: the terrain tree (`MAP_ASSETS_DIR`) and the glyph atlas
   (`GLYPH_ASSETS_DIR`) that the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
@@ -209,11 +212,11 @@ holds the full rules:
 
 - Postgres 18: locally the `db` service of `deploy/compose.dev.yml` on host port
   5434, which `cargo xtask db up` starts. The API owns the schema through the numbered migrations
-  in `apps/api/migrations/`, embedded at compile time; an applied migration never changes
+  in `crates/api/api_database/migrations/`, embedded at compile time; an applied migration never changes
   in its statements, and a comments-only edit needs `cargo xtask db repair-migration-checksum` on
-  every database that applied it. The [migrations README](/apps/api/migrations/README.md)
+  every database that applied it. The [migrations README](/crates/api/api_database/migrations/README.md)
   has the rules.
-- `apps/api/seeds/`: the development data `cargo xtask db seed` applies once the API
+- `crates/api/api_database/seeds/`: the development data `cargo xtask db seed` applies once the API
   has migrated the database, and the Workbench [registry](/documentation/glossary/n_to_z.md#registry)
   exports that `cargo xtask db registry-import` loads.
 - The upload directory (`UPLOAD_DIR`) and the equipment data directory (`EQUIPMENT_DATA_DIR`),
@@ -221,22 +224,103 @@ holds the full rules:
 
 ## Design
 
-The crate is organised by domain, not by layer. `core` holds what every domain needs and names no
-domain concept; `background_workers` holds the timers and calls domain services; each of the eight
-domains owns its route table, handlers, services and models, and another domain reaches it only
-through its services and models, never its handlers. The rules are executable:
+The API is organised by domain, not by layer, as crates under `crates/api/`. The kernel crates
+(among them `api_http_layer`, the middleware and extractors, and `api_state`, the application
+state) hold what every domain needs and name no domain concept; `api_background_workers` holds the
+timers and calls domain services; each of the eight domain crates owns its route table, handlers,
+services and models, and another domain reaches it only through its services and models, never its
+handlers. The application (`apps/api`) only assembles them: its router merges the route tables and
+its composition root builds the state. The rules are executable:
 `apps/api/src/tests/architecture_rules.rs` checks the layout and
 `apps/api/src/tests/prose_rules.rs` the prose of comments, seeds and `.env.example`,
 on every unit-test run; `cargo xtask verify route-tags` checks that every handler declares its
 `/// @route`, and `cargo xtask schema citations` checks that the `@contract` tags of the models that project a
 schema cite it correctly.
 
+### Crate map
+
+Every API crate sits in `crates/api/` and declares its tier (1 plus the highest tier it depends
+on); each links its README. The application `api` depends on the crates its router, composition
+root and binaries name, and reaches `api_foundation`, `api_audit_log`, `api_mission_vocabulary`,
+`api_member_activity`, `api_failpoints` and `api_property_evidence` only as dev-dependencies of
+its tests.
+
+| Group | Crate | Tier | Owns |
+|---|---|---|---|
+| infrastructure | [`api_identifiers`](/crates/api/api_identifiers/README.md) | 1 | the typed ids ([Ids](#ids)) |
+| infrastructure | [`api_foundation`](/crates/api/api_foundation/README.md) | 1 | the `{error, details?}` envelope (`ApiError`), JSON wire formats, text policies, `PathParams` |
+| infrastructure | [`api_failpoints`](/crates/api/api_failpoints/README.md) | 2 | `fail_point!` and the failpoint catalogue ([Failpoints](#failpoints)) |
+| infrastructure | [`api_configuration`](/crates/api/api_configuration/README.md) | 2 | `Config`, trusted proxies, the process shutdown signal |
+| infrastructure | [`api_database`](/crates/api/api_database/README.md) | 3 | the pool, `migrations/`, `seeds/`, SQLSTATE predicates |
+| infrastructure | [`api_http_layer`](/crates/api/api_http_layer/README.md) | 3 | access tokens, the middleware chain and the tier extractors, rate limiters, `/healthz` and `/metrics`, the realtime hub |
+| infrastructure | [`api_property_evidence`](/crates/api/api_property_evidence/README.md) | 1 | dev-only: the property run recorder |
+| kernel | [`api_mission_vocabulary`](/crates/api/api_mission_vocabulary/README.md) | 0 | `TerrainType`, `GameMode` |
+| kernel | [`api_audit_log`](/crates/api/api_audit_log/README.md) | 2 | the audit severity and the audit line appends every domain writes |
+| kernel | [`api_equipment_datasets`](/crates/api/api_equipment_datasets/README.md) | 2 | the equipment dataset imports, index and reads behind community content's viewer routes |
+| kernel | [`api_member_activity`](/crates/api/api_member_activity/README.md) | 3 | member statistics, the leaderboard view, attendance attribution, the re-evaluation queue |
+| kernel | [`api_discord`](/crates/api/api_discord/README.md) | 4 | the Discord OAuth2, guild-member and webhook clients (`WebhookAnnouncement`) |
+| kernel | [`api_caller_identity`](/crates/api/api_caller_identity/README.md) | 4 | `UserRole`, session and account authority, cached membership permissions, `MachineCaller` |
+| kernel | [`api_state`](/crates/api/api_state/README.md) | 5 | `AppState` and its `FromRef` projections ([State composition](#state-composition)) |
+| domain | `api_community_content`, `api_identity_and_access` | 6 | their route groups in [Routes by domain](#routes-by-domain) |
+| domain | `api_administration`, `api_server_infrastructure` | 7 | 〃 |
+| domain | `api_missions`, `api_match_telemetry` | 8 | 〃 |
+| domain | `api_operations` | 9 | 〃 |
+| domain | `api_command_center` | 10 | 〃 |
+| workers | [`api_background_workers`](/crates/api/api_background_workers/README.md) | 10 | the thirteen interval tasks and `spawn_all` |
+
+A domain crate exposes one `routes()` table, which the router merges; it depends on another
+domain only along the domain graph `apps/api/src/tests/architecture_rules.rs` holds
+(administration on identity and access; server infrastructure on community content; match
+telemetry on server infrastructure; missions on community content and server infrastructure;
+operations on identity and access, match telemetry, missions and server infrastructure; command
+center on community content, identity and access, missions, operations and server
+infrastructure), and no kernel or infrastructure crate depends on a domain. The
+`staging-fixtures` host tool in `tools/staging/staging_fixtures/` writes through the domain
+crates' services and carries 4 of the API's 154 integration binaries.
+
+### State composition
+
+`api::composition::application_state(pool, config)` is the one place the concrete services are
+built: the database session authority of `api_caller_identity`, the Discord OAuth2 client and the
+announcement webhook of `api_discord`, and the `EquipmentDatasets` of `api_equipment_datasets`.
+It passes them to `api_state::AppState::new`, which builds the token manager, the CORS allow-list,
+the rate-limit state, the realtime hub and the metrics registry itself. `AppState` holds the
+services concretely and the session authority as an `Arc<dyn SessionAuthority>`, so
+`api_http_layer`'s `AuthUser` extractor asks it without naming the caller identity crate. A
+handler extracts the whole state; a middleware or extractor of `api_http_layer` takes only its
+part through a `FromRef` projection (the pool, the configuration, the token manager, the session
+authority, the CORS origins, the rate limits, the hub, the Discord services), which
+keeps `api_http_layer` below `api_state`. The `api` binary, `import-registry` and every
+integration suite build their state through `application_state`.
+
+### Failpoints
+
+`fail_point!(<point>)` marks a place on a write path where a test injects a failure or a pause:
+before or after a commit, before an external effect. The macro and the catalogue of 18 points
+live in `api_failpoints`; the domain crates that place points (identity and access,
+administration, server infrastructure, missions, match telemetry, operations) depend on it
+normally and turn its `failpoints` feature on only through their dev-dependencies, as the
+application does. A test build carries the registry; the deploy build
+(`cargo build --release -p api --bin api`) compiles every point to nothing. The
+`failure_injection_*` integration binaries arm the points, and the
+[failpoints README](/crates/api/api_failpoints/README.md) gives the arming rules.
+
+### Ids
+
+Every id at a public boundary of an API crate is a typed id from `api_identifiers`: one type per
+concept (`EventId`, `MissionId`, `ServerId`, `DiscordUserId` and the rest), declared with the
+`newtype_ids` macros. Each is serde- and sqlx-transparent, so its JSON, its text, its SQL bind and
+an axum path parse are those of the bare `Uuid`, `String` or `i64`; the response goldens and stored
+digests stay byte-equal. A field or public function parameter named `id` or `*_id` with a bare
+type is refused by `cargo xtask verify crate-anatomy`. The
+[identifiers README](/crates/api/api_identifiers/README.md) lists every id by domain.
+
 Contract parity follows Law 9 of `CLAUDE.md`: the domain models are the snake_case source of
 truth, the contract types are generated from `contracts/definitions/` into the
 [contract_schema_types](/crates/contracts/contract_schema_types/README.md) crate by
 `cargo xtask ci schema-codegen`, and the frontend DTOs in
 `apps/frontend/src/foundation/transport/dto/` mirror the models under golden tests. The missions
-domain's [contract layer](/apps/api/src/missions/contract/README.md) validates every
+domain's [contract layer](/crates/api/api_missions/src/contract/README.md) validates every
 mission document it accepts or serves against those schemas.
 
 To verify a change from the repository root:
@@ -271,7 +355,7 @@ DTO in `apps/frontend/src/foundation/transport/dto/`. Acceptance of the API as a
   `GET /api/v1/matches/{matchId}/events` exist; the after-action replay that plays them does
   not.
 - [T-952 — api set_var mutates a shared test process](/.ai/tickets/T-952.toml) (idea, no
-  plan): the pool-setting tests in `apps/api/src/core/database/tests/connection.rs`
+  plan): the pool-setting tests in `crates/api/api_database/src/tests/connection.rs`
   stop mutating the process environment and use `DbPoolConfig::from_lookup`.
 - [T-1131 — Decide whether Markdown edits should invalidate API readiness evidence](/.ai/tickets/T-1131.toml)
   (idea, no plan): whether documentation stays in the readiness fingerprint.
@@ -281,7 +365,7 @@ DTO in `apps/frontend/src/foundation/transport/dto/`. Acceptance of the API as a
 The [API decisions log](/documentation/apps/api/decisions.md) records each with its
 context and consequences.
 
-- The crate is organised by domain, and a route's tier travels with its handler's extractor:
+- The API is organised by domain, and a route's tier travels with its handler's extractor:
   a domain can be read, changed and tested whole, and no router position grants access.
 - `/map-assets` sits below the rate limiter: terrain streaming is bytes, not requests, and a cold
   Mission Creator boot fetches hundreds of files at once.
@@ -292,3 +376,7 @@ context and consequences.
   over HTTPS rather than from files staged on disk.
 - Background workers own the schedule and nothing else: the work is a domain service, and only
   the binary imports the workers.
+- The API is a thin application over API crates: the crate graph, not a source walk, holds the
+  domain boundaries, and each crate builds and tests alone.
+- Ids at a crate's public boundary are typed and wire-transparent: a mixed-up id is a compile
+  error, and no response, digest or SQL bind changes.

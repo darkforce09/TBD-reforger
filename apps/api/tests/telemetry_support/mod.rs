@@ -25,10 +25,9 @@
 // own, and the gate runs `clippy -p api --all-targets -- -D warnings`.
 #![allow(dead_code)]
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
@@ -44,9 +43,9 @@ pub mod report_fixtures;
 /// Router + pool over this binary's private database, or `None` when the suite must skip.
 pub async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    let app = http_router::router(AppState::new(
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "tele-secret"),
     ));
@@ -104,7 +103,7 @@ pub async fn runtime_session(app: &Router, pool: &PgPool, server: uuid::Uuid) ->
     let secret = format!(
         "tbdm_{}_{}",
         credential.simple(),
-        api::core::authentication_primitives::random_token(32)
+        api_http_layer::authentication_primitives::random_token(32)
     );
     sqlx::query(
         "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by)
@@ -112,7 +111,7 @@ pub async fn runtime_session(app: &Router, pool: &PgPool, server: uuid::Uuid) ->
     )
     .bind(credential)
     .bind(server)
-    .bind(api::core::authentication_primitives::hash_token(&secret))
+    .bind(api_http_layer::authentication_primitives::hash_token(&secret))
     .bind(common::DEV_LOGIN_USER)
     .execute(pool)
     .await

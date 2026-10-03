@@ -33,7 +33,7 @@ strings are `chrono::DateTime<Utc>`, except in `current-profile.schema.json`, wh
 stay `String` to keep their exact fractional precision through a round trip; `uuid` strings are
 `uuid::Uuid`. The loadout export model is not generated: its versioned root `oneOf` does not
 survive typify, so the API keeps it by hand in
-`apps/api/src/missions/contract/loadout_projection.rs`.
+`crates/api/api_missions/src/contract/loadout_projection.rs`.
 
 ## Getting started
 

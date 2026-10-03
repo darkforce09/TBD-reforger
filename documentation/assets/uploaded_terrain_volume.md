@@ -70,7 +70,7 @@ multipart archive
 
 - The design has the API resolve one folder per tier and serve both under `/map-assets` (Data,
   below) — the API serves `/map-assets` from
-  `MAP_ASSETS_DIR` alone (`apps/api/src/core/http_router.rs`), and no code reads
+  `MAP_ASSETS_DIR` alone (`apps/api/src/router.rs`), and no code reads
   `TBD_TERRAIN_STORAGE_DIR`.
 
 ## Data

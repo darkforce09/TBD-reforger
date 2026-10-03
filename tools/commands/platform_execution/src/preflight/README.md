@@ -27,7 +27,7 @@ check: ✓ for fine, ✗ BLOCK for a stop, ! WARN for a risk.
 | working tree, branch, remote | dirty tree; not on `main` | commits not pushed |
 | worktrees | | stale worktrees; worktrees idle over `TBD_IDLE_WORKTREE_MIN` minutes |
 | ticket check, wave lock | `cargo xtask ticket check` or `cargo xtask wave check` fails | |
-| postgres :5434, API :8080 | | database down; `/healthz` not 200, or the API process older than the newest API commit |
+| postgres :5434, API :8080 | | database down; `/healthz` not 200, or the API process older than the newest commit under `apps/api` or `crates/api` |
 | trunk serve, chrome | | stray Chrome processes |
 
 The summary is `PREFLIGHT: PASS (<n> warn)` or `PREFLIGHT: <n> BLOCK, <n> warn — DO NOT START`.

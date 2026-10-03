@@ -1,4 +1,4 @@
-//! Arming helpers over `api::core::failpoints` and the check of an injected answer.
+//! Arming helpers over `api_failpoints` and the check of an injected answer.
 //!
 //! **Role:** names the three ways a case arms a point (`fail`, `fail_once`, `pause`) as methods of
 //! the held suite lock, bundles a pause with its guard, and checks the `500` a request answers
@@ -14,7 +14,7 @@
 use axum::http::StatusCode;
 use serde_json::Value;
 
-pub use api::core::failpoints::{
+pub use api_failpoints::{
     ArmGuard, CATALOGUE, FailAction, Failpoint, FailpointSuiteLock, PauseHandle, lock_suite, reach,
 };
 
@@ -60,7 +60,7 @@ pub struct PausedFailpoint<'suite> {
 
 impl PausedFailpoint<'_> {
     /// Resolves once the first arrival is held at the point; panics after
-    /// `api::core::failpoints::PAUSE_REACH_BOUND`.
+    /// `api_failpoints::PAUSE_REACH_BOUND`.
     pub async fn reached(&self) {
         self.handle.reached().await;
     }

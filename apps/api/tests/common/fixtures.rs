@@ -190,7 +190,7 @@ pub async fn participant_allocation(
 }
 
 /// The fixed account dev-login mints for each role other than guest
-/// (`identity_and_access::handlers::developer_login::discord_id_for_role`).
+/// (`api_identity_and_access::handlers::developer_login::discord_id_for_role`).
 pub const DEV_LOGIN_MEMBER_IDENTITIES: [(&str, &str); 4] = [
     ("000000000000000001", "admin"),
     ("000000000000000002", "enlisted"),
@@ -240,7 +240,7 @@ pub async fn event_runtime_credential(pool: &PgPool, event: Uuid, author: &str) 
     let secret = format!(
         "tbdm_{}_{}",
         credential.simple(),
-        api::core::authentication_primitives::random_token(32)
+        api_http_layer::authentication_primitives::random_token(32)
     );
     sqlx::query(
         "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by)
@@ -248,7 +248,7 @@ pub async fn event_runtime_credential(pool: &PgPool, event: Uuid, author: &str) 
     )
     .bind(credential)
     .bind(server)
-    .bind(api::core::authentication_primitives::hash_token(&secret))
+    .bind(api_http_layer::authentication_primitives::hash_token(&secret))
     .bind(author)
     .execute(&mut *transaction)
     .await

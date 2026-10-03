@@ -20,7 +20,7 @@ mod contract_support;
 
 use std::time::Duration;
 
-use api::administration::services::audit_notifier::AuditSignal;
+use api_administration::services::audit_notifier::AuditSignal;
 use axum::http::{HeaderValue, StatusCode};
 use serde_json::{Value, json};
 use tokio::sync::broadcast::error::TryRecvError;
@@ -477,7 +477,9 @@ async fn audit_replay_malformed_last_event_id_answers_400() {
 
 /// Migration 0057's backfill statement, verbatim.
 fn backfill_statement() -> &'static str {
-    let migration = include_str!("../migrations/0057_audit_publication_retained_floor.sql");
+    let migration = include_str!(
+        "../../../crates/api/api_database/migrations/0057_audit_publication_retained_floor.sql"
+    );
     let start = migration
         .find("UPDATE public.audit_publication_state AS state")
         .expect("0057 backfills the floor");

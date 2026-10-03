@@ -16,10 +16,10 @@ mod failpoint_and_race_support;
 
 use std::time::Duration;
 
-use api::administration::services::audit_publication::publish_audit_batch;
-use api::administration::services::required_audit::append_system_audit;
-use api::core::database;
-use api::core::failpoints::InjectedFailure;
+use api_administration::services::audit_publication::publish_audit_batch;
+
+use api_audit_log::required_audit::append_system_audit;
+use api_failpoints::Error;
 use failpoint_and_race_support::{
     AuditEvidence, BLOCKED_WAIT_BOUND, CATALOGUE, Failpoint, FailpointArming, Interleaving,
     RowCounts, RowLockHolder, audit_evidence, check_publication_sequence, lock_suite, reach,
@@ -34,7 +34,7 @@ const SELF_CHECK_ACTION: &str = "failure_injection.self_check";
 async fn self_check_pool() -> PgPool {
     let url = common::require_test_database_url()
         .expect("the failure-injection self-checks require PostgreSQL");
-    database::connect(&url)
+    api_database::connect(&url)
         .await
         .expect("connect to the suite database")
 }
@@ -129,7 +129,7 @@ async fn failure_injection_failpoints_are_inert_until_armed() {
 async fn failure_injection_support_fail_once_and_pause_affect_only_the_first_arrival() {
     let suite = lock_suite().await;
     let point = Failpoint::SessionLogoutBeforeCommit;
-    let injected = Err(InjectedFailure { failpoint: point });
+    let injected = Err(Error::InjectedFailure { failpoint: point });
     {
         let guard = suite.fail(point);
         assert_eq!(reach(point).await, injected);

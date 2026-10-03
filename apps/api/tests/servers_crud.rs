@@ -11,10 +11,10 @@
 //!
 //! Skips without `TEST_DATABASE_URL`.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Method, Request, StatusCode, header};
@@ -33,8 +33,8 @@ mod common;
 /// likewise filters `GET /servers` down to its own rows.
 async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let like = format!("Servers {tag}%");
     sqlx::query(
         "DELETE FROM server_statuses WHERE server_id IN (SELECT id FROM servers WHERE name LIKE $1)",
@@ -49,8 +49,9 @@ async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
         .await
         .expect("clean servers");
 
-    let state = AppState::new(pool.clone(), Config::for_tests(url, "servers-secret"));
-    let app = http_router::router(state.clone());
+    let state =
+        api::composition::application_state(pool.clone(), Config::for_tests(url, "servers-secret"));
+    let app = router(state.clone());
     Some((app, pool, state))
 }
 
@@ -407,7 +408,7 @@ async fn servers_list_terrain_from_current_match_join() {
 }
 
 /// The writes are admin-only; the reads stay member-tier. Asserted against the tier the handler's
-/// own extractor enforces, so this holds however `core/http_router.rs` registers the routes.
+/// own extractor enforces, so this holds however `src/router.rs` registers the routes.
 #[tokio::test]
 async fn servers_writes_are_admin_only() {
     let Some((app, _, state)) = boot_servers("Tier").await else {

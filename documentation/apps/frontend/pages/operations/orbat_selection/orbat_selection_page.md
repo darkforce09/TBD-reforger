@@ -56,7 +56,7 @@ selector the event hub shows under each mission.
   unrestricted standing (`OrbatSelectionInner` in
   `apps/frontend/src/pages/operations/orbat_selection/page.rs`). For a mission of an
   event the viewer may not see, the selector's own ORBAT fetch fails with 404 "mission not found"
-  (`get_orbat` in `apps/api/src/operations/handlers/orbat_view.rs`) and reads
+  (`get_orbat` in `crates/api/api_operations/src/handlers/orbat_view.rs`) and reads
   "No ORBAT slots defined for this mission.", so the viewer is not told the link is closed to
   them.
 - The back link names an event without a `name_override` "Operation", where the hub it leads to
@@ -69,7 +69,7 @@ The README's [Data](/apps/frontend/src/pages/operations/orbat_selection/README.m
 lists the calls. Server-side:
 
 - `GET /api/v1/events/{id}` (`get_event` in
-  `apps/api/src/operations/handlers/event_hub.rs`): the event's hub projected for the
+  `crates/api/api_operations/src/handlers/event_hub.rs`): the event's hub projected for the
   viewer's access, which the page reads for the event's name, the mission's title and the
   viewer's standing; 404 "event not found" for an event the viewer may not see.
 - The selector's calls and their server-side meaning are the event hub page's

@@ -1,0 +1,17 @@
+# Stage S9 K3b: the identity and access domain (Discord sign-in, session tokens, the caller's own
+# profile, the Arma link handshake) becomes api_identity_and_access.
+# The domain folder becomes the crate's src/ whole (its README the source tree README) and its
+# mod.rs the crate root. The module prefix is one `crate::` row scoped to the moved folder (first:
+# a file two rows of one prefix both reach takes the earlier row), one `crate::` row scoped to the
+# API source and one `api::` row scoped to the API package (its integration tests and the
+# staging-fixtures binary). Grouped use trees were split before the rows ran.
+kind	from	to	scope
+#
+# Folder and crate root
+path	apps/api/src/identity_and_access	crates/api/api_identity_and_access/src
+path	apps/api/src/identity_and_access/mod.rs	crates/api/api_identity_and_access/src/lib.rs
+#
+# Module prefix
+rust_path	crate::identity_and_access::	crate::	apps/api/src/identity_and_access
+rust_path	crate::identity_and_access::	api_identity_and_access::	apps/api/src
+rust_path	api::identity_and_access::	api_identity_and_access::	apps/api

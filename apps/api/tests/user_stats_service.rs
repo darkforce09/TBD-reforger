@@ -5,14 +5,12 @@
 //! operations regardless of their recorded state, and rounds the percentage to two decimals.
 //! Telemetry and identity-link integration suites also exercise this service through HTTP.
 
-use api::core::database;
+use api_identifiers::DiscordUserId;
 use sqlx::PgPool;
 use uuid::Uuid;
 // The reachability proof: a `pub(super)` `recompute_user_stats` inside the ingest handler could
 // not be imported here at all, so this line is itself the assertion.
-use api::command_center::services::user_stats::{
-    recompute_user_stats, recompute_user_stats_best_effort,
-};
+use api_member_activity::user_stats::{recompute_user_stats, recompute_user_stats_best_effort};
 
 mod common;
 
@@ -27,10 +25,15 @@ struct Fixture {
 }
 
 impl Fixture {
+    /// This fixture's player as the typed Discord user id the services take.
+    fn player_id(&self) -> DiscordUserId {
+        DiscordUserId::new(self.player)
+    }
+
     async fn boot(player: &'static str, tag: &'static str) -> Option<(PgPool, Self)> {
         let url = common::require_test_database_url()?;
-        let pool = database::connect(&url).await.expect("connect");
-        database::migrate(&pool).await.expect("migrate");
+        let pool = api_database::connect(&url).await.expect("connect");
+        api_database::migrate(&pool).await.expect("migrate");
         let f = Self { player, tag };
         common::seed_user(
             &pool,
@@ -230,7 +233,7 @@ async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
     f.seed_registration(&pool, "future-registered", -48, "registered")
         .await;
 
-    recompute_user_stats(&pool, f.player)
+    recompute_user_stats(&pool, &f.player_id())
         .await
         .expect("recompute must succeed");
 
@@ -247,7 +250,7 @@ async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
     // Future attendance cannot inflate the numerator or dilute the denominator.
     f.seed_registration(&pool, "future-attended", -72, "attended")
         .await;
-    recompute_user_stats(&pool, f.player)
+    recompute_user_stats(&pool, &f.player_id())
         .await
         .expect("recompute must succeed");
     let (deployments, rate) = f.stored_stats(&pool).await;
@@ -268,7 +271,7 @@ async fn recompute_user_stats_is_reachable_from_services_and_still_correct() {
     .expect("move the attended operation into the past")
     .rows_affected();
     assert_eq!(moved, 1);
-    recompute_user_stats(&pool, f.player)
+    recompute_user_stats(&pool, &f.player_id())
         .await
         .expect("recompute the expanded past population");
     assert_eq!(
@@ -300,7 +303,7 @@ async fn a_player_with_no_history_reads_zero_rather_than_dividing_by_zero() {
     .await
     .expect("prime");
 
-    recompute_user_stats(&pool, f.player)
+    recompute_user_stats(&pool, &f.player_id())
         .await
         .expect("recompute must succeed");
 
@@ -323,7 +326,7 @@ async fn the_best_effort_wrapper_still_writes_the_numbers() {
     let m = f.seed_match(&pool, "wrapper").await;
     f.seed_stat(&pool, m, "w").await;
 
-    recompute_user_stats_best_effort(&pool, f.player, "wrapper check").await;
+    recompute_user_stats_best_effort(&pool, &f.player_id(), "wrapper check").await;
 
     let (deployments, _) = f.stored_stats(&pool).await;
     assert_eq!(deployments, 1, "the wrapper must actually recompute");
@@ -337,17 +340,19 @@ async fn the_best_effort_wrapper_still_writes_the_numbers() {
 /// re-derived the SQL in a handler — would satisfy every test above.
 #[test]
 fn the_sql_lives_only_in_the_service() {
-    let service = include_str!("../src/command_center/services/user_stats.rs");
+    let service = include_str!("../../../crates/api/api_member_activity/src/user_stats.rs");
     assert!(
         service.contains("SELECT count(DISTINCT match_id) FROM match_player_stats"),
-        "command_center/services/user_stats.rs no longer owns the deployment count"
+        "api_member_activity's user_stats.rs no longer owns the deployment count"
     );
     for handler in [
-        include_str!("../src/match_telemetry/handlers/match_results.rs"),
-        include_str!("../src/operations/services/participation_attribution.rs"),
-        include_str!("../src/identity_and_access/handlers/arma_link_confirmation.rs"),
-        include_str!("../src/identity_and_access/handlers/arma_link_codes.rs"),
-        include_str!("../src/operations/handlers/member_service_record.rs"),
+        include_str!("../../../crates/api/api_match_telemetry/src/handlers/match_results.rs"),
+        include_str!("../../../crates/api/api_member_activity/src/participation_attribution.rs"),
+        include_str!(
+            "../../../crates/api/api_identity_and_access/src/handlers/arma_link_confirmation.rs"
+        ),
+        include_str!("../../../crates/api/api_identity_and_access/src/handlers/arma_link_codes.rs"),
+        include_str!("../../../crates/api/api_operations/src/handlers/member_service_record.rs"),
     ] {
         assert!(
             !handler.contains("count(DISTINCT match_id) FROM match_player_stats"),
@@ -365,15 +370,15 @@ fn the_sql_lives_only_in_the_service() {
 /// Schedule passage changes displayed rates even when no business write refreshes the cache.
 #[tokio::test]
 async fn attendance_read_crosses_database_clock_boundary_without_a_write() {
-    use api::identity_and_access::services::user_lookup::load_user;
+    use api_identity_and_access::services::user_lookup::load_user;
     let (pool, f) = Fixture::boot("000000000000336004", "stats-clock")
         .await
         .unwrap();
     f.seed_registration(&pool, "decided", -1, "attended").await;
-    recompute_user_stats(&pool, f.player).await.unwrap();
+    recompute_user_stats(&pool, &f.player_id()).await.unwrap();
     assert_eq!(f.stored_stats(&pool).await.1, 0.0);
     assert_eq!(
-        load_user(&pool, f.player)
+        load_user(&pool, &f.player_id())
             .await
             .unwrap()
             .unwrap()
@@ -410,7 +415,7 @@ async fn attendance_read_crosses_database_clock_boundary_without_a_write() {
         "there was no aggregate write"
     );
     assert_eq!(
-        load_user(&pool, f.player)
+        load_user(&pool, &f.player_id())
             .await
             .unwrap()
             .unwrap()

@@ -105,5 +105,5 @@ because a publish refuses a relative one. Every request runs in the browser buil
 
 - [Content manager page](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
-- [Community content domain](/apps/api/src/community_content/README.md) — the
+- [Community content domain](/crates/api/api_community_content/src/README.md) — the
   announcement and upload routes.

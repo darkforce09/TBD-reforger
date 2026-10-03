@@ -25,7 +25,9 @@ use std::path::{Path, PathBuf};
 
 /// The pinned tbd-framework Scripts root.
 pub fn scripts_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../mod/tbd-framework/Scripts")
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("apps/mod/tbd-framework/Scripts")
 }
 
 /// One script file's outline.

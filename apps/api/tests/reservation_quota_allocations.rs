@@ -2,10 +2,10 @@
 //! participant shared across missions; limit edits never fall below granted places; generated
 //! operation sequences conserve allocations, pool limits and seatability.
 
-use api::operations::services::event_reservations::reservation_scope::{
+use api_operations::services::event_reservations::reservation_scope::{
     AttachmentScope, ReservationScope,
 };
-use api::operations::services::event_reservations::scope_snapshot::ScopeSnapshot;
+use api_operations::services::event_reservations::scope_snapshot::ScopeSnapshot;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
 
@@ -266,15 +266,26 @@ async fn reservation_quotas_limit_edits_below_allocation_conflict() {
 /// Invariants that must hold after every committed reservation operation.
 async fn assert_scope_invariants(f: &Fixture) -> Result<(), String> {
     let mut tx = f.pool().begin().await.unwrap();
-    let scope = ReservationScope::lock(&mut tx, f.event, AttachmentScope::Active, None, &[])
+    let scope = ReservationScope::lock(&mut tx, f.event.into(), AttachmentScope::Active, None, &[])
         .await
         .map_err(|error| error.message)?;
-    let snapshot = ScopeSnapshot::load(&mut tx, &scope, &f.main_guild)
-        .await
-        .map_err(|error| error.message)?;
+    let snapshot = ScopeSnapshot::load(
+        &mut tx,
+        &scope,
+        &api_identifiers::DiscordGuildId::new(f.main_guild.as_str()),
+    )
+    .await
+    .map_err(|error| error.message)?;
     let plan = snapshot.plan().map_err(|error| error.message)?;
     for (index, mission) in f.missions.iter().enumerate() {
-        if !plan.holders_remain_seatable(&snapshot.eligibility, *mission, None, None, None, None) {
+        if !plan.holders_remain_seatable(
+            &snapshot.eligibility,
+            (*mission).into(),
+            None,
+            None,
+            None,
+            None,
+        ) {
             return Err(format!("mission {index} strands a seatless holder"));
         }
         let (participants, seats): (i64, i64) = sqlx::query_as(
@@ -322,7 +333,7 @@ async fn assert_scope_invariants(f: &Fixture) -> Result<(), String> {
 fn generated_reservation_operations_conserve_allocations_quota_and_seatability() {
     use proptest::prelude::*;
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "reservation_allocation_conservation",
         24,
         &proptest::collection::vec((0u8..6, 0usize..4, 0usize..2, 0usize..3), 1..14),

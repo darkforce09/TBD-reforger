@@ -1,19 +1,16 @@
 //! Verified reclamation releases deleted ownership while preserving factual authorship.
 
-use api::{
-    command_center::services::{
-        leaderboard_view::refresh_leaderboard_on_connection,
-        user_stats::recompute_user_stats_on_connection,
-    },
-    core::{
-        application_state::AppState, configuration::Config, database, http_router,
-        middleware::AuthUser,
-    },
-    identity_and_access::services::{
-        identity_linking::confirm_identity, link_code_issuance::issue_link_code,
-        session_authorization::authorize_session, session_issuance::issue_session,
-    },
+use api::router::router;
+use api_caller_identity::session_authorization::authorize_session;
+use api_configuration::configuration::Config;
+use api_http_layer::middleware::AuthUser;
+use api_identity_and_access::services::{
+    identity_linking::confirm_identity, link_code_issuance::issue_link_code,
+    session_issuance::issue_session,
 };
+use api_member_activity::leaderboard_view::refresh_leaderboard_on_connection;
+use api_member_activity::user_stats::recompute_user_stats_on_connection;
+use api_state::AppState;
 use axum::{
     body::{Body, to_bytes},
     http::{Request, StatusCode},
@@ -59,15 +56,14 @@ async fn actor(state: &AppState) -> AuthUser {
 
 async fn fixture(history: bool, deleted: bool) -> Fixture {
     let url = common::require_test_database_url().expect("reclamation tests require PostgreSQL");
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(pool, Config::for_tests(url, "deleted-owner-reclamation"));
-    let game_server = ReportingServer::open(
-        &http_router::router(state.clone()),
-        &state.pool,
-        "Reclamation server",
-    )
-    .await;
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state = api::composition::application_state(
+        pool,
+        Config::for_tests(url, "deleted-owner-reclamation"),
+    );
+    let game_server =
+        ReportingServer::open(&router(state.clone()), &state.pool, "Reclamation server").await;
     let owner = actor(&state).await;
     issue_session(&state, &owner.discord_id).await.unwrap();
     let claimant = actor(&state).await;
@@ -75,9 +71,9 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
     let consumed_owner_code = issue_link_code(&state, &owner).await.unwrap().0;
     confirm_identity(
         &state,
-        game_server.server_id,
+        game_server.server_id.into(),
         &consumed_owner_code,
-        &arma,
+        &api_identifiers::ArmaPlayerId::new(arma.as_str()),
         "Original character",
     )
     .await
@@ -147,7 +143,7 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
 
 /// Confirm `code` for `arma` over HTTP with the fixture server's machine credential.
 async fn confirm_http(f: &Fixture, code: &str, arma: &str) -> (StatusCode, Value) {
-    let response = http_router::router(f.state.clone())
+    let response = router(f.state.clone())
         .oneshot(
             Request::builder()
                 .method("POST")
@@ -287,7 +283,7 @@ async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
         .fetch_one(&f.state.pool)
         .await
         .unwrap();
-        assert_eq!(facts, (Some(claimant.discord_id.clone()), 7, 2));
+        assert_eq!(facts, (Some(claimant.discord_id.to_string()), 7, 2));
     }
     for (account, expected) in [
         (&f.owner.discord_id, 0),
@@ -333,7 +329,8 @@ async fn seed_authored_facts(f: &Fixture) {
     .unwrap();
     let mut fixture = (pool).begin().await.unwrap();
     let allocation =
-        common::participant_allocation(&mut fixture, event_mission, &f.owner.discord_id).await;
+        common::participant_allocation(&mut fixture, event_mission, f.owner.discord_id.as_str())
+            .await;
     sqlx::query(
         "INSERT INTO event_registrations(event_mission_id, discord_id, attendance_state, legacy_attendance_state, registered_at, allocation_id)
          VALUES ($1, $2, 'attended', 'attended', now() - interval '3 days', $3)",
@@ -394,7 +391,7 @@ async fn deleted_owner_history_transfers_and_signup_attendance_and_authorship_re
     let authored = authored_snapshot(&f).await;
     let (status, body) = confirm_http(&f, &f.claimant_code, &f.arma).await;
     assert_eq!(status, StatusCode::OK, "{body}");
-    assert_eq!(body["discord_id"], f.claimant.discord_id);
+    assert_eq!(body["discord_id"], f.claimant.discord_id.as_str());
     assert_eq!(body["linked"], true);
     assert_reclaimed(&f, &f.claimant, &f.claimant_code).await;
     assert_eq!(authored_snapshot(&f).await, authored);
@@ -568,7 +565,8 @@ async fn required_statistics_or_audit_failure_rolls_back_reclamation_and_retry_s
     for audit in [false, true] {
         let f = fixture(true, true).await;
         let before = business_snapshot(&f).await;
-        let (trigger, table) = install_failure(&f.state.pool, &f.claimant.discord_id, audit).await;
+        let (trigger, table) =
+            install_failure(&f.state.pool, f.claimant.discord_id.as_str(), audit).await;
         let failed = confirm_http(&f, &f.claimant_code, &f.arma).await;
         remove_failure(&f.state.pool, &trigger, table).await;
         assert_eq!(

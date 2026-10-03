@@ -1,0 +1,17 @@
+# Stage S9 K2b, second of three: the member statistics, the leaderboard refresh, the attendance
+# attribution and the re-evaluation queue become api_member_activity.
+# The staging folder becomes the crate's src/ whole and its mod.rs the crate root. The module prefix
+# is one `crate::` row scoped to the moved folder (first: a file two rows of one prefix both reach
+# takes the earlier row), one `crate::` row scoped to the API source and one `api::` row scoped
+# to the API package (its integration tests and the staging-fixtures binary). Grouped use trees
+# were split before the rows ran.
+kind	from	to	scope
+#
+# Folder and crate root
+path	apps/api/src/kernel/member_activity	crates/api/api_member_activity/src
+path	apps/api/src/kernel/member_activity/mod.rs	crates/api/api_member_activity/src/lib.rs
+#
+# Module prefix
+rust_path	crate::kernel::member_activity::	crate::	apps/api/src/kernel/member_activity
+rust_path	crate::kernel::member_activity::	api_member_activity::	apps/api/src
+rust_path	api::kernel::member_activity::	api_member_activity::	apps/api

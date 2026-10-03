@@ -88,7 +88,10 @@ pub fn run(args: &[String]) -> Result<u8> {
     let migdir = match env::var("TBD_GATE_MIGRATION_DIR") {
         Ok(folder) => folder,
         Err(_) => match find_repository_root() {
-            Ok(root) => root.join("apps/api/migrations").display().to_string(),
+            Ok(root) => root
+                .join("crates/api/api_database/migrations")
+                .display()
+                .to_string(),
             // No migrations folder to audit against: fail closed.
             Err(_) => stop!(
                 "TBD_GATE_MIGRATION_DIR unset and repo root not found — cannot locate migrations."

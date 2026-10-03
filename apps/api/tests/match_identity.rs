@@ -191,7 +191,7 @@ async fn match_identity_host_agent_credential_is_forbidden() {
     let secret = format!(
         "tbdm_{}_{}",
         credential.simple(),
-        api::core::authentication_primitives::random_token(32)
+        api_http_layer::authentication_primitives::random_token(32)
     );
     sqlx::query(
         "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by)
@@ -199,7 +199,7 @@ async fn match_identity_host_agent_credential_is_forbidden() {
     )
     .bind(credential)
     .bind(server.server_id)
-    .bind(api::core::authentication_primitives::hash_token(&secret))
+    .bind(api_http_layer::authentication_primitives::hash_token(&secret))
     .bind(common::DEV_LOGIN_USER)
     .execute(&pool)
     .await

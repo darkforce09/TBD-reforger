@@ -25,12 +25,12 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use api::community_content::services::discord_webhook::WebhookService;
-use api::community_content::services::equipment_data_viewer::EquipmentDataService;
-use api::community_content::services::equipment_data_viewer::importing::generation_import;
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::http_router;
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_discord::discord_webhook::WebhookService;
+use api_equipment_datasets::EquipmentDataService;
+use api_equipment_datasets::importing::generation_import;
+use api_state::AppState;
 use axum::routing::post;
 use axum::{Json, Router};
 use serde_json::{Value, json};
@@ -225,7 +225,7 @@ impl PartWorld for AdministrationCenterContentWorld {
         });
         state.webhook = Arc::new(WebhookService::new(format!("{base}/webhook")));
 
-        let app = http_router::router(state.clone());
+        let app = router(state.clone());
         let admin = actors.user(Role::Admin).token.clone();
         let create = |uri: &'static str, body: Value| {
             let app = app.clone();

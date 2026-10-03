@@ -122,5 +122,5 @@ every request run in the browser build only; the views that run them exist in th
 
 - [Audit logs page](/documentation/apps/frontend/pages/administration/audit_logs/audit_logs_page.md)
   — the page's behaviour, what the trail holds server-side, its design, open work and decisions.
-- [Administration domain](/apps/api/src/administration/README.md) — the audit log
+- [Administration domain](/crates/api/api_administration/src/README.md) — the audit log
   routes, the export and the live feed.

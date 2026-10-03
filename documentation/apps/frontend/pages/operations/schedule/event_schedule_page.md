@@ -21,7 +21,7 @@ reads any event's full hub beside it, briefing, places and
   [event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md),
   where administrators create the events listed here; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [operations domain](/apps/api/src/operations/README.md), which serves the list and
+  [operations domain](/crates/api/api_operations/src/README.md), which serves the list and
   the hub.
 
 ## Behaviour
@@ -74,10 +74,10 @@ reads any event's full hub beside it, briefing, places and
   hub's change callback refetches only the hub (`board` in
   `apps/frontend/src/pages/operations/schedule/page.rs`), while the counts come from
   the list fetch (`list_events` in
-  `apps/api/src/operations/handlers/event_listing.rs`).
+  `crates/api/api_operations/src/handlers/event_listing.rs`).
 - A card without a `name_override` reads "Untitled Operation" although its missions have titles;
   the dashboard names the same event after its first mission (`get_dashboard` in
-  `apps/api/src/command_center/handlers/live_dashboard.rs`).
+  `crates/api/api_command_center/src/handlers/live_dashboard.rs`).
 - The list shows the first 20 events the viewer may see: the page sends no `limit` or `offset`
   and has no pager, and the API pages by 20 by default (`list_events`).
 
@@ -87,13 +87,13 @@ The README's [Data](/apps/frontend/src/pages/operations/schedule/README.md#data)
 lists each call with the fields the page reads. Server-side:
 
 - `GET /api/v1/events` (`list_events` in
-  `apps/api/src/operations/handlers/event_listing.rs`), for any signed-in member:
+  `crates/api/api_operations/src/handlers/event_listing.rs`), for any signed-in member:
   - The `scope` parameter picks the set; the page sends none, so the default `upcoming` applies:
     events that start after now, or whose effective status is `live`, soonest first. `past` and
     `all` exist and the page does not use them.
   - The status in each row is the effective status, derived in Postgres from the stored status
     and the clock (`EFFECTIVE_STATUS_SQL` in
-    `apps/api/src/operations/services/event_status_rules.rs`): an event turns `live` at
+    `crates/api/api_operations/src/services/event_status_rules.rs`): an event turns `live` at
     its start time and `completed` six hours after its last mission starts, whether or not the
     lifecycle sweep has run. A cancelled event keeps its status and still lists while its start
     lies ahead.
@@ -104,7 +104,7 @@ lists each call with the fields the page reads. Server-side:
     (`filled * 100 / total_slots`, 0 when there are no slots).
   - The page is `limit` rows (20 by default, at most 100) from `offset`.
 - `GET /api/v1/events/{id}` (`get_event` in
-  `apps/api/src/operations/handlers/event_hub.rs`): the selected event's hub; the
+  `crates/api/api_operations/src/handlers/event_hub.rs`): the selected event's hub; the
   [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md)
   gives its server-side meaning and the slotting calls the embedded view makes.
 

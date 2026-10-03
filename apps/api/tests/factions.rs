@@ -11,10 +11,9 @@
 //! role rewrite), and [`common::require_test_database_url`] refuses `tbd_reforger` before any
 //! DELETE.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Method, Request, StatusCode, header};
@@ -34,8 +33,8 @@ const GHOST: &str = "000000000000400099";
 async fn setup() -> Option<(Router, PgPool, String, String)> {
     // Unset → skip; set-but-live-DB → panic before connect/DELETE.
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     // Owner-scoped wipe only — never `DELETE FROM user_factions` bare.
     sqlx::query("DELETE FROM user_factions WHERE owner_id = ANY($1)")
@@ -65,8 +64,11 @@ async fn setup() -> Option<(Router, PgPool, String, String)> {
     )
     .await;
 
-    let state = AppState::new(pool.clone(), Config::for_tests(url, "factions-secret"));
-    let app = http_router::router(state.clone());
+    let state = api::composition::application_state(
+        pool.clone(),
+        Config::for_tests(url, "factions-secret"),
+    );
+    let app = router(state.clone());
     let maker = common::access_token(&state, "factions", MAKER, "mission_maker", true).await;
     let enlisted = common::access_token(&state, "factions", ENLISTED, "enlisted", true).await;
     Some((app, pool, maker, enlisted))
@@ -101,10 +103,13 @@ async fn req(
 
 /// The committed golden doc — real GUIDs from the census-gated envelope.
 fn golden_doc() -> Value {
-    let raw = std::fs::read(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../contracts/fixtures/registry/faction-library.sample.json"
-    ))
+    let raw = std::fs::read(
+        repository_layout::find_repository_root_from(std::path::Path::new(env!(
+            "CARGO_MANIFEST_DIR"
+        )))
+        .expect("the repository root above the API package")
+        .join("contracts/fixtures/registry/faction-library.sample.json"),
+    )
     .expect("read faction golden");
     serde_json::from_slice(&raw).unwrap()
 }

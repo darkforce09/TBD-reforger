@@ -18,12 +18,13 @@
 //! which a banned or deleted account holds a session.
 
 use super::PropertyWorld;
-use api::core::{application_state::AppState, authentication_primitives::Claims};
-use api::identity_and_access::models::user_account::UserRole;
-use api::identity_and_access::services::{
+use api_caller_identity::UserRole;
+use api_http_layer::authentication_primitives::Claims;
+use api_identity_and_access::services::{
     session_issuance::{issue_development_session, issue_session},
     session_rotation::{logout_session, rotate_session},
 };
+use api_state::AppState;
 use chrono::Utc;
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use proptest::prelude::*;
@@ -291,9 +292,20 @@ pub async fn realise(world: &PropertyWorld, case: &AuthorityCase) -> RealisedSes
         write_snapshot(pool, &discord_id, guild, snapshot).await;
     }
     let (access, _, refresh) = match case.provenance {
-        SessionProvenance::Ordinary => issue_session(state, &discord_id).await,
+        SessionProvenance::Ordinary => {
+            issue_session(
+                state,
+                &api_identifiers::DiscordUserId::new(discord_id.as_str()),
+            )
+            .await
+        }
         SessionProvenance::Development(rank) => {
-            issue_development_session(state, &discord_id, rank.user_role()).await
+            issue_development_session(
+                state,
+                &api_identifiers::DiscordUserId::new(discord_id.as_str()),
+                rank.user_role(),
+            )
+            .await
         }
     }
     .expect("a fresh, unbanned account receives a session");

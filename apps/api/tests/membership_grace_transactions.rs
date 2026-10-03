@@ -1,11 +1,12 @@
 //! HTTP outage recovery validates duration, current authority, and transactional audit publication.
 
-use api::{
-    core::{application_state::AppState, configuration::Config, database, http_router},
-    identity_and_access::services::discord_membership_cache::{
-        accept_membership_observation, claim_membership_refresh,
-    },
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_identifiers::DiscordUserId;
+use api_identity_and_access::services::discord_membership_cache::{
+    accept_membership_observation, claim_membership_refresh,
 };
+use api_state::AppState;
 use axum::{
     body::{Body, to_bytes},
     http::{Request, StatusCode, header},
@@ -25,9 +26,9 @@ struct Fixture {
 
 async fn fixture(role: &str) -> Fixture {
     let url = common::require_test_database_url().expect("scratch database required");
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state = api::composition::application_state(
         pool,
         Config::for_tests(url, "membership-grace-transactions"),
     );
@@ -42,7 +43,7 @@ async fn fixture(role: &str) -> Fixture {
 }
 
 async fn request(f: &Fixture, method: &str, uri: &str, body: &str) -> (StatusCode, Value) {
-    let response = http_router::router(f.state.clone())
+    let response = router(f.state.clone())
         .oneshot(
             Request::builder()
                 .method(method)
@@ -236,7 +237,7 @@ async fn membership_grace_http_revalidates_actor_authority_and_session() {
             "departure" => {
                 let lease = claim_membership_refresh(
                     &f.state.pool,
-                    &f.actor,
+                    &DiscordUserId::new(f.actor.as_str()),
                     &f.state.cfg.discord_guild_id,
                     true,
                 )
@@ -310,7 +311,7 @@ async fn membership_grace_http_cannot_restore_unavailable_target_membership() {
                 common::fixtures::seed_membership(
                     &f.state.pool,
                     &target,
-                    &f.state.cfg.discord_guild_id,
+                    f.state.cfg.discord_guild_id.as_str(),
                     "guest",
                 )
                 .await

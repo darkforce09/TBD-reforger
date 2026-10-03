@@ -9,15 +9,15 @@
 //! default) — the inserts below mirror that.
 //!
 //! Also hosts the sparse-reimport pin for
-//! `src/missions/services/registry_import.rs`, so that DB consumer goes through the common
+//! `crates/api/api_missions/src/services/registry_import.rs`, so that DB consumer goes through the common
 //! guard and the tests-only `src/` scan stays green.
 
 mod common;
 
-use api::core::database;
-use api::identity_and_access::models::user_account::{User, UserRole};
-use api::missions::models::mission::MissionVersion;
-use api::missions::services::registry_import::import_items;
+use api_caller_identity::UserRole;
+use api_identity_and_access::models::user_account::User;
+use api_missions::models::mission::MissionVersion;
+use api_missions::services::registry_import::import_items;
 use uuid::Uuid;
 
 #[tokio::test]
@@ -26,8 +26,8 @@ async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     let did = format!("frt-{}", Uuid::new_v4());
 
@@ -106,7 +106,7 @@ async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
 
 /// Sparse re-import must not NULL populated Option columns.
 ///
-/// Lives here rather than beside `src/missions/services/registry_import.rs` so the DB
+/// Lives here rather than beside `crates/api/api_missions/src/services/registry_import.rs` so the DB
 /// consumer goes through the common per-binary guard instead of reading `TEST_DATABASE_URL`
 /// raw against the operator base.
 #[tokio::test]
@@ -115,8 +115,8 @@ async fn sparse_reimport_preserves_option_columns() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     const MP: &str = "00000000-0000-4000-a000-000000003377";
     const RN: &str = "{DEADBEEF00003761}Prefabs/Clothing/Reimport_Sparse_Vest.et";
@@ -171,7 +171,7 @@ async fn sparse_reimport_preserves_option_columns() {
         sqlx::query(q).bind(mp).execute(&pool).await.expect("clean");
     }
 
-    let c1 = import_items(&pool, &rich, Some(mp), false)
+    let c1 = import_items(&pool, &rich, Some(mp.into()), false)
         .await
         .expect("rich");
     assert_eq!((c1.inserted, c1.updated), (1, 0));
@@ -211,7 +211,7 @@ async fn sparse_reimport_preserves_option_columns() {
     assert_eq!(after_rich.weight_kg, Some(2.5));
     assert_eq!(after_rich.icon_url, "items/reimport.png");
 
-    let c2 = import_items(&pool, &sparse, Some(mp), false)
+    let c2 = import_items(&pool, &sparse, Some(mp.into()), false)
         .await
         .expect("sparse");
     // display_name change forces the UPDATE path; Option absences must not NULL columns.

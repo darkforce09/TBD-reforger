@@ -6,7 +6,7 @@
 //! writers and resets it meets.
 //! **Position:** drives `GET /api/v1/admin/audit-logs/stream` and `GET /api/v1/admin/audit-logs`
 //! through [`audit_frontend_support::AuditLogsPage`]; rows are written through
-//! `administration::services::required_audit` and the audited warning route.
+//! `api_audit_log::required_audit` and the audited warning route.
 //! **Signals & state:** every case holds the suite's sequence lock (see
 //! `audit_frontend_support`), owns a marker its rows carry, and counts only marked rows.
 //! **Invariants:** the merged view equals the database set for the case's marker; one audit id
@@ -20,7 +20,7 @@ mod contract_support;
 use std::collections::BTreeSet;
 use std::time::Duration;
 
-use api::administration::models::audit_log::AuditSeverity;
+use api_audit_log::AuditSeverity;
 use chrono::{DateTime, Datelike, Utc};
 use serde_json::json;
 

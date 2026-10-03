@@ -38,25 +38,25 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         }
     }
 
-    // ── Shape assertions on http_router.rs ───────────────────────────────────────────────────
+    // ── Shape assertions on router.rs ────────────────────────────────────────────────────────
     //
     // The extractor reads the MERGE function by name and prefixes ONE nest path; both are
     // load-bearing, so both are pinned. bash's `gate_require … "$APP_RS"` is a stat plus a content
     // match, split here into an explicit read plus `gate::require_str` for one reason: the script
-    // `cd`s to `$ROOT` and so printed `apps/api/src/core/http_router.rs`, while xtask
+    // `cd`s to `$ROOT` and so printed `apps/api/src/router.rs`, while xtask
     // takes an absolute root and may be invoked from any subdirectory. Reading first lets the
     // missing-target `Finding` carry that same relative path, with the same `Verdict` shapes.
     let nest = format!(".nest(\"{API_PREFIX}\", api_v1_routes(");
     let pins: [(String, &str); 2] = [
         (
             format!(
-                "http_router.rs no longer defines `{MERGE_FN}` — the mount cross-check in {SELF_REL} reads that function by name to learn which domain route tables are actually served, so it is now reading nothing. Re-point it before trusting any verdict."
+                "router.rs no longer defines `{MERGE_FN}` — the mount cross-check in {SELF_REL} reads that function by name to learn which domain route tables are actually served, so it is now reading nothing. Re-point it before trusting any verdict."
             ),
             MERGE_FN,
         ),
         (
             format!(
-                "http_router.rs no longer nests {MERGE_FN_NAME} at `{API_PREFIX}` — every @route tag in the crate is written with that prefix, so the extracted paths would all be wrong."
+                "router.rs no longer nests {MERGE_FN_NAME} at `{API_PREFIX}` — every @route tag in the crate is written with that prefix, so the extracted paths would all be wrong."
             ),
             nest.as_str(),
         ),
@@ -70,7 +70,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         None => {
             // bash ran both `gate_require`s and both reported the same missing file, so both lines
             // print. Reproduced rather than collapsed: the second names the nest prefix, and a
-            // reader who has lost http_router.rs still needs to know both invariants exist.
+            // reader who has lost router.rs still needs to know both invariants exist.
             for (msg, _) in &pins {
                 let cause = NotRun::TargetMissing(PathBuf::from(ROUTER_RS_REL));
                 o.push(Verdict::did_not_run(msg.clone(), Kind::Pin, cause).to_string());
@@ -97,14 +97,15 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
 
     // ── Extract both sides ───────────────────────────────────────────────────────────────────
     //
-    // The router side is the UNION of every `src/<domain>/routes.rs` in the tree, not one
+    // The router side is the UNION of every `crates/api/<crate>/src/routes.rs`, not one
     // function: each table is parsed on its own so a `.route(` in one cannot bleed into another
     // through the flattening.
     let tables = match discover_route_files(repo_root) {
         Ok(files) => files,
         Err(cause) => {
-            let msg =
-                format!("the domain route tables could not be discovered under {SRC_DIR_REL}");
+            let msg = format!(
+                "the domain route tables could not be discovered under {API_CRATES_DIR_REL}"
+            );
             o.push(Verdict::did_not_run(msg, Kind::Pin, cause).to_string());
             say(&mut o, &["", PARSE_FAIL]);
             return (2, o);
@@ -133,7 +134,8 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
         Ok(pair) => pair,
         Err(cause) => {
             // The case `2>/dev/null || true` could not tell apart from "no tags exist".
-            let msg = format!("the @route sweep could not read {SRC_DIR_REL}");
+            let msg =
+                format!("the @route sweep could not read {SRC_DIR_REL} and {API_CRATES_DIR_REL}");
             o.push(Verdict::did_not_run(msg, Kind::Pin, cause).to_string());
             say(&mut o, &["", PARSE_FAIL]);
             return (2, o);
@@ -162,13 +164,13 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     let discovered: BTreeSet<String> = tables.iter().map(|t| t.domain.clone()).collect();
     for domain in discovered.difference(&merged) {
         o.push(format!(
-            "FAIL: route file src/{domain}/{ROUTES_FILE} is not merged by {MERGE_FN_NAME}"
+            "FAIL: route file {API_CRATES_DIR_REL}/{domain}/src/{ROUTES_FILE} is not merged by {MERGE_FN_NAME}"
         ));
         fail = true;
     }
     for domain in merged.difference(&discovered) {
         o.push(format!(
-            "FAIL: {MERGE_FN_NAME} merges {domain}::routes but src/{domain}/{ROUTES_FILE} does not exist"
+            "FAIL: {MERGE_FN_NAME} merges {domain}::routes but {API_CRATES_DIR_REL}/{domain}/src/{ROUTES_FILE} does not exist"
         ));
         fail = true;
     }
@@ -262,7 +264,7 @@ pub(super) fn run(repo_root: &Path) -> (u8, Vec<String>) {
     o.push(String::new());
     let n_files = tables.len();
     o.push(format!(
-        "checked {n_tags} @route tag(s) against {n_routes} registered route(s) in {n_files} route file(s) under {SRC_DIR_REL}"
+        "checked {n_tags} @route tag(s) against {n_routes} registered route(s) in {n_files} route file(s) under {API_CRATES_DIR_REL}"
     ));
     if a_bad != 0 || b_bad != 0 {
         o.push(format!(

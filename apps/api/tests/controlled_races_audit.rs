@@ -23,8 +23,8 @@ mod failpoint_and_race_support;
 
 use std::time::Duration;
 
-use api::administration::services::audit_publication::publish_audit_batch;
-use api::administration::services::required_audit::append_system_audit;
+use api_administration::services::audit_publication::publish_audit_batch;
+use api_audit_log::required_audit::append_system_audit;
 use sqlx::PgConnection;
 
 use audit_stream_support::{AuditHarness, SseEvent, SseReader, case_tag, sequence_of};

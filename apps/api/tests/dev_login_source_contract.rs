@@ -5,6 +5,18 @@
 //! are a first failure, not the contract — `tests/dev_login_runtime_identity.rs` reads the
 //! identities back over HTTP, which is the only view that can see whether the arms compile.
 
+/// The development login handler's source file, relative to the checkout root.
+const DEVELOPER_LOGIN_HANDLER: &str =
+    "crates/api/api_identity_and_access/src/handlers/developer_login.rs";
+
+/// The development login handler's source file, found under the checkout root above this package.
+fn developer_login_handler_path() -> std::path::PathBuf {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    repository_layout::find_repository_root_from(manifest)
+        .unwrap_or_else(|e| panic!("no repository root above {}: {e}", manifest.display()))
+        .join(DEVELOPER_LOGIN_HANDLER)
+}
+
 /// Strip `//` and `/* */` outside string/char/raw-string literals so a source pin cannot stay green
 /// when live match arms are moved into comments.
 ///
@@ -281,7 +293,7 @@ fn fn_body<'a>(code: &'a str, name: &str) -> &'a str {
         [only] => *only,
         [] => panic!(
             "source pin: no FILE-SCOPE `{marker}` in comment-stripped \
-             src/identity_and_access/handlers/developer_login.rs — a definition nested in a `mod`/`impl`/block is not \
+             {DEVELOPER_LOGIN_HANDLER} — a definition nested in a `mod`/`impl`/block is not \
              the item the crate calls, and this pin binds the top-level one on purpose."
         ),
         many => panic!(
@@ -379,8 +391,7 @@ fn fn_body<'a>(code: &'a str, name: &str) -> &'a str {
 /// identities back over HTTP.
 #[test]
 fn dev_login_roles_use_distinct_discord_ids() {
-    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src/identity_and_access/handlers/developer_login.rs");
+    let handler = developer_login_handler_path();
     let src = std::fs::read_to_string(&handler)
         .unwrap_or_else(|e| panic!("source pin: read {}: {e}", handler.display()));
     // The pins below run on comment-stripped code so `// "enlisted" => …` cannot green.
@@ -401,14 +412,14 @@ fn dev_login_roles_use_distinct_discord_ids() {
     for id in discord_ids {
         assert!(
             code.contains(id),
-            "src/identity_and_access/handlers/developer_login.rs missing discord_id `{id}` — each role needs its own \
+            "{DEVELOPER_LOGIN_HANDLER} missing discord_id `{id}` — each role needs its own \
              row"
         );
     }
     for id in arma_ids {
         assert!(
             code.contains(id),
-            "src/identity_and_access/handlers/developer_login.rs missing arma_id `{id}` — per-role COALESCE must not race \
+            "{DEVELOPER_LOGIN_HANDLER} missing arma_id `{id}` — per-role COALESCE must not race \
              idx_users_arma_id"
         );
     }
@@ -451,11 +462,12 @@ fn dev_login_roles_use_distinct_discord_ids() {
     }
 
     // Call site must *use* the helpers: dead helpers plus a DEV_USER_ID bind
-    // must go red. Exact `let … = …(role);` — not the `fn …(role: &str)` signature.
+    // must go red. Exact `let … = …(role…);` — not the `fn …(role: &str)` signature; the
+    // Discord id is bound through its typed id, `DiscordUserId::new`.
     let login_body = fn_body(&code, "dev_login");
     assert!(
-        login_body.contains("let discord_id = discord_id_for_role(role);"),
-        "dev_login must bind `let discord_id = discord_id_for_role(role);` — \
+        login_body.contains("let discord_id = DiscordUserId::new(discord_id_for_role(role));"),
+        "dev_login must bind `let discord_id = DiscordUserId::new(discord_id_for_role(role));` — \
          `discord_id = DEV_USER_ID` with helpers left dead reintroduces the single-id fold"
     );
     assert!(
@@ -560,8 +572,7 @@ fn raw_string_arm_decoy_is_blanked_live_arms_kept() {
 /// collapsed, so reformatting either cannot turn this red or green.
 #[test]
 fn dev_login_docstring_names_every_accepted_role_and_the_admin_fallback() {
-    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src/identity_and_access/handlers/developer_login.rs");
+    let handler = developer_login_handler_path();
     let src = std::fs::read_to_string(&handler)
         .unwrap_or_else(|e| panic!("source pin: read {}: {e}", handler.display()));
     let code = strip_rust_comments_outside_literals(&src);

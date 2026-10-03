@@ -13,10 +13,9 @@
 // its own and the gate runs `clippy --all-targets -- -D warnings`.
 #![allow(dead_code)]
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -27,9 +26,9 @@ use crate::common;
 
 pub async fn app_and_token(role: &str) -> Option<(Router, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    let app = http_router::router(AppState::new(
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    let app = router(api::composition::application_state(
         pool,
         Config::for_tests(url, "missions-secret"),
     ));
@@ -370,7 +369,7 @@ pub async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, Stri
     let url = common::require_test_database_url()?;
     let (app, maker) = app_and_token("mission_maker").await?;
     let (_, admin) = app_and_token("admin").await?;
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
     Some((app, pool, maker, admin))
 }
 
@@ -383,7 +382,7 @@ pub async fn id_on_default_missions_page1(
     id: &str,
 ) -> bool {
     let sep = if uri_base.contains('?') { '&' } else { '?' };
-    // Explicit limit=20 matches the `ListQuery` default (`missions::handlers::mission_library`);
+    // Explicit limit=20 matches the `ListQuery` default (`api_missions::handlers::mission_library`);
     // omit would
     // also be 20, but spelling it makes the page-1 contract obvious in failures.
     let uri = format!("{uri_base}{sep}limit=20&offset=0");

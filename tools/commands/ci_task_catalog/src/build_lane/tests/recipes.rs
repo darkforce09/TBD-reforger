@@ -18,14 +18,25 @@ fn wasm_ci_steps() -> Vec<Step> {
 /// The echoed lines, pinned against the strings `make -n` printed on 2026-08-12.
 #[test]
 fn echo_matches_make() {
-    assert_eq!(
-        rust_build()[0].echo(),
-        "cd apps/api && cargo build --all-targets"
+    let api =
+        |steps: Result<Vec<Step>>| steps.expect("the API recipe derives its packages")[0].echo();
+    let build = api(rust_build(&checkout()));
+    assert!(
+        build.starts_with("cargo build -p api -p api_") && build.ends_with(" --all-targets"),
+        "{build}"
     );
     assert_eq!(rust_fmt()[1].echo(), "cargo fmt --all --check");
-    assert_eq!(
-        rust_clippy()[0].echo(),
-        "cd apps/api && cargo clippy --all-targets -- -D warnings"
+    let clippy = api(rust_clippy(&checkout()));
+    assert!(
+        clippy.starts_with("cargo clippy -p api -p api_")
+            && clippy.ends_with(" --all-targets -- -D warnings"),
+        "{clippy}"
+    );
+    let unit_tests = api(rust_test(&checkout()));
+    assert!(
+        unit_tests.starts_with("cargo test -p api -p api_")
+            && unit_tests.ends_with(" --lib --bins"),
+        "{unit_tests}"
     );
     assert_eq!(
         leptos()[0].echo(),
@@ -149,6 +160,45 @@ fn wasm_ci_recipe_and_ci_task_row_run_the_same_lines() {
         .collect();
     let mk_lines: Vec<String> = wasm_ci_steps().iter().map(|s| s.echo()).collect();
     assert_eq!(ci_lines, mk_lines);
+}
+
+/// `mk rust-build`, `mk rust-clippy` and `mk rust-test` and the CI rows of the same name are one
+/// lane spelled twice: each row's derived API line is the recipe's line, `-p` list included.
+#[test]
+fn api_recipes_and_ci_task_rows_run_the_same_lines() {
+    use crate::task_runner::{Step as CiStep, TASKS};
+    type ApiRecipe = fn(&std::path::Path) -> Result<Vec<Step>>;
+    let recipes: [(&str, ApiRecipe); 3] = [
+        ("rust-build", rust_build),
+        ("rust-clippy", rust_clippy),
+        ("rust-test", rust_test),
+    ];
+    for (name, recipe) in recipes {
+        let row = TASKS
+            .iter()
+            .find(|t| t.name == name)
+            .unwrap_or_else(|| panic!("the ci task table has a {name} row"));
+        let ci_lines: Vec<String> = row
+            .steps
+            .iter()
+            .map(|step| match step {
+                CiStep::Native { run } => {
+                    let line = crate::api_package_lane::api_line_of(*run)
+                        .unwrap_or_else(|| panic!("the {name} row runs an API line"));
+                    crate::api_package_lane::api_line_argv(&checkout(), line)
+                        .expect("the API packages derive")
+                        .join(" ")
+                }
+                _ => panic!("the {name} row runs the derived API line"),
+            })
+            .collect();
+        let mk_lines: Vec<String> = recipe(&checkout())
+            .expect("the API recipe derives")
+            .iter()
+            .map(|s| s.echo())
+            .collect();
+        assert_eq!(ci_lines, mk_lines, "{name}");
+    }
 }
 
 /// `mortar-offline-gate` builds the release app once, then runs `gate mortar-offline` on it.

@@ -45,7 +45,7 @@ who is the author, or an administrator) gates the Mission Creator link, the coll
 and the upload panel; `can_manage` (the author or an administrator, any role) gates the Manage row,
 the review feedback and the review record. The [API](/documentation/glossary/a_to_f.md#api) is
 stricter: every write to an existing mission (update, delete, submit, review comment) takes
-`lock_editable_mission` in `apps/api/src/missions/services/mission_write_lock.rs`, which
+`lock_editable_mission` in `crates/api/api_missions/src/services/mission_write_lock.rs`, which
 requires the `mission_maker` role as well as authorship or administrator rights, so an author
 below `mission_maker` sees the Manage row but the API answers 403. The dossier renders the overview page's read-only `dossier_body`, the review record
 and submit control from `apps/frontend/src/features/mission_review_record/`, the

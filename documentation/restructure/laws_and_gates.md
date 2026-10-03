@@ -38,10 +38,12 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
      renderer crates;
    - web-sys, js-sys, wasm-bindgen and gloo only in wasm-only crates, `time_source` (behind a
      cfg) and the frontend;
-   - sqlx and axum only in api crates, with one category clause: axum (never sqlx) is also
-     allowed in crates whose category is `tools/browser_testing` or `tools/staging`, because
-     those are test and staging harness servers (the gate's static server, the staging relay),
-     not product code; there is no per-crate allowlist;
+   - sqlx and axum only in api crates, with one category clause: axum is also allowed in
+     crates whose category is `tools/browser_testing` or `tools/staging`, because those are test
+     and staging harness servers (the gate's static server, the staging relay), not product code;
+     sqlx also in `tools/staging/staging_fixtures`, the staging host tool (coordinator decision,
+     operator review pending), the one tool the crate-tier law already lets depend on api crates,
+     which seeds and cleans staging rows directly; no other crate has an exception;
    - leptos only in frontend crates;
    - no tokio, axum, reqwest, resvg or image in the dependency closure of xtask (this ban stays
      hard and keeps the harness servers out of xtask; the closure is walked from the xtask

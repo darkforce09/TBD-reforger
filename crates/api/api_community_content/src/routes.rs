@@ -1,0 +1,152 @@
+//! The `/api/v1` route table for community content.
+//!
+//! Paths are written relative to the `/api/v1` nest applied by the API's router
+//! (`apps/api/src/router.rs`). Auth tiers
+//! are enforced per-handler by the extractor each takes (`AuthUser` for the reads, `AdminUser`
+//! for the writes), so they travel with the handler rather than with the registration. The
+//! equipment data viewer's anonymous debug reads are the one exception: they are registered only
+//! in development, so a production router answers 404 for them.
+
+use axum::Router;
+use axum::extract::DefaultBodyLimit;
+use axum::routing::{get, post};
+
+use api_http_layer::middleware;
+use api_state::AppState;
+
+use super::handlers;
+
+/// `dev` gates the equipment data viewer's debug reads, which are registered only when the
+/// configuration reports a development environment.
+pub fn routes(dev: bool) -> Router<AppState> {
+    let mut r = Router::new()
+        // Content reads (member tier via each handler's AuthUser extractor).
+        .route(
+            "/announcements",
+            get(handlers::announcements_public::list_announcements),
+        )
+        .route(
+            "/announcements/{id}",
+            get(handlers::announcements_public::get_announcement),
+        )
+        .route("/wiki", get(handlers::wiki_knowledgebase::list_wiki))
+        .route(
+            "/wiki/{slug}",
+            get(handlers::wiki_knowledgebase::get_wiki_page)
+                .put(handlers::wiki_knowledgebase::save_wiki_page),
+        )
+        .route(
+            "/wiki/{slug}/revisions",
+            get(handlers::wiki_knowledgebase::list_wiki_revisions),
+        )
+        .route(
+            "/wiki/{slug}/revisions/{revision}",
+            get(handlers::wiki_knowledgebase::get_wiki_revision),
+        )
+        // Vehicle database: members read, administrators write (per-handler extractors).
+        .route(
+            "/vehicle-database",
+            get(handlers::vehicle_database::list_vehicles)
+                .post(handlers::vehicle_database::create_vehicle),
+        )
+        .route(
+            "/vehicle-database/{id}",
+            get(handlers::vehicle_database::get_vehicle)
+                .put(handlers::vehicle_database::replace_vehicle)
+                .patch(handlers::vehicle_database::patch_vehicle)
+                .delete(handlers::vehicle_database::delete_vehicle),
+        )
+        // Admin writes (create / replace / delete / set-current). Auth tier is per-handler via
+        // AdminUser — same pattern as /wiki/{slug} PUT and /vehicle-database POST.
+        .route(
+            "/modpacks",
+            get(handlers::modpack_catalog::list_modpacks)
+                .post(handlers::modpack_admin::create_modpack),
+        )
+        .route(
+            "/modpacks/current",
+            get(handlers::modpack_catalog::get_current_modpack),
+        )
+        .route(
+            "/modpacks/{id}",
+            axum::routing::put(handlers::modpack_admin::replace_modpack)
+                .delete(handlers::modpack_admin::delete_modpack),
+        )
+        .route(
+            "/modpacks/{id}/set-current",
+            post(handlers::modpack_admin::set_current_modpack),
+        )
+        // CMS — announcements + uploads.
+        .route(
+            "/cms/announcements",
+            get(handlers::announcements_admin::list_cms_announcements)
+                .post(handlers::announcements_admin::create_announcement),
+        )
+        .route(
+            "/cms/announcements/{id}",
+            axum::routing::patch(handlers::announcements_admin::update_announcement)
+                .delete(handlers::announcements_admin::delete_announcement),
+        )
+        .route(
+            "/cms/announcements/{id}/push-discord",
+            post(handlers::announcement_discord_push::push_announcement_discord),
+        )
+        .route(
+            "/cms/uploads",
+            post(handlers::media_upload::upload_image)
+                .layer(DefaultBodyLimit::max(middleware::MAX_MULTIPART_BODY)),
+        );
+    if dev {
+        // Development-only equipment data viewer reads: anonymous and generation-pinned.
+        r = r
+            .route(
+                "/debug/equipment-data/status",
+                get(handlers::equipment_data_viewer::dataset::status),
+            )
+            .route(
+                "/debug/equipment-data/overview",
+                get(handlers::equipment_data_viewer::dataset::overview),
+            )
+            .route(
+                "/debug/equipment-data/resources",
+                get(handlers::equipment_data_viewer::resources::resources),
+            )
+            .route(
+                "/debug/equipment-data/relationships",
+                get(handlers::equipment_data_viewer::resources::relationships),
+            )
+            .route(
+                "/debug/equipment-data/fields",
+                get(handlers::equipment_data_viewer::resources::fields),
+            )
+            .route(
+                "/debug/equipment-data/resource-cards",
+                get(handlers::equipment_data_viewer::source_inspection::resource_cards),
+            )
+            .route(
+                "/debug/equipment-data/selection",
+                get(handlers::equipment_data_viewer::source_inspection::selection),
+            )
+            .route(
+                "/debug/equipment-data/containers",
+                get(handlers::equipment_data_viewer::source_inspection::containers),
+            )
+            .route(
+                "/debug/equipment-data/properties",
+                get(handlers::equipment_data_viewer::source_inspection::properties),
+            )
+            .route(
+                "/debug/equipment-data/values",
+                get(handlers::equipment_data_viewer::source_inspection::values),
+            )
+            .route(
+                "/debug/equipment-data/documents",
+                get(handlers::equipment_data_viewer::source_inspection::documents),
+            )
+            .route(
+                "/debug/equipment-data/download",
+                get(handlers::equipment_data_viewer::downloads::download),
+            );
+    }
+    r
+}

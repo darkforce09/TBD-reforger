@@ -118,7 +118,7 @@ covers the site, the mounts and the forwarded-address trust.
   host's named volumes stay `website_<volume>` and its containers keep their project wherever
   the file sits. `TRUSTED_PROXIES` of its `api` service is pinned by
   `the_shipped_staging_default_parses_and_matches_the_loopback_proxy` in
-  `apps/api/src/core/configuration/tests/configuration.rs`.
+  `crates/api/api_configuration/src/configuration/tests/configuration.rs`.
 - `compose.dev.yml`: the local development database; its project name, `api`, keeps the volume
   `api_tbd_pgdata` and the container `tbd_reforger_db` in one project wherever the file sits.
 - `Dockerfile`: `podman build -f deploy/Dockerfile .` (or `docker build`, or the compose file's

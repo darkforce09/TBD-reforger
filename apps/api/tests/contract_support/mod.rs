@@ -10,7 +10,9 @@ use std::path::PathBuf;
 use serde_json::{Value, json};
 
 fn definitions_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/definitions")
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("contracts/definitions")
 }
 
 /// Draft-07 defines no `uuid` format, so a draft-07 validator passes any string for it. The

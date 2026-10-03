@@ -277,10 +277,10 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
         .await
         .unwrap_or_else(|e| panic!("close maintenance connection: {e}"));
 
-    let pool = api::core::database::connect(derived_url)
+    let pool = api_database::connect(derived_url)
         .await
         .unwrap_or_else(|e| panic!("connect to derived test database: {e}"));
-    api::core::database::migrate(&pool)
+    api_database::migrate(&pool)
         .await
         .unwrap_or_else(|e| panic!("migrate `{derived_name}`: {e}"));
 
@@ -310,7 +310,8 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
 /// Assert that only [`require_test_database_url`] reads `TEST_DATABASE_URL`.
 ///
 /// Scans every top-level `tests/*.rs` binary (not this `common/` module) **and** every
-/// `src/**/*.rs` file. Scanning `src/` is not optional: an in-crate `#[tokio::test]` can read
+/// `src/**/*.rs` and `crates/api/**/*.rs` file. Scanning the sources is not optional: an in-crate
+/// `#[tokio::test]` can read
 /// the operator base raw and stay invisible to a tests-only scan. A raw
 /// `env::var("TEST_DATABASE_URL")` outside this module is a regression — parallel integration
 /// runs against live `tbd_reforger` must panic, not mutate.
@@ -372,6 +373,15 @@ pub fn assert_no_raw_test_database_url_reads_outside_common() {
         }
     }
     walk_rs(&src_dir, needle, &mut offenders, manifest);
+    // The API crates under `crates/api/` hold the domains' in-crate database tests too.
+    let repository_root = repository_layout::find_repository_root_from(manifest)
+        .expect("the repository root above the API package");
+    walk_rs(
+        &repository_root.join("crates/api"),
+        needle,
+        &mut offenders,
+        &repository_root,
+    );
 
     assert!(
         offenders.is_empty(),

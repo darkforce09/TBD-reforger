@@ -89,7 +89,13 @@ fn worktree_local_pin_is_detected() {
 /// §5 RED: a `rust-build` that set its own dir must be reported, with the offending line.
 #[test]
 fn private_target_dir_violation_bites() {
-    assert_eq!(private_target_dir_violation(&rust_build()), None);
+    assert_eq!(
+        private_target_dir_violation(
+            &rust_build(&tool_test_support::test_repo_root())
+                .expect("the rust-build recipe derives")
+        ),
+        None
+    );
     let bad = vec![
         Step::new(&["cargo", "build", "--all-targets"])
             .cd(WEB)
@@ -105,7 +111,13 @@ fn private_target_dir_violation_bites() {
 /// §5 of the gate, as a unit test.
 #[test]
 fn only_rust_api_sets_a_private_target_dir() {
-    assert!(private_target_dir_violation(&rust_build()).is_none());
+    assert!(
+        private_target_dir_violation(
+            &rust_build(&tool_test_support::test_repo_root())
+                .expect("the rust-build recipe derives")
+        )
+        .is_none()
+    );
     let api = rust_api();
     let v = api[0]
         .recipe_env("CARGO_TARGET_DIR")

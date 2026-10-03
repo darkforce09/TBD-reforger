@@ -359,11 +359,11 @@ Routes of the [operations](/documentation/glossary/n_to_z.md#operations) domain:
   the server solution and the guns in one transaction and answers 201 `{solution, fire_mission}`. A
   foreign-key violation answers 404.
 - `GET /api/v1/events/{id}/fire-missions` goes through `viewer_event_access`
-  (`apps/api/src/operations/services/event_access/visibility.rs`), which decides 404 or
+  (`crates/api/api_operations/src/services/event_access/visibility.rs`), which decides 404 or
   403. Legacy rows, including `weapon_system` "M120 120mm", list with their original strings and are
   marked not re-solvable.
 
-Migration `apps/api/migrations/0060_game_ballistics_catalogs_and_fire_mission_inputs.sql`:
+Migration `crates/api/api_database/migrations/0060_game_ballistics_catalogs_and_fire_mission_inputs.sql`:
 
 - `ballistics_catalogs`: catalog_id, catalog_version, title, game_build, export_generation_id,
   catalog_sha256, calibration_sha256, catalog_document jsonb, calibration_document jsonb,

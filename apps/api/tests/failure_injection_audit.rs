@@ -26,9 +26,9 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use api::administration::services::audit_delivery::{AuditStreamItem, audit_delivery_stream};
-use api::administration::services::audit_notifier::{AuditNotify, AuditSignal};
-use api::background_workers::audit_publication_worker::start_audit_publication;
+use api_administration::services::audit_delivery::{AuditStreamItem, audit_delivery_stream};
+use api_administration::services::audit_notifier::{AuditNotify, AuditSignal};
+use api_background_workers::audit_publication_worker::start_audit_publication;
 use audit_stream_support::{
     AuditHarness, SseEvent, SseReader, case_tag, drive, next_item, plant_row, plant_rows,
     publication_bounds, publications_after, publish_all, sequence_of, wait_listening,
@@ -339,7 +339,7 @@ async fn failure_injection_audit_half_open_listener_stays_listening_and_the_time
     let row = plant_row(pool, &tag, 1).await;
     match next_item(&mut items, BOUND).await {
         Some(AuditStreamItem::Delivery(delivery)) => {
-            assert_eq!(delivery.row.id, row);
+            assert_eq!(delivery.row.id.get(), row);
             assert_eq!(Some(delivery.sequence), sequence_of(pool, row).await);
             assert!(delivery.sequence > tail);
         }

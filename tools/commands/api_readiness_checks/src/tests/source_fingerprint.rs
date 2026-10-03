@@ -173,6 +173,25 @@ fn additions_and_restoration_change_the_hash_and_staging_present_files_does_not(
 }
 
 #[test]
+fn a_change_under_an_api_crate_changes_the_fingerprint() {
+    let repository = Repository::new();
+    repository.seed();
+    let original = repository.fingerprint();
+    let crate_source = "crates/api/api_state/src/lib.rs";
+    repository.write(crate_source, "pub struct AppState;\n");
+    repository.git(&["add", "--", crate_source]);
+    let added = repository.fingerprint();
+    assert_ne!(
+        added, original,
+        "an API crate source is a fingerprint input"
+    );
+    repository.write(crate_source, "pub struct AppState(u8);\n");
+    assert_ne!(repository.fingerprint(), added, "its content is hashed");
+    assert!(source_input(crate_source));
+    assert!(source_input("crates/api/api_state/Cargo.toml"));
+}
+
+#[test]
 fn disappearance_or_restoration_after_inventory_is_rejected() {
     let repository = Repository::new();
     repository.seed();

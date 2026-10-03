@@ -9,14 +9,13 @@
 //! envelope (full-scan-set semantics). Reads `DATABASE_URL` from the environment
 //! (`.env` honored); runs migrations first so a fresh DB works out of the box.
 
-use api::core::database;
-use api::missions::services::registry_import::{ImportCounts, import_compat, import_items};
-use uuid::Uuid;
+use api_identifiers::ModpackId;
+use api_missions::services::registry_import::{ImportCounts, import_compat, import_items};
 
 struct Args {
     items: Option<String>,
     compat: Option<String>,
-    modpack: Option<Uuid>,
+    modpack: Option<ModpackId>,
     prune: bool,
 }
 
@@ -34,8 +33,10 @@ fn parse_args() -> Result<Args, String> {
             "--compat" => args.compat = Some(it.next().ok_or("--compat needs a path")?),
             "--modpack" => {
                 let raw = it.next().ok_or("--modpack needs a uuid")?;
-                args.modpack =
-                    Some(Uuid::parse_str(&raw).map_err(|_| format!("bad --modpack uuid: {raw}"))?);
+                args.modpack = Some(
+                    raw.parse()
+                        .map_err(|_| format!("bad --modpack uuid: {raw}"))?,
+                );
             }
             "--prune" => args.prune = true,
             other => return Err(format!("unknown argument: {other}")),
@@ -64,8 +65,8 @@ async fn main() -> anyhow::Result<()> {
     let url = std::env::var("DATABASE_URL")
         .map_err(|_| anyhow::anyhow!("DATABASE_URL is not set (env or .env)"))?;
 
-    let pool = database::connect(&url).await?;
-    database::migrate(&pool).await?;
+    let pool = api_database::connect(&url).await?;
+    api_database::migrate(&pool).await?;
 
     if let Some(path) = &args.items {
         let raw = std::fs::read(path)?;

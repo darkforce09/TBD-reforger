@@ -8,7 +8,6 @@
 //!
 //! Skips without `TEST_DATABASE_URL`.
 
-use api::core::database;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -86,7 +85,7 @@ async fn dev_login_unknown_role_defaults_to_admin() {
 //
 // `common/mod.rs`'s COALESCE pin and `dev_login_roles_use_distinct_discord_ids` in
 // `tests/dev_login_source_contract.rs` both read
-// `src/identity_and_access/handlers/developer_login.rs` as text. Every scrub-then-grep view can
+// `crates/api/api_identity_and_access/src/handlers/developer_login.rs` as text. Every scrub-then-grep view can
 // be walked around: `#[cfg(any())]` on the live match arms, and a nested `fn dev_login`, are
 // questions about **reachability**, which no grep can answer.
 //
@@ -182,7 +181,7 @@ async fn dev_login_first_create_coalesces_arma_id() {
     };
     let _guard = DEV_ROLE_ROWS.lock().await;
     let url = common::require_test_database_url().expect("boot succeeded ⇒ URL set");
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
 
     // `leader` is this binary's spare role — no sibling test asserts on its row.
     const ROLE: &str = "leader";
@@ -263,7 +262,7 @@ async fn dev_login_gives_every_role_its_own_identity_at_runtime() {
     };
     let _guard = DEV_ROLE_ROWS.lock().await;
     let url = common::require_test_database_url().expect("boot succeeded ⇒ URL set");
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
 
     const EXPECT: [(&str, &str, &str); 4] = [
         ("admin", "000000000000000001", "dev-arma-76561190000000001"),
@@ -323,7 +322,7 @@ async fn dev_login_roles_do_not_rewrite_each_other() {
     };
     let _guard = DEV_ROLE_ROWS.lock().await;
     let url = common::require_test_database_url().expect("boot succeeded ⇒ URL set");
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
 
     let (_e_tok, e_id, e_role) = dev_login_identity(&app, "enlisted").await;
     assert_eq!(e_role, "enlisted");

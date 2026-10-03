@@ -1,0 +1,26 @@
+# The mission vocabulary enums more than one API domain names: the terrain a mission, a match and a
+# server's running mission are on, and the game mode a mission is played in.
+[package]
+name = "api_mission_vocabulary"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's terrain and game mode enums, one spelling on the wire and in Postgres."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 0
+targets = "any"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+sqlx = { workspace = true, features = ["postgres", "macros"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

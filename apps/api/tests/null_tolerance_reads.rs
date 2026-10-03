@@ -82,7 +82,7 @@ async fn every_nullable_column_null_and_every_get_route_still_serves() {
     assert!(
         unexpected.is_empty(),
         "a nullable column decoded into a non-Option field. COALESCE it in the query — do NOT \
-         make the model field Option (see match_telemetry::models::match_record::Match).\n  {}",
+         make the model field Option (see api_match_telemetry::models::match_record::Match).\n  {}",
         unexpected
             .iter()
             .map(|s| s.as_str())
@@ -209,7 +209,7 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
     let registered = registered_get_routes(&src);
     assert!(
         registered.len() > 40,
-        "parsed only {} GET routes out of the eight domain route tables and src/core/http_router.rs \
+        "parsed only {} GET routes out of the eight domain route tables and src/router.rs \
          — the parser has drifted from the source and this guard is no longer guarding anything",
         registered.len()
     );

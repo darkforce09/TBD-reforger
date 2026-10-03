@@ -205,7 +205,7 @@ pub mod documentation {
              included",
         ),
         (
-            "apps/api/migrations/0011_events_server_modpack.sql",
+            "crates/api/api_database/migrations/0011_events_server_modpack.sql",
             "committed migrations are checksum-frozen; rewording a comment in one breaks every \
              checkout that already applied it",
         ),

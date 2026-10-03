@@ -118,12 +118,12 @@ The page README's [Data](/apps/frontend/src/pages/operations/schedule/README.md#
 lists each call with the DTO the page reads. Server-side:
 
 - `GET /api/v1/events` (`list_events` in
-  `apps/api/src/operations/handlers/event_listing.rs`): the default scope `upcoming`
+  `crates/api/api_operations/src/handlers/event_listing.rs`): the default scope `upcoming`
   returns the events that start ahead or are live now, in start order, filtered to those the
   viewer's access admits; each item adds `mission_count`, `registered`, `filled`, `total_slots` and
   `percent` to the event row.
 - `GET /api/v1/events/{id}` (`get_event` in
-  `apps/api/src/operations/handlers/event_hub.rs`): once the viewer's access to the
+  `crates/api/api_operations/src/handlers/event_hub.rs`): once the viewer's access to the
   event is checked, the event and each attached mission's dossier in start order, read in one
   read-only snapshot.
 - `POST` and `DELETE /api/v1/event-missions/{emid}/register`: registration and withdrawal, sent by

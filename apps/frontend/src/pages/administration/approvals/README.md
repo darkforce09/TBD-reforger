@@ -109,4 +109,4 @@ the views that run them exist in that build only.
 
 - [Mission approvals page](/documentation/apps/frontend/pages/administration/approvals/mission_approvals_page.md)
   — the page's behaviour, what each call means server-side, its design and decisions.
-- [Missions domain](/apps/api/src/missions/README.md) — the approval and review routes.
+- [Missions domain](/crates/api/api_missions/src/README.md) — the approval and review routes.

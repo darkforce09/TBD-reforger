@@ -14,7 +14,7 @@ upload directory left relative all loaded without complaint and failed later, at
 remote error: Discord answering 401 or the callback landing on `#error=discord_unreachable`,
 which read as an outage rather than a misconfiguration.
 
-**Decision:** `Config::validate` in `apps/api/src/core/configuration/mod.rs` refuses
+**Decision:** `Config::validate` in `crates/api/api_configuration/src/configuration/mod.rs` refuses
 the boot, naming the variable, when a required value is empty (`DATABASE_URL`, `JWT_SECRET`, and
 outside development the Discord client id, secret and redirect URL and `UPLOAD_DIR`) or a set
 value can never work (`DISCORD_BOT_TOKEN` with whitespace, a relative or padded `UPLOAD_DIR`, a
@@ -25,7 +25,7 @@ reports its absence by name where a path needs it.
 **Consequences:** A misconfigured deployment never starts, and its error names the fix. A setting
 enters `Config` together with the code that reads it, so no variable looks configured while
 doing nothing. The rules are unit-tested in
-`apps/api/src/core/configuration/tests/configuration.rs`; the
+`crates/api/api_configuration/src/configuration/tests/configuration.rs`; the
 [environment variable reference](/documentation/apps/api/environment_variables.md)
 lists them.
 
@@ -40,7 +40,7 @@ range requests among them. Measured on the live stack, 145,858 of the 145,861 `4
 had issued were `/map-assets`, and none were on `/auth/` or `/ingest/`, the routes it exists for.
 A higher tier for the mount was one option; exemption was the other.
 
-**Decision:** `apps/api/src/core/http_router.rs` mounts `/map-assets` and
+**Decision:** `apps/api/src/router.rs` mounts `/map-assets` and
 `/map-assets/glyphs` below the `rate_limit` layer, so the limiter never sees them. Everything the
 API answers for — `/api/v1`, `/healthz`, `/metrics`, `/uploads` and the built app — stays above
 it and stays limited.
@@ -49,7 +49,7 @@ it and stays limited.
 so exemption opens nothing a request limit protected; the resource there is bytes, which a
 request meter cannot price. The order is load-bearing and is held twice:
 `the_exempt_mount_is_registered_below_the_rate_limit_layer` in
-`apps/api/src/core/middleware/tests/rate_limiting.rs` checks the source, and
+`apps/api/src/tests/router.rs` checks the router's source, and
 `apps/api/tests/map_assets_rate_limit_exemption.rs` checks that the routes above still
 refuse.
 
@@ -66,7 +66,7 @@ names the real client is text any client can write.
 `TRUSTED_PROXIES`, and then on the rightmost `X-Forwarded-For` hop that is not a trusted proxy.
 An empty list, the default, ignores the header entirely. A set entry that does not parse, or a
 CIDR block not written as its network address, stops the boot
-(`apps/api/src/core/configuration/proxy_network.rs`).
+(`crates/api/api_configuration/src/configuration/proxy_network.rs`).
 
 **Consequences:** A key any client could forge would limit nobody, while a shared key still
 limits everyone, so the fail-safe default is the shared key. An operator behind a proxy must list
@@ -103,7 +103,7 @@ tag on every handler.
 stale leaderboards, silent game servers, Discord changes nobody signs in to pick up. Timers
 written inside domains would hide who runs what and when.
 
-**Decision:** `apps/api/src/background_workers/` holds every interval task, and
+**Decision:** `crates/api/api_background_workers/src/` holds every interval task, and
 `spawn_all` arms them once at boot from `apps/api/src/bin/api.rs`. A worker holds its
 loop and calls a service of the domain that owns the data; three intervals are tunable by
 environment variable, the rest are constants.
@@ -173,3 +173,48 @@ the decision in place.
 **Supersedes:** the sentence "The API has no RCON console route." of
 [2026-09-23 — Game hosts are reached only through work they claim](#2026-09-23--game-hosts-are-reached-only-through-work-they-claim);
 the rest of that entry holds.
+
+### 2026-10-03 — The API is a thin application over API crates
+
+**Context:** The 2026-09-18 domain layout kept every domain, the shared layer and the background
+workers as folders of one crate, so the dependency rules between them were a walk over source
+imports that a test had to keep up to date, and nothing could be built, tested or reused apart
+from the whole.
+
+**Decision:** Each domain, each kernel concern and the background workers are crates under
+`crates/api/` (`api_<domain>`, the kernel crates such as `api_state` and `api_http_layer`, and
+`api_background_workers`). `apps/api/src/` holds only the thin application: `router.rs`, which
+merges the eight domain crates' route tables under `/api/v1`; `composition.rs`, which builds the
+application state with its concrete services; the `api` and `import-registry` binaries; and the
+layout and prose rules under `tests/`. There is no `core` folder.
+
+**Consequences:** The crate boundary makes an undeclared import a compile error, so
+`apps/api/src/tests/architecture_rules.rs` judges the crate graph from the Cargo manifests: the
+kernel crates depend on no domain, the domain crates depend on one another only along the one-way
+domain graph, only the application depends on `api_background_workers` and only its `api` binary
+names it, no crate imports another domain's handlers, and every domain crate's one route table is
+merged by the router. The source-import layer ratchet that held the folders to the planned graph
+before the crates existed is retired. Each crate tests and lints on its own
+(`cargo test -p api_<name>`).
+
+**Supersedes:** the folder layout of
+[2026-09-18 — The crate is organised by domain](#2026-09-18--the-crate-is-organised-by-domain)
+(`apps/api/src/` holding `core`, `background_workers` and eight domains, and the `core` import
+rule); its domain ownership of route tables, handlers, services and models holds.
+
+### 2026-10-03 — Ids at an API crate's boundary are typed
+
+**Context:** With the API split into crates, every id crossing a crate boundary was a bare `Uuid`,
+`String` or `i64`, so an event id passed where a mission id belonged compiled, and the Discord
+user id appeared as `String`, `&str` and `Option<String>` in different domains.
+
+**Decision:** Every id concept at a public boundary has one newtype in `api_identifiers`, declared
+with the `newtype_ids` macros: the UUID table keys, the text keys (Discord snowflakes, Arma
+player ids, keys the game runtime chooses) and the `BIGINT` keys. Each is serde- and
+sqlx-transparent. A client's raw text that the handler must refuse with the contract's own message
+is a submitted id (`SubmittedEventId`, `SubmittedMissionId`) the handler parses itself.
+
+**Consequences:** The JSON, the SQL binds, the path parses, the response goldens and the stored
+digests are byte-equal to the bare values', so no contract changes.
+`cargo xtask verify crate-anatomy` refuses a public `id` or `*_id` field or parameter of a bare
+type in any crate. A new table key gets its type in `api_identifiers` before its first handler.

@@ -1,7 +1,7 @@
 id = "T-1230"
 kind = "work"
 title = "Split the content golden seed under the 500-line ceiling"
-summary = "apps/api/seeds/content_golden.sql is 1,475 lines against the CLAUDE.md law 7 ceiling of 500 in every language; cargo xtask verify file-length scans only the Rust trees and mod Scripts roots, so no gate reports it."
+summary = "crates/api/api_database/seeds/content_golden.sql is 1,475 lines against the CLAUDE.md law 7 ceiling of 500 in every language; cargo xtask verify file-length scans only the Rust trees and mod Scripts roots, so no gate reports it."
 class = "chore"
 status = "idea"
 notes = "Split by domain into ordered seed files, keep the recipe order (registry_dev.sql first) and the capture recipe at the end of the last file, and update seeds/README.md, the contract_parity_goldens loader and the golden recipe. Source: milestone V findings V-F12 and V-F42 (golden seed growth)."

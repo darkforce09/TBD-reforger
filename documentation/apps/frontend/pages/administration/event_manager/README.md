@@ -30,7 +30,7 @@ folder's README lists the page's files.
 
 - [Event manager page](/apps/frontend/src/pages/administration/event_manager/) — the
   route component `EventManagerPage`, the calendar, the forms and the access sheet.
-- [Operations domain](/apps/api/src/operations/) — the event, event mission, access,
+- [Operations domain](/crates/api/api_operations/src/) — the event, event mission, access,
   group, quota and waiting-list routes the page calls.
 
 ## Boundaries

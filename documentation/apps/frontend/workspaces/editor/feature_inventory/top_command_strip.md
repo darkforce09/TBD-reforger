@@ -178,10 +178,10 @@ merges a payload straight through the hosted document (`merge_mission_json` on
 ## Data
 
 - `POST /api/v1/missions/{id}/versions` (`create_version` in
-  `apps/api/src/missions/handlers/mission_versions.rs`): Save Version, described in
+  `crates/api/api_missions/src/handlers/mission_versions.rs`): Save Version, described in
   [data persistence and compile](/documentation/apps/frontend/workspaces/editor/feature_inventory/data_persistence_and_compile.md#data).
 - `PATCH /api/v1/missions/{id}` (`update_mission` in
-  `apps/api/src/missions/handlers/mission_lifecycle.rs`): the time, weather and
+  `crates/api/api_missions/src/handlers/mission_lifecycle.rs`): the time, weather and
   Mission Settings row fields; `GET /api/v1/missions/{id}` for the row the dialog shows.
 - The exports make no call: they compile the local document and download it.
 

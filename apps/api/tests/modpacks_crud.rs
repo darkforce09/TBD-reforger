@@ -7,10 +7,9 @@
 //! migration 0012) and re-run `modpack_crud_round_trip` — the assert
 //! `mods[0].workshop_id == "AABBCCDDEEFF0011"` goes red. Restored + `touch` → green.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Method, Request, StatusCode, header};
@@ -22,8 +21,8 @@ mod common;
 
 async fn boot(tag: &str) -> Option<(Router, PgPool, String, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     let like = format!("Modpack {tag}%");
     // Nested mods first — no FK, but keep the table tidy across parallel IT binaries.
@@ -41,8 +40,11 @@ async fn boot(tag: &str) -> Option<(Router, PgPool, String, String)> {
         .await
         .expect("clean packs");
 
-    let state = AppState::new(pool.clone(), Config::for_tests(url, "modpacks-secret"));
-    let app = http_router::router(state.clone());
+    let state = api::composition::application_state(
+        pool.clone(),
+        Config::for_tests(url, "modpacks-secret"),
+    );
+    let app = router(state.clone());
     let admin = common::access_token(
         &state,
         "modpacks_crud",

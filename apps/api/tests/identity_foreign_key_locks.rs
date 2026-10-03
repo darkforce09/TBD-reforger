@@ -1,15 +1,14 @@
 //! Real PostgreSQL barriers verify identity transactions coexist with foreign-key row locks.
 
-use api::{
-    core::{
-        application_state::AppState, configuration::Config, database, http_router,
-        middleware::AuthUser,
-    },
-    identity_and_access::services::{
-        identity_linking::confirm_identity, link_code_issuance::issue_link_code,
-        session_authorization::authorize_session,
-    },
+use api::router::router;
+use api_caller_identity::session_authorization::authorize_session;
+use api_configuration::configuration::Config;
+use api_http_layer::middleware::AuthUser;
+use api_identifiers::{ArmaPlayerId, ServerId};
+use api_identity_and_access::services::{
+    identity_linking::confirm_identity, link_code_issuance::issue_link_code,
 };
+use api_state::AppState;
 use axum::http::StatusCode;
 use std::time::Duration;
 use telemetry_support::match_reports::ReportingServer;
@@ -22,9 +21,12 @@ const LOCK_DEADLINE: Duration = Duration::from_secs(5);
 
 async fn fixture() -> (AppState, AuthUser, String) {
     let url = common::require_test_database_url().expect("scratch database required");
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(pool, Config::for_tests(url, "identity-foreign-key-locks"));
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state = api::composition::application_state(
+        pool,
+        Config::for_tests(url, "identity-foreign-key-locks"),
+    );
     let actor = format!("identity-lock-{}", Uuid::new_v4());
     let access = common::access_token(
         &state,
@@ -43,14 +45,14 @@ async fn fixture() -> (AppState, AuthUser, String) {
 #[tokio::test]
 async fn ingest_waiting_on_event_allows_registration_foreign_key_account_lock() {
     let (state, user, arma) = fixture().await;
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     let reporter = ReportingServer::open(&app, &state.pool, "Identity lock barrier server").await;
     let code = issue_link_code(&state, &user).await.unwrap().0;
     confirm_identity(
         &state,
-        reporter.server_id,
+        ServerId::from(reporter.server_id),
         &code,
-        &arma,
+        &ArmaPlayerId::new(arma.as_str()),
         "Lock Barrier Player",
     )
     .await
@@ -124,7 +126,7 @@ async fn ingest_waiting_on_event_allows_registration_foreign_key_account_lock() 
         .unwrap();
     assert_eq!(
         account_lock.expect("ingest account locks must admit the registration FK check"),
-        user.discord_id
+        user.discord_id.as_str()
     );
     let (status, response_body) = response;
     assert_eq!(status, StatusCode::OK, "{response_body}");
@@ -148,7 +150,7 @@ async fn ingest_waiting_on_event_allows_registration_foreign_key_account_lock() 
 async fn identity_confirmation_does_not_upgrade_past_a_foreign_key_account_lock() {
     let (state, user, arma) = fixture().await;
     let reporter = ReportingServer::open(
-        &http_router::router(state.clone()),
+        &router(state.clone()),
         &state.pool,
         "Identity confirmation server",
     )
@@ -166,9 +168,9 @@ async fn identity_confirmation_does_not_upgrade_past_a_foreign_key_account_lock(
         LOCK_DEADLINE,
         confirm_identity(
             &state,
-            reporter.server_id,
+            ServerId::from(reporter.server_id),
             &code,
-            &arma,
+            &ArmaPlayerId::new(arma.as_str()),
             "Foreign Key Player",
         ),
     )

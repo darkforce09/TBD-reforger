@@ -24,7 +24,7 @@ Phase→commit map: C1 = this inventory · C2 = layout+renames (+`fixtures/api` 
 
 | Row | Class | Evidence |
 |---|---|---|
-| `apps/website/internal/db/migrations/` (6 SQL: 00_extensions…05_registry_items) | **SAFE-delete (C3)** | Rust boot uses `sqlx::migrate!("./migrations")` (`src/db.rs:51`) against `apps/website/migrations/` (0001…0006). No Makefile/CI/script reads internal/db/migrations. Go binary deleted at T-145. |
+| `apps/website/internal/db/migrations/` (6 SQL: 00_extensions…05_registry_items) | **SAFE-delete (C3)** | Rust boot uses `sqlx::migrate!("../../crates/api/api_database/migrations")` (`src/db.rs:51`) against `apps/website/migrations/` (0001…0006). No Makefile/CI/script reads internal/db/migrations. Go binary deleted at T-145. |
 | `apps/website/internal/db/seeds/{discord_roles,registry_dev}.sql` | **LIVE — relocate first (C3)** | Root `Makefile:24-26` `make seed` pipes both. Relocate → `apps/website/api/seeds/` BEFORE purging `internal/` (handoff DO-NOT). |
 | `apps/website/internal/db/seeds/mock_data.sql` | **LIVE-ish — relocate (C3)** | Applier (`go run ./cmd/seed`) deleted at T-145; file still the only source of the four fixed-UUID mock missions; `docs/website/DEV_RUNBOOK.md:171-173` documents it (path fix → Cursor). Manual `psql <` remains the mechanism. |
 | `apps/website/Makefile` (nested) | **SAFE-delete (C3)** | All recipes Go/Vite lies: `go run ./cmd/api` (:24), `cd frontend && npm run dev` (:27), `go test` (:30,:33), `go build` + `npm run build` (:36-37), `go mod tidy` (:40); its `seed` (:21) is a subset of root's. `ticket-*` targets use relpath broken from that dir. CLAUDE.md redirect already says "run from repo root". |
@@ -70,7 +70,7 @@ Phase→commit map: C1 = this inventory · C2 = layout+renames (+`fixtures/api` 
 - Docs/registry hits (69 in docs/ + registry.json:5318 + generated TICKET_REGISTRY.md:132) → Cursor list §7 (generated files via `./scripts/ticket sync` after registry edit).
 - Trunk wasm artifact basename changes (`website-leptos*_bg.wasm` → `frontend*`): zero by-name consumers (`index.html` uses `data-trunk rel="rust"` auto-injection).
 
-**Relative-path breakage classes on the api/ move (+1 `../`):** `src/contract/validate.rs:18-26` (5× include_str), `src/contract/generated/loadout.rs:141,143` (hand-maintained include_str), `tests/factions.rs:82` + `tests/registry_compat.rs:30-35` (CARGO_MANIFEST_DIR joins), `src/app.rs:292` map-assets CWD default, `apps/website/Cargo.toml` map-engine-core path dep, root `Makefile:29-31` registry-import `../../packages` (CWD = $(WEB)). Crate-relative survivors (no edit): `sqlx::migrate!("./migrations")`, `app.rs:287` uploads ServeDir, rustfmt/rust-toolchain discovery.
+**Relative-path breakage classes on the api/ move (+1 `../`):** `src/contract/validate.rs:18-26` (5× include_str), `src/contract/generated/loadout.rs:141,143` (hand-maintained include_str), `tests/factions.rs:82` + `tests/registry_compat.rs:30-35` (CARGO_MANIFEST_DIR joins), `src/app.rs:292` map-assets CWD default, `apps/website/Cargo.toml` map-engine-core path dep, root `Makefile:29-31` registry-import `../../packages` (CWD = $(WEB)). Crate-relative survivors (no edit): `sqlx::migrate!("../../crates/api/api_database/migrations")`, `app.rs:287` uploads ServeDir, rustfmt/rust-toolchain discovery.
 
 **Frontend move breakage:** `frontend/Cargo.toml` crate paths `../../crates/*` → `../../../crates/*`; `src/dto.rs:648-653` fixture include_str (superseded by §5 move → crate-relative `../tests/fixtures/api/`, move-proof).
 

@@ -27,9 +27,9 @@ reservations and the waitlist, member search, [service records](#service-record)
 the API domain also serves the ballistics catalogs, the mortar fire missions and the game-runtime
 roster and deployments.
 
-In code: `apps/api/src/operations/`; `apps/frontend/src/pages/operations/`.
+In code: `crates/api/api_operations/src/`; `apps/frontend/src/pages/operations/`.
 
-See: [Operations domain](/apps/api/src/operations/README.md).
+See: [Operations domain](/crates/api/api_operations/src/README.md).
 
 ### oracle
 
@@ -50,7 +50,7 @@ See: [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.m
 The order of battle: the factions, squads and role [slots](#slot) of one mission within an event. A
 mission carries it in its document; each event mission holds it as `orbat_slots` rows.
 
-In code: `OrbatSlot` in `apps/api/src/operations/models/event.rs`; `apps/api/src/operations/handlers/orbat_view.rs`.
+In code: `OrbatSlot` in `crates/api/api_operations/src/models/event.rs`; `crates/api/api_operations/src/handlers/orbat_view.rs`.
 
 See: [ORBAT selection page](/apps/frontend/src/pages/operations/orbat_selection/README.md).
 
@@ -112,7 +112,7 @@ Most often the item registry: one modpack's flat catalog of the engine items the
 [arsenal](/documentation/glossary/a_to_f.md#arsenal) offers, with a graph of what fits in or on what, exported from Workbench and
 imported into Postgres. Other registries are named in full (ticket, server, fleet scenario).
 
-In code: `RegistryItem` and `RegistryCompatEdge` in `apps/api/src/missions/models/registry.rs`; `contracts/catalogs/`.
+In code: `RegistryItem` and `RegistryCompatEdge` in `crates/api/api_missions/src/models/registry.rs`; `contracts/catalogs/`.
 
 See: [Contract catalogs](/contracts/catalogs/README.md).
 
@@ -131,7 +131,7 @@ An account's tier on the permission ladder, lowest first: `guest`, `enlisted`, `
 `mission_maker`, `admin`; a route's access tier is the lowest role it admits. A member's role
 follows their Discord roles through the `discord_roles` mappings; the website sets none itself.
 
-In code: `Role` in `apps/frontend/src/foundation/transport/dto/role.rs`; `role_rank` in `apps/api/src/core/middleware/mod.rs`.
+In code: `Role` in `apps/frontend/src/foundation/transport/dto/role.rs`; `role_rank` in `crates/api/api_http_layer/src/middleware/mod.rs`.
 
 See: [dev login](/documentation/glossary/a_to_f.md#dev-login), [personnel](#personnel).
 
@@ -142,7 +142,7 @@ API records it. Starting one takes the server's next generation and supersedes i
 heartbeats every 15 s carry a strictly rising sequence; a session silent for 60 s expires and its
 server goes offline; ending a session ends the player lives still open in it.
 
-In code: `apps/api/src/server_infrastructure/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `apps/api/src/match_telemetry/routes.rs`; `apps/api/src/background_workers/runtime_session_expiry.rs`; `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c`.
+In code: `crates/api/api_server_infrastructure/src/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `crates/api/api_match_telemetry/src/routes.rs`; `crates/api/api_background_workers/src/runtime_session_expiry.rs`; `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c`.
 
 See: [machine credential](/documentation/glossary/g_to_m.md#machine-credential), [server infrastructure](#server-infrastructure).
 
@@ -163,7 +163,7 @@ A code spelling, never a prose term. Platform code that says scenario means a [m
 fleet code means a [mission header](/documentation/glossary/g_to_m.md#mission-header); Enfusion's
 own names (`scenarioId`, the `SCR_EScenario*` types) keep it. Prose says mission or mission header.
 
-In code: `apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`.
+In code: `crates/api/api_server_infrastructure/src/handlers/fleet_scenarios.rs`.
 
 See: [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario).
 
@@ -184,16 +184,16 @@ The API domain of the game servers: the server registry, each server's status an
 feed, [machine credentials](/documentation/glossary/g_to_m.md#machine-credential), the [fleet command](/documentation/glossary/a_to_f.md#fleet-command) ledger and its
 executor routes, runtime sessions and the [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) registry.
 
-In code: `apps/api/src/server_infrastructure/`.
+In code: `crates/api/api_server_infrastructure/src/`.
 
-See: [RCON](#rcon), [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md).
+See: [RCON](#rcon), [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md).
 
 ### service record
 
 A member's own record at `/deployments` (My Deployments): matches played, upcoming deployments, past
 matches and leave requests; no combat figures, though the API sends kills, deaths and K/D.
 
-In code: `apps/api/src/operations/handlers/member_service_record.rs`; `DeploymentsPage` in `apps/frontend/src/pages/operations/deployments/`.
+In code: `crates/api/api_operations/src/handlers/member_service_record.rs`; `DeploymentsPage` in `apps/frontend/src/pages/operations/deployments/`.
 
 See: [Deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md).
 
@@ -226,7 +226,7 @@ One fillable position in an [ORBAT](#orbat): a faction, squad, callsign, role an
 member occupies, and in the game a spawn position. Slotting fills them: members reserve a slot or
 join the waitlist, squad managers assign seats, and players claim their slot in the game's lobby.
 
-In code: `OrbatSlot` in `apps/api/src/operations/models/event.rs`; `slot_registration.rs` and `slot_assignment.rs` in `apps/api/src/operations/handlers/`.
+In code: `OrbatSlot` in `crates/api/api_operations/src/models/event.rs`; `slot_registration.rs` and `slot_assignment.rs` in `crates/api/api_operations/src/handlers/`.
 
 See: [event](/documentation/glossary/a_to_f.md#event), [arsenal](/documentation/glossary/a_to_f.md#arsenal).
 
@@ -235,7 +235,7 @@ See: [event](/documentation/glossary/a_to_f.md#event), [arsenal](/documentation/
 Server-Sent Events: the one-way HTTP streams on which the API pushes live updates, such as a
 server's status feed and the audit log feed. An SSE event is one message, never an [event](/documentation/glossary/a_to_f.md#event).
 
-In code: `Hub` in `apps/api/src/core/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `apps/api/src/administration/services/audit_notifier.rs`; the clients in `apps/frontend/src/foundation/transport/sse.rs` (the status feed) and `apps/frontend/src/foundation/transport/audit_stream.rs` (the audit feed, resumed from the last event id it received).
+In code: `Hub` in `crates/api/api_http_layer/src/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `crates/api/api_administration/src/services/audit_notifier.rs`; the clients in `apps/frontend/src/foundation/transport/sse.rs` (the status feed) and `apps/frontend/src/foundation/transport/audit_stream.rs` (the audit feed, resumed from the last event id it received).
 
 See: [audit logs](/documentation/glossary/a_to_f.md#audit-logs), [server infrastructure](#server-infrastructure).
 
@@ -249,7 +249,7 @@ and polls its read-only observers (host shell, database, unit journal, console l
 member reads, saved Chrome page reads) until the effect shows or the deadline passes, without ever
 reading stdin.
 
-In code: `tools/commands/staging_procedures/src/` with `procedure_runner/` and the `fleet_procedure/`, `discord_procedure/` and `load_procedure/` step tables; the host tool `staging-fixtures` in `apps/api/src/bin/staging_fixtures/`.
+In code: `tools/commands/staging_procedures/src/` with `procedure_runner/` and the `fleet_procedure/`, `discord_procedure/` and `load_procedure/` step tables; the host tool `staging-fixtures` in `tools/staging/staging_fixtures/src/`.
 
 See: [fleet instance](/documentation/glossary/a_to_f.md#fleet-instance), [acknowledgement-dropping relay](/documentation/glossary/a_to_f.md#acknowledgement-dropping-relay), [load workload](/documentation/glossary/g_to_m.md#load-workload), [Staging harness](/tools/commands/staging_procedures/src/README.md).
 
@@ -273,7 +273,7 @@ One of the 1,100 member accounts the staging load run signs in as, created by
 reserved accounts only. Seeding refuses while the API's Discord bot token is set or when any reserved
 id already exists.
 
-In code: `apps/api/src/bin/staging_fixtures/reserved_accounts.rs` and `load_population/`; `tools/xtask/staging/load_population.json`; `account_rotation.rs` in `tools/staging/staging_load_generator/src/`.
+In code: `tools/staging/staging_fixtures/src/reserved_accounts.rs` and `load_population/`; `tools/xtask/staging/load_population.json`; `account_rotation.rs` in `tools/staging/staging_load_generator/src/`.
 
 See: [load workload](/documentation/glossary/g_to_m.md#load-workload), [staging harness](#staging-harness).
 

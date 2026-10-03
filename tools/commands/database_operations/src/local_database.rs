@@ -93,6 +93,7 @@ use crate::error::Result;
 use recipe_execution::{compose, registry_import, seed};
 
 mod ab;
+pub mod api_test_packages;
 mod development_compose;
 mod recipe_execution;
 mod recipes;
@@ -119,9 +120,15 @@ pub(crate) const SEEDS: &[&str] = &[
     "wiki_pages.sql",
 ];
 
-/// The repository-relative path of one of the [`SEEDS`]: the API crate's `seeds/` folder.
+/// The folder of the [`SEEDS`]: the development seeds of the API's database crate.
+pub(crate) const SEEDS_FOLDER: &str = "crates/api/api_database/seeds";
+
+/// The folder of the migrations `sqlx::migrate!` embeds into the API's database crate.
+pub(crate) const MIGRATIONS_FOLDER: &str = "crates/api/api_database/migrations";
+
+/// The repository-relative path of one of the [`SEEDS`], in [`SEEDS_FOLDER`].
 pub(crate) fn seed_file(file: &str) -> String {
-    format!("{WEB}/seeds/{file}")
+    format!("{SEEDS_FOLDER}/{file}")
 }
 
 /// Every `cargo xtask db <cmd>` spelling, in [`DbCmd`] order.

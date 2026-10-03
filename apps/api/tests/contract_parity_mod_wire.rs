@@ -635,8 +635,11 @@ fn mod_schema_version_window(scripts: &[ScriptFile]) -> BTreeSet<String> {
 
 /// Every `schemaVersion` literal the mission compiler chooses between.
 fn compiler_schema_versions() -> BTreeSet<String> {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../crates/mission/mission_compiler/src/game_document/compile_graph.rs");
+    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )))
+    .expect("the repository root above the API package")
+    .join("crates/mission/mission_compiler/src/game_document/compile_graph.rs");
     let source = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
     let start = source

@@ -5,7 +5,7 @@
 //! production routes, and an oracle of the mission lifecycle predicts every answer.
 //!
 //! **Position:** a `api` integration binary over its per-binary test database. Requests go
-//! through `http_router::router` with the accounts of `MissionFixture`
+//! through `api::router::router` with the accounts of `MissionFixture`
 //! (`tests/mission_artifact_support`); the invariants read the persisted mission, review,
 //! artifact, deployment, fleet command and runtime session rows.
 //!
@@ -831,7 +831,7 @@ fn approval_and_deployment_share_immutable_artifact() {
         (fixture, modpack)
     });
     let reached = std::cell::RefCell::new(Reached::default());
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "approval_and_deployment_share_immutable_artifact",
         256,
         &lifecycle(),

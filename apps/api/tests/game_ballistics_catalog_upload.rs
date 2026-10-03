@@ -15,7 +15,7 @@ mod contract_support;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::operations::handlers::ballistics_catalogs::upload::{
+use api_operations::handlers::ballistics_catalogs::upload::{
     MAX_CALIBRATION_PART_BYTES, MAX_CATALOG_UPLOAD_BODY_BYTES,
 };
 use axum::body::{Body, to_bytes};
@@ -41,8 +41,13 @@ const VANILLA_CALIBRATION_SHA256: &str =
 const VANILLA_FORWARD_SAMPLES_NOT_JUDGED: u64 = 15_427;
 
 fn repository_file(relative: &str) -> Vec<u8> {
-    let path = format!("{}/../../{relative}", env!("CARGO_MANIFEST_DIR"));
-    std::fs::read(&path).unwrap_or_else(|error| panic!("read committed fixture {path}: {error}"))
+    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )))
+    .expect("the repository root above the API package")
+    .join(relative);
+    std::fs::read(&path)
+        .unwrap_or_else(|error| panic!("read committed fixture {}: {error}", path.display()))
 }
 
 fn vanilla_catalog() -> Vec<u8> {

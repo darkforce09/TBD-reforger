@@ -19,7 +19,7 @@
 //! seeded timestamp is a fixed instant with a quarter-second fraction, so each run sends the
 //! same fractional-second wire form through the contract parity check.
 
-use api::core::application_state::AppState;
+use api_state::AppState;
 use serde_json::{Value, json};
 use uuid::Uuid;
 

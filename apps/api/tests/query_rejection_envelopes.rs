@@ -7,7 +7,7 @@
 //! `expected_access_revision`) or omits a required one (the credential revocation `reason`), and
 //! the answer is 400 with a JSON object whose `error` carries the rejection's own reason for that
 //! parameter (`<parameter>: <reason>`, or `missing field` and the quoted name for an omitted one).
-//! **Position:** boots `core::http_router::router` over this binary's own test database with the
+//! **Position:** boots `api::router::router` over this binary's own test database with the
 //! development test configuration and mints each actor's session through `common::access_token`;
 //! the handlers reach the envelope through `ApiError::from_query_rejection`.
 //! **Signals & state:** none beyond the per-binary database; every actor is a suite-owned row
@@ -22,10 +22,9 @@ mod common;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
 use axum::http::{Request, StatusCode, header};
@@ -304,8 +303,9 @@ async fn assert_query_rejection_envelope(area: &str) {
         .unwrap_or_else(|| panic!("no query case for area `{area}`"));
     let url = common::require_test_database_url()
         .expect("the per-binary test database is provisioned before any case runs");
-    let pool = database::connect(&url).await.expect("connect");
-    let state = AppState::new(pool, Config::for_tests(url, "query-rejection-secret"));
+    let pool = api_database::connect(&url).await.expect("connect");
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "query-rejection-secret"));
     let method = case.method;
     let path = case.path.replace("{id}", PATH_ID);
     let mut builder = Request::builder().method(method).uri(&path);
@@ -320,10 +320,7 @@ async fn assert_query_rejection_envelope(area: &str) {
     };
     let mut request = builder.body(Body::empty()).expect("request");
     request.extensions_mut().insert(ConnectInfo(next_peer()));
-    let response = http_router::router(state)
-        .oneshot(request)
-        .await
-        .expect("infallible");
+    let response = router(state).oneshot(request).await.expect("infallible");
     let status = response.status();
     let bytes = to_bytes(response.into_body(), usize::MAX)
         .await

@@ -29,7 +29,7 @@ and states.
 
 - [Event hub page](/apps/frontend/src/pages/operations/event_detail/) — the route
   component `EventHubPage`, the hub body `event_hub_view` and the selector `OrbatSelector`.
-- [Operations domain](/apps/api/src/operations/) — the hub, the ORBAT, registrations,
+- [Operations domain](/crates/api/api_operations/src/) — the hub, the ORBAT, registrations,
   squad holds, seat assignment, the waiting list and the member directory.
 
 ## Boundaries
@@ -45,7 +45,7 @@ and states.
 
 ## Related documentation
 
-- [Operations domain](/apps/api/src/operations/README.md) — the API side of the hub
+- [Operations domain](/crates/api/api_operations/src/README.md) — the API side of the hub
   and its slotting.
-- [Event reservation services](/apps/api/src/operations/services/event_reservations/README.md)
+- [Event reservation services](/crates/api/api_operations/src/services/event_reservations/README.md)
   — the pools, claims, holds and promotion rules behind registration.

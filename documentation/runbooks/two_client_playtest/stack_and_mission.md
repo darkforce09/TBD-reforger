@@ -188,7 +188,7 @@ curl -s -w '\n%{http_code}\n' http://127.0.0.1:8080/healthz
 ```
 
 Expected: `{"status":"ok"}` and `200` once the database answers and the migrations are applied
-(`apps/api/src/core/observability/health_probe.rs`); `unavailable` comes with `503`. Together with step 14's `200`, the
+(`crates/api/api_http_layer/src/observability/health_probe.rs`); `unavailable` comes with `503`. Together with step 14's `200`, the
 platform is ready to deploy the mission.
 
 ## Troubleshooting

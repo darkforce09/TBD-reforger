@@ -55,4 +55,4 @@ Recent Intelligence rows link into the announcement board, and its banner into t
   — the live server panel.
 - [Announcements page](/documentation/apps/frontend/pages/command_center/announcements/announcements_page.md)
   — the announcement board.
-- [Command center domain](/apps/api/src/command_center/README.md) — the dashboard route.
+- [Command center domain](/crates/api/api_command_center/src/README.md) — the dashboard route.

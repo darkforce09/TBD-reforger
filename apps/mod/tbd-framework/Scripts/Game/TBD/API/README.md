@@ -69,10 +69,10 @@ byte for byte the one match results carry. Each subfolder's README describes its
   `TBD_MissionLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`;
   `TBD_SpawnManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`; the engine's
   `RestContext`, `RestCallback`, `SCR_PlayerIdentityUtils` and `SCR_ChatComponent`. Over HTTP, the
-  API domains `apps/api/src/server_infrastructure/` (sessions and fleet executor),
-  `apps/api/src/match_telemetry/` (heartbeats, match registration, results and events),
-  `apps/api/src/identity_and_access/` (link confirmation),
-  `apps/api/src/missions/` and `apps/api/src/operations/`.
+  API domains `crates/api/api_server_infrastructure/src/` (sessions and fleet executor),
+  `crates/api/api_match_telemetry/src/` (heartbeats, match registration, results and events),
+  `crates/api/api_identity_and_access/src/` (link confirmation),
+  `crates/api/api_missions/src/` and `crates/api/api_operations/src/`.
 - Used by: `TBD_GameRuntimeHttp` by `TBD_DeployedMission`, `TBD_MissionArtifactVerification` and
   `TBD_RosterLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`, by
   `TBD_DeploymentAuthorization`, `TBD_DeploymentRequest`, `TBD_DeploymentRequestQueue` and
@@ -96,13 +96,13 @@ byte for byte the one match results carry. Each subfolder's README describes its
 
 ## Related documentation
 
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — runtime
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) — runtime
   sessions, machine credentials and the fleet command ledger on the API side
-- [Match telemetry domain](/apps/api/src/match_telemetry/README.md) — how heartbeats
+- [Match telemetry domain](/crates/api/api_match_telemetry/src/README.md) — how heartbeats
   and match telemetry are taken in
 - [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — match
   identity, results revisions, detailed events and the game-runtime queue
-- [Identity and access domain](/apps/api/src/identity_and_access/README.md) — the link
+- [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the link
   code handshake the `#tbd link` command completes
 - [Discord identity link specification](/documentation/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
   — the in-game linking flow

@@ -58,7 +58,7 @@ const RECIPE_SOURCE: &str = "cargo xtask db seed";
 /// the list arrives as a `&[&str]`, so no arrangement of text in that file can satisfy the gate.
 const RECIPE_CONST: &str = "tools/commands/database_operations/src/local_database.rs SEEDS";
 /// The seed the seeder must apply, repo-relative. Also quoted verbatim in one failure hint.
-const SEED_FILE: &str = "apps/api/seeds/wiki_pages.sql";
+const SEED_FILE: &str = "crates/api/api_database/seeds/wiki_pages.sql";
 /// The [`SEEDS`] entry that must be present. The const holds bare file names (the seeder redirects
 /// `seeds/<entry>`), so this is the bare name — matched by EQUALITY, not substring, so a
 /// `wiki_pages.sql.disabled` entry cannot satisfy the pin.

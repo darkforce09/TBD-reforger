@@ -79,7 +79,7 @@ Run every command from the repository root unless a step says otherwise.
 
    Expected: one echoed compose command per file, each running
    `exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger` against `deploy/compose.dev.yml`
-   with the seed on stdin, from `apps/api/seeds/discord_roles.sql` through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
+   with the seed on stdin, from `crates/api/api_database/seeds/discord_roles.sql` through `registry_dev.sql`, `faction_library.sql` and `vehicle_database.sql` to
    `wiki_pages.sql`, each followed by psql's command tags (`INSERT 0 3` for the roles), and exit 0.
    Each psql run stops at its first failed statement, so an `ERROR:` line ends the command with
    psql's exit code 3 at that file. The seeds upsert, so running them again converges.
@@ -218,7 +218,7 @@ person at Discord's consent screen. The request and response of each call are in
    Expected: the portal lists it. Discord compares it byte for byte twice, on the authorize URL
    and on the token exchange: scheme, host, port and a trailing slash all count. The API builds
    its own authorize URL with the scopes `identify guilds.members.read` (`OAUTH_SCOPES` in
-   `apps/api/src/identity_and_access/services/discord_client.rs`), so the portal's URL
+   `crates/api/api_discord/src/discord_client.rs`), so the portal's URL
    generator and a bot are not involved.
 
 2. Fill the credentials and align the hosts. Set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` and
@@ -280,7 +280,7 @@ person at Discord's consent screen. The request and response of each call are in
    guild's Command Staff (`admin`), Mission Maker (`mission_maker`) and Player (`enlisted`)
    roles; no Squad Leader (`leader`) role id is committed. For another guild, or for `leader`,
    read your role ids from `user_discord_roles` after a sign-in and insert the mapping, as the
-   header of `apps/api/seeds/discord_roles.sql` shows.
+   header of `crates/api/api_database/seeds/discord_roles.sql` shows.
 
    ```sql
    INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority)

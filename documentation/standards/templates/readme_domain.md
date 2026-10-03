@@ -47,7 +47,7 @@ that span them. Name each child's part in one clause; the child's own README hol
 
 ## Worked sample
 
-Written from `apps/api/src/missions/`. The sample sits in a fenced block, so no gate
+Written from `crates/api/api_missions/src/`. The sample sits in a fenced block, so no gate
 reads it as a README; the folder's own README.md is written from the same code and may differ.
 
 ````markdown
@@ -61,7 +61,7 @@ running server through immutable artifacts, reviews, approvals and deployments.
 ## Contents
 
 ```text
-apps/api/src/missions/
+crates/api/api_missions/src/
 ├── contract/     JSON Schema validation of every mission document, and the generated contract types
 ├── handlers/     one HTTP handler module per mission surface
 ├── mod.rs        the module tree; re-exports `routes`
@@ -121,7 +121,7 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
   - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
   - `core::http_router`, which merges the route table;
-  - the deployment reconciler in `apps/api/src/background_workers/` and the
+  - the deployment reconciler in `crates/api/api_background_workers/src/` and the
     `import-registry` binary in `apps/api/src/bin/`;
   - `command_center`, `operations`, `match_telemetry` and `server_infrastructure`, through the
     lookups, deployment services and models above;

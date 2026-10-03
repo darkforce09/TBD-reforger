@@ -60,7 +60,7 @@ imports another.
 
 - [Account pages](/documentation/apps/frontend/pages/account/account_pages.md) — the
   behaviour and design of sign-in, the callback and settings.
-- [Identity and access domain](/apps/api/src/identity_and_access/README.md) — the API
+- [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the API
   routes behind these pages.
 - [App layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md)
   — the frame that renders sign-in bare and the account menu that links settings.

@@ -46,7 +46,7 @@ and its feature doc, a line in Contents and a row in the table.
 
 - [Doctrine and info pages](/apps/frontend/src/pages/doctrine_and_info/) — the three
   route components, which the feature docs describe.
-- [Community content domain](/apps/api/src/community_content/) — the wiki, vehicle
+- [Community content domain](/crates/api/api_community_content/src/) — the wiki, vehicle
   database and modpack routes behind them.
 
 ## Boundaries

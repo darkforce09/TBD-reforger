@@ -7,11 +7,11 @@
 //! in a generated order, publishes through the production `publish_audit_batch` with generated
 //! batch sizes before and between the finishes, drains what is left, and finally reads the
 //! production `audit_delivery_stream` from the cursor the case started at.
-//! **Position:** drives `administration::services::{required_audit, audit_publication,
-//! audit_delivery, audit_notifier}` against this binary's private database. [`PublicationModel`]
-//! is the oracle: a committed row becomes pending at its commit, and a publish takes the lowest
-//! pending audit ids, up to the clamped batch size, numbering them after the tail in audit-id
-//! order.
+//! **Position:** drives `api_audit_log::required_audit` and
+//! `api_administration::services::{audit_publication, audit_delivery, audit_notifier}` against
+//! this binary's private database. [`PublicationModel`] is the oracle: a committed row becomes
+//! pending at its commit, and a publish takes the lowest pending audit ids, up to the clamped
+//! batch size, numbering them after the tail in audit-id order.
 //! **Signals & state:** one runtime, pool and audit listener serve every case; each case owns a
 //! fresh actor and unique action names and starts after draining whatever is pending, so the
 //! cases share only the publication sequence, whose tail the model reads as its start. This
@@ -29,11 +29,12 @@ use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
-use api::administration::services::audit_delivery::{AuditStreamItem, audit_delivery_stream};
-use api::administration::services::audit_notifier::AuditNotify;
-use api::administration::services::audit_publication::publish_audit_batch;
-use api::administration::services::required_audit::append_required_audit;
-use api::core::database;
+use api_administration::services::audit_delivery::{AuditStreamItem, audit_delivery_stream};
+use api_administration::services::audit_notifier::AuditNotify;
+use api_administration::services::audit_publication::publish_audit_batch;
+
+use api_audit_log::required_audit::append_required_audit;
+use api_identifiers::DiscordUserId;
 use futures::StreamExt;
 use proptest::collection::vec;
 use proptest::prelude::*;
@@ -259,7 +260,7 @@ async fn run_case(
             .expect("appends happen before any finish");
         append_required_audit(
             connection,
-            &actor,
+            &DiscordUserId::new(actor.as_str()),
             &action,
             &actor,
             "generated audit publication case",
@@ -368,11 +369,11 @@ async fn run_case(
         match next_item(&mut stream).await {
             AuditStreamItem::Delivery(delivery) => {
                 prop_assert_eq!(
-                    actions.get(&delivery.row.id),
+                    actions.get(&delivery.row.id.get()),
                     Some(&delivery.row.action),
                     "a delivery carries the row appended under its id"
                 );
-                delivered.push((delivery.sequence, delivery.row.id));
+                delivered.push((delivery.sequence, delivery.row.id.get()));
             }
             other => {
                 return Err(TestCaseError::fail(format!(
@@ -397,14 +398,14 @@ fn audit_publication_preserves_committed_event_delivery() {
     let (pool, notify) = runtime.block_on(async {
         let url = common::require_test_database_url()
             .expect("audit publication properties require an isolated test database");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect the test database");
         let notify = AuditNotify::for_pool(&pool);
         (pool, notify)
     });
     let coverage = PublicationCoverage::default();
-    common::property_evidence::run_property(PROPERTY, CASES, &scenario(), |scenario| {
+    api_property_evidence::run_property(PROPERTY, CASES, &scenario(), |scenario| {
         runtime.block_on(run_case(&pool, &notify, &coverage, scenario))
     });
     println!("audit-publication-coverage: {coverage:?}");

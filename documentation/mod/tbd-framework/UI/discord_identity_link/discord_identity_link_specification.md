@@ -65,10 +65,10 @@ None found: each reply matches the status the platform's handler returns.
 ## Data
 
 - `POST /api/v1/me/link` (`create_link_code` in
-  `apps/api/src/identity_and_access/handlers/arma_link_codes.rs`): signed-in member
+  `crates/api/api_identity_and_access/src/handlers/arma_link_codes.rs`): signed-in member
   tier; issues the 6-digit code with a 10-minute expiry.
 - `POST /api/v1/ingest/link-confirm` (`ingest_link_confirm` in
-  `apps/api/src/identity_and_access/handlers/arma_link_confirmation.rs`): machine tier,
+  `crates/api/api_identity_and_access/src/handlers/arma_link_confirmation.rs`): machine tier,
   called by the game server with its `mod_runtime` machine credential as
   `Authorization: Bearer`; body `code`, `arma_id` and `arma_character`. It consumes the code, sets
   the member's game identity, attributes their earlier history and recomputes statistics, writes an

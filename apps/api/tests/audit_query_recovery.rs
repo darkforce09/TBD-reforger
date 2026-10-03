@@ -18,8 +18,8 @@ mod contract_support;
 
 use std::time::Duration;
 
-use api::administration::services::audit_delivery::{AuditStreamItem, audit_delivery_stream};
-use api::administration::services::audit_notifier::{AuditNotify, AuditSignal};
+use api_administration::services::audit_delivery::{AuditStreamItem, audit_delivery_stream};
+use api_administration::services::audit_notifier::{AuditNotify, AuditSignal};
 use futures::{Stream, StreamExt};
 use sqlx::PgPool;
 use tokio::sync::broadcast::error::TryRecvError;
@@ -120,7 +120,7 @@ fn assert_delivery(item: Option<AuditStreamItem>, sequence: i64, audit_id: i64, 
     match item {
         Some(AuditStreamItem::Delivery(delivery)) => {
             assert_eq!(delivery.sequence, sequence, "{why}");
-            assert_eq!(delivery.row.id, audit_id, "{why}");
+            assert_eq!(delivery.row.id.get(), audit_id, "{why}");
             let data = serde_json::to_value(&delivery.row).expect("row JSON");
             contract_support::assert_valid(AUDIT_SCHEMA, Some("AuditLogEntry"), &data);
         }

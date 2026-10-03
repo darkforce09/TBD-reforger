@@ -30,7 +30,7 @@ land ─▶ merge each ─▶ wave gate on merged main ─▶ drop worktrees ─
 - The [slice agent brief](/documentation/runbooks/factory_waves/slice_agent_brief.md) and the
   [adversarial verifier brief](/documentation/runbooks/factory_waves/adversarial_verifier_brief.md)
   to hand.
-- `TBD_GATE_MIGRATION_0016=apps/api/migrations/0016_backfill_linked_match_stats.sql`
+- `TBD_GATE_MIGRATION_0016=crates/api/api_database/migrations/0016_backfill_linked_match_stats.sql`
   exported in the orchestrator's shell and each slice agent's. The gate's `db_migrate claim body`
   step defaults to a migration file name the migrations folder does not hold
   (`tools/commands/platform_execution/src/wave_execution/migrate/gate_db_migrate_claim_body.rs`),

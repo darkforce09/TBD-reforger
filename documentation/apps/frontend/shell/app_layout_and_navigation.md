@@ -139,18 +139,18 @@ The README's [Data](/apps/frontend/src/shell/README.md#data) lists each call
 with the body it sends or the DTO it reads. Server-side:
 
 - `POST /api/v1/auth/logout` (`logout` in
-  `apps/api/src/identity_and_access/handlers/session_tokens.rs`): revokes the session
+  `crates/api/api_identity_and_access/src/handlers/session_tokens.rs`): revokes the session
   the refresh token belongs to and answers 204, also for an unknown token; a missing token is
   refused with 400 "refresh_token required".
-- `GET /api/v1/me` (`get_me` in `apps/api/src/identity_and_access/handlers/member_profile.rs`):
+- `GET /api/v1/me` (`get_me` in `crates/api/api_identity_and_access/src/handlers/member_profile.rs`):
   the profile the store adopts, with `membership_stale`, `membership_override_active` and
   `can_manage_membership_override`, which the API derives from the account's last verified
   Discord membership on every authenticated request
-  (`apps/api/src/identity_and_access/services/session_authorization.rs`,
+  (`crates/api/api_caller_identity/src/session_authorization.rs`,
   `cached_membership_permissions.rs`). A background worker re-reads each member's Discord
   membership.
 - `POST /api/v1/admin/users/{discordId}/membership-grace` (`extend_grace` in
-  `apps/api/src/administration/handlers/membership_grace_overrides.rs`): takes
+  `crates/api/api_administration/src/handlers/membership_grace_overrides.rs`): takes
   `duration_hours` from 1 to 48 and a reason of 1 to 2000 bytes. The caller must hold a live
   non-development session and be a verified administrator who is still a guild member; the
   target must be a verified guild member who is neither banned nor deleted (409 otherwise). In

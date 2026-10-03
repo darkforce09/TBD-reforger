@@ -435,16 +435,16 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
 }
 
 /// The members whose tests a step of [`cmd_gate`] other than `test workspace members` runs:
-/// `test api` against the gate database, `test map-engine` with every feature on and
-/// `test frontend`.
+/// `test api` against the gate database (with every API crate, which the step derives),
+/// `test map-engine` with every feature on and `test frontend`.
 pub(super) const WAVE_GATE_DEDICATED_TEST_PACKAGES: [&str; 3] = ["api", "map_engine", "frontend"];
 
 /// `test workspace members`: `cargo test -p <package>` in `target_dir_assignment`'s private target
-/// directory for every workspace member outside [`WAVE_GATE_DEDICATED_TEST_PACKAGES`], each its
-/// own run; the first red package's code, after every package ran. A workspace whose members
+/// directory for every workspace member outside [`WAVE_GATE_DEDICATED_TEST_PACKAGES`] and the API
+/// family `test api` covers, each its own run; the first red package's code, after every package ran. A workspace whose members
 /// cannot be derived is red, never an empty step.
 fn test_workspace_members(ctx: &Ctx, target_dir_assignment: &str) -> i32 {
-    let packages = match ci_task_catalog::workspace_member_tests::member_packages_except(
+    let packages = match ci_task_catalog::workspace_member_tests::member_packages_outside_api_family(
         &ctx.root,
         &WAVE_GATE_DEDICATED_TEST_PACKAGES,
     ) {

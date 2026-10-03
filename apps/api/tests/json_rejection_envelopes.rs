@@ -9,7 +9,7 @@
 //! malformed and boundary probes of the `route_acceptance_*` binaries, whose worlds supply real
 //! rows. The administrator ballistics catalog upload reads a multipart form under its own body
 //! limit, so its case sends a JSON body (415) and a form one byte over that limit (413).
-//! **Position:** boots `core::http_router::router` over this binary's own test database with the
+//! **Position:** boots `api::router::router` over this binary's own test database with the
 //! development test configuration; user sessions come from `common::access_token`, and a
 //! `mod_runtime` machine credential is issued through the administrator credential route for a
 //! server row this binary inserts. The handlers reach the envelope through
@@ -25,12 +25,12 @@ mod common;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::core::middleware::MAX_JSON_BODY;
-use api::operations::handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
+use api_http_layer::middleware::MAX_JSON_BODY;
+use api_operations::handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -356,9 +356,10 @@ async fn assert_json_rejection_envelopes(area: &str) {
         .unwrap_or_else(|| panic!("no body case for area `{area}`"));
     let url = common::require_test_database_url()
         .expect("the per-binary test database is provisioned before any case runs");
-    let pool = database::connect(&url).await.expect("connect");
-    let state = AppState::new(pool, Config::for_tests(url, "json-rejection-secret"));
-    let app = http_router::router(state.clone());
+    let pool = api_database::connect(&url).await.expect("connect");
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "json-rejection-secret"));
+    let app = router(state.clone());
     let bearer = match case.caller {
         Caller::Anonymous => None,
         Caller::Role(role) => {
@@ -581,9 +582,10 @@ async fn contract_parity_json_rejections_answer_the_error_envelope_runtime_relay
 async fn contract_parity_json_rejections_answer_the_error_envelope_ballistics_catalog_upload() {
     let url = common::require_test_database_url()
         .expect("the per-binary test database is provisioned before any case runs");
-    let pool = database::connect(&url).await.expect("connect");
-    let state = AppState::new(pool, Config::for_tests(url, "json-rejection-secret"));
-    let app = http_router::router(state.clone());
+    let pool = api_database::connect(&url).await.expect("connect");
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "json-rejection-secret"));
+    let app = router(state.clone());
     let actor = "json-rejection-ballistics_catalog_upload";
     let bearer = common::access_token(&state, SUITE, actor, "admin", true).await;
     let path = "/api/v1/ballistics-catalogs";

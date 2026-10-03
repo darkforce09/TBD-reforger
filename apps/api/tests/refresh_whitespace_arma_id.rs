@@ -4,17 +4,17 @@
 //!
 //! This binary is the HTTP half: refresh must mint `arma_linked=false` when the row holds
 //! whitespace-only `arma_id` (proves session issuance is not `is_some()`-only), and
-//! `POST /me/leave-requests` must 400 on whitespace `reason` (operations/handlers/leave_requests.rs).
+//! `POST /me/leave-requests` must 400 on whitespace `reason` (api_operations/src/handlers/leave_requests.rs).
 //!
 //! The Discord callback shares
-//! [`api::identity_and_access::services::session_issuance::arma_id_is_linked`] — covered
+//! [`api_caller_identity::arma_identity_link::arma_id_is_linked`] — covered
 //! by the unit pin beside that helper plus the refresh IT below (same helper, same claim).
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::identity_and_access::services::session_issuance::issue_refresh;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
+use api_identity_and_access::services::session_issuance::issue_refresh;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -37,11 +37,11 @@ const SEED_ARMA: &str = "refresh-ws-seed-arma-1";
 
 async fn boot() -> Option<(Router, AppState, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let cfg = Config::for_tests(url, "refresh-ws-secret");
-    let state = AppState::new(pool.clone(), cfg);
-    Some((http_router::router(state.clone()), state, pool))
+    let state = api::composition::application_state(pool.clone(), cfg);
+    Some((router(state.clone()), state, pool))
 }
 
 async fn cleanup(pool: &PgPool) {
@@ -93,7 +93,9 @@ async fn refresh_whitespace_arma_id_mints_arma_linked_false() {
     assert!(stored.is_some());
     assert!(stored.as_deref().unwrap().trim().is_empty());
 
-    let refresh = issue_refresh(&pool, ACTOR).await.expect("issue_refresh");
+    let refresh = issue_refresh(&pool, &api_identifiers::DiscordUserId::new(ACTOR))
+        .await
+        .expect("issue_refresh");
     let body = format!(r#"{{"refresh_token":"{refresh}"}}"#);
     let resp = app
         .clone()
@@ -131,7 +133,9 @@ async fn refresh_real_arma_id_mints_arma_linked_true() {
     cleanup(&pool).await;
     common::seed_user(&pool, ACTOR, "refresh-ws-real", SEED_ARMA, "enlisted").await;
 
-    let refresh = issue_refresh(&pool, ACTOR).await.expect("issue_refresh");
+    let refresh = issue_refresh(&pool, &api_identifiers::DiscordUserId::new(ACTOR))
+        .await
+        .expect("issue_refresh");
     let body = format!(r#"{{"refresh_token":"{refresh}"}}"#);
     let resp = app
         .clone()

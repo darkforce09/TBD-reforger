@@ -13,7 +13,9 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -67,12 +69,12 @@ impl ContentSuite {
 
     async fn boot(suite: &str, scratch: PathBuf, upload_dir: PathBuf) -> Self {
         let url = common::require_test_database_url().expect("content suites require PostgreSQL");
-        let pool = database::connect(&url).await.unwrap();
-        database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url).await.unwrap();
+        api_database::migrate(&pool).await.unwrap();
         let mut config = Config::for_tests(url, "content-suites");
         config.upload_dir = upload_dir.display().to_string();
-        let state = AppState::new(pool, config);
-        let app = http_router::router(state.clone());
+        let state = api::composition::application_state(pool, config);
+        let app = router(state.clone());
         let mut fixture = Self {
             state,
             app,

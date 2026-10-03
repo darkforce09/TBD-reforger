@@ -207,6 +207,6 @@ RCON route. Every request runs in the browser build only; the views that run the
 
 - [Server control page](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — the
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) — the
   server registry, command, scenario and credential routes.
-- [Missions domain](/apps/api/src/missions/README.md) — the deployment routes.
+- [Missions domain](/crates/api/api_missions/src/README.md) — the deployment routes.

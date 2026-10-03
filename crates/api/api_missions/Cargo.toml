@@ -1,0 +1,80 @@
+# The missions domain of the API: the mission library and the versions the Mission Creator saves,
+# the compiled artifacts, the reviews and the approval queue, the mission deployments, the armory,
+# the faction library, the item registry with its compatibility graph and the game-runtime mission
+# reads. Names two other domains: community content (the modpack a registry belongs to) and server
+# infrastructure (the fleet command a deployment runs as).
+[package]
+name = "api_missions"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's mission library, versions, artifacts, reviews, deployments, armory, factions and registries."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 8
+targets = "any"
+
+[dependencies]
+# The required audit lines of the mission, review, faction and deployment writes.
+api_audit_log = { workspace = true }
+# The mission maker and administrator authority rechecks and the machine caller of the
+# game-runtime reads.
+api_caller_identity = { workspace = true }
+# The modpack a registry read is scoped to.
+api_community_content = { workspace = true }
+# `Config`, the guild the write lock and the deployment requests reread the caller's authority in.
+api_configuration = { workspace = true }
+# `is_unique_violation`, the duplicate version check.
+api_database = { workspace = true }
+# `fail_point!` at the deployment request and review decision commits.
+api_failpoints = { workspace = true }
+# `ApiError`, the canonical JSON of the artifact digests and the typed path parameters.
+api_foundation = { workspace = true }
+# The caller extractors and the realtime hub.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# `TerrainType` and the mission vocabulary enums.
+api_mission_vocabulary = { workspace = true }
+# The fleet command ledger a deployment request enqueues its command on.
+api_server_infrastructure = { workspace = true }
+# `AppState`, the state every handler extracts.
+api_state = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+# `sha256_hex`, the digest of every artifact's bytes and inputs.
+content_digest = { workspace = true }
+# The serde types generated from the contract schemas the registry import decodes.
+contract_schema_types = { workspace = true }
+# The fleet command vocabulary and the RFC 3339 timestamp spelling of every emitted time.
+fleet_wire_contract = { workspace = true }
+# `is_http_url`, the scheme guard of the mission's URL fields.
+http_url_guard = { workspace = true }
+# Core draft 2020-12 validation of the embedded mission schemas.
+jsonschema = { workspace = true }
+# The game-document compiler's identity, error and compiled document the artifact store records.
+mission_compiler = { workspace = true }
+# The compiled slot row the compile service re-exports.
+mission_model = { workspace = true }
+# The validation findings the compile service re-exports as its diagnostics.
+mission_validation = { workspace = true }
+# The control-character and cargo capacity scans every mission save and compile runs.
+mission_wire_safety = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# float_roundtrip parses every number bit-exactly, so a stored payload and the artifact digested
+# from it read back the same f64 values in every build; raw_value keeps a saved payload's bytes.
+serde_json = { workspace = true, features = ["float_roundtrip", "raw_value"] }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "json"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[dev-dependencies]
+api_failpoints = { workspace = true, features = ["failpoints"] }
+# The editor payload compiler the flatten tests compare the server compile against.
+mission_payload = { workspace = true }
+
+[lints]
+workspace = true

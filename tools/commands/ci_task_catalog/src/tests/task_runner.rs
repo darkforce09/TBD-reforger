@@ -14,7 +14,7 @@
 //! renders FROM [`TASKS`], so there is no second copy of the help text left to drift.
 
 use super::*;
-use crate::workspace_member_tests::{DEDICATED_TEST_TASKS, member_packages_except};
+use crate::workspace_member_tests::{DEDICATED_TEST_TASKS, workspace_member_lane_packages};
 
 /// The checkout the test binary was built from, whatever the working directory.
 fn root() -> PathBuf {
@@ -407,8 +407,9 @@ fn the_runtime_scan_sees_a_runtime_wherever_a_shell_runs_it() {
     assert_eq!(bare_container_runtime_steps(&clean), Vec::<String>::new());
 }
 
-/// Every line the task `name` runs, its `Step::Task` rows followed, and every row it reaches.
-fn reachable(name: &str) -> (Vec<&'static str>, std::collections::BTreeSet<&'static str>) {
+/// Every line the task `name` runs, its `Step::Task` rows followed, and every row it reaches. A
+/// native step that runs a derived API line contributes that line, as this checkout derives it.
+fn reachable(name: &str) -> (Vec<String>, std::collections::BTreeSet<&'static str>) {
     let mut lines = Vec::new();
     let mut rows = std::collections::BTreeSet::new();
     let mut pending = vec![find(name).unwrap_or_else(|| panic!("no task {name}"))];
@@ -421,7 +422,14 @@ fn reachable(name: &str) -> (Vec<&'static str>, std::collections::BTreeSet<&'sta
                 Step::Task(next) => {
                     pending.push(find(next).unwrap_or_else(|| panic!("no task {next}")))
                 }
-                other => lines.extend(step_echo(other)),
+                Step::Native { run } => {
+                    if let Some(line) = crate::api_package_lane::api_line_of(*run) {
+                        let argv = crate::api_package_lane::api_line_argv(&root(), line)
+                            .expect("the API packages derive");
+                        lines.push(argv.join(" "));
+                    }
+                }
+                other => lines.extend(step_echo(other).map(str::to_string)),
             }
         }
     }
@@ -430,20 +438,25 @@ fn reachable(name: &str) -> (Vec<&'static str>, std::collections::BTreeSet<&'sta
 
 /// Whether `line` runs the tests of the workspace member at `path` whose package is `package`:
 /// a `cargo test` naming the package, a `cargo test` inside the member's folder, or the database
-/// lane, which runs the tests of the API's folder.
+/// lane, which runs the tests of every package `api_test_packages` derives (the API, every API
+/// crate and every member that uses one).
 fn line_tests_member(line: &str, package: &str, path: &str) -> bool {
     let words: Vec<&str> = line.split_whitespace().collect();
     let names_package = words
         .windows(2)
         .any(|pair| matches!(pair[0], "-p" | "--package") && pair[1] == package);
     let in_member_folder = line.starts_with(&format!("cd {path} && cargo test"));
-    let database_lane =
-        line == "cargo xtask db test-it" && path == database_operations::local_database::WEB;
+    let database_lane = line == "cargo xtask db test-it"
+        && database_operations::local_database::api_test_packages::api_test_packages(&root())
+            .expect("the API packages derive")
+            .iter()
+            .any(|api_package| api_package == package);
     (line.contains("cargo test") && (names_package || in_member_folder)) || database_lane
 }
 
 /// The workspace members no line or row reachable from `tasks` tests, as `package (path)`. The
-/// `workspace-member-tests` row tests every member outside its dedicated packages.
+/// `workspace-member-tests` row tests every member outside its dedicated packages and the API
+/// family.
 fn untested_members(tasks: &[&str]) -> Vec<String> {
     let members = repository_laws::workspace_members::read_workspace_members(&root())
         .expect("the workspace members read");
@@ -455,8 +468,7 @@ fn untested_members(tasks: &[&str]) -> Vec<String> {
         rows.extend(task_rows);
     }
     let derived: Vec<String> = if rows.contains("workspace-member-tests") {
-        let dedicated: Vec<&str> = DEDICATED_TEST_TASKS.iter().map(|(p, _)| *p).collect();
-        member_packages_except(&root(), &dedicated).expect("the derived lane reads")
+        workspace_member_lane_packages(&root()).expect("the derived lane reads")
     } else {
         Vec::new()
     };

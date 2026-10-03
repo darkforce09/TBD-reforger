@@ -46,6 +46,7 @@ publish = false
 # whose version requirement differs keeps its own specification.
 [workspace.dependencies]
 aho-corasick = "1"
+ammonia = "4.1.3"
 anyhow = "1"
 # The loopback relay that withholds one fleet executor answer on the staging host
 # (`tools/staging/acknowledgement_dropping_relay`).
@@ -53,7 +54,71 @@ acknowledgement_dropping_relay = { path = "tools/staging/acknowledgement_droppin
 # The API readiness judge: acceptance register, evidence receipts, fingerprints and the staging
 # recorder (`tools/commands/api_readiness_checks`).
 api_readiness_checks = { path = "tools/commands/api_readiness_checks" }
+# The API's serde- and sqlx-transparent typed identifiers (`crates/api/api_identifiers`).
+api_identifiers = { path = "crates/api/api_identifiers" }
+# The API's runtime configuration and process shutdown signal (`crates/api/api_configuration`).
+api_configuration = { path = "crates/api/api_configuration" }
+# The API's Postgres pool, migrations, seeds and SQLSTATE classification
+# (`crates/api/api_database`).
+api_database = { path = "crates/api/api_database" }
+# The API's `fail_point!` macro and its test-only failpoint registry (`crates/api/api_failpoints`).
+api_failpoints = { path = "crates/api/api_failpoints" }
+# The API's handler error, JSON wire formats, text policies and request parameters
+# (`crates/api/api_foundation`).
+api_foundation = { path = "crates/api/api_foundation" }
+# The API's access tokens, middleware chain, rate limiters, metrics and health surfaces, realtime
+# hub and outbound retry (`crates/api/api_http_layer`).
+api_http_layer = { path = "crates/api/api_http_layer" }
+# The dev-only property run recorder of the API's property tests
+# (`crates/api/api_property_evidence`).
+api_property_evidence = { path = "crates/api/api_property_evidence" }
+# The API's audit severity and audit line appends (`crates/api/api_audit_log`).
+api_audit_log = { path = "crates/api/api_audit_log" }
+# The API's terrain and game mode enums (`crates/api/api_mission_vocabulary`).
+api_mission_vocabulary = { path = "crates/api/api_mission_vocabulary" }
+# The API's Discord OAuth2, guild-member and webhook clients (`crates/api/api_discord`).
+api_discord = { path = "crates/api/api_discord" }
+# The API's equipment dataset imports, navigation index and read queries
+# (`crates/api/api_equipment_datasets`).
+api_equipment_datasets = { path = "crates/api/api_equipment_datasets" }
+# The API's role ladder, session and account authority, identity lock order and machine caller
+# (`crates/api/api_caller_identity`).
+api_caller_identity = { path = "crates/api/api_caller_identity" }
+# The API's member statistics, leaderboard refresh, attendance attribution and re-evaluation queue
+# (`crates/api/api_member_activity`).
+api_member_activity = { path = "crates/api/api_member_activity" }
+# The API's application state and its sub-state projections (`crates/api/api_state`).
+api_state = { path = "crates/api/api_state" }
+# The API's Discord sign-in, session tokens, caller profile and Arma link handshake
+# (`crates/api/api_identity_and_access`).
+api_identity_and_access = { path = "crates/api/api_identity_and_access" }
+# The API's announcements, wiki, vehicle database, modpacks, uploads and equipment data viewer
+# routes (`crates/api/api_community_content`).
+api_community_content = { path = "crates/api/api_community_content" }
+# The API's member roster, moderation, Discord role resync and audit log console
+# (`crates/api/api_administration`).
+api_administration = { path = "crates/api/api_administration" }
+# The API's server registry, live status feed, machine credentials, fleet commands and runtime
+# sessions (`crates/api/api_server_infrastructure`).
+api_server_infrastructure = { path = "crates/api/api_server_infrastructure" }
+# The API's game-runtime heartbeat, match registration, results revisions and detailed event ingest
+# (`crates/api/api_match_telemetry`).
+api_match_telemetry = { path = "crates/api/api_match_telemetry" }
+# The API's mission library, versions, artifacts, reviews, deployments, armory, factions and
+# registries (`crates/api/api_missions`).
+api_missions = { path = "crates/api/api_missions" }
+# The API's event calendar and access control, ORBAT slotting and reservations, deployment history,
+# leave requests, fire missions and ballistics catalogs (`crates/api/api_operations`).
+api_operations = { path = "crates/api/api_operations" }
+# The API's members' dashboard, community leaderboards and per-player statistics card
+# (`crates/api/api_command_center`).
+api_command_center = { path = "crates/api/api_command_center" }
+# The API's background workers, the interval tasks the API binary arms at boot
+# (`crates/api/api_background_workers`).
+api_background_workers = { path = "crates/api/api_background_workers" }
+async-stream = "0.3.6"
 axum = "0.8.9"
+axum-extra = "0.12.6"
 base64 = "0.22"
 # The seeded lattice of battery fire problems for native/wasm32 agreement
 # (`crates/ballistics/ballistics_agreement_cases`).
@@ -121,6 +186,8 @@ deterministic_random = { path = "crates/foundation/deterministic_random" }
 # The documentation gates: README coverage, Markdown placement and the link check
 # (`tools/checks/documentation_checks`).
 documentation_checks = { path = "tools/checks/documentation_checks" }
+csv = "1.4.0"
+dotenvy = "0.15.7"
 # Ear-clipping polygon triangulation behind `render_primitives`.
 earcutr = "0.5.0"
 # The Enfusion MCP client: daemon control, tool calls, the selftest and the server command
@@ -147,8 +214,10 @@ futures-util = "0.3"
 # Plain f64 geometry: vector products, 2D segment tests, rigid transforms, 3D boxes
 # (`crates/geometry/geometry_primitives`).
 geometry_primitives = { path = "crates/geometry/geometry_primitives" }
+governor = "0.10.4"
 gloo-net = "0.6"
 heck = "0.5"
+hex = "0.4.3"
 # The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).
 http_url_guard = { path = "crates/foundation/http_url_guard" }
 # Default features off; members select the codecs they decode and encode.
@@ -159,6 +228,8 @@ js-sys = "0.3"
 # The `string_id!`, `integer_id!` and `uuid_id!` newtype identifier macros
 # (`crates/foundation/newtype_ids`).
 newtype_ids = { path = "crates/foundation/newtype_ids" }
+# Default features off; members select the signing backend (`rust_crypto`).
+jsonwebtoken = { version = "10.4.0", default-features = false }
 # Line of sight inside a building: compound traces, the shared sight-line evaluation and floor
 # washes (`crates/line_of_sight/interior_line_of_sight`).
 interior_line_of_sight = { path = "crates/line_of_sight/interior_line_of_sight" }
@@ -254,6 +325,8 @@ prettyplease = "0.2"
 # (`tools/foundation/process_runner`).
 process_runner = { path = "tools/foundation/process_runner" }
 proptest = "1"
+# Default features off; members select the parser features they need.
+pulldown-cmark = { version = "0.13.4", default-features = false }
 rand = "0.10.2"
 regex = "1"
 # The ECMA-262 regular expressions the generated contract types check schema patterns with.
@@ -286,6 +359,7 @@ road_network = { path = "crates/terrain/road_network" }
 # Default features off; members select `std`, `bytecheck` and `little_endian`, which fix the
 # on-disk archive format.
 rkyv = { version = "0.8.18", default-features = false }
+rust_decimal = "1.42.1"
 # Default features off drop the aws-lc-rs provider; members enable `ring`.
 rustls = { version = "0.23.41", default-features = false }
 # The satellite container reader: header, both tile index versions, checks, level picks
@@ -299,6 +373,8 @@ serde = "1"
 serde_json = "1"
 # The YAML reader of the CI workflow checks.
 serde_norway = "0.9"
+# Default features off; each API crate selects its driver, runtime and type features.
+sqlx = { version = "0.9.0", default-features = false }
 # The triangle BVH, its sidecar format, the point grid and the clusters
 # (`crates/geometry/spatial_indexes`).
 spatial_indexes = { path = "crates/geometry/spatial_indexes" }
@@ -315,6 +391,7 @@ staging_procedures = { path = "tools/commands/staging_procedures" }
 syn = "2"
 # The tar archive writer of the equipment export upload bundle.
 tar = "0.4"
+subtle = "2.6.1"
 # A terrain's elevation model: raster placement, PNG and raw grid decoding, sampling, the vector
 # grid (`crates/terrain/terrain_elevation`).
 terrain_elevation = { path = "crates/terrain/terrain_elevation" }
@@ -348,6 +425,9 @@ tokio-tungstenite = "0.30"
 # dev-dependency only (`tools/foundation/tool_test_support`).
 tool_test_support = { path = "tools/foundation/tool_test_support" }
 toml = "1.1.3"
+tokio-stream = "0.1.18"
+tower = "0.5.3"
+tower-http = "0.7.0"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
 # The compile-fail test runner.

@@ -6,16 +6,16 @@ Rules ERR-1, ERR-2, ERR-4, ERR-5 and LOG-3: the one error shape the
 [API](/documentation/glossary/a_to_f.md#api) speaks, the status codes it answers with, and what it
 logs about a failed request. The code number ERR-3 is not used; its logging requirement is part of
 LOG-3. The error type itself is described in the
-[handler errors README](/apps/api/src/core/error_handling/README.md).
+[handler errors README](/crates/api/api_foundation/src/error_handling/README.md).
 
 ## Error envelope
 
 - **ERR-1 (Usability) — An error body is `{"error": "<message>"}`, with an optional `details`.**
-  `ApiError` in [api_error.rs](/apps/api/src/core/error_handling/api_error.rs) renders
-  it, and `json_error` in `apps/api/src/core/middleware/mod.rs` renders the same shape
+  `ApiError` in [api_error.rs](/crates/api/api_foundation/src/error_handling/api_error.rs) renders
+  it, and `json_error` in `crates/api/api_http_layer/src/middleware/mod.rs` renders the same shape
   for the extractors and the rate limiter. `details` is any JSON value: an array of strings for
   payload validation (`"invalid mission payload"` with one message per problem, in
-  `apps/api/src/missions/handlers/mission_versions.rs`), or an object carrying a `code`
+  `crates/api/api_missions/src/handlers/mission_versions.rs`), or an object carrying a `code`
   or a `reason` elsewhere (the [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) refusals, the modpack body error). The
   single-page app folds `details` into the message it shows only when it is an array of strings
   (`apps/frontend/src/foundation/transport/client/errors.rs`). A `sqlx::Error` never reaches the
@@ -27,7 +27,7 @@ LOG-3. The error type itself is described in the
 
 A success list answers `{"data": [...], "total": n, "limit": l, "offset": o}`, with `limit`
 defaulting to 20 and capped at 100 (`PageParams` in
-`apps/api/src/core/http/pagination.rs`); the audit log pages by cursor instead, with
+`crates/api/api_foundation/src/http/pagination.rs`); the audit log pages by cursor instead, with
 `{"data": [...], "next_cursor": id}`.
 
 ## Status codes
@@ -60,8 +60,8 @@ defaulting to 20 and capped at 100 (`PageParams` in
 
 - **LOG-3 (Debuggability) — A request that fails is logged with its path, status and duration.**
   The `logging` middleware in
-  [tracing_correlation.rs](/apps/api/src/core/middleware/tracing_correlation.rs), which
-  `apps/api/src/core/http_router.rs` mounts on every route, writes one structured
+  [tracing_correlation.rs](/crates/api/api_http_layer/src/middleware/tracing_correlation.rs), which
+  `apps/api/src/router.rs` mounts on every route, writes one structured
   `access` line per request with the request id, method, path, status and elapsed milliseconds,
   so every `4xx` and `5xx` is logged without handler code. A database error is logged a second
   time, at error level, where it converts into `ApiError`. An operation that fails on the side of

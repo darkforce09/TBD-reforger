@@ -1,0 +1,16 @@
+# Stage S9 K2a, second of four: the terrain and game mode enums become api_mission_vocabulary.
+# The staging folder becomes the crate's src/ whole and its mod.rs the crate root. The module prefix
+# is one `crate::` row scoped to the moved folder (first: a file two rows of one prefix both reach
+# takes the earlier row), one `crate::` row scoped to the API source and one `api::` row scoped
+# to the API package (its integration tests and the staging-fixtures binary). Grouped use trees
+# were split before the rows ran.
+kind	from	to	scope
+#
+# Folder and crate root
+path	apps/api/src/kernel/mission_vocabulary	crates/api/api_mission_vocabulary/src
+path	apps/api/src/kernel/mission_vocabulary/mod.rs	crates/api/api_mission_vocabulary/src/lib.rs
+#
+# Module prefix
+rust_path	crate::kernel::mission_vocabulary::	crate::	apps/api/src/kernel/mission_vocabulary
+rust_path	crate::kernel::mission_vocabulary::	api_mission_vocabulary::	apps/api/src
+rust_path	api::kernel::mission_vocabulary::	api_mission_vocabulary::	apps/api

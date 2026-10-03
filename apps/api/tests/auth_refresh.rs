@@ -2,11 +2,10 @@
 //! real router via `tower::oneshot`.
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::identity_and_access::services::refresh_token_purge::purge_expired_refresh_tokens;
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_identity_and_access::services::refresh_token_purge::purge_expired_refresh_tokens;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -21,8 +20,8 @@ const DEV_ID: &str = "000000000000000001";
 
 async fn setup() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     // Isolate: clear the dev user's tokens from prior runs.
     sqlx::query("DELETE FROM refresh_tokens WHERE discord_id = $1")
         .bind(DEV_ID)
@@ -30,7 +29,10 @@ async fn setup() -> Option<(Router, PgPool)> {
         .await
         .expect("cleanup");
     let cfg = Config::for_tests(url, "g7a-secret");
-    Some((http_router::router(AppState::new(pool.clone(), cfg)), pool))
+    Some((
+        router(api::composition::application_state(pool.clone(), cfg)),
+        pool,
+    ))
 }
 
 /// Extract a fragment param from a redirect Location. Token values are hex/JWT, so

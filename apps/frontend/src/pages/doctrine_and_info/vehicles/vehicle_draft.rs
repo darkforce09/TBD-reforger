@@ -9,7 +9,7 @@
 //! **Signals & state:** none; pure functions over the draft.
 //! **Invariants:**
 //! - The rules are the backend validator's
-//!   (`apps/api/src/community_content/handlers/vehicle_database/validation.rs`): every
+//!   (`crates/api/api_community_content/src/handlers/vehicle_database/validation.rs`): every
 //!   value is trimmed of whitespace and the byte order mark before its rule applies, and a limit
 //!   counts characters. `name` (at most 120), `faction` (at most 60) and `armor_type` (at most 60)
 //!   are required and never blank; `amphibious` (at most 60) and `primary_threat` (at most 120) are

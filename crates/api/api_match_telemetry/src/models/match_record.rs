@@ -1,0 +1,153 @@
+//! The stored record of a finished match: the match row, its outcome enum, and the per-player
+//! line items the game server reports for it.
+
+use api_identifiers::{
+    ArmaPlayerId, DiscordUserId, EventId, MatchId, MatchPlayerStatId, MissionId, SourceEventId,
+    SourceMatchId,
+};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+
+use api_mission_vocabulary::TerrainType;
+use fleet_wire_contract::rfc3339_timestamps::{rfc3339_utc, rfc3339_utc_opt};
+
+/// Mission outcomes (Postgres ENUM `mission_outcome`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "mission_outcome", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum MissionOutcome {
+    /// The mission was accomplished (`success`).
+    Success,
+    /// The mission failed (`failure`).
+    Failure,
+    /// The mission was called off (`aborted`).
+    Aborted,
+    /// The match is registered and not yet adjudicated (`pending`).
+    Pending,
+}
+
+impl MissionOutcome {
+    /// The Postgres/JSON wire string.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            MissionOutcome::Success => "success",
+            MissionOutcome::Failure => "failure",
+            MissionOutcome::Aborted => "aborted",
+            MissionOutcome::Pending => "pending",
+        }
+    }
+}
+
+/// One completed operation instance.
+///
+/// **`winning_faction`, `aar_replay_url` and `created_at` are non-optional fields over NULLABLE
+/// columns, so every read site MUST `COALESCE` them — `Option` was considered and rejected.**
+/// That is the house convention here, not an oversight: the zero value is kept in the type and
+/// the conversion is pushed into SQL. The API's `apps/api/tests/null_tolerance_*.rs` suites exist
+/// to hold that line ("NULL reads back as a zero value, 200 not 500"), and
+/// `crates/api/api_operations/src/handlers/member_service_record.rs`
+/// — the only read of this struct — coalesces all three. Measured against a real NULL:
+/// `GET /api/v1/me/deployments` serves **200**, and dropping the `COALESCE` fails the row with
+/// *"error occurred while decoding column `winning_faction`: unexpected null; try decoding as an
+/// `Option`"*. The safety lives in the query, not the type.
+///
+/// `Option<String>` for `winning_faction` is rejected because **the wire cannot express the
+/// distinction it would add.** `skip_serializing_if = "String::is_empty"` already omits the key
+/// for `""`, which is byte-identical to what an omitted `None` produces — the committed golden
+/// `GET__me__deployments.json` was in fact captured from match `rf-match-20260704-01`, whose
+/// `aar_replay_url` **is** NULL, and the golden simply lacks the key. `None` and `""` would be two
+/// encodings of one state. "No winner" is also already carried by `outcome`
+/// (`failure`/`aborted`/`pending`), and `""` — not NULL — is the explicit "clear the winner"
+/// re-adjudication signal the ingest contract defines.
+///
+/// The durable fix is therefore the opposite one: `SET NOT NULL DEFAULT ''` on both text columns,
+/// which belongs in `migrations/` rather than in this file.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Match {
+    /// The match's id.
+    pub id: MatchId,
+    /// The game runtime's id of the match, when it registered one.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub source_match_id: Option<SourceMatchId>,
+    /// The event the match was played for, when one.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub event_id: Option<EventId>,
+    /// The mission played, when known.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub mission_id: Option<MissionId>,
+    /// The terrain played, when known.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub terrain: Option<TerrainType>,
+    /// When the match started.
+    #[serde(with = "rfc3339_utc")]
+    pub started_at: DateTime<Utc>,
+    /// When the match ended, while it is not still running.
+    #[serde(
+        with = "rfc3339_utc_opt",
+        skip_serializing_if = "Option::is_none",
+        default
+    )]
+    pub ended_at: Option<DateTime<Utc>>,
+    /// The adjudicated outcome.
+    pub outcome: MissionOutcome,
+    /// The winning side; empty while there is none.
+    #[serde(skip_serializing_if = "String::is_empty", default)]
+    pub winning_faction: String,
+    /// The after-action review replay URL; empty while there is none.
+    #[serde(skip_serializing_if = "String::is_empty", default)]
+    pub aar_replay_url: String,
+    /// When the row was written.
+    #[serde(with = "rfc3339_utc")]
+    pub created_at: DateTime<Utc>,
+}
+
+/// Per-player line item ingested from the game server.
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct MatchPlayerStat {
+    /// The line's id.
+    pub id: MatchPlayerStatId,
+    /// The match the line belongs to.
+    pub match_id: MatchId,
+    /// The member linked to the Arma identity, when one is.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub discord_id: Option<DiscordUserId>,
+    /// The player's Arma identity.
+    pub arma_id: ArmaPlayerId,
+    /// Nullable column, non-optional field — read sites must `COALESCE(role_played, '')`
+    /// (`crates/api/api_operations/src/handlers/member_service_record.rs` does; it is the only read of
+    /// this struct).
+    /// Kept a `String` for the same reason as `Match::winning_faction`, and with a stronger case:
+    /// `role_played` is **required** on the ingest input and is bound unconditionally through
+    /// `EXCLUDED.role_played`, so the API itself can only ever write `''`. A NULL here can come
+    /// only from a manual fix, a backfill or an import — which is what `SET NOT NULL DEFAULT ''`
+    /// in `migrations/` would close for good.
+    #[serde(skip_serializing_if = "String::is_empty", default)]
+    pub role_played: String,
+    /// `NULL` = not measured. A stored `0` is a scored zero; do not coalesce at read sites that
+    /// care about the distinction. `leaderboard_totals` SUMs ignore NULL.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub kills: Option<i64>,
+    /// Deaths; `None` when not measured.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub deaths: Option<i64>,
+    /// Team kills; `None` when not measured.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub team_kills: Option<i64>,
+    /// Longest kill, in metres; `None` when not measured.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub longest_kill_m: Option<i64>,
+    /// Vehicles destroyed; `None` when not measured.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub vehicles_destroyed: Option<i64>,
+    /// Whether the player held a command role; `None` when not measured.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub is_command: Option<bool>,
+    /// Whether the player's command won; `None` when not measured or not in command.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub command_win: Option<bool>,
+    /// The runtime's id of the line's source event, which keys the line within the match.
+    pub source_event_id: SourceEventId,
+    /// When the line was written.
+    #[serde(with = "rfc3339_utc")]
+    pub created_at: DateTime<Utc>,
+}

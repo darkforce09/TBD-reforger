@@ -44,10 +44,9 @@
 
 mod common;
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -58,9 +57,9 @@ use uuid::Uuid;
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    let app = http_router::router(AppState::new(
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "fire-mission-secret"),
     ));
@@ -95,7 +94,7 @@ async fn call(
 
 /// The stored row, straight out of the table.
 ///
-/// Deliberately **not** the `FireMission` model in `src/operations/models/fire_mission.rs` via
+/// Deliberately **not** the `FireMission` model in `api_operations/src/models/fire_mission.rs` via
 /// `query_as`: that struct is what the handler deserialises into, so sharing it would let one
 /// wrong column name agree with itself on both sides. Naming the columns here means the test fails if the migration named them differently
 /// from what the handler binds.
@@ -367,7 +366,8 @@ const SHIPPED_LEGACY_GRID_READER: &str =
 /// Where [`SHIPPED_LEGACY_GRID_READER`] lives, for failure messages.
 const SHIPPED_LEGACY_GRID_READER_PATH: &str =
     "apps/frontend/src/pages/field_tools/mortar/saved_fires/restore.rs";
-const MIGRATION_0020: &str = include_str!("../migrations/0020_fire_missions_solution.sql");
+const MIGRATION_0020: &str =
+    include_str!("../../../crates/api/api_database/migrations/0020_fire_missions_solution.sql");
 
 /// The accept regex out of the shipped migration — both copies, which must be the same regex.
 ///

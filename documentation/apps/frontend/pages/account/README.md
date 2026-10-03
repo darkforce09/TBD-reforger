@@ -38,7 +38,7 @@ into one file per page, each with a line in Contents, once it passes 500 lines.
   feature doc describes.
 - [Session and access](/apps/frontend/src/foundation/auth/) — the session store, its
   persistence and the [role](/documentation/glossary/n_to_z.md#role) ladder the pages read and write.
-- [Identity and access domain](/apps/api/src/identity_and_access/) — the Discord
+- [Identity and access domain](/crates/api/api_identity_and_access/src/) — the Discord
   sign-in, the [dev login](/documentation/glossary/a_to_f.md#dev-login), the profile and the Arma
   link routes.
 

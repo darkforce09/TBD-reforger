@@ -75,7 +75,7 @@ RULES
 7. Gate before reporting, from the worktree:
      cargo xtask platform wave gate --slice <ticket id>
    It must end `SLICE GATE: PASS`. Export
-   TBD_GATE_MIGRATION_0016=apps/api/migrations/0016_backfill_linked_match_stats.sql
+   TBD_GATE_MIGRATION_0016=crates/api/api_database/migrations/0016_backfill_linked_match_stats.sql
    first. "clippy: REFUSING to pass — … resolved to NO crate" means the diff has no lintable
    Rust, not that the code is broken. `gate: WAITING for the gate lock` is serialisation.
 8. In a worktree run `cargo xtask schema validate`, not `cargo xtask ci schema-validate`: the

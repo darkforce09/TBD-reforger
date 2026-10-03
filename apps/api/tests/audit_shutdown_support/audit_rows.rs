@@ -3,7 +3,7 @@
 
 use std::time::{Duration, Instant};
 
-use api::administration::services::audit_publication::publish_audit_batch;
+use api_administration::services::audit_publication::publish_audit_batch;
 use sqlx::PgPool;
 
 /// Plants `count` audit rows tagged `tag` with one statement; answers their ids in ascending

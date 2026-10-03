@@ -2,7 +2,7 @@
 //! atomically, the leader and administrator promotion route, concurrency at the last place, and
 //! promotion when a pool reaches its opening time.
 
-use api::background_workers::event_reservation_reevaluator::drain_due_reevaluations;
+use api_background_workers::event_reservation_reevaluator::drain_due_reevaluations;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
 

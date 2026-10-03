@@ -11,7 +11,7 @@ mod common;
 mod contract_support;
 mod telemetry_support;
 
-use api::server_infrastructure::services::status_broadcast::publish_all_server_statuses;
+use api_server_infrastructure::services::status_broadcast::publish_all_server_statuses;
 use axum::Router;
 use axum::http::StatusCode;
 use contract_schema_types::match_telemetry::match_telemetry::{

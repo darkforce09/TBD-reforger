@@ -27,7 +27,7 @@ page's files, calls and states.
 
 - [Deployments page](/apps/frontend/src/pages/operations/deployments/) — the route
   component `DeploymentsPage`, the banner, the history table and the leave panels.
-- [Operations domain](/apps/api/src/operations/) — the service record and the leave
+- [Operations domain](/crates/api/api_operations/src/) — the service record and the leave
   requests.
 
 ## Boundaries
@@ -43,5 +43,5 @@ page's files, calls and states.
 
 ## Related documentation
 
-- [Operations domain](/apps/api/src/operations/README.md) — the API side of the
+- [Operations domain](/crates/api/api_operations/src/README.md) — the API side of the
   service record and leave.

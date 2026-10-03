@@ -1,7 +1,7 @@
 //! Populated upgrades preserve signup facts while separating allocation from proven attendance.
 
 use anyhow::{Context, Result, ensure};
-use api::core::database;
+
 use chrono::{DateTime, Utc};
 use futures::FutureExt;
 use serde_json::Value;
@@ -19,7 +19,7 @@ mod common;
 async fn reservation_attendance_upgrade_preserves_history_and_rejects_invalid_provenance() {
     let base =
         common::require_test_database_url().expect("reservation upgrade requires PostgreSQL");
-    let maintenance = database::connect(&base).await.unwrap();
+    let maintenance = api_database::connect(&base).await.unwrap();
     let mut url = url::Url::parse(&base).unwrap();
     let prefix: String = url
         .path()
@@ -38,7 +38,7 @@ async fn reservation_attendance_upgrade_preserves_history_and_rejects_invalid_pr
         .unwrap();
 
     // This invocation owns exactly this database. Both ordinary errors and panics reach cleanup.
-    let outcome = match database::connect(url.as_str()).await {
+    let outcome = match api_database::connect(url.as_str()).await {
         Ok(pool) => {
             let result = AssertUnwindSafe(populated_upgrade(&pool))
                 .catch_unwind()
@@ -241,7 +241,7 @@ async fn immutable_facts(pool: &PgPool) -> Result<Value> {
 }
 
 async fn populated_upgrade(pool: &PgPool) -> Result<()> {
-    let all = sqlx::migrate!("./migrations");
+    let all = sqlx::migrate!("../../crates/api/api_database/migrations");
     let target_version = all
         .migrations
         .last()

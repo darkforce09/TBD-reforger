@@ -3,8 +3,9 @@
 //!
 //! **Role:** the size and permission rules the writer of a secret file creates it with and the
 //! reader of one refuses it without.
-//! **Position:** the staging fixtures tool of the API writes credential files under these rules;
-//! the host agent reads its credential and RCON password files under the same rules.
+//! **Position:** the staging fixtures tool (`tools/staging/staging_fixtures`) writes credential
+//! files under these rules; the host agent reads its credential and RCON password files under the
+//! same rules.
 //! **Signals & state:** none; constants.
 //! **Invariants:** a secret file is created with [`SECRET_FILE_MODE`], which carries none of
 //! [`SHARED_PERMISSION_BITS`], so every file a writer creates passes the reader's permission

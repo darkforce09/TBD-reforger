@@ -1,15 +1,13 @@
 //! Generated operation traces and concurrent HTTP ingestion verify current identity attribution.
-use api::{
-    core::{
-        application_state::AppState, configuration::Config, database, http_router,
-        middleware::AuthUser,
-    },
-    identity_and_access::services::{
-        identity_linking::{confirm_identity, unlink_identity},
-        link_code_issuance::issue_link_code,
-        session_authorization::authorize_session,
-    },
+use api::router::router;
+use api_caller_identity::session_authorization::authorize_session;
+use api_configuration::configuration::Config;
+use api_http_layer::middleware::AuthUser;
+use api_identity_and_access::services::{
+    identity_linking::{confirm_identity, unlink_identity},
+    link_code_issuance::issue_link_code,
 };
+use api_state::AppState;
 use axum::http::StatusCode;
 use proptest::collection::vec;
 use std::sync::Arc;
@@ -22,9 +20,9 @@ mod telemetry_support;
 /// reports that match.
 async fn fixture() -> (AppState, AuthUser, String, String, Arc<ReportingServer>) {
     let url = common::require_test_database_url().unwrap();
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state = api::composition::application_state(
         pool,
         Config::for_tests(url, "identity-attribution-sequences"),
     );
@@ -41,7 +39,7 @@ async fn fixture() -> (AppState, AuthUser, String, String, Arc<ReportingServer>)
         .await
         .unwrap();
     let reporter = ReportingServer::open(
-        &http_router::router(state.clone()),
+        &router(state.clone()),
         &state.pool,
         "Attribution sequence server",
     )
@@ -60,9 +58,7 @@ async fn ingest(state: AppState, reporter: &ReportingServer, arma: &str, source:
     let body = serde_json::json!({"match":{"source_match_id":source,"outcome":"success","winning_faction":"USA"},
         "players":[{"arma_id":arma,"role_played":"rifleman","source_event_id":"result",
         "counters":{"kills":7,"deaths":1,"team_kills":0,"longest_kill_m":100,"vehicles_destroyed":0,"is_command":false}}]});
-    let (status, answer) = reporter
-        .report_results(&http_router::router(state), &body)
-        .await;
+    let (status, answer) = reporter.report_results(&router(state), &body).await;
     assert_eq!(status, StatusCode::OK, "{answer}");
 }
 
@@ -98,9 +94,15 @@ async fn assert_consistent(state: &AppState, user: &AuthUser, arma: &str) {
 async fn ingestion_racing_unlink_cannot_restore_previous_attribution() {
     let (state, user, arma, source, reporter) = fixture().await;
     let code = issue_link_code(&state, &user).await.unwrap().0;
-    confirm_identity(&state, reporter.server_id, &code, &arma, "Player")
-        .await
-        .unwrap();
+    confirm_identity(
+        &state,
+        reporter.server_id.into(),
+        &code,
+        &api_identifiers::ArmaPlayerId::new(arma.as_str()),
+        "Player",
+    )
+    .await
+    .unwrap();
     let barrier = Arc::new(Barrier::new(3));
     let (s, a, src, b, r) = (
         state.clone(),
@@ -155,9 +157,15 @@ async fn ingestion_racing_link_cannot_leave_new_history_unattributed() {
     );
     let link = tokio::spawn(async move {
         b.wait().await;
-        confirm_identity(&s, server, &code, &a, "Player")
-            .await
-            .unwrap();
+        confirm_identity(
+            &s,
+            server.into(),
+            &code,
+            &api_identifiers::ArmaPlayerId::new(a.as_str()),
+            "Player",
+        )
+        .await
+        .unwrap();
     });
     barrier.wait().await;
     upload.await.unwrap();
@@ -168,7 +176,7 @@ async fn ingestion_racing_link_cannot_leave_new_history_unattributed() {
 #[test]
 fn generated_identity_operation_sequences_preserve_ownership_codes_and_aggregates() {
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "generated_identity_operation_sequences_preserve_ownership_codes_and_aggregates",
         16,
         &vec(0u8..6, 1..25),
@@ -184,9 +192,9 @@ fn generated_identity_operation_sequences_preserve_ownership_codes_and_aggregate
                             if let Some(code) = &code {
                                 let _ = confirm_identity(
                                     &state,
-                                    reporter.server_id,
+                                    reporter.server_id.into(),
                                     code,
-                                    &arma,
+                                    &api_identifiers::ArmaPlayerId::new(arma.as_str()),
                                     "Player",
                                 )
                                 .await;

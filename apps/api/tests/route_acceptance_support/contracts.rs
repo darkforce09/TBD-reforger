@@ -25,7 +25,9 @@ use super::spec::Contract;
 use crate::contract_support;
 
 fn definitions_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/definitions")
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("contracts/definitions")
 }
 
 /// The parsed schema document `file` of `contracts/definitions/`.

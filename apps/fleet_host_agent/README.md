@@ -168,7 +168,7 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 
 ## Boundaries
 
-- Depends on: the API's executor routes in `apps/api/src/server_infrastructure/`, with
+- Depends on: the API's executor routes in `crates/api/api_server_infrastructure/src/`, with
   a `host_agent` machine credential; the wire contracts
   `contracts/definitions/fleet-command.schema.json` and
   `contracts/definitions/machine-credential.schema.json`, through the `fleet_wire_contract` crate

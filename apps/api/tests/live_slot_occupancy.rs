@@ -3,8 +3,8 @@
 //! redeploy; ending a runtime session ends its lives; a delayed end names only its own life; and
 //! a retried deployment returns its original decision.
 
-use api::background_workers::event_reservation_reevaluator::drain_due_reevaluations;
-use api::identity_and_access::services::discord_membership_cache::{
+use api_background_workers::event_reservation_reevaluator::drain_due_reevaluations;
+use api_identity_and_access::services::discord_membership_cache::{
     accept_membership_observation, claim_membership_refresh,
 };
 use axum::http::StatusCode;
@@ -163,14 +163,24 @@ async fn live_occupancy_delayed_end_cannot_clear_newer_occupant() {
 
 /// Commit a confirmed Discord departure through the production reconciliation path.
 async fn observe_departure(f: &Fixture, actor: &Actor) {
-    let lease = claim_membership_refresh(f.pool(), &actor.id, &f.main_guild, true)
+    let lease = claim_membership_refresh(
+        f.pool(),
+        &api_identifiers::DiscordUserId::new(actor.id.as_str()),
+        &api_identifiers::DiscordGuildId::new(f.main_guild.as_str()),
+        true,
+    )
+    .await
+    .unwrap()
+    .expect("a forced refresh always leases");
+    assert!(
+        accept_membership_observation(
+            f.pool(),
+            &lease,
+            None,
+            &api_identifiers::DiscordGuildId::new(f.main_guild.as_str()),
+        )
         .await
         .unwrap()
-        .expect("a forced refresh always leases");
-    assert!(
-        accept_membership_observation(f.pool(), &lease, None, &f.main_guild)
-            .await
-            .unwrap()
     );
 }
 

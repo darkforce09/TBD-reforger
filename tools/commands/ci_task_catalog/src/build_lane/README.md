@@ -44,10 +44,10 @@ recipes dispatch to are tested beside them, in `tools/commands/ci_task_catalog/s
   | `verify-cargo-target` | checks that the shared target-directory pin is intact, that `rust-build` sets no directory of its own and that `rust-api` builds into this checkout's `target/dev-api` |
   | `reclaim-target-ci` | deletes the primary checkout's `target/ci/` and the retired root-level `target-ci/`, refusing any other path |
   | `rust-api` | `cargo run --bin api` in `apps/api`; stays in the foreground |
-  | `rust-build` | `cargo build --all-targets` in `apps/api` |
-  | `rust-test` | `cargo test --lib --bins` in `apps/api`, no database |
+  | `rust-build` | `cargo build -p api -p <every crates/api package> --all-targets`, the packages derived from the workspace |
+  | `rust-test` | `cargo test -p api -p <every crates/api package> --lib --bins`, no database |
   | `rust-fmt` | `cargo fmt --check` in `apps/api`, then `cargo fmt --all --check` |
-  | `rust-clippy` | `cargo clippy --all-targets -- -D warnings` in `apps/api` |
+  | `rust-clippy` | `cargo clippy -p api -p <every crates/api package> --all-targets -- -D warnings` |
   | `rust-ci` | `rust-fmt`, `rust-clippy`, `rust-build`, `wasm-ci`, then `cargo xtask db test-it` in process: the API's complete integration suite against a fresh database; needs `cargo xtask db up` |
   | `wasm-ci` | fmt, native clippy with all features and tests of `map_engine`, `graphics_engine` and `offline_service_worker`; clippy for `wasm32-unknown-unknown` of every package `wasm32_lint_lane.rs` derives (the frontend's is `ci-local-leptos`'s) |
   | `leptos` | `trunk serve --release` in `apps/frontend`; stays in the foreground on :3000 |

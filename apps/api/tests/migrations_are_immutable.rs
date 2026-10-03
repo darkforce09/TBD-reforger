@@ -92,9 +92,9 @@ fn hex(bytes: &[u8]) -> String {
         })
 }
 
-/// The corpus the binary embeds and applies — the same `migrate!` call `core::database` makes.
+/// The corpus the binary embeds and applies — the same `migrate!` call `api_database` makes.
 fn embedded() -> sqlx::migrate::Migrator {
-    sqlx::migrate!("./migrations")
+    sqlx::migrate!("../../crates/api/api_database/migrations")
 }
 
 /// Retired versions remain retired; newly pinned migrations append after the accepted head.
@@ -171,7 +171,7 @@ fn every_migration_on_disk_matches_its_pinned_checksum() {
     assert!(
         unpinned.is_empty(),
         "migration(s) {unpinned:?} have no pin here — add a (version, sha384) row for each so the \
-         file is immutable from the moment it lands. `sha384sum migrations/<file>.sql` prints it."
+         file is immutable from the moment it lands. `sha384sum crates/api/api_database/migrations/<file>.sql` prints it."
     );
 }
 

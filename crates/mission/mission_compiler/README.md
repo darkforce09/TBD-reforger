@@ -80,7 +80,7 @@ All also in `prelude`, the rule ids and flow defaults excepted:
   `AssetId`), `mission_wire_safety` (`is_wire_unsafe`), `orbat_slot_ids` (`SlotId`, `SlotUid`);
   `serde`, `serde_json` (`preserve_order`) and `thiserror`.
 - Used by:
-  - the API's compile, save and artifact code in `apps/api/src/missions/`, which stores
+  - the API's compile, save and artifact code in `crates/api/api_missions/src/`, which stores
     `COMPILER_PACKAGE_VERSION` with every artifact;
   - the Mission Creator in `apps/frontend/src/workspaces/editor/` and the mission DTOs of
     `apps/frontend/src/foundation/transport/dto/`;

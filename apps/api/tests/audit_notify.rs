@@ -2,7 +2,7 @@
 //!
 //! Event create, mission soft-delete and slot kick write their audit rows through the row
 //! triggers in `0025_audit_notify.sql` rather than through the handlers, and every `audit_logs`
-//! insert raises `pg_notify('audit_log', id)` so `administration::services::audit_notifier`
+//! insert raises `pg_notify('audit_log', id)` so `api_administration::services::audit_notifier`
 //! pushes to the admin stream instead of polling the table.
 //!
 //! Skips (`skip:` line) unless `TEST_DATABASE_URL` is set; `cargo xtask db test-it` always sets
@@ -14,11 +14,12 @@ mod common;
 
 use std::time::{Duration, Instant};
 
-use api::administration::handlers::audit_logs::audit_row_stream;
-use api::administration::models::audit_log::{AuditLog, AuditSeverity};
-use api::administration::services::audit_notifier::{AuditNotify, AuditSignal};
-use api::administration::services::audit_writer::write_audit;
-use api::core::database;
+use api_administration::handlers::audit_logs::audit_row_stream;
+use api_administration::models::audit_log::AuditLog;
+use api_administration::services::audit_notifier::{AuditNotify, AuditSignal};
+
+use api_audit_log::AuditSeverity;
+use api_audit_log::audit_writer::write_audit;
 use futures::{Stream, StreamExt};
 use serde_json::Value;
 use sqlx::PgPool;
@@ -41,7 +42,7 @@ struct AuditRow {
 
 async fn boot() -> Option<PgPool> {
     let url = common::require_test_database_url()?;
-    Some(database::connect(&url).await.expect("connect"))
+    Some(api_database::connect(&url).await.expect("connect"))
 }
 
 /// A fresh, snowflake-shaped discord id so parallel tests never share a user row.
@@ -487,7 +488,7 @@ async fn listener_down_falls_back_to_polling_and_recovers() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
     let tight = PgPoolOptions::new()
         .max_connections(1)
         .acquire_timeout(Duration::from_secs(2))

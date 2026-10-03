@@ -41,12 +41,11 @@
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::core::middleware::durable_ratelimit::bucket_key;
-use api::core::middleware::{DURABLE_STRICT_BURST, DURABLE_STRICT_SCOPE};
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_http_layer::middleware::durable_ratelimit::bucket_key;
+use api_http_layer::middleware::{DURABLE_STRICT_BURST, DURABLE_STRICT_SCOPE};
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -68,8 +67,8 @@ const XFF: &str = "x-forwarded-for";
 
 async fn boot() -> Option<(PgPool, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     Some((pool, url))
 }
 
@@ -77,7 +76,7 @@ async fn boot() -> Option<(PgPool, String)> {
 fn router_trusting(pool: PgPool, url: &str, trusted: &[&str]) -> Router {
     let mut cfg = Config::for_tests(url, "forwarded-secret");
     cfg.trusted_proxies = trusted.iter().map(|s| (*s).to_string()).collect();
-    http_router::router(AppState::new(pool, cfg))
+    router(api::composition::application_state(pool, cfg))
 }
 
 /// One request from `peer`, optionally carrying an `X-Forwarded-For` chain.
@@ -412,15 +411,19 @@ fn the_deployed_proxy_still_fronts_this_api_from_loopback() {
 /// that fails the day the wiring is removed again.
 #[test]
 fn the_rate_limiter_still_reads_the_trusted_proxy_list() {
-    // The limiter's trust list and the client resolution it feeds live in two sibling files;
-    // both halves have to be in view for this pin to mean anything.
+    // The limiter's trust list and the client resolution it feeds live in two sibling files, and
+    // the application state hands the configured list to the limiter; all three have to be in
+    // view for this pin to mean anything.
     let src = concat!(
-        include_str!("../src/core/middleware/rate_limiting.rs"),
-        include_str!("../src/core/middleware/client_identity.rs"),
+        include_str!("../../../crates/api/api_http_layer/src/middleware/rate_limiting.rs"),
+        include_str!("../../../crates/api/api_http_layer/src/middleware/client_identity.rs"),
     );
+    let state = include_str!("../../../crates/api/api_state/src/application_state.rs");
     assert!(
-        src.contains("parse_trusted_proxies(&app.cfg.trusted_proxies)"),
-        "core/middleware/rate_limiting.rs no longer builds its trust list from \
+        src.contains("parse_trusted_proxies(trusted_proxies)")
+            && state.contains("RateLimitState::new(")
+            && state.contains("&cfg.trusted_proxies"),
+        "api_http_layer::middleware::rate_limiting no longer builds its trust list from \
          Config::trusted_proxies — TRUSTED_PROXIES is back to being configuration that does nothing"
     );
     assert!(

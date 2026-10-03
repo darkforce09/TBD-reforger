@@ -41,7 +41,7 @@ tools/commands/deployment/src/website/
   `deploy/compose.staging.yml` under docker compose when the host has docker, else
   under podman compose. The steps are: `staging_compose up -d postgres`; `cargo build --release -p
   api --bin api`; the staging host tools of `STAGING_HOST_TOOLS`, `cargo build --release
-  -p api --bin staging-fixtures` and `cargo build --release -p developer_tools --bin
+  -p staging_fixtures --bin staging-fixtures` and `cargo build --release -p developer_tools --bin
   acknowledgement-dropping-relay`, each proven by `test -x target/release/<executable>`, so the
   staging harness and `cargo xtask deploy staging` find them built from the same checkout;
   `trunk build --release` in `apps/frontend`;

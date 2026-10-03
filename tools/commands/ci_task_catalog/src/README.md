@@ -10,6 +10,7 @@ Developers run `ci-local` before pushing, and the GitHub workflows run single ta
 
 ```text
 tools/commands/ci_task_catalog/src/
+├── api_package_lane.rs  the API's test, lint and build lines over `api` and every `crates/api` package, derived from the workspace
 ├── build_lane/          the `cargo xtask mk` lane: the recipes, the step runner and their tests
 ├── cargo_target_pin.rs  the shared `CARGO_TARGET_DIR` pin, the two checkout roots, the development API's folder, the glibc stamp guard
 ├── cargo_target_verification.rs  the `mk verify-cargo-target` and `mk reclaim-target-ci` bodies over the pin and the recipes
@@ -22,7 +23,7 @@ tools/commands/ci_task_catalog/src/
 ├── task_definitions.rs  `TASKS`: every task with its help line, group, lane and steps
 ├── task_runner/         the runner, the child environment, `help`, the gate list
 ├── task_runner.rs       the `Task`, `Step` and `Lane` types, re-exports
-├── tests/               unit tests for the frozen `ci-local` set, composite failure, `help`, parity, member coverage, the wasm32 lint and the target pin
+├── tests/               unit tests for the frozen `ci-local` set, composite failure, `help`, parity, member coverage, the API lines, the wasm32 lint and the target pin
 ├── wasm32_lint_lane.rs  the packages the wasm32 lint covers, derived from the workspace, and the `wasm-ci` row's lint step
 ├── workflow_checks/     the `verify ci-shell` and `verify ci-schema-parity` gates
 └── workspace_member_tests.rs  the `workspace-member-tests` task: `cargo test -p` for every member no dedicated task tests
@@ -65,7 +66,12 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
 
 Every workspace member is tested. `DEDICATED_TEST_TASKS` in `workspace_member_tests.rs` names the
 members a dedicated task tests (`api` by `api-test`, `frontend` by `ci-local-leptos`, and
-`graphics_engine`, `map_engine` and `offline_service_worker` by `wasm-ci`); `workspace-member-tests`
+`graphics_engine`, `map_engine` and `offline_service_worker` by `wasm-ci`). The API crates go with
+`api`: `api_package_lane.rs` derives `api`, every member under `crates/api` and every member that uses an
+API crate, such as `staging_fixtures` (through
+`database_operations`' `api_test_packages`, the list `cargo xtask db test-it` runs over), and
+`api-test`, `rust-test`, `rust-clippy` and `rust-build` run one cargo line naming each of them with
+`-p`, as the `mk` recipes of the same names do. `workspace-member-tests`
 reads the root `Cargo.toml` workspace and runs `cargo test -p <package>` once for every other
 member, so a member the workspace gains is tested from the moment the manifest names it (the
 binary-only `xtask` and `developer_tools` packages among them, whose run builds every binary). A dedicated entry that names no member, or a workspace that
@@ -111,11 +117,11 @@ from it.
   | `map-cartographic-everon` | map, ci | builds the cartographic ortho and its tile pyramid, patches the manifest, then `map-cartographic-verify` |
   | `map-cartographic-verify` | map, ci | `map verify-pyramid --terrain everon --view-map` |
   | `lfs-dem`, `lfs-sat` | map, ci | `git lfs pull` of the Everon elevation raster or satellite container |
-  | `api-test` | build, ci | `cargo test` in `apps/api`, honouring `TEST_DATABASE_URL` |
-  | `workspace-member-tests` | build, ci | `cargo test -p <package>`, one run per workspace member outside `DEDICATED_TEST_TASKS`, derived from the root `Cargo.toml`; every package runs, and the exit is the first red package's code |
+  | `api-test` | build, ci | `cargo test -p api -p <every crates/api package>`, honouring `TEST_DATABASE_URL` |
+  | `workspace-member-tests` | build, ci | `cargo test -p <package>`, one run per workspace member outside `DEDICATED_TEST_TASKS` and the API package family, derived from the root `Cargo.toml`; every package runs, and the exit is the first red package's code |
   | `test` | build, ci | `rust-test` |
   | `build` | build, ci | `cargo build --release --bin api` in `apps/api`, then `leptos-build` |
-  | `rust-ci`, `rust-fmt`, `rust-clippy`, `rust-build`, `rust-test`, `wasm-ci`, `ci-local-leptos`, `leptos-build` | build, borrowed | the `cargo xtask mk` recipe of the same name, spelled as lines |
+  | `rust-ci`, `rust-fmt`, `rust-clippy`, `rust-build`, `rust-test`, `wasm-ci`, `ci-local-leptos`, `leptos-build` | build, borrowed | the `cargo xtask mk` recipe of the same name, spelled as lines (`rust-clippy`, `rust-build` and `rust-test` as the derived API line over `api` and every `crates/api` package) |
   | `rust-test-it` | db, borrowed | `cargo xtask db test-it` in process: the API's tests against a fresh database on port 5434, then that run's databases dropped |
 
 - Exit codes: 0 the task passed, or the listing printed; the first failing step's code otherwise

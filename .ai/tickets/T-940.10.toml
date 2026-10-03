@@ -43,8 +43,8 @@ completed_at = "2026-09-28T16:08:33Z"
 estimated = ["tokens"]
 owns = [
     "legacy/map_engine/src/data/scenario/ballistics/mod.rs",
-    "apps/api/src/operations/services/fire_mission_resolve.rs",
-    "apps/api/src/operations/handlers/fire_missions/save.rs",
+    "crates/api/api_operations/src/services/fire_mission_resolve.rs",
+    "crates/api/api_operations/src/handlers/fire_missions/save.rs",
     "apps/frontend/src/pages/field_tools/mortar/page.rs",
     "apps/frontend/src/pages/field_tools/mortar/solve_bridge.rs",
     "apps/frontend/src/foundation/offline/mod.rs",

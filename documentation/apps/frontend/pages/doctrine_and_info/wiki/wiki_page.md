@@ -22,7 +22,7 @@ place and restores older revisions.
 - Related: the [vehicle database page](/documentation/apps/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md),
   which holds vehicle identification apart from the manuals; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [community content domain](/apps/api/src/community_content/README.md), which owns
+  [community content domain](/crates/api/api_community_content/src/README.md), which owns
   the wiki routes and the markup service.
 
 ## Behaviour
@@ -108,8 +108,8 @@ fails renders as its text, and an image whose address fails renders as its alt t
 
 The README's [Data](/apps/frontend/src/pages/doctrine_and_info/wiki/README.md#data)
 lists each call with the fields it reads or sends. Server-side, the handlers are in
-`apps/api/src/community_content/handlers/wiki_knowledgebase/` and the parse in
-`apps/api/src/community_content/services/wiki_markup/`:
+`crates/api/api_community_content/src/handlers/wiki_knowledgebase/` and the parse in
+`crates/api/api_community_content/src/services/wiki_markup/`:
 
 - `GET /api/v1/wiki` (`list_wiki`): any signed-in member; every page's summary, ordered by
   `nav_order`, then title, then slug.

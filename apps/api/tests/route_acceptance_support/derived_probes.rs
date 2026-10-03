@@ -306,7 +306,7 @@ pub fn refusal_problems(spec: &RouteSpec, tags: &[RouteTag]) -> Vec<String> {
     let modules: Vec<String> = tags
         .iter()
         .filter(|tag| tag.key() == key)
-        .map(|tag| tag.file.to_string_lossy().replace('\\', "/"))
+        .map(|tag| repository_relative_module(&tag.file))
         .collect();
     if modules.is_empty() {
         problems.push(format!(
@@ -321,4 +321,26 @@ pub fn refusal_problems(spec: &RouteSpec, tags: &[RouteTag]) -> Vec<String> {
         ));
     }
     problems
+}
+
+/// The module spelling a refusal-only reason names: a tag file under an API crate, which the
+/// collector holds absolute, is spelled from the repository root
+/// (`crates/api/<crate>/src/<module>.rs`); a file under this package's `src/` keeps its
+/// `src/`-relative spelling.
+fn repository_relative_module(file: &std::path::Path) -> String {
+    let spelled = file.to_string_lossy().replace('\\', "/");
+    if !file.is_absolute() {
+        return spelled;
+    }
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    repository_layout::find_repository_root_from(manifest)
+        .ok()
+        .and_then(|root| {
+            file.strip_prefix(root)
+                .ok()
+                .map(std::path::Path::to_path_buf)
+        })
+        .map_or(spelled, |relative| {
+            relative.to_string_lossy().replace('\\', "/")
+        })
 }

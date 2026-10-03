@@ -1,0 +1,19 @@
+# Stage S9 K3f: the missions domain (the mission library and its editor payloads, the version
+# history and its compiled artifacts, the reviews and the approval queue, the deployments, the
+# armory, the faction and asset registries and the game-runtime mission reads) becomes
+# api_missions.
+# The domain folder becomes the crate's src/ whole (its README the source tree README) and its
+# mod.rs the crate root. The module prefix is one `crate::` row scoped to the moved folder (first:
+# a file two rows of one prefix both reach takes the earlier row), one `crate::` row scoped to the
+# API source and one `api::` row scoped to the API package (its integration tests). No grouped use
+# tree names the domain.
+kind	from	to	scope
+#
+# Folder and crate root
+path	apps/api/src/missions	crates/api/api_missions/src
+path	apps/api/src/missions/mod.rs	crates/api/api_missions/src/lib.rs
+#
+# Module prefix
+rust_path	crate::missions::	crate::	apps/api/src/missions
+rust_path	crate::missions::	api_missions::	apps/api/src
+rust_path	api::missions::	api_missions::	apps/api

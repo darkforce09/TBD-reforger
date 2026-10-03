@@ -74,7 +74,7 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
   `apps/frontend/src/shell/layout.rs`, which renders this path bare; the DOM
   oracle's `callback` capture in
   `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`; over redirects, the Discord
-  callback and the dev login in `apps/api/src/identity_and_access/handlers/`.
+  callback and the dev login in `crates/api/api_identity_and_access/src/handlers/`.
 - Rules: the fragment is scrubbed with a history replace, never a push; the path stays reachable
   signed out and stays named in the frame's `classify_frame` (`classify_frame_kinds` in
   `apps/frontend/src/shell/tests/layout.rs`); an error code the page does not
@@ -84,7 +84,7 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
 
 - [Account pages](/documentation/apps/frontend/pages/account/account_pages.md) — the
   behaviour and design of the account pages.
-- [Identity and access domain](/apps/api/src/identity_and_access/README.md) — the
+- [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the
   sign-in routes that redirect here.
 - [Local development](/documentation/runbooks/local_development.md) — the dev login, which
   lands here with the same fragment as the Discord sign-in.

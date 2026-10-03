@@ -72,10 +72,10 @@ The page body sits in `AuthGate`; the session, loading and failure texts are in 
 - "Edit Armory" shows to the author at any role (`can_edit` in
   `apps/frontend/src/pages/mission_hub/overview/page.rs`, whose comment says the
   server's tier is authorship alone), but `set_armory` in
-  `apps/api/src/missions/handlers/mission_armory.rs` takes `MissionMakerUser`: an
+  `crates/api/api_missions/src/handlers/mission_armory.rs` takes `MissionMakerUser`: an
   author demoted below mission maker sees the button and the save answers 403 "insufficient role".
 - The review record's reply box shows to the same author, but `add_mission_review_comment` in
-  `apps/api/src/missions/handlers/mission_reviews.rs` also takes `MissionMakerUser`, so
+  `crates/api/api_missions/src/handlers/mission_reviews.rs` also takes `MissionMakerUser`, so
   that author's reply is refused the same way.
 
 ## Data
@@ -84,18 +84,18 @@ The README's [Data](/apps/frontend/src/pages/mission_hub/overview/README.md#data
 each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/missions/{id}` (`get_mission` in
-  `apps/api/src/missions/handlers/mission_library.rs`): a live mission, or any mission
+  `crates/api/api_missions/src/handlers/mission_library.rs`): a live mission, or any mission
   for its author or an administrator; anyone else gets 404. It returns the card fields with the
   author's name and avatar and the caller's bookmark, the armory rows in their `sort_order`, and
   the current version with its payload, which the dialog reads the ORBAT factions from.
 - `PUT /api/v1/missions/{id}/armory` (`set_armory` in
-  `apps/api/src/missions/handlers/mission_armory.rs`): a mission maker who is the
+  `crates/api/api_missions/src/handlers/mission_armory.rs`): a mission maker who is the
   author, or an administrator. `items` is required: `{"items":[]}` clears the armory, while a
   missing body, a missing `items`, a blank item name, or a missing, blank or padded faction answers
   400 and leaves the rows untouched. Every row is checked before the transaction, which deletes
   the old armory and inserts the new one; item names are stored trimmed and factions verbatim.
 - `GET /api/v1/missions/{id}/reviews`, `POST /api/v1/missions/{id}/review-comments` and
-  `POST /api/v1/missions/{id}/submit` (`apps/api/src/missions/handlers/mission_reviews.rs`
+  `POST /api/v1/missions/{id}/submit` (`crates/api/api_missions/src/handlers/mission_reviews.rs`
   and `mission_submission.rs`): the review history for the author or an administrator, a thread
   comment on the newest review's artifact, and the resubmission of a mission awaiting approval
   with no review under way.

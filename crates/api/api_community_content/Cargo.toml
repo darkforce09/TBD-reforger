@@ -1,0 +1,60 @@
+# The API's community content domain: announcements and their Discord push, the doctrine wiki and
+# its markup reader, the vehicle database, the modpack manifests, the media uploads and the
+# development-only equipment data viewer reads, with the `/api/v1` route table that serves them.
+# Names no other domain.
+[package]
+name = "api_community_content"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's announcements, wiki, vehicle database, modpacks, uploads and equipment data viewer routes."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 6
+targets = "any"
+
+[dependencies]
+# The audit lines the content writes leave, best-effort and inside their transactions.
+api_audit_log = { workspace = true }
+# The announcement webhook the Discord push posts through.
+api_discord = { workspace = true }
+# The generation-pinned dataset reads behind the equipment data viewer routes.
+api_equipment_datasets = { workspace = true }
+# The handler error, the wire formats, the text caps and the request parameters.
+api_foundation = { workspace = true }
+# The caller extractors, the multipart body limit and the realtime hub.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# The application state every handler receives.
+api_state = { workspace = true }
+async-stream = { workspace = true }
+axum = { workspace = true, features = ["macros", "multipart"] }
+chrono = { workspace = true, features = ["serde"] }
+# The generated wire types of the upload answer and the equipment data viewer pages.
+contract_schema_types = { workspace = true }
+# The RFC 3339 timestamp spellings of the content models.
+fleet_wire_contract = { workspace = true }
+futures = { workspace = true }
+# The content URL check of the announcement thumbnails.
+http_url_guard = { workspace = true }
+pulldown-cmark = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "uuid", "chrono", "json", "macros"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util"] }
+tracing = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[dev-dependencies]
+# The wiki block goldens validate against the wiki page contract.
+jsonschema = { workspace = true }
+# The repository root the wiki tests read the contract and the seed from.
+repository_layout = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "macros", "rt"] }
+
+[lints]
+workspace = true

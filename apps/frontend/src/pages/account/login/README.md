@@ -46,5 +46,5 @@ apps/frontend/src/pages/account/login/
 
 - [Account pages](/documentation/apps/frontend/pages/account/account_pages.md) — the
   behaviour and design of the account pages.
-- [Identity and access domain](/apps/api/src/identity_and_access/README.md) — the
+- [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the
   Discord sign-in routes the button starts.

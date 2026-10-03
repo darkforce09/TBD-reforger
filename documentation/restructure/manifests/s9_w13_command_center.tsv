@@ -1,0 +1,17 @@
+# Stage S9 K3h: the command center domain (the platform dashboard with its fleet overview, the
+# community leaderboards and the per-player statistics card) becomes api_command_center.
+# The domain folder becomes the crate's src/ whole (its README the source tree README) and its
+# mod.rs the crate root. The module prefix is one `crate::` row scoped to the moved folder (first:
+# a file two rows of one prefix both reach takes the earlier row), one `crate::` row scoped to the
+# API source and one `api::` row scoped to the API package (its integration tests and the
+# staging-fixtures binary).
+kind	from	to	scope
+#
+# Folder and crate root
+path	apps/api/src/command_center	crates/api/api_command_center/src
+path	apps/api/src/command_center/mod.rs	crates/api/api_command_center/src/lib.rs
+#
+# Module prefix
+rust_path	crate::command_center::	crate::	apps/api/src/command_center
+rust_path	crate::command_center::	api_command_center::	apps/api/src
+rust_path	api::command_center::	api_command_center::	apps/api

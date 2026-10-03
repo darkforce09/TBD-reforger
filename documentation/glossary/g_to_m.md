@@ -33,9 +33,9 @@ See: [slice](/documentation/glossary/n_to_z.md#slice), [Testing and CI](/documen
 The API domain of sign-in and the caller's own account: Discord OAuth2 login, token refresh, logout,
 the [dev login](/documentation/glossary/a_to_f.md#dev-login), `/api/v1/me`, and the Discord-to-Arma identity link handshake.
 
-In code: `apps/api/src/identity_and_access/`.
+In code: `crates/api/api_identity_and_access/src/`.
 
-See: [Identity and access domain](/apps/api/src/identity_and_access/README.md).
+See: [Identity and access domain](/crates/api/api_identity_and_access/src/README.md).
 
 ### lane
 
@@ -64,7 +64,7 @@ A per-server secret that authenticates one program on a game host: `host_agent` 
 [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) or `mod_runtime` for the [game runtime](#game-runtime). An
 administrator issues one (its secret shows once), lists them without secrets and revokes each alone.
 
-In code: `MachineCredential` in `apps/api/src/server_infrastructure/models/machine_credential.rs`; `ExecutorKind` in `crates/contracts/fleet_wire_contract/src/executor_kind.rs`.
+In code: `MachineCredential` in `crates/api/api_server_infrastructure/src/models/machine_credential.rs`; `ExecutorKind` in `crates/contracts/fleet_wire_contract/src/executor_kind.rs`.
 
 See: [Machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md).
 
@@ -75,9 +75,9 @@ The API domain that takes in what game servers report, each call authenticated b
 server status, match registrations, numbered results revisions and batches of detailed combat,
 medical and vehicle events. It also serves the read of a match's detailed events.
 
-In code: `apps/api/src/match_telemetry/`.
+In code: `crates/api/api_match_telemetry/src/`.
 
-See: [Match telemetry domain](/apps/api/src/match_telemetry/README.md).
+See: [Match telemetry domain](/crates/api/api_match_telemetry/src/README.md).
 
 ### mission
 
@@ -85,7 +85,7 @@ The platform document a mission maker authors in the [Mission Creator](#mission-
 versions, reviews, [artifacts](/documentation/glossary/a_to_f.md#artifact) and deployments; its status is `draft`, `pending_approval`,
 `live`, `rejected` or `archived`. It is not the [mission header](#mission-header) a server boots.
 
-In code: `Mission`, `MissionVersion` and `MissionStatus` in `apps/api/src/missions/models/mission.rs`; `contracts/definitions/mission.schema.json`; some code spells it [scenario](/documentation/glossary/n_to_z.md#scenario).
+In code: `Mission`, `MissionVersion` and `MissionStatus` in `crates/api/api_missions/src/models/mission.rs`; `contracts/definitions/mission.schema.json`; some code spells it [scenario](/documentation/glossary/n_to_z.md#scenario).
 
 See: [missions](#missions), [event](/documentation/glossary/a_to_f.md#event).
 
@@ -105,7 +105,7 @@ A request that runs an approved [artifact](/documentation/glossary/a_to_f.md#art
 [fleet command](/documentation/glossary/a_to_f.md#fleet-command) (`load_mission` on the same terrain, `restart_with_mission` for
 another), follows it to confirmation, and cancels it while no executor has claimed it.
 
-In code: `apps/api/src/missions/handlers/mission_deployments.rs`; `contracts/definitions/mission-deployment.schema.json`.
+In code: `crates/api/api_missions/src/handlers/mission_deployments.rs`; `contracts/definitions/mission-deployment.schema.json`.
 
 See: [deployment](/documentation/glossary/a_to_f.md#deployment), [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario).
 
@@ -125,9 +125,9 @@ The API domain that owns [missions](#mission): the library, the versions the Mis
 submission and [approvals](/documentation/glossary/a_to_f.md#approvals), artifacts, mission deployments, the [armory](/documentation/glossary/a_to_f.md#armory), the
 faction library, the item [registry](/documentation/glossary/n_to_z.md#registry) and the game-runtime routes that serve artifacts.
 
-In code: `apps/api/src/missions/`.
+In code: `crates/api/api_missions/src/`.
 
-See: [Missions domain](/apps/api/src/missions/README.md).
+See: [Missions domain](/crates/api/api_missions/src/README.md).
 
 ### mod
 
@@ -146,6 +146,6 @@ Workshop link and mod rows (Workshop ID, mod GUID, optional version pin, key dep
 modpack is current. The item [registry](/documentation/glossary/n_to_z.md#registry) is kept per
 modpack.
 
-In code: `Modpack` and `ModpackMod` in `apps/api/src/community_content/models/modpack.rs`; the `/api/v1/modpacks` routes in `apps/api/src/community_content/routes.rs`; `ModpacksPage` at `/modpacks` in `apps/frontend/src/pages/doctrine_and_info/modpacks/`.
+In code: `Modpack` and `ModpackMod` in `crates/api/api_community_content/src/models/modpack.rs`; the `/api/v1/modpacks` routes in `crates/api/api_community_content/src/routes.rs`; `ModpacksPage` at `/modpacks` in `apps/frontend/src/pages/doctrine_and_info/modpacks/`.
 
 See: [community content](/documentation/glossary/a_to_f.md#community-content), [Modpacks page](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md).

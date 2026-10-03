@@ -22,7 +22,7 @@ stage; this document follows each stage's commit, and its last section says what
 TBD-reforger/
 ├── apps/            the products: API, single-page app, service worker, Enfusion mod suite,
 │                    fleet host agent, ticketboard
-├── crates/          the tiered library crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, graphics/)
+├── crates/          the tiered library crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, graphics/, api/)
 ├── legacy/          the map and graphics engines, parked while their code moves into crates/
 ├── deploy/          the release Dockerfile, compose files, Caddy site (caddy/), deploy settings,
 │                    systemd units
@@ -53,7 +53,7 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 
 | Folder | Package | What it is |
 |---|---|---|
-| [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub, with the `api` server and the registry import and staging fixture tools |
+| [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub: the thin application (router, composition root, the `api` server and the `import-registry` tool) the 23 crates under `crates/api/` are assembled into, and its 150 integration binaries |
 | [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk; its `src/` holds five layers: `foundation/`, `features/`, `pages/`, `workspaces/` and `shell/` |
 | [`legacy/map_engine/`](/legacy/map_engine/README.md) | `map_engine` | map graphics, spatial computation, terrain formats, streaming and the editing seam over the mission crates |
 | [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | `graphics_engine` | GPU rendering primitives with no map concept |
@@ -88,6 +88,29 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`crates/ballistics/fire_mission_planning/`](/crates/ballistics/fire_mission_planning/README.md) | `fire_mission_planning` | the fire-mission assembler: battery solutions, time fuzes, the comparison rule and the wording |
 | [`crates/ballistics/ballistics_calibration/`](/crates/ballistics/ballistics_calibration/README.md) | `ballistics_calibration` | a ballistics catalog judged against the game's native tables, wind tables and engine oracle samples |
 | [`crates/ballistics/ballistics_agreement_cases/`](/crates/ballistics/ballistics_agreement_cases/README.md) | `ballistics_agreement_cases` | the seeded lattice of battery fire problems and the bit patterns of their solutions |
+| [`crates/api/api_identifiers/`](/crates/api/api_identifiers/README.md) | `api_identifiers` | the serde- and sqlx-transparent typed ids of every API table key, Discord snowflake and game runtime key |
+| [`crates/api/api_foundation/`](/crates/api/api_foundation/README.md) | `api_foundation` | the handler error envelope, JSON wire formats, text policies, request parameters |
+| [`crates/api/api_failpoints/`](/crates/api/api_failpoints/README.md) | `api_failpoints` | the `fail_point!` macro and, in test builds, the failpoint catalogue and arming registry |
+| [`crates/api/api_configuration/`](/crates/api/api_configuration/README.md) | `api_configuration` | the environment configuration read at boot, trusted proxy networks, the process shutdown signal |
+| [`crates/api/api_database/`](/crates/api/api_database/README.md) | `api_database` | the Postgres pool, the embedded migrations, the development seeds, SQLSTATE predicates |
+| [`crates/api/api_http_layer/`](/crates/api/api_http_layer/README.md) | `api_http_layer` | access tokens, the middleware chain and extractors, rate limiters, metrics and health, the realtime hub |
+| [`crates/api/api_property_evidence/`](/crates/api/api_property_evidence/README.md) | `api_property_evidence` | the dev-only property run recorder of the API's property tests |
+| [`crates/api/api_mission_vocabulary/`](/crates/api/api_mission_vocabulary/README.md) | `api_mission_vocabulary` | the terrain and game mode enums several API domains name |
+| [`crates/api/api_audit_log/`](/crates/api/api_audit_log/README.md) | `api_audit_log` | the audit severity and the best-effort and transactional audit line appends |
+| [`crates/api/api_equipment_datasets/`](/crates/api/api_equipment_datasets/README.md) | `api_equipment_datasets` | the equipment dataset imports, their SQLite navigation index and the generation-pinned read queries |
+| [`crates/api/api_member_activity/`](/crates/api/api_member_activity/README.md) | `api_member_activity` | member statistics, the leaderboard refresh, attendance attribution, the re-evaluation queue |
+| [`crates/api/api_discord/`](/crates/api/api_discord/README.md) | `api_discord` | the Discord OAuth2, guild-member and announcement webhook clients and their typed failures |
+| [`crates/api/api_caller_identity/`](/crates/api/api_caller_identity/README.md) | `api_caller_identity` | the role ladder, session and account authority, the identity lock order, the machine caller |
+| [`crates/api/api_state/`](/crates/api/api_state/README.md) | `api_state` | the application state and its `FromRef` sub-state projections |
+| [`crates/api/api_community_content/`](/crates/api/api_community_content/README.md) | `api_community_content` | the announcements, the wiki, the vehicle database, modpacks, uploads and the equipment data viewer routes |
+| [`crates/api/api_identity_and_access/`](/crates/api/api_identity_and_access/README.md) | `api_identity_and_access` | Discord sign-in, session tokens, the caller's profile, the Arma link handshake, Discord membership |
+| [`crates/api/api_administration/`](/crates/api/api_administration/README.md) | `api_administration` | the member roster and its moderation, the Discord role resync, the membership grace extension, the audit log console |
+| [`crates/api/api_server_infrastructure/`](/crates/api/api_server_infrastructure/README.md) | `api_server_infrastructure` | the server registry, the live status feed, machine credentials, the fleet command ledger, runtime sessions |
+| [`crates/api/api_missions/`](/crates/api/api_missions/README.md) | `api_missions` | the mission library, versions, artifacts, reviews and approvals, deployments, the armory, factions and registries |
+| [`crates/api/api_match_telemetry/`](/crates/api/api_match_telemetry/README.md) | `api_match_telemetry` | the game runtime's session-fenced heartbeat, match registration, results revisions and detailed event batches |
+| [`crates/api/api_operations/`](/crates/api/api_operations/README.md) | `api_operations` | the event calendar and its access control, ORBAT slotting and reservations, service records, leave requests, fire missions, ballistics catalogs |
+| [`crates/api/api_command_center/`](/crates/api/api_command_center/README.md) | `api_command_center` | the members' dashboard with its fleet overview, the community leaderboards, the per-player statistics card |
+| [`crates/api/api_background_workers/`](/crates/api/api_background_workers/README.md) | `api_background_workers` | the interval tasks the API binary arms at boot, each calling a domain service |
 | [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command line and dispatch onto the tool crates, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` command groups |
 | [`tools/foundation/verification_core/`](/tools/foundation/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, gates and the verification lock |
 | [`tools/foundation/process_runner/`](/tools/foundation/process_runner/README.md) | `process_runner` | process isolation, deadlines, host-bridge execution and the secure shell transport |
@@ -128,7 +151,16 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`tools/staging/staging_load_plan/`](/tools/staging/staging_load_plan/README.md) | `staging_load_plan` | the staging member load's plan, request catalog, pacing, records, report and their JSON codec, without tokio |
 | [`tools/staging/staging_load_generator/`](/tools/staging/staging_load_generator/README.md) | `staging_load_generator` | the staging member load's virtual clients and the `staging-load` executable's command line |
 | [`tools/staging/acknowledgement_dropping_relay/`](/tools/staging/acknowledgement_dropping_relay/README.md) | `acknowledgement_dropping_relay` | the loopback relay that withholds one fleet executor answer, and the `acknowledgement-dropping-relay` command line |
+| [`tools/staging/staging_fixtures/`](/tools/staging/staging_fixtures/README.md) | `staging_fixtures` | the `staging-fixtures` host tool that stages a staging run's fixtures through the API crates' services, with its 4 database suites |
 | [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the eight tool binaries, each a one-line `main` over one tool crate (script index, browser gates, MCP broker, world export, map assets, capture, the staging load and relay); no library |
+
+The API is 24 packages: the `api` application and the 23 crates under `crates/api/`, grouped as
+infrastructure (`api_identifiers`, `api_foundation`, `api_failpoints`, `api_configuration`,
+`api_database`, `api_http_layer`, the dev-only `api_property_evidence`), kernel
+(`api_mission_vocabulary`, `api_audit_log`, `api_equipment_datasets`, `api_member_activity`,
+`api_discord`, `api_caller_identity`, `api_state`), the eight domain crates and
+`api_background_workers`. Its 154 integration binaries are 150 in `apps/api/tests/` and the 4
+suites of `staging_fixtures`.
 
 Every package is named after its folder, in snake_case. A crate under `crates/` sits in the
 folder of its category and declares its tier in its manifest, and no crate outside `apps/`, the

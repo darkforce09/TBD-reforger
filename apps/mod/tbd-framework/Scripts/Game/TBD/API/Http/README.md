@@ -133,5 +133,5 @@ the URL with the reason a credential is unusable.
 ## Related documentation
 
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the backend clients that use this connection
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — machine
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) — machine
   credentials and the routes this transport reaches

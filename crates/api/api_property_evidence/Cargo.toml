@@ -1,0 +1,25 @@
+# The property run recorder of the API's property tests: it runs a proptest strategy with a fixed
+# seed and case count, counts the checks that completed, digests their inputs and prints the run
+# record. Dev-only: only `[dev-dependencies]` name it.
+[package]
+name = "api_property_evidence"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's property run recorder: fixed seed and case count, completed checks, input digest."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 1
+targets = "any"
+
+[dependencies]
+content_digest = { workspace = true }
+proptest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

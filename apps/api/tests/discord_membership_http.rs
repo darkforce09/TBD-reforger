@@ -3,7 +3,8 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use api::identity_and_access::services::discord_client::DiscordService;
+use api_discord::discord_client::DiscordService;
+use api_identifiers::{DiscordGuildId, DiscordUserId};
 use axum::Router;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode};
@@ -102,7 +103,11 @@ async fn discord_membership_bot_uses_scoped_endpoint_and_bot_authorization() {
     }
     let server = serve(Router::new().route(BOT_ROUTE, get(handler))).await;
     let result = client(&server)
-        .fetch_member_with_bot("bot-secret", "partner-guild", "player-123")
+        .fetch_member_with_bot(
+            "bot-secret",
+            &DiscordGuildId::new("partner-guild"),
+            &DiscordUserId::new("player-123"),
+        )
         .await;
     let member = result
         .unwrap_or_else(|error| panic!("bot lookup failed: {}", error.reason))
@@ -137,7 +142,11 @@ async fn discord_membership_empty_roles_mean_member_for_both_clients() {
     let server = fixed_response(StatusCode::OK, r#"{"roles":[]}"#, None).await;
     let client = client(&server);
     let bot = client
-        .fetch_member_with_bot("token", "partner-guild", "player-123")
+        .fetch_member_with_bot(
+            "token",
+            &DiscordGuildId::new("partner-guild"),
+            &DiscordUserId::new("player-123"),
+        )
         .await
         .unwrap_or_else(|error| panic!("bot lookup failed: {}", error.reason));
     assert!(
@@ -167,7 +176,11 @@ async fn discord_membership_malformed_success_never_becomes_nonmembership() {
         let server = fixed_response(StatusCode::OK, body, None).await;
         let client = client(&server);
         let failure = client
-            .fetch_member_with_bot("token", "partner-guild", "player-123")
+            .fetch_member_with_bot(
+                "token",
+                &DiscordGuildId::new("partner-guild"),
+                &DiscordUserId::new("player-123"),
+            )
             .await
             .expect_err("malformed roles cannot establish membership");
         assert!(!failure.rate_limited);
@@ -189,7 +202,11 @@ async fn discord_membership_only_unknown_member_code_confirms_departure() {
     .await;
     let client = client(&server);
     let bot = client
-        .fetch_member_with_bot("token", "partner-guild", "player-123")
+        .fetch_member_with_bot(
+            "token",
+            &DiscordGuildId::new("partner-guild"),
+            &DiscordUserId::new("player-123"),
+        )
         .await
         .unwrap_or_else(|error| panic!("bot lookup failed: {}", error.reason));
     assert!(bot.is_none());
@@ -208,7 +225,11 @@ async fn discord_membership_other_404_responses_preserve_uncertainty() {
         let server = fixed_response(StatusCode::NOT_FOUND, body, None).await;
         let client = client(&server);
         let failure = client
-            .fetch_member_with_bot("token", "partner-guild", "player-123")
+            .fetch_member_with_bot(
+                "token",
+                &DiscordGuildId::new("partner-guild"),
+                &DiscordUserId::new("player-123"),
+            )
             .await
             .expect_err("unclassified 404 is unavailable verification");
         assert!(!failure.rate_limited);
@@ -234,7 +255,11 @@ async fn discord_membership_bot_rate_limit_preserves_body_and_header_retry_delay
     ] {
         let server = fixed_response(StatusCode::TOO_MANY_REQUESTS, body, header).await;
         let failure = client(&server)
-            .fetch_member_with_bot("token", "partner-guild", "player-123")
+            .fetch_member_with_bot(
+                "token",
+                &DiscordGuildId::new("partner-guild"),
+                &DiscordUserId::new("player-123"),
+            )
             .await
             .expect_err("rate-limited lookup must fail explicitly");
         assert!(failure.rate_limited, "body: {body}; header: {header:?}");
@@ -252,7 +277,11 @@ async fn discord_membership_server_errors_never_confirm_departure() {
         let server = fixed_response(StatusCode::INTERNAL_SERVER_ERROR, body, None).await;
         let client = client(&server);
         let failure = client
-            .fetch_member_with_bot("token", "partner-guild", "player-123")
+            .fetch_member_with_bot(
+                "token",
+                &DiscordGuildId::new("partner-guild"),
+                &DiscordUserId::new("player-123"),
+            )
             .await
             .expect_err("server failure cannot establish membership");
         assert!(!failure.rate_limited);

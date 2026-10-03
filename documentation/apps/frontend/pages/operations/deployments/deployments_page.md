@@ -25,7 +25,7 @@ administrator, the queue of leave requests to decide.
   which the banner links to; the [leaderboards page](/documentation/apps/frontend/pages/operations/leaderboards/leaderboards_page.md),
   which shows the combat figures this page leaves out; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [operations domain](/apps/api/src/operations/README.md), which serves the record and
+  [operations domain](/crates/api/api_operations/src/README.md), which serves the record and
   the leave requests.
 
 ## Behaviour
@@ -84,7 +84,7 @@ administrator, the queue of leave requests to decide.
   `CreateLeaveInput` in `apps/frontend/src/foundation/transport/dto/events.rs`), but the API
   requires one: a body without it is refused with 400 "starts_on, ends_on and reason are
   required", and a blank one with 400 "reason is required" (`submit_leave` in
-  `apps/api/src/operations/handlers/leave_requests.rs`). A member who leaves the reason
+  `crates/api/api_operations/src/handlers/leave_requests.rs`). A member who leaves the reason
   empty cannot file a request.
 - The review queue shows the first 20 requests, pending first: the page sends no paging and has
   no pager (`AdminLeaveQueue` in
@@ -97,7 +97,7 @@ The README's [Data](/apps/frontend/src/pages/operations/deployments/README.md#da
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/me/deployments` (`get_my_deployments` in
-  `apps/api/src/operations/handlers/member_service_record.rs`), for any signed-in
+  `crates/api/api_operations/src/handlers/member_service_record.rs`), for any signed-in
   member:
   - `upcoming`: the viewer's `registered` and `waitlisted` signups on missions that start after
     now, soonest first, in events and missions that are not deleted; each names the event (its
@@ -108,13 +108,13 @@ lists each call with the DTO it reads or sends. Server-side:
     date, operation, outcome and `aar_replay_url`, and the role the viewer played.
   - `total_operations`: the number of distinct matches the viewer played, kept on the user row
     (`recompute_user_stats_on_connection` in
-    `apps/api/src/command_center/services/user_stats.rs`).
+    `crates/api/api_member_activity/src/user_stats.rs`).
   - `attendance_rate`, derived from the viewer's decided attendance only, and `kills`, `deaths`,
     `kd_ratio`, `command_games`, `command_wins` and `command_win_rate`, read from the same
     `leaderboard_totals` view the leaderboards use; a figure nobody measured is `null`, never `0`.
     The page shows none of them.
 - `GET` and `POST /api/v1/me/leave-requests` (`list_my_leave` and `submit_leave` in
-  `apps/api/src/operations/handlers/leave_requests.rs`): the viewer's own requests, and
+  `crates/api/api_operations/src/handlers/leave_requests.rs`): the viewer's own requests, and
   filing one as `pending` with the trimmed reason (201).
 - `GET /api/v1/admin/leave-requests` (`list_all_leave`, same file), administrators only: every
   request, pending first, 20 per page by default.

@@ -64,7 +64,7 @@ editor tool while nothing is saved.
 - The route requires the `mission_maker` role (the `/missions/:id/artifacts/:artifact_id/workspace`
   row in `apps/frontend/src/foundation/route_table/mod.rs`), but the API serves the workspace to the mission's
   author at any role (`get_review_workspace` in
-  `apps/api/src/missions/handlers/mission_reviews.rs` takes `AuthUser` and checks
+  `crates/api/api_missions/src/handlers/mission_reviews.rs` takes `AuthUser` and checks
   authorship): an author demoted below mission maker is sent back to the overview, although the
   API would answer.
 
@@ -74,7 +74,7 @@ The README's [Data](/apps/frontend/src/workspaces/editor/review_workspace/README
 lists the call and its DTO. Server-side:
 
 - `GET /api/v1/missions/{id}/artifacts/{artifact_id}/workspace` (`get_review_workspace` in
-  `apps/api/src/missions/handlers/mission_reviews.rs`): any signed-in viewer who may
+  `crates/api/api_missions/src/handlers/mission_reviews.rs`): any signed-in viewer who may
   see the mission and who is its author or an administrator; a hidden mission answers 404 and a
   visible one the caller does not own 403. It loads the artifact of that mission (404 for another
   mission's artifact), then the version the artifact names, recomputes the SHA-256 of the stored

@@ -18,9 +18,9 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::http_router;
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use axum::Router;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
@@ -35,10 +35,11 @@ use crate::route_acceptance_support::world::{Fixture, PartWorld, WorldCore};
 /// The version body limit the world configures: small, so the over-limit probe stays cheap.
 const VERSION_BODY_LIMIT: i64 = 2 << 20;
 /// The committed faction-library sample every faction body starts from.
-const FACTION_SAMPLE: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../contracts/fixtures/registry/faction-library.sample.json"
-);
+fn faction_sample() -> std::path::PathBuf {
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("contracts/fixtures/registry/faction-library.sample.json")
+}
 const RIFLE: &str = "{00000000000000A1}Prefabs/Weapons/Rifles/Rifle_RouteAcceptance.et";
 const MAGAZINE: &str = "{00000000000000A2}Prefabs/Weapons/Magazines/Magazine_RouteAcceptance.et";
 const CHARACTER: &str = "{00000000000000A3}Prefabs/Characters/Character_RouteAcceptance.et";
@@ -167,7 +168,7 @@ impl Setup<'_> {
 
 /// A faction-library document named `name`.
 fn faction_document(name: &str) -> Value {
-    let raw = std::fs::read(FACTION_SAMPLE).expect("read the faction-library sample");
+    let raw = std::fs::read(faction_sample()).expect("read the faction-library sample");
     let mut document: Value = serde_json::from_slice(&raw).expect("the sample is JSON");
     document["name"] = json!(name);
     document
@@ -265,7 +266,7 @@ impl PartWorld for MissionsLibraryWorld {
     }
 
     async fn build(state: &mut AppState, actors: &Actors) -> Self {
-        let app = http_router::router(state.clone());
+        let app = router(state.clone());
         let setup = Setup {
             app: &app,
             author: actors.user(Role::MissionMaker).token.clone(),

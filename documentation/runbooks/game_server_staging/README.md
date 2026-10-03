@@ -134,7 +134,7 @@ Facts every topic relies on:
 - [Mod commands](/tools/commands/mod_operations/src/) — `mod bootstrap-staging`,
   `mod remote-logs`, `mod test-game-runtime-api` and `mod playtest`.
 - [Deploy files](/deploy/) — `deploy.env.example` and the systemd units.
-- [Staging fixtures host tool](/apps/api/src/bin/staging_fixtures/README.md) — the
+- [Staging fixtures host tool](/tools/staging/staging_fixtures/src/README.md) — the
   `provision-fleet` and `rotate-credential` subcommands `cargo xtask staging` runs on the host.
 - [Game runtime transport](/apps/mod/tbd-framework/Scripts/Game/TBD/API/) — what the mod sends
   with its machine credential.

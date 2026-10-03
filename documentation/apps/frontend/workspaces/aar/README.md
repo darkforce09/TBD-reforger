@@ -18,7 +18,7 @@ documentation/apps/frontend/workspaces/aar/
 
 - [After-action review workspace](/apps/frontend/src/workspaces/aar/) — the reserved code
   folder, which holds only its README: no module, no route.
-- [Match telemetry domain](/apps/api/src/match_telemetry/) — the match results the
+- [Match telemetry domain](/crates/api/api_match_telemetry/src/) — the match results the
   game servers report today, including the optional replay link.
 
 ## Boundaries

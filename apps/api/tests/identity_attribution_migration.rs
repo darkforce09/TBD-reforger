@@ -1,7 +1,7 @@
 //! Populated schema upgrades repair gameplay ownership without rewriting factual authorship.
 
 use anyhow::{Context, Result, ensure};
-use api::core::database;
+
 use serde_json::Value;
 use sqlx::{AssertSqlSafe, PgPool};
 use std::{borrow::Cow, time::Duration};
@@ -14,7 +14,7 @@ mod common;
 async fn identity_attribution_migration_preserves_facts_and_reconciles_ownership_atomically() {
     let base =
         common::require_test_database_url().expect("attribution upgrade requires PostgreSQL");
-    let maintenance = database::connect(&base).await.unwrap();
+    let maintenance = api_database::connect(&base).await.unwrap();
     let mut url = url::Url::parse(&base).unwrap();
     let prefix: String = url
         .path()
@@ -31,7 +31,7 @@ async fn identity_attribution_migration_preserves_facts_and_reconciles_ownership
         .execute(&maintenance)
         .await
         .unwrap();
-    let pool = database::connect(url.as_str()).await.unwrap();
+    let pool = api_database::connect(url.as_str()).await.unwrap();
     let result = populated_upgrade(&pool).await;
     pool.close().await;
     sqlx::raw_sql(AssertSqlSafe(format!("DROP DATABASE {name}")))
@@ -141,7 +141,7 @@ async fn registration(
 }
 
 async fn populated_upgrade(pool: &PgPool) -> Result<()> {
-    let all = sqlx::migrate!("./migrations");
+    let all = sqlx::migrate!("../../crates/api/api_database/migrations");
     run_migration(&through(&all, 34), pool).await??;
     let before_version: i64 =
         sqlx::query_scalar("SELECT max(version) FROM _sqlx_migrations WHERE success")

@@ -31,8 +31,12 @@ use std::{
 /// The Git index mode of a symbolic link; its blob holds the link text.
 const GIT_SYMLINK_MODE: &str = "120000";
 
+/// The tracked folders whose source files are fingerprint inputs: the applications, the library
+/// crates the API is built from (`crates/api` among them), the tools, the contracts, the evidence
+/// register and the build and CI configuration.
 const INPUT_ROOTS: &[&str] = &[
     "apps/",
+    "crates/",
     "tools/",
     "contracts/",
     repository_layout::API_READINESS_EVIDENCE_PREFIX,

@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S8 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3, S11a and S7 landed |
-| Last green commit | the S7 stage commit (S11a: ffb5fe74d, M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Current stage | S8 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3, S11a, S7, S11b and S9 landed |
+| Last green commit | the S9 stage commit (S11b: 2a105fa4f, S7: 17985220a, S11a: ffb5fe74d, M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
@@ -141,12 +141,14 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [ ] Stage commit — pending
 
 ### S9 API
-- [ ] K0 (L) kernel cuts — pending
-- [ ] K1 (M) infrastructure crates — pending
-- [ ] K2 (M) state and kernel crates — pending
-- [ ] K3a–h (M) eight domain crates — pending
-- [ ] K4 (M) workers, thin app, staging fixtures — pending
-- [ ] Stage commit — pending
+- [x] K0 (L) kernel cuts — done as K0a, K0b and K0c (the relocation tool's climbing-token rule, F-S9-04) — in place, then the layer ratchet
+- [x] KI (L) typed ids in place — done as KIa, KIb, KIb2 — `api_identifiers` (62 types); goldens, review binding and route acceptance byte-equal
+- [x] K1 (M) infrastructure crates — done as K1a, K1b — foundation, configuration, failpoints, database (migrations, seeds), property evidence, HTTP layer
+- [x] K2 (M) state and kernel crates — done as K2a, K2b — audit log, mission vocabulary, Discord, equipment datasets, caller identity, member activity, state
+- [x] K3a–h (M) eight domain crates — done — born bottom-up along the domain graph
+- [x] K4 (M) workers, thin app, staging fixtures — done as K4a, K4b, K4c (tools see `crates/api`)
+- [x] K5, G9, G9b documentation, closing fixes, coordinator rulings (F-S9-15 sqlx clause, F-S9-12) — done
+- [x] Stage commit — done (see [stage_logs/s9.md](/documentation/restructure/stage_logs/s9.md))
 
 ### S10 Frontend crates
 - [ ] H0 (L) editor untangle — pending
@@ -382,6 +384,17 @@ packages from `targets = "wasm32"` metadata. The check that `legacy/` is empty i
 S12's final sweep. Decisions, findings (F-S11-01..14), the coordinator ruling pending operator
 review (the axum harness-server clause, F-S11-09) and the relocation rules later stages converge on
 are in [stage_logs/s11.md](/documentation/restructure/stage_logs/s11.md).
+
+S9 is on `main`: the API is 23 crates under `crates/api/` (infrastructure: identifiers, foundation,
+failpoints, configuration, database with migrations and seeds, HTTP layer, property evidence;
+kernel: audit log, mission vocabulary, Discord, equipment datasets, caller identity, member
+activity, state; the eight domain crates, each exposing `routes()`; background workers), and
+`apps/api` is the thin app (`router.rs`, `composition.rs`, two binaries, 150 integration binaries).
+Every id at a crate boundary is a serde- and sqlx-transparent newtype. `staging-fixtures` is
+`tools/staging/staging_fixtures` with its 4 suites, and it is the one tool crate the sqlx firewall
+admits (a coordinator decision, operator review pending). The integration subset S9 ran, the tool
+edits once meant for S11, and the notes for S12 are in
+[stage_logs/s9.md](/documentation/restructure/stage_logs/s9.md) ("For S12").
 
 Every remaining stage (S3–S12, M3) has its own worktree and orchestrator, managed by the
 "Restructure coordinator" session (decision D22; inputs per stage in the stage logs protocol). The

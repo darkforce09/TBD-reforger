@@ -2,12 +2,15 @@
 //!
 //! **Role:** derives, from the root `Cargo.toml` workspace, the packages no dedicated test task
 //! covers and runs `cargo test -p <package>` for each, so a member the workspace gains is tested
-//! from the moment the root manifest names it.
+//! from the moment the root manifest names it. The API crates (`crates/api/*`) are not in this
+//! lane: `api-test` and `cargo xtask db test-it` test them with `api`, in the database lane. Their
+//! unit tests need no database (none reads `TEST_DATABASE_URL`), so the lane they share with `api`
+//! is the one that owns the API family, not a database requirement.
 //!
 //! **Position:** the `workspace-member-tests` row of [`super::task_runner::TASKS`], which
 //! `ci-local` and the ci.yml `workspace-members` job run; the wave gate's `test workspace members`
-//! step derives its own package list through [`member_packages_except`] with the members its
-//! other steps test.
+//! step derives its own package list through [`member_packages_outside_api_family`] with the
+//! members its other steps test.
 //!
 //! **Signals & state:** none; reads the checkout and spawns `cargo test`, one package at a time.
 //!
@@ -21,6 +24,7 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::error::{Error, Result};
+use database_operations::local_database::api_test_packages::api_test_packages;
 use process_runner::Run;
 use repository_laws::workspace_members::read_workspace_members;
 
@@ -66,8 +70,38 @@ pub fn member_packages_except(repo_root: &Path, dedicated: &[&str]) -> Result<Ve
         .collect())
 }
 
-/// `cargo xtask ci workspace-member-tests`: `cargo test -p <package>` for every member outside
-/// [`DEDICATED_TEST_TASKS`], each its own run from the repository root.
+/// [`member_packages_except`] without the API family as well: `api` and every member under
+/// `crates/api`, which a lane's API step tests together (the derivation
+/// `cargo xtask db test-it` runs over).
+///
+/// # Errors
+/// As [`member_packages_except`], or the API packages cannot be derived.
+pub fn member_packages_outside_api_family(
+    repo_root: &Path,
+    dedicated: &[&str],
+) -> Result<Vec<String>> {
+    let api_family = api_test_packages(repo_root)
+        .map_err(|error| Error::msg(format!("the API packages cannot be derived: {error}")))?;
+    let mut excluded = dedicated.to_vec();
+    excluded.extend(api_family.iter().map(String::as_str));
+    member_packages_except(repo_root, &excluded)
+}
+
+/// The packages this lane tests under `repo_root`: every member outside [`DEDICATED_TEST_TASKS`]
+/// and outside the API family that `api-test` tests with `api`, in member-path order.
+///
+/// # Errors
+/// As [`member_packages_outside_api_family`].
+pub fn workspace_member_lane_packages(repo_root: &Path) -> Result<Vec<String>> {
+    let dedicated: Vec<&str> = DEDICATED_TEST_TASKS
+        .iter()
+        .map(|(package, _)| *package)
+        .collect();
+    member_packages_outside_api_family(repo_root, &dedicated)
+}
+
+/// `cargo xtask ci workspace-member-tests`: `cargo test -p <package>` for every package of
+/// [`workspace_member_lane_packages`], each its own run from the repository root.
 ///
 /// Returns 0 when every package passed; otherwise the first red package's exit code (1 for a run
 /// killed by a signal, a lane that could not derive its packages, or a cargo that could not start).
@@ -83,11 +117,7 @@ pub(crate) fn run() -> i32 {
 
 fn run_every_package() -> Result<i32> {
     let root = find_repository_root()?;
-    let dedicated: Vec<&str> = DEDICATED_TEST_TASKS
-        .iter()
-        .map(|(package, _)| *package)
-        .collect();
-    let packages = member_packages_except(&root, &dedicated)?;
+    let packages = workspace_member_lane_packages(&root)?;
     let mut first_red = 0;
     let mut red = Vec::new();
     for package in &packages {

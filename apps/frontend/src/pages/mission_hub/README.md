@@ -63,4 +63,4 @@ under it, never inside it.
   — the read-only review workspace these pages link to.
 - [Mission hub pages documentation](/documentation/apps/frontend/pages/mission_hub/README.md)
   — the index of the pages' feature docs.
-- [Missions domain](/apps/api/src/missions/README.md) — the API routes these pages call.
+- [Missions domain](/crates/api/api_missions/src/README.md) — the API routes these pages call.

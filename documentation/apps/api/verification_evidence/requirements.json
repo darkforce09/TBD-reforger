@@ -5,7 +5,7 @@
       "id": "identity_guest_access",
       "behavior": "Authenticated nonmembers use Guest permissions; anonymous access remains distinct.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_guest_access",
@@ -21,7 +21,7 @@
       "id": "identity_discord_authority",
       "behavior": "Website privileges derive from verified TBD Discord roles; partner roles grant only event eligibility.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_discord_authority",
@@ -35,7 +35,7 @@
       "id": "identity_membership_states",
       "behavior": "Distinguish verified member, confirmed nonmember, and unavailable membership independently of an empty role list.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_membership_states",
@@ -49,7 +49,7 @@
       "id": "identity_discord_rest_reconciliation",
       "behavior": "Coordinate background bot-authenticated REST reconciliation across API instances; OAuth and supported verified hooks enqueue refresh; no Gateway connection.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_discord_rest_reconciliation",
@@ -64,7 +64,7 @@
       "id": "identity_discord_resilience",
       "behavior": "Use last verified PostgreSQL snapshot during failure; show staleness; 48-hour grace; no global website lockout; audited time-limited administrator override.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_discord_resilience",
@@ -81,7 +81,7 @@
       "id": "identity_discord_revocation",
       "behavior": "Healthy reconciliation propagates role changes within 60 seconds where rate budgets permit; confirmed departure becomes Guest; bans always apply.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_discord_revocation",
@@ -96,7 +96,7 @@
       "id": "identity_session_authority",
       "behavior": "Validate JWT issuer audience algorithm expiry session and authoritative account state.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_session_authority",
@@ -110,7 +110,7 @@
       "id": "identity_refresh_rotation",
       "behavior": "Account/session locking makes rotation replay revocation and successor insertion atomic.",
       "implementation": [
-        "apps/api/src/identity_and_access",
+        "crates/api/api_identity_and_access/src",
         "apps/frontend/src/foundation/auth",
         "apps/frontend/src/foundation/transport/client",
         "tools/browser_testing/browser_gate_suites/src/session_tokens.rs",
@@ -132,7 +132,7 @@
       "id": "identity_logout_revocation",
       "behavior": "Logout revokes access and refresh credentials transactionally and reports database failure.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_logout_revocation",
@@ -146,7 +146,7 @@
       "id": "identity_stream_authorization",
       "behavior": "Long-lived streams revalidate current session and effective authority.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_stream_authorization",
@@ -160,7 +160,7 @@
       "id": "identity_role_resolution",
       "behavior": "Equal-priority role mappings resolve deterministically.",
       "implementation": [
-        "apps/api/src/identity_and_access"
+        "crates/api/api_identity_and_access/src"
       ],
       "checks": [
         "identity_role_resolution",
@@ -174,7 +174,7 @@
       "id": "identity_identity_linking",
       "behavior": "Single pending code, single consumption, unique Arma ownership and server-authenticated engine identity.",
       "implementation": [
-        "apps/api/src/identity_and_access",
+        "crates/api/api_identity_and_access/src",
         "apps/api/tests/identity_deleted_owner_reclamation.rs"
       ],
       "checks": [
@@ -193,7 +193,7 @@
       "id": "identity_history_attribution",
       "behavior": "Gameplay history follows verified Arma identity; signup audit and moderation authorship remain factual.",
       "implementation": [
-        "apps/api/src/identity_and_access",
+        "crates/api/api_identity_and_access/src",
         "apps/api/tests/identity_deleted_owner_reclamation.rs"
       ],
       "checks": [
@@ -210,8 +210,8 @@
       "id": "events_policy_precedence",
       "behavior": "Explicit slot access policy overrides squad then event; absent inherits; explicit empty grants deny.",
       "implementation": [
-        "apps/api/src/operations/services/event_access/evaluation.rs",
-        "apps/api/src/operations/services/event_access/slot_eligibility.rs",
+        "crates/api/api_operations/src/services/event_access/evaluation.rs",
+        "crates/api/api_operations/src/services/event_access/slot_eligibility.rs",
         "apps/frontend/src/pages/administration/event_manager/access",
         "apps/api/tests/event_eligibility_policies.rs"
       ],
@@ -228,10 +228,10 @@
       "id": "events_policy_grants",
       "behavior": "Alternative grants combine mandatory conditions; bans sessions capacity opening times and deployment constraints cannot be overridden.",
       "implementation": [
-        "apps/api/src/operations/services/event_access/evaluation.rs",
-        "apps/api/src/operations/models/event_access_policy.rs",
-        "apps/api/src/operations/handlers/event_access_administration.rs",
-        "apps/api/src/operations/services/access_administration/persistence.rs",
+        "crates/api/api_operations/src/services/event_access/evaluation.rs",
+        "crates/api/api_operations/src/models/event_access_policy.rs",
+        "crates/api/api_operations/src/handlers/event_access_administration.rs",
+        "crates/api/api_operations/src/services/access_administration/persistence.rs",
         "apps/frontend/src/pages/administration/event_manager/access",
         "apps/frontend/src/foundation/transport/dto/event_access_administration.rs",
         "apps/frontend/src/foundation/transport/dto/tests/r_api_event_access.rs",
@@ -253,11 +253,11 @@
       "id": "events_event_groups",
       "behavior": "Groups use managed rosters or verified partner-guild roles, with visible provenance and no self-asserted verification.",
       "implementation": [
-        "apps/api/src/operations/handlers/event_group_administration.rs",
-        "apps/api/src/operations/models/event_group.rs",
-        "apps/api/src/operations/services/access_administration/persistence.rs",
-        "apps/api/src/operations/services/access_administration/participant_explanation.rs",
-        "apps/api/src/identity_and_access/services/discord_membership_enrollment.rs",
+        "crates/api/api_operations/src/handlers/event_group_administration.rs",
+        "crates/api/api_operations/src/models/event_group.rs",
+        "crates/api/api_operations/src/services/access_administration/persistence.rs",
+        "crates/api/api_operations/src/services/access_administration/participant_explanation.rs",
+        "crates/api/api_identity_and_access/src/services/discord_membership_enrollment.rs",
         "apps/frontend/src/pages/administration/event_manager/access",
         "apps/frontend/src/foundation/transport/dto/event_access_administration.rs",
         "apps/frontend/src/foundation/transport/endpoints/event_access_administration.rs",
@@ -277,10 +277,10 @@
       "id": "events_event_visibility",
       "behavior": "Users eligible for a child squad or slot can discover its event without receiving unauthorized data.",
       "implementation": [
-        "apps/api/src/operations/services/event_access/visibility.rs",
-        "apps/api/src/operations/handlers/event_hub.rs",
-        "apps/api/src/operations/handlers/event_listing.rs",
-        "apps/api/src/operations/handlers/orbat_view.rs",
+        "crates/api/api_operations/src/services/event_access/visibility.rs",
+        "crates/api/api_operations/src/handlers/event_hub.rs",
+        "crates/api/api_operations/src/handlers/event_listing.rs",
+        "crates/api/api_operations/src/handlers/orbat_view.rs",
         "apps/frontend/src/foundation/transport/dto/event_viewer_access.rs",
         "contracts/definitions/event-viewer-access.schema.json",
         "contracts/definitions/event-hub.schema.json",
@@ -301,12 +301,12 @@
       "id": "events_reservation_quotas",
       "behavior": "Member and guest reserved capacity falls back to open quota only when open; persist consumed quota.",
       "implementation": [
-        "apps/api/src/operations/services/event_reservations/quota_selection.rs",
-        "apps/api/src/operations/services/event_reservations/participant_allocations.rs",
-        "apps/api/src/operations/services/event_reservations/quota_availability.rs",
-        "apps/api/src/operations/handlers/event_access_administration.rs",
-        "apps/api/migrations/0042_event_reservation_quota_pools.sql",
-        "apps/api/migrations/0043_event_participant_allocations.sql",
+        "crates/api/api_operations/src/services/event_reservations/quota_selection.rs",
+        "crates/api/api_operations/src/services/event_reservations/participant_allocations.rs",
+        "crates/api/api_operations/src/services/event_reservations/quota_availability.rs",
+        "crates/api/api_operations/src/handlers/event_access_administration.rs",
+        "crates/api/api_database/migrations/0042_event_reservation_quota_pools.sql",
+        "crates/api/api_database/migrations/0043_event_participant_allocations.sql",
         "apps/frontend/src/pages/administration/event_manager/access",
         "apps/frontend/src/foundation/transport/dto/event_access_administration.rs",
         "apps/frontend/src/foundation/transport/endpoints/event_access_administration.rs",
@@ -328,9 +328,9 @@
       "id": "events_reservation_uniqueness",
       "behavior": "One reservation per user per mission, one owner per slot, distinct-user event capacity and uncapped semantics.",
       "implementation": [
-        "apps/api/src/operations/services/event_reservations/seat_matching.rs",
-        "apps/api/src/operations/services/event_reservations/seat_claims.rs",
-        "apps/api/migrations/0043_event_participant_allocations.sql",
+        "crates/api/api_operations/src/services/event_reservations/seat_matching.rs",
+        "crates/api/api_operations/src/services/event_reservations/seat_claims.rs",
+        "crates/api/api_database/migrations/0043_event_participant_allocations.sql",
         "apps/frontend/src/foundation/transport/endpoints/event_registration.rs",
         "apps/api/tests/reservation_allocation_migration.rs",
         "apps/api/tests/seatless_hold_seatability.rs"
@@ -347,9 +347,9 @@
       "id": "events_waitlist_promotion",
       "behavior": "Earliest eligible waiting participant atomically receives an actual slot and available quota.",
       "implementation": [
-        "apps/api/src/operations/services/event_reservations/waitlist_promotion.rs",
-        "apps/api/src/operations/services/event_reservations/reservation_planning.rs",
-        "apps/api/src/operations/handlers/waitlist_promotion.rs",
+        "crates/api/api_operations/src/services/event_reservations/waitlist_promotion.rs",
+        "crates/api/api_operations/src/services/event_reservations/reservation_planning.rs",
+        "crates/api/api_operations/src/handlers/waitlist_promotion.rs",
         "apps/frontend/src/pages/administration/event_manager/access",
         "apps/frontend/src/foundation/transport/endpoints/event_registration.rs",
         "contracts/definitions/waitlist-promotion-response.schema.json",
@@ -367,10 +367,10 @@
       "id": "events_reservation_concurrency",
       "behavior": "All reservation paths share a lock order; assignments cannot overwrite occupants; undersized capacity updates conflict.",
       "implementation": [
-        "apps/api/src/operations/services/event_reservations/reservation_scope.rs",
-        "apps/api/src/operations/services/event_reservations/seat_claims.rs",
-        "apps/api/src/operations/services/event_reservations/waitlist_promotion.rs",
-        "apps/api/src/operations/handlers/event_access_administration.rs",
+        "crates/api/api_operations/src/services/event_reservations/reservation_scope.rs",
+        "crates/api/api_operations/src/services/event_reservations/seat_claims.rs",
+        "crates/api/api_operations/src/services/event_reservations/waitlist_promotion.rs",
+        "crates/api/api_operations/src/handlers/event_access_administration.rs",
         "apps/api/tests/reservation_guard_transactions.rs",
         "apps/api/tests/reservation_guard_support/mod.rs",
         "apps/api/tests/eligibility_release_transactions.rs",
@@ -390,11 +390,11 @@
       "id": "events_eligibility_release",
       "behavior": "Confirmed loss releases reservation with reason and promotes replacements; transient sync failure does not evict.",
       "implementation": [
-        "apps/api/src/operations/services/event_reservations/eligibility_reevaluation.rs",
-        "apps/api/src/operations/services/event_reservations/reevaluation_queue.rs",
-        "apps/api/src/background_workers/event_reservation_reevaluator.rs",
-        "apps/api/src/identity_and_access/services/discord_membership_cache.rs",
-        "apps/api/migrations/0044_event_reservation_reevaluation_queue.sql",
+        "crates/api/api_operations/src/services/event_reservations/eligibility_reevaluation.rs",
+        "crates/api/api_member_activity/src/reevaluation_queue.rs",
+        "crates/api/api_background_workers/src/event_reservation_reevaluator.rs",
+        "crates/api/api_identity_and_access/src/services/discord_membership_cache.rs",
+        "crates/api/api_database/migrations/0044_event_reservation_reevaluation_queue.sql",
         "apps/api/tests/eligibility_release_transactions.rs"
       ],
       "checks": [
@@ -409,11 +409,11 @@
       "id": "events_live_occupancy",
       "behavior": "Release reservations without auto-kick; block further deployment until eligible; prevent replacement spawning into occupied live slots.",
       "implementation": [
-        "apps/api/src/operations/services/live_slot_occupancy.rs",
-        "apps/api/src/operations/handlers/game_runtime_deployments.rs",
-        "apps/api/src/operations/handlers/game_runtime_roster.rs",
-        "apps/api/src/server_infrastructure/services/runtime_sessions.rs",
-        "apps/api/migrations/0048_live_slot_occupancies.sql",
+        "crates/api/api_operations/src/services/live_slot_occupancy.rs",
+        "crates/api/api_operations/src/handlers/game_runtime_deployments.rs",
+        "crates/api/api_operations/src/handlers/game_runtime_roster.rs",
+        "crates/api/api_server_infrastructure/src/services/runtime_sessions.rs",
+        "crates/api/api_database/migrations/0048_live_slot_occupancies.sql",
         "apps/api/tests/live_slot_occupancy.rs",
         "contracts/definitions/game-runtime-deployment.schema.json",
         "contracts/definitions/game-runtime-roster.schema.json",
@@ -437,11 +437,11 @@
       "id": "events_registration_history",
       "behavior": "Preserve withdrawal tombstones and attendance; finalized facts drive no_show and later corrections.",
       "implementation": [
-        "apps/api/src/operations/services/participation_attribution.rs",
-        "apps/api/src/operations/services/event_reservations/reservation_release.rs",
-        "apps/api/src/operations/handlers/event_hub.rs",
-        "apps/api/src/match_telemetry/handlers/match_results.rs",
-        "apps/api/migrations/0045_derived_no_show_attendance.sql",
+        "crates/api/api_member_activity/src/participation_attribution.rs",
+        "crates/api/api_operations/src/services/event_reservations/reservation_release.rs",
+        "crates/api/api_operations/src/handlers/event_hub.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_results.rs",
+        "crates/api/api_database/migrations/0045_derived_no_show_attendance.sql",
         "apps/api/tests/attendance_no_show_derivation.rs",
         "apps/api/tests/event_administration_transactions.rs",
         "apps/api/tests/reservation_allocation_migration.rs",
@@ -463,7 +463,7 @@
       "id": "events_schedule_cascade",
       "behavior": "Rescheduling consistently moves dependent mission times; deleted missions disappear from selection but remain historical.",
       "implementation": [
-        "apps/api/src/operations",
+        "crates/api/api_operations/src",
         "apps/api/tests/event_administration_transactions.rs",
         "apps/api/tests/event_lifecycle_transactions.rs",
         "apps/api/tests/mission_detachment_lifecycle.rs",
@@ -485,10 +485,11 @@
       "id": "fleet_server_credentials",
       "behavior": "Per-instance revocable scoped machine credentials forbid cross-server operations.",
       "implementation": [
-        "apps/api/src/server_infrastructure/services/machine_credentials.rs",
-        "apps/api/src/server_infrastructure/services/machine_authentication.rs",
-        "apps/api/src/server_infrastructure/handlers/machine_credentials.rs",
-        "apps/api/migrations/0046_server_machine_credentials.sql",
+        "crates/api/api_server_infrastructure/src/services/machine_credentials.rs",
+        "crates/api/api_caller_identity/src/machine_caller.rs",
+        "crates/api/api_caller_identity/src/machine_authentication.rs",
+        "crates/api/api_server_infrastructure/src/handlers/machine_credentials.rs",
+        "crates/api/api_database/migrations/0046_server_machine_credentials.sql",
         "apps/fleet_host_agent/src/agent_configuration/secret_files.rs",
         "apps/fleet_host_agent/src/secret_text.rs",
         "apps/fleet_host_agent/src/tests/secret_text.rs",
@@ -500,8 +501,9 @@
         "apps/frontend/src/foundation/utils/clipboard.rs",
         "apps/frontend/src/foundation/utils/tests/clipboard.rs",
         "apps/frontend/src/foundation/transport/endpoints/machine_credentials.rs",
-        "apps/api/src/server_infrastructure/models/machine_credential.rs",
-        "apps/api/src/server_infrastructure/services/tests/machine_credentials.rs",
+        "crates/api/api_server_infrastructure/src/models/machine_credential.rs",
+        "crates/api/api_server_infrastructure/src/services/tests/machine_credentials.rs",
+        "crates/api/api_caller_identity/src/tests/machine_caller.rs",
         "apps/api/tests/server_machine_credentials.rs",
         "contracts/definitions/machine-credential.schema.json",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeHttp.c",
@@ -519,11 +521,11 @@
       "id": "fleet_fleet_commands",
       "behavior": "Host agent and mod outbound HTTPS consumers share durable command ledger and explicit executor types.",
       "implementation": [
-        "apps/api/src/server_infrastructure/services/fleet_commands/command_ledger.rs",
-        "apps/api/src/server_infrastructure/services/fleet_commands/executor_claims.rs",
-        "apps/api/src/server_infrastructure/handlers/fleet_commands.rs",
-        "apps/api/src/server_infrastructure/handlers/fleet_executor.rs",
-        "apps/api/migrations/0049_fleet_commands.sql",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/command_ledger.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/executor_claims.rs",
+        "crates/api/api_server_infrastructure/src/handlers/fleet_commands.rs",
+        "crates/api/api_server_infrastructure/src/handlers/fleet_executor.rs",
+        "crates/api/api_database/migrations/0049_fleet_commands.sql",
         "apps/fleet_host_agent/src/ledger_client/command_loop.rs",
         "apps/fleet_host_agent/src/ledger_client/ledger_api.rs",
         "apps/fleet_host_agent/src/ledger_client/ledger_messages.rs",
@@ -548,7 +550,7 @@
         "apps/frontend/src/pages/administration/server_control/fleet_commands/tests/fleet_commands.rs",
         "apps/frontend/src/foundation/transport/dto/fleet_commands.rs",
         "apps/frontend/src/foundation/transport/dto/tests/r_api_fleet.rs",
-        "apps/api/src/server_infrastructure/services/fleet_commands/mod.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/mod.rs",
         "apps/api/tests/fleet_command_ledger.rs",
         "apps/api/tests/fleet_support/mod.rs",
         "contracts/definitions/fleet-command.schema.json",
@@ -568,8 +570,8 @@
       "id": "fleet_process_control",
       "behavior": "Start stop restart and live-player listing work against remote fleet with fixed host operations.",
       "implementation": [
-        "apps/api/src/server_infrastructure/services/fleet_commands/executor_claims.rs",
-        "apps/api/src/server_infrastructure/models/fleet_command.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/executor_claims.rs",
+        "crates/api/api_server_infrastructure/src/models/fleet_command.rs",
         "apps/fleet_host_agent/src/process_control/mod.rs",
         "apps/fleet_host_agent/src/process_control/systemctl_runner.rs",
         "apps/fleet_host_agent/src/process_control/unit_state_verdict.rs",
@@ -638,10 +640,10 @@
       "id": "fleet_kick_identity",
       "behavior": "Kick binds target identity and runtime session so reused IDs cannot target another player.",
       "implementation": [
-        "apps/api/src/server_infrastructure/services/fleet_commands/command_arguments.rs",
-        "apps/api/src/server_infrastructure/services/fleet_commands/executor_claims.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/command_arguments.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/executor_claims.rs",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetPlayerActions.c",
-        "apps/api/src/server_infrastructure/services/fleet_commands/tests/command_arguments.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/tests/command_arguments.rs",
         "apps/api/tests/fleet_command_ledger.rs"
       ],
       "checks": [
@@ -656,8 +658,8 @@
       "id": "fleet_command_receipts",
       "behavior": "202 returns durable receipt with observable queued claimed executing succeeded failed expired cancelled or indeterminate state.",
       "implementation": [
-        "apps/api/src/server_infrastructure/services/fleet_commands/command_ledger.rs",
-        "apps/api/src/server_infrastructure/handlers/fleet_commands.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/command_ledger.rs",
+        "crates/api/api_server_infrastructure/src/handlers/fleet_commands.rs",
         "apps/frontend/src/pages/administration/server_control/fleet_commands/command_history.rs",
         "apps/frontend/src/pages/administration/server_control/fleet_commands/command_wording.rs",
         "apps/fleet_host_agent/src/action_verdict.rs",
@@ -679,9 +681,9 @@
       "id": "fleet_command_recovery",
       "behavior": "Persist intent before effects; reconcile crashes; never blindly repeat uncertain non-idempotent actions; fence stale executors.",
       "implementation": [
-        "apps/api/src/server_infrastructure/services/fleet_commands/command_reconciliation.rs",
-        "apps/api/src/server_infrastructure/services/fleet_commands/executor_claims.rs",
-        "apps/api/src/background_workers/fleet_command_reconciler.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/command_reconciliation.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands/executor_claims.rs",
+        "crates/api/api_background_workers/src/fleet_command_reconciler.rs",
         "apps/api/tests/fleet_command_ledger.rs"
       ],
       "checks": [
@@ -696,9 +698,9 @@
       "id": "fleet_console_command",
       "behavior": "Administrators send one console line to a fleet instance over RCON: 1-256 bytes on one line, no control characters, no leading @; host-agent executor, not idempotent, process-changing, 30-second window; login retries are safe, the line is transmitted once and never resent; the reply is kept to 4096 bytes cut on a character boundary with a truncation flag, a missing reply reads as may-or-may-not-have-run, and the request audit carries the line.",
       "implementation": [
-        "apps/api/migrations/0061_fleet_console_command.sql",
-        "apps/api/src/server_infrastructure/models/fleet_command.rs",
-        "apps/api/src/server_infrastructure/services/fleet_commands",
+        "crates/api/api_database/migrations/0061_fleet_console_command.sql",
+        "crates/api/api_server_infrastructure/src/models/fleet_command.rs",
+        "crates/api/api_server_infrastructure/src/services/fleet_commands",
         "contracts/definitions/fleet-command.schema.json",
         "apps/fleet_host_agent/src/rcon",
         "apps/fleet_host_agent/src/command_execution",
@@ -722,20 +724,20 @@
       "id": "missions_immutable_artifacts",
       "behavior": "Pin mission version metadata catalog modpack compiler schema digest and exact validated bytes within 8 MiB.",
       "implementation": [
-        "apps/api/src/missions/services/mission_artifacts/artifact_store.rs",
-        "apps/api/src/missions/services/mission_artifacts/artifact_inputs.rs",
-        "apps/api/src/missions/handlers/mission_submission.rs",
-        "apps/api/migrations/0050_mission_artifacts.sql",
-        "apps/api/migrations/0052_mission_version_immutability.sql",
+        "crates/api/api_missions/src/services/mission_artifacts/artifact_store.rs",
+        "crates/api/api_missions/src/services/mission_artifacts/artifact_inputs.rs",
+        "crates/api/api_missions/src/handlers/mission_submission.rs",
+        "crates/api/api_database/migrations/0050_mission_artifacts.sql",
+        "crates/api/api_database/migrations/0052_mission_version_immutability.sql",
         "contracts/definitions/mission-review.schema.json",
         "apps/frontend/src/features/mission_review_record/submission_action.rs",
         "apps/frontend/src/features/mission_review_record/submission_refusal.rs",
         "apps/frontend/src/features/mission_review_record/artifact_provenance_view.rs",
         "apps/frontend/src/features/mission_review_record/tests/submission_refusal.rs",
-        "apps/api/src/missions/services/mission_artifacts/mod.rs",
-        "apps/api/src/missions/services/mission_artifacts/tests/artifact_store.rs",
-        "apps/api/src/missions/handlers/artifact_document_response.rs",
-        "apps/api/src/missions/handlers/tests/artifact_document_response.rs",
+        "crates/api/api_missions/src/services/mission_artifacts/mod.rs",
+        "crates/api/api_missions/src/services/mission_artifacts/tests/artifact_store.rs",
+        "crates/api/api_missions/src/handlers/artifact_document_response.rs",
+        "crates/api/api_missions/src/handlers/tests/artifact_document_response.rs",
         "apps/api/tests/mission_review_binding.rs",
         "apps/api/tests/mission_review_contract.rs",
         "apps/api/tests/mission_artifact_support/mod.rs"
@@ -753,10 +755,10 @@
       "id": "missions_approval_binding",
       "behavior": "Review and conditional approval transitions bind exact immutable compilation inputs.",
       "implementation": [
-        "apps/api/src/missions/services/mission_reviews.rs",
-        "apps/api/src/missions/handlers/approvals_queue.rs",
-        "apps/api/src/missions/handlers/mission_submission.rs",
-        "apps/api/migrations/0051_mission_reviews.sql",
+        "crates/api/api_missions/src/services/mission_reviews.rs",
+        "crates/api/api_missions/src/handlers/approvals_queue.rs",
+        "crates/api/api_missions/src/handlers/mission_submission.rs",
+        "crates/api/api_database/migrations/0051_mission_reviews.sql",
         "apps/frontend/src/pages/administration/approvals/review_decision.rs",
         "apps/frontend/src/pages/administration/approvals/decision_refusal.rs",
         "apps/frontend/src/features/mission_review_record/submission_action.rs",
@@ -766,7 +768,7 @@
         "apps/frontend/src/pages/administration/approvals/tests/approvals.rs",
         "apps/frontend/src/foundation/transport/dto/mission_reviews.rs",
         "apps/frontend/src/foundation/transport/endpoints/mission_reviews.rs",
-        "apps/api/src/missions/models/mission_review.rs",
+        "crates/api/api_missions/src/models/mission_review.rs",
         "apps/api/tests/mission_review_binding.rs"
       ],
       "checks": [
@@ -781,10 +783,10 @@
       "id": "missions_artifact_consumers",
       "behavior": "Deployment game loading and roster derivation use the same immutable artifact.",
       "implementation": [
-        "apps/api/src/missions/handlers/game_runtime_missions.rs",
-        "apps/api/src/missions/services/mission_deployments/deployment_reads.rs",
-        "apps/api/src/operations/handlers/game_runtime_roster.rs",
-        "apps/api/src/operations/services/live_slot_occupancy.rs",
+        "crates/api/api_missions/src/handlers/game_runtime_missions.rs",
+        "crates/api/api_missions/src/services/mission_deployments/deployment_reads.rs",
+        "crates/api/api_operations/src/handlers/game_runtime_roster.rs",
+        "crates/api/api_operations/src/services/live_slot_occupancy.rs",
         "contracts/definitions/mission-deployment.schema.json",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_DeployedMission.c",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionArtifactVerification.c",
@@ -793,7 +795,7 @@
         "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RosterLoader.c",
         "tools/commands/mod_operations/src/world_boot/compiled_lane.rs",
         "tools/commands/mod_operations/src/playtest_server/platform_deployment.rs",
-        "apps/api/src/missions/handlers/artifact_document_response.rs",
+        "crates/api/api_missions/src/handlers/artifact_document_response.rs",
         "apps/api/tests/mission_deployment_transitions.rs",
         "apps/api/tests/mission_review_contract.rs",
         "contracts/definitions/game-runtime-roster.schema.json",
@@ -816,12 +818,12 @@
       "id": "missions_mission_transitions",
       "behavior": "Validate terrain/resources before persisted selection; same-terrain scenario restart and coordinated cross-terrain transition.",
       "implementation": [
-        "apps/api/src/missions/services/mission_deployments/deployment_selection.rs",
-        "apps/api/src/missions/services/mission_deployments/deployment_requests.rs",
-        "apps/api/src/missions/services/mission_deployments/slot_bindings.rs",
-        "apps/api/src/missions/handlers/mission_deployments.rs",
-        "apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs",
-        "apps/api/migrations/0053_mission_deployments.sql",
+        "crates/api/api_missions/src/services/mission_deployments/deployment_selection.rs",
+        "crates/api/api_missions/src/services/mission_deployments/deployment_requests.rs",
+        "crates/api/api_missions/src/services/mission_deployments/slot_bindings.rs",
+        "crates/api/api_missions/src/handlers/mission_deployments.rs",
+        "crates/api/api_server_infrastructure/src/handlers/fleet_scenarios.rs",
+        "crates/api/api_database/migrations/0053_mission_deployments.sql",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetLoadMissionAction.c",
         "apps/fleet_host_agent/src/command_execution/mission_restart.rs",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionDeploymentRelay.c",
@@ -840,11 +842,11 @@
         "apps/frontend/src/foundation/transport/dto/tests/r_api_fleet.rs",
         "apps/frontend/src/foundation/transport/endpoints/fleet_scenarios.rs",
         "apps/frontend/src/foundation/transport/endpoints/mission_deployments.rs",
-        "apps/api/src/missions/models/mission_deployment.rs",
-        "apps/api/src/missions/services/mission_deployments/mod.rs",
-        "apps/api/src/missions/services/mission_deployments/tests/slot_bindings.rs",
-        "apps/api/src/server_infrastructure/models/fleet_scenario.rs",
-        "apps/api/src/server_infrastructure/handlers/tests/fleet_scenarios.rs",
+        "crates/api/api_missions/src/models/mission_deployment.rs",
+        "crates/api/api_missions/src/services/mission_deployments/mod.rs",
+        "crates/api/api_missions/src/services/mission_deployments/tests/slot_bindings.rs",
+        "crates/api/api_server_infrastructure/src/models/fleet_scenario.rs",
+        "crates/api/api_server_infrastructure/src/handlers/tests/fleet_scenarios.rs",
         "apps/api/tests/mission_deployment_transitions.rs",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_DeployableMissionList.c"
       ],
@@ -861,16 +863,16 @@
       "id": "missions_deployment_confirmation",
       "behavior": "Success requires matching artifact and runtime-session report; rejected/partial transitions recover observably.",
       "implementation": [
-        "apps/api/src/missions/services/mission_deployments/deployment_settlement.rs",
-        "apps/api/src/server_infrastructure/services/runtime_sessions.rs",
-        "apps/api/src/background_workers/mission_deployment_reconciler.rs",
+        "crates/api/api_missions/src/services/mission_deployments/deployment_settlement.rs",
+        "crates/api/api_server_infrastructure/src/services/runtime_sessions.rs",
+        "crates/api/api_background_workers/src/mission_deployment_reconciler.rs",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_LoadedArtifactReport.c",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c",
         "apps/frontend/src/pages/administration/server_control/mission_deployments/deployment_list.rs",
         "apps/frontend/src/pages/administration/server_control/mission_deployments/deployment_wording.rs",
         "apps/frontend/src/pages/administration/server_control/mission_deployments/tests/mission_deployments.rs",
         "apps/frontend/src/foundation/transport/dto/mission_deployments.rs",
-        "apps/api/src/server_infrastructure/handlers/game_runtime_sessions.rs",
+        "crates/api/api_server_infrastructure/src/handlers/game_runtime_sessions.rs",
         "apps/api/tests/mission_deployment_transitions.rs"
       ],
       "checks": [
@@ -886,10 +888,10 @@
       "behavior": "Every supported authored field survives compilation; unsupported gameplay data receives actionable rejection.",
       "implementation": [
         "crates/mission/mission_compiler/src/game_document/unsupported_authored_data.rs",
-        "apps/api/src/missions/services/mission_artifacts/artifact_store.rs",
+        "crates/api/api_missions/src/services/mission_artifacts/artifact_store.rs",
         "apps/frontend/src/features/mission_review_record/submission_refusal.rs",
         "apps/frontend/src/features/mission_review_record/tests/submission_refusal.rs",
-        "apps/api/src/missions/services/mission_artifacts/tests/artifact_store.rs",
+        "crates/api/api_missions/src/services/mission_artifacts/tests/artifact_store.rs",
         "apps/api/tests/mission_authored_preservation.rs",
         "crates/mission/mission_compiler/src/game_document/tests/unsupported_authored_data.rs"
       ],
@@ -905,9 +907,9 @@
       "id": "missions_review_comments",
       "behavior": "Persist author/version review threads; rejection feedback and state change commit together.",
       "implementation": [
-        "apps/api/src/missions/services/mission_reviews.rs",
-        "apps/api/src/missions/handlers/mission_reviews.rs",
-        "apps/api/migrations/0051_mission_reviews.sql",
+        "crates/api/api_missions/src/services/mission_reviews.rs",
+        "crates/api/api_missions/src/handlers/mission_reviews.rs",
+        "crates/api/api_database/migrations/0051_mission_reviews.sql",
         "apps/frontend/src/features/mission_review_record/review_history_view.rs",
         "apps/frontend/src/features/mission_review_record/comment_composer.rs",
         "apps/frontend/src/features/mission_review_record/mod.rs",
@@ -917,7 +919,7 @@
         "apps/frontend/src/foundation/transport/dto/mission_reviews.rs",
         "apps/frontend/src/foundation/transport/dto/tests/r_api_mission_reviews.rs",
         "apps/frontend/src/foundation/transport/endpoints/mission_reviews.rs",
-        "apps/api/src/missions/models/mission_review.rs",
+        "crates/api/api_missions/src/models/mission_review.rs",
         "apps/api/tests/mission_review_binding.rs",
         "apps/api/tests/mission_review_contract.rs"
       ],
@@ -933,8 +935,8 @@
       "id": "missions_review_workspace",
       "behavior": "Launch a real read-only workspace for the exact reviewed version.",
       "implementation": [
-        "apps/api/src/missions/handlers/mission_reviews.rs",
-        "apps/api/migrations/0052_mission_version_immutability.sql",
+        "crates/api/api_missions/src/handlers/mission_reviews.rs",
+        "crates/api/api_database/migrations/0052_mission_version_immutability.sql",
         "apps/frontend/src/workspaces/editor/review_workspace/page.rs",
         "apps/frontend/src/workspaces/editor/session/review_mode.rs",
         "apps/frontend/src/workspaces/editor/review_workspace/mod.rs",
@@ -961,19 +963,19 @@
       "id": "telemetry_match_identity",
       "behavior": "Persist stable server-scoped source-match identity before reporting.",
       "implementation": [
-        "apps/api/src/match_telemetry/handlers/match_registration.rs",
-        "apps/api/src/match_telemetry/handlers/match_results.rs",
-        "apps/api/src/match_telemetry/handlers/match_event_batches.rs",
-        "apps/api/src/match_telemetry/models/match_registration.rs",
-        "apps/api/src/match_telemetry/models/match_results_revision.rs",
-        "apps/api/src/match_telemetry/models/telemetry_refusal.rs",
-        "apps/api/src/match_telemetry/services/registered_match.rs",
-        "apps/api/migrations/0054_server_scoped_match_identity.sql",
+        "crates/api/api_match_telemetry/src/handlers/match_registration.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_results.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_event_batches.rs",
+        "crates/api/api_match_telemetry/src/models/match_registration.rs",
+        "crates/api/api_match_telemetry/src/models/match_results_revision.rs",
+        "crates/api/api_match_telemetry/src/models/telemetry_refusal.rs",
+        "crates/api/api_match_telemetry/src/services/registered_match.rs",
+        "crates/api/api_database/migrations/0054_server_scoped_match_identity.sql",
         "contracts/definitions/match-telemetry.schema.json",
         "crates/contracts/contract_schema_types/src/generated/match_telemetry/match_telemetry",
-        "apps/api/src/match_telemetry/services/match_registration.rs",
-        "apps/api/src/match_telemetry/handlers/server_heartbeat.rs",
-        "apps/api/src/identity_and_access/handlers/arma_link_confirmation.rs",
+        "crates/api/api_match_telemetry/src/services/match_registration.rs",
+        "crates/api/api_match_telemetry/src/handlers/server_heartbeat.rs",
+        "crates/api/api_identity_and_access/src/handlers/arma_link_confirmation.rs",
         "apps/api/tests/match_identity.rs",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/TBD_MatchRegistration.c"
       ],
@@ -989,19 +991,19 @@
       "id": "telemetry_telemetry_revisions",
       "behavior": "Duplicate retries are inert, same-revision conflicts reject, stale revisions cannot overwrite newer facts.",
       "implementation": [
-        "apps/api/src/match_telemetry/handlers/match_registration.rs",
-        "apps/api/src/match_telemetry/handlers/match_results.rs",
-        "apps/api/src/match_telemetry/handlers/match_event_batches.rs",
-        "apps/api/src/match_telemetry/models/match_registration.rs",
-        "apps/api/src/match_telemetry/models/match_results_revision.rs",
-        "apps/api/src/match_telemetry/models/telemetry_refusal.rs",
-        "apps/api/src/match_telemetry/services/registered_match.rs",
-        "apps/api/migrations/0054_server_scoped_match_identity.sql",
+        "crates/api/api_match_telemetry/src/handlers/match_registration.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_results.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_event_batches.rs",
+        "crates/api/api_match_telemetry/src/models/match_registration.rs",
+        "crates/api/api_match_telemetry/src/models/match_results_revision.rs",
+        "crates/api/api_match_telemetry/src/models/telemetry_refusal.rs",
+        "crates/api/api_match_telemetry/src/services/registered_match.rs",
+        "crates/api/api_database/migrations/0054_server_scoped_match_identity.sql",
         "contracts/definitions/match-telemetry.schema.json",
         "crates/contracts/contract_schema_types/src/generated/match_telemetry/match_telemetry",
-        "apps/api/src/match_telemetry/services/results_revision.rs",
-        "apps/api/src/match_telemetry/services/match_results_ingest.rs",
-        "apps/api/src/core/wire_format/content_digest.rs",
+        "crates/api/api_match_telemetry/src/services/results_revision.rs",
+        "crates/api/api_match_telemetry/src/services/match_results_ingest.rs",
+        "crates/api/api_foundation/src/wire_format/content_digest.rs",
         "apps/api/tests/telemetry_revisions.rs"
       ],
       "checks": [
@@ -1016,18 +1018,18 @@
       "id": "telemetry_telemetry_corrections",
       "behavior": "Higher revisions may decrease counters while finalized matches remain finalized.",
       "implementation": [
-        "apps/api/src/match_telemetry/handlers/match_registration.rs",
-        "apps/api/src/match_telemetry/handlers/match_results.rs",
-        "apps/api/src/match_telemetry/handlers/match_event_batches.rs",
-        "apps/api/src/match_telemetry/models/match_registration.rs",
-        "apps/api/src/match_telemetry/models/match_results_revision.rs",
-        "apps/api/src/match_telemetry/models/telemetry_refusal.rs",
-        "apps/api/src/match_telemetry/services/registered_match.rs",
-        "apps/api/migrations/0054_server_scoped_match_identity.sql",
+        "crates/api/api_match_telemetry/src/handlers/match_registration.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_results.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_event_batches.rs",
+        "crates/api/api_match_telemetry/src/models/match_registration.rs",
+        "crates/api/api_match_telemetry/src/models/match_results_revision.rs",
+        "crates/api/api_match_telemetry/src/models/telemetry_refusal.rs",
+        "crates/api/api_match_telemetry/src/services/registered_match.rs",
+        "crates/api/api_database/migrations/0054_server_scoped_match_identity.sql",
         "contracts/definitions/match-telemetry.schema.json",
         "crates/contracts/contract_schema_types/src/generated/match_telemetry/match_telemetry",
-        "apps/api/src/match_telemetry/services/match_revision_write.rs",
-        "apps/api/src/match_telemetry/services/match_results_ingest.rs",
+        "crates/api/api_match_telemetry/src/services/match_revision_write.rs",
+        "crates/api/api_match_telemetry/src/services/match_results_ingest.rs",
         "apps/api/tests/telemetry_corrections.rs"
       ],
       "checks": [
@@ -1042,19 +1044,19 @@
       "id": "telemetry_telemetry_atomicity",
       "behavior": "Validate entire batch before transactional persistence and aggregate updates; retries cannot double count.",
       "implementation": [
-        "apps/api/src/match_telemetry/handlers/match_registration.rs",
-        "apps/api/src/match_telemetry/handlers/match_results.rs",
-        "apps/api/src/match_telemetry/handlers/match_event_batches.rs",
-        "apps/api/src/match_telemetry/models/match_registration.rs",
-        "apps/api/src/match_telemetry/models/match_results_revision.rs",
-        "apps/api/src/match_telemetry/models/telemetry_refusal.rs",
-        "apps/api/src/match_telemetry/services/registered_match.rs",
-        "apps/api/migrations/0054_server_scoped_match_identity.sql",
+        "crates/api/api_match_telemetry/src/handlers/match_registration.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_results.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_event_batches.rs",
+        "crates/api/api_match_telemetry/src/models/match_registration.rs",
+        "crates/api/api_match_telemetry/src/models/match_results_revision.rs",
+        "crates/api/api_match_telemetry/src/models/telemetry_refusal.rs",
+        "crates/api/api_match_telemetry/src/services/registered_match.rs",
+        "crates/api/api_database/migrations/0054_server_scoped_match_identity.sql",
         "contracts/definitions/match-telemetry.schema.json",
         "crates/contracts/contract_schema_types/src/generated/match_telemetry/match_telemetry",
-        "apps/api/src/match_telemetry/services/match_results_ingest.rs",
-        "apps/api/src/match_telemetry/services/match_event_batches.rs",
-        "apps/api/src/match_telemetry/models/match_event.rs",
+        "crates/api/api_match_telemetry/src/services/match_results_ingest.rs",
+        "crates/api/api_match_telemetry/src/services/match_event_batches.rs",
+        "crates/api/api_match_telemetry/src/models/match_event.rs",
         "apps/api/tests/telemetry_atomicity.rs"
       ],
       "checks": [
@@ -1069,21 +1071,21 @@
       "id": "telemetry_detailed_events",
       "behavior": "Stable combat medical and vehicle event IDs and deterministic ordering; invalid indexed entry rejects whole batch.",
       "implementation": [
-        "apps/api/src/match_telemetry/handlers/match_registration.rs",
-        "apps/api/src/match_telemetry/handlers/match_results.rs",
-        "apps/api/src/match_telemetry/handlers/match_event_batches.rs",
-        "apps/api/src/match_telemetry/models/match_registration.rs",
-        "apps/api/src/match_telemetry/models/match_results_revision.rs",
-        "apps/api/src/match_telemetry/models/telemetry_refusal.rs",
-        "apps/api/src/match_telemetry/services/registered_match.rs",
-        "apps/api/migrations/0054_server_scoped_match_identity.sql",
+        "crates/api/api_match_telemetry/src/handlers/match_registration.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_results.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_event_batches.rs",
+        "crates/api/api_match_telemetry/src/models/match_registration.rs",
+        "crates/api/api_match_telemetry/src/models/match_results_revision.rs",
+        "crates/api/api_match_telemetry/src/models/telemetry_refusal.rs",
+        "crates/api/api_match_telemetry/src/services/registered_match.rs",
+        "crates/api/api_database/migrations/0054_server_scoped_match_identity.sql",
         "contracts/definitions/match-telemetry.schema.json",
         "crates/contracts/contract_schema_types/src/generated/match_telemetry/match_telemetry",
-        "apps/api/src/match_telemetry/models/match_event.rs",
-        "apps/api/src/match_telemetry/models/match_event_page.rs",
-        "apps/api/src/match_telemetry/services/match_event_batches.rs",
-        "apps/api/src/match_telemetry/handlers/match_event_reads.rs",
-        "apps/api/migrations/0055_match_events.sql",
+        "crates/api/api_match_telemetry/src/models/match_event.rs",
+        "crates/api/api_match_telemetry/src/models/match_event_page.rs",
+        "crates/api/api_match_telemetry/src/services/match_event_batches.rs",
+        "crates/api/api_match_telemetry/src/handlers/match_event_reads.rs",
+        "crates/api/api_database/migrations/0055_match_events.sql",
         "apps/api/tests/detailed_events.rs",
         "apps/frontend/src/foundation/transport/dto/match_events.rs",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents"
@@ -1101,11 +1103,11 @@
       "id": "telemetry_telemetry_queue",
       "behavior": "Mod persists outbound data until acknowledgement and exposes bounded-queue failures.",
       "implementation": [
-        "apps/api/src/match_telemetry/handlers/server_heartbeat.rs",
-        "apps/api/src/match_telemetry/handlers/server_heartbeat_contract.rs",
-        "apps/api/src/server_infrastructure/models/server.rs",
-        "apps/api/src/server_infrastructure/services/status_broadcast.rs",
-        "apps/api/migrations/0056_server_status_telemetry_queue.sql",
+        "crates/api/api_match_telemetry/src/handlers/server_heartbeat.rs",
+        "crates/api/api_match_telemetry/src/handlers/server_heartbeat_contract.rs",
+        "crates/api/api_server_infrastructure/src/models/server.rs",
+        "crates/api/api_server_infrastructure/src/services/status_broadcast.rs",
+        "crates/api/api_database/migrations/0056_server_status_telemetry_queue.sql",
         "contracts/definitions/game-runtime-session.schema.json",
         "apps/api/tests/telemetry_queue.rs",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry",
@@ -1126,11 +1128,11 @@
       "id": "telemetry_heartbeat_fencing",
       "behavior": "Session generation and monotonic sequence reject stale heartbeats.",
       "implementation": [
-        "apps/api/src/match_telemetry/handlers/server_heartbeat.rs",
-        "apps/api/src/server_infrastructure/services/runtime_sessions.rs",
-        "apps/api/src/background_workers/runtime_session_expiry.rs",
-        "apps/api/migrations/0047_server_runtime_sessions.sql",
-        "apps/api/src/server_infrastructure/handlers/game_runtime_sessions.rs",
+        "crates/api/api_match_telemetry/src/handlers/server_heartbeat.rs",
+        "crates/api/api_server_infrastructure/src/services/runtime_sessions.rs",
+        "crates/api/api_background_workers/src/runtime_session_expiry.rs",
+        "crates/api/api_database/migrations/0047_server_runtime_sessions.sql",
+        "crates/api/api_server_infrastructure/src/handlers/game_runtime_sessions.rs",
         "apps/api/tests/runtime_session_fencing.rs",
         "contracts/definitions/game-runtime-session.schema.json",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionLifecycle.c",
@@ -1150,7 +1152,7 @@
       "id": "administration_transactional_audit",
       "behavior": "Required business mutations and audit/outbox facts commit atomically.",
       "implementation": [
-        "apps/api/src/administration"
+        "crates/api/api_administration/src"
       ],
       "checks": [
         "administration_transactional_audit",
@@ -1164,7 +1166,7 @@
       "id": "administration_audit_publication",
       "behavior": "Serialized transactional publisher assigns commit-safe delivery sequence; inverted row-ID commits cannot lose records.",
       "implementation": [
-        "apps/api/src/administration"
+        "crates/api/api_administration/src"
       ],
       "checks": [
         "administration_audit_publication",
@@ -1178,17 +1180,17 @@
       "id": "administration_audit_replay",
       "behavior": "SSE IDs replay reconnects and slow consumers; unavailable retained history produces explicit reset.",
       "implementation": [
-        "apps/api/src/administration",
-        "apps/api/src/administration/handlers/audit_logs.rs",
-        "apps/api/src/administration/services/audit_delivery.rs",
-        "apps/api/src/administration/services/audit_notifier.rs",
-        "apps/api/src/administration/models/audit_stream.rs",
-        "apps/api/src/administration/models/audit_log.rs",
+        "crates/api/api_administration/src",
+        "crates/api/api_administration/src/handlers/audit_logs.rs",
+        "crates/api/api_administration/src/services/audit_delivery.rs",
+        "crates/api/api_administration/src/services/audit_notifier.rs",
+        "crates/api/api_administration/src/models/audit_stream.rs",
+        "crates/api/api_administration/src/models/audit_log.rs",
         "crates/contracts/contract_schema_types/src/generated/administration/audit_log",
-        "apps/api/migrations/0057_audit_publication_retained_floor.sql",
+        "crates/api/api_database/migrations/0057_audit_publication_retained_floor.sql",
         "contracts/definitions/audit-log.schema.json",
-        "apps/api/src/core/middleware/authorized_event_stream.rs",
-        "apps/api/src/core/process_lifecycle",
+        "crates/api/api_http_layer/src/middleware/authorized_event_stream.rs",
+        "crates/api/api_configuration/src/process_lifecycle",
         "apps/api/src/bin/api.rs",
         "apps/api/tests/audit_replay.rs",
         "apps/api/tests/audit_stream_support",
@@ -1207,11 +1209,11 @@
       "id": "administration_audit_query_recovery",
       "behavior": "Failed reads retry even while notification listener remains healthy.",
       "implementation": [
-        "apps/api/src/administration",
-        "apps/api/src/administration/services/audit_delivery.rs",
-        "apps/api/src/administration/services/audit_notifier.rs",
-        "apps/api/src/administration/handlers/audit_logs.rs",
-        "apps/api/migrations/0057_audit_publication_retained_floor.sql",
+        "crates/api/api_administration/src",
+        "crates/api/api_administration/src/services/audit_delivery.rs",
+        "crates/api/api_administration/src/services/audit_notifier.rs",
+        "crates/api/api_administration/src/handlers/audit_logs.rs",
+        "crates/api/api_database/migrations/0057_audit_publication_retained_floor.sql",
         "contracts/definitions/audit-log.schema.json",
         "apps/api/tests/audit_query_recovery.rs",
         "apps/api/tests/audit_stream_support"
@@ -1228,9 +1230,9 @@
       "id": "administration_personnel_pagination",
       "behavior": "Personnel pages use stable ordering and complete pagination metadata.",
       "implementation": [
-        "apps/api/src/administration",
-        "apps/api/src/administration/handlers/personnel_roster.rs",
-        "apps/api/src/administration/models/personnel_page.rs",
+        "crates/api/api_administration/src",
+        "crates/api/api_administration/src/handlers/personnel_roster.rs",
+        "crates/api/api_administration/src/models/personnel_page.rs",
         "crates/contracts/contract_schema_types/src/generated/administration/personnel_roster",
         "contracts/definitions/personnel-roster.schema.json",
         "apps/api/tests/personnel_pagination.rs",
@@ -1250,11 +1252,12 @@
       "id": "administration_audit_frontend",
       "behavior": "Audit UI consumes live stream and deduplicates overlap with paged history.",
       "implementation": [
-        "apps/api/src/administration",
-        "apps/api/src/administration/handlers/audit_logs.rs",
-        "apps/api/src/administration/models/audit_log.rs",
-        "apps/api/src/administration/models/audit_stream.rs",
-        "apps/api/src/administration/services/required_audit.rs",
+        "crates/api/api_administration/src",
+        "crates/api/api_administration/src/handlers/audit_logs.rs",
+        "crates/api/api_administration/src/models/audit_log.rs",
+        "crates/api/api_administration/src/models/audit_stream.rs",
+        "crates/api/api_audit_log/src/audit_severity.rs",
+        "crates/api/api_audit_log/src/required_audit.rs",
         "contracts/definitions/audit-log.schema.json",
         "apps/api/tests/audit_frontend.rs",
         "apps/api/tests/audit_frontend_support",
@@ -1281,15 +1284,15 @@
       "id": "content_vehicle_mutations",
       "behavior": "Vehicle creation update and deletion work with permission and validation parity.",
       "implementation": [
-        "apps/api/src/community_content",
-        "apps/api/src/community_content/handlers/vehicle_database",
-        "apps/api/src/community_content/models/vehicle_database.rs",
+        "crates/api/api_community_content/src",
+        "crates/api/api_community_content/src/handlers/vehicle_database",
+        "crates/api/api_community_content/src/models/vehicle_database.rs",
         "crates/contracts/contract_schema_types/src/generated/community_content/vehicle_database",
-        "apps/api/src/community_content/routes.rs",
-        "apps/api/migrations/0058_vehicle_database_lifecycle.sql",
+        "crates/api/api_community_content/src/routes.rs",
+        "crates/api/api_database/migrations/0058_vehicle_database_lifecycle.sql",
         "contracts/definitions/vehicle-database.schema.json",
-        "apps/api/src/core/text/content_url_policy.rs",
-        "apps/api/src/core/error_handling",
+        "crates/api/api_foundation/src/text/content_url_policy.rs",
+        "crates/api/api_foundation/src/error_handling",
         "apps/api/tests/vehicle_mutations.rs",
         "apps/api/tests/content_support",
         "apps/frontend/src/pages/doctrine_and_info/vehicles",
@@ -1310,18 +1313,18 @@
       "id": "content_wiki_features",
       "behavior": "Wiki headings links images tables checklists revisions and safe rendering meet T-940 requirements.",
       "implementation": [
-        "apps/api/src/community_content",
-        "apps/api/src/community_content/handlers/wiki_knowledgebase",
-        "apps/api/src/community_content/services/wiki_markup",
-        "apps/api/src/community_content/models/wiki.rs",
+        "crates/api/api_community_content/src",
+        "crates/api/api_community_content/src/handlers/wiki_knowledgebase",
+        "crates/api/api_community_content/src/services/wiki_markup",
+        "crates/api/api_community_content/src/models/wiki.rs",
         "crates/contracts/contract_schema_types/src/generated/community_content/wiki_page",
-        "apps/api/src/community_content/routes.rs",
-        "apps/api/migrations/0059_wiki_page_revisions.sql",
+        "crates/api/api_community_content/src/routes.rs",
+        "crates/api/api_database/migrations/0059_wiki_page_revisions.sql",
         "contracts/definitions/wiki-page.schema.json",
-        "apps/api/src/core/text/content_url_policy.rs",
-        "apps/api/src/core/error_handling",
-        "apps/api/seeds/wiki_pages.sql",
-        "apps/api/seeds/content_golden.sql",
+        "crates/api/api_foundation/src/text/content_url_policy.rs",
+        "crates/api/api_foundation/src/error_handling",
+        "crates/api/api_database/seeds/wiki_pages.sql",
+        "crates/api/api_database/seeds/content_golden.sql",
         "apps/api/tests/wiki_features.rs",
         "apps/api/tests/wiki_support",
         "apps/frontend/src/pages/doctrine_and_info/wiki",
@@ -1348,13 +1351,13 @@
       "id": "content_content_storage",
       "behavior": "Request limits ownership storage failures and error contracts work at actual consumer boundaries.",
       "implementation": [
-        "apps/api/src/community_content",
-        "apps/api/src/community_content/handlers/media_upload",
-        "apps/api/src/community_content/handlers/announcements_admin.rs",
-        "apps/api/src/community_content/handlers/announcements_public.rs",
+        "crates/api/api_community_content/src",
+        "crates/api/api_community_content/src/handlers/media_upload",
+        "crates/api/api_community_content/src/handlers/announcements_admin.rs",
+        "crates/api/api_community_content/src/handlers/announcements_public.rs",
         "crates/contracts/contract_schema_types/src/generated/community_content/content_upload",
         "contracts/definitions/content-upload.schema.json",
-        "apps/api/src/core/error_handling",
+        "crates/api/api_foundation/src/error_handling",
         "apps/api/tests/content_storage.rs",
         "apps/api/tests/content_support"
       ],
@@ -1370,11 +1373,11 @@
       "id": "dashboard_fleet_dashboard",
       "behavior": "Dashboard and live status explicitly select or aggregate the configured fleet.",
       "implementation": [
-        "apps/api/src/command_center/services/fleet_overview.rs",
-        "apps/api/src/command_center/handlers/live_dashboard.rs",
-        "apps/api/src/server_infrastructure/handlers/server_intel.rs",
-        "apps/api/src/server_infrastructure/handlers/server_status_stream.rs",
-        "apps/api/src/server_infrastructure/services/status_broadcast.rs",
+        "crates/api/api_command_center/src/services/fleet_overview.rs",
+        "crates/api/api_command_center/src/handlers/live_dashboard.rs",
+        "crates/api/api_server_infrastructure/src/handlers/server_intel.rs",
+        "crates/api/api_server_infrastructure/src/handlers/server_status_stream.rs",
+        "crates/api/api_server_infrastructure/src/services/status_broadcast.rs",
         "apps/api/tests/fleet_dashboard.rs",
         "apps/frontend/src/pages/command_center/dashboard/server_uplink.rs",
         "apps/frontend/src/pages/command_center/dashboard/fleet_totals.rs"
@@ -1391,10 +1394,10 @@
       "id": "dashboard_statistics_recomputation",
       "behavior": "Link changes and telemetry corrections synchronously or durably complete required derived-statistics updates.",
       "implementation": [
-        "apps/api/src/match_telemetry/services/match_results_ingest.rs",
-        "apps/api/src/identity_and_access/services/identity_linking.rs",
-        "apps/api/src/command_center/services/leaderboard_view.rs",
-        "apps/api/src/command_center/services/user_stats.rs",
+        "crates/api/api_match_telemetry/src/services/match_results_ingest.rs",
+        "crates/api/api_identity_and_access/src/services/identity_linking.rs",
+        "crates/api/api_member_activity/src/leaderboard_view.rs",
+        "crates/api/api_member_activity/src/user_stats.rs",
         "apps/api/tests/statistics_recomputation.rs"
       ],
       "checks": [
@@ -1409,7 +1412,7 @@
       "id": "verification_route_acceptance",
       "behavior": "Every registered route has authorized unauthorized ownership guest ban malformed and boundary acceptance coverage.",
       "implementation": [
-        "apps/api/src/core",
+        "apps/api/src/router.rs",
         "apps/api/tests/route_acceptance_administration_center_content.rs",
         "apps/api/tests/route_acceptance_coverage.rs",
         "apps/api/tests/route_acceptance_fleet_and_telemetry.rs",
@@ -1420,7 +1423,7 @@
         "apps/api/tests/route_acceptance_operations_reservations.rs",
         "apps/api/tests/route_acceptance_support",
         "apps/api/tests/debug_routes_are_development_only.rs",
-        "apps/api/src/core/http/path_parameters.rs"
+        "crates/api/api_foundation/src/http/path_parameters.rs"
       ],
       "checks": [
         "verification_route_acceptance",
@@ -1434,7 +1437,7 @@
       "id": "verification_contract_parity",
       "behavior": "Current handler responses schemas generated types frontend DTOs and mod wire versions remain compatible.",
       "implementation": [
-        "apps/api/src/core",
+        "apps/api/src/router.rs",
         "apps/api/tests/contract_parity_equipment_viewer.rs",
         "apps/api/tests/contract_parity_goldens.rs",
         "apps/api/tests/contract_parity_mod_wire.rs",
@@ -1442,7 +1445,7 @@
         "apps/api/tests/enfscript_source_support",
         "apps/api/tests/json_rejection_envelopes.rs",
         "apps/api/tests/query_rejection_envelopes.rs",
-        "apps/api/seeds/content_golden.sql",
+        "crates/api/api_database/seeds/content_golden.sql",
         "contracts/fixtures/api_goldens",
         "contracts/definitions/announcement.schema.json",
         "contracts/definitions/arma-link.schema.json",
@@ -1477,7 +1480,9 @@
       "id": "verification_migration_integrity",
       "behavior": "Preserve pinned checksums and retired versions 22-24; new migrations append monotonically after 27.",
       "implementation": [
-        "apps/api/src/core"
+        "crates/api/api_database/migrations",
+        "crates/api/api_database/src",
+        "apps/api/tests/migrations_are_immutable.rs"
       ],
       "checks": [
         "verification_migration_integrity",
@@ -1508,7 +1513,7 @@
       "implementation": [
         "tools/commands/api_readiness_checks/src",
         "tools/commands/api_readiness_checks/src/property_test_configuration.rs",
-        "apps/api/src/tests/property_evidence.rs",
+        "crates/api/api_property_evidence/src/property_run.rs",
         "tools/commands/api_readiness_checks/src/fingerprint.rs"
       ],
       "checks": [
@@ -1523,7 +1528,7 @@
       "id": "verification_engineering_laws",
       "behavior": "Production files under500 lines, tests under1000 lines, separate tests and architectural boundary compliance.",
       "implementation": [
-        "apps/api/src/core",
+        "apps/api/src/tests/architecture_rules.rs",
         "apps/api/tests/engineering_laws.rs",
         "tools/foundation/repository_laws/src"
       ],
@@ -1540,7 +1545,7 @@
       "id": "verification_property_invariants",
       "behavior": "Rust proptest invariants cover authorization policies quotas linking sessions artifacts telemetry commands and audit ordering.",
       "implementation": [
-        "apps/api/src/core",
+        "crates/api/api_property_evidence/src",
         "apps/api/tests/audit_publication_properties.rs",
         "apps/api/tests/fleet_command_properties.rs",
         "apps/api/tests/mission_artifact_properties.rs",
@@ -1561,13 +1566,13 @@
       "id": "verification_controlled_races",
       "behavior": "Tokio barriers deterministically exercise last-seat refresh replay assignment withdrawal linking approval ingest and commit ordering.",
       "implementation": [
-        "apps/api/src/core",
+        "crates/api/api_database/src",
         "apps/api/tests/controlled_races_audit.rs",
         "apps/api/tests/controlled_races_identity.rs",
         "apps/api/tests/controlled_races_missions_and_telemetry.rs",
         "apps/api/tests/controlled_races_reservations.rs",
         "apps/api/tests/failpoint_and_race_support",
-        "apps/api/src/core/failpoints"
+        "crates/api/api_failpoints/src"
       ],
       "checks": [
         "verification_controlled_races",
@@ -1581,7 +1586,7 @@
       "id": "verification_failure_injection",
       "behavior": "Explicit failpoints verify rollback recovery and effect/acknowledgement failure boundaries.",
       "implementation": [
-        "apps/api/src/core",
+        "apps/api/src/composition.rs",
         "apps/api/tests/failure_injection_audit.rs",
         "apps/api/tests/failure_injection_discord.rs",
         "apps/api/tests/failure_injection_fleet.rs",
@@ -1591,7 +1596,7 @@
         "apps/api/tests/failure_injection_self_checks.rs",
         "apps/api/tests/failure_injection_telemetry.rs",
         "apps/api/tests/failpoint_and_race_support",
-        "apps/api/src/core/failpoints"
+        "crates/api/api_failpoints/src"
       ],
       "checks": [
         "verification_failure_injection",
@@ -1605,14 +1610,14 @@
       "id": "verification_game_ballistics",
       "behavior": "Administrators upload calibrated ballistics catalogs as immutable versions, anyone reads them, and a saved fire mission is re-solved on the server against its pinned catalog and stored with its guns.",
       "implementation": [
-        "apps/api/src/operations/handlers/ballistics_catalogs",
-        "apps/api/src/operations/handlers/fire_missions",
-        "apps/api/src/operations/models/ballistics_catalog.rs",
-        "apps/api/src/operations/models/fire_mission.rs",
-        "apps/api/src/operations/services/ballistics_catalogs",
-        "apps/api/src/operations/services/fire_mission_resolve.rs",
-        "apps/api/src/operations/services/fire_mission_store.rs",
-        "apps/api/migrations/0060_game_ballistics_catalogs_and_fire_mission_inputs.sql",
+        "crates/api/api_operations/src/handlers/ballistics_catalogs",
+        "crates/api/api_operations/src/handlers/fire_missions",
+        "crates/api/api_operations/src/models/ballistics_catalog.rs",
+        "crates/api/api_operations/src/models/fire_mission.rs",
+        "crates/api/api_operations/src/services/ballistics_catalogs",
+        "crates/api/api_operations/src/services/fire_mission_resolve.rs",
+        "crates/api/api_operations/src/services/fire_mission_store.rs",
+        "crates/api/api_database/migrations/0060_game_ballistics_catalogs_and_fire_mission_inputs.sql",
         "contracts/definitions/fire-mission.schema.json",
         "apps/frontend/src/pages/administration/ballistics_catalogs"
       ],
@@ -1768,7 +1773,7 @@
       "behavior": "Real Discord healthy changes, cached outage grace, partner eligibility, admin override and non-blocking warnings.",
       "implementation": [
         "tools/commands/staging_procedures/src/discord_procedure",
-        "apps/api/src/bin/staging_fixtures"
+        "tools/staging/staging_fixtures/src"
       ],
       "checks": [
         "staging_discord",
@@ -1810,9 +1815,9 @@
       "id": "events_attendance_separation",
       "behavior": "Finalized exact-match participation derives attendance independently of retained reservation history; corrections, identity changes and mission removal never restore a released reservation.",
       "implementation": [
-        "apps/api/src/operations/services/participation_attribution.rs",
-        "apps/api/src/operations/services/event_reservations",
-        "apps/api/migrations",
+        "crates/api/api_member_activity/src/participation_attribution.rs",
+        "crates/api/api_operations/src/services/event_reservations",
+        "crates/api/api_database/migrations",
         "apps/frontend/src/pages/operations",
         "contracts/definitions/reservation-response.schema.json",
         "apps/api/tests/mission_detachment_lifecycle.rs",
@@ -1837,12 +1842,12 @@
       "id": "events_transactional_administration",
       "behavior": "Create, attach, restore, reschedule, cancel and delete revalidate administrative authority; capacity reductions respect current distinct participants; lifecycle transitions and business audits commit atomically.",
       "implementation": [
-        "apps/api/src/operations/services/event_reservations/event_administration.rs",
-        "apps/api/src/operations/services/event_lifecycle_sweep.rs",
-        "apps/api/src/operations/handlers/event_create_update.rs",
-        "apps/api/src/operations/handlers/event_mission_attachment.rs",
-        "apps/api/src/missions/handlers/mission_lifecycle.rs",
-        "apps/api/src/missions/services/mission_write_lock.rs",
+        "crates/api/api_operations/src/services/event_reservations/event_administration.rs",
+        "crates/api/api_operations/src/services/event_lifecycle_sweep.rs",
+        "crates/api/api_operations/src/handlers/event_create_update.rs",
+        "crates/api/api_operations/src/handlers/event_mission_attachment.rs",
+        "crates/api/api_missions/src/handlers/mission_lifecycle.rs",
+        "crates/api/api_missions/src/services/mission_write_lock.rs",
         "apps/api/tests/event_administration_transactions.rs",
         "apps/api/tests/event_lifecycle_transactions.rs",
         "apps/api/tests/mission_detachment_lifecycle.rs"
@@ -3182,7 +3187,7 @@
       "timeout_seconds": 3600,
       "minimum_cases": 7,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test operations::(?:models::event_access_policy|services::event_access::evaluation)::tests::(?:grant_and_condition_bounds_are_exact|identity_bounds_count_utf8_bytes_and_reject_padding|event_access_is_exactly_or_of_and_grants|slot_then_squad_then_event_selects_exactly_one_policy|grant_and_condition_permutations_preserve_authority|every_mandatory_gate_blocks_every_satisfied_grant|discord_roles_are_guild_scoped_and_independent_grants_survive_missing_guilds) \\.\\.\\. ok$",
+      "case_pattern": "(?m)^test (?:models::event_access_policy|services::event_access::evaluation)::tests::(?:grant_and_condition_bounds_are_exact|identity_bounds_count_utf8_bytes_and_reject_padding|event_access_is_exactly_or_of_and_grants|slot_then_squad_then_event_selects_exactly_one_policy|grant_and_condition_permutations_preserve_authority|every_mandatory_gate_blocks_every_satisfied_grant|discord_roles_are_guild_scoped_and_independent_grants_survive_missing_guilds) \\.\\.\\. ok$",
       "properties": [
         {
           "id": "grant_and_condition_bounds_are_exact",
@@ -3226,7 +3231,7 @@
       "timeout_seconds": 3600,
       "minimum_cases": 3,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test operations::services::event_reservations::quota_selection::tests::(?:generated_operation_sequences_conserve_allocations_and_capacity|arbitrary_u64_usage_agrees_with_wide_integer_arithmetic|every_valid_u32_or_explicit_null_limit_round_trips) \\.\\.\\. ok$",
+      "case_pattern": "(?m)^test services::event_reservations::quota_selection::tests::(?:generated_operation_sequences_conserve_allocations_and_capacity|arbitrary_u64_usage_agrees_with_wide_integer_arithmetic|every_valid_u32_or_explicit_null_limit_round_trips) \\.\\.\\. ok$",
       "properties": [
         {
           "id": "generated_operation_sequences_conserve_allocations_and_capacity",

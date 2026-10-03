@@ -32,7 +32,10 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
     );
     // Something the SPA genuinely does not compile stays out.
     assert!(
-        !wasm_scope_touched(&root, ["apps/api/src/core/database/mod.rs"].into_iter()),
+        !wasm_scope_touched(
+            &root,
+            ["crates/api/api_database/src/connection.rs"].into_iter()
+        ),
         "a backend-only change must not force the most expensive step in the gate"
     );
 }
@@ -80,7 +83,10 @@ fn the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not() {
     );
     // And the negative: a backend-only change stays out, include inputs and all.
     assert!(
-        !frontend_include_input_touched(&root, ["apps/api/src/core/database/mod.rs"].into_iter()),
+        !frontend_include_input_touched(
+            &root,
+            ["crates/api/api_database/src/connection.rs"].into_iter()
+        ),
         "a backend-only change must not reach the frontend suite"
     );
     // A golden response the frontend embeds through a macro that completes a folder prefix per

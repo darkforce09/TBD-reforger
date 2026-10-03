@@ -1,0 +1,18 @@
+# Stage S9 K3c: the administration domain (the member roster and its moderation, the Discord role
+# resync, the membership grace extension, the audit log with its publication sequence and live
+# feed) becomes api_administration.
+# The domain folder becomes the crate's src/ whole (its README the source tree README) and its
+# mod.rs the crate root. The module prefix is one `crate::` row scoped to the moved folder (first:
+# a file two rows of one prefix both reach takes the earlier row), one `crate::` row scoped to the
+# API source and one `api::` row scoped to the API package (its integration tests). No grouped use
+# tree names the domain.
+kind	from	to	scope
+#
+# Folder and crate root
+path	apps/api/src/administration	crates/api/api_administration/src
+path	apps/api/src/administration/mod.rs	crates/api/api_administration/src/lib.rs
+#
+# Module prefix
+rust_path	crate::administration::	crate::	apps/api/src/administration
+rust_path	crate::administration::	api_administration::	apps/api/src
+rust_path	api::administration::	api_administration::	apps/api

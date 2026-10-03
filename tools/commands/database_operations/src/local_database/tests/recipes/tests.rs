@@ -29,9 +29,9 @@ fn seed_recipe_keeps_all_five_appliers_in_order() {
     let all = rendered_recipes();
     let (_, seed) = all.iter().find(|(t, _)| *t == "seed").expect("seed lane");
     assert_eq!(seed.len(), 5);
-    assert!(seed[0].ends_with(" < ../apps/api/seeds/discord_roles.sql"));
+    assert!(seed[0].ends_with(" < ../crates/api/api_database/seeds/discord_roles.sql"));
     assert!(
-        seed[4].ends_with(" < ../apps/api/seeds/wiki_pages.sql"),
+        seed[4].ends_with(" < ../crates/api/api_database/seeds/wiki_pages.sql"),
         "`verify wiki-seeds` pins the wiki seed to this lane"
     );
 }

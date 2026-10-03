@@ -190,10 +190,12 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "api-test",
-        help: "cargo test in apps/api (honours TEST_DATABASE_URL)",
+        help: "cargo test over api and every crates/api package (honours TEST_DATABASE_URL)",
         group: "build",
         lane: Lane::Ci,
-        steps: &[sh!("cd apps/api && cargo test")],
+        steps: &[Step::Native {
+            run: crate::api_package_lane::run_api_test,
+        }],
     },
     // Derived from the workspace: every member no task above tests, one `cargo test -p` each.
     Task {
@@ -402,26 +404,30 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "rust-clippy",
-        help: "Lint Rust with clippy (deny warnings; GO-2..8 analog)",
+        help: "Lint api and every crates/api package with clippy (deny warnings; GO-2..8 analog)",
         group: "build",
         lane: Lane::Borrowed,
-        steps: &[sh!(
-            "cd apps/api && cargo clippy --all-targets -- -D warnings"
-        )],
+        steps: &[Step::Native {
+            run: crate::api_package_lane::run_api_clippy,
+        }],
     },
     Task {
         name: "rust-build",
-        help: "Build the Rust backend (all targets)",
+        help: "Build api and every crates/api package (all targets)",
         group: "build",
         lane: Lane::Borrowed,
-        steps: &[sh!("cd apps/api && cargo build --all-targets")],
+        steps: &[Step::Native {
+            run: crate::api_package_lane::run_api_build,
+        }],
     },
     Task {
         name: "rust-test",
-        help: "Run Rust unit tests (no DB)",
+        help: "Run the unit tests of api and every crates/api package (no DB)",
         group: "build",
         lane: Lane::Borrowed,
-        steps: &[sh!("cd apps/api && cargo test --lib --bins")],
+        steps: &[Step::Native {
+            run: crate::api_package_lane::run_api_unit_tests,
+        }],
     },
     Task {
         name: "wasm-ci",

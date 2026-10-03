@@ -233,6 +233,44 @@ fn crate_tiers_sqlx_in_a_browser_testing_or_staging_crate_is_rule_6() {
 }
 
 #[test]
+fn crate_tiers_sqlx_in_the_staging_fixtures_host_tool_passes() {
+    let mut workspace = green_workspace("tiers-staging-fixtures-sqlx");
+    workspace.layout_crate(
+        "tools/staging/staging_fixtures",
+        0,
+        "any",
+        &[normal("sqlx")],
+    );
+    let found = findings(&workspace);
+    assert!(found.is_empty(), "{found:#?}");
+}
+
+#[test]
+fn crate_tiers_sqlx_in_any_other_tool_crate_is_rule_6_naming_the_staging_fixtures_exception() {
+    let mut workspace = green_workspace("tiers-other-tool-sqlx");
+    let other_tools = [
+        "tools/commands/deployment",
+        "tools/staging/staging_fixtures_reports",
+        "tools/tickets/ticket_registry",
+    ];
+    for crate_path in other_tools {
+        workspace.layout_crate(crate_path, 0, "any", &[normal("sqlx")]);
+    }
+    let found = findings(&workspace);
+    assert_eq!(found.len(), other_tools.len(), "{found:#?}");
+    for crate_path in other_tools {
+        assert!(
+            found
+                .iter()
+                .any(|f| f.contains(&format!("{crate_path}/Cargo.toml"))
+                    && f.contains("sqlx — sqlx and axum live only in api crates")
+                    && f.contains("sqlx also in tools/staging/staging_fixtures")),
+            "{crate_path}: {found:#?}"
+        );
+    }
+}
+
+#[test]
 fn crate_tiers_axum_from_a_harness_server_in_the_xtask_closure_is_rule_6() {
     let mut workspace = green_workspace("tiers-harness-xtask");
     workspace.layout_crate(

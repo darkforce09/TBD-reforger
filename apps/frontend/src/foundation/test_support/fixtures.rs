@@ -36,35 +36,35 @@ pub(crate) fn api_route_source() -> String {
     const TABLES: [&str; 8] = [
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/identity_and_access/routes.rs"
+            "/../../crates/api/api_identity_and_access/src/routes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/operations/routes.rs"
+            "/../../crates/api/api_operations/src/routes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/missions/routes.rs"
+            "/../../crates/api/api_missions/src/routes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/server_infrastructure/routes.rs"
+            "/../../crates/api/api_server_infrastructure/src/routes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/administration/routes.rs"
+            "/../../crates/api/api_administration/src/routes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/match_telemetry/routes.rs"
+            "/../../crates/api/api_match_telemetry/src/routes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/command_center/routes.rs"
+            "/../../crates/api/api_command_center/src/routes.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../api/src/community_content/routes.rs"
+            "/../../crates/api/api_community_content/src/routes.rs"
         )),
     ];
     TABLES.concat()

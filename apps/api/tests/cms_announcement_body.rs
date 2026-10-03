@@ -8,7 +8,7 @@
 //! **byte-identical**, and a body-only PATCH recomputes `snippet` (capped) from the new body.
 //!
 //! Fails when `sanitize_html(&input.body)` is introduced in
-//! `community_content/handlers/announcements_admin.rs`: the `assert_eq!(body, AUTHOR)` arms fail
+//! `crates/api/api_community_content/src/handlers/announcements_admin.rs`: the `assert_eq!(body, AUTHOR)` arms fail
 //! because the row contains `&lt;` / `&amp;`.
 //!
 //! **`POST …/push-discord` refuses non-published.** Create/PATCH gate Discord push on
@@ -22,10 +22,9 @@
 
 mod common;
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Json as AxumJson;
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -44,11 +43,11 @@ async fn boot() -> Option<(Router, PgPool)> {
 
 async fn boot_with_webhook(webhook_url: String) -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let mut cfg = Config::for_tests(url, "body-secret");
     cfg.discord_webhook_url = webhook_url;
-    let app = http_router::router(AppState::new(pool.clone(), cfg));
+    let app = router(api::composition::application_state(pool.clone(), cfg));
     Some((app, pool))
 }
 

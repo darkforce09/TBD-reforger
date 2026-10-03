@@ -1,0 +1,34 @@
+# Stage S9 K1a, first of five: the API's handler error, JSON wire formats, text policies and request
+# parameters become crates/api/api_foundation. The four core folders move whole; the wire formats
+# keep only the midnight-UTC date module of the RFC 3339 file, renamed for what it holds (the instant
+# modules are fleet_wire_contract's). Each module prefix is one `crate::` row scoped to the API source,
+# one `api::` row scoped to the API package (integration tests, binaries) and one `crate::` row
+# scoped to the new crate. Grouped use trees were split before the rows ran.
+kind	from	to	scope
+#
+# Folders and the renamed date module
+path	apps/api/src/core/error_handling	crates/api/api_foundation/src/error_handling
+path	apps/api/src/core/wire_format	crates/api/api_foundation/src/wire_format
+path	apps/api/src/core/text	crates/api/api_foundation/src/text
+path	apps/api/src/core/http	crates/api/api_foundation/src/http
+path	apps/api/src/core/wire_format/rfc3339_timestamps.rs	crates/api/api_foundation/src/wire_format/rfc3339_dates.rs
+#
+# Module prefixes
+# Inside the new crate, scoped to the folders that become it, first: a file two rows of one prefix
+# both reach takes the earlier row
+rust_path	crate::core::error_handling::	crate::error_handling::	apps/api/src/core/error_handling
+rust_path	crate::core::error_handling::	crate::error_handling::	apps/api/src/core/http
+rust_path	crate::core::wire_format::	crate::wire_format::	apps/api/src/core/wire_format
+rust_path	crate::core::text::	crate::text::	apps/api/src/core/text
+rust_path	crate::core::http::	crate::http::	apps/api/src/core/http
+rust_path	crate::core::http::	crate::http::	apps/api/src/core/error_handling
+#
+# Every other consumer
+rust_path	crate::core::error_handling::	api_foundation::error_handling::	apps/api/src
+rust_path	api::core::error_handling::	api_foundation::error_handling::	apps/api
+rust_path	crate::core::wire_format::	api_foundation::wire_format::	apps/api/src
+rust_path	api::core::wire_format::	api_foundation::wire_format::	apps/api
+rust_path	crate::core::text::	api_foundation::text::	apps/api/src
+rust_path	api::core::text::	api_foundation::text::	apps/api
+rust_path	crate::core::http::	api_foundation::http::	apps/api/src
+rust_path	api::core::http::	api_foundation::http::	apps/api

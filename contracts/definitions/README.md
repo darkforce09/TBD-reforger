@@ -30,11 +30,11 @@ A schema reaches code in one of three ways:
   and fails on any missing, changed or stray file; it runs in `ci-local-schema` and in the
   `contracts.yml` workflow. `loadout-export.schema.json` stays out of codegen, because its
   versioned root `oneOf` does not survive typify; its model is hand-written in
-  `apps/api/src/missions/contract/loadout_projection.rs`.
+  `crates/api/api_missions/src/contract/loadout_projection.rs`.
 - **Embedded validators.** Code embeds a schema with `include_str!` and validates at runtime: the
   API checks the editor payload of `POST /api/v1/missions/{id}/versions`, every compiled
   [artifact](/documentation/glossary/a_to_f.md#artifact), faction documents and registry envelopes
-  (`apps/api/src/missions/contract/schema_validators.rs`); the
+  (`crates/api/api_missions/src/contract/schema_validators.rs`); the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) embeds `mission.schema.json` for
   its zone vocabulary and `loadout-export.schema.json` for its loadout export; the xtask
   equipment-export commands embed `equipment-vehicle-export.schema.json`. An unknown key in a closed
@@ -122,8 +122,8 @@ other map-object schemas, the prefab classification rules and the glyph keys all
   - the typify codegen in `tools/commands/schema_tooling/src/generate/`, and the generated modules of
     `crates/contracts/contract_schema_types/`;
   - the API's embedded validators in
-    `apps/api/src/missions/contract/schema_validators.rs` and
-    `apps/api/src/missions/handlers/mission_default_overrides.rs`, and its contract tests
+    `crates/api/api_missions/src/contract/schema_validators.rs` and
+    `crates/api/api_missions/src/handlers/mission_default_overrides.rs`, and its contract tests
     under `apps/api/tests/`;
   - the Mission Creator's embeds in
     `apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`

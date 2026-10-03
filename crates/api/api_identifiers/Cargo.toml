@@ -1,0 +1,28 @@
+# The typed identifiers of the API: one serde- and sqlx-transparent newtype per id concept (an
+# event, a mission, a server, a Discord user, ...), so an id at a public boundary of the API
+# crates is a type of its own while its JSON and its SQL binds stay those of the bare value.
+[package]
+name = "api_identifiers"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's typed identifiers: serde- and sqlx-transparent newtypes over UUID, string and integer keys."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 1
+targets = "any"
+
+[dependencies]
+newtype_ids = { workspace = true }
+sqlx = { workspace = true, features = ["postgres", "uuid", "macros"] }
+
+[dev-dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true, features = ["serde"] }
+
+[lints]
+workspace = true

@@ -20,10 +20,9 @@ mod contract_support;
 
 use std::time::{Duration, Instant};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::process_lifecycle::process_shutdown;
-use api::core::{database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_configuration::process_lifecycle::process_shutdown;
 use serde_json::json;
 use uuid::Uuid;
 
@@ -84,19 +83,22 @@ fn received(events: &[SseEvent]) -> Vec<(i64, i64)> {
 async fn audit_replay_shutdown_ends_open_streams_so_clients_reconnect_and_replay() {
     let url = common::require_test_database_url()
         .expect("the audit replay shutdown suite requires its PostgreSQL database");
-    let pool = database::connect(&url)
+    let pool = api_database::connect(&url)
         .await
         .expect("connect test database");
-    database::migrate(&pool)
+    api_database::migrate(&pool)
         .await
         .expect("migrate test database");
-    let state = AppState::new(pool.clone(), Config::for_tests(url.clone(), JWT_SECRET));
+    let state = api::composition::application_state(
+        pool.clone(),
+        Config::for_tests(url.clone(), JWT_SECRET),
+    );
     let admin = format!("{SUITE}-admin-{}", Uuid::new_v4());
     let token = common::access_token(&state, SUITE, &admin, "admin", true).await;
     let tag = format!("{SUITE}.{}", Uuid::new_v4());
 
     // 1. The api binary serves both streams; SIGTERM closes them and the process exits.
-    let mut api = ApiProcess::start(&url, JWT_SECRET, &state.cfg.discord_guild_id).await;
+    let mut api = ApiProcess::start(&url, JWT_SECRET, state.cfg.discord_guild_id.as_str()).await;
     let client = http_client(None);
     let mut audit = open_process_stream(&api, &client, &token, AUDIT_STREAM_PATH, None).await;
     let ready = audit
@@ -168,7 +170,7 @@ async fn audit_replay_shutdown_ends_open_streams_so_clients_reconnect_and_replay
     publish_all(&pool).await;
 
     // 3. A reconnect with the last id, on a router in this process, replays them exactly once.
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     let mut replay = open_router_stream(&app, &token, AUDIT_STREAM_PATH, Some(last_id)).await;
     let ready = replay
         .expect_event(EVENT_BOUND, "ready opens the reconnected stream")

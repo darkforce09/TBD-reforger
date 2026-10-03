@@ -22,11 +22,11 @@
 //! another; the worlds' events keep the default members-only access policy, which the world's
 //! enlisted account fully sees; the world never stores the committed `vanilla_mortars` id.
 
-use api::core::application_state::AppState;
-use api::core::http_router;
-use api::core::wire_format::content_digest::sha256_hex;
+use api::router::router;
+use api_state::AppState;
 use axum::Router;
 use ballistics_model::catalog::BallisticsCatalog;
+use content_digest::sha256_hex;
 use fire_mission_planning::fire_mission::{
     FireMissionGunPosition, FireMissionInputs, FireMissionPoint, HeightSource, solve_fire_mission,
 };
@@ -75,9 +75,13 @@ pub struct OperationsBallisticsWorld {
 }
 
 fn repository_text(relative: &str) -> String {
-    let path = format!("{}/../../{relative}", env!("CARGO_MANIFEST_DIR"));
+    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )))
+    .expect("the repository root above the API package")
+    .join(relative);
     std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("read committed fixture {path}: {error}"))
+        .unwrap_or_else(|error| panic!("read committed fixture {}: {error}", path.display()))
 }
 
 /// A catalog id no earlier world or probe used.
@@ -238,7 +242,7 @@ impl OperationsBallisticsWorld {
 
 impl PartWorld for OperationsBallisticsWorld {
     async fn build(state: &mut AppState, actors: &Actors) -> Self {
-        let app = http_router::router(state.clone());
+        let app = router(state.clone());
         let committed_catalog = repository_text(COMMITTED_CATALOG);
         let committed_calibration = repository_text(COMMITTED_CALIBRATION);
         let catalog_id = fresh_catalog_id();

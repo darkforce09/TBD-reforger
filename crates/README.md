@@ -8,6 +8,7 @@ them; a library crate never depends on an application.
 
 ```text
 crates/
+├── api/  the API's library crates, such as the typed identifiers
 ├── ballistics/  the mortar ballistics: the catalog and flight model, the solver, the fire-mission planner
 ├── contracts/   shapes and policies two programs share, such as the offline cache policy
 ├── foundation/  dependency-free building blocks, such as the HTTP URL guard

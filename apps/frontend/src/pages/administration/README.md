@@ -77,5 +77,5 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
 
 - [Administration pages](/documentation/apps/frontend/pages/administration/README.md) — the
   six pages' feature docs and design references.
-- [Administration domain](/apps/api/src/administration/README.md) — the roster,
+- [Administration domain](/crates/api/api_administration/src/README.md) — the roster,
   moderation and audit routes.

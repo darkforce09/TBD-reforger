@@ -1,9 +1,9 @@
 //! The database-backed half of observability and durable rate limiting.
 //!
-//! # Why this file exists rather than `#[cfg(test)]` in `src/core/http_router.rs`
+//! # Why this file exists rather than `#[cfg(test)]` in `src/router.rs`
 //!
 //! Everything that can be proven in-process (the metrics registry, the exposition text,
-//! the cardinality cap, `/healthz` going red) lives in `src/core/http_router.rs` next to the code.
+//! the cardinality cap, `/healthz` going red) lives in `src/router.rs` next to the code.
 //! What is here needs a **real** database, and `common::assert_no_raw_test_database_url_reads_outside_common`
 //! forbids `src/**` from reading `TEST_DATABASE_URL` at all — a rule that exists because an
 //! in-crate DB test reading the operator's base URL raw could run against live
@@ -13,9 +13,9 @@
 //! # What it proves
 //!
 //! 1. `/healthz` is **green** against a migrated database and its migration check reports a
-//!    real applied count — the other half of the red case pinned in `src/core/http_router.rs`.
+//!    real applied count — the other half of the red case pinned in `src/router.rs`.
 //! 2. `/metrics` reports a live database (`tbd_db_up 1`, non-zero pool gauges) — the same
-//!    gauges that read 0 against a dead pool in `src/core/http_router.rs`.
+//!    gauges that read 0 against a dead pool in `src/router.rs`.
 //! 3. `PgRateLimiter` **refuses at the limit and still refuses after a restart**, which is
 //!    the entire claim behind the word "durable"; the in-memory `IpLimiter` is exercised
 //!    beside it to pin the defect it replaces.
@@ -25,12 +25,13 @@
 
 use std::time::Duration;
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::core::middleware::IpLimiter;
-use api::core::middleware::durable_ratelimit::{PgRateLimiter, RATE_LIMIT_BUCKETS_DDL, bucket_key};
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_http_layer::middleware::IpLimiter;
+use api_http_layer::middleware::durable_ratelimit::{
+    PgRateLimiter, RATE_LIMIT_BUCKETS_DDL, bucket_key,
+};
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
@@ -52,7 +53,7 @@ async fn pool_for(url: &str) -> PgPool {
 }
 
 fn app_with(pool: PgPool) -> Router {
-    http_router::router(AppState::new(
+    router(api::composition::application_state(
         pool,
         Config::for_tests("postgres://unused", "observability-secret"),
     ))
@@ -102,7 +103,7 @@ static BUCKET_TABLE: tokio::sync::OnceCell<()> = tokio::sync::OnceCell::const_ne
 
 /// Ensure the table [`PgRateLimiter`] needs. **This DDL is the deliverable for the
 /// migration owner** — `RATE_LIMIT_BUCKETS_DDL` is a `const` in
-/// `src/core/middleware/durable_ratelimit.rs` precisely so the bytes proven here and the bytes in
+/// `api_http_layer::middleware::durable_ratelimit` precisely so the bytes proven here and the bytes in
 /// `migrations/0021_rate_limit_buckets.sql` cannot drift.
 async fn ensure_bucket_table(pool: &PgPool) {
     BUCKET_TABLE
@@ -120,13 +121,13 @@ async fn ensure_bucket_table(pool: &PgPool) {
 /// `/healthz` green against a migrated database, and the migration check reading real
 /// numbers rather than reporting a constant.
 ///
-/// The red half — both checks `down`, 503 — is `core::tests::http_router::healthz_goes_red_when_the_
+/// The red half — both checks `down`, 503 — is `router::tests::healthz_goes_red_when_the_
 /// database_is_unreachable`. Neither is worth anything without the other: a probe that is
 /// always green and a probe that is always red are the same defect.
 ///
 /// The detail sits behind the observability bearer, so this reads the probe *with* the
 /// token. The public shape (`{"status": …}` and nothing else) is asserted against a dead pool by
-/// `core::tests::http_router::healthz_discloses_nothing_to_an_unauthenticated_caller` and against a live one by
+/// `router::tests::healthz_discloses_nothing_to_an_unauthenticated_caller` and against a live one by
 /// [`healthz_public_shape_is_status_only_against_a_live_database`] below — a probe that discloses
 /// nothing only because it is failing would prove nothing.
 #[tokio::test]
@@ -138,7 +139,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
         return;
     };
     let pool = pool_for(&url).await;
-    database::migrate(&pool).await.expect("migrate");
+    api_database::migrate(&pool).await.expect("migrate");
     let app = app_with(pool);
 
     let (st, body) = call(&app, "/healthz", Some(OBSERVABILITY_BEARER)).await;
@@ -151,12 +152,16 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
     // "a tool reporting success over an input it never examined" is the defect this
     // program is built around. Pin it to the migration directory the database was built
     // from, so the check has to be reading `_sqlx_migrations` to pass.
-    let on_disk =
-        std::fs::read_dir(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations"))
-            .expect("read migrations dir")
-            .filter_map(Result::ok)
-            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("sql"))
-            .count() as i64;
+    let migrations_folder = repository_layout::find_repository_root_from(std::path::Path::new(
+        env!("CARGO_MANIFEST_DIR"),
+    ))
+    .expect("the repository root above the API crate")
+    .join("crates/api/api_database/migrations");
+    let on_disk = std::fs::read_dir(migrations_folder)
+        .expect("read migrations dir")
+        .filter_map(Result::ok)
+        .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("sql"))
+        .count() as i64;
     assert!(
         on_disk > 0,
         "no migration files found — this pin would be vacuous"
@@ -198,7 +203,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
 
 /// Against a **live, healthy** database the public probe still discloses nothing.
 ///
-/// The dead-pool half lives in `src/core/http_router.rs`. Both are needed: a `/healthz` that reveals nothing
+/// The dead-pool half lives in `src/router.rs`. Both are needed: a `/healthz` that reveals nothing
 /// because it is 503-ing on every check has not been fixed, it has been broken, and this is the
 /// case where there is real detail to leak (a real version, a real uptime, real pool gauges and a
 /// real migration count — the four fields measured off the public route).
@@ -209,7 +214,7 @@ async fn healthz_public_shape_is_status_only_against_a_live_database() {
         return;
     };
     let pool = pool_for(&url).await;
-    database::migrate(&pool).await.expect("migrate");
+    api_database::migrate(&pool).await.expect("migrate");
     let app = app_with(pool);
 
     let (st, body) = call(&app, "/healthz", None).await;

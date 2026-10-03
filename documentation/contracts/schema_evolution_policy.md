@@ -29,7 +29,7 @@ editing a schema.
 1. The schema is the authority. Neither a database model nor an Enfusion script class puts a
    property on the wire that its schema does not define. Where a schema closes an object
    (`additionalProperties: false`), the API's embedded validators reject an unknown key instead of
-   dropping it (`apps/api/src/missions/contract/schema_validators.rs`).
+   dropping it (`crates/api/api_missions/src/contract/schema_validators.rs`).
 2. Optionality means something. `null` and absent are distinct states, and each schema says which
    it accepts; a reader that conflates them disagrees with a writer that does not.
 3. The tree holds data only. Code generation writes typed models into the consumers; nothing
@@ -43,9 +43,9 @@ editing a schema.
   schema, and `cargo xtask ci verify-codegen-fresh` fails on any missing, stale or stray file.
 - Hand-written models: `loadout-export.schema.json` stays out of codegen, because typify expands
   its versioned `oneOf` branches into empty structs, which is silent and wrong rather than loud and
-  broken. Its model is `apps/api/src/missions/contract/loadout_projection.rs`, held to
+  broken. Its model is `crates/api/api_missions/src/contract/loadout_projection.rs`, held to
   the schema by the round-trip tests over both committed sample exports
-  (`apps/api/src/missions/contract/tests/loadout_projection.rs`).
+  (`crates/api/api_missions/src/contract/tests/loadout_projection.rs`).
 - Hand mappings: the map engine maps `mission.schema.json` into its mission document model and
   `terrain-manifest.schema.json` into its world loader; the voice bridge's two ends map
   `bridge-messages.schema.json`. The [definitions README](/contracts/definitions/README.md#how-it-works)
@@ -64,7 +64,7 @@ The [mission](/documentation/glossary/g_to_m.md#mission) schema shows the patter
 `1.0` to `1.3` in one file, each minor version additive, selected by `if`/`then` blocks. The compiler emits the lowest version whose
 keys actually reach the wire: a document with no `1.3` key still goes out as `1.1` or `1.2`, so an
 older server keeps loading it (`mission_compile_flatten.rs` in
-`apps/api/src/missions/services/tests/` pins the bump to `1.2` on the first slot
+`crates/api/api_missions/src/services/tests/` pins the bump to `1.2` on the first slot
 height). The mod's `TBD_MissionValidator.CheckSchemaVersion` admits `1.1`, `1.2` and `1.3`. A
 `1.3` field that no shipped reader handles yet is listed by the unread-wire-field check
 (`tools/commands/schema_tooling/src/schema_checks/wire_field_readers.rs`), and a field loses its
@@ -98,7 +98,7 @@ emission and the mod's own version check.
   8 MiB document ceiling (`contracts/definitions/mission.schema.json:5`) — no such route
   exists; the API validates a compiled [artifact](/documentation/glossary/a_to_f.md#artifact) when it
   compiles it, and game servers fetch it from `GET /api/v1/game-runtime/artifacts/{artifactId}`
-  (`apps/api/src/missions/routes.rs`).
+  (`crates/api/api_missions/src/routes.rs`).
 
 ## Data
 

@@ -8,7 +8,8 @@
 //! runs in the `tbd_reforger_db` container through `podman exec`, bridged when containerised.
 //!
 //! **Signals & state:** none held; creates and drops Postgres databases and spawns `cargo test -p
-//! api` with `TEST_DATABASE_URL` in a private target folder.
+//! api` (with every API crate the workspace names) with `TEST_DATABASE_URL` in a private target
+//! folder.
 //!
 //! **Invariants:** a skipped database test is red, never green; pruning needs the gate lock (or the
 //! deliberate unserialised escape hatch) and matches only `^tbd_gate_w<digits>` with an optional
@@ -17,6 +18,7 @@
 
 use super::{Ctx, gate_folder, host, ledger, lock::GateState};
 use crate::wave_execution::{werr, wprint, wprintln};
+use ci_task_catalog::api_package_lane::{ApiLine, api_line_argv};
 use repository_layout::build_output;
 
 /// `podman exec tbd_reforger_db psql …`, bridged when we are in the container.
@@ -296,7 +298,10 @@ pub(crate) fn ensure_gate_db(ctx: &Ctx, state: &GateState) -> i32 {
     0
 }
 
-/// `cargo test -p api`, but a run where the DB tests skipped is a FAILURE, not a pass.
+/// `cargo test -p api -p <every crates/api package>`, but a run where the DB tests skipped is a
+/// FAILURE, not a pass. The packages come from [`ci_task_catalog::api_package_lane`], the
+/// derivation `cargo xtask db test-it` and the CI `api-test` row run over, so an API crate is
+/// tested here from the moment the workspace names it.
 /// CARGO_TARGET_DIR IS PRIVATE HERE — read before removing it.
 ///
 /// `cargo test` BUILDS AND THEN RUNS a binary. With the shared dir, the binary this step runs can be
@@ -317,21 +322,17 @@ pub(crate) fn ensure_gate_db(ctx: &Ctx, state: &GateState) -> i32 {
 /// returns a verdict about a file it never opened whenever the file's mtime does not exceed the
 /// recorded output's — no execution required.
 pub(crate) fn gate_test_api(ctx: &Ctx) -> i32 {
-    let argv = ctx.host.hostrun_argv(&host::v(&[
-        "env",
-        &format!(
-            "CARGO_TARGET_DIR={}",
-            gate_folder(&ctx.main_root, build_output::GATE_API_SUBFOLDER)
-        ),
-        "CARGO_INCREMENTAL=0",
-        "cargo",
-        "test",
-        "-p",
-        "api",
-        "--quiet",
-        "--",
-        "--nocapture",
-    ]));
+    let api_test_line = match api_line_argv(&ctx.root, ApiLine::Test) {
+        Ok(line) => line,
+        Err(error) => {
+            wprintln!("    {error:#}");
+            return 1;
+        }
+    };
+    let argv = ctx.host.hostrun_argv(&gate_test_api_argv(
+        &gate_folder(&ctx.main_root, build_output::GATE_API_SUBFOLDER),
+        &api_test_line,
+    ));
     let (out, rc) = host::capture(&argv);
     let skips = out.lines().filter(|l| l.starts_with("skip:")).count();
     wprint!("{out}");
@@ -351,3 +352,20 @@ pub(crate) fn gate_test_api(ctx: &Ctx) -> i32 {
     }
     0
 }
+
+/// `env CARGO_TARGET_DIR=<target_folder> CARGO_INCREMENTAL=0 <api_test_line> --quiet -- --nocapture`:
+/// the `test api` command, before the host bridge.
+pub(super) fn gate_test_api_argv(target_folder: &str, api_test_line: &[String]) -> Vec<String> {
+    let mut argv = host::v(&[
+        "env",
+        &format!("CARGO_TARGET_DIR={target_folder}"),
+        "CARGO_INCREMENTAL=0",
+    ]);
+    argv.extend(api_test_line.iter().cloned());
+    argv.extend(host::v(&["--quiet", "--", "--nocapture"]));
+    argv
+}
+
+#[cfg(test)]
+#[path = "tests/db/tests.rs"]
+mod tests;

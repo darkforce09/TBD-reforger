@@ -60,7 +60,7 @@ in `feature_inventory/`, an Eden catalog in `eden_editor_reference/`, a design s
 - [Mission crates](/crates/mission/) and the
   [mission editing crates](/crates/mission_editing/) — the mission document, its compiler and
   validation, and the editing commands and tools the editor drives.
-- [Missions domain](/apps/api/src/missions/) — the mission versions the editor loads
+- [Missions domain](/crates/api/api_missions/src/) — the mission versions the editor loads
   and saves, and the item [registry](/documentation/glossary/n_to_z.md#registry) the palettes and the
   Arsenal read.
 

@@ -9,8 +9,8 @@
 mod common;
 mod telemetry_support;
 
-use api::core::realtime_hub::Hub;
-use api::server_infrastructure::services::status_broadcast::publish_all_server_statuses;
+use api_http_layer::realtime_hub::Hub;
+use api_server_infrastructure::services::status_broadcast::publish_all_server_statuses;
 use axum::Router;
 use axum::http::StatusCode;
 use serde_json::{Value, json};

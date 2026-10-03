@@ -3,7 +3,7 @@
 //! stale executors are fenced, lapsed leases never repeat an uncertain effect, requester
 //! authority is revalidated at claim, and kicks are bound to the runtime session they target.
 
-use api::server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
+use api_server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
 use uuid::Uuid;

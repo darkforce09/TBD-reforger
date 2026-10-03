@@ -28,7 +28,7 @@ folder's README lists the page's files, its call and its states.
 
 - [Dashboard page](/apps/frontend/src/pages/command_center/dashboard/) — the route
   component `DashboardPage` and its five panels.
-- [Command center domain](/apps/api/src/command_center/) — `GET /api/v1/dashboard`,
+- [Command center domain](/crates/api/api_command_center/src/) — `GET /api/v1/dashboard`,
   which composes the page's one payload.
 
 ## Boundaries
@@ -42,5 +42,5 @@ folder's README lists the page's files, its call and its states.
 
 ## Related documentation
 
-- [Command center domain](/apps/api/src/command_center/README.md) — the API side of the
+- [Command center domain](/crates/api/api_command_center/src/README.md) — the API side of the
   dashboard.

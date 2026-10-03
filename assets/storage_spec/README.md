@@ -27,7 +27,7 @@ assets/storage_spec/
 
 - Producers: none; no upload endpoint writes the volume.
 - Consumers: none; no code reads `TBD_TERRAIN_STORAGE_DIR`, and the API serves `/map-assets` from
-  `MAP_ASSETS_DIR` alone (`apps/api/src/core/http_router.rs`).
+  `MAP_ASSETS_DIR` alone (`apps/api/src/router.rs`).
 
 ## Boundaries
 

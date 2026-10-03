@@ -54,7 +54,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
        - Hand-written JSON DTO structs MUST declare `//! @contract <schema>#<pointer>`.
        - REST API call sites MUST declare `//! @route <METHOD> <path>`.
 9. **API & Contract Parity**:
-   - Backend Rust models (`apps/api/src/<domain>/models/`) are the snake_case API source of truth.
+   - Backend Rust models (`crates/api/api_<domain>/src/models/`) are the snake_case API source of truth.
    - Contract types are generated from `contracts/definitions/*.json` via `cargo xtask ci schema-codegen`.
    - Frontend DTOs (`apps/frontend/src/foundation/transport/dto/`) mirror models with strict R-api golden test parity.
 10. **Documentation Ships With the Code**:
@@ -71,20 +71,11 @@ The [workspace layout](/documentation/architecture/workspace_layout.md) explains
 
 ```text
 apps/
-├── api/                                 <-- Axum + sqlx REST API and SSE backend (:8080)
-│   └── src/                             <-- Domain-driven backend: core + workers + eight domains
-│       ├── core/                        <-- Configuration, database, state, errors, router, middleware, observability, realtime hub, auth primitives
-│       ├── background_workers/          <-- Interval tasks the API binary arms at boot
-│       ├── bin/                         <-- The `api` server, the `import-registry` tool and the `staging-fixtures` host tool
-│       ├── administration/              <-- Member roster, moderation actions, Discord role resync, audit log
-│       ├── command_center/              <-- Dashboard, leaderboards, per-player statistics
-│       ├── community_content/           <-- Announcements, wiki, vehicle database, modpacks, uploads
-│       ├── identity_and_access/         <-- Discord OAuth2, session tokens, profile, Arma link handshake
-│       ├── match_telemetry/             <-- Game-runtime heartbeats and finished match results
-│       ├── missions/                    <-- Missions, versions, artifacts, reviews, deployments, armory, registries
-│       ├── operations/                  <-- Events, ORBAT slotting, reservations, service records, fire missions, ballistics catalogs
-│       ├── server_infrastructure/       <-- Game-server registry, live status SSE, machine credentials, fleet commands, runtime sessions
-│       └── tests/architecture_rules.rs  <-- Executable layout rules checked against src/
+├── api/                                 <-- Axum + sqlx REST API and SSE backend (:8080): the thin app the crates/api/ crates assemble into
+│   ├── src/                             <-- lib.rs · router.rs (route tables, mounts, middleware chain) · composition.rs (state with concrete services)
+│   │   ├── bin/                         <-- The `api` server and the `import-registry` tool
+│   │   └── tests/                       <-- Executable layout rules (crate graph, domain graph) and prose rules, router pins
+│   └── tests/                           <-- 150 integration binaries, each on its own database
 ├── frontend/                            <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000)
 │   └── src/                             <-- Five layers in one crate: foundation < features < pages, workspaces < shell
 │       ├── main.rs, app_routes.rs       <-- Entry point (mounts the shell) and the render form of the route table
@@ -264,6 +255,30 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── fire_mission_planning/           <-- Fire-mission assembler: battery solutions, time fuzes, client/server comparison, wording
 │   ├── ballistics_calibration/          <-- Catalog calibration against the game's native tables, wind tables and engine oracle samples
 │   └── ballistics_agreement_cases/      <-- Seeded lattice of battery fire problems and their solution bit patterns (native and wasm32 agreement)
+├── api/                                 <-- The API's library crates (sqlx and axum only here); infrastructure < kernel < domains < workers
+│   ├── api_identifiers/                 <-- Infrastructure: serde- and sqlx-transparent typed ids of every table key, Discord snowflake, game runtime key
+│   ├── api_foundation/                  <-- Infrastructure: handler error envelope, JSON wire formats, text policies, request parameters
+│   ├── api_failpoints/                  <-- Infrastructure: `fail_point!`; in test builds the failpoint catalogue and arming registry
+│   ├── api_configuration/               <-- Infrastructure: environment configuration read at boot, trusted proxies, process shutdown signal
+│   ├── api_database/                    <-- Infrastructure: Postgres pool, embedded migrations/, development seeds/, SQLSTATE predicates
+│   ├── api_http_layer/                  <-- Infrastructure: access tokens, middleware and extractors, rate limiters, metrics and health, realtime hub
+│   ├── api_property_evidence/           <-- Infrastructure (dev-only): the run recorder of the API's property tests
+│   ├── api_mission_vocabulary/          <-- Kernel: terrain and game mode enums several domains name
+│   ├── api_audit_log/                   <-- Kernel: audit severity, best-effort and transactional audit appends
+│   ├── api_equipment_datasets/          <-- Kernel: equipment dataset imports, SQLite navigation index, generation-pinned reads
+│   ├── api_member_activity/             <-- Kernel: member statistics, leaderboard refresh, attendance attribution, re-evaluation queue
+│   ├── api_discord/                     <-- Kernel: Discord OAuth2, guild-member and announcement webhook clients
+│   ├── api_caller_identity/             <-- Kernel: role ladder, session and account authority, identity lock order, machine caller
+│   ├── api_state/                       <-- Kernel: AppState with its concrete services and FromRef projections
+│   ├── api_community_content/           <-- Domain: announcements, wiki, vehicle database, modpacks, uploads, equipment data viewer
+│   ├── api_identity_and_access/         <-- Domain: Discord sign-in, session tokens, profile, Arma link handshake, Discord membership
+│   ├── api_administration/              <-- Domain: member roster, moderation actions, Discord role resync, audit log console
+│   ├── api_server_infrastructure/       <-- Domain: game-server registry, live status SSE, machine credentials, fleet commands, runtime sessions
+│   ├── api_missions/                    <-- Domain: missions, versions, artifacts, reviews, deployments, armory, factions, registries
+│   ├── api_match_telemetry/             <-- Domain: game-runtime heartbeats, match registration, results revisions, event batches
+│   ├── api_operations/                  <-- Domain: events, ORBAT slotting, reservations, service records, fire missions, ballistics catalogs
+│   ├── api_command_center/              <-- Domain: dashboard, leaderboards, per-player statistics
+│   └── api_background_workers/          <-- Workers: the interval tasks the API binary arms at boot
 └── graphics/                            <-- Map-agnostic CPU rendering primitives
     └── render_primitives/               <-- Instance layouts, geometry, triangulation, CPU cull oracle, frame ids, text atlas, the WGSL shader
 
@@ -314,6 +329,7 @@ tools/                                   <-- Every developer tool in the reposit
 ├── staging/                             <-- Staging crates
 │   ├── staging_load_plan/               <-- The member load's plan, request catalog, pacing and report, without tokio
 │   ├── staging_load_generator/          <-- The member load's virtual clients behind `staging-load`
+│   ├── staging_fixtures/                <-- The `staging-fixtures` host tool: staging accounts, fleet credentials, fixture events and its database suites
 │   └── acknowledgement_dropping_relay/  <-- Relay that withholds one fleet executor answer
 ├── map_assets/                          <-- Map asset crates
 │   ├── blueprint_compiler/              <-- Building blueprints from voxel dumps and game models, occlusion sidecars, the blueprint archive

@@ -26,10 +26,11 @@ use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use api::core::observability::metrics_registry::DiscordReconcileOutcome;
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
-use api::identity_and_access::services::discord_client::DiscordService;
-use api::identity_and_access::services::discord_rest_reconciliation::{
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_discord::discord_client::DiscordService;
+use api_http_layer::observability::metrics_registry::DiscordReconcileOutcome;
+use api_identity_and_access::services::discord_rest_reconciliation::{
     enroll_accounts, reconcile_one,
 };
 use axum::body::{Body, to_bytes};
@@ -270,7 +271,11 @@ async fn discord_client_proxy_environment_child_reads_a_member() {
     );
     discord.set_api_base(&format!("{origin}/api/v10"));
     match discord
-        .fetch_member_with_bot(BOT_TOKEN, "proxy-proof-guild", MEMBER)
+        .fetch_member_with_bot(
+            BOT_TOKEN,
+            &api_identifiers::DiscordGuildId::new("proxy-proof-guild"),
+            &api_identifiers::DiscordUserId::new(MEMBER),
+        )
         .await
     {
         Ok(member) => println!("{REPORT}outcome=answered member={}", member.is_some()),
@@ -292,8 +297,8 @@ async fn discord_client_proxy_environment_child_reconciles_a_member() {
         .try_init();
     let url = common::require_test_database_url()
         .expect("TEST_DATABASE_URL: the reconciliation child needs this binary's database");
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
     sqlx::query("DELETE FROM discord_membership_snapshots")
         .execute(&pool)
         .await
@@ -307,7 +312,7 @@ async fn discord_client_proxy_environment_child_reconciles_a_member() {
     common::seed_user(&pool, MEMBER, "Proxy Proof", "proxy-proof-arma", "enlisted").await;
     let mut cfg = Config::for_tests(url, "discord-proxy-environment");
     cfg.discord_bot_token = BOT_TOKEN.into();
-    let mut state = AppState::new(pool, cfg);
+    let mut state = api::composition::application_state(pool, cfg);
     Arc::make_mut(&mut state.discord).set_api_base(&format!("{origin}/api/v10"));
     enroll_accounts(&state.pool, &state.cfg.discord_guild_id)
         .await
@@ -354,7 +359,7 @@ async fn discord_client_proxy_environment_child_reconciles_a_member() {
         )
         .body(Body::empty())
         .expect("the metrics request");
-    let response = http_router::router(state)
+    let response = router(state)
         .oneshot(scrape)
         .await
         .expect("the metrics scrape");

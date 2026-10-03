@@ -3,11 +3,13 @@
 //! timestamps are RFC 3339 UTC with trailing fractional zeros trimmed, and dates are midnight
 //! UTC. The SPA's DTO golden tests and the Enfusion mod parse exactly these spellings.
 
-use api::core::wire_format::rfc3339_utc;
-use api::identity_and_access::models::user_account::{User, UserRole};
-use api::missions::models::mission::{GameMode, MissionStatus, WeatherType};
-use api::operations::models::event::RegistrationState;
+use api_caller_identity::UserRole;
+use api_identity_and_access::models::user_account::User;
+use api_mission_vocabulary::GameMode;
+use api_missions::models::mission::{MissionStatus, WeatherType};
+use api_operations::models::event::RegistrationState;
 use chrono::{TimeZone, Utc};
+use fleet_wire_contract::rfc3339_timestamps::rfc3339_utc;
 use serde_json::json;
 
 #[test]

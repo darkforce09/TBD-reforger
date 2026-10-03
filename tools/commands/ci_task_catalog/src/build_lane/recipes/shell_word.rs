@@ -125,12 +125,32 @@ pub(crate) fn rust_api() -> Vec<Step> {
     ]
 }
 
-pub(crate) fn rust_build() -> Vec<Step> {
-    vec![Step::new(&["cargo", "build", "--all-targets"]).cd(WEB)]
+/// One step running `line` over `api` and every API crate of the workspace under `repo_root`,
+/// from the repository root. The `api-test`, `rust-test`, `rust-clippy` and `rust-build` rows of
+/// the CI task table run the same argv through [`crate::api_package_lane`].
+///
+/// # Errors
+/// The API packages cannot be derived from the workspace.
+fn api_package_step(repo_root: &Path, line: ApiLine) -> Result<Vec<Step>> {
+    let argv = api_line_argv(repo_root, line)?;
+    let words: Vec<&str> = argv.iter().map(String::as_str).collect();
+    Ok(vec![Step::new(&words)])
 }
 
-pub(crate) fn rust_test() -> Vec<Step> {
-    vec![Step::new(&["cargo", "test", "--lib", "--bins"]).cd(WEB)]
+/// `cargo build --all-targets` over `api` and every API crate.
+///
+/// # Errors
+/// As [`api_package_step`].
+pub(crate) fn rust_build(repo_root: &Path) -> Result<Vec<Step>> {
+    api_package_step(repo_root, ApiLine::Build)
+}
+
+/// `cargo test --lib --bins` over `api` and every API crate.
+///
+/// # Errors
+/// As [`api_package_step`].
+pub(crate) fn rust_test(repo_root: &Path) -> Result<Vec<Step>> {
+    api_package_step(repo_root, ApiLine::UnitTests)
 }
 
 pub(crate) fn rust_fmt() -> Vec<Step> {
@@ -141,8 +161,12 @@ pub(crate) fn rust_fmt() -> Vec<Step> {
     ]
 }
 
-pub(crate) fn rust_clippy() -> Vec<Step> {
-    vec![Step::new(&["cargo", "clippy", "--all-targets", "--", "-D", "warnings"]).cd(WEB)]
+/// `cargo clippy --all-targets -- -D warnings` over `api` and every API crate.
+///
+/// # Errors
+/// As [`api_package_step`].
+pub(crate) fn rust_clippy(repo_root: &Path) -> Result<Vec<Step>> {
+    api_package_step(repo_root, ApiLine::Clippy)
 }
 
 /// Fmt / clippy / test for the engine crates and the offline service worker.
@@ -353,8 +377,8 @@ fn rust_test_it() -> Result<u8> {
 fn rust_ci_recipes() -> Result<[Vec<Step>; 4]> {
     Ok([
         rust_fmt(),
-        rust_clippy(),
-        rust_build(),
+        rust_clippy(&cwd_root())?,
+        rust_build(&cwd_root())?,
         wasm_ci(&cwd_root())?,
     ])
 }

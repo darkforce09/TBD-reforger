@@ -119,7 +119,7 @@ One validator serves POST, PUT and PATCH:
 - DELETE is soft: it sets `deleted_at` and `deleted_by`. A deleted row answers 404 on GET, PUT,
   PATCH and DELETE and leaves the list.
 - The list orders by `name ASC, id ASC`.
-- Every mutation appends a transactional audit row (administration `required_audit`) in the same
+- Every mutation appends a transactional audit row (`api_audit_log`'s `required_audit`) in the same
   transaction.
 - The response row shape stays as served: empty optional strings are omitted.
 - Contract: `vehicle-database.schema.json`.
@@ -254,7 +254,7 @@ name files of an older layout. Their work lands at these paths:
 
 | Ticket | Plan names | Current path |
 |---|---|---|
-| T-940.7 | `admin.rs` `list_users` | `apps/api/src/administration/handlers/personnel_roster.rs` |
+| T-940.7 | `admin.rs` `list_users` | `crates/api/api_administration/src/handlers/personnel_roster.rs` |
 | T-940.7 | `pages/admin/personnel.rs` | `apps/frontend/src/pages/administration/personnel/` |
 | T-940.8 | `handlers/content/vehicles.rs`; the vehicle handlers in `content/wiki.rs` | `community_content/handlers/vehicle_database/` |
 | T-940.8 | `app.rs` routes | `community_content/routes.rs` |

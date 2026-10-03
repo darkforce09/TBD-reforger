@@ -16,7 +16,7 @@ after it ends.
   have no replay route.
 - Related features: the [deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md),
   whose service record links each match's external replay; the
-  [match telemetry domain](/apps/api/src/match_telemetry/README.md), which takes in the
+  [match telemetry domain](/crates/api/api_match_telemetry/src/README.md), which takes in the
   match results.
 
 ## Behaviour
@@ -34,7 +34,7 @@ None: no code replays a match. What exists around it:
 ## Data
 
 - `POST /api/v1/ingest/match-results` (`ingest_match_results` in
-  `apps/api/src/match_telemetry/handlers/match_results.rs`): upserts a match and its
+  `crates/api/api_match_telemetry/src/handlers/match_results.rs`): upserts a match and its
   player results; an `aar_replay_url` that is not an absolute `http://` or `https://` URL is
   refused, and an absent one keeps the stored link, so a later post can attach it.
 - The replay itself needs data the platform does not collect yet: timestamped unit positions and

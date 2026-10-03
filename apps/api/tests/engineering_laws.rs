@@ -29,13 +29,29 @@ use repository_laws::sibling_test_placement::scan_inline_test_modules;
 use repository_laws::source_roots::{is_test_file, repository_relative};
 use verification_core::{Pattern, scan};
 
-/// The repository root: two levels above `apps/api`.
+/// The repository root, found above the API package's manifest folder.
 fn repository_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(2)
-        .expect("apps/api sits two levels below the repository root")
-        .to_path_buf()
+    repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+}
+
+/// The manifests of the API: the application's and every API crate's under `crates/api/`.
+fn api_manifests(root: &Path) -> Vec<PathBuf> {
+    let mut manifests = vec![root.join("apps/api/Cargo.toml")];
+    let crates = root.join("crates/api");
+    let mut crate_manifests: Vec<PathBuf> = std::fs::read_dir(&crates)
+        .unwrap_or_else(|e| panic!("cannot read {}: {e}", crates.display()))
+        .map(|entry| entry.expect("directory entry").path().join("Cargo.toml"))
+        .filter(|manifest| manifest.is_file())
+        .collect();
+    crate_manifests.sort();
+    assert!(
+        crate_manifests.len() >= 20,
+        "found only {} API crate manifest(s) under crates/api/",
+        crate_manifests.len()
+    );
+    manifests.extend(crate_manifests);
+    manifests
 }
 
 /// The engine-layer judgement of this checkout, with every rule judged.
@@ -157,17 +173,37 @@ fn engineering_laws_frontend_does_not_depend_on_the_graphics_engine() {
 #[test]
 fn engineering_laws_api_depends_on_no_graphics_or_frontend_crate() {
     let root = repository_root();
-    let manifest =
-        read_manifest(&root.join("apps/api/Cargo.toml")).expect("the api manifest reads");
+    // The mission domain's edge to the mission crates sits in the missions crate.
+    let missions = read_manifest(&root.join("crates/api/api_missions/Cargo.toml"))
+        .expect("the missions crate manifest reads");
     assert!(
-        manifest
+        missions
             .dependencies
             .iter()
-            .any(|edge| edge.package == "mission_compiler"),
-        "the manifest reader found no mission_compiler edge, so it read nothing"
+            .any(|edge| edge.package == "mission_compiler" && !edge.is_dev_dependency()),
+        "the manifest reader found no mission_compiler edge in api_missions, so it read nothing"
     );
     let edges = rule_findings(&root, &API_RULE).expect("the api manifest reads");
     assert!(edges.is_empty(), "{}", rendered(&edges));
+    // The application's rule holds for every API crate it is assembled from.
+    let forbidden: Vec<String> = api_manifests(&root)
+        .iter()
+        .flat_map(|path| {
+            let manifest = read_manifest(path).expect("an API manifest reads");
+            let relative = repository_relative(&root, path);
+            manifest
+                .dependencies
+                .into_iter()
+                .filter(|edge| API_RULE.forbidden_packages.contains(&edge.package.as_str()))
+                .map(move |edge| {
+                    format!(
+                        "{relative}:{}: [{}] depends on {} — {}",
+                        edge.line_no, edge.table, edge.package, API_RULE.reason
+                    )
+                })
+        })
+        .collect();
+    assert!(forbidden.is_empty(), "{}", forbidden.join("\n"));
 }
 
 #[test]
@@ -184,10 +220,41 @@ fn engineering_laws_engine_layer_walls_and_crate_directions_hold() {
 #[test]
 fn engineering_laws_failpoints_are_test_only() {
     let root = repository_root();
-    let manifest =
-        read_manifest(&root.join("apps/api/Cargo.toml")).expect("the api manifest reads");
+    // The feature belongs to the failpoints crate; the crate-anatomy law holds every other
+    // manifest to enabling it from `[dev-dependencies]` only.
+    let manifest = read_manifest(&root.join("crates/api/api_failpoints/Cargo.toml"))
+        .expect("the failpoints manifest reads");
     let findings = test_only_feature_findings(&manifest, "failpoints");
     assert!(findings.is_empty(), "{}", findings.join("\n"));
+
+    // Every API manifest that compiles the registry in (the application's and the API crates'
+    // that test their failpoints) enables the feature from `[dev-dependencies]` only.
+    let mut enabling = 0;
+    let mut normal: Vec<String> = Vec::new();
+    for path in api_manifests(&root) {
+        let manifest = read_manifest(&path).expect("an API manifest reads");
+        for edge in manifest
+            .dependencies
+            .iter()
+            .filter(|edge| edge.features.iter().any(|feature| feature == "failpoints"))
+        {
+            enabling += 1;
+            if !edge.is_dev_dependency() {
+                normal.push(format!(
+                    "{}:{}: [{}] {} enables `failpoints` outside [dev-dependencies]",
+                    repository_relative(&root, &path),
+                    edge.line_no,
+                    edge.table,
+                    edge.package
+                ));
+            }
+        }
+    }
+    assert!(
+        enabling > 0,
+        "no API manifest enables `failpoints`, so the scan read nothing"
+    );
+    assert!(normal.is_empty(), "{}", normal.join("\n"));
 
     // The deploy build compiles the server with no feature flag at all.
     let deploy = root.join("tools/commands/deployment/src");

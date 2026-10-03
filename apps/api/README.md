@@ -1,10 +1,11 @@
 # Website API
 
 The `api` crate: the Axum REST [API](/documentation/glossary/a_to_f.md#api) and
-[SSE](/documentation/glossary/n_to_z.md#sse) streams behind the web platform. It serves `/api/v1` to
+[SSE](/documentation/glossary/n_to_z.md#sse) streams behind the web platform, assembled from the API
+crates under `crates/api/`. It serves `/api/v1` to
 the single-page app, the game servers and the
-[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent), owns the Postgres schema
-through its migrations, and serves uploads and terrain assets.
+[fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent), applies the Postgres schema
+migrations of `crates/api/api_database/` at boot, and serves uploads and terrain assets.
 
 ## Contents
 
@@ -12,22 +13,22 @@ through its migrations, and serves uploads and terrain assets.
 apps/api/
 ├── .env.example         the template the gitignored `.env` is copied from, with development values
 ├── Cargo.toml           the `api` package: the library and its two binaries
-├── migrations/          the SQL schema migrations, embedded at compile time and applied at boot
-├── seeds/               the development seeds `cargo xtask db seed` applies, and hand-applied data
-├── src/                 the library: `core`, the background workers, the eight domains, the binaries
+├── src/                 the thin application: the router, the composition root, the binaries, the layout rules
 └── tests/               integration suites against real Postgres, with their shared support
 ```
 
 ## How it works
 
-`src/bin/api.rs` loads the configuration, opens the Postgres pool, applies `migrations/` unless
+`src/bin/api.rs` loads the configuration, opens the Postgres pool, applies the migrations unless
 `SKIP_MIGRATE` is set, arms the [background workers](/documentation/glossary/a_to_f.md#background-workers)
 and serves the router on `0.0.0.0:$PORT` until SIGINT or SIGTERM. The router nests the eight
 domains' route tables under `/api/v1` and wraps everything in one middleware chain, outermost
 first: request id, access log, Prometheus metrics, panic recovery, CORS, body limit, rate limit.
-The terrain and glyph mounts under `/map-assets` sit below the rate limit. Each domain under
-`src/` owns its handlers, services, models and route table, and `core` imports no domain except
-where the router and the application state compose them.
+The terrain and glyph mounts under `/map-assets` sit below the rate limit. The application holds no
+domain logic: each domain is an API crate (`crates/api/api_<domain>/`) that owns its handlers,
+services, models and route table, the kernel crates below them depend on no domain, and the
+background workers are their own crate (`crates/api/api_background_workers/`), which only the
+`api` binary arms.
 
 A route's access tier is the extractor its handler takes: a signed-in member, a member of at
 least a given [role](/documentation/glossary/n_to_z.md#role), or a per-server
@@ -45,8 +46,8 @@ The integration suites in `tests/` build one test binary per top-level file. A b
 a database derives its own scratch database from `TEST_DATABASE_URL`, creates and migrates it,
 and the suites that drive HTTP build the same router the `api` binary serves. Shared support
 lives in `tests/common/` and the `*_support/` folders, which produce no binary of their own.
-Every test build compiles the crate with its `failpoints` feature, which places named fault
-points on commit and external-effect paths; the deploy build compiles them out.
+Every test build compiles `api_failpoints` with its `failpoints` feature, which places named
+fault points on commit and external-effect paths; the deploy build compiles them out.
 
 ### Verification suites
 
@@ -55,9 +56,9 @@ name starts with its group's prefix, which the verification register counts.
 
 | Group | Binaries | Shared support |
 |---|---|---|
-| route acceptance | `route_acceptance_coverage`, one `route_acceptance_<part>` per part (`identity_and_core`, `operations_events`, `operations_reservations`, `operations_ballistics`, `missions_library`, `missions_reviews`, `fleet_and_telemetry`, `administration_center_content`), and `debug_routes_are_development_only` | `route_acceptance_support/`: the route table read from `src/`, the specs and worlds per part, the derived probes and the dimension runner |
+| route acceptance | `route_acceptance_coverage`, one `route_acceptance_<part>` per part (`identity_and_core`, `operations_events`, `operations_reservations`, `operations_ballistics`, `missions_library`, `missions_reviews`, `fleet_and_telemetry`, `administration_center_content`), and `debug_routes_are_development_only` | `route_acceptance_support/`: the route table read from `src/router.rs` and the domain crates' `routes.rs`, the specs and worlds per part, the derived probes and the dimension runner |
 | contract parity | `contract_parity_goldens`, `contract_parity_equipment_viewer`, `contract_parity_mod_wire`, `json_rejection_envelopes`, `query_rejection_envelopes`, and each route acceptance part's `contract_parity_<part>_…` case | `contract_parity_support/` (golden index, normalisation, seeded capture, route contracts), `enfscript_source_support/` (the `@contract` tag grammar of the mod scripts), `fixtures/equipment_data_viewer/` |
-| properties | `session_authority_properties`, `mission_artifact_properties`, `telemetry_revision_properties`, `fleet_command_properties`, `audit_publication_properties`, `reservation_transaction_properties` | `common::property_evidence`, the recorder every property runs through; `session_authority_support/` |
+| properties | `session_authority_properties`, `mission_artifact_properties`, `telemetry_revision_properties`, `fleet_command_properties`, `audit_publication_properties`, `reservation_transaction_properties` | `api_property_evidence`, the recorder every property runs through; `session_authority_support/` |
 | controlled races | `controlled_races_identity`, `controlled_races_reservations`, `controlled_races_missions_and_telemetry`, `controlled_races_audit` | `failpoint_and_race_support/`: arming, interleavings, row-lock barriers, persisted-state checks |
 | failure injection | `failure_injection_<area>` for `identity`, `operations`, `missions`, `telemetry`, `fleet`, `audit` and `discord`, and `failure_injection_self_checks` | `failpoint_and_race_support/` |
 | engineering laws | `engineering_laws` | the `repository_laws` and `verification_core` dev-dependencies |
@@ -95,8 +96,8 @@ fragment; outside development the route answers 404.
 
 ## Configuration
 
-`Config::load` in `src/core/configuration/mod.rs` reads the process environment, then the first
-`.env` found from the working directory upward; an exported variable wins. `DATABASE_URL` and
+`Config::load` in `crates/api/api_configuration/src/configuration/mod.rs` reads the process
+environment, then the first `.env` found from the working directory upward; an exported variable wins. `DATABASE_URL` and
 `JWT_SECRET` are always required. Outside development, `DISCORD_CLIENT_ID`,
 `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR` are required too. A
 value that is set but unusable stops the boot for `UPLOAD_DIR`, `EQUIPMENT_DATA_DIR`,
@@ -104,11 +105,11 @@ value that is set but unusable stops the boot for `UPLOAD_DIR`, `EQUIPMENT_DATA_
 `.env.example` carries most variables with development values; `TRUSTED_PROXIES`,
 `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and `TEST_DATABASE_URL` are not in it.
 
-The crate has one Cargo feature, `failpoints`, off by default. `Cargo.toml` enables it only
-through the crate's dev-dependency on itself, so every test build (the unit tests and every
-`tests/*.rs` binary) carries the fault-injection registry of `src/core/failpoints/`, and the
-deploy build, `cargo build --release -p api --bin api`, which passes no feature flag,
-compiles every fault point to nothing. The `engineering_laws` suite holds both halves.
+The crate declares no Cargo feature. `Cargo.toml` turns `api_failpoints`'s `failpoints` feature
+on only through a dev-dependency, so every test build (the unit tests and every `tests/*.rs`
+binary) carries the fault-injection registry of `crates/api/api_failpoints/`, and the deploy
+build, `cargo build --release -p api --bin api`, which passes no feature flag, compiles every
+fault point to nothing. The `engineering_laws` suite holds both halves.
 
 | Variable | Default | Required | Read by |
 |---|---|---|---|
@@ -124,10 +125,10 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 | `EQUIPMENT_DATA_DIR` | `../../assets/equipment` in development, empty otherwise, which leaves the equipment datasets unconfigured; the systemd unit sets its state directory; the imported equipment datasets and their indexes | no; when set outside development, absolute | `Config::load` |
 | `EQUIPMENT_EXPORT_SOURCE_DIR` | empty, which disables importing; the Workbench equipment export publication the import worker polls | no; when set outside development, absolute | `Config::load` |
 | `DATABASE_URL` | none | yes | `Config::load`; `import-registry`; `staging-fixtures`, from the API env file |
-| `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `src/core/database/connection_pool.rs` |
-| `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | `src/core/database/connection_pool.rs` |
-| `TBD_DB_POOL_MAX_LIFETIME_SECS` | `1800` | no | `src/core/database/connection_pool.rs` |
-| `TBD_DB_POOL_ACQUIRE_TIMEOUT_SECS` | `30` | no | `src/core/database/connection_pool.rs` |
+| `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `crates/api/api_database/src/connection_pool.rs` |
+| `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | `crates/api/api_database/src/connection_pool.rs` |
+| `TBD_DB_POOL_MAX_LIFETIME_SECS` | `1800` | no | `crates/api/api_database/src/connection_pool.rs` |
+| `TBD_DB_POOL_ACQUIRE_TIMEOUT_SECS` | `30` | no | `crates/api/api_database/src/connection_pool.rs` |
 | `MISSION_VERSION_MAX_BODY_BYTES` | 256 MiB; the body limit of the mission version save route alone | no | `Config::load` |
 | `JWT_SECRET` | none; signs the access tokens | yes | `Config::load` |
 | `JWT_ACCESS_TTL_MIN` | `15` | no | `Config::load` |
@@ -136,38 +137,37 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 | `DISCORD_BOT_TOKEN` | empty, meaning no bot; a value holding whitespace stops the boot | no | `Config::load` |
 | `DISCORD_WEBHOOK_URL` | empty, which disables announcement pushes | no | `Config::load` |
 | `OBSERVABILITY_TOKEN` | empty, which answers 401 on `/metrics` and serves only the public `/healthz`; sent as `Authorization: Bearer` | no | `Config::load` |
-| `SERVER_STATUS_PUBLISH_INTERVAL_SECS` | `10` | no | `src/background_workers/server_status_publisher.rs` |
-| `LEADERBOARD_REFRESH_INTERVAL_SECS` | `900` | no | `src/background_workers/leaderboard_refresher.rs` |
-| `ROLE_RESYNC_INTERVAL_SECS` | `86400` | no | `src/background_workers/discord_role_synchronizer.rs` |
+| `SERVER_STATUS_PUBLISH_INTERVAL_SECS` | `10` | no | `crates/api/api_background_workers/src/server_status_publisher.rs` |
+| `LEADERBOARD_REFRESH_INTERVAL_SECS` | `900` | no | `crates/api/api_background_workers/src/leaderboard_refresher.rs` |
+| `ROLE_RESYNC_INTERVAL_SECS` | `86400` | no | `crates/api/api_background_workers/src/discord_role_synchronizer.rs` |
 | `SKIP_MIGRATE` | unset; any value skips the migrations at boot, for a harness that migrates a shared database itself | no | `src/bin/api.rs` |
 | `RUST_LOG` | `info`; the log filter | no | `src/bin/api.rs` |
 | `TEST_DATABASE_URL` | none; `cargo xtask db test-it` sets it | for the database suites | `tests/common/database.rs` |
 
 ## Public surface
 
-- The library `api` (`src/lib.rs`): `core`, `background_workers` and the eight domain
-  modules. Its users are this crate's binaries and integration suites.
+- The library `api` (`src/lib.rs`): `router::router`, the whole application with its middleware
+  chain, and `composition::application_state`, the application state with its concrete services.
+  Its users are this crate's binaries and integration suites.
 - The `api` binary: the server described above.
 - The `import-registry` binary: imports Workbench registry envelopes (`--items`, `--compat`) into
   Postgres for the envelope's modpack, which `--modpack` overrides; `--prune` deletes that
   modpack's rows the envelope lacks.
-- The `staging-fixtures` binary: the staging host tool; `provision-fleet` registers the staging
-  fleet's servers and writes their machine credentials into mode-600 files, and
-  `rotate-credential` stages and promotes a new credential. Every subcommand is a dry run unless
-  `--apply` is given, and runs only against the database `--confirm-database` names.
 - The HTTP surface: `/api/v1`, `/healthz` (the detailed report with the `OBSERVABILITY_TOKEN`
   bearer), `/metrics` (`OBSERVABILITY_TOKEN` bearer), `/uploads`, `/map-assets` and
   `/map-assets/glyphs`, and the built app as the fallback when `SPA_DIST_DIR` is set.
 
 ## Boundaries
 
-- Depends on: the mission crates (`mission_model`, `mission_payload`, `mission_validation`,
-  `mission_compiler`, `mission_wire_safety`), which compile and validate missions, and the
-  ballistics crates (`ballistics_model`, `ballistics_solver`, `fire_mission_planning`,
-  `ballistics_calibration`), which solve fire missions; `fleet_wire_contract`, the fleet command shapes and machine
-  credential format shared with the fleet host agent; the schemas in
-  `contracts/definitions/`, embedded at compile time; Postgres 18; Discord's OAuth2 and REST
-  APIs and a channel webhook; and, at run time, the asset trees in `assets/terrains/` and
+- Depends on: the API crates of [crates/api](/crates/api/README.md): the eight domain crates,
+  whose route tables the router merges; `api_background_workers`, which the `api` binary arms;
+  `api_state`, `api_caller_identity`, `api_discord` and `api_equipment_datasets`, which the
+  composition root assembles; `api_http_layer`, whose middleware the router mounts;
+  `api_configuration` and `api_database`, which the binaries load and open; and, for the tests
+  only, `api_failpoints` (with its `failpoints` feature), `api_property_evidence` and the mission,
+  ballistics and contract crates the suites build their requests and expectations from. Through
+  them: Postgres 18, Discord's OAuth2 and REST APIs and a channel webhook, the schemas in
+  `contracts/definitions/`, and, at run time, the asset trees in `assets/terrains/` and
   `assets/glyphs/`.
 - Used by:
   - the single-page app in `apps/frontend/`, whose Trunk server proxies `/api` and
@@ -178,12 +178,15 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
   - the release image that `deploy/Dockerfile` builds, the optional `api` service of
     `deploy/compose.staging.yml`, and the systemd unit
     `deploy/systemd/tbd-website-api.service`.
-- Rules: `core` imports no domain except in `src/core/application_state.rs` and
-  `src/core/http_router.rs`, a domain's handlers never import another domain's handlers, and
-  `background_workers` is imported only by `src/bin/api.rs` (`src/tests/architecture_rules.rs`
-  checks all three); an applied migration never changes (`tests/migrations_are_immutable.rs`);
-  the crate depends on neither `graphics_engine` nor `frontend`, and
-  `failpoints` stays a test-only feature (`tests/engineering_laws.rs`); the crate builds with
+- Rules: `src/` holds only the thin application; the kernel crates depend on no domain, the
+  domain crates depend on one another only along the domain graph, no crate imports another
+  domain's handlers, every domain's one route table is merged by `src/router.rs`, and only
+  `src/bin/api.rs` names `api_background_workers` (`src/tests/architecture_rules.rs` reads the
+  API crates' manifests and sources); an applied migration never changes
+  (`tests/migrations_are_immutable.rs`); neither the application nor any API crate depends on
+  `map_engine`, `graphics_engine` or `frontend`, and
+  `api_failpoints`' `failpoints` stays a test-only feature (`tests/engineering_laws.rs`); the
+  crate builds with
   the workspace root's `rust-toolchain.toml` and `rustfmt.toml`; the local Postgres 18 service
   `db` (container `tbd_reforger_db`, port 5434) is `deploy/compose.dev.yml`; the filled `.env` is
   never committed.

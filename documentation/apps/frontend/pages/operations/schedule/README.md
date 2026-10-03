@@ -29,7 +29,7 @@ feature doc. The code folder's README lists the page's files, calls and states.
 
 - [Event schedule page](/apps/frontend/src/pages/operations/schedule/) — the route
   component `EventSchedulePage` and the event card.
-- [Operations domain](/apps/api/src/operations/) — the event list and the event hub
+- [Operations domain](/crates/api/api_operations/src/) — the event list and the event hub
   the page reads.
 
 ## Boundaries
@@ -45,5 +45,5 @@ feature doc. The code folder's README lists the page's files, calls and states.
 
 ## Related documentation
 
-- [Operations domain](/apps/api/src/operations/README.md) — the API side of events and
+- [Operations domain](/crates/api/api_operations/src/README.md) — the API side of events and
   their hubs.

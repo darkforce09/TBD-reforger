@@ -27,9 +27,10 @@ jobs:
   # --- api: the sole backend (Rust 1.95 + Postgres 18) ---
   # fmt (FMT-1): `cargo fmt --check` on api, then `cargo fmt --all --check` on every
   # workspace member. clippy (GO-2..8 analog): `cargo clippy --all-targets -- -D warnings` on
-  # api (host target, default features), so any warning fails the job. build:
-  # `cargo build --all-targets` on api. tests: api's `cargo test` (unit + integration,
-  # TEST-1) against the Postgres service below.
+  # api and every crates/api package (host target, default features; one `-p` each, derived from
+  # the workspace), so any warning fails the job. build: `cargo build --all-targets` on the same
+  # packages. tests: their `cargo test` (unit + integration, TEST-1) against the Postgres service
+  # below.
   api:
     name: api (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
@@ -144,8 +145,8 @@ jobs:
 
   # --- workspace-members: every member the jobs above do not test ---
   # `cargo xtask ci workspace-member-tests` derives its package list from the root Cargo.toml
-  # workspace minus the members a dedicated job tests (api, frontend and the three wasm-ci
-  # crates), and runs `cargo test -p <package>` once per package, so features never
+  # workspace minus the members a dedicated job tests (api with every crates/api package,
+  # frontend and the three wasm-ci crates), and runs `cargo test -p <package>` once per package, so features never
   # unify across packages. A member the workspace gains is tested here from the moment the
   # manifest names it; `ci_local_tests_every_workspace_member` and
   # `the_ci_workflow_tests_every_workspace_member` (ci_task_catalog) keep every member in a job.

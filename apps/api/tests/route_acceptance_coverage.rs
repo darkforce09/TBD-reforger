@@ -1,7 +1,7 @@
 //! Route acceptance coverage: the route table read from source, the `@route` tags, and the
 //! specs of every part agree.
 //!
-//! The route table is parsed from `src/core/http_router.rs` and every table it merges or nests
+//! The route table is parsed from `src/router.rs` and every table it merges or nests
 //! (`route_acceptance_support::route_table`); every registered route needs exactly one spec,
 //! every spec a registered route, every spec all seven dimensions, and every success a contract
 //! that resolves; a refusal status stands as a success only on a refusal-only spec whose reason
@@ -23,10 +23,10 @@ use serde_json::{Value, json};
 use route_acceptance_support::contracts::{check_contract_resolves, json_violations};
 use route_acceptance_support::derived_probes::{declaration_problems, refusal_problems};
 use route_acceptance_support::round_trip_comparison::differences_beside_schema;
-use route_acceptance_support::route_table::{
-    Handler, RouteRow, crate_source_root, parse_route_table, route_table,
+use route_acceptance_support::route_table::{Handler, RouteRow, parse_route_table, route_table};
+use route_acceptance_support::route_tags::{
+    RouteTag, collect_api_route_tags, collect_route_tags, cross_check,
 };
-use route_acceptance_support::route_tags::{RouteTag, collect_route_tags, cross_check};
 use route_acceptance_support::spec::{Access, Contract, Role, RouteSpec};
 use route_acceptance_support::specs::all_specs;
 
@@ -47,7 +47,7 @@ fn find<'a>(rows: &'a [RouteRow], key: &str) -> &'a RouteRow {
 
 #[test]
 fn route_acceptance_route_table_matches_every_route_tag() {
-    let tags = collect_route_tags(&crate_source_root())
+    let tags = collect_api_route_tags()
         .unwrap_or_else(|errors| panic!("unreadable @route tags:\n  {}", errors.join("\n  ")));
     let rows = route_table();
     report("route table against @route tags", &cross_check(rows, &tags));
@@ -99,7 +99,7 @@ fn route_acceptance_every_spec_declares_all_seven_dimensions() {
 
 #[test]
 fn route_acceptance_every_json_success_names_a_contract() {
-    let tags = collect_route_tags(&crate_source_root())
+    let tags = collect_api_route_tags()
         .unwrap_or_else(|errors| panic!("unreadable @route tags:\n  {}", errors.join("\n  ")));
     let mut problems = Vec::new();
     for spec in all_specs() {
@@ -288,7 +288,7 @@ pub fn routes(dev: bool) -> Router<AppState> {{
     SourceTree::new(
         name,
         &[
-            ("core/http_router.rs", SYNTHETIC_ROUTER),
+            ("router.rs", SYNTHETIC_ROUTER),
             (
                 "alpha/mod.rs",
                 "pub mod handlers;\npub mod routes;\npub use routes::routes;\n",

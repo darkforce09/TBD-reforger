@@ -92,5 +92,5 @@ feed. The map backdrop and the theatre tile are images on `lh3.googleusercontent
 
 - [Server intel page](/documentation/apps/frontend/pages/command_center/server_intel/server_intel_page.md)
   — the page's behaviour and design.
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — the
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) — the
   server list and status stream routes.

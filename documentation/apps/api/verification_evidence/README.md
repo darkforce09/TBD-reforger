@@ -90,12 +90,12 @@ The notes describe the code at the time each was written; where the code has mov
 code wins:
 
 - `mission_artifacts.md:57` spells the artifact path parameter `{artifactId}`; the route is
-  `/api/v1/missions/{id}/artifacts/{artifact_id}` (`apps/api/src/missions/routes.rs`).
+  `/api/v1/missions/{id}/artifacts/{artifact_id}` (`crates/api/api_missions/src/routes.rs`).
 - `mission_artifacts.md:82-93` lists the deployment refusals without the codes
   `SERVER_INACTIVE` and `EVENT_MISSION_NOT_ON_SERVER`, which the code returns for an inactive
   server and for an event mission that does not fit the server
-  (`apps/api/src/missions/services/mission_deployments/deployment_requests.rs`; the
-  [mission deployments README](/apps/api/src/missions/services/mission_deployments/README.md)
+  (`crates/api/api_missions/src/services/mission_deployments/deployment_requests.rs`; the
+  [mission deployments README](/crates/api/api_missions/src/services/mission_deployments/README.md)
   has the full table).
 
 ## Code

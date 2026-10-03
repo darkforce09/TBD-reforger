@@ -5,8 +5,10 @@
 
 #![allow(dead_code)]
 
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
-use api::identity_and_access::services::session_issuance::issue_session;
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_identity_and_access::services::session_issuance::issue_session;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -62,12 +64,12 @@ impl Fixture {
     pub async fn new(suite: &str, shape: EventShape<'_>) -> Self {
         let url =
             common::require_test_database_url().expect("event eligibility requires PostgreSQL");
-        let pool = database::connect(&url).await.unwrap();
-        database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url).await.unwrap();
+        api_database::migrate(&pool).await.unwrap();
         let config = Config::for_tests(url, "event-eligibility");
-        let main_guild = config.discord_guild_id.clone();
-        let state = AppState::new(pool, config);
-        let app = http_router::router(state.clone());
+        let main_guild = config.discord_guild_id.to_string();
+        let state = api::composition::application_state(pool, config);
+        let app = router(state.clone());
         let mut fixture = Self {
             admin: Actor {
                 id: String::new(),
@@ -177,7 +179,12 @@ impl Fixture {
         .execute(&self.state.pool)
         .await
         .unwrap();
-        let (token, _, _) = issue_session(&self.state, &id).await.unwrap();
+        let (token, _, _) = issue_session(
+            &self.state,
+            &api_identifiers::DiscordUserId::new(id.as_str()),
+        )
+        .await
+        .unwrap();
         Actor { id, token }
     }
 

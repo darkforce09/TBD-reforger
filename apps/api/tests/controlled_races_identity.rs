@@ -24,9 +24,11 @@ use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 
-use api::core::authentication_primitives::{hash_token, random_token};
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
-use api::identity_and_access::services::session_issuance::issue_session;
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_http_layer::authentication_primitives::{hash_token, random_token};
+use api_identity_and_access::services::session_issuance::issue_session;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -110,14 +112,17 @@ impl Harness {
     async fn boot() -> Self {
         let url =
             common::require_test_database_url().expect("the identity races require PostgreSQL");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect the suite database");
-        database::migrate(&pool)
+        api_database::migrate(&pool)
             .await
             .expect("migrate the suite database");
-        let state = AppState::new(pool, Config::for_tests(url, "controlled-races-identity"));
-        let app = http_router::router(state.clone());
+        let state = api::composition::application_state(
+            pool,
+            Config::for_tests(url, "controlled-races-identity"),
+        );
+        let app = router(state.clone());
         Self { state, app }
     }
 
@@ -309,9 +314,12 @@ async fn refresh_winner_race(
     order: Interleaving,
 ) -> usize {
     let member = member(&harness.state).await;
-    let (issued_access, _, spent) = issue_session(&harness.state, &member.id)
-        .await
-        .expect("issue the session under test");
+    let (issued_access, _, spent) = issue_session(
+        &harness.state,
+        &api_identifiers::DiscordUserId::new(member.id.as_str()),
+    )
+    .await
+    .expect("issue the session under test");
     let (leader, _) = order.arrange(0, 1);
 
     let paused = suite.pause(Failpoint::SessionRotationBeforeCommit);
@@ -371,9 +379,12 @@ enum RefreshPresenter {
 async fn replay_race(harness: &Harness, order: Interleaving) -> StatusCode {
     let pool = harness.pool();
     let member = member(&harness.state).await;
-    let (issued_access, _, spent) = issue_session(&harness.state, &member.id)
-        .await
-        .expect("issue the session under test");
+    let (issued_access, _, spent) = issue_session(
+        &harness.state,
+        &api_identifiers::DiscordUserId::new(member.id.as_str()),
+    )
+    .await
+    .expect("issue the session under test");
     let first = assert_rotated(&harness.refresh(&spent).await, &spent);
     assert_eq!(
         harness.profile_status(&first.access).await,

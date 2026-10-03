@@ -97,5 +97,5 @@ and a create selects the new pack. Sizes print through `format_download_size` of
 
 - [Modpacks page](/documentation/apps/frontend/pages/doctrine_and_info/modpacks/modpacks_page.md)
   — the page's behaviour and design.
-- [Community content domain](/apps/api/src/community_content/README.md) — the modpack
+- [Community content domain](/crates/api/api_community_content/src/README.md) — the modpack
   routes this page calls.

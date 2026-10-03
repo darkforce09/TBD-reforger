@@ -20,9 +20,9 @@ tools/commands/database_operations/src/database_checks/
 
 | Verb | Checks | Exit codes |
 |---|---|---|
-| `wiki-seeds` | `SEEDS` holds `wiki_pages.sql` (by equality), and `apps/api/seeds/wiki_pages.sql` exists, is not empty and holds the `field-manual` slug; the first failing check is reported | 0 pass, 1 any failure, a missing file included |
-| `faction-library-seeds` | `apps/api/seeds/faction_library.sql` holds a live `INSERT INTO user_factions` naming `'US Army 1980s'` once SQL comments are stripped; `SEEDS` holds `faction_library.sql` (by equality); the [wave](/documentation/glossary/n_to_z.md#wave) gate's `VERIFY_STEPS` holds the `faction-library-seeds` row and both `gate_slice` and `cmd_gate` loop over it | 0 pass, 1 any failure, 2 a broken variant could not be built |
-| `no-select-star` | every `.rs` file under `apps/api/src`: a `SELECT * FROM <table>` or a `RETURNING *` line fails unless the table (for `RETURNING`, the line) names `modpack_mods` or `orbat_reservations`, the two tables with no nullable column | 0 clean, 1 a match, 2 the source tree could not be read |
+| `wiki-seeds` | `SEEDS` holds `wiki_pages.sql` (by equality), and `crates/api/api_database/seeds/wiki_pages.sql` exists, is not empty and holds the `field-manual` slug; the first failing check is reported | 0 pass, 1 any failure, a missing file included |
+| `faction-library-seeds` | `crates/api/api_database/seeds/faction_library.sql` holds a live `INSERT INTO user_factions` naming `'US Army 1980s'` once SQL comments are stripped; `SEEDS` holds `faction_library.sql` (by equality); the [wave](/documentation/glossary/n_to_z.md#wave) gate's `VERIFY_STEPS` holds the `faction-library-seeds` row and both `gate_slice` and `cmd_gate` loop over it | 0 pass, 1 any failure, 2 a broken variant could not be built |
+| `no-select-star` | every file under `apps/api/src` and `crates/api` (the API crates): a `SELECT * FROM <table>` or a `RETURNING *` line fails unless the table (for `RETURNING`, the line) names `modpack_mods` or `orbat_reservations`, the two tables with no nullable column | 0 clean, 1 a match, 2 the source tree could not be read |
 
 `SEEDS` is the constant in `tools/commands/database_operations/src/local_database.rs` that
 `cargo xtask db seed` walks; both seed gates read it in process, so an entry is either applied or

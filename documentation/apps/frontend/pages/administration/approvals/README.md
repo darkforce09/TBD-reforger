@@ -31,7 +31,7 @@ compile findings. The code folder's README lists the page's files.
   route component `MissionApprovalsPage`, the queue, the review drawer and the decision form.
 - [Mission review views](/apps/frontend/src/features/mission_review_record/) — the
   provenance, review record and comment views the drawer shares with the mission hub.
-- [Missions domain](/apps/api/src/missions/) — the approvals queue, the review record
+- [Missions domain](/crates/api/api_missions/src/) — the approvals queue, the review record
   and the decisions.
 
 ## Boundaries

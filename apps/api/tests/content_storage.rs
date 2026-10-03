@@ -11,7 +11,7 @@
 //! public name, byte for byte, beside no staging file, and a refused one must leave the directory
 //! as it was.
 
-use api::community_content::handlers::media_upload::MAX_UPLOAD_BYTES;
+use api_community_content::handlers::media_upload::MAX_UPLOAD_BYTES;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
 use uuid::Uuid;

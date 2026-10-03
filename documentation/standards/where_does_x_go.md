@@ -17,17 +17,17 @@ is drawn in the directory atlas of `CLAUDE.md`, and every code folder's README s
 | an [API](/documentation/glossary/a_to_f.md#api) endpoint | `apps/api/src/<domain>/handlers/<surface>.rs`, registered in that domain's `routes.rs`, with its `/// @route` tag |
 | API logic that two surfaces share | that domain's `services/` |
 | an API wire or database model | that domain's `models/`, the snake_case contract |
-| API code that names no domain concept: pagination, SQLSTATE predicates, wire formats, text guards, token primitives | `apps/api/src/core/` |
-| an API background ticker | `apps/api/src/background_workers/`; the work itself stays in the owning domain's `services/` |
+| API code that names no domain concept: pagination, SQLSTATE predicates, wire formats, text guards, token primitives | the API infrastructure crates under `crates/api/` (`api_foundation`, `api_http_layer`, `api_configuration`, `api_database`) |
+| an API background ticker | `crates/api/api_background_workers/src/`; the work itself stays in the owning domain's `services/` |
 | an API binary | `apps/api/src/bin/` |
-| a database migration | `apps/api/migrations/NNNN_<subject>.sql` (sqlx, embedded, applied at boot) |
-| a development seed | `apps/api/seeds/`; `cargo xtask db seed` applies the files its `SEEDS` list names, and `mock_data.sql` is applied by hand |
+| a database migration | `crates/api/api_database/migrations/NNNN_<subject>.sql` (sqlx, embedded, applied at boot) |
+| a development seed | `crates/api/api_database/seeds/`; `cargo xtask db seed` applies the files its `SEEDS` list names, and `mock_data.sql` is applied by hand |
 | map graphics, spatial computation, terrain formats, streaming, camera math, the [mission](/documentation/glossary/g_to_m.md#mission) document model | `legacy/map_engine/src/` |
 | GPU rendering primitives with no map concept | `legacy/graphics_engine/src/` |
 
 The API has eight domains: `administration`, `command_center`, `community_content`,
 `identity_and_access`, `match_telemetry`, `missions`, `operations` and `server_infrastructure`.
-`api_v1_routes` in `apps/api/src/core/http_router.rs` merges their route tables and
+`api_v1_routes` in `apps/api/src/router.rs` merges their route tables and
 nests them under `/api/v1`, so a public URL is the literal in the domain's `routes.rs` with
 `/api/v1` in front. `core` imports no domain except its composition root, a domain's handlers
 never import another domain's handlers, and `background_workers` is imported only by

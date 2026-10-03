@@ -20,12 +20,12 @@ mod failpoint_and_race_support;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::authentication_primitives::{hash_token, random_token};
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::identity_and_access::services::session_issuance::issue_session;
+use api_configuration::configuration::Config;
+use api_http_layer::authentication_primitives::{hash_token, random_token};
+use api_state::AppState;
+
+use api::router::router;
+use api_identity_and_access::services::session_issuance::issue_session;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -93,11 +93,14 @@ impl Harness {
     async fn new() -> Self {
         let url = common::require_test_database_url()
             .expect("the identity failure-injection suite requires PostgreSQL");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect to the suite database");
-        let state = AppState::new(pool, Config::for_tests(url, "failure-injection-identity"));
-        let app = http_router::router(state.clone());
+        let state = api::composition::application_state(
+            pool,
+            Config::for_tests(url, "failure-injection-identity"),
+        );
+        let app = router(state.clone());
         Self { state, app }
     }
 
@@ -161,9 +164,12 @@ impl Harness {
     async fn signed_in(&self, arma_linked: bool) -> SignedIn {
         let account = format!("{SUITE}-{}", Uuid::new_v4());
         common::access_token(&self.state, SUITE, &account, "enlisted", arma_linked).await;
-        let (access, _, refresh) = issue_session(&self.state, &account)
-            .await
-            .expect("issue a session pair");
+        let (access, _, refresh) = issue_session(
+            &self.state,
+            &api_identifiers::DiscordUserId::new(account.as_str()),
+        )
+        .await
+        .expect("issue a session pair");
         SignedIn {
             account,
             access,
@@ -311,9 +317,12 @@ async fn failure_injection_session_rotation_after_commit_makes_the_retry_a_repla
     check_refresh_families(pool, &pair.account).await.unwrap();
 
     // Recovery is a fresh sign-in, whose pair rotates normally.
-    let (_, _, fresh) = issue_session(&harness.state, &pair.account)
-        .await
-        .expect("a fresh sign-in after the revoked family");
+    let (_, _, fresh) = issue_session(
+        &harness.state,
+        &api_identifiers::DiscordUserId::new(pair.account.as_str()),
+    )
+    .await
+    .expect("a fresh sign-in after the revoked family");
     let (status, rotated) = harness.refresh(&fresh).await;
     assert_eq!(status, StatusCode::OK, "{rotated}");
     check_refresh_families(pool, &pair.account).await.unwrap();

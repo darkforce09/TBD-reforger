@@ -5,9 +5,9 @@ use super::*;
 const ROUTER: &str = r#"
 fn api_v1_routes(dev: bool, version_limit: usize) -> Router<AppState> {
     Router::new()
-        .merge(crate::server_infrastructure::routes())
-        .merge(crate::operations::routes())
-        .merge(crate::identity_and_access::routes(dev))
+        .merge(api_server_infrastructure::routes())
+        .merge(api_event_calendar::routes())
+        .merge(api_identity_and_access::routes(dev))
 }
 pub fn router(state: AppState) -> Router {
     Router::new()
@@ -72,14 +72,14 @@ pub async fn create_event() {}
 pub async fn get_me() {}
 "#;
 
-/// The three domains the fixture router merges, paired with the table each one holds.
+/// The three domain crates the fixture router merges, paired with the table each one holds.
 const TABLES: &[(&str, &str)] = &[
-    ("server_infrastructure", SERVERS_TABLE),
-    ("operations", EVENTS_TABLE),
-    ("identity_and_access", ME_TABLE),
+    ("api_server_infrastructure", SERVERS_TABLE),
+    ("api_event_calendar", EVENTS_TABLE),
+    ("api_identity_and_access", ME_TABLE),
 ];
 
-const TAGS_REL: &str = "apps/api/src/handlers/telemetry/servers.rs";
+const TAGS_REL: &str = "crates/api/api_server_infrastructure/src/handlers/servers.rs";
 
 struct Repo(PathBuf);
 impl Repo {
@@ -87,8 +87,9 @@ impl Repo {
         let mut p = std::env::temp_dir();
         p.push(format!("tbd-rt-{}-{name}", std::process::id()));
         let _ = std::fs::remove_dir_all(&p);
-        std::fs::create_dir_all(p.join("apps/api/src/handlers/telemetry")).unwrap();
-        std::fs::create_dir_all(p.join("apps/api/src/core")).unwrap();
+        std::fs::create_dir_all(p.join("apps/api/src")).unwrap();
+        std::fs::create_dir_all(p.join("crates/api/api_server_infrastructure/src/handlers"))
+            .unwrap();
         let r = Repo(p);
         r.router(ROUTER);
         for (domain, body) in TABLES {
@@ -98,18 +99,24 @@ impl Repo {
         r
     }
     fn router(&self, body: &str) {
-        std::fs::write(self.0.join("apps/api/src/core/http_router.rs"), body).unwrap();
+        std::fs::write(self.0.join("apps/api/src/router.rs"), body).unwrap();
     }
     fn table(&self, domain: &str, body: &str) {
-        let dir = self.0.join("apps/api/src").join(domain);
+        let dir = self.0.join("crates/api").join(domain).join("src");
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("routes.rs"), body).unwrap();
     }
     fn drop_table(&self, domain: &str) {
-        std::fs::remove_file(self.0.join("apps/api/src").join(domain).join("routes.rs")).unwrap();
+        std::fs::remove_file(self.0.join("crates/api").join(domain).join("src/routes.rs")).unwrap();
     }
     fn tags(&self, body: &str) {
         std::fs::write(self.0.join(TAGS_REL), body).unwrap();
+    }
+    /// Write `body` at the repository-relative `relative`, creating its folders.
+    fn file(&self, relative: &str, body: &str) {
+        let path = self.0.join(relative);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, body).unwrap();
     }
     /// Run; assert the exit code and every expected line; hand back the joined output.
     fn expect(&self, code: u8, want: &[&str]) -> String {
@@ -135,7 +142,7 @@ fn clean_tree_passes_and_counts_exactly() {
     let all = Repo::new("clean").expect(
         0,
         &[
-            "checked 6 @route tag(s) against 6 registered route(s) in 3 route file(s) under apps/api/src",
+            "checked 6 @route tag(s) against 6 registered route(s) in 3 route file(s) under crates/api",
             "  none — all 6 tag(s) resolve to a registered route.",
             "  none — all 6 registered route(s) are documented.",
             "ROUTE-TAG CHECK: PASS",
@@ -156,8 +163,8 @@ fn a_tag_pointing_at_no_route_fails() {
     let extra = "/// @route DELETE /api/v1/servers/:id\npub async fn deactivate_server() {}\n";
     r.tags(&format!("{TAGS}\n{extra}"));
     r.expect(1, &[
-            "  apps/api/src/handlers/telemetry/servers.rs:20",
-            "      @route DELETE /api/v1/servers/{id}  ->  handler `deactivate_server` is NOT registered in the api_v2 domain route tables on that method+path.",
+            "  crates/api/api_server_infrastructure/src/handlers/servers.rs:20",
+            "      @route DELETE /api/v1/servers/{id}  ->  handler `deactivate_server` is NOT registered in the API crates' route tables on that method+path.",
             "checked 7 @route tag(s) against 6 registered route(s)",
             "ROUTE-TAG CHECK: FAIL — 1 unwired tag(s), 0 undocumented route(s)",
         ]);
@@ -227,7 +234,7 @@ fn inputs_that_were_never_read_do_not_pass() {
     let all = out.join("\n");
     assert_eq!(code, 2, "a check that never ran must not exit 0:\n{all}");
     assert!(
-        all.contains("target file missing: apps/api/src/core/http_router.rs"),
+        all.contains("target file missing: apps/api/src/router.rs"),
         "{all}"
     );
     assert!(
@@ -259,9 +266,9 @@ fn zero_route_files_is_not_a_pass() {
         1,
         &[
             "FAIL: parsed NOTHING — 6 raw @route tag(s), 0 raw .route( registration(s).",
-            "FAIL: api_v1_routes merges server_infrastructure::routes but src/server_infrastructure/routes.rs does not exist",
-            "FAIL: api_v1_routes merges operations::routes but src/operations/routes.rs does not exist",
-            "FAIL: api_v1_routes merges identity_and_access::routes but src/identity_and_access/routes.rs does not exist",
+            "FAIL: api_v1_routes merges api_server_infrastructure::routes but crates/api/api_server_infrastructure/src/routes.rs does not exist",
+            "FAIL: api_v1_routes merges api_event_calendar::routes but crates/api/api_event_calendar/src/routes.rs does not exist",
+            "FAIL: api_v1_routes merges api_identity_and_access::routes but crates/api/api_identity_and_access/src/routes.rs does not exist",
             PARSE_FAIL,
         ],
     );
@@ -273,13 +280,13 @@ fn zero_route_files_is_not_a_pass() {
 fn an_unmerged_route_file_fails() {
     let r = Repo::new("unmerged");
     r.table(
-        "community_content",
+        "api_community_content",
         "pub fn routes() -> Router<AppState> {\n    Router::new().route(\"/wiki\", get(handlers::wiki::list_wiki))\n}\n",
     );
     r.expect(
         1,
         &[
-            "FAIL: route file src/community_content/routes.rs is not merged by api_v1_routes",
+            "FAIL: route file crates/api/api_community_content/src/routes.rs is not merged by api_v1_routes",
             MOUNT_TAIL,
             PARSE_FAIL,
         ],
@@ -292,16 +299,90 @@ fn an_unmerged_route_file_fails() {
 fn a_merge_without_a_route_file_fails() {
     let r = Repo::new("phantom-merge");
     r.router(&ROUTER.replace(
-        "        .merge(crate::operations::routes())\n",
-        "        .merge(crate::operations::routes())\n        .merge(crate::missions::routes(version_limit))\n",
+        "        .merge(api_event_calendar::routes())\n",
+        "        .merge(api_event_calendar::routes())\n        .merge(api_missions::routes(version_limit))\n",
     ));
     r.expect(
         1,
         &[
-            "FAIL: api_v1_routes merges missions::routes but src/missions/routes.rs does not exist",
+            "FAIL: api_v1_routes merges api_missions::routes but crates/api/api_missions/src/routes.rs does not exist",
             MOUNT_TAIL,
             PARSE_FAIL,
         ],
+    );
+}
+
+/// A table merged from the app's own tree (`crate::<module>::routes(`) is not one of the API
+/// crates' tables, so the merge has no discovered table behind it and fails rather than serving
+/// routes this gate never reads.
+#[test]
+fn a_merge_from_the_app_tree_is_not_invisible() {
+    let r = Repo::new("app-tree-merge");
+    r.router(&ROUTER.replace(
+        "        .merge(api_event_calendar::routes())\n",
+        "        .merge(api_event_calendar::routes())\n        .merge(crate::local_tables::routes())\n",
+    ));
+    r.file(
+        "apps/api/src/local_tables/routes.rs",
+        "pub fn routes() -> Router<AppState> {\n    Router::new().route(\"/x\", get(handlers::x::x))\n}\n",
+    );
+    r.expect(
+        1,
+        &[
+            "FAIL: api_v1_routes merges local_tables::routes but crates/api/local_tables/src/routes.rs does not exist",
+            PARSE_FAIL,
+        ],
+    );
+}
+
+/// The tag sweep covers the API application's own tree as well as the crates: a tag there that
+/// names no route is direction A, not unseen.
+#[test]
+fn a_tag_in_the_app_tree_is_swept() {
+    let r = Repo::new("app-tree-tag");
+    r.file(
+        "apps/api/src/bin/extra.rs",
+        "/// @route GET /api/v1/unwired\npub async fn unwired() {}\n",
+    );
+    r.expect(
+        1,
+        &[
+            "  apps/api/src/bin/extra.rs:1",
+            "checked 7 @route tag(s) against 6 registered route(s) in 3 route file(s) under crates/api",
+            "ROUTE-TAG CHECK: FAIL — 1 unwired tag(s), 0 undocumented route(s)",
+        ],
+    );
+}
+
+/// A table deeper than a crate's `src` is a handler file, never a route table; a crate folder
+/// with no table contributes nothing and no failure.
+#[test]
+fn only_a_routes_file_directly_in_a_crate_src_is_a_table() {
+    let r = Repo::new("depth");
+    r.file(
+        "crates/api/api_server_infrastructure/src/handlers/routes.rs",
+        "pub fn routes() -> Router<AppState> {\n    Router::new().route(\"/deep\", get(handlers::x::deep))\n}\n",
+    );
+    r.file("crates/api/api_state/src/lib.rs", "pub struct AppState;\n");
+    let all = r.expect(
+        0,
+        &[
+            "in 3 route file(s) under crates/api",
+            "ROUTE-TAG CHECK: PASS",
+        ],
+    );
+    assert!(!all.contains("deep"), "{all}");
+}
+
+/// The router read, the crates folder missing: the check did not run, it did not pass.
+#[test]
+fn a_missing_crates_folder_did_not_run() {
+    let r = Repo::new("no-crates");
+    std::fs::remove_dir_all(r.0.join("crates/api")).unwrap();
+    let all = r.expect(2, &[PARSE_FAIL]);
+    assert!(
+        all.contains("could not be discovered under crates/api") && !all.contains("PASS"),
+        "{all}"
     );
 }
 
@@ -312,7 +393,7 @@ fn a_broken_router_shape_is_a_failure_not_a_pass() {
     r.expect(
         1,
         &[
-            "http_router.rs no longer defines `fn api_v1_routes`",
+            "router.rs no longer defines `fn api_v1_routes`",
             SELF_REL,
             SHAPE_FAIL,
         ],
@@ -321,7 +402,7 @@ fn a_broken_router_shape_is_a_failure_not_a_pass() {
     r.expect(
         1,
         &[
-            "http_router.rs no longer nests api_v1_routes at `/api/v1`",
+            "router.rs no longer nests api_v1_routes at `/api/v1`",
             SHAPE_FAIL,
         ],
     );
@@ -334,18 +415,18 @@ fn an_unreadable_parse_is_named_not_skipped() {
     r.tags(&format!("{TAGS}\n/// @route GET /api/v1/orphaned-claim\n"));
     r.expect(1, &[
             "FAIL: 7 @route tag(s) in the tree but 6 parsed into (METHOD, PATH, HANDLER).",
-            "      orphan: ORPHAN apps/api/src/handlers/telemetry/servers.rs:20 GET /api/v1/orphaned-claim",
+            "      orphan: ORPHAN crates/api/api_server_infrastructure/src/handlers/servers.rs:20 GET /api/v1/orphaned-claim",
             ORPHAN_TAIL,
             PARSE_FAIL,
         ]);
     // A table holding no `pub fn routes` at all is a shape this extractor cannot read, and is
     // NAMED rather than silently contributing nothing.
     let n = Repo::new("no-routes-fn");
-    n.table("operations", "fn private_routes() -> Router<AppState> {\n    Router::new().route(\"/events\", get(handlers::events::list_events))\n}\n");
+    n.table("api_event_calendar", "fn private_routes() -> Router<AppState> {\n    Router::new().route(\"/events\", get(handlers::events::list_events))\n}\n");
     n.expect(
         1,
         &[
-            "      UNPARSED apps/api/src/operations/routes.rs-declares-0-column-0-pub-fn-routes",
+            "      UNPARSED crates/api/api_event_calendar/src/routes.rs-declares-0-column-0-pub-fn-routes",
             UNPARSED_TAIL,
             PARSE_FAIL,
         ],
@@ -354,7 +435,7 @@ fn an_unreadable_parse_is_named_not_skipped() {
     // directions cross-checking clean, so only the sentinel can catch it.
     let s = Repo::new("sentinel");
     s.table(
-        "server_infrastructure",
+        "api_server_infrastructure",
         &SERVERS_TABLE.replace("list_servers", "index_servers"),
     );
     s.tags(&TAGS.replace("list_servers", "index_servers"));
@@ -412,7 +493,11 @@ fn the_merge_extractor_reads_only_the_merge_function() {
     let merged = merged_domains(ROUTER);
     assert_eq!(
         merged.iter().map(String::as_str).collect::<Vec<_>>(),
-        ["identity_and_access", "operations", "server_infrastructure"],
+        [
+            "api_event_calendar",
+            "api_identity_and_access",
+            "api_server_infrastructure"
+        ],
         "the `.merge(` below `fn router` is outside the range and must not be read"
     );
     assert!(

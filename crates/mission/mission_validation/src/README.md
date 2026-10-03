@@ -74,7 +74,7 @@ the panel can select it.
     `mission_editing_commands::document_text`, which summarises those findings for the compiled
     export;
   - the [API](/documentation/glossary/a_to_f.md#api), which re-exports `Finding` and `Severity` from
-    `apps/api/src/missions/services/mission_compile.rs` and runs no rule.
+    `crates/api/api_missions/src/services/mission_compile.rs` and runs no rule.
 - Rules:
   - every rule fires on its own trip fixture, and the ids are distinct
     (`engine_self_check_passes_for_the_seed_registry`,

@@ -12,7 +12,7 @@
 //! **Position:** compiled into the `contract_parity_goldens` binary through
 //! `mod contract_parity_support;`; `contract_parity_equipment_viewer` compiles
 //! [`json_difference`] alone through a `#[path]` module. This directory adds no binary of its
-//! own. It reads `contracts/fixtures/api_goldens/`, `apps/api/seeds/` and
+//! own. It reads `contracts/fixtures/api_goldens/`, `crates/api/api_database/seeds/` and
 //! `contracts/definitions/`, and writes only the binary's own database.
 //!
 //! **Signals & state:** the capture in [`seeded_capture`] is the only state: taken once per

@@ -5,8 +5,9 @@
 //! renderer; the browser crates in wasm-only crates, `time_source` behind a target table and the
 //! frontend, and never in mission editing — neither as a manifest edge nor as the bare word
 //! `web_sys`, `leptos` or `wasm_bindgen` in any `.rs` file under the category; sqlx and axum in
-//! api crates, with axum (never sqlx) also in the `tools/browser_testing` and `tools/staging`
-//! crates, which are test and staging harness servers rather than product code; leptos in
+//! api crates, with axum also in the `tools/browser_testing` and `tools/staging` crates, which are
+//! test and staging harness servers rather than product code, and sqlx also in the one crate at
+//! [`SQLX_STAGING_TOOL_PATH`], the staging fixtures host tool; leptos in
 //! frontend crates; no tokio, axum, reqwest, resvg or image in the dependency closure of xtask
 //! (which keeps the harness servers out of it); and no map noun in a declared name of a graphics
 //! crate.
@@ -25,8 +26,8 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 use super::crate_layout::{
-    CategoryClass, MISSION_EDITING_CATEGORY, TargetPlatforms, category_class, declared_targets,
-    effective_category,
+    CategoryClass, MISSION_EDITING_CATEGORY, STAGING_FIXTURES_PATH, TargetPlatforms,
+    category_class, declared_targets, effective_category,
 };
 use crate::cargo_manifest::DependencyEdge;
 use crate::engine_layers::MAP_NOUN_DECLARATION_PATTERN;
@@ -58,9 +59,15 @@ pub(crate) const BROWSER_SOURCE_TOKEN_PATTERN: &str = r"\b(web_sys|leptos|wasm_b
 /// The one foundation package that may reach the browser, from a target table only.
 pub(crate) const TIME_SOURCE_PACKAGE: &str = "time_source";
 /// The tool categories whose crates are test and staging harness servers (the gate's static
-/// server, the staging relay): axum, never sqlx, is allowed there; [`XTASK_CLOSURE_BANS`] keeps
-/// them out of xtask.
+/// server, the staging relay): axum is allowed there, sqlx is not (outside the one crate at
+/// [`SQLX_STAGING_TOOL_PATH`]); [`XTASK_CLOSURE_BANS`] keeps them out of xtask.
 pub(crate) const HARNESS_SERVER_CATEGORIES: &[&str] = &["tools/browser_testing", "tools/staging"];
+/// The one crate outside the api crates that may depend on sqlx, named by its exact repository
+/// path: the `staging-fixtures` host tool. It is the one tool the crate-tier law already lets
+/// depend on the api crates, and it seeds and cleans staging rows directly, through sqlx, where
+/// the API's services do not cover the read or the guarded delete. No other path, and no other
+/// crate in its category, matches.
+pub(crate) const SQLX_STAGING_TOOL_PATH: &str = STAGING_FIXTURES_PATH;
 /// External crates that never enter the dependency closure of xtask.
 pub(crate) const XTASK_CLOSURE_BANS: &[&str] = &["tokio", "axum", "reqwest", "resvg", "image"];
 /// The package name of the xtask binary.
@@ -136,10 +143,11 @@ fn breached_firewall(
         |crate_name: &str| name == crate_name || name.starts_with(&format!("{crate_name}-"));
     if is_crate("sqlx") || is_crate("axum") {
         let allowed = class == Some(CategoryClass::Api)
-            || (is_crate("axum") && HARNESS_SERVER_CATEGORIES.contains(&category));
+            || (is_crate("axum") && HARNESS_SERVER_CATEGORIES.contains(&category))
+            || (is_crate("sqlx") && member.path == SQLX_STAGING_TOOL_PATH);
         return (!allowed).then_some(
             "sqlx and axum live only in api crates; axum also in the browser_testing and staging \
-             harness servers",
+             harness servers; sqlx also in tools/staging/staging_fixtures, the staging host tool",
         );
     }
     if name == "leptos" || name.starts_with("leptos_") || name.starts_with("leptos-") {

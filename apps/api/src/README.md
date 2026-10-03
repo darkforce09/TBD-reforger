@@ -1,103 +1,118 @@
 # Website API source
 
-The source of the `api` crate: the `api` library, split into a shared `core`,
-eight domains and the [background workers](/documentation/glossary/a_to_f.md#background-workers),
-and the two binaries built on it.
+The source of the `api` crate: the thin application the API crates under `crates/api/` are
+assembled into. It holds the router, the composition root, the two binaries and the layout and
+prose rules; every domain, the kernel below them and the
+[background workers](/documentation/glossary/a_to_f.md#background-workers) are API crates.
 
 ## Contents
 
 ```text
 apps/api/src/
-├── administration/         member roster, bans and warnings, the Discord role resync, the audit log
-├── background_workers/     the interval tasks the `api` binary arms at boot
-├── bin/                    the `api` server and the `import-registry` tool
-├── command_center/         the dashboard, leaderboards and per-player statistics
-├── community_content/      announcements, the wiki, the vehicle database, modpacks and uploads
-├── core/                   configuration, database, state, errors, router, middleware, shared helpers
-├── identity_and_access/    Discord sign-in, sessions, the caller's profile, the Arma link handshake
-├── lib.rs                  the `api` library root: the module tree and the source-rule tests
-├── match_telemetry/        game-runtime heartbeats and finished match results
-├── missions/               missions, versions, artifacts, reviews, deployments, armory, registries
-├── operations/             events, ORBAT slotting, reservations, service records, fire missions
-├── server_infrastructure/  servers, live status, machine credentials, fleet commands, runtime sessions
-└── tests/                  source-text rules for layout and prose, and the property-test recorder
+├── bin/             the `api` server and the `import-registry` tool
+├── composition.rs   the composition root: the application state with its concrete services
+├── lib.rs           the `api` library root: the module tree and the source-rule tests
+├── router.rs        `router`: every route and mount, and the middleware chain
+└── tests/           the layout and prose rules, and the router's unit tests
 ```
 
 ## How it works
 
-The crate is split by domain, not by layer. `core` is the floor every other module stands on.
-Each of the eight domains owns one slice of the [API](/documentation/glossary/a_to_f.md#api) with
-the same shape: `mod.rs`, a `routes.rs` that exports `pub fn routes`, and `handlers/`,
-`services/` and `models/` folders (`command_center` has no models of its own); `missions` adds
-`contract/` and `validation/`.
-`core::http_router` merges the eight route tables under `/api/v1` without adding a prefix, so a
-public URL is the path written in a domain's `routes.rs` with `/api/v1` in front. The binaries in
-`bin/` compose the library, and only `bin/api.rs` arms `background_workers`.
+The `api` binary loads `Config`, opens the pool with `api_database::connect`, applies the
+migrations with `api_database::migrate`, builds the state with
+`composition::application_state(pool, config)`, arms the workers with
+`api_background_workers::spawn_all`, and serves `router::router(state)`. On SIGINT or SIGTERM it
+begins `api_configuration::process_lifecycle::process_shutdown`, which closes every open
+[SSE](/documentation/glossary/n_to_z.md#sse) stream so the graceful drain completes.
+
+`composition.rs` constructs the services that need a concrete implementation (the database
+session authority, the Discord OAuth2 and webhook clients, the equipment datasets) and injects
+them into `api_state::AppState::new`, so the state names no domain. `AppState` is the one
+dependency container: handlers extract it whole or take one part through its `FromRef`
+implementations, and the middleware of `api_http_layer` reads only its sub-states.
+
+`router.rs` nests the `/api/v1` tree, which merges the eight domain crates' route tables
+(`api_<domain>::routes`) and adds no prefix of its own, so a public URL is the path written in a
+domain's `routes.rs` with `/api/v1` in front. Beside it the router serves `/healthz`, `/metrics`,
+the upload directory at `/uploads` (created when the router is built), the terrain and glyph trees
+at `/map-assets` and `/map-assets/glyphs` (a warning is logged at boot when either directory is
+missing), and, when `SPA_DIST_DIR` is set, the built single-page app with an `index.html`
+fallback and the cross-origin isolation headers, its offline service worker loader
+`/service_worker.js` with `Cache-Control: no-cache`. The middleware chain wraps all of it,
+outermost first: request id, access log, metrics, panic recovery, CORS, body limit, rate limit;
+the two asset mounts sit below the rate limit and never reach it, which `tests/router.rs` pins by
+the order of the two registrations in `router.rs`.
 
 ```text
-bin/api.rs ─▶ core (configuration, database, state, router)
-                 └─▶ the eight domain route tables ─▶ handlers ─▶ services ─▶ models
-bin/api.rs ─▶ background_workers ─▶ domain services
+bin/api.rs ─▶ composition ─▶ api_state and the concrete services of the API crates
+bin/api.rs ─▶ router ─▶ the eight domain route tables ─▶ handlers ─▶ services ─▶ models
+bin/api.rs ─▶ api_background_workers ─▶ domain services
 ```
 
-Dependencies point one way. A domain's handlers, services and models may use `core` and another
-domain's services and models, never its handlers. Logic that more than one domain needs goes to
-`core` when it names no domain concept (pagination, SQLSTATE checks, wire formats, the URL guard);
-logic that names one stays in its domain's `services/`, and the other domains call it there: the
-user lookup of `identity_and_access`, the [mission](/documentation/glossary/g_to_m.md#mission)
-lookups and cargo catalog of `missions`, the audit writer of `administration`, the modpack lookup
-of `community_content`, the status broadcast of `server_infrastructure`, and the
-[event](/documentation/glossary/a_to_f.md#event) status rules of `operations`. Mortar ballistics live
-in the ballistics crates under `crates/ballistics/`.
+A route's access tier is the extractor its handler takes (`AuthUser`, `LeaderUser`,
+`MissionMakerUser` and `AdminUser` from `api_http_layer::middleware`, the caller identity crate's
+`MachineCaller` for game hosts, and `ObservabilityAuth` from
+`api_http_layer::observability::observability_auth` for the operator's scraper), never its
+position in the router. Every refusal a handler answers carries the `{error, details?}` envelope of
+`api_foundation::error_handling`, extractor rejections included.
 
-A new endpoint is a handler in `<domain>/handlers/` carrying its `/// @route <METHOD> <path>` tag,
-a registration in that domain's `routes.rs`, and, for anything a second caller needs, a function
-in that domain's `services/`. Unit tests live in sibling files under a `tests/` folder, declared
-from the production file with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. The types
-generated from `contracts/definitions/` live in the `contract_schema_types` crate
-(`crates/contracts/contract_schema_types/`), one module per domain.
+A new endpoint is a handler in `crates/api/api_<domain>/src/handlers/` carrying its
+`/// @route <METHOD> <path>` tag, a registration in that domain's `routes.rs`, and, for anything a
+second caller needs, a function in that domain's `services/`. An id at a public boundary is a
+typed id from `api_identifiers` (`crates/api/api_identifiers/`), whose JSON, text and SQL bind are
+those of the bare `Uuid`, `String` or `i64`. Unit tests live in sibling files under a `tests/`
+folder, declared with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 
 ## Public surface
 
-- The library `api` (`lib.rs`): `core`, `background_workers` and the eight domain
-  modules, all public, for the binaries and the integration suites in
-  `apps/api/tests/`.
+- The library `api` (`lib.rs`): `router::router` and `composition::application_state`, for the
+  binaries and the integration suites in `apps/api/tests/`, which serve the same router.
 - The binaries `api` and `import-registry`, in `bin/`.
-- The HTTP surface: each domain's routes under `/api/v1`, and `core`'s `/healthz`, `/metrics`,
-  `/uploads`, `/map-assets`, `/map-assets/glyphs` and single-page app fallback.
+- The HTTP routes the router owns: `GET /healthz` (public status; the detailed report with the
+  `OBSERVABILITY_TOKEN` bearer), `GET /metrics` (`OBSERVABILITY_TOKEN` bearer), `/uploads`,
+  `/map-assets`, `/map-assets/glyphs` and the single-page app fallback; every `/api/v1` route
+  belongs to a domain crate.
 
 ## Boundaries
 
-- Depends on: the crates of `apps/api/Cargo.toml`, `map_engine` among them for
-  the mission compiler; the schemas in `contracts/definitions/`, embedded at compile time; the
-  migrations in `apps/api/migrations/`.
+- Depends on: the API crates in `apps/api/Cargo.toml`: the eight domain crates, whose route tables
+  the router merges; `api_background_workers`; `api_state`, `api_caller_identity`, `api_discord`
+  and `api_equipment_datasets`, which the composition root assembles; `api_http_layer`, whose
+  middleware, metrics and health surfaces the router mounts; `api_configuration` and
+  `api_database`; axum, tower and tower-http.
 - Used by: the integration suites in `apps/api/tests/`; through the binaries, the
   `cargo xtask` recipes, the release image and the systemd unit that run them; over HTTP, the
   single-page app in `apps/frontend/`, the game servers through
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, and the
   [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/`.
-- Rules:
-  - `core` imports no domain outside `core/application_state.rs` and `core/http_router.rs`; a
-    domain never imports another domain's handlers; only `bin/api.rs` (and `lib.rs`, which
-    declares it) names `background_workers`; every domain exports a route table the router
-    merges; `src/` holds no top-level `handlers/`, `services/`, `models/`, `contract/` or `auth/`
-    folder and no top-level `app.rs`, `state.rs`, `db.rs`, `config.rs` or `realtime.rs`; no
-    production file holds an inline `mod tests` body. `tests/architecture_rules.rs` checks each.
-  - The Rust files of `src/` and of the integration suites, `.env.example`, and the comment lines
-    of the seeds and migrations carry no ticket ids, no comparison with another implementation,
-    no delivery-process vocabulary and no path the crate lacks (`tests/prose_rules.rs`).
-  - The generated contract types are written into `contract_schema_types` by
-    `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`);
-    `missions/contract/loadout_projection.rs` is the one contract model maintained by hand,
-    because the generator's output for the loadout export's versioned root loses fields.
-  - The snake_case models under each domain's `models/` are the API's wire contract; the
-    single-page app's DTOs in `apps/frontend/src/foundation/transport/dto/` mirror them under
-    golden tests, so a model change updates both.
-  - Every `@route` tag resolves to a route a table registers, and every registered route to a
-    tag (`cargo xtask verify route-tags`).
+- Rules (`tests/architecture_rules.rs`, which reads the source and the Cargo manifests of this
+  crate and of every API crate):
+  - `src/` holds only `lib.rs`, `router.rs`, `composition.rs`, the two binaries, `tests/` and this
+    README;
+  - the kernel crates depend on no domain crate, and the domain crates depend on one another only
+    along the one-way domain graph (`DOMAIN_DEPENDENCIES`), read from their manifests; that
+    manifest assertion replaced the source-import layer ratchet once no layer was left inside one
+    crate;
+  - only this crate depends on `api_background_workers`, and only `bin/api.rs` names it;
+  - no crate imports another domain's handlers, and each domain crate defines one route table in
+    its `routes.rs`, which `router.rs` merges;
+  - no source file of this crate or of an API crate holds an inline `mod tests` body, a ticket id
+    or a comparison with another implementation.
+- Prose rules (`tests/prose_rules.rs`): the Rust files of `src/`, of the integration suites and of
+  every API crate's `src/`, `.env.example`, and the comment lines of the seeds and migrations in
+  `crates/api/api_database/` carry no ticket ids, no comparison with another implementation, no
+  delivery-process vocabulary and no path the crates lack.
+- Every `@route` tag resolves to a route a table registers, and every registered route to a tag
+  (`cargo xtask verify route-tags`).
 
 ## Related documentation
 
 - [API overview](/documentation/apps/api/api_overview.md) — the routes of every domain.
+- [API HTTP layer](/crates/api/api_http_layer/README.md) — the middleware, extractors, rate
+  limiters and metrics the router mounts.
+- [API application state](/crates/api/api_state/README.md) — the state the router carries and
+  its `FromRef` projections.
+- [API crates](/crates/api/README.md) — the kernel, domain and worker crates the application is
+  assembled from.
 - [Documentation standards](/documentation/standards/documentation_standards.md) — the
   module headers and the `@route` and `@contract` tags the source carries.

@@ -19,10 +19,10 @@ mod failpoint_and_race_support;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -74,10 +74,13 @@ impl ReservationWorld {
     async fn new() -> Self {
         let url = common::require_test_database_url()
             .expect("the operations failure-injection suite requires PostgreSQL");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect to the suite database");
-        let state = AppState::new(pool, Config::for_tests(url, "failure-injection-operations"));
+        let state = api::composition::application_state(
+            pool,
+            Config::for_tests(url, "failure-injection-operations"),
+        );
         let organiser = format!("{SUITE}-organiser-{}", Uuid::new_v4());
         common::access_token(&state, SUITE, &organiser, "admin", true).await;
         let player = format!("{SUITE}-player-{}", Uuid::new_v4());
@@ -121,7 +124,7 @@ impl ReservationWorld {
             .expect("create a seat");
             seats.push(seat);
         }
-        let app = http_router::router(state.clone());
+        let app = router(state.clone());
         Self {
             state,
             app,

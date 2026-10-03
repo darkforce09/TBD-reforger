@@ -1,0 +1,15 @@
+# Stage S9 K2b, third of three: the application state and its sub-state projections become
+# api_state.
+# The state file and its unit test move beside the crate root the stage writes, which re-exports
+# `AppState`, so the module prefix becomes the crate name: one `crate::` row scoped to the API
+# source and one `api::` row scoped to the API package (its integration tests and the
+# staging-fixtures binary). Grouped use trees were split before the rows ran.
+kind	from	to	scope
+#
+# The state and its test
+path	apps/api/src/core/application_state.rs	crates/api/api_state/src/application_state.rs
+path	apps/api/src/core/tests/application_state.rs	crates/api/api_state/src/tests/application_state.rs
+#
+# Module prefix
+rust_path	crate::core::application_state::	api_state::	apps/api/src
+rust_path	api::core::application_state::	api_state::	apps/api

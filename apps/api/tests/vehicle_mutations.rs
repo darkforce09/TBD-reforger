@@ -8,7 +8,8 @@
 //!
 //! ## What makes this fail (non-vacuity)
 //! Drop `#[serde(deny_unknown_fields)]` from `VehiclePatchBody` in
-//! `src/community_content/handlers/vehicle_database/validation.rs`: a PATCH naming an unknown key
+//! `crates/api/api_community_content/src/handlers/vehicle_database/validation.rs`: a PATCH naming
+//! an unknown key
 //! becomes an empty edit answered 200, and `vehicle_mutations_unknown_field_is_refused_by_every_write`
 //! goes red.
 

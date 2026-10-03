@@ -14,10 +14,9 @@
 // binary is not dead code — but rustc judges each binary on its own.
 #![allow(dead_code)]
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 
 use crate::common;
@@ -27,9 +26,9 @@ pub const ORIGIN: &str = "http://localhost:5173";
 
 pub async fn boot() -> Option<Router> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    Some(http_router::router(AppState::new(
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    Some(router(api::composition::application_state(
         pool,
         Config::for_tests(url, "router-secret"),
     )))

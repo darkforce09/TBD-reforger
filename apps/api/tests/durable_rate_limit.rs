@@ -8,7 +8,7 @@
 //! called `check()`. That is the signature defect in its production form: the code exists, the
 //! protection does not.
 //!
-//! So every test here goes through `http_router::router` — the same router `bin/api.rs` serves — and the
+//! So every test here goes through `api::router::router` — the same router `bin/api.rs` serves — and the
 //! central one is [`refusal_survives_a_restart`]: spend the bucket on one router, build a second
 //! router with a **fresh in-memory limiter** over the same database, and require the very next
 //! request to be refused. A fresh `IpLimiter` cannot refuse a first request, so nothing but the
@@ -19,7 +19,7 @@
 //!
 //! These requests carry a real `ConnectInfo` peer, because production does: `bin/api.rs` serves
 //! with `into_make_service_with_connect_info::<SocketAddr>()`. A `oneshot` without it is a request
-//! with no client, which [`core::middleware::client_identity`]'s `client_ip` reports as `None` — see
+//! with no client, which [`api_http_layer::middleware::client_identity`]'s `client_ip` reports as `None` — see
 //! [`api_binary_still_installs_connect_info`], which pins the binary so that path cannot become
 //! production's.
 //!
@@ -29,15 +29,14 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
 
-use api::background_workers::ratelimit_cleanup_worker::{
+use api_background_workers::ratelimit_cleanup_worker::{
     RATE_LIMIT_BUCKET_TTL, start_rate_limit_prune,
 };
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::core::middleware::durable_ratelimit::{RATE_LIMIT_BUCKETS_DDL, bucket_key};
-use api::core::middleware::{
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_http_layer::middleware::durable_ratelimit::{RATE_LIMIT_BUCKETS_DDL, bucket_key};
+use api_http_layer::middleware::{
     DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, STRICT_PREFIXES,
 };
 use axum::Router;
@@ -58,13 +57,13 @@ const GLOBAL_ROUTE: &str = "/api/v1/announcements";
 
 async fn boot() -> Option<(PgPool, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     Some((pool, url))
 }
 
 fn router_for(pool: PgPool, url: &str) -> Router {
-    http_router::router(AppState::new(
+    router(api::composition::application_state(
         pool,
         Config::for_tests(url, "durable-secret"),
     ))
@@ -393,10 +392,11 @@ fn prune_ttl_is_longer_than_a_full_refill() {
 /// compares them, which is what this does.
 #[test]
 fn migration_0021_is_the_ddl_constant_verbatim() {
-    let sql = include_str!("../migrations/0021_rate_limit_buckets.sql");
+    let sql =
+        include_str!("../../../crates/api/api_database/migrations/0021_rate_limit_buckets.sql");
     assert!(
         sql.contains(RATE_LIMIT_BUCKETS_DDL),
-        "migrations/0021_rate_limit_buckets.sql no longer contains RATE_LIMIT_BUCKETS_DDL \
+        "crates/api/api_database/migrations/0021_rate_limit_buckets.sql no longer contains RATE_LIMIT_BUCKETS_DDL \
          verbatim — the limiter would bind a shape the migration did not land.\n\
          --- const ---\n{RATE_LIMIT_BUCKETS_DDL}\n--- file ---\n{sql}"
     );
@@ -417,13 +417,13 @@ fn api_binary_still_installs_connect_info() {
          — without it every production request has no peer address, and both rate-limit tiers \
          stop distinguishing clients"
     );
-    // …and the prune tick the bucket table depends on is still armed, now by the worker
-    // supervisor the binary delegates every interval task to.
-    let workers = include_str!("../src/background_workers/mod.rs");
+    // …and the prune tick the bucket table depends on is still armed, by the worker set of the
+    // background workers crate the binary delegates every interval task to.
+    let workers = include_str!("../../../crates/api/api_background_workers/src/worker_set.rs");
     assert!(
         workers.contains("start_rate_limit_prune"),
-        "src/background_workers/mod.rs no longer arms the rate-limit bucket sweeper — \
-         rate_limit_buckets grows without bound"
+        "crates/api/api_background_workers/src/worker_set.rs no longer arms the rate-limit bucket \
+         sweeper — rate_limit_buckets grows without bound"
     );
 }
 

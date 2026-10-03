@@ -20,11 +20,11 @@
 mod common;
 mod session_authority_support;
 
-use api::core::application_state::AppState;
-use api::identity_and_access::services::{
+use api_identity_and_access::services::{
     session_issuance::issue_session,
     session_rotation::{logout_session, rotate_session},
 };
+use api_state::AppState;
 use axum::http::StatusCode;
 use proptest::prelude::*;
 use proptest::test_runner::TestCaseResult;
@@ -58,7 +58,7 @@ const RANK_GATED_ROUTES: [(Rank, &str); 4] = [
 fn protected_actions_require_effective_session_authority() {
     let runtime = tokio::runtime::Runtime::new().expect("build the test runtime");
     let world = runtime.block_on(PropertyWorld::open());
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "protected_actions_require_effective_session_authority",
         CASES,
         &authority_cases::authority_case(),
@@ -70,7 +70,7 @@ fn protected_actions_require_effective_session_authority() {
 fn refresh_replay_revokes_concurrently_issued_successor() {
     let runtime = tokio::runtime::Runtime::new().expect("build the test runtime");
     let world = runtime.block_on(PropertyWorld::open());
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "refresh_replay_revokes_concurrently_issued_successor",
         CASES,
         &refresh_families::refresh_steps(),
@@ -123,17 +123,24 @@ async fn check_refresh_families(world: &PropertyWorld, steps: Vec<RefreshStep>) 
     common::fixtures::seed_membership(
         &state.pool,
         &discord_id,
-        &state.cfg.discord_guild_id,
+        state.cfg.discord_guild_id.as_str(),
         "enlisted",
     )
     .await;
     let mut families = Vec::with_capacity(FAMILY_COUNT);
     for _ in 0..FAMILY_COUNT {
-        let (access, _, refresh) = issue_session(state, &discord_id)
-            .await
-            .expect("a fresh member signs in");
+        let (access, _, refresh) = issue_session(
+            state,
+            &api_identifiers::DiscordUserId::new(discord_id.as_str()),
+        )
+        .await
+        .expect("a fresh member signs in");
         let session_id = state.jwt.parse(&access).expect("issued credential").sid;
-        families.push(FamilyModel::issued(session_id, access, refresh));
+        families.push(FamilyModel::issued(
+            session_id.into_inner(),
+            access,
+            refresh,
+        ));
     }
     let mut candidates = vec![AccountModel { families }];
     for step in steps {

@@ -6,7 +6,7 @@
 //! completion under the failed lease cannot apply it again, and a further refresh of the same
 //! answer leaves the recorded membership as it is.
 //! **Position:** its own test binary over `reconcile_one` of
-//! `identity_and_access::services::discord_rest_reconciliation`, which carries the failpoints
+//! `api_identity_and_access::services::discord_rest_reconciliation`, which carries the failpoints
 //! `DiscordRoleSyncBeforeEffect` and `DiscordRoleSyncAfterEffect`; Discord is a local HTTP fake
 //! reached through `DiscordService::set_api_base`, counting the member reads it answers.
 //! **Signals & state:** the process-global failpoint registry, serialised by the suite lock every
@@ -22,14 +22,15 @@ mod failpoint_and_race_support;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use api::core::{application_state::AppState, configuration::Config, database};
-use api::identity_and_access::services::discord_client::GuildMember;
-use api::identity_and_access::services::discord_membership_cache::{
+use api_configuration::configuration::Config;
+use api_discord::discord_client::GuildMember;
+use api_identity_and_access::services::discord_membership_cache::{
     MembershipRefreshLease, accept_membership_observation,
 };
-use api::identity_and_access::services::discord_rest_reconciliation::{
+use api_identity_and_access::services::discord_rest_reconciliation::{
     enroll_accounts, reconcile_one,
 };
+use api_state::AppState;
 use axum::routing::get;
 use axum::{Router, http::StatusCode};
 use failpoint_and_race_support::{Failpoint, FailpointArming, lock_suite};
@@ -60,8 +61,8 @@ impl DiscordRefresh {
     async fn open(case: &str) -> Self {
         let url = common::require_test_database_url()
             .expect("the Discord failure-injection suite requires PostgreSQL");
-        let pool = database::connect(&url).await.expect("connect");
-        database::migrate(&pool).await.expect("migrate");
+        let pool = api_database::connect(&url).await.expect("connect");
+        api_database::migrate(&pool).await.expect("migrate");
         let discord_id = format!("fi-{case}-{}", Uuid::new_v4().simple());
         common::seed_user(
             &pool,
@@ -73,7 +74,7 @@ impl DiscordRefresh {
         .await;
         let mut config = Config::for_tests(url, "failure-injection-discord");
         config.discord_bot_token = "bot-token".into();
-        let mut state = AppState::new(pool, config);
+        let mut state = api::composition::application_state(pool, config);
 
         let member_reads = Arc::new(AtomicUsize::new(0));
         let counter = Arc::clone(&member_reads);
@@ -214,7 +215,7 @@ impl DiscordRefresh {
         assert!(held, "the lease stays held until it expires");
         assert_eq!(revision, before.3 + 1);
         let lease = MembershipRefreshLease {
-            discord_id: self.discord_id.clone(),
+            discord_id: self.discord_id.clone().into(),
             guild_id: self.state.cfg.discord_guild_id.clone(),
             revision,
             lease_token: token.expect("the failed attempt holds its lease"),

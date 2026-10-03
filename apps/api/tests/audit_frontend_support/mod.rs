@@ -5,7 +5,7 @@
 //! load the history through the list route's keyset pages, merge live rows and history rows by
 //! audit id, and reload the history on `reset`.
 //! **Position:** drives `GET /api/v1/admin/audit-logs/stream` and `GET /api/v1/admin/audit-logs`
-//! through the real router; writes rows through `administration::services::required_audit` and
+//! through the real router; writes rows through `api_audit_log::required_audit` and
 //! the audited warning route; validates every stream item and list page against
 //! `audit-log.schema.json` through `contract_support`.
 //! **Signals & state:** [`AuditConsoleFixture`] holds [`SEQUENCE_LOCK`] for its whole life;
@@ -22,12 +22,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::pin::Pin;
 use std::time::Duration;
 
-use api::administration::models::audit_log::AuditSeverity;
-use api::administration::services::audit_publication::publish_audit_batch;
-use api::administration::services::required_audit::{
-    append_actor_audit_with_severity, append_system_audit,
-};
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
+use api::router::router;
+use api_administration::services::audit_publication::publish_audit_batch;
+use api_audit_log::AuditSeverity;
+use api_audit_log::required_audit::{append_actor_audit_with_severity, append_system_audit};
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, Bytes, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -72,14 +72,17 @@ impl AuditConsoleFixture {
         let sequence = SEQUENCE_LOCK.lock().await;
         let url = common::require_test_database_url()
             .expect("the audit frontend suite requires the isolated PostgreSQL test database");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect test database");
-        database::migrate(&pool)
+        api_database::migrate(&pool)
             .await
             .expect("migrate test database");
-        let state = AppState::new(pool.clone(), Config::for_tests(url, "audit-frontend"));
-        let app = http_router::router(state.clone());
+        let state = api::composition::application_state(
+            pool.clone(),
+            Config::for_tests(url, "audit-frontend"),
+        );
+        let app = router(state.clone());
         let admin_id = format!("{SUITE}-admin-{}", Uuid::new_v4());
         let admin = common::access_token(&state, SUITE, &admin_id, "admin", true).await;
         Self {
@@ -140,7 +143,7 @@ impl AuditConsoleFixture {
         append_actor_audit_with_severity(
             &mut transaction,
             AuditSeverity::Info,
-            &self.admin_id,
+            &api_identifiers::DiscordUserId::new(self.admin_id.as_str()),
             "audit_frontend.held",
             "user",
             &self.admin_id,
@@ -277,7 +280,7 @@ async fn write_marked_row(
     append_actor_audit_with_severity(
         &mut transaction,
         severity,
-        actor,
+        &api_identifiers::DiscordUserId::new(actor),
         "audit_frontend.write",
         "user",
         actor,

@@ -31,8 +31,8 @@ session reports.
 - Related: the [server control](/documentation/glossary/n_to_z.md#server-control) glossary entry; the
   [server intel page](/documentation/apps/frontend/pages/command_center/server_intel/server_intel_page.md),
   the members' read-only view of the same servers; the API's
-  [server infrastructure domain](/apps/api/src/server_infrastructure/README.md) and
-  [missions domain](/apps/api/src/missions/README.md); the
+  [server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) and
+  [missions domain](/crates/api/api_missions/src/README.md); the
   [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) and its
   [README](/apps/fleet_host_agent/README.md); the
   [fleet command ledger evidence](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
@@ -180,11 +180,11 @@ The README's [Data](/apps/frontend/src/pages/administration/server_control/READM
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/servers` (`list_servers` in
-  `apps/api/src/server_infrastructure/handlers/server_intel.rs`): every server,
+  `crates/api/api_server_infrastructure/src/handlers/server_intel.rs`): every server,
   active or not, in name order, each with its cached
   status row, its required modpack and the terrain of its current match.
 - `POST /api/v1/servers` (`create_server` in
-  `apps/api/src/server_infrastructure/handlers/server_registry.rs`): registers a
+  `crates/api/api_server_infrastructure/src/handlers/server_registry.rs`): registers a
   server, active unless the body says otherwise, and answers 201 with its row, whose `status` and
   `terrain` are `null` until the server reports. It trims the name and refuses a blank one
   ("name is required"), refuses an `ip` that is not a literal address ("ip must be a literal IPv4
@@ -192,7 +192,7 @@ lists each call with the DTO it reads or sends. Server-side:
   hostname and would silently drop a mask. It refuses a port outside 1 to 65535 and an unknown
   `required_modpack_id`, and records `server.create` in the transaction that writes the row
   (`register_server` in
-  `apps/api/src/server_infrastructure/services/server_registration.rs`).
+  `crates/api/api_server_infrastructure/src/services/server_registration.rs`).
 - `PATCH /api/v1/servers/{id}` (`update_server`): changes the fields the body names, with the same
   checks; `required_modpack_id: null` clears the requirement, `is_active` deactivates or
   reactivates, and a body naming nothing is refused. It answers the changed row and records
@@ -206,7 +206,7 @@ lists each call with the DTO it reads or sends. Server-side:
 - `GET /api/v1/modpacks` (`list_modpacks` in the community content domain): every modpack, for
   the registration form's required-modpack choice.
 - `GET /api/v1/servers/{id}/commands` (`list_server_commands` in
-  `apps/api/src/server_infrastructure/handlers/fleet_commands.rs`): the server's
+  `crates/api/api_server_infrastructure/src/handlers/fleet_commands.rs`): the server's
   commands, newest first, 50 by default.
 - `POST /api/v1/servers/{id}/commands` (`request_server_command`): records the command and answers 202 with its receipt; a
   deactivated server is refused with 409 "a deactivated server accepts no commands", and a kick
@@ -227,7 +227,7 @@ lists each call with the DTO it reads or sends. Server-side:
   and cancellation while the command is still queued (409 `COMMAND_NOT_CANCELLABLE`, with its
   state, otherwise).
 - `GET /api/v1/servers/{id}/deployments` (`list_server_deployments` in
-  `apps/api/src/missions/handlers/mission_deployments.rs`): the server's deployments,
+  `crates/api/api_missions/src/handlers/mission_deployments.rs`): the server's deployments,
   newest first, 20 by default.
 - `POST /api/v1/servers/{id}/deployments` (`request_server_deployment`): in one transaction the API validates
   the request, records the deployment with its seat bindings, issues its fleet command and
@@ -249,11 +249,11 @@ lists each call with the DTO it reads or sends. Server-side:
   operations whose `server_id` is this server) and `GET /api/v1/events/{id}` for each of those.
 - `GET /api/v1/fleet/scenarios`, `PUT /api/v1/fleet/scenarios/{terrainKey}` and `DELETE` on the
   same path (`list_fleet_scenarios`, `put_fleet_scenario` and `delete_fleet_scenario` in
-  `apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`): the registry of
+  `crates/api/api_server_infrastructure/src/handlers/fleet_scenarios.rs`): the registry of
   fleet scenarios; the API checks the same patterns and records `fleet.scenario_registered` or
   `fleet.scenario_removed`.
 - `GET /api/v1/servers/{id}/credentials` (`list_server_credentials` in
-  `apps/api/src/server_infrastructure/handlers/machine_credentials.rs`): the
+  `crates/api/api_server_infrastructure/src/handlers/machine_credentials.rs`): the
   server's credentials without secrets. `POST` on the same path issues one, for `host_agent` or
   `mod_runtime`, and its answer is the only one that carries the secret.
   `DELETE /api/v1/servers/{id}/credentials/{credentialId}?reason=<text>`

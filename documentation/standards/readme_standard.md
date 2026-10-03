@@ -141,12 +141,12 @@ table, with a skeleton and a worked sample written from a real folder; the
 |---|---|---|---|
 | area root | Getting started | `readme_area_root.md` | `apps/`, `apps/mod/`, `tools/` |
 | crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `apps/api/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
-| domain or subsystem | Public surface | `readme_domain.md` | `apps/api/src/missions/`, `legacy/map_engine/src/spatial/` |
+| domain or subsystem | Public surface | `readme_domain.md` | `crates/api/api_missions/src/`, `legacy/map_engine/src/spatial/` |
 | leaf | none | `readme_leaf.md` | `crates/line_of_sight/interior_line_of_sight/src/` |
 | page | Routes, Data, States | `readme_page.md` | `apps/frontend/src/pages/operations/schedule/` |
 | app | Routes, Public surface | `readme_app.md` | `apps/frontend/src/workspaces/editor/` |
 | command-line | Commands | `readme_command_line.md` | `tools/developer_tools/src/bin/`, `tools/commands/database_operations/src/` |
-| data (contracts, assets, fixtures, migrations, seeds) | Format, Producers and consumers | `readme_data.md` | `contracts/fixtures/missions/`, `apps/api/migrations/` |
+| data (contracts, assets, fixtures, migrations, seeds) | Format, Producers and consumers | `readme_data.md` | `contracts/fixtures/missions/`, `crates/api/api_database/migrations/` |
 | mod scripts | Authority | `readme_mod_scripts.md` | `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` |
 | mod assets | Format, Referenced by | `readme_mod_assets.md` | `apps/mod/tbd-framework/Prefabs/` |
 | deploy or config | Configuration, Installed by | `readme_deploy_config.md` | `deploy/` |
@@ -205,7 +205,7 @@ Go down this list and take the first kind that fits.
 6. **deploy or config**: templates, service units and profiles that set up a host or a server
    (`deploy/`, `tools/xtask/dedicated_server_profiles/`).
 7. **data**: schemas, fixtures, migrations, seeds and asset data that code reads rather than runs
-   (`contracts/definitions/`, `apps/api/seeds/`, `assets/`, `assets/terrains/`).
+   (`contracts/definitions/`, `crates/api/api_database/seeds/`, `assets/`, `assets/terrains/`).
 8. **command-line**: a crate's `src/bin/`, and each folder directly under
    `tools/xtask/src/commands/` (`tools/developer_tools/src/bin/`,
    `apps/api/src/bin/`, `tools/commands/database_operations/src/`). Any other folder that

@@ -3,8 +3,8 @@
 # README template: data
 
 **When to use:** a folder of schemas, fixtures, migrations, seeds or asset data that code reads
-rather than runs: `contracts/definitions/`, a fixture folder, `apps/api/migrations/`,
-`apps/api/seeds/`, `assets/terrains/`. The
+rather than runs: `contracts/definitions/`, a fixture folder, `crates/api/api_database/migrations/`,
+`crates/api/api_database/seeds/`, `assets/terrains/`. The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the data kind adds Format, and Producers and consumers.
 
@@ -116,7 +116,7 @@ name.
     usage text, as the offline `--artifact-file` for `cargo xtask mod playtest`;
   - tests that load one mission by name: the map engine's compiler flatten tests
     (`crates/mission/mission_compiler/src/game_document/tests/`), the API's schema
-    validator test (`apps/api/src/missions/contract/tests/schema_validators.rs`), and the
+    validator test (`crates/api/api_missions/src/contract/tests/schema_validators.rs`), and the
     xtask schema and mission-test tests, which reach `valid/` through `mission_fixtures_valid_dir`.
 
 ## Boundaries

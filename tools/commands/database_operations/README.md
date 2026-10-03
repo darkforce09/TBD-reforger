@@ -14,7 +14,7 @@ timers on the website host run the backup and the drill.
 
 ```text
 tools/commands/database_operations/
-├── Cargo.toml  the `database_operations` library package: `process_runner`, `repository_checks`, `api_readiness_checks`, layout tier 4
+├── Cargo.toml  the `database_operations` library package: `process_runner`, `repository_checks`, `repository_laws`, `api_readiness_checks`, layout tier 4
 └── src/        the local database lane, backup, restore, drill, the container layer, the source checks and the errors
 ```
 
@@ -62,7 +62,7 @@ clap usage error exits 2.
 - Does: `compose up -d db` starts Postgres (`tbd_reforger_db`, host port 5434) in the background;
   `compose down` stops it and keeps the data volume; `compose logs -f db` follows the log until
   interrupted; `seed` applies `discord_roles.sql`, `registry_dev.sql`, `faction_library.sql`,
-  `vehicle_database.sql` and `wiki_pages.sql` from `apps/api/seeds/`, in that order, each through
+  `vehicle_database.sql` and `wiki_pages.sql` from `crates/api/api_database/seeds/`, in that order, each through
   `psql -v ON_ERROR_STOP=1`, stopping at the first failed file. Seeding needs the tables the API's
   boot migrations create: start `cargo xtask mk rust-api` once first. Each compose command names
   `deploy/compose.dev.yml` and runs in `deploy/`; `TBD_MK_WEB` points it at another folder, and
@@ -97,8 +97,10 @@ clap usage error exits 2.
 - Synopsis: `cargo xtask db test-it [--test <binary>]... [--lib] [<filter>]`
 - Does: creates one database for the run, named from the label in `TBD_IT_BASE_DB` (default
   `rust_it`) plus random hex, runs the API's suite against it with
-  `cargo test --locked --no-fail-fast`, and drops the run's databases afterwards whatever the tests
-  did. A selection narrows the run and prints that it is no readiness receipt. Needs `db up`.
+  `cargo test --locked --no-fail-fast -p api -p <every crates/api package>` (a `--test` selection
+  names `-p api` alone, which holds the integration binaries), and drops the run's databases
+  afterwards whatever the tests did. A selection narrows the run and prints that it is no
+  readiness receipt. Needs `db up`.
 - Exit codes: the test run's code when non-zero, else the cleanup's; 1 a label off the scratch
   allow-list; 2 a malformed `--test` or filter.
 - Example: `cargo xtask db test-it --test factions`

@@ -31,7 +31,7 @@ check that did not run, never as a pass.
 | Verb | Reads | Fails when | Exit codes |
 |---|---|---|---|
 | `engine-layers` | `legacy/graphics_engine` (sources and `Cargo.toml`), `legacy/map_engine/src`, `apps/frontend` (sources and `Cargo.toml`) | a rule below is broken, a matcher self-probe answers wrongly, or a walk finds no files | 0 pass, 1 breach, 2 a root or manifest missing |
-| `route-tags` | `apps/api/src`: the domain `routes.rs` tables, `core/http_router.rs`, every `@route` tag | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
+| `route-tags` | `crates/api/<crate>/src/routes.rs` tables, `apps/api/src/router.rs`, every `@route` tag under `apps/api/src` and `crates/api` | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
 | `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; the frontend's sources; `apps/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
 | `editor-orbat-coherency` | named editor, store and symbology files; `cargo test` runs | a ban matches, a pin is absent, or a test pin fails or runs no test | 0 pass, 1 every failure |
 
@@ -57,8 +57,8 @@ in order as a step of `ci-local`.
 
 Direction A requires every `/// @route METHOD PATH` tag to name a route that a domain table
 registers on that method for that handler; direction B requires every registered route to carry
-that tag. The route side is the union of the `apps/api/src/<domain>/routes.rs` tables
-that `api_v1_routes` merges under `/api/v1`; the `route_tags/` README describes the guards.
+that tag. The route side is the union of the `crates/api/<crate>/src/routes.rs` tables
+that `api_v1_routes` in `apps/api/src/router.rs` merges under `/api/v1`; the `route_tags/` README describes the guards.
 
 ### ORBAT coherency
 

@@ -29,7 +29,7 @@ into each page type, claiming every wire field, and expects each negative fixtur
 - Depends on: `serde`.
 - Used by: the equipment data viewer in `apps/frontend/src/workspaces/debug/data_viewer/`.
 - Rules: the API's equipment data viewer handlers in
-  `apps/api/src/community_content/handlers/equipment_data_viewer/` and the schemas
+  `crates/api/api_community_content/src/handlers/equipment_data_viewer/` and the schemas
   lead, and these types follow; every wire field is claimed
   (`equipment_viewer_dataset_parity` through `equipment_viewer_resource_cards_parity` in
   `apps/frontend/src/foundation/transport/dto/tests/equipment_data_viewer_parity.rs`).

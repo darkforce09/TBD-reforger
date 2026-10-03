@@ -89,7 +89,7 @@ Page folders sit under `apps/frontend/src/pages/`, workspace folders under
   item selected, so one feature doc covers each pair.
 - `/events` asks `GET /api/v1/events` for its list with no `scope`, so the API's default,
   `upcoming`, applies (`list_events` in
-  `apps/api/src/operations/handlers/event_listing.rs`). The schedule embeds the
+  `crates/api/api_operations/src/handlers/event_listing.rs`). The schedule embeds the
   [event](/documentation/glossary/a_to_f.md#event) hub, whose feature doc describes the hub view and
   the [ORBAT](/documentation/glossary/n_to_z.md#orbat) slotting once for the schedule, `/events/:id`
   and the ORBAT selection page alike.

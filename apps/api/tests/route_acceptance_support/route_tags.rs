@@ -1,4 +1,5 @@
-//! The `/// @route METHOD PATH` tags in `src/` and their cross-check against the route table.
+//! The `/// @route METHOD PATH` tags of the API (`src/` and every API crate's `src/`) and their
+//! cross-check against the route table.
 //!
 //! **Role:** collects every column-0 `@route` tag with the column-0 `pub fn` it documents, and
 //! compares the tags with the parsed [`super::route_table::RouteRow`]s in both directions.
@@ -15,7 +16,7 @@
 
 use std::path::{Path, PathBuf};
 
-use super::route_table::{Handler, RouteRow};
+use super::route_table::{Handler, RouteRow, api_crate_source_roots, crate_source_root};
 use super::rust_source_scanning::{module_directory, rust_files_under};
 
 /// One `@route` tag and the handler it documents.
@@ -27,7 +28,7 @@ pub struct RouteTag {
     pub path: String,
     /// The name of the documented `pub fn`.
     pub handler_fn: String,
-    /// The file holding the tag, relative to `src/`.
+    /// The file holding the tag: relative to `src/`, or absolute in an API crate.
     pub file: PathBuf,
     /// The tag's 1-based line.
     pub line: usize,
@@ -44,8 +45,53 @@ impl RouteTag {
 pub fn collect_route_tags(src_root: &Path) -> Result<Vec<RouteTag>, Vec<String>> {
     let mut tags = Vec::new();
     let mut errors = Vec::new();
-    for path in rust_files_under(src_root) {
-        let relative = path.strip_prefix(src_root).unwrap_or(&path).to_path_buf();
+    scan_tree(
+        src_root,
+        TagFileSpelling::RelativeToRoot,
+        &mut tags,
+        &mut errors,
+    );
+    finish_collection(tags, errors, &src_root.display().to_string())
+}
+
+/// Every `@route` tag the API's route table can reach: the tags under this package's `src/`, with
+/// files relative to it, and the tags under every API crate's `src/`, with absolute files — the
+/// spelling the route table gives a handler module in each. The handlers live in the API crates,
+/// so `src/` alone may hold no tag; the collection fails only when the whole set is empty.
+pub fn collect_api_route_tags() -> Result<Vec<RouteTag>, Vec<String>> {
+    let mut tags = Vec::new();
+    let mut errors = Vec::new();
+    let package_root = crate_source_root();
+    scan_tree(
+        &package_root,
+        TagFileSpelling::RelativeToRoot,
+        &mut tags,
+        &mut errors,
+    );
+    for root in api_crate_source_roots().map_err(|error| vec![error])? {
+        scan_tree(&root, TagFileSpelling::Absolute, &mut tags, &mut errors);
+    }
+    let scope = format!("{} or any API crate's src/", package_root.display());
+    finish_collection(tags, errors, &scope)
+}
+
+/// How a collected tag spells its file.
+#[derive(Debug, Clone, Copy)]
+enum TagFileSpelling {
+    /// Relative to the scanned root (this package's `src/`, or a synthetic tree).
+    RelativeToRoot,
+    /// The absolute path (an API crate's `src/`).
+    Absolute,
+}
+
+/// Scan every Rust file under `root`, appending its tags and its malformed or orphaned tag lines.
+fn scan_tree(
+    root: &Path,
+    spelling: TagFileSpelling,
+    tags: &mut Vec<RouteTag>,
+    errors: &mut Vec<String>,
+) {
+    for path in rust_files_under(root) {
         let text = match std::fs::read_to_string(&path) {
             Ok(text) => text,
             Err(error) => {
@@ -53,10 +99,25 @@ pub fn collect_route_tags(src_root: &Path) -> Result<Vec<RouteTag>, Vec<String>>
                 continue;
             }
         };
-        scan_file(&relative, &text, &mut tags, &mut errors);
+        let file = match spelling {
+            TagFileSpelling::RelativeToRoot => {
+                path.strip_prefix(root).unwrap_or(&path).to_path_buf()
+            }
+            TagFileSpelling::Absolute => path.clone(),
+        };
+        scan_file(&file, &text, tags, errors);
     }
+}
+
+/// The collected tags, or the errors; an empty, error-free collection is itself an error, since a
+/// walk that found no tag has lost the tree and every cross-check would pass vacuously.
+fn finish_collection(
+    tags: Vec<RouteTag>,
+    mut errors: Vec<String>,
+    scope: &str,
+) -> Result<Vec<RouteTag>, Vec<String>> {
     if tags.is_empty() && errors.is_empty() {
-        errors.push(format!("no @route tag under {}", src_root.display()));
+        errors.push(format!("no @route tag under {scope}"));
     }
     if errors.is_empty() {
         Ok(tags)

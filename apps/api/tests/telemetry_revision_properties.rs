@@ -25,16 +25,15 @@ mod telemetry_support;
 
 use std::cell::Cell;
 
-use api::core::application_state::AppState;
-use api::match_telemetry::models::match_registration::decode_registration;
-use api::match_telemetry::models::match_results_revision::{
+use api_caller_identity::machine_caller::{MachineCaller, authenticate_machine};
+use api_identifiers::MatchId;
+use api_match_telemetry::models::match_registration::decode_registration;
+use api_match_telemetry::models::match_results_revision::{
     MatchResultsAnswer, decode_results_revision,
 };
-use api::match_telemetry::services::match_registration::register_match;
-use api::match_telemetry::services::match_results_ingest::ingest_results_revision;
-use api::server_infrastructure::services::machine_credentials::{
-    MachineCaller, authenticate_machine,
-};
+use api_match_telemetry::services::match_registration::register_match;
+use api_match_telemetry::services::match_results_ingest::ingest_results_revision;
+use api_state::AppState;
 use proptest::prelude::*;
 use proptest::test_runner::TestCaseResult;
 use serde_json::{Value, json};
@@ -318,7 +317,7 @@ impl RevisionWorld {
             .await
             .expect("register the case's match");
         assert!(answer.registered, "a fresh source registers a new match");
-        answer.match_id
+        answer.match_id.into_inner()
     }
 }
 
@@ -336,7 +335,7 @@ fn check_answer(
         .filter(|index| roster.owners[**index].is_none())
         .map(|index| roster.arma[*index].clone())
         .collect();
-    prop_assert_eq!(answer.match_id, match_id);
+    prop_assert_eq!(answer.match_id, MatchId::new(match_id));
     prop_assert_eq!(answer.revision, revision);
     prop_assert_eq!(answer.applied, applied);
     prop_assert_eq!(answer.players, present.len());
@@ -466,7 +465,7 @@ fn telemetry_revisions_contribute_exactly_once() {
     let runtime = tokio::runtime::Runtime::new().expect("build the test runtime");
     let world = runtime.block_on(RevisionWorld::open());
     let coverage = Coverage::default();
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "telemetry_revisions_contribute_exactly_once",
         CASES,
         &stream_strategy(),

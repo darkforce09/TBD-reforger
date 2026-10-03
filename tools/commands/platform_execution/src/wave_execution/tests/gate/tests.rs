@@ -30,16 +30,28 @@ fn both_gates_run_the_same_ten_class_r_verifies() {
 }
 
 /// The wave gate tests every workspace member: `test workspace members` derives every member
-/// outside the dedicated packages, every dedicated package is a workspace member, and the step
-/// that tests each dedicated package is wired into the gate.
+/// outside the dedicated packages and the API family, every dedicated package is a workspace
+/// member, and the step that tests each dedicated package (the API family with `api`) is wired
+/// into the gate.
 #[test]
 fn the_wave_gate_tests_every_workspace_member() {
     let root = tool_test_support::test_repo_root();
-    let derived = ci_task_catalog::workspace_member_tests::member_packages_except(
+    let derived = ci_task_catalog::workspace_member_tests::member_packages_outside_api_family(
         &root,
         &gate_dispatch::WAVE_GATE_DEDICATED_TEST_PACKAGES,
     )
     .expect("every dedicated package is a workspace member");
+    let api_crates: Vec<String> = repository_laws::workspace_members::read_workspace_members(&root)
+        .expect("the workspace members read")
+        .into_iter()
+        .filter(|member| member.parent_folder() == "crates/api")
+        .map(|member| member.package_name)
+        .collect();
+    assert!(!api_crates.is_empty(), "the workspace names no API crate");
+    assert!(
+        !derived.iter().any(|package| api_crates.contains(package)),
+        "the API crates run in `test api`, not again per member: {derived:?}"
+    );
     assert!(!derived.is_empty(), "the derived step names no package");
     let source = include_str!("../../gate/gate_dispatch.rs")
         .split_whitespace()

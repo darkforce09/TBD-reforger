@@ -1,10 +1,9 @@
 //! Community-content reads — list envelopes, tier enforcement, the wiki save round trip and the
 //! vehicle create round trip. Needs `TEST_DATABASE_URL` (see `common::require_test_database_url`).
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -17,15 +16,15 @@ mod contract_support;
 
 async fn setup() -> Option<(Router, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let _ = sqlx::query("DELETE FROM wiki_pages WHERE slug = 'content-test'")
         .execute(&pool)
         .await;
     let _ = sqlx::query("DELETE FROM vehicle_databases WHERE name = 'content-test-vehicle'")
         .execute(&pool)
         .await;
-    let app = http_router::router(AppState::new(
+    let app = router(api::composition::application_state(
         pool,
         Config::for_tests(url, "content-secret"),
     ));

@@ -21,7 +21,7 @@ contracts/definitions/equipment-data-viewer/
 
 `cargo xtask ci schema-codegen` generates one Rust module per schema into
 `crates/contracts/contract_schema_types/src/generated/community_content/equipment_data_viewer/`,
-and the handlers in `apps/api/src/community_content/handlers/equipment_data_viewer/` answer the
+and the handlers in `crates/api/api_community_content/src/handlers/equipment_data_viewer/` answer the
 `GET /api/v1/debug/equipment-data/…` routes with those types:
 
 | Schema | Root type | Routes under `/api/v1/debug/equipment-data/` |
@@ -56,7 +56,7 @@ wire field, and refuses every `negative/` one.
 - Producers: people; the schemas are written by hand alongside the viewer's handlers.
 - Consumers:
   - `cargo xtask ci schema-codegen`, which generates the API models;
-  - the API handlers and services under `apps/api/src/community_content/`, through
+  - the API handlers and services under `crates/api/api_community_content/src/`, through
     the generated models;
   - `apps/api/tests/contract_parity_equipment_viewer.rs`, which imports a committed
     export, validates every route's answer against its schema and requires it to equal its

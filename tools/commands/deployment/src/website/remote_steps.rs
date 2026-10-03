@@ -125,7 +125,7 @@ pub(crate) struct StagingHostTool {
 /// relay instance's host agent.
 pub(crate) const STAGING_HOST_TOOLS: [StagingHostTool; 2] = [
     StagingHostTool {
-        package: "api",
+        package: "staging_fixtures",
         executable: "staging-fixtures",
     },
     StagingHostTool {

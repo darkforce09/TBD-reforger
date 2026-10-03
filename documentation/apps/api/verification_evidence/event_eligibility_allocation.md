@@ -12,7 +12,7 @@ evidence is the command output recorded in progress_checkpoint.md.
   policy (`event_squad_access_policies`) or slot policy (`orbat_slots.access_policy`) replaces the
   broader one for its seats: slot, then squad, then event. A missing child policy inherits; an
   empty grant list admits nobody. Grants are alternatives; the conditions of one grant are
-  conjoined (`operations/services/event_access/evaluation.rs`).
+  conjoined (`crates/api/api_operations/src/services/event_access/evaluation.rs`).
 - Conditions: `authenticated`, `tbd_member`, `discord_role`, `event_group`, `named_account`.
   Groups are either a managed roster (every entry records who added it, or the system transition
   that did) or a partner guild whose membership comes only from bot-authenticated Discord

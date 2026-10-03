@@ -73,7 +73,7 @@ fn staging_load_data_decodes_agrees_and_digests_both_files_length_framed() {
 
 #[test]
 fn staging_load_population_states_the_host_tool_fixture_plan() {
-    let root = repository_root().join("apps/api/src/bin/staging_fixtures");
+    let root = repository_root().join("tools/staging/staging_fixtures/src");
     let plan = std::fs::read_to_string(root.join("load_fixture_events/fixture_plan.rs")).unwrap();
     let reserved = std::fs::read_to_string(root.join("reserved_accounts.rs")).unwrap();
     let data = committed();

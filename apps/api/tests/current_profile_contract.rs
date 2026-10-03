@@ -1,8 +1,7 @@
 //! Validate actual /me responses against the schema, generated types, and frontend golden.
-use api::{
-    core::{application_state::AppState, configuration::Config, database, http_router},
-    identity_and_access::models::current_profile::CurrentProfileResponse,
-};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_identity_and_access::models::current_profile::CurrentProfileResponse;
 use axum::{
     body::{Body, to_bytes},
     http::{Request, StatusCode},
@@ -17,10 +16,13 @@ const SCHEMA: &str = include_str!("../../../contracts/definitions/current-profil
 #[tokio::test]
 async fn current_profile_handler_schema_generated_types_and_frontend_golden_agree() {
     let url = common::require_test_database_url().unwrap();
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(pool, Config::for_tests(url, "current-profile-contract"));
-    let app = http_router::router(state.clone());
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state = api::composition::application_state(
+        pool,
+        Config::for_tests(url, "current-profile-contract"),
+    );
+    let app = router(state.clone());
     let expected: Value = serde_json::from_str(GOLDEN).unwrap();
     let user = &expected["user"];
     let actor = user["discord_id"].as_str().unwrap();

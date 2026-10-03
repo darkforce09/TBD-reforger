@@ -152,8 +152,8 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
     `cargo test -p frontend`, and a release Trunk build;
   - no file imports `graphics_engine` (`cargo xtask verify engine-layers`);
   - the captures in `contracts/fixtures/api_goldens/` are taken from a fresh database seeded with
-    `apps/api/seeds/registry_dev.sql` and then
-    `apps/api/seeds/content_golden.sql`, by the recipe that closes
+    `crates/api/api_database/seeds/registry_dev.sql` and then
+    `crates/api/api_database/seeds/content_golden.sql`, by the recipe that closes
     `content_golden.sql`, and every golden reproduces from the seed through that recipe: the reads
     in `_index.tsv` order, then its writes in index order, each sending its `*.request.json` body
     when it has one;

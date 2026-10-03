@@ -15,12 +15,13 @@
 //! so its refusal proves the ban revokes live sessions; every machine secret comes from
 //! `issue_machine_credential`, stored hashed exactly as the issue route stores it.
 
+use api_identifiers::DiscordUserId;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::server_infrastructure::services::machine_credentials::{
+use api_server_infrastructure::services::machine_credentials::{
     issue_machine_credential, revoke_machine_credential,
 };
+use api_state::AppState;
 use fleet_wire_contract::ExecutorKind;
 use uuid::Uuid;
 
@@ -101,19 +102,19 @@ async fn credential(
     let mut transaction = state.pool.begin().await.expect("begin credential fixture");
     let issued = issue_machine_credential(
         &mut transaction,
-        server,
+        server.into(),
         executor_kind(executor),
         "Route acceptance",
-        author,
+        &DiscordUserId::new(author),
     )
     .await
     .unwrap_or_else(|error| panic!("issue route acceptance credential: {error:?}"));
     if revoked {
         revoke_machine_credential(
             &mut transaction,
-            server,
+            server.into(),
             issued.credential.id,
-            author,
+            &DiscordUserId::new(author),
             "route acceptance revoked credential",
         )
         .await

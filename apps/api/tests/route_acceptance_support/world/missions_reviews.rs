@@ -22,8 +22,8 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::http_router;
+use api::router::router;
+use api_state::AppState;
 use axum::Router;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
@@ -393,7 +393,7 @@ impl MissionsReviewsWorld {
 
 impl PartWorld for MissionsReviewsWorld {
     async fn build(state: &mut AppState, actors: &Actors) -> Self {
-        let app = http_router::router(state.clone());
+        let app = router(state.clone());
         let setup = Setup::of(&app, &state.pool, actors);
         setup.register_scenario(TERRAIN).await;
         let under_review = setup.submitted("under review").await;

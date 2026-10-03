@@ -41,7 +41,7 @@ Forge" dialog; each set's README says what it shows and how the built tab differ
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md), the
   [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md)
   and the [glossary](/documentation/glossary/README.md); the arsenal code, the registry handlers in
-  `apps/api/src/missions/handlers/` and the ticket registry in `.ai/tickets/`.
+  `crates/api/api_missions/src/handlers/` and the ticket registry in `.ai/tickets/`.
 - Used by: the [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md);
   the in-code READMEs of `apps/frontend/src/workspaces/editor/arsenal/` and its folders,
   which link the feature doc under Related documentation.

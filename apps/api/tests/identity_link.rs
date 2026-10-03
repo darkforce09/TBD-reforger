@@ -6,7 +6,7 @@
 //!
 //! Authenticating as the shared `dev-login` snowflake ([`common::DEV_LOGIN_USER`]) is forbidden
 //! here: `GET /me` computes `arma_linked` from the **database** row
-//! (`identity_and_access::handlers::member_profile`), and
+//! (`api_identity_and_access::handlers::member_profile`), and
 //! `auth_refresh.rs` asserts `arma_linked == true` on that same shared id, so nulling that row's
 //! `arma_id` and relinking it interleaves ahead of auth_refresh under a concurrent
 //! `cargo test -p api` and fails it. Actors here live in a private snowflake range and
@@ -26,10 +26,10 @@
 //! gate DB fails. [`DB_LOCK`] therefore serialises the async tests, and `setup` releases the
 //! seed placeholders before `seed_user` (same pattern as live arma ids).
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -70,7 +70,7 @@ async fn host_agent_secret(pool: &PgPool, server: uuid::Uuid) -> String {
     let secret = format!(
         "tbdm_{}_{}",
         credential.simple(),
-        api::core::authentication_primitives::random_token(32)
+        api_http_layer::authentication_primitives::random_token(32)
     );
     sqlx::query(
         "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by)
@@ -78,7 +78,7 @@ async fn host_agent_secret(pool: &PgPool, server: uuid::Uuid) -> String {
     )
     .bind(credential)
     .bind(server)
-    .bind(api::core::authentication_primitives::hash_token(&secret))
+    .bind(api_http_layer::authentication_primitives::hash_token(&secret))
     .bind(common::DEV_LOGIN_USER)
     .execute(pool)
     .await
@@ -89,8 +89,8 @@ async fn host_agent_secret(pool: &PgPool, server: uuid::Uuid) -> String {
 async fn setup() -> Option<(Router, AppState, PgPool)> {
     // Unset → skip; set-but-live-DB → panic before connect/UPDATE/DELETE.
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     // Scoped cleanup only — never touch `common::DEV_LOGIN_USER`. Fail loud on SQL errors: a
     // swallowed error hides a unique-index / migrate race and leaves a poisoned row behind.
@@ -155,8 +155,11 @@ async fn setup() -> Option<(Router, AppState, PgPool)> {
     .await
     .unwrap_or_else(|e| panic!("identity_link unlink actor: {e}"));
 
-    let state = AppState::new(pool.clone(), Config::for_tests(url, "identity-secret"));
-    let app = http_router::router(state.clone());
+    let state = api::composition::application_state(
+        pool.clone(),
+        Config::for_tests(url, "identity-secret"),
+    );
+    let app = router(state.clone());
     Some((app, state, pool))
 }
 
@@ -481,7 +484,7 @@ async fn arma_link_flow() {
 /// Pin `ingest_link_confirm`'s trim.
 ///
 /// A suite that only ever posts clean `"steam-xyz"` ids leaves `req.arma_id.trim()`
-/// (`identity_and_access::handlers::arma_link_codes`) and the ingest bind of `p.arma_id.trim()`
+/// (`api_identity_and_access::handlers::arma_link_codes`) and the ingest bind of `p.arma_id.trim()`
 /// held by comments, not
 /// gates. A regression that stored the padded wire form makes the account read as linked
 /// while every future `WHERE arma_id = $1` misses.

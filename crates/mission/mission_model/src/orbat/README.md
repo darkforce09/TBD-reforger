@@ -39,13 +39,13 @@ stores `faction` verbatim in `orbat_slots.faction`, which the
 - Used by:
   - `mission_payload`, whose export payload embeds `derive_orbat_from_editor`'s
     result as `orbat`;
-  - the API: `apps/api/src/operations/services/mod.rs`
+  - the API: `crates/api/api_operations/src/services/mod.rs`
     re-exports the templates and `parse_orbat_template` for the event mission attachment
-    (`apps/api/src/operations/handlers/event_mission_attachment.rs`, which also calls
+    (`crates/api/api_operations/src/handlers/event_mission_attachment.rs`, which also calls
     `validate_faction_join_key`), the reservation restore in
-    `apps/api/src/operations/services/event_reservations/` and the
+    `crates/api/api_operations/src/services/event_reservations/` and the
     [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) slot bindings in
-    `apps/api/src/missions/services/mission_deployments/`.
+    `crates/api/api_missions/src/services/mission_deployments/`.
 - Rules:
   - a non-empty top-level `orbat` wins, and a payload that does not decode derives from the editor
     graph or yields nothing (`legacy_orbat_wins`, `empty_payloads_yield_nothing` in

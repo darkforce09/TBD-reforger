@@ -19,9 +19,9 @@
 //! the router is assembled from it; each world's namespace keeps its accounts apart from every
 //! other world's.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::{database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use axum::Router;
 use serde_json::Value;
 
@@ -117,14 +117,14 @@ impl<W: PartWorld> World<W> {
     pub async fn build(suite: &'static str, namespace: u8) -> World<W> {
         let url = common::require_test_database_url()
             .expect("TEST_DATABASE_URL is required for the route acceptance binaries");
-        let pool = database::connect(&url).await.expect("connect");
-        database::migrate(&pool).await.expect("migrate");
+        let pool = api_database::connect(&url).await.expect("connect");
+        api_database::migrate(&pool).await.expect("migrate");
         let mut config = Config::for_tests(url, JWT_SECRET);
         W::configure(&mut config);
-        let mut state = AppState::new(pool, config);
+        let mut state = api::composition::application_state(pool, config);
         let actors = Actors::create(&state, suite, namespace).await;
         let part = W::build(&mut state, &actors).await;
-        let app = http_router::router(state.clone());
+        let app = router(state.clone());
         World {
             core: WorldCore {
                 app,

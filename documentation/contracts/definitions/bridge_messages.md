@@ -50,7 +50,7 @@ Every message carries the same envelope:
 `player.identityId` is the engine identity the framework already keys slot enforcement on, the
 same `arma_id` the website binds to a member through `POST /api/v1/ingest/link-confirm`
 (`ingest_link_confirm` in
-`apps/api/src/identity_and_access/handlers/arma_link_confirmation.rs`). The voice
+`crates/api/api_identity_and_access/src/handlers/arma_link_confirmation.rs`). The voice
 client matches a connection to an in-game player by this id and never by what the client claims.
 
 ### Message lifecycle

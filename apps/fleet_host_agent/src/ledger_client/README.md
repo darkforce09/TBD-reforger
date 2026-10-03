@@ -76,7 +76,7 @@ HTTPS, and installs the `ring` TLS provider once.
   the executor routes (`ClaimedFleetCommand`, `ExecutionStart`, `ExecutionResult`), the ones the
   API writes and reads; the `reqwest` (rustls without a bundled provider), `rustls`, `serde`,
   `serde_json`, `uuid`, `rand`, `tokio` and `tracing` crates; the API's `/api/v1/fleet-executor/` routes in
-  `apps/api/src/server_infrastructure/routes.rs`.
+  `crates/api/api_server_infrastructure/src/routes.rs`.
 - Used by: `apps/fleet_host_agent/src/main.rs`, which runs the loop until SIGTERM or SIGINT, and
   `apps/fleet_host_agent/tests/host_agent_ledger.rs`, which runs it against a stand-in of the
   executor routes.

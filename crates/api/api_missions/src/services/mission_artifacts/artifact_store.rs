@@ -1,0 +1,306 @@
+//! Compile a mission version into an immutable artifact, or return the artifact identical inputs
+//! already produced, and read artifacts back.
+
+use api_identifiers::{DiscordUserId, MissionArtifactId, MissionId, MissionVersionId, ModpackId};
+use chrono::{DateTime, Utc};
+use mission_compiler::COMPILER_PACKAGE_VERSION;
+use mission_compiler::unsupported_authored_data;
+use serde::Serialize;
+use serde_json::Value;
+use sqlx::PgConnection;
+
+use super::artifact_inputs::{compiled_metadata, load_catalog_snapshot};
+use crate::contract::schema_validators::validate_mission_document;
+use crate::models::mission::Mission;
+use crate::services::mission_compile::flatten_to_mod_document_with_catalog;
+use api_foundation::error_handling::api_error::ApiError;
+use api_foundation::wire_format::content_digest::canonical_json;
+use content_digest::sha256_hex;
+use fleet_wire_contract::rfc3339_timestamps::rfc3339_utc;
+use mission_compiler::Error as CompileError;
+
+/// An artifact's provenance as operators and reviewers see it; the document bytes are served
+/// separately.
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct MissionArtifact {
+    /// Artifact row id.
+    pub id: MissionArtifactId,
+    /// Mission the artifact belongs to.
+    pub mission_id: MissionId,
+    /// Mission version the artifact was compiled from.
+    pub mission_version_id: MissionVersionId,
+    /// SHA-256 hex of the version's authored JSON payload.
+    pub version_payload_sha256: String,
+    /// Compiled mission metadata recorded with the artifact.
+    pub metadata: sqlx::types::Json<Value>,
+    /// SHA-256 hex of the canonical JSON of [`MissionArtifact::metadata`].
+    pub metadata_sha256: String,
+    /// SHA-256 hex of the canonical cargo catalog of the modpack current at compile time.
+    pub catalog_sha256: String,
+    /// Modpack current at compile time; absent when no modpack is current.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub modpack_id: Option<ModpackId>,
+    /// Version of [`MissionArtifact::modpack_id`]; absent when no modpack is current.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub modpack_version: Option<String>,
+    /// Mission compiler package version that produced the document.
+    pub compiler_version: String,
+    /// Schema version of the compiled mission document.
+    pub schema_version: String,
+    /// Terrain the compiled mission document targets.
+    pub terrain: String,
+    /// SHA-256 hex of the compiled document bytes.
+    pub document_sha256: String,
+    /// Size of the compiled document in bytes.
+    pub document_bytes: i32,
+    /// Compile findings: a JSON array of `rule_id`/`severity`/`subject`/`subject_id`/`message`.
+    pub diagnostics: sqlx::types::Json<Value>,
+    /// SHA-256 hex over every compile input; unique, so identical inputs share one artifact.
+    pub artifact_digest: String,
+    /// Discord user id of the member who compiled the artifact.
+    pub created_by: String,
+    /// When the artifact was stored, serialized as an RFC 3339 UTC timestamp.
+    #[serde(with = "rfc3339_utc")]
+    pub created_at: DateTime<Utc>,
+}
+
+pub(crate) const ARTIFACT_COLUMNS: &str = "id, mission_id, mission_version_id, version_payload_sha256, \
+     metadata, metadata_sha256, catalog_sha256, modpack_id, modpack_version, compiler_version, \
+     schema_version, terrain, document_sha256, document_bytes, diagnostics, artifact_digest, \
+     created_by, created_at";
+
+/// Cap on the findings a rejection echoes. Every constraint in `mission.schema.json` under
+/// `slots[]` is per slot, so one systematic defect on a large mission yields one finding per
+/// slot; the full count always ships and the full list reaches the log.
+pub(crate) const MAX_REPORTED_FINDINGS: usize = 20;
+
+/// The distinct findings in first-reported order, and how many there are. The schema reaches
+/// `slots[]` through two paths, so every slot finding arrives twice.
+pub(crate) fn reported_findings(findings: Vec<String>) -> (usize, Vec<String>) {
+    let mut seen = std::collections::HashSet::with_capacity(findings.len());
+    let unique: Vec<String> = findings
+        .into_iter()
+        .filter(|finding| seen.insert(finding.clone()))
+        .collect();
+    (unique.len(), unique)
+}
+
+fn rejection(code: &str, message: String, findings: Vec<String>) -> ApiError {
+    let (count, unique) = reported_findings(findings);
+    if !unique.is_empty() {
+        tracing::warn!(code, findings = count, detail = %unique.join("; "), "artifact compilation refused");
+    }
+    let shown: Vec<&String> = unique.iter().take(MAX_REPORTED_FINDINGS).collect();
+    ApiError::with_details(
+        axum::http::StatusCode::UNPROCESSABLE_ENTITY,
+        message,
+        serde_json::json!({
+            "code": code,
+            "schema": "mission.schema.json",
+            "finding_count": count,
+            "findings": shown,
+        }),
+    )
+}
+
+/// Compile `version` of `mission` against the current catalog into an artifact authored by
+/// `actor`. Identical inputs return the artifact they already produced. Authored gameplay data
+/// the document cannot carry is refused with every authored path it concerns, so an artifact
+/// always plays as authored.
+pub async fn compile_artifact(
+    connection: &mut PgConnection,
+    mission: &Mission,
+    version: MissionVersionId,
+    actor: &DiscordUserId,
+) -> Result<MissionArtifact, ApiError> {
+    let payload: String = sqlx::query_scalar(
+        "SELECT json_payload::text FROM mission_versions WHERE id = $1 AND mission_id = $2",
+    )
+    .bind(version)
+    .bind(mission.id)
+    .fetch_optional(&mut *connection)
+    .await?
+    .ok_or_else(|| ApiError::not_found("mission version not found"))?;
+    let snapshot = load_catalog_snapshot(connection).await?;
+    let document = match flatten_to_mod_document_with_catalog(
+        mission,
+        payload.as_bytes(),
+        &snapshot.catalog,
+    ) {
+        Ok(document) => document,
+        Err(CompileError::NoSlots) => {
+            return Err(rejection(
+                "NO_PLACED_SLOTS",
+                "the version has no placed slots".into(),
+                Vec::new(),
+            ));
+        }
+        Err(CompileError::Parse(detail)) => {
+            return Err(rejection(
+                "UNCOMPILABLE_VERSION",
+                "the version does not compile".into(),
+                vec![detail],
+            ));
+        }
+    };
+    let authored: Value = serde_json::from_str(&payload).unwrap_or(Value::Null);
+    let unsupported = unsupported_authored_data(&document, &authored);
+    if !unsupported.is_empty() {
+        return Err(rejection(
+            "UNSUPPORTED_AUTHORED_DATA",
+            "the version authors gameplay data the mission document cannot carry".into(),
+            unsupported,
+        ));
+    }
+    let diagnostics = serde_json::to_value(
+        document
+            .diagnostics
+            .iter()
+            .map(|finding| {
+                serde_json::json!({
+                    "rule_id": finding.rule_id,
+                    "severity": finding.severity.as_str(),
+                    "subject": finding.subject,
+                    "subject_id": finding.subject_id,
+                    "message": finding.message,
+                })
+            })
+            .collect::<Vec<_>>(),
+    )
+    .unwrap_or_else(|_| Value::Array(Vec::new()));
+    let bytes = serde_json::to_vec(&document)
+        .map_err(|_| ApiError::internal("the compiled document could not be serialized"))?;
+    let findings = validate_mission_document(&bytes)
+        .map_err(|_| ApiError::internal("mission validation unavailable"))?;
+    if !findings.is_empty() {
+        return Err(rejection(
+            "DOCUMENT_CONTRACT_VIOLATION",
+            "the compiled document violates the mission contract".into(),
+            findings,
+        ));
+    }
+    let metadata = compiled_metadata(mission);
+    let metadata_sha256 = sha256_hex(canonical_json(&metadata).as_bytes());
+    let version_payload_sha256 = sha256_hex(payload.as_bytes());
+    let document_sha256 = sha256_hex(&bytes);
+    let (modpack_id, modpack_version) = snapshot.modpack.clone().unzip();
+    let digest_input = canonical_json(&serde_json::json!({
+        "compiler_version": COMPILER_PACKAGE_VERSION,
+        "schema_version": document.schema_version,
+        "mission_version_id": version,
+        "version_payload_sha256": version_payload_sha256,
+        "metadata_sha256": metadata_sha256,
+        "catalog_sha256": snapshot.sha256,
+        "modpack_id": modpack_id,
+        "modpack_version": modpack_version,
+        "document_sha256": document_sha256,
+    }));
+    let artifact_digest = sha256_hex(digest_input.as_bytes());
+    let inserted: Option<MissionArtifact> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "INSERT INTO mission_artifacts (mission_id, mission_version_id, version_payload_sha256,
+             metadata, metadata_sha256, catalog_sha256, modpack_id, modpack_version, compiler_version,
+             schema_version, terrain, document, document_sha256, document_bytes, diagnostics,
+             artifact_digest, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+         ON CONFLICT (artifact_digest) DO NOTHING
+         RETURNING {ARTIFACT_COLUMNS}"
+    )))
+    .bind(mission.id)
+    .bind(version)
+    .bind(&version_payload_sha256)
+    .bind(sqlx::types::Json(&metadata))
+    .bind(&metadata_sha256)
+    .bind(&snapshot.sha256)
+    .bind(modpack_id)
+    .bind(&modpack_version)
+    .bind(COMPILER_PACKAGE_VERSION)
+    .bind(&document.schema_version)
+    .bind(&document.meta.terrain)
+    .bind(&bytes)
+    .bind(&document_sha256)
+    .bind(bytes.len() as i32)
+    .bind(sqlx::types::Json(&diagnostics))
+    .bind(&artifact_digest)
+    .bind(actor)
+    .fetch_optional(&mut *connection)
+    .await?;
+    match inserted {
+        Some(artifact) => {
+            for finding in &document.diagnostics {
+                tracing::warn!(
+                    artifact = %artifact.id,
+                    rule = %finding.rule_id,
+                    severity = %finding.severity.as_str(),
+                    subject = %finding.subject,
+                    subject_id = %finding.subject_id.as_ref().map_or("", |id| id.as_str()),
+                    detail = %finding.message,
+                    "compile diagnostic",
+                );
+            }
+            Ok(artifact)
+        }
+        None => load_artifact_by_digest(connection, &artifact_digest).await,
+    }
+}
+
+async fn load_artifact_by_digest(
+    connection: &mut PgConnection,
+    digest: &str,
+) -> Result<MissionArtifact, ApiError> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT {ARTIFACT_COLUMNS} FROM mission_artifacts WHERE artifact_digest = $1"
+    )))
+    .bind(digest)
+    .fetch_one(connection)
+    .await?)
+}
+
+/// Load artifact `artifact` of `mission`; not found when it is missing or of another mission.
+pub async fn load_artifact(
+    connection: &mut PgConnection,
+    mission: MissionId,
+    artifact: MissionArtifactId,
+) -> Result<MissionArtifact, ApiError> {
+    sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT {ARTIFACT_COLUMNS} FROM mission_artifacts WHERE id = $1 AND mission_id = $2"
+    )))
+    .bind(artifact)
+    .bind(mission)
+    .fetch_optional(connection)
+    .await?
+    .ok_or_else(|| ApiError::not_found("artifact not found"))
+}
+
+/// An artifact's exact compiled bytes, their SHA-256, and the compile's findings.
+pub struct ArtifactDocument {
+    /// The compiled mission document bytes, exactly as stored.
+    pub bytes: Vec<u8>,
+    /// SHA-256 hex of [`ArtifactDocument::bytes`].
+    pub sha256: String,
+    /// Compile findings as a JSON array.
+    pub diagnostics: Value,
+}
+
+/// Load the compiled document bytes, their SHA-256 and the compile findings of `artifact`.
+pub async fn load_artifact_document(
+    connection: &mut PgConnection,
+    artifact: MissionArtifactId,
+) -> Result<ArtifactDocument, ApiError> {
+    let row: Option<(Vec<u8>, String, sqlx::types::Json<Value>)> = sqlx::query_as(
+        "SELECT document, document_sha256, diagnostics FROM mission_artifacts WHERE id = $1",
+    )
+    .bind(artifact)
+    .fetch_optional(connection)
+    .await?;
+    let (bytes, sha256, diagnostics) =
+        row.ok_or_else(|| ApiError::not_found("artifact not found"))?;
+    Ok(ArtifactDocument {
+        bytes,
+        sha256,
+        diagnostics: diagnostics.0,
+    })
+}
+
+#[cfg(test)]
+#[path = "tests/artifact_store.rs"]
+mod tests;

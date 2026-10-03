@@ -312,48 +312,52 @@ checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 name = "api"
 version = "0.1.0"
 dependencies = [
- "ammonia",
  "anyhow",
- "api",
- "async-stream",
+ "api_administration",
+ "api_audit_log",
+ "api_background_workers",
+ "api_caller_identity",
+ "api_command_center",
+ "api_community_content",
+ "api_configuration",
+ "api_database",
+ "api_discord",
+ "api_equipment_datasets",
+ "api_failpoints",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_identity_and_access",
+ "api_match_telemetry",
+ "api_member_activity",
+ "api_mission_vocabulary",
+ "api_missions",
+ "api_operations",
+ "api_property_evidence",
+ "api_server_infrastructure",
+ "api_state",
  "axum",
- "axum-extra",
- "ballistics_calibration",
  "ballistics_model",
- "ballistics_solver",
  "chrono",
+ "content_digest",
  "contract_schema_types",
- "csv",
  "dotenvy",
  "fire_mission_planning",
  "fleet_wire_contract",
  "futures",
- "governor",
- "hex",
  "http_url_guard",
  "jsonschema",
  "jsonwebtoken",
  "mission_compiler",
- "mission_model",
- "mission_payload",
- "mission_validation",
- "mission_wire_safety",
  "proptest",
- "pulldown-cmark",
- "rand 0.10.2",
- "regress 0.10.5",
  "repository_laws",
+ "repository_layout",
  "reqwest",
- "rust_decimal",
  "rustls",
  "serde",
  "serde_json",
- "sha2 0.11.0",
  "sqlx",
- "subtle",
- "thiserror 2.0.18",
  "tokio",
- "tokio-stream",
  "tower",
  "tower-http 0.7.0",
  "tracing",
@@ -361,6 +365,433 @@ dependencies = [
  "url",
  "uuid",
  "verification_core",
+]
+
+[[package]]
+name = "api_administration"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_caller_identity",
+ "api_failpoints",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_identity_and_access",
+ "api_member_activity",
+ "api_state",
+ "async-stream",
+ "axum",
+ "chrono",
+ "csv",
+ "fleet_wire_contract",
+ "futures",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "api_audit_log"
+version = "0.1.0"
+dependencies = [
+ "api_identifiers",
+ "serde",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "api_background_workers"
+version = "0.1.0"
+dependencies = [
+ "api_administration",
+ "api_database",
+ "api_equipment_datasets",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_identity_and_access",
+ "api_member_activity",
+ "api_missions",
+ "api_operations",
+ "api_server_infrastructure",
+ "api_state",
+ "axum",
+ "chrono",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "api_caller_identity"
+version = "0.1.0"
+dependencies = [
+ "api_configuration",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "axum",
+ "chrono",
+ "fleet_wire_contract",
+ "futures",
+ "proptest",
+ "serde",
+ "sqlx",
+ "thiserror 2.0.18",
+ "uuid",
+]
+
+[[package]]
+name = "api_command_center"
+version = "0.1.0"
+dependencies = [
+ "api_community_content",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_identity_and_access",
+ "api_missions",
+ "api_operations",
+ "api_server_infrastructure",
+ "api_state",
+ "axum",
+ "chrono",
+ "fleet_wire_contract",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "uuid",
+]
+
+[[package]]
+name = "api_community_content"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_discord",
+ "api_equipment_datasets",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_state",
+ "async-stream",
+ "axum",
+ "chrono",
+ "contract_schema_types",
+ "fleet_wire_contract",
+ "futures",
+ "http_url_guard",
+ "jsonschema",
+ "pulldown-cmark",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "api_configuration"
+version = "0.1.0"
+dependencies = [
+ "api_identifiers",
+ "dotenvy",
+ "futures",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "api_database"
+version = "0.1.0"
+dependencies = [
+ "api_configuration",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "api_discord"
+version = "0.1.0"
+dependencies = [
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "axum",
+ "chrono",
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "api_equipment_datasets"
+version = "0.1.0"
+dependencies = [
+ "api_identifiers",
+ "content_digest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "api_failpoints"
+version = "0.1.0"
+dependencies = [
+ "api_failpoints",
+ "api_foundation",
+ "axum",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "api_foundation"
+version = "0.1.0"
+dependencies = [
+ "ammonia",
+ "axum",
+ "chrono",
+ "content_digest",
+ "regress 0.10.5",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "api_http_layer"
+version = "0.1.0"
+dependencies = [
+ "api_configuration",
+ "api_foundation",
+ "api_identifiers",
+ "async-stream",
+ "axum",
+ "chrono",
+ "content_digest",
+ "futures",
+ "governor",
+ "hex",
+ "jsonwebtoken",
+ "proptest",
+ "rand 0.10.2",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "subtle",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "api_identifiers"
+version = "0.1.0"
+dependencies = [
+ "newtype_ids",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
+name = "api_identity_and_access"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_caller_identity",
+ "api_configuration",
+ "api_discord",
+ "api_failpoints",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_member_activity",
+ "api_state",
+ "axum",
+ "chrono",
+ "fleet_wire_contract",
+ "http_url_guard",
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "api_match_telemetry"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_caller_identity",
+ "api_database",
+ "api_failpoints",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_member_activity",
+ "api_mission_vocabulary",
+ "api_server_infrastructure",
+ "api_state",
+ "axum",
+ "chrono",
+ "fleet_wire_contract",
+ "http_url_guard",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "uuid",
+]
+
+[[package]]
+name = "api_member_activity"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_foundation",
+ "api_identifiers",
+ "chrono",
+ "sqlx",
+ "thiserror 2.0.18",
+ "uuid",
+]
+
+[[package]]
+name = "api_mission_vocabulary"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "api_missions"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_caller_identity",
+ "api_community_content",
+ "api_configuration",
+ "api_database",
+ "api_failpoints",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_mission_vocabulary",
+ "api_server_infrastructure",
+ "api_state",
+ "axum",
+ "chrono",
+ "content_digest",
+ "contract_schema_types",
+ "fleet_wire_contract",
+ "http_url_guard",
+ "jsonschema",
+ "mission_compiler",
+ "mission_model",
+ "mission_payload",
+ "mission_validation",
+ "mission_wire_safety",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "api_operations"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_caller_identity",
+ "api_configuration",
+ "api_database",
+ "api_failpoints",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_identity_and_access",
+ "api_match_telemetry",
+ "api_member_activity",
+ "api_mission_vocabulary",
+ "api_missions",
+ "api_property_evidence",
+ "api_server_infrastructure",
+ "api_state",
+ "axum",
+ "ballistics_calibration",
+ "ballistics_model",
+ "ballistics_solver",
+ "chrono",
+ "content_digest",
+ "fire_mission_planning",
+ "fleet_wire_contract",
+ "http_url_guard",
+ "mission_model",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "api_property_evidence"
+version = "0.1.0"
+dependencies = [
+ "content_digest",
+ "proptest",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -378,6 +809,43 @@ dependencies = [
  "thiserror 2.0.18",
  "tool_test_support",
  "verification_core",
+]
+
+[[package]]
+name = "api_server_infrastructure"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_caller_identity",
+ "api_community_content",
+ "api_failpoints",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_mission_vocabulary",
+ "api_state",
+ "async-stream",
+ "axum",
+ "chrono",
+ "fleet_wire_contract",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "api_state"
+version = "0.1.0"
+dependencies = [
+ "api_configuration",
+ "api_discord",
+ "api_equipment_datasets",
+ "api_http_layer",
+ "axum",
+ "sqlx",
 ]
 
 [[package]]
@@ -732,29 +1200,6 @@ dependencies = [
  "mime",
  "pin-project-lite",
  "sync_wrapper",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "axum-extra"
-version = "0.12.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be44683b41ccb9ab2d23a5230015c9c3c55be97a25e4428366de8873103f7970"
-dependencies = [
- "axum",
- "axum-core",
- "bytes",
- "cookie",
- "futures-core",
- "futures-util",
- "headers",
- "http",
- "http-body",
- "http-body-util",
- "mime",
- "pin-project-lite",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -1606,17 +2051,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cookie"
-version = "0.18.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ddef33a339a91ea89fb53151bd0a4689cfce27055c291dfa69945475d22c747"
-dependencies = [
- "percent-encoding",
- "time",
- "version_check",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1870,6 +2304,7 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_checks",
+ "repository_laws",
  "repository_layout",
  "thiserror 2.0.18",
  "tool_test_support",
@@ -2562,12 +2997,6 @@ dependencies = [
  "event-listener",
  "pin-project-lite",
 ]
-
-[[package]]
-name = "fallible-iterator"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4443176a9f2c162692bd3d352d745ef9413eec5782a80d8fd6f8a1ac692a07f7"
 
 [[package]]
 name = "fancy-regex"
@@ -3374,30 +3803,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "824e001ac4f3012dd16a264bec811403a67ca9deb6c102fc5049b32c4574b35f"
 dependencies = [
  "hashbrown 0.16.1",
-]
-
-[[package]]
-name = "headers"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3314d5adb5d94bcdf56771f2e50dbbc80bb4bdf88967526706205ac9eff24eb"
-dependencies = [
- "base64",
- "bytes",
- "headers-core",
- "http",
- "httpdate",
- "mime",
- "sha1 0.10.6",
-]
-
-[[package]]
-name = "headers-core"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54b4a22553d4242c49fddb9ba998a99962b5cc6f22cb5a3482bec22522403ce4"
-dependencies = [
- "http",
 ]
 
 [[package]]
@@ -5911,35 +6316,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "postgres-protocol"
-version = "0.6.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08808e3c483c46e999108051c78334f473d5adb59d78bb80a1268c7e6aa6c514"
-dependencies = [
- "base64",
- "byteorder",
- "bytes",
- "fallible-iterator",
- "hmac 0.13.0",
- "md-5",
- "memchr",
- "rand 0.10.2",
- "sha2 0.11.0",
- "stringprep",
-]
-
-[[package]]
-name = "postgres-types"
-version = "0.2.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "851ca9db4932932d69f3ea811b1abe63087a0f740a47692619dd40d4899b68be"
-dependencies = [
- "bytes",
- "fallible-iterator",
- "postgres-protocol",
-]
-
-[[package]]
 name = "potential_utf"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6897,7 +7273,6 @@ dependencies = [
  "borsh",
  "bytes",
  "num-traits",
- "postgres-types",
  "rand 0.8.6",
  "rkyv 0.7.46",
  "serde",
@@ -7414,17 +7789,6 @@ dependencies = [
 
 [[package]]
 name = "sha1"
-version = "0.10.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3bf829a2d51ab4a5ddf1352d8470c140cadc8301b2ae1789db023f01cedd6ba"
-dependencies = [
- "cfg-if",
- "cpufeatures 0.2.17",
- "digest 0.10.7",
-]
-
-[[package]]
-name = "sha1"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aacc4cc499359472b4abe1bf11d0b12e688af9a805fa5e3016f9a386dc2d0214"
@@ -7810,7 +8174,7 @@ dependencies = [
  "percent-encoding",
  "rust_decimal",
  "serde",
- "sha1 0.11.0",
+ "sha1",
  "sha2 0.11.0",
  "sqlx-core",
  "thiserror 2.0.18",
@@ -7887,6 +8251,42 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
+
+[[package]]
+name = "staging_fixtures"
+version = "0.1.0"
+dependencies = [
+ "api_audit_log",
+ "api_caller_identity",
+ "api_configuration",
+ "api_database",
+ "api_discord",
+ "api_equipment_datasets",
+ "api_foundation",
+ "api_http_layer",
+ "api_identifiers",
+ "api_identity_and_access",
+ "api_missions",
+ "api_operations",
+ "api_server_infrastructure",
+ "api_state",
+ "axum",
+ "chrono",
+ "dotenvy",
+ "fleet_wire_contract",
+ "mission_model",
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tower-http 0.7.0",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+]
 
 [[package]]
 name = "staging_load_generator"
@@ -8495,7 +8895,6 @@ dependencies = [
  "futures-core",
  "pin-project-lite",
  "tokio",
- "tokio-util",
 ]
 
 [[package]]
@@ -8754,7 +9153,7 @@ dependencies = [
  "httparse",
  "log",
  "rand 0.10.2",
- "sha1 0.11.0",
+ "sha1",
  "thiserror 2.0.18",
 ]
 
@@ -9140,7 +9539,6 @@ dependencies = [
  "cfg-if",
  "once_cell",
  "rustversion",
- "serde",
  "wasm-bindgen-macro",
  "wasm-bindgen-shared",
 ]

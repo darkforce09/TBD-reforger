@@ -11,7 +11,7 @@ not here.
 
 ```text
 apps/
-├── api/                     the website's REST API and realtime hub, crate `api`
+├── api/                     the website's REST API and realtime hub, crate `api`: the thin app over the crates in `crates/api/`
 ├── fleet_host_agent/        the game-host agent for fleet commands, crate `fleet_host_agent`
 ├── frontend/                the website's single-page app and Mission Creator, crate `frontend`
 ├── mod/                     the Enfusion mod suite: game mod, Workbench export addon, MCP bridge
@@ -48,8 +48,10 @@ ticketboard ──▶ ticket_model (tools/tickets/) ──▶ .ai/tickets/
 ```
 
 The five Rust crates (`api`, `frontend`, `offline_service_worker`, `fleet_host_agent` and
-`ticketboard`) are members of the root Cargo workspace; the frontend and the API link the map and
-graphics engines parked in `legacy/`. The mod is Enfusion script and data, built and checked by
+`ticketboard`) are members of the root Cargo workspace. The API is a thin application: its router
+and composition root assemble the domain, kernel and worker crates in `crates/api/`, and its
+integration suites stay in `apps/api/tests/`. The frontend links the map and graphics engines
+parked in `legacy/`. The mod is Enfusion script and data, built and checked by
 the xtask `mod` commands.
 
 ## Getting started
@@ -77,12 +79,16 @@ cargo run -p ticketboard          # opens the ticket registry viewer; stays in t
   agent; `assets/`, the map data the API serves; `tools/tickets/ticket_model/`, which
   ticketboard reads the registry through; Postgres, Discord and the Arma Reforger dedicated server.
 - Used by: the members' browsers and the game servers at run time; the xtask commands in
-  `tools/xtask/` that build, test, check and deploy the products; and the developer tools in
-  `tools/developer_tools/`, which link the map engine and drive the app in a headless browser.
+  `tools/xtask/` that build, test, check and deploy the products; the developer tools in
+  `tools/developer_tools/`, whose `gate` and `capture` binaries drive the app in a headless
+  browser; and the `staging-fixtures` host tool in `tools/staging/staging_fixtures/`, which writes
+  through the API crates' services.
 - Rules: the products share data only over the API and through the schemas in `contracts/`: no
   crate here depends on a crate of another product, apart from the website's three (the frontend
-  links `offline_service_worker`); the path dependencies leaving `apps/` go to `legacy/` (the
-  engines), `crates/` and `tools/` (`repository_laws` and `verification_core` for the API, `ticket_model` for
+  links `offline_service_worker`); the path dependencies leaving `apps/` go to `crates/` (the
+  API's crates in `crates/api/` among them), `legacy/` (the engines, for the frontend only) and
+  `tools/` (`repository_layout`, `repository_laws` and `verification_core` for the API's tests;
+  `repository_layout`, `ticket_model`, `ticket_wave_lock` and `ticketboard_model` for
   ticketboard); the engine layer rules are held by `cargo xtask verify engine-layers`.
 
 ## Related documentation

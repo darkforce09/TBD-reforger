@@ -86,11 +86,11 @@ const BASELINE: &[(&str, &[&str])] = &[
     (
         "seed",
         &[
-            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/discord_roles.sql",
-            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/registry_dev.sql",
-            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/faction_library.sql",
-            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/vehicle_database.sql",
-            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../apps/api/seeds/wiki_pages.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../crates/api/api_database/seeds/discord_roles.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../crates/api/api_database/seeds/registry_dev.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../crates/api/api_database/seeds/faction_library.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../crates/api/api_database/seeds/vehicle_database.sql",
+            "cd deploy && podman compose -f compose.dev.yml exec -T db psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger < ../crates/api/api_database/seeds/wiki_pages.sql",
         ],
     ),
     (

@@ -46,10 +46,10 @@ Contents and a row in the table.
 
 - [Command center pages](/apps/frontend/src/pages/command_center/) — the three route
   components and their panels, which the feature docs describe.
-- [Command center domain](/apps/api/src/command_center/) — the dashboard payload.
-- [Community content domain](/apps/api/src/community_content/) — the announcement feed
+- [Command center domain](/crates/api/api_command_center/src/) — the dashboard payload.
+- [Community content domain](/crates/api/api_community_content/src/) — the announcement feed
   and the current modpack.
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/) — the server
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/) — the server
   list and its [SSE](/documentation/glossary/n_to_z.md#sse) status stream.
 
 ## Boundaries

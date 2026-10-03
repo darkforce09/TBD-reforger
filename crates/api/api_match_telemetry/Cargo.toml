@@ -1,0 +1,59 @@
+# The match telemetry domain of the API: the session-fenced live status heartbeat a game runtime
+# posts, the match registration, the numbered results revisions, the detailed event batches and
+# the read of a match's events.
+# Names one other domain: server infrastructure (the runtime-session fence, the server status row
+# and its publisher).
+[package]
+name = "api_match_telemetry"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's game-runtime heartbeat, match registration, results revisions and detailed event ingest."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 8
+targets = "any"
+
+[dependencies]
+# The required audit lines of an unlinked identity and the audit writer of a low-FPS warning.
+api_audit_log = { workspace = true }
+# The machine caller every ingest takes and the identity lock order of a results revision.
+api_caller_identity = { workspace = true }
+# The Postgres error codes a registration race and an event batch conflict map from.
+api_database = { workspace = true }
+# `fail_point!` around the results revision commit.
+api_failpoints = { workspace = true }
+# `ApiError`, the typed path parameters and the canonical JSON digest.
+api_foundation = { workspace = true }
+# The `AuthUser` extractor of the event read.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# Attendance attribution, the member statistics and the leaderboard a results revision updates.
+api_member_activity = { workspace = true }
+# `TerrainType`, the terrain a match played.
+api_mission_vocabulary = { workspace = true }
+# The runtime-session fence, the server status row and its publisher a heartbeat passes through.
+api_server_infrastructure = { workspace = true }
+# `AppState`, the state every handler extracts.
+api_state = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+# The executor kind of the machine caller and the RFC 3339 timestamp spelling of every emitted
+# time.
+fleet_wire_contract = { workspace = true }
+# The scheme check of the URLs a results revision carries.
+http_url_guard = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "json"] }
+thiserror = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[dev-dependencies]
+api_failpoints = { workspace = true, features = ["failpoints"] }
+
+[lints]
+workspace = true

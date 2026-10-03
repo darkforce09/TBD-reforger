@@ -1,0 +1,35 @@
+# Stage S9 K1b: the API's HTTP layer becomes crates/api/api_http_layer. The access tokens and
+# opaque-token primitives, the middleware chain, the metrics and health surfaces, the realtime hub
+# and the outbound retry move whole, each folder a module of the crate. Each module prefix is one
+# `crate::` row scoped to the API source and one `api::` row scoped to the API package (integration
+# tests, binaries); the folders that reach each other get `crate::` rows scoped to themselves
+# first. Grouped use trees were split before the rows ran.
+kind	from	to	scope
+#
+# Folders
+path	apps/api/src/core/authentication_primitives	crates/api/api_http_layer/src/authentication_primitives
+path	apps/api/src/core/middleware	crates/api/api_http_layer/src/middleware
+path	apps/api/src/core/observability	crates/api/api_http_layer/src/observability
+path	apps/api/src/core/realtime_hub	crates/api/api_http_layer/src/realtime_hub
+path	apps/api/src/core/http_client	crates/api/api_http_layer/src/http_client
+#
+# Module prefixes
+# Inside the new crate, scoped to the folders that become it, first: a file two rows of one prefix
+# both reach takes the earlier row
+rust_path	crate::core::authentication_primitives::	crate::authentication_primitives::	apps/api/src/core/middleware
+rust_path	crate::core::authentication_primitives::	crate::authentication_primitives::	apps/api/src/core/observability
+rust_path	crate::core::middleware::	crate::middleware::	apps/api/src/core/authentication_primitives
+rust_path	crate::core::middleware::	crate::middleware::	apps/api/src/core/middleware
+rust_path	crate::core::middleware::	crate::middleware::	apps/api/src/core/observability
+rust_path	crate::core::observability::	crate::observability::	apps/api/src/core/observability
+#
+# Every other consumer
+rust_path	crate::core::authentication_primitives::	api_http_layer::authentication_primitives::	apps/api/src
+rust_path	api::core::authentication_primitives::	api_http_layer::authentication_primitives::	apps/api
+rust_path	crate::core::middleware::	api_http_layer::middleware::	apps/api/src
+rust_path	api::core::middleware::	api_http_layer::middleware::	apps/api
+rust_path	crate::core::observability::	api_http_layer::observability::	apps/api/src
+rust_path	api::core::observability::	api_http_layer::observability::	apps/api
+rust_path	crate::core::realtime_hub::	api_http_layer::realtime_hub::	apps/api/src
+rust_path	api::core::realtime_hub::	api_http_layer::realtime_hub::	apps/api
+rust_path	crate::core::http_client::	api_http_layer::http_client::	apps/api/src

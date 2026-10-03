@@ -1,7 +1,7 @@
 id = "T-1238"
 kind = "work"
 title = "Answer static mount misses with the JSON error envelope"
-summary = "apps/api/src/core/http_router.rs:101 (/uploads) and :165-171 (glyph and /map-assets mounts) serve ServeDir, whose 404 for a missing file carries no {error} envelope, unlike every /api/v1 refusal."
+summary = "apps/api/src/router.rs:101 (/uploads) and :165-171 (glyph and /map-assets mounts) serve ServeDir, whose 404 for a missing file carries no {error} envelope, unlike every /api/v1 refusal."
 class = "bug"
 status = "idea"
 notes = "Source: milestone V finding V-F37 (route acceptance framework)."

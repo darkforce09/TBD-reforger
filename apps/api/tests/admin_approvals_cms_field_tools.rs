@@ -18,10 +18,9 @@
 //! An account without verified membership cannot gain website privileges through PATCH or sync.
 //! Snapshot → restore isolation preserves other tests' stored roles while exercising global sync.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -40,9 +39,9 @@ static ROLES_TABLE_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    let app = http_router::router(AppState::new(
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "af-secret"),
     ));
@@ -176,7 +175,7 @@ async fn call_ct(
 /// wrote — it cannot retire the residue already there without deleting rows a concurrently-gating
 /// sibling worktree is mid-assertion on.
 async fn find_in_approvals(app: &Router, tok: &str, mission_id: &str) -> Option<Value> {
-    // `PageParams::bounds()` (`core/http/pagination.rs`) silently falls back to the default 20 for any
+    // `PageParams::bounds()` (`api_foundation::http::pagination`) silently falls back to the default 20 for any
     // limit above 100, so 100 is the largest page actually honoured — asking for more would
     // quietly make this walk five times as many pages.
     const PAGE: usize = 100;
@@ -830,13 +829,13 @@ async fn unverified_account_cannot_gain_roles_through_patch_or_sync() {
         "PATCH and sync must not fabricate verified membership"
     );
 
-    let state = AppState::new(
+    let state = api::composition::application_state(
         pool.clone(),
         Config::for_tests("postgres://unused/unused", "af-secret"),
     );
-    let (guest_token, _, _) = api::identity_and_access::services::session_issuance::issue_session(
+    let (guest_token, _, _) = api_identity_and_access::services::session_issuance::issue_session(
         &state,
-        UNVERIFIED_USER,
+        &api_identifiers::DiscordUserId::new(UNVERIFIED_USER),
     )
     .await
     .expect("issue unverified account session");

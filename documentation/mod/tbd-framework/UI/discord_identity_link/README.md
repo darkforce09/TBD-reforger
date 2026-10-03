@@ -18,7 +18,7 @@ documentation/mod/tbd-framework/UI/discord_identity_link/
 
 - [Backend bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/) — `TBD_IdentityLink`, the
   command, and `TBD_PlayerIdentity`, the identity accessor
-- [Identity and access](/apps/api/src/identity_and_access/) — the link code and link
+- [Identity and access](/crates/api/api_identity_and_access/src/) — the link code and link
   confirmation handlers
 
 ## Boundaries

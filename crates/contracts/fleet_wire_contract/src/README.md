@@ -36,7 +36,7 @@ without the text itself.
 ## Boundaries
 
 - Depends on: `chrono`, `serde`, `serde_json`, `thiserror` and `uuid`.
-- Used by: the API's fleet ledger, handlers, machine credentials and staging fixtures tool; the
+- Used by: the API's fleet ledger, handlers and machine credentials; the staging fixtures tool; the
   host agent's ledger client and secret-file reader; `xtask`'s mod mission test.
 - Rules: no module imports sqlx, axum or reqwest; each shape module carries the `@contract` tags
   of the schema definitions it implements; tests live in `tests/`, one file per module.

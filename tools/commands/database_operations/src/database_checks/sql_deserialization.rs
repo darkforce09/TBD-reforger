@@ -43,17 +43,17 @@ use verification_core::{NotRun, Pattern};
 /// so adding one is not an exercise in regex quoting.
 const ALLOW: &[&str] = &["modpack_mods", "orbat_reservations"];
 
-/// Directories searched, relative to `apps/api`.
+/// Directories searched, relative to the repository root.
 ///
-/// The whole `src` tree, not a hand-listed set of subdirectories: any SQL-bearing module is in
-/// scope wherever it sits, and no rename can silently drop source out of the gate.
-const ROOTS: &[&str] = &["src"];
+/// The API application's whole `src` tree and every API crate (`crates/api`), not a hand-listed
+/// set of subdirectories: any SQL-bearing module is in scope wherever it sits, and no rename can
+/// silently drop source out of the gate.
+const ROOTS: &[&str] = &["apps/api/src", "crates/api"];
 
 /// `cargo xtask verify no-select-star`: no `SELECT *` in the API's query sources; returns the
 /// gate's exit code.
 pub fn verify_no_select_star(repo_root: &Path) -> Result<u8> {
-    let api = repo_root.join("apps/api");
-    let roots: Vec<_> = ROOTS.iter().map(|r| api.join(r)).collect();
+    let roots: Vec<_> = ROOTS.iter().map(|r| repo_root.join(r)).collect();
     let root_refs: Vec<&Path> = roots.iter().map(|p| p.as_path()).collect();
 
     // A missing root is "the check did not run", never "clean". See the module docs.

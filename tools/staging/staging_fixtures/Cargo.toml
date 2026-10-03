@@ -1,0 +1,76 @@
+# The `staging-fixtures` host tool: stages the fixtures of a staging verification run (the fleet's
+# servers and machine credentials, the load population and its fixture events, the Discord
+# procedure's snapshot and member reads) in the staging database and on the staging host, behind
+# one set of guards. It writes through the API's own services, which is why it is the one tool
+# crate the crate-tier law lets depend on the api crates; sqlx carries the reads and the guarded
+# deletes those services do not cover, reqwest and rustls the Discord member reads.
+[package]
+name = "staging_fixtures"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The staging-fixtures host tool: fleet servers, credentials, load fixtures and Discord member reads for a staging verification run"
+
+[package.metadata.layout]
+category = "tools/staging"
+tier = 10
+targets = "any"
+
+[[bin]]
+name = "staging-fixtures"
+path = "src/main.rs"
+
+[dependencies]
+# The append-only audit lines every applied subcommand records.
+api_audit_log = { workspace = true }
+# The account lock and the administrator authority check of the fleet subcommands' actor.
+api_caller_identity = { workspace = true }
+# The Postgres pool of the API env file's `DATABASE_URL`.
+api_database = { workspace = true }
+# The Discord API base and the guild-member shape the member reads parse.
+api_discord = { workspace = true }
+# The handler error the API services answer with.
+api_foundation = { workspace = true }
+# The token hash a staged credential's stored row is found by.
+api_http_layer = { workspace = true }
+# The typed ids of the rows the tool writes and reads.
+api_identifiers = { workspace = true }
+# Account registration, the membership cache and session issuance the load population uses.
+api_identity_and_access = { workspace = true }
+# The event authoring services and the event status the load fixture events go through.
+api_operations = { workspace = true }
+# Server registration and machine credential issuance the fleet subcommands go through.
+api_server_infrastructure = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+dotenvy = { workspace = true }
+# `ExecutorKind` and the secret-file limits the host agent reads its credential files under.
+fleet_wire_contract = { workspace = true }
+# The ORBAT template the load fixture events attach.
+mission_model = { workspace = true }
+reqwest = { workspace = true, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
+rustls = { workspace = true, features = ["ring", "std", "tls12", "logging"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "macros"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[dev-dependencies]
+# The configuration, the application state and the services the suites build the API under test
+# from, and the route tables of the three domains whose routes the suites call.
+api_configuration = { workspace = true }
+api_equipment_datasets = { workspace = true }
+api_missions = { workspace = true }
+api_state = { workspace = true }
+# The router under test and the fake Discord the member read suite serves.
+axum = { workspace = true }
+tokio = { workspace = true, features = ["process", "sync", "net"] }
+tower = { workspace = true, features = ["util"] }
+tower-http = { workspace = true, features = ["catch-panic"] }
+
+[lints]
+workspace = true

@@ -11,7 +11,7 @@
 //! `diagnostic_export/` goes through `generation_import::poll` into the diagnostic catalog's
 //! directory and `export_source/` is the configured export source whose `gameplay/` publication
 //! the gameplay catalog imports, both into one temporary equipment data directory; then boots
-//! `core::http_router::router` with a development configuration over this binary's own test
+//! `api::router::router` with a development configuration over this binary's own test
 //! database and drives it with `oneshot` requests.
 //!
 //! **Signals & state:** the temporary equipment data directory, removed when the case ends; each
@@ -36,12 +36,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::community_content::services::equipment_data_viewer::EquipmentDataService;
-use api::community_content::services::equipment_data_viewer::importing::generation_import;
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_equipment_datasets::EquipmentDataService;
+use api_equipment_datasets::importing::generation_import;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -60,8 +59,9 @@ const ROUTE_PREFIX: &str = "/api/v1/debug/equipment-data/";
 /// The tag that marks an equipment data viewer handler in `src/`.
 const ROUTE_TAG: &str = "/// @route GET /api/v1/debug/equipment-data/";
 
-/// The handler folder whose `@route` tags list every equipment data viewer route.
-const HANDLER_FOLDER: &str = "src/community_content/handlers/equipment_data_viewer";
+/// The handler folder whose `@route` tags list every equipment data viewer route, relative to the
+/// repository root.
+const HANDLER_FOLDER: &str = "crates/api/api_community_content/src/handlers/equipment_data_viewer";
 
 /// Where a JSON golden lives.
 enum GoldenFile {
@@ -210,8 +210,9 @@ fn fixture_root() -> PathBuf {
 
 /// The contract samples the frontend's DTO parity tests also read.
 fn contract_samples() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../contracts/fixtures/equipment-data-viewer/positive")
+    repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("contracts/fixtures/equipment-data-viewer/positive")
 }
 
 impl GoldenFile {
@@ -254,7 +255,7 @@ fn next_peer() -> SocketAddr {
 async fn imported_router(data_dir: &Path) -> Router {
     let url = common::require_test_database_url()
         .expect("the per-binary test database is provisioned before any case runs");
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
     let diagnostic_importer = Arc::new(EquipmentDataService::new(
         data_dir,
         Some(fixture_root().join("diagnostic_export")),
@@ -266,7 +267,7 @@ async fn imported_router(data_dir: &Path) -> Router {
     config.equipment_data_dir = data_dir.display().to_string();
     config.equipment_export_source_dir =
         Some(fixture_root().join("export_source").display().to_string());
-    let state = AppState::new(pool, config);
+    let state = api::composition::application_state(pool, config);
     generation_import::initialize(&state.equipment_data.diagnostic)
         .await
         .expect("the diagnostic catalog activates the imported generation");
@@ -276,7 +277,7 @@ async fn imported_router(data_dir: &Path) -> Router {
     generation_import::poll(state.equipment_data.gameplay.clone())
         .await
         .expect("the importer publishes the committed gameplay export");
-    http_router::router(state)
+    router(state)
 }
 
 /// Status, headers and body of one anonymous `GET uri`.
@@ -441,7 +442,10 @@ fn contract_parity_equipment_viewer_every_positive_fixture_and_route_is_covered(
         file_names(&fixture_root().join("route_responses")),
         "every committed route answer is the golden of exactly one request"
     );
-    let handlers = Path::new(env!("CARGO_MANIFEST_DIR")).join(HANDLER_FOLDER);
+    let handlers =
+        repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+            .expect("the repository root above the API package")
+            .join(HANDLER_FOLDER);
     let mut tagged = BTreeSet::new();
     for name in file_names(&handlers) {
         let text = fs::read_to_string(handlers.join(&name)).expect("read handler source");

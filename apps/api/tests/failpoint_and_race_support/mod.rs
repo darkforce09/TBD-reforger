@@ -10,7 +10,7 @@
 //! depends only on `api` (the `failpoints` feature is on in every test build), `sqlx`,
 //! `tokio` and `axum`, never on `tests/common`, so a suite chooses its own fixtures.
 //! **Signals & state:** none of its own; arming goes through the process-global registry of
-//! `api::core::failpoints`, which the suite lock serialises.
+//! `api_failpoints`, which the suite lock serialises.
 //! **Invariants:** every case that arms a failpoint, or passes a point another case may arm, holds
 //! [`lock_suite`] for its whole body and declares the lock before any guard; every wait is bounded
 //! and panics with the boundary it waited for; a check of the persisted state reads committed rows

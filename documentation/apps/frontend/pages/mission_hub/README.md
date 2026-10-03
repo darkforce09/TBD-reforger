@@ -46,7 +46,7 @@ in Contents and a row in the table.
 
 - [Mission hub pages](/apps/frontend/src/pages/mission_hub/) — the two route components and
   the create dialog, which the feature docs describe.
-- [Missions domain](/apps/api/src/missions/) — the missions, versions, armory, reviews
+- [Missions domain](/crates/api/api_missions/src/) — the missions, versions, armory, reviews
   and artifacts behind the two pages.
 
 ## Boundaries

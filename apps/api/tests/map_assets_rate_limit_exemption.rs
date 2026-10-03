@@ -36,11 +36,10 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::time::Duration;
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::core::middleware::{DURABLE_STRICT_BURST, RATE_LIMIT_EXEMPT_MOUNT, STRICT_PREFIXES};
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_http_layer::middleware::{DURABLE_STRICT_BURST, RATE_LIMIT_EXEMPT_MOUNT, STRICT_PREFIXES};
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -74,29 +73,37 @@ const LIMITED_STATIC: &str = "/uploads/exempt-no-such-file.png";
 /// survives it cannot be surviving on a bucket that merely happens to be deep.
 const BURST: usize = 200;
 
-/// The map-asset directory, resolved from the manifest rather than the process CWD.
+/// The map-asset directory, resolved from the repository root rather than the process CWD.
 ///
-/// `Config::map_assets_dir` empty makes `http_router::router` fall back to `../../assets/terrains`,
+/// `Config::map_assets_dir` empty makes `api::router::router` fall back to `../../assets/terrains`,
 /// which is correct for the shipped binary and CWD-dependent for a test harness. Setting it
 /// explicitly is the same code path a deployment with `MAP_ASSETS_DIR` set takes.
-const MAP_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/terrains");
+fn map_assets_dir() -> std::path::PathBuf {
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("assets/terrains")
+}
 
 /// The glyph directory, resolved the same way. Glyphs are shared by every terrain, so they sit
 /// beside the terrain tree on disk and are joined to it at the router.
-const GLYPH_ASSETS_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/glyphs");
+fn glyph_assets_dir() -> std::path::PathBuf {
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("assets/glyphs")
+}
 
 /// A committed, non-LFS glyph asset, chosen for the same reason as [`EXEMPT_ASSET`].
 const EXEMPT_GLYPH: &str = "/map-assets/glyphs/manifest.json";
 
 fn config_for(url: &str) -> Config {
     let mut cfg = Config::for_tests(url, "exempt-secret");
-    cfg.map_assets_dir = MAP_ASSETS_DIR.to_string();
-    cfg.glyph_assets_dir = GLYPH_ASSETS_DIR.to_string();
+    cfg.map_assets_dir = map_assets_dir().display().to_string();
+    cfg.glyph_assets_dir = glyph_assets_dir().display().to_string();
     cfg
 }
 
 fn router_for(pool: PgPool, url: &str) -> Router {
-    http_router::router(AppState::new(pool, config_for(url)))
+    router(api::composition::application_state(pool, config_for(url)))
 }
 
 /// A pool that never reaches a server and gives up fast.
@@ -119,8 +126,8 @@ fn dead_router() -> Router {
 
 async fn boot() -> Option<(PgPool, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     Some((pool, url))
 }
 
@@ -345,7 +352,7 @@ async fn the_other_static_mount_is_still_limited() {
 async fn the_spa_deployment_keeps_its_fallback_limited_and_its_isolation_headers() {
     let mut cfg = config_for("postgres://unused");
     cfg.spa_dist_dir = "/nonexistent-exempt-dist".to_string();
-    let app = http_router::router(AppState::new(dead_pool(), cfg));
+    let app = router(api::composition::application_state(dead_pool(), cfg));
     let ip = Ipv4Addr::new(10, 63, 6, 6);
 
     // 1. the SPA fallback is a limited route.
@@ -447,10 +454,9 @@ fn the_asset_under_test_is_under_the_exempt_mount() {
          some other route's limiter behaviour"
     );
     assert!(
-        std::path::Path::new(MAP_ASSETS_DIR)
-            .join("terrain-registry.json")
-            .is_file(),
-        "the committed map asset this suite serves is missing from {MAP_ASSETS_DIR} — every burst \
-         assertion below would be measuring 404s"
+        map_assets_dir().join("terrain-registry.json").is_file(),
+        "the committed map asset this suite serves is missing from {} — every burst \
+         assertion below would be measuring 404s",
+        map_assets_dir().display()
     );
 }

@@ -1,0 +1,92 @@
+# The operations domain of the API: the event calendar and each event's hub, the event access
+# control and reservation pools, ORBAT slotting with the squad reservations and the waiting list,
+# the member directory, the game-runtime roster and player deployments, the attendance derived from
+# match results, the caller's service record and leave requests, the saved mortar fire missions and
+# the ballistics catalog uploads. Names four other domains: identity and access (the user lookups
+# and the partner guild enrollment), match telemetry (the matches of a service record), missions
+# (the mission titles, the armory and the deployment a server runs) and server infrastructure (the
+# open runtime session).
+[package]
+name = "api_operations"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's events, access control, ORBAT reservations, service records, leave requests, fire missions and ballistics catalogs."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 9
+targets = "any"
+
+[dependencies]
+# The required audit lines of the event, access, reservation and catalog writes.
+api_audit_log = { workspace = true }
+# The account and identity lock order, the session authority recheck, the cached membership
+# permissions, `UserRole` and the machine caller of the game-runtime reads.
+api_caller_identity = { workspace = true }
+# `Config`, the guild every reservation writer rereads the caller's authority in.
+api_configuration = { workspace = true }
+# `is_unique_violation` and `violated_constraint`, the duplicate and constraint refusals.
+api_database = { workspace = true }
+# `fail_point!` at the slot registration commit.
+api_failpoints = { workspace = true }
+# `ApiError`, the RFC 3339 date spelling, the paging and the typed path parameters.
+api_foundation = { workspace = true }
+# The caller extractors `AuthUser`, `LeaderUser` and `AdminUser`.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# The user lookups and the Discord membership enrollment of the partner guilds.
+api_identity_and_access = { workspace = true }
+# The matches and player statistics a service record lists.
+api_match_telemetry = { workspace = true }
+# The user statistics recompute and the eligibility re-evaluation queue.
+api_member_activity = { workspace = true }
+# `TerrainType` and `GameMode` of the event hub.
+api_mission_vocabulary = { workspace = true }
+# The mission titles and terrains, `MissionArmory` and the mission deployment a server runs.
+api_missions = { workspace = true }
+# The open runtime session a player deployment is authorized against.
+api_server_infrastructure = { workspace = true }
+# `AppState`, the state every handler extracts.
+api_state = { workspace = true }
+axum = { workspace = true, features = ["multipart"] }
+# The calibration bundle a ballistics catalog upload is accepted by.
+ballistics_calibration = { workspace = true }
+# The ballistics catalog document every fire mission pins.
+ballistics_model = { workspace = true }
+# The charge solution of a re-solved fire mission.
+ballistics_solver = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+# `sha256_hex`, the lowercase hex SHA-256 the ballistics catalog uploads digest their bytes with.
+content_digest = { workspace = true }
+# The fire-mission assembler and the comparison of a client solution with the server's.
+fire_mission_planning = { workspace = true }
+# `ExecutorKind` of the game-runtime caller and the RFC 3339 timestamp spelling of every emitted
+# time.
+fleet_wire_contract = { workspace = true }
+# `is_http_url`, the scheme guard of the event's URL fields.
+http_url_guard = { workspace = true }
+# The ORBAT template parse and the faction join-key check behind event mission attachment.
+mission_model = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# float_roundtrip parses every number bit-exactly, so a fire solution re-solved from a client or
+# catalog document starts from the same f64 inputs the wasm client used.
+serde_json = { workspace = true, features = ["float_roundtrip", "raw_value"] }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "json"] }
+thiserror = { workspace = true }
+# `spawn_blocking`, which runs the catalog calibration and the fire-mission solve off the runtime.
+tokio = { workspace = true, features = ["rt"] }
+tracing = { workspace = true }
+uuid = { workspace = true, features = ["serde"] }
+
+[dev-dependencies]
+api_failpoints = { workspace = true, features = ["failpoints"] }
+# The property run recorder of the access, quota and reservation planning property tests.
+api_property_evidence = { workspace = true }
+proptest = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[lints]
+workspace = true

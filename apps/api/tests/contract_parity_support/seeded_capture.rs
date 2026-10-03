@@ -29,10 +29,10 @@ use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 
-use api::administration::services::audit_publication::publish_audit_batch;
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::{database, http_router};
+use api::router::router;
+use api_administration::services::audit_publication::publish_audit_batch;
+use api_configuration::configuration::Config;
+use api_identifiers::DiscordGuildId;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -54,8 +54,10 @@ pub const STREAM_READ_LIMIT: Duration = Duration::from_secs(10);
 const SUITE: &str = "contract_parity_goldens";
 /// The largest batch the production publisher accepts.
 const AUDIT_BATCH: i64 = 1000;
-const REGISTRY_DEV_SEED: &str = include_str!("../../seeds/registry_dev.sql");
-const CONTENT_GOLDEN_SEED: &str = include_str!("../../seeds/content_golden.sql");
+const REGISTRY_DEV_SEED: &str =
+    include_str!("../../../../crates/api/api_database/seeds/registry_dev.sql");
+const CONTENT_GOLDEN_SEED: &str =
+    include_str!("../../../../crates/api/api_database/seeds/content_golden.sql");
 /// The route that uploads a catalog pair; every golden whose path starts with it follows the
 /// upload.
 const BALLISTICS_CATALOGS: &str = "/api/v1/ballistics-catalogs";
@@ -124,18 +126,28 @@ fn run_capture() -> Result<SeededCapture, String> {
 }
 
 async fn capture(url: String) -> Result<SeededCapture, String> {
-    let pool = database::connect(&url)
+    let pool = api_database::connect(&url)
         .await
         .map_err(|error| format!("connect to {url}: {error}"))?;
     let mut config = Config::for_tests(url, "contract-parity-goldens-secret");
-    config.discord_guild_id = RECIPE_DISCORD_GUILD_ID.to_string();
-    let app = http_router::router(AppState::new(pool.clone(), config));
+    config.discord_guild_id = DiscordGuildId::new(RECIPE_DISCORD_GUILD_ID);
+    let app = router(api::composition::application_state(pool.clone(), config));
 
     // Recipe order: the login stamps the operator's row and writes a session audit line, and the
     // content golden pins both back, so the login comes first.
     let token = common::dev_login_token(&app, SUITE, "admin").await;
-    apply_seed(&pool, "seeds/registry_dev.sql", REGISTRY_DEV_SEED).await?;
-    apply_seed(&pool, "seeds/content_golden.sql", CONTENT_GOLDEN_SEED).await?;
+    apply_seed(
+        &pool,
+        "crates/api/api_database/seeds/registry_dev.sql",
+        REGISTRY_DEV_SEED,
+    )
+    .await?;
+    apply_seed(
+        &pool,
+        "crates/api/api_database/seeds/content_golden.sql",
+        CONTENT_GOLDEN_SEED,
+    )
+    .await?;
     publish_pending_audit_lines(&pool).await?;
 
     let mut answers = Vec::new();
@@ -183,8 +195,13 @@ async fn upload_committed_catalog(app: &Router, token: &str) -> Result<(), Strin
     let boundary = "contract-parity-goldens-catalog";
     let mut body = Vec::new();
     for (part, relative) in COMMITTED_CATALOG_PAIR {
-        let path = format!("{}/../../{relative}", env!("CARGO_MANIFEST_DIR"));
-        let bytes = std::fs::read(&path).map_err(|error| format!("read {path}: {error}"))?;
+        let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+            "CARGO_MANIFEST_DIR"
+        )))
+        .map_err(|error| format!("no repository root above the API package: {error}"))?
+        .join(relative);
+        let bytes =
+            std::fs::read(&path).map_err(|error| format!("read {}: {error}", path.display()))?;
         body.extend_from_slice(
             format!(
                 "--{boundary}\r\nContent-Disposition: form-data; name=\"{part}\"; \

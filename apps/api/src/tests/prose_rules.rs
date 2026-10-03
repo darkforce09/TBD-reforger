@@ -1,5 +1,6 @@
-//! Executable statements of this crate's prose rules, checked against the text of `src/`,
-//! `tests/`, `.env.example`, the seeds, and the comment lines of the migrations.
+//! Executable statements of the API's prose rules, checked against the text of the application's
+//! `src/`, `tests/` and `.env.example`, of every API crate's `src/` (`crates/api/*/src`), and the
+//! comment lines of the seeds and migrations the database crate holds.
 //!
 //! Comments, docstrings, fixtures and templates describe the code as it stands. A ticket id is a
 //! pointer into a registry the reader of this crate does not have; a comparison to another
@@ -19,11 +20,15 @@ use std::path::{Path, PathBuf};
 const RULE_FILES: [&str; 2] = ["tests/architecture_rules.rs", "tests/prose_rules.rs"];
 
 /// Floors for each walk: a scan that returns fewer files than this has lost the tree, and every
-/// rule over it would pass vacuously.
-const SOURCE_FLOOR: usize = 100;
-const SUITE_FLOOR: usize = 40;
-const SEED_FLOOR: usize = 5;
-const MIGRATION_FLOOR: usize = 20;
+/// rule over it would pass vacuously. The application's `src/` holds `lib.rs`, the router, the
+/// composition root, the two binaries and the router's tests (6 files besides the rule files);
+/// the API crates' `src/` folders held 550 Rust files, the integration suites 232, the seeds 7 and
+/// the migrations 58 when the floors were set.
+const SOURCE_FLOOR: usize = 6;
+const CRATE_SOURCE_FLOOR: usize = 500;
+const SUITE_FLOOR: usize = 200;
+const SEED_FLOOR: usize = 7;
+const MIGRATION_FLOOR: usize = 58;
 
 /// Prose that describes this crate in terms of another implementation.
 const OTHER_IMPLEMENTATION: [&str; 11] = [
@@ -84,10 +89,28 @@ struct Line {
     text: String,
 }
 
-/// The crate directory, resolved from the manifest so the tests do not depend on the working
-/// directory a test runner happens to use.
+/// The application's directory, resolved from the manifest so the tests do not depend on the
+/// working directory a test runner happens to use.
 fn crate_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+}
+
+/// The repository root, found above the application's directory.
+fn repository_root() -> PathBuf {
+    repository_layout::find_repository_root_from(&crate_root())
+        .expect("the repository root above the API crate")
+}
+
+/// The `src/` folder of every API crate under `crates/api/`.
+fn api_crate_sources() -> Vec<PathBuf> {
+    let root = repository_root().join("crates/api");
+    let mut sources: Vec<PathBuf> = std::fs::read_dir(&root)
+        .unwrap_or_else(|e| panic!("cannot read {}: {e}", root.display()))
+        .map(|entry| entry.expect("directory entry").path().join("src"))
+        .filter(|source| source.is_dir())
+        .collect();
+    sources.sort();
+    sources
 }
 
 /// Every `.rs` file under `root`, sorted by path, skipping the rule files.
@@ -124,21 +147,29 @@ fn read(path: &Path) -> String {
     std::fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()))
 }
 
+/// `path:line`, the path relative to the repository root.
 fn location(path: &Path, index: usize) -> String {
-    let relative = path.strip_prefix(crate_root()).unwrap_or(path);
+    let relative = path.strip_prefix(repository_root()).unwrap_or(path);
     format!("{}:{}", relative.display(), index + 1)
 }
 
-/// Every line of every `.rs` file under `src/` and `tests/`.
+/// Every line of every `.rs` file under the application's `src/` and `tests/` and every API
+/// crate's `src/`.
 fn rust_lines() -> Vec<Line> {
     let root = crate_root();
     let sources = rust_files(&root.join("src"));
     let suites = rust_files(&root.join("tests"));
-    assert_floor(sources.len(), SOURCE_FLOOR, "src/");
-    assert_floor(suites.len(), SUITE_FLOOR, "tests/");
+    let crate_sources: Vec<PathBuf> = api_crate_sources()
+        .iter()
+        .flat_map(|source| rust_files(source))
+        .collect();
+    assert_floor(sources.len(), SOURCE_FLOOR, "apps/api/src/");
+    assert_floor(suites.len(), SUITE_FLOOR, "apps/api/tests/");
+    assert_floor(crate_sources.len(), CRATE_SOURCE_FLOOR, "crates/api/*/src/");
     sources
         .iter()
         .chain(suites.iter())
+        .chain(crate_sources.iter())
         .flat_map(|path| lines_of(path, |_| true))
         .collect()
 }
@@ -148,15 +179,19 @@ fn env_template_lines() -> Vec<Line> {
     lines_of(&crate_root().join(".env.example"), |_| true)
 }
 
-/// The `--` comment lines of every seed and migration.
+/// The `--` comment lines of every seed and migration, both in the API's database crate.
 fn sql_comment_lines() -> Vec<Line> {
-    let root = crate_root();
+    let database_crate = repository_root().join("crates/api/api_database");
     let mut seeds = Vec::new();
-    collect(&root.join("seeds"), "sql", &mut seeds);
+    collect(&database_crate.join("seeds"), "sql", &mut seeds);
     let mut migrations = Vec::new();
-    collect(&root.join("migrations"), "sql", &mut migrations);
-    assert_floor(seeds.len(), SEED_FLOOR, "seeds/");
-    assert_floor(migrations.len(), MIGRATION_FLOOR, "migrations/");
+    collect(&database_crate.join("migrations"), "sql", &mut migrations);
+    assert_floor(seeds.len(), SEED_FLOOR, "crates/api/api_database/seeds/");
+    assert_floor(
+        migrations.len(),
+        MIGRATION_FLOOR,
+        "crates/api/api_database/migrations/",
+    );
     seeds.sort();
     migrations.sort();
     seeds

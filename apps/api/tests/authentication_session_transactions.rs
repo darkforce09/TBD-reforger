@@ -1,10 +1,13 @@
 //! Persisted session authorization, concurrent rotation/logout, and database failure recovery.
 
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
-use api::identity_and_access::services::{
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_identifiers::DiscordUserId;
+use api_identity_and_access::services::{
     session_issuance::issue_session,
     session_rotation::{logout_session, rotate_session},
 };
+use api_state::AppState;
 use axum::{
     Router,
     body::Body,
@@ -18,22 +21,28 @@ use uuid::Uuid;
 
 mod common;
 
-async fn fixture() -> (AppState, String, String, String) {
+async fn fixture() -> (AppState, DiscordUserId, String, String) {
     let url = common::require_test_database_url().expect("database required");
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(pool, Config::for_tests(url, "session-transactions"));
-    let actor = format!("session-{}", Uuid::new_v4());
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "session-transactions"));
+    let actor = DiscordUserId::new(format!("session-{}", Uuid::new_v4()));
     common::seed_user(
         &state.pool,
-        &actor,
+        actor.as_str(),
         "Session Actor",
         &common::unique_arma("session"),
         "admin",
     )
     .await;
-    common::fixtures::seed_membership(&state.pool, &actor, &state.cfg.discord_guild_id, "admin")
-        .await;
+    common::fixtures::seed_membership(
+        &state.pool,
+        actor.as_str(),
+        state.cfg.discord_guild_id.as_str(),
+        "admin",
+    )
+    .await;
     let (access, _, refresh) = issue_session(&state, &actor).await.unwrap();
     (state, actor, access, refresh)
 }
@@ -51,7 +60,7 @@ async fn me(app: Router, access: &str) -> StatusCode {
     .status()
 }
 
-async fn active_tokens(pool: &PgPool, actor: &str) -> i64 {
+async fn active_tokens(pool: &PgPool, actor: &DiscordUserId) -> i64 {
     sqlx::query_scalar(
         "SELECT count(*) FROM refresh_tokens WHERE discord_id = $1 AND revoked_at IS NULL",
     )
@@ -89,7 +98,7 @@ async fn refresh_concurrency_replay_revokes_the_committed_successor_and_access()
     assert_eq!(active_tokens(&state.pool, &actor).await, 0);
     let (access, _, successor) = winners.pop().unwrap();
     assert_eq!(
-        me(http_router::router(state.clone()), &access).await,
+        me(router(state.clone()), &access).await,
         StatusCode::UNAUTHORIZED
     );
     assert!(rotate_session(&state, &successor).await.is_err());
@@ -113,7 +122,7 @@ async fn logout_concurrency_with_rotation_never_leaves_a_successor_authorized() 
     let rotated = rotate.await.unwrap();
     logout.await.unwrap().unwrap();
     assert_eq!(active_tokens(&state.pool, &actor).await, 0);
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     assert_eq!(me(app.clone(), &access).await, StatusCode::UNAUTHORIZED);
     if let Ok((access, _, refresh)) = rotated {
         assert_eq!(me(app, &access).await, StatusCode::UNAUTHORIZED);
@@ -124,12 +133,17 @@ async fn logout_concurrency_with_rotation_never_leaves_a_successor_authorized() 
 #[tokio::test]
 async fn session_revocation_ban_deletion_and_identity_binding_apply_to_existing_access() {
     let (state, actor, access, _) = fixture().await;
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     assert_eq!(me(app.clone(), &access).await, StatusCode::OK);
     let claims = state.jwt.parse(&access).unwrap();
     let forged = state
         .jwt
-        .issue_access("different-owner", claims.sid, "admin", true)
+        .issue_access(
+            &DiscordUserId::new("different-owner"),
+            claims.sid,
+            "admin",
+            true,
+        )
         .unwrap()
         .0;
     assert_eq!(me(app.clone(), &forged).await, StatusCode::UNAUTHORIZED);
@@ -159,9 +173,19 @@ async fn session_revocation_ban_deletion_and_identity_binding_apply_to_existing_
 }
 
 /// A uniquely named, actor-scoped database trigger injects an actual storage failure.
-async fn inject_failure(pool: &PgPool, actor: &str, table: &str, operation: &str) -> String {
+async fn inject_failure(
+    pool: &PgPool,
+    actor: &DiscordUserId,
+    table: &str,
+    operation: &str,
+) -> String {
     let name = format!("session_failure_{}", Uuid::new_v4().simple());
-    assert!(actor.chars().all(|c| c.is_ascii_alphanumeric() || c == '-'));
+    assert!(
+        actor
+            .as_str()
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-')
+    );
     assert!(matches!(
         (table, operation),
         ("refresh_tokens", "INSERT") | ("authentication_sessions", "UPDATE")
@@ -197,10 +221,7 @@ async fn refresh_failure_injection_rolls_back_consumption_and_recovers() {
         StatusCode::INTERNAL_SERVER_ERROR
     );
     assert_eq!(active_tokens(&state.pool, &actor).await, 1);
-    assert_eq!(
-        me(http_router::router(state.clone()), &access).await,
-        StatusCode::OK
-    );
+    assert_eq!(me(router(state.clone()), &access).await, StatusCode::OK);
     assert!(
         rotate_session(&state, &refresh).await.is_ok(),
         "rolled-back refresh is still spendable"
@@ -218,33 +239,27 @@ async fn logout_failure_reports_error_and_preserves_the_transaction() {
         StatusCode::INTERNAL_SERVER_ERROR
     );
     assert_eq!(active_tokens(&state.pool, &actor).await, 1);
-    assert_eq!(
-        me(http_router::router(state.clone()), &access).await,
-        StatusCode::OK
-    );
+    assert_eq!(me(router(state.clone()), &access).await, StatusCode::OK);
     logout_session(&state, &refresh).await.unwrap();
-    assert_eq!(
-        me(http_router::router(state), &access).await,
-        StatusCode::UNAUTHORIZED
-    );
+    assert_eq!(me(router(state), &access).await, StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
 async fn development_sessions_are_rejected_by_production_configuration() {
     let (mut state, actor, _, _) = fixture().await;
     let (access, _, refresh) =
-        api::identity_and_access::services::session_issuance::issue_development_session(
+        api_identity_and_access::services::session_issuance::issue_development_session(
             &state,
             &actor,
-            api::identity_and_access::models::user_account::UserRole::Admin,
+            api_caller_identity::UserRole::Admin,
         )
         .await
         .unwrap();
     let mut cfg = (*state.cfg).clone();
     cfg.env = "production".into();
-    state = AppState::new(state.pool.clone(), cfg);
+    state = api::composition::application_state(state.pool.clone(), cfg);
     assert_eq!(
-        me(http_router::router(state.clone()), &access).await,
+        me(router(state.clone()), &access).await,
         StatusCode::UNAUTHORIZED
     );
     assert!(rotate_session(&state, &refresh).await.is_err());
@@ -254,10 +269,10 @@ async fn development_sessions_are_rejected_by_production_configuration() {
 async fn revoked_development_refresh_cannot_revoke_production_sessions() {
     let (development, actor, ordinary_access, ordinary_refresh) = fixture().await;
     let (_, _, development_refresh) =
-        api::identity_and_access::services::session_issuance::issue_development_session(
+        api_identity_and_access::services::session_issuance::issue_development_session(
             &development,
             &actor,
-            api::identity_and_access::models::user_account::UserRole::Admin,
+            api_caller_identity::UserRole::Admin,
         )
         .await
         .unwrap();
@@ -268,8 +283,8 @@ async fn revoked_development_refresh_cannot_revoke_production_sessions() {
 
     let mut config = (*development.cfg).clone();
     config.env = "production".into();
-    let production = AppState::new(development.pool.clone(), config);
-    let app = http_router::router(production.clone());
+    let production = api::composition::application_state(development.pool.clone(), config);
+    let app = router(production.clone());
     assert_eq!(me(app.clone(), &ordinary_access).await, StatusCode::OK);
 
     let rejected = rotate_session(&production, &development_refresh)
@@ -298,16 +313,21 @@ async fn revoked_development_refresh_cannot_revoke_production_sessions() {
 
 #[tokio::test]
 async fn session_stream_revalidates_before_delivery_and_during_idle_periods() {
-    use api::core::middleware::authorized_event_stream::authorize_event_stream;
-    use api::identity_and_access::services::session_authorization::authorize_session;
+    use api_caller_identity::session_authorization::authorize_session;
+    use api_http_layer::middleware::authorized_event_stream::authorize_event_stream;
     use futures::StreamExt;
     let (state, actor, access, refresh) = fixture().await;
     let claims = state.jwt.parse(&access).unwrap();
     let user = authorize_session(&state.pool, &state.cfg, &claims)
         .await
         .unwrap();
-    common::fixtures::seed_membership(&state.pool, &actor, &state.cfg.discord_guild_id, "guest")
-        .await;
+    common::fixtures::seed_membership(
+        &state.pool,
+        actor.as_str(),
+        state.cfg.discord_guild_id.as_str(),
+        "guest",
+    )
+    .await;
     let source =
         futures::stream::iter([Ok(axum::response::sse::Event::default().data("protected"))]);
     let protected = authorize_event_stream(source, state.clone(), user.clone(), "admin");
@@ -332,7 +352,7 @@ async fn logged_out_family_credentials_cannot_revoke_a_later_login() {
     let (old_access, _, old_refresh) = rotate_session(&state, &original_refresh).await.unwrap();
     logout_session(&state, &original_refresh).await.unwrap();
     let (new_access, _, new_refresh) = issue_session(&state, &actor).await.unwrap();
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     for expired in [original_refresh, old_refresh] {
         assert_eq!(
             rotate_session(&state, &expired).await.unwrap_err().status,
@@ -360,7 +380,7 @@ async fn repeated_replay_of_a_retired_family_preserves_subsequent_recovery_login
             .status,
         StatusCode::UNAUTHORIZED
     );
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     assert_eq!(
         me(app.clone(), &successor_access).await,
         StatusCode::UNAUTHORIZED

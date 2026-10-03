@@ -28,7 +28,7 @@ the page's files, calls and states.
 
 - [Server intel page](/apps/frontend/src/pages/command_center/server_intel/) — the
   route component `ServerIntelPage`, the panel and the stream subscription.
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/) — the server
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/) — the server
   list and the status stream the page reads.
 
 ## Boundaries
@@ -43,5 +43,5 @@ the page's files, calls and states.
 
 ## Related documentation
 
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — the
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) — the
   API side of the server list and the status stream.

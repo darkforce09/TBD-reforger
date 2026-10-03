@@ -6,12 +6,13 @@
 
 #![allow(dead_code)]
 
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{HeaderMap, Request, StatusCode, header};
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
@@ -37,8 +38,9 @@ pub fn payload_with_role(role: &str) -> String {
     common::COMPILABLE_EDITOR_PAYLOAD.replace(r#""role":"SL""#, &format!(r#""role":"{role}""#))
 }
 
+/// The lowercase hex SHA-256 of `bytes`, the spelling the artifact store records.
 pub fn sha256_hex(bytes: &[u8]) -> String {
-    hex::encode(Sha256::digest(bytes))
+    content_digest::sha256_hex(bytes)
 }
 
 pub fn refusal_code(body: &Value) -> &str {
@@ -56,10 +58,11 @@ pub fn uuid_of(value: &Value) -> Uuid {
 impl MissionFixture {
     pub async fn new(suite: &str) -> Self {
         let url = common::require_test_database_url().expect("mission suites require PostgreSQL");
-        let pool = database::connect(&url).await.unwrap();
-        database::migrate(&pool).await.unwrap();
-        let state = AppState::new(pool, Config::for_tests(url, "mission-artifacts"));
-        let app = http_router::router(state.clone());
+        let pool = api_database::connect(&url).await.unwrap();
+        api_database::migrate(&pool).await.unwrap();
+        let state =
+            api::composition::application_state(pool, Config::for_tests(url, "mission-artifacts"));
+        let app = router(state.clone());
         let mut fixture = Self {
             state,
             app,

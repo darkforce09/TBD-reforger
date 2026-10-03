@@ -22,9 +22,9 @@ documentation/apps/frontend/pages/administration/server_control/
 - [Server control page](/apps/frontend/src/pages/administration/server_control/) — the
   route component `ServerControlPage`, the server card and its fleet command, deployment, fleet
   scenario and credential panels.
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/) — the server,
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/) — the server,
   fleet command, fleet scenario and machine credential routes.
-- [Missions domain](/apps/api/src/missions/) — the
+- [Missions domain](/crates/api/api_missions/src/) — the
   [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) routes.
 - [Fleet host agent](/apps/fleet_host_agent/) — the executor of process control and the player
   list.

@@ -7,7 +7,7 @@
 //! **Position:** a render-time check for any page that writes authored content into an attribute
 //! (the doctrine wiki's links and images, the vehicle database's profile images). The backend
 //! applies the same policy when it saves and parses that content
-//! (`apps/api/src/core/text/content_url_policy.rs`), so this is the second check, made
+//! (`crates/api/api_foundation/src/text/content_url_policy.rs`), so this is the second check, made
 //! where the attribute is written.
 //! **Signals & state:** none; pure functions over the candidate string.
 //! **Invariants:**

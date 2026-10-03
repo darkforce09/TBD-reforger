@@ -28,7 +28,7 @@ RCON wire protocol. The folder mirrors `apps/fleet_host_agent/` with `apps/` lef
 ## Code
 
 - [Fleet host agent](/apps/fleet_host_agent/) — the crate the document covers.
-- [Server infrastructure](/apps/api/src/server_infrastructure/) — the API's fleet
+- [Server infrastructure](/crates/api/api_server_infrastructure/src/) — the API's fleet
   command ledger and machine credentials the agent talks to.
 
 ## Boundaries

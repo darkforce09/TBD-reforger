@@ -1,11 +1,10 @@
 //! OAuth redirect paths. These bail before
 //! any DB access, so they run with a lazy (unconnected) pool and need no live DB.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::identity_and_access::handlers::oauth_host_guard::OAUTH_STATE_CLEAR;
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_identity_and_access::handlers::oauth_host_guard::OAUTH_STATE_CLEAR;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
@@ -14,8 +13,8 @@ use tower::ServiceExt;
 
 fn app() -> Router {
     // for_tests() has a blank Discord client_id → the "oauth_unconfigured" path.
-    let pool = database::connect_lazy("postgres://tbd:tbd@localhost:5434/unused").unwrap();
-    http_router::router(AppState::new(
+    let pool = api_database::connect_lazy("postgres://tbd:tbd@localhost:5434/unused").unwrap();
+    router(api::composition::application_state(
         pool,
         Config::for_tests("postgres://x/x", "oauth-secret"),
     ))
@@ -99,8 +98,8 @@ async fn discord_login_sets_oauth_state_cookie_when_configured() {
     let mut cfg = Config::for_tests("postgres://x/x", "oauth-secret");
     cfg.discord_client_id = "test-client".into();
     cfg.discord_redirect_url = "http://localhost:8080/api/v1/auth/discord/callback".into();
-    let pool = database::connect_lazy("postgres://tbd:tbd@localhost:5434/unused").unwrap();
-    let resp = http_router::router(AppState::new(pool, cfg))
+    let pool = api_database::connect_lazy("postgres://tbd:tbd@localhost:5434/unused").unwrap();
+    let resp = router(api::composition::application_state(pool, cfg))
         .oneshot(
             Request::builder()
                 .uri("/api/v1/auth/discord/login")

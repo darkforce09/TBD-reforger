@@ -1,0 +1,60 @@
+# Mission contract validation
+
+The [missions](/documentation/glossary/g_to_m.md#missions) domain's contract layer: JSON Schema
+validation of every document the domain accepts or serves, against the schemas in
+`contracts/definitions/`, and the loadout projection written by hand beside them.
+
+## Contents
+
+```text
+crates/api/api_missions/src/contract/
+├── loadout_projection.rs  `LoadoutExport`, the loadout-export document model, written by hand
+├── mod.rs                 the module tree; re-exports the validators
+├── schema_validators.rs   the embedded schemas and their `validate_*` entry points
+├── tests/                 unit tests for the validators, the zone pass and the loadout round trips
+└── zone_quantisation.rs   refuses at save a zone the compiled mission document would reject
+```
+
+## How it works
+
+`schema_validators.rs` embeds five schemas at compile time and compiles each one once, on first
+use, into a draft 2020-12 validator. Every entry point answers `Ok` with no findings for a valid
+document, `Ok` with findings (the instance path, then the validator's message) for an invalid one,
+and `Err(ContractError)` only when a schema itself fails to compile. The findings are for people:
+callers show them and never match on their text.
+
+| Entry point | Checks | Called by |
+|---|---|---|
+| `validate_mission_editor_payload_with_catalog` | `mission-editor-payload.schema.json`, control characters in authored strings, cargo over capacity, the zone pass | `handlers::mission_versions`, on every payload stored |
+| `validate_mission_document` | `mission.schema.json` and the 8 MiB `MISSION_FILE_MAX_BYTES` ceiling | [artifact](/documentation/glossary/a_to_f.md#artifact) compilation in `services::mission_artifacts` |
+| `validate_faction_library_doc` | `faction-library.schema.json` | `handlers::faction_library` |
+| `validate_registry_items_envelope` | `registry-items.schema.json` | `services::registry_import` |
+| `validate_registry_compat_envelope` | `registry-compat.schema.json` | `services::registry_import` |
+
+`zone_quantisation.rs` closes the gap between saving and compiling a
+[mission](/documentation/glossary/g_to_m.md#mission). The compile rounds zone coordinates to 0.1 m, so
+a circle of radius 0.04 m is valid as authored and invalid once compiled. The zone pass validates
+the row the compile will emit against `#/$defs/zone`, lifted from the same embedded
+`mission.schema.json` bytes the compiled document is checked against, so a saved zone is a zone the
+compiled document accepts; a zone the compile drops is not refused.
+
+`loadout_projection.rs` models `loadout-export.schema.json` by hand, tagged by `loadoutVersion`
+1 or 2, because the generated form of its versioned root `oneOf` loses fields; its tests round-trip
+both sample exports in `contracts/fixtures/registry/`.
+
+## Boundaries
+
+- Depends on: the schemas in `contracts/definitions/`, embedded with `include_str!`; the
+  `jsonschema` crate; the `mission_wire_safety` crate for the name and cargo capacity scans and
+  the cargo catalog type.
+- Used by: `api_missions::handlers` (`mission_versions`, `faction_library`) and
+  `api_missions::services` (`mission_artifacts`, `registry_import`).
+- The types generated from the registry, editor payload and faction schemas live in
+  `contract_schema_types::missions`; `registry_import` decodes envelopes into its generated
+  [registry](/documentation/glossary/n_to_z.md#registry) types.
+- Rules: `loadout_projection.rs` stays outside the generator
+  (`cargo xtask ci schema-codegen`); `MISSION_FILE_MAX_BYTES`, the [mod](/documentation/glossary/g_to_m.md#mod) mission
+  loader's 8 MiB limit, equals the schema's `x-tbd-missionFileMaxBytes`
+  (`schema_x_tbd_mission_file_max_bytes_matches_mod_constant` in `tests/schema_validators.rs`); the
+  zone pass rounds exactly as the compile does
+  (`zone_quantisation_mirrors_flatten` in `tests/zone_quantisation.rs`).

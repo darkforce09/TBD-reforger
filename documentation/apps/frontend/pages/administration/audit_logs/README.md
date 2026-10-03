@@ -28,7 +28,7 @@ folder's README lists the page's files.
 
 - [Audit logs page](/apps/frontend/src/pages/administration/audit_logs/) — the route
   component `AuditLogsPage`, the trail, the filter and the entry inspector.
-- [Administration domain](/apps/api/src/administration/) — the audit log routes and the
+- [Administration domain](/crates/api/api_administration/src/) — the audit log routes and the
   service every state-changing handler records its entry through.
 
 ## Boundaries
@@ -43,5 +43,5 @@ folder's README lists the page's files.
 
 ## Related documentation
 
-- [Administration domain](/apps/api/src/administration/README.md) — the API side of the
+- [Administration domain](/crates/api/api_administration/src/README.md) — the API side of the
   audit trail.

@@ -18,10 +18,10 @@ use common::database::{
 };
 use common::http::{DEV_LOGIN_ARMA_ID, DEV_LOGIN_USER};
 use common::source_text::{
-    flatten_sql_ws, pg_dollar_delim_len, pg_dollar_literal_end, rust_fn_body,
-    sqlx_queries_have_arma_coalesce_update, sqlx_query_string_payloads,
-    strip_rust_comments_outside_literals, strip_sql_comments_outside_literals,
-    users_insert_arma_id_value,
+    DEVELOPER_LOGIN_HANDLER, developer_login_handler_path, flatten_sql_ws, pg_dollar_delim_len,
+    pg_dollar_literal_end, rust_fn_body, sqlx_queries_have_arma_coalesce_update,
+    sqlx_query_string_payloads, strip_rust_comments_outside_literals,
+    strip_sql_comments_outside_literals, users_insert_arma_id_value,
 };
 
 #[test]
@@ -461,14 +461,13 @@ fn pin_binds_file_scope_dev_login_and_blanks_pg_dollar_quotes() {
 /// readable first failure that names the literals — not as the guarantee.
 #[test]
 fn dev_login_prime_literals_still_match_handler() {
-    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("src/identity_and_access/handlers/developer_login.rs");
+    let handler = developer_login_handler_path();
     let src = std::fs::read_to_string(&handler)
         .unwrap_or_else(|e| panic!("read {}: {e}", handler.display()));
     for needle in [DEV_LOGIN_USER, DEV_LOGIN_ARMA_ID] {
         assert!(
             src.contains(needle),
-            "src/identity_and_access/handlers/developer_login.rs no longer contains \
+            "{DEVELOPER_LOGIN_HANDLER} no longer contains \
              `{needle}`. The dev-login prime in tests/common/database.rs seeds that exact \
              row; update both together."
         );

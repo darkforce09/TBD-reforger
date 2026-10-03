@@ -21,7 +21,7 @@ by name, and opens one player's full statistics in a slide-over dossier.
 - Related: the [deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md),
   whose API reads the same aggregate view for the viewer's own figures; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [command center domain](/apps/api/src/command_center/README.md), which serves the
+  [command center domain](/crates/api/api_command_center/src/README.md), which serves the
   board and the dossier.
 
 ## Behaviour
@@ -66,7 +66,7 @@ by name, and opens one player's full statistics in a slide-over dossier.
   `apps/frontend/src/pages/operations/leaderboards/board_table.rs`), so the dossiers of
   the second and third players cannot be opened from the page.
 - A search re-ranks: the API numbers the matching rows from 1 (`get_leaderboards` in
-  `apps/api/src/command_center/handlers/leaderboards.rs`), so a searched player shows on
+  `crates/api/api_command_center/src/handlers/leaderboards.rs`), so a searched player shows on
   the podium as "#1" and the dossier says "RANK #1" whatever their place on the full board.
 - The board shows the first 20 players: the page sends no `limit` or `offset` and has no pager,
   and the API returns 20 rows by default (`get_leaderboards`).
@@ -77,19 +77,19 @@ The README's [Data](/apps/frontend/src/pages/operations/leaderboards/README.md#d
 lists each call with the fields the page reads. Server-side:
 
 - `GET /api/v1/leaderboards?category=<category>&q=<text>` (`get_leaderboards` in
-  `apps/api/src/command_center/handlers/leaderboards.rs`), for any signed-in member:
+  `crates/api/api_command_center/src/handlers/leaderboards.rs`), for any signed-in member:
   rows of the `leaderboard_totals` materialized view joined to the players who are not deleted,
   filtered by a case-insensitive username match, ordered by the category (K/D and the command win
   rate with unmeasured values last) with the Discord id breaking ties, `limit` rows (20 by
   default, at most 50) from `offset`, each numbered `rank` from `offset + 1`. An unknown category
   is refused with 400 "unknown category". A K/D nobody measured is `null`.
 - `GET /api/v1/users/{discordId}/stats` (`get_user_stats` in
-  `apps/api/src/command_center/handlers/user_stats_card.rs`): one player's row of the
+  `crates/api/api_command_center/src/handlers/user_stats_card.rs`): one player's row of the
   same view, all zeros for a player with no matches, and their total operations and attendance
   rate; 404 "user not found" for an unknown player.
 - The view aggregates the per-match player statistics that match results carry, and is refreshed
   in the same transaction as every match ingest and identity link that changes them
-  (`apps/api/src/command_center/services/leaderboard_view.rs`).
+  (`crates/api/api_member_activity/src/leaderboard_view.rs`).
 
 The page writes nothing and stores nothing in the browser.
 

@@ -55,7 +55,7 @@ server intel page's copy button and the
   `format_download_size` by the modpacks page in `apps/frontend/src/pages/doctrine_and_info/modpacks/`
   and the dashboard's modpack card in `apps/frontend/src/pages/command_center/dashboard/modpack.rs`.
 - Rules: `safe_url.rs` answers as the API's content URL policy
-  (`apps/api/src/core/text/content_url_policy.rs`) does, and its tests repeat that
+  (`crates/api/api_foundation/src/text/content_url_policy.rs`) does, and its tests repeat that
   policy's case lists, which `the_case_lists_match_the_backend_policy_tests` in
   `tests/safe_url.rs` keeps identical; the clipboard write toasts success only on the
   promise's resolve arm (`class_r_write_clipboard_toasts_only_on_the_resolve_arm` in

@@ -4,7 +4,7 @@
 //! reconciles when the identity links; a withdrawal leaves a timestamped tombstone whose seat is
 //! reusable. Scheduled time alone never decides attendance.
 
-use api::operations::services::event_lifecycle_sweep::sweep_once;
+use api_operations::services::event_lifecycle_sweep::sweep_once;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
 

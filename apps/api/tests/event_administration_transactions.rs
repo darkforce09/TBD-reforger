@@ -1,5 +1,8 @@
 //! Real event writes conserve participant capacity, schedules, authority and retained history.
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_identifiers::EventId;
+use api_state::AppState;
 use axum::{Router, http::StatusCode};
 use chrono::{DateTime, Duration, Utc};
 use serde_json::{Value, json};
@@ -20,9 +23,10 @@ struct Fixture {
 }
 async fn fixture() -> Fixture {
     let url = common::require_test_database_url().expect("isolated PostgreSQL required");
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(pool, Config::for_tests(url, "event-administration"));
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "event-administration"));
     let actor = format!("event-admin-{}", Uuid::new_v4());
     let other = format!("event-other-{}", Uuid::new_v4());
     let token = common::access_token(
@@ -77,7 +81,7 @@ async fn fixture() -> Fixture {
         fixture.commit().await.unwrap();
         attachments.push(attachment);
     }
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     Fixture {
         state,
         app,
@@ -259,7 +263,7 @@ fn generated_reschedules_preserve_exact_utc_offsets_and_normalize_microseconds_o
     use chrono::Timelike;
     use proptest::prelude::*;
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "event_schedule_offset_conservation",
         24,
         &proptest::collection::vec((-3600_i64..3600, 0_u32..1000), 1..5),
@@ -517,7 +521,7 @@ async fn event_delete_and_cancel_release_reservations_without_erasing_attendance
 #[tokio::test]
 async fn completed_events_remain_terminal_when_schedules_or_attachments_change_before_or_after_sweep()
  {
-    use api::operations::services::event_lifecycle_sweep::sweep_once;
+    use api_operations::services::event_lifecycle_sweep::sweep_once;
     for swept in [false, true] {
         for action in ["schedule", "attach", "restore"] {
             let f = fixture().await;
@@ -528,7 +532,8 @@ async fn completed_events_remain_terminal_when_schedules_or_attachments_change_b
             if swept {
                 let (started, completed) = sweep_once(&f.state.pool).await.unwrap();
                 assert!(
-                    started.contains(&f.event) && completed.contains(&f.event),
+                    started.contains(&EventId::new(f.event))
+                        && completed.contains(&EventId::new(f.event)),
                     "the swept branch must execute both transitions"
                 );
             }

@@ -1,0 +1,33 @@
+# The API's application state: the one dependency container every handler, middleware and
+# background worker receives, holding the pool, the configuration, the token manager, the session
+# authority, the CORS allow-list, the rate limiters, the realtime hub, the metrics registry, the
+# Discord and webhook clients and the equipment datasets. Names no domain.
+[package]
+name = "api_state"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's application state and its FromRef sub-state projections."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 5
+targets = "any"
+
+[dependencies]
+# `Config`, the loaded configuration the state shares.
+api_configuration = { workspace = true }
+# `DiscordService` and `WebhookService`, the concrete Discord clients the state holds.
+api_discord = { workspace = true }
+# `EquipmentDatasets`, the concrete equipment datasets the state holds.
+api_equipment_datasets = { workspace = true }
+# The token manager, the session authority trait, the CORS allow-list, the rate-limit state, the
+# metrics registry and the realtime hub.
+api_http_layer = { workspace = true }
+axum = { workspace = true }
+sqlx = { workspace = true, features = ["postgres"] }
+
+[lints]
+workspace = true

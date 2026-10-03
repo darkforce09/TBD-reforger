@@ -1,5 +1,5 @@
 //! Unit coverage for the app's content URL policy: the same case lists as the backend policy's
-//! tests (`apps/api/src/core/text/tests/content_url_policy.rs`), and a sweep of every
+//! tests (`crates/api/api_foundation/src/text/tests/content_url_policy.rs`), and a sweep of every
 //! character in every position against the character classes of the contract patterns in
 //! `contracts/definitions/wiki-page.schema.json`.
 //!
@@ -120,7 +120,7 @@ const INTERNAL_LINKS: &[&str] = &[
 /// The backend policy's tests, whose case lists this file repeats.
 const BACKEND_POLICY_TESTS: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../api/src/core/text/tests/content_url_policy.rs"
+    "/../../crates/api/api_foundation/src/text/tests/content_url_policy.rs"
 ));
 
 /// The case lists of a policy test file: from the first list's doc line to the end of
@@ -147,7 +147,7 @@ fn the_case_lists_match_the_backend_policy_tests() {
     assert_eq!(
         case_lists(include_str!("safe_url.rs")),
         case_lists(BACKEND_POLICY_TESTS),
-        "copy the case lists of apps/api/src/core/text/tests/content_url_policy.rs"
+        "copy the case lists of crates/api/api_foundation/src/text/tests/content_url_policy.rs"
     );
 }
 

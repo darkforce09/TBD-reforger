@@ -49,7 +49,7 @@ caller.
 - Depends on: `ballistics_model`, `ballistics_solver` (the elevation searches), `content_digest`
   and `newtype_ids`; `serde`, `serde_json`, `thiserror` and `libm`.
 - Used by: the API's catalog upload
-  (`apps/api/src/operations/services/ballistics_catalogs/upload_validation.rs`).
+  (`crates/api/api_operations/src/services/ballistics_catalogs/upload_validation.rs`).
 - Rules: the committed catalog and bundle of `contracts/fixtures/ballistics/vanilla_mortars.v1/`
   pass shell by shell and each negative variant fails with its own failure
   (`src/tests/committed_bundle.rs`); the catalog digest matches the FIPS 180-2 vectors

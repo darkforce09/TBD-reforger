@@ -4,10 +4,9 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -30,8 +29,8 @@ use crate::common;
 /// `auth::hash_token` — the same hash the handler recomputes — gives this suite its own user.
 pub async fn boot() -> Option<(Router, PgPool, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, role, is_banned, created_at, updated_at) \
@@ -127,11 +126,14 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
     }
 
     common::fixtures::seed_membership(&pool, NULL_UID, "test-tbd-guild", "admin").await;
-    let raw = api::identity_and_access::services::session_issuance::issue_refresh(&pool, NULL_UID)
-        .await
-        .expect("seed persisted session");
+    let raw = api_identity_and_access::services::session_issuance::issue_refresh(
+        &pool,
+        &api_identifiers::DiscordUserId::new(NULL_UID),
+    )
+    .await
+    .expect("seed persisted session");
 
-    let app = http_router::router(AppState::new(
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "null-secret"),
     ));
@@ -269,7 +271,7 @@ pub async fn seed(pool: &PgPool) -> Seed {
          VALUES ($1, $2, 'mod_runtime', $3, 'Null runtime', $4)",
         credential,
         server,
-        api::core::authentication_primitives::hash_token(&machine_secret),
+        api_http_layer::authentication_primitives::hash_token(&machine_secret),
         NULL_UID
     );
     rows.push((

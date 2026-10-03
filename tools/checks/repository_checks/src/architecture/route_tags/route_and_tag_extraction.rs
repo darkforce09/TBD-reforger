@@ -1,7 +1,8 @@
 //! Reading the two sides this gate compares out of source text.
 //!
-//! One half discovers and parses the domain route tables (`src/<domain>/routes.rs`) plus the
-//! `.merge(` lines that serve them; the other sweeps the whole tree for `@route` doc tags. Both
+//! One half discovers and parses the domain route tables (`crates/api/<crate>/src/routes.rs`) plus
+//! the `.merge(` lines that serve them; the other sweeps the API application and every API crate
+//! for `@route` doc tags. Both
 //! sides emit a marker row — `UNPARSED …` / `ORPHAN …` — for any input they could not read, so a
 //! shape this file does not understand shrinks no count in silence.
 
@@ -9,26 +10,29 @@ use super::*;
 
 /// One discovered domain route table.
 pub(super) struct RouteTable {
-    /// The single path segment between `src/` and `routes.rs` — the domain name the merge names.
+    /// The crate folder holding `src/routes.rs` — the crate name the merge names.
     pub domain: String,
     /// Repo-relative, for the mount-mismatch and UNPARSED messages.
     pub rel: String,
     pub text: String,
 }
 
-/// Every `src/<domain>/routes.rs` in the tree, in sorted order.
+/// Every `crates/api/<crate>/src/routes.rs` in the tree, in sorted order.
 ///
-/// A route table is EXACTLY one directory level below `src`: anything deeper is a handler, a model
-/// or a test, all of which are swept for `@route` tags but never for registrations. A missing or
-/// unreadable tree is a `NotRun`, never an empty list — the same fail-closed rule the tag sweep
-/// follows, and for the same reason.
+/// A route table sits EXACTLY in a crate's `src`: anything deeper is a handler, a model or a test,
+/// all of which are swept for `@route` tags but never for registrations. A missing or unreadable
+/// tree is a `NotRun`, never an empty list — the same fail-closed rule the tag sweep follows, and
+/// for the same reason.
 pub(super) fn discover_route_files(repo_root: &Path) -> Result<Vec<RouteTable>, NotRun> {
-    let src_dir = repo_root.join(SRC_DIR_REL);
-    let files = scan::walk_files(&[&src_dir], |p| {
+    let crates_dir = repo_root.join(API_CRATES_DIR_REL);
+    let files = scan::walk_files(&[&crates_dir], |p| {
+        let src = p.parent();
         p.file_name().is_some_and(|n| n == ROUTES_FILE)
-            && p.parent()
-                .and_then(|d| d.parent())
-                .is_some_and(|g| g == src_dir)
+            && src.and_then(|s| s.file_name()).is_some_and(|n| n == "src")
+            && src
+                .and_then(|s| s.parent())
+                .and_then(|c| c.parent())
+                .is_some_and(|g| g == crates_dir)
     })?;
     let mut out = Vec::new();
     for path in files {
@@ -38,6 +42,7 @@ pub(super) fn discover_route_files(repo_root: &Path) -> Result<Vec<RouteTable>, 
         })?;
         let domain = path
             .parent()
+            .and_then(|src| src.parent())
             .and_then(|d| d.file_name())
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
@@ -51,14 +56,16 @@ pub(super) fn discover_route_files(repo_root: &Path) -> Result<Vec<RouteTable>, 
     Ok(out)
 }
 
-/// The `<domain>` of every `.merge(crate::<domain>::routes(` inside the [`MERGE_FN`] body.
+/// The `<crate>` of every `.merge(<crate>::routes(` inside the [`MERGE_FN`] body; a
+/// `.merge(crate::<module>::routes(` yields `<module>`, so a table merged from the app's own tree
+/// is a merge with no table behind it, never invisible.
 ///
 /// The range runs from the column-0 `MERGE_FN` line to the next column-0 `}`, which in this
 /// rustfmt-clean crate is that function's own closing brace — so a `.merge(` anywhere else in
-/// `http_router.rs` is invisible, exactly as a `.route(` outside a route table is.
+/// `router.rs` is invisible, exactly as a `.route(` outside a route table is.
 pub(super) fn merged_domains(router_src: &str) -> BTreeSet<String> {
-    let merge =
-        Regex::new(r"\.merge\(crate::([A-Za-z_][A-Za-z_0-9]*)::routes\(").expect("static regex");
+    let merge = Regex::new(r"\.merge\((?:crate::)?([A-Za-z_][A-Za-z_0-9]*)::routes\(")
+        .expect("static regex");
     let mut out = BTreeSet::new();
     let mut in_range = false;
     for line in router_src.lines() {
@@ -163,12 +170,13 @@ pub(super) fn extract_router(body: &str) -> Vec<String> {
     out
 }
 
-/// Sweep `src/` for `@route` tags. Returns the parsed rows plus the RAW tag-line count the vacuity
-/// guard compares for exact equality. A missing or unreadable tree is a `NotRun`, which closes
-/// the script's `2>/dev/null || true`.
+/// Sweep the API application's `src/` and every API crate for `@route` tags. Returns the parsed
+/// rows plus the RAW tag-line count the vacuity guard compares for exact equality. A missing or
+/// unreadable tree is a `NotRun`, which closes the script's `2>/dev/null || true`.
 pub(super) fn extract_all_tags(repo_root: &Path) -> Result<(Vec<String>, usize), NotRun> {
     let src_dir = repo_root.join(SRC_DIR_REL);
-    let files = scan::walk_files(&[&src_dir], scan::with_extension(&["rs"]))?;
+    let crates_dir = repo_root.join(API_CRATES_DIR_REL);
+    let files = scan::walk_files(&[&src_dir, &crates_dir], scan::with_extension(&["rs"]))?;
     let tag_re = Regex::new(TAG_RE).expect("static regex");
     let (mut rows, mut raw) = (Vec::new(), 0usize);
     for path in files {

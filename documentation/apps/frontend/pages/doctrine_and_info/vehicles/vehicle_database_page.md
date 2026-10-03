@@ -21,7 +21,7 @@ vehicles from the same page.
   [Routes](/apps/frontend/src/pages/doctrine_and_info/vehicles/README.md#routes).
 - Related: the [doctrine wiki page](/documentation/apps/frontend/pages/doctrine_and_info/wiki/wiki_page.md),
   which holds the written manuals; the [API](/documentation/glossary/a_to_f.md#api)'s
-  [vehicle database handlers](/apps/api/src/community_content/handlers/vehicle_database/README.md),
+  [vehicle database handlers](/crates/api/api_community_content/src/handlers/vehicle_database/README.md),
   which own the vehicle rows.
 
 ## Behaviour
@@ -88,7 +88,7 @@ confirmation texts are in the README's
 
 The README's [Data](/apps/frontend/src/pages/doctrine_and_info/vehicles/README.md#data)
 lists the calls and the fields the page reads and sends. Server-side, in
-`apps/api/src/community_content/handlers/vehicle_database/`:
+`crates/api/api_community_content/src/handlers/vehicle_database/`:
 
 - `GET /api/v1/vehicle-database` (`list_vehicles` in `reads.rs`): any signed-in member; every
   vehicle row that is not deleted, ordered by name, then id; an empty amphibious value, threat or

@@ -29,7 +29,7 @@ the page's files.
 
 - [Vehicle database page](/apps/frontend/src/pages/doctrine_and_info/vehicles/) — the
   route component `VehicleDatabasePage`, the list, the dossier and the vehicle form.
-- [Community content domain](/apps/api/src/community_content/) — the vehicle database
+- [Community content domain](/crates/api/api_community_content/src/) — the vehicle database
   routes.
 
 ## Boundaries
@@ -43,5 +43,5 @@ the page's files.
 
 ## Related documentation
 
-- [Community content domain](/apps/api/src/community_content/README.md) — the API side
+- [Community content domain](/crates/api/api_community_content/src/README.md) — the API side
   of the vehicle rows.

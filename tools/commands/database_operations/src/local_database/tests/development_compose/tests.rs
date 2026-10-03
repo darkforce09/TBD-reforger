@@ -53,7 +53,7 @@ fn every_seed_is_opened_through_the_path_its_line_shows() {
         let from_root = seed_file(file);
         let line = project.shown.render("podman", &["exec"], Some(&from_root));
         assert!(
-            line.ends_with(&format!(" < ../apps/api/seeds/{file}")),
+            line.ends_with(&format!(" < ../crates/api/api_database/seeds/{file}")),
             "{line}"
         );
         let opened = project.stdin_file(&from_root);
@@ -98,8 +98,8 @@ fn the_folder_override_keeps_the_file_name_and_shows_the_folder_as_given() {
         "cd target/db-selftest && podman compose -f compose.dev.yml down"
     );
     assert_eq!(
-        relative.stdin_file("apps/api/seeds/x.sql"),
-        Path::new("/checkout/apps/api/seeds/x.sql")
+        relative.stdin_file("crates/api/api_database/seeds/x.sql"),
+        Path::new("/checkout/crates/api/api_database/seeds/x.sql")
     );
     let absolute = ComposeProject::in_override_folder(
         "/elsewhere/project",

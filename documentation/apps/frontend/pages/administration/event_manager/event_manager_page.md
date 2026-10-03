@@ -29,7 +29,7 @@ decide in an access sheet who may join, from which pools, and why each participa
   and the [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md),
   where members see and join what this page schedules; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [operations domain](/apps/api/src/operations/README.md); the
+  [operations domain](/crates/api/api_operations/src/README.md); the
   [event administration evidence](/documentation/apps/api/verification_evidence/event_administration.md),
   [eligibility and allocation evidence](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
   and [reservation and attendance evidence](/documentation/apps/api/verification_evidence/reservation_attendance.md).
@@ -133,10 +133,10 @@ operation.
   nothing: it hides the attachment, withdraws its registrations and keeps its ORBAT with the
   signup and attendance history, and attaching the same mission again restores the attachment
   with that ORBAT and history (`remove_event_mission` and `add_event_mission` in
-  `apps/api/src/operations/handlers/event_mission_attachment.rs`).
+  `crates/api/api_operations/src/handlers/event_mission_attachment.rs`).
 - The delete confirmation says every registration is kept. The API withdraws every reservation
   of the operation (reason `event_deleted`) and keeps the signup and attendance history
-  (`delete_event` in `apps/api/src/operations/handlers/event_create_update.rs`).
+  (`delete_event` in `crates/api/api_operations/src/handlers/event_create_update.rs`).
 - The calendar asks for every operation without a limit (`GET /api/v1/events?scope=all`), so the
   API answers its default page: the 20 earliest operations ever scheduled. Later operations never
   reach the grid once more than 20 exist, and a failed read shows as an empty month
@@ -149,19 +149,19 @@ operation.
 
 The README's [Data](/apps/frontend/src/pages/administration/event_manager/README.md#data)
 lists each call with the DTO or fields it reads or sends. Server-side, in
-`apps/api/src/operations/handlers/`:
+`crates/api/api_operations/src/handlers/`:
 
 - `GET /api/v1/events?scope=all` (`list_events` in `event_listing.rs`): the `all` scope lists every operation the viewer may see, in start
   order, 20 per page unless `limit` asks for up to 100; each item adds `mission_count`,
   `registered`, `filled`, `total_slots` and `percent`.
 - `GET /api/v1/missions?scope=global` (`list_missions` in
-  `apps/api/src/missions/handlers/mission_library.rs`): the picker's library, the live
+  `crates/api/api_missions/src/handlers/mission_library.rs`): the picker's library, the live
   missions and the administrator's own missions that are not archived, most recently updated
   first, 20 of them since the page sends no `limit`.
 - `GET /api/v1/events/{id}` (`get_event` in `event_hub.rs`): the hub behind the edit form's
   attached missions, and the access sheet's missions.
 - `GET /api/v1/servers` (`list_servers` in
-  `apps/api/src/server_infrastructure/handlers/server_intel.rs`): every server, active
+  `crates/api/api_server_infrastructure/src/handlers/server_intel.rs`): every server, active
   or not, for the game server choice.
 - `POST /api/v1/events` (`create_event` in `event_create_update.rs`): the API requires a start time, a
   `max_slots` of 0 to 256, a pre-start status (`scheduled`, `open` or `locked`), an absolute

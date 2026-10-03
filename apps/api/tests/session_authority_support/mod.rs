@@ -20,7 +20,9 @@ pub mod authority_oracle;
 pub mod persisted_families;
 pub mod refresh_families;
 
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use authority_cases::ServingEnvironment;
 use axum::{
     Router,
@@ -54,19 +56,22 @@ impl PropertyWorld {
     pub async fn open() -> Self {
         let url = crate::common::require_test_database_url()
             .expect("the session authority properties need TEST_DATABASE_URL");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect the test database");
-        database::migrate(&pool)
+        api_database::migrate(&pool)
             .await
             .expect("migrate the test database");
-        let development = AppState::new(pool.clone(), Config::for_tests(url.clone(), JWT_SECRET));
+        let development = api::composition::application_state(
+            pool.clone(),
+            Config::for_tests(url.clone(), JWT_SECRET),
+        );
         let mut production_config = Config::for_tests(url, JWT_SECRET);
         production_config.env = "production".into();
-        let production = AppState::new(pool, production_config);
+        let production = api::composition::application_state(pool, production_config);
         Self {
-            development_router: http_router::router(development.clone()),
-            production_router: http_router::router(production),
+            development_router: router(development.clone()),
+            production_router: router(production),
             development,
         }
     }

@@ -229,9 +229,9 @@ Expected: `{"version":2,"eventId":…,"missionId":…,"assignments":[…],"slots
   — the servers, and the credentials, deployments and fleet command panels.
 - [Event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md)
   — binding an operation to its game server.
-- [Staging fixtures host tool](/apps/api/src/bin/staging_fixtures/README.md) — the
+- [Staging fixtures host tool](/tools/staging/staging_fixtures/src/README.md) — the
   `provision-fleet` and `rotate-credential` subcommands and their guards.
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/README.md) — the
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md) — the
   credential, session and fleet command routes.
 - [Fleet command execution](/documentation/apps/fleet_host_agent/fleet_command_execution.md) — how a
   command moves from `queued` to `succeeded`.

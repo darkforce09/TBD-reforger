@@ -139,7 +139,7 @@ red ("CAUTION", "CRITICAL RULE").
 
 - [Doctrine wiki page](/documentation/apps/frontend/pages/doctrine_and_info/wiki/wiki_page.md)
   — the page's behaviour and design.
-- [Community content domain](/apps/api/src/community_content/README.md) — the wiki
+- [Community content domain](/crates/api/api_community_content/src/README.md) — the wiki
   routes.
 - [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md#wiki-markup-and-revisions)
   — the markup service, the revision storage and the save refusals.

@@ -6,7 +6,7 @@
 //! **Position:** its own test binary over `POST /api/v1/ingest/match-results`, driven through the
 //! real router with a registered server's machine credential (`tests/telemetry_support`); the
 //! failpoints `ResultsRevisionBeforeCommit` and `ResultsRevisionAfterCommit` sit in
-//! `match_telemetry::services::match_results_ingest::ingest_results_revision`.
+//! `api_match_telemetry::services::match_results_ingest::ingest_results_revision`.
 //! **Signals & state:** the process-global failpoint registry, serialised by the suite lock every
 //! case holds for its whole body; this binary's private database from `tests/common`.
 //! **Invariants:** a failed-before-commit revision leaves the match, its player lines, the derived

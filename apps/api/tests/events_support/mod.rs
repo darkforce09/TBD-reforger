@@ -33,10 +33,9 @@
 // and the gate runs `clippy -p api --all-targets -- -D warnings`.
 #![allow(dead_code)]
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -60,7 +59,7 @@ pub const OTHER: &str = "000000000000334002";
 /// between seats. Same private range as [`OTHER`].
 pub const THIRD: &str = "000000000000334003";
 /// The identity `dev-login` mints for every role
-/// (`identity_and_access::handlers::developer_login::DEV_USER_ID`).
+/// (`api_identity_and_access::handlers::developer_login::DEV_USER_ID`).
 ///
 /// Shared with every other dev-login caller — that is inherent to the handler, not something
 /// these suites can namespace away. Nothing here asserts on that row's columns; it is only
@@ -80,17 +79,19 @@ pub fn arma(discord_id: &str) -> String {
 
 /// The TBD guild of the test configuration; event access defaults to its verified members.
 pub fn tbd_guild() -> String {
-    Config::for_tests("postgres://unused", "events-secret").discord_guild_id
+    Config::for_tests("postgres://unused", "events-secret")
+        .discord_guild_id
+        .into_inner()
 }
 
 /// Router + pool over this binary's private database, or `None` when the suite must skip.
 /// Dev-login identities are verified TBD members, as the default event policy requires.
 pub async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     common::fixtures::verify_dev_login_members(&pool, &tbd_guild()).await;
-    let app = http_router::router(AppState::new(
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "events-secret"),
     ));

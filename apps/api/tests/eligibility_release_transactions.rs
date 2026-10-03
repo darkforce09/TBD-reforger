@@ -2,9 +2,9 @@
 //! retain history and promote replacements; transient or stale Discord data never evicts; the
 //! re-evaluation worker and policy edits revalidate after waiting for the event lock.
 
-use api::background_workers::event_reservation_reevaluator::drain_due_reevaluations;
-use api::identity_and_access::services::discord_client::GuildMember;
-use api::identity_and_access::services::discord_membership_cache::{
+use api_background_workers::event_reservation_reevaluator::drain_due_reevaluations;
+use api_discord::discord_client::GuildMember;
+use api_identity_and_access::services::discord_membership_cache::{
     accept_membership_observation, claim_membership_refresh, record_membership_failure,
 };
 use axum::http::StatusCode;
@@ -17,6 +17,8 @@ use event_eligibility_support::{
     Actor, EventShape, Fixture, REEVALUATION_QUEUE, named, tbd_members,
 };
 
+use api_identifiers::{DiscordGuildId, DiscordUserId};
+
 const SUITE: &str = "eligibility_release_transactions";
 
 fn code(body: &Value) -> &str {
@@ -25,18 +27,27 @@ fn code(body: &Value) -> &str {
 
 /// Commit a bot observation through the production reconciliation path.
 async fn observe_main_guild(f: &Fixture, actor: &Actor, member: bool) {
-    let lease = claim_membership_refresh(f.pool(), &actor.id, &f.main_guild, true)
-        .await
-        .unwrap()
-        .expect("a forced refresh always leases");
+    let lease = claim_membership_refresh(
+        f.pool(),
+        &DiscordUserId::new(actor.id.as_str()),
+        &DiscordGuildId::new(f.main_guild.as_str()),
+        true,
+    )
+    .await
+    .unwrap()
+    .expect("a forced refresh always leases");
     let observed = GuildMember {
         nick: String::new(),
         roles: vec![format!("observed-role-{}", actor.id.len())],
     };
-    let accepted =
-        accept_membership_observation(f.pool(), &lease, member.then_some(&observed), &f.main_guild)
-            .await
-            .unwrap();
+    let accepted = accept_membership_observation(
+        f.pool(),
+        &lease,
+        member.then_some(&observed),
+        &DiscordGuildId::new(f.main_guild.as_str()),
+    )
+    .await
+    .unwrap();
     assert!(accepted, "the current lease commits its observation");
 }
 
@@ -110,10 +121,15 @@ async fn eligibility_release_transient_failure_and_expired_grace_do_not_evict() 
     let member = f.member("member").await;
     assert_eq!(f.register(&member, 0, Some(0)).await.0, StatusCode::OK);
     // A failed Discord request records nothing about membership and requests no release.
-    let lease = claim_membership_refresh(f.pool(), &member.id, &f.main_guild, true)
-        .await
-        .unwrap()
-        .unwrap();
+    let lease = claim_membership_refresh(
+        f.pool(),
+        &DiscordUserId::new(member.id.as_str()),
+        &DiscordGuildId::new(f.main_guild.as_str()),
+        true,
+    )
+    .await
+    .unwrap()
+    .unwrap();
     record_membership_failure(
         f.pool(),
         &lease,

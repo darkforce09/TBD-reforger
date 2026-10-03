@@ -2,23 +2,21 @@
 //!
 //! **Role:** the `api` binary: loads the configuration, opens the pool (with backoff), applies
 //! the migrations, spawns the background workers, builds the router and middleware
-//! ([`api::core::http_router::router`]) and serves on `:PORT` until SIGINT or SIGTERM.
+//! ([`api::router::router`]) and serves on `:PORT` until SIGINT or SIGTERM.
 //! **Position:** the composition root of the `api` crate; the systemd unit, the release
 //! image and `cargo xtask mk rust-api` start it.
 //! **Signals & state:** the process's Tokio runtime; the worker handles live until `main`
 //! returns; SIGINT or SIGTERM begins
-//! [`api::core::process_lifecycle::process_shutdown`].
+//! [`api_configuration::process_lifecycle::process_shutdown`].
 //! **Invariants:** shutdown begins the process-wide shutdown signal at the moment `axum::serve`
 //! stops accepting, so every open SSE stream ends with it and the graceful drain waits only for
 //! ordinary requests in flight; the process then exits 0.
 
 use std::net::SocketAddr;
 
-use api::background_workers;
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::process_lifecycle::process_shutdown;
-use api::core::{database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_configuration::process_lifecycle::process_shutdown;
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -28,21 +26,21 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let cfg = Config::load()?;
-    let pool = database::connect(&cfg.database_url).await?;
+    let pool = api_database::connect(&cfg.database_url).await?;
     // `SKIP_MIGRATE` lets a harness that owns migration of a shared database keep this
     // process from racing it.
     if std::env::var("SKIP_MIGRATE").is_err() {
-        database::migrate(&pool).await?;
+        api_database::migrate(&pool).await?;
         tracing::info!(env = %cfg.env, "migrations applied");
     }
 
     let port = cfg.port.clone();
-    let state = AppState::new(pool, cfg);
+    let state = api::composition::application_state(pool, cfg);
     // Every interval task the API runs, armed in one place. The handles stay owned for the
     // life of the process; what each worker does and why a missed tick is survivable is
     // documented on the worker module itself.
-    let _workers = background_workers::spawn_all(&state);
-    let app = http_router::router(state);
+    let _workers = api_background_workers::spawn_all(&state);
+    let app = router(state);
 
     let addr = format!("0.0.0.0:{port}");
     let listener = tokio::net::TcpListener::bind(&addr).await?;

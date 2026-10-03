@@ -17,7 +17,7 @@ documentation/apps/frontend/pages/doctrine_and_info/wiki/
 - [Doctrine wiki page](/apps/frontend/src/pages/doctrine_and_info/wiki/) — the route
   component `WikiPage`, the index, the article pane, the block renderer, the revision history and
   the save path.
-- [Community content domain](/apps/api/src/community_content/) — the wiki list, article,
+- [Community content domain](/crates/api/api_community_content/src/) — the wiki list, article,
   revision and write routes the page calls, and the markup service.
 
 ## Boundaries
@@ -31,5 +31,5 @@ documentation/apps/frontend/pages/doctrine_and_info/wiki/
 
 ## Related documentation
 
-- [Community content domain](/apps/api/src/community_content/README.md) — the API side
+- [Community content domain](/crates/api/api_community_content/src/README.md) — the API side
   of the wiki.

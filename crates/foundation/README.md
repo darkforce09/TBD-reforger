@@ -23,8 +23,8 @@ crates/foundation/
 - Used by: the API and the single-page app; `content_digest` by `xtask`; `browser_platform` by
   the map engine's `render` tier; `orbat_slot_ids` by the mission crates, `unit_symbology` and
   `mission_editing_commands`; `newtype_ids` by the typed ids of the mission, ballistics, world
-  format, world-object and map overlay crates and by `orbat_slot_ids`; `deterministic_random` by
-  `formation_geometry` and the ballistics solver and agreement cases; `time_source` by
-  `mission_crdt`, `mission_document` and `map_editing_tools`.
+  format, world-object and map overlay crates, by `orbat_slot_ids`, and by `api_identifiers`, the
+  API's typed ids; `deterministic_random` by `formation_geometry` and the ballistics solver and
+  agreement cases; `time_source` by `mission_crdt`, `mission_document` and `map_editing_tools`.
 - Rules: a foundation crate declares `category = "crates/foundation"` and depends on foundation
   crates only (`cargo xtask verify crate-tiers`).

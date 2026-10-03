@@ -1,0 +1,38 @@
+# The API's Discord clients: the OAuth2 code exchange, the guild-member reads behind membership
+# reconciliation and the announcement webhook, with the typed failures they report.
+[package]
+name = "api_discord"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's Discord OAuth2, guild-member and announcement webhook clients and their typed failures."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 4
+targets = "any"
+
+[dependencies]
+# `cap_runes` and `truncate`, the embed field caps of the webhook.
+api_foundation = { workspace = true }
+# The outbound retry on `429` and the membership reconciliation outcome the metrics count.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+chrono = { workspace = true }
+reqwest = { workspace = true, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
+# The ring crypto provider both clients install once before building their TLS client.
+rustls = { workspace = true, features = ["ring", "std", "tls12", "logging"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["time"] }
+url = { workspace = true }
+
+[dev-dependencies]
+axum = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt", "time"] }
+
+[lints]
+workspace = true

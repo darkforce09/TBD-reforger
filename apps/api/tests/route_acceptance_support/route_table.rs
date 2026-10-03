@@ -1,6 +1,6 @@
 //! The API's route table, read from the router source at test runtime.
 //!
-//! **Role:** turns `src/core/http_router.rs` and every route table it reaches into rows of
+//! **Role:** turns `src/router.rs` and every route table it reaches into rows of
 //! (method, full path, handler, development-only flag, route body limit), following every
 //! `.merge(…)`, `.nest(prefix, …)`, `.nest_service(prefix, …)` and development-gated `if` block.
 //!
@@ -96,13 +96,13 @@ pub fn row(key: &str) -> Option<&'static RouteRow> {
     route_table().iter().find(|row| row.key() == key)
 }
 
-/// Parse the route table rooted at `src_root/core/http_router.rs`'s `fn router`.
+/// Parse the route table rooted at `src_root/router.rs`'s `fn router`.
 pub fn parse_route_table(src_root: &Path) -> Result<Vec<RouteRow>, String> {
     let parser = Parser { src_root };
-    let file = PathBuf::from("core/http_router.rs");
+    let file = PathBuf::from("router.rs");
     let source = parser.read(&file)?;
     let body = file_scope_fn_body(&source, "router")?
-        .ok_or_else(|| "core/http_router.rs has no `fn router`".to_string())?;
+        .ok_or_else(|| "router.rs has no `fn router`".to_string())?;
     let mut rows = Vec::new();
     let scope = Scope {
         file,
@@ -390,7 +390,10 @@ impl Parser<'_> {
 
     /// The file of the module `segments` names, as seen from `from` (relative to `src/`).
     /// `crate::` starts at `src/`, `super::` at the parent module; a bare first segment is a
-    /// child module of `from` or, through a `use super::…` import, a sibling of it.
+    /// child module of `from`, through a `use super::…` import a sibling of it, an API crate
+    /// named directly (`api_<name>::…`, its root `src/lib.rs` when named alone) or, through a
+    /// `use <crate>::…::<segment>;` import of an API crate, a module of that crate; an API
+    /// crate's file is answered as an absolute path.
     fn resolve_module(&self, segments: &[&str], from: &Path) -> Result<PathBuf, String> {
         let own_dir = module_directory(from).unwrap_or_default();
         let parent_dir = from.parent().map(Path::to_path_buf).unwrap_or_default();
@@ -401,33 +404,15 @@ impl Parser<'_> {
             _ => (vec![own_dir, parent_dir], segments),
         };
         for base in bases {
-            let mut dir = base;
-            let mut file = None;
-            for segment in rest {
-                if self
-                    .src_root
-                    .join(&dir)
-                    .join(format!("{segment}.rs"))
-                    .is_file()
-                {
-                    file = Some(dir.join(format!("{segment}.rs")));
-                } else if self
-                    .src_root
-                    .join(&dir)
-                    .join(segment)
-                    .join("mod.rs")
-                    .is_file()
-                {
-                    file = Some(dir.join(segment).join("mod.rs"));
-                } else {
-                    file = None;
-                    break;
-                }
-                dir = dir.join(segment);
-            }
-            if let Some(file) = file {
+            if let Some(file) = module_file(self.src_root, base, rest) {
                 return Ok(file);
             }
+        }
+        if let Some(file) = named_api_crate_module(segments)? {
+            return Ok(file);
+        }
+        if let Some(file) = self.imported_api_crate_module(segments, from)? {
+            return Ok(file);
         }
         Err(format!(
             "{}: module `{}` resolves to no file",
@@ -435,6 +420,105 @@ impl Parser<'_> {
             segments.join("::")
         ))
     }
+
+    /// The absolute file of the module `segments` names when `from` imports its first segment
+    /// from an API crate with a plain `use <crate>::…::<first>;`, or `None` when no such import
+    /// reaches a module file of a crate under `crates/api/`.
+    fn imported_api_crate_module(
+        &self,
+        segments: &[&str],
+        from: &Path,
+    ) -> Result<Option<PathBuf>, String> {
+        let Some((first, inner)) = segments.split_first() else {
+            return Ok(None);
+        };
+        let text = self.read(from)?;
+        let api_crates = api_crates_root()?;
+        let mut at = 0;
+        while let Some(found) = find_outside_literals(&text, at, "use ") {
+            let end = text[found..].find(';').map_or(text.len(), |e| found + e);
+            at = end;
+            let starts_a_word = text[..found]
+                .chars()
+                .next_back()
+                .is_none_or(|c| !(c.is_ascii_alphanumeric() || c == '_'));
+            let imported: Vec<&str> = text[found + "use ".len()..end]
+                .split("::")
+                .map(str::trim)
+                .collect();
+            let Some((krate, path)) = imported.split_first() else {
+                continue;
+            };
+            if !starts_a_word || path.last() != Some(first) {
+                continue;
+            }
+            let crate_source = api_crates.join(krate).join("src");
+            let module_path: Vec<&str> = path.iter().chain(inner).copied().collect();
+            if let Some(file) = module_file(&crate_source, PathBuf::new(), &module_path) {
+                return Ok(Some(crate_source.join(file)));
+            }
+        }
+        Ok(None)
+    }
+}
+
+/// The file, relative to `root`, of the module `rest` names below the folder `base`: each segment
+/// a `<segment>.rs` or a `<segment>/mod.rs`; `None` when a segment names no file.
+fn module_file(root: &Path, base: PathBuf, rest: &[&str]) -> Option<PathBuf> {
+    let mut dir = base;
+    let mut file = None;
+    for segment in rest {
+        if root.join(&dir).join(format!("{segment}.rs")).is_file() {
+            file = Some(dir.join(format!("{segment}.rs")));
+        } else if root.join(&dir).join(segment).join("mod.rs").is_file() {
+            file = Some(dir.join(segment).join("mod.rs"));
+        } else {
+            return None;
+        }
+        dir = dir.join(segment);
+    }
+    file
+}
+
+/// The absolute file of the module `segments` names when its first segment is an API crate
+/// (a folder of `crates/api/` holding `src/lib.rs`): the crate root for the crate alone, else the
+/// module file below its `src/`; `None` when the first segment names no API crate.
+fn named_api_crate_module(segments: &[&str]) -> Result<Option<PathBuf>, String> {
+    let Some((krate, inner)) = segments.split_first() else {
+        return Ok(None);
+    };
+    let crate_source = api_crates_root()?.join(krate).join("src");
+    if !crate_source.join("lib.rs").is_file() {
+        return Ok(None);
+    }
+    if inner.is_empty() {
+        return Ok(Some(crate_source.join("lib.rs")));
+    }
+    Ok(module_file(&crate_source, PathBuf::new(), inner).map(|file| crate_source.join(file)))
+}
+
+/// The `src/` folder of every API crate (each folder of `crates/api/` holding `src/lib.rs`),
+/// sorted; an unreadable `crates/api/` is an error, never an empty list.
+pub fn api_crate_source_roots() -> Result<Vec<PathBuf>, String> {
+    let root = api_crates_root()?;
+    let entries = std::fs::read_dir(&root).map_err(|e| format!("read {}: {e}", root.display()))?;
+    let mut roots: Vec<PathBuf> = entries
+        .filter_map(|entry| entry.ok().map(|entry| entry.path().join("src")))
+        .filter(|source| source.join("lib.rs").is_file())
+        .collect();
+    roots.sort();
+    if roots.is_empty() {
+        return Err(format!("no API crate under {}", root.display()));
+    }
+    Ok(roots)
+}
+
+/// The folder of the API crates (`crates/api`), found above this package's manifest folder.
+fn api_crates_root() -> Result<PathBuf, String> {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    repository_layout::find_repository_root_from(manifest)
+        .map(|root| root.join("crates/api"))
+        .map_err(|error| format!("no repository root above {}: {error}", manifest.display()))
 }
 
 /// The next registration call or `if` keyword in `text` at or after `from`.

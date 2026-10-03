@@ -1,0 +1,33 @@
+# The API's equipment datasets: verified local imports of the equipment exports the Workbench
+# publishes, their SQLite navigation index, and the generation-pinned read queries behind the
+# equipment data viewer routes.
+[package]
+name = "api_equipment_datasets"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's equipment dataset imports, navigation index and generation-pinned read queries."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 2
+targets = "any"
+
+[dependencies]
+api_identifiers = { workspace = true }
+# `sha256_hex` for documents and manifests, `Sha256Hasher` for the streamed publication files.
+content_digest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["raw_value"] }
+sqlx = { workspace = true, features = ["runtime-tokio", "sqlite-bundled", "macros"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["rt", "sync"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt", "sync"] }
+uuid = { workspace = true, features = ["v4"] }
+
+[lints]
+workspace = true

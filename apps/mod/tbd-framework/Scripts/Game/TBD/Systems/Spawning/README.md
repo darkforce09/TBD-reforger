@@ -162,7 +162,7 @@ groups live; a `garrison` spawns once and is not restocked. A module names eithe
     `apps/mod/tbd-framework/Scripts/Game/TBD/API/`;
   - over HTTP with the `mod_runtime` [machine credential](/documentation/glossary/g_to_m.md#machine-credential),
     `/api/v1/game-runtime/sessions/{sessionId}/deployments` and its `/{occupancyId}/end` route
-    (`apps/api/src/operations/routes.rs`), shaped by
+    (`crates/api/api_operations/src/routes.rs`), shaped by
     `contracts/definitions/game-runtime-deployment.schema.json`;
   - the engine's spawn classes (`SCR_RespawnSystemComponent`, `SCR_MenuSpawnLogic`,
     `SCR_PossessSpawnHandlerComponent`, `SCR_PossessSpawnData`) and `SCR_AIGroup`.

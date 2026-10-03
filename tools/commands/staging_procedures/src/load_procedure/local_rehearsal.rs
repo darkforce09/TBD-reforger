@@ -320,7 +320,7 @@ impl RehearsalEnvironment for LocalStack {
             "--quiet",
             "--release",
             "-p",
-            "api",
+            "staging_fixtures",
             "--bin",
             "staging-fixtures",
             "--",

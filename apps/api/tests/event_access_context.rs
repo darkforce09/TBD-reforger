@@ -1,7 +1,10 @@
 //! PostgreSQL eligibility projections preserve membership provenance and event policy boundaries.
 
-use api::core::{database, error_handling::api_error::ApiError};
-use api::operations::{
+use api_foundation::error_handling::api_error::ApiError;
+use api_identifiers::{
+    DiscordGuildId, DiscordUserId, EventGroupId, EventId, EventMissionId, MissionId, OrbatSlotId,
+};
+use api_operations::{
     models::{
         event_access_policy::{EventAccessCondition, EventAccessGrant, EventAccessPolicy},
         event_group::EventGroupSource,
@@ -26,14 +29,19 @@ struct Fixture {
     actor: String,
     main_guild: String,
     partner_guild: String,
-    event: Uuid,
+    event: EventId,
 }
 
 impl Fixture {
+    /// The main guild as the typed Discord guild id the access services take.
+    fn main_guild_id(&self) -> DiscordGuildId {
+        DiscordGuildId::new(self.main_guild.as_str())
+    }
+
     async fn new() -> Self {
         let url = common::require_test_database_url().expect("event access requires PostgreSQL");
-        let pool = database::connect(&url).await.unwrap();
-        database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url).await.unwrap();
+        api_database::migrate(&pool).await.unwrap();
         let actor = format!("event-access-{}", Uuid::new_v4());
         sqlx::query("INSERT INTO users(discord_id, username, created_at, updated_at) VALUES ($1, $1, now(), now())")
             .bind(&actor).execute(&pool).await.unwrap();
@@ -47,7 +55,7 @@ impl Fixture {
         }
     }
 
-    async fn insert_event(pool: &PgPool, author: &str) -> Uuid {
+    async fn insert_event(pool: &PgPool, author: &str) -> EventId {
         sqlx::query_scalar("INSERT INTO events(name_override, start_time, created_by, created_at) VALUES ('Eligibility fixture', now(), $1, now()) RETURNING id")
             .bind(author).fetch_one(pool).await.unwrap()
     }
@@ -60,19 +68,19 @@ impl Fixture {
         context
             .subject(
                 &mut self.pool.acquire().await.unwrap(),
-                &self.actor,
-                &self.main_guild,
+                &DiscordUserId::new(self.actor.as_str()),
+                &self.main_guild_id(),
             )
             .await
     }
 
-    async fn group(&self, event: Uuid, source: EventGroupSource) -> Uuid {
+    async fn group(&self, event: EventId, source: EventGroupSource) -> EventGroupId {
         sqlx::query_scalar("INSERT INTO event_groups(event_id, name, source, created_by) VALUES ($1, 'Eligibility group', $2, $3) RETURNING id")
             .bind(event).bind(serde_json::to_value(source).unwrap()).bind(&self.actor)
             .fetch_one(&self.pool).await.unwrap()
     }
 
-    async fn partner_group(&self, roles: &[&str]) -> Uuid {
+    async fn partner_group(&self, roles: &[&str]) -> EventGroupId {
         self.group(
             self.event,
             EventGroupSource::PartnerGuild {
@@ -83,7 +91,7 @@ impl Fixture {
         .await
     }
 
-    async fn roster(&self, group: Uuid) {
+    async fn roster(&self, group: EventGroupId) {
         sqlx::query(
             "INSERT INTO event_group_roster(group_id, discord_id, added_by) VALUES ($1, $2, $2)",
         )
@@ -121,8 +129,8 @@ impl Fixture {
             .bind(&self.actor).bind(guild).execute(&self.pool).await.unwrap();
     }
 
-    async fn mission(&self, event: Uuid) -> (Uuid, Uuid) {
-        let mission: Uuid = sqlx::query_scalar("INSERT INTO missions(title, author_id, terrain, game_mode, max_players, status, created_at)
+    async fn mission(&self, event: EventId) -> (MissionId, EventMissionId) {
+        let mission: MissionId = sqlx::query_scalar("INSERT INTO missions(title, author_id, terrain, game_mode, max_players, status, created_at)
             VALUES ('Eligibility mission', $1, 'everon', 'pve_coop', 32, 'live', now()) RETURNING id")
             .bind(&self.actor).fetch_one(&self.pool).await.unwrap();
         let event_mission = sqlx::query_scalar("INSERT INTO event_missions(event_id, mission_id, start_time, created_at) VALUES ($1, $2, now(), now()) RETURNING id")
@@ -130,7 +138,13 @@ impl Fixture {
         (mission, event_mission)
     }
 
-    async fn squad(&self, mission: Uuid, faction: &str, squad: &str, policy: &EventAccessPolicy) {
+    async fn squad(
+        &self,
+        mission: EventMissionId,
+        faction: &str,
+        squad: &str,
+        policy: &EventAccessPolicy,
+    ) {
         sqlx::query("INSERT INTO event_squad_access_policies(event_mission_id, faction, squad, access_policy) VALUES ($1, $2, $3, $4)")
             .bind(mission).bind(faction).bind(squad).bind(serde_json::to_value(policy).unwrap())
             .execute(&self.pool).await.unwrap();
@@ -138,11 +152,11 @@ impl Fixture {
 
     async fn slot(
         &self,
-        mission: Uuid,
+        mission: EventMissionId,
         faction: &str,
         index: i64,
         policy: Option<&EventAccessPolicy>,
-    ) -> Uuid {
+    ) -> OrbatSlotId {
         sqlx::query_scalar("INSERT INTO orbat_slots(event_mission_id, faction, squad, role, slot_index, access_policy)
             VALUES ($1, $2, 'Alpha', 'Rifleman', $3, $4) RETURNING id")
             .bind(mission).bind(faction).bind(index).bind(policy.map(|policy| serde_json::to_value(policy).unwrap()))
@@ -159,7 +173,7 @@ fn policy(alternatives: Vec<Vec<EventAccessCondition>>) -> EventAccessPolicy {
     }
 }
 
-fn group_policy(group: Uuid) -> EventAccessPolicy {
+fn group_policy(group: EventGroupId) -> EventAccessPolicy {
     policy(vec![vec![EventAccessCondition::EventGroup {
         group_id: group,
     }]])
@@ -188,7 +202,7 @@ async fn event_access_default_policy_distinguishes_empty_member_roles_guests_and
     assert_eq!(context.revision, 0);
     assert_eq!(context.policy, EventAccessPolicy::default());
     let guest = fixture.subject(&context).await.unwrap();
-    assert_eq!(guest.discord_id, fixture.actor);
+    assert_eq!(guest.discord_id.as_str(), fixture.actor);
     assert!(!guest.tbd_member);
     assert!(!permitted(&context.policy, &guest));
     assert!(permitted(&open_policy(), &guest));
@@ -415,8 +429,8 @@ async fn event_access_unavailable_accounts_cannot_obtain_a_subject_even_with_all
         context
             .subject(
                 &mut fixture.pool.acquire().await.unwrap(),
-                &missing,
-                &fixture.main_guild
+                &DiscordUserId::new(missing.as_str()),
+                &fixture.main_guild_id()
             )
             .await
             .unwrap_err()
@@ -454,7 +468,7 @@ async fn event_access_policy_references_require_live_groups_and_guilds_from_the_
         }]]),
     ] {
         context
-            .validate_policy_references(&candidate, &fixture.main_guild)
+            .validate_policy_references(&candidate, &fixture.main_guild_id())
             .unwrap();
     }
     for guild in [&fixture.main_guild, &fixture.partner_guild] {
@@ -464,13 +478,13 @@ async fn event_access_policy_references_require_live_groups_and_guilds_from_the_
                     guild_id: guild.clone(),
                     role_id: "role".into(),
                 }]]),
-                &fixture.main_guild,
+                &fixture.main_guild_id(),
             )
             .unwrap();
     }
     for candidate in [
         group_policy(foreign_group),
-        group_policy(Uuid::new_v4()),
+        group_policy(Uuid::new_v4().into()),
         policy(vec![vec![EventAccessCondition::DiscordRole {
             guild_id: foreign_guild,
             role_id: "role".into(),
@@ -478,7 +492,7 @@ async fn event_access_policy_references_require_live_groups_and_guilds_from_the_
     ] {
         assert_eq!(
             context
-                .validate_policy_references(&candidate, &fixture.main_guild)
+                .validate_policy_references(&candidate, &fixture.main_guild_id())
                 .unwrap_err()
                 .status,
             StatusCode::BAD_REQUEST
@@ -493,7 +507,7 @@ async fn event_access_policy_references_require_live_groups_and_guilds_from_the_
     assert!(!changed.groups.iter().any(|group| group.id == own_partner));
     assert!(
         changed
-            .validate_policy_references(&group_policy(own_partner), &fixture.main_guild)
+            .validate_policy_references(&group_policy(own_partner), &fixture.main_guild_id())
             .is_err()
     );
     assert!(
@@ -503,7 +517,7 @@ async fn event_access_policy_references_require_live_groups_and_guilds_from_the_
                     guild_id: fixture.partner_guild.clone(),
                     role_id: "role".into()
                 }]]),
-                &fixture.main_guild
+                &fixture.main_guild_id()
             )
             .is_err()
     );

@@ -61,7 +61,7 @@ quotes every headline and state text.
 The README's [Data](/apps/frontend/src/pages/administration/ballistics_catalogs/README.md#data)
 lists each call with its DTO. Server-side:
 
-- `POST /api/v1/ballistics-catalogs` (`apps/api/src/operations/handlers/ballistics_catalogs/upload.rs`):
+- `POST /api/v1/ballistics-catalogs` (`crates/api/api_operations/src/handlers/ballistics_catalogs/upload.rs`):
   administrator only, checked before the body is read. Refusals in the order they are checked: a
   body that is not `multipart/form-data` 415; a body over 17 MiB + 64 KiB, a `catalog` part over
   1 MiB or a `calibration` part over 16 MiB 413 (`request_too_large`); a part of another content
@@ -71,7 +71,7 @@ lists each call with its DTO. Server-side:
   (`accepted`, `cases`, `failures`, `forward_samples_not_judged`); the version and its audit line
   (`ballistics_catalog.uploaded`) are stored in one transaction, so a refused upload stores
   nothing. A database trigger refuses every later update or delete of a stored version.
-- `GET /api/v1/ballistics-catalogs` (`apps/api/src/operations/handlers/ballistics_catalogs/reads.rs`):
+- `GET /api/v1/ballistics-catalogs` (`crates/api/api_operations/src/handlers/ballistics_catalogs/reads.rs`):
   public; one summary per stored version.
 
 ## Design

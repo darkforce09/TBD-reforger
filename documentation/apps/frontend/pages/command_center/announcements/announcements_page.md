@@ -23,7 +23,7 @@ announcement opens exactly that one.
   [dashboard page](/documentation/apps/frontend/pages/command_center/dashboard/dashboard_page.md),
   whose "Recent Intelligence" rows link to `/announcements/{id}`; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [community content domain](/apps/api/src/community_content/README.md), which serves
+  [community content domain](/crates/api/api_community_content/src/README.md), which serves
   the feed.
 
 ## Behaviour
@@ -67,11 +67,11 @@ announcement opens exactly that one.
   (`reader` in `apps/frontend/src/pages/command_center/announcements/article_viewer.rs`),
   which the API fills with the publishing administrator's Discord id
   (`create_announcement` in
-  `apps/api/src/community_content/handlers/announcements_admin.rs`), so readers see a
+  `crates/api/api_community_content/src/handlers/announcements_admin.rs`), so readers see a
   number rather than a name.
 - The page asks for the feed without paging and so receives the first 20 announcements
   (`list_announcements` in
-  `apps/api/src/community_content/handlers/announcements_public.rs`). A link to an
+  `crates/api/api_community_content/src/handlers/announcements_public.rs`). A link to an
   older announcement reads "That broadcast is no longer in the feed." although the API still
   serves it at `GET /api/v1/announcements/{id}`, which the page never calls.
 
@@ -81,14 +81,14 @@ The README's [Data](/apps/frontend/src/pages/command_center/announcements/README
 lists the call and the fields the page reads. Server-side:
 
 - `GET /api/v1/announcements` (`list_announcements` in
-  `apps/api/src/community_content/handlers/announcements_public.rs`), for any
+  `crates/api/api_community_content/src/handlers/announcements_public.rs`), for any
   signed-in member: the published announcements that are not deleted, pinned first and then
   newest first, one page of `limit` (20 by default, at most 100) from `offset`, with `total`
   counting them all. Drafts never appear. The API leaves `snippet` and `thumbnail_url` out when
   they are empty, and the page draws nothing in their place.
 - The snippet is written when the announcement is saved: the one the author typed, cut to 200
   characters, else one derived from the body (`snippet_from` in
-  `apps/api/src/community_content/handlers/announcements_admin.rs`). The page's own
+  `crates/api/api_community_content/src/handlers/announcements_admin.rs`). The page's own
   fallback to the body's first paragraph covers a row without one.
 - `GET /api/v1/announcements/{id}` (`get_announcement`, same file): one published announcement,
   404 "announcement not found" for any other, 400 "invalid id" for an id that is not a UUID. The

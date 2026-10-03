@@ -49,7 +49,7 @@ Run every command from the repository root.
 
    ```bash
    cargo xtask deploy db ct-i psql -U tbd -d tbd_reforger \
-     < apps/api/seeds/discord_roles.sql
+     < crates/api/api_database/seeds/discord_roles.sql
    ```
 
    Expected: psql's command tags, here `DELETE 0` and `INSERT 0 3`, and no `ERROR:` line. psql
@@ -57,7 +57,7 @@ Run every command from the repository root.
 
 ### Load and remove the sample data
 
-`apps/api/seeds/mock_data.sql` holds sample users, modpacks and four
+`crates/api/api_database/seeds/mock_data.sql` holds sample users, modpacks and four
 [missions](/documentation/glossary/g_to_m.md#mission) with fixed ids. `cargo xtask db seed` never
 applies it.
 
@@ -65,13 +65,13 @@ applies it.
 
    ```bash
    cargo xtask deploy db ct-i psql -U tbd -d tbd_reforger \
-     < apps/api/seeds/mock_data.sql
+     < crates/api/api_database/seeds/mock_data.sql
    ```
 
    Expected: psql's `INSERT` tags and no `ERROR:` line.
 
 2. Remove the four missions. Their versions, armories and bookmarks go with them
-   (`ON DELETE CASCADE` in `apps/api/migrations/0018_foreign_keys.sql`); the sample
+   (`ON DELETE CASCADE` in `crates/api/api_database/migrations/0018_foreign_keys.sql`); the sample
    users and modpacks stay.
 
    ```bash
@@ -189,7 +189,7 @@ A drill proves a backup can be recovered and that the API would boot on it.
 
    Expected: `═══ backup restore drill ═══`, the restore into `tbd_drill_probe` (`TBD_DRILL_DB`),
    the table, enum, index and row counts, the boot audit (every `_sqlx_migrations` row has a
-   file in `apps/api/migrations/`, succeeded and matches the file's SHA-384; newer
+   file in `crates/api/api_database/migrations/`, succeeded and matches the file's SHA-384; newer
    files are listed as pending), then
    `DRILL PASS — <dump> restored into 'tbd_drill_probe' with <rows> row(s) across <n> table(s), and is boot-ready.`
    The scratch database is dropped afterwards. `DRILL FAIL` exits 1; treat it as an incident,
@@ -349,5 +349,5 @@ server, `journalctl --user -u tbd-website-backup.service -n 50` shows the last b
   and its exit codes.
 - [Deploy commands](/tools/commands/deployment/src/README.md) — every `cargo xtask deploy db`
   command, the dump checks and the drill.
-- [Database migrations](/apps/api/migrations/README.md) and
-  [database seeds](/apps/api/seeds/README.md) — the schema files and the seed files.
+- [Database migrations](/crates/api/api_database/migrations/README.md) and
+  [database seeds](/crates/api/api_database/seeds/README.md) — the schema files and the seed files.

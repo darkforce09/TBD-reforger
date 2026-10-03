@@ -282,9 +282,9 @@ Version.
 
 **Decision:** `POST /api/v1/missions/{id}/versions` alone accepts bodies up to
 `MISSION_VERSION_MAX_BODY_BYTES`, 256 MB by default
-(`/apps/api/src/core/configuration/mod.rs`, applied in
-`/apps/api/src/missions/routes.rs`); every other JSON route keeps 1 MB
-(`MAX_JSON_BODY`, `/apps/api/src/core/middleware/mod.rs`).
+(`/crates/api/api_configuration/src/configuration/mod.rs`, applied in
+`/crates/api/api_missions/src/routes.rs`); every other JSON route keeps 1 MB
+(`MAX_JSON_BODY`, `/crates/api/api_http_layer/src/middleware/mod.rs`).
 
 **Consequences:** A larger body is refused and the save status reads "Payload too large".
 
@@ -374,12 +374,12 @@ layer toggles.
 **Context:** The mod needed the compiled mission and the event's roster from the platform.
 
 **Decision:** The game server fetches a compiled mission from
-`GET /api/v1/game-runtime/artifacts/{artifactId}` (`/apps/api/src/missions/routes.rs`)
+`GET /api/v1/game-runtime/artifacts/{artifactId}` (`/crates/api/api_missions/src/routes.rs`)
 and the roster from `GET /api/v1/game-runtime/events/{id}/roster`
-(`/apps/api/src/operations/routes.rs`), where an [event](/documentation/glossary/a_to_f.md#event)
+(`/crates/api/api_operations/src/routes.rs`), where an [event](/documentation/glossary/a_to_f.md#event)
 is the scheduled session. Submission refuses authored data the compiled document cannot carry
 (`unsupported_authored_data`, used by
-`/apps/api/src/missions/services/mission_artifacts/artifact_store.rs`).
+`/crates/api/api_missions/src/services/mission_artifacts/artifact_store.rs`).
 
 **Consequences:** An authored trigger, for one, blocks submission until it is removed, because the
 compile does not emit triggers.

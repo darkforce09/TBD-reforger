@@ -7,7 +7,7 @@
 //! production-built router: self-service register and withdraw, administrator seat assignment
 //! and clearance, and administrator waitlist promotion. The persisted reservation state is read
 //! after every operation and held to the invariants below.
-//! **Position:** exercises `operations::handlers::{slot_registration, slot_assignment,
+//! **Position:** exercises `api_operations::handlers::{slot_registration, slot_assignment,
 //! waitlist_promotion}` and the `event_reservations` services beneath them against this binary's
 //! private database. Actors are verified members seeded through `events_support::seed_member`;
 //! their sessions come from the production `issue_session`.
@@ -36,8 +36,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::net::{IpAddr, SocketAddr};
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
-use api::identity_and_access::services::session_issuance::issue_session;
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_identity_and_access::services::session_issuance::issue_session;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
@@ -215,7 +217,7 @@ async fn actor(state: &AppState, role: &str) -> Actor {
         role,
     )
     .await;
-    let token = issue_session(state, &id)
+    let token = issue_session(state, &api_identifiers::DiscordUserId::new(id.as_str()))
         .await
         .unwrap_or_else(|error| panic!("issue a session for {id}: {error:?}"))
         .0;
@@ -878,19 +880,22 @@ fn reservation_transactions_conserve_slots_and_participants() {
     let world = runtime.block_on(async {
         let url = common::require_test_database_url()
             .expect("reservation properties require an isolated test database");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect the test database");
-        let state = AppState::new(pool, Config::for_tests(url, "reservation-properties"));
+        let state = api::composition::application_state(
+            pool,
+            Config::for_tests(url, "reservation-properties"),
+        );
         let administrator = actor(&state, "admin").await;
         PropertyWorld {
-            app: http_router::router(state.clone()),
+            app: router(state.clone()),
             state,
             administrator,
         }
     });
     let tally = OutcomeTally::default();
-    common::property_evidence::run_property(PROPERTY, CASES, &scenario(), |scenario| {
+    api_property_evidence::run_property(PROPERTY, CASES, &scenario(), |scenario| {
         runtime.block_on(run_case(&world, &tally, scenario))
     });
     let tally = tally.into_inner();

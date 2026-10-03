@@ -55,17 +55,17 @@ Contents and a row in the table.
 
 - [Administration pages](/apps/frontend/src/pages/administration/) — the seven route
   components and their panels, which the feature docs describe.
-- [Administration domain](/apps/api/src/administration/) — the roster, bans, warnings,
+- [Administration domain](/crates/api/api_administration/src/) — the roster, bans, warnings,
   role resync and audit trail behind the personnel and audit logs pages.
-- [Missions domain](/apps/api/src/missions/) — the approvals queue and decisions, and
+- [Missions domain](/crates/api/api_missions/src/) — the approvals queue and decisions, and
   the [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) of server control.
-- [Community content domain](/apps/api/src/community_content/) — the announcements and
+- [Community content domain](/crates/api/api_community_content/src/) — the announcements and
   uploads the content manager writes.
-- [Operations domain](/apps/api/src/operations/) — the
+- [Operations domain](/crates/api/api_operations/src/) — the
   [events](/documentation/glossary/a_to_f.md#event), their attached
   [missions](/documentation/glossary/g_to_m.md#mission) and the access administration of the event
   manager, and the ballistics catalog upload.
-- [Server infrastructure domain](/apps/api/src/server_infrastructure/) — the servers,
+- [Server infrastructure domain](/crates/api/api_server_infrastructure/src/) — the servers,
   [fleet commands](/documentation/glossary/a_to_f.md#fleet-command),
   [fleet scenarios](/documentation/glossary/a_to_f.md#fleet-scenario) and
   [machine credentials](/documentation/glossary/g_to_m.md#machine-credential) of server control.

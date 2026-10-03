@@ -58,7 +58,7 @@ None: no features and no environment variables.
 
 - Depends on: `ballistics_model` and `ballistics_solver`; `serde`, `thiserror` and `libm`. Its
   tests also use `jsonschema` against `contracts/definitions/fire-mission.schema.json`.
-- Used by: `apps/api/src/operations/services/fire_mission_resolve.rs`, which re-solves every
+- Used by: `crates/api/api_operations/src/services/fire_mission_resolve.rs`, which re-solves every
   `POST /api/v1/fire-missions` save and checks the client's solution (pinned by
   `apps/api/tests/game_ballistics_fire_missions.rs`); the mortar calculator in
   `apps/frontend/src/pages/field_tools/mortar/`; `ballistics_agreement_cases`; the developer

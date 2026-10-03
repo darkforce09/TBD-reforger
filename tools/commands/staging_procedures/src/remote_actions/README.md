@@ -40,7 +40,7 @@ The relay is controlled through `$HOME/.local/bin/acknowledgement-dropping-relay
 ## Boundaries
 
 - Depends on: `tools/commands/staging_procedures/src/remote_observers/remote_command.rs`; on the
-  host, the `staging-fixtures` tool (`apps/api/src/bin/staging_fixtures/`), the relay
+  host, the `staging-fixtures` tool (`tools/staging/staging_fixtures/src/`), the relay
   (`tools/staging/acknowledgement_dropping_relay/`), docker, systemd and steamcmd.
 - Used by: `tools/commands/staging_procedures/src/staging_dispatch.rs`, the procedures and
   `support_commands/status.rs`.

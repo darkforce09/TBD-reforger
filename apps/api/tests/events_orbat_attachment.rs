@@ -206,7 +206,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
     // So the assertion moves down a layer to the thing that now guarantees it: the UPDATE is
     // **rejected with SQLSTATE 23503**. That is strictly stronger — the old test proved the
     // handler survives bad data, this proves the bad data cannot be written. The handler's
-    // 500 arm (`orbat_template_for_mission`, `operations/handlers/event_mission_attachment.rs`)
+    // 500 arm (`orbat_template_for_mission`, `api_operations/src/handlers/event_mission_attachment.rs`)
     // is deliberately left in place as defence in depth: it still covers a row that predates
     // this migration on a database restored from an old dump, and constraint 18's backfill
     // NULLs exactly those.

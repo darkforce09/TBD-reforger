@@ -6,13 +6,13 @@
 //! endpoints report unlinked. Proves the `/me` handlers are not `is_some()`-only.
 //!
 //! Helper:
-//! [`api::identity_and_access::services::session_issuance::arma_id_is_linked`] — the same
+//! [`api_caller_identity::arma_identity_link::arma_id_is_linked`] — the same
 //! one refresh and the Discord callback use.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -35,11 +35,11 @@ const SEED_ARMA: &str = "profile-ws-seed-arma-1";
 
 async fn boot() -> Option<(Router, AppState, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let cfg = Config::for_tests(url, "profile-ws-secret");
-    let state = AppState::new(pool.clone(), cfg);
-    Some((http_router::router(state.clone()), state, pool))
+    let state = api::composition::application_state(pool.clone(), cfg);
+    Some((router(state.clone()), state, pool))
 }
 
 async fn cleanup(pool: &PgPool) {

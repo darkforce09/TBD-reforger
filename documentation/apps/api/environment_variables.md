@@ -9,17 +9,17 @@ where `apps/api/.env.example` and the code disagree, this reference follows the 
 
 ## Where it lives
 
-- Code: [`apps/api/src/core/configuration/mod.rs`](/apps/api/src/core/configuration/mod.rs)
+- Code: [`crates/api/api_configuration/src/configuration/mod.rs`](/crates/api/api_configuration/src/configuration/mod.rs)
   (`Config::load` and its validation), `proxy_network.rs` beside it (the `TRUSTED_PROXIES`
-  parser), [`apps/api/src/core/database/connection_pool.rs`](/apps/api/src/core/database/connection_pool.rs)
+  parser), [`crates/api/api_database/src/connection_pool.rs`](/crates/api/api_database/src/connection_pool.rs)
   (the pool settings), three workers in
-  [`apps/api/src/background_workers/`](/apps/api/src/background_workers/)
+  [`crates/api/api_background_workers/src/`](/crates/api/api_background_workers/src/)
   (their intervals), and [`apps/api/src/bin/api.rs`](/apps/api/src/bin/api.rs)
-  (`SKIP_MIGRATE`, `RUST_LOG`); `reqwest` reads the proxy variables when `AppState::new` builds
-  the outbound HTTP clients.
+  (`SKIP_MIGRATE`, `RUST_LOG`); `reqwest` reads the proxy variables when
+  `composition::application_state` builds the outbound HTTP clients.
 - Entry: the template [`apps/api/.env.example`](/apps/api/.env.example),
   copied to the gitignored `apps/api/.env`.
-- Related: the [configuration README](/apps/api/src/core/configuration/README.md), the
+- Related: the [configuration README](/crates/api/api_configuration/src/configuration/README.md), the
   crate README's [Configuration](/apps/api/README.md#configuration) table, the
   [local development runbook](/documentation/runbooks/local_development.md) and the
   [website deployment runbook](/documentation/runbooks/website_deployment.md).
@@ -35,10 +35,11 @@ where `apps/api/.env.example` and the code disagree, this reference follows the 
 2. It reads each variable once, at boot. A string variable that is unset or empty takes its
    default; a number that does not parse takes its default.
 3. `Config::validate` then refuses the boot on the rules below, naming the variable.
-4. `core::database::connect` reads the four `TBD_DB_POOL_*` variables when it opens the pool,
+4. `api_database::connect` reads the four `TBD_DB_POOL_*` variables when it opens the pool,
    and `spawn_all` reads the three worker intervals when it arms the workers.
-5. `AppState::new` builds the API's two outbound HTTP clients, the Discord client and the
-   announcement webhook client, and `reqwest` reads the proxy variables then, once per client.
+5. `composition::application_state` builds the API's two outbound HTTP clients, the Discord
+   client and the announcement webhook client, and `reqwest` reads the proxy variables then, once
+   per client.
 
 ### What stops the boot
 
@@ -73,7 +74,7 @@ behaves as production. Development:
 - registers the equipment data viewer's anonymous `/api/v1/debug/equipment-data/*` reads, which
   outside development are not registered;
 - refuses to start the Discord flow when `FRONTEND_URL` and `DISCORD_REDIRECT_URL` name different
-  hosts (`apps/api/src/identity_and_access/handlers/oauth_host_guard.rs`); production
+  hosts (`crates/api/api_identity_and_access/src/handlers/oauth_host_guard.rs`); production
   logs one warning instead, since a split-host deployment is legitimate there.
 
 ### Known discrepancies
@@ -82,15 +83,15 @@ behaves as production. Development:
   row (`apps/api/.env.example:135-137`) — the code writes none: with a blank guild,
   sign-in takes no membership lease and reads no guild membership, so the member's stored role
   stays as it is (`claim_membership_refresh` in
-  `apps/api/src/identity_and_access/services/discord_membership_cache.rs`, and
-  `apps/api/src/identity_and_access/handlers/discord_oauth.rs`, whose callback reads the
+  `crates/api/api_identity_and_access/src/services/discord_membership_cache.rs`, and
+  `crates/api/api_identity_and_access/src/handlers/discord_oauth.rs`, whose callback reads the
   guild membership only for a configured guild and registers the account through
   `register_account` in
-  `apps/api/src/identity_and_access/services/account_registration.rs`, which never
+  `crates/api/api_identity_and_access/src/services/account_registration.rs`, which never
   writes the role).
 - `.env.example` ties the `/map-assets` mount to `SPA_DIST_DIR`
   (`apps/api/.env.example:41-42`) — the router always mounts `/map-assets` and
-  `/map-assets/glyphs` (`apps/api/src/core/http_router.rs`); `SPA_DIST_DIR` adds only
+  `/map-assets/glyphs` (`apps/api/src/router.rs`); `SPA_DIST_DIR` adds only
   the built app and the cross-origin isolation headers.
 - `.env.example` omits five variables the code reads: `TRUSTED_PROXIES`,
   `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and `TEST_DATABASE_URL`.
@@ -99,7 +100,7 @@ behaves as production. Development:
 
 Paths in defaults are relative to the working directory, which is `apps/api/` for
 `cargo xtask mk rust-api`. "Config" is `Config::load` in
-`apps/api/src/core/configuration/mod.rs`.
+`crates/api/api_configuration/src/configuration/mod.rs`.
 
 ### Server and frontend
 
@@ -119,17 +120,17 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 
 | Variable | Default | Required | Read by | Meaning |
 |---|---|---|---|---|
-| `MAP_ASSETS_DIR` | `../../assets/terrains` | no | Config; the default applies in `apps/api/src/core/http_router.rs` | the terrain tree served at `/map-assets`; a missing directory logs a warning at boot |
+| `MAP_ASSETS_DIR` | `../../assets/terrains` | no | Config; the default applies in `apps/api/src/router.rs` | the terrain tree served at `/map-assets`; a missing directory logs a warning at boot |
 | `GLYPH_ASSETS_DIR` | `../../assets/glyphs` | no | the same | the glyph atlas served at `/map-assets/glyphs` |
 | `UPLOAD_DIR` | `../../assets/scratch/api/uploads` in development; none otherwise | outside development, absolute | Config | where the CMS upload writes and `/uploads` serves from; the router creates it at boot |
 | `EQUIPMENT_DATA_DIR` | `../../assets/equipment` in development; none otherwise, which leaves the equipment datasets unconfigured | no; when set outside development, absolute | Config | the imported equipment datasets and their indexes, which the development-only `/api/v1/debug/equipment-data/*` reads serve; the import worker creates it on its first import, and a missing folder reads as waiting for an import |
-| `EQUIPMENT_EXPORT_SOURCE_DIR` | empty: nothing is imported | no; when set outside development, absolute | Config | the Workbench equipment export's publication folder, which the import worker (`apps/api/src/background_workers/equipment_export_watcher.rs`) polls and copies into `EQUIPMENT_DATA_DIR` |
+| `EQUIPMENT_EXPORT_SOURCE_DIR` | empty: nothing is imported | no; when set outside development, absolute | Config | the Workbench equipment export's publication folder, which the import worker (`crates/api/api_background_workers/src/equipment_export_watcher.rs`) polls and copies into `EQUIPMENT_DATA_DIR` |
 
 ### Database
 
 | Variable | Default | Required | Read by | Meaning |
 |---|---|---|---|---|
-| `DATABASE_URL` | none | yes | Config; `apps/api/src/bin/import_registry.rs`; `apps/api/src/bin/staging_fixtures/main.rs`, from the API env file | the Postgres URL; locally `postgres://tbd:tbd@localhost:5434/tbd_reforger?sslmode=disable` |
+| `DATABASE_URL` | none | yes | Config; `apps/api/src/bin/import_registry.rs`; `tools/staging/staging_fixtures/src/main.rs`, from the API env file | the Postgres URL; locally `postgres://tbd:tbd@localhost:5434/tbd_reforger?sslmode=disable` |
 | `TBD_DB_POOL_MAX_CONNECTIONS` | `25` | no | `DbPoolConfig::from_env` in `connection_pool.rs` | pool ceiling, at least 1 |
 | `TBD_DB_POOL_IDLE_TIMEOUT_SECS` | `300` | no | the same | seconds a connection may sit idle |
 | `TBD_DB_POOL_MAX_LIFETIME_SECS` | `1800` | no | the same | seconds a connection may live |
@@ -145,15 +146,15 @@ The template sets `FRONTEND_URL=http://localhost:3000` and both local origins in
 | `DISCORD_CLIENT_ID` | empty | outside development | Config | the OAuth2 application id; empty sends sign-in back with `#error=oauth_unconfigured` |
 | `DISCORD_CLIENT_SECRET` | empty | outside development | Config | the OAuth2 secret for the token exchange; a wrong one ends sign-in with `#error=discord_unreachable` |
 | `DISCORD_REDIRECT_URL` | empty | outside development | Config | the callback registered byte-exact in the Discord Developer Portal; the template's is `http://localhost:8080/api/v1/auth/discord/callback` |
-| `DISCORD_GUILD_ID` | empty | no | Config; `apps/api/src/bin/staging_fixtures/guarded_context.rs`, from the API env file | the guild whose members' roles decide website [roles](/documentation/glossary/n_to_z.md#role) through `apps/api/seeds/discord_roles.sql`; empty skips membership reads, enrolment and reconciliation |
+| `DISCORD_GUILD_ID` | empty | no | Config; `tools/staging/staging_fixtures/src/guarded_context.rs`, from the API env file | the guild whose members' roles decide website [roles](/documentation/glossary/n_to_z.md#role) through `crates/api/api_database/seeds/discord_roles.sql`; empty skips membership reads, enrolment and reconciliation |
 | `DISCORD_BOT_TOKEN` | empty: no bot | no | Config, read only through `Config::require_discord_bot_token` | the bot token; an unset token is reported by name where a path needs it |
-| `DISCORD_WEBHOOK_URL` | empty: pushing off | no | Config; `apps/api/src/community_content/services/discord_webhook.rs` | the channel webhook announcements are pushed to; while empty the push route answers 400 "discord webhook not configured" and a publish that asks to push writes a CRIT `webhook.push_failed` audit row |
+| `DISCORD_WEBHOOK_URL` | empty: pushing off | no | Config; `crates/api/api_discord/src/discord_webhook.rs` | the channel webhook announcements are pushed to; while empty the push route answers 400 "discord webhook not configured" and a publish that asks to push writes a CRIT `webhook.push_failed` audit row |
 
 ### Game servers and monitoring
 
 | Variable | Default | Required | Read by | Meaning |
 |---|---|---|---|---|
-| `OBSERVABILITY_TOKEN` | empty: `/metrics` answers 401 and `/healthz` serves only its public `{status}` | no | Config; `ObservabilityAuth` and `observability_bearer_matches` in `apps/api/src/core/observability/observability_auth.rs` | the operator's secret for scrapers, sent as `Authorization: Bearer <token>` to `GET /metrics` and the detailed `GET /healthz` and compared in constant time; no other route accepts it, and no user session or machine credential reaches these two |
+| `OBSERVABILITY_TOKEN` | empty: `/metrics` answers 401 and `/healthz` serves only its public `{status}` | no | Config; `ObservabilityAuth` and `observability_bearer_matches` in `crates/api/api_http_layer/src/observability/observability_auth.rs` | the operator's secret for scrapers, sent as `Authorization: Bearer <token>` to `GET /metrics` and the detailed `GET /healthz` and compared in constant time; no other route accepts it, and no user session or machine credential reaches these two |
 
 Game servers hold no shared token. The
 [machine credentials](/documentation/glossary/g_to_m.md#machine-credential) of the
@@ -170,9 +171,9 @@ means the default, and the boot log states the interval each worker got.
 
 | Variable | Default | Read by |
 |---|---|---|
-| `SERVER_STATUS_PUBLISH_INTERVAL_SECS` | `10` | `apps/api/src/background_workers/server_status_publisher.rs` |
-| `LEADERBOARD_REFRESH_INTERVAL_SECS` | `900` | `apps/api/src/background_workers/leaderboard_refresher.rs` |
-| `ROLE_RESYNC_INTERVAL_SECS` | `86400` | `apps/api/src/background_workers/discord_role_synchronizer.rs` |
+| `SERVER_STATUS_PUBLISH_INTERVAL_SECS` | `10` | `crates/api/api_background_workers/src/server_status_publisher.rs` |
+| `LEADERBOARD_REFRESH_INTERVAL_SECS` | `900` | `crates/api/api_background_workers/src/leaderboard_refresher.rs` |
+| `ROLE_RESYNC_INTERVAL_SECS` | `86400` | `crates/api/api_background_workers/src/discord_role_synchronizer.rs` |
 
 ### Process
 
@@ -180,7 +181,7 @@ means the default, and the boot log states the interval each worker got.
 |---|---|---|---|
 | `SKIP_MIGRATE` | unset | `apps/api/src/bin/api.rs` | any value, even empty, skips the migrations at boot, for a harness that migrates a shared database itself |
 | `RUST_LOG` | `info` | `apps/api/src/bin/api.rs` | the `tracing` filter; an unparseable value means `info` |
-| `HTTPS_PROXY`, `NO_PROXY` | unset: direct connections | `reqwest`, in the clients of `apps/api/src/identity_and_access/services/discord_client.rs` and `apps/api/src/community_content/services/discord_webhook.rs` | every outbound HTTPS request of the API, Discord's included, goes through the `HTTPS_PROXY` proxy unless its host matches the comma-separated `NO_PROXY` list; lowercase `https_proxy` and `no_proxy` apply when the uppercase name is unset. A proxy that cannot be reached fails each Discord member read as `unavailable` and leaves the recorded membership as it was: the staging outage drill sets `HTTPS_PROXY=http://127.0.0.1:9`, a closed loopback port, and `apps/api/tests/discord_client_proxy_environment.rs` proves both the proxying and that outcome over loopback |
+| `HTTPS_PROXY`, `NO_PROXY` | unset: direct connections | `reqwest`, in the clients of `crates/api/api_discord/src/discord_client.rs` and `crates/api/api_discord/src/discord_webhook.rs` | every outbound HTTPS request of the API, Discord's included, goes through the `HTTPS_PROXY` proxy unless its host matches the comma-separated `NO_PROXY` list; lowercase `https_proxy` and `no_proxy` apply when the uppercase name is unset. A proxy that cannot be reached fails each Discord member read as `unavailable` and leaves the recorded membership as it was: the staging outage drill sets `HTTPS_PROXY=http://127.0.0.1:9`, a closed loopback port, and `apps/api/tests/discord_client_proxy_environment.rs` proves both the proxying and that outcome over loopback |
 
 ### Tests
 
@@ -188,7 +189,7 @@ means the default, and the boot log states the interval each worker got.
 |---|---|---|
 | `TEST_DATABASE_URL` | `apps/api/tests/common/database.rs` | the base URL each database suite derives its own scratch database from; `cargo xtask db test-it` sets it, and a suite without it fails rather than skips |
 | `TBD_GATE_DB` | `apps/api/tests/aar_replay_url_backfill.rs` | that suite's fallback when `TEST_DATABASE_URL` is unset |
-| `PROPTEST_RNG_SEED` | `apps/api/src/tests/property_evidence.rs` | the property-test seed, decimal digits; the suites fix a default |
+| `PROPTEST_RNG_SEED` | `crates/api/api_property_evidence/src/property_run.rs` | the property-test seed, decimal digits; the suites fix a default |
 | `PROPTEST_CASES` | the same | must stay unset: the property suites own their case counts |
 
 ### Where each deployment sets them

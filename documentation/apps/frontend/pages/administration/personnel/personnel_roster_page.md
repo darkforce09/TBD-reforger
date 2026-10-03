@@ -22,7 +22,7 @@ Discord. A role follows the member's Discord roles, so the page explains it and 
   [Routes](/apps/frontend/src/pages/administration/personnel/README.md#routes).
 - Related: the [personnel](/documentation/glossary/n_to_z.md#personnel) glossary entry; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [administration domain](/apps/api/src/administration/README.md), which owns the
+  [administration domain](/crates/api/api_administration/src/README.md), which owns the
   roster, bans, warnings and the role resync; the membership grace extension, which the
   navigation frame's membership control sends, not this page.
 
@@ -77,7 +77,7 @@ Discord. A role follows the member's Discord roles, so the page explains it and 
 - The search placeholder promises a Discord id search ("Search Discord ID or Arma Name…",
   `apps/frontend/src/pages/administration/personnel/page.rs`), but the API matches
   the text against the username, the Discord handle, the Arma character and the Arma id only
-  (`list_users` in `apps/api/src/administration/handlers/personnel_roster.rs`); a
+  (`list_users` in `crates/api/api_administration/src/handlers/personnel_roster.rs`); a
   Discord id finds nobody unless it also appears in one of those.
 
 ## Data
@@ -86,7 +86,7 @@ The README's [Data](/apps/frontend/src/pages/administration/personnel/README.md#
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/admin/users?page=<n>&per_page=<size>&q=<text>` (`list_users` in
-  `apps/api/src/administration/handlers/personnel_roster.rs`): answers
+  `crates/api/api_administration/src/handlers/personnel_roster.rs`): answers
   `{items, page, per_page, total}` (`personnel-roster.schema.json`). The API orders by
   `lower(username)`, then `discord_id`, so every member sits on exactly one page; `page` defaults
   to 1 and `per_page` to 20, a `per_page` above 100 is served as 100, and a `page` or `per_page`
@@ -94,7 +94,7 @@ lists each call with the DTO it reads or sends. Server-side:
   matches it case-insensitively as described above; `total` counts every match, and a page past
   the end answers no items with the real total.
 - `POST /api/v1/admin/users/{discordId}/ban` (`ban_user` in
-  `apps/api/src/administration/handlers/disciplinary.rs`): answers `{banned: true}`.
+  `crates/api/api_administration/src/handlers/disciplinary.rs`): answers `{banned: true}`.
   In one transaction the API marks the member banned with the reason, the banning administrator
   and the time, revokes their refresh tokens (so the ban takes hold when the current access token
   expires), queues a re-evaluation of their [event](/documentation/glossary/a_to_f.md#event)
@@ -105,7 +105,7 @@ lists each call with the DTO it reads or sends. Server-side:
 - `POST /api/v1/admin/users/{discordId}/warnings` (`issue_warning`): creates the
   warning (201) and records `user.warn` at warning severity; the same reason rule applies.
 - `POST /api/v1/admin/roles/sync` (`resync_roles` in
-  `apps/api/src/administration/handlers/role_management.rs`): reapplies the guild's
+  `crates/api/api_administration/src/handlers/role_management.rs`): reapplies the guild's
   role mappings to every member, moves members no longer in the guild to `guest`, records
   `roles.resync` and answers `{updated}`, the number of members it updated.
 - `PATCH /api/v1/admin/users/{discordId}` (`update_user`, same file) is never called: it refuses

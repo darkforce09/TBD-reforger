@@ -41,7 +41,7 @@ snake_case database and wire contract. The eight domains are `administration`, `
   Gate: CI-BLOCK, `cargo xtask mk rust-clippy` in the `api` job.
 - **GO-3 (Debuggability) — A best-effort write logs its failure and says why dropping it is
   safe.** Rust form: the write goes through a function that logs the error and returns nothing,
-  as `write_audit` in `apps/api/src/administration/services/audit_writer.rs` does,
+  as `write_audit` in `crates/api/api_audit_log/src/audit_writer.rs` does,
   while a write that must not happen without its record uses `required_audit.rs` in the same
   transaction; a bare discard (`let _ = …` or `.ok()`) carries a comment giving the reason.
   Status: live, unenforced: clippy accepts an explicit discard without a comment.
@@ -50,7 +50,7 @@ snake_case database and wire contract. The eight domains are `administration`, `
   the Rust type system carries it.
 - **GO-5 (Usability) — A unique-constraint clash answers `409` through SQLSTATE `23505`, never a
   string match.** Rust form: `is_unique_violation` in
-  [postgres_errors.rs](/apps/api/src/core/database/postgres_errors.rs), then
+  [postgres_errors.rs](/crates/api/api_database/src/postgres_errors.rs), then
   `ApiError::conflict`. Status: live, unenforced: no gate finds a handler that string-matches an
   error message.
 - **GO-6 (Readability) — Every public item carries a doc comment.** Rust form: the `///` rules of
@@ -69,7 +69,7 @@ clippy and `cargo fmt` stand in for the Go-era rules GO-2 to GO-8 and FMT-1 toge
 - **GO-7 (Readability) — Every handler that a route table registers carries `@route` in its doc
   comment, and the tag matches the wired route.** The route side is the eight
   `apps/api/src/<domain>/routes.rs` tables that `api_v1_routes` in
-  [http_router.rs](/apps/api/src/core/http_router.rs) merges under `/api/v1`. The
+  [http_router.rs](/apps/api/src/router.rs) merges under `/api/v1`. The
   check runs in both directions: every `/// @route METHOD PATH` tag names a route registered on
   that method for that handler, and every registered route carries a matching tag, keyed on
   method, path and handler function. Gate: CI-SCRIPT, `cargo xtask verify route-tags`, run by

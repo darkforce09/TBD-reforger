@@ -78,3 +78,28 @@ fn an_unreadable_workspace_is_an_error_not_an_empty_lane() {
     );
     let _ = std::fs::remove_dir_all(&root);
 }
+
+/// The API crates leave this lane with `api`: `api-test` and `db test-it` test the API family
+/// together, so a crate under `crates/api` is never tested twice nor dropped from both.
+#[test]
+fn the_api_family_is_left_to_the_api_lane() {
+    let root = fixture_root("api-family");
+    workspace(
+        &root,
+        &[
+            ("apps/api", "api"),
+            ("apps/frontend", "frontend"),
+            ("apps/offline_service_worker", "offline_service_worker"),
+            ("apps/graphics_engine", "graphics_engine"),
+            ("apps/map_engine", "map_engine"),
+            ("apps/agent", "agent"),
+            ("crates/api/api_state", "api_state"),
+            ("crates/foundation/guard", "guard"),
+        ],
+    );
+    assert_eq!(
+        workspace_member_lane_packages(&root).expect("the fixture reads"),
+        vec!["agent".to_string(), "guard".to_string()]
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}

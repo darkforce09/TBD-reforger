@@ -1,0 +1,58 @@
+# The administration domain of the API: the member roster and its moderation (bans, ban lifts,
+# warnings), the Discord role resync, the membership grace extension, and the audit log with its
+# publication sequence, its CSV export and its live feed.
+[package]
+name = "api_administration"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's member roster, moderation, Discord role resync and audit log console."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 7
+targets = "any"
+
+[dependencies]
+# `AuditSeverity` and the required and best-effort audit writers of every moderation action.
+api_audit_log = { workspace = true }
+# `UserRole` and the account identity locks a ban or a warning takes.
+api_caller_identity = { workspace = true }
+# `fail_point!` at the audit publication commit and the audit delivery read.
+api_failpoints = { workspace = true }
+# `ApiError`, the pagination and path parameters, and the wire formats.
+api_foundation = { workspace = true }
+# The `AdminUser` and `AuthUser` extractors and the authorized event stream of the live feed.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# The Discord role resync and the membership grace extension services.
+api_identity_and_access = { workspace = true }
+# The reservation re-evaluation queue a ban feeds.
+api_member_activity = { workspace = true }
+# `AppState`, the state every handler extracts.
+api_state = { workspace = true }
+# The live feed's stream of publications.
+async-stream = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+# The audit log CSV export.
+csv = { workspace = true }
+# The RFC 3339 timestamp spelling of every emitted time.
+fleet_wire_contract = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "chrono"] }
+thiserror = { workspace = true }
+# The notification listener's broadcast channel, its respawned pump and the delivery timer.
+tokio = { workspace = true, features = ["sync", "time", "rt"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+api_failpoints = { workspace = true, features = ["failpoints"] }
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
+
+[lints]
+workspace = true

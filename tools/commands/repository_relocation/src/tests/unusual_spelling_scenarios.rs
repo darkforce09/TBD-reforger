@@ -342,14 +342,14 @@ fn relocate_climbs_led_by_a_folder_no_anchor_holds_stay_as_written() {
         .write("apps/api/src/identity/services/tests/profile.rs", profile)
         .track();
     let manifest = repo.manifest(
-        "path\tapps/api/src/identity/services/tests/profile.rs\tapps/api/src/kernel/discord/tests/profile.rs\t\n\
+        "path\tapps/api/src/identity/services/tests/profile.rs\tcrates/api/api_discord/src/tests/profile.rs\t\n\
          path\told_assets\tnew_assets\t\n",
     );
 
     assert_eq!(dry_run(repo.root(), &manifest), 0);
     assert_eq!(apply(repo.root(), &manifest), 0);
     assert_eq!(
-        repo.read("apps/api/src/kernel/discord/tests/profile.rs"),
+        repo.read("crates/api/api_discord/src/tests/profile.rs"),
         "const ID: &str = \"7/../..\";\nconst DATA: &str = \"apps/../new_assets\";\n"
     );
     assert_eq!(verify(repo.root(), Some(&manifest)), 0);

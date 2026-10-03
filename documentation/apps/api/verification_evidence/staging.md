@@ -232,7 +232,7 @@ Declared cases (10): `population_seeded`, `refresh_paced`, `sustained_rate`, `co
 | Receipt recorder | `tools/commands/api_readiness_checks/src/operational_recording.rs` |
 | Harness and procedures | `tools/commands/staging_procedures/src/` (`cargo xtask staging …`) |
 | Load engine and relay | `tools/staging/` (`staging_load_plan`, `staging_load_generator`, `acknowledgement_dropping_relay`) |
-| Host tool | `apps/api/src/bin/staging_fixtures/` (`staging-fixtures`, built on the host by the website deploy) |
+| Host tool | `tools/staging/staging_fixtures/src/` (`staging-fixtures`, built on the host by the website deploy) |
 | Multi-instance deploy | `tools/commands/deployment/src/staging/`, units in `deploy/systemd/` |
 | Console command | the fleet command ledger (migration 0061), the host agent's at-most-once RCON path, the Server Control console box |
 

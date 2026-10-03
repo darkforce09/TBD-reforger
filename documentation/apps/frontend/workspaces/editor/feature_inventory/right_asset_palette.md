@@ -167,11 +167,11 @@ character ("Every role needs a name and a character.").
 ## Data
 
 - `GET /api/v1/registry` (`list_registry` in
-  `apps/api/src/missions/handlers/registry_items.rs`): the item rows, fetched in pages
+  `crates/api/api_missions/src/handlers/registry_items.rs`): the item rows, fetched in pages
   of 500 at boot and read as `RegistryItem`; the palettes build every tree from them.
   `GET /api/v1/registry?limit=1&offset=0` probes a failure for the "No modpack" wording.
 - `GET /api/v1/factions`, `POST /api/v1/factions`, `PUT /api/v1/factions/{id}` and
-  `DELETE /api/v1/factions/{id}` (`apps/api/src/missions/handlers/faction_library.rs`):
+  `DELETE /api/v1/factions/{id}` (`crates/api/api_missions/src/handlers/faction_library.rs`):
   the signed-in mission maker's own faction library; every call needs the mission-maker tier.
 - Compositions, markers, zones and triggers live in the mission document; favourites in this
   browser's local storage.

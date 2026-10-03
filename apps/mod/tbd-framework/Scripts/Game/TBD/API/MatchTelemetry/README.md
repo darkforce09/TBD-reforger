@@ -48,7 +48,7 @@ the contract; each subfolder's README describes its part.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`; `TBD_Sha256` and `TBD_Log` in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; `TBD_DeployedMission` and `TBD_MissionLoader`
   in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`. Over HTTP, the ingest
-  routes of `apps/api/src/match_telemetry/`.
+  routes of `crates/api/api_match_telemetry/src/`.
 - Used by: `TBD_ResultsReporter` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/`;
   `TBD_MatchEventRecorder` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents/`;
   `TBD_RuntimeStatusReadings` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/`;
@@ -61,6 +61,6 @@ the contract; each subfolder's README describes its part.
 
 - [Match telemetry design](/documentation/apps/api/verification_evidence/telemetry.md) — match identity,
   results revisions, detailed events and the queue's answer table
-- [Match telemetry domain](/apps/api/src/match_telemetry/README.md) — how the ingest routes take the
+- [Match telemetry domain](/crates/api/api_match_telemetry/src/README.md) — how the ingest routes take the
   reports in
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the machine-credential transport

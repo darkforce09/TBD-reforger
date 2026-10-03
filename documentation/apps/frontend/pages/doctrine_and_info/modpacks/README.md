@@ -29,7 +29,7 @@ files.
 
 - [Modpacks page](/apps/frontend/src/pages/doctrine_and_info/modpacks/) — the route
   component `ModpacksPage`, the pack list, the dossier and the edit form.
-- [Community content domain](/apps/api/src/community_content/) — the modpack routes.
+- [Community content domain](/crates/api/api_community_content/src/) — the modpack routes.
 
 ## Boundaries
 
@@ -42,5 +42,5 @@ files.
 
 ## Related documentation
 
-- [Community content domain](/apps/api/src/community_content/README.md) — the API side
+- [Community content domain](/crates/api/api_community_content/src/README.md) — the API side
   of the modpacks.

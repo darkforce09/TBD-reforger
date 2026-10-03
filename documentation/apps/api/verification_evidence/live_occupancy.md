@@ -15,7 +15,7 @@ indexes allow at most one open life per slot and one open life per player per se
 
 ## Deployment decision
 
-`POST /game-runtime/sessions/{sessionId}/deployments` (`operations/services/live_slot_occupancy.rs`)
+`POST /game-runtime/sessions/{sessionId}/deployments` (`crates/api/api_operations/src/services/live_slot_occupancy.rs`)
 allows a life when the identity is linked, the account is available, and either the player's own
 active reservation is for the slot, or the slot is unreserved and its effective policy admits the
 player under current membership authority — and the slot has no other open life and the player no

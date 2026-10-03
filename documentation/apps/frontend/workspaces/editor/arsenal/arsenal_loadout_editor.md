@@ -149,11 +149,11 @@ The editor page loads the registry and the compatibility feed once at boot, in
 the tab; the tab makes no call of its own.
 
 - `GET /api/v1/registry?limit=500&offset=…` (`list_registry` in
-  `apps/api/src/missions/handlers/registry_items.rs`): read as `RegistryResponse` pages
+  `crates/api/api_missions/src/handlers/registry_items.rs`): read as `RegistryResponse` pages
   of `RegistryItem` until `total` is reached; the current modpack's flat catalog, for the
   `mission_maker` [role](/documentation/glossary/n_to_z.md#role) and above, with a weak ETag.
 - `GET /api/v1/registry/compat?edge_type=optic_on_weapon,mag_in_weapon,attachment_on_weapon`
-  (`list_registry_compat` in `apps/api/src/missions/handlers/registry_compat_graph.rs`):
+  (`list_registry_compat` in `crates/api/api_missions/src/handlers/registry_compat_graph.rs`):
   read as `RegistryCompatResponse`; the compatibility edges of those three families, which build
   `CompatGraph`.
 - `GET /api/v1/registry/compat?view=cargo_defaults` (same handler): read as
@@ -163,7 +163,7 @@ the tab; the tab makes no call of its own.
   the map engine's `update_slot_loadout`; the buffer verbs commit a plan with
   `commit_loadout_writes`. The loadout reaches the server only when the mission maker saves a
   version: `POST /api/v1/missions/{id}/versions` (`create_version` in
-  `apps/api/src/missions/handlers/mission_versions.rs`) refuses cargo over the
+  `crates/api/api_missions/src/handlers/mission_versions.rs`) refuses cargo over the
   catalogued capacity with a 400, from the same registry weights and volumes the Arsenal reads.
 - `loadout-export.json`: the downloaded file, which follows
   `contracts/definitions/loadout-export.schema.json`; the import gate checks the same schema,

@@ -37,7 +37,7 @@ feature doc; the code folder's README lists the page's files.
   `solve_fire_mission` assembler the page and the API run.
 - [Offline core](/apps/frontend/src/foundation/offline/) — the offline pack the page
   triggers.
-- [Operations domain](/apps/api/src/operations/) — the ballistics catalog and
+- [Operations domain](/crates/api/api_operations/src/) — the ballistics catalog and
   fire-mission routes.
 
 ## Boundaries
@@ -52,7 +52,7 @@ feature doc; the code folder's README lists the page's files.
 
 ## Related documentation
 
-- [Operations domain](/apps/api/src/operations/README.md) — the API side of the
+- [Operations domain](/crates/api/api_operations/src/README.md) — the API side of the
   catalogs and the fire missions.
 - [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md)
   — the operator decisions, the model, the tolerances and the register.

@@ -10,7 +10,7 @@
 //! publication.
 //! **Position:** its own test binary; the event, its attachments, seats and actors come from
 //! `tests/reservation_guard_support`, the ordering from `tests/failpoint_and_race_support` (a
-//! pause at `ReservationClaimBeforeCommit` in `operations/handlers/slot_registration.rs`, and a
+//! pause at `ReservationClaimBeforeCommit` in `api_operations/src/handlers/slot_registration.rs`, and a
 //! held event row lock the contenders queue behind, observed through `pg_blocking_pids`).
 //! **Signals & state:** the process-global failpoint registry, serialised by the suite lock every
 //! case takes first; each order builds a fresh fixture and closes its pool at the end.

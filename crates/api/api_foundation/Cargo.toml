@@ -1,0 +1,38 @@
+# The primitives every API crate builds on: the handler error and its JSON envelope, the JSON wire
+# formats (the `jsonb` passthrough, the midnight-UTC date spelling, canonical-JSON digests), the
+# HTML sanitiser and content URL policy, and the request pagination and path parameters.
+[package]
+name = "api_foundation"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's handler error envelope, JSON wire formats, text policies and request parameters."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 1
+targets = "any"
+
+[dependencies]
+ammonia = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true }
+content_digest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["raw_value"] }
+sqlx = { workspace = true, features = ["json"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+# The ECMA-262 engine the content URL policy tests compile the schemas' URL patterns with, the
+# engine the generated contract types check them with.
+regress = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt"] }
+tower = { workspace = true, features = ["util"] }
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+[lints]
+workspace = true

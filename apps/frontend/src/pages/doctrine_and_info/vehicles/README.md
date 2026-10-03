@@ -116,7 +116,7 @@ selection falls back to the first row. Paths carry the id percent-encoded as one
 
 - [Vehicle database page](/documentation/apps/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
   — the page's behaviour and design.
-- [Vehicle database handlers](/apps/api/src/community_content/handlers/vehicle_database/README.md)
+- [Vehicle database handlers](/crates/api/api_community_content/src/handlers/vehicle_database/README.md)
   — the routes, the validator and the soft delete.
 - [Vehicle database contract](/contracts/definitions/vehicle-database.schema.json) — the row,
   the list and the write bodies.

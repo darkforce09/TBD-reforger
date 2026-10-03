@@ -135,7 +135,7 @@ or a strike.
 
 1. **Mission armory and slot loadouts.** The [armory](/documentation/glossary/a_to_f.md#armory)
    (`GET` and `PUT /api/v1/missions/{id}/armory`, `mission_armory.rs` in
-   `apps/api/src/missions/handlers/`) is a separate list that a write replaces whole;
+   `crates/api/api_missions/src/handlers/`) is a separate list that a write replaces whole;
    nothing derives it from the slots' loadouts. Does an Arsenal edit update the armory, or do the
    two stay apart? No ticket.
 2. **Mission planner.** No ticket covers the reserved workspace

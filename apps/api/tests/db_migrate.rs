@@ -7,8 +7,6 @@
 
 mod common;
 
-use api::core::database;
-
 #[tokio::test]
 async fn migrate_creates_full_schema() {
     let Some(url) = common::require_test_database_url() else {
@@ -16,9 +14,9 @@ async fn migrate_creates_full_schema() {
         return;
     };
 
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
     // Provision already migrated; a second apply must be a no-op and leave counts intact.
-    database::migrate(&pool).await.expect("migrate");
+    api_database::migrate(&pool).await.expect("migrate");
 
     // 30 base tables (29 domain tables + registry_compat) + the sqlx
     // `_sqlx_migrations` bookkeeping table.
@@ -78,5 +76,7 @@ async fn migrate_creates_full_schema() {
     );
 
     // Idempotent: a second run is a no-op (already-applied migration).
-    database::migrate(&pool).await.expect("migrate idempotent");
+    api_database::migrate(&pool)
+        .await
+        .expect("migrate idempotent");
 }

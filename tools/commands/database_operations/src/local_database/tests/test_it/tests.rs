@@ -137,12 +137,31 @@ fn a_failing_suite_still_reports_its_own_rc() {
     assert_eq!(join_rc(0, 0), 0);
 }
 
+/// The API packages a fixture workspace derives: the app first, then two API crates.
+fn api_packages() -> Vec<String> {
+    ["api", "api_database", "api_state"]
+        .map(String::from)
+        .to_vec()
+}
+
 #[test]
-fn the_complete_suite_keeps_the_canonical_cargo_arguments() {
-    let arguments = cargo_test_arguments(&TestSelection::default()).unwrap();
+fn the_complete_suite_tests_the_api_app_and_every_api_crate() {
+    let arguments = cargo_test_arguments(&TestSelection::default(), &api_packages()).unwrap();
     assert_eq!(
         arguments,
-        ["test", "--locked", "--no-fail-fast", "--", "--show-output"]
+        [
+            "test",
+            "--locked",
+            "--no-fail-fast",
+            "-p",
+            "api",
+            "-p",
+            "api_database",
+            "-p",
+            "api_state",
+            "--",
+            "--show-output"
+        ]
     );
     assert!(TestSelection::default().is_complete_suite());
 }
@@ -156,11 +175,13 @@ fn a_narrowed_selection_forwards_binaries_library_and_filter() {
     };
     assert!(!selection.is_complete_suite());
     assert_eq!(
-        cargo_test_arguments(&selection).unwrap(),
+        cargo_test_arguments(&selection, &api_packages()).unwrap(),
         [
             "test",
             "--locked",
             "--no-fail-fast",
+            "-p",
+            "api",
             "--lib",
             "--test",
             "waitlist_promotion_transactions",
@@ -169,6 +190,34 @@ fn a_narrowed_selection_forwards_binaries_library_and_filter() {
             "--",
             "--show-output",
             "operations::services::event_reservations",
+        ],
+        "the integration binaries belong to the `api` package alone"
+    );
+}
+
+#[test]
+fn a_library_or_filter_selection_covers_every_api_package() {
+    let selection = TestSelection {
+        binaries: Vec::new(),
+        library: true,
+        name_filter: Some("services".into()),
+    };
+    assert_eq!(
+        cargo_test_arguments(&selection, &api_packages()).unwrap(),
+        [
+            "test",
+            "--locked",
+            "--no-fail-fast",
+            "-p",
+            "api",
+            "-p",
+            "api_database",
+            "-p",
+            "api_state",
+            "--lib",
+            "--",
+            "--show-output",
+            "services",
         ]
     );
 }
@@ -181,7 +230,7 @@ fn selectors_reject_option_injection_and_malformed_text() {
             ..TestSelection::default()
         };
         assert!(
-            cargo_test_arguments(&selection).is_err(),
+            cargo_test_arguments(&selection, &api_packages()).is_err(),
             "accepted {binary:?}"
         );
     }
@@ -191,7 +240,7 @@ fn selectors_reject_option_injection_and_malformed_text() {
             ..TestSelection::default()
         };
         assert!(
-            cargo_test_arguments(&selection).is_err(),
+            cargo_test_arguments(&selection, &api_packages()).is_err(),
             "accepted {filter:?}"
         );
     }

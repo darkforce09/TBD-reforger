@@ -1,0 +1,31 @@
+# The aggregates and queues API member-level facts feed: each member's deployment count and
+# attendance rate, the leaderboard view refresh, the attendance derived from match results, and the
+# durable queue of event eligibility re-evaluations.
+[package]
+name = "api_member_activity"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's member statistics, leaderboard refresh, attendance attribution and eligibility re-evaluation queue."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 3
+targets = "any"
+
+[dependencies]
+# The warning line a failed best-effort recomputation records.
+api_audit_log = { workspace = true }
+# `ApiError`, the refusal the queue and the attribution writers answer.
+api_foundation = { workspace = true }
+api_identifiers = { workspace = true }
+chrono = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono"] }
+thiserror = { workspace = true }
+# `new_v4`, the lease token a claimed re-evaluation carries.
+uuid = { workspace = true, features = ["v4"] }
+
+[lints]
+workspace = true

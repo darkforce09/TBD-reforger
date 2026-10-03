@@ -19,6 +19,7 @@
 //! **Invariants:** a composite runs exactly the rows it names, never a copy of them; a step that
 //! could not run is never reported as a pass; the runner returns the leaf's raw exit code.
 
+pub mod api_package_lane;
 pub mod build_lane;
 pub mod cargo_target_pin;
 mod cargo_target_verification;

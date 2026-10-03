@@ -1,0 +1,17 @@
+# Stage S9 K3a: the community content domain (announcements, the wiki, the vehicle database,
+# modpacks, uploads and the equipment data viewer handlers) becomes api_community_content.
+# The domain folder becomes the crate's src/ whole (its README the source README) and its mod.rs
+# the crate root. The module prefix is one `crate::` row scoped to the moved folder (first: a file
+# two rows of one prefix both reach takes the earlier row), one `crate::` row scoped to the API
+# source and one `api::` row scoped to the API package (its integration tests and the
+# staging-fixtures binary).
+kind	from	to	scope
+#
+# Folder and crate root
+path	apps/api/src/community_content	crates/api/api_community_content/src
+path	apps/api/src/community_content/mod.rs	crates/api/api_community_content/src/lib.rs
+#
+# Module prefix
+rust_path	crate::community_content::	crate::	apps/api/src/community_content
+rust_path	crate::community_content::	api_community_content::	apps/api/src
+rust_path	api::community_content::	api_community_content::	apps/api

@@ -8,7 +8,7 @@
 //! **Position:** compiled into `tests/audit_replay.rs`, `tests/audit_query_recovery.rs`,
 //! `tests/failure_injection_audit.rs` and `tests/controlled_races_audit.rs`
 //! (`mod audit_stream_support;`); it adds no test binary. It reaches the database through
-//! `tests/common` and the API through `api::core::http_router::router`.
+//! `tests/common` and the API through `api::router::router`.
 //! **Signals & state:** [`SUITE_LOCK`] serialises the cases of one binary, which share one
 //! database, one publication sequence and one retained floor; each [`SseReader`] owns one response
 //! body and the bytes of its unfinished event.
@@ -20,10 +20,12 @@
 
 use std::time::{Duration, Instant};
 
-use api::administration::services::audit_delivery::AuditStreamItem;
-use api::administration::services::audit_notifier::{AuditNotify, AuditSignal};
-use api::administration::services::audit_publication::publish_audit_batch;
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
+use api::router::router;
+use api_administration::services::audit_delivery::AuditStreamItem;
+use api_administration::services::audit_notifier::{AuditNotify, AuditSignal};
+use api_administration::services::audit_publication::publish_audit_batch;
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, BodyDataStream, to_bytes};
 use axum::http::{HeaderValue, Request, StatusCode, header};
@@ -73,14 +75,17 @@ impl AuditHarness {
     pub async fn boot(suite: &str) -> Self {
         let url = common::require_test_database_url()
             .expect("the audit stream suites require their PostgreSQL database");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect test database");
-        database::migrate(&pool)
+        api_database::migrate(&pool)
             .await
             .expect("migrate test database");
-        let state = AppState::new(pool.clone(), Config::for_tests(url, "audit-stream-secret"));
-        let app = http_router::router(state.clone());
+        let state = api::composition::application_state(
+            pool.clone(),
+            Config::for_tests(url, "audit-stream-secret"),
+        );
+        let app = router(state.clone());
         let admin = format!("{suite}-admin-{}", Uuid::new_v4());
         let admin_token = common::access_token(&state, suite, &admin, "admin", true).await;
         let notify = AuditNotify::for_pool(&pool);

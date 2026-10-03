@@ -24,6 +24,8 @@ clap = { workspace = true, features = ["derive"] }
 content_digest = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
+# The workspace members the API test lane derives its packages from.
+repository_laws = { workspace = true }
 # The wave gate's seed sources the faction-library check reads.
 repository_checks = { workspace = true }
 repository_layout = { workspace = true }

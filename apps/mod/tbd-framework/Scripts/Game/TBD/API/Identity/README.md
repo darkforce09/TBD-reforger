@@ -57,7 +57,7 @@ a name hash there binds the account to whoever holds that seat or name next.
   `TBD_BackendText` in `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/`; `TBD_PlayerChat`,
   `TBD_Authority` and `TBD_Log` in `apps/mod/tbd-framework/Scripts/Game/TBD/Core/`; the engine's
   `SCR_PlayerIdentityUtils`. Over HTTP, the link confirmation of
-  `apps/api/src/identity_and_access/`.
+  `crates/api/api_identity_and_access/src/`.
 - Used by: `TBD_AdminCommands` in `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/` (the chat
   hook) and `TBD_MissionLoader` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`
   (`Arm`); `TBD_PlayerIdentity` by the results report, the fleet commands, `TBD_RosterLoader`,
@@ -70,7 +70,7 @@ a name hash there binds the account to whoever holds that seat or name next.
 ## Related documentation
 
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the machine-credential tier
-- [Identity and access domain](/apps/api/src/identity_and_access/README.md) — the link
+- [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the link
   code handshake the `#tbd link` command completes
 - [Discord identity link specification](/documentation/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
   — the in-game linking flow

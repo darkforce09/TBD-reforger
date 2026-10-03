@@ -31,7 +31,7 @@ run(args)
 The source database is `--db`, else `TBD_BACKUP_DB`, else `tbd_reforger`; the dump folder is
 `--out`, else `TBD_BACKUP_DIR`, else `~/tbd-backups/website`; the scratch database is `--scratch`,
 else `TBD_DRILL_DB`, else `tbd_drill_probe`. The migration folder is `TBD_GATE_MIGRATION_DIR`, else
-`apps/api/migrations` of the checkout. A restore without `_sqlx_migrations` fails the
+`crates/api/api_database/migrations` of the checkout. A restore without `_sqlx_migrations` fails the
 drill, or only warns with `--lax-migrations` or `TBD_DRILL_STRICT_MIGRATIONS=0`, because sqlx
 would try to apply the first migration over the restored tables. The restore takes its workers from
 `TBD_RESTORE_JOBS` and its row minimum from `TBD_RESTORE_MIN_ROWS`, both default 1.

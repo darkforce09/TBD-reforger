@@ -103,7 +103,7 @@ fn a_missing_seed_file_does_not_read_as_pass() {
     let t = Tree::new("no-seed");
     let v = t.verdict();
     assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
-    assert!(text(&v).contains("requires apps/api/seeds/wiki_pages.sql"));
+    assert!(text(&v).contains("requires crates/api/api_database/seeds/wiki_pages.sql"));
     assert_eq!(verify_wiki_seeds(&t.0).unwrap(), 1);
 }
 

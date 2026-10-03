@@ -25,7 +25,7 @@ account to their Arma identity, and gives their attendance figures.
   which holds the session store, its persistence and the role ladder; the
   [API](/documentation/glossary/a_to_f.md#api)'s
   [identity and access](/documentation/glossary/g_to_m.md#identity-and-access) domain
-  ([README](/apps/api/src/identity_and_access/README.md)), which runs the sign-in and
+  ([README](/crates/api/api_identity_and_access/src/README.md)), which runs the sign-in and
   the link.
 
 ## Behaviour
@@ -122,7 +122,7 @@ The page's states and toasts are in the settings README's
   (`apps/frontend/src/pages/account/auth_callback/page.rs`). The API sends
   `oauth_host_mismatch` in development for a configuration fault that no retry fixes: the two
   URLs in `apps/api/.env` name different hosts (`reject_login_on_host_mismatch` in
-  `apps/api/src/identity_and_access/handlers/oauth_host_guard.rs`).
+  `crates/api/api_identity_and_access/src/handlers/oauth_host_guard.rs`).
 - `AuthCallbackPage`'s doc comment says the page shows "Completing sign in…" and navigates to the
   destination the sign-in started from (`auth_callback/page.rs`). The page shows
   "Completing sign-in…", nothing records where the sign-in started, and the page always loads `/`.
@@ -135,24 +135,24 @@ The READMEs' Data sections list each call with the DTO the pages read:
 [settings](/apps/frontend/src/pages/account/settings/README.md#data). Server-side:
 
 - `GET /api/v1/auth/discord/login` (`discord_login` in
-  `apps/api/src/identity_and_access/handlers/discord_oauth.rs`): sets the state cookie
+  `crates/api/api_identity_and_access/src/handlers/discord_oauth.rs`): sets the state cookie
   and redirects to Discord, or to the callback page with an error, as the sign-in steps say.
 - `GET /api/v1/auth/discord/callback` (`discord_callback`, same file): compares the state in
   constant time, upserts the `users` row, records the guild membership observation, issues the
   session and redirects with the token fragment; `expires_at` there is RFC 3339 in whole seconds
-  (`session_redirect` in `apps/api/src/identity_and_access/services/session_issuance.rs`).
+  (`session_redirect` in `crates/api/api_identity_and_access/src/services/session_issuance.rs`).
 - `GET /api/v1/auth/dev-login` (`dev_login` in
-  `apps/api/src/identity_and_access/handlers/developer_login.rs`): upserts the role's
+  `crates/api/api_identity_and_access/src/handlers/developer_login.rs`): upserts the role's
   own local account, each role with its own Discord id and Arma id, and issues a session that
   carries the role.
-- `GET /api/v1/me` (`get_me` in `apps/api/src/identity_and_access/handlers/member_profile.rs`):
+- `GET /api/v1/me` (`get_me` in `crates/api/api_identity_and_access/src/handlers/member_profile.rs`):
   the stored account with the session's effective role in place of the stored one,
   `arma_linked`, and the membership flags the navigation frame reads. `attendance_rate` is
   computed on each read from the decided attendance records; `total_deployments` is the number of
   distinct matches with recorded statistics for the account, which the match results ingest and
   the link and unlink steps recompute.
 - `GET /api/v1/me/link/status` (`link_status` in
-  `apps/api/src/identity_and_access/handlers/arma_link_codes.rs`): `linked` when the
+  `crates/api/api_identity_and_access/src/handlers/arma_link_codes.rs`): `linked` when the
   stored Arma id is not blank, `arma_id`, `arma_character`, and `pending_code` when an unspent,
   uncancelled, unexpired code exists.
 - `POST /api/v1/me/link` (`create_link_code`, same file): 201 with a six-digit `code` and its
@@ -160,7 +160,7 @@ The READMEs' Data sections list each call with the DTO the pages read:
 - `DELETE /api/v1/me/link` (`unlink`, same file): removes the Arma identity and every pending code
   while keeping sign-up and attendance records, and answers `{linked: false}`.
 - `POST /api/v1/ingest/link-confirm` (`ingest_link_confirm` in
-  `apps/api/src/identity_and_access/handlers/arma_link_confirmation.rs`): the game
+  `crates/api/api_identity_and_access/src/handlers/arma_link_confirmation.rs`): the game
   server's half of the link, which spends a code with `{code, arma_id, arma_character}`; the
   pages never send it.
 - `PATCH /api/v1/me` (`update_me` in `member_profile.rs`) is never called: every profile field

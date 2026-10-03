@@ -21,7 +21,7 @@ mod events_support;
 /// length check against `"   "`.
 ///
 /// What makes the bug expensive is the breadth: a whitespace string is non-empty, so it defeats
-/// six separate `is_empty()` fallbacks at once — `operations/handlers/member_service_record.rs`, `dashboard.rs:79`,
+/// six separate `is_empty()` fallbacks at once — `api_operations/src/handlers/member_service_record.rs`, `dashboard.rs:79`,
 /// `dashboard.rs:142`, and the SPA's `event_hub.rs:200`, `orbat_selection.rs:71`,
 /// `event_manager.rs:831`. This measures the first of those through `GET /me/deployments`, which
 /// is keyed to the caller's own registration rather than a global `ORDER BY`, so the assertion is

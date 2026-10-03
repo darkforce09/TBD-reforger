@@ -17,11 +17,12 @@ tools/checks/repository_checks/src/architecture/route_tags/
 ## How it works
 
 `verify_route_tags.rs` probes its literal matcher, then pins the shape of
-`apps/api/src/core/http_router.rs`: it defines `fn api_v1_routes` and nests it at
-`/api/v1`. `route_and_tag_extraction.rs` finds every `apps/api/src/<domain>/routes.rs`
+`apps/api/src/router.rs`: it defines `fn api_v1_routes` and nests it at
+`/api/v1`. `route_and_tag_extraction.rs` finds every `crates/api/<crate>/src/routes.rs`
 holding exactly one column-0 `pub fn routes(`, reads each `.route(` registration into
-`METHOD PATH HANDLER` rows, reads the `.merge(crate::<domain>::routes(` lines of
-`api_v1_routes`, and sweeps every `.rs` file under `apps/api/src` for column-0
+`METHOD PATH HANDLER` rows, reads the `.merge(<crate>::routes(` lines of `api_v1_routes` (a
+`.merge(crate::<module>::routes(` counts as a merge of `<module>`, which has no API crate table and
+fails), and sweeps every `.rs` file under `apps/api/src` and `crates/api` for column-0
 `/// @route METHOD PATH` tags on the `pub fn` below them. A line it cannot read becomes an
 `UNPARSED` or `ORPHAN` row instead of disappearing.
 
@@ -46,8 +47,9 @@ on every machine.
     (`clean_tree_passes_and_counts_exactly` in
     `tools/checks/repository_checks/src/architecture/tests/route_tags/tests.rs`);
   - exit 1 for a failed probe or pin, an unread registration or tag, a mount mismatch or a
-    tag and route that do not match; exit 2 when `http_router.rs` or the source tree could not be
-    read (`inputs_that_were_never_read_do_not_pass`);
-  - zero route tables is a failure, never a pass (`zero_route_files_is_not_a_pass`);
+    tag and route that do not match; exit 2 when `router.rs` or a source tree could not be
+    read (`inputs_that_were_never_read_do_not_pass`, `a_missing_crates_folder_did_not_run`);
+  - zero route tables is a failure, never a pass (`zero_route_files_is_not_a_pass`); a merge
+    from the app's own tree is never invisible (`a_merge_from_the_app_tree_is_not_invisible`);
   - the sort order reproduces the measured glibc `en_AU.UTF-8` order with no locale input
     (`collation_reproduces_measured_glibc_order`).

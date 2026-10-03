@@ -167,5 +167,5 @@ browser build only; the views that run them exist in that build only.
 
 - [Event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
-- [Operations domain](/apps/api/src/operations/README.md) — the event, attachment and
+- [Operations domain](/crates/api/api_operations/src/README.md) — the event, attachment and
   access routes this page calls.

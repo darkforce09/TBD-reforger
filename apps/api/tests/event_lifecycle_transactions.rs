@@ -1,6 +1,7 @@
 //! PostgreSQL barriers verify atomic lifecycle evidence and schedule-lock ordering.
 
-use api::{core::database, operations::services::event_lifecycle_sweep::sweep_once};
+use api_identifiers::EventId;
+use api_operations::services::event_lifecycle_sweep::sweep_once;
 use sqlx::{AssertSqlSafe, PgPool};
 use std::time::Duration;
 use tokio::{sync::Mutex, time::timeout};
@@ -20,8 +21,8 @@ struct Fixture {
 impl Fixture {
     async fn new() -> Self {
         let url = common::require_test_database_url().expect("lifecycle tests require PostgreSQL");
-        let pool = database::connect(&url).await.unwrap();
-        database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url).await.unwrap();
+        api_database::migrate(&pool).await.unwrap();
         let author = format!("lifecycle-{}", Uuid::new_v4());
         common::seed_user(
             &pool,
@@ -118,7 +119,7 @@ impl Fixture {
     }
 }
 
-async fn sweep(pool: &PgPool) -> (Vec<Uuid>, Vec<Uuid>) {
+async fn sweep(pool: &PgPool) -> (Vec<EventId>, Vec<EventId>) {
     timeout(DEADLINE, sweep_once(pool))
         .await
         .expect("lifecycle sweep must finish within the test deadline")
@@ -244,15 +245,15 @@ async fn evidence_failure_rolls_back_and_retry_is_exactly_once(publication: bool
     assert!(f.records(event).await.is_empty());
 
     let (started, completed) = sweep(&f.pool).await;
-    assert!(started.contains(&event));
-    assert!(completed.contains(&event));
+    assert!(started.contains(&EventId::new(event)));
+    assert!(completed.contains(&EventId::new(event)));
     assert_eq!(f.status(event).await, "completed");
     let records = f.records(event).await;
     assert_required_evidence(&records, &["event.auto_live", "event.auto_completed"]);
     assert!(records[0].1.contains("scheduled → live"));
     let (started, completed) = sweep(&f.pool).await;
-    assert!(!started.contains(&event));
-    assert!(!completed.contains(&event));
+    assert!(!started.contains(&EventId::new(event)));
+    assert!(!completed.contains(&EventId::new(event)));
     assert_eq!(
         f.records(event).await,
         records,
@@ -310,11 +311,11 @@ async fn lifecycle_rechecks_committed_start_and_mission_horizon_after_event_lock
         .expect("schedule race must complete after the barrier is released");
         let (started, completed) = outcome.unwrap();
         assert!(
-            !started.contains(&event),
+            !started.contains(&EventId::new(event)),
             "postponement cancels a stale start decision"
         );
         assert!(
-            !completed.contains(&event),
+            !completed.contains(&EventId::new(event)),
             "postponement cancels a stale completion decision"
         );
         assert_eq!(f.status(event).await, original_status);
@@ -349,8 +350,8 @@ async fn lifecycle_status_updates_admit_an_uncommitted_telemetry_foreign_key_loc
     let (started, completed) = outcome
         .expect("sweep must commit while telemetry retains its event KEY SHARE lock")
         .unwrap();
-    assert!(started.contains(&event));
-    assert!(completed.contains(&event));
+    assert!(started.contains(&EventId::new(event)));
+    assert!(completed.contains(&EventId::new(event)));
     assert_eq!(f.status(event).await, "completed");
     assert_required_evidence(
         &f.records(event).await,
@@ -409,9 +410,9 @@ async fn lifecycle_locks_all_transition_candidates_in_uuid_order() {
     .await
     .expect("ordered lifecycle sweep must finish after the editor releases its event");
     let (started, completed) = outcome.unwrap();
-    assert!(!started.contains(&first));
-    assert!(started.contains(&second));
-    assert!(completed.contains(&first) && completed.contains(&second));
+    assert!(!started.contains(&EventId::new(first)));
+    assert!(started.contains(&EventId::new(second)));
+    assert!(completed.contains(&EventId::new(first)) && completed.contains(&EventId::new(second)));
     assert!(completed.windows(2).all(|pair| pair[0] < pair[1]));
     assert_required_evidence(&f.records(first).await, &["event.auto_completed"]);
     assert_required_evidence(
@@ -449,21 +450,23 @@ async fn lifecycle_preserves_legal_edges_and_latest_active_mission_six_hour_hori
 
     let (started, finished) = sweep(&f.pool).await;
     for (event, from) in starts {
-        assert!(started.contains(&event));
-        assert!(!finished.contains(&event));
+        assert!(started.contains(&EventId::new(event)));
+        assert!(!finished.contains(&EventId::new(event)));
         assert_eq!(f.status(event).await, "live");
         let records = f.records(event).await;
         assert_required_evidence(&records, &["event.auto_live"]);
         assert!(records[0].1.contains(&format!("{from} → live")));
     }
-    assert!(started.contains(&long_past) && finished.contains(&long_past));
+    assert!(
+        started.contains(&EventId::new(long_past)) && finished.contains(&EventId::new(long_past))
+    );
     assert_eq!(f.status(long_past).await, "completed");
     assert_required_evidence(
         &f.records(long_past).await,
         &["event.auto_live", "event.auto_completed"],
     );
     assert!(
-        finished.contains(&deleted_mission),
+        finished.contains(&EventId::new(deleted_mission)),
         "removed missions do not extend the horizon"
     );
     assert_required_evidence(&f.records(deleted_mission).await, &["event.auto_completed"]);
@@ -475,7 +478,9 @@ async fn lifecycle_preserves_legal_edges_and_latest_active_mission_six_hour_hori
         (completed, "completed"),
         (deleted_event, "scheduled"),
     ] {
-        assert!(!started.contains(&event) && !finished.contains(&event));
+        assert!(
+            !started.contains(&EventId::new(event)) && !finished.contains(&EventId::new(event))
+        );
         assert_eq!(f.status(event).await, expected);
         assert!(f.records(event).await.is_empty());
     }

@@ -42,7 +42,7 @@ what that definition is and how its projections stay true to it.
   `cargo xtask schema validate`.
 - **Runtime validation.** `POST /api/v1/missions/:id/versions` validates the payload against
   `mission-editor-payload.schema.json` before it stores anything and answers 400 with the
-  violations (`apps/api/src/missions/handlers/mission_versions.rs`).
+  violations (`crates/api/api_missions/src/handlers/mission_versions.rs`).
 - **Three version fields.** The canonical mission document (`mission.schema.json`, what the mod
   loads) carries `schemaVersion` as a string; the editor payload
   (`mission-editor-payload.schema.json`, what the version save accepts) carries `schemaVersion` as
@@ -51,7 +51,7 @@ what that definition is and how its projections stay true to it.
   own document does.
 - **Published data is immutable.** A mission version is written once, unique per mission and
   semver, and a database trigger refuses any update
-  (`apps/api/migrations/0052_mission_version_immutability.sql`). A contract change is a
+  (`crates/api/api_database/migrations/0052_mission_version_immutability.sql`). A contract change is a
   schema change plus regeneration, never an edit of a stored payload.
 
 Wire casing is fixed per document:
@@ -145,7 +145,7 @@ none) and `**Invariants:**` (the guarantees a change must keep). From
 **Symbol docs.** Every public type, function, method and enum carries a `///` Markdown doc
 comment, and names other items as intra-doc links (``[`crate::path::Type`]``) that rustdoc
 resolves. No gate runs rustdoc, so review holds this rule. From
-`apps/api/src/core/observability/metrics_registry.rs:90-96`:
+`crates/api/api_http_layer/src/observability/metrics_registry.rs:90-96`:
 
 ```rust
 /// One registry per [`crate::core::http_router::router`] call.
@@ -162,7 +162,7 @@ written at column 0 in the doc comment of a column-0 `pub fn` or `pub async fn`,
 `/api/v1` path; a path parameter is written `:name` or `{name}` with the router's name. The
 route-tag check fails a tag no route table registers for that method and handler, a registered
 route whose handler has no matching tag, and a tag with no handler under it. From
-`apps/api/src/administration/handlers/audit_logs.rs:66-69`:
+`crates/api/api_administration/src/handlers/audit_logs.rs:66-69`:
 
 ```rust
 /// `GET /api/v1/admin/audit-logs` — newest-first, keyset pagination via `?before=`.
@@ -188,8 +188,8 @@ the whole tag on the mod scripts, parsed by
 `apps/api/tests/enfscript_source_support/contract_tag.rs`: every field name and `//!<`
 JSON key binding of a tagged class must be a property of the cited node, and a class without
 `partial` must carry every required one. A module of such types carries the tag in its `//!`
-header (`apps/api/src/missions/models/registry.rs:4`); a single type in its `///`
-comment (`apps/api/src/administration/models/audit_stream.rs:19-21`):
+header (`crates/api/api_missions/src/models/registry.rs:4`); a single type in its `///`
+comment (`crates/api/api_administration/src/models/audit_stream.rs:19-21`):
 
 ```rust
 /// @contract audit-log.schema.json#/definitions/AuditStreamReady
@@ -398,7 +398,7 @@ link-check, so no application grows a documentation tree of its own.
   link to code that no longer exists becomes a GitHub permalink with the full commit id,
   `https://github.com/darkforce09/TBD-reforger/blob/<commit>/<path>`.
 - **Paths and commands.** A path written in backticks is repository-relative
-  (`apps/api/src/missions/`), and must name a tracked file or folder, or one git
+  (`crates/api/api_missions/src/`), and must name a tracked file or folder, or one git
   ignores on purpose, such as `deploy/deploy.env`; a `cargo xtask` command written
   in a document must exist in the command tree. A README writes paths inside its own folder
   relative to it, as the README standard says.

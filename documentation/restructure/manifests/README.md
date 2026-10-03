@@ -85,7 +85,32 @@ documentation/restructure/manifests/
 ├── s7_q3_tools.tsv  stage S7 Q3: the selection, ruler, line-of-sight and viewshed scheduler tools, with the source scrub their guards read, become map_editing_tools
 ├── s7_x7a_switch.tsv  stage S7 X7a: every consumer of the S7 streaming and mission editing crates imports them directly, and the map engine's re-export shims go
 ├── s7_x7b_documentation.tsv  stage S7 X7b, first of two: the editing layer and draft persistence feature docs into the mirror of the mission editing crates
-└── s7_x7b_engine_layer_results.tsv  stage S7 X7b, second of two: with engine rule 5 retired, the engine-layer report results tests take that subject's name
+├── s7_x7b_engine_layer_results.tsv  stage S7 X7b, second of two: with engine rule 5 retired, the engine-layer report results tests take that subject's name
+├── s9_w01_k0a_kernel_cuts.tsv  stage S9 K0a: the audit writers, member activity and caller identity files into the API's kernel staging folders
+├── s9_w02_k0b_kernel_cuts.tsv  stage S9 K0b: the Discord clients and the equipment datasets into the API's kernel staging folders
+├── s9_w05_1_api_foundation.tsv  stage S9 K1a, first of five: the handler error, wire formats, text and request primitives become api_foundation
+├── s9_w05_2_api_configuration.tsv  stage S9 K1a, second of five: the configuration and the shutdown signal become api_configuration
+├── s9_w05_3_api_failpoints.tsv  stage S9 K1a, third of five: the fault injection becomes api_failpoints
+├── s9_w05_4_api_database.tsv  stage S9 K1a, fourth of five: the connection lifecycle, migrations and seeds become api_database
+├── s9_w05_5_api_property_evidence.tsv  stage S9 K1a, fifth of five: the property run recorder becomes the dev-only api_property_evidence
+├── s9_w06_k1b_http_layer.tsv  stage S9 K1b: the access tokens, middleware, observability, realtime hub and outbound retry become api_http_layer
+├── s9_w07_1_api_audit_log.tsv  stage S9 K2a, first of four: the audit severity and the audit line appends become api_audit_log
+├── s9_w07_2_api_mission_vocabulary.tsv  stage S9 K2a, second of four: the terrain and game mode enums become api_mission_vocabulary
+├── s9_w07_3_api_discord.tsv  stage S9 K2a, third of four: the Discord OAuth2, guild-member and webhook clients become api_discord
+├── s9_w07_4_api_equipment_datasets.tsv  stage S9 K2a, fourth of four: the equipment dataset imports, index and read queries become api_equipment_datasets
+├── s9_w08_1_api_caller_identity.tsv  stage S9 K2b, first of three: the role ladder, the session and account authority, the identity locks and the machine caller become api_caller_identity
+├── s9_w08_2_api_member_activity.tsv  stage S9 K2b, second of three: the member statistics, the leaderboard refresh, the attendance attribution and the re-evaluation queue become api_member_activity
+├── s9_w08_3_api_state.tsv  stage S9 K2b, third of three: the application state and its sub-state projections become api_state
+├── s9_w09_community_content.tsv  stage S9 K3a: the announcements, the wiki, the vehicle database, modpacks, uploads and the equipment data viewer routes become api_community_content
+├── s9_w09_identity_and_access.tsv  stage S9 K3b: Discord sign-in, session tokens, the caller's profile, the Arma link handshake and Discord membership become api_identity_and_access
+├── s9_w10_administration.tsv  stage S9 K3c: the member roster and its moderation, the Discord role resync, the membership grace extension and the audit log console become api_administration
+├── s9_w10_server_infrastructure.tsv  stage S9 K3d: the server registry, the live status feed, the machine credentials, the fleet command ledger and the runtime sessions become api_server_infrastructure
+├── s9_w11_match_telemetry.tsv  stage S9 K3e: the session-fenced heartbeat, the match registration, the results revisions and the detailed event batches become api_match_telemetry
+├── s9_w11_missions.tsv  stage S9 K3f: the mission library, versions, artifacts, reviews and approvals, deployments, the armory, factions and registries become api_missions
+├── s9_w12_operations.tsv  stage S9 K3g: the event calendar and its access control, ORBAT slotting and reservations, service records, leave requests, fire missions and ballistics catalogs become api_operations
+├── s9_w13_command_center.tsv  stage S9 K3h: the members' dashboard with its fleet overview, the community leaderboards and the per-player statistics card become api_command_center
+├── s9_w14_k4a_thin_app.tsv  stage S9 K4a: the background workers become api_background_workers, and the API application becomes the thin app (the router at `src/router.rs`, no `core/`)
+└── s9_w14_k4b_staging_fixtures.tsv  stage S9 K4b: the API's `staging-fixtures` host tool and its four integration suites become the staging_fixtures bin crate under tools/staging
 ```
 
 ## How it works

@@ -93,7 +93,7 @@ checks every such editor binding against the others and against the shortcut cat
 
 - [Mission Creator UX specification](/documentation/apps/frontend/workspaces/editor/ux_spec.md)
   — the editor's layout, interaction contract and keyboard shortcuts.
-- [Missions domain](/apps/api/src/missions/README.md) — the mission row and faction
+- [Missions domain](/crates/api/api_missions/src/README.md) — the mission row and faction
   library routes the dialogs call.
 - [Mission Creator feature inventory: asset palette](/documentation/apps/frontend/workspaces/editor/feature_inventory/right_asset_palette.md) — the Faction Manager behind "Manage factions".
 - [Mission Creator feature inventory: top command strip](/documentation/apps/frontend/workspaces/editor/feature_inventory/top_command_strip.md) — the Mission Settings dialog.

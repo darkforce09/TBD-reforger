@@ -171,5 +171,5 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   solver the page runs.
 - [Offline core](/apps/frontend/src/foundation/offline/README.md) — the offline pack and
   its state.
-- [Operations domain](/apps/api/src/operations/README.md) — the catalog and
+- [Operations domain](/crates/api/api_operations/src/README.md) — the catalog and
   fire-mission routes.

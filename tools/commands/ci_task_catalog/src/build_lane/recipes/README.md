@@ -21,7 +21,10 @@ prints the usage line and `TARGETS`, exiting 0 with `--list` and 2 otherwise; an
 exits 2. The three targets that compute rather than build (`print-cargo-target-dir`,
 `verify-cargo-target`, `reclaim-target-ci`) call into
 `tools/commands/ci_task_catalog/src/cargo_target_pin.rs` and `tools/commands/ci_task_catalog/src/cargo_target_verification.rs`; `rust-ci` runs its composite; every other
-target gets its step list from a function in `shell_word.rs`. `recipe_lines` returns the lines a
+target gets its step list from a function in `shell_word.rs`. `rust-build`, `rust-test` and
+`rust-clippy` derive theirs from the workspace through
+`tools/commands/ci_task_catalog/src/api_package_lane.rs`: one cargo line naming `api` and every
+`crates/api` package with `-p`, run from the repository root. `recipe_lines` returns the lines a
 recipe target runs, as `--dry-run` prints them, which the recipe tests scan.
 
 `run_steps` in `shell_word.rs` runs a list in order and stops at the first non-zero exit. For
@@ -49,10 +52,12 @@ outcome, so no recipe here names a container runtime or cleans a database itself
 - Depends on: `Step`, `TARGETS` and the folder constants in `recipes.rs`;
   `tools/commands/ci_task_catalog/src/cargo_target_pin.rs` for the pin and the ABI guard and
   `tools/commands/ci_task_catalog/src/cargo_target_verification.rs` for the two checking targets; `verification_core` for verdicts;
-  `tools/commands/database_operations/src/local_database/test_it.rs` for `rust-ci`'s integration tests.
+  `tools/commands/database_operations/src/local_database/test_it.rs` for `rust-ci`'s integration tests;
+  `tools/commands/ci_task_catalog/src/api_package_lane.rs` for the API lines.
 - Used by: `recipes.rs`, which re-exports the recipe functions and `run`; the recipe tests in
   `tools/commands/ci_task_catalog/src/build_lane/tests/recipes.rs`.
 - Rules: a step's printed line and its execution come from the same fields, never two copies
-  (`echo_matches_make` pins the echoes); `leptos-gates` builds the app once
+  (`echo_matches_make` pins the echoes); the API recipes and the CI rows of the same names run the
+  same derived line (`api_recipes_and_ci_task_rows_run_the_same_lines`); `leptos-gates` builds the app once
   (`leptos_gates_does_not_double_build`); no step detaches from the terminal, so Ctrl-C reaches
   `trunk serve`.

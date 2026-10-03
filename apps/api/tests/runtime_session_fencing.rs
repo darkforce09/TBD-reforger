@@ -2,7 +2,7 @@
 //! sequence per session, so stale, duplicated or superseded messages never overwrite newer live
 //! state; silent sessions expire and take their server offline.
 
-use api::background_workers::runtime_session_expiry::expire_runtime_sessions;
+use api_background_workers::runtime_session_expiry::expire_runtime_sessions;
 use axum::http::StatusCode;
 use serde_json::json;
 

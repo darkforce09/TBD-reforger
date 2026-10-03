@@ -59,11 +59,11 @@ All also in `prelude`:
 
 - Depends on: `serde_json` only.
 - Used by:
-  - the API: `apps/api/src/missions/contract/schema_validators.rs` runs both scans after the
-    payload schema on every save; `apps/api/src/missions/services/mission_compile.rs` refuses a
-    compile on any capacity line; `apps/api/src/missions/services/cargo_catalog.rs` and
-    `apps/api/src/missions/services/mission_artifacts/artifact_inputs.rs` build the catalog from
-    the registry's rows; `apps/api/src/missions/contract/zone_quantisation.rs` caps its report
+  - the API: `crates/api/api_missions/src/contract/schema_validators.rs` runs both scans after the
+    payload schema on every save; `crates/api/api_missions/src/services/mission_compile.rs` refuses a
+    compile on any capacity line; `crates/api/api_missions/src/services/cargo_catalog.rs` and
+    `crates/api/api_missions/src/services/mission_artifacts/artifact_inputs.rs` build the catalog from
+    the registry's rows; `crates/api/api_missions/src/contract/zone_quantisation.rs` caps its report
     at `MAX_REPORTED`;
   - `mission_compiler` (`crates/mission/mission_compiler/src/game_document/`: `is_wire_unsafe`
     for the identity keys it emits, `MAX_REPORTED` for the type-safety report) and

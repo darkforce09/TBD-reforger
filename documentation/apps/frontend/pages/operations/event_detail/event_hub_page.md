@@ -31,8 +31,8 @@ and through which a leader reserves and fills a squad.
   [event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md),
   where administrators set an event's missions, access policies and pools; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [operations domain](/apps/api/src/operations/README.md) and its
-  [reservation services](/apps/api/src/operations/services/event_reservations/README.md).
+  [operations domain](/crates/api/api_operations/src/README.md) and its
+  [reservation services](/crates/api/api_operations/src/services/event_reservations/README.md).
 
 ## Behaviour
 
@@ -143,13 +143,13 @@ and through which a leader reserves and fills a squad.
   `apps/frontend/src/pages/operations/event_detail/reservation_actions.rs`); the API
   refuses with "registration is locked; an admin must assign you" or "registration is closed for
   this operation" (`require_registration_open` in
-  `apps/api/src/operations/services/event_reservations/mutation_authority.rs`), and the
+  `crates/api/api_operations/src/services/event_reservations/mutation_authority.rs`), and the
   footer shows that sentence only after the click.
 - A failed ORBAT fetch reads "No ORBAT slots defined for this mission.", the text of an empty
   ORBAT (`OrbatSelector` in
   `apps/frontend/src/pages/operations/event_detail/slotting_selector.rs`), while the API
   answers 404 "mission not found" for a mission the viewer may not see (`get_orbat` in
-  `apps/api/src/operations/handlers/orbat_view.rs`).
+  `crates/api/api_operations/src/handlers/orbat_view.rs`).
 - The hero prefixes every countdown with "T-MINUS ", so a started event reads "T-MINUS LIVE NOW"
   (`event_hub_view` in
   `apps/frontend/src/pages/operations/event_detail/hero_countdown.rs`); the dashboard
@@ -163,7 +163,7 @@ The README's [Data](/apps/frontend/src/pages/operations/event_detail/README.md#d
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/events/{id}` (`get_event` in
-  `apps/api/src/operations/handlers/event_hub.rs`), for any signed-in member: the event
+  `crates/api/api_operations/src/handlers/event_hub.rs`), for any signed-in member: the event
   and each attached mission's dossier in start order, projected for the viewer's access in one
   read-only snapshot. A viewer the event policy admits sees every mission; a partial viewer gets
   the summary without the briefing and only the missions, seats and factions their policies
@@ -172,11 +172,11 @@ lists each call with the DTO it reads or sends. Server-side:
   describes. Each dossier carries the viewer's own reservation, attendance, seat, waiting
   position and released signup, and the event carries the pools and the viewer's access.
 - `GET /api/v1/event-missions/{emid}/orbat` (`get_orbat` in
-  `apps/api/src/operations/handlers/orbat_view.rs`): the mission's `orbat_slots` rows
+  `crates/api/api_operations/src/handlers/orbat_view.rs`): the mission's `orbat_slots` rows
   grouped by faction and squad, with occupant and reserver names and each seat's eligibility for
   the viewer; a partial viewer gets only the seats their policies admit.
 - `POST /api/v1/event-missions/{emid}/register` (`register_for_event_mission` in
-  `apps/api/src/operations/handlers/slot_registration.rs`), any signed-in member, body
+  `crates/api/api_operations/src/handlers/slot_registration.rs`), any signed-in member, body
   `{ "slot_id": … }` with `""` for a seatless place: refused with 409 while the event is not
   scheduled or open, and with 403 while registration is locked, unless the caller is an
   administrator. Under the event's lock it plans the claim against access, pools, capacity and
@@ -188,11 +188,11 @@ lists each call with the DTO it reads or sends. Server-side:
   releases places no longer used, and promotes the earliest eligible waiting participants in the
   same transaction; 404 "not registered" when there is nothing to release.
 - `POST /api/v1/event-missions/{emid}/waitlist/promote` (`promote_waitlisted_participants` in
-  `apps/api/src/operations/handlers/waitlist_promotion.rs`), `leader` and above: seats
+  `crates/api/api_operations/src/handlers/waitlist_promotion.rs`), `leader` and above: seats
   the earliest eligible waiting participants in queue order, each with an actual seat and a place;
   the caller cannot choose who; refused while registration is locked.
 - `POST /api/v1/event-missions/{emid}/squads/reserve` and `…/squads/release` (`reserve_squad` and
-  `release_squad` in `apps/api/src/operations/handlers/slot_assignment.rs`), `leader`
+  `release_squad` in `crates/api/api_operations/src/handlers/slot_assignment.rs`), `leader`
   and above: hold a squad (409 "squad is already reserved") and release it (403 "only the reserver
   or an admin can release this squad").
 - `PUT` and `DELETE /api/v1/event-missions/{emid}/slots/{slotId}/assign` (`assign_slot` and
@@ -201,10 +201,10 @@ lists each call with the DTO it reads or sends. Server-side:
   their eligibility, pool, capacity and account, or clear the seat; clearing keeps the member's
   place until they withdraw.
 - `GET /api/v1/members?q=…` (`search_members` in
-  `apps/api/src/operations/handlers/orbat_view.rs`), `leader` and above: members who
+  `crates/api/api_operations/src/handlers/orbat_view.rs`), `leader` and above: members who
   are not banned, whose username or Discord handle contains the text, 20 per page.
 - `GET /api/v1/modpacks` (`list_modpacks` in
-  `apps/api/src/community_content/handlers/modpack_catalog.rs`): every modpack, the
+  `crates/api/api_community_content/src/handlers/modpack_catalog.rs`): every modpack, the
   current one first, which the chip searches for the event's modpack; `GET
   /api/v1/modpacks/current`: the modpack flagged current.
 
@@ -255,4 +255,4 @@ The page stores nothing in the browser.
 - A squad hold makes the squad its reserver's to fill: other members cannot take its seats, and
   only the reserver or an administrator assigns and clears them, in the page and in the API
   alike (`require_squad_management` in
-  `apps/api/src/operations/services/event_reservations/mutation_authority.rs`).
+  `crates/api/api_operations/src/services/event_reservations/mutation_authority.rs`).

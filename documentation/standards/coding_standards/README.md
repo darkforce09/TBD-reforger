@@ -147,8 +147,8 @@ now maps to a page:
 - [CI task commands](/tools/commands/ci_task_catalog/src/) — `ci-local`, `verify-coding-standards`,
   `verify-editorconfig` (FMT-2).
 - [API layout tests](/apps/api/src/tests/) — GO-9 and the API's test placement.
-- [Handler errors](/apps/api/src/core/error_handling/) — ERR-1 and ERR-4.
-- [Middleware](/apps/api/src/core/middleware/) — LOG-3.
+- [Handler errors](/crates/api/api_foundation/src/error_handling/) — ERR-1 and ERR-4.
+- [Middleware](/crates/api/api_http_layer/src/middleware/) — LOG-3.
 - [Workflows](/.github/workflows/) — CI-2 and every CI-BLOCK gate.
 
 ## Boundaries

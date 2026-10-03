@@ -8,10 +8,10 @@
 //! seating key. Also pins that a padded real id emits the trimmed form (agreeing with refresh /
 //! link-confirm / telemetry).
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -50,11 +50,11 @@ const EDITOR_PAYLOAD: &str = r#"{
 
 async fn boot() -> Option<(Router, AppState, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let cfg = Config::for_tests(url, "roster-ws-secret");
-    let state = AppState::new(pool.clone(), cfg);
-    Some((http_router::router(state.clone()), state, pool))
+    let state = api::composition::application_state(pool.clone(), cfg);
+    Some((router(state.clone()), state, pool))
 }
 
 async fn cleanup(pool: &PgPool) {

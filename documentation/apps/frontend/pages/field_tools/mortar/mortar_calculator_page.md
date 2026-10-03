@@ -111,22 +111,22 @@ The README's [Data](/apps/frontend/src/pages/field_tools/mortar/README.md#data) 
 each call with its DTO. Server-side:
 
 - `GET /api/v1/ballistics-catalogs` and `GET /api/v1/ballistics-catalogs/{catalogId}/versions/{version}`
-  (`apps/api/src/operations/handlers/ballistics_catalogs/reads.rs`): public. The list
+  (`crates/api/api_operations/src/handlers/ballistics_catalogs/reads.rs`): public. The list
   holds one summary per stored version; a version document is immutable, answered with its sha256
   as `ETag` and `Cache-Control: public, max-age=31536000, immutable`, so the offline copy never
   goes stale.
-- `POST /api/v1/fire-missions` (`apps/api/src/operations/handlers/fire_missions/save.rs`):
+- `POST /api/v1/fire-missions` (`crates/api/api_operations/src/handlers/fire_missions/save.rs`):
   any signed-in member. It loads the pinned catalog (404 when unknown), re-solves through
   `solve_fire_mission`, compares with the client solution (422 `solution_mismatch` with both
   values, 422 `fire_mission_refused` when the inputs do not solve, 422 `no_firing_solution` when
   the lead gun's fired charge does not solve), then stores the server solution and the guns in one
   transaction and answers 201 with the solution and the row. An unknown event answers 404.
-- `GET /api/v1/events/{id}/fire-missions` (`apps/api/src/operations/handlers/fire_missions/list.rs`):
+- `GET /api/v1/events/{id}/fire-missions` (`crates/api/api_operations/src/handlers/fire_missions/list.rs`):
   the event's rows with their guns, behind the event's viewer access (404 or 403 as that check
   decides). Rows saved before catalogs list with their original weapon strings, "M120 120mm"
   included.
 - `GET /api/v1/events` (`list_events` in
-  `apps/api/src/operations/handlers/event_listing.rs`): the default `upcoming` scope,
+  `crates/api/api_operations/src/handlers/event_listing.rs`): the default `upcoming` scope,
   first page, filtered to the events the caller may see, which feeds the picker.
 - `/map-assets/everon/…`: the manifest, elevation, hillshade, imagery and grid the map boots, and
   `tiles/map/index.json`, the tile list of the offline pack.

@@ -27,7 +27,7 @@ into the live library, approve it with conditions, or reject it with a reason.
   where the author submits, reads the same review record and replies; the read-only review
   workspace ([README](/apps/frontend/src/workspaces/editor/review_workspace/README.md));
   the [API](/documentation/glossary/a_to_f.md#api)'s
-  [missions domain](/apps/api/src/missions/README.md); the
+  [missions domain](/crates/api/api_missions/src/README.md); the
   [mission artifacts evidence](/documentation/apps/api/verification_evidence/mission_artifacts.md).
 
 ## Behaviour
@@ -73,15 +73,15 @@ The README's [Data](/apps/frontend/src/pages/administration/approvals/README.md#
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/approvals` (`list_approvals` in
-  `apps/api/src/missions/handlers/approvals_queue.rs`): the API lists the missions
+  `crates/api/api_missions/src/handlers/approvals_queue.rs`): the API lists the missions
   whose status is `pending_approval`, oldest submission first (the pending review's submission
   time, else the mission's update or creation time), 20 per page; the page reads only the first
   page, while `total` counts every pending mission.
 - `GET /api/v1/missions/{id}` (`get_mission` in
-  `apps/api/src/missions/handlers/mission_library.rs`): the mission behind the
+  `crates/api/api_missions/src/handlers/mission_library.rs`): the mission behind the
   briefing and the tiles.
 - `GET /api/v1/missions/{id}/artifacts/{artifact_id}` (`get_mission_artifact` in
-  `apps/api/src/missions/handlers/mission_reviews.rs`): the artifact's provenance and
+  `crates/api/api_missions/src/handlers/mission_reviews.rs`): the artifact's provenance and
   its compile diagnostics.
 - `GET /api/v1/missions/{id}/reviews` (`list_mission_reviews`): every review with its decision,
   conditions or rejection reason, and the comment thread.
@@ -89,7 +89,7 @@ lists each call with the DTO it reads or sends. Server-side:
   comment against the artifact under review.
 - `POST /api/v1/approvals/{id}/approve` and `POST /api/v1/approvals/{id}/reject`
   (`approve_mission` and `reject_mission`, then `decide_review` in
-  `apps/api/src/missions/services/mission_reviews.rs`). In one transaction the API
+  `crates/api/api_missions/src/services/mission_reviews.rs`). In one transaction the API
   locks the mission, checks again that the caller is still an administrator (403 otherwise), and
   refuses with 409 when the mission is not pending approval, when no review is pending
   (`NO_PENDING_REVIEW`) or when the named artifact is not the one under review

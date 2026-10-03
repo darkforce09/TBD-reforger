@@ -19,7 +19,7 @@ documentation/apps/frontend/workspaces/editor/review_workspace/
   the route component `ReviewWorkspacePage` and its banner.
 - [Mission Creator session](/apps/frontend/src/workspaces/editor/session/) — `review_mode.rs`,
   the read-only state the page opens.
-- [Missions domain](/apps/api/src/missions/) — the workspace route and its digest check.
+- [Missions domain](/crates/api/api_missions/src/) — the workspace route and its digest check.
 
 ## Boundaries
 

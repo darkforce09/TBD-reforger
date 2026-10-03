@@ -1,0 +1,48 @@
+# Stage S9 K0a: the in-place kernel cuts of the API, part one. Each future kernel crate's code moves
+# into its own staging folder apps/api/src/kernel/<name>/ that imports only core and the kernel
+# folders below it: the audit writers (audit_log), the member activity aggregates and queues
+# (member_activity), and the caller authority checks (caller_identity). Whole files move here; the
+# split items (AuditSeverity, TerrainType and GameMode, UserRole, arma_id_is_linked, the machine
+# caller half of machine_credentials.rs and its tests) are cut by hand after the moves, and the
+# mod declarations are edited by hand. Each module prefix is one `crate::` row scoped to the API
+# source and one `api::` row scoped to the API package (integration tests, binaries, doc examples).
+kind	from	to	scope
+#
+# Whole files
+path	apps/api/src/administration/services/required_audit.rs	apps/api/src/kernel/audit_log/required_audit.rs
+path	apps/api/src/administration/services/audit_writer.rs	apps/api/src/kernel/audit_log/audit_writer.rs
+path	apps/api/src/command_center/services/user_stats.rs	apps/api/src/kernel/member_activity/user_stats.rs
+path	apps/api/src/command_center/services/leaderboard_view.rs	apps/api/src/kernel/member_activity/leaderboard_view.rs
+path	apps/api/src/operations/services/participation_attribution.rs	apps/api/src/kernel/member_activity/participation_attribution.rs
+path	apps/api/src/operations/services/event_reservations/reevaluation_queue.rs	apps/api/src/kernel/member_activity/reevaluation_queue.rs
+path	apps/api/src/identity_and_access/services/session_authorization.rs	apps/api/src/kernel/caller_identity/session_authorization.rs
+path	apps/api/src/identity_and_access/services/identity_ownership.rs	apps/api/src/kernel/caller_identity/identity_ownership.rs
+path	apps/api/src/identity_and_access/services/account_authority.rs	apps/api/src/kernel/caller_identity/account_authority.rs
+path	apps/api/src/identity_and_access/services/cached_membership_permissions.rs	apps/api/src/kernel/caller_identity/cached_membership_permissions.rs
+path	apps/api/src/identity_and_access/services/tests/cached_membership_permissions.rs	apps/api/src/kernel/caller_identity/tests/cached_membership_permissions.rs
+path	apps/api/src/identity_and_access/services/tests/session_issuance.rs	apps/api/src/kernel/caller_identity/tests/arma_identity_link.rs
+path	apps/api/src/server_infrastructure/services/machine_authentication.rs	apps/api/src/kernel/caller_identity/machine_authentication.rs
+#
+# Module prefixes
+rust_path	crate::administration::services::required_audit::	crate::kernel::audit_log::required_audit::	apps/api/src
+rust_path	api::administration::services::required_audit::	api::kernel::audit_log::required_audit::	apps/api
+rust_path	crate::administration::services::audit_writer::	crate::kernel::audit_log::audit_writer::	apps/api/src
+rust_path	api::administration::services::audit_writer::	api::kernel::audit_log::audit_writer::	apps/api
+rust_path	crate::command_center::services::user_stats::	crate::kernel::member_activity::user_stats::	apps/api/src
+rust_path	api::command_center::services::user_stats::	api::kernel::member_activity::user_stats::	apps/api
+rust_path	crate::command_center::services::leaderboard_view::	crate::kernel::member_activity::leaderboard_view::	apps/api/src
+rust_path	api::command_center::services::leaderboard_view::	api::kernel::member_activity::leaderboard_view::	apps/api
+rust_path	crate::operations::services::participation_attribution::	crate::kernel::member_activity::participation_attribution::	apps/api/src
+rust_path	api::operations::services::participation_attribution::	api::kernel::member_activity::participation_attribution::	apps/api
+rust_path	crate::operations::services::event_reservations::reevaluation_queue::	crate::kernel::member_activity::reevaluation_queue::	apps/api/src
+rust_path	api::operations::services::event_reservations::reevaluation_queue::	api::kernel::member_activity::reevaluation_queue::	apps/api
+rust_path	crate::identity_and_access::services::session_authorization::	crate::kernel::caller_identity::session_authorization::	apps/api/src
+rust_path	api::identity_and_access::services::session_authorization::	api::kernel::caller_identity::session_authorization::	apps/api
+rust_path	crate::identity_and_access::services::identity_ownership::	crate::kernel::caller_identity::identity_ownership::	apps/api/src
+rust_path	api::identity_and_access::services::identity_ownership::	api::kernel::caller_identity::identity_ownership::	apps/api
+rust_path	crate::identity_and_access::services::account_authority::	crate::kernel::caller_identity::account_authority::	apps/api/src
+rust_path	api::identity_and_access::services::account_authority::	api::kernel::caller_identity::account_authority::	apps/api
+rust_path	crate::identity_and_access::services::cached_membership_permissions::	crate::kernel::caller_identity::cached_membership_permissions::	apps/api/src
+rust_path	api::identity_and_access::services::cached_membership_permissions::	api::kernel::caller_identity::cached_membership_permissions::	apps/api
+rust_path	crate::server_infrastructure::services::machine_authentication::	crate::kernel::caller_identity::machine_authentication::	apps/api/src
+rust_path	api::server_infrastructure::services::machine_authentication::	api::kernel::caller_identity::machine_authentication::	apps/api

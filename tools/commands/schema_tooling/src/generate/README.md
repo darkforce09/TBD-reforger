@@ -41,7 +41,7 @@ TARGETS ─▶ module_tree::render_tree_files ─▶ rustfmt ──────�
 ```
 
 The loadout export model is not generated: its versioned root `oneOf` does not survive typify, so
-`apps/api/src/missions/contract/loadout_projection.rs` is written by hand, and
+`crates/api/api_missions/src/contract/loadout_projection.rs` is written by hand, and
 `codegen` says so when it finishes.
 
 ## Commands

@@ -1,7 +1,8 @@
 //! Isolated integration-test invocation and ownership-checked database cleanup.
 //!
-//! **Role:** `cargo xtask db test-it`: the API test suite against a freshly claimed scratch
-//! database, then the ownership-checked cleanup of the run's databases.
+//! **Role:** `cargo xtask db test-it`: the API test suite (the `api` package, every API crate and
+//! every member using one that [`super::api_test_packages`] derives) against a freshly claimed
+//! scratch database, then the ownership-checked cleanup of the run's databases.
 //! **Position:** a child of [`crate::local_database`], whose `run` dispatch calls `run`; the ci
 //! `rust-test-it` task calls [`run_complete_suite`]; `super::selftest` uses the cleanup.
 //! **Signals & state:** the run's scratch database namespace, claimed with `CREATE DATABASE` and
@@ -17,6 +18,7 @@ use std::io::Read;
 
 use process_runner::Run;
 
+use super::api_test_packages::{API_APPLICATION_PACKAGE, api_test_packages, package_arguments};
 use super::recipe_execution::{echo, finish_status, runtime, web};
 use super::{IT_BASE_DB, IT_MAINT_DB};
 use crate::container_database as dbc;
@@ -159,10 +161,21 @@ fn is_selector_text(value: &str) -> bool {
 }
 
 /// Cargo arguments for the selection; libtest always retains successful property records.
-pub(crate) fn cargo_test_arguments(selection: &TestSelection) -> Result<Vec<String>, String> {
+///
+/// Every package of `api_packages` is tested, except under a `--test` selection: the integration
+/// binaries belong to the `api` package alone, so that form names `api` only.
+pub(crate) fn cargo_test_arguments(
+    selection: &TestSelection,
+    api_packages: &[String],
+) -> Result<Vec<String>, String> {
     let mut arguments: Vec<String> = ["test", "--locked", "--no-fail-fast"]
         .map(String::from)
         .to_vec();
+    if selection.binaries.is_empty() {
+        arguments.extend(package_arguments(api_packages));
+    } else {
+        arguments.extend(package_arguments(&[API_APPLICATION_PACKAGE.to_string()]));
+    }
     if selection.library {
         arguments.push("--lib".into());
     }
@@ -196,7 +209,8 @@ pub(crate) fn run(selection: TestSelection) -> Result<u8> {
     let property_configuration =
         api_readiness_checks::PropertyTestConfiguration::from_environment()?;
     println!("{}", property_configuration.marker());
-    let arguments = match cargo_test_arguments(&selection) {
+    let api_packages = api_test_packages(&repository_layout::find_repository_root()?)?;
+    let arguments = match cargo_test_arguments(&selection, &api_packages) {
         Ok(arguments) => arguments,
         Err(message) => {
             eprintln!("{message}");
@@ -230,8 +244,9 @@ pub(crate) fn run(selection: TestSelection) -> Result<u8> {
 
     let url = format!("postgres://tbd:tbd@localhost:5434/{base}?sslmode=disable");
     echo(&format!(
-        "cd {} && cargo test (isolated database {base})",
-        web.rel
+        "cd {} && cargo {} (isolated database {base})",
+        web.rel,
+        arguments.join(" ")
     ));
     run_with_cleanup(
         || {

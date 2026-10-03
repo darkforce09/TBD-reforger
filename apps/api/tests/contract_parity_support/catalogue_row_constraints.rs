@@ -21,7 +21,6 @@
 //! storage columns; it never drops or changes a copied constraint.
 
 use std::collections::BTreeMap;
-use std::path::PathBuf;
 
 use serde_json::Value;
 
@@ -66,9 +65,12 @@ pub const ROW_COPIES: &[RowCopy] = &[
 ///
 /// When the file is missing or is not JSON.
 pub fn read_schema(file: &str) -> Value {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../contracts/definitions")
-        .join(file);
+    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )))
+    .expect("the repository root above the API package")
+    .join("contracts/definitions")
+    .join(file);
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
     serde_json::from_str(&text).unwrap_or_else(|error| panic!("parse {}: {error}", path.display()))

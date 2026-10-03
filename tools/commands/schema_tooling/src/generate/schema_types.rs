@@ -10,7 +10,7 @@
 //! does not produce is removed by the codegen and refused by the freshness check. The
 //! loadout-export model is not generated: its versioned root `oneOf` is provably lossy (the
 //! branches merge and `Wear{}`/`Equipment{}` come out empty), so it is hand-maintained in
-//! `apps/api/src/missions/contract/loadout_projection.rs` and guarded there by serde round-trip
+//! `crates/api/api_missions/src/contract/loadout_projection.rs` and guarded there by serde round-trip
 //! tests against the committed sample fixtures.
 use std::collections::BTreeMap;
 use std::fs;

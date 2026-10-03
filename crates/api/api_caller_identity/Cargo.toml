@@ -1,0 +1,43 @@
+# Who an API request acts as and with what authority: the role ladder, the account authority read
+# from the verified Discord membership snapshot, the session authorization behind the `AuthUser`
+# extractor, the identity and account lock order, and the machine caller a game host authenticates
+# as.
+[package]
+name = "api_caller_identity"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's role ladder, session and account authority, identity lock order and machine caller."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 4
+targets = "any"
+
+[dependencies]
+# `Config`: the configured guild and the development flag a session check reads.
+api_configuration = { workspace = true }
+# `ApiError`, the refusal every check and the machine extractor answer.
+api_foundation = { workspace = true }
+# The access token claims, the opaque-token hash and its constant-time compare, the `AuthUser`
+# extractor and the `SessionAuthority` trait the database authority implements.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true }
+# `ExecutorKind` and the machine credential format the machine caller parses.
+fleet_wire_contract = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono"] }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+
+[lints]
+workspace = true

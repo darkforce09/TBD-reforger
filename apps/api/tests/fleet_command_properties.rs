@@ -33,14 +33,12 @@ mod fleet_support;
 use std::cell::Cell;
 use std::collections::HashMap;
 
-use api::core::error_handling::api_error::ApiError;
-use api::server_infrastructure::services::fleet_commands::command_ledger::enqueue_command;
-use api::server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
-use api::server_infrastructure::services::fleet_commands::executor_claims::{
+use api_caller_identity::machine_caller::{MachineCaller, authenticate_machine};
+use api_foundation::error_handling::api_error::ApiError;
+use api_server_infrastructure::services::fleet_commands::command_ledger::enqueue_command;
+use api_server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
+use api_server_infrastructure::services::fleet_commands::executor_claims::{
     claim_next_command, mark_executing, record_result,
-};
-use api::server_infrastructure::services::machine_credentials::{
-    MachineCaller, authenticate_machine,
 };
 use event_eligibility_support::{EventShape, Fixture};
 use fleet_support::{credential, register_server};
@@ -579,9 +577,9 @@ impl LedgerWorld {
         };
         let receipt = enqueue_command(
             &mut transaction,
-            self.server,
+            self.server.into(),
             &request,
-            &self.fixture.admin.id,
+            &api_identifiers::DiscordUserId::new(self.fixture.admin.id.as_str()),
         )
         .await
         .expect("enqueue a generated command");
@@ -610,7 +608,7 @@ impl LedgerWorld {
             &mut transaction,
             &self.executors[executor],
             None,
-            &self.fixture.main_guild,
+            &api_identifiers::DiscordGuildId::new(self.fixture.main_guild.as_str()),
         )
         .await
         {
@@ -627,7 +625,14 @@ impl LedgerWorld {
 
     async fn report_executing(&self, executor: usize, command: Uuid, token: i64) -> Observed {
         let mut transaction = self.pool().begin().await.expect("begin executing report");
-        match mark_executing(&mut transaction, &self.executors[executor], command, token).await {
+        match mark_executing(
+            &mut transaction,
+            &self.executors[executor],
+            command.into(),
+            token,
+        )
+        .await
+        {
             Ok(receipt) => {
                 transaction.commit().await.expect("commit executing report");
                 Observed::Receipt {
@@ -656,7 +661,7 @@ impl LedgerWorld {
         match record_result(
             &mut transaction,
             &self.executors[executor],
-            command,
+            command.into(),
             &result,
         )
         .await
@@ -737,7 +742,7 @@ impl LedgerWorld {
                     command.token,
                     command
                         .holder
-                        .map(|executor| self.executors[executor].credential_id),
+                        .map(|executor| self.executors[executor].credential_id.into_inner()),
                     command.attempts,
                 )
             })
@@ -981,7 +986,7 @@ fn command_executor_fencing_preserves_observed_outcomes() {
     let runtime = tokio::runtime::Runtime::new().expect("build the test runtime");
     let world = runtime.block_on(LedgerWorld::open());
     let coverage = Coverage::default();
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "command_executor_fencing_preserves_observed_outcomes",
         CASES,
         &interleaving_strategy(),

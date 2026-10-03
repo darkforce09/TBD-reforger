@@ -50,7 +50,7 @@ const DISCORD_ROLES: &str = "website roles derive from Discord: the route valida
 const ROLE_CHANGE_REFUSAL: &str = "Website roles are derived from Discord; change the Discord \
      role mapping or use a membership grace extension";
 const ROLE_CHANGE_REFUSAL_REASON: &str = "Discord owns every website role: `update_user` in \
-     administration/handlers/role_management.rs validates the body and refuses every valid role \
+     crates/api/api_administration/src/handlers/role_management.rs validates the body and refuses every valid role \
      change with 409";
 
 /// The query string each equipment data viewer read is authorized with: the committed
@@ -373,7 +373,7 @@ fn administration() -> Vec<RouteSpec> {
             "rank below",
             Expect::status(403).error_contains("verified administrator required"),
             "the grace extension checks the caller's verified administrator authority inside \
-             its transaction (identity_and_access::services::membership_grace_overrides), so \
+             its transaction (api_identity_and_access::services::membership_grace_overrides), so \
              the refusal names that authority",
         )
         .override_derived(

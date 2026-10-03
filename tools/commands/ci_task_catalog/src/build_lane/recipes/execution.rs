@@ -83,10 +83,10 @@ pub(crate) fn recipe_lines(target: &str) -> Result<Option<Vec<String>>> {
 fn recipe_steps(target: &str) -> Result<Option<Vec<Step>>> {
     Ok(Some(match target {
         "rust-api" => rust_api(),
-        "rust-build" => rust_build(),
-        "rust-test" => rust_test(),
+        "rust-build" => rust_build(&cwd_root())?,
+        "rust-test" => rust_test(&cwd_root())?,
         "rust-fmt" => rust_fmt(),
-        "rust-clippy" => rust_clippy(),
+        "rust-clippy" => rust_clippy(&cwd_root())?,
         "wasm-ci" => wasm_ci(&cwd_root())?,
         "leptos" => leptos(),
         "leptos-debug" => leptos_debug(),

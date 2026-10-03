@@ -27,7 +27,7 @@ use super::*;
 /// when claimable orphans are 0. That class of defect is invisible to the Rust gate; pin the claim
 /// needles on disk here.
 ///
-/// Needles measured from `apps/api/migrations/0016_backfill_pre_t326_linked_match_stats.sql`
+/// Needles measured from `crates/api/api_database/migrations/0016_backfill_pre_t326_linked_match_stats.sql`
 /// claim step 2 (not comments — comment prose uses unqualified `discord_id IS NULL`).
 ///
 /// Path override `TBD_GATE_MIGRATION_0016` is for perturbation probes only (point at a bait file
@@ -38,7 +38,7 @@ pub(crate) fn gate_db_migrate_claim_body(ctx: &Ctx) -> i32 {
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| {
             ctx.root
-                .join("apps/api/migrations/0016_backfill_pre_t326_linked_match_stats.sql")
+                .join("crates/api/api_database/migrations/0016_backfill_pre_t326_linked_match_stats.sql")
                 .display()
                 .to_string()
         });
@@ -135,13 +135,18 @@ pub(crate) fn gate_db_migrate_persist(ctx: &Ctx, state: &GateState, mode: &str) 
     let migdir = std::env::var("TBD_GATE_MIGRATION_DIR")
         .ok()
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| ctx.root.join("apps/api/migrations").display().to_string());
+        .unwrap_or_else(|| {
+            ctx.root
+                .join("crates/api/api_database/migrations")
+                .display()
+                .to_string()
+        });
     let seed = std::env::var("TBD_GATE_MIGRATE_SEED")
         .ok()
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| {
             ctx.root
-                .join("apps/api/seeds/content_golden.sql")
+                .join("crates/api/api_database/seeds/content_golden.sql")
                 .display()
                 .to_string()
         });

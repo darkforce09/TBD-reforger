@@ -1,8 +1,9 @@
 //! Real PostgreSQL locks and local HTTP verify REST lease, dispatch, and backoff coordination.
-use api::{
-    core::{application_state::AppState, configuration::Config, database},
-    identity_and_access::services::discord_rest_reconciliation::{enroll_accounts, reconcile_one},
+use api_configuration::configuration::Config;
+use api_identity_and_access::services::discord_rest_reconciliation::{
+    enroll_accounts, reconcile_one,
 };
+use api_state::AppState;
 use axum::{Router, http::StatusCode, routing::get};
 use std::sync::{
     Arc, LazyLock,
@@ -24,8 +25,8 @@ impl Drop for Fixture {
 }
 async fn fixture(status: StatusCode, body: &'static str) -> Fixture {
     let url = common::require_test_database_url().unwrap();
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
     sqlx::query("DELETE FROM discord_membership_snapshots")
         .execute(&pool)
         .await
@@ -39,7 +40,7 @@ async fn fixture(status: StatusCode, body: &'static str) -> Fixture {
     common::seed_user(&pool, "rest-member", "Member", "rest-arma", "enlisted").await;
     let mut cfg = Config::for_tests(url, "rest-coordination");
     cfg.discord_bot_token = "bot-token".into();
-    let mut state = AppState::new(pool, cfg);
+    let mut state = api::composition::application_state(pool, cfg);
     let requests = Arc::new(AtomicUsize::new(0));
     let counter = requests.clone();
     let app = Router::new().route(
@@ -144,7 +145,7 @@ async fn discord_rest_retry_after_uses_database_time_and_preserves_verified_memb
     common::fixtures::seed_membership(
         &f.state.pool,
         "rest-member",
-        &f.state.cfg.discord_guild_id,
+        f.state.cfg.discord_guild_id.as_str(),
         "admin",
     )
     .await;

@@ -16,10 +16,10 @@
 
 use std::time::Duration;
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api::router::router;
 use axum::Router;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -39,10 +39,11 @@ use crate::common;
 pub async fn boot_with_state() -> (Router, PgPool, AppState) {
     let url = common::require_test_database_url()
         .expect("TEST_DATABASE_URL is required for the telemetry suites");
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    let state = AppState::new(pool.clone(), Config::for_tests(url, "tele-secret"));
-    (http_router::router(state.clone()), pool, state)
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    let state =
+        api::composition::application_state(pool.clone(), Config::for_tests(url, "tele-secret"));
+    (router(state.clone()), pool, state)
 }
 
 /// Seed an account holding `arma_id` (or none) and issue a persisted session for it.

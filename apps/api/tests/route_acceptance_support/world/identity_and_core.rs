@@ -20,10 +20,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::identity_and_access::services::session_issuance::issue_session;
-use api::identity_and_access::services::session_rotation::rotate_session;
+use api_configuration::configuration::Config;
+use api_identity_and_access::services::session_issuance::issue_session;
+use api_identity_and_access::services::session_rotation::rotate_session;
+use api_state::AppState;
 use axum::extract::Form;
 use axum::http::{HeaderMap, StatusCode, header};
 use axum::response::IntoResponse;
@@ -135,10 +135,13 @@ impl IdentityAndCoreWorld {
     }
 
     async fn refresh_token(core: &WorldCore, discord_id: &str) -> String {
-        issue_session(&core.state, discord_id)
-            .await
-            .unwrap_or_else(|error| panic!("issue a session for {discord_id}: {error:?}"))
-            .2
+        issue_session(
+            &core.state,
+            &api_identifiers::DiscordUserId::new(discord_id),
+        )
+        .await
+        .unwrap_or_else(|error| panic!("issue a session for {discord_id}: {error:?}"))
+        .2
     }
 
     /// A link confirmation body for a fresh unlinked account's newly issued code.

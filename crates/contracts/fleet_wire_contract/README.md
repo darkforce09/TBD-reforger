@@ -61,8 +61,8 @@ None: the crate reads no environment variable and declares no feature.
 ## Boundaries
 
 - Depends on: `chrono`, `serde`, `serde_json`, `thiserror` and `uuid`; no workspace crate.
-- Used by: `apps/api` (the fleet command ledger and handlers, the machine credentials, every
-  handler that requires an executor kind, and the staging fixtures tool's credential files),
+- Used by: `apps/api` (the fleet command ledger and handlers, the machine credentials and every
+  handler that requires an executor kind), `tools/staging/staging_fixtures` (its credential files),
   `apps/fleet_host_agent` (the ledger client and the secret-file reader) and `tools/xtask` (the
   credential prefix of the mod mission test).
 - Rules:

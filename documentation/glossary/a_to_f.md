@@ -25,7 +25,7 @@ See: [staging harness](/documentation/glossary/n_to_z.md#staging-harness), [Ackn
 The administrator-only side of the platform: the API domain of the member roster, bans, warnings,
 membership grace, the Discord role resync and the audit log, and the seven `/admin/*` pages.
 
-In code: `apps/api/src/administration/`; `apps/frontend/src/pages/administration/`.
+In code: `crates/api/api_administration/src/`; `apps/frontend/src/pages/administration/`.
 
 See: [event manager](#event-manager), [approvals](#approvals), [server control](/documentation/glossary/n_to_z.md#server-control), [personnel](/documentation/glossary/n_to_z.md#personnel), [content manager](#content-manager), [audit logs](#audit-logs).
 
@@ -44,7 +44,7 @@ The website's backend: the Axum REST API under `/api/v1` and its Server-Sent Eve
 Postgres, in eight domains beside a shared `core` and the [background workers](#background-workers).
 Documents say the API; the crate is `api`, in the folder `apps/api/`.
 
-In code: `apps/api/` (library `api`, binaries `api` and `import-registry`); `apps/api/src/core/http_router.rs` merges the domain route tables.
+In code: `apps/api/` (library `api`, binaries `api` and `import-registry`); `apps/api/src/router.rs` merges the domain route tables.
 
 See: [Website API](/apps/api/README.md).
 
@@ -54,7 +54,7 @@ The mission approval queue at `/admin/approvals`, titled Mission Approvals: an a
 reviews the [artifact](#artifact) a mission maker submitted and approves it into the live library,
 optionally with conditions, or returns it to the author with a reason.
 
-In code: `MissionApprovalsPage` in `apps/frontend/src/pages/administration/approvals/`; `apps/api/src/missions/handlers/approvals_queue.rs`.
+In code: `MissionApprovalsPage` in `apps/frontend/src/pages/administration/approvals/`; `crates/api/api_missions/src/handlers/approvals_queue.rs`.
 
 See: [Mission approvals page](/documentation/apps/frontend/pages/administration/approvals/mission_approvals_page.md).
 
@@ -63,7 +63,7 @@ See: [Mission approvals page](/documentation/apps/frontend/pages/administration/
 The weapons, vehicles and equipment a [mission](/documentation/glossary/g_to_m.md#mission) makes available per faction, each with an
 optional quantity (none is unlimited), shown on the mission overview; not the [arsenal](#arsenal).
 
-In code: `MissionArmory` in `apps/api/src/missions/models/mission.rs`; `apps/api/src/missions/handlers/mission_armory.rs`.
+In code: `MissionArmory` in `crates/api/api_missions/src/models/mission.rs`; `crates/api/api_missions/src/handlers/mission_armory.rs`.
 
 See: [Mission overview page](/documentation/apps/frontend/pages/mission_hub/overview/mission_overview_page.md).
 
@@ -83,7 +83,7 @@ The immutable compiled form of one [mission](/documentation/glossary/g_to_m.md#m
 current version into an artifact, a review decides exactly that artifact, and a
 [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) runs an approved one on a server, which fetches it by ID.
 
-In code: `MissionArtifact` in `apps/api/src/missions/services/mission_artifacts/artifact_store.rs`; `mission_submission.rs` and `game_runtime_missions.rs` in `apps/api/src/missions/handlers/`.
+In code: `MissionArtifact` in `crates/api/api_missions/src/services/mission_artifacts/artifact_store.rs`; `mission_submission.rs` and `game_runtime_missions.rs` in `crates/api/api_missions/src/handlers/`.
 
 See: [Mission artifacts evidence](/documentation/apps/api/verification_evidence/mission_artifacts.md).
 
@@ -95,7 +95,7 @@ loads older entries a page at a time, shows each entry once whichever way it arr
 loaded entries by text in the browser and inspects one entry. The API also serves a CSV export,
 which the page does not use.
 
-In code: `AuditLogsPage` in `apps/frontend/src/pages/administration/audit_logs/`; `apps/frontend/src/foundation/transport/audit_stream.rs`; `apps/api/src/administration/handlers/audit_logs.rs`.
+In code: `AuditLogsPage` in `apps/frontend/src/pages/administration/audit_logs/`; `apps/frontend/src/foundation/transport/audit_stream.rs`; `crates/api/api_administration/src/handlers/audit_logs.rs`.
 
 See: [Audit logs page](/documentation/apps/frontend/pages/administration/audit_logs/audit_logs_page.md).
 
@@ -105,9 +105,9 @@ The interval tasks the [API](#api) binary starts at boot and never awaits: token
 lifecycle, leaderboards, server status, Discord roles and membership, rate limits, audit
 publication, reservations, runtime sessions, fleet commands and mission deployments.
 
-In code: `spawn_all` and `WorkerHandles` in `apps/api/src/background_workers/mod.rs`.
+In code: `spawn_all` and `WorkerHandles` in `crates/api/api_background_workers/src/worker_set.rs`.
 
-See: [Background workers](/apps/api/src/background_workers/README.md).
+See: [Background workers](/crates/api/api_background_workers/src/README.md).
 
 ### charge ring
 
@@ -137,18 +137,18 @@ See: [orchestrator](/documentation/glossary/n_to_z.md#orchestrator), [Sub-agent 
 The web app's landing area (the dashboard at `/`, server intel, announcements) and the API domain of
 the dashboard, leaderboards and player statistics; not the [orchestrator](/documentation/glossary/n_to_z.md#orchestrator).
 
-In code: `apps/frontend/src/pages/command_center/`; `apps/api/src/command_center/`.
+In code: `apps/frontend/src/pages/command_center/`; `crates/api/api_command_center/src/`.
 
-See: [Command center domain](/apps/api/src/command_center/README.md).
+See: [Command center domain](/crates/api/api_command_center/src/README.md).
 
 ### community content
 
 The API domain of what the community reads (announcements, the doctrine wiki, the vehicle database,
 modpack manifests) and the CMS routes the [content manager](#content-manager) writes through.
 
-In code: `apps/api/src/community_content/`.
+In code: `crates/api/api_community_content/src/`.
 
-See: [Community content domain](/apps/api/src/community_content/README.md).
+See: [Community content domain](/crates/api/api_community_content/src/README.md).
 
 ### console command
 
@@ -198,7 +198,7 @@ Four meanings: a [mission deployment](/documentation/glossary/g_to_m.md#mission-
 server; a member's deployments are the events on their [service record](/documentation/glossary/n_to_z.md#service-record); a
 game-runtime deployment puts one player life into a slot; a website deployment ships the platform.
 
-In code: `mission_deployments.rs` in `apps/api/src/missions/handlers/`; `member_service_record.rs` and `game_runtime_deployments.rs` in `apps/api/src/operations/handlers/`.
+In code: `mission_deployments.rs` in `crates/api/api_missions/src/handlers/`; `member_service_record.rs` and `game_runtime_deployments.rs` in `crates/api/api_operations/src/handlers/`.
 
 See: [Website deployment runbook](/documentation/runbooks/website_deployment.md).
 
@@ -208,7 +208,7 @@ A development-only sign-in without Discord: with `APP_ENV=development`, the dev-
 as a local account of the requested [role](/documentation/glossary/n_to_z.md#role) (`admin` for an unknown one) and redirects to
 `/auth/callback` with the token in the URL fragment; elsewhere it answers 404.
 
-In code: `dev_login` in `apps/api/src/identity_and_access/handlers/developer_login.rs`, serving `GET /api/v1/auth/dev-login?role=<role>`.
+In code: `dev_login` in `crates/api/api_identity_and_access/src/handlers/developer_login.rs`, serving `GET /api/v1/auth/dev-login?role=<role>`.
 
 See: [Local development](/documentation/runbooks/local_development.md).
 
@@ -248,7 +248,7 @@ A scheduled community session record: start time, briefing, attached [missions](
 own start times, their [ORBAT](/documentation/glossary/n_to_z.md#orbat) slots, sign-ups and waitlist. "Event" alone means this record
 (never an SSE or DOM event); code and screen titles also say operation.
 
-In code: `Event` and `EventMission` in `apps/api/src/operations/models/event.rs`; the `event_*.rs` handlers in `apps/api/src/operations/handlers/`.
+In code: `Event` and `EventMission` in `crates/api/api_operations/src/models/event.rs`; the `event_*.rs` handlers in `crates/api/api_operations/src/handlers/`.
 
 See: [slot](/documentation/glossary/n_to_z.md#slot), [Event schedule page](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md).
 
@@ -257,7 +257,7 @@ See: [slot](/documentation/glossary/n_to_z.md#slot), [Event schedule page](/docu
 The `/admin/events` page, titled the operations calendar: a month grid and a day panel from which
 administrators schedule, edit and cancel [events](#event), attach missions and set who may join.
 
-In code: `EventManagerPage` in `apps/frontend/src/pages/administration/event_manager/`; `apps/api/src/operations/handlers/event_create_update.rs`.
+In code: `EventManagerPage` in `apps/frontend/src/pages/administration/event_manager/`; `crates/api/api_operations/src/handlers/event_create_update.rs`.
 
 See: [Event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md).
 
@@ -290,7 +290,7 @@ One operator command to one game server (`start`, `stop`, `restart`, `list_playe
 `kick`, `console_command`), kept in the API's command ledger from acceptance through an executor's claim to its
 outcome; [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) alone issue `load_mission` and `restart_with_mission`.
 
-In code: `FleetAction` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `apps/api/src/server_infrastructure/handlers/`.
+In code: `FleetAction` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `crates/api/api_server_infrastructure/src/handlers/`.
 
 See: [fleet host agent](#fleet-host-agent), [console command](#console-command), [game runtime](/documentation/glossary/g_to_m.md#game-runtime), [server control](/documentation/glossary/n_to_z.md#server-control).
 
@@ -324,7 +324,7 @@ See: [acknowledgement-dropping relay](#acknowledgement-dropping-relay), [Deploy 
 An entry of the registry that names, for each terrain, the [mission header](/documentation/glossary/g_to_m.md#mission-header) the
 fleet boots; a mission deployment to a terrain without one is refused. The code says scenario here.
 
-In code: `apps/api/src/server_infrastructure/handlers/fleet_scenarios.rs`.
+In code: `crates/api/api_server_infrastructure/src/handlers/fleet_scenarios.rs`.
 
 See: [scenario](/documentation/glossary/n_to_z.md#scenario), [server control](/documentation/glossary/n_to_z.md#server-control).
 

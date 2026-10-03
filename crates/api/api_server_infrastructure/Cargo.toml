@@ -1,0 +1,56 @@
+# The server infrastructure domain of the API: the dedicated-server registry, the live status feed
+# and its `server:{id}` topic, the machine credentials, the fleet command ledger with its executor
+# claims and reconciliation, the game-runtime sessions and the per-terrain fleet scenarios.
+# Names one other domain: community content (the modpack a server runs).
+[package]
+name = "api_server_infrastructure"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's server registry, live status feed, machine credentials, fleet commands and runtime sessions."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 7
+targets = "any"
+
+[dependencies]
+# The required audit lines of the registry, credential, command and session writes.
+api_audit_log = { workspace = true }
+# The machine caller, the session authorization of the status stream, the administrator
+# authority check and the account locks of a credential issue.
+api_caller_identity = { workspace = true }
+# The modpack models and lookup a server's intel answer carries.
+api_community_content = { workspace = true }
+# `fail_point!` at the fleet command claim and result commits.
+api_failpoints = { workspace = true }
+# `ApiError` and the typed path parameters.
+api_foundation = { workspace = true }
+# The caller extractors, the event stream authorization, the token hashing and the realtime hub.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# `TerrainType`, the terrain a server's intel answer names.
+api_mission_vocabulary = { workspace = true }
+# `AppState`, the state every handler extracts.
+api_state = { workspace = true }
+async-stream = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+# The fleet command vocabulary, the executor and operator messages, the machine credential format
+# and the RFC 3339 timestamp spelling of every emitted time.
+fleet_wire_contract = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "json"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[dev-dependencies]
+api_failpoints = { workspace = true, features = ["failpoints"] }
+tokio = { workspace = true, features = ["macros", "rt", "sync"] }
+
+[lints]
+workspace = true

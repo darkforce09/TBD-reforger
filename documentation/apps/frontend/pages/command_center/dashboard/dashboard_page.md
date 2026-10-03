@@ -23,7 +23,7 @@ announcements, all read from one request.
   which the banner opens; the [announcements page](/documentation/apps/frontend/pages/command_center/announcements/announcements_page.md),
   which each feed row opens; the [server intel page](/documentation/apps/frontend/pages/command_center/server_intel/server_intel_page.md),
   the live view of a server; the [API](/documentation/glossary/a_to_f.md#api)'s
-  [command center domain](/apps/api/src/command_center/README.md), which composes the
+  [command center domain](/crates/api/api_command_center/src/README.md), which composes the
   payload.
 
 ## Behaviour
@@ -79,7 +79,7 @@ three cards.
 - The banner reads as a countdown ("T-MINUS …") but is fixed at render time
   (`apps/frontend/src/pages/command_center/dashboard/hero_banner.rs`); the API returns
   only events that start after the moment of the request (`get_dashboard` in
-  `apps/api/src/command_center/handlers/live_dashboard.rs`), so a started event leaves
+  `crates/api/api_command_center/src/handlers/live_dashboard.rs`), so a started event leaves
   the banner on the next load rather than showing `LIVE NOW`.
 - The "Server Uplink" pill draws "0/<n> ONLINE" in the same green as a fleet with servers
   online; only the dot turns grey
@@ -91,7 +91,7 @@ The README's [Data](/apps/frontend/src/pages/command_center/dashboard/README.md#
 lists the call and the DTO the page reads. Server-side:
 
 - `GET /api/v1/dashboard` (`get_dashboard` in
-  `apps/api/src/command_center/handlers/live_dashboard.rs`), for any signed-in
+  `crates/api/api_command_center/src/handlers/live_dashboard.rs`), for any signed-in
   member, composes five independent reads:
   - `next_event`: the soonest event the viewer created that starts after now and is scheduled,
     open or live; when there is none, the soonest such event of anyone's. The name is the
@@ -102,7 +102,7 @@ lists the call and the DTO the page reads. Server-side:
     event mission that starts after now, as faction, squad and role (and the event's id and name,
     which the page does not show).
   - `fleet`: the configured fleet (`load_fleet_overview` in
-    `apps/api/src/command_center/services/fleet_overview.rs`): every server with
+    `crates/api/api_command_center/src/services/fleet_overview.rs`): every server with
     `is_active = true`, ordered by name then id, each with its `server_statuses` row when it has
     one (including its `telemetry_queue` reading when the server reported one), and `totals`
     (`configured`, `online`, `players`, `max_players`, `telemetry_backlog`,
@@ -111,7 +111,7 @@ lists the call and the DTO the page reads. Server-side:
     [telemetry specification](/documentation/apps/api/verification_evidence/telemetry.md#fleet)
     defines the shape.
   - `current_modpack`: the modpack flagged current (`load_current_modpack` in
-    `apps/api/src/community_content/services/modpack_lookup.rs`).
+    `crates/api/api_community_content/src/services/modpack_lookup.rs`).
   - `recent_announcements`: the three newest published announcements, newest first, pinned or
     not.
 

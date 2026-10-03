@@ -27,16 +27,16 @@ against the route table the source declares at test time.
 The table is read from source when the tests run, never kept by hand
 (`tests/route_acceptance_support/route_table.rs`):
 
-- `core/http_router.rs` gives the top-level routes (`/healthz`, `/metrics`, `/uploads`,
+- `apps/api/src/router.rs` gives the top-level routes (`/healthz`, `/metrics`, `/uploads`,
   `/map-assets*`) and `api_v1_routes`, which merges with the `/api/v1` nest.
-- Every `<domain>/routes.rs` gives its `pub fn routes(` body. Each
+- Every domain crate's `crates/api/api_<domain>/src/routes.rs` gives its `pub fn routes(` body. Each
   `.merge(handlers::<x>::routes())` is followed into `handlers/<x>/mod.rs` or `handlers/<x>.rs`,
   and its `.nest(prefix, …)` applies to the rows it yields.
 - A row is (method, full path, handler fn, development-only, route body limit). A row is
   development-only exactly when an enclosing `if` tests the configuration's development flag; a
   registration under any other condition is an error, never a skipped row.
 - Cross-check: the parsed set equals the set of column-0 `/// @route METHOD PATH` tags bound to
-  handler fns in `src/`, in both directions.
+  handler fns in `apps/api/src/` and the API crates, in both directions.
 
 The twelve `/api/v1/debug/equipment-data/*` routes of the equipment data viewer are registered in
 `community_content/routes.rs` only under a development configuration, as `/auth/dev-login` is.
@@ -86,7 +86,7 @@ and refuses every valid role change with 409.
 The malformed and boundary dimensions hold one API-wide rule: no extractor answers axum's
 plain-text rejection body.
 
-- Path segments: every handler takes `core::http::path_parameters::PathParams` in place of axum's
+- Path segments: every handler takes `api_foundation::http::path_parameters::PathParams` in place of axum's
   `Path`; a segment that does not decode answers 400 `invalid path parameter: <reason>`
   (`ApiError::from_path_rejection`), and an extractor that does not match its route answers a
   logged 500, never a 400 that blames the caller.
@@ -140,7 +140,7 @@ authorized probe sends validates against its request definition where the schema
 
 The re-serialised value compares exactly, with one rule for instants: a string the schema declares
 `format: date-time` compares as the instant it names, and the live string must also be the API's
-own spelling of that instant (`core::wire_format::rfc3339_utc`: UTC, `Z`, trailing fractional
+own spelling of that instant (`fleet_wire_contract::rfc3339_timestamps::rfc3339_utc`: UTC, `Z`, trailing fractional
 zeros trimmed), so the comparison never relaxes the wire format
 (`tests/route_acceptance_support/round_trip_comparison.rs`).
 
@@ -240,7 +240,7 @@ The capture window runs from just before the first indexed request to just after
 
 The `contract_parity_equipment_viewer` binary reproduces every answer of the twelve
 development-only equipment routes from a committed export rather than a local dataset. The
-production importer (`community_content::services::equipment_data_viewer`) imports
+production importer (`api_equipment_datasets`) imports
 `tests/fixtures/equipment_data_viewer/diagnostic_export/` and the gameplay publication under
 `tests/fixtures/equipment_data_viewer/export_source/` into a temporary data directory, and a
 development router answers one request per route. Each JSON answer equals its golden as a
@@ -312,7 +312,7 @@ across every binary; `cargo xtask db test-it` sets `PROPTEST_RNG_SEED` (default 
 
 Invariant (g) is per attached mission because a claim releases the participant's other seats of
 the same mission only (`release_other_seats` in
-`operations/services/event_reservations/seat_claims.rs`); a single-mission event is the same.
+`crates/api/api_operations/src/services/event_reservations/seat_claims.rs`); a single-mission event is the same.
 
 ### Register fix
 
@@ -345,8 +345,8 @@ response is lost: the handler answers 500.
 | `SessionRotationBeforeCommit` | refresh-token rotation, before its transaction commits | `identity_and_access/services/session_rotation.rs::rotate_session` |
 | `SessionRotationAfterCommit` | refresh-token rotation, after commit, response lost | `identity_and_access/services/session_rotation.rs::rotate_session` |
 | `SessionLogoutBeforeCommit` | logout, before its transaction commits | `identity_and_access/services/session_rotation.rs::logout_session` |
-| `ReservationClaimBeforeCommit` | reservation claim, before commit | `operations/handlers/slot_registration.rs::register_for_event_mission` |
-| `ReservationClaimAfterCommit` | reservation claim, after commit, response lost | `operations/handlers/slot_registration.rs::register_for_event_mission` |
+| `ReservationClaimBeforeCommit` | reservation claim, before commit | `register_for_event_mission` in `crates/api/api_operations/src/handlers/slot_registration.rs` |
+| `ReservationClaimAfterCommit` | reservation claim, after commit, response lost | `register_for_event_mission` in `crates/api/api_operations/src/handlers/slot_registration.rs` |
 | `ReviewDecisionBeforeCommit` | mission review decision, before commit | `missions/services/mission_reviews.rs::decide_review` |
 | `DeploymentRequestBeforeCommit` | mission deployment request, before commit | `missions/services/mission_deployments/deployment_requests.rs::request_deployment` |
 | `DeploymentRequestAfterCommit` | mission deployment request, after commit, response lost | `missions/handlers/mission_deployments.rs::request_server_deployment`, `missions/handlers/game_runtime_missions.rs::relayed_deployment_request` |
@@ -393,7 +393,7 @@ Two races are serialised by locks a red-proving perturbation must target:
 
 - Refresh rotation: `rotate_session` (`identity_and_access/services/session_rotation.rs`) takes the
   account lock (`lock_account`, `SELECT … FROM users … FOR UPDATE` in
-  `identity_and_access/services/account_authority.rs`) before it reads the token row, so every
+  `crates/api/api_caller_identity/src/account_authority.rs`) before it reads the token row, so every
   rotation of one account queues there. Removing the refresh-token row lock alone leaves the race
   green; removing `lock_account` from `rotate_session` is the defect that turns it red.
 - Review decision: an approval and a rejection are serialised twice, by the mission row lock that

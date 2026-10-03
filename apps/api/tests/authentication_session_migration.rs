@@ -1,6 +1,5 @@
 //! Upgrade a populated pre-session schema without changing identity or historical records.
 
-use api::core::database;
 use sqlx::{AssertSqlSafe, PgPool};
 use std::borrow::Cow;
 use uuid::Uuid;
@@ -9,7 +8,7 @@ mod common;
 #[tokio::test]
 async fn session_migration_preserves_accounts_and_invalidates_unverified_legacy_credentials() {
     let base = common::require_test_database_url().unwrap();
-    let maintenance = database::connect(&base).await.unwrap();
+    let maintenance = api_database::connect(&base).await.unwrap();
     let mut url = url::Url::parse(&base).unwrap();
     let prefix: String = url
         .path()
@@ -26,7 +25,7 @@ async fn session_migration_preserves_accounts_and_invalidates_unverified_legacy_
         .execute(&maintenance)
         .await
         .unwrap();
-    let pool = database::connect(url.as_str()).await.unwrap();
+    let pool = api_database::connect(url.as_str()).await.unwrap();
     let result = upgrade(&pool).await;
     pool.close().await;
     sqlx::raw_sql(AssertSqlSafe(format!("DROP DATABASE {name}")))
@@ -37,7 +36,7 @@ async fn session_migration_preserves_accounts_and_invalidates_unverified_legacy_
 }
 
 async fn upgrade(pool: &PgPool) -> anyhow::Result<()> {
-    let all = sqlx::migrate!("./migrations");
+    let all = sqlx::migrate!("../../crates/api/api_database/migrations");
     let baseline = sqlx::migrate::Migrator {
         migrations: Cow::Owned(
             all.migrations

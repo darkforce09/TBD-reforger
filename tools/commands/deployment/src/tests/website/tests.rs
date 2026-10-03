@@ -270,7 +270,7 @@ fn the_staging_host_tools_step_builds_and_proves_every_executable() {
     );
     assert!(command.starts_with(&preamble), "{command}");
     for (package, executable) in [
-        ("api", "staging-fixtures"),
+        ("staging_fixtures", "staging-fixtures"),
         ("developer_tools", "acknowledgement-dropping-relay"),
     ] {
         let build = format!("cargo build --release -p {package} --bin {executable}");
@@ -288,12 +288,13 @@ fn the_staging_host_tools_step_builds_and_proves_every_executable() {
 /// host never builds or runs a name that no longer exists.
 #[test]
 fn every_staging_host_tool_is_an_executable_its_package_declares() {
-    const WEBSITE_API: &str = include_str!("../../../../../../apps/api/Cargo.toml");
+    const STAGING_FIXTURES: &str =
+        include_str!("../../../../../staging/staging_fixtures/Cargo.toml");
     const DEVELOPER_TOOLS: &str = include_str!("../../../../../developer_tools/Cargo.toml");
     const RELAY_UNIT: &str =
         include_str!("../../../../../../deploy/systemd/acknowledgement-dropping-relay@.service");
     for tool in &remote_steps::STAGING_HOST_TOOLS {
-        let manifest: toml::Table = [WEBSITE_API, DEVELOPER_TOOLS]
+        let manifest: toml::Table = [STAGING_FIXTURES, DEVELOPER_TOOLS]
             .iter()
             .map(|text| text.parse::<toml::Table>().expect("a manifest parses"))
             .find(|manifest| manifest["package"]["name"].as_str() == Some(tool.package))

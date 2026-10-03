@@ -17,7 +17,7 @@ collection; administrators create, edit, make current and delete packs in place.
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md#routes).
 - Related: the [API](/documentation/glossary/a_to_f.md#api)'s
-  [community content domain](/apps/api/src/community_content/README.md), which owns the
+  [community content domain](/crates/api/api_community_content/src/README.md), which owns the
   modpack routes; the servers and [events](/documentation/glossary/a_to_f.md#event) that name a
   required modpack, which the API checks before a delete.
 
@@ -69,7 +69,7 @@ README's [States](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md#
   row's index as its order.
 - The pack's download size shows in the list and the dossier, but the form has no size field: a
   pack created on the page keeps a size of 0 unless the API is called directly
-  (`total_size_bytes` in `apps/api/src/community_content/handlers/modpack_admin.rs`).
+  (`total_size_bytes` in `crates/api/api_community_content/src/handlers/modpack_admin.rs`).
 
 ## Data
 
@@ -77,10 +77,10 @@ The README's [Data](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.m
 lists each call with its DTO. Server-side:
 
 - `GET /api/v1/modpacks` (`list_modpacks` in
-  `apps/api/src/community_content/handlers/modpack_catalog.rs`): any signed-in member;
+  `crates/api/api_community_content/src/handlers/modpack_catalog.rs`): any signed-in member;
   every pack with its addons, current first, then newest.
 - `POST /api/v1/modpacks` (`create_modpack` in
-  `apps/api/src/community_content/handlers/modpack_admin.rs`): `admin` only; trims and
+  `crates/api/api_community_content/src/handlers/modpack_admin.rs`): `admin` only; trims and
   requires the name, the version and every addon's name, refuses a negative size, and, when the
   new pack is current, clears the flag on every other pack in the same transaction.
 - `PUT /api/v1/modpacks/{id}` (`replace_modpack`, same file): the same checks; replaces the pack's

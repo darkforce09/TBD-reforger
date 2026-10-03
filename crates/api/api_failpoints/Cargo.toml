@@ -1,0 +1,39 @@
+# Fault injection for the API's test builds: the `fail_point!` macro every commit and
+# external-effect path places, and, with the dev-only `failpoints` feature, the catalogue of named
+# points, the process-global registry that arms them and the failure an armed point returns.
+[package]
+name = "api_failpoints"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's fail_point! macro, failpoint catalogue and test-only arming registry."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 2
+targets = "any"
+
+# `failpoints` compiles the catalogue, the registry and the injected failure in. Only a
+# `[dev-dependencies]` edge enables it, so every test build carries it and the deploy build
+# (`cargo build --release -p api --bin api`) expands every `fail_point!` to nothing.
+[features]
+failpoints = []
+
+[dependencies]
+api_foundation = { workspace = true }
+axum = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["sync", "time"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+# The crate itself with `failpoints` on, for its unit tests.
+api_failpoints = { workspace = true, features = ["failpoints"] }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+
+[lints]
+workspace = true

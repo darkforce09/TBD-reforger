@@ -11,8 +11,8 @@
 //! (`/api/v1/fleet-executor/commands/…`) of an `event_eligibility_support` fixture, with host-agent
 //! credentials from `fleet_support`; the failpoints `FleetCommandClaimAfterCommit`,
 //! `FleetCommandResultBeforeCommit` and `FleetCommandResultAfterCommit` sit in
-//! `server_infrastructure::handlers::fleet_executor` and
-//! `server_infrastructure::services::fleet_commands::executor_claims::record_result`.
+//! `api_server_infrastructure::handlers::fleet_executor` and
+//! `api_server_infrastructure::services::fleet_commands::executor_claims::record_result`.
 //! **Signals & state:** the process-global failpoint registry, serialised by the suite lock every
 //! case holds for its whole body; this binary's private database from `tests/common`.
 //! **Invariants:** every command records at most one outcome audit, equal to its state; a lease is
@@ -24,7 +24,7 @@ mod event_eligibility_support;
 mod failpoint_and_race_support;
 mod fleet_support;
 
-use api::server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
+use api_server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
 use axum::http::StatusCode;
 use event_eligibility_support::{EventShape, Fixture};
 use failpoint_and_race_support::{

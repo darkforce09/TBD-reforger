@@ -37,7 +37,9 @@ pub const METHODS: [&str; 5] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 /// The committed corpus directory.
 pub fn corpus_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../contracts/fixtures/api_goldens")
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("contracts/fixtures/api_goldens")
 }
 
 /// One `_index.tsv` row: `status<TAB>path<TAB>file<TAB>size`.

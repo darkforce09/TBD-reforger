@@ -10,7 +10,8 @@
 //!
 //! ## What makes this fail (non-vacuity)
 //! Skip the `page_store::record_current_revision` call in `save_wiki_page`
-//! (`src/community_content/handlers/wiki_knowledgebase/save.rs`): the saves still answer 201 and
+//! (`crates/api/api_community_content/src/handlers/wiki_knowledgebase/save.rs`): the saves still
+//! answer 201 and
 //! 200, but the history stays empty and `wiki_features_each_save_appends_a_revision_newest_first`
 //! goes red.
 

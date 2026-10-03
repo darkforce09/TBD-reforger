@@ -19,7 +19,8 @@ command output recorded in progress_checkpoint.md.
   ?reason=`) credentials. Each write locks the server row, reauthorizes the administrator on that
   transaction and audits in it. Revocation is independent per credential, idempotent, and ends
   every runtime session the credential authenticated.
-- `MachineCaller` (`server_infrastructure/services/machine_authentication.rs`) is the extractor
+- `MachineCaller` (`crates/api/api_caller_identity/src/machine_caller.rs`, its extractor in
+  `crates/api/api_caller_identity/src/machine_authentication.rs`) is the caller
   of every machine route. Handlers require their executor kind and check every resource against
   the caller's server: a roster, session or deployment of another server answers 403.
 
@@ -58,4 +59,5 @@ command output recorded in progress_checkpoint.md.
 
 `tests/server_machine_credentials.rs` (`server_credentials_*`), `tests/runtime_session_fencing.rs`
 (`heartbeat_fencing_*`), the adapted heartbeat and roster suites, and the unit tests in
-`services/tests/machine_credentials.rs`.
+`server_infrastructure/services/tests/machine_credentials.rs` and
+`crates/api/api_caller_identity/src/tests/machine_caller.rs`.

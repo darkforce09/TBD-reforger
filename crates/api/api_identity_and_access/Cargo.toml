@@ -1,0 +1,66 @@
+# The identity and access domain of the API: Discord OAuth2 sign-in, session token rotation and
+# logout, the development login, the caller's own profile (`/me`) and the two halves of the Arma
+# account-link handshake, with the account, session and membership services behind them.
+[package]
+name = "api_identity_and_access"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's Discord sign-in, session tokens, caller profile and Arma link handshake."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 6
+targets = "any"
+
+[dependencies]
+# The required audit lines of session issuance and rotation, the grace overrides and the link
+# handshake.
+api_audit_log = { workspace = true }
+# The role ladder, the session and account authority, the identity locks and the machine caller.
+api_caller_identity = { workspace = true }
+# `Config`: the OAuth client, the configured guild and the development flag.
+api_configuration = { workspace = true }
+# The Discord OAuth2 and guild-member clients and their typed error.
+api_discord = { workspace = true }
+# `fail_point!` at the session rotation, the link confirmation and the role sync effect.
+api_failpoints = { workspace = true }
+# `ApiError`, the wire formats and the error cause rendering.
+api_foundation = { workspace = true }
+# The token hashing and random codes, the `AuthUser` extractor and the Discord reconciliation
+# metrics.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# The attendance rate column, the attendance refresh and statistics recompute after an identity
+# link, and the re-evaluation queue a membership change feeds.
+api_member_activity = { workspace = true }
+# `AppState`, the state every handler extracts.
+api_state = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+# `ExecutorKind`, the machine caller the link confirmation accepts, and the RFC 3339 timestamp
+# spelling of every emitted time.
+fleet_wire_contract = { workspace = true }
+# `is_http_url`, the scheme guard on the stored avatar URL.
+http_url_guard = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono"] }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+# The OAuth host guard's URL parse and the session redirect's fragment encoding.
+url = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+
+[dev-dependencies]
+api_failpoints = { workspace = true, features = ["failpoints"] }
+# A real transport error of the client's own type, for the OAuth failure classification tests.
+reqwest = { workspace = true, features = ["rustls-no-provider"] }
+rustls = { workspace = true, features = ["ring", "std", "tls12", "logging"] }
+tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
+tracing-subscriber = { workspace = true, features = ["fmt"] }
+
+[lints]
+workspace = true

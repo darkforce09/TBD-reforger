@@ -21,7 +21,7 @@ announcements only; the doctrine wiki has no editor here.
 - Related: the [content manager](/documentation/glossary/a_to_f.md#content-manager) glossary entry;
   the [announcements page](/documentation/apps/frontend/pages/command_center/announcements/announcements_page.md),
   where members read what this page publishes; the [API](/documentation/glossary/a_to_f.md#api)'s
-  [community content domain](/apps/api/src/community_content/README.md).
+  [community content domain](/crates/api/api_community_content/src/README.md).
 
 ## Behaviour
 
@@ -77,7 +77,7 @@ announcements only; the doctrine wiki has no editor here.
 
 The README's [Data](/apps/frontend/src/pages/administration/content_manager/README.md#data)
 lists each call with the DTO or body it reads or sends. Server-side, in
-`apps/api/src/community_content/handlers/`:
+`crates/api/api_community_content/src/handlers/`:
 
 - `GET /api/v1/cms/announcements?limit=100` (`list_cms_announcements` in
   `announcements_admin.rs`): the API returns the drafts and published posts, neither archived nor
@@ -99,7 +99,7 @@ lists each call with the DTO or body it reads or sends. Server-side, in
 - `DELETE /api/v1/cms/announcements/{id}` (`delete_announcement`): sets the post's status to
   `archived` and answers 204; the row stays, so an archived post can be restored in the database.
 - `POST /api/v1/cms/uploads` (`upload_image` in the API's
-  [media upload handler](/apps/api/src/community_content/handlers/media_upload/README.md)):
+  [media upload handler](/crates/api/api_community_content/src/handlers/media_upload/README.md)):
   the API accepts one `jpg`, `jpeg`, `png` or `webp` image of at most 5 MiB whose leading bytes
   match its extension, writes it whole under a fresh name and answers 201 with
   `{url: "/uploads/<uuid>.<ext>"}`. A body or file over the limit answers 413 ("the upload is

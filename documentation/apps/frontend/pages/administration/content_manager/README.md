@@ -29,7 +29,7 @@ page's files.
 
 - [Content manager page](/apps/frontend/src/pages/administration/content_manager/) —
   the route component `ContentManagerPage`, the post list, the editor and the hero upload.
-- [Community content domain](/apps/api/src/community_content/) — the announcement,
+- [Community content domain](/crates/api/api_community_content/src/) — the announcement,
   Discord push and upload routes the page writes through.
 
 ## Boundaries

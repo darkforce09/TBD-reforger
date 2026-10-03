@@ -1,6 +1,6 @@
 //! Source-text scanners used by the dev-login contract pins.
 //!
-//! The pins assert that `src/identity_and_access/handlers/developer_login.rs` still runs the
+//! The pins assert that `crates/api/api_identity_and_access/src/handlers/developer_login.rs` still runs the
 //! race-free first-create shape: `INSERT … arma_id NULL` plus a live
 //! `UPDATE users SET arma_id = COALESCE(arma_id, …)`. A raw `contains` over the handler's
 //! source is not enough to prove that, because the needle can appear in text that never
@@ -20,6 +20,18 @@
 //! What these scanners cannot decide is **reachability**: whether the statement they found
 //! executes. `tests/dev_login_runtime_identity.rs` owns that half, by driving `GET /auth/dev-login`
 //! against a real database and asserting the COALESCE semantics on the stored row.
+
+/// The development login handler's source file, relative to the checkout root.
+pub(crate) const DEVELOPER_LOGIN_HANDLER: &str =
+    "crates/api/api_identity_and_access/src/handlers/developer_login.rs";
+
+/// The development login handler's source file, found under the checkout root above this package.
+pub(crate) fn developer_login_handler_path() -> std::path::PathBuf {
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    repository_layout::find_repository_root_from(manifest)
+        .unwrap_or_else(|e| panic!("no repository root above {}: {e}", manifest.display()))
+        .join(DEVELOPER_LOGIN_HANDLER)
+}
 
 /// Index just past the Rust literal that opens at `bytes[i]`, or `None` when none does.
 ///

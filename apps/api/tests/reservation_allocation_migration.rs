@@ -4,7 +4,7 @@
 //! derives only from reservations the history recorded as active at finalization.
 
 use anyhow::{Context, Result, ensure};
-use api::core::database;
+
 use futures::FutureExt;
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, PgPool};
@@ -25,7 +25,7 @@ where
     Fut: Future<Output = Result<()>>,
 {
     let base = common::require_test_database_url().expect("allocation upgrade requires PostgreSQL");
-    let maintenance = database::connect(&base).await.unwrap();
+    let maintenance = api_database::connect(&base).await.unwrap();
     let mut url = url::Url::parse(&base).unwrap();
     let prefix: String = url
         .path()
@@ -42,7 +42,7 @@ where
         .execute(&maintenance)
         .await
         .unwrap();
-    let outcome = match database::connect(url.as_str()).await {
+    let outcome = match api_database::connect(url.as_str()).await {
         Ok(pool) => {
             let result = AssertUnwindSafe(body(pool.clone())).catch_unwind().await;
             pool.close().await;
@@ -189,7 +189,7 @@ async fn active_allocations(pool: &PgPool, event: Uuid) -> Result<Vec<(String, S
 #[tokio::test]
 async fn reservation_uniqueness_migration_repairs_duplicate_slot_claims_with_audit() {
     with_owned_database("allocup", |pool| async move {
-        let all = sqlx::migrate!("./migrations");
+        let all = sqlx::migrate!("../../crates/api/api_database/migrations");
         migrate(&through(&all, 41), &pool).await?;
         let author = user(&pool, "author").await?;
         let [kept_by_seat, displaced, earliest, later, orphan, waiting, withdrawn, veteran] = [
@@ -379,7 +379,7 @@ async fn reservation_uniqueness_migration_repairs_duplicate_slot_claims_with_aud
 #[tokio::test]
 async fn registration_history_migration_derives_no_show_only_from_recorded_obligations() {
     with_owned_database("noshowup", |pool| async move {
-        let all = sqlx::migrate!("./migrations");
+        let all = sqlx::migrate!("../../crates/api/api_database/migrations");
         migrate(&through(&all, 41), &pool).await?;
         let author = user(&pool, "author").await?;
         let [obliged, joined_later, waiting, played] = [

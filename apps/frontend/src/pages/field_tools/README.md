@@ -47,4 +47,4 @@ and `/debug/ballistics-agreement` are apps, in `apps/frontend/src/workspaces/deb
 
 - [Mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
   — the mortar page's behaviour and design.
-- [Operations domain](/apps/api/src/operations/README.md) — the fire-mission routes.
+- [Operations domain](/crates/api/api_operations/src/README.md) — the fire-mission routes.

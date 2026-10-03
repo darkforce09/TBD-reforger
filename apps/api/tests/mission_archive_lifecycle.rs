@@ -1,10 +1,9 @@
 //! Mission archive and soft-delete lifecycle, editor-only ORBAT derivation, export edge cases,
 //! and the version body-limit override. Skips without `TEST_DATABASE_URL`.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -19,9 +18,9 @@ const OTHER: &str = "000000000000000007";
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
-    let app = http_router::router(AppState::new(
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "lx-secret"),
     ));
@@ -243,7 +242,7 @@ async fn editor_only_orbat_derivation() {
 /// which is stronger than asserting a 500 from the export: the export cannot be silently
 /// empty because the data it would read cannot be wrong in the first place.
 ///
-/// `missions/handlers/mission_export.rs`'s 500 arm is intentionally NOT removed. It still covers a row that
+/// `api_missions`'s `handlers/mission_export.rs` 500 arm is intentionally NOT removed. It still covers a row that
 /// predates this migration on a database restored from an older dump, and 0018's own backfill
 /// is what NULLs exactly those rows on the way in.
 #[tokio::test]

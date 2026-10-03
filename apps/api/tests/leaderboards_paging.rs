@@ -9,7 +9,7 @@
 //! among thirty equal rows, which is what lets a missing tie-breaker repeat and skip rows. The
 //! whitelist's shape (every arm ends in the `lt.discord_id ASC` tie-breaker; nothing off-list
 //! reaches ORDER BY) is pinned by the pure unit tests that stay next to the handler in
-//! `src/command_center/handlers/leaderboards.rs`.
+//! `crates/api/api_command_center/src/handlers/leaderboards.rs`.
 //!
 //! Why it lives in `tests/` and not in that file: the source pin
 //! (`common::assert_no_raw_test_database_url_reads_outside_common`) forbids a raw
@@ -28,11 +28,11 @@ mod common;
 
 use std::collections::BTreeSet;
 
-use api::command_center::handlers::leaderboards::{LeaderboardQuery, get_leaderboards};
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::middleware::AuthUser;
+use api_command_center::handlers::leaderboards::{LeaderboardQuery, get_leaderboards};
+use api_configuration::configuration::Config;
+use api_state::AppState;
+
+use api_http_layer::middleware::AuthUser;
 use axum::extract::{Query, State};
 use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Json};
@@ -53,7 +53,8 @@ const CATEGORIES: [&str; 5] = [
 /// The content golden, applied on top of this binary's migrated database. Every INSERT is
 /// `ON CONFLICT … DO UPDATE` and §12 refreshes the view, so applying it is idempotent — also over
 /// the `dev-login` row `common` primes (`…001`, a golden player too).
-const CONTENT_GOLDEN: &str = include_str!("../seeds/content_golden.sql");
+const CONTENT_GOLDEN: &str =
+    include_str!("../../../crates/api/api_database/seeds/content_golden.sql");
 /// The six golden players with `match_player_stats` rows (content_golden §7).
 const GOLDEN_PLAYERS: [&str; 6] = [
     "000000000000000001",
@@ -105,13 +106,15 @@ async fn provision_golden_database() -> (String, PgPool) {
              to rust_it; by hand: postgres://tbd:tbd@localhost:5434/<name>_it?sslmode=disable"
         )
     });
-    let pool = database::connect(&url)
+    let pool = api_database::connect(&url)
         .await
         .unwrap_or_else(|e| panic!("connect to `{url}`: {e}"));
     sqlx::raw_sql(CONTENT_GOLDEN)
         .execute(&pool)
         .await
-        .unwrap_or_else(|e| panic!("apply seeds/content_golden.sql to `{url}`: {e}"));
+        .unwrap_or_else(|e| {
+            panic!("apply crates/api/api_database/seeds/content_golden.sql to `{url}`: {e}")
+        });
     sqlx::raw_sql(TIED_PLAYERS_SQL)
         .execute(&pool)
         .await
@@ -122,9 +125,9 @@ async fn provision_golden_database() -> (String, PgPool) {
 /// The handler ignores the bearer beyond requiring one.
 fn bearer() -> AuthUser {
     AuthUser {
-        session_claims: api::core::authentication_primitives::Claims {
+        session_claims: api_http_layer::authentication_primitives::Claims {
             sub: "paging-test".into(),
-            sid: uuid::Uuid::new_v4(),
+            sid: uuid::Uuid::new_v4().into(),
             iss: "tbd-reforger".into(),
             aud: "tbd-website".into(),
             iat: 0,
@@ -216,7 +219,8 @@ fn largest_tie(category: &str, rows: &[Value]) -> usize {
 #[tokio::test]
 async fn paging_the_golden_ties_yields_every_row_exactly_once() {
     let (url, pool) = provision_golden_database().await;
-    let state = AppState::new(pool, Config::for_tests(url, "paging-test-secret"));
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "paging-test-secret"));
 
     // Acceptance 2: the whitelist is still the only source of ORDER BY text.
     let rejected = get_leaderboards(State(state.clone()), bearer(), Ok(query("bogus", PAGE, 0)))

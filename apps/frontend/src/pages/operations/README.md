@@ -70,5 +70,5 @@ the banner of the viewer's next [deployment](/documentation/glossary/a_to_f.md#d
   — the service record page.
 - [Leaderboards page](/documentation/apps/frontend/pages/operations/leaderboards/leaderboards_page.md)
   — the global ladders.
-- [Operations domain](/apps/api/src/operations/README.md) — the API routes these pages
+- [Operations domain](/crates/api/api_operations/src/README.md) — the API routes these pages
   call.

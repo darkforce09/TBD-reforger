@@ -23,8 +23,8 @@
 
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::http_router;
+use api::router::router;
+use api_state::AppState;
 use axum::Router;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
@@ -520,7 +520,7 @@ impl FleetAndTelemetryWorld {
 
 impl PartWorld for FleetAndTelemetryWorld {
     async fn build(state: &mut AppState, actors: &Actors) -> Self {
-        let app = http_router::router(state.clone());
+        let app = router(state.clone());
         let namespace = actors.namespace;
         let command_server = insert_server(
             state,

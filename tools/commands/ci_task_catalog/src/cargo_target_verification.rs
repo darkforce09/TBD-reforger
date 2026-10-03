@@ -82,7 +82,7 @@ pub(crate) fn verify_cargo_target(root: &Path) -> Result<u8> {
     }
 
     // §5 — `rust-build` must INHERIT the shared export, never set a private dir of its own.
-    if let Some(line) = private_target_dir_violation(&rust_build()) {
+    if let Some(line) = private_target_dir_violation(&rust_build(root)?) {
         println!(
             "FAIL: rust-build must inherit the shared export, not set a private \
              CARGO_TARGET_DIR (got: {line})"

@@ -36,7 +36,7 @@ a line in Contents and a row in the table.
 
 - [Field tools pages](/apps/frontend/src/pages/field_tools/) — the route components the
   feature docs describe.
-- [Operations domain](/apps/api/src/operations/) — the ballistics catalog and
+- [Operations domain](/crates/api/api_operations/src/) — the ballistics catalog and
   fire-mission routes behind the mortar calculator.
 
 ## Boundaries

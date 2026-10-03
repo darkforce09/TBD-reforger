@@ -4,7 +4,7 @@
 //! **Role:** the `administration_personnel_pagination` requirement: the roster's total, page
 //! window, `per_page` clamp, past-the-end page, total order, literal search, query refusals and
 //! administrator gate.
-//! **Position:** boots `http_router::router` over this binary's own database; members come from
+//! **Position:** boots `api::router::router` over this binary's own database; members come from
 //! `common::seed_user`, callers from `common::access_token`; every 200 answer is validated
 //! against `PersonnelPage` through `contract_support`.
 //! **Signals & state:** the database is shared by the cases of this binary, which run in
@@ -21,7 +21,9 @@ mod contract_support;
 
 use std::collections::BTreeSet;
 
-use api::core::{application_state::AppState, configuration::Config, database, http_router};
+use api::router::router;
+use api_configuration::configuration::Config;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -47,14 +49,17 @@ impl Roster {
     async fn boot() -> Self {
         let url = common::require_test_database_url()
             .expect("personnel pagination requires the isolated PostgreSQL test database");
-        let pool = database::connect(&url)
+        let pool = api_database::connect(&url)
             .await
             .expect("connect test database");
-        database::migrate(&pool)
+        api_database::migrate(&pool)
             .await
             .expect("migrate test database");
-        let state = AppState::new(pool.clone(), Config::for_tests(url, "personnel-pagination"));
-        let app = http_router::router(state.clone());
+        let state = api::composition::application_state(
+            pool.clone(),
+            Config::for_tests(url, "personnel-pagination"),
+        );
+        let app = router(state.clone());
         let admin = common::access_token(
             &state,
             SUITE,

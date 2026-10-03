@@ -76,7 +76,7 @@ fill the arsenal with sample data while every test still passes.
     as ground truth under a test modpack;
   - `contracts/rules/kit-aliases.json`, whose `vehicles` table is derived from the `vehicle`
     items of the items file, and the development seed
-    `apps/api/seeds/registry_dev.sql`, a small registry taken from the same export.
+    `crates/api/api_database/seeds/registry_dev.sql`, a small registry taken from the same export.
 
 ## Boundaries
 

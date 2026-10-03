@@ -19,7 +19,7 @@ assets/terrains/
 
 The API mounts this folder at `/map-assets` from `MAP_ASSETS_DIR`, whose default
 `../../../assets/terrains` resolves here from the API's working directory
-`apps/api/` (`apps/api/src/core/http_router.rs`). The mount sits below the
+`apps/api/` (`apps/api/src/router.rs`). The mount sits below the
 rate limiter, so streaming a terrain spends no request tokens, and in development the app's Trunk
 server proxies `/map-assets` to the API (`apps/frontend/Trunk.toml`).
 

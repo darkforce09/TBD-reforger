@@ -128,5 +128,5 @@ build renders the failure branch.
 
 - [Personnel roster page](/documentation/apps/frontend/pages/administration/personnel/personnel_roster_page.md)
   — the page's behaviour, what each call means server-side, its design, open work and decisions.
-- [Administration domain](/apps/api/src/administration/README.md) — the roster, ban,
+- [Administration domain](/crates/api/api_administration/src/README.md) — the roster, ban,
   warning and role resync routes.

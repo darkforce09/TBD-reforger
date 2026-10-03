@@ -28,7 +28,7 @@ page's files, calls and states.
 
 - [Leaderboards page](/apps/frontend/src/pages/operations/leaderboards/) — the route
   component `LeaderboardsPage`, the podium, the roster and the dossier.
-- [Command center domain](/apps/api/src/command_center/) — the leaderboard and the
+- [Command center domain](/crates/api/api_command_center/src/) — the leaderboard and the
   per-player statistics the page reads.
 
 ## Boundaries
@@ -43,5 +43,5 @@ page's files, calls and states.
 
 ## Related documentation
 
-- [Command center domain](/apps/api/src/command_center/README.md) — the API side of the
+- [Command center domain](/crates/api/api_command_center/src/README.md) — the API side of the
   leaderboard and the statistics card.

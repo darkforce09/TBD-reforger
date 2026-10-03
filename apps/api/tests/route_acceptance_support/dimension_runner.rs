@@ -17,8 +17,8 @@
 //! passes only when every probe ran and held; a fixture missing a path parameter fails the probe
 //! instead of sending a malformed URI.
 
-use api::core::middleware::{MAX_JSON_BODY, MAX_MULTIPART_BODY};
-use api::operations::handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES;
+use api_http_layer::middleware::{MAX_JSON_BODY, MAX_MULTIPART_BODY};
+use api_operations::handlers::ballistics_catalogs::upload::MAX_CATALOG_UPLOAD_BODY_BYTES;
 use serde_json::Value;
 
 use super::contracts::{json_violations, schema_of};

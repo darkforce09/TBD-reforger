@@ -7,7 +7,7 @@
 //! **Position:** compiled into `tests/audit_replay_shutdown.rs` only
 //! (`mod audit_shutdown_support;`); it adds no test binary. It reaches the database through the
 //! suite's pool, the binary through `CARGO_BIN_EXE_api`, and the router through
-//! `api::core::http_router::router`.
+//! `api::router::router`.
 //! **Signals & state:** each [`ApiProcess`] owns one child process, killed if dropped while it
 //! runs, and its log file; each [`SseReader`] owns one response body and the text of its
 //! unfinished event.

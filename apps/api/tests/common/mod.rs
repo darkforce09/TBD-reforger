@@ -34,9 +34,6 @@ pub(crate) mod fixtures;
 pub(crate) mod http;
 pub(crate) mod source_text;
 
-#[path = "../../src/tests/property_evidence.rs"]
-pub(crate) mod property_evidence;
-
 // Same reason as the `dead_code` allow above, one level up: a re-export no *single* suite
 // happens to name is still the surface every other suite reaches through, and rustc judges
 // each binary on its own.

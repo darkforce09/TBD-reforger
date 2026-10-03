@@ -1,13 +1,11 @@
-//! The enumerating half: every `SELECT` literal in `src/`, cross-referenced against
-//! `information_schema` nullability.
+//! The enumerating half: every `SELECT` literal in `src/` and in the API crates under
+//! `crates/api/`, cross-referenced against `information_schema` nullability.
 //!
 //! Needs no seed and no predicate, so it reaches read sites the behavioural sweep cannot.
 //!
 //! Skips without `TEST_DATABASE_URL`.
 
 use std::collections::BTreeSet;
-
-use api::core::database;
 
 mod common;
 mod null_tolerance_support;
@@ -20,7 +18,7 @@ use null_tolerance_support::*;
 ///
 /// A behavioural sweep only reaches code whose predicates the seed satisfies; this one needs no
 /// predicate at all. For every `SELECT` literal handed to `query_as` / `QueryBuilder::new` in
-/// `src/`, a `concat!` of literals and column-list macros read whole, it cross-references the select list against `information_schema` nullability and
+/// `src/` and `crates/api/`, a `concat!` of literals and column-list macros read whole, it cross-references the select list against `information_schema` nullability and
 /// fails on:
 ///   * a bare `*` / `t.*` over a table that has nullable columns (the model
 ///     silently acquires whatever nullability the DDL has), or
@@ -34,17 +32,21 @@ async fn no_query_as_reads_a_nullable_column_without_coalesce() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let nullable = nullable_columns(&pool).await;
     let allow: BTreeSet<(&str, &str)> = OPTION_FIELDS.iter().copied().collect();
 
-    let src_root = concat!(env!("CARGO_MANIFEST_DIR"), "/src");
+    // This package's `src/` and every API crate under `crates/api/`, where the domains' reads live.
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let repository_root = repository_layout::find_repository_root_from(manifest)
+        .expect("the repository root above the API package");
     let mut files = Vec::new();
-    collect_rs(std::path::Path::new(src_root), &mut files);
+    collect_rs(&manifest.join("src"), &mut files);
+    collect_rs(&repository_root.join("crates/api"), &mut files);
     assert!(
         files.len() > 20,
-        "found only {} .rs files under {src_root}",
+        "found only {} .rs files under src/ and crates/api/",
         files.len()
     );
 
@@ -60,7 +62,8 @@ async fn no_query_as_reads_a_nullable_column_without_coalesce() {
     let macro_source = sources.concat();
     for (path, src) in files.iter().zip(&sources) {
         let rel = path
-            .strip_prefix(env!("CARGO_MANIFEST_DIR"))
+            .strip_prefix(manifest)
+            .or_else(|_| path.strip_prefix(&repository_root))
             .unwrap_or(path)
             .display()
             .to_string();
@@ -150,7 +153,7 @@ async fn no_query_as_reads_a_nullable_column_without_coalesce() {
     assert!(
         new.is_empty(),
         "nullable column(s) read into a non-Option field. Fix by adding COALESCE to the query \
-         (NOT by making the model field Option — see match_telemetry::models::match_record::Match). If the field really \
+         (NOT by making the model field Option — see api_match_telemetry::models::match_record::Match). If the field really \
          is Option<..>, add the pair to OPTION_FIELDS naming the model.\n  {}",
         new.iter()
             .map(|s| s.as_str())
@@ -192,7 +195,8 @@ async fn read() {
     );
 
     // The shipped fire-mission store builds its reads this way; both are scanned whole.
-    let store = include_str!("../src/operations/services/fire_mission_store.rs");
+    let store =
+        include_str!("../../../crates/api/api_operations/src/services/fire_mission_store.rs");
     let tables: Vec<String> = select_literals(store, store)
         .iter()
         .flat_map(|(_, sql)| table_aliases(sql).into_values())

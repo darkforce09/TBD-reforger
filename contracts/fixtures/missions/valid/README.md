@@ -73,7 +73,7 @@ readers can ship before writers.
     `bridgehead-at-levie.json`, `compiler-shaped-two-faction.json` and
     `last-stand-at-montfort.json`;
   - the [API](/documentation/glossary/a_to_f.md#api)'s contract test
-    `apps/api/src/missions/contract/tests/schema_validators.rs`, which pads
+    `crates/api/api_missions/src/contract/tests/schema_validators.rs`, which pads
     `last-stand-at-montfort.json` past the byte ceiling;
   - the xtask schema tests `staged_golden_tests.rs` and `side_fallback_tests.rs` in
     `tools/commands/schema_tooling/src/tests/schema_checks/`, which read

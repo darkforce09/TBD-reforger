@@ -26,7 +26,7 @@ restore or delete it.
   [mission review record README](/apps/frontend/src/features/mission_review_record/README.md);
   the [review workspace page](/documentation/apps/frontend/workspaces/editor/review_workspace/review_workspace_page.md)
   that the review record links; the [API](/documentation/glossary/a_to_f.md#api)'s
-  [missions domain](/apps/api/src/missions/README.md).
+  [missions domain](/crates/api/api_missions/src/README.md).
 
 ## Behaviour
 
@@ -123,12 +123,12 @@ is signed in. Every text quoted below is listed there with the state that shows 
   (`can_manage` in `apps/frontend/src/pages/mission_hub/library/dossier_sheet.rs`,
   whose comment says the three routes test authorship "and nothing else"), but the API's submit,
   metadata `PATCH` and `DELETE` each require the `mission_maker` tier (`MissionMakerUser` and
-  `lock_editable_mission` in `apps/api/src/missions/services/mission_write_lock.rs`):
+  `lock_editable_mission` in `crates/api/api_missions/src/services/mission_write_lock.rs`):
   an author demoted below mission maker sees the three buttons and gets 403 "insufficient role".
 - "Bookmarked" lists every bookmarked mission that is not deleted, whatever its status
-  (`push_filters` in `apps/api/src/missions/handlers/mission_library.rs`), while the
+  (`push_filters` in `crates/api/api_missions/src/handlers/mission_library.rs`), while the
   dossier fetch serves only a live mission or the viewer's own (`can_view` in
-  `apps/api/src/missions/validation/access.rs`): a bookmarked mission its author has
+  `crates/api/api_missions/src/validation/access.rs`): a bookmarked mission its author has
   since archived still shows its card, and its dossier reads "Failed to load data.".
 - "Share for review" reports a success toast, "Will allow anyone to view and comment"
   (`apps/frontend/src/pages/mission_hub/library/dossier_collaboration.rs`), but calls
@@ -140,7 +140,7 @@ The README's [Data](/apps/frontend/src/pages/mission_hub/library/README.md#data)
 each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/missions` (`list_missions` in
-  `apps/api/src/missions/handlers/mission_library.rs`): any signed-in member. `global`
+  `crates/api/api_missions/src/handlers/mission_library.rs`): any signed-in member. `global`
   holds the live missions plus the caller's own that are not archived; `mine` the caller's own at
   every status; `bookmarked` the caller's bookmarks. A filter value the API does not know is
   ignored rather than refused; `player_count` is an inclusive `lo-hi` range on `max_players`; `q`
@@ -153,7 +153,7 @@ each call with the DTO it reads or sends. Server-side:
 - `POST` and `DELETE /api/v1/missions/{id}/bookmark`: an idempotent insert and a delete of the
   caller's own bookmark row.
 - `POST /api/v1/missions` (`create_mission` in
-  `apps/api/src/missions/handlers/mission_lifecycle.rs`): `mission_maker` and above.
+  `crates/api/api_missions/src/handlers/mission_lifecycle.rs`): `mission_maker` and above.
   It trims and requires the title, takes terrain `everon`, `arland` or `custom`, mode `pve_coop`,
   `pvp` or `zeus`, 1 to 256 players, weather defaulting to clear and a time defaulting to 14:00,
   then creates the draft and its first version, `0.1.0`, in one transaction and answers 201.
@@ -164,13 +164,13 @@ each call with the DTO it reads or sends. Server-side:
 - `DELETE /api/v1/missions/{id}` (`delete_mission`, same file): a soft delete, refused with 409
   while any event uses the mission, recorded as `mission.delete_authorized`.
 - `POST /api/v1/missions/{id}/versions` (`create_version` in
-  `apps/api/src/missions/handlers/mission_versions.rs`): a mission maker who is the
+  `crates/api/api_missions/src/handlers/mission_versions.rs`): a mission maker who is the
   author, or an administrator. The version must be valid SemVer and new to the mission (409
   "version already exists"), and the payload passes the schema and cargo checks and must not be
   empty. The version becomes current, the mission moves to the top of the library, and a title in
   the payload replaces the mission's title.
 - `POST /api/v1/missions/{id}/submit` (`submit_mission` in
-  `apps/api/src/missions/handlers/mission_submission.rs`): compiles the current version
+  `crates/api/api_missions/src/handlers/mission_submission.rs`): compiles the current version
   into an immutable artifact, opens its review and sets the mission to `pending_approval` in one
   transaction; a draft or a returned mission qualifies, a version that does not compile answers
   422, and a mission under review, live or archived answers 409.

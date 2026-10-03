@@ -1,12 +1,12 @@
 //! HTTP and PostgreSQL barriers verify attendance cannot create or restore reservations.
-use api::{
-    core::{application_state::AppState, configuration::Config, database, http_router},
-    identity_and_access::services::{
-        identity_linking::{confirm_identity, unlink_identity},
-        link_code_issuance::issue_link_code,
-        session_authorization::authorize_session,
-    },
+use api::router::router;
+use api_caller_identity::session_authorization::authorize_session;
+use api_configuration::configuration::Config;
+use api_identity_and_access::services::{
+    identity_linking::{confirm_identity, unlink_identity},
+    link_code_issuance::issue_link_code,
 };
+use api_state::AppState;
 use axum::{Router, http::StatusCode};
 use serde_json::{Value, json};
 use std::time::Duration;
@@ -33,9 +33,10 @@ struct Fixture {
 }
 async fn fixture() -> Fixture {
     let url = common::require_test_database_url().expect("scratch PostgreSQL required");
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(pool, Config::for_tests(url, "reservation-attendance"));
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "reservation-attendance"));
     let actor = format!("attendance-{}", Uuid::new_v4());
     let token = common::access_token(
         &state,
@@ -98,7 +99,7 @@ async fn fixture() -> Fixture {
     .await
     .unwrap();
     fixture.commit().await.unwrap();
-    let app = http_router::router(state.clone());
+    let app = router(state.clone());
     let reporter = ReportingServer::open(&app, &state.pool, "Reservation attendance server").await;
     Fixture {
         state,
@@ -186,9 +187,15 @@ async fn withdrawal_finalization_correction_and_relink_preserve_reservation_hist
     .unwrap();
     unlink_identity(&f.state, &user).await.unwrap();
     let code = issue_link_code(&f.state, &user).await.unwrap().0;
-    confirm_identity(&f.state, f.reporter.server_id, &code, &f.arma, "Player")
-        .await
-        .unwrap();
+    confirm_identity(
+        &f.state,
+        f.reporter.server_id.into(),
+        &code,
+        &api_identifiers::ArmaPlayerId::new(f.arma.as_str()),
+        "Player",
+    )
+    .await
+    .unwrap();
     assert_eq!(
         snapshot(&f).await,
         ("withdrawn".into(), Some("attended".into()), None, 1)
@@ -417,7 +424,7 @@ fn assert_response_contract(value: &Value) {
     let generated: contract_schema_types::operations::reservation_response::ReservationResponse =
         serde_json::from_value(value.clone()).unwrap();
     assert_eq!(serde_json::to_value(generated).unwrap(), *value);
-    let backend: api::operations::models::reservation_response::ReservationResponse =
+    let backend: api_operations::models::reservation_response::ReservationResponse =
         serde_json::from_value(value.clone()).unwrap();
     assert_eq!(serde_json::to_value(backend).unwrap(), *value);
     let golden: Value = serde_json::from_str(include_str!(
@@ -455,7 +462,7 @@ fn assert_response_contract(value: &Value) {
 fn generated_attendance_corrections_preserve_independent_reservations() {
     use proptest::prelude::*;
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    common::property_evidence::run_property(
+    api_property_evidence::run_property(
         "attendance_reservation_independence",
         24,
         &(0_u8..4, proptest::collection::vec(0_u8..4, 1..6)),
@@ -534,9 +541,15 @@ async fn correction_retracts_old_signup_attribution_after_identity_moves() {
     .await
     .unwrap();
     let code = issue_link_code(&f.state, &new_user).await.unwrap().0;
-    confirm_identity(&f.state, f.reporter.server_id, &code, &f.arma, "New owner")
-        .await
-        .unwrap();
+    confirm_identity(
+        &f.state,
+        f.reporter.server_id.into(),
+        &code,
+        &api_identifiers::ArmaPlayerId::new(f.arma.as_str()),
+        "New owner",
+    )
+    .await
+    .unwrap();
     assert_eq!(
         snapshot(&f).await.1.as_deref(),
         Some("attended"),

@@ -143,7 +143,7 @@ that belong to other accounts.
 
 - The Save Version dialog pre-fills "0.1.0" (`apps/frontend/src/workspaces/editor/mission_editor.rs`)
   and never changes it — creating a mission already inserts version `0.1.0`
-  (`create_mission` in `apps/api/src/missions/handlers/mission_lifecycle.rs`), so the
+  (`create_mission` in `crates/api/api_missions/src/handlers/mission_lifecycle.rs`), so the
   default first save of a new mission is refused with "Version 0.1.0 already exists".
 - A draft that differs from the server only in zones, triggers, comments, connections,
   compositions, world objects, the title or the environment is classified as matching and marked
@@ -160,15 +160,15 @@ that belong to other accounts.
 ## Data
 
 - `GET /api/v1/missions/{id}` (`get_mission` in
-  `apps/api/src/missions/handlers/mission_library.rs`): the mission row and its current
+  `crates/api/api_missions/src/handlers/mission_library.rs`): the mission row and its current
   version's payload, read once at boot for a UUID id.
 - `POST /api/v1/missions/{id}/versions` (`create_version` in
-  `apps/api/src/missions/handlers/mission_versions.rs`): creates an immutable version
+  `crates/api/api_missions/src/handlers/mission_versions.rs`): creates an immutable version
   with a new SemVer; the route alone lifts the body limit to the configured version size
   (256 MiB by default); a taken SemVer is refused with 409; a non-blank payload title becomes the
   mission's title.
 - `PATCH /api/v1/missions/{id}` (`update_mission` in
-  `apps/api/src/missions/handlers/mission_lifecycle.rs`): time and weather (400 ms
+  `crates/api/api_missions/src/handlers/mission_lifecycle.rs`): time and weather (400 ms
   debounce) and the Mission Settings row fields such as the game mode, mirrored onto the mission
   row.
 - IndexedDB `tbd-mission-yrs` / `doc-state` (drafts and backup snapshots), localStorage

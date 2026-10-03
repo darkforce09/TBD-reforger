@@ -42,10 +42,9 @@
 //!
 //! Skips without `TEST_DATABASE_URL`, like every suite here.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -62,11 +61,11 @@ const FRONTEND_COPY: &str = "frontend/src/event_manager.rs DELETE_EVENT_CONFIRM_
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     let config = Config::for_tests(url, "soft-delete-secret");
-    common::fixtures::verify_dev_login_members(&pool, &config.discord_guild_id).await;
-    let app = http_router::router(AppState::new(pool.clone(), config));
+    common::fixtures::verify_dev_login_members(&pool, config.discord_guild_id.as_str()).await;
+    let app = router(api::composition::application_state(pool.clone(), config));
     Some((app, pool))
 }
 

@@ -82,10 +82,10 @@ authored editor triggers), and the [API](/documentation/glossary/a_to_f.md#api) 
   `mission_validation` (`Finding`, `Severity`, `Primitive`, the ids) and `mission_wire_safety`
   (`is_wire_unsafe`, `MAX_REPORTED`); `serde_json`.
 - Used by:
-  - the API: `apps/api/src/missions/services/mission_compile.rs` builds `MissionMeta`
+  - the API: `crates/api/api_missions/src/services/mission_compile.rs` builds `MissionMeta`
     from the mission row and compiles,
-    `apps/api/src/missions/services/mission_artifacts/artifact_store.rs` calls
-    `unsupported_authored_data`, and `apps/api/src/missions/handlers/mission_versions.rs`
+    `crates/api/api_missions/src/services/mission_artifacts/artifact_store.rs` calls
+    `unsupported_authored_data`, and `crates/api/api_missions/src/handlers/mission_versions.rs`
     runs `scan_editor_payload_types` on every save;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): its compiled export
     (`apps/frontend/src/workspaces/editor/session/document_commands/imp/compilation.rs`), the

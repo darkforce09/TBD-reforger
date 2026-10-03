@@ -31,7 +31,7 @@ folders' READMEs list the files.
   component `MissionLibraryPage`, the grid, the hero and the dossier sheet.
 - [New mission dialog](/apps/frontend/src/pages/mission_hub/create_dialog/) — the
   create form the library opens.
-- [Missions domain](/apps/api/src/missions/) — the list, detail, bookmark, lifecycle,
+- [Missions domain](/crates/api/api_missions/src/) — the list, detail, bookmark, lifecycle,
   version and submission routes the page calls.
 
 ## Boundaries
@@ -45,7 +45,7 @@ folders' READMEs list the files.
 
 ## Related documentation
 
-- [Missions domain](/apps/api/src/missions/README.md) — the API side of the library,
+- [Missions domain](/crates/api/api_missions/src/README.md) — the API side of the library,
   the lifecycle and the versions.
 - [Archived setup wizard page](/documentation/archive/go_and_react_era_design/mission_creator_setup_wizard_page.md)
   — the standalone create page the dialog replaced.

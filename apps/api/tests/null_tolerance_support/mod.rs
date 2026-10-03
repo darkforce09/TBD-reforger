@@ -6,7 +6,7 @@
 //! into SQL. `Option` is deliberately NOT the fix — `skip_serializing_if = "String::is_empty"`
 //! already omits the key for `""` byte-identically to an omitted `None`, so `Option` would add
 //! a second encoding of one state and break the committed goldens. The full rejection is
-//! recorded on `match_telemetry::models::match_record::Match`. So: the safety lives in the
+//! recorded on `api_match_telemetry::models::match_record::Match`. So: the safety lives in the
 //! query, and these suites' job is to prove that no read site is missing it.
 //!
 //! **Why the harness is shaped this way.** A hand-written list of a few `INSERT`s and a few
@@ -134,14 +134,14 @@ pub async fn seed_wiki_revision(pool: &sqlx::PgPool, slug: &str) -> (&'static st
 /// is meant to exercise, which is failure mode 2 above. Deliberately as small as possible;
 /// every other nullable column in the schema gets NULLed.
 pub const REACHABILITY_KEEP: &[&str] = &[
-    // `dashboard.rs` / `operations/handlers/member_service_record.rs`: `WHERE orbat_slots.assigned_to = $me`.
+    // `dashboard.rs` / `api_operations/src/handlers/member_service_record.rs`: `WHERE orbat_slots.assigned_to = $me`.
     "orbat_slots.assigned_to",
-    // `operations/handlers/member_service_record.rs` service history: `WHERE match_player_stats.discord_id = $me`.
+    // `api_operations/src/handlers/member_service_record.rs` service history: `WHERE match_player_stats.discord_id = $me`.
     "match_player_stats.discord_id",
-    // `operations/handlers/game_runtime_roster.rs`: a machine credential reads only the roster
+    // `api_operations/src/handlers/game_runtime_roster.rs`: a machine credential reads only the roster
     // of an event bound to its own server.
     "events.server_id",
-    // `operations/services/fire_mission_store.rs`: the per-event list reads
+    // `api_operations/src/services/fire_mission_store.rs`: the per-event list reads
     // `WHERE fire_missions.event_id = $1`.
     "fire_missions.event_id",
 ];
@@ -158,13 +158,13 @@ pub const STATE_BOUND_KEEP: &[&str] = &["event_registrations.allocation_id"];
 ///
 /// A nullable column that is NOT here and NOT `COALESCE`d is the bug these suites exist for.
 pub const OPTION_FIELDS: &[(&str, &str)] = &[
-    // operations::services::access_administration::persistence::{GroupRow, RosterRow, SlotPolicyRow}
+    // api_operations::services::access_administration::persistence::{GroupRow, RosterRow, SlotPolicyRow}
     // and event_access::subject_loading::RosterRow: exactly one of the author and the system
     // origin is present; a slot without an explicit policy inherits.
     ("event_groups", "created_by"),
     ("event_groups", "system_origin"),
     ("event_group_roster", "added_by"),
-    // operations::handlers::event_hub ViewerRegistration: released reservations name a reason
+    // api_operations::handlers::event_hub ViewerRegistration: released reservations name a reason
     // and the time the place was released.
     ("event_registrations", "release_reason"),
     ("event_registrations", "withdrawn_at"),
@@ -172,87 +172,87 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     ("event_reservation_quota_pools", "seat_limit"),
     ("event_group_roster", "system_origin"),
     ("orbat_slots", "access_policy"),
-    // server_infrastructure::models::machine_credential::MachineCredential: unused and
+    // api_server_infrastructure::models::machine_credential::MachineCredential: unused and
     // unrevoked credentials carry no use or revocation facts.
     ("server_machine_credentials", "last_used_at"),
     ("server_machine_credentials", "revoked_at"),
     ("server_machine_credentials", "revoked_by"),
     ("server_machine_credentials", "revoke_reason"),
-    // server_infrastructure::services::runtime_sessions::SessionState: an open session has no
+    // api_server_infrastructure::services::runtime_sessions::SessionState: an open session has no
     // end reason.
     ("server_runtime_sessions", "end_reason"),
-    // server_infrastructure::models::fleet_command::FleetCommandReceiptRow and the executor claim:
-    // an unclaimed command has no claim, and an unfinished one no outcome.
+    // api_server_infrastructure::models::fleet_command::FleetCommandReceiptRow and the executor
+    // claim: an unclaimed command has no claim, and an unfinished one no outcome.
     ("fleet_commands", "claimed_by"),
     ("fleet_commands", "claimed_at"),
     ("fleet_commands", "executing_at"),
     ("fleet_commands", "finished_at"),
     ("fleet_commands", "outcome"),
     ("fleet_commands", "failure_reason"),
-    // missions::models::mission::Mission: a mission never approved from an artifact.
+    // api_missions::models::mission::Mission: a mission never approved from an artifact.
     ("missions", "approved_artifact_id"),
-    // missions::services::mission_artifacts::artifact_store::MissionArtifact: compiled without
+    // api_missions::services::mission_artifacts::artifact_store::MissionArtifact: compiled without
     // a current modpack.
     ("mission_artifacts", "modpack_id"),
     ("mission_artifacts", "modpack_version"),
-    // missions::models::mission_review::MissionReview: a pending review is undecided.
+    // api_missions::models::mission_review::MissionReview: a pending review is undecided.
     ("mission_reviews", "decided_by"),
     ("mission_reviews", "decided_at"),
-    // missions::models::mission_review::ReviewComment: a thread comment need not concern a
+    // api_missions::models::mission_review::ReviewComment: a thread comment need not concern a
     // review, a version or an artifact.
     ("mission_review_comments", "review_id"),
     ("mission_review_comments", "mission_version_id"),
     ("mission_review_comments", "artifact_id"),
-    // missions::models::mission_deployment::{MissionDeployment, RuntimeDeployment}: a
+    // api_missions::models::mission_deployment::{MissionDeployment, RuntimeDeployment}: a
     // deployment need not run an event mission, and only a finished one has its outcome.
     ("mission_deployments", "event_mission_id"),
     ("mission_deployments", "confirmed_runtime_session_id"),
     ("mission_deployments", "finished_at"),
     ("mission_deployments", "failure_reason"),
-    // server_infrastructure::services::runtime_sessions: a runtime that runs no artifact.
+    // api_server_infrastructure::services::runtime_sessions: a runtime that runs no artifact.
     ("server_runtime_sessions", "loaded_artifact_id"),
     ("server_runtime_sessions", "loaded_artifact_sha256"),
-    // identity_and_access::models::user_account::User
+    // api_identity_and_access::models::user_account::User
     ("users", "arma_id"),
     ("users", "banned_by"),
     ("users", "banned_at"),
     ("users", "last_login_at"),
-    // identity_and_access::services::session_storage::SessionRow: absent revocation and development provenance are real states.
+    // api_identity_and_access::services::session_storage::SessionRow: absent revocation and development provenance are real states.
     ("authentication_sessions", "revoked_at"),
     ("authentication_sessions", "development_role"),
-    // operations::services::event_access::context::GuildEligibilitySnapshot: None means never verified.
+    // api_operations::services::event_access::context::GuildEligibilitySnapshot: None means never verified.
     ("discord_membership_snapshots", "verified_at"),
-    // identity_and_access::models::user_account::RefreshToken
+    // api_identity_and_access::models::user_account::RefreshToken
     ("refresh_tokens", "revoked_at"),
     // Identity confirmation reads the code's optional consumed Arma identity.
     ("identity_link_codes", "arma_id"),
-    // community_content::models::announcement::Announcement
+    // api_community_content::models::announcement::Announcement
     ("announcements", "published_at"),
-    // missions::models::mission::Mission
+    // api_missions::models::mission::Mission
     ("missions", "current_version_id"),
     ("missions", "reviewed_by"),
     ("missions", "reviewed_at"),
-    // missions::models::mission::MissionArmory — `null` = unlimited, a real third state.
+    // api_missions::models::mission::MissionArmory — `null` = unlimited, a real third state.
     ("mission_armories", "quantity"),
-    // operations::models::event::Event — the link to a match is matches.event_id, so the
+    // api_operations::models::event::Event — the link to a match is matches.event_id, so the
     // event row carries no match id of its own.
     ("events", "server_id"),  // Option<Uuid> — migration 0011
     ("events", "modpack_id"), // Option<Uuid> — migration 0011
-    // operations::models::event::OrbatSlot
+    // api_operations::models::event::OrbatSlot
     ("orbat_slots", "assigned_to"),
     ("orbat_slots", "assigned_at"),
-    // operations::models::event::EventRegistration
+    // api_operations::models::event::EventRegistration
     ("event_registrations", "slot_id"),
     ("event_registrations", "attendance_state"), // Option<RegistrationState>; undecided attendance.
-    // operations::models::leave_request::LeaveRequest
+    // api_operations::models::leave_request::LeaveRequest
     ("leave_requests", "reviewed_by"),
-    // match_telemetry::models::match_record::Match
+    // api_match_telemetry::models::match_record::Match
     ("matches", "source_match_id"),
     ("matches", "event_id"),
     ("matches", "mission_id"),
     ("matches", "terrain"),
     ("matches", "ended_at"),
-    // match_telemetry::models::match_record::MatchPlayerStat
+    // api_match_telemetry::models::match_record::MatchPlayerStat
     ("match_player_stats", "discord_id"),
     ("match_player_stats", "command_win"),
     // Counters are Option: NULL = not measured, which is distinct from a scored 0.
@@ -262,13 +262,13 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     ("match_player_stats", "longest_kill_m"),
     ("match_player_stats", "vehicles_destroyed"),
     ("match_player_stats", "is_command"),
-    // server_infrastructure::models::server::{Server, ServerStatus}
+    // api_server_infrastructure::models::server::{Server, ServerStatus}
     ("server_statuses", "current_match_id"),
     ("servers", "required_modpack_id"),
-    // administration::models::audit_log::AuditLog
+    // api_administration::models::audit_log::AuditLog
     ("audit_logs", "actor_id"),
     ("audit_logs", "metadata"),
-    // operations::models::fire_mission::FireMission — the catalog-model inputs are `None` on a
+    // api_operations::models::fire_mission::FireMission — the catalog-model inputs are `None` on a
     // row stored before catalogs, the optional ones also on a catalog-model row without them;
     // the legacy coordinate and sight columns are `None` on a row stored before they existed.
     ("fire_missions", "event_id"),
@@ -293,14 +293,14 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     ("fire_missions", "mils_per_circle"),
     ("fire_missions", "dispersion"),
     ("fire_missions", "solver_revision"),
-    // operations::models::fire_mission::FireMissionGun — the solution is `None` when no charge
+    // api_operations::models::fire_mission::FireMissionGun — the solution is `None` when no charge
     // solved.
     ("fire_mission_guns", "elevation_mils"),
     ("fire_mission_guns", "charge_rings"),
     ("fire_mission_guns", "time_of_flight_s"),
-    // community_content::models::wiki::WikiPage
+    // api_community_content::models::wiki::WikiPage
     ("wiki_pages", "updated_by"),
-    // missions::models::registry::RegistryItem — every one of these is `Option`, and NULL means
+    // api_missions::models::registry::RegistryItem — every one of these is `Option`, and NULL means
     // "engine class default", which is a distinct state from any zero value.
     ("registry_items", "abstract"),
     ("registry_items", "arsenal_type"),
@@ -312,7 +312,7 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     ("registry_items", "variant_of"),
     ("registry_items", "cargo_grid_w"),
     ("registry_items", "cargo_grid_h"),
-    // match_telemetry::services::registered_match::RegisteredMatch: a registered match holds
+    // api_match_telemetry::services::registered_match::RegisteredMatch: a registered match holds
     // no report digest until its first results revision applies.
     ("matches", "report_sha256"),
 ];

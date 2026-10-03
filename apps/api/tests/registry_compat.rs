@@ -9,11 +9,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
-use api::missions::services::registry_import::{import_compat, import_items};
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_missions::services::registry_import::{import_compat, import_items};
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -28,19 +27,18 @@ mod common;
 const TEST_MP: &str = "00000000-0000-4000-a000-00000000c0de";
 const TEST_MP2: &str = "00000000-0000-4000-a000-00000000c0d2";
 
-const ITEMS_PATH: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../contracts/catalogs/registry-items.workbench.json"
-);
-const COMPAT_PATH: &str = concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../contracts/catalogs/registry-compat.workbench.json"
-);
+/// A committed Workbench registry envelope under `contracts/catalogs/`.
+fn catalog_path(file: &str) -> std::path::PathBuf {
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the repository root above the API package")
+        .join("contracts/catalogs")
+        .join(file)
+}
 
 async fn setup() -> Option<(Router, PgPool, String, String)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     // Own rows only — other suites share this DB.
     for mp in [TEST_MP, TEST_MP2] {
         let id = Uuid::parse_str(mp).unwrap();
@@ -52,7 +50,7 @@ async fn setup() -> Option<(Router, PgPool, String, String)> {
             sqlx::query(q).bind(id).execute(&pool).await.expect("clean");
         }
     }
-    let app = http_router::router(AppState::new(
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "registry-secret"),
     ));
@@ -231,16 +229,18 @@ async fn registry_compat_ingest_api_worker_gates() {
     };
     let mp = Uuid::parse_str(TEST_MP).unwrap();
     let mp2 = Uuid::parse_str(TEST_MP2).unwrap();
-    let items_raw = std::fs::read(ITEMS_PATH).expect("read items envelope");
-    let compat_raw = std::fs::read(COMPAT_PATH).expect("read compat envelope");
+    let items_raw =
+        std::fs::read(catalog_path("registry-items.workbench.json")).expect("read items envelope");
+    let compat_raw = std::fs::read(catalog_path("registry-compat.workbench.json"))
+        .expect("read compat envelope");
     let items_env: Value = serde_json::from_slice(&items_raw).unwrap();
     let compat_env: Value = serde_json::from_slice(&compat_raw).unwrap();
 
     // ── Import the committed vanilla envelopes under the test modpack ────────
-    let ci = import_items(&pool, &items_raw, Some(mp), false)
+    let ci = import_items(&pool, &items_raw, Some(mp.into()), false)
         .await
         .expect("items");
-    let cc = import_compat(&pool, &compat_raw, Some(mp), false)
+    let cc = import_compat(&pool, &compat_raw, Some(mp.into()), false)
         .await
         .expect("compat");
     // The committed envelope's census:
@@ -382,10 +382,10 @@ async fn registry_compat_ingest_api_worker_gates() {
 
     // ── Idempotency: re-run touches nothing ──────────────────────────────────
     let snap = db_edge_snapshot(&pool, mp).await;
-    let ci2 = import_items(&pool, &items_raw, Some(mp), false)
+    let ci2 = import_items(&pool, &items_raw, Some(mp.into()), false)
         .await
         .unwrap();
-    let cc2 = import_compat(&pool, &compat_raw, Some(mp), false)
+    let cc2 = import_compat(&pool, &compat_raw, Some(mp.into()), false)
         .await
         .unwrap();
     assert_eq!(

@@ -19,7 +19,7 @@
 //! - logout with any token of a family revokes that family alone;
 //! - a concurrent pair is explained by at least one of its two serialisations.
 
-use api::core::authentication_primitives::hash_token;
+use api_http_layer::authentication_primitives::hash_token;
 use axum::http::StatusCode;
 use proptest::{collection::vec, prelude::*};
 use std::collections::BTreeSet;

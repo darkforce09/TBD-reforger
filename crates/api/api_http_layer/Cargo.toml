@@ -1,0 +1,49 @@
+# The API's HTTP layer: access tokens and opaque-token hashing, the request middleware chain and
+# its authentication extractors, the rate limiters, the metrics and health surfaces, the realtime
+# hub and the outbound retry policy. Generic over the application state through `FromRef`, so it
+# names no state struct and no domain.
+[package]
+name = "api_http_layer"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's access tokens, middleware chain, rate limiters, metrics and health surfaces, realtime hub and outbound retry."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 3
+targets = "any"
+
+[dependencies]
+api_configuration = { workspace = true }
+api_foundation = { workspace = true }
+api_identifiers = { workspace = true }
+async-stream = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true }
+# `sha256_hex`, the stored hash of an opaque token.
+content_digest = { workspace = true }
+futures = { workspace = true }
+governor = { workspace = true }
+hex = { workspace = true }
+# rust_crypto = pure-Rust HMAC/SHA backend for HS256 (no aws-lc-rs C dependency).
+jsonwebtoken = { workspace = true, features = ["rust_crypto"] }
+rand = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres"] }
+subtle = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["macros", "sync", "time"] }
+tracing = { workspace = true }
+uuid = { workspace = true, features = ["v4"] }
+
+[dev-dependencies]
+proptest = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt", "sync", "time"] }
+
+[lints]
+workspace = true

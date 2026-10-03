@@ -12,13 +12,14 @@ modules.
 ```text
 tools/commands/database_operations/src/local_database/
 ├── ab.rs                         the self-test's plumbing: bridged argv, make runs, scratch databases
+├── api_test_packages.rs          the packages the API lanes cover: `api`, every `crates/api` member and their users
 ├── development_compose.rs        the development compose project: folder, `-f` file, echoed line
 ├── recipe_execution.rs           the recipe runner: echo, API folder, runtime, exit status; compose, seed, registry import
 ├── recipes.rs                    the recipe lines the lane echoes, and a Makefile recipe reader
 ├── repair_migration_checksum.rs  `db repair-migration-checksum`: repoints comments-only edits
 ├── selftest.rs                   `db selftest`: six arms over the recipes, the guard and the cleanup
 ├── test_it.rs                    `db test-it`: one isolated database per run, then its cleanup
-└── tests/                        unit tests for the plumbing, compose, recipes, repair and test-it
+└── tests/                        unit tests for the plumbing, API packages, compose, recipes, repair and test-it
 ```
 
 ## How it works
@@ -39,21 +40,31 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   `*_probe`, never `tbd_reforger`), and claims a fresh database named
   `i<first five label characters>_<32 random hex>_it` with `CREATE DATABASE`, so a collision
   fails without touching another run's database. It runs
-  `cargo test --locked --no-fail-fast [--lib] [--test <binary>]... -- --show-output [<filter>]` in
-  `apps/api` with `TEST_DATABASE_URL` on port 5434, `TBD_API_VERIFICATION=true` and the
+  `cargo test --locked --no-fail-fast -p api -p <API crate>... -p <API crate user>... [--lib] [--test <binary>]... -- --show-output [<filter>]`
+  in `apps/api` (a `--test` selection names `-p api` alone, the package that holds the
+  integration binaries) with `TEST_DATABASE_URL` on port 5434, `TBD_API_VERIFICATION=true` and the
   marker's `PROPTEST_RNG_SEED`. The cleanup then always runs, whatever the tests did: it selects
-  the run's database and every `<name>_<suite>_it` the harness in
-  `apps/api/tests/common/database.rs` derived from it, re-checks each row's ownership
+  the run's database and every `<name>_<suite>_it` the harnesses in
+  `apps/api/tests/common/database.rs` and `tools/staging/staging_fixtures/tests/common/database.rs`
+  derived from it, re-checks each row's ownership
   and drops it with `FORCE`.
+- `api_test_packages::api_test_packages` derives the API lanes' packages from the workspace:
+  `api`, then every member directly under `crates/api`, then every other member with a normal or
+  development dependency on one of them (the staging fixtures tool in
+  `tools/staging/staging_fixtures`, whose suites need the API's database), each group in
+  member-path order, so an API crate and its users are tested, linted and built from the moment
+  the root manifest names them. Its library-less package runs no case under `--lib`. An unreadable workspace or
+  one without `api` is an error. The CI task table, the `mk` build lane and the wave gate's
+  `test api` step derive their API lines through it.
 - `development_compose::ComposeProject` names `deploy/compose.dev.yml` (`DEVELOPMENT_COMPOSE_FILE`
   in `repository_layout`) with `-f` and runs compose in `deploy/`, the folder its
   relative paths resolve against; it passes no `-p`, so the file's `name:` sets the project.
   `ComposeLine` renders the echoed `cd deploy && <runtime> compose -f compose.dev.yml …` line, and
   `recipes::rendered_recipes` renders the lane's lines through it. A seed read on stdin is shown,
-  and opened, as `../apps/api/seeds/<file>` from that folder. `TBD_MK_WEB` swaps the folder for
+  and opened, as `../crates/api/api_database/seeds/<file>` from that folder. `TBD_MK_WEB` swaps the folder for
   another one holding a `compose.dev.yml`.
 - `repair_migration_checksum::run` reads `_sqlx_migrations` from `TBD_DB_NAME` (default
-  `tbd_reforger`). For each applied version whose file in `apps/api/migrations/`
+  `tbd_reforger`). For each applied version whose file in `crates/api/api_database/migrations/`
   hashes to another value than the recorded SHA-384, it searches `git log --all --follow` for the
   blob that matches, then compares the two with `--` comments and blank lines stripped,
   quote-aware. A comments-only difference is repointed with an `UPDATE`; a statement difference is

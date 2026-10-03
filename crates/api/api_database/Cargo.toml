@@ -1,0 +1,28 @@
+# The API's Postgres connection lifecycle: the tuned pool with its startup retry budget, the
+# embedded migration pipeline with the migrations it embeds, the development seeds, and the
+# SQLSTATE classification handlers answer constraint violations with.
+[package]
+name = "api_database"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's Postgres pool, embedded migrations, development seeds and SQLSTATE classification."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 3
+targets = "any"
+
+[dependencies]
+api_configuration = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "tls-rustls", "postgres", "migrate", "macros"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["time"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt", "sync"] }
+
+[lints]
+workspace = true

@@ -154,10 +154,10 @@ required too.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the fleet host agent in `apps/fleet_host_agent/`;
   the `mk rust-api`, `db` and `deploy website` commands of `tools/xtask/`; and the release image
   that `deploy/Dockerfile` builds.
-- Rules: `core` imports no domain except in `src/core/application_state.rs` and
-  `src/core/http_router.rs`, a domain's handlers never import another domain's handlers, and
-  `background_workers` is imported only by `src/bin/api.rs` (`src/tests/architecture_rules.rs`
-  checks all three); an applied migration never changes (`tests/migrations_are_immutable.rs`).
+- Rules: `src/` holds only the thin application; the kernel crates depend on no domain, no crate
+  imports another domain's handlers, and only `src/bin/api.rs` names `api_background_workers`
+  (`src/tests/architecture_rules.rs` checks all three); an applied migration never changes
+  (`tests/migrations_are_immutable.rs`).
 
 ## Related documentation
 

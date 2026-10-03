@@ -15,6 +15,20 @@
 
 use super::*;
 
+/// The source folders of the running API: the thin app and every API crate. The newest commit
+/// touching any of them is the code the API process must be at least as new as.
+const API_SOURCE_FOLDERS: &[&str] = &["apps/api", "crates/api"];
+
+/// The commit time (`%ct`) of the newest commit under [`API_SOURCE_FOLDERS`] in `root`; 0 when
+/// git answers nothing.
+fn newest_api_commit_epoch(root: &Path) -> i64 {
+    let mut args = vec!["log", "-1", "--format=%ct", "--"];
+    args.extend_from_slice(API_SOURCE_FOLDERS);
+    git_out(root, &args)
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(0)
+}
+
 /// Entry for `xtask platform preflight [--warn]`.
 pub(crate) fn run(warn_only: bool) -> Result<u8> {
     let root = resolve_root()?;
@@ -257,9 +271,7 @@ pub(crate) fn run(warn_only: bool) -> Result<u8> {
         } else {
             proc_start_epoch(&api_pid)
         };
-        let newest = git_out(&root, &["log", "-1", "--format=%ct", "--", "apps/api"])
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(0);
+        let newest = newest_api_commit_epoch(&root);
         if started > 0 && newest > started {
             soft(
                 &mut c,
@@ -326,3 +338,7 @@ pub(crate) fn run(warn_only: bool) -> Result<u8> {
     writeln!(out, "PREFLIGHT: PASS ({} warn)", c.warn)?;
     Ok(0)
 }
+
+#[cfg(test)]
+#[path = "../tests/preflight/api_freshness_tests.rs"]
+mod api_freshness_tests;

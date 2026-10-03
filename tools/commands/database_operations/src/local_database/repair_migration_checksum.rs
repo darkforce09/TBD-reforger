@@ -40,7 +40,7 @@
 use crate::error::{Result, refuse};
 use content_digest::sha384_hex;
 
-use super::WEB;
+use super::MIGRATIONS_FOLDER;
 use super::recipe_execution::echo;
 use crate::container_database::{ct_capture, db_user};
 use process_runner::Run;
@@ -241,7 +241,7 @@ fn repoint(version: i64, checksum: &str) -> Result<u8> {
 pub(crate) fn run(version: Option<i64>, force: bool) -> Result<u8> {
     echo("cargo xtask db repair-migration-checksum");
     let repo_root = repository_layout::find_repository_root()?;
-    let migrations = repo_root.join(WEB).join("migrations");
+    let migrations = repo_root.join(MIGRATIONS_FOLDER);
     let applied = applied_checksums()?;
     if applied.is_empty() {
         println!("  no rows in _sqlx_migrations — nothing has been applied.");
@@ -282,7 +282,7 @@ pub(crate) fn run(version: Option<i64>, force: bool) -> Result<u8> {
         drifted += 1;
 
         let name = entry.file_name().to_string_lossy().into_owned();
-        let rel = format!("{WEB}/migrations/{name}");
+        let rel = format!("{MIGRATIONS_FOLDER}/{name}");
         println!("  {recorded_version} ({name}): file does not match the applied checksum.");
 
         let Some(applied_sql) = applied_content(&repo_root, &rel, recorded_checksum) else {

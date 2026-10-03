@@ -1,14 +1,15 @@
 //! Identity ownership, single-use codes, and derived facts commit together under competing requests.
 
-use api::core::{
-    application_state::AppState, configuration::Config, database,
-    error_handling::api_error::ApiError, middleware::AuthUser,
-};
-use api::identity_and_access::services::{
+use api_caller_identity::session_authorization::authorize_session;
+use api_configuration::configuration::Config;
+use api_foundation::error_handling::api_error::ApiError;
+use api_http_layer::middleware::AuthUser;
+use api_identifiers::{ArmaPlayerId, ServerId};
+use api_identity_and_access::services::{
     identity_linking::{confirm_identity, unlink_identity},
     link_code_issuance::issue_link_code,
-    session_authorization::authorize_session,
 };
+use api_state::AppState;
 use axum::http::StatusCode;
 use sqlx::PgPool;
 use std::{future::Future, time::Duration};
@@ -20,13 +21,13 @@ mod common;
 async fn fixture() -> AppState {
     let url =
         common::require_test_database_url().expect("identity transaction tests require PostgreSQL");
-    let pool = database::connect(&url)
+    let pool = api_database::connect(&url)
         .await
         .expect("connect integration database");
-    database::migrate(&pool)
+    api_database::migrate(&pool)
         .await
         .expect("migrate integration database");
-    AppState::new(pool, Config::for_tests(url, "identity-link-transactions"))
+    api::composition::application_state(pool, Config::for_tests(url, "identity-link-transactions"))
 }
 
 async fn actor(state: &AppState) -> AuthUser {
@@ -115,7 +116,7 @@ fn one_winner<T: std::fmt::Debug>(
 }
 
 /// A registered game server to confirm link codes from; confirmations name it in their audit.
-async fn confirming_server(pool: &PgPool) -> Uuid {
+async fn confirming_server(pool: &PgPool) -> ServerId {
     sqlx::query_scalar(
         "INSERT INTO servers (name, ip, port, is_active)
          VALUES ('Identity confirmation server', '127.0.0.1'::inet, 2001, true) RETURNING id",
@@ -169,7 +170,10 @@ async fn link_code_atomic_issuance_keeps_one_pending_code_for_competing_requests
     );
     assert!(first_expiry > chrono::Utc::now());
     assert!(second_expiry > chrono::Utc::now());
-    assert_eq!(pending_codes(&state.pool, &user.discord_id).await, 1);
+    assert_eq!(
+        pending_codes(&state.pool, user.discord_id.as_str()).await,
+        1
+    );
     let first_state = code_state(&state.pool, &first).await;
     let second_state = code_state(&state.pool, &second).await;
     assert!(
@@ -187,7 +191,12 @@ async fn link_code_atomic_issuance_keeps_one_pending_code_for_competing_requests
     };
     assert_eq!(cancelled.3.as_deref(), Some("superseded"));
     assert_eq!(
-        audit_count(&state.pool, &user.discord_id, "identity.link_code_issued").await,
+        audit_count(
+            &state.pool,
+            user.discord_id.as_str(),
+            "identity.link_code_issued"
+        )
+        .await,
         2
     );
 }
@@ -203,13 +212,25 @@ async fn linking_single_code_cannot_assign_two_different_arma_identities() {
         format!("arma-{}", Uuid::new_v4()),
     ];
     let (first, second) = race(
-        confirm_identity(&state, server, &code, &identities[0], "First player"),
-        confirm_identity(&state, server, &code, &identities[1], "Second player"),
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &ArmaPlayerId::new(identities[0].as_str()),
+            "First player",
+        ),
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &ArmaPlayerId::new(identities[1].as_str()),
+            "Second player",
+        ),
     )
     .await;
     let winner = one_winner(first, second);
     assert_eq!(
-        current_identity(&state.pool, &user.discord_id)
+        current_identity(&state.pool, user.discord_id.as_str())
             .await
             .as_deref(),
         Some(identities[winner].as_str())
@@ -217,9 +238,12 @@ async fn linking_single_code_cannot_assign_two_different_arma_identities() {
     let spent = code_state(&state.pool, &code).await;
     assert!(spent.0 && !spent.1);
     assert_eq!(spent.2.as_deref(), Some(identities[winner].as_str()));
-    assert_eq!(pending_codes(&state.pool, &user.discord_id).await, 0);
     assert_eq!(
-        audit_count(&state.pool, &user.discord_id, "identity.link").await,
+        pending_codes(&state.pool, user.discord_id.as_str()).await,
+        0
+    );
+    assert_eq!(
+        audit_count(&state.pool, user.discord_id.as_str(), "identity.link").await,
         1
     );
 }
@@ -235,21 +259,33 @@ async fn linking_identity_ownership_has_one_winner_across_two_accounts() {
     let identity = format!("arma-{}", Uuid::new_v4());
     let history = historical_fact(&state.pool, &identity).await;
     let (left, right) = race(
-        confirm_identity(&state, server, &first_code, &identity, "Shared player"),
-        confirm_identity(&state, server, &second_code, &identity, "Shared player"),
+        confirm_identity(
+            &state,
+            server,
+            &first_code,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Shared player",
+        ),
+        confirm_identity(
+            &state,
+            server,
+            &second_code,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Shared player",
+        ),
     )
     .await;
     let winner = one_winner(left, right);
     let users = [&first, &second];
     let codes = [&first_code, &second_code];
     assert_eq!(
-        current_identity(&state.pool, &users[winner].discord_id)
+        current_identity(&state.pool, users[winner].discord_id.as_str())
             .await
             .as_deref(),
         Some(identity.as_str())
     );
     assert!(
-        current_identity(&state.pool, &users[1 - winner].discord_id)
+        current_identity(&state.pool, users[1 - winner].discord_id.as_str())
             .await
             .is_none()
     );
@@ -262,15 +298,25 @@ async fn linking_identity_ownership_has_one_winner_across_two_accounts() {
     assert!(code_state(&state.pool, codes[winner]).await.0);
     assert!(!code_state(&state.pool, codes[1 - winner]).await.0);
     assert_eq!(
-        pending_codes(&state.pool, &users[1 - winner].discord_id).await,
+        pending_codes(&state.pool, users[1 - winner].discord_id.as_str()).await,
         1
     );
     assert_eq!(
-        audit_count(&state.pool, &users[winner].discord_id, "identity.link").await,
+        audit_count(
+            &state.pool,
+            users[winner].discord_id.as_str(),
+            "identity.link"
+        )
+        .await,
         1
     );
     assert_eq!(
-        audit_count(&state.pool, &users[1 - winner].discord_id, "identity.link").await,
+        audit_count(
+            &state.pool,
+            users[1 - winner].discord_id.as_str(),
+            "identity.link"
+        )
+        .await,
         0
     );
     let owners: i64 = sqlx::query_scalar("SELECT count(*) FROM users WHERE arma_id = $1")
@@ -290,7 +336,13 @@ async fn linking_confirmation_racing_unlink_never_restores_released_ownership() 
     let identity = format!("arma-{}", Uuid::new_v4());
     let history = historical_fact(&state.pool, &identity).await;
     let (confirmation, unlink) = race(
-        confirm_identity(&state, server, &code, &identity, "Concurrent player"),
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Concurrent player",
+        ),
         unlink_identity(&state, &user),
     )
     .await;
@@ -303,7 +355,7 @@ async fn linking_confirmation_racing_unlink_never_restores_released_ownership() 
         );
     }
     assert!(
-        current_identity(&state.pool, &user.discord_id)
+        current_identity(&state.pool, user.discord_id.as_str())
             .await
             .is_none()
     );
@@ -312,7 +364,10 @@ async fn linking_confirmation_racing_unlink_never_restores_released_ownership() 
             .await
             .is_none()
     );
-    assert_eq!(pending_codes(&state.pool, &user.discord_id).await, 0);
+    assert_eq!(
+        pending_codes(&state.pool, user.discord_id.as_str()).await,
+        0
+    );
     let terminal = code_state(&state.pool, &code).await;
     assert_ne!(
         terminal.0, terminal.1,
@@ -323,20 +378,26 @@ async fn linking_confirmation_racing_unlink_never_restores_released_ownership() 
         assert_eq!(terminal.3.as_deref(), Some("unlinked"));
     }
     assert_eq!(
-        audit_count(&state.pool, &user.discord_id, "identity.unlink").await,
+        audit_count(&state.pool, user.discord_id.as_str(), "identity.unlink").await,
         1
     );
     assert_eq!(
-        audit_count(&state.pool, &user.discord_id, "identity.link").await,
+        audit_count(&state.pool, user.discord_id.as_str(), "identity.link").await,
         i64::from(confirmation.is_ok())
     );
     assert!(
-        confirm_identity(&state, server, &code, &identity, "Late retry")
-            .await
-            .is_err()
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Late retry"
+        )
+        .await
+        .is_err()
     );
     assert!(
-        current_identity(&state.pool, &user.discord_id)
+        current_identity(&state.pool, user.discord_id.as_str())
             .await
             .is_none()
     );
@@ -349,12 +410,24 @@ async fn linking_unlink_cancels_pending_codes_even_when_consumed_confirmation_re
     let user = actor(&state).await;
     let identity = format!("arma-{}", Uuid::new_v4());
     let (consumed, _) = issue_link_code(&state, &user).await.unwrap();
-    confirm_identity(&state, server, &consumed, &identity, "Linked player")
-        .await
-        .unwrap();
+    confirm_identity(
+        &state,
+        server,
+        &consumed,
+        &ArmaPlayerId::new(identity.as_str()),
+        "Linked player",
+    )
+    .await
+    .unwrap();
     let (pending, _) = issue_link_code(&state, &user).await.unwrap();
     let (retry, unlink) = race(
-        confirm_identity(&state, server, &consumed, &identity, "Duplicate player"),
+        confirm_identity(
+            &state,
+            server,
+            &consumed,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Duplicate player",
+        ),
         unlink_identity(&state, &user),
     )
     .await;
@@ -363,11 +436,14 @@ async fn linking_unlink_cancels_pending_codes_even_when_consumed_confirmation_re
         assert_eq!(error.status, StatusCode::CONFLICT);
     }
     assert!(
-        current_identity(&state.pool, &user.discord_id)
+        current_identity(&state.pool, user.discord_id.as_str())
             .await
             .is_none()
     );
-    assert_eq!(pending_codes(&state.pool, &user.discord_id).await, 0);
+    assert_eq!(
+        pending_codes(&state.pool, user.discord_id.as_str()).await,
+        0
+    );
     assert_eq!(
         code_state(&state.pool, &pending).await,
         (false, true, None, Some("unlinked".into()))
@@ -377,7 +453,7 @@ async fn linking_unlink_cancels_pending_codes_even_when_consumed_confirmation_re
         "consumption history remains factual"
     );
     assert_eq!(
-        audit_count(&state.pool, &user.discord_id, "identity.link").await,
+        audit_count(&state.pool, user.discord_id.as_str(), "identity.link").await,
         1
     );
 }
@@ -430,10 +506,17 @@ async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required
     let identity = format!("arma-{}", Uuid::new_v4());
     let history = historical_fact(&state.pool, &identity).await;
     let (code, _) = issue_link_code(&state, &user).await.unwrap();
-    let audits = audit_snapshot(&state.pool, &user.discord_id).await;
+    let audits = audit_snapshot(&state.pool, user.discord_id.as_str()).await;
     let code_before = code_state(&state.pool, &code).await;
-    let trigger = install_stats_failure(&state.pool, &user.discord_id).await;
-    let failed = confirm_identity(&state, server, &code, &identity, "Recoverable player").await;
+    let trigger = install_stats_failure(&state.pool, user.discord_id.as_str()).await;
+    let failed = confirm_identity(
+        &state,
+        server,
+        &code,
+        &ArmaPlayerId::new(identity.as_str()),
+        "Recoverable player",
+    )
+    .await;
     remove_stats_failure(&state.pool, &trigger).await;
     assert_eq!(
         failed
@@ -442,7 +525,7 @@ async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required
         StatusCode::INTERNAL_SERVER_ERROR
     );
     assert!(
-        current_identity(&state.pool, &user.discord_id)
+        current_identity(&state.pool, user.discord_id.as_str())
             .await
             .is_none()
     );
@@ -452,24 +535,33 @@ async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required
             .await
             .is_none()
     );
-    assert_eq!(audit_snapshot(&state.pool, &user.discord_id).await, audits);
+    assert_eq!(
+        audit_snapshot(&state.pool, user.discord_id.as_str()).await,
+        audits
+    );
     let deployments: i64 =
         sqlx::query_scalar("SELECT total_deployments FROM users WHERE discord_id = $1")
-            .bind(&user.discord_id)
+            .bind(user.discord_id.as_str())
             .fetch_one(&state.pool)
             .await
             .unwrap();
     assert_eq!(deployments, 0);
 
     assert_eq!(
-        confirm_identity(&state, server, &code, &identity, "Recoverable player")
-            .await
-            .unwrap()
-            .discord_id,
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Recoverable player"
+        )
+        .await
+        .unwrap()
+        .discord_id,
         user.discord_id
     );
     assert_eq!(
-        current_identity(&state.pool, &user.discord_id)
+        current_identity(&state.pool, user.discord_id.as_str())
             .await
             .as_deref(),
         Some(identity.as_str())
@@ -483,17 +575,17 @@ async fn linking_statistics_failure_rolls_back_code_ownership_facts_and_required
     assert!(code_state(&state.pool, &code).await.0);
     let deployments: i64 =
         sqlx::query_scalar("SELECT total_deployments FROM users WHERE discord_id = $1")
-            .bind(&user.discord_id)
+            .bind(user.discord_id.as_str())
             .fetch_one(&state.pool)
             .await
             .unwrap();
     assert_eq!(deployments, 1);
     assert_eq!(
-        audit_count(&state.pool, &user.discord_id, "identity.link").await,
+        audit_count(&state.pool, user.discord_id.as_str(), "identity.link").await,
         1
     );
     assert_eq!(
-        audit_snapshot(&state.pool, &user.discord_id).await,
+        audit_snapshot(&state.pool, user.discord_id.as_str()).await,
         (audits.0 + 1, audits.1 + 1)
     );
 }
@@ -506,8 +598,20 @@ async fn linking_duplicate_same_identity_confirmation_is_audited_once() {
     let identity = format!("arma-{}", Uuid::new_v4());
     let (code, _) = issue_link_code(&state, &user).await.unwrap();
     let (first, second) = race(
-        confirm_identity(&state, server, &code, &identity, "Original character"),
-        confirm_identity(&state, server, &code, &identity, "Original character"),
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Original character",
+        ),
+        confirm_identity(
+            &state,
+            server,
+            &code,
+            &ArmaPlayerId::new(identity.as_str()),
+            "Original character",
+        ),
     )
     .await;
     assert_eq!(first.unwrap().discord_id, user.discord_id);
@@ -518,7 +622,7 @@ async fn linking_duplicate_same_identity_confirmation_is_audited_once() {
             &state,
             server,
             &code,
-            &identity,
+            &ArmaPlayerId::new(identity.as_str()),
             "Changed duplicate character"
         )
         .await
@@ -528,12 +632,12 @@ async fn linking_duplicate_same_identity_confirmation_is_audited_once() {
     );
     assert_eq!(code_state(&state.pool, &code).await, before);
     assert_eq!(
-        audit_count(&state.pool, &user.discord_id, "identity.link").await,
+        audit_count(&state.pool, user.discord_id.as_str(), "identity.link").await,
         1
     );
     let character: String =
         sqlx::query_scalar("SELECT arma_character FROM users WHERE discord_id = $1")
-            .bind(&user.discord_id)
+            .bind(user.discord_id.as_str())
             .fetch_one(&state.pool)
             .await
             .unwrap();

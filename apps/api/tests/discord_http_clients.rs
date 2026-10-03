@@ -4,11 +4,13 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use api::community_content::models::announcement::{
+use api_community_content::handlers::announcement_discord_push::webhook_announcement;
+use api_community_content::models::announcement::{
     Announcement, AnnouncementStatus, AnnouncementTag,
 };
-use api::community_content::services::discord_webhook::WebhookService;
-use api::identity_and_access::services::discord_client::DiscordService;
+use api_discord::discord_client::DiscordService;
+use api_discord::discord_webhook::WebhookService;
+use api_identifiers::DiscordMessageId;
 use axum::Router;
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -27,7 +29,7 @@ async fn spawn(router: Router) -> String {
 
 fn ann(title: &str, body: &str, snippet: &str) -> Announcement {
     Announcement {
-        id: Uuid::new_v4(),
+        id: Uuid::new_v4().into(),
         title: title.into(),
         body: body.into(),
         snippet: snippet.into(),
@@ -37,7 +39,7 @@ fn ann(title: &str, body: &str, snippet: &str) -> Announcement {
         status: AnnouncementStatus::Published,
         is_pinned: false,
         pushed_to_discord: false,
-        discord_message_id: String::new(),
+        discord_message_id: DiscordMessageId::default(),
         published_at: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
@@ -52,7 +54,7 @@ async fn webhook_push_success_returns_message_id() {
         spawn(Router::new().route("/wh", post(|| async { Json(json!({ "id": "msg-42" })) }))).await;
     let wh = WebhookService::new(format!("{base}/wh"));
     let id = wh
-        .push_announcement(&ann("Op Redwood", "body", "snip"))
+        .push_announcement(&webhook_announcement(&ann("Op Redwood", "body", "snip")))
         .await
         .unwrap();
     assert_eq!(id, "msg-42");
@@ -62,7 +64,11 @@ async fn webhook_push_success_returns_message_id() {
 async fn webhook_disabled_errors() {
     let wh = WebhookService::new(String::new());
     assert!(!wh.enabled());
-    assert!(wh.push_announcement(&ann("t", "b", "s")).await.is_err());
+    assert!(
+        wh.push_announcement(&webhook_announcement(&ann("t", "b", "s")))
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -71,7 +77,11 @@ async fn webhook_server_error_errors() {
         spawn(Router::new().route("/wh", post(|| async { StatusCode::INTERNAL_SERVER_ERROR })))
             .await;
     let wh = WebhookService::new(format!("{base}/wh"));
-    assert!(wh.push_announcement(&ann("t", "b", "s")).await.is_err());
+    assert!(
+        wh.push_announcement(&webhook_announcement(&ann("t", "b", "s")))
+            .await
+            .is_err()
+    );
 }
 
 #[tokio::test]
@@ -91,7 +101,10 @@ async fn webhook_retries_on_429_then_succeeds() {
     let hits = Arc::new(AtomicUsize::new(0));
     let base = spawn(Router::new().route("/wh", post(h)).with_state(hits.clone())).await;
     let wh = WebhookService::new(format!("{base}/wh"));
-    let id = wh.push_announcement(&ann("t", "b", "s")).await.unwrap();
+    let id = wh
+        .push_announcement(&webhook_announcement(&ann("t", "b", "s")))
+        .await
+        .unwrap();
     assert_eq!(id, "msg-after-retry");
     assert_eq!(hits.load(Ordering::SeqCst), 2, "one 429 + one success");
 }
@@ -109,7 +122,7 @@ async fn webhook_caps_embed_title_to_256_runes() {
     let base = spawn(Router::new().route("/wh", post(h)).with_state(seen.clone())).await;
     let wh = WebhookService::new(format!("{base}/wh"));
     let long_title = "A".repeat(300);
-    wh.push_announcement(&ann(&long_title, "b", "s"))
+    wh.push_announcement(&webhook_announcement(&ann(&long_title, "b", "s")))
         .await
         .unwrap();
     let body = seen.lock().unwrap().clone().unwrap();

@@ -20,8 +20,8 @@
 //! so an unresolved schema never loosens the comparison; a key the round trip drops or adds and
 //! an array whose length changes are always differences.
 
-use api::core::wire_format::rfc3339_utc;
 use chrono::{DateTime, Utc};
+use fleet_wire_contract::rfc3339_timestamps::rfc3339_utc;
 use serde_json::{Value, json};
 
 use super::contracts::load_schema_document;

@@ -112,7 +112,7 @@ in the game runtime.
 
 - `POST /api/v1/fleet-executor/commands/claim`, `…/{commandId}/executing` and
   `…/{commandId}/result` (the fleet executor handlers in
-  `apps/api/src/server_infrastructure/`): claim the next command for the credential's
+  `crates/api/api_server_infrastructure/src/`): claim the next command for the credential's
   server with a lease and a fencing token, move it to `executing` inside its execution window, and
   record its outcome; a stale token is a 409 `STALE_FENCING_TOKEN`. The wire shapes are
   `contracts/definitions/fleet-command.schema.json`.

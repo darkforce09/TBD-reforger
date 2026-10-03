@@ -1,13 +1,13 @@
 //! Minting persisted integration-test sessions through the router or session service.
 
-use api::core::application_state::AppState;
+use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use tower::ServiceExt;
 
 /// The shared `dev-login` row's `arma_id`, pinned from `DEV_ARMA_ID` in
-/// `src/identity_and_access/handlers/developer_login.rs`.
+/// `crates/api/api_identity_and_access/src/handlers/developer_login.rs`.
 ///
 /// `tests/test_support_self_checks.rs` asserts the handler still carries this literal, so a
 /// handler-side change turns into a named failure instead of a fixture that quietly drifts
@@ -65,14 +65,14 @@ pub async fn dev_login_token(app: &Router, suite: &str, role: &str) -> String {
     let Some(location) = ctx.location else {
         let msg = ctx.report(
             "302 with no Location header. The redirect was built by something other than \
-             session_redirect (src/identity_and_access/services/session_issuance.rs).",
+             session_redirect (crates/api/api_identity_and_access/src/services/session_issuance.rs).",
         );
         panic!("{msg}");
     };
     let Some((_, fragment)) = location.split_once('#') else {
         let msg = ctx.report(
             "Location carries no `#` fragment. auth_callback_url puts the tokens in the \
-             fragment (src/identity_and_access/services/session_issuance.rs); a fragment-less \
+             fragment (crates/api/api_identity_and_access/src/services/session_issuance.rs); a fragment-less \
              Location is an error redirect, and its `error=` query names the reason.",
         );
         panic!("{msg}");
@@ -158,12 +158,20 @@ pub async fn access_token(
     .await
     .unwrap_or_else(|error| panic!("tests/{suite}.rs: create actor {discord_id}: {error}"));
 
-    super::fixtures::seed_membership(&state.pool, discord_id, &state.cfg.discord_guild_id, role)
-        .await;
-    api::identity_and_access::services::session_issuance::issue_session(state, discord_id)
-        .await
-        .unwrap_or_else(|e| {
-            panic!("tests/{suite}.rs: issue_session(discord_id={discord_id}, role={role}): {e:?}")
-        })
-        .0
+    super::fixtures::seed_membership(
+        &state.pool,
+        discord_id,
+        state.cfg.discord_guild_id.as_str(),
+        role,
+    )
+    .await;
+    api_identity_and_access::services::session_issuance::issue_session(
+        state,
+        &api_identifiers::DiscordUserId::new(discord_id),
+    )
+    .await
+    .unwrap_or_else(|e| {
+        panic!("tests/{suite}.rs: issue_session(discord_id={discord_id}, role={role}): {e:?}")
+    })
+    .0
 }

@@ -2,7 +2,7 @@
 //!
 //! # Why this file exists
 //!
-//! `community_content/services/discord_webhook.rs` owns the sanitiser (`sanitize_discord_embed_field`: strip ASCII
+//! `crates/api/api_discord/src/discord_webhook.rs` owns the sanitiser (`sanitize_discord_embed_field`: strip ASCII
 //! controls, then prefix a leading `=` / `+` / `-` / `@` with U+200B) and three unit tests. Two
 //! of the three test the helper in isolation; the third is an `include_str!` window pin that
 //! greps `push_announcement` for the call. None of them asserts what the **webhook actually
@@ -29,14 +29,14 @@
 
 use std::sync::{Arc, Mutex};
 
-use api::community_content::models::announcement::{
+use api_community_content::handlers::announcement_discord_push::webhook_announcement;
+use api_community_content::models::announcement::{
     Announcement, AnnouncementStatus, AnnouncementTag,
 };
-use api::community_content::services::discord_webhook::WebhookService;
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
+use api_discord::discord_webhook::WebhookService;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::{Request, State};
@@ -120,7 +120,7 @@ fn embed_description(raw: &[u8]) -> String {
 
 fn announcement(title: &str, body: &str, snippet: &str) -> Announcement {
     Announcement {
-        id: Uuid::new_v4(),
+        id: Uuid::new_v4().into(),
         title: title.into(),
         body: body.into(),
         snippet: snippet.into(),
@@ -130,7 +130,7 @@ fn announcement(title: &str, body: &str, snippet: &str) -> Announcement {
         status: AnnouncementStatus::Published,
         is_pinned: false,
         pushed_to_discord: false,
-        discord_message_id: String::new(),
+        discord_message_id: Default::default(),
         published_at: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
@@ -142,7 +142,7 @@ async fn push_and_capture(title: &str, body: &str, snippet: &str) -> (String, Ve
     let (url, seen) = spawn_discord().await;
     let wh = WebhookService::new(url);
     let id = wh
-        .push_announcement(&announcement(title, body, snippet))
+        .push_announcement(&webhook_announcement(&announcement(title, body, snippet)))
         .await
         .unwrap_or_else(|e| panic!("push_announcement({title:?}): {e}"));
     assert_eq!(id, "msg-embed", "the created message id must round-trip");
@@ -262,14 +262,14 @@ async fn cms_publish_sanitises_the_title_it_pushes_to_discord() {
         eprintln!("skip: test database URL unset");
         return;
     };
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     let (hook_url, seen) = spawn_discord().await;
     let mut cfg = Config::for_tests(url, "webhook-it-secret");
     cfg.discord_webhook_url = hook_url;
-    let state = AppState::new(pool.clone(), cfg);
-    let app = http_router::router(state.clone());
+    let state = api::composition::application_state(pool.clone(), cfg);
+    let app = router(state.clone());
 
     // A private actor: this suite must not rewrite the shared dev-login rows.
     const ACTOR: &str = "000000000000000546";

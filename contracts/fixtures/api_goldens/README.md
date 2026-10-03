@@ -20,14 +20,14 @@ contracts/fixtures/api_goldens/
   response file, its size), no header. The rows run in capture order: every read, then every
   write in the order it is sent, so a write's response reflects the writes before it.
 - Responses: UTF-8 JSON as the API serialises it; identifiers and timestamps come from
-  `apps/api/seeds/content_golden.sql`, which pins every one of them.
+  `crates/api/api_database/seeds/content_golden.sql`, which pins every one of them.
 - Event streams: the raw `text/event-stream` bytes of the stream's first frames.
 - Adding a recording: add its index row, the seed rows it reads, its request body when it writes,
   and capture it with the recipe that closes `content_golden.sql`.
 
 ## Producers and consumers
 
-- Producers: the capture recipe at the end of `apps/api/seeds/content_golden.sql`, run against a
+- Producers: the capture recipe at the end of `crates/api/api_database/seeds/content_golden.sql`, run against a
   fresh database seeded with `registry_dev.sql` and then `content_golden.sql`.
 - Consumers: the API's `contract_parity_goldens` test binary (`apps/api/tests/`), which replays
   every row against the live router and checks each body against its route's schema in
@@ -37,7 +37,7 @@ contracts/fixtures/api_goldens/
 
 ## Boundaries
 
-- Depends on: `apps/api/seeds/content_golden.sql` and the schemas in `contracts/definitions/`.
+- Depends on: `crates/api/api_database/seeds/content_golden.sql` and the schemas in `contracts/definitions/`.
 - Used by: the API's contract tests, the frontend's DTO and page tests, and the browser gates.
 - Rules: every recording reproduces from the seed through the capture recipe
   (`cargo xtask db test-it --test contract_parity_goldens`); a response shape change updates the
@@ -47,4 +47,4 @@ contracts/fixtures/api_goldens/
 
 - [Contract fixtures](/contracts/fixtures/README.md) — every fixture folder and the gates that
   read it.
-- [Development seeds](/apps/api/seeds/README.md) — the seed the recordings are captured from.
+- [Development seeds](/crates/api/api_database/seeds/README.md) — the seed the recordings are captured from.

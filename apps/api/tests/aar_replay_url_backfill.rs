@@ -8,7 +8,7 @@
 //! **Empty-string alignment:** migration `0015_matches_empty_text_missions_timestamps.sql` makes
 //! `matches.aar_replay_url` `DEFAULT '' NOT NULL`. Canonical empty is `''` (telemetry COALESCE,
 //! seed writes). A successful NULL plant is illegal; scrubbed rows must land as `''`, not NULL.
-//! sqlx embeds 0010 with a SHA-384 checksum — editing the applied file breaks `database::migrate` on
+//! sqlx embeds 0010 with a SHA-384 checksum — editing the applied file breaks `api_database::migrate` on
 //! every DB that already ran version 10 — so this test re-executes the real file via
 //! `include_str!` after substituting the frozen `SET … = NULL` scrub for the canonical
 //! `SET … = ''` (see [`migration_for_post_0015_rerun`]).
@@ -34,7 +34,6 @@
 //! `TEST_DATABASE_URL` (or `TBD_GATE_DB`) is **required**. A missing URL is a hard failure — never
 //! a silent pass-via-skip. The gate supplies the URL via `ensure_gate_db`.
 
-use api::core::database;
 use http_url_guard::cases::IS_HTTP_URL_CASES;
 use http_url_guard::is_http_url;
 use sqlx::{AssertSqlSafe, PgPool, Row};
@@ -45,7 +44,9 @@ mod common;
 /// The migration, executed verbatim rather than paraphrased. If someone edits the file, this test
 /// runs the edit — except for the one substitution documented on
 /// [`migration_for_post_0015_rerun`].
-const MIGRATION: &str = include_str!("../migrations/0010_backfill_aar_replay_url_scheme.sql");
+const MIGRATION: &str = include_str!(
+    "../../../crates/api/api_database/migrations/0010_backfill_aar_replay_url_scheme.sql"
+);
 
 /// The scrub line as it stands in 0010. Frozen in the migration file (sqlx checksum); illegal
 /// because 0015 makes the column `NOT NULL`.
@@ -99,8 +100,8 @@ async fn boot() -> PgPool {
             url
         }
     };
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
     pool
 }
 

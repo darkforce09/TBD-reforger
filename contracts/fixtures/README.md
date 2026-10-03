@@ -34,7 +34,7 @@ and the xtask [mod](/documentation/glossary/g_to_m.md#mod) commands stage missio
 `missions/valid/` into a game server. The equipment data viewer's pages are held by the
 API's `contract_parity_equipment_viewer` test binary, which reproduces every accepted page from a
 committed export, and by the frontend's DTO parity tests. The recorded responses in
-`api_goldens/` are captured from a fresh database seeded with `apps/api/seeds/content_golden.sql`;
+`api_goldens/` are captured from a fresh database seeded with `crates/api/api_database/seeds/content_golden.sql`;
 the API's `contract_parity_goldens` test binary replays them against the live router, the
 frontend's golden and page tests embed them, and the headless browser gates answer the app's
 requests from them.

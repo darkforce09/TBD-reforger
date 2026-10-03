@@ -27,7 +27,7 @@ and its states.
 
 - [Announcements page](/apps/frontend/src/pages/command_center/announcements/) — the
   route component `AnnouncementsPage`, the list and the reading pane.
-- [Community content domain](/apps/api/src/community_content/) — the announcement feed
+- [Community content domain](/crates/api/api_community_content/src/) — the announcement feed
   the page reads and the CMS routes that write it.
 
 ## Boundaries
@@ -44,5 +44,5 @@ and its states.
 
 - [Content manager page](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md)
   — where announcements are written, published and pinned.
-- [Community content domain](/apps/api/src/community_content/README.md) — the API side
+- [Community content domain](/crates/api/api_community_content/src/README.md) — the API side
   of the feed.

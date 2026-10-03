@@ -7,10 +7,9 @@
 //! vacuous — the same defect `null_tolerance` measures. This file mints a private session for
 //! [`DASH_UID`] and seeds every caller-scoped row against that same id.
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
@@ -37,8 +36,8 @@ const EVENT_TAG: &str = "Dashboard-Reads-";
 /// `/dashboard` 200 passes without ever executing the assignment branch.
 async fn setup() -> Option<(Router, String, PgPool)> {
     let url = common::require_test_database_url()?;
-    let pool = database::connect(&url).await.expect("connect");
-    database::migrate(&pool).await.expect("migrate");
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
 
     sqlx::query(
         "INSERT INTO users (discord_id, username, role, is_banned, created_at, updated_at) \
@@ -76,11 +75,14 @@ async fn setup() -> Option<(Router, String, PgPool)> {
     }
 
     common::fixtures::seed_membership(&pool, DASH_UID, "test-tbd-guild", "admin").await;
-    let raw = api::identity_and_access::services::session_issuance::issue_refresh(&pool, DASH_UID)
-        .await
-        .expect("seed persisted session");
+    let raw = api_identity_and_access::services::session_issuance::issue_refresh(
+        &pool,
+        &api_identifiers::DiscordUserId::new(DASH_UID),
+    )
+    .await
+    .expect("seed persisted session");
 
-    let app = http_router::router(AppState::new(
+    let app = router(api::composition::application_state(
         pool.clone(),
         Config::for_tests(url, "dash-secret"),
     ));
@@ -229,7 +231,8 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
 /// `mission_title_terrain` must turn this red without needing a schema change.
 #[test]
 fn deployments_reads_avoid_bare_star_and_swallowed_errors() {
-    let src = include_str!("../src/operations/handlers/member_service_record.rs");
+    let src =
+        include_str!("../../../crates/api/api_operations/src/handlers/member_service_record.rs");
     // Needle split so this assert's own source (and handler comments) do not contain the
     // forbidden SQL as one literal.
     let bare_star = concat!("event_registrations.", "*");
@@ -238,7 +241,7 @@ fn deployments_reads_avoid_bare_star_and_swallowed_errors() {
         "member_service_record must not SELECT a bare star on event_registrations \
          (the bare-* class that 500s the dashboard)"
     );
-    let lookup = include_str!("../src/missions/services/mission_lookup.rs");
+    let lookup = include_str!("../../../crates/api/api_missions/src/services/mission_lookup.rs");
     let swallowed = concat!(".ok()", ".flatten()");
     assert!(
         !lookup.contains(swallowed),

@@ -75,7 +75,7 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
 
 ## Related documentation
 
-- [Missions domain](/apps/api/src/missions/README.md) — the `/api/v1/factions` routes
+- [Missions domain](/crates/api/api_missions/src/README.md) — the `/api/v1/factions` routes
   the templates read and write.
 - [Mission Creator feature inventory: left sidebar and ORBAT tree](/documentation/apps/frontend/workspaces/editor/feature_inventory/left_sidebar.md) — the ORBAT tree and squad authoring.
 - [Mission Creator feature inventory: selection](/documentation/apps/frontend/workspaces/editor/feature_inventory/selection.md) — selecting from the ORBAT Manager tree.

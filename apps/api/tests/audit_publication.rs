@@ -5,8 +5,8 @@ mod common;
 use std::sync::Arc;
 use std::time::Duration;
 
-use api::administration::services::audit_publication::publish_audit_batch;
-use api::core::database;
+use api_administration::services::audit_publication::publish_audit_batch;
+
 use sqlx::{Executor, PgPool, Postgres};
 use tokio::sync::Barrier;
 use tokio::time::timeout;
@@ -15,7 +15,7 @@ use uuid::Uuid;
 async fn boot() -> PgPool {
     let url = common::require_test_database_url()
         .expect("audit publication verification requires an isolated test database");
-    database::connect(&url)
+    api_database::connect(&url)
         .await
         .expect("connect test database")
 }

@@ -58,7 +58,7 @@ variable.
 
 - Depends on: `url` (the WHATWG parser).
 - Used by: the API (`apps/api`), whose writers of every URL column call the guard (listed in
-  `apps/api/src/core/text/README.md`); the single-page app (`apps/frontend`), whose avatar
+  `crates/api/api_foundation/src/text/README.md`); the single-page app (`apps/frontend`), whose avatar
   sanitiser, Mission Creator settings, announcement, mission library, service record and
   leaderboard links call it. With `test_fixtures`: `apps/api/tests/aar_replay_url_backfill.rs`
   and the frontend page tests that render a stored link or image.

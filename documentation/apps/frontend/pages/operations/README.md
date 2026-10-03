@@ -57,11 +57,11 @@ and a row in the table.
 
 - [Operations pages](/apps/frontend/src/pages/operations/) — the five route components,
   the hub body and the slotting selector, which the feature docs describe.
-- [Operations domain](/apps/api/src/operations/) — events, their hubs and ORBATs,
+- [Operations domain](/crates/api/api_operations/src/) — events, their hubs and ORBATs,
   registration, squad holds, the waiting list, the service record and leave requests.
-- [Command center domain](/apps/api/src/command_center/) — the leaderboard and the
+- [Command center domain](/crates/api/api_command_center/src/) — the leaderboard and the
   per-player statistics.
-- [Community content domain](/apps/api/src/community_content/) — the modpacks the hub
+- [Community content domain](/crates/api/api_community_content/src/) — the modpacks the hub
   names.
 
 ## Boundaries

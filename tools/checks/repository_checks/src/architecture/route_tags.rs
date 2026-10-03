@@ -34,10 +34,11 @@
 //!
 //! ── WHERE THE ROUTES LIVE ────────────────────────────────────────────────────────────────────
 //!
-//! The registrations are not in one function. Each domain owns a route table at
-//! `src/<domain>/routes.rs`, holding exactly one column-0 `pub fn routes`, and `http_router.rs`'s
-//! `MERGE_FN` merges all of them under `API_PREFIX`. So the router side of this check is the
-//! UNION of every discovered table, and `http_router.rs` is read only for its shape.
+//! The registrations are not in one function. Each domain crate owns a route table at
+//! `crates/api/<crate>/src/routes.rs`, holding exactly one column-0 `pub fn routes`, and
+//! `apps/api/src/router.rs`'s `MERGE_FN` merges all of them under `API_PREFIX`. So the router side
+//! of this check is the UNION of every discovered table, and `router.rs` is read only for its
+//! shape. The `@route` tags are swept from the API application and every API crate.
 //!
 //! ── VACUITY GUARDS (a gate reporting nothing == a gate checking nothing) ────────────────────
 //!
@@ -45,7 +46,7 @@
 //! parse is checked against itself before any verdict is issued: every raw `@route` line must
 //! become exactly one parsed tuple; every `.route(` line must yield at least one registration;
 //! every discovered route table must be merged and every merged table must exist on disk;
-//! `http_router.rs` must still have the shape the extractor parses; and four sentinel routes
+//! `router.rs` must still have the shape the extractor parses; and four sentinel routes
 //! present on both sides must survive the pipeline. Each is a FAIL, never a SKIP.
 //!
 //! The mount cross-check is the guard that the split into tables made necessary: a table nobody
@@ -83,10 +84,10 @@
 //! * **`SELF_REL` in the two shape-pin messages** tells the reader where the extractor they
 //!   must re-point lives, which is this file. Reachable only once `MERGE_FN` has been renamed —
 //!   never on a clean tree.
-//! * **Exit 2, not 1, when the check DID NOT RUN** (missing or unreadable `http_router.rs` or
-//!   `src/`), as in the other verifications that separate the two. Callers that only test
+//! * **Exit 2, not 1, when the check DID NOT RUN** (missing or unreadable `router.rs` or
+//!   source tree), as in the other verifications that separate the two. Callers that only test
 //!   `rc == 0` still read FAIL, and the headline stays on line 1 so a grep for
-//!   `FAIL: http_router.rs no longer …` still hits. A real A/B violation exits **1**.
+//!   `FAIL: router.rs no longer …` still hits. A real A/B violation exits **1**.
 
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
@@ -98,28 +99,30 @@ use verification_core::{Kind, NotRun, Pattern, Verdict, gate, scan};
 
 /// The router assembly. Relative, because the script `cd`s to `$ROOT` and printed relative paths.
 /// Read for its SHAPE only — the registrations live in the domain tables it merges.
-const ROUTER_RS_REL: &str = "apps/api/src/core/http_router.rs";
-/// The tree swept for `@route` tags — the whole `src/`, not just `handlers/`. Also the tree the
-/// domain route tables are discovered in.
+const ROUTER_RS_REL: &str = "apps/api/src/router.rs";
+/// The API application's source tree, swept for `@route` tags.
 const SRC_DIR_REL: &str = "apps/api/src";
-/// The nest prefix every `@route` tag is written against. Asserted, never assumed: if
-/// `http_router.rs`
+/// The folder of the API crates: every `.rs` file under it is swept for `@route` tags, and the
+/// domain route tables are discovered in it.
+const API_CRATES_DIR_REL: &str = "crates/api";
+/// The nest prefix every `@route` tag is written against. Asserted, never assumed: if `router.rs`
 /// stops nesting the merged tables here, every extracted path is silently wrong.
 const API_PREFIX: &str = "/api/v1";
-/// The function in `http_router.rs` that merges the domain route tables. Its body is read for the
-/// `.merge(crate::<domain>::routes(` lines the mount cross-check compares against the tree.
+/// The function in `router.rs` that merges the domain route tables. Its body is read for the
+/// `.merge(<crate>::routes(` lines the mount cross-check compares against the tree.
 const MERGE_FN: &str = "fn api_v1_routes";
 /// [`MERGE_FN`] without the `fn` keyword, for the messages that NAME the function rather than pin
 /// its declaration.
 const MERGE_FN_NAME: &str = "api_v1_routes";
-/// A domain route table is exactly `src/<domain>/routes.rs` — one directory level below `src`.
-/// Anything deeper is a handler, a model or a test, and is swept for tags but never for routes.
+/// A domain route table is exactly `crates/api/<crate>/src/routes.rs` — directly in a crate's
+/// `src`. Anything deeper is a handler, a model or a test, and is swept for tags but never for
+/// routes.
 const ROUTES_FILE: &str = "routes.rs";
 /// The column-0 function each route table declares exactly once. The `(` is part of the needle so
 /// a neighbouring `pub fn routes_for_tests(` cannot be mistaken for it.
 const ROUTES_FN: &str = "pub fn routes(";
 /// How the report names the router side, which is now a set of files rather than one function.
-const ROUTE_TABLES: &str = "the api_v2 domain route tables";
+const ROUTE_TABLES: &str = "the API crates' route tables";
 /// bash interpolated `$0`. See the module docs on the one deliberate text deviation.
 const SELF_REL: &str = "tools/checks/repository_checks/src/architecture/route_tags.rs";
 /// Routes registered AND tagged today, spanning three separate domain tables and covering a path

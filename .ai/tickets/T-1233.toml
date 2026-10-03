@@ -1,7 +1,7 @@
 id = "T-1233"
 kind = "work"
 title = "Name the game-runtime roster wire version as a shared constant"
-summary = "apps/api/src/operations/handlers/game_runtime_roster.rs:66 and :94 write the bare literal version: 2, which the schema const and TBD_RosterLoader.c WIRE_VERSION repeat; contract_parity_mod_roster_wire_version_matches_backend_and_schema pins all three today."
+summary = "crates/api/api_operations/src/handlers/game_runtime_roster.rs:66 and :94 write the bare literal version: 2, which the schema const and TBD_RosterLoader.c WIRE_VERSION repeat; contract_parity_mod_roster_wire_version_matches_backend_and_schema pins all three today."
 class = "chore"
 status = "idea"
 notes = "Source: milestone V finding V-F15 (issue triage F-8)."

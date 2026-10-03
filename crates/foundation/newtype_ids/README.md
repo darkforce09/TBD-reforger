@@ -68,7 +68,8 @@ No features and no environment variables.
 ## Boundaries
 
 - Depends on: `serde` (with `derive`), `uuid` (with `serde`).
-- Used by: nothing yet; the typed ids of the API and the libraries declare themselves with it.
+- Used by: `api_identifiers` (`crates/api/api_identifiers`), which declares the API's typed ids
+  with it; the typed ids of the libraries declare themselves with it.
 - Rules: serialisation is transparent (`serialises_exactly_as_its_string` and its integer and UUID
   counterparts); a string id is looked up by `&str`
   (`a_map_keyed_by_the_id_is_looked_up_by_str`); foundation tier, so the crate depends on no

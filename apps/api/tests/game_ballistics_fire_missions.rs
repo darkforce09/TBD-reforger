@@ -14,7 +14,7 @@ mod common;
 mod content_support;
 mod contract_support;
 
-use api::core::database::postgres_errors::is_foreign_key_violation;
+use api_database::postgres_errors::is_foreign_key_violation;
 use axum::http::StatusCode;
 use ballistics_model::catalog::BallisticsCatalog;
 use fire_mission_planning::fire_mission::{
@@ -42,11 +42,13 @@ const VANILLA_CALIBRATION_SHA256: &str =
 const WIRE_EPSILON: f64 = 1e-9;
 
 fn vanilla_catalog_bytes() -> Vec<u8> {
-    let path = format!(
-        "{}/../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json",
-        env!("CARGO_MANIFEST_DIR")
-    );
-    std::fs::read(&path).unwrap_or_else(|error| panic!("read committed catalog {path}: {error}"))
+    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )))
+    .expect("the repository root above the API package")
+    .join("contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json");
+    std::fs::read(&path)
+        .unwrap_or_else(|error| panic!("read committed catalog {}: {error}", path.display()))
 }
 
 fn vanilla_catalog() -> BallisticsCatalog {

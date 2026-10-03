@@ -23,7 +23,7 @@ page at a time, and inspect one entry's actor, target and metadata. The screen o
 - Entry: the route, its tier and its layout are in the README's
   [Routes](/apps/frontend/src/pages/administration/audit_logs/README.md#routes).
 - Related: the [API](/documentation/glossary/a_to_f.md#api)'s
-  [administration domain](/apps/api/src/administration/README.md), which serves the
+  [administration domain](/crates/api/api_administration/src/README.md), which serves the
   trail; every page that changes state writes to it.
 
 ## Behaviour
@@ -70,7 +70,7 @@ The page reads the stream and the list, which the README's
 the DTOs it reads. Server-side:
 
 - `GET /api/v1/admin/audit-logs/stream` (`stream_audit_logs` in
-  `apps/api/src/administration/handlers/audit_logs.rs`): an SSE stream that opens with
+  `crates/api/api_administration/src/handlers/audit_logs.rs`): an SSE stream that opens with
   `event: ready` (its id is the start cursor), sends every published entry as an unnamed event
   whose id is its publication sequence, and sends `event: reset` when the `Last-Event-ID` it was
   given cannot be replayed, then continues from the tail. It is woken by Postgres notifications,
@@ -80,11 +80,11 @@ the DTOs it reads. Server-side:
   gives the protocol.
 
 - `GET /api/v1/admin/audit-logs`, then `?before=<id>` for each further page (`list_audit_logs` in
-  `apps/api/src/administration/handlers/audit_logs.rs`): the API returns the entries
+  `crates/api/api_administration/src/handlers/audit_logs.rs`): the API returns the entries
   newest first (`ORDER BY id DESC`), keyset-paged: `before` keeps the ids below it, a page holds
   20 entries unless `limit` asks for up to 100, and `next_cursor` carries the last id whenever the
   page came back full. Each entry is an `AuditLog` row
-  (`apps/api/src/administration/models/audit_log.rs`): `id`, `severity` (`info`,
+  (`crates/api/api_administration/src/models/audit_log.rs`): `id`, `severity` (`info`,
   `warn` or `crit`), `actor_id` (absent when the entry records no account), `actor_name`, `action`,
   `message`, `target_type`, `target_id`, free-form JSON `metadata` and `created_at`.
 - The same handler filters by `?severity=` and by `?q=`, a case-insensitive match on the message;
@@ -94,14 +94,14 @@ the DTOs it reads. Server-side:
   every cell escaped against spreadsheet formulas.
 - Most entries are appended inside the transaction of the change they record, through
   `append_actor_audit` and its siblings in
-  `apps/api/src/administration/services/required_audit.rs`, so the entry and its change
-  commit or fail together; triggers from `apps/api/migrations/0025_audit_notify.sql`
+  `crates/api/api_audit_log/src/required_audit.rs`, so the entry and its change
+  commit or fail together; triggers from `crates/api/api_database/migrations/0025_audit_notify.sql`
   write the entries for creating an [event](/documentation/glossary/a_to_f.md#event), soft-deleting a
   [mission](/documentation/glossary/g_to_m.md#mission) and removing a member from a
   [slot](/documentation/glossary/n_to_z.md#slot) in the statement that makes the change. The role
   resync, warnings, modpack and announcement administration, the server
   [registry](/documentation/glossary/n_to_z.md#registry) and mission versions write best-effort instead,
-  through `write_audit` in `apps/api/src/administration/services/audit_writer.rs`, after
+  through `write_audit` in `crates/api/api_audit_log/src/audit_writer.rs`, after
   their change has committed, as do the system warnings for a failed Discord push, a failed
   statistics or leaderboard refresh and a low server FPS: a failed write is only logged, and the
   change stands without its entry. The other administration pages' docs name the actions they

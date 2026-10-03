@@ -86,7 +86,7 @@ budget also runs natively, as the crate's tests use it.
     `gloo-net`, `web-sys`, `js-sys`, `wasm-bindgen` and `wasm-bindgen-futures`;
   - the [API](/documentation/glossary/a_to_f.md#api)'s `/map-assets` mount, which serves
     `assets/terrains/` and `assets/glyphs/` unless `MAP_ASSETS_DIR` or `GLYPH_ASSETS_DIR`
-    names another folder (`apps/api/src/core/http_router.rs`).
+    names another folder (`apps/api/src/router.rs`).
 - Used by:
   - the DEM, satellite, water, forest and label loaders of `crate::world`;
   - the Mission Creator in `apps/frontend/src/workspaces/editor/`, the shared map mount in

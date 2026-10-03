@@ -21,21 +21,21 @@ pub fn collect_rs(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
 }
 
 /// Every source file that registers a route: the eight domain route tables, which hold the whole
-/// of `/api/v1`, plus `core/http_router.rs`, which holds `/healthz` and `/metrics`.
+/// of `/api/v1`, plus `src/router.rs`, which holds `/healthz` and `/metrics`.
 ///
 /// Concatenated rather than parsed one file at a time because [`registered_get_routes`] keys on
 /// the path alone and a `.route(` call never spans two files.
 pub fn router_source() -> String {
     const PARTS: [&str; 9] = [
-        include_str!("../../src/core/http_router.rs"),
-        include_str!("../../src/identity_and_access/routes.rs"),
-        include_str!("../../src/operations/routes.rs"),
-        include_str!("../../src/missions/routes.rs"),
-        include_str!("../../src/server_infrastructure/routes.rs"),
-        include_str!("../../src/administration/routes.rs"),
-        include_str!("../../src/match_telemetry/routes.rs"),
-        include_str!("../../src/command_center/routes.rs"),
-        include_str!("../../src/community_content/routes.rs"),
+        include_str!("../../src/router.rs"),
+        include_str!("../../../../crates/api/api_identity_and_access/src/routes.rs"),
+        include_str!("../../../../crates/api/api_operations/src/routes.rs"),
+        include_str!("../../../../crates/api/api_missions/src/routes.rs"),
+        include_str!("../../../../crates/api/api_server_infrastructure/src/routes.rs"),
+        include_str!("../../../../crates/api/api_administration/src/routes.rs"),
+        include_str!("../../../../crates/api/api_match_telemetry/src/routes.rs"),
+        include_str!("../../../../crates/api/api_command_center/src/routes.rs"),
+        include_str!("../../../../crates/api/api_community_content/src/routes.rs"),
     ];
     PARTS.concat()
 }

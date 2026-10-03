@@ -56,7 +56,7 @@ pub(super) fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
             eprintln!("FAIL: TBD_MODPACK_URL is set but TBD_MODPACK_TOKEN is empty.");
             eprintln!("      GET /api/v1/modpacks/current is gated by AuthUser (Bearer JWT,");
             eprintln!(
-                "      apps/api/src/core/middleware/authentication.rs). A machine credential"
+                "      crates/api/api_http_layer/src/middleware/authentication.rs). A machine credential"
             );
             eprintln!("      will NOT authenticate this route.");
             return Err(1);

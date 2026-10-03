@@ -49,6 +49,7 @@ use crate::Result;
 use process_runner::Run;
 use verification_core::{Kind, NotRun, Verdict};
 
+use crate::api_package_lane::{ApiLine, api_line_argv};
 use crate::cargo_target_pin::{
     abi_guard, cwd_root, dev_api_target_dir, env_pin, primary_root, resolve_target_dir,
 };

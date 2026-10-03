@@ -3,12 +3,13 @@
 //! **Role:** proves every `GET /api/v1/debug/equipment-data/*` route answers 404 from a router
 //! booted with a production configuration and reaches its handler (anything but 404) from a
 //! router booted with a development configuration.
-//! **Position:** boots `core::http_router::router` over this binary's own test database, once per
-//! configuration, and drives it with `oneshot` requests; reads `src/` for the `@route` tags the
-//! path list is checked against.
+//! **Position:** boots `api::router::router` over this binary's own test database, once per
+//! configuration, and drives it with `oneshot` requests; reads `src/` and the API crates under
+//! `crates/api/` for the `@route` tags the path list is checked against.
 //! **Signals & state:** none beyond the per-binary database both routers share; each request
 //! carries a fresh synthetic peer so the rate limiter never answers in the handler's place.
-//! **Invariants:** the path list equals the set of `@route GET /api/v1/debug/…` tags in `src/`, so
+//! **Invariants:** the path list equals the set of `@route GET /api/v1/debug/…` tags in `src/`
+//! and `crates/api/`, so
 //! a debug route added later cannot escape the production 404 check. A missing
 //! `TEST_DATABASE_URL` panics; no case passes without its database.
 
@@ -19,10 +20,9 @@ use std::net::{IpAddr, SocketAddr};
 use std::path::Path;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::core::application_state::AppState;
-use api::core::configuration::Config;
-use api::core::database;
-use api::core::http_router;
+use api_configuration::configuration::Config;
+
+use api::router::router;
 use axum::Router;
 use axum::body::Body;
 use axum::extract::ConnectInfo;
@@ -60,10 +60,10 @@ fn next_peer() -> SocketAddr {
 async fn router_for(app_env: &str) -> Router {
     let url = common::require_test_database_url()
         .expect("the per-binary test database is provisioned before any case runs");
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
     let mut config = Config::for_tests(url, "debug-routes-secret");
     config.env = app_env.into();
-    http_router::router(AppState::new(pool, config))
+    router(api::composition::application_state(pool, config))
 }
 
 /// The status an anonymous `GET path` answers with.
@@ -102,11 +102,13 @@ fn rust_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
 
 #[test]
 fn route_acceptance_debug_equipment_routes_list_every_tagged_debug_route() {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let api_crates = repository_layout::find_repository_root_from(manifest)
+        .expect("the repository root above the API package")
+        .join("crates/api");
     let mut files = Vec::new();
-    rust_files(
-        &Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
-        &mut files,
-    );
+    rust_files(&manifest.join("src"), &mut files);
+    rust_files(&api_crates, &mut files);
     let tagged: BTreeSet<String> = files
         .iter()
         .flat_map(|file| {

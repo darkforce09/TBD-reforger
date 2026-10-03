@@ -24,7 +24,7 @@ requires, kept current by the server's [SSE](/documentation/glossary/n_to_z.md#s
   [dashboard page](/documentation/apps/frontend/pages/command_center/dashboard/dashboard_page.md),
   whose "Server Uplink" card summarises one server; the
   [API](/documentation/glossary/a_to_f.md#api)'s
-  [server infrastructure domain](/apps/api/src/server_infrastructure/README.md), which
+  [server infrastructure domain](/crates/api/api_server_infrastructure/src/README.md), which
   serves the server list and the stream.
 
 ## Behaviour
@@ -80,7 +80,7 @@ requires, kept current by the server's [SSE](/documentation/glossary/n_to_z.md#s
   blueprint (`server_panel` in
   `apps/frontend/src/pages/command_center/server_intel/server_list.rs`); the API has no
   intelligence feed, and the list row carries nothing the strip could show
-  (`list_servers` in `apps/api/src/server_infrastructure/handlers/server_intel.rs`).
+  (`list_servers` in `crates/api/api_server_infrastructure/src/handlers/server_intel.rs`).
 - "LAUNCH & CONNECT" is styled as the page's main action and answers with a success toast, but
   connects nothing (`launch_stub` in
   `apps/frontend/src/pages/command_center/server_intel/direct_connect.rs`).
@@ -91,17 +91,17 @@ The README's [Data](/apps/frontend/src/pages/command_center/server_intel/README.
 lists each call with the DTO the page reads. Server-side:
 
 - `GET /api/v1/servers` (`list_servers` in
-  `apps/api/src/server_infrastructure/handlers/server_intel.rs`), for any signed-in
+  `crates/api/api_server_infrastructure/src/handlers/server_intel.rs`), for any signed-in
   member: every registered server, inactive ones included, ordered by name, unpaged, as intel
   cards. A card is the server row (`id`, `name`, `ip`, `port`, `required_modpack_id`,
   `is_active`) with its `server_statuses` row as `status` (null when the server never reported),
   its required modpack when it names one, and `terrain`, the terrain of the match the status
   names as current (null when there is none).
 - `GET /api/v1/servers/{id}/status/stream` (`stream_server_status` in
-  `apps/api/src/server_infrastructure/handlers/server_status_stream.rs`), for any
+  `crates/api/api_server_infrastructure/src/handlers/server_status_stream.rs`), for any
   signed-in member: opens with the current status, then relays every frame the realtime hub
   publishes on `server:{id}`. Frames come from the game server's heartbeat
-  (`apps/api/src/match_telemetry/handlers/server_heartbeat.rs`) and from the
+  (`crates/api/api_match_telemetry/src/handlers/server_heartbeat.rs`) and from the
   `server_status_publisher` worker, which republishes every server's status on an interval
   (`SERVER_STATUS_PUBLISH_INTERVAL_SECS`, 10 seconds by default). The page opens it with
   `stream_server_status` in `apps/frontend/src/foundation/transport/sse.rs`, a fetch that sends

@@ -28,7 +28,7 @@ initials. The code folder's README lists the page's files.
 
 - [Personnel roster page](/apps/frontend/src/pages/administration/personnel/) — the
   route component `PersonnelRosterPage`, the roster, the dossier and the moderation dialogs.
-- [Administration domain](/apps/api/src/administration/) — the roster, ban, warning and
+- [Administration domain](/crates/api/api_administration/src/) — the roster, ban, warning and
   role routes the page calls.
 
 ## Boundaries
@@ -43,5 +43,5 @@ initials. The code folder's README lists the page's files.
 
 ## Related documentation
 
-- [Administration domain](/apps/api/src/administration/README.md) — the API side of the
+- [Administration domain](/crates/api/api_administration/src/README.md) — the API side of the
   roster, moderation and the role resync.

@@ -30,7 +30,7 @@ strings when the table has neither.
 - Used by: `mission_compiler`, which resolves every
   [slot](/documentation/glossary/n_to_z.md#slot)'s kit, every vehicle's alias and every side's default
   kit and preset; the [API](/documentation/glossary/a_to_f.md#api), which re-exports `KitAliases` and
-  `load_kit_aliases` from `apps/api/src/missions/contract/mod.rs`.
+  `load_kit_aliases` from `crates/api/api_missions/src/contract/mod.rs`.
 - Rules: a resource name matches only exactly, and an unknown vehicle resolves to nothing rather
   than to a substitute (`resolves_known_kits_and_faction_defaults`,
   `resolves_known_vehicles_and_refuses_unknown` in `tests/cases_1.rs`); every side the mod knows

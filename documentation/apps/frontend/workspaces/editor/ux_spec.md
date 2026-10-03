@@ -169,7 +169,7 @@ The loading overlay, its phases and the failure texts are listed in the canvas m
   [slots](/documentation/glossary/n_to_z.md#slot) only; placed vehicles are left out.
 - The Save Version dialog always pre-fills `0.1.0` (`mission_editor.rs`) — after a first save the
   second "Save" with the pre-fill returns 409 (`create_version` in
-  `apps/api/src/missions/handlers/mission_versions.rs`), shown as "Version … already
+  `crates/api/api_missions/src/handlers/mission_versions.rs`), shown as "Version … already
   exists".
 - Delete is the shortcut for deleting the selection (`input/window_keydown.rs`) — the map engine's
   `delete_selection` removes slots, comments and their connections only, so a selected vehicle
@@ -183,16 +183,16 @@ The editor README's [Boundaries](/apps/frontend/src/workspaces/editor/README.md#
 names the [API](/documentation/glossary/a_to_f.md#api) client it uses. Server-side:
 
 - `GET /api/v1/missions/{id}` (`get_mission` in
-  `apps/api/src/missions/handlers/mission_library.rs`): the mission row with its current
+  `crates/api/api_missions/src/handlers/mission_library.rs`): the mission row with its current
   version's payload; the hydrate reads it on every open, the Mission Settings dialog reads the row.
 - `POST /api/v1/missions/{id}/versions` (`create_version` in
-  `apps/api/src/missions/handlers/mission_versions.rs`): for a `mission_maker` who may
+  `crates/api/api_missions/src/handlers/mission_versions.rs`): for a `mission_maker` who may
   edit the mission; checks the SemVer string, validates the payload, refuses an empty one, inserts
   an immutable version (409 on a duplicate semver, 413 over `MISSION_VERSION_MAX_BODY_BYTES`,
   256 MiB by default), points the mission's current version at it and copies a non-blank payload
   title onto the row.
 - `PATCH /api/v1/missions/{id}` (`update_mission` in
-  `apps/api/src/missions/handlers/mission_lifecycle.rs`): the row mirrors write
+  `crates/api/api_missions/src/handlers/mission_lifecycle.rs`): the row mirrors write
   `time_of_day` and `weather` from the top strip, and the briefing, thumbnail link and game mode
   from Mission Settings.
 - `GET /api/v1/registry` and `GET /api/v1/registry/compat` (`list_registry` in

@@ -30,7 +30,7 @@ page's files.
 
 - [Mission overview page](/apps/frontend/src/pages/mission_hub/overview/) — the route
   component `MissionOverviewPage`, the shared dossier body and the Edit Armory dialog.
-- [Missions domain](/apps/api/src/missions/) — the mission detail, armory and review
+- [Missions domain](/crates/api/api_missions/src/) — the mission detail, armory and review
   routes the page calls.
 
 ## Boundaries
@@ -47,5 +47,5 @@ page's files.
 
 - [Mission library page](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md)
   — the library whose slide-over renders the same dossier body.
-- [Missions domain](/apps/api/src/missions/README.md) — the API side of the dossier and
+- [Missions domain](/crates/api/api_missions/src/README.md) — the API side of the dossier and
   the armory.

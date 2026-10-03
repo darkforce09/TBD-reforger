@@ -1,28 +1,37 @@
 //! Cached Discord authority, administrative grace and REST response fencing against PostgreSQL.
 
-use api::core::{application_state::AppState, configuration::Config, database};
-use api::identity_and_access::services::{
-    discord_client::GuildMember,
+use api_caller_identity::session_authorization::authorize_session;
+use api_configuration::configuration::Config;
+use api_discord::discord_client::GuildMember;
+use api_identifiers::DiscordUserId;
+use api_identity_and_access::services::{
     discord_membership_cache::{
         accept_membership_observation, claim_membership_refresh, record_membership_failure,
     },
     membership_grace_overrides::extend_membership_grace,
-    session_authorization::authorize_session,
     session_issuance::issue_session,
 };
+use api_state::AppState;
 use axum::http::StatusCode;
 use chrono::Duration;
 use uuid::Uuid;
 mod common;
 
-async fn fixture(role: &str) -> (AppState, String, String) {
+async fn fixture(role: &str) -> (AppState, DiscordUserId, String) {
     let url = common::require_test_database_url().unwrap();
-    let pool = database::connect(&url).await.unwrap();
-    database::migrate(&pool).await.unwrap();
-    let state = AppState::new(pool, Config::for_tests(url, "membership-authority"));
-    let actor = format!("membership-{}", Uuid::new_v4());
-    let token =
-        common::access_token(&state, "discord_membership_authority", &actor, role, false).await;
+    let pool = api_database::connect(&url).await.unwrap();
+    api_database::migrate(&pool).await.unwrap();
+    let state =
+        api::composition::application_state(pool, Config::for_tests(url, "membership-authority"));
+    let actor = DiscordUserId::new(format!("membership-{}", Uuid::new_v4()));
+    let token = common::access_token(
+        &state,
+        "discord_membership_authority",
+        actor.as_str(),
+        role,
+        false,
+    )
+    .await;
     (state, actor, token)
 }
 
@@ -48,8 +57,13 @@ async fn membership_authority_ignores_website_overrides_and_jwt_role_claims() {
         .await
         .unwrap();
     assert_eq!(role(&state, &forged_role).await, "enlisted");
-    common::fixtures::seed_membership(&state.pool, &actor, &state.cfg.discord_guild_id, "leader")
-        .await;
+    common::fixtures::seed_membership(
+        &state.pool,
+        actor.as_str(),
+        state.cfg.discord_guild_id.as_str(),
+        "leader",
+    )
+    .await;
     assert_eq!(
         role(&state, &token).await,
         "leader",
@@ -195,7 +209,7 @@ async fn membership_unknown_empty_roles_and_failure_are_distinct() {
 async fn membership_mapping_ties_are_deterministic_and_partner_roles_do_not_grant_site_authority() {
     let (state, actor, token) = fixture("guest").await;
     let partner = "test-partner-guild";
-    common::fixtures::seed_membership(&state.pool, &actor, partner, "admin").await;
+    common::fixtures::seed_membership(&state.pool, actor.as_str(), partner, "admin").await;
     assert_eq!(role(&state, &token).await, "guest");
     let lower = format!("a-{actor}");
     let higher = format!("b-{actor}");

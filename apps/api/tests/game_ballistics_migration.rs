@@ -10,8 +10,7 @@ mod common;
 
 use std::borrow::Cow;
 
-use api::core::database;
-use api::operations::models::fire_mission::{FireMission, FireMissionGun, HeightSource};
+use api_operations::models::fire_mission::{FireMission, FireMissionGun, HeightSource};
 use sqlx::{AssertSqlSafe, PgPool};
 use uuid::Uuid;
 
@@ -20,7 +19,7 @@ const AUTHOR: &str = "game-ballistics-migration-author";
 async fn provisioned() -> PgPool {
     let url = common::require_test_database_url()
         .expect("TEST_DATABASE_URL is unset: this suite needs a test database");
-    let pool = database::connect(&url).await.expect("connect");
+    let pool = api_database::connect(&url).await.expect("connect");
     sqlx::query(
         "INSERT INTO users(discord_id, username, role) VALUES ($1, 'Ballistics author', 'admin') \
          ON CONFLICT (discord_id) DO NOTHING",
@@ -297,7 +296,10 @@ async fn game_ballistics_migration_complete_rows_decode_and_guns_cascade() {
     .fetch_one(&pool)
     .await
     .expect("the row decodes into FireMission");
-    assert_eq!(mission.catalog_id.as_deref(), Some(catalog_id.as_str()));
+    assert_eq!(
+        mission.catalog_id.as_ref().map(|id| id.as_str()),
+        Some(catalog_id.as_str())
+    );
     assert_eq!(mission.target_height_source, Some(HeightSource::Dem));
     assert_eq!(mission.mils_per_circle, Some(6400));
     assert!(mission.guns.is_empty());
@@ -339,7 +341,7 @@ async fn game_ballistics_migration_complete_rows_decode_and_guns_cascade() {
 async fn game_ballistics_migration_detaches_fire_missions_naming_a_missing_event() {
     let base = common::require_test_database_url()
         .expect("TEST_DATABASE_URL is unset: this suite needs a test database");
-    let maintenance = database::connect(&base).await.expect("connect");
+    let maintenance = api_database::connect(&base).await.expect("connect");
     let mut url = url::Url::parse(&base).expect("parse the database url");
     let prefix: String = url
         .path()
@@ -356,7 +358,7 @@ async fn game_ballistics_migration_detaches_fire_missions_naming_a_missing_event
         .execute(&maintenance)
         .await
         .expect("create the upgrade database");
-    let pool = database::connect(url.as_str()).await.expect("connect");
+    let pool = api_database::connect(url.as_str()).await.expect("connect");
     let outcome = upgrade_from_0059(&pool).await;
     pool.close().await;
     sqlx::raw_sql(AssertSqlSafe(format!("DROP DATABASE {name}")))
@@ -367,7 +369,7 @@ async fn game_ballistics_migration_detaches_fire_missions_naming_a_missing_event
 }
 
 async fn upgrade_from_0059(pool: &PgPool) -> anyhow::Result<()> {
-    let all = sqlx::migrate!("./migrations");
+    let all = sqlx::migrate!("../../crates/api/api_database/migrations");
     anyhow::ensure!(
         all.migrations.iter().any(|m| m.version == 60),
         "migration 0060 is not on disk"

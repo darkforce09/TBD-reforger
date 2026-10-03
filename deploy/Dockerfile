@@ -14,8 +14,8 @@
 # the lock file holds only for the member set it records, so the root .dockerignore narrows the
 # context to the folders that hold the members plus the contract folders whose files the API
 # embeds at compile time (contracts/definitions, contracts/rules); the API's migrations, which
-# `sqlx::migrate!` embeds, ride with apps/api. The base image's tag is the toolchain
-# rust-toolchain.toml pins.
+# `sqlx::migrate!` embeds, ride with crates/api/api_database. The base image's tag is the
+# toolchain rust-toolchain.toml pins.
 #
 # The runtime listens on 0.0.0.0:$PORT (default 8080). Supply at least DATABASE_URL and
 # JWT_SECRET (see apps/api/.env.example). This image does not serve the single-page app:

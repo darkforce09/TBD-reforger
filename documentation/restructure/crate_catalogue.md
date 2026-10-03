@@ -121,6 +121,30 @@ checks them.
 | S11b | world_export_pipeline | `tools/map_assets/world_export_pipeline/` | 6 |
 | S11b | map_asset_verification | `tools/map_assets/map_asset_verification/` | 7 |
 | S11b | map_raster_pipeline | `tools/map_assets/map_raster_pipeline/` | 7 |
+| S9 | api_mission_vocabulary | `crates/api/api_mission_vocabulary/` | 0 |
+| S9 | api_identifiers | `crates/api/api_identifiers/` | 1 |
+| S9 | api_foundation | `crates/api/api_foundation/` | 1 |
+| S9 | api_property_evidence | `crates/api/api_property_evidence/` | 1 |
+| S9 | api_failpoints | `crates/api/api_failpoints/` | 2 |
+| S9 | api_configuration | `crates/api/api_configuration/` | 2 |
+| S9 | api_audit_log | `crates/api/api_audit_log/` | 2 |
+| S9 | api_equipment_datasets | `crates/api/api_equipment_datasets/` | 2 |
+| S9 | api_database | `crates/api/api_database/` | 3 |
+| S9 | api_http_layer | `crates/api/api_http_layer/` | 3 |
+| S9 | api_member_activity | `crates/api/api_member_activity/` | 3 |
+| S9 | api_discord | `crates/api/api_discord/` | 4 |
+| S9 | api_caller_identity | `crates/api/api_caller_identity/` | 4 |
+| S9 | api_state | `crates/api/api_state/` | 5 |
+| S9 | api_community_content | `crates/api/api_community_content/` | 6 |
+| S9 | api_identity_and_access | `crates/api/api_identity_and_access/` | 6 |
+| S9 | api_administration | `crates/api/api_administration/` | 7 |
+| S9 | api_server_infrastructure | `crates/api/api_server_infrastructure/` | 7 |
+| S9 | api_match_telemetry | `crates/api/api_match_telemetry/` | 8 |
+| S9 | api_missions | `crates/api/api_missions/` | 8 |
+| S9 | api_operations | `crates/api/api_operations/` | 9 |
+| S9 | api_command_center | `crates/api/api_command_center/` | 10 |
+| S9 | api_background_workers | `crates/api/api_background_workers/` | 10 |
+| S9 | staging_fixtures | `tools/staging/staging_fixtures/` | 10 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -211,23 +235,31 @@ Every other crate in this catalogue is still planned; its From column names the 
 
 ## crates/api (sqlx and axum only here)
 
+Built in S9 (O12 amendments applied).
+
 | Crate | From |
 |---|---|
+| api_identifiers | new: the serde- and sqlx-transparent typed ids (`newtype_ids` macros) of every API table key, Discord snowflake and game runtime key (C2, C3) |
 | api_failpoints | `core/failpoints` (dev feature `failpoints`; `$crate` path fixed) |
 | api_foundation | `core/{error_handling,wire_format,text,http}` |
 | api_configuration | `core/{configuration,process_lifecycle}` |
-| api_database | `core/database`, `migrations/`, `seeds/` |
-| api_audit_log | `required_audit`, `audit_writer`, the `audit_log` model |
-| api_mission_vocabulary | `TerrainType`, the ORBAT template parser |
+| api_database | `core/database`, `migrations/`, `seeds/` (both folders move into the crate) |
+| api_property_evidence | dev-only: `src/tests/property_evidence.rs`, the property run recorder (O6) |
 | api_http_layer | `core/{authentication_primitives,middleware,observability,realtime_hub,http_client}` |
-| api_discord | `DiscordService`, `WebhookService` |
-| api_state | `AppState`, with `Arc<dyn SessionAuthority>` and `Arc<dyn EquipmentDatasets>` |
-| api_caller_identity | `MachineCaller`, `authenticate_machine`, the `ExecutorKind` model; `session_authorization`, `identity_ownership`, `account_authority`, `arma_id_is_linked`, `UserRole`. Credential issue/list/revoke stay in server_infrastructure. |
+| api_audit_log | `required_audit`, `audit_writer`, `AuditSeverity` |
+| api_mission_vocabulary | the vocabulary enums only: `TerrainType`, `GameMode`; the ORBAT template parser stays mission crate code (`mission_model::orbat`), which missions imports directly |
+| api_equipment_datasets | `community_content/services/equipment_data_viewer/` (the dataset imports, the SQLite navigation index, the read queries); its handlers stay in api_community_content (C4) |
+| api_discord | `DiscordService`, `WebhookService`, and its own webhook input `WebhookAnnouncement`, which community content maps its `Announcement` into |
+| api_caller_identity | `MachineCaller`, `authenticate_machine` (the machine-caller half of `machine_credentials`), `session_authorization`, `cached_membership_permissions`, `identity_ownership`, `account_authority`, `arma_id_is_linked`, `UserRole`. `ExecutorKind` is in fleet_wire_contract; credential issue/list/revoke stay in server_infrastructure. |
 | api_member_activity | `user_stats` (with `ATTENDANCE_RATE_SQL`), `leaderboard_view`, `participation_attribution`, `reevaluation_queue` |
+| api_state | `AppState`, holding the concrete `DiscordService`, `WebhookService` and `EquipmentDatasets` and an `Arc<dyn SessionAuthority>`, and every `FromRef` projection; no `dyn EquipmentDatasets` |
 | api_administration … api_server_infrastructure (8) | the domain folders; each exposes `routes() -> Router<AppState>`; anyhow → thiserror |
 | api_background_workers | `background_workers` |
 
-The api app (apps/api) keeps the router composition, the `api` and `import_registry` bins, and the 154 integration binaries. `staging_fixtures` moves to tools/staging.
+The api app (apps/api) keeps the router (`router.rs`), the composition root (`composition.rs`),
+the `api` and `import_registry` bins, the layout and prose rules, and 150 integration binaries.
+`staging_fixtures` moves to `tools/staging/staging_fixtures` with the `staging-fixtures` bin and
+its 4 suites, so the total stays 154.
 
 ## crates/frontend (Leptos only here)
 
@@ -264,7 +296,7 @@ Built in S11a, and the map asset crates in S11b.
 | enfusion | `enfusion_pak` (dt `enfusion_pak`) · `enfusion_script_index` (dt `enfusion_tooling` plus xt `fetch`) · `enfusion_mcp_broker` (dt `mcp_broker`; the `mcpd` bin calls it) |
 | map_assets (S11b) | `blueprint_compiler` (dt `blueprint`, its test fixtures) · `world_export_pipeline` (dt `world_export_pipeline`; the `world` bin) · `map_raster_pipeline` (dt `map_raster_pipeline`; the `map` bin; never in xtask's closure) · `map_asset_verification` (dt `map_verification`; xtask `schema`, `verify` and `map world-los`) |
 | browser_testing | `chrome_devtools_protocol` (dt `browser_testing/cdp`) · `browser_gate_suites` (`dom_oracle`, gate server, capture, the ballistics and mortar suites (S11b), the `gate` and `capture` command lines) |
-| staging | `staging_load_plan` (the tokio-free plan and report types) · `staging_load_generator` (dt `load_generation`; the `staging-load` bin) · `acknowledgement_dropping_relay` · staging_fixtures (bin; S9 K4, decision S11-D5) |
+| staging | `staging_load_plan` (the tokio-free plan and report types) · `staging_load_generator` (dt `load_generation`; the `staging-load` bin) · `acknowledgement_dropping_relay` · `staging_fixtures` (the `staging-fixtures` bin and its 4 suites; built in S9, decision S11-D5) |
 
 - `tools/xtask` holds the command line and the dispatch plus the command groups that are still its
   own modules (`agent_context`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify`, `wave`;

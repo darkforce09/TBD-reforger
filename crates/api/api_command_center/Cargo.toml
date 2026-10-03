@@ -1,0 +1,51 @@
+# The command center domain of the API: the members' dashboard with its fleet overview, the
+# ranked community leaderboards and one player's statistics card.
+# Names the five domains whose rows the dashboard and the card read: community content,
+# identity and access, missions, operations and server infrastructure.
+[package]
+name = "api_command_center"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The API's members' dashboard, community leaderboards and per-player statistics card."
+
+[package.metadata.layout]
+category = "crates/api"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The current modpack and the latest announcements the dashboard shows.
+api_community_content = { workspace = true }
+# `ApiError` and the typed path parameters.
+api_foundation = { workspace = true }
+# The `AuthUser` extractor every route takes.
+api_http_layer = { workspace = true }
+api_identifiers = { workspace = true }
+# `load_user`, the account the statistics card names.
+api_identity_and_access = { workspace = true }
+# The mission title and terrain of the dashboard's next event.
+api_missions = { workspace = true }
+# `Event`, `EventMission` and `OrbatSlot`, the next event and the caller's assignment in it.
+api_operations = { workspace = true }
+# The server status rows and the fleet status read of the fleet overview.
+api_server_infrastructure = { workspace = true }
+# `AppState`, the state every handler extracts.
+api_state = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
+# The RFC 3339 timestamp spelling of every emitted time.
+fleet_wire_contract = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "json"] }
+thiserror = { workspace = true }
+uuid = { workspace = true, features = ["serde"] }
+
+[dev-dependencies]
+uuid = { workspace = true, features = ["v4", "serde"] }
+
+[lints]
+workspace = true
