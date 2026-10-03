@@ -80,7 +80,7 @@ in `crate::world::environment::buildings::footprint`.
   - `crate::spatial::los::world`, `crate::world::terrain::roads::airfield`,
     `crate::world::environment::vegetation::canopy` and
     `crate::world::environment::buildings::footprint`;
-  - the debug world line-of-sight bench in `apps/frontend/src/v2/apps/debug/world_los/`,
+  - the debug world line-of-sight bench in `apps/frontend/src/workspaces/debug/world_los/`,
     and the world line-of-sight verification and its tests in
     `tools/developer_tools/src/map_verification/`.
 - Rules:

@@ -6,9 +6,8 @@ name: ci
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
 # The api, map-engine and frontend jobs are the cargo gates: each runs a fmt
-# check, clippy and tests, and the comment above each job lists its exact commands. api
-# and map-engine pass `-D warnings` to clippy, so a warning fails those jobs; frontend
-# runs clippy without it, so its clippy warnings are reported but do not fail the job.
+# check, clippy and tests, and the comment above each job lists its exact commands. Every
+# job passes `-D warnings` to clippy, so a warning fails the job.
 # The workspace-members job tests every other workspace member.
 # contracts.yml is the path-filtered citations/codegen supplement.
 on:
@@ -131,9 +130,9 @@ jobs:
       - run: cargo xtask mk wasm-ci
 
   # --- frontend: the Rust/Leptos SPA crate (`cargo xtask mk ci-local-leptos`) ---
-  # fmt: `cargo fmt -p frontend --check`. clippy: `cargo clippy -p frontend
-  # --target wasm32-unknown-unknown --all-targets` WITHOUT `-D warnings`, so clippy warnings are
-  # reported but do not fail the job; only errors (including deny-by-default lints) do. tests:
+  # fmt: `cargo fmt -p frontend --check`. clippy, twice with `-D warnings`: `cargo clippy -p
+  # frontend --target wasm32-unknown-unknown --all-targets -- -D warnings` (the browser build) and
+  # `cargo clippy -p frontend --all-targets --locked -- -D warnings` (the native test build). tests:
   # `cargo test -p frontend`, host target. build: `trunk build --release` in
   # apps/frontend. The editor S/V/R/T smokes + the
   # frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS;
@@ -154,7 +153,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: trunk
-      - name: fmt + clippy(wasm32) + test + trunk (ci-local-leptos)
+      - name: fmt + clippy -D warnings (wasm32, native) + test + trunk (ci-local-leptos)
         run: cargo xtask mk ci-local-leptos
 
   # --- workspace-members: every member the jobs above do not test ---
@@ -286,7 +285,7 @@ jobs:
         run: cargo xtask verify crate-anatomy
       - name: verify-strangler (no new crate depends on legacy; no shim)
         run: cargo xtask verify strangler
-      - name: verify-frontend-layering (ratchet ceiling)
+      - name: verify-frontend-layering (layer and foundation sub-area order, hard at zero)
         run: cargo xtask verify frontend-layering
       - name: verify-tailwind-sources (an @source line per leptos crate)
         run: cargo xtask verify tailwind-sources

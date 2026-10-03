@@ -28,7 +28,7 @@ folder's README lists the page's files.
 
 ## Code
 
-- [Event manager page](/apps/frontend/src/v2/pages/administration/event_manager/) — the
+- [Event manager page](/apps/frontend/src/pages/administration/event_manager/) — the
   route component `EventManagerPage`, the calendar, the forms and the access sheet.
 - [Operations domain](/apps/api/src/operations/) — the event, event mission, access,
   group, quota and waiting-list routes the page calls.

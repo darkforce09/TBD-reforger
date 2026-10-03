@@ -35,9 +35,9 @@ included, tints as BLUFOR.
     `crate::editing::lanes::markers`;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s document host and canvas
     mount
-    (`apps/frontend/src/v2/apps/editor/bridge/document_host/history.rs`,
-    `apps/frontend/src/v2/apps/editor/bridge/document_host/history/render_lanes.rs`,
-    `apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount/boot_tasks.rs`), which
+    (`apps/frontend/src/workspaces/editor/bridge/document_host/history.rs`,
+    `apps/frontend/src/workspaces/editor/bridge/document_host/history/render_lanes.rs`,
+    `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/boot_tasks.rs`), which
     pack side tints.
 - Rules: no other file re-derives the role or alias mapping
   (`every_seeded_kit_maps_and_unknown_defaults`, `authored_role_strings_and_token_boundaries` and

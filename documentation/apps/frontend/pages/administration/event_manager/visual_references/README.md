@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Event manager page](/apps/frontend/src/v2/pages/administration/event_manager/) — the
+- [Event manager page](/apps/frontend/src/pages/administration/event_manager/) — the
   built page the set was drawn for.
 
 ## Boundaries

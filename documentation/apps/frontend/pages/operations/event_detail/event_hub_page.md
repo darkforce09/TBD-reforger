@@ -11,17 +11,17 @@ and through which a leader reserves and fills a squad.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/operations/event_detail/`](/apps/frontend/src/v2/pages/operations/event_detail/):
+- Code: [`apps/frontend/src/pages/operations/event_detail/`](/apps/frontend/src/pages/operations/event_detail/):
   `page.rs` holds the route component `EventHubPage` and this route's chrome;
   `hero_countdown.rs` `event_hub_view`, the hub body; `mission_dossier.rs` one mission card;
   `slotting_selector.rs` `OrbatSelector`; `squad_pane.rs`, `seat_row.rs`, `assign_picker.rs` and
   `reservation_actions.rs` the squad, the seats, the member picker and the footer;
   `registration_access/` what the viewer may register for and why. The folder's
-  [README](/apps/frontend/src/v2/pages/operations/event_detail/README.md) and the
-  [registration access README](/apps/frontend/src/v2/pages/operations/event_detail/registration_access/README.md)
+  [README](/apps/frontend/src/pages/operations/event_detail/README.md) and the
+  [registration access README](/apps/frontend/src/pages/operations/event_detail/registration_access/README.md)
   describe each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/operations/event_detail/README.md#routes). The
+  [Routes](/apps/frontend/src/pages/operations/event_detail/README.md#routes). The
   sidebar has no entry for it; the schedule, the dashboard banner, the deployments page and
   direct links lead here.
 - Related: the [event schedule page](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md),
@@ -38,9 +38,9 @@ and through which a leader reserves and fills a squad.
 
 ### Loading the hub
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
    the session states of the README's
-   [States](/apps/frontend/src/v2/pages/operations/event_detail/README.md#states) until the
+   [States](/apps/frontend/src/pages/operations/event_detail/README.md#states) until the
    viewer is signed in.
 2. The signed-in half reads `:id`, fetches the event's hub and shows "Loading…", then
    "Failed to load data." or the hub. An event the viewer may not see fails like a missing one.
@@ -140,26 +140,26 @@ and through which a leader reserves and fills a squad.
 - The footer offers "Register for Deployment" and "Join waiting list" on an event whose
   registration is locked, or whose status is live, completed or cancelled
   (`reservation_footer` in
-  `apps/frontend/src/v2/pages/operations/event_detail/reservation_actions.rs`); the API
+  `apps/frontend/src/pages/operations/event_detail/reservation_actions.rs`); the API
   refuses with "registration is locked; an admin must assign you" or "registration is closed for
   this operation" (`require_registration_open` in
   `apps/api/src/operations/services/event_reservations/mutation_authority.rs`), and the
   footer shows that sentence only after the click.
 - A failed ORBAT fetch reads "No ORBAT slots defined for this mission.", the text of an empty
   ORBAT (`OrbatSelector` in
-  `apps/frontend/src/v2/pages/operations/event_detail/slotting_selector.rs`), while the API
+  `apps/frontend/src/pages/operations/event_detail/slotting_selector.rs`), while the API
   answers 404 "mission not found" for a mission the viewer may not see (`get_orbat` in
   `apps/api/src/operations/handlers/orbat_view.rs`).
 - The hero prefixes every countdown with "T-MINUS ", so a started event reads "T-MINUS LIVE NOW"
   (`event_hub_view` in
-  `apps/frontend/src/v2/pages/operations/event_detail/hero_countdown.rs`); the dashboard
+  `apps/frontend/src/pages/operations/event_detail/hero_countdown.rs`); the dashboard
   drops the prefix for `LIVE NOW`.
 - The modpack chip links to "#" when the modpack has no workshop address and still opens it in a
   new tab (`event_hub_view`, same file).
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/operations/event_detail/README.md#data)
+The README's [Data](/apps/frontend/src/pages/operations/event_detail/README.md#data)
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/events/{id}` (`get_event` in
@@ -244,14 +244,14 @@ The page stores nothing in the browser.
   unknown seat standing as restricted, so the page never offers what the API would refuse on
   access grounds (`an_unknown_pool_state_reads_as_closed` and
   `restricted_seats_are_closed_and_say_why` in
-  `apps/frontend/src/v2/pages/operations/event_detail/registration_access/tests/registration_access.rs`).
+  `apps/frontend/src/pages/operations/event_detail/registration_access/tests/registration_access.rs`).
 - Joining the waiting list is a registration without a seat: the API decides between a held
   place and a waiting entry, so the page needs no second route.
 - Only dossier facts render: every meta badge and briefing comes from the dossier, and a blank
   briefing says so rather than showing invented text
   (`meta_badges_are_all_dossier_derived` and
   `a_cleared_briefing_renders_the_empty_state_and_never_the_invented_lore` in
-  `apps/frontend/src/v2/pages/operations/event_detail/tests/event_hub.rs`).
+  `apps/frontend/src/pages/operations/event_detail/tests/event_hub.rs`).
 - A squad hold makes the squad its reserver's to fill: other members cannot take its seats, and
   only the reserver or an administrator assigns and clears them, in the page and in the API
   alike (`require_squad_management` in

@@ -64,7 +64,7 @@ the panel can select it.
   `serde_json`.
 - Used by:
   - the Mission Creator's validation panel
-    (`apps/frontend/src/v2/apps/editor/ui/inspector/validation_panel/`), which evaluates
+    (`apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`), which evaluates
     the compiled payload with `known_asset_ids` from the item
     [registry](/documentation/glossary/n_to_z.md#registry) and no other fact, and renders every
     `Finding`, compile findings included;

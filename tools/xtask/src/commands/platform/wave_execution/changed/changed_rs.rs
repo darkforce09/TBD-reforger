@@ -277,7 +277,7 @@ pub fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
 /// the suite compiles files from OUTSIDE that graph, through `include_str!` —
-/// `contracts/definitions/mission.schema.json` (`v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`),
+/// `contracts/definitions/mission.schema.json` (`workspaces/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`),
 /// `loadout-export.schema.json` (`arsenal/`), `apps/api/src/<domain>/routes.rs` (four `pages/`
 /// census tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
 /// changed `mission.schema.json`; a slice whose diff was only that file would have printed

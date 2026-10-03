@@ -23,12 +23,12 @@ tests.
   water, forest and label loaders the host drives live under
   [`world/`](/legacy/map_engine/src/world/README.md).
 - Entry: `streaming::host::bootstrap`, which the Mission Creator calls once its render engine
-  exists (`apps/frontend/src/v2/apps/editor/bridge/world_assets.rs`); the settle and
+  exists (`apps/frontend/src/workspaces/editor/bridge/world_assets.rs`); the settle and
   `flush_viewport` calls, which its pointer and wheel gestures and camera dock make after the
   camera moves.
 - Related features: the [map engine overview](/documentation/legacy/map_engine/map_engine_overview.md),
   the [terrain assets](/assets/terrains/README.md) the loaders read, and the Mission Creator's
-  [feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+  [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   for the map features streaming backs.
 
 ## Behaviour

@@ -87,10 +87,10 @@ rows change with it.
   - `crate::data::store::operations`, whose tactical graphics draw tool takes `min_points` and
     `MAX_POINTS`;
   - the Mission Creator's inspector panels in
-    `apps/frontend/src/v2/apps/editor/ui/inspector/` (`audio_emitters.rs`,
+    `apps/frontend/src/workspaces/editor/ui/inspector/` (`audio_emitters.rs`,
     `radio_panel.rs`, `spawn_modules.rs`, `tasks_panel.rs`, `weather_timeline.rs`,
     `win_conditions_card.rs` and the zones panel), with their tests and the
-    bridge tests in `apps/frontend/src/v2/apps/editor/bridge/tests/tactical_graphics/`;
+    bridge tests in `apps/frontend/src/workspaces/editor/bridge/tests/tactical_graphics/`;
   - the API, only through the compiler in `crate::data::scenario::flatten`.
 - Rules:
   - every listed block reaches the compiled document

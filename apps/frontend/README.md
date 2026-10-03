@@ -14,7 +14,7 @@ apps/frontend/
 ├── index.html            the Trunk entry: the app and worker builds, stylesheet, icon font, web manifest
 ├── manifest.webmanifest  the web app manifest: name, start URL, scope, standalone display, colours
 ├── service_worker.js     the service worker loader: imports the Rust worker and forwards its events
-├── src/                  the entry point, the route table and the `v2/` tree of pages, workspaces and core
+├── src/                  the entry point and the layers: foundation, features, pages, workspaces, shell
 ├── style/                the Aegis stylesheet Tailwind compiles into the build
 └── Trunk.toml            the build, the dev server on 127.0.0.1:3000 and its proxy to the API
 ```
@@ -26,7 +26,7 @@ Trunk reads `index.html`: it builds the crate's binary for `wasm32-unknown-unkno
 `data-wasm-opt="z"` asks for; it compiles `style/aegis.css` with Tailwind CSS, and writes the page,
 the module, its JavaScript glue and the stylesheet into `dist/`. In the browser, the start
 function in `src/main.rs` mounts the app layout under a router, the layout restores a stored
-session, and the route table in `src/app_routes.rs` and `src/router.rs` picks the page.
+session, and the route table in `src/app_routes.rs` and `src/foundation/route_table/` picks the page.
 
 The same `index.html` builds the offline service worker from
 `apps/offline_service_worker` as a Trunk worker (`data-type="worker"`,
@@ -103,13 +103,13 @@ The app reads no environment variable: the settings are the build files'.
 | `[serve]` | `127.0.0.1:3000`, with `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: credentialless` for cross-origin isolation | Trunk |
 | `[[proxy]]` | `/api` to `http://127.0.0.1:8080/api` with `no_redirect = true`; `/map-assets` to `http://127.0.0.1:8080/map-assets` | Trunk |
 | `data-wasm-opt` | `z`, the size-first `wasm-opt` level of a release build | Trunk, from `index.html` |
-| API root | `/api/v1` on the page's origin, `API_BASE` | the client's verbs, from `src/v2/core/api/client/mod.rs` |
-| stored session | the `tbd-auth` key of local storage; `tbd-auth-refresh` names the Web Lock and the broadcast channel of a token refresh | `src/v2/core/auth/session.rs` and `src/v2/core/api/client/refresh.rs` |
+| API root | `/api/v1` on the page's origin, `API_BASE` | the client's verbs, from `src/foundation/transport/client/mod.rs` |
+| stored session | the `tbd-auth` key of local storage; `tbd-auth-refresh` names the Web Lock and the broadcast channel of a token refresh | `src/foundation/auth/session.rs` and `src/foundation/transport/client/refresh.rs` |
 
 The [mission](/documentation/glossary/g_to_m.md#mission) store and compiler are in the native build
 too, so `cargo test` checks the metadata the Mission Creator's export compiles from
 (`compiled_meta_is_the_row_the_server_compiles_from` in
-`src/v2/core/api/dto/tests/r_api_missions.rs`). The token refresh needs the Web Locks API, which
+`src/foundation/transport/dto/tests/r_api_missions.rs`). The token refresh needs the Web Locks API, which
 only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
 
 ## Public surface
@@ -157,8 +157,8 @@ only a secure context offers: `localhost`, `127.0.0.1` or HTTPS.
     `content_golden.sql`, and every golden reproduces from the seed through that recipe: the reads
     in `_index.tsv` order, then its writes in index order, each sending its `*.request.json` body
     when it has one;
-  - every production file under `src/v2/` passes the documentation audit of
-    `src/v2/tests/doc_audit/mod.rs`.
+  - every production file under `src/` passes the documentation audit of
+    `src/tests/doc_audit/mod.rs`.
 
 ## Related documentation
 

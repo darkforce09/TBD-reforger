@@ -20,7 +20,7 @@ documentation/apps/frontend/pages/operations/
 
 ## How it works
 
-The folders mirror the page folders under `apps/frontend/src/v2/pages/operations/` and
+The folders mirror the page folders under `apps/frontend/src/pages/operations/` and
 keep their spelling. Each holds a README index and the page's feature doc; the schedule,
 deployments and leaderboards folders add a `visual_references/` folder with one design-phase
 blueprint set. A feature doc follows the
@@ -35,8 +35,8 @@ one place, so the event hub feature doc describes them once and the schedule and
 feature docs link to it. Start with the feature doc of the page at hand; for anything about
 registering, squads or the waiting list, start with the event hub.
 
-Every page is declared in `apps/frontend/src/router.rs` with the route tier `none` and
-renders its body inside `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), so only a
+Every page is declared in `apps/frontend/src/foundation/route_table/mod.rs` with the route tier `none` and
+renders its body inside `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), so only a
 signed-in viewer sees data; the deployments page adds a review queue for the `admin`
 [role](/documentation/glossary/n_to_z.md#role), and the slotting adds squad controls for `leader`
 and above.
@@ -55,7 +55,7 @@ and a row in the table.
 
 ## Code
 
-- [Operations pages](/apps/frontend/src/v2/pages/operations/) — the five route components,
+- [Operations pages](/apps/frontend/src/pages/operations/) — the five route components,
   the hub body and the slotting selector, which the feature docs describe.
 - [Operations domain](/apps/api/src/operations/) — events, their hubs and ORBATs,
   registration, squad holds, the waiting list, the service record and leave requests.

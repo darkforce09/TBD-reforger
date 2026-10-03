@@ -82,9 +82,9 @@ network domain enabled so each response says whether the service worker answered
 
 ## Related documentation
 
-- [Mortar calculator page](/apps/frontend/src/v2/pages/field_tools/mortar/README.md) — the
+- [Mortar calculator page](/apps/frontend/src/pages/field_tools/mortar/README.md) — the
   page, its inputs and its solution panel.
-- [Offline core](/apps/frontend/src/v2/core/offline/README.md) — the pack download and the
+- [Offline core](/apps/frontend/src/foundation/offline/README.md) — the pack download and the
   `data-offline-state` values.
 - [Offline service worker](/apps/offline_service_worker/README.md) — the worker the reload
   is answered by.

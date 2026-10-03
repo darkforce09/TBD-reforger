@@ -5,7 +5,7 @@
 Design-phase reference for the [mission](/documentation/glossary/g_to_m.md#mission) approvals page at
 `/admin/approvals`: a dossier in which a reviewer reads one community-submitted mission and decides
 it. It gives colour and layout context and is not an implementation source; the built UI is the
-Leptos code under `apps/frontend/src/v2/pages/administration/approvals/`.
+Leptos code under `apps/frontend/src/pages/administration/approvals/`.
 
 ## Contents
 
@@ -36,7 +36,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Mission approvals page](/apps/frontend/src/v2/pages/administration/approvals/) — the
+- [Mission approvals page](/apps/frontend/src/pages/administration/approvals/) — the
   page this set was drawn for.
 
 ## Boundaries

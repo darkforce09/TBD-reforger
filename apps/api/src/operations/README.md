@@ -133,10 +133,10 @@ pins, refuses a client solution that disagrees, and stores the server's solution
     `apps/api/src/background_workers/`;
   - `administration`, `command_center`, `identity_and_access`, `match_telemetry` and `missions`,
     through the surface above;
-  - over HTTP, the operations pages in `apps/frontend/src/v2/pages/operations/`, the
+  - over HTTP, the operations pages in `apps/frontend/src/pages/operations/`, the
     [event manager](/documentation/glossary/a_to_f.md#event-manager) in
-    `apps/frontend/src/v2/pages/administration/event_manager/`, the mortar calculator in
-    `apps/frontend/src/v2/pages/field_tools/mortar/`, and the game runtime's roster loader
+    `apps/frontend/src/pages/administration/event_manager/`, the mortar calculator in
+    `apps/frontend/src/pages/field_tools/mortar/`, and the game runtime's roster loader
     and deployment queues in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and

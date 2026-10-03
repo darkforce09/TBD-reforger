@@ -10,31 +10,31 @@ into the live library, approve it with conditions, or reject it with a reason.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/administration/approvals/`](/apps/frontend/src/v2/pages/administration/approvals/):
+- Code: [`apps/frontend/src/pages/administration/approvals/`](/apps/frontend/src/pages/administration/approvals/):
   `page.rs` holds the route component `MissionApprovalsPage`, the queue fetch and the desk the
   queue and drawer share; `submission_queue.rs` the queue; `review_drawer.rs` the drawer, with
   `review_briefing.rs` for the briefing and settings; `review_decision.rs` the decision form;
   `decision_refusal.rs` the wording of a refused decision. The drawer reuses the mission hub's
   review views in
-  [`apps/frontend/src/v2/pages/mission_hub/mission_review/`](/apps/frontend/src/v2/pages/mission_hub/mission_review/)
+  [`apps/frontend/src/features/mission_review_record/`](/apps/frontend/src/features/mission_review_record/)
   (provenance, review history, comment box, review wording). The folder's
-  [README](/apps/frontend/src/v2/pages/administration/approvals/README.md) describes each
+  [README](/apps/frontend/src/pages/administration/approvals/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/administration/approvals/README.md#routes).
+  [Routes](/apps/frontend/src/pages/administration/approvals/README.md#routes).
 - Related: the [approvals](/documentation/glossary/a_to_f.md#approvals) glossary entry; the
   [mission overview page](/documentation/apps/frontend/pages/mission_hub/overview/mission_overview_page.md),
   where the author submits, reads the same review record and replies; the read-only review
-  workspace ([README](/apps/frontend/src/v2/pages/mission_hub/review_workspace/README.md));
+  workspace ([README](/apps/frontend/src/workspaces/editor/review_workspace/README.md));
   the [API](/documentation/glossary/a_to_f.md#api)'s
   [missions domain](/apps/api/src/missions/README.md); the
   [mission artifacts evidence](/documentation/apps/api/verification_evidence/mission_artifacts.md).
 
 ## Behaviour
 
-1. The page body sits in `AdminGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which
+1. The page body sits in `AdminGate` (`apps/frontend/src/foundation/auth/gates.rs`), which
    shows the session and access states of the README's
-   [States](/apps/frontend/src/v2/pages/administration/approvals/README.md#states) in
+   [States](/apps/frontend/src/pages/administration/approvals/README.md#states) in
    place of the page until a signed-in viewer holds the `admin`
    [role](/documentation/glossary/n_to_z.md#role).
 2. The queue loads on arrival. Its heading counts the missions pending in total. Each row names
@@ -64,12 +64,12 @@ into the live library, approve it with conditions, or reject it with a reason.
    any more; the author resubmitted, so the decision named an artifact no longer under review
    (naming the one under review now); or the server's sentence that the mission is not pending
    approval. Any other refusal shows the server's sentence under the form. The README's
-   [States](/apps/frontend/src/v2/pages/administration/approvals/README.md#states) quote
+   [States](/apps/frontend/src/pages/administration/approvals/README.md#states) quote
    every text.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/administration/approvals/README.md#data)
+The README's [Data](/apps/frontend/src/pages/administration/approvals/README.md#data)
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/approvals` (`list_approvals` in

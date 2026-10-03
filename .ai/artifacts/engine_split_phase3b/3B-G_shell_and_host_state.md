@@ -63,7 +63,7 @@ the rest of `xtask/` and `tools/` before you finish.
 Sibling test files with their bottom-of-file declarations; allowlist rows updated in the same
 commit; `//!` headers rewritten where they name `editor/state`; anchored pins repointed (several
 files under `state/` hold them — `tab_lock.rs`, `title_prefer.rs`, `save_status.rs`); every
-`crate::v2::apps::editor::state::…` call site swept; `mission_editor.rs`'s
+`crate::workspaces::editor::state::…` call site swept; `mission_editor.rs`'s
 `use crate::…::state::{editor_context, history as mission_history, hydrate as mission_hydrate,
 persist as yrs_persist}` aliases repointed with their `cfg` gates intact — the aliases keep their
 spelling, only the path behind them changes.

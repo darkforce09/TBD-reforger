@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Mission library page](/apps/frontend/src/v2/pages/mission_hub/library/) — the built
+- [Mission library page](/apps/frontend/src/pages/mission_hub/library/) — the built
   page the set was drawn for.
 
 ## Boundaries

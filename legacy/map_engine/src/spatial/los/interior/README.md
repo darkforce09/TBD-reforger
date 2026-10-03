@@ -43,10 +43,10 @@ raster in batches of `WASH_BATCH_CELLS` (256) under a time budget, and can be ca
   blocking test, crossing reduction and concealment fold, and whose object tree uses
   `segment_aabb_window`; `crate::editing::tools::viewshed_scheduler`, whose building-wash lane
   runs a `WashJob` in budgeted steps; the debug building viewer
-  (`apps/frontend/src/v2/apps/debug/building_viewer.rs` and
-  `apps/frontend/src/v2/apps/debug/building_viewer/`);
+  (`apps/frontend/src/workspaces/debug/building_viewer.rs` and
+  `apps/frontend/src/workspaces/debug/building_viewer/`);
   the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
-  (`apps/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`); and the blueprint
+  (`apps/frontend/src/workspaces/editor/input/tools/los_world_wasm.rs`); and the blueprint
   tooling (`tools/developer_tools/src/blueprint/bvh/construction.rs`).
 - Rules: both modules compile only with the `io` feature; `wash_cap_check` refuses a wash radius
   above `MAX_WASH_RADIUS_M` (400 m), `WashJob::new` returns the refusal and `wash_band` returns an

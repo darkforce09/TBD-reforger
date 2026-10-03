@@ -6,7 +6,7 @@ Design-phase reference for the modpacks page at `/modpacks`: one wide card for t
 modpack, its size, its key dependencies and a button that connects and syncs the
 [mods](/documentation/glossary/g_to_m.md#mod). It gives colour and layout context and is not an
 implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/doctrine_and_info/modpacks/`.
+`apps/frontend/src/pages/doctrine_and_info/modpacks/`.
 
 ## Contents
 
@@ -33,7 +33,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Modpacks page](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/) — the page
+- [Modpacks page](/apps/frontend/src/pages/doctrine_and_info/modpacks/) — the page
   this set was drawn for.
 
 ## Boundaries

@@ -5,7 +5,7 @@
 Design-phase reference for the leaderboards page at `/leaderboards`: category tabs and a search
 field over a three-place podium and a ranked roster. It gives colour and layout context and is not
 an implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/operations/leaderboards/`.
+`apps/frontend/src/pages/operations/leaderboards/`.
 
 ## Contents
 
@@ -31,7 +31,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Leaderboards page](/apps/frontend/src/v2/pages/operations/leaderboards/) — the page
+- [Leaderboards page](/apps/frontend/src/pages/operations/leaderboards/) — the page
   this set was drawn for.
 
 ## Boundaries

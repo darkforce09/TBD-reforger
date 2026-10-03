@@ -89,8 +89,8 @@ total fits or nothing more may go.
     viewport and the host queries that lend the occluder out;
   - `crate::editing::tools::line_of_sight`, whose object wash places points with `map_to_engine`;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
-    (`apps/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`) and the debug world
-    line-of-sight bench (`apps/frontend/src/v2/apps/debug/world_los/`);
+    (`apps/frontend/src/workspaces/editor/input/tools/los_world_wasm.rs`) and the debug world
+    line-of-sight bench (`apps/frontend/src/workspaces/debug/world_los/`);
   - the world line-of-sight check
     (`tools/developer_tools/src/map_verification/world_line_of_sight.rs`) and the blueprint
     tooling in `tools/developer_tools/src/blueprint/archive_emission/`.

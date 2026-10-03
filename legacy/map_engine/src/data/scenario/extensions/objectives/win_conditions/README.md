@@ -48,7 +48,7 @@ the rule.
   compiled rule from `AuthoredWinConditions` and `FALLBACK_TRIGGER`, and
   `crate::data::scenario::ast`, whose `ModWinConditions` carries `WinConditionParams`; the Mission
   Creator's win conditions card
-  (`apps/frontend/src/v2/apps/editor/ui/inspector/win_conditions_card.rs` and its
+  (`apps/frontend/src/workspaces/editor/ui/inspector/win_conditions_card.rs` and its
   `view.rs`), which builds its mode, trigger and parameter controls from the vocabularies, the
   parameter maps and the timeout limits, and shows `validate`'s refusal.
 - Rules: `AUTHORED_MODES` equals the `mode` enum of

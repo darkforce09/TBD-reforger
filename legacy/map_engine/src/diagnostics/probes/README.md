@@ -32,7 +32,7 @@ offset to the south, which fails if the map is drawn upside down. The promise re
   and `map_coordinates::terrain_frames::ANCHOR`.
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   `window.__selfChecks.calibration`, published by
-  `register_self_checks` in `apps/frontend/src/v2/apps/editor/bridge/viewport.rs`; the
+  `register_self_checks` in `apps/frontend/src/workspaces/editor/bridge/viewport.rs`; the
   editor gate's `selfcheck` smoke
   (`tools/developer_tools/src/browser_testing/editor_smoke_tests/editor_boot_scenarios.rs`)
   calls it under WebGL2, and `cargo xtask mk leptos-gates` runs that smoke.

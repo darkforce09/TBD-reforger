@@ -71,7 +71,7 @@ UI framework or editor state; browser I/O (the atlas upload, the lane binds) com
   layouts), `serde` and `wasm_bindgen`.
 - Used by: `crate::editing` (lanes, picking), `crate::frame`, `crate::camera`, `crate::streaming`,
   `crate::world::environment::locations`, `crate::diagnostics`; the Mission Creator in
-  `apps/frontend/src/v2/apps/editor/`; `tools/developer_tools/`.
+  `apps/frontend/src/workspaces/editor/`; `tools/developer_tools/`.
 - Rules: every marker alias of the schema maps to a glyph (`every_schema_alias_maps` in
   `tests/markers_tests.rs`); marker atlas cells 0 and 1 equal the slot atlas
   (`marker_atlas_cells_0_and_1_match_slot_atlas`); the committed label data has no glyph without

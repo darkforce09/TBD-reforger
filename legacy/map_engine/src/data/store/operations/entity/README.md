@@ -78,13 +78,13 @@ ring below three vertices.
     authoring commands), and the sibling modules
     `legacy/map_engine/src/data/store/operations/attrs.rs`, `cargo.rs`, `document_index.rs`
     and `transform.rs`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/`: the armed placement and
-    zone draw in `apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/`, the
-    editor context and selection in `apps/frontend/src/v2/apps/editor/bridge/host_state/`,
-    the debug seed in `apps/frontend/src/v2/apps/editor/bridge/document_host/doc_host.rs`,
-    the pointer release in `apps/frontend/src/v2/apps/editor/input/pointer_gestures/`, the
-    zones panel in `apps/frontend/src/v2/apps/editor/ui/inspector/zones_panel/` and the
-    outliner in `apps/frontend/src/v2/apps/editor/ui/outliner/`;
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the armed placement and
+    zone draw in `apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/`, the
+    editor context and selection in `apps/frontend/src/workspaces/editor/bridge/host_state/`,
+    the debug seed in `apps/frontend/src/workspaces/editor/bridge/document_host/doc_host.rs`,
+    the pointer release in `apps/frontend/src/workspaces/editor/input/pointer_gestures/`, the
+    zones panel in `apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/` and the
+    outliner in `apps/frontend/src/workspaces/editor/ui/outliner/`;
   - `legacy/map_engine/tests/operation_boundaries.rs` and the re-export pins in
     `legacy/map_engine/src/data/store/tests/reexports.rs`.
 - Rules:
@@ -104,5 +104,5 @@ ring below three vertices.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: placement](/documentation/apps/frontend/apps/editor/feature_inventory/placement.md) — what a map release commits, per kind.
-- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/apps/editor/feature_inventory/transform_and_delete.md) — what Delete removes.
+- [Mission Creator feature inventory: placement](/documentation/apps/frontend/workspaces/editor/feature_inventory/placement.md) — what a map release commits, per kind.
+- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/workspaces/editor/feature_inventory/transform_and_delete.md) — what Delete removes.

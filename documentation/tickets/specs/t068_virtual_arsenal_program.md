@@ -8,7 +8,7 @@ shipped:** **T-068.15.1** @ `85acbb13` → **T-068.15.2** @ `4fb156b7` → **T-0
 `c66494c6` → **T-068.12** @ `0be53e16`. **ACTIVE:** **T-068.13** LOBBY slot picker →
 **T-068.14** Phase-2 E2E.  
 **Git tags:** **T-068.12** @ `0be53e16` (latest cargo). Full ticket ships @ **T-068.14**.  
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) · [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) · [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) · [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) · [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
 

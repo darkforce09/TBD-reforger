@@ -76,7 +76,7 @@ no floor is chosen.
   - `crate::world::terrain::satellite::quadtree`, which claims the floor at boot and names the
     budget's share of a downscale in its warning;
   - the Mission Creator's frame pump, which shows the HUD tail
-    (`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`).
+    (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`).
 - Rules:
   - a request that would fit an empty budget is told to shrink, never refused, and a reservation
     records nothing unless it fits; measured growth never enters `held`; the walk never returns a

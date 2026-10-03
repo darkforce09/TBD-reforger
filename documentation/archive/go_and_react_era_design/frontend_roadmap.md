@@ -6,7 +6,7 @@
 
 **Queue:** [`docs/TICKET_LEAD.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md)
 
-**Code:** [`apps/website/frontend/src/`](/apps/frontend/src/) · **Routes:** [`apps/website/frontend/src/router.rs`](/apps/frontend/src/router.rs) · Conventions: [`WHERE_DOES_X_GO.md`](/documentation/standards/where_does_x_go.md)
+**Code:** [`apps/website/frontend/src/`](/apps/frontend/src/) · **Routes:** [`apps/website/frontend/src/router.rs`](/apps/frontend/src/foundation/route_table/mod.rs) · Conventions: [`WHERE_DOES_X_GO.md`](/documentation/standards/where_does_x_go.md)
 
 ---
 
@@ -17,7 +17,7 @@
 | **[`documentation_v2/website/frontend/README.md`](/documentation/apps/frontend/README.md)** | Per-route surface specs (28 pages) |
 | **[`documentation_v2/design_system/design_tokens.md`](/documentation/design_system/design_tokens.md)** | Aegis tokens in use |
 | **[`documentation_v2/archive/go_and_react_era_design/frontend_page_spec_template.md`](/documentation/archive/go_and_react_era_design/frontend_page_spec_template.md)** | Template for new page docs |
-| **[Mission Creator ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md)** | 2D editor ticket queue |
+| **[Mission Creator ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md)** | 2D editor ticket queue |
 | **[`documentation_v2/archive/audits/codebase_audit_2026.md`](/documentation/archive/audits/codebase_audit_2026.md)** | T-122 audit + T-123 resolutions (T1/T8) |
 | **[`documentation_v2/standards/documentation_standards.md`](/documentation/standards/documentation_standards.md)** | Cross-boundary `@contract` / codegen / validation (T-123 shipped) |
 | **[`docs/platform/macos_ux_architecture.md`](/documentation/archive/go_and_react_era_design/macos_ux_architecture.md)** | Split-pane / frictionlessness methodology |
@@ -41,7 +41,7 @@ All routes below have a surface spec unless noted. Live UI = `apps/website/front
 | `/leaderboards` | [leaderboards.md](/documentation/apps/frontend/pages/operations/leaderboards/leaderboards_page.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](/documentation/apps/frontend/pages/mission_hub/overview/mission_overview_page.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](/documentation/apps/frontend/apps/editor/ux_spec.md) | **in-progress** — T-091 shipped @ `dde589e` (DEM + Z + hillshade); **T-090.3.0** Workbench spike active (**T-090.1** aligned tiles queued) |
+| `/missions/:id/edit` | [mission-editor.md](/documentation/apps/frontend/workspaces/editor/ux_spec.md) | **in-progress** — T-091 shipped @ `dde589e` (DEM + Z + hillshade); **T-090.3.0** Workbench spike active (**T-090.1** aligned tiles queued) |
 | `/events` | [event-schedule.md](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md) | Wired from Deployments (T-122 R2) |
@@ -56,8 +56,8 @@ All routes below have a surface spec unless noted. Live UI = `apps/website/front
 | `/admin/personnel` | [personnel-roster.md](/documentation/apps/frontend/pages/administration/personnel/personnel_roster_page.md) | Live API |
 | `/admin/content` | [content-manager.md](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md) | Nav: Comms Broadcaster |
 | `/admin/audit` | [audit-logs.md](/documentation/apps/frontend/pages/administration/audit_logs/audit_logs_page.md) | Live API |
-| `*` | [not-found.md](/documentation/apps/frontend/pages/navigation/app_layout_and_navigation.md) | |
-| (shell) | [sidebar.md](/documentation/apps/frontend/pages/navigation/app_layout_and_navigation.md), [topnav.md](/documentation/apps/frontend/pages/navigation/app_layout_and_navigation.md), [app-layout.md](/documentation/apps/frontend/pages/navigation/app_layout_and_navigation.md) | |
+| `*` | [not-found.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | |
+| (shell) | [sidebar.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md), [topnav.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md), [app-layout.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) | |
 
 ---
 
@@ -69,7 +69,7 @@ All routes below have a surface spec unless noted. Live UI = `apps/website/front
 | **T-086** | Server Control `/admin/server` | [server-control.md](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md) | **T-086** backend RCON API |
 | **T-087** | CMS rich text | [content-manager.md](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md) | WYSIWYG choice |
 | **T-088** | Multi-server picker | [server-intel.md](/documentation/apps/frontend/pages/command_center/server_intel/server_intel_page.md) | UI for `GET /servers` |
-| **T-068+** | Mission editor Eden parity | [mission-editor.md](/documentation/apps/frontend/apps/editor/ux_spec.md) | **T-068 Phase 1 shipped**; Phase 2 paused; **T-090–T-092** map gate active |
+| **T-068+** | Mission editor Eden parity | [mission-editor.md](/documentation/apps/frontend/workspaces/editor/ux_spec.md) | **T-068 Phase 1 shipped**; Phase 2 paused; **T-090–T-092** map gate active |
 
 Full deferred table: [`docs/TICKET_REGISTRY.md`](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md).
 

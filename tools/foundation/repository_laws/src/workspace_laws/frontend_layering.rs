@@ -1,18 +1,20 @@
 //! The frontend-layering law: a lower frontend layer never imports a higher one.
 //!
 //! **Role:** maps every production and test source of a frontend crate onto a layer — foundation
-//! below features below pages and workspaces below the app shell — through a layer table the
-//! caller passes, resolves every in-crate module path each file names, and counts the import
-//! edges that break the order: a lower layer naming a higher one, pages naming workspaces or the
-//! reverse, and one page area naming another.
+//! below features below pages and workspaces below the app shell — and, inside a folder whose
+//! children are ordered, onto a sub-area, through a layer table the caller passes; resolves every
+//! in-crate module path each file names; and reports every import edge that breaks the order: a
+//! lower layer naming a higher one, pages naming workspaces or the reverse, one page area naming
+//! another, a sub-area naming a sibling sub-area at or above its own tier, and a production file
+//! naming a test-only sub-area.
 //! **Position:** `cargo xtask verify frontend-layering` prints [`check_frontend_layering`]; xtask
-//! owns the layer table, so a folder move rewrites the table and not this law.
+//! owns the layer table and the sub-area orders, so a folder move rewrites the table and not this
+//! law, which knows no folder name of any crate.
 //! **Signals & state:** none; reads the checkout.
-//! **Invariants:** an edge is one (source file, target layer and area) pair, counted once however
-//! many lines name it, and production and test edges are counted apart. The law is a ratchet:
-//! more edges than [`FRONTEND_LAYERING_CEILING`] fail, fewer pass with a note to lower it. A
-//! source file no table row maps is a finding, and a missing crate folder is
-//! [`NotRun::TargetMissing`].
+//! **Invariants:** the law is hard at zero: every edge is a finding. An edge is one (source file,
+//! target place) pair, reported once at the first line naming it, production and test files
+//! counted apart. A source file no table row maps, and a child of an ordered folder that sits in
+//! no tier and is not test-only, are findings; a missing crate folder is [`NotRun::TargetMissing`].
 
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -64,12 +66,52 @@ impl FrontendLayer {
 /// One row of a frontend crate's layer table.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FrontendLayerRow {
-    /// Crate-relative folder (`src/v2/core`) or file (`src/router.rs`) the row maps.
+    /// Crate-relative folder (`src/foundation`) or file (`src/main.rs`) the row maps.
     pub path: &'static str,
     /// The layer of everything under the path.
     pub layer: FrontendLayer,
     /// True when the next folder under the path names an area (a page area, a workspace).
     pub has_areas: bool,
+}
+
+/// The strict order of the children (sub-areas) of one folder.
+///
+/// A sub-area is a child folder or file module of [`SubAreaOrder::parent`]. A file in one
+/// sub-area may import only sibling sub-areas in a strictly lower tier; the sub-areas of one tier
+/// are peers that never import each other. A test-only sub-area sits outside the tiers: it may
+/// import any sibling, and only test files, wherever they sit in the crate, may import it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SubAreaOrder {
+    /// Crate-relative folder whose children are ordered, e.g. `src/foundation`.
+    pub parent: &'static str,
+    /// The tiers, lowest first; each lists the names of its peer sub-areas.
+    pub tiers: &'static [&'static [&'static str]],
+    /// Sub-areas only test files may import.
+    pub test_only: &'static [&'static str],
+}
+
+impl SubAreaOrder {
+    /// The tier index of the sub-area `name`; `None` for a test-only or unlisted name.
+    fn tier(&self, name: &str) -> Option<usize> {
+        self.tiers.iter().position(|tier| tier.contains(&name))
+    }
+
+    /// True when `name` is a test-only sub-area.
+    fn is_test_only(&self, name: &str) -> bool {
+        self.test_only.contains(&name)
+    }
+
+    /// The sub-area the crate-relative `path` (a file, or a module path spelled as a folder path)
+    /// sits in; `None` outside the parent and for the parent's own module.
+    fn sub_area_of<'p>(&self, path: &'p str) -> Option<&'p str> {
+        let rest = path.strip_prefix(self.parent)?.strip_prefix('/')?;
+        let name = rest
+            .split('/')
+            .next()
+            .unwrap_or_default()
+            .trim_end_matches(".rs");
+        (!name.is_empty() && name != "mod").then_some(name)
+    }
 }
 
 /// The layer table of one frontend crate.
@@ -79,30 +121,11 @@ pub struct FrontendCrateLayers {
     pub crate_path: &'static str,
     /// The rows; the longest matching path wins.
     pub rows: &'static [FrontendLayerRow],
+    /// The folders whose children are ordered against each other.
+    pub sub_area_orders: &'static [SubAreaOrder],
 }
 
-/// The most layering edges the tree may hold, production and test apart.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LayeringCeiling {
-    /// Edges from production files.
-    pub production: usize,
-    /// Edges from test files.
-    pub test: usize,
-}
-
-/// The ratchet ceiling: the edges the tree holds today. Lower it as edges are removed; it reaches
-/// zero when the frontend splits into layer crates. The production edges are the foundation's
-/// imports of the Mission Creator (`core/ui` select, slider and search box; `core/auth/store.rs`)
-/// and of the route table (`core/auth/route_guard.rs`), the mission hub's imports of the Mission
-/// Creator (`library/dossier_upload*.rs`, `review_workspace/page.rs`), and administration pages'
-/// imports of the mission hub's review record; the test edges are two route-table checks and the
-/// review workspace's test.
-pub const FRONTEND_LAYERING_CEILING: LayeringCeiling = LayeringCeiling {
-    production: 12,
-    test: 3,
-};
-
-/// One import edge that breaks the layer order.
+/// One import edge that breaks the layer or sub-area order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LayeringEdge {
     /// The importing file, repository-relative.
@@ -111,83 +134,79 @@ pub struct LayeringEdge {
     pub line_no: usize,
     /// True when the importing file is a test file.
     pub test: bool,
-    /// The importing file's place, e.g. `pages/mission_hub`.
+    /// The importing file's place, e.g. `pages/mission_hub` or `foundation/transport`.
     pub from: String,
-    /// The imported place, e.g. `workspaces/editor`.
+    /// The imported place, e.g. `workspaces/editor` or `foundation/auth`.
     pub to: String,
 }
 
-/// The layering report over `crates`, judged against `ceiling`.
+/// What one scan of a frontend crate found.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct LayeringScan {
+    /// Every import edge that breaks the order.
+    pub edges: Vec<LayeringEdge>,
+    /// Source files no row of the layer table maps, repository-relative.
+    pub unmapped: Vec<String>,
+    /// Children of an ordered folder that sit in no tier and are not test-only, as
+    /// repository-relative module paths (`apps/web/src/foundation/stray`).
+    pub unordered: BTreeSet<String>,
+}
+
+/// The layering report over `crates`: any edge fails the law.
 pub fn check_frontend_layering(
     repo_root: &Path,
     crates: &[FrontendCrateLayers],
-    ceiling: LayeringCeiling,
 ) -> WorkspaceLawReport {
     WorkspaceLawReport::from_outcome(
         "frontend-layering",
-        frontend_layering_outcome(repo_root, crates, ceiling),
+        frontend_layering_outcome(repo_root, crates),
     )
 }
 
-/// The ratchet verdict over the layering edges of `crates`.
+/// The hard verdict over the layering edges of `crates`: one finding per edge.
 pub fn frontend_layering_outcome(
     repo_root: &Path,
     crates: &[FrontendCrateLayers],
-    ceiling: LayeringCeiling,
 ) -> Result<LawOutcome, NotRun> {
     let mut outcome = LawOutcome::default();
     let mut edges = Vec::new();
     for layers in crates {
-        let (crate_edges, unmapped) = layering_edges(repo_root, layers)?;
-        edges.extend(crate_edges);
+        let scan = layering_edges(repo_root, layers)?;
+        edges.extend(scan.edges);
         outcome.findings.extend(
-            unmapped
+            scan.unmapped
                 .into_iter()
                 .map(|file| format!("{file} sits under no row of the layer table")),
+        );
+        outcome.findings.extend(
+            scan.unordered
+                .into_iter()
+                .map(|sub_area| format!("{sub_area} sits in no tier of its folder's order")),
         );
     }
     let production = edges.iter().filter(|edge| !edge.test).count();
     let test = edges.len() - production;
-    outcome.summary = format!(
-        "{production} production and {test} test edge(s) against a ceiling of {} and {}",
-        ceiling.production, ceiling.test
-    );
-    for edge in &edges {
+    outcome.summary =
+        format!("{production} production and {test} test layering edge(s); the law allows none");
+    outcome.findings.extend(edges.iter().map(|edge| {
         let kind = if edge.test { "test" } else { "production" };
-        outcome.notes.push(format!(
+        format!(
             "{kind} edge {}:{}: {} imports {}",
             edge.file, edge.line_no, edge.from, edge.to
-        ));
-    }
-    for (label, count, limit) in [
-        ("production", production, ceiling.production),
-        ("test", test, ceiling.test),
-    ] {
-        if count > limit {
-            outcome.findings.push(format!(
-                "{count} {label} layering edge(s) exceed the ceiling of {limit}; remove the new \
-                 import instead of raising the ceiling"
-            ));
-        } else if count < limit {
-            outcome.notes.push(format!(
-                "{count} {label} layering edge(s) are under the ceiling of {limit}; lower \
-                 FRONTEND_LAYERING_CEILING.{label} to {count}"
-            ));
-        }
-    }
+        )
+    }));
     Ok(outcome)
 }
 
-/// Every layering edge of one crate, and the files no row maps.
+/// Every layering edge of one crate, the files no row maps and the unordered sub-areas.
 pub fn layering_edges(
     repo_root: &Path,
     layers: &FrontendCrateLayers,
-) -> Result<(Vec<LayeringEdge>, Vec<String>), NotRun> {
+) -> Result<LayeringScan, NotRun> {
     let crate_root = repo_root.join(layers.crate_path);
     let source = crate_root.join("src");
     let files = scan::walk_files(&[source.as_path()], scan::with_extension(&["rs"]))?;
-    let mut edges = Vec::new();
-    let mut unmapped = Vec::new();
+    let mut scan = LayeringScan::default();
     for file in files {
         let crate_rel = file
             .strip_prefix(&crate_root)
@@ -195,55 +214,77 @@ pub fn layering_edges(
             .to_string_lossy()
             .replace('\\', "/");
         let repo_rel = format!("{}/{crate_rel}", layers.crate_path);
-        let Some(from) = place_of(layers.rows, &crate_rel, false) else {
-            unmapped.push(repo_rel);
+        let Some(from) = place_of(layers, &crate_rel, false) else {
+            scan.unmapped.push(repo_rel);
             continue;
         };
+        for order in layers.sub_area_orders {
+            if let Some(name) = order.sub_area_of(&crate_rel)
+                && order.tier(name).is_none()
+                && !order.is_test_only(name)
+            {
+                let parent = order.parent;
+                scan.unordered
+                    .insert(format!("{}/{parent}/{name}", layers.crate_path));
+            }
+        }
         let text = std::fs::read_to_string(&file).map_err(|source| NotRun::Unreadable {
             path: file.clone(),
             source,
         })?;
+        let test = is_test_file(&repo_rel);
         let mut seen = BTreeSet::new();
         for reference in module_references(&text, &file_module(&crate_rel)) {
             let target = format!("src/{}", reference.segments.join("/"));
-            let Some(to) = place_of(layers.rows, &target, true) else {
+            let Some(to) = place_of(layers, &target, true) else {
                 continue;
             };
-            if breaks_order(&from, &to) && seen.insert(to.label()) {
-                edges.push(LayeringEdge {
+            let breaks = breaks_order(&from, &to)
+                || layers
+                    .sub_area_orders
+                    .iter()
+                    .any(|order| breaks_sub_area_order(order, &crate_rel, &target, test));
+            if breaks && seen.insert(to.label()) {
+                scan.edges.push(LayeringEdge {
                     file: repo_rel.clone(),
                     line_no: reference.line_no,
-                    test: is_test_file(&repo_rel),
+                    test,
                     from: from.label(),
                     to: to.label(),
                 });
             }
         }
     }
-    Ok((edges, unmapped))
+    Ok(scan)
 }
 
-/// A layer and, for a row with areas, the area.
+/// A layer and, for a row with areas, the area; inside an ordered folder, the sub-area.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Place {
     layer: FrontendLayer,
     area: Option<String>,
+    sub_area: Option<String>,
 }
 
 impl Place {
     fn label(&self) -> String {
-        match &self.area {
-            Some(area) => format!("{}/{area}", self.layer.name()),
-            None => self.layer.name().to_string(),
-        }
+        [
+            Some(self.layer.name()),
+            self.area.as_deref(),
+            self.sub_area.as_deref(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join("/")
     }
 }
 
 /// The place of the crate-relative `path`: a source file, or (`module_path`) a module path
-/// spelled as a folder path, where a file row `src/router.rs` maps the module `src/router`.
-fn place_of(rows: &[FrontendLayerRow], path: &str, module_path: bool) -> Option<Place> {
+/// spelled as a folder path, where a file row `src/main.rs` maps the module `src/main`.
+fn place_of(layers: &FrontendCrateLayers, path: &str, module_path: bool) -> Option<Place> {
     let mut best: Option<(&FrontendLayerRow, &str, usize)> = None;
-    for row in rows {
+    for row in layers.rows {
         let row_path = if module_path {
             row.path.trim_end_matches("/mod.rs").trim_end_matches(".rs")
         } else {
@@ -275,9 +316,15 @@ fn place_of(rows: &[FrontendLayerRow], path: &str, module_path: bool) -> Option<
         })
         .filter(|area| !area.is_empty() && *area != "mod")
         .map(str::to_string);
+    let sub_area = layers
+        .sub_area_orders
+        .iter()
+        .find_map(|order| order.sub_area_of(path))
+        .map(str::to_string);
     Some(Place {
         layer: row.layer,
         area,
+        sub_area,
     })
 }
 
@@ -290,6 +337,30 @@ fn breaks_order(from: &Place, to: &Place) -> bool {
     match (from.layer, to.layer) {
         (Pages, Workspaces) | (Workspaces, Pages) => true,
         (Pages, Pages) => from.area.is_some() && to.area.is_some() && from.area != to.area,
+        _ => false,
+    }
+}
+
+/// True when the file at crate-relative `file` (a test file when `test`) naming the module path
+/// `target` breaks `order`: a production file outside a test-only sub-area naming it, or a
+/// sub-area naming a sibling whose tier is not strictly lower than its own.
+fn breaks_sub_area_order(order: &SubAreaOrder, file: &str, target: &str, test: bool) -> bool {
+    let Some(to) = order.sub_area_of(target) else {
+        return false;
+    };
+    let from = order.sub_area_of(file);
+    if from == Some(to) {
+        return false;
+    }
+    if order.is_test_only(to) {
+        return !test;
+    }
+    let Some(from) = from.filter(|from| !order.is_test_only(from)) else {
+        return false;
+    };
+    match (order.tier(from), order.tier(to)) {
+        (Some(from_tier), Some(to_tier)) => to_tier >= from_tier,
+        // An unlisted sub-area is its own finding; its edges are judged once a tier lists it.
         _ => false,
     }
 }

@@ -45,8 +45,8 @@ returns false, and then drops itself; a missing `window` ends the loop.
   `legacy/map_engine/src/frame/pump.rs` and implements `FrameTarget` for `RenderEngine`
   there; through that re-export, the frontend starts a pump for the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport
-  (`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`) and for the debug building
-  viewer and world line-of-sight views (`apps/frontend/src/v2/apps/debug/`).
+  (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`) and for the debug building
+  viewer and world line-of-sight views (`apps/frontend/src/workspaces/debug/`).
 - Rules: a frame renders, then polls, then counts, then calls the hook
   (`a_frame_renders_then_polls`, `the_hook_runs_after_the_frame_and_sees_the_running_count`); a
   contended or unbooted target skips the frame and keeps the loop alive

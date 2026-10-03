@@ -23,16 +23,16 @@ that links it. A link that still needs one of these documents goes to the target
 
 | Stubs | Target |
 |---|---|
-| the feature entry schema | [feature entry schema](/documentation/apps/frontend/apps/editor/feature_inventory/feds_schema.md) |
-| the two roadmaps | [Mission Creator roadmap](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) |
-| the two Eden UX specs | [Mission Creator UX spec](/documentation/apps/frontend/apps/editor/ux_spec.md) |
-| the agent execution plan | [Mission Creator decisions](/documentation/apps/frontend/apps/editor/decisions.md) |
-| the two feature inventories | [feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) |
-| the Eden editor feature reference | [Eden interactions](/documentation/apps/frontend/apps/editor/eden_editor_reference/interactions/README.md) |
-| the Eden UI anatomy | [Eden UI anatomy](/documentation/apps/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) |
-| the Eden attribute catalog | [Eden attributes](/documentation/apps/frontend/apps/editor/eden_editor_reference/attributes.md) |
-| the Eden gap analysis | [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) |
-| the Eden wiki manifest | [Eden wiki scrape manifest](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml) |
+| the feature entry schema | [feature entry schema](/documentation/apps/frontend/workspaces/editor/feature_inventory/feds_schema.md) |
+| the two roadmaps | [Mission Creator roadmap](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) |
+| the two Eden UX specs | [Mission Creator UX spec](/documentation/apps/frontend/workspaces/editor/ux_spec.md) |
+| the agent execution plan | [Mission Creator decisions](/documentation/apps/frontend/workspaces/editor/decisions.md) |
+| the two feature inventories | [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md) |
+| the Eden editor feature reference | [Eden interactions](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/interactions/README.md) |
+| the Eden UI anatomy | [Eden UI anatomy](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/ui_anatomy.md) |
+| the Eden attribute catalog | [Eden attributes](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/attributes.md) |
+| the Eden gap analysis | [Eden gap analysis](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md) |
+| the Eden wiki manifest | [Eden wiki scrape manifest](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_wiki_scrape_manifest.yaml) |
 | the problem statement, technical specification, engineering plan, macOS UX architecture, backend architecture, context handoffs and registration flow design | the matching files in [Go and React era designs](/documentation/archive/go_and_react_era_design/README.md) |
 | the Mission Creator mock-up readme | a GitHub permalink to the token folder it indexed |
 
@@ -51,7 +51,7 @@ None: the stubs point at documents, not code.
 
 ## Related documentation
 
-- [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md) — where
+- [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md) — where
   most stubs point.
 - [Go and React era designs](/documentation/archive/go_and_react_era_design/README.md) — the
   archived targets of the rest.

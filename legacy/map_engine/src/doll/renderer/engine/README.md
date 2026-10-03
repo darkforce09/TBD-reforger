@@ -15,7 +15,7 @@ legacy/map_engine/src/doll/renderer/engine/
 
 - Depends on: `crate::doll::renderer::lifecycle_1`, which defines `DollEngine`.
 - Used by: nothing; the arsenal preview in
-  `apps/frontend/src/v2/apps/editor/arsenal/doll.rs` and the readback check in
+  `apps/frontend/src/workspaces/editor/arsenal/doll.rs` and the readback check in
   `legacy/map_engine/src/diagnostics/readback/doll.rs` name
   `doll::renderer::lifecycle_1::DollEngine` directly.
 - Rules: the module declares nothing of its own; the struct and its methods stay in

@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Mission approvals page](/apps/frontend/src/v2/pages/administration/approvals/) — the
+- [Mission approvals page](/apps/frontend/src/pages/administration/approvals/) — the
   built page the set was drawn for.
 
 ## Boundaries

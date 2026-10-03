@@ -55,9 +55,9 @@ index with `u16`.
   `crate::doll::interaction::picking`.
 - Used by: `crate::doll::renderer`, `crate::doll::interaction` and
   `crate::diagnostics::readback::doll`. The arsenal preview in
-  `apps/frontend/src/v2/apps/editor/arsenal/doll.rs` reaches the scene only through
+  `apps/frontend/src/workspaces/editor/arsenal/doll.rs` reaches the scene only through
   `DollEngine`, and sends its region states in the order of its own `RAIL_REGIONS`
-  (`apps/frontend/src/v2/apps/editor/arsenal/rules/paper_doll_and_weight.rs`).
+  (`apps/frontend/src/workspaces/editor/arsenal/rules/paper_doll_and_weight.rs`).
 - Rules:
   - `REGION_KEYS` and the frontend's `RAIL_REGIONS` list the same 14 keys in the same order,
     because the state bytes and the pick index are positional; no test compares the two lists
@@ -69,5 +69,5 @@ index with `u16`.
 
 ## Related documentation
 
-- [Arsenal](/apps/frontend/src/v2/apps/editor/arsenal/README.md) — the workspace whose
+- [Arsenal](/apps/frontend/src/workspaces/editor/arsenal/README.md) — the workspace whose
   rail and loadout rows the regions stand for.

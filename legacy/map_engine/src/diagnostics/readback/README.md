@@ -59,7 +59,7 @@ which drops the GPU timer.
   `layout::QuadInstance`).
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   `window.__selfChecks.texture` (`texture_self_check`, published in
-  `apps/frontend/src/v2/apps/editor/bridge/viewport.rs` and called by the editor gate's
+  `apps/frontend/src/workspaces/editor/bridge/viewport.rs` and called by the editor gate's
   `selfcheck` smoke); `crate::frame::pump` (`poll`, every frame); the Mission Creator's canvas boot
   and the debug benches (`disable_frame_timing`); `crate::diagnostics::bench`
   (`readback_sleep_ms`). No code in the repository calls the other eight checks or

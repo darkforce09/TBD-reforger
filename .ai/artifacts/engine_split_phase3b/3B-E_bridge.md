@@ -2,7 +2,7 @@
 
 Read `00_rules_every_agent_obeys.md` first. Every rule there applies to this brief.
 
-The editor now lives at `apps/frontend/src/v2/apps/editor/` in its old internal shape, and
+The editor now lives at `apps/frontend/src/workspaces/editor/` in its old internal shape, and
 `render_sync.rs` is gone. This brief is the first of the reshape briefs, one destination folder
 each. CLAUDE.md's atlas defines `bridge/` as the canvas mount, DPR scaling and rAF heartbeat
 connector — the frontend's side of the engine seam.
@@ -39,7 +39,7 @@ line carries the same `cfg` gate as the code it declares (`world_assets` is
 
 ## What to repoint
 
-- `crate::v2::apps::editor::canvas::…` call sites across the crate → `…::bridge::…`.
+- `crate::workspaces::editor::canvas::…` call sites across the crate → `…::bridge::…`.
 - `mission_editor.rs`'s `pub(crate) use` re-export blocks for the overlay components
   (`AssetPickerOverlay`, `CommentEditorOverlay`, `ConflictDialog`, `ConnectionsPanelOverlay`,
   `SnapReadout`, `TransformWidgetOverlay`, `WidgetModeHint`, `read_widget_pivot`,

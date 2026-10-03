@@ -204,13 +204,13 @@ Expected: `26/26 routes match the frozen oracle` and exit 0.
   for EOF on pipes that Chromium's zygote and crashpad children inherit.
 - **`innerText` returns the text CSS renders.** Under `text-transform: uppercase`, `innerText`
   reads `ATTACHED MISSIONS` where `textContent` reads `Attached Missions` (the heading in
-  `apps/frontend/src/v2/pages/administration/event_manager/mission_picker.rs:216` carries
+  `apps/frontend/src/pages/administration/event_manager/mission_picker.rs:216` carries
   the `uppercase` class). `render-check --expect` matches against `document.body.innerText`; use
   `textContent` in `--assert-js` for source-exact text, or compare case-insensitively.
 - **`aside` is ambiguous.** The desktop sidebar
-  (`apps/frontend/src/v2/pages/navigation/sidebar.rs:47`), the mobile drawer
-  (`apps/frontend/src/v2/pages/navigation/layout.rs:135`) and the membership notice
-  (`apps/frontend/src/v2/pages/navigation/membership_status.rs:96`) are all `<aside>`, and
+  (`apps/frontend/src/shell/sidebar.rs:47`), the mobile drawer
+  (`apps/frontend/src/shell/layout.rs:135`) and the membership notice
+  (`apps/frontend/src/shell/membership_status.rs:96`) are all `<aside>`, and
   `document.querySelector('aside')` returns the first in DOM order whether or not it is shown.
   Select on a discriminating class or scope to a landmark.
 - **`render-check` proxies `/api` to a live API.** `--api-proxy` defaults to

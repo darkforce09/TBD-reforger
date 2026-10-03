@@ -10,15 +10,15 @@ administrator, the queue of leave requests to decide.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/operations/deployments/`](/apps/frontend/src/v2/pages/operations/deployments/):
+- Code: [`apps/frontend/src/pages/operations/deployments/`](/apps/frontend/src/pages/operations/deployments/):
   `page.rs` holds the route component `DeploymentsPage`, the fetch and the two-column layout;
   `active_orders.rs` the banner of upcoming deployments; `service_record.rs` the combat history
   table; `leave_of_absence.rs` the leave form and the viewer's requests;
   `leave_review_queue.rs` the administrator's queue. The folder's
-  [README](/apps/frontend/src/v2/pages/operations/deployments/README.md) describes each
+  [README](/apps/frontend/src/pages/operations/deployments/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/operations/deployments/README.md#routes). The
+  [Routes](/apps/frontend/src/pages/operations/deployments/README.md#routes). The
   sidebar lists the page as "My Deployments" in the "Operations" section.
 - Related: the [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md)
   and the [ORBAT selection page](/documentation/apps/frontend/pages/operations/orbat_selection/orbat_selection_page.md),
@@ -32,9 +32,9 @@ administrator, the queue of leave requests to decide.
 
 ### The record
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
    the session states of the README's
-   [States](/apps/frontend/src/v2/pages/operations/deployments/README.md#states) until the
+   [States](/apps/frontend/src/pages/operations/deployments/README.md#states) until the
    viewer is signed in.
 2. The signed-in half reads the viewer's name and [role](/documentation/glossary/n_to_z.md#role)
    from the session through a memo, so a profile poll that changes neither does not rebuild the
@@ -80,20 +80,20 @@ administrator, the queue of leave requests to decide.
 
 - The leave form calls the reason optional and leaves it out of the body when it is empty
   (`LeaveOfAbsencePanel` in
-  `apps/frontend/src/v2/pages/operations/deployments/leave_of_absence.rs`, and
-  `CreateLeaveInput` in `apps/frontend/src/v2/core/api/dto/events.rs`), but the API
+  `apps/frontend/src/pages/operations/deployments/leave_of_absence.rs`, and
+  `CreateLeaveInput` in `apps/frontend/src/foundation/transport/dto/events.rs`), but the API
   requires one: a body without it is refused with 400 "starts_on, ends_on and reason are
   required", and a blank one with 400 "reason is required" (`submit_leave` in
   `apps/api/src/operations/handlers/leave_requests.rs`). A member who leaves the reason
   empty cannot file a request.
 - The review queue shows the first 20 requests, pending first: the page sends no paging and has
   no pager (`AdminLeaveQueue` in
-  `apps/frontend/src/v2/pages/operations/deployments/leave_review_queue.rs`), and the API
+  `apps/frontend/src/pages/operations/deployments/leave_review_queue.rs`), and the API
   pages by 20 by default (`list_all_leave`, same API file).
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/operations/deployments/README.md#data)
+The README's [Data](/apps/frontend/src/pages/operations/deployments/README.md#data)
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/me/deployments` (`get_my_deployments` in
@@ -161,7 +161,7 @@ The page stores nothing in the browser.
   reads "No telemetry recorded" rather than zeros
   (`no_fabricated_personal_telemetry_survives_in_this_module` and
   `personal_telemetry_empty_copy_is_pinned` in
-  `apps/frontend/src/v2/pages/operations/deployments/tests/deployments.rs`).
+  `apps/frontend/src/pages/operations/deployments/tests/deployments.rs`).
 - One fetch feeds the record: upcoming deployments and history arrive together, so nothing on the
   page can go stale against anything else on it; each leave panel owns its own fetch because it
   changes on its own.

@@ -99,7 +99,7 @@ session.
   - `crate::streaming::host`; `crate::streaming::scheduler` (`WorldChunk`, `ObjectsManifest`,
     `DEFAULT_CHUNK_SIZE_M`); `crate::spatial::los::world`; and the DEM, water, label, vegetation
     and satellite loaders and tests under `crate::world`;
-  - the debug world line-of-sight bench in `apps/frontend/src/v2/apps/debug/world_los/`;
+  - the debug world line-of-sight bench in `apps/frontend/src/workspaces/debug/world_los/`;
   - the developer tools in `tools/developer_tools/src/`: the world export pipeline, the map
     raster pipeline and the map verifications.
 - Rules:

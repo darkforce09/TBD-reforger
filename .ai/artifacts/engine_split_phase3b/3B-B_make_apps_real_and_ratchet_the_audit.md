@@ -15,7 +15,7 @@ and zero lines of Rust — is not part of the crate at all.
 - add `pub mod apps;` to `v2/mod.rs`, in the same style as the two lines above it, and extend that
   file's `//!` header so its "Role" sentence names what `apps` holds: the standalone CAD
   workspaces, which consume `core` and are reached from `pages`.
-- create `apps/frontend/src/v2/apps/mod.rs` with a `//!` header describing the domain
+- create `apps/frontend/src/workspaces/mod.rs` with a `//!` header describing the domain
   (per CLAUDE.md's atlas: the editor, planner, aar and debug workspaces). It declares nothing yet —
   brief 3B-C adds `pub mod editor;`.
 

@@ -59,8 +59,8 @@ Discord is unreachable and their own snapshot is stale.
   `operations::services::event_reservations`; `core` for the extractors, pagination and the
   authorized SSE stream.
 - Used by: the domain's `routes.rs`; over HTTP, the personnel and audit log pages in
-  `apps/frontend/src/v2/pages/administration/` and the membership status control in
-  `apps/frontend/src/v2/pages/navigation/membership_status.rs`.
+  `apps/frontend/src/pages/administration/` and the membership status control in
+  `apps/frontend/src/shell/membership_status.rs`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); a ban
   reason and a role are required fields, never defaulted, so a malformed body cannot erase what an

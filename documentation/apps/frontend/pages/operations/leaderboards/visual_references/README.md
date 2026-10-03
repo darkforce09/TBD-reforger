@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Leaderboards page](/apps/frontend/src/v2/pages/operations/leaderboards/) — the built page
+- [Leaderboards page](/apps/frontend/src/pages/operations/leaderboards/) — the built page
   the set was drawn for.
 
 ## Boundaries

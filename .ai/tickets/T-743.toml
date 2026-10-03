@@ -68,7 +68,7 @@ owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "apps/frontend/src/mission_editor.rs",
     "apps/frontend/src/eden_help.rs",
-    "documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md",
+    "documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md",
 ]
 
 [scope]

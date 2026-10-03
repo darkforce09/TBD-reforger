@@ -35,7 +35,7 @@ them, and that invariant must survive the split. Do not duplicate a line of it.
 
 As in brief 3B-E: sibling test files and their bottom-of-file declarations, allowlist rows updated
 in the same commit, `//!` headers rewritten where they name an old home, anchored source pins
-repointed to the new suffixes, `crate::v2::apps::editor::{canvas,tools}::…` call sites swept, and
+repointed to the new suffixes, `crate::workspaces::editor::{canvas,tools}::…` call sites swept, and
 `xtask/` + `tools/` grepped for any path you moved. `mission_editor.rs`'s re-export blocks are
 repointed, never deleted.
 

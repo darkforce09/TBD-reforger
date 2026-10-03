@@ -27,9 +27,9 @@ compile findings. The code folder's README lists the page's files.
 
 ## Code
 
-- [Mission approvals page](/apps/frontend/src/v2/pages/administration/approvals/) — the
+- [Mission approvals page](/apps/frontend/src/pages/administration/approvals/) — the
   route component `MissionApprovalsPage`, the queue, the review drawer and the decision form.
-- [Mission review views](/apps/frontend/src/v2/pages/mission_hub/mission_review/) — the
+- [Mission review views](/apps/frontend/src/features/mission_review_record/) — the
   provenance, review record and comment views the drawer shares with the mission hub.
 - [Missions domain](/apps/api/src/missions/) — the approvals queue, the review record
   and the decisions.

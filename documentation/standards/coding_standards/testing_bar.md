@@ -41,8 +41,8 @@ forbidden (CLAUDE.md law 7). Three test suites hold the rule, each in the crate'
 
 - the API: `no_inline_test_modules` in
   [architecture_rules.rs](/apps/api/src/tests/architecture_rules.rs);
-- the app's `src/v2/` tree: `v2_production_files_meet_the_documentation_standard` in
-  `apps/frontend/src/v2/tests/doc_audit/mod.rs`;
+- the app's `src/` tree: `frontend_production_files_meet_the_documentation_standard` in
+  `apps/frontend/src/tests/doc_audit/mod.rs`;
 - the four `tools` crates: `tooling_test_modules_live_in_separate_files` in
   `tools/xtask/src/tests/tooling_dependency_boundaries.rs`.
 

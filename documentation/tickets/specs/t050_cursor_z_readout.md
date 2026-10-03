@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-050)  
 **Git tag on ship:** T-050  
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Recommended program order · [eden/ui_anatomy.md](/documentation/apps/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) Status Bar X/Y/Z · follows [t049_terrain_title_position.md](t049_terrain_title_position.md)
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) §Recommended program order · [eden/ui_anatomy.md](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/ui_anatomy.md) Status Bar X/Y/Z · follows [t049_terrain_title_position.md](t049_terrain_title_position.md)
 
 ---
 
@@ -118,12 +118,12 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-050 bullet + bump latest-feature line |
 | [`docs/TAGS.md`](/documentation/standards/ticket_identifiers.md) | T-050 row |
-| [`docs/website/frontend/pages/mission-editor.md`](/documentation/apps/frontend/apps/editor/ux_spec.md) | Element #5 (toolbelt X/Y/Z incl. cursor) + M3.6 milestone |
-| [`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) | `MAP-CURSOR-001` — X/Y/Z, Outputs fix, acceptance |
-| [`agent_execution.md`](/documentation/apps/frontend/apps/editor/decisions.md) | Decisions log — CUR readout X/Y/Z |
-| [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) | DONE T-050; T-050 shipped note; shipped-list cursor X/Y/Z |
+| [`docs/website/frontend/pages/mission-editor.md`](/documentation/apps/frontend/workspaces/editor/ux_spec.md) | Element #5 (toolbelt X/Y/Z incl. cursor) + M3.6 milestone |
+| [`feature_inventory.md`](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md) | `MAP-CURSOR-001` — X/Y/Z, Outputs fix, acceptance |
+| [`agent_execution.md`](/documentation/apps/frontend/workspaces/editor/decisions.md) | Decisions log — CUR readout X/Y/Z |
+| [`ROADMAP.md`](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) | DONE T-050; T-050 shipped note; shipped-list cursor X/Y/Z |
 | [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | Recently shipped T-050 |
-| [`eden/ui_anatomy.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) | Status Bar X/Y/Z mapping row |
+| [`eden/ui_anatomy.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/ui_anatomy.md) | Status Bar X/Y/Z mapping row |
 | [`t049_terrain_title_position.md`](t049_terrain_title_position.md) | Amendment: renumber Future T-050 title PATCH → **T-051**; mark "cursor Z stays `—`" superseded |
 
 **Do not update:** archive stitch, Eden wiki artifacts.

@@ -25,7 +25,7 @@ page's files, calls and states.
 
 ## Code
 
-- [Deployments page](/apps/frontend/src/v2/pages/operations/deployments/) — the route
+- [Deployments page](/apps/frontend/src/pages/operations/deployments/) — the route
   component `DeploymentsPage`, the banner, the history table and the leave panels.
 - [Operations domain](/apps/api/src/operations/) — the service record and the leave
   requests.

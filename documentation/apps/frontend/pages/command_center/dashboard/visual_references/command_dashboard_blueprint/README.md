@@ -5,7 +5,7 @@
 Design-phase reference for the dashboard page at `/`: a countdown banner over three status cards
 and an intelligence feed. It gives colour and layout context and is not an implementation source;
 the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/command_center/dashboard/`.
+`apps/frontend/src/pages/command_center/dashboard/`.
 
 ## Contents
 
@@ -34,7 +34,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Dashboard page](/apps/frontend/src/v2/pages/command_center/dashboard/) — the page this
+- [Dashboard page](/apps/frontend/src/pages/command_center/dashboard/) — the page this
   set was drawn for.
 
 ## Boundaries

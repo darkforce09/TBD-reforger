@@ -30,7 +30,7 @@ legacy/map_engine/src/editing/
 ## How it works
 
 ```text
-Mission Creator (apps/frontend/src/v2/apps/editor/)
+Mission Creator (apps/frontend/src/workspaces/editor/)
   │ creates the MissionDocCore handle and the selection, then host::install(doc, selection)
   ▼
 host.rs ── with_doc / with_doc_mut: one borrow per call, dropped before returning
@@ -85,9 +85,9 @@ probe and the click with one resolution, so a row is clickable only when a click
   side tints), `crate::frame::EngineHandle` on `wasm32` with `render`; `serde_json`. The `editing`
   feature turns on `store`, `world` and `streaming`.
 - Used by:
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/` (canvas mount, bridge,
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/` (canvas mount, bridge,
     input, shell, docks, inspector, outliner, modals, arsenal) and the debug building viewer in
-    `apps/frontend/src/v2/apps/debug/building_viewer/`;
+    `apps/frontend/src/workspaces/debug/building_viewer/`;
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through the
     selection self-checks the select tool publishes;
   - the `engine-layers` and `editor-orbat-coherency` gates of `tools/xtask/`, which scan this
@@ -110,7 +110,7 @@ probe and the click with one resolution, so a row is clickable only when a click
   layer edits and the operations it calls.
 - [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the
   `engine-layers` and `editor-orbat-coherency` gates that scan this tree.
-- [Mission Creator feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — the Mission Creator features this layer backs.
 - [Editing layer](/documentation/legacy/map_engine/editing_layer.md) — the host, hosted
   commands, undo and tools as flows, with open work and decisions.

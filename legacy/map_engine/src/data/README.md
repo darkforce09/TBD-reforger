@@ -51,9 +51,9 @@ binding enters this tree.
   `contracts/rules/kit-aliases.json`, embedded at build time; nothing else of the crate.
 - Used by: `crate::editing`; the API's [missions](/documentation/glossary/g_to_m.md#missions) and
   [operations](/documentation/glossary/n_to_z.md#operations) domains under
-  `apps/api/src/`; the Mission Creator in `apps/frontend/src/v2/apps/editor/`,
-  the mission library in `apps/frontend/src/v2/pages/mission_hub/library/` and the DTOs of
-  `apps/frontend/src/v2/core/api/dto/`; the `engine-layers` and `editor-orbat-coherency`
+  `apps/api/src/`; the Mission Creator in `apps/frontend/src/workspaces/editor/`,
+  the mission library in `apps/frontend/src/pages/mission_hub/library/` and the DTOs of
+  `apps/frontend/src/foundation/transport/dto/`; the `engine-layers` and `editor-orbat-coherency`
   gates of `tools/xtask/`, which scan this tree.
 - Rules:
   - the tree imports none of the crate's `camera`, `diagnostics`, `doll`, `frame`, `io`,

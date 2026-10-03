@@ -25,7 +25,7 @@ and its states.
 
 ## Code
 
-- [Announcements page](/apps/frontend/src/v2/pages/command_center/announcements/) — the
+- [Announcements page](/apps/frontend/src/pages/command_center/announcements/) — the
   route component `AnnouncementsPage`, the list and the reading pane.
 - [Community content domain](/apps/api/src/community_content/) — the announcement feed
   the page reads and the CMS routes that write it.

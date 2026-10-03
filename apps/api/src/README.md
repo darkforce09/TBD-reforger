@@ -91,7 +91,7 @@ generated from `contracts/definitions/` live in the `contract_schema_types` crat
     `missions/contract/loadout_projection.rs` is the one contract model maintained by hand,
     because the generator's output for the loadout export's versioned root loses fields.
   - The snake_case models under each domain's `models/` are the API's wire contract; the
-    single-page app's DTOs in `apps/frontend/src/v2/core/api/dto/` mirror them under
+    single-page app's DTOs in `apps/frontend/src/foundation/transport/dto/` mirror them under
     golden tests, so a model change updates both.
   - Every `@route` tag resolves to a route a table registers, and every registered route to a
     tag (`cargo xtask verify route-tags`).

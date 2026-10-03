@@ -16,7 +16,7 @@ never_minted = [
 ]
 
 # Which ticket implements an editor gap row, for the rows of
-# `documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md`
+# `documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md`
 # that no ticket claims through its own `implements` list and whose notes carry no checkmark
 # citation. `ticket sync` writes the document's ticket column from a ticket's own claim first
 # and from this table only as a fallback.

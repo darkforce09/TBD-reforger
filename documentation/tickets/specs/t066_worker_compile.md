@@ -4,7 +4,7 @@
 
 **Status:** **Shipped** — T-066 + **T-066.1** hotfix; FE build/lint clean; manual @ ~367k: Save Version **201** (user verified 2026-06-25).  
 **Git tag:** **T-066** (this commit)  
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/apps/editor/decisions.md) §ACTIVE SLICE · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §Phase 9 · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) · [t065_cluster_lod.md](t065_cluster_lod.md)
+**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/workspaces/editor/decisions.md) §ACTIVE SLICE · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §Phase 9 · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) · [t065_cluster_lod.md](t065_cluster_lod.md)
 
 **Prerequisites:** T-065 shipped (`845bfb2`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 

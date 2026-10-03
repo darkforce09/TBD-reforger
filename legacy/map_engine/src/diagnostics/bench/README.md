@@ -44,7 +44,7 @@ and `clear_vector_lane` call it.
   anchor), `crate::world::scene` (the stress quads), `crate::diagnostics::timing` and `crate::diagnostics::readback::scene` (clocks and
   the async sleep), and `render_primitives::draw::instances::CHUNK_CAPACITY`.
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport bridge
-  (`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`), which publishes `render_bench`
+  (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`), which publishes `render_bench`
   as `window.__editorBench(n)` and shows `stats()` in its debug HUD once a second; the editor
   gate's smoke harness in `tools/developer_tools/src/browser_testing/editor_smoke_tests.rs`,
   which calls `window.__editorBench` when it exists; the upload belts, through `set_vector_stat`.

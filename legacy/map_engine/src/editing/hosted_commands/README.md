@@ -66,7 +66,7 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
 - Used by:
   - `crate::editing::tools::selection`, whose `Rotate` gesture commits through
     `selection_transform::rotate_selection_to_face`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/`: the bridge's host state,
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the bridge's host state,
     armed placement, overlays and document history, the pointer input, the arsenal, the docks
     (context menu, left and right docks, markers, toolbelt, top strip), the inspector (Attributes
     modal, audio emitters, zones panel), the modals, the outliner, and the editor tests.
@@ -79,7 +79,7 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
 
 - [Mission document store](/legacy/map_engine/src/data/store/README.md) — the document and
   the operations these commands drive.
-- [Mission Creator feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — the [ORBAT](/documentation/glossary/n_to_z.md#orbat), layers, markers, zones, triggers,
   connections and clipboard features.
-- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the arrange, rotate, formation and delete commands.
+- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/workspaces/editor/feature_inventory/transform_and_delete.md) — the arrange, rotate, formation and delete commands.

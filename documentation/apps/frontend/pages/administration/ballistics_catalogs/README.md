@@ -16,7 +16,7 @@ documentation/apps/frontend/pages/administration/ballistics_catalogs/
 
 ## Code
 
-- [Ballistics catalogs page](/apps/frontend/src/v2/pages/administration/ballistics_catalogs/)
+- [Ballistics catalogs page](/apps/frontend/src/pages/administration/ballistics_catalogs/)
   — the route component `BallisticsCatalogsPage`, the upload form, the validation report and the
   version list.
 - [Operations domain](/apps/api/src/operations/) — the catalog upload and read routes.

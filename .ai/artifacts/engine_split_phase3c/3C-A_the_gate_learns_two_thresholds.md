@@ -15,5 +15,5 @@ Read `00_rules_every_agent_obeys.md` first. The Phase 3C plan pasted in the curr
 
 - Run `cargo test -p xtask` (record known baseline failures by name), `cargo xtask verify file-length`, `cargo test -p frontend`, and `cargo fmt --all -- --check`, serially, with the target-dir prefix.
 - The new gate must report exactly 42 unallowlisted frontend SIZE-3 violations and no others. Report each verification result verbatim.
-- Do not touch `apps/frontend/src/v2/tests/doc_audit/allowlist.rs`; the coordinator owns it.
+- Do not touch `apps/frontend/src/tests/doc_audit/allowlist.rs`; the coordinator owns it.
 - Tell the coordinator when editing is complete and list the exact files changed. Do not commit; the coordinator owns serialized Git operations.

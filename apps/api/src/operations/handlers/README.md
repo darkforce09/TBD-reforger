@@ -80,11 +80,11 @@ server.
   `fleet_wire_contract` for `ExecutorKind`; `map_engine::data::scenario` for the faction join-key check and the
   ballistics.
 - Used by: the domain's `routes.rs`; over HTTP, the operations pages in
-  `apps/frontend/src/v2/pages/operations/`, the
+  `apps/frontend/src/pages/operations/`, the
   [event manager](/documentation/glossary/a_to_f.md#event-manager) in
-  `apps/frontend/src/v2/pages/administration/event_manager/`, the mortar calculator in
-  `apps/frontend/src/v2/pages/field_tools/mortar/`, the endpoint helpers in
-  `apps/frontend/src/v2/core/api/endpoints/`, and the game runtime's roster loader in
+  `apps/frontend/src/pages/administration/event_manager/`, the mortar calculator in
+  `apps/frontend/src/pages/field_tools/mortar/`, the endpoint helpers in
+  `apps/frontend/src/foundation/transport/endpoints/`, and the game runtime's roster loader in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` and deployment queues in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler

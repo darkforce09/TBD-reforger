@@ -75,8 +75,8 @@ legacy/map_engine/src/spatial/los/interior/
 - Used by: `crate::spatial::los::world`, whose world occluder reuses the walker's trace and
   concealment helpers; `crate::editing::tools::viewshed_scheduler`, whose building-wash lane runs a
   `WashJob` in budgeted steps; the debug building viewer
-  (`apps/frontend/src/v2/apps/debug/building_viewer.rs`); the Mission Creator's
-  line-of-sight tool (`apps/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`);
+  (`apps/frontend/src/workspaces/debug/building_viewer.rs`); the Mission Creator's
+  line-of-sight tool (`apps/frontend/src/workspaces/editor/input/tools/los_world_wasm.rs`);
   and the blueprint tooling (`tools/developer_tools/src/blueprint/bvh/construction.rs`).
 - Rules: `wash_cap_check` refuses a wash radius above `MAX_WASH_RADIUS_M` (400 m)
   (`over_cap_wash_radius_is_refused_with_a_message` in `tests/wash.rs`); a `WashJob` may pause at

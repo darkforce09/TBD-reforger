@@ -11,14 +11,14 @@ selector the event hub shows under each mission.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/operations/orbat_selection/`](/apps/frontend/src/v2/pages/operations/orbat_selection/):
+- Code: [`apps/frontend/src/pages/operations/orbat_selection/`](/apps/frontend/src/pages/operations/orbat_selection/):
   `page.rs` holds the route component `OrbatSelectionPage`, the event fetch, the mission lookup
   and the mounted selector. The folder's
-  [README](/apps/frontend/src/v2/pages/operations/orbat_selection/README.md) describes it.
+  [README](/apps/frontend/src/pages/operations/orbat_selection/README.md) describes it.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/operations/orbat_selection/README.md#routes). The
+  [Routes](/apps/frontend/src/pages/operations/orbat_selection/README.md#routes). The
   sidebar has no entry for it; the deployments page's "Modify Assignment" link
-  (`apps/frontend/src/v2/pages/operations/deployments/active_orders.rs`) and direct links
+  (`apps/frontend/src/pages/operations/deployments/active_orders.rs`) and direct links
   lead here.
 - Related: the [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md),
   which owns `OrbatSelector`, `MissionStanding` and `standing_notices` and describes the slotting
@@ -27,9 +27,9 @@ selector the event hub shows under each mission.
 
 ## Behaviour
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
    the session states of the README's
-   [States](/apps/frontend/src/v2/pages/operations/orbat_selection/README.md#states) until
+   [States](/apps/frontend/src/pages/operations/orbat_selection/README.md#states) until
    the viewer is signed in.
 2. The signed-in half reads `:id` and `:emid`, fetches the event's hub and shows "Loading…".
 3. It looks the mission up in the hub by its event mission id. When the hub holds it, the page
@@ -54,18 +54,18 @@ selector the event hub shows under each mission.
 
 - A failed hub fetch and a mission the viewer may not see both render the generic page with an
   unrestricted standing (`OrbatSelectionInner` in
-  `apps/frontend/src/v2/pages/operations/orbat_selection/page.rs`). For a mission of an
+  `apps/frontend/src/pages/operations/orbat_selection/page.rs`). For a mission of an
   event the viewer may not see, the selector's own ORBAT fetch fails with 404 "mission not found"
   (`get_orbat` in `apps/api/src/operations/handlers/orbat_view.rs`) and reads
   "No ORBAT slots defined for this mission.", so the viewer is not told the link is closed to
   them.
 - The back link names an event without a `name_override` "Operation", where the hub it leads to
   calls it "Untitled Operation"
-  (`event_hub_view` in `apps/frontend/src/v2/pages/operations/event_detail/hero_countdown.rs`).
+  (`event_hub_view` in `apps/frontend/src/pages/operations/event_detail/hero_countdown.rs`).
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/operations/orbat_selection/README.md#data)
+The README's [Data](/apps/frontend/src/pages/operations/orbat_selection/README.md#data)
 lists the calls. Server-side:
 
 - `GET /api/v1/events/{id}` (`get_event` in

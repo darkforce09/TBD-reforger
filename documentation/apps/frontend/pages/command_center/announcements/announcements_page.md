@@ -10,13 +10,13 @@ announcement opens exactly that one.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/command_center/announcements/`](/apps/frontend/src/v2/pages/command_center/announcements/):
+- Code: [`apps/frontend/src/pages/command_center/announcements/`](/apps/frontend/src/pages/command_center/announcements/):
   `page.rs` holds the route component `AnnouncementsPage` and the list fetch; `article_feed.rs`
   the order of the list, its rows and the split pane; `article_viewer.rs` the reading pane. The
-  folder's [README](/apps/frontend/src/v2/pages/command_center/announcements/README.md)
+  folder's [README](/apps/frontend/src/pages/command_center/announcements/README.md)
   describes each file.
 - Entry: both routes render `AnnouncementsPage`; their tier and layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/command_center/announcements/README.md#routes).
+  [Routes](/apps/frontend/src/pages/command_center/announcements/README.md#routes).
   The sidebar lists the page as "Announcements" in the "Command Center" section.
 - Related: the [content manager page](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md),
   where administrators write, publish, pin and push announcements to Discord; the
@@ -30,9 +30,9 @@ announcement opens exactly that one.
 
 ### The list
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), which
    shows the session states of the README's
-   [States](/apps/frontend/src/v2/pages/command_center/announcements/README.md#states)
+   [States](/apps/frontend/src/pages/command_center/announcements/README.md#states)
    until the viewer is signed in.
 2. The signed-in half fetches the feed once and shows "Loading…", then "Failed to load data." or
    the board. The feed carries every body, so opening an announcement never fetches again.
@@ -64,7 +64,7 @@ announcement opens exactly that one.
 ### Known discrepancies
 
 - The byline promises an author and shows the `author_id` field
-  (`reader` in `apps/frontend/src/v2/pages/command_center/announcements/article_viewer.rs`),
+  (`reader` in `apps/frontend/src/pages/command_center/announcements/article_viewer.rs`),
   which the API fills with the publishing administrator's Discord id
   (`create_announcement` in
   `apps/api/src/community_content/handlers/announcements_admin.rs`), so readers see a
@@ -77,7 +77,7 @@ announcement opens exactly that one.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/command_center/announcements/README.md#data)
+The README's [Data](/apps/frontend/src/pages/command_center/announcements/README.md#data)
 lists the call and the fields the page reads. Server-side:
 
 - `GET /api/v1/announcements` (`list_announcements` in
@@ -136,7 +136,7 @@ The page writes nothing and stores nothing in the browser.
 - The body renders as escaped plain text: it is stored unsanitised, so rendering it as markup
   would need a sanitiser on the write path first
   (`body_paragraphs_preserve_bare_angle_brackets` in
-  `apps/frontend/src/v2/pages/command_center/announcements/tests/announcements.rs` keeps
+  `apps/frontend/src/pages/command_center/announcements/tests/announcements.rs` keeps
   the single escape).
 - A thumbnail loads only from an `http(s)` URL, checked again at render although the writer
   already checks it (`announcement_thumbnail_emits_src_only_for_http_urls`, same file).

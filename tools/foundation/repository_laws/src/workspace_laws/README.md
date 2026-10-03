@@ -15,7 +15,7 @@ tools/foundation/repository_laws/src/workspace_laws/
 ├── crate_firewalls.rs           rule 6 of the crate-tier law: the external-crate firewalls
 ├── crate_layout.rs              categories, the judged set, declared targets and the category edge matrix
 ├── crate_tiers.rs               rules 1 to 8 of the crate-tier law and its report
-├── frontend_layering.rs         the layer table types, the ratchet ceiling and the layering report
+├── frontend_layering.rs         the layer table and sub-area order types and the hard layering report
 ├── mod.rs                       the law reports' shared shape: `LawOutcome` and `WorkspaceLawReport`
 ├── rust_module_references.rs    the in-crate module paths a source file names, comments and strings blanked
 ├── strangler.rs                 dependency edges onto `legacy/` and re-export shims
@@ -38,7 +38,7 @@ verdict line `<LAW>: PASS`, `<LAW>: FAIL (<n> finding(s))` (exit 1) or `<LAW>: F
 | Crate tiers | `crate_tiers::check_crate_tiers(root, sweep_roots)` | 1 every `Cargo.toml` under the sweep roots (outside `tests`, `fixtures`, `test_fixtures`, `target`, `node_modules`) is a member; 2 the layout is declared; 3 category equals the parent folder, package equals the folder name; 4 declared tier equals 1 plus the highest judged dependency tier (0 with none), edges strictly down; 5 the category matrix, and a wasm-only crate reached from an `any` crate only through a wasm32 table; 6 the firewalls; 7 no edge onto a member under `legacy/`; 8 no dev-dependency onto `apps/` or `legacy/` |
 | Crate anatomy | `crate_anatomy::check_crate_anatomy(root)` | each judged library crate: `lib.rs` ≤ 80 lines of doc comments, attributes, `mod` and `pub use` lines; `pub mod prelude`; a `thiserror` `error.rs` when a `pub fn` returns `Result`; no `anyhow`; a README Contents block; inherited `edition`, `rust-version`, `[lints]` and dependencies; only `test_fixtures` and `failpoints`, enabled only by dev-dependencies; no primitive public `id` / `*_id` outside `generated/` and `#[wasm_bindgen]`; no `pub use` of another workspace crate outside the crate's prelude module |
 | Strangler | `strangler::check_strangler(root)` | no member outside `legacy/` (apps and `tools/xtask`, `tools/developer_tools` excepted) depends on a member under `legacy/`; no source under `legacy/` holds a `pub use` of a workspace crate outside `legacy/` |
-| Frontend layering | `frontend_layering::check_frontend_layering(root, crates, ceiling)` | import edges where a lower layer names a higher one, pages and workspaces name each other, or one page area names another, counted per (file, target place), production and test apart, against `FRONTEND_LAYERING_CEILING` |
+| Frontend layering | `frontend_layering::check_frontend_layering(root, crates)` | import edges where a lower layer names a higher one, pages and workspaces name each other, one page area names another, a sub-area of an ordered folder names a sibling at or above its own tier, or a production file names a test-only sub-area; one finding per (file, target place), production and test apart; hard at zero, so any edge fails, as does a source no row maps or a child of an ordered folder in no tier |
 | Tailwind sources | `tailwind_sources::check_tailwind_sources(root, stylesheet)` | every member with a `leptos` dependency has an `@source` glob, resolved from the stylesheet's folder, ending in `/**/*.rs` over its `src` folder or an ancestor |
 
 The category matrix (`crate_layout::category_edge_allowed`): foundation → foundation; contracts →
@@ -51,9 +51,11 @@ tools → foundation, contracts, mission, ballistics, engine crates whose `targe
 tools, never a wasm-only crate, with the staging fixtures tool (tools/staging/staging_fixtures) also reaching api.
 
 The frontend layer table is the caller's: xtask passes the table for
-`apps/frontend` (`src/v2/core` foundation, `src/v2/pages` pages, `src/v2/apps`
-workspaces, the entry point, route table, platform frame and crate-level tests the shell). Module
-paths are read from `crate::` and `super::` paths after comments and string literals are blanked,
+`apps/frontend` (`src/foundation` foundation, `src/features` features, `src/pages` pages,
+`src/workspaces` workspaces, the entry point, the render form of the route table, the platform
+frame in `src/shell` and the crate-level tests the shell) and the order of the foundation's
+sub-areas (`ui` < `utils` < `transport` < `route_table` < `auth` < {`offline`, `map_view`}, with
+`test_support` test-only). Module paths are read from `crate::` and `super::` paths after comments and string literals are blanked,
 braced `use` groups included.
 
 ## Public surface
@@ -69,8 +71,8 @@ braced `use` groups included.
 - `strangler`: `check_strangler`, `strangler_outcome`, `legacy_dependency_findings`,
   `reexported_crate`, `LEGACY_DEPENDENT_TOOL_BINARIES`.
 - `frontend_layering`: `check_frontend_layering`, `frontend_layering_outcome`, `layering_edges`,
-  `FrontendLayer`, `FrontendLayerRow`, `FrontendCrateLayers`, `LayeringCeiling`, `LayeringEdge`,
-  `FRONTEND_LAYERING_CEILING`.
+  `FrontendLayer`, `FrontendLayerRow`, `SubAreaOrder`, `FrontendCrateLayers`, `LayeringEdge`,
+  `LayeringScan`.
 - `tailwind_sources`: `check_tailwind_sources`, `tailwind_sources_outcome`, `source_globs`,
   `LEPTOS_PACKAGE`.
 
@@ -85,7 +87,7 @@ braced `use` groups included.
     never a pass (`crate_tiers_a_missing_member_folder_did_not_run`,
     `tailwind_sources_a_missing_stylesheet_did_not_run`);
   - every law passes this checkout (`crate_tiers_this_checkout_passes` and its siblings), the
-    layering law at its ceiling.
+    layering law with no edge.
 
 ## Related documentation
 

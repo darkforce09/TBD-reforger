@@ -49,7 +49,7 @@ which converts world positions to the scene anchor.
 - `symbols`: the instance constants, `cluster_mode`, `px_to_m_at_zoom` and the packers, for
   `crate::camera::viewport`, `crate::overlay::symbology::markers` and `crate::frame`.
 - `drag::pack_vehicle_drag_preview`, for the Mission Creator's select tool
-  (`apps/frontend/src/v2/apps/editor/input/tools/select_tool.rs`).
+  (`apps/frontend/src/workspaces/editor/input/tools/select_tool.rs`).
 - `bridge_1::SlotGpuBridge`, `bridge_1::SlotAtlasGpu` and `lanes::ICON_UNIFORM_BYTES`, for
   `crate::frame`.
 - The `#[wasm_bindgen]` methods on `RenderEngine` (`ensure_slot_atlas`, `slots_bind_symbology`,
@@ -68,7 +68,7 @@ which converts world positions to the scene anchor.
 - Used by:
   - `crate::frame` (boot, encode, engine, lifecycle), `crate::camera::viewport`,
     `crate::overlay::symbology::markers` and `crate::streaming::loaders::world_loader`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/` (canvas mount boot tasks,
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/` (canvas mount boot tasks,
     document host, entity selection, attributes modal, armed placement, pointer gestures, select
     tool, viewport).
 - Rules: a selection change patches rows and never repacks the lane, and the side tints stay three
@@ -80,4 +80,4 @@ which converts world positions to the scene anchor.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: performance at scale](/documentation/apps/frontend/apps/editor/feature_inventory/performance_at_scale.md) — the selection patches, drag overlay and clusters at scale.
+- [Mission Creator feature inventory: performance at scale](/documentation/apps/frontend/workspaces/editor/feature_inventory/performance_at_scale.md) — the selection patches, drag overlay and clusters at scale.

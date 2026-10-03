@@ -5,7 +5,7 @@
 Design-phase reference for the content manager page at `/admin/content`: a "Comms Link" reading
 view of command announcements in a list-beside-detail split. It gives colour and layout context
 and is not an implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/administration/content_manager/`.
+`apps/frontend/src/pages/administration/content_manager/`.
 
 ## Contents
 
@@ -32,7 +32,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Content manager page](/apps/frontend/src/v2/pages/administration/content_manager/) —
+- [Content manager page](/apps/frontend/src/pages/administration/content_manager/) —
   the page this set was drawn for.
 
 ## Boundaries

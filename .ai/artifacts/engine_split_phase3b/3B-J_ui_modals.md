@@ -58,7 +58,7 @@ lines and is split in Phase 3C, not here.
 
 Sibling test files with their bottom-of-file declarations. Allowlist rows added or updated in the
 same commit. Anchored pins repointed. Every `crate::pages::operations::{orbat,faction}_manager` and
-`crate::v2::apps::editor::panels::{help,settings}_modal` call site swept.
+`crate::workspaces::editor::panels::{help,settings}_modal` call site swept.
 
 ## Verification — run once, at the end, from the repo root
 

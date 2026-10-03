@@ -18,7 +18,7 @@ documentation/apps/frontend/pages/doctrine_and_info/
 
 ## How it works
 
-The folders mirror the page folders under `apps/frontend/src/v2/pages/doctrine_and_info/`
+The folders mirror the page folders under `apps/frontend/src/pages/doctrine_and_info/`
 and keep their spelling. Each holds a README index and the page's feature doc; the vehicle
 database and the modpacks also hold a `visual_references/` folder of design-phase sets. A feature
 doc follows the [feature doc template](/documentation/standards/templates/feature_doc.md): Where
@@ -44,7 +44,7 @@ and its feature doc, a line in Contents and a row in the table.
 
 ## Code
 
-- [Doctrine and info pages](/apps/frontend/src/v2/pages/doctrine_and_info/) — the three
+- [Doctrine and info pages](/apps/frontend/src/pages/doctrine_and_info/) — the three
   route components, which the feature docs describe.
 - [Community content domain](/apps/api/src/community_content/) — the wiki, vehicle
   database and modpack routes behind them.

@@ -21,7 +21,7 @@ Both folders hold the same six file names, one per schema in
 `apps/api/tests/fixtures/equipment_data_viewer/` through the production importer, boots
 a development router and requires the answer of each route that has a sample here to equal the
 `positive/` page, validate against its schema and decode into the generated type. The frontend's
-`apps/frontend/src/v2/core/api/dto/tests/equipment_data_viewer_parity.rs` decodes every
+`apps/frontend/src/foundation/transport/dto/tests/equipment_data_viewer_parity.rs` decodes every
 `positive/` page into its DTO, claiming every wire field, and requires every `negative/` page to
 fail decoding.
 

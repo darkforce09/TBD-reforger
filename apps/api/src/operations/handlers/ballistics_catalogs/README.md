@@ -42,7 +42,7 @@ apps/api/src/operations/handlers/ballistics_catalogs/
   `operations::models::ballistics_catalog` for the summaries; `core` for `AdminUser`, `PathParams`
   and `ApiError`.
 - Used by: `apps/api/src/operations/routes.rs`; over HTTP, the mortar calculator in
-  `apps/frontend/src/v2/pages/field_tools/mortar/` and the offline service worker; the
+  `apps/frontend/src/pages/field_tools/mortar/` and the offline service worker; the
   test `apps/api/tests/game_ballistics_catalog_upload.rs`.
 - Rules: the reads take no identity extractor; the upload takes `AdminUser`, so a lower caller is
   refused before the body is read; a refused upload stores nothing and writes no audit line.

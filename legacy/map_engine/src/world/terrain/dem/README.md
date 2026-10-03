@@ -81,7 +81,7 @@ fire-planning map uses); the Mission Creator's full scope leaves the handle empt
   - `crate::spatial::los::terrain` and `crate::editing::tools::line_of_sight`, which take a
     `DemManifest`;
   - the Mission Creator's canvas and pointer handlers in
-    `apps/frontend/src/v2/apps/editor/`, which read heights with `sample_grid_meters`;
+    `apps/frontend/src/workspaces/editor/`, which read heights with `sample_grid_meters`;
   - the world export in `tools/developer_tools/src/world_export_pipeline/`, which writes
     `dem/elevation.dem` with `raw::to_bytes`, and the label and alignment checks in
     `tools/developer_tools/src/map_raster_pipeline/` and

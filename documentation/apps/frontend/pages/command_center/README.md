@@ -18,7 +18,7 @@ documentation/apps/frontend/pages/command_center/
 
 ## How it works
 
-The folders mirror the page folders under `apps/frontend/src/v2/pages/command_center/`
+The folders mirror the page folders under `apps/frontend/src/pages/command_center/`
 and keep their spelling. Each holds a README index and the page's feature doc; the dashboard and
 server intel folders add a `visual_references/` folder with one design-phase blueprint set. A
 feature doc follows the [feature doc template](/documentation/standards/templates/feature_doc.md):
@@ -27,9 +27,9 @@ Where it lives, Behaviour (ending in the known discrepancies between the page an
 layout as built and each difference from the design target), Open work and Decisions. Start with
 the feature doc of the page at hand.
 
-Every page is declared in `apps/frontend/src/router.rs` with the route tier `none`, full
+Every page is declared in `apps/frontend/src/foundation/route_table/mod.rs` with the route tier `none`, full
 bleed inside the navigation frame, and renders its body inside `AuthGate`
-(`apps/frontend/src/v2/core/ui/gates.rs`), so only a signed-in viewer sees data. The pages
+(`apps/frontend/src/foundation/auth/gates.rs`), so only a signed-in viewer sees data. The pages
 only read: none of them writes platform data.
 
 | Page | Route and component | Label on screen | Feature doc |
@@ -44,7 +44,7 @@ Contents and a row in the table.
 
 ## Code
 
-- [Command center pages](/apps/frontend/src/v2/pages/command_center/) — the three route
+- [Command center pages](/apps/frontend/src/pages/command_center/) — the three route
   components and their panels, which the feature docs describe.
 - [Command center domain](/apps/api/src/command_center/) — the dashboard payload.
 - [Community content domain](/apps/api/src/community_content/) — the announcement feed

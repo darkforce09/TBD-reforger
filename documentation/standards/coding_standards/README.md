@@ -97,16 +97,16 @@ predictable contract for the consumer; Debuggability (De), a failure that says w
 | TEST-2 | De | non-trivial app logic has a unit test | CI-BLOCK, the `frontend` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
 | TEST-3 | Us | a schema change ships a fixture and a green schema gate | CI-BLOCK, the `schema` job | [testing_bar.md](/documentation/standards/coding_standards/testing_bar.md) |
 | TS-1 | De | the compiler runs in its strictest mode | retired; the Rust compiler carries it | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
-| TS-2 | Sc | layer boundaries hold | CI-SCRIPT for the engine wall (`cargo xtask verify engine-layers`); the rest unenforced | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
+| TS-2 | Sc | layer boundaries hold | CI-SCRIPT, `cargo xtask verify frontend-layering` and the engine wall (`cargo xtask verify engine-layers`) | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-3 | De | contract data is fully typed | retired; the Rust type system carries it | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-4 | Us | a failed request shows the user an error | live, unenforced | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-5 | Re | every exported contract item has a doc comment | retired; the documentation standards own it | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | TS-6 | Re | a DTO mirrors its API model exactly | CI-BLOCK, the R-api golden tests | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
-| TS-7 | Us | no failure is swallowed | live, unenforced | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
+| TS-7 | Us | no failure is swallowed | CI-SCRIPT, the app's clippy `-D warnings` in `cargo xtask mk ci-local-leptos` | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | WS-1 | Sc | every manifest is a member; judged crates declare their layout, tier and category edges; the firewalls hold | CI-SCRIPT, `cargo xtask verify crate-tiers` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-1-crate-tiers) |
 | WS-2 | Sc | a judged library crate keeps the crate anatomy | CI-SCRIPT, `cargo xtask verify crate-anatomy` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-2-crate-anatomy) |
 | WS-3 | Sc | nothing new depends on legacy, and legacy holds no shim | CI-SCRIPT, `cargo xtask verify strangler` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-3-strangler) |
-| WS-4 | Sc | a lower frontend layer never imports a higher one (ratchet) | CI-SCRIPT, `cargo xtask verify frontend-layering` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-4-frontend-layering) |
+| WS-4 | Sc | a lower frontend layer never imports a higher one, and the foundation's sub-areas keep their declared order | CI-SCRIPT, `cargo xtask verify frontend-layering` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-4-frontend-layering) |
 | WS-5 | Sc | every leptos crate has an `@source` line in the app stylesheet | CI-SCRIPT, `cargo xtask verify tailwind-sources` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-5-tailwind-sources) |
 
 46 codes: 23 gated (10 CI-BLOCK, 13 CI-SCRIPT, TS-2 counted for its engine wall), 2 MANUAL, 12

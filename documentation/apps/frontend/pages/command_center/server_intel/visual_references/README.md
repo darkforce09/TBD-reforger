@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Server intel page](/apps/frontend/src/v2/pages/command_center/server_intel/) — the built
+- [Server intel page](/apps/frontend/src/pages/command_center/server_intel/) — the built
   page the set was drawn for.
 
 ## Boundaries

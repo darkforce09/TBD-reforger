@@ -44,7 +44,7 @@ each assigned task.
 
 - Depends on: `serde` (the derives of `TaskState` and `TaskTier`) and `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `tasks` row calls `validate`; the Mission
-  Creator's tasks panel (`apps/frontend/src/v2/apps/editor/ui/inspector/tasks_panel.rs`),
+  Creator's tasks panel (`apps/frontend/src/workspaces/editor/ui/inspector/tasks_panel.rs`),
   which offers `TIERS` and `STATES`, checks each edit with `validate`, and checks each schedule
   with `validate_schedule` against `flow.timeLimitSeconds`.
 - Rules: only the two moves out of `assigned` are legal, as in the game's table

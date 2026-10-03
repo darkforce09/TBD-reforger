@@ -91,8 +91,8 @@ and the crate's tests use them.
     names another folder (`apps/api/src/core/http_router.rs`).
 - Used by:
   - `crate::world` and `crate::spatial::los::world`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/` and the debug world
-    line-of-sight bench in `apps/frontend/src/v2/apps/debug/world_los/`;
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/` and the debug world
+    line-of-sight bench in `apps/frontend/src/workspaces/debug/world_los/`;
   - the developer tools in `tools/developer_tools/src/` (the world export pipeline, the map
     raster pipeline, the map verifications) and their editor smoke tests, which read
     `window.__mapAssets`.

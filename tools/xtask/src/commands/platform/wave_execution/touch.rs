@@ -272,12 +272,10 @@ fn package_name(dir: &str) -> Option<String> {
 /// there. Without it here, a test-only lint is invisible to the agent and certain to land red. That
 /// is exactly the case.
 ///
-/// Scoped to changed crates rather than the workspace because `clippy --workspace -D warnings` is
-/// red on clean main — a gate nothing can pass teaches agents that gate failures are noise. A re-measure
-/// re-measured 2026-07-31: 60 errors, ALL of them frontend linted natively, none in
-/// tools/developer_tools or xtask (this note used to blame those two; they are clean and the wave gate
-/// now lints them by name). Frontend goes through wasm32 with NO `-D`, matching ci.yml:113;
-/// everything else takes `-D warnings`, matching the wave gate.
+/// Scoped to changed crates rather than the workspace: the slice's gate examines the crates the
+/// slice touched, each with the flags its CI job uses. Every crate takes `-D warnings`, matching the
+/// wave gate and ci.yml; the frontend is linted twice, for `wasm32-unknown-unknown` (the browser
+/// build) and natively (the native test build), as `cargo xtask mk ci-local-leptos` does.
 pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
     // Propagate changed_rs failure — empty stdout + rc≠0 must not become SKIP.
     let files = match changed_rs(base) {
@@ -333,27 +331,41 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
         return 1;
     }
     for c in &crates {
-        let argv: Vec<String> = match c.as_str() {
-            // --all-targets is load-bearing (see function header) — without it, #[cfg(test)]
-            // lints are invisible here and certain to land red once CI learns the
-            // same flag. NO -D warnings: ci.yml frontend clippy is advisory (no -D),
-            // matching the wave-gate `clippy frontend` step. Align -D with CI intent, not with the
-            // other crates.
-            "frontend" => host::v(&[
-                "cargo",
-                "clippy",
-                "-p",
-                "frontend",
-                "--target",
-                "wasm32-unknown-unknown",
-                "--all-targets",
-                "--quiet",
-            ]),
-            // THE TOOLING CRATES ARE NOT SKIPPED HERE. A skip reading "red on main, ungated by
-            // CI" is false on both halves. Measured: the 60 workspace errors are ALL
-            // frontend, and the wave gate lints the tooling crates by name. Re-verified
-            // 2026-08-01 through this very function, both directions: with a skip arm in place, a
-            // `format!("{}", "verify")` injected into
+        let runs: Vec<Vec<String>> = match c.as_str() {
+            // --all-targets is load-bearing (see function header): without it, #[cfg(test)]
+            // lints are invisible here. The browser build and the native test build compile
+            // different `cfg(target_arch)` halves, so each is linted, both with `-D warnings`,
+            // matching the wave-gate `clippy frontend` steps and ci.yml.
+            "frontend" => vec![
+                host::v(&[
+                    "cargo",
+                    "clippy",
+                    "-p",
+                    "frontend",
+                    "--target",
+                    "wasm32-unknown-unknown",
+                    "--all-targets",
+                    "--quiet",
+                    "--",
+                    "-D",
+                    "warnings",
+                ]),
+                host::v(&[
+                    "cargo",
+                    "clippy",
+                    "-p",
+                    "frontend",
+                    "--all-targets",
+                    "--locked",
+                    "--quiet",
+                    "--",
+                    "-D",
+                    "warnings",
+                ]),
+            ],
+            // THE TOOLING CRATES ARE NOT SKIPPED HERE: they are clean, and the wave gate lints
+            // them by name. Verified through this very function, both directions: with a skip
+            // arm in place, a `format!("{}", "verify")` injected into
             // tools/developer_tools/src/enfusion_tooling/apidoc.rs and into an xtask module
             // leaves it returning 0, printing `(skipped: …)` and compiling nothing; without the
             // arm, `clippy_changed` returns 1 naming each file and line in turn, and returns 0
@@ -373,7 +385,7 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
             // `error: useless use of format!` with them. The adversarial verifier found this; the
             // gate did not.
             // T-0xx Phase 2A: `website-mission-core` was the other arm here and no longer exists.
-            engine @ ("map_engine" | "graphics_engine") => host::v(&[
+            engine @ ("map_engine" | "graphics_engine") => vec![host::v(&[
                 "cargo",
                 "clippy",
                 "-p",
@@ -384,8 +396,8 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
                 "--",
                 "-D",
                 "warnings",
-            ]),
-            other => host::v(&[
+            ])],
+            other => vec![host::v(&[
                 "cargo",
                 "clippy",
                 "-p",
@@ -395,12 +407,14 @@ pub fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
                 "--",
                 "-D",
                 "warnings",
-            ]),
+            ])],
         };
-        let (out, rc) = host::capture(&ctx.host.checkrun_argv(&ctx.gate_check_target, &argv));
-        wprint!("{out}");
-        if rc != 0 {
-            return 1;
+        for argv in &runs {
+            let (out, rc) = host::capture(&ctx.host.checkrun_argv(&ctx.gate_check_target, argv));
+            wprint!("{out}");
+            if rc != 0 {
+                return 1;
+            }
         }
     }
     0

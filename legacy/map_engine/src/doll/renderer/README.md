@@ -74,7 +74,7 @@ reconfigures once on an outdated or lost surface, and fails if the texture still
   and `bytemuck`.
 - Used by:
   - `crate::diagnostics::readback::doll`, the byte-exact offscreen self-check;
-  - the arsenal preview in `apps/frontend/src/v2/apps/editor/arsenal/doll.rs`, which
+  - the arsenal preview in `apps/frontend/src/workspaces/editor/arsenal/doll.rs`, which
     creates the engine, forwards pointer moves, drags and clicks, pushes the states and runs the
     `requestAnimationFrame` loop.
 - Rules:
@@ -92,7 +92,7 @@ reconfigures once on an outdated or lost surface, and fails if the texture still
 
 ## Related documentation
 
-- [Arsenal](/apps/frontend/src/v2/apps/editor/arsenal/README.md) — the workspace that
+- [Arsenal](/apps/frontend/src/workspaces/editor/arsenal/README.md) — the workspace that
   mounts the preview.
 - [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the camera behind the
   render uniform.

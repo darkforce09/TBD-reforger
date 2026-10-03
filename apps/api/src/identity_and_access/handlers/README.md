@@ -66,9 +66,9 @@ apps/api/src/identity_and_access/handlers/
   `server_infrastructure` (`MachineCaller`) and `fleet_wire_contract` (`ExecutorKind`) for the
   link confirmation's caller.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
-  and the navigation frame under `apps/frontend/src/v2/pages/`, the
+  and the navigation frame under `apps/frontend/src/pages/`, the
   [API](/documentation/glossary/a_to_f.md#api) client's token refresh in
-  `apps/frontend/src/v2/core/api/client/refresh.rs`, and the mod's
+  `apps/frontend/src/foundation/transport/client/refresh.rs`, and the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_IdentityLink.c`, which confirms link codes.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); tokens

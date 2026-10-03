@@ -34,9 +34,9 @@ into one file per page, each with a line in Contents, once it passes 500 lines.
 
 ## Code
 
-- [Account pages](/apps/frontend/src/v2/pages/account/) — the three route components the
+- [Account pages](/apps/frontend/src/pages/account/) — the three route components the
   feature doc describes.
-- [Session and access](/apps/frontend/src/v2/core/auth/) — the session store, its
+- [Session and access](/apps/frontend/src/foundation/auth/) — the session store, its
   persistence and the [role](/documentation/glossary/n_to_z.md#role) ladder the pages read and write.
 - [Identity and access domain](/apps/api/src/identity_and_access/) — the Discord
   sign-in, the [dev login](/documentation/glossary/a_to_f.md#dev-login), the profile and the Arma
@@ -56,7 +56,7 @@ into one file per page, each with a line in Contents, once it passes 500 lines.
 
 ## Related documentation
 
-- [App layout and navigation](/documentation/apps/frontend/pages/navigation/app_layout_and_navigation.md)
+- [App layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md)
   — the frame that renders sign-in bare and the top bar that links the account pages.
 - [Local development](/documentation/runbooks/local_development.md) — the dev login and the
   Discord round trip on a workstation.

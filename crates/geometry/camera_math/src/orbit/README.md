@@ -29,7 +29,7 @@ instance's model matrix multiplies in the shader.
 - Used by: the map engine's `doll`, whose renderer, picking and scene model use both projections
   (the scene model re-exports them), and its doll readback check
   (`diagnostics::readback::doll`), all through the map engine's `camera::orbit` re-export. The
-  arsenal's preview in `apps/frontend/src/v2/apps/editor/arsenal/doll.rs` reaches it only
+  arsenal's preview in `apps/frontend/src/workspaces/editor/arsenal/doll.rs` reaches it only
   through the map engine's `doll`.
 - Rules: picking and rendering share one view-projection, so a pick lands on the pixel that was
   drawn: `view_proj_wgpu` is `view_proj_gl` with the depth remap in front and nothing else.

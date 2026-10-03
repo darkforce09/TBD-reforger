@@ -15,7 +15,7 @@ documentation/apps/frontend/pages/field_tools/
 
 ## How it works
 
-The folder mirrors the page folders under `apps/frontend/src/v2/pages/field_tools/` and
+The folder mirrors the page folders under `apps/frontend/src/pages/field_tools/` and
 keeps their spelling. A page's folder holds a README index, its feature doc, which follows the
 [feature doc template](/documentation/standards/templates/feature_doc.md), and a
 `visual_references/` folder of design-phase sets.
@@ -23,7 +23,7 @@ keeps their spelling. A page's folder holds a README index, its feature doc, whi
 A field tool stands on its own: it hangs off no [mission](/documentation/glossary/g_to_m.md#mission),
 owns a route under `/tools/` and sits in the sidebar's "Field Tools" section. The mortar calculator
 is public and works offline; only its save area renders inside `AuthGate`. The debug benches are apps, documented under
-[the debug benches documentation](/documentation/apps/frontend/apps/debug/README.md).
+[the debug benches documentation](/documentation/apps/frontend/workspaces/debug/README.md).
 
 | Page | Route and component | Label on screen | Feature doc |
 |---|---|---|---|
@@ -34,7 +34,7 @@ a line in Contents and a row in the table.
 
 ## Code
 
-- [Field tools pages](/apps/frontend/src/v2/pages/field_tools/) — the route components the
+- [Field tools pages](/apps/frontend/src/pages/field_tools/) — the route components the
   feature docs describe.
 - [Operations domain](/apps/api/src/operations/) — the ballistics catalog and
   fire-mission routes behind the mortar calculator.

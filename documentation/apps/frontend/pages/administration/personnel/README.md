@@ -26,7 +26,7 @@ initials. The code folder's README lists the page's files.
 
 ## Code
 
-- [Personnel roster page](/apps/frontend/src/v2/pages/administration/personnel/) — the
+- [Personnel roster page](/apps/frontend/src/pages/administration/personnel/) — the
   route component `PersonnelRosterPage`, the roster, the dossier and the moderation dialogs.
 - [Administration domain](/apps/api/src/administration/) — the roster, ban, warning and
   role routes the page calls.

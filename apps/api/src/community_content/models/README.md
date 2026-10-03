@@ -40,7 +40,7 @@ details, which carry `WikiMarkupFinding`s.
 - Used by: the domain's handlers and services; `command_center`'s dashboard (`Announcement`);
   `server_infrastructure`'s server intel (`Modpack`, `ModpackMod`); `missions`'
   [registry](/documentation/glossary/n_to_z.md#registry) items (`Modpack`); the web app's
-  `apps/frontend/src/v2/core/api/dto/content.rs` mirrors the modpack wire shape.
+  `apps/frontend/src/foundation/transport/dto/content.rs` mirrors the modpack wire shape.
 - Rules: an enum here and its Postgres enum in `apps/api/migrations/` change together;
   the generated types are written by `cargo xtask ci schema-codegen` and never edited by hand
   (`cargo xtask ci verify-codegen-fresh` checks them).

@@ -24,7 +24,7 @@ apps/api/src/identity_and_access/models/
 - Used by: the domain's handlers and services; `administration` handlers and
   `operations::services::event_access`, which read `UserRole`; the contract test
   `apps/api/tests/current_profile_contract.rs`, which decodes live answers into the
-  generated types; the web app's `apps/frontend/src/v2/core/api/dto/auth.rs` mirrors the
+  generated types; the web app's `apps/frontend/src/foundation/transport/dto/auth.rs` mirrors the
   wire shape.
 - Rules: soft-delete columns stay out of these structs, since the queries filter them;
   `RefreshToken.token_hash` never reaches the wire; the generated types are written by

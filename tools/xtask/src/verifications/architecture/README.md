@@ -62,7 +62,7 @@ that `api_v1_routes` merges under `/api/v1`; the `route_tags/` README describes 
 ### ORBAT coherency
 
 Three bans: `ensure_default_squad` on the placement path (the Mission Creator's arming and
-context files in `apps/frontend/src/v2/apps/editor/` and the map engine's
+context files in `apps/frontend/src/workspaces/editor/` and the map engine's
 `data/store/operations/` and `editing/hosted_commands/`), `loadout: String::new()` in the slot
 template derive, and the strings Standardization, IFAK or Grenade Complement in the ORBAT manager
 modal and the editor chrome. Three pins require the BLUFOR, OPFOR and INDFOR side colours in

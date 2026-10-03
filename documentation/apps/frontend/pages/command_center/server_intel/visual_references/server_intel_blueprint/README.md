@@ -5,7 +5,7 @@
 Design-phase reference for the server intel page at `/server-intel`: one game server's panel with
 its connect header, a telemetry grid and an intelligence strip, over a map backdrop. It gives
 colour and layout context and is not an implementation source; the built UI is the Leptos code
-under `apps/frontend/src/v2/pages/command_center/server_intel/`.
+under `apps/frontend/src/pages/command_center/server_intel/`.
 
 ## Contents
 
@@ -32,7 +32,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Server intel page](/apps/frontend/src/v2/pages/command_center/server_intel/) — the
+- [Server intel page](/apps/frontend/src/pages/command_center/server_intel/) — the
   page this set was drawn for.
 
 ## Boundaries

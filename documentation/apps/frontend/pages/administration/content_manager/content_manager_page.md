@@ -9,15 +9,15 @@ announcements only; the doctrine wiki has no editor here.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/administration/content_manager/`](/apps/frontend/src/v2/pages/administration/content_manager/):
+- Code: [`apps/frontend/src/pages/administration/content_manager/`](/apps/frontend/src/pages/administration/content_manager/):
   `page.rs` holds the route component `ContentManagerPage`, the list fetch and the working set
   of posts; `article_table.rs` the list rows and their badges; `editor_form.rs` the editor and
   its save, publish and delete actions; `hero_upload.rs` the hero image picker and upload;
   `doc.rs` the post shape, the routes and the category-to-tag mapping. The folder's
-  [README](/apps/frontend/src/v2/pages/administration/content_manager/README.md)
+  [README](/apps/frontend/src/pages/administration/content_manager/README.md)
   describes each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/administration/content_manager/README.md#routes).
+  [Routes](/apps/frontend/src/pages/administration/content_manager/README.md#routes).
 - Related: the [content manager](/documentation/glossary/a_to_f.md#content-manager) glossary entry;
   the [announcements page](/documentation/apps/frontend/pages/command_center/announcements/announcements_page.md),
   where members read what this page publishes; the [API](/documentation/glossary/a_to_f.md#api)'s
@@ -26,9 +26,9 @@ announcements only; the doctrine wiki has no editor here.
 ## Behaviour
 
 1. The page starts the list fetch at once and renders inside `AdminGate`
-   (`apps/frontend/src/v2/core/ui/gates.rs`), which shows the session and access states
+   (`apps/frontend/src/foundation/auth/gates.rs`), which shows the session and access states
    of the README's
-   [States](/apps/frontend/src/v2/pages/administration/content_manager/README.md#states)
+   [States](/apps/frontend/src/pages/administration/content_manager/README.md#states)
    in place of the page until a signed-in viewer holds the `admin`
    [role](/documentation/glossary/n_to_z.md#role).
 2. The master column holds the heading and a "New" button. The first successful fetch seeds the
@@ -55,7 +55,7 @@ announcements only; the doctrine wiki has no editor here.
 9. Every publish sends `is_pinned` false; the page has no pin control.
 10. "Delete" acts at once, without a confirmation. A saved post is archived on the server and
     leaves the list; an unsaved post is dropped with no request. Every toast is in the README's
-    [States](/apps/frontend/src/v2/pages/administration/content_manager/README.md#states).
+    [States](/apps/frontend/src/pages/administration/content_manager/README.md#states).
 11. The SOP category is stored under the tag `update`, the one Announcement uses, because the
     stored tag set has no SOP entry; a saved SOP post reads back as Announcement.
 
@@ -75,7 +75,7 @@ announcements only; the doctrine wiki has no editor here.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/administration/content_manager/README.md#data)
+The README's [Data](/apps/frontend/src/pages/administration/content_manager/README.md#data)
 lists each call with the DTO or body it reads or sends. Server-side, in
 `apps/api/src/community_content/handlers/`:
 
@@ -152,4 +152,4 @@ lists each call with the DTO or body it reads or sends. Server-side, in
 - The list reads typed `Announcement` rows: a row missing a key the contract requires fails the
   fetch and shows the list's error with its retry, never a partly blank post
   (`the_captured_cms_list_maps_drafts_and_published_posts` in
-  `apps/frontend/src/v2/pages/administration/content_manager/tests/content.rs`).
+  `apps/frontend/src/pages/administration/content_manager/tests/content.rs`).

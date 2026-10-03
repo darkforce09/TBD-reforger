@@ -63,7 +63,7 @@ null and left off the wire.
   state, the `AuthUser` and `AdminUser` extractors and `ApiError`; the `wiki_pages` and
   `wiki_page_revisions` tables of migration 0059.
 - Used by: the domain's `routes.rs`; over HTTP, the wiki page under
-  `apps/frontend/src/v2/pages/doctrine_and_info/wiki/`.
+  `apps/frontend/src/pages/doctrine_and_info/wiki/`.
 - Rules: reads take `AuthUser` and the save `AdminUser`; every handler carries its `/// @route` tag
   (`cargo xtask verify route-tags`); the save locks the page row, then inserts the revision, then
   appends the audit row, all in one transaction; every nullable column is read through `COALESCE`

@@ -5,7 +5,7 @@
 Design-phase reference for the personnel roster page at `/admin/personnel`: a member table beside
 one member's dossier, styled like an activity monitor. It gives colour and layout context and is
 not an implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/administration/personnel/`.
+`apps/frontend/src/pages/administration/personnel/`.
 
 ## Contents
 
@@ -35,7 +35,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Personnel roster page](/apps/frontend/src/v2/pages/administration/personnel/) — the
+- [Personnel roster page](/apps/frontend/src/pages/administration/personnel/) — the
   page this set was drawn for.
 
 ## Boundaries

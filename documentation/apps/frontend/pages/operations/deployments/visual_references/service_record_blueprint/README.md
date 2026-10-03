@@ -6,7 +6,7 @@ Design-phase reference for the deployments page at `/deployments`: a member's
 [service record](/documentation/glossary/n_to_z.md#service-record), with career figures beside the
 next operation's orders and a combat history. It gives colour and layout context and is not an
 implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/operations/deployments/`.
+`apps/frontend/src/pages/operations/deployments/`.
 
 ## Contents
 
@@ -35,7 +35,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Deployments page](/apps/frontend/src/v2/pages/operations/deployments/) — the page this
+- [Deployments page](/apps/frontend/src/pages/operations/deployments/) — the page this
   set was drawn for.
 
 ## Boundaries

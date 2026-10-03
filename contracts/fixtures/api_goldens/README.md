@@ -32,7 +32,7 @@ contracts/fixtures/api_goldens/
 - Consumers: the API's `contract_parity_goldens` test binary (`apps/api/tests/`), which replays
   every row against the live router and checks each body against its route's schema in
   `contracts/definitions/`, and its other contract tests that embed single files; the frontend's
-  DTO golden tests and page tests under `apps/frontend/src/v2/`; the headless browser gates of
+  DTO golden tests and page tests under `apps/frontend/src/`; the headless browser gates of
   `tools/developer_tools/`, which answer the app's requests from these files.
 
 ## Boundaries

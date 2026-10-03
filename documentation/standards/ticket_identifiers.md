@@ -88,7 +88,7 @@ A commit that lands a ticket names its full id in the subject, for example
   `## Open work`. Code comments carry no ticket ids: tests hold this for every tracked file under
   `tools/` (`tools/xtask/src/tests/tooling_prose_rules.rs`), for the API's sources
   (`no_ticket_references_in_source` in `apps/api/src/tests/architecture_rules.rs`) and
-  for the app's `src/v2/` tree (`apps/frontend/src/v2/tests/doc_audit/mod.rs`).
+  for the app's `src/` tree (`apps/frontend/src/tests/doc_audit/mod.rs`).
 
 The repository also holds git tags named after ticket ids. No command creates them and no gate
 reads them; the ticket file's `shipped_at` sha, written by `ticket stamp-sha`, is the record of

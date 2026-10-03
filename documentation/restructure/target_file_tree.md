@@ -162,7 +162,7 @@ TBD-reforger/
 ## The tree between stages
 
 Each stage builds a part of this tree; until the close stage the live tree also holds what the
-later stages have not yet dissolved. After S2 the live tree differs from the end state in these
+later stages have not yet dissolved. After S3 the live tree differs from the end state in these
 places:
 
 - `crates/` holds the first two library crates, both tier 0: `http_url_guard` in
@@ -171,8 +171,9 @@ places:
   request classes, network fallback and offline pack list the service worker and the page share).
 - `legacy/` parks the two engine crates, `legacy/map_engine/` and `legacy/graphics_engine/`
   (decision D12), until S8 deletes them; no crate under `crates/` depends on them.
-- `apps/` holds the end-state app folders; the frontend keeps its `src/v2/` layer until S3, and
-  `apps/offline_service_worker/` is already the binary-only crate of the end state.
+- `apps/` holds the end-state app folders; the frontend's `src/` holds the `foundation/`,
+  `features/`, `pages/`, `workspaces/` and `shell/` layers in one crate until S10 splits them into
+  crates, and `apps/offline_service_worker/` is already the binary-only crate of the end state.
 - `deploy/` is in its end state, `caddy/` included.
 - `tools/` keeps its four single crates (`xtask`, `verification_core`, `ticket_engine`,
   `developer_tools`) until S4 and S11 split them.

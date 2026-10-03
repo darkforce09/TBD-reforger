@@ -11,21 +11,21 @@ line can reload it.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/field_tools/mortar/`](/apps/frontend/src/v2/pages/field_tools/mortar/):
+- Code: [`apps/frontend/src/pages/field_tools/mortar/`](/apps/frontend/src/pages/field_tools/mortar/):
   `page.rs` holds the route component `MortarCalculatorPage`; `catalog_source.rs` the public
   catalog reads; `inputs/` the weapon and shell, position, battery, wind and illumination inputs;
   `map_picker/` the Everon map with placing, dragging, the fire-mission overlay and the crest
   profile; `solve_bridge.rs` the mapping onto the map engine's solver; `solution/` the solution
   panel; `saved_fires/` the save area; `offline_status.rs` the offline pack line. The folder's
-  [README](/apps/frontend/src/v2/pages/field_tools/mortar/README.md) describes each file.
+  [README](/apps/frontend/src/pages/field_tools/mortar/README.md) describes each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/field_tools/mortar/README.md#routes).
+  [Routes](/apps/frontend/src/pages/field_tools/mortar/README.md#routes).
 - Related:
   - the [game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md),
     whose `solve_fire_mission` the page and the API both run;
   - the [ballistics catalogs page](/documentation/apps/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md),
     where administrators publish the catalogs the page solves with;
-  - the [offline core](/apps/frontend/src/v2/core/offline/README.md) and the
+  - the [offline core](/apps/frontend/src/foundation/offline/README.md) and the
     [offline mortar page runbook](/documentation/runbooks/offline_mortar_page.md);
   - the [game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md),
     which records the model, the tolerances and the operator decisions.
@@ -34,7 +34,7 @@ line can reload it.
 
 The page renders for every viewer; only the save area sits in `AuthGate`. Every label, message and
 state text is in the README's
-[States](/apps/frontend/src/v2/pages/field_tools/mortar/README.md#states).
+[States](/apps/frontend/src/pages/field_tools/mortar/README.md#states).
 
 ### Choosing the catalog, weapon, shell and charge
 
@@ -107,7 +107,7 @@ state text is in the README's
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/field_tools/mortar/README.md#data) lists
+The README's [Data](/apps/frontend/src/pages/field_tools/mortar/README.md#data) lists
 each call with its DTO. Server-side:
 
 - `GET /api/v1/ballistics-catalogs` and `GET /api/v1/ballistics-catalogs/{catalogId}/versions/{version}`

@@ -63,7 +63,7 @@ the `map` binary (`tools/developer_tools/src/map_raster_pipeline/`) writes eithe
   index and its validation); `serde_json` for the version 1 index.
 - Used by: `crate::world::terrain::satellite::quadtree`, which reads the index and picks the
   levels; and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tests in
-  `apps/frontend/src/v2/apps/editor/tests/`, which parse Everon's index and check the level
+  `apps/frontend/src/workspaces/editor/tests/`, which parse Everon's index and check the level
   choice.
 - Rules: the folder compiles only with the `streaming` feature; both container versions of one
   pyramid parse to the same tiles at the same bytes (`v1_and_v2_of_one_pyramid_read_back_identical`

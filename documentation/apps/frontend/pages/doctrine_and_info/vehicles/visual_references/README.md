@@ -24,7 +24,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Vehicle database page](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/) — the
+- [Vehicle database page](/apps/frontend/src/pages/doctrine_and_info/vehicles/) — the
   built page the sets were drawn for.
 
 ## Boundaries

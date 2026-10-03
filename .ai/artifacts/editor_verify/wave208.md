@@ -19,7 +19,7 @@ Verifier: Cursor Grok 4.5, 2026-08-11. Verified MERGED MAIN at **f8353eab** (`gi
 ## FINDINGS
 
 ### F1 — `?role_notice=mission_maker` is written but never read
-`MINOR | apps/frontend/src/router.rs:303-312 + apps/frontend/src/auth.rs:349-352 | denial redirect appends \`role_notice\` and a comment claims it "remains for deep links", but no SPA consumer reads the query; only the navigate-time toast fires | proven by whole-tree \`role_notice\` grep + live CDP`
+`MINOR | apps/frontend/src/foundation/route_table/mod.rs:303-312 + apps/frontend/src/auth.rs:349-352 | denial redirect appends \`role_notice\` and a comment claims it "remains for deep links", but no SPA consumer reads the query; only the navigate-time toast fires | proven by whole-tree \`role_notice\` grep + live CDP`
 
 - Evidence: `rg role_notice` under `apps/frontend/src` hits **only** `router.rs` / `auth.rs` (writers + unit asserts). No `mission_overview` / `missions` / layout effect parses the param. Live CDP: enlisted/leader/guest deep-link to `/missions/smoke/edit` → pathname `/missions/smoke`, search `?role_notice=mission_maker`, toast text `Mission Maker role required to open the editor.` present in `[role=status]`. A cold open of `/missions/smoke?role_notice=mission_maker` without going through the guard would show **no** toast (param inert).
 - Impact: Primary UX (redirect + toast on denial) works. Deep-link / refresh of the overview URL alone does not re-show the notice. Claim "with `role_notice=`" is half-true.

@@ -54,11 +54,11 @@ terrain.
     in `crate::data::store::operations` (`terrain_bounds`), and `crate::editing::persist`, which
     compares a local draft with the server's version through `compile_payload`;
   - the Mission Creator's Save and Export
-    (`apps/frontend/src/v2/apps/editor/shell/document_commands.rs`), its validation
-    panel's payload (`apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`) and
-    its zone inspector (`apps/frontend/src/v2/apps/editor/ui/inspector/zones_panel/`);
+    (`apps/frontend/src/workspaces/editor/session/document_commands.rs`), its validation
+    panel's payload (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`) and
+    its zone inspector (`apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/`);
   - the mission library's document upload, through `version_body_to_writer`
-    (`apps/frontend/src/v2/pages/mission_hub/library/dossier_upload_panel.rs`).
+    (`apps/frontend/src/pages/mission_hub/library/dossier_upload_panel.rs`).
 - Rules:
   - a saved payload has no `orbat` key, and an export's ORBAT runs faction, squad, then `index`
     (`save_payload_omits_orbat_and_has_editor_shape`,

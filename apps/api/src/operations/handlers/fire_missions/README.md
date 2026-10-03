@@ -46,7 +46,7 @@ apps/api/src/operations/handlers/fire_missions/
   `map_engine::data::scenario::ballistics::fire_mission` for the body's input and
   solution types; `core` for `AuthUser`, `PathParams` and `ApiError`.
 - Used by: `apps/api/src/operations/routes.rs`; over HTTP, the mortar calculator in
-  `apps/frontend/src/v2/pages/field_tools/mortar/`; the tests
+  `apps/frontend/src/pages/field_tools/mortar/`; the tests
   `apps/api/tests/game_ballistics_fire_missions.rs` and
   `apps/api/tests/fire_mission_solution.rs`.
 - Rules: both routes take `AuthUser`; a refused save stores nothing.

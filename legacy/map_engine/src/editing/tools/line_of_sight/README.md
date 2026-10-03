@@ -72,12 +72,12 @@ the ruler's point-capture arm (`crate::editing::tools::ruler::should_begin_ruler
   - `crate::editing::tools::viewshed_scheduler`, whose terrain lane reads the sampler, the manifest,
     the eye height and the viewshed state;
   - the Mission Creator's line-of-sight overlay and object wash
-    (`apps/frontend/src/v2/apps/editor/input/tools/los_tool.rs`,
-    `apps/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`), its pointer gestures
-    (`apps/frontend/src/v2/apps/editor/input/pointer_gestures.rs`), the editor page
-    (`apps/frontend/src/v2/apps/editor/mission_editor.rs`) and the toolbelt
-    (`apps/frontend/src/v2/apps/editor/ui/docks/toolbelt.rs`, which reads `LosMode`);
-  - the debug building viewer (`apps/frontend/src/v2/apps/debug/building_viewer/geom.rs`),
+    (`apps/frontend/src/workspaces/editor/input/tools/los_tool.rs`,
+    `apps/frontend/src/workspaces/editor/input/tools/los_world_wasm.rs`), its pointer gestures
+    (`apps/frontend/src/workspaces/editor/input/pointer_gestures.rs`), the editor page
+    (`apps/frontend/src/workspaces/editor/mission_editor.rs`) and the toolbelt
+    (`apps/frontend/src/workspaces/editor/ui/docks/toolbelt.rs`, which reads `LosMode`);
+  - the debug building viewer (`apps/frontend/src/workspaces/debug/building_viewer/geom.rs`),
     through `viewshed_texture`.
 - Rules:
   - nothing here names the document or its mutators
@@ -92,4 +92,4 @@ the ruler's point-capture arm (`crate::editing::tools::ruler::should_begin_ruler
 
 ## Related documentation
 
-- [Mission Creator feature inventory: bottom toolbelt](/documentation/apps/frontend/apps/editor/feature_inventory/bottom_toolbelt.md) — the Line of Sight tool, ray and viewshed.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation/apps/frontend/workspaces/editor/feature_inventory/bottom_toolbelt.md) — the Line of Sight tool, ray and viewshed.

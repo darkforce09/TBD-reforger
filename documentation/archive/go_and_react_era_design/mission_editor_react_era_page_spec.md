@@ -1,4 +1,4 @@
-**Status:** archived — see [documentation_v2/website/frontend/apps/editor/ux_spec.md](/documentation/apps/frontend/apps/editor/ux_spec.md)
+**Status:** archived — see [documentation_v2/website/frontend/apps/editor/ux_spec.md](/documentation/apps/frontend/workspaces/editor/ux_spec.md)
 
 # Mission Editor (2D Canvas)
 
@@ -29,7 +29,7 @@
 - **Live source:** `apps/website/frontend/src/mission_editor.rs` + editor modules (`select_tool`/`outliner`/`attributes`/`arsenal`/`eden_chrome`/`world_assets`/`world_layer_prefs`/…) on wgpu (`crates/map-engine-render`); route in `apps/website/frontend/src/router.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3; T-173 render prefs + world lanes)
 - **Stitch reference:** none
 - **Min role:** `mission_maker` (owner or admin)
-- **Blueprint ref:** [Mission Creator ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md), [feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+- **Blueprint ref:** [Mission Creator ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md), [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
 
 ## Element Inventory
 
@@ -136,10 +136,10 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 - **[PERF-002] ~~Bulk paste 10k freeze~~** — **Resolved T-059** (validated **360k @ 100+ fps** pan; 6k paste loops smooth).
 - **[PERF-003] Initial load** — **Resolved T-062.1** (v2 chunked restore; legacy migrate once). Spec: [t062_1_idb_streaming_load.md](/documentation/tickets/specs/t062_1_idb_streaming_load.md). Pan **100+ fps** @ 360k when idle.
 - **[PERF-004] Save Version** — **Resolved T-060.1.4 / shipped T-060.** Verified: curl 140 MB → 201; browser Save @ ~367k/~142 MB → 201 (2026-06-23).
-- **[PERF-005] Drag-move @ 360k** — **Resolved T-061 (good enough).** Motion ~60 fps sustained; pickup/release materially improved via `slotIconCache` + bindings slot fast path. Mega optimizations deferred ([MC ROADMAP §Deferred mega optimizations](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md)). Spec: [t061_drag_move_hotfix.md](/documentation/tickets/specs/t061_drag_move_hotfix.md).
+- **[PERF-005] Drag-move @ 360k** — **Resolved T-061 (good enough).** Motion ~60 fps sustained; pickup/release materially improved via `slotIconCache` + bindings slot fast path. Mega optimizations deferred ([MC ROADMAP §Deferred mega optimizations](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md)). Spec: [t061_drag_move_hotfix.md](/documentation/tickets/specs/t061_drag_move_hotfix.md).
 - **[PERF-006] Incremental bindings @ 360k** — **Resolved T-062.** Spec: [t062_incremental_bindings.md](/documentation/tickets/specs/t062_incremental_bindings.md).
 - **[PERF-007] Alt-tab / session reload @ 360k** — **Resolved T-062.2.** Extended alt-tab (Firefox dev) no longer re-triggers full load overlay; warm session skips server GET on same-tab return. Spec: [t062_2_editor_session_persistence.md](/documentation/tickets/specs/t062_2_editor_session_persistence.md).
 - **[PERF-008] Outliner @ 360k** — **Resolved T-064.** Virtualized ORBAT + Editor Layers; outliner visible on first paint @ ~367k; scrollable 367k rows; T-064.1 scroll-ref hotfix. Spec: [t064_virtualized_outliner.md](/documentation/tickets/specs/t064_virtualized_outliner.md).
 - **[PERF-009] Spatial chunks / bulk paste @ 367k+** — **Partially resolved T-067.** Bulk paste `slot-add-bulk` shipped; pan ~160 fps @ 367k (CPU cull deferred). Lazy RAM + GPU cull @ 1M+ deferred. Spec: [t067_spatial_chunks.md](/documentation/tickets/specs/t067_spatial_chunks.md).
 - **Active slice:** **T-090.1.1.1** Map land-cover · **T-071** ORBAT Manager **ready** (T-092 unblocks). **T-092 shipped** @ `a73224f2`.
-- **Next queued:** **T-092** spawn transform → **T-071** ORBAT → **T-068 Phase 2** → T-069 markers, T-070 vehicles — see [Mission Creator ROADMAP](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) and [TICKET_REGISTRY.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md).
+- **Next queued:** **T-092** spawn transform → **T-071** ORBAT → **T-068 Phase 2** → T-069 markers, T-070 vehicles — see [Mission Creator ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) and [TICKET_REGISTRY.md](https://github.com/darkforce09/TBD-reforger/blob/2574b0ed2f76edb131447eb10e3d55446404d785/docs/TICKET_REGISTRY.md).

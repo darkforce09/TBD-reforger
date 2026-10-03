@@ -27,7 +27,7 @@ the page's files.
 
 ## Code
 
-- [Vehicle database page](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/) — the
+- [Vehicle database page](/apps/frontend/src/pages/doctrine_and_info/vehicles/) — the
   route component `VehicleDatabasePage`, the list, the dossier and the vehicle form.
 - [Community content domain](/apps/api/src/community_content/) — the vehicle database
   routes.

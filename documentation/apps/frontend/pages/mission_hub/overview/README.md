@@ -28,7 +28,7 @@ page's files.
 
 ## Code
 
-- [Mission overview page](/apps/frontend/src/v2/pages/mission_hub/overview/) — the route
+- [Mission overview page](/apps/frontend/src/pages/mission_hub/overview/) — the route
   component `MissionOverviewPage`, the shared dossier body and the Edit Armory dialog.
 - [Missions domain](/apps/api/src/missions/) — the mission detail, armory and review
   routes the page calls.

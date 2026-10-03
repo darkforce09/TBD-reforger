@@ -33,8 +33,8 @@ each lookup is best-effort, so a missing piece is `null` rather than a failed da
   `Announcement`), `operations::models` (`Event`, `EventMission`, `OrbatSlot`) and the domain's
   `services::fleet_overview`; `core` for the extractor and errors.
 - Used by: the domain's `routes.rs`; over HTTP, the dashboard in
-  `apps/frontend/src/v2/pages/command_center/dashboard/` and the leaderboards and operator
-  dossier in `apps/frontend/src/v2/pages/operations/leaderboards/`.
+  `apps/frontend/src/pages/command_center/dashboard/` and the leaderboards and operator
+  dossier in `apps/frontend/src/pages/operations/leaderboards/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); a
   leaderboard category maps to its ordering only through the fixed list, never through request

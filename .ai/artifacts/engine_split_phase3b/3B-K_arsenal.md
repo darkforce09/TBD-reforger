@@ -36,7 +36,7 @@ gate's row, repoint the anchored suffixes of anything you moved, leave self-pins
 
 Sibling test files with their bottom-of-file declarations. Allowlist rows updated in the same
 commit. `//!` headers rewritten where they name an old path. Every
-`crate::v2::apps::editor::arsenal::…` call site swept — the rename of two modules means some of
+`crate::workspaces::editor::arsenal::…` call site swept — the rename of two modules means some of
 those change spelling, so sweep by symbol, not only by prefix. `mission_editor.rs`'s re-exports and
 mounts repointed, never deleted.
 

@@ -5,7 +5,7 @@ The headless state machines, geometry and verdicts of the
 ruler, line of sight and its viewshed, and the placement vocabulary the arrange commands share. A
 tool here holds phase and geometry, driven by explicit world coordinates; the browser half, with
 the pointer events, overlays and frame pump, lives in
-`apps/frontend/src/v2/apps/editor/input/tools/`.
+`apps/frontend/src/workspaces/editor/input/tools/`.
 
 ## Contents
 
@@ -60,11 +60,11 @@ set of patterns, edges, axes and thresholds.
   world and interior line-of-sight cores), `crate::world::terrain::dem::manifest`, and
   `crate::editing::picking`.
 - Used by:
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/`: the tool overlays
-    (`apps/frontend/src/v2/apps/editor/input/tools/`), the pointer gestures and keyboard
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the tool overlays
+    (`apps/frontend/src/workspaces/editor/input/tools/`), the pointer gestures and keyboard
     handler, the editor page and its canvas mount, the bridge's host state and overlays, the
     toolbelt, the right dock, the arrange strip and the outliner;
-  - the debug building viewer in `apps/frontend/src/v2/apps/debug/building_viewer/`;
+  - the debug building viewer in `apps/frontend/src/workspaces/debug/building_viewer/`;
   - `crate::editing::hosted_commands::selection_transform`, through `placement`;
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, through the
     selection self-checks.
@@ -76,5 +76,5 @@ set of patterns, edges, axes and thresholds.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — the toolbelt, selection and arrange features these tools back.

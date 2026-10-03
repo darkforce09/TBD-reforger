@@ -9,28 +9,28 @@ page at a time, and inspect one entry's actor, target and metadata. The screen o
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/administration/audit_logs/`](/apps/frontend/src/v2/pages/administration/audit_logs/):
+- Code: [`apps/frontend/src/pages/administration/audit_logs/`](/apps/frontend/src/pages/administration/audit_logs/):
   `page.rs` holds the route component `AuditLogsPage`, the stream wiring, the history reloads and
   the list paths; `live_merge.rs` the board that merges history pages and live rows by audit id;
   `live_status.rs` the status badge and the history load state; `filter_bar.rs` the search field
   and the text an entry is matched against; `log_table.rs` the trail, its load control and the
   entry inspector. The folder's
-  [README](/apps/frontend/src/v2/pages/administration/audit_logs/README.md) describes
+  [README](/apps/frontend/src/pages/administration/audit_logs/README.md) describes
   each file. The stream client is
-  [`core/api/audit_stream.rs`](/apps/frontend/src/v2/core/api/audit_stream.rs), which reads
+  [`core/api/audit_stream.rs`](/apps/frontend/src/foundation/transport/audit_stream.rs), which reads
   the bytes with the event-stream parser
-  [`core/api/sse_frames.rs`](/apps/frontend/src/v2/core/api/sse_frames.rs).
+  [`core/api/sse_frames.rs`](/apps/frontend/src/foundation/transport/sse_frames.rs).
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/administration/audit_logs/README.md#routes).
+  [Routes](/apps/frontend/src/pages/administration/audit_logs/README.md#routes).
 - Related: the [API](/documentation/glossary/a_to_f.md#api)'s
   [administration domain](/apps/api/src/administration/README.md), which serves the
   trail; every page that changes state writes to it.
 
 ## Behaviour
 
-1. The page body sits in `AdminGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which
+1. The page body sits in `AdminGate` (`apps/frontend/src/foundation/auth/gates.rs`), which
    shows the session and access states of the README's
-   [States](/apps/frontend/src/v2/pages/administration/audit_logs/README.md#states) in
+   [States](/apps/frontend/src/pages/administration/audit_logs/README.md#states) in
    place of the page until a signed-in viewer holds the `admin`
    [role](/documentation/glossary/n_to_z.md#role). The route redirects no one.
 2. The page connects to the live audit stream first and loads the newest page of the trail only
@@ -48,7 +48,7 @@ page at a time, and inspect one entry's actor, target and metadata. The screen o
    gone, with the reason under it), beside the count of entries the stream delivered, such as
    "3 live rows".
 6. The master column lists one line per entry, in the format the README's
-   [States](/apps/frontend/src/v2/pages/administration/audit_logs/README.md#states) give:
+   [States](/apps/frontend/src/pages/administration/audit_logs/README.md#states) give:
    the local time, the level token, the action and the message, with a blinking cursor after the
    last line.
 7. The search field above the trail filters in the browser only: an entry matches when its local
@@ -66,7 +66,7 @@ page at a time, and inspect one entry's actor, target and metadata. The screen o
 ## Data
 
 The page reads the stream and the list, which the README's
-[Data](/apps/frontend/src/v2/pages/administration/audit_logs/README.md#data) lists with
+[Data](/apps/frontend/src/pages/administration/audit_logs/README.md#data) lists with
 the DTOs it reads. Server-side:
 
 - `GET /api/v1/admin/audit-logs/stream` (`stream_audit_logs` in

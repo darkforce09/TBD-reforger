@@ -17,6 +17,10 @@ documentation/restructure/manifests/
 ├── s2_brief_archive.tsv      stage S2: the executed S1 agent briefs into the archive
 ├── s2_caddy_folder.tsv       stage S2: the Caddyfile into deploy/caddy/, the one folder the Caddy container mounts
 ├── s2_crate_births.tsv       stage S2: the API's URL guard and the worker's cache policy become crates/
+├── s3_byte_formatting.tsv    stage S3: the byte-count formatter's consumers, from the Mission Creator to foundation utilities
+├── s3_foundation_cycles.tsv  stage S3: the role ladder, the single flight into transport; the content gates into auth
+├── s3_frontend_layers.tsv    stage S3: the frontend's src/v2 into foundation, features, pages, workspaces, shell
+├── s3_outliner_module.tsv    stage S3: the Editor Layers outliner's node model, from outliner::outliner to node_model
 ├── s4_b0_dem_sample_tests.tsv  stage S4 B0: the dem/sample re-export module's tests beside the code they test
 ├── s4_b1a_tool_foundations.tsv  stage S4 B1a: verification_core splits into the tools/foundation crates verification_core, process_runner and repository_laws
 ├── s4_b2b_browser_platform.tsv  stage S4 B2b: the map engine's console macros and fetch helpers become browser_platform

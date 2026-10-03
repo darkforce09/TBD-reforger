@@ -58,7 +58,7 @@ compound flattened at its current door states.
   - `crate::spatial::los::interior` (the walker and the wash) and `crate::spatial::los::world`
     (the world occluder, its descriptors and residency);
   - the debug building viewer, interior bench and world line-of-sight bench in
-    `apps/frontend/src/v2/apps/debug/`;
+    `apps/frontend/src/workspaces/debug/`;
   - the blueprint tooling in `tools/developer_tools/src/blueprint/`, which writes the blueprint
     JSON, the instances files and the blueprint archive, and the map checks in
     `tools/developer_tools/src/map_verification/`.

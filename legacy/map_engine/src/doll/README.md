@@ -18,7 +18,7 @@ legacy/map_engine/src/doll/
 ## How it works
 
 ```text
-arsenal page (apps/frontend/src/v2/apps/editor/arsenal/doll.rs)
+arsenal page (apps/frontend/src/workspaces/editor/arsenal/doll.rs)
    │ create, resize, rotate, set_states, set_hover, pick_region, anchor_px, render
    ▼
 renderer/     DollEngine: own device and surface, damage-driven frames
@@ -43,7 +43,7 @@ wasm32 as well.
 ## Public surface
 
 - `renderer::lifecycle_1::DollEngine`: the preview's JavaScript-facing engine, for the arsenal page
-  in `apps/frontend/src/v2/apps/editor/arsenal/doll.rs`.
+  in `apps/frontend/src/workspaces/editor/arsenal/doll.rs`.
 - `scene::instances` (regions, states, parts, colours) and the renderer's pipeline, pass and
   packing helpers, for the readback check in `crate::diagnostics::readback::doll`.
 
@@ -54,7 +54,7 @@ wasm32 as well.
   `legacy/map_engine/src/shaders/doll.wgsl`; on wasm32, `wgpu`, `wasm-bindgen` and
   `web-sys`; and `bytemuck`.
 - Used by: `crate::diagnostics::readback::doll`, the byte-exact offscreen self-check; the arsenal
-  page in `apps/frontend/src/v2/apps/editor/arsenal/doll.rs`, the only caller outside the
+  page in `apps/frontend/src/workspaces/editor/arsenal/doll.rs`, the only caller outside the
   crate.
 - Rules:
   - the module compiles only with the `render` feature
@@ -66,7 +66,7 @@ wasm32 as well.
 
 ## Related documentation
 
-- [Arsenal](/apps/frontend/src/v2/apps/editor/arsenal/README.md) — the workspace that
+- [Arsenal](/apps/frontend/src/workspaces/editor/arsenal/README.md) — the workspace that
   mounts the preview and owns the loadout it shows.
 - [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the fixed-orbit camera the
   preview draws and picks with.

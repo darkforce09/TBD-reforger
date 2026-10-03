@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Personnel roster page](/apps/frontend/src/v2/pages/administration/personnel/) — the
+- [Personnel roster page](/apps/frontend/src/pages/administration/personnel/) — the
   built page the set was drawn for.
 
 ## Boundaries

@@ -112,5 +112,5 @@ Facts every topic relies on:
   rule the session exercises.
 - [TBD Framework documentation](/documentation/mod/tbd-framework/README.md) — the in-game
   screens, with the lobby and briefing specifications.
-- [Arsenal loadout editor](/documentation/apps/frontend/apps/editor/arsenal/arsenal_loadout_editor.md)
+- [Arsenal loadout editor](/documentation/apps/frontend/workspaces/editor/arsenal/arsenal_loadout_editor.md)
   — authoring the loadouts the session checks on a player.

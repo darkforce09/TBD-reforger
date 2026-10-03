@@ -5,7 +5,7 @@
 Design-phase reference for the event schedule page at `/events`: a list of upcoming operations
 beside the selected operation's briefing and [ORBAT](/documentation/glossary/n_to_z.md#orbat). It
 gives colour and layout context and is not an implementation source; the built UI is the Leptos
-code under `apps/frontend/src/v2/pages/operations/schedule/`.
+code under `apps/frontend/src/pages/operations/schedule/`.
 
 ## Contents
 
@@ -34,7 +34,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Event schedule page](/apps/frontend/src/v2/pages/operations/schedule/) — the page this
+- [Event schedule page](/apps/frontend/src/pages/operations/schedule/) — the page this
   set was drawn for.
 
 ## Boundaries

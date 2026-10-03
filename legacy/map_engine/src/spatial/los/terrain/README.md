@@ -50,9 +50,9 @@ raster's world rectangle; its rows must be at least four bytes a texel and 256-b
   the viewshed and whose verdict, projection, palette and texture read them;
   `crate::editing::tools::viewshed_scheduler`, whose terrain lane runs a `ViewshedJob`;
   `crate::spatial::los::interior`, whose wash reuses `Visibility` and `ViewshedCapRefused`; and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input
-  handlers (`apps/frontend/src/v2/apps/editor/input/`) and canvas mount
-  (`apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`) and the debug
-  building viewer (`apps/frontend/src/v2/apps/debug/building_viewer/`), which upload and
+  handlers (`apps/frontend/src/workspaces/editor/input/`) and canvas mount
+  (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`) and the debug
+  building viewer (`apps/frontend/src/workspaces/debug/building_viewer/`), which upload and
   clear the viewshed lane.
 - Rules: `overlay.rs` compiles only for wasm32 with the `render` feature, and nothing else here
   touches the GPU or the browser; a raster over `MAX_VIEWSHED_CELLS` (300 000) cells is refused:

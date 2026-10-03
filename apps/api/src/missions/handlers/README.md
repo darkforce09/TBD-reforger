@@ -68,10 +68,10 @@ missing one, and a write by someone who may not edit the mission answers 403.
   `community_content::models` for a registry's modpack; `map_engine::data::scenario` for
   the save-time type scan; `contracts/definitions/mission.schema.json`, embedded.
 - Used by: the domain's `routes.rs`; over HTTP, the Mission Creator in
-  `apps/frontend/src/v2/apps/editor/`, the mission hub pages in
-  `apps/frontend/src/v2/pages/mission_hub/`, the approvals and
+  `apps/frontend/src/workspaces/editor/`, the mission hub pages in
+  `apps/frontend/src/pages/mission_hub/`, the approvals and
   [server control](/documentation/glossary/n_to_z.md#server-control) pages in
-  `apps/frontend/src/v2/pages/administration/`, the
+  `apps/frontend/src/pages/administration/`, the
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
   `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
   `tools/xtask/src/commands/mod_ops/website_api_client/`.

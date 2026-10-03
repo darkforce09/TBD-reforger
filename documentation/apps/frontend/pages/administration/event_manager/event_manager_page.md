@@ -12,7 +12,7 @@ decide in an access sheet who may join, from which pools, and why each participa
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/administration/event_manager/`](/apps/frontend/src/v2/pages/administration/event_manager/):
+- Code: [`apps/frontend/src/pages/administration/event_manager/`](/apps/frontend/src/pages/administration/event_manager/):
   `page.rs` holds the route component `EventManagerPage`; `state.rs` the screen's state and its
   four fetches; `event_table.rs` the heading, the month grid and the day panel;
   `schedule_dialog.rs` and `edit_dialog.rs` the two forms; `mission_picker.rs` the mission
@@ -20,10 +20,10 @@ decide in an access sheet who may join, from which pools, and why each participa
   forms share; `confirm_dialogs.rs` the delete and detach
   confirmations; `lifecycle.rs` the six states and the moves between them; `dates.rs` the date
   arithmetic; `access/` the access sheet. The folder's
-  [README](/apps/frontend/src/v2/pages/administration/event_manager/README.md) describes
+  [README](/apps/frontend/src/pages/administration/event_manager/README.md) describes
   each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/administration/event_manager/README.md#routes).
+  [Routes](/apps/frontend/src/pages/administration/event_manager/README.md#routes).
 - Related: the [event manager](/documentation/glossary/a_to_f.md#event-manager) glossary entry; the
   [event schedule page](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md)
   and the [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md),
@@ -36,9 +36,9 @@ decide in an access sheet who may join, from which pools, and why each participa
 
 ## Behaviour
 
-The page body sits in `AdminGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+The page body sits in `AdminGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
 the session and access states of the README's
-[States](/apps/frontend/src/v2/pages/administration/event_manager/README.md#states) in
+[States](/apps/frontend/src/pages/administration/event_manager/README.md#states) in
 place of the page until a signed-in viewer holds the `admin`
 [role](/documentation/glossary/n_to_z.md#role). The README's States quote every text the steps below
 mention.
@@ -147,7 +147,7 @@ operation.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/administration/event_manager/README.md#data)
+The README's [Data](/apps/frontend/src/pages/administration/event_manager/README.md#data)
 lists each call with the DTO or fields it reads or sends. Server-side, in
 `apps/api/src/operations/handlers/`:
 

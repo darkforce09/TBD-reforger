@@ -54,7 +54,7 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
   `u32` conversions, for `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial`,
   `crate::diagnostics`, the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   document host and tools, and the debug apps in
-  `apps/frontend/src/v2/apps/debug/`.
+  `apps/frontend/src/workspaces/debug/`.
 - `lod`: the zoom gates, `INSTANCE_BUDGET` and the contour interval, for
   `crate::streaming` (bridge, buffers, scheduler) and `crate::world` (vegetation, relief).
 - `lanes_prefs`: `set_world_layer_visible`, `set_lane_opacity`, `set_grid` and `set_clear_color`
@@ -76,7 +76,7 @@ its lanes, `set_lane_opacity` re-tints a texture lane in place, and `set_grid` b
   `symbology` gates its own files.
 - Used by: `crate::frame`, `crate::streaming`, `crate::world`, `crate::spatial::los::terrain`,
   `crate::diagnostics`, `crate::editing`, `crate::camera`; the Mission Creator and the debug apps
-  under `apps/frontend/src/v2/apps/`; the architecture tests in
+  under `apps/frontend/src/workspaces/`; the architecture tests in
   `tools/xtask/src/verifications/architecture/tests/`.
 - Rules: the `role_id` and `tex_role_id` wire ids never change (`wire_ids_are_pinned`,
   `tex_wire_ids_are_pinned` in `tests/draw_order.rs`); `ALL_LANES` covers every variant

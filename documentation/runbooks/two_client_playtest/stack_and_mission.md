@@ -206,7 +206,7 @@ platform is ready to deploy the mission.
   the next runbook: boot this mission's bytes headless.
 - [Local development](/documentation/runbooks/local_development.md) — the API and app stack in
   full.
-- [Arsenal loadout editor](/documentation/apps/frontend/apps/editor/arsenal/arsenal_loadout_editor.md)
+- [Arsenal loadout editor](/documentation/apps/frontend/workspaces/editor/arsenal/arsenal_loadout_editor.md)
   — the Arsenal's fields and rules.
 - [Machine credentials and mission deployment](/documentation/runbooks/game_server_staging/machine_credentials_and_mission_deployment.md)
   — the same credential, event binding and deployment steps against the staging server.

@@ -52,12 +52,12 @@ when the dragged entity is selected, otherwise that entity alone.
   `crate::frame::EngineHandle`, re-exported on `wasm32` with the `render` feature.
 - Used by:
   - the Mission Creator's select tool and pointer gestures
-    (`apps/frontend/src/v2/apps/editor/input/tools/select_tool.rs`, which publishes the
+    (`apps/frontend/src/workspaces/editor/input/tools/select_tool.rs`, which publishes the
     self-checks on `window.__editorSelection`, and
-    `apps/frontend/src/v2/apps/editor/input/pointer_gestures.rs`), the keyboard handler
-    (`apps/frontend/src/v2/apps/editor/input/window_keydown.rs`), the editor page, the
+    `apps/frontend/src/workspaces/editor/input/pointer_gestures.rs`), the keyboard handler
+    (`apps/frontend/src/workspaces/editor/input/window_keydown.rs`), the editor page, the
     bridge's host state and overlays, the right dock, the toolbelt and the outliner under
-    `apps/frontend/src/v2/apps/editor/`;
+    `apps/frontend/src/workspaces/editor/`;
   - the headless marquee gate
     (`tools/developer_tools/src/browser_testing/editor_smoke_tests/marquee_drag.rs`), which
     calls `marquee_selfcheck` through the browser.
@@ -69,7 +69,7 @@ when the dragged entity is selected, otherwise that entity alone.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — selection, marquee, move and rotate among the Mission Creator's features.
-- [Mission Creator feature inventory: selection](/documentation/apps/frontend/apps/editor/feature_inventory/selection.md) — the click, marquee and modifier rules as the mission maker meets them.
-- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/apps/editor/feature_inventory/transform_and_delete.md) — the drag-move and the rotate gesture.
+- [Mission Creator feature inventory: selection](/documentation/apps/frontend/workspaces/editor/feature_inventory/selection.md) — the click, marquee and modifier rules as the mission maker meets them.
+- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/workspaces/editor/feature_inventory/transform_and_delete.md) — the drag-move and the rotate gesture.

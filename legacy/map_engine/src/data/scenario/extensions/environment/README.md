@@ -41,7 +41,7 @@ block: the compiler reads it itself into the compiled `meta` and `environment`, 
 - Depends on: `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `audio` and `weatherTimeline` rows call the
   two `validate` functions; the Mission Creator's `audio_emitters.rs` and `weather_timeline.rs`
-  panels in `apps/frontend/src/v2/apps/editor/ui/inspector/`.
+  panels in `apps/frontend/src/workspaces/editor/ui/inspector/`.
 - Rules: both blocks stay carried rather than document-owned
   (`win_conditions_is_the_registered_block_and_the_document_models_it` in
   `legacy/map_engine/src/data/scenario/extensions/authored/tests/cases_1.rs`), and a mission

@@ -74,7 +74,7 @@ audit id, and reloads the history on `reset`.
   - every other domain, through the audit services and `AuditSeverity`;
   - over HTTP, the [personnel](/documentation/glossary/n_to_z.md#personnel) and
     [audit logs](/documentation/glossary/a_to_f.md#audit-logs) pages in
-    `apps/frontend/src/v2/pages/administration/`.
+    `apps/frontend/src/pages/administration/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); no Rust code outside `services/`

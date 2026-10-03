@@ -126,8 +126,8 @@ other map-object schemas, the prefab classification rules and the glyph keys all
     `apps/api/src/missions/handlers/mission_default_overrides.rs`, and its contract tests
     under `apps/api/tests/`;
   - the Mission Creator's embeds in
-    `apps/frontend/src/v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`
-    and `apps/frontend/src/v2/apps/editor/arsenal/rules/export_schema_contract.rs`;
+    `apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`
+    and `apps/frontend/src/workspaces/editor/arsenal/rules/export_schema_contract.rs`;
   - the xtask schema gates in `tools/xtask/src/verifications/schemas/checks/` and the
     equipment-export validation in
     `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/validation.rs`;

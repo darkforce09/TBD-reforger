@@ -17,9 +17,7 @@ use anyhow::Result;
 use repository_laws::workspace_laws::WorkspaceLawReport;
 use repository_laws::workspace_laws::crate_anatomy::check_crate_anatomy;
 use repository_laws::workspace_laws::crate_tiers::check_crate_tiers;
-use repository_laws::workspace_laws::frontend_layering::{
-    FRONTEND_LAYERING_CEILING, check_frontend_layering,
-};
+use repository_laws::workspace_laws::frontend_layering::check_frontend_layering;
 use repository_laws::workspace_laws::strangler::check_strangler;
 use repository_laws::workspace_laws::tailwind_sources::check_tailwind_sources;
 
@@ -53,9 +51,7 @@ pub fn workspace_law_report(law: WorkspaceLaw, repo_root: &Path) -> WorkspaceLaw
         WorkspaceLaw::CrateTiers => check_crate_tiers(repo_root, MANIFEST_SWEEP_ROOTS),
         WorkspaceLaw::CrateAnatomy => check_crate_anatomy(repo_root),
         WorkspaceLaw::Strangler => check_strangler(repo_root),
-        WorkspaceLaw::FrontendLayering => {
-            check_frontend_layering(repo_root, FRONTEND_LAYERS, FRONTEND_LAYERING_CEILING)
-        }
+        WorkspaceLaw::FrontendLayering => check_frontend_layering(repo_root, FRONTEND_LAYERS),
         WorkspaceLaw::TailwindSources => check_tailwind_sources(repo_root, TAILWIND_STYLESHEET),
     }
 }

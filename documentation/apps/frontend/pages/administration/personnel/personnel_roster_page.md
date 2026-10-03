@@ -9,17 +9,17 @@ Discord. A role follows the member's Discord roles, so the page explains it and 
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/administration/personnel/`](/apps/frontend/src/v2/pages/administration/personnel/):
+- Code: [`apps/frontend/src/pages/administration/personnel/`](/apps/frontend/src/pages/administration/personnel/):
   `page.rs` holds the route component `PersonnelRosterPage`, the address kept in the URL, the
   roster fetch, the search box, the sort and filter controls and the role resync;
   `roster_query.rs` the address (`page`, `per_page`, `q`): its URL parse and format and the
   request path; `roster_pager.rs` the page arithmetic and the pager bar; `member_roster.rs` the
   sort orders, the filters and the table; `dossier.rs` the member's profile, readings and action
   buttons; `role_dialog.rs` the role note and the ban and warning dialogs. The folder's
-  [README](/apps/frontend/src/v2/pages/administration/personnel/README.md) describes each
+  [README](/apps/frontend/src/pages/administration/personnel/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/administration/personnel/README.md#routes).
+  [Routes](/apps/frontend/src/pages/administration/personnel/README.md#routes).
 - Related: the [personnel](/documentation/glossary/n_to_z.md#personnel) glossary entry; the
   [API](/documentation/glossary/a_to_f.md#api)'s
   [administration domain](/apps/api/src/administration/README.md), which owns the
@@ -28,9 +28,9 @@ Discord. A role follows the member's Discord roles, so the page explains it and 
 
 ## Behaviour
 
-1. The page body sits in `AdminGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which
+1. The page body sits in `AdminGate` (`apps/frontend/src/foundation/auth/gates.rs`), which
    shows the session and access states of the README's
-   [States](/apps/frontend/src/v2/pages/administration/personnel/README.md#states) in
+   [States](/apps/frontend/src/pages/administration/personnel/README.md#states) in
    place of the page until a signed-in viewer holds the `admin` role.
 2. The header holds the heading, the "Sync Roles" button, a sort control, a filter control, the
    search field and a caption saying that search covers the whole roster while sort and filter
@@ -45,7 +45,7 @@ Discord. A role follows the member's Discord roles, so the page explains it and 
    search field, every page move and every page size. The search text stays in the URL as typed;
    the request sends it trimmed as `q`, and leaves `q` out when it is blank. A new search or a
    new page size starts again at page 1. The table's loading, failure and empty texts are in
-   [States](/apps/frontend/src/v2/pages/administration/personnel/README.md#states).
+   [States](/apps/frontend/src/pages/administration/personnel/README.md#states).
 5. The pager under the table shows the member count ("6 members"), "Previous", the position
    ("Page 1 of 1"), "Next" and a "Per page" select of 10, 20, 50 and 100. It reads the page, page
    size and total the API served; a roster always fills at least one page. Previous is disabled
@@ -56,7 +56,7 @@ Discord. A role follows the member's Discord roles, so the page explains it and 
    browser and never refetch, so they order and narrow this page only; each control's tooltip
    says so too.
 7. The table shows one row per member of the page, with the columns the README's
-   [States](/apps/frontend/src/v2/pages/administration/personnel/README.md#states) list.
+   [States](/apps/frontend/src/pages/administration/personnel/README.md#states) list.
 8. Selecting a row opens that member's dossier: the profile, four readings and three buttons,
    "Edit Roles", "Issue Warning", and "Ban Personnel" or "Unban Personnel". The dossier reads the
    loaded page, so moving to a page without the selected member empties the dossier pane.
@@ -70,19 +70,19 @@ Discord. A role follows the member's Discord roles, so the page explains it and 
 12. "Sync Roles" resyncs every member, reports how many were updated, then refetches. An answer
     without the count is reported as unexpected; a refusal shows the server's sentence, as the
     ban, unban and warning errors do. Every toast is in the README's
-    [States](/apps/frontend/src/v2/pages/administration/personnel/README.md#states).
+    [States](/apps/frontend/src/pages/administration/personnel/README.md#states).
 
 ### Known discrepancies
 
 - The search placeholder promises a Discord id search ("Search Discord ID or Arma Name…",
-  `apps/frontend/src/v2/pages/administration/personnel/page.rs`), but the API matches
+  `apps/frontend/src/pages/administration/personnel/page.rs`), but the API matches
   the text against the username, the Discord handle, the Arma character and the Arma id only
   (`list_users` in `apps/api/src/administration/handlers/personnel_roster.rs`); a
   Discord id finds nobody unless it also appears in one of those.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/administration/personnel/README.md#data)
+The README's [Data](/apps/frontend/src/pages/administration/personnel/README.md#data)
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/admin/users?page=<n>&per_page=<size>&q=<text>` (`list_users` in

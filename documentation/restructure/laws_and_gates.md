@@ -65,7 +65,9 @@ For every library crate:
 - **Strangler** (`cargo xtask verify strangler`): the shim ledger is empty at commit, and no new crate
   depends on legacy.
 - **Frontend layering** (`cargo xtask verify frontend-layering`): foundation does not import features,
-  pages, workspaces or the app shell; features do not import pages or workspaces. Hard from S3.
+  pages, workspaces or the app shell; features do not import pages or workspaces; inside foundation
+  a sub-area imports only sub-areas before it in the order ui, utils, transport, route_table, auth,
+  then offline and map_view as peers (test_support only from test files). Hard from S3.
 - **Tailwind sources** (`cargo xtask verify tailwind-sources`): every frontend crate has an `@source`
   line in the app's stylesheet. Hard from S10.
 - **Relocation** (`cargo xtask refactor relocate --verify`): no retired spelling in a live file.

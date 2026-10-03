@@ -66,7 +66,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 owns = [
     "apps/frontend/src/event_hub.rs",
-    "apps/frontend/src/router.rs",
+    "apps/frontend/src/foundation/route_table/mod.rs",
     "apps/frontend/src/app_routes.rs",
     "apps/frontend/src/datefmt.rs",
     "apps/frontend/src/announcements.rs",

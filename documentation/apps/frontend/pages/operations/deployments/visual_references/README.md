@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Deployments page](/apps/frontend/src/v2/pages/operations/deployments/) — the built page
+- [Deployments page](/apps/frontend/src/pages/operations/deployments/) — the built page
   the set was drawn for.
 
 ## Boundaries

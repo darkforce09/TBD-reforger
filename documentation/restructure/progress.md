@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S3, S5, S6 in parallel (decision D21); S4 landed in two commits (S4a, S4b) |
-| Last green commit | the S4b stage commit (S4a: dcfeda907) |
+| Current stage | S5, S6 in parallel (decision D21); S4 landed in two commits (S4a, S4b); S3 landed |
+| Last green commit | the S3 stage commit (S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); S4 lands the relocation tool fix (F-S4-06, F-S4-10) as its own commit |
 | Blocked on | nothing |
 
@@ -70,12 +70,12 @@ Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A st
 - [x] Stage commit — done (see the execution log)
 
 ### S3 Frontend in place
-- [ ] F1 (M) src/v2 split — pending
-- [ ] F2 (M) shell extraction, editor session rename — pending
-- [ ] F3 (S) UI tokens, logout hooks, route table — pending
-- [ ] F4 (S) review workspace, byte formatting, mission review feature — pending
-- [ ] F5 (M) frontend clippy-clean on native and wasm32 under `-D warnings` (finding F-004) — pending
-- [ ] Stage commit — pending
+- [x] F1 (L) every move: src/v2 split, transport, shell, route table, editor session, review workspace, mission review record, documentation mirrors — done — 1247 files moved, layering {6, 0}
+- [x] F2 (L) foundation cycles: `TokenProvider`, wire types into transport, gates, UI tokens, logout hooks, route guard over the route table — done — foundation edges follow the declared order
+- [x] F3 (S) pages and workspaces edges: byte formatting, review workspace — done — layering 0 and 0
+- [x] F4 (S) frontend-layering hard at zero with the foundation order; frontend clippy `-D warnings` in CI — done — hard at zero with the foundation order; zero pending F3
+- [x] F5a (M) ∥ F5b (L) ∥ F5c (S), then F5z (S): frontend clippy-clean on native and wasm32 under `-D warnings` (finding F-004) — done — with follow-ups F5ab, F5bb, F5z, F5y: both targets at zero, 2012 tests
+- [x] Stage commit — done (see stage_logs/s3.md); frontend clippy `-D warnings` on both targets is the norm from here
 
 ### S4 Tier 0–1
 S4 lands in two commits (operator): S4a, the crates S5 and S6 need; S4b, tool foundations and
@@ -286,7 +286,7 @@ become tickets at S12.
 - **F-003 (CLOSE, P0): the blueprint draft cited planned paths.** Its four backticked planned
   paths broke link-check. Fixed by archiving it as
   [the blueprint draft](/documentation/archive/restructure_research/00_architecture_blueprint_draft.md).
-- **F-004 (FIX, S3): the frontend is not clippy-clean.**
+- **F-004 (FIX, done in S3): the frontend was not clippy-clean.** Closed: the frontend is clean on native and wasm32 under `-D warnings`, CI and xtask lint both targets, and stage gates no longer exclude it.
   - The native build has 764 clippy errors under `-D warnings`, mostly imports and code used only by
     the wasm build.
   - The wasm32 build has 253 errors (116 bin, 137 test).
@@ -307,6 +307,8 @@ orchestrator session, following the [stage logs protocol](/documentation/restruc
 | S4 Tier 0–1 | `/run/media/system/Disk_2/Projects/tbd-restructure-s4` | `target/restructure-s4/ORCHESTRATOR_PROMPT.md` |
 | S5 Mission and ballistics | `/run/media/system/Disk_2/Projects/tbd-restructure-s5` | `target/restructure-s5/ORCHESTRATOR_PROMPT.md` |
 | S6 World CPU | `/run/media/system/Disk_2/Projects/tbd-restructure-s6` | `target/restructure-s6/ORCHESTRATOR_PROMPT.md` |
+
+S3 is on `main`: the frontend is `src/{foundation, features, pages, workspaces, shell}` with no `src/v2` layer, the frontend-layering law is hard at zero with the foundation sub-area order, and the frontend is clippy-clean on native and wasm32 under `-D warnings`, so every stage gate drops `--exclude frontend`. Its product changes (four inspector panels mounted in Mission Settings, the unmounted placed-vehicles panel deleted) are listed in [stage_logs/s3.md](/documentation/restructure/stage_logs/s3.md) for the S12 walkthrough.
 
 S4 is on `main` in two commits, S4a (the tier 0–1 crates S5 and S6 need) and S4b (tool foundations
 and contract crates). Duplicates S4 left in place, each with the stage that switches it, are in the

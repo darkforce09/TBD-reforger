@@ -14,7 +14,7 @@ documentation/apps/frontend/pages/doctrine_and_info/wiki/
 
 ## Code
 
-- [Doctrine wiki page](/apps/frontend/src/v2/pages/doctrine_and_info/wiki/) — the route
+- [Doctrine wiki page](/apps/frontend/src/pages/doctrine_and_info/wiki/) — the route
   component `WikiPage`, the index, the article pane, the block renderer, the revision history and
   the save path.
 - [Community content domain](/apps/api/src/community_content/) — the wiki list, article,

@@ -6,7 +6,7 @@ Design-phase reference for the mission dossier of the mission overview page at `
 drawn as the slide-over the library opens: one [mission](/documentation/glossary/g_to_m.md#mission)'s
 briefing, required assets and order of battle. It gives colour and layout context and is not an
 implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/mission_hub/overview/`.
+`apps/frontend/src/pages/mission_hub/overview/`.
 
 ## Contents
 
@@ -33,7 +33,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Mission overview page](/apps/frontend/src/v2/pages/mission_hub/overview/) — the
+- [Mission overview page](/apps/frontend/src/pages/mission_hub/overview/) — the
   dossier this set was drawn for.
 
 ## Boundaries

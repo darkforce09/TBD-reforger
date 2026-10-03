@@ -74,7 +74,7 @@ transformed box.
   - `crate::spatial::los::world`: the occluder's residency builds instances with
     `instances_from_records`, its prefab descriptors carry `InstanceRecord`s, its placements are
     `Rigid`s, and its coverage reads `Instance` and `InstanceKind`;
-  - the debug building viewer and interior bench in `apps/frontend/src/v2/apps/debug/`,
+  - the debug building viewer and interior bench in `apps/frontend/src/workspaces/debug/`,
     which assemble a compound from `<slug>.instances.json` and open and close its doors;
   - the blueprint tooling in `tools/developer_tools/src/blueprint/`, where
     `cargo xtask map bvh-batch` writes `<slug>.instances.json`, and the world line-of-sight checks

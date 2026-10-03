@@ -105,7 +105,7 @@ is added.
   - `crate::editing` (the host, history, hosted commands, persistence, picking, lanes and tools),
     and the store-gated tests in `legacy/map_engine/src/data/scenario/compiler/` and
     `legacy/map_engine/tests/`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/`: the document host, editor
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the document host, editor
     context, overlays and tactical-graphics lane in `bridge/`, the canvas mount and the document
     helpers in `mission_editor/`, the hydrate, persistence and document commands in `shell/`, and
     the inspector, the settings dialog and the outliner in `ui/`.

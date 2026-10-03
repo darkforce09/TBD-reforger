@@ -5,7 +5,7 @@
 Design-phase reference for the mission library page at `/missions`: a featured
 [mission](/documentation/glossary/g_to_m.md#mission) hero above a search and filter toolbar and a grid
 of mission cards. It gives colour and layout context and is not an implementation source; the
-built UI is the Leptos code under `apps/frontend/src/v2/pages/mission_hub/library/`.
+built UI is the Leptos code under `apps/frontend/src/pages/mission_hub/library/`.
 
 ## Contents
 
@@ -33,7 +33,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Mission library page](/apps/frontend/src/v2/pages/mission_hub/library/) — the page
+- [Mission library page](/apps/frontend/src/pages/mission_hub/library/) — the page
   this set was drawn for.
 
 ## Boundaries

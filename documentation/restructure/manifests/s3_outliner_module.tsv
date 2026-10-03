@@ -1,0 +1,8 @@
+# Stage S3, agent F5bb: the Editor Layers outliner's node model stops sharing its parent's name
+# (clippy module_inception): ui/outliner/outliner becomes ui/outliner/node_model. The `mod`
+# line and the bare `outliner::` qualifiers behind a `use …::outliner::outliner;` import are
+# fixed by hand.
+kind	from	to	scope
+path	apps/frontend/src/workspaces/editor/ui/outliner/outliner.rs	apps/frontend/src/workspaces/editor/ui/outliner/node_model.rs
+path	apps/frontend/src/workspaces/editor/ui/outliner/outliner	apps/frontend/src/workspaces/editor/ui/outliner/node_model
+rust_path	crate::workspaces::editor::ui::outliner::outliner::	crate::workspaces::editor::ui::outliner::node_model::	apps/frontend

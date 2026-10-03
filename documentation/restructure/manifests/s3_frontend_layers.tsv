@@ -1,0 +1,65 @@
+# Stage S3 — frontend layers: apps/frontend/src/v2 splits into foundation, features, pages,
+# workspaces and shell inside the one frontend crate. Paths name the tree before the moves (after S2).
+kind	from	to	scope
+#
+# the route table and its authorization tests; the shallowest rows, so they run first and create
+# foundation/route_table/
+path	apps/frontend/src/router.rs	apps/frontend/src/foundation/route_table/mod.rs
+path	apps/frontend/src/tests/route_authorization.rs	apps/frontend/src/foundation/route_table/tests/route_authorization.rs
+#
+# shared foundations: one row per child of v2/core, since foundation/ exists once the route table moved
+path	apps/frontend/src/v2/core/mod.rs	apps/frontend/src/foundation/mod.rs
+path	apps/frontend/src/v2/core/README.md	apps/frontend/src/foundation/README.md
+path	apps/frontend/src/v2/core/api	apps/frontend/src/foundation/transport
+path	apps/frontend/src/v2/core/auth	apps/frontend/src/foundation/auth
+path	apps/frontend/src/v2/core/map_view	apps/frontend/src/foundation/map_view
+path	apps/frontend/src/v2/core/offline	apps/frontend/src/foundation/offline
+path	apps/frontend/src/v2/core/test_support	apps/frontend/src/foundation/test_support
+path	apps/frontend/src/v2/core/ui	apps/frontend/src/foundation/ui
+path	apps/frontend/src/v2/core/utils	apps/frontend/src/foundation/utils
+#
+# routed pages; the app frame out of pages/navigation, its menu into the route table; the mission
+# review record becomes a feature; the review workspace joins the editor
+path	apps/frontend/src/v2/pages	apps/frontend/src/pages
+path	apps/frontend/src/v2/pages/navigation	apps/frontend/src/shell
+path	apps/frontend/src/v2/pages/navigation/nav_config.rs	apps/frontend/src/foundation/route_table/navigation_menu.rs
+path	apps/frontend/src/v2/pages/mission_hub/mission_review	apps/frontend/src/features/mission_review_record
+path	apps/frontend/src/v2/pages/mission_hub/review_workspace	apps/frontend/src/workspaces/editor/review_workspace
+#
+# the standalone workspaces; the editor's per-tab session folder and its warm-session marker
+path	apps/frontend/src/v2/apps	apps/frontend/src/workspaces
+path	apps/frontend/src/v2/apps/editor/shell	apps/frontend/src/workspaces/editor/session
+path	apps/frontend/src/v2/apps/editor/shell/session.rs	apps/frontend/src/workspaces/editor/session/warm_session_marker.rs
+#
+# the crate's documentation audit joins the crate tests (src/tests/ exists, so the leaf folder moves)
+path	apps/frontend/src/v2/tests/doc_audit	apps/frontend/src/tests/doc_audit
+#
+# documentation mirror (code path minus src/)
+path	documentation/apps/frontend/apps	documentation/apps/frontend/workspaces
+path	documentation/apps/frontend/pages/navigation	documentation/apps/frontend/shell
+path	documentation/apps/frontend/pages/mission_hub/review_workspace	documentation/apps/frontend/workspaces/editor/review_workspace
+#
+# crate paths in the frontend (never unscoped: verification_core's law fixtures spell crate::v2::)
+rust_path	crate::v2::core::api::	crate::foundation::transport::	apps/frontend
+rust_path	crate::v2::core::	crate::foundation::	apps/frontend
+rust_path	crate::router::	crate::foundation::route_table::	apps/frontend
+rust_path	crate::v2::pages::navigation::nav_config::	crate::foundation::route_table::navigation_menu::	apps/frontend
+rust_path	crate::v2::pages::navigation::	crate::shell::	apps/frontend
+rust_path	crate::v2::pages::mission_hub::mission_review::	crate::features::mission_review_record::	apps/frontend
+rust_path	crate::v2::pages::mission_hub::review_workspace::	crate::workspaces::editor::review_workspace::	apps/frontend
+rust_path	crate::v2::pages::	crate::pages::	apps/frontend
+rust_path	crate::v2::apps::editor::shell::session::	crate::workspaces::editor::session::warm_session_marker::	apps/frontend
+rust_path	crate::v2::apps::editor::shell::	crate::workspaces::editor::session::	apps/frontend
+rust_path	crate::v2::apps::	crate::workspaces::	apps/frontend
+#
+# the same paths written from the crate root without crate:: (main.rs uses, doc comments)
+rust_path	v2::core::api::	foundation::transport::	apps/frontend
+rust_path	v2::core::	foundation::	apps/frontend
+rust_path	v2::pages::navigation::nav_config::	foundation::route_table::navigation_menu::	apps/frontend
+rust_path	v2::pages::navigation::	shell::	apps/frontend
+rust_path	v2::pages::mission_hub::mission_review::	features::mission_review_record::	apps/frontend
+rust_path	v2::pages::mission_hub::review_workspace::	workspaces::editor::review_workspace::	apps/frontend
+rust_path	v2::pages::	pages::	apps/frontend
+rust_path	v2::apps::editor::shell::session::	workspaces::editor::session::warm_session_marker::	apps/frontend
+rust_path	v2::apps::editor::shell::	workspaces::editor::session::	apps/frontend
+rust_path	v2::apps::	workspaces::	apps/frontend

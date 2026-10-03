@@ -448,12 +448,15 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "ci-local-leptos",
-        help: "CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors the ci.yml frontend job)",
+        help: "CI gate: Leptos SPA fmt + clippy -D warnings (wasm32 and native, --all-targets) + native tests + trunk release build (mirrors the ci.yml frontend job)",
         group: "build",
         lane: Lane::Borrowed,
         steps: &[
             sh!("cargo fmt -p frontend --check"),
-            sh!("cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets"),
+            sh!(
+                "cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets -- -D warnings"
+            ),
+            sh!("cargo clippy -p frontend --all-targets --locked -- -D warnings"),
             sh!("cargo test -p frontend"),
             sh!("cd apps/frontend && trunk build --release"),
         ],

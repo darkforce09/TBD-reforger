@@ -65,8 +65,8 @@ Outside the walk, and so unenforced by this gate:
 - Markdown. Live documents under `documentation/` have their own 500-line limit, checked by
   `cargo xtask verify markdown-placement`.
 
-The app's `src/v2/` tree has a second 500-line check in its own tests,
-`v2_production_files_meet_the_documentation_standard` in
-`apps/frontend/src/v2/tests/doc_audit/mod.rs`. That audit has no allowlist and no
+The app's `src/` tree has a second 500-line check in its own tests,
+`frontend_production_files_meet_the_documentation_standard` in
+`apps/frontend/src/tests/doc_audit/mod.rs`. That audit has no allowlist and no
 exemption path: it judges every production file, and a file that breaks a rule is fixed, never
 listed.

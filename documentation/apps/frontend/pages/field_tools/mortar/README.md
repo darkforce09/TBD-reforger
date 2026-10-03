@@ -30,12 +30,12 @@ feature doc; the code folder's README lists the page's files.
 
 ## Code
 
-- [Mortar calculator page](/apps/frontend/src/v2/pages/field_tools/mortar/) — the route
+- [Mortar calculator page](/apps/frontend/src/pages/field_tools/mortar/) — the route
   component `MortarCalculatorPage`, the inputs, the map picker, the solve bridge, the solution
   panel, the save area and the offline pack line.
 - [Game ballistics](/legacy/map_engine/src/data/scenario/ballistics/) — the
   `solve_fire_mission` assembler the page and the API run.
-- [Offline core](/apps/frontend/src/v2/core/offline/) — the offline pack the page
+- [Offline core](/apps/frontend/src/foundation/offline/) — the offline pack the page
   triggers.
 - [Operations domain](/apps/api/src/operations/) — the ballistics catalog and
   fire-mission routes.

@@ -60,9 +60,9 @@ it was on screen. `pan` and `zoom_at` keep the target within the bounds too.
     `camera::viewport`, `editing` (picking and the selection tools) and `diagnostics` (the probe
     runner and the readback checks);
   - the Mission Creator's toolbelt and document helpers
-    (`apps/frontend/src/v2/apps/editor/ui/docks/toolbelt.rs`,
-    `apps/frontend/src/v2/apps/editor/mission_editor/document_helpers.rs`) and the debug
-    benches under `apps/frontend/src/v2/apps/debug/`, which read `MAX_ZOOM`;
+    (`apps/frontend/src/workspaces/editor/ui/docks/toolbelt.rs`,
+    `apps/frontend/src/workspaces/editor/mission_editor/document_helpers.rs`) and the debug
+    benches under `apps/frontend/src/workspaces/debug/`, which read `MAX_ZOOM`;
   - the crate's integration suites `crates/geometry/camera_math/tests/camera_props.rs` and
     `crates/geometry/camera_math/tests/deckgl_ortho_parity.rs`.
 - Rules: the camera matches deck.gl's orthographic viewport over 300 golden cases in

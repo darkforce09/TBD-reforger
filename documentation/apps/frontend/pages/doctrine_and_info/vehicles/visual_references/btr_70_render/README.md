@@ -6,7 +6,7 @@ Design-phase reference for the image area of the vehicle database dossier at `/v
 top-down render of a BTR-70 on a dirt track among supply crates and camouflage nets, framed by
 "MILITARY INTELLIGENCE" and "MILITARY INTELLIGENCE ANALYSIS" labels. It gives mood and colour
 context and is not an implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/doctrine_and_info/vehicles/`.
+`apps/frontend/src/pages/doctrine_and_info/vehicles/`.
 
 ## Contents
 
@@ -25,7 +25,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Vehicle database page](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/) — the
+- [Vehicle database page](/apps/frontend/src/pages/doctrine_and_info/vehicles/) — the
   page this render was made for.
 
 ## Boundaries

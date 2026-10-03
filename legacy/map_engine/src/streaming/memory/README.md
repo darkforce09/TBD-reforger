@@ -49,7 +49,7 @@ natively.
     `legacy/map_engine/src/streaming/loaders/tests/` and
     `legacy/map_engine/src/streaming/scheduler/residency/`;
   - the Mission Creator's frame pump, which shows the HUD tail
-    (`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`).
+    (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`).
 - Rules:
   - `stats_json` is written by hand with `format!`, so it must stay valid JSON and keep its key
     names, which `merge_residency_stats` in `crate::streaming::bridge::statistics` and the tests

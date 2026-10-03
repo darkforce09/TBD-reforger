@@ -127,17 +127,10 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     });
     r.run("wasm32 (frontend)", || changed::wasm_changed(ctx, &range));
     r.run("fmt (changed)", || changed::fmt_changed(ctx, &range));
-    // Clippy is scoped per-crate, NOT --workspace.
-    //
-    // `cargo clippy --workspace --all-targets -- -D warnings` is still red on clean main, so a
-    // workspace-wide gate would be red before a single slice merged and nothing could ever land.
-    //
-    // The remaining errors on clean main are in `frontend` linted natively, not in
-    // tools: xtask and developer_tools are clean and are gated by the
-    // `clippy xtask+developer_tools` step below.
-    //
-    // ci.yml gates per-crate (:59 api, :91 map-engine, :112 frontend on wasm32) and
-    // the three steps here mirror it; the fourth (below) covers what ci.yml has no job for at all.
+    // Clippy is scoped per-crate, NOT --workspace: each crate is linted with the flags its ci.yml
+    // job uses (the api job, the map-engine job with --all-features, the frontend job on wasm32
+    // and natively), every one with `-D warnings`. The `clippy xtask+developer_tools` step below
+    // covers what ci.yml has no job for at all.
     r.run("clippy api", || {
         checkrun(
             ctx,
@@ -175,10 +168,10 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             ],
         )
     });
-    // NOTE: no `-D warnings` here, deliberately — ci.yml frontend clippy runs WITHOUT it,
-    // so warnings are advisory upstream. Adding -D here would make the gate stricter than CI and
-    // red on arrival. --all-targets is load-bearing for `#[cfg(test)]` code and benches, and keeps
-    // this step aligned with clippy_changed and `ci-local-leptos`; -D stays off to match CI.
+    // The frontend is linted twice, both with `-D warnings`, as `ci-local-leptos` and
+    // clippy_changed do: for wasm32 (the browser build) and natively (the native test build),
+    // since each compiles a different `cfg(target_arch)` half. --all-targets is load-bearing for
+    // `#[cfg(test)]` code and benches.
     r.run("clippy frontend", || {
         checkrun(
             ctx,
@@ -191,6 +184,26 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "wasm32-unknown-unknown",
                 "--all-targets",
                 "--quiet",
+                "--",
+                "-D",
+                "warnings",
+            ],
+        )
+    });
+    r.run("clippy frontend (native)", || {
+        checkrun(
+            ctx,
+            &[
+                "cargo",
+                "clippy",
+                "-p",
+                "frontend",
+                "--all-targets",
+                "--locked",
+                "--quiet",
+                "--",
+                "-D",
+                "warnings",
             ],
         )
     });

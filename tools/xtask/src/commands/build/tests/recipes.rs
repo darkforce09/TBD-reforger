@@ -141,7 +141,15 @@ fn echo_matches_make() {
         "cd apps/frontend && trunk serve --release"
     );
     assert_eq!(
-        ci_local_leptos()[3].echo(),
+        ci_local_leptos()[1].echo(),
+        "cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets -- -D warnings"
+    );
+    assert_eq!(
+        ci_local_leptos()[2].echo(),
+        "cargo clippy -p frontend --all-targets --locked -- -D warnings"
+    );
+    assert_eq!(
+        ci_local_leptos()[4].echo(),
         "cd apps/frontend && trunk build --release"
     );
     assert_eq!(

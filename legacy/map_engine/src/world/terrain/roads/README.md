@@ -63,7 +63,7 @@ axis, and none narrower than `STRIP_MIN_PX` (1.5) pixels.
 - Used by: `crate::streaming`, whose loaders read the network and build the road mesh and apron,
   whose strip and glyph packers draw the strips and gate airfield structures, and whose toggles
   recompute the box; `crate::world::environment::locations`, whose road labels follow
-  `RoadSegment`s; the debug benches in `apps/frontend/src/v2/apps/debug/`, which stroke
+  `RoadSegment`s; the debug benches in `apps/frontend/src/workspaces/debug/`, which stroke
   lines with `expand_polyline_strip`; and `tools/developer_tools/src/`, whose world export
   writes the archive from the JSON and whose label pipeline and checks read the network.
 - Rules: `airfield.rs`, `cartographic_strip.rs` and `network.rs` compile only with the `streaming`

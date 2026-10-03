@@ -16,7 +16,7 @@ session reports.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/administration/server_control/`](/apps/frontend/src/v2/pages/administration/server_control/):
+- Code: [`apps/frontend/src/pages/administration/server_control/`](/apps/frontend/src/pages/administration/server_control/):
   `page.rs` holds the route component `ServerControlPage`, the list states and the picker;
   `server_cards.rs` the server list rows and the selected server's card, whose telemetry band is
   `server_card_telemetry.rs`; `server_registry/` holds the server list, the selection and the
@@ -24,10 +24,10 @@ session reports.
   the card's panels: `fleet_commands/` (the command console), `mission_deployments/` (the
   deployments panel), `fleet_scenarios/` (the fleet scenario sheet) and `machine_credentials/`
   (the credential sheet). The folder's
-  [README](/apps/frontend/src/v2/pages/administration/server_control/README.md) describes
+  [README](/apps/frontend/src/pages/administration/server_control/README.md) describes
   each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/administration/server_control/README.md#routes).
+  [Routes](/apps/frontend/src/pages/administration/server_control/README.md#routes).
 - Related: the [server control](/documentation/glossary/n_to_z.md#server-control) glossary entry; the
   [server intel page](/documentation/apps/frontend/pages/command_center/server_intel/server_intel_page.md),
   the members' read-only view of the same servers; the API's
@@ -40,9 +40,9 @@ session reports.
 
 ## Behaviour
 
-The page body sits in `AdminGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+The page body sits in `AdminGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
 the session and access states of the README's
-[States](/apps/frontend/src/v2/pages/administration/server_control/README.md#states) in
+[States](/apps/frontend/src/pages/administration/server_control/README.md#states) in
 place of the page until a signed-in viewer holds the `admin`
 [role](/documentation/glossary/n_to_z.md#role). The README's States quote every text the steps below
 mention.
@@ -176,7 +176,7 @@ mention.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/administration/server_control/README.md#data)
+The README's [Data](/apps/frontend/src/pages/administration/server_control/README.md#data)
 lists each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/servers` (`list_servers` in

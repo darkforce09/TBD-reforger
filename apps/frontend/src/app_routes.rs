@@ -10,26 +10,26 @@
 //! layout flags and the required tiers are read from; a path added here without a row there
 //! renders with default layout and no tier requirement.
 
-use crate::v2::pages::account::login::LoginPage;
-use crate::v2::pages::account::settings::SettingsPage;
-use crate::v2::pages::administration::approvals::MissionApprovalsPage;
-use crate::v2::pages::administration::audit_logs::AuditLogsPage;
-use crate::v2::pages::administration::ballistics_catalogs::BallisticsCatalogsPage;
-use crate::v2::pages::administration::content_manager::ContentManagerPage;
-use crate::v2::pages::administration::personnel::PersonnelRosterPage;
-use crate::v2::pages::administration::server_control::ServerControlPage;
-use crate::v2::pages::command_center::announcements::AnnouncementsPage;
-use crate::v2::pages::command_center::dashboard::DashboardPage;
-use crate::v2::pages::command_center::server_intel::ServerIntelPage;
-use crate::v2::pages::doctrine_and_info::modpacks::ModpacksPage;
-use crate::v2::pages::doctrine_and_info::vehicles::VehicleDatabasePage;
-use crate::v2::pages::doctrine_and_info::wiki::WikiPage;
-use crate::v2::pages::field_tools::mortar::MortarCalculatorPage;
-use crate::v2::pages::mission_hub::library::MissionLibraryPage;
-use crate::v2::pages::navigation::not_found::NotFoundPage;
-use crate::v2::pages::operations::deployments::DeploymentsPage;
-use crate::v2::pages::operations::leaderboards::LeaderboardsPage;
-use crate::v2::pages::operations::schedule::EventSchedulePage;
+use crate::pages::account::login::LoginPage;
+use crate::pages::account::settings::SettingsPage;
+use crate::pages::administration::approvals::MissionApprovalsPage;
+use crate::pages::administration::audit_logs::AuditLogsPage;
+use crate::pages::administration::ballistics_catalogs::BallisticsCatalogsPage;
+use crate::pages::administration::content_manager::ContentManagerPage;
+use crate::pages::administration::personnel::PersonnelRosterPage;
+use crate::pages::administration::server_control::ServerControlPage;
+use crate::pages::command_center::announcements::AnnouncementsPage;
+use crate::pages::command_center::dashboard::DashboardPage;
+use crate::pages::command_center::server_intel::ServerIntelPage;
+use crate::pages::doctrine_and_info::modpacks::ModpacksPage;
+use crate::pages::doctrine_and_info::vehicles::VehicleDatabasePage;
+use crate::pages::doctrine_and_info::wiki::WikiPage;
+use crate::pages::field_tools::mortar::MortarCalculatorPage;
+use crate::pages::mission_hub::library::MissionLibraryPage;
+use crate::pages::operations::deployments::DeploymentsPage;
+use crate::pages::operations::leaderboards::LeaderboardsPage;
+use crate::pages::operations::schedule::EventSchedulePage;
+use crate::shell::not_found::NotFoundPage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
 use leptos_router::path;
@@ -39,9 +39,9 @@ use leptos_router::path;
 pub fn AppRoutes() -> impl IntoView {
     view! {
         <Routes fallback=|| view! { <NotFoundPage /> }>
-            <Route path=path!("/debug/data-viewer") view=crate::v2::apps::debug::data_viewer::DataViewerPage />
+            <Route path=path!("/debug/data-viewer") view=crate::workspaces::debug::data_viewer::DataViewerPage />
             <Route path=path!("/login") view=LoginPage />
-            <Route path=path!("/auth/callback") view=crate::v2::pages::account::auth_callback::AuthCallbackPage />
+            <Route path=path!("/auth/callback") view=crate::pages::account::auth_callback::AuthCallbackPage />
             <Route path=path!("/") view=DashboardPage />
             <Route path=path!("/server-intel") view=ServerIntelPage />
             <Route path=path!("/announcements") view=AnnouncementsPage />
@@ -49,20 +49,20 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/deployments") view=DeploymentsPage />
             <Route path=path!("/leaderboards") view=LeaderboardsPage />
             <Route path=path!("/missions") view=MissionLibraryPage />
-            <Route path=path!("/missions/:id") view=crate::v2::pages::mission_hub::overview::MissionOverviewPage />
+            <Route path=path!("/missions/:id") view=crate::pages::mission_hub::overview::MissionOverviewPage />
             <Route
                 path=path!("/missions/:id/edit")
-                view=crate::v2::apps::editor::mission_editor::MissionEditorPage
+                view=crate::workspaces::editor::mission_editor::MissionEditorPage
             />
             <Route
                 path=path!("/missions/:id/artifacts/:artifact_id/workspace")
-                view=crate::v2::pages::mission_hub::review_workspace::ReviewWorkspacePage
+                view=crate::workspaces::editor::review_workspace::ReviewWorkspacePage
             />
             <Route path=path!("/events") view=EventSchedulePage />
-            <Route path=path!("/events/:id") view=crate::v2::pages::operations::event_detail::EventHubPage />
+            <Route path=path!("/events/:id") view=crate::pages::operations::event_detail::EventHubPage />
             <Route
                 path=path!("/events/:id/missions/:emid/orbat")
-                view=crate::v2::pages::operations::orbat_selection::OrbatSelectionPage
+                view=crate::pages::operations::orbat_selection::OrbatSelectionPage
             />
             <Route path=path!("/wiki") view=WikiPage />
             <Route path=path!("/wiki/:slug") view=WikiPage />
@@ -71,18 +71,18 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/tools/mortar") view=MortarCalculatorPage />
             <Route
                 path=path!("/debug/building-viewer")
-                view=crate::v2::apps::debug::building_viewer::BuildingViewerPage
+                view=crate::workspaces::debug::building_viewer::BuildingViewerPage
             />
             <Route
                 path=path!("/debug/world-los")
-                view=crate::v2::apps::debug::world_los::WorldLosPage
+                view=crate::workspaces::debug::world_los::WorldLosPage
             />
             <Route
                 path=path!("/debug/ballistics-agreement")
-                view=crate::v2::apps::debug::ballistics_agreement::BallisticsAgreementPage
+                view=crate::workspaces::debug::ballistics_agreement::BallisticsAgreementPage
             />
             <Route path=path!("/settings") view=SettingsPage />
-            <Route path=path!("/admin/events") view=crate::v2::pages::administration::event_manager::EventManagerPage />
+            <Route path=path!("/admin/events") view=crate::pages::administration::event_manager::EventManagerPage />
             <Route path=path!("/admin/approvals") view=MissionApprovalsPage />
             <Route path=path!("/admin/server") view=ServerControlPage />
             <Route path=path!("/admin/personnel") view=PersonnelRosterPage />

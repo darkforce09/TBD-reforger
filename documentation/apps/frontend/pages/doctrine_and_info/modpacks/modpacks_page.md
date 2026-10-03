@@ -8,14 +8,14 @@ collection; administrators create, edit, make current and delete packs in place.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/doctrine_and_info/modpacks/`](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/):
+- Code: [`apps/frontend/src/pages/doctrine_and_info/modpacks/`](/apps/frontend/src/pages/doctrine_and_info/modpacks/):
   `page.rs` holds the route component `ModpacksPage` and the list fetch; `preset_list.rs` the pack
   list and "+ New"; `mod_table.rs` the read dossier; `pack_editor.rs` and `pack_edit.rs` the edit
   form and its request body. The folder's
-  [README](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/README.md) describes each
+  [README](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/README.md#routes).
+  [Routes](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md#routes).
 - Related: the [API](/documentation/glossary/a_to_f.md#api)'s
   [community content domain](/apps/api/src/community_content/README.md), which owns the
   modpack routes; the servers and [events](/documentation/glossary/a_to_f.md#event) that name a
@@ -24,7 +24,7 @@ collection; administrators create, edit, make current and delete packs in place.
 ## Behaviour
 
 The page body sits in `AuthGate`; the session, loading, failure and toast texts are in the
-README's [States](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/README.md#states).
+README's [States](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md#states).
 
 ### Reading
 
@@ -64,7 +64,7 @@ README's [States](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/README.
 ### Known discrepancies
 
 - Every addon row in the edit form draws a drag handle, and the module header of
-  `apps/frontend/src/v2/pages/doctrine_and_info/modpacks/pack_editor.rs` calls the rows
+  `apps/frontend/src/pages/doctrine_and_info/modpacks/pack_editor.rs` calls the rows
   reorderable, but no handler moves a row; `PackEdit::to_put_body` in `pack_edit.rs` stores each
   row's index as its order.
 - The pack's download size shows in the list and the dossier, but the form has no size field: a
@@ -73,7 +73,7 @@ README's [States](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/README.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/README.md#data)
+The README's [Data](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md#data)
 lists each call with its DTO. Server-side:
 
 - `GET /api/v1/modpacks` (`list_modpacks` in

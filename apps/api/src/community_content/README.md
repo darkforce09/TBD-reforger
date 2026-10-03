@@ -83,7 +83,7 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
   - `command_center`, `server_infrastructure` and `missions`, through the services and models
     above;
   - over HTTP, the command center, doctrine and content manager pages in
-    `apps/frontend/src/v2/pages/`.
+    `apps/frontend/src/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); a handler
   folder with its own `routes()` holds every registration of its routes, and `routes.rs` only

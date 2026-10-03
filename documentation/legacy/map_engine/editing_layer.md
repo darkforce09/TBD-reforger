@@ -21,12 +21,12 @@ Local drafts are a separate doc, [draft persistence](/documentation/legacy/map_e
   files. The document it edits is `MissionDocCore` in
   [`data/store/`](/legacy/map_engine/src/data/store/README.md).
 - Entry: `editing::host::install(doc, selection)`, which the Mission Creator's canvas mount calls
-  once the document exists (`apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`),
+  once the document exists (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`),
   and `history::install_host`, through which its document host installs the post-change hook
-  (`apps/frontend/src/v2/apps/editor/bridge/document_host/history.rs`).
+  (`apps/frontend/src/workspaces/editor/bridge/document_host/history.rs`).
 - Related features: [draft persistence](/documentation/legacy/map_engine/draft_persistence.md),
   the [map engine overview](/documentation/legacy/map_engine/map_engine_overview.md), and the
-  Mission Creator's [feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+  Mission Creator's [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   for the ORBAT, layer, marker, zone, trigger, connection, clipboard and undo features this layer
   backs.
 

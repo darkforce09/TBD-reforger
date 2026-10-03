@@ -9,10 +9,10 @@ Developers and agents read it before laying out a list, a detail view or a creat
 ## Where it lives
 
 - Code: the primitives in
-  [`apps/frontend/src/v2/core/ui/`](/apps/frontend/src/v2/core/ui/README.md):
+  [`apps/frontend/src/foundation/ui/`](/apps/frontend/src/foundation/ui/README.md):
   `SplitPane`, `GlassSplit` and their filter field and empty state (`split_pane.rs`), `Dialog`
   (`dialog.rs`), `Sheet` (`sheet.rs`) and the modal stack they share (`modal_stack.rs`).
-- Pages: the page folders under `apps/frontend/src/v2/pages/`, indexed with their feature
+- Pages: the page folders under `apps/frontend/src/pages/`, indexed with their feature
   docs in the [pages documentation](/documentation/apps/frontend/pages/README.md).
 - Related: the [design tokens](/documentation/design_system/design_tokens.md), whose motion
   rules the overlays follow, and the [mod design](/documentation/mod/tbd-framework/mod_design.md),

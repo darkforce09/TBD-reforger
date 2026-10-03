@@ -27,7 +27,7 @@ feature doc. The code folder's README lists the page's files, calls and states.
 
 ## Code
 
-- [Event schedule page](/apps/frontend/src/v2/pages/operations/schedule/) — the route
+- [Event schedule page](/apps/frontend/src/pages/operations/schedule/) — the route
   component `EventSchedulePage` and the event card.
 - [Operations domain](/apps/api/src/operations/) — the event list and the event hub
   the page reads.

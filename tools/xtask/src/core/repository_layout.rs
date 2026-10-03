@@ -62,7 +62,7 @@ pub const PLAYABLE_SELECTOR_OVERRIDE_ENV: &str = "TBD_PS_ORACLE";
 /// path that moves with the tree; a stage that moves a folder rewrites these constants.
 pub mod workspace_laws {
     use repository_laws::workspace_laws::frontend_layering::{
-        FrontendCrateLayers, FrontendLayer, FrontendLayerRow,
+        FrontendCrateLayers, FrontendLayer, FrontendLayerRow, SubAreaOrder,
     };
 
     /// Folders whose every `Cargo.toml` (outside test trees, fixtures and build output) must be a
@@ -72,24 +72,42 @@ pub mod workspace_laws {
     /// The app stylesheet whose `@source` lines must cover every leptos crate.
     pub const TAILWIND_STYLESHEET: &str = "apps/frontend/style/aegis.css";
 
-    /// The frontend crate's layer table: `src/v2/core` is the foundation, `src/v2/pages` the
-    /// pages (one area per section), `src/v2/apps` the workspaces, and the entry point, the route
-    /// table, the platform frame and the crate-level tests the shell.
+    /// The frontend crate's layer table: `src/foundation` is the foundation, `src/features` the
+    /// shared features, `src/pages` the pages (one area per section), `src/workspaces` the
+    /// workspaces (one area per workspace), and the entry point, the render form of the route
+    /// table, the platform frame and the crate-level tests the shell. Inside the foundation the
+    /// sub-areas follow [`FOUNDATION_SUB_AREA_ORDER`].
     pub const FRONTEND_LAYERS: &[FrontendCrateLayers] = &[FrontendCrateLayers {
         crate_path: "apps/frontend",
         rows: &[
             shell("src/main.rs"),
-            shell("src/router.rs"),
             shell("src/app_routes.rs"),
             shell("src/tests"),
-            shell("src/v2/mod.rs"),
-            shell("src/v2/tests"),
-            shell("src/v2/pages/navigation"),
-            row("src/v2/core", FrontendLayer::Foundation, false),
-            row("src/v2/pages", FrontendLayer::Pages, true),
-            row("src/v2/apps", FrontendLayer::Workspaces, true),
+            shell("src/shell"),
+            row("src/foundation", FrontendLayer::Foundation, false),
+            row("src/features", FrontendLayer::Features, false),
+            row("src/pages", FrontendLayer::Pages, true),
+            row("src/workspaces", FrontendLayer::Workspaces, true),
         ],
+        sub_area_orders: &[FOUNDATION_SUB_AREA_ORDER],
     }];
+
+    /// The strict order of the foundation's sub-areas, lowest first: `ui` < `utils` <
+    /// `transport` < `route_table` < `auth` < {`offline`, `map_view`}. A sub-area imports only
+    /// sub-areas strictly before it; `offline` and `map_view` are peers that never import each
+    /// other; `test_support` sits outside the order and only test files import it.
+    pub const FOUNDATION_SUB_AREA_ORDER: SubAreaOrder = SubAreaOrder {
+        parent: "src/foundation",
+        tiers: &[
+            &["ui"],
+            &["utils"],
+            &["transport"],
+            &["route_table"],
+            &["auth"],
+            &["offline", "map_view"],
+        ],
+        test_only: &["test_support"],
+    };
 
     const fn shell(path: &'static str) -> FrontendLayerRow {
         row(path, FrontendLayer::Shell, false)

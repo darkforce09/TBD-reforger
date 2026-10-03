@@ -23,7 +23,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Mission overview page](/apps/frontend/src/v2/pages/mission_hub/overview/) — the built
+- [Mission overview page](/apps/frontend/src/pages/mission_hub/overview/) — the built
   dossier the set was drawn for.
 
 ## Boundaries

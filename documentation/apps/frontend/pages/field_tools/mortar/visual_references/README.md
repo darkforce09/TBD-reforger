@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Mortar calculator page](/apps/frontend/src/v2/pages/field_tools/mortar/) — the built
+- [Mortar calculator page](/apps/frontend/src/pages/field_tools/mortar/) — the built
   page the set was drawn for.
 
 ## Boundaries

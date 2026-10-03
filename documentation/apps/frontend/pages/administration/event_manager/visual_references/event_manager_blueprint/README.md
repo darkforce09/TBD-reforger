@@ -5,7 +5,7 @@
 Design-phase reference for the [event manager](/documentation/glossary/a_to_f.md#event-manager) page at
 `/admin/events`: a tactical month calendar beside a form that schedules one operation. It gives
 colour and layout context and is not an implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/administration/event_manager/`.
+`apps/frontend/src/pages/administration/event_manager/`.
 
 ## Contents
 
@@ -34,7 +34,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Event manager page](/apps/frontend/src/v2/pages/administration/event_manager/) — the
+- [Event manager page](/apps/frontend/src/pages/administration/event_manager/) — the
   page this set was drawn for.
 
 ## Boundaries

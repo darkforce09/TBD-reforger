@@ -25,7 +25,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Content manager page](/apps/frontend/src/v2/pages/administration/content_manager/) —
+- [Content manager page](/apps/frontend/src/pages/administration/content_manager/) —
   the built page the sets were drawn for.
 
 ## Boundaries

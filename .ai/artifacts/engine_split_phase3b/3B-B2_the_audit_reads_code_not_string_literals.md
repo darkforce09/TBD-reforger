@@ -4,7 +4,7 @@ Read `00_rules_every_agent_obeys.md` first. Every rule there applies to this bri
 
 ## The defect
 
-`apps/frontend/src/v2/tests/doc_audit/mod.rs` decides whether a line declares a
+`apps/frontend/src/tests/doc_audit/mod.rs` decides whether a line declares a
 documentable item by looking at the line's text. It has no idea whether that line is code or the
 inside of a string literal. This codebase pins behaviour by source inspection constantly, so its
 tests are full of fixture strings holding Rust source — and every `pub fn` inside one of those

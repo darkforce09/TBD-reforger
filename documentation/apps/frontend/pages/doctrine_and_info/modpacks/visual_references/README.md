@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Modpacks page](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/) — the built
+- [Modpacks page](/apps/frontend/src/pages/doctrine_and_info/modpacks/) — the built
   page the set was drawn for.
 
 ## Boundaries

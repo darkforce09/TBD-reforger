@@ -61,10 +61,10 @@ as the file stores them, which makes the output deterministic: two builds emit t
   - the occluder loader (`legacy/map_engine/src/streaming/loaders/occluder_loader.rs`),
     which parses each fetched `.bvh`;
   - the debug building viewer and building interior benches
-    (`apps/frontend/src/v2/apps/debug/building_viewer.rs`,
-    `apps/frontend/src/v2/apps/debug/building_interior.rs`) and the
+    (`apps/frontend/src/workspaces/debug/building_viewer.rs`,
+    `apps/frontend/src/workspaces/debug/building_interior.rs`) and the
     [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s line-of-sight tool
-    (`apps/frontend/src/v2/apps/editor/input/tools/los_world_wasm.rs`);
+    (`apps/frontend/src/workspaces/editor/input/tools/los_world_wasm.rs`);
   - the blueprint tooling in `tools/developer_tools/src/blueprint/`, whose emitters in
     `tools/developer_tools/src/blueprint/bvh/` write the sidecars, and the library checks in
     `tools/developer_tools/src/map_verification/`.

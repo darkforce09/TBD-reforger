@@ -80,9 +80,9 @@ boundary, so moving one is a change for its callers:
   - the API's [missions](/documentation/glossary/g_to_m.md#missions) and
     [operations](/documentation/glossary/n_to_z.md#operations) domains in
     `apps/api/src/missions/` and `apps/api/src/operations/`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/`, the mission library in
-    `apps/frontend/src/v2/pages/mission_hub/library/` and the DTOs of
-    `apps/frontend/src/v2/core/api/dto/`;
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/`, the mission library in
+    `apps/frontend/src/pages/mission_hub/library/` and the DTOs of
+    `apps/frontend/src/foundation/transport/dto/`;
   - inside the crate, `crate::data::store` and `crate::editing`.
 - Rules:
   - nothing here imports the document store, the graphics engine, or the crate's `camera`,

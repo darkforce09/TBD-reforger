@@ -67,9 +67,9 @@ apps/api/src/community_content/handlers/
 - Used by: the domain's `routes.rs`, which registers the flat handlers and the `vehicle_database/`,
   `wiki_knowledgebase/` and `equipment_data_viewer/` handlers; over HTTP, the announcement feed
   and dashboard intel under
-  `apps/frontend/src/v2/pages/command_center/`, the wiki, vehicle and modpack pages under
-  `apps/frontend/src/v2/pages/doctrine_and_info/`, and the content manager under
-  `apps/frontend/src/v2/pages/administration/content_manager/`.
+  `apps/frontend/src/pages/command_center/`, the wiki, vehicle and modpack pages under
+  `apps/frontend/src/pages/doctrine_and_info/`, and the content manager under
+  `apps/frontend/src/pages/administration/content_manager/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); the
   Discord embed is sanitised at the webhook sink, never at the CMS write, so the site shows the

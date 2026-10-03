@@ -42,7 +42,7 @@ contract type `UploadResponseUrl` before it is sent.
   and `Config::upload_dir` (`UPLOAD_DIR`); tokio for the file writes.
 - Used by: the domain's `routes.rs`, which registers `upload_image` behind the multipart body
   limit; over HTTP, the hero upload of the content manager under
-  `apps/frontend/src/v2/pages/administration/content_manager/`.
+  `apps/frontend/src/pages/administration/content_manager/`.
 - Rules: this folder is the only writer of the upload directory, which `core::http_router` serves
   at `/uploads`; the wire shapes are `contracts/definitions/content-upload.schema.json`.
 

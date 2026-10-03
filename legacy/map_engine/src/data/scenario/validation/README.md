@@ -39,7 +39,7 @@ same wherever it is reported.
 
 - Depends on: `crate::data::scenario::compile` (`terrain_bounds`); `serde_json`.
 - Used by: the Mission Creator's validation panel
-  (`apps/frontend/src/v2/apps/editor/ui/inspector/validation_panel/`) and compiled export;
+  (`apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`) and compiled export;
   the missions domain in `apps/api/src/missions/` (`contract/`, `handlers/`,
   `services/`); inside the crate, `crate::data::scenario::flatten` and `crate::editing::commands`.
 - Rules: every rule fires on its own trip fixture

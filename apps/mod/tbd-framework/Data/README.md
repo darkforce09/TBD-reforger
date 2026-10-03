@@ -65,7 +65,7 @@ server runs the mission deployed to it on the platform.
   aliases against it (`tools/xtask/src/verifications/registry/object_registry_aliases.rs`), and
   `cargo xtask verify no-crf-leak` scans it for upstream-only prefab GUIDs.
 - The Mission Creator embeds `registry.json` at compile time to know which object aliases the mod
-  can spawn (`apps/frontend/src/v2/apps/editor/arsenal/asset_catalog.rs`).
+  can spawn (`apps/frontend/src/workspaces/editor/arsenal/asset_catalog.rs`).
 
 ## Boundaries
 

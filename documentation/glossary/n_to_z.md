@@ -27,7 +27,7 @@ reservations and the waitlist, member search, [service records](#service-record)
 the API domain also serves the ballistics catalogs, the mortar fire missions and the game-runtime
 roster and deployments.
 
-In code: `apps/api/src/operations/`; `apps/frontend/src/v2/pages/operations/`.
+In code: `apps/api/src/operations/`; `apps/frontend/src/pages/operations/`.
 
 See: [Operations domain](/apps/api/src/operations/README.md).
 
@@ -52,7 +52,7 @@ mission carries it in its document; each event mission holds it as `orbat_slots`
 
 In code: `OrbatSlot` in `apps/api/src/operations/models/event.rs`; `apps/api/src/operations/handlers/orbat_view.rs`.
 
-See: [ORBAT selection page](/apps/frontend/src/v2/pages/operations/orbat_selection/README.md).
+See: [ORBAT selection page](/apps/frontend/src/pages/operations/orbat_selection/README.md).
 
 ### orchestrator
 
@@ -70,7 +70,7 @@ The `/admin/personnel` page, titled Personnel Roster: the paged member roster be
 dossier, where administrators ban and warn members with a reason and run the Discord role resync. A
 member's [role](#role) follows their Discord roles, so the dossier explains it and never sets it.
 
-In code: `PersonnelRosterPage` in `apps/frontend/src/v2/pages/administration/personnel/`.
+In code: `PersonnelRosterPage` in `apps/frontend/src/pages/administration/personnel/`.
 
 See: [Personnel roster page](/documentation/apps/frontend/pages/administration/personnel/personnel_roster_page.md).
 
@@ -91,7 +91,7 @@ deviation; the mortar calculator reports it along range and along deflection wit
 ellipse. The platform derives it from the game's dispersion parameters, a documented
 interpretation that no engine call verifies, not from measured impacts.
 
-In code: `charge_dispersion` in `legacy/map_engine/src/data/scenario/ballistics/dispersion.rs`; the dispersion card in `apps/frontend/src/v2/pages/field_tools/mortar/solution/dispersion_card.rs`.
+In code: `charge_dispersion` in `legacy/map_engine/src/data/scenario/ballistics/dispersion.rs`; the dispersion card in `apps/frontend/src/pages/field_tools/mortar/solution/dispersion_card.rs`.
 
 See: [charge ring](/documentation/glossary/a_to_f.md#charge-ring), [Game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md).
 
@@ -131,7 +131,7 @@ An account's tier on the permission ladder, lowest first: `guest`, `enlisted`, `
 `mission_maker`, `admin`; a route's access tier is the lowest role it admits. A member's role
 follows their Discord roles through the `discord_roles` mappings; the website sets none itself.
 
-In code: `Role` in `apps/frontend/src/v2/core/auth/role.rs`; `role_rank` in `apps/api/src/core/middleware/mod.rs`.
+In code: `Role` in `apps/frontend/src/foundation/transport/dto/role.rs`; `role_rank` in `apps/api/src/core/middleware/mod.rs`.
 
 See: [dev login](/documentation/glossary/a_to_f.md#dev-login), [personnel](#personnel).
 
@@ -174,7 +174,7 @@ where administrators register, edit, deactivate and reactivate a server, and, fo
 server, its [fleet commands](/documentation/glossary/a_to_f.md#fleet-command), [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) and
 [machine credentials](/documentation/glossary/g_to_m.md#machine-credential), with the [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) registry.
 
-In code: `ServerControlPage` in `apps/frontend/src/v2/pages/administration/server_control/`.
+In code: `ServerControlPage` in `apps/frontend/src/pages/administration/server_control/`.
 
 See: [Server control page](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md).
 
@@ -193,7 +193,7 @@ See: [RCON](#rcon), [Server infrastructure domain](/apps/api/src/server_infrastr
 A member's own record at `/deployments` (My Deployments): matches played, upcoming deployments, past
 matches and leave requests; no combat figures, though the API sends kills, deaths and K/D.
 
-In code: `apps/api/src/operations/handlers/member_service_record.rs`; `DeploymentsPage` in `apps/frontend/src/v2/pages/operations/deployments/`.
+In code: `apps/api/src/operations/handlers/member_service_record.rs`; `DeploymentsPage` in `apps/frontend/src/pages/operations/deployments/`.
 
 See: [Deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md).
 
@@ -204,7 +204,7 @@ published ballistics catalog version, the Everon manifest, elevation, imagery an
 about 248 MB. The Rust service worker answers from it with no connection; the page calls it the
 offline pack and shows its state in `data-offline-state`.
 
-In code: `apps/offline_service_worker/` (the worker); `offline_pack` and `offline_manifest` in `apps/frontend/src/v2/core/offline/`; `cargo xtask map tile-index` writes the tile list the pack reads.
+In code: `apps/offline_service_worker/` (the worker); `offline_pack` and `offline_manifest` in `apps/frontend/src/foundation/offline/`; `cargo xtask map tile-index` writes the tile list the pack reads.
 
 See: [Offline mortar page](/documentation/runbooks/offline_mortar_page.md), [Mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md).
 
@@ -235,7 +235,7 @@ See: [event](/documentation/glossary/a_to_f.md#event), [arsenal](/documentation/
 Server-Sent Events: the one-way HTTP streams on which the API pushes live updates, such as a
 server's status feed and the audit log feed. An SSE event is one message, never an [event](/documentation/glossary/a_to_f.md#event).
 
-In code: `Hub` in `apps/api/src/core/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `apps/api/src/administration/services/audit_notifier.rs`; the clients in `apps/frontend/src/v2/core/api/sse.rs` (the status feed) and `apps/frontend/src/v2/core/api/audit_stream.rs` (the audit feed, resumed from the last event id it received).
+In code: `Hub` in `apps/api/src/core/realtime_hub/mod.rs` (the status feed); the audit feed's `LISTEN audit_log` in `apps/api/src/administration/services/audit_notifier.rs`; the clients in `apps/frontend/src/foundation/transport/sse.rs` (the status feed) and `apps/frontend/src/foundation/transport/audit_stream.rs` (the audit feed, resumed from the last event id it received).
 
 See: [audit logs](/documentation/glossary/a_to_f.md#audit-logs), [server infrastructure](#server-infrastructure).
 

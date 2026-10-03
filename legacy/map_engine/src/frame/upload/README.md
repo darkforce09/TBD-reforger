@@ -60,9 +60,9 @@ and the adapter's largest 2D texture.
     atlas), and `crate::frame` and `crate::diagnostics::readback` (`TextAtlasGpu` and
     `text_uniform_bytes`);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input handlers, canvas
-    mount and document host under `apps/frontend/src/v2/apps/editor/` (the marquee, the
+    mount and document host under `apps/frontend/src/workspaces/editor/` (the marquee, the
     connection and squad lines), and the debug benches under
-    `apps/frontend/src/v2/apps/debug/` (building interiors).
+    `apps/frontend/src/workspaces/debug/` (building interiors).
 - Rules: every lane change goes through `upsert_lane` or `remove_lane`, which mark the frame damaged
   (`every_lane_mutation_marks_the_frame_damaged` in
   `legacy/map_engine/src/frame/tests/damage_discipline.rs`); `connections_bind` uploads

@@ -45,10 +45,10 @@ metres on the map plane; a comment's and a marker's stored `{x, z}` is read as e
   `serde_json`; the rows come from `crate::data::store::MissionDocCore`'s JSON views, passed in by
   the caller.
 - Used by: the Mission Creator's editor page
-  (`apps/frontend/src/v2/apps/editor/mission_editor.rs`, which re-exports the lanes to its
+  (`apps/frontend/src/workspaces/editor/mission_editor.rs`, which re-exports the lanes to its
   document helpers, render lanes and pointer gestures) and its hover bridge
-  (`apps/frontend/src/v2/apps/editor/bridge/pointer_hover.rs`), plus the editor tests
-  under `apps/frontend/src/v2/apps/editor/tests/`.
+  (`apps/frontend/src/workspaces/editor/bridge/pointer_hover.rs`), plus the editor tests
+  under `apps/frontend/src/workspaces/editor/tests/`.
 - Rules: `COMMENT_PICK_PX` equals the slot pick radius, pinned by
-  `apps/frontend/src/v2/apps/editor/tests/t784_comment_glyph.rs`; nothing here caches, so
+  `apps/frontend/src/workspaces/editor/tests/t784_comment_glyph.rs`; nothing here caches, so
   a lane is rebuilt from the document on every read.

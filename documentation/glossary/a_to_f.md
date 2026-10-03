@@ -25,7 +25,7 @@ See: [staging harness](/documentation/glossary/n_to_z.md#staging-harness), [Ackn
 The administrator-only side of the platform: the API domain of the member roster, bans, warnings,
 membership grace, the Discord role resync and the audit log, and the seven `/admin/*` pages.
 
-In code: `apps/api/src/administration/`; `apps/frontend/src/v2/pages/administration/`.
+In code: `apps/api/src/administration/`; `apps/frontend/src/pages/administration/`.
 
 See: [event manager](#event-manager), [approvals](#approvals), [server control](/documentation/glossary/n_to_z.md#server-control), [personnel](/documentation/glossary/n_to_z.md#personnel), [content manager](#content-manager), [audit logs](#audit-logs).
 
@@ -34,9 +34,9 @@ See: [event manager](#event-manager), [approvals](#approvals), [server control](
 The review of a finished match, abbreviated AAR: in the game, the END banner and the DEBRIEF
 scoreboard; on the website, a map replay that is planned and not built, with a reserved workspace.
 
-In code: `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`; `apps/frontend/src/v2/apps/aar/`.
+In code: `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`; `apps/frontend/src/workspaces/aar/`.
 
-See: [After-action review](/documentation/apps/frontend/apps/aar/after_action_review.md).
+See: [After-action review](/documentation/apps/frontend/workspaces/aar/after_action_review.md).
 
 ### API
 
@@ -54,7 +54,7 @@ The mission approval queue at `/admin/approvals`, titled Mission Approvals: an a
 reviews the [artifact](#artifact) a mission maker submitted and approves it into the live library,
 optionally with conditions, or returns it to the author with a reason.
 
-In code: `MissionApprovalsPage` in `apps/frontend/src/v2/pages/administration/approvals/`; `apps/api/src/missions/handlers/approvals_queue.rs`.
+In code: `MissionApprovalsPage` in `apps/frontend/src/pages/administration/approvals/`; `apps/api/src/missions/handlers/approvals_queue.rs`.
 
 See: [Mission approvals page](/documentation/apps/frontend/pages/administration/approvals/mission_approvals_page.md).
 
@@ -73,7 +73,7 @@ The Mission Creator's Arsenal tab, where a mission maker edits one [slot](/docum
 wear, attachments, cargo) with a doll preview and weight and validity checks. Its catalog is the
 item [registry](/documentation/glossary/n_to_z.md#registry), which the code calls the Virtual Arsenal catalog.
 
-In code: `apps/frontend/src/v2/apps/editor/arsenal/`.
+In code: `apps/frontend/src/workspaces/editor/arsenal/`.
 
 See: [armory](#armory), [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator).
 
@@ -95,7 +95,7 @@ loads older entries a page at a time, shows each entry once whichever way it arr
 loaded entries by text in the browser and inspects one entry. The API also serves a CSV export,
 which the page does not use.
 
-In code: `AuditLogsPage` in `apps/frontend/src/v2/pages/administration/audit_logs/`; `apps/frontend/src/v2/core/api/audit_stream.rs`; `apps/api/src/administration/handlers/audit_logs.rs`.
+In code: `AuditLogsPage` in `apps/frontend/src/pages/administration/audit_logs/`; `apps/frontend/src/foundation/transport/audit_stream.rs`; `apps/api/src/administration/handlers/audit_logs.rs`.
 
 See: [Audit logs page](/documentation/apps/frontend/pages/administration/audit_logs/audit_logs_page.md).
 
@@ -137,7 +137,7 @@ See: [orchestrator](/documentation/glossary/n_to_z.md#orchestrator), [Sub-agent 
 The web app's landing area (the dashboard at `/`, server intel, announcements) and the API domain of
 the dashboard, leaderboards and player statistics; not the [orchestrator](/documentation/glossary/n_to_z.md#orchestrator).
 
-In code: `apps/frontend/src/v2/pages/command_center/`; `apps/api/src/command_center/`.
+In code: `apps/frontend/src/pages/command_center/`; `apps/api/src/command_center/`.
 
 See: [Command center domain](/apps/api/src/command_center/README.md).
 
@@ -159,7 +159,7 @@ The agent may repeat the login but transmits the line once and never resends it;
 the reply up to 4,096 bytes with a truncation flag, and without a reply the command may or may not
 have run.
 
-In code: `FleetAction::ConsoleCommand` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `apps/frontend/src/v2/pages/administration/server_control/fleet_commands/`.
+In code: `FleetAction::ConsoleCommand` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `apps/frontend/src/pages/administration/server_control/fleet_commands/`.
 
 See: [RCON](/documentation/glossary/n_to_z.md#rcon), [API decisions](/documentation/apps/api/decisions.md).
 
@@ -168,7 +168,7 @@ See: [RCON](/documentation/glossary/n_to_z.md#rcon), [API decisions](/documentat
 The `/admin/content` page, whose breadcrumb reads Comms Broadcaster: administrators write, publish,
 edit and delete announcements, upload a hero image, and push a post to Discord.
 
-In code: `ContentManagerPage` in `apps/frontend/src/v2/pages/administration/content_manager/`.
+In code: `ContentManagerPage` in `apps/frontend/src/pages/administration/content_manager/`.
 
 See: [Content manager page](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md).
 
@@ -219,9 +219,9 @@ Most often the Eden editor, Arma 3's scenario editor: the design the
 catalogued interaction by interaction with an ID each. In [Enfusion](#enfusion) resource paths,
 Eden is also Everon's world, `worlds/Eden/Eden.ent`, which the mod's worlds inherit.
 
-In code: the Mission Creator's shell measurements taken from Eden in `apps/frontend/src/v2/apps/editor/shell/layout.rs`; `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent` and `apps/mod/tbd-export/worlds/TBD_Export_Everon.ent`, whose parent is `worlds/Eden/Eden.ent`.
+In code: the Mission Creator's shell measurements taken from Eden in `apps/frontend/src/workspaces/editor/session/layout.rs`; `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent` and `apps/mod/tbd-export/worlds/TBD_Export_Everon.ent`, whose parent is `worlds/Eden/Eden.ent`.
 
-See: [Eden editor reference](/documentation/apps/frontend/apps/editor/eden_editor_reference/README.md), [Eden gap analysis](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md).
+See: [Eden editor reference](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/README.md), [Eden gap analysis](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md).
 
 ### EnfScript
 
@@ -257,7 +257,7 @@ See: [slot](/documentation/glossary/n_to_z.md#slot), [Event schedule page](/docu
 The `/admin/events` page, titled the operations calendar: a month grid and a day panel from which
 administrators schedule, edit and cancel [events](#event), attach missions and set who may join.
 
-In code: `EventManagerPage` in `apps/frontend/src/v2/pages/administration/event_manager/`; `apps/api/src/operations/handlers/event_create_update.rs`.
+In code: `EventManagerPage` in `apps/frontend/src/pages/administration/event_manager/`; `apps/api/src/operations/handlers/event_create_update.rs`.
 
 See: [Event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md).
 
@@ -280,7 +280,7 @@ where it lives, behaviour, data, design, open work and decisions. It sits beside
 README index and is named after what it covers (`<page component>_page.md`,
 `<screen>_specification.md` or a subject name); the code README links it and never repeats it.
 
-In code: none; the code README of the folder a feature doc describes links it under Related documentation, as `apps/frontend/src/v2/pages/administration/personnel/README.md` links `personnel_roster_page.md`.
+In code: none; the code README of the folder a feature doc describes links it under Related documentation, as `apps/frontend/src/pages/administration/personnel/README.md` links `personnel_roster_page.md`.
 
 See: [Feature doc template](/documentation/standards/templates/feature_doc.md), [README standard](/documentation/standards/readme_standard.md).
 

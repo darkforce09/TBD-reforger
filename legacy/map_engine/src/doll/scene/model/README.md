@@ -20,7 +20,7 @@ legacy/map_engine/src/doll/scene/model/
   `camera_math::orbit::projection` and `camera_math::matrix4`.
 - Used by: `crate::doll::renderer`'s tests (`tests/pack_tests.rs` there imports the facade); no
   production code imports it, since the renderer, the readback check and the arsenal preview in
-  `apps/frontend/src/v2/apps/editor/arsenal/doll.rs` name the defining modules.
+  `apps/frontend/src/workspaces/editor/arsenal/doll.rs` name the defining modules.
 - Rules: a re-export only, so every item keeps its definition in the module it names; the tests
   pin the contract the renderer and the page rely on: 14 unique region keys, at least one
   instance a region, the exact cube and cylinder vertex and index counts, and the pick and anchor

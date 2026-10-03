@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Event schedule page](/apps/frontend/src/v2/pages/operations/schedule/) — the built page
+- [Event schedule page](/apps/frontend/src/pages/operations/schedule/) — the built page
   the set was drawn for.
 
 ## Boundaries

@@ -84,7 +84,7 @@ so those come back empty or zero.
     occluder reports in `LosHit` and `LosHitKind`;
   - `crate::world::architecture::section`, whose drawing takes a blueprint's level bands;
   - the debug building viewer and line-of-sight benches in
-    `apps/frontend/src/v2/apps/debug/`, which fetch the blueprint JSON from
+    `apps/frontend/src/workspaces/debug/`, which fetch the blueprint JSON from
     `/map-assets/everon/prefabs/buildings/`;
   - the blueprint tooling in `tools/developer_tools/src/blueprint/`:
     `cargo xtask map blueprint-from-voxels` writes the blueprint JSON, and its `archive` action

@@ -29,11 +29,11 @@ rocks, that's fine").
 
 | File | Lines | What it is |
 |---|---|---|
-| [`eden/gap_analysis.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md) | 639 | **The parity table.** `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`), a `build_class` column on attribute rows, and a ticket column. **191 rows, 113 `missing`** — a census as of 2026-08-01. Read the correction below for what it was before that, and why it matters. |
-| [`eden/ui_anatomy.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/ui_anatomy.md) | 273 | What Eden's screen is actually made of |
-| [`eden/interactions.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/interactions/README.md) | 560 | Eden's input model — clicks, modifiers, drags |
-| [`eden/attributes.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/attributes.md) | 250 | Eden's per-entity attribute catalogue |
-| [`feature_inventory.md`](/documentation/apps/frontend/apps/editor/feature_inventory/README.md) | 1797 | TBD's own inventory, with the `RIGHT-*` / `PLACE-*` / `SEL-*` ids the gap table joins on |
+| [`eden/gap_analysis.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md) | 639 | **The parity table.** `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`), a `build_class` column on attribute rows, and a ticket column. **191 rows, 113 `missing`** — a census as of 2026-08-01. Read the correction below for what it was before that, and why it matters. |
+| [`eden/ui_anatomy.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/ui_anatomy.md) | 273 | What Eden's screen is actually made of |
+| [`eden/interactions.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/interactions/README.md) | 560 | Eden's input model — clicks, modifiers, drags |
+| [`eden/attributes.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/attributes.md) | 250 | Eden's per-entity attribute catalogue |
+| [`feature_inventory.md`](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md) | 1797 | TBD's own inventory, with the `RIGHT-*` / `PLACE-*` / `SEL-*` ids the gap table joins on |
 
 The numbered files (`07_…`, `08_…`) at the parent level are **stubs** that redirect into `eden/`.
 Do not edit those.
@@ -54,10 +54,10 @@ opened the file being described. Measured:
 The more important correction was what the table *is*. It read as a census of Eden parity. It was
 not:
 
-- [`eden/attributes.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/attributes.md) defines
+- [`eden/attributes.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/attributes.md) defines
   **93 ids** (not 96 — the higher figure came from a looser grep that also caught the bare
   `ATTR-FIELD` template, the `ATTR-TAB-*` glob and a cross-ref); the table covered **3**.
-- [`eden/interactions.md`](/documentation/apps/frontend/apps/editor/eden_editor_reference/interactions/README.md) defines
+- [`eden/interactions.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/interactions/README.md) defines
   **83 ids**; **42 had no parity row at all**.
 
 So "work the parity table" was **not** the same as the operator's ask, *"add all the things to the

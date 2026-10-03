@@ -11,27 +11,27 @@ restore or delete it.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/mission_hub/library/`](/apps/frontend/src/v2/pages/mission_hub/library/):
+- Code: [`apps/frontend/src/pages/mission_hub/library/`](/apps/frontend/src/pages/mission_hub/library/):
   `page.rs` holds the route component `MissionLibraryPage`, the scope, search and filter state and
   both list fetches; `dossier_sheet.rs` and `dossier_body.rs` the slide-over dossier;
   `dossier_lifecycle.rs` the Manage row; `dossier_upload.rs` and `dossier_upload_panel.rs` the
   version upload. The New Mission dialog lives in
-  [`apps/frontend/src/v2/pages/mission_hub/create_dialog/`](/apps/frontend/src/v2/pages/mission_hub/create_dialog/).
+  [`apps/frontend/src/pages/mission_hub/create_dialog/`](/apps/frontend/src/pages/mission_hub/create_dialog/).
   Each folder's README describes its files.
 - Entry: the `/missions` route, whose tier and layout the README's
-  [Routes](/apps/frontend/src/v2/pages/mission_hub/library/README.md#routes) give.
+  [Routes](/apps/frontend/src/pages/mission_hub/library/README.md#routes) give.
 - Related: the [mission overview page](/documentation/apps/frontend/pages/mission_hub/overview/mission_overview_page.md),
   whose read-only dossier body the slide-over renders; the review record shared with the
   [approvals](/documentation/glossary/a_to_f.md#approvals) page, described in the
-  [mission review record README](/apps/frontend/src/v2/pages/mission_hub/mission_review/README.md);
-  the [review workspace page](/documentation/apps/frontend/pages/mission_hub/review_workspace/review_workspace_page.md)
+  [mission review record README](/apps/frontend/src/features/mission_review_record/README.md);
+  the [review workspace page](/documentation/apps/frontend/workspaces/editor/review_workspace/review_workspace_page.md)
   that the review record links; the [API](/documentation/glossary/a_to_f.md#api)'s
   [missions domain](/apps/api/src/missions/README.md).
 
 ## Behaviour
 
 The page body sits in `AuthGate`, which shows the session states of the README's
-[States](/apps/frontend/src/v2/pages/mission_hub/library/README.md#states) until a viewer
+[States](/apps/frontend/src/pages/mission_hub/library/README.md#states) until a viewer
 is signed in. Every text quoted below is listed there with the state that shows it.
 
 ### Browsing
@@ -120,7 +120,7 @@ is signed in. Every text quoted below is listed there with the state that shows 
 ### Known discrepancies
 
 - The Manage row shows to an author at any role
-  (`can_manage` in `apps/frontend/src/v2/pages/mission_hub/library/dossier_sheet.rs`,
+  (`can_manage` in `apps/frontend/src/pages/mission_hub/library/dossier_sheet.rs`,
   whose comment says the three routes test authorship "and nothing else"), but the API's submit,
   metadata `PATCH` and `DELETE` each require the `mission_maker` tier (`MissionMakerUser` and
   `lock_editable_mission` in `apps/api/src/missions/services/mission_write_lock.rs`):
@@ -131,12 +131,12 @@ is signed in. Every text quoted below is listed there with the state that shows 
   `apps/api/src/missions/validation/access.rs`): a bookmarked mission its author has
   since archived still shows its card, and its dossier reads "Failed to load data.".
 - "Share for review" reports a success toast, "Will allow anyone to view and comment"
-  (`apps/frontend/src/v2/pages/mission_hub/library/dossier_collaboration.rs`), but calls
+  (`apps/frontend/src/pages/mission_hub/library/dossier_collaboration.rs`), but calls
   nothing: the API has no sharing route.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/mission_hub/library/README.md#data) lists
+The README's [Data](/apps/frontend/src/pages/mission_hub/library/README.md#data) lists
 each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/missions` (`list_missions` in

@@ -54,8 +54,8 @@ The three modules are reached through the aliases of `data::scenario`:
   derivation), `crate::data::scenario::extensions` (the authored blocks),
   `crate::data::scenario::validate` (`Finding`) and `crate::data::scenario::wire_safety`;
   `contracts/rules/kit-aliases.json`; `serde`, `serde_json` and `thiserror`.
-- Used by: the Mission Creator in `apps/frontend/src/v2/apps/editor/` and the mission
-  library in `apps/frontend/src/v2/pages/mission_hub/library/`; the
+- Used by: the Mission Creator in `apps/frontend/src/workspaces/editor/` and the mission
+  library in `apps/frontend/src/pages/mission_hub/library/`; the
   [missions](/documentation/glossary/g_to_m.md#missions) domain in
   `apps/api/src/missions/`; inside the crate, `crate::data::store::operations`,
   `crate::editing::persist` and `crate::data::scenario::validate` (`terrain_bounds`,
@@ -73,4 +73,4 @@ The three modules are reached through the aliases of `data::scenario`:
   the saved payload.
 - [Mission artifacts](/documentation/apps/api/verification_evidence/mission_artifacts.md)
   — what the API does with a compiled document.
-- [Mission Creator feature inventory: data persistence and compile](/documentation/apps/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/apps/frontend/workspaces/editor/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.

@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Dashboard page](/apps/frontend/src/v2/pages/command_center/dashboard/) — the built
+- [Dashboard page](/apps/frontend/src/pages/command_center/dashboard/) — the built
   page the set was drawn for.
 
 ## Boundaries

@@ -45,4 +45,4 @@ from the document on every call, so it is right again after an undo.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: placement](/documentation/apps/frontend/apps/editor/feature_inventory/placement.md) — where a placed character lands in the ORBAT.
+- [Mission Creator feature inventory: placement](/documentation/apps/frontend/workspaces/editor/feature_inventory/placement.md) — where a placed character lands in the ORBAT.

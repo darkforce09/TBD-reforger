@@ -66,7 +66,7 @@ layer. `show_satellite_basemap` sets that layer's opacity back to 1.
 - Used by: `crate::streaming::host`, which calls `load_satellite` at boot and
   `load_map_basemap` and `show_satellite_basemap` when the basemap view changes; and a
   source-scanning test of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) in
-  `apps/frontend/src/v2/apps/editor/tests/`, which reads all nine files by path.
+  `apps/frontend/src/workspaces/editor/tests/`, which reads all nine files by path.
 - Rules: the folder compiles only for wasm32 with the `render` feature and runs only in a
   browser, so that source-scanning test holds its rules: a level is never chosen without the GPU's
   reported texture limit, a downscaled basemap always says why, and the full load logs what it

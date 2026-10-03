@@ -9,19 +9,19 @@ account to their Arma identity, and gives their attendance figures.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/account/`](/apps/frontend/src/v2/pages/account/):
+- Code: [`apps/frontend/src/pages/account/`](/apps/frontend/src/pages/account/):
   `login/page.rs` holds `LoginPage`, `auth_callback/page.rs` holds `AuthCallbackPage` with the
   fragment parser and the failure lines, and `settings/page.rs` holds `SettingsPage` with its two
   fetches, the link and unlink actions and the three cards. The folder's
-  [README](/apps/frontend/src/v2/pages/account/README.md) describes each folder.
+  [README](/apps/frontend/src/pages/account/README.md) describes each folder.
 - Entry: the three routes, their tier and their layout are in the
-  [sign-in page](/apps/frontend/src/v2/pages/account/login/README.md#routes),
-  [sign-in callback page](/apps/frontend/src/v2/pages/account/auth_callback/README.md#routes)
-  and [account settings page](/apps/frontend/src/v2/pages/account/settings/README.md#routes)
+  [sign-in page](/apps/frontend/src/pages/account/login/README.md#routes),
+  [sign-in callback page](/apps/frontend/src/pages/account/auth_callback/README.md#routes)
+  and [account settings page](/apps/frontend/src/pages/account/settings/README.md#routes)
   READMEs.
-- Related: the [app layout and navigation](/documentation/apps/frontend/pages/navigation/app_layout_and_navigation.md)
+- Related: the [app layout and navigation](/documentation/apps/frontend/shell/app_layout_and_navigation.md)
   doc, whose frame renders the first two pages bare and whose top bar links `/login` and
-  `/settings`; the [session and access](/apps/frontend/src/v2/core/auth/README.md) code,
+  `/settings`; the [session and access](/apps/frontend/src/foundation/auth/README.md) code,
   which holds the session store, its persistence and the role ladder; the
   [API](/documentation/glossary/a_to_f.md#api)'s
   [identity and access](/documentation/glossary/g_to_m.md#identity-and-access) domain
@@ -33,7 +33,7 @@ account to their Arma identity, and gives their attendance figures.
 ### Sign-in
 
 1. A visitor reaches `/login` from the top bar's "Sign in with Discord" link, from the sign-in
-   prompt of `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`) or from the callback's
+   prompt of `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`) or from the callback's
    "Back to login" link. The frame renders the page bare, with no sidebar or top bar.
 2. The card offers "Sign in with Discord" and a "Continue browsing without signing in" link to
    `/`. It renders the same card for a viewer who is already signed in; nothing redirects them.
@@ -83,7 +83,7 @@ gives the commands.
    linked.
 
 Every status and failure text is in the callback README's
-[States](/apps/frontend/src/v2/pages/account/auth_callback/README.md#states).
+[States](/apps/frontend/src/pages/account/auth_callback/README.md#states).
 
 ### Settings
 
@@ -113,13 +113,13 @@ Every status and failure text is in the callback README's
 9. Service Stats shows "Total Operations" and "Attendance" as a percentage.
 
 The page's states and toasts are in the settings README's
-[States](/apps/frontend/src/v2/pages/account/settings/README.md#states).
+[States](/apps/frontend/src/pages/account/settings/README.md#states).
 
 ### Known discrepancies
 
 - The callback page shows "Something went wrong completing sign-in. Please try again." for
   `oauth_host_mismatch` and `server_error`, since `auth_error_copy` has no line for either
-  (`apps/frontend/src/v2/pages/account/auth_callback/page.rs`). The API sends
+  (`apps/frontend/src/pages/account/auth_callback/page.rs`). The API sends
   `oauth_host_mismatch` in development for a configuration fault that no retry fixes: the two
   URLs in `apps/api/.env` name different hosts (`reject_login_on_host_mismatch` in
   `apps/api/src/identity_and_access/handlers/oauth_host_guard.rs`).
@@ -130,9 +130,9 @@ The page's states and toasts are in the settings README's
 ## Data
 
 The READMEs' Data sections list each call with the DTO the pages read:
-[sign-in](/apps/frontend/src/v2/pages/account/login/README.md#data),
-[callback](/apps/frontend/src/v2/pages/account/auth_callback/README.md#data) and
-[settings](/apps/frontend/src/v2/pages/account/settings/README.md#data). Server-side:
+[sign-in](/apps/frontend/src/pages/account/login/README.md#data),
+[callback](/apps/frontend/src/pages/account/auth_callback/README.md#data) and
+[settings](/apps/frontend/src/pages/account/settings/README.md#data). Server-side:
 
 - `GET /api/v1/auth/discord/login` (`discord_login` in
   `apps/api/src/identity_and_access/handlers/discord_oauth.rs`): sets the state cookie
@@ -166,7 +166,7 @@ The READMEs' Data sections list each call with the DTO the pages read:
 - `PATCH /api/v1/me` (`update_me` in `member_profile.rs`) is never called: every profile field
   belongs to the Discord sign-in or the link flow, so it answers the stored account unchanged.
 - `POST /api/v1/auth/refresh` belongs to the API client, not to these pages: the session store
-  README's [How it works](/apps/frontend/src/v2/core/auth/README.md#how-it-works) gives
+  README's [How it works](/apps/frontend/src/foundation/auth/README.md#how-it-works) gives
   the refresh rotation and the `tbd-auth` blob the callback writes.
 
 ## Design

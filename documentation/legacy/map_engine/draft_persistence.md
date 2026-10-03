@@ -16,14 +16,14 @@ decisions; the Mission Creator stores the bytes in IndexedDB and fetches the ser
   document in [`data/store/`](/legacy/map_engine/src/data/store/README.md).
 - Entry: the Mission Creator's shell. The boot's server reconciliation calls `is_uuid`,
   `classify_local_draft`, `adopt_payload` and the snapshot capture
-  ([`shell/hydrate/`](/apps/frontend/src/v2/apps/editor/shell/hydrate/README.md));
+  ([`shell/hydrate/`](/apps/frontend/src/workspaces/editor/session/hydrate/README.md));
   the draft writer calls the key scoping, `restores_to_authored_content`, `merge_before_write`
-  and the read retry ([`shell/persist/`](/apps/frontend/src/v2/apps/editor/shell/persist/README.md));
+  and the read retry ([`shell/persist/`](/apps/frontend/src/workspaces/editor/session/persist/README.md));
   the review restore adopts a reviewed version
-  (`apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount/review_restore.rs`).
+  (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/review_restore.rs`).
 - Related features: the [editing layer](/documentation/legacy/map_engine/editing_layer.md),
   whose post-change tail schedules each draft save, and the Mission Creator's
-  [feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+  [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   for the save, restore and conflict features.
 
 ## Behaviour
@@ -100,10 +100,10 @@ Terrain, environment and row fields never raise the prompt: only the authored ke
 
 - IndexedDB: the Mission Creator's draft records and snapshot records, keyed as above; the stored
   value is the document's `encode_state` blob. The storage code is in
-  [`shell/persist/`](/apps/frontend/src/v2/apps/editor/shell/persist/README.md).
+  [`shell/persist/`](/apps/frontend/src/workspaces/editor/session/persist/README.md).
 - `GET /api/v1/missions/{id}`: the mission row and its current version, whose `json_payload` is
   the payload `classify_local_draft` and `adopt_payload` read; the call and its fallbacks are in
-  the [hydrate README](/apps/frontend/src/v2/apps/editor/shell/hydrate/README.md).
+  the [hydrate README](/apps/frontend/src/workspaces/editor/session/hydrate/README.md).
 - `slots_digest`: an order-independent fingerprint that compares a cold and a warm document by
   content rather than by encoded bytes.
 

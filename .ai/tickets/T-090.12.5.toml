@@ -52,7 +52,7 @@ owns = [
     "apps/frontend/src/pages/debug/world_los.rs",
     "apps/frontend/src/pages/debug/world_los_scene.rs",
     "apps/frontend/src/pages/debug/mod.rs",
-    "apps/frontend/src/router.rs",
+    "apps/frontend/src/foundation/route_table/mod.rs",
     "apps/frontend/src/app_routes.rs",
     "tools/tbd-tools/fixtures/t159/manifests/routes.csv",
 ]

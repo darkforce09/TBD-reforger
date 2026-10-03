@@ -1,7 +1,7 @@
 //! S-routes gate: the Leptos router's routes against the committed manifest.
 //!
-//! Extracts the route table from `apps/frontend/src/router.rs` and diffs it against the
-//! frozen React oracle manifest `manifests/routes.csv`. Robust to rustfmt line-wrapping: splits
+//! Extracts the route table from `apps/frontend/src/foundation/route_table/mod.rs` and diffs it
+//! against the frozen React oracle manifest `manifests/routes.csv`. Robust to rustfmt line-wrapping: splits
 //! on `RouteDef { … }` blocks and pulls each field by name.
 //!
 //! Exit 0 = the Leptos route table set/column-diffs equal to routes.csv; 1 = drift (printed).
@@ -14,7 +14,7 @@ use crate::repository_layout::compiled_checkout_root;
 
 pub fn run() -> Result<u8> {
     let root = compiled_checkout_root()?;
-    let router = root.join("apps/frontend/src/router.rs");
+    let router = root.join("apps/frontend/src/foundation/route_table/mod.rs");
     let oracle_path = root.join("tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv");
 
     let src =

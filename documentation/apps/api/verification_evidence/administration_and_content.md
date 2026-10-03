@@ -255,15 +255,15 @@ name files of an older layout. Their work lands at these paths:
 | Ticket | Plan names | Current path |
 |---|---|---|
 | T-940.7 | `admin.rs` `list_users` | `apps/api/src/administration/handlers/personnel_roster.rs` |
-| T-940.7 | `pages/admin/personnel.rs` | `apps/frontend/src/v2/pages/administration/personnel/` |
+| T-940.7 | `pages/admin/personnel.rs` | `apps/frontend/src/pages/administration/personnel/` |
 | T-940.8 | `handlers/content/vehicles.rs`; the vehicle handlers in `content/wiki.rs` | `community_content/handlers/vehicle_database/` |
 | T-940.8 | `app.rs` routes | `community_content/routes.rs` |
-| T-940.8 | `core/dto.rs` (the R-api golden mirror) | `apps/frontend/src/v2/core/api/dto/` |
-| T-940.8 | the vehicle page | `apps/frontend/src/v2/pages/doctrine_and_info/vehicles/` |
+| T-940.8 | `core/dto.rs` (the R-api golden mirror) | `apps/frontend/src/foundation/transport/dto/` |
+| T-940.8 | the vehicle page | `apps/frontend/src/pages/doctrine_and_info/vehicles/` |
 | T-940.9 | `content/wiki.rs` | `community_content/handlers/wiki_knowledgebase/` |
 | T-940.9 | `services/wiki_markup.rs` | `community_content/services/wiki_markup/` |
 | T-940.9 | `migrations/0026_wiki_revisions.sql` | migrations 0057 (audit retention floor), 0058 (vehicle audit columns) and 0059 (wiki revisions) |
-| T-940.9 | `pages/public/wiki.rs` | `apps/frontend/src/v2/pages/doctrine_and_info/wiki/` |
+| T-940.9 | `pages/public/wiki.rs` | `apps/frontend/src/pages/doctrine_and_info/wiki/` |
 
 ## Tests
 

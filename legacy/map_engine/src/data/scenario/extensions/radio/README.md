@@ -41,7 +41,7 @@ those nets into the compiled plan and, when no valid plan is authored, derives o
   `AuthoredBlocks::parse` calls `parse`; `crate::data::scenario::flatten`, whose
   `legacy/map_engine/src/data/scenario/compiler/flatten/radio.rs` turns `AuthoredRadioPlan`
   into the compiled plan; the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
-  radio panel (`apps/frontend/src/v2/apps/editor/ui/inspector/radio_panel.rs`), which
+  radio panel (`apps/frontend/src/workspaces/editor/ui/inspector/radio_panel.rs`), which
   bounds its fields by the limits and `RANGES`, picks and compares frequencies with `freq_key`,
   and checks each edit with `validate`.
 - Rules: a frequency another net already uses is refused (`a_duplicate_frequency_is_refused` in

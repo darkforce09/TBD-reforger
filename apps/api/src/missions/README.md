@@ -137,11 +137,11 @@ with the artifact's compiled slots, which the event roster in `operations` reads
     and the `import-registry` binary in `apps/api/src/bin/`;
   - `command_center`, `operations`, `match_telemetry` and `server_infrastructure`, through the
     surface above;
-  - over HTTP, the Mission Creator in `apps/frontend/src/v2/apps/editor/`, the mission hub
-    pages in `apps/frontend/src/v2/pages/mission_hub/`, the
+  - over HTTP, the Mission Creator in `apps/frontend/src/workspaces/editor/`, the mission hub
+    pages in `apps/frontend/src/pages/mission_hub/`, the
     [event manager](/documentation/glossary/a_to_f.md#event-manager), approvals and
     [server control](/documentation/glossary/n_to_z.md#server-control) pages in
-    `apps/frontend/src/v2/pages/administration/`, the
+    `apps/frontend/src/pages/administration/`, the
     [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
     `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands through
     `tools/xtask/src/commands/mod_ops/website_api_client/`.

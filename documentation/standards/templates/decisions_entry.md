@@ -3,7 +3,7 @@
 # Template: decisions entry
 
 **When to use:** one decision in a feature's `decisions.md` log, such as the Mission Creator's
-`documentation/apps/frontend/apps/editor/decisions.md`: a choice that shapes the feature and
+`documentation/apps/frontend/workspaces/editor/decisions.md`: a choice that shapes the feature and
 would otherwise be argued again. An entry says what was decided, why, what follows from it, and
 which earlier entry it replaces. Live documents carry no dates, decisions entries excepted. The
 [README standard](/documentation/standards/readme_standard.md) holds the

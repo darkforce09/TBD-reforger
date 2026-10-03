@@ -44,9 +44,9 @@ legacy/map_engine/src/editing/commands/
   `crate::data::scenario::validate` (`Finding`, `Severity`) for the compile summary, and
   `serde_json`.
 - Used by: the Mission Creator's document commands
-  (`apps/frontend/src/v2/apps/editor/shell/document_commands.rs`, which re-exports all
+  (`apps/frontend/src/workspaces/editor/session/document_commands.rs`, which re-exports all
   three modules) and its exporter test
-  (`apps/frontend/src/v2/apps/editor/shell/tests/exporter_grid_reference.rs`, which checks
+  (`apps/frontend/src/workspaces/editor/session/tests/exporter_grid_reference.rs`, which checks
   `format_grid_ref` against the map-edge labels).
 - Rules: the compiled export is byte-identical to its input
   (`class_r_compiled_export_is_byte_identical_to_wire` in `tests/export_text.rs`); a clean compile
@@ -57,5 +57,5 @@ legacy/map_engine/src/editing/commands/
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — the export, merge and clipboard features these decisions back.

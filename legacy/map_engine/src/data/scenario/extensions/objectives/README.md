@@ -46,7 +46,7 @@ and `TBD_WinConditionEvaluator` evaluates the rule.
   `AuthoredBlocks::parse` parses the win rule; `crate::data::scenario::flatten` and
   `crate::data::scenario::ast`, which build and hold the compiled rule; the Mission Creator's
   `tasks_panel.rs` and `win_conditions_card.rs` in
-  `apps/frontend/src/v2/apps/editor/ui/inspector/`.
+  `apps/frontend/src/workspaces/editor/ui/inspector/`.
 - Rules: `winConditions` is document-owned and `tasks` is carried
   (`win_conditions_is_the_registered_block_and_the_document_models_it` in
   `legacy/map_engine/src/data/scenario/extensions/authored/tests/cases_1.rs`,

@@ -49,7 +49,7 @@ dropped whole, never split.
   - `crate::data::store::rows`, whose `MissionDocCore` builds its undo manager here and applies
     the cap in `undo_depth`;
   - through the re-exports of `crate::data::store`, `install_wasm_now`, called at wasm start by
-    `apps/frontend/src/v2/apps/editor/bridge/host_state/undo_grouped_gestures.rs`; the
+    `apps/frontend/src/workspaces/editor/bridge/host_state/undo_grouped_gestures.rs`; the
     store also re-exports `GESTURE_WINDOW_MS`, `MAX_UNDO_GROUPS` and `ManualClock`, which only
     this folder's tests read.
 - Rules:

@@ -56,7 +56,7 @@ apps/api/src/community_content/handlers/vehicle_database/
   the application state, the `AuthUser` and `AdminUser` extractors, `ApiError` and the content URL
   policy; the `vehicle_databases` table (lifecycle columns from migration 0058).
 - Used by: the domain's `routes.rs`, which registers the re-exported handlers; over HTTP, the
-  vehicle database page under `apps/frontend/src/v2/pages/doctrine_and_info/vehicles/`.
+  vehicle database page under `apps/frontend/src/pages/doctrine_and_info/vehicles/`.
 - Rules: reads take `AuthUser` and writes `AdminUser`; every handler carries its `/// @route` tag
   (`cargo xtask verify route-tags`); every statement on `vehicle_databases` lives in
   `vehicle_rows.rs`, and every select list `COALESCE`s the optional columns

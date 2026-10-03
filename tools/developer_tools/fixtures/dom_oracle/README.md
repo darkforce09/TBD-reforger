@@ -27,7 +27,7 @@ route's golden at a time, and `routes.csv` is edited by hand.
   `manifests/`; each child README gives the layout.
 - Schema: a golden is the tree the serializer in
   `tools/developer_tools/src/browser_testing/fixture_injection.rs` emits; `routes.csv` mirrors
-  the `RouteDef` fields of `apps/frontend/src/router.rs`.
+  the `RouteDef` fields of `apps/frontend/src/foundation/route_table/mod.rs`.
 - Adding a file: through `gate v-suite accept` for a golden, by hand for `routes.csv`.
 
 ## Producers and consumers

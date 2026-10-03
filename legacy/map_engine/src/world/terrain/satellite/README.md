@@ -60,7 +60,7 @@ bytes than its base level in the diagnostics.
     `crate::spatial::los::terrain` and `crate::world::environment::vegetation`, which build
     `TexLane`s for the viewshed overlay and the forest density texture;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tests in
-    `apps/frontend/src/v2/apps/editor/tests/`, which parse Everon's index and read the
+    `apps/frontend/src/workspaces/editor/tests/`, which parse Everon's index and read the
     loading code.
 - Rules: `textures.rs` and `quadtree/` compile only for wasm32 with the `render` feature, and
   `streamer/` with `streaming`; the texture-layer roles are exactly 0 and 1, the numbers the

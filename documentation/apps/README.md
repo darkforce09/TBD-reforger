@@ -25,8 +25,7 @@ documentation/apps/
 ## How it works
 
 Each folder sits at its crate's path with the leading `apps/` replaced by `documentation/apps/`
-and `src/` left out; the single-page app's documents also leave out `src/v2/` until the
-[restructure](/documentation/restructure/README.md) reshapes that tree. Each folder opens with a
+and `src/` left out. Each folder opens with a
 README index; the documents inside follow the templates in `documentation/standards/templates/`:
 feature docs for a page, an app or a cross-cutting subject, and `decisions.md` logs for the
 decisions behind them.

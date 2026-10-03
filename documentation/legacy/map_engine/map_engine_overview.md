@@ -18,16 +18,16 @@ The code READMEs it links hold the exact detail.
   - the API links the default `scenario` tier (`apps/api/Cargo.toml:65`) and calls
     `data::scenario` from its missions and operations domains;
   - the Mission Creator installs the editing host (`editing::host::install` in
-    `apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`), creates the
+    `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`), creates the
     render engine (`RenderEngine::create` in `canvas_mount/boot_tasks.rs`) and starts streaming
-    (`streaming::host::bootstrap`, through `apps/frontend/src/v2/apps/editor/bridge/world_assets.rs`);
+    (`streaming::host::bootstrap`, through `apps/frontend/src/workspaces/editor/bridge/world_assets.rs`);
   - the offline tools in `tools/developer_tools/` link the `world`, `streaming`, `io` and `bvh`
     tiers for the world export, the blueprint tooling and the map checks.
 - Related features: [map streaming](/documentation/legacy/map_engine/map_streaming.md), the
   [editing layer](/documentation/legacy/map_engine/editing_layer.md),
   [draft persistence](/documentation/legacy/map_engine/draft_persistence.md), the
   [graphics engine](/documentation/legacy/graphics_engine/graphics_engine_overview.md) it
-  draws with, and the [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md)
+  draws with, and the [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md)
   for the app around it.
 
 ## Behaviour

@@ -65,7 +65,7 @@ in its [README](/legacy/map_engine/README.md) and [source README](/legacy/map_en
 | the decisions behind serialising and hydrating a draft (`editing/persist/`) | the tab lock, the save-status signal and the title (`editor/shell/`) |
 
 A file whose home is unclear goes where this rule sends it. The frontend paths are under
-`apps/frontend/src/v2/apps/editor/`; the map engine paths under
+`apps/frontend/src/workspaces/editor/`; the map engine paths under
 `legacy/map_engine/src/`. Where the bytes of a draft are stored (IndexedDB) and how they
 travel is the frontend's; what they mean is the map engine's.
 

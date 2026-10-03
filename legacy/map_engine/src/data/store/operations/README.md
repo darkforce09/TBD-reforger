@@ -37,7 +37,7 @@ legacy/map_engine/src/data/store/operations/
 ## How it works
 
 ```text
-Mission Creator gesture (apps/frontend/src/v2/apps/editor/)
+Mission Creator gesture (apps/frontend/src/workspaces/editor/)
    │
    ▼
 crate::editing::hosted_commands: borrow the hosted MissionDocCore, pass host values
@@ -72,14 +72,14 @@ abandoned drag costs no undo step and a finished one costs one.
   context.
 - `cargo` and `cargo_rules`: the slot loadout and ORBAT roster commands, and the
   [arsenal](/documentation/glossary/a_to_f.md#arsenal) in
-  `apps/frontend/src/v2/apps/editor/arsenal/`.
+  `apps/frontend/src/workspaces/editor/arsenal/`.
 - `transform`, `rotation` and `placement`: the selection transform command, the canvas transform
   and, through `crate::editing::tools::placement`, the arrange menu.
 - `document_index`, `compositions`, `zones` and `tactical_graphics`: the document search,
   composition library and zone authoring commands, the left dock, the zones panel and the tactical
   graphics bridge.
 - `faction_library::FactionDoc` and `environment::MissionEnv`: re-exported as DTOs by
-  `apps/frontend/src/v2/core/api/dto/`.
+  `apps/frontend/src/foundation/transport/dto/`.
 - `assets`: `PlacePayload` and the alias helpers, for the arsenal's asset catalog; `slot_ids`, for
   the Mission Creator's save.
 - `apply_faction` and `place_orbat`: re-exported by `crate::data::store`.
@@ -93,9 +93,9 @@ abandoned drag costs no undo step and a finished one costs one.
   - `crate::editing`: `legacy/map_engine/src/editing/hosted_commands/`,
     `legacy/map_engine/src/editing/commands/merge_report.rs` and
     `legacy/map_engine/src/editing/tools/placement.rs`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/` (`arsenal/`, `bridge/`,
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/` (`arsenal/`, `bridge/`,
     `input/`, `mission_editor/`, `shell/` and `ui/`) and the DTOs of
-    `apps/frontend/src/v2/core/api/dto/`;
+    `apps/frontend/src/foundation/transport/dto/`;
   - `legacy/map_engine/tests/operation_boundaries.rs` and the re-export pins in
     `legacy/map_engine/src/data/store/tests/reexports.rs`.
 - Rules:
@@ -114,5 +114,5 @@ abandoned drag costs no undo step and a finished one costs one.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation/apps/frontend/apps/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — the placement, arrange, loadout, zone and ORBAT features these operations serve.

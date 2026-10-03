@@ -21,7 +21,7 @@ input it never examined.** Each instance looks like a green check.
 | a golden file under `#[serde(flatten)]` | a deleted field is re-emitted and the JSON stays byte-identical | read what the golden covers, not only that it matches |
 | the collision analysis | tickets with no plan row are never candidates | `slice-collisions` warns about dispatchable tickets missing from the lock |
 | a health check that is a TCP connect | a six-hour-old API binary reports as up | preflight reads `/healthz` and compares the API process's age with the newest API commit |
-| a test that `include_str!`s its own file and greps for a literal | the needle matches the test's own assertion, forever | scrub the test module out of the haystack with `class_r_scrub::live_source` or `live_code` (`apps/frontend/src/v2/core/test_support/class_r_scrub/`) |
+| a test that `include_str!`s its own file and greps for a literal | the needle matches the test's own assertion, forever | scrub the test module out of the haystack with `class_r_scrub::live_source` or `live_code` (`apps/frontend/src/foundation/test_support/class_r_scrub/`) |
 | `cargo check` under lock contention | it replays a cached verdict and prints `Finished`, exit 0, over code that does not compile | the gate checks into its own `target/gate-check` folder and invalidates fingerprints first |
 | a piped gate (`cargo check … \| tail -5`) | the pipeline returns `tail`'s exit status | never pipe a gate or test; the wave driver captures each step's status itself |
 | a grep loop that reads exit 2 as "no match" | an invalid pattern becomes a pass | read the exit status: 0 match, 1 no match, 2 error, 127 tool absent; the last two fail closed |

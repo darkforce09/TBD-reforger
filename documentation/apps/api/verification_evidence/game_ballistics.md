@@ -402,7 +402,7 @@ Migration `apps/api/migrations/0060_game_ballistics_catalogs_and_fire_mission_in
   output and registers the install, activate and fetch handlers synchronously; it holds no policy.
   It is served with `Cache-Control: no-cache` and registered as `/service_worker.js?build=<bundle
   hash>`.
-- The page's offline core (`apps/frontend/src/v2/core/offline/`) registers the worker at
+- The page's offline core (`apps/frontend/src/foundation/offline/`) registers the worker at
   boot. On the first `/tools/mortar` visit it checks `navigator.storage.estimate()`, calls
   `persist()`, and downloads the pack with progress. The document element carries
   `data-offline-state` ∈ idle | downloading | ready | incomplete | quota-short | unsupported |

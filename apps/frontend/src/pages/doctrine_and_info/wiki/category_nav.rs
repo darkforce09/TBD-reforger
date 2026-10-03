@@ -1,0 +1,100 @@
+//! The master half of the wiki: the search box and the category-grouped list of manuals.
+//!
+//! **Role:** renders the doctrine index — one labelled group per category, each holding the
+//! manuals that survived the search box, as links that navigate to `/wiki/<slug>`.
+//! **Position:** the master pane of the wiki's split view, above which its own header sits; fed
+//! the page summaries of `GET /wiki`.
+//! **Signals & state:** reads the search `RwSignal<String>` the page owns and writes it through
+//! `SidebarSearch`; navigation is the router's, so no selection state lives here.
+//! **Invariants:** groups appear in the order the API returned their first member, which is the
+//! nav order the wiki is authored in; a group whose manuals all filtered out is not rendered.
+
+use crate::foundation::transport::dto::wiki::WikiPageSummary;
+#[cfg(target_arch = "wasm32")]
+use crate::foundation::ui::split_pane::{search_matches, ListDetailItem, SidebarSearch};
+#[cfg(target_arch = "wasm32")]
+use leptos::prelude::*;
+
+/// The distinct categories of `pages`, in the order each was first seen.
+///
+/// The API orders the list by nav order and then title, so first-seen order is authoring order.
+/// Rows with no category are skipped.
+pub(super) fn category_order(pages: &[WikiPageSummary]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for page in pages {
+        if !page.category.is_empty() && !out.contains(&page.category) {
+            out.push(page.category.clone());
+        }
+    }
+    out
+}
+
+/// The index header: the section label and the search box bound to `search`.
+#[cfg(target_arch = "wasm32")]
+pub(super) fn master_header(search: RwSignal<String>) -> impl IntoView {
+    view! {
+        <div class="w-full space-y-3">
+            <p class="font-mono text-xs font-bold tracking-widest text-on-surface-variant uppercase">
+                "SOPs & Manuals"
+            </p>
+            <SidebarSearch placeholder="Search manuals..." bind=search />
+        </div>
+    }
+}
+
+/// The grouped list of manuals.
+///
+/// `active_slug` is the manual currently open, `query` the live search text, and `pages` the
+/// full list. A row matches when the query matches its title or its category; clicking one
+/// navigates to that manual's route rather than mutating local state.
+#[cfg(target_arch = "wasm32")]
+pub(super) fn manual_index(
+    active_slug: Option<String>,
+    query: &str,
+    pages: &[WikiPageSummary],
+) -> impl IntoView {
+    let query = query.to_string();
+    let active = active_slug.unwrap_or_default();
+    category_order(pages)
+        .into_iter()
+        .filter_map(move |category| {
+            let rows: Vec<WikiPageSummary> = pages
+                .iter()
+                .filter(|page| page.category == category)
+                .filter(|page| {
+                    search_matches(&query, &format!("{} {}", page.title, page.category))
+                })
+                .cloned()
+                .collect();
+            if rows.is_empty() {
+                return None;
+            }
+            Some(view! {
+                <div class="mb-3">
+                    <p class="px-1 py-1 font-mono text-[11px] tracking-widest text-outline uppercase">
+                        {category}
+                    </p>
+                    <div class="mt-1 flex flex-col gap-1">
+                        {rows
+                            .into_iter()
+                            .map(|row| {
+                                let navigate = leptos_router::hooks::use_navigate();
+                                let active_row = row.slug == active;
+                                let slug = row.slug;
+                                view! {
+                                    <ListDetailItem
+                                        active=active_row
+                                        title={view! { {row.title} }.into_any()}
+                                        on_click={Callback::new(move |()| {
+                                            navigate(&format!("/wiki/{slug}"), Default::default());
+                                        })}
+                                    />
+                                }
+                            })
+                            .collect_view()}
+                    </div>
+                </div>
+            })
+        })
+        .collect_view()
+}

@@ -21,7 +21,7 @@ legacy/map_engine/src/data/store/
 ## How it works
 
 ```text
-Mission Creator (apps/frontend/src/v2/apps/editor/)
+Mission Creator (apps/frontend/src/workspaces/editor/)
         │ crate::editing: the host, hosted commands, history, picking
         ▼
 operations/   plan an edit in plain values; host decisions arrive as callbacks
@@ -70,8 +70,8 @@ undo clock (`install_wasm_now`), so no browser binding enters this tree.
 - Used by:
   - `crate::editing`, the crate's integration tests in `legacy/map_engine/tests/` and the
     store-gated tests of `legacy/map_engine/src/data/scenario/compiler/`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/` and the DTOs of
-    `apps/frontend/src/v2/core/api/dto/`;
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/` and the DTOs of
+    `apps/frontend/src/foundation/transport/dto/`;
   - the `engine-layers` and `editor-orbat-coherency` gates of `tools/xtask/`, which scan and
     test this tree.
 - Rules:
@@ -91,6 +91,6 @@ undo clock (`install_wasm_now`), so no browser binding enters this tree.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: data persistence and compile](/documentation/apps/frontend/apps/editor/feature_inventory/data_persistence_and_compile.md) — the draft, the hydrate and the compile as the editor uses them.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/apps/frontend/workspaces/editor/feature_inventory/data_persistence_and_compile.md) — the draft, the hydrate and the compile as the editor uses them.
 - [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the
   `engine-layers` and `editor-orbat-coherency` gates that scan this tree.

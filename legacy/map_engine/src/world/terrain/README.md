@@ -73,9 +73,9 @@ feature; the rest is plain computation that the native tools reuse:
     `crate::world::environment`, which reads road segments and the elevation model; and
     `crate::world::mesh`, which composes contour rings and the sea band;
   - the Mission Creator's canvas and pointer handlers in
-    `apps/frontend/src/v2/apps/editor/`, which sample the vector grid, and its tests, which
+    `apps/frontend/src/workspaces/editor/`, which sample the vector grid, and its tests, which
     read the satellite container and loading code; the debug benches in
-    `apps/frontend/src/v2/apps/debug/`, which stroke lines with the road strips;
+    `apps/frontend/src/workspaces/debug/`, which stroke lines with the road strips;
   - the world export, the map raster pipeline and the map checks in
     `tools/developer_tools/src/`, which write and verify the terrain files.
 - Rules: the module compiles only with the `world` feature and each file under its gate above; a

@@ -55,9 +55,9 @@ A refused request records the cap's message in `last_refusal`, which a later suc
   `crate::editing::tools::line_of_sight` (`host_registry`, `terrain_survey`, `terrain_verdict`).
 - Used by: `crate::editing::tools::line_of_sight::viewshed_texture::place_viewshed`, which submits
   the terrain disc; the Mission Creator's scheduler host
-  (`apps/frontend/src/v2/apps/editor/input/tools/viewshed_scheduler.rs`), which installs
+  (`apps/frontend/src/workspaces/editor/input/tools/viewshed_scheduler.rs`), which installs
   the services and pumps the terrain lane, installed by the canvas mount in
-  `apps/frontend/src/v2/apps/editor/mission_editor/canvas_mount.rs`. The wash lane and the
+  `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`. The wash lane and the
   readouts (`last_refusal`, `active_generation`, `progress`) have no caller outside `tests/`.
 - Rules: one job per tool, and a submit cancels only its own tool's job
   (`one_active_job_per_tool_and_a_submit_cancels_its_own` in `tests/lane_isolation.rs`); a

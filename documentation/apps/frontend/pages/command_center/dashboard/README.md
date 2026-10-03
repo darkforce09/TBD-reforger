@@ -26,7 +26,7 @@ folder's README lists the page's files, its call and its states.
 
 ## Code
 
-- [Dashboard page](/apps/frontend/src/v2/pages/command_center/dashboard/) — the route
+- [Dashboard page](/apps/frontend/src/pages/command_center/dashboard/) — the route
   component `DashboardPage` and its five panels.
 - [Command center domain](/apps/api/src/command_center/) — `GET /api/v1/dashboard`,
   which composes the page's one payload.

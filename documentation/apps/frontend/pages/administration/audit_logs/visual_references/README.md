@@ -22,7 +22,7 @@ feature doc lists every difference in its Design section.
 
 ## Code
 
-- [Audit logs page](/apps/frontend/src/v2/pages/administration/audit_logs/) — the built
+- [Audit logs page](/apps/frontend/src/pages/administration/audit_logs/) — the built
   page the set was drawn for.
 
 ## Boundaries

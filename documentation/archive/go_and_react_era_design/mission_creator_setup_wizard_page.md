@@ -12,4 +12,4 @@
 
 - **Was:** Full-page wizard at `/missions/create` (T-003).
 - **Now:** macOS frosted Dialog on Mission Library; sidebar "Mission Creator" nav item removed.
-- **2D editor:** unchanged at `/missions/:id/edit` — see [mission-editor.md](/documentation/apps/frontend/apps/editor/ux_spec.md).
+- **2D editor:** unchanged at `/missions/:id/edit` — see [mission-editor.md](/documentation/apps/frontend/workspaces/editor/ux_spec.md).

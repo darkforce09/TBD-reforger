@@ -5,7 +5,7 @@
 Design-phase reference for the mortar calculator page at `/tools/mortar`: a gridded tactical map
 with a firing position and a target joined by a line, and a heads-up panel with the firing
 solution. It gives colour and layout context and is not an implementation source; the built UI is
-the Leptos code under `apps/frontend/src/v2/pages/field_tools/mortar/`.
+the Leptos code under `apps/frontend/src/pages/field_tools/mortar/`.
 
 ## Contents
 
@@ -33,7 +33,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Mortar calculator page](/apps/frontend/src/v2/pages/field_tools/mortar/) — the page
+- [Mortar calculator page](/apps/frontend/src/pages/field_tools/mortar/) — the page
   this set was drawn for.
 
 ## Boundaries

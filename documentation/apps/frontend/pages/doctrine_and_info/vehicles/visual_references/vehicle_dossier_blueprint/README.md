@@ -5,7 +5,7 @@
 Design-phase reference for the vehicle database page at `/vehicles`: a faction-grouped vehicle
 list beside a BTR-70 identification dossier, inside a wiki-style frame. It gives colour and layout
 context and is not an implementation source; the built UI is the Leptos code under
-`apps/frontend/src/v2/pages/doctrine_and_info/vehicles/`.
+`apps/frontend/src/pages/doctrine_and_info/vehicles/`.
 
 ## Contents
 
@@ -34,7 +34,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Vehicle database page](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/) — the
+- [Vehicle database page](/apps/frontend/src/pages/doctrine_and_info/vehicles/) — the
   page this set was drawn for.
 
 ## Boundaries

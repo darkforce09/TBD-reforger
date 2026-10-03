@@ -76,7 +76,7 @@ None: the crate reads no environment variable and declares no feature.
   - the reports, the request and the console types refuse unknown keys; the claim and the receipt
     tolerate them;
   - every `@contract` tag resolves (`cargo xtask schema citations`).
-- The single-page app keeps its own fleet command DTOs in `apps/frontend/src/v2/core/api/dto/`
+- The single-page app keeps its own fleet command DTOs in `apps/frontend/src/foundation/transport/dto/`
   (decision D7 of the restructure program), checked against the same schema by its golden tests.
 
 ## Related documentation

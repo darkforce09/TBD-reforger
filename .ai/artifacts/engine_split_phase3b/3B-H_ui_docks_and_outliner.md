@@ -53,7 +53,7 @@ What does need repointing:
 Sibling test files with their bottom-of-file declarations — `class_r_scrub::live_code()` blanks a
 file from its first `#[cfg(test)]` to EOF, and these files are read by scrubs. Allowlist rows
 updated in the same commit. `//!` headers rewritten where they name `editor/panels`. Every
-`crate::v2::apps::editor::panels::…` call site swept. `mission_editor.rs`'s re-exports and mounts
+`crate::workspaces::editor::panels::…` call site swept. `mission_editor.rs`'s re-exports and mounts
 repointed, never deleted. `xtask/` and `tools/` grepped for any path you moved.
 
 ## Verification — run once, at the end, from the repo root

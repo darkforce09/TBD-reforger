@@ -10,24 +10,24 @@ The same dossier body renders inside the mission library's slide-over.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/mission_hub/overview/`](/apps/frontend/src/v2/pages/mission_hub/overview/):
+- Code: [`apps/frontend/src/pages/mission_hub/overview/`](/apps/frontend/src/pages/mission_hub/overview/):
   `page.rs` holds the route component `MissionOverviewPage`, the mission fetch and the edit
   predicate; `dossier_body.rs` the shared read-only dossier and `mission_status_label`;
   `armory_editor.rs` and `armory_dialog.rs` the Edit Armory dialog. The folder's
-  [README](/apps/frontend/src/v2/pages/mission_hub/overview/README.md) describes each file.
+  [README](/apps/frontend/src/pages/mission_hub/overview/README.md) describes each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/mission_hub/overview/README.md#routes).
+  [Routes](/apps/frontend/src/pages/mission_hub/overview/README.md#routes).
 - Related: the [mission library page](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md),
   whose dossier sheet renders the same body; the review record in
-  [`apps/frontend/src/v2/pages/mission_hub/mission_review/`](/apps/frontend/src/v2/pages/mission_hub/mission_review/README.md),
-  which links the [review workspace page](/documentation/apps/frontend/pages/mission_hub/review_workspace/review_workspace_page.md);
+  [`apps/frontend/src/features/mission_review_record/`](/apps/frontend/src/features/mission_review_record/README.md),
+  which links the [review workspace page](/documentation/apps/frontend/workspaces/editor/review_workspace/review_workspace_page.md);
   the [event](/documentation/glossary/a_to_f.md#event) hub, which groups the armory by faction for
   the players of an event.
 
 ## Behaviour
 
 The page body sits in `AuthGate`; the session, loading and failure texts are in the README's
-[States](/apps/frontend/src/v2/pages/mission_hub/overview/README.md#states).
+[States](/apps/frontend/src/pages/mission_hub/overview/README.md#states).
 
 ### Reading the dossier
 
@@ -70,7 +70,7 @@ The page body sits in `AuthGate`; the session, loading and failure texts are in 
 ### Known discrepancies
 
 - "Edit Armory" shows to the author at any role (`can_edit` in
-  `apps/frontend/src/v2/pages/mission_hub/overview/page.rs`, whose comment says the
+  `apps/frontend/src/pages/mission_hub/overview/page.rs`, whose comment says the
   server's tier is authorship alone), but `set_armory` in
   `apps/api/src/missions/handlers/mission_armory.rs` takes `MissionMakerUser`: an
   author demoted below mission maker sees the button and the save answers 403 "insufficient role".
@@ -80,7 +80,7 @@ The page body sits in `AuthGate`; the session, loading and failure texts are in 
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/mission_hub/overview/README.md#data) lists
+The README's [Data](/apps/frontend/src/pages/mission_hub/overview/README.md#data) lists
 each call with the DTO it reads or sends. Server-side:
 
 - `GET /api/v1/missions/{id}` (`get_mission` in

@@ -43,7 +43,7 @@ fn the_wasm_scope_follows_the_frontends_dependency_graph() {
 /// `frontend_tests_changed` originally scoped itself on `wasm_scope_touched` alone. But the
 /// suite compiles files from outside that graph through `include_str!`, and wave 255 itself
 /// changed one of them — `contracts/definitions/mission.schema.json`, compiled by
-/// `v2/apps/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs` and asserted over by
+/// `workspaces/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs` and asserted over by
 /// `zone_rule_fields_cover_the_whole_vocabulary`, which is documented to fail loudly on a new
 /// `$defs/zoneRules` key. A slice whose diff was only that file would have printed "frontend
 /// untouched", skipped the suite, and reported PASS over the one test that would have caught it.

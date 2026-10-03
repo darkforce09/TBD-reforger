@@ -9,15 +9,15 @@ requires, kept current by the server's [SSE](/documentation/glossary/n_to_z.md#s
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/command_center/server_intel/`](/apps/frontend/src/v2/pages/command_center/server_intel/):
+- Code: [`apps/frontend/src/pages/command_center/server_intel/`](/apps/frontend/src/pages/command_center/server_intel/):
   `page.rs` holds the route component `ServerIntelPage`, the server list fetch and the one stream
   subscription; `server_list.rs` the server pick, the panel shell and the intelligence strip;
   `direct_connect.rs` the header with the address and the launch button; `player_census.rs` the
   telemetry grid. The folder's
-  [README](/apps/frontend/src/v2/pages/command_center/server_intel/README.md) describes
+  [README](/apps/frontend/src/pages/command_center/server_intel/README.md) describes
   each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/command_center/server_intel/README.md#routes). The
+  [Routes](/apps/frontend/src/pages/command_center/server_intel/README.md#routes). The
   sidebar lists the page as "Server Intel" in the "Command Center" section.
 - Related: the [server control page](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md),
   where administrators run the servers this page reports on; the
@@ -31,9 +31,9 @@ requires, kept current by the server's [SSE](/documentation/glossary/n_to_z.md#s
 
 ### Choosing the server
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
    the session states of the README's
-   [States](/apps/frontend/src/v2/pages/command_center/server_intel/README.md#states)
+   [States](/apps/frontend/src/pages/command_center/server_intel/README.md#states)
    until the viewer is signed in.
 2. The signed-in half fetches the server list and shows "Loading…", then "Failed to load data."
    or the panel. An empty list shows "No servers configured."
@@ -78,16 +78,16 @@ requires, kept current by the server's [SSE](/documentation/glossary/n_to_z.md#s
 
 - The "Recent Intelligence" strip reads as live reports but is fixed text copied from the
   blueprint (`server_panel` in
-  `apps/frontend/src/v2/pages/command_center/server_intel/server_list.rs`); the API has no
+  `apps/frontend/src/pages/command_center/server_intel/server_list.rs`); the API has no
   intelligence feed, and the list row carries nothing the strip could show
   (`list_servers` in `apps/api/src/server_infrastructure/handlers/server_intel.rs`).
 - "LAUNCH & CONNECT" is styled as the page's main action and answers with a success toast, but
   connects nothing (`launch_stub` in
-  `apps/frontend/src/v2/pages/command_center/server_intel/direct_connect.rs`).
+  `apps/frontend/src/pages/command_center/server_intel/direct_connect.rs`).
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/command_center/server_intel/README.md#data)
+The README's [Data](/apps/frontend/src/pages/command_center/server_intel/README.md#data)
 lists each call with the DTO the page reads. Server-side:
 
 - `GET /api/v1/servers` (`list_servers` in
@@ -104,7 +104,7 @@ lists each call with the DTO the page reads. Server-side:
   (`apps/api/src/match_telemetry/handlers/server_heartbeat.rs`) and from the
   `server_status_publisher` worker, which republishes every server's status on an interval
   (`SERVER_STATUS_PUBLISH_INTERVAL_SECS`, 10 seconds by default). The page opens it with
-  `stream_server_status` in `apps/frontend/src/v2/core/api/sse.rs`, a fetch that sends
+  `stream_server_status` in `apps/frontend/src/foundation/transport/sse.rs`, a fetch that sends
   the bearer token.
 - `GET /api/v1/servers/{id}/status`, one server's card, exists and is not called by this page.
 
@@ -142,10 +142,10 @@ The page writes nothing and stores nothing in the browser.
   paint, and the stream keeps it current without polling.
 - No readout invents a value: a missing status shows "—" and a missing terrain shows no name;
   the tests in
-  `apps/frontend/src/v2/pages/command_center/server_intel/tests/server_intel_t385.rs` keep
+  `apps/frontend/src/pages/command_center/server_intel/tests/server_intel_t385.rs` keep
   the theatre wired to the `terrain` key.
 - The copy button reports a copy only after the clipboard write resolved
   (`class_r_copy_address_routes_through_the_awaited_clipboard_helper` in
-  `apps/frontend/src/v2/pages/command_center/server_intel/tests/server_intel_t773.rs`),
+  `apps/frontend/src/pages/command_center/server_intel/tests/server_intel_t773.rs`),
   because an unconfirmed toast claimed copies that never happened
   on insecure origins.

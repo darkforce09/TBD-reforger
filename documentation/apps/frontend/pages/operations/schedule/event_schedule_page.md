@@ -9,12 +9,12 @@ reads any event's full hub beside it, briefing, places and
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/operations/schedule/`](/apps/frontend/src/v2/pages/operations/schedule/):
+- Code: [`apps/frontend/src/pages/operations/schedule/`](/apps/frontend/src/pages/operations/schedule/):
   `page.rs` holds the route component `EventSchedulePage`, the list fetch, the selection, the hub
   fetch and the split pane; `upcoming_ops.rs` one event card. The folder's
-  [README](/apps/frontend/src/v2/pages/operations/schedule/README.md) describes each file.
+  [README](/apps/frontend/src/pages/operations/schedule/README.md) describes each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/operations/schedule/README.md#routes). The sidebar
+  [Routes](/apps/frontend/src/pages/operations/schedule/README.md#routes). The sidebar
   lists the page as "Event Schedule", first in the "Operations" section.
 - Related: the [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md),
   whose hub view (`event_hub_view`) the detail column renders; the
@@ -28,9 +28,9 @@ reads any event's full hub beside it, briefing, places and
 
 ### The list
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
    the session states of the README's
-   [States](/apps/frontend/src/v2/pages/operations/schedule/README.md#states) until the
+   [States](/apps/frontend/src/pages/operations/schedule/README.md#states) until the
    viewer is signed in.
 2. The signed-in half fetches the event list once, with no query parameters, and shows
    "Loading…", then "Failed to load data." or the split pane. The list is not fetched again while
@@ -72,7 +72,7 @@ reads any event's full hub beside it, briefing, places and
 
 - A card's fill counts and bar do not follow a registration made in the detail column: the
   hub's change callback refetches only the hub (`board` in
-  `apps/frontend/src/v2/pages/operations/schedule/page.rs`), while the counts come from
+  `apps/frontend/src/pages/operations/schedule/page.rs`), while the counts come from
   the list fetch (`list_events` in
   `apps/api/src/operations/handlers/event_listing.rs`).
 - A card without a `name_override` reads "Untitled Operation" although its missions have titles;
@@ -83,7 +83,7 @@ reads any event's full hub beside it, briefing, places and
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/operations/schedule/README.md#data)
+The README's [Data](/apps/frontend/src/pages/operations/schedule/README.md#data)
 lists each call with the fields the page reads. Server-side:
 
 - `GET /api/v1/events` (`list_events` in
@@ -143,4 +143,4 @@ ticket yet.
   `upcoming` scope decides what it holds.
 - The hub has one renderer: the schedule and `/events/:id` both call `event_hub_view`, so the two
   cannot drift apart (`schedule_briefing_empty_check_stays_trim_aligned` in
-  `apps/frontend/src/v2/pages/operations/schedule/tests/schedule.rs`).
+  `apps/frontend/src/pages/operations/schedule/tests/schedule.rs`).

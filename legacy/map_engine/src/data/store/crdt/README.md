@@ -53,13 +53,13 @@ The document store re-exports what leaves this folder:
     `legacy/map_engine/src/editing/tools/selection/`, the slot fingerprint in
     `legacy/map_engine/src/editing/persist/` and the slot attributes command in
     `legacy/map_engine/src/editing/hosted_commands/`;
-  - the Mission Creator in `apps/frontend/src/v2/apps/editor/` through `SlotSoa`: the
+  - the Mission Creator in `apps/frontend/src/workspaces/editor/` through `SlotSoa`: the
     document handle, the undo driver and its render lanes in
-    `apps/frontend/src/v2/apps/editor/bridge/document_host/`, the select-in-view of
-    `apps/frontend/src/v2/apps/editor/bridge/host_state/`,
-    `apps/frontend/src/v2/apps/editor/input/tools/select_tool.rs`, and the canvas mount and
-    the document helpers in `apps/frontend/src/v2/apps/editor/mission_editor/`; and
-    `apps/frontend/src/v2/apps/editor/bridge/host_state/undo_grouped_gestures.rs` through
+    `apps/frontend/src/workspaces/editor/bridge/document_host/`, the select-in-view of
+    `apps/frontend/src/workspaces/editor/bridge/host_state/`,
+    `apps/frontend/src/workspaces/editor/input/tools/select_tool.rs`, and the canvas mount and
+    the document helpers in `apps/frontend/src/workspaces/editor/mission_editor/`; and
+    `apps/frontend/src/workspaces/editor/bridge/host_state/undo_grouped_gestures.rs` through
     `install_wasm_now`.
 - Rules:
   - `SlotSoa` columns stay row-aligned by id (`add_slot_materializes_soa` in

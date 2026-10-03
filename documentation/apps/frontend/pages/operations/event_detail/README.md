@@ -27,7 +27,7 @@ and states.
 
 ## Code
 
-- [Event hub page](/apps/frontend/src/v2/pages/operations/event_detail/) — the route
+- [Event hub page](/apps/frontend/src/pages/operations/event_detail/) — the route
   component `EventHubPage`, the hub body `event_hub_view` and the selector `OrbatSelector`.
 - [Operations domain](/apps/api/src/operations/) — the hub, the ORBAT, registrations,
   squad holds, seat assignment, the waiting list and the member directory.

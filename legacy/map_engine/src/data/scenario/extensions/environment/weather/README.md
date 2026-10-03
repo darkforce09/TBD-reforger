@@ -38,7 +38,7 @@ each keyframe at its offset.
 - Depends on: `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `weatherTimeline` row calls `validate`; the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s weather timeline panel
-  (`apps/frontend/src/v2/apps/editor/ui/inspector/weather_timeline.rs`), which checks each
+  (`apps/frontend/src/workspaces/editor/ui/inspector/weather_timeline.rs`), which checks each
   edit with `validate` and offers `WEATHER_PRESETS`.
 - Rules: an offset equal to or below the one before it is refused (`equal_at_minutes_are_refused`
   and `out_of_order_at_minutes_are_refused` in `tests/cases_1.rs`); `WEATHER_PRESETS` is the

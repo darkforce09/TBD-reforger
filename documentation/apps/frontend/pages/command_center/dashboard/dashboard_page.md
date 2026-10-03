@@ -10,14 +10,14 @@ announcements, all read from one request.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/command_center/dashboard/`](/apps/frontend/src/v2/pages/command_center/dashboard/):
+- Code: [`apps/frontend/src/pages/command_center/dashboard/`](/apps/frontend/src/pages/command_center/dashboard/):
   `page.rs` holds the route component `DashboardPage`, the fetch and the panel grid;
   `hero_banner.rs` the banner; `server_uplink.rs` (with its totals row in `fleet_totals.rs`),
   `deployment.rs` and `modpack.rs` the three cards; `recent_intel.rs` the announcement feed. The folder's
-  [README](/apps/frontend/src/v2/pages/command_center/dashboard/README.md) describes each
+  [README](/apps/frontend/src/pages/command_center/dashboard/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/command_center/dashboard/README.md#routes). The
+  [Routes](/apps/frontend/src/pages/command_center/dashboard/README.md#routes). The
   sidebar lists the page as "Dashboard", first in the "Command Center" section.
 - Related: the [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md),
   which the banner opens; the [announcements page](/documentation/apps/frontend/pages/command_center/announcements/announcements_page.md),
@@ -30,9 +30,9 @@ announcements, all read from one request.
 
 ### Loading
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`): until a
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`): until a
    session is restored and signed in, the viewer sees the session states of the README's
-   [States](/apps/frontend/src/v2/pages/command_center/dashboard/README.md#states)
+   [States](/apps/frontend/src/pages/command_center/dashboard/README.md#states)
    instead of the panels. The route itself has the tier `none`, so the navigation frame and the
    sign-in prompt render for anyone.
 2. The signed-in half sends one `GET /api/v1/dashboard` and shows "Loading…" until it answers,
@@ -45,7 +45,7 @@ announcements, all read from one request.
 
 1. The banner shows "T-MINUS " and the time left until the next event starts, as one rounded
    unit in capitals ("T-MINUS 3 HOURS", "T-MINUS 2 DAYS"; `countdown_label` in
-   `apps/frontend/src/v2/core/utils/countdown.rs`). The label is worked out once, when the
+   `apps/frontend/src/foundation/utils/countdown.rs`). The label is worked out once, when the
    panel renders, and does not tick. Once the start time has passed at render it reads
    `LIVE NOW` without the prefix. Under it, "OPERATION: <name> — <terrain>", and an
    "Open Operation Hub" link to `/events/{event_id}`.
@@ -77,17 +77,17 @@ three cards.
 ### Known discrepancies
 
 - The banner reads as a countdown ("T-MINUS …") but is fixed at render time
-  (`apps/frontend/src/v2/pages/command_center/dashboard/hero_banner.rs`); the API returns
+  (`apps/frontend/src/pages/command_center/dashboard/hero_banner.rs`); the API returns
   only events that start after the moment of the request (`get_dashboard` in
   `apps/api/src/command_center/handlers/live_dashboard.rs`), so a started event leaves
   the banner on the next load rather than showing `LIVE NOW`.
 - The "Server Uplink" pill draws "0/<n> ONLINE" in the same green as a fleet with servers
   online; only the dot turns grey
-  (`apps/frontend/src/v2/pages/command_center/dashboard/server_uplink.rs`).
+  (`apps/frontend/src/pages/command_center/dashboard/server_uplink.rs`).
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/command_center/dashboard/README.md#data)
+The README's [Data](/apps/frontend/src/pages/command_center/dashboard/README.md#data)
 lists the call and the DTO the page reads. Server-side:
 
 - `GET /api/v1/dashboard` (`get_dashboard` in

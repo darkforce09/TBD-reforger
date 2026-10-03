@@ -25,9 +25,9 @@ file, calls and states.
 
 ## Code
 
-- [ORBAT selection page](/apps/frontend/src/v2/pages/operations/orbat_selection/) — the
+- [ORBAT selection page](/apps/frontend/src/pages/operations/orbat_selection/) — the
   route component `OrbatSelectionPage`.
-- [Event hub page](/apps/frontend/src/v2/pages/operations/event_detail/) — the
+- [Event hub page](/apps/frontend/src/pages/operations/event_detail/) — the
   `OrbatSelector` and `MissionStanding` the page mounts.
 
 ## Boundaries

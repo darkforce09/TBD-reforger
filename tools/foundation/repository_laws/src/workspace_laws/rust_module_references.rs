@@ -12,14 +12,14 @@
 /// One module path a source file names, resolved from the crate root.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct ModuleReference {
-    /// The module path's segments from the crate root, e.g. `["v2", "apps", "editor"]`.
+    /// The module path's segments from the crate root, e.g. `["workspaces", "editor"]`.
     pub segments: Vec<String>,
     /// 1-based line where the path starts.
     pub line_no: usize,
 }
 
-/// The module of the source file at crate-relative `rel` (`src/v2/core/ui/select.rs` →
-/// `v2::core::ui::select`); a `mod.rs`, `main.rs` or `lib.rs` is its folder's module and a
+/// The module of the source file at crate-relative `rel` (`src/foundation/ui/select.rs` →
+/// `foundation::ui::select`); a `mod.rs`, `main.rs` or `lib.rs` is its folder's module and a
 /// `tests` folder is transparent, so a sibling test file resolves `super` to the module it tests.
 pub(super) fn file_module(rel: &str) -> Vec<String> {
     let rel = rel.strip_prefix("src/").unwrap_or(rel);

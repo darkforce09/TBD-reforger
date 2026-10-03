@@ -9,14 +9,14 @@ by name, and opens one player's full statistics in a slide-over dossier.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/operations/leaderboards/`](/apps/frontend/src/v2/pages/operations/leaderboards/):
+- Code: [`apps/frontend/src/pages/operations/leaderboards/`](/apps/frontend/src/pages/operations/leaderboards/):
   `page.rs` holds the route component `LeaderboardsPage`, the tabs, the search field, the board
   fetch and the row reader; `board_table.rs` the podium and the roster rows;
   `operator_dossier.rs` the dossier sheet. The folder's
-  [README](/apps/frontend/src/v2/pages/operations/leaderboards/README.md) describes each
+  [README](/apps/frontend/src/pages/operations/leaderboards/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/operations/leaderboards/README.md#routes). The
+  [Routes](/apps/frontend/src/pages/operations/leaderboards/README.md#routes). The
   sidebar lists the page as "Global Leaderboards" in the "Operations" section.
 - Related: the [deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md),
   whose API reads the same aggregate view for the viewer's own figures; the
@@ -28,9 +28,9 @@ by name, and opens one player's full statistics in a slide-over dossier.
 
 ### The board
 
-1. The page body sits in `AuthGate` (`apps/frontend/src/v2/core/ui/gates.rs`), which shows
+1. The page body sits in `AuthGate` (`apps/frontend/src/foundation/auth/gates.rs`), which shows
    the session states of the README's
-   [States](/apps/frontend/src/v2/pages/operations/leaderboards/README.md#states) until the
+   [States](/apps/frontend/src/pages/operations/leaderboards/README.md#states) until the
    viewer is signed in.
 2. The header reads "Global Leaderboards" and "Real-time tactical performance metrics across all
    active theaters.", with the five tabs "K/D Ratio" (the default), "Command Win Rate",
@@ -63,7 +63,7 @@ by name, and opens one player's full statistics in a slide-over dossier.
 
 - The second and third podium places have no dossier control: only the first place carries
   "[ VIEW DOSSIER ]", and the podium places are not clickable (`podium_place` in
-  `apps/frontend/src/v2/pages/operations/leaderboards/board_table.rs`), so the dossiers of
+  `apps/frontend/src/pages/operations/leaderboards/board_table.rs`), so the dossiers of
   the second and third players cannot be opened from the page.
 - A search re-ranks: the API numbers the matching rows from 1 (`get_leaderboards` in
   `apps/api/src/command_center/handlers/leaderboards.rs`), so a searched player shows on
@@ -73,7 +73,7 @@ by name, and opens one player's full statistics in a slide-over dossier.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/operations/leaderboards/README.md#data)
+The README's [Data](/apps/frontend/src/pages/operations/leaderboards/README.md#data)
 lists each call with the fields the page reads. Server-side:
 
 - `GET /api/v1/leaderboards?category=<category>&q=<text>` (`get_leaderboards` in
@@ -119,7 +119,7 @@ The page writes nothing and stores nothing in the browser.
 
 - Ranking and search stay on the server: the page never re-sorts a page of rows, so the order
   holds across the whole table (`parse_row_prefers_the_server_rank_over_position` in
-  `apps/frontend/src/v2/pages/operations/leaderboards/tests/leaderboards.rs`).
+  `apps/frontend/src/pages/operations/leaderboards/tests/leaderboards.rs`).
 - The command win rate is a command win rate: the API counts only matches where the player held a
   command slot, and the page labels it so rather than as a general win rate, which the telemetry
   cannot derive (`command_win_rate_renders_the_wire_fraction_as_a_percentage`, same test file).

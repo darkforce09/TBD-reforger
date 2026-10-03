@@ -14,7 +14,7 @@ Abbreviations in code spans:
 | `me` | `legacy/map_engine/src/` |
 | `ge` | `legacy/graphics_engine/src/` |
 | `api` | `apps/api/src/` |
-| `fe` | `apps/frontend/src/v2/` |
+| `fe` | `apps/frontend/src/` |
 | `xt` | `tools/xtask/src/` |
 | `dt` | `tools/developer_tools/src/` |
 | `te` | `tools/ticket_engine/src/` |

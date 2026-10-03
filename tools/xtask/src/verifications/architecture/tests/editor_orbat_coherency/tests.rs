@@ -72,7 +72,7 @@ fn every_static_arm_can_go_red() {
     );
     red_append(
         "ban1-host",
-        "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs",
+        "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/map_release.rs",
         "\nensure_default_squad\n",
         BANS[0].0,
     );

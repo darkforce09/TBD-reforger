@@ -22,7 +22,7 @@ documentation/apps/frontend/pages/administration/
 
 ## How it works
 
-The folders mirror the page folders under `apps/frontend/src/v2/pages/administration/` and
+The folders mirror the page folders under `apps/frontend/src/pages/administration/` and
 keep their spelling. Each holds a README index, the page's feature doc and, except for server
 control and ballistics catalogs, a `visual_references/` folder with one or two design-phase blueprint sets. A feature doc
 follows the [feature doc template](/documentation/standards/templates/feature_doc.md): Where it
@@ -32,9 +32,9 @@ server-side), Design (the layout as built and each difference from the blueprint
 Decisions. Start with the feature doc of the page at hand; its Design section leads to the
 blueprint.
 
-Every page is declared in `apps/frontend/src/router.rs` for the `admin` tier, sits in the
+Every page is declared in `apps/frontend/src/foundation/route_table/mod.rs` for the `admin` tier, sits in the
 sidebar's Administration section and renders its body inside `AdminGate`
-(`apps/frontend/src/v2/core/ui/gates.rs`), so a viewer below the `admin`
+(`apps/frontend/src/foundation/auth/gates.rs`), so a viewer below the `admin`
 [role](/documentation/glossary/n_to_z.md#role) sees "Admin access required." instead of the page.
 
 | Page | Route and component | Label on screen | Feature doc |
@@ -53,7 +53,7 @@ Contents and a row in the table.
 
 ## Code
 
-- [Administration pages](/apps/frontend/src/v2/pages/administration/) — the seven route
+- [Administration pages](/apps/frontend/src/pages/administration/) — the seven route
   components and their panels, which the feature docs describe.
 - [Administration domain](/apps/api/src/administration/) — the roster, bans, warnings,
   role resync and audit trail behind the personnel and audit logs pages.

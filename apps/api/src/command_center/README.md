@@ -57,7 +57,7 @@ players and capacity, and sum every reported telemetry queue's backlog and drops
   - `core::http_router`, which merges the route table, and the `leaderboard_refresher` worker in
     `apps/api/src/background_workers/`;
   - `match_telemetry`, `identity_and_access` and `operations`, through the services above;
-  - over HTTP, the dashboard and the leaderboard pages in `apps/frontend/src/v2/pages/`.
+  - over HTTP, the dashboard and the leaderboard pages in `apps/frontend/src/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); the view refresh and the counter

@@ -27,9 +27,9 @@ folders' READMEs list the files.
 
 ## Code
 
-- [Mission library page](/apps/frontend/src/v2/pages/mission_hub/library/) — the route
+- [Mission library page](/apps/frontend/src/pages/mission_hub/library/) — the route
   component `MissionLibraryPage`, the grid, the hero and the dossier sheet.
-- [New mission dialog](/apps/frontend/src/v2/pages/mission_hub/create_dialog/) — the
+- [New mission dialog](/apps/frontend/src/pages/mission_hub/create_dialog/) — the
   create form the library opens.
 - [Missions domain](/apps/api/src/missions/) — the list, detail, bookmark, lifecycle,
   version and submission routes the page calls.

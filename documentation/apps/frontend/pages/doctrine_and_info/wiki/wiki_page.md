@@ -9,16 +9,16 @@ place and restores older revisions.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/doctrine_and_info/wiki/`](/apps/frontend/src/v2/pages/doctrine_and_info/wiki/):
+- Code: [`apps/frontend/src/pages/doctrine_and_info/wiki/`](/apps/frontend/src/pages/doctrine_and_info/wiki/):
   `page.rs` holds the route component `WikiPage`, the page-list fetch, the slug resolution and the
   shared state; `category_nav.rs` the index; `article/` the open manual's fetch, header, body and
   editor; `blocks/` the renderer of the server's typed blocks; `revisions/` the history panel,
   the older revision on view and its restore; `saving/` the save and restore requests and their
   refusal notice. The folder's
-  [README](/apps/frontend/src/v2/pages/doctrine_and_info/wiki/README.md) describes each
+  [README](/apps/frontend/src/pages/doctrine_and_info/wiki/README.md) describes each
   file.
 - Entry: both routes, their tier and their layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/doctrine_and_info/wiki/README.md#routes).
+  [Routes](/apps/frontend/src/pages/doctrine_and_info/wiki/README.md#routes).
 - Related: the [vehicle database page](/documentation/apps/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md),
   which holds vehicle identification apart from the manuals; the
   [API](/documentation/glossary/a_to_f.md#api)'s
@@ -28,7 +28,7 @@ place and restores older revisions.
 ## Behaviour
 
 The page body sits in `AuthGate`; the session, loading, failure and empty texts are in the
-README's [States](/apps/frontend/src/v2/pages/doctrine_and_info/wiki/README.md#states).
+README's [States](/apps/frontend/src/pages/doctrine_and_info/wiki/README.md#states).
 
 ### Reading
 
@@ -106,7 +106,7 @@ fails renders as its text, and an image whose address fails renders as its alt t
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/doctrine_and_info/wiki/README.md#data)
+The README's [Data](/apps/frontend/src/pages/doctrine_and_info/wiki/README.md#data)
 lists each call with the fields it reads or sends. Server-side, the handlers are in
 `apps/api/src/community_content/handlers/wiki_knowledgebase/` and the parse in
 `apps/api/src/community_content/services/wiki_markup/`:

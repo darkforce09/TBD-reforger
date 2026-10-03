@@ -21,7 +21,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 6. **Strict Boundary Layers**:
    - `graphics_engine` (`legacy/graphics_engine/`): Pure GPU rendering primitives (pipelines, shaders, draw batching). Knows **zero** map concepts.
    - `map_engine` (`legacy/map_engine/`): Map graphics, spatial computation, terrain formats, asset streaming, camera math, and the mission domain (compilation, validation, Yjs CRDT document model). Speaks graphics engine frame vocabulary; zero UI/Leptos dependencies.
-   - `frontend` (`apps/frontend/`): Presentation, navigation, and CAD workspaces (`src/v2/`); consumes engine crates.
+   - `frontend` (`apps/frontend/`): Presentation, navigation, and CAD workspaces, in five layers under `src/` (foundation < features < pages, workspaces < shell); consumes engine crates.
    - `api` (`apps/api/`): Axum REST API and SSE realtime hub.
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
    - Production files must stay **at or under 500 lines**.
@@ -56,7 +56,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 9. **API & Contract Parity**:
    - Backend Rust models (`apps/api/src/<domain>/models/`) are the snake_case API source of truth.
    - Contract types are generated from `contracts/definitions/*.json` via `cargo xtask ci schema-codegen`.
-   - Frontend DTOs (`apps/frontend/src/v2/core/api/dto/`) mirror models with strict R-api golden test parity.
+   - Frontend DTOs (`apps/frontend/src/foundation/transport/dto/`) mirror models with strict R-api golden test parity.
 10. **Documentation Ships With the Code**:
     - Documentation lands in the same commit as the code it describes, whichever agent writes that code: the comments of the code it alters, the README.md of every folder whose contents, surface, commands or boundaries change, and the feature docs whose behaviour changes.
     - [documentation/README.md](/documentation/README.md) is the documentation entry (map and authority ladder); [documentation/standards/](/documentation/standards/README.md) holds the documentation, README and coding standards and the templates.
@@ -86,16 +86,20 @@ apps/
 │       ├── server_infrastructure/       <-- Game-server registry, live status SSE, machine credentials, fleet commands, runtime sessions
 │       └── tests/architecture_rules.rs  <-- Executable layout rules checked against src/
 ├── frontend/                            <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000)
-│   └── src/v2/                          <-- Domain-driven frontend architecture
-│       ├── core/                        <-- Shared foundations across the frontend
-│       │   ├── api/                     <-- HTTP client, DTOs, endpoints, SSE subscriber
-│       │   ├── auth/                    <-- Session storage, role hierarchy, route guards
+│   └── src/                             <-- Five layers in one crate: foundation < features < pages, workspaces < shell
+│       ├── main.rs, app_routes.rs       <-- Entry point (mounts the shell) and the render form of the route table
+│       ├── foundation/                  <-- Shared foundations every layer builds on
+│       │   ├── transport/               <-- HTTP client, DTOs and the role ladder, endpoints, SSE subscriber
+│       │   ├── auth/                    <-- Session storage and refresh, sign-out hooks, route guard, content gates
+│       │   ├── route_table/             <-- Every route's path, layout flags and access tier; the sidebar's navigation menu
 │       │   ├── map_view/                <-- Shared map mount seam (Mission Creator, mortar map picker), terrain heights
 │       │   ├── offline/                 <-- Service worker registration, offline pack download, storage quota, offline state
 │       │   ├── ui/                      <-- Reusable design system primitives (dialogs, sheets, selects, toasts)
-│       │   └── utils/                   <-- Time formatting, clipboard, sanitising helpers
-│       ├── pages/                       <-- Standard platform navigation & document pages
-│       │   ├── navigation/              <-- Platform frame (top nav, sidebar, not-found page)
+│       │   ├── utils/                   <-- Time formatting, clipboard, sanitising helpers
+│       │   └── test_support/            <-- Source scrubber, captured API responses, source pins (tests only)
+│       ├── features/                    <-- Capabilities several pages and workspaces show
+│       │   └── mission_review_record/   <-- Shared review record: history, thread, artifact provenance, submit control
+│       ├── pages/                       <-- Standard platform document pages, one folder per navigation area
 │       │   ├── account/                 <-- User login, OAuth callback, settings
 │       │   ├── command_center/          <-- Dashboard, announcements, live server intel
 │       │   ├── operations/              <-- Event schedule, event detail, slotting, deployments, leaderboards
@@ -104,12 +108,10 @@ apps/
 │       │   │   ├── orbat_selection/     <-- Dedicated full-screen slotting view
 │       │   │   ├── deployments/         <-- "My Deployments": the viewer's service record and upcoming slots
 │       │   │   └── leaderboards/        <-- Community player rankings with a slide-over dossier
-│       │   ├── mission_hub/             <-- Mission library, overview dossier, create dialog, review
+│       │   ├── mission_hub/             <-- Mission library, overview dossier, create dialog
 │       │   │   ├── library/             <-- Filterable community mission catalog
 │       │   │   ├── overview/            <-- Mission dossier: briefing, details, armory, review record
-│       │   │   ├── create_dialog/       <-- "New Mission" dialog that opens the Mission Creator
-│       │   │   ├── mission_review/      <-- Shared review record: history, thread, artifact provenance, submit control
-│       │   │   └── review_workspace/    <-- Mission Creator opened read-only on a submitted version
+│       │   │   └── create_dialog/       <-- "New Mission" dialog that opens the Mission Creator
 │       │   ├── field_tools/             <-- Interactive tactical utilities
 │       │   │   └── mortar/              <-- Mortar calculator: catalog-driven on-device firing solutions, map picker, offline pack
 │       │   ├── doctrine_and_info/       <-- Knowledgebase and reference catalogs
@@ -124,17 +126,20 @@ apps/
 │       │       ├── content_manager/     <-- Announcement authoring ("Comms Broadcaster")
 │       │       ├── audit_logs/          <-- Audit trail of administrative actions
 │       │       └── ballistics_catalogs/ <-- Calibrated ballistics catalog uploads and stored versions
-│       └── apps/                        <-- Standalone CAD workspaces & interactive tools
-│           ├── editor/                  <-- Mission Creator: top-down 2D CAD workspace (3D only in the Arsenal paper doll)
-│           │   ├── mission_editor/      <-- Route component parts: canvas mount, page effects, registry loading, transforms
-│           │   ├── ui/                  <-- CAD docks, outliner, inspectors, Arsenal tab, modals
-│           │   ├── input/               <-- DOM pointer/keyboard events -> map engine commands and tools
-│           │   ├── bridge/              <-- Engine seam: boot, viewport and frame timing, hosted mission document, overlays
-│           │   ├── shell/               <-- Per-tab session: IndexedDB drafts, hydrate, cross-tab lock, review mode, layout prefs
-│           │   └── arsenal/             <-- Loadout domain, gear catalog trees, 3D paper doll
-│           ├── planner/                 <-- Reserved for the mission planner whiteboard (README only, no code)
-│           ├── aar/                     <-- Reserved for the after-action review replay (README only, no code)
-│           └── debug/                   <-- URL-only benches: building viewer, building interior, world line of sight, ballistics agreement
+│       ├── workspaces/                  <-- Standalone CAD workspaces & interactive tools
+│       │   ├── editor/                  <-- Mission Creator: top-down 2D CAD workspace (3D only in the Arsenal paper doll)
+│       │   │   ├── mission_editor/      <-- Route component parts: canvas mount, page effects, registry loading, transforms
+│       │   │   ├── ui/                  <-- CAD docks, outliner, inspectors, Arsenal tab, modals
+│       │   │   ├── input/               <-- DOM pointer/keyboard events -> map engine commands and tools
+│       │   │   ├── bridge/              <-- Engine seam: boot, viewport and frame timing, hosted mission document, overlays
+│       │   │   ├── session/             <-- Per-tab session: IndexedDB drafts, hydrate, cross-tab lock, review mode, layout prefs
+│       │   │   ├── review_workspace/    <-- Mission Creator opened read-only on a submitted version
+│       │   │   └── arsenal/             <-- Loadout domain, gear catalog trees, 3D paper doll
+│       │   ├── planner/                 <-- Reserved for the mission planner whiteboard (README only, no code)
+│       │   ├── aar/                     <-- Reserved for the after-action review replay (README only, no code)
+│       │   └── debug/                   <-- URL-only benches: building viewer, building interior, world line of sight, ballistics agreement
+│       ├── shell/                       <-- App frame around every route: layout, top nav, sidebar, membership status, not-found page
+│       └── tests/doc_audit/             <-- Documentation audit of every production file of the crate
 ├── offline_service_worker/              <-- Rust/WASM service worker: offline pack caches, Range→206 from cache (no JS policy)
 ├── fleet_host_agent/                    <-- Agent per game-server instance: claims fleet commands from the API, runs process control, RCON reads and console lines, mission header switches
 ├── mod/                                 <-- Enfusion engine mod suite (three addons)
@@ -259,7 +264,7 @@ assets/                                  <-- Terrain datasets and the world-obje
 documentation/                           <-- All documentation; entry, map and authority ladder: README.md
 ├── architecture/                        <-- Workspace layout as it stands: top-level folders, members, where code, contracts, assets and docs live
 ├── apps/ legacy/ mod/ tools/ contracts/ assets/
-│                                        <-- Feature docs at the code's path minus src/ (frontend docs also drop src/v2/; mod docs drop apps/ and Scripts/Game/TBD/)
+│                                        <-- Feature docs at the code's path minus src/ (mod docs drop apps/ and Scripts/Game/TBD/)
 ├── restructure/                         <-- Active workspace restructure program: plan, target tree, crate catalogue, relocation manifests, shared agent brief, progress
 ├── runbooks/                            <-- Procedures: local development, deployment, gates, playtests
 ├── standards/                           <-- Documentation, README and coding standards; document templates

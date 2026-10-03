@@ -89,8 +89,8 @@ pointer, as the 16 hexadecimal digits of its IEEE 754 bits).
   re-solves every `POST /api/v1/fire-missions` save through `fire_mission::solve_fire_mission` and
   checks the client's solution with `fire_mission_comparison::compare_solutions` (pinned by
   `apps/api/tests/game_ballistics_fire_missions.rs`); the mortar calculator in
-  `apps/frontend/src/v2/pages/field_tools/mortar/`; the agreement bench
-  `apps/frontend/src/v2/apps/debug/ballistics_agreement/` and the agreement gate
+  `apps/frontend/src/pages/field_tools/mortar/`; the agreement bench
+  `apps/frontend/src/workspaces/debug/ballistics_agreement/` and the agreement gate
   `tools/developer_tools/src/browser_testing/ballistics_agreement/`, which both draw, map and
   walk the cases through `agreement_cases.rs`.
 - Rules: each module's rules and the tests that pin them are listed in its own README

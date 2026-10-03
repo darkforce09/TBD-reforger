@@ -4,13 +4,13 @@ Read `.ai/artifacts/engine_split_phase3b/00_rules_every_agent_obeys.md` first. E
 applies to this brief.
 
 Briefs 3B-A, 3B-B and 3B-C1 have landed: pins address their subject from the crate root,
-`v2::apps` is a compiled module with a dated allowlist behind its documentation audit, and the
+`workspaces` is a compiled module with a dated allowlist behind its documentation audit, and the
 editor tree owes no header or `pub`-item documentation.
 
 ## What this brief does — and what it deliberately does not
 
 This is a **relocation, not a reshape**. `apps/frontend/src/editor/` moves to
-`apps/frontend/src/v2/apps/editor/` with its internal shape byte-identical: `panels/` is
+`apps/frontend/src/workspaces/editor/` with its internal shape byte-identical: `panels/` is
 still `panels/`, `canvas/` is still `canvas/`, `state/` is still `state/`. The reshape into
 `ui/ input/ bridge/ shell/ arsenal/` is briefs 3B-E through 3B-K, one destination folder at a time.
 
@@ -36,7 +36,7 @@ half-moved.
    `state/tests/` keeps its name and travels with `state/`.
 4. **Declare it.** `mod editor;` leaves `main.rs`; `pub mod editor;` joins `v2/apps/mod.rs`.
 5. **Sweep the paths.** 631 `crate::editor::` references across 72 files become
-   `crate::v2::apps::editor::`. Rustdoc links in comments (`[`crate::editor::...`]`) count — sweep
+   `crate::workspaces::editor::`. Rustdoc links in comments (`[`crate::editor::...`]`) count — sweep
    them too, then grep for a surviving `crate::editor` and paste the (empty) result.
 6. **Repoint the anchored pins.** Brief 3B-A anchored every cross-file pin as
    `include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/editor/..."))`. Those suffixes become

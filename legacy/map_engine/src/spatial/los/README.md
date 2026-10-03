@@ -59,8 +59,8 @@ cancelled; `crate::editing::tools::viewshed_scheduler` runs them.
   - `crate::editing::tools::line_of_sight` and `crate::editing::tools::viewshed_scheduler`, the
     Mission Creator's line-of-sight tool and the scheduler of its visibility jobs;
   - `crate::streaming`, whose occluder loader and host queries own and lend the world occluder;
-  - the Mission Creator's input handlers in `apps/frontend/src/v2/apps/editor/input/`, and
-    the debug benches in `apps/frontend/src/v2/apps/debug/`;
+  - the Mission Creator's input handlers in `apps/frontend/src/workspaces/editor/input/`, and
+    the debug benches in `apps/frontend/src/workspaces/debug/`;
   - the blueprint tooling and the map checks in `tools/developer_tools/src/`.
 - Rules: the three layers stay three modules; a request over a cap is refused with one
   `ViewshedCapRefused` that names the cap and the measured value

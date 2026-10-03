@@ -110,7 +110,7 @@ Three facts about headless Chromium that the capture encodes; changing any of th
 ### Camera caveat
 
 `window.__editorCamSet(x, y, zoom)` (installed by
-`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`) panics the render engine under
+`apps/frontend/src/workspaces/editor/bridge/viewport.rs`) panics the render engine under
 headless Vulkan: after the first call every `__editorCam()` returns `undefined` and every canvas
 read is a black rectangle of about 44 KB. In a real browser the call works and the editor renders
 at full frame rate, so this is an artifact of the headless Vulkan surface, not an engine defect.

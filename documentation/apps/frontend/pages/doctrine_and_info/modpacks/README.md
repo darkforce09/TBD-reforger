@@ -27,7 +27,7 @@ files.
 
 ## Code
 
-- [Modpacks page](/apps/frontend/src/v2/pages/doctrine_and_info/modpacks/) — the route
+- [Modpacks page](/apps/frontend/src/pages/doctrine_and_info/modpacks/) — the route
   component `ModpacksPage`, the pack list, the dossier and the edit form.
 - [Community content domain](/apps/api/src/community_content/) — the modpack routes.
 

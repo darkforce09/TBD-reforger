@@ -37,7 +37,7 @@ plays the cues.
 - Depends on: `serde_json`.
 - Used by: `crate::data::scenario::extensions`, whose `audio` row calls `validate`; the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s audio panel
-  (`apps/frontend/src/v2/apps/editor/ui/inspector/audio_emitters.rs` and its `view.rs`),
+  (`apps/frontend/src/workspaces/editor/ui/inspector/audio_emitters.rs` and its `view.rs`),
   which checks each edit with `validate` and offers `MUSIC_EVENTS` as the cue list.
 - Rules: a radius of zero or below is refused, as the schema's `exclusiveMinimum: 0` refuses it
   (`radius_zero_is_refused` and `a_negative_radius_is_refused` in `tests/cases_1.rs`); ids are

@@ -4,7 +4,7 @@
 
 Design-phase reference for the audit logs page at `/admin/audit`: a terminal-style console of
 the system log. It gives colour and layout context and is not an implementation source; the built
-UI is the Leptos code under `apps/frontend/src/v2/pages/administration/audit_logs/`.
+UI is the Leptos code under `apps/frontend/src/pages/administration/audit_logs/`.
 
 ## Contents
 
@@ -31,7 +31,7 @@ feature doc holds the full comparison.
 
 ## Code
 
-- [Audit logs page](/apps/frontend/src/v2/pages/administration/audit_logs/) — the page
+- [Audit logs page](/apps/frontend/src/pages/administration/audit_logs/) — the page
   this set was drawn for.
 
 ## Boundaries

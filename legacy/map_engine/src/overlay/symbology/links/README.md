@@ -29,8 +29,8 @@ layout.
 - Depends on: `crate::overlay::symbology::roles::classify::side_rgba`.
 - Used by: `crate::editing::picking::squad_link_inputs`, which builds the inputs from the document;
   the Mission Creator's document host
-  (`apps/frontend/src/v2/apps/editor/bridge/document_host/history.rs`) for the rest layout
-  and its select tool (`apps/frontend/src/v2/apps/editor/input/tools/select_tool.rs`) for
+  (`apps/frontend/src/workspaces/editor/bridge/document_host/history.rs`) for the rest layout
+  and its select tool (`apps/frontend/src/workspaces/editor/input/tools/select_tool.rs`) for
   the drag preview.
 - Rules: only squads touched by a drag re-resolve with the offset
   (`squad_link_drag_preview_repacks_only_affected_squads` in `tests/squad_links_tests.rs`); a

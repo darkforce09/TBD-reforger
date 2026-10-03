@@ -50,7 +50,7 @@ legacy/map_engine/src/streaming/bridge/
   `serde_json`, `wasm-bindgen`, `js-sys` and `web-sys`.
 - Used by: `crate::streaming::host`, `crate::streaming::loaders` and the DEM, water, label,
   vegetation and satellite loaders of `crate::world`; the Mission Creator in
-  `apps/frontend/src/v2/apps/editor/` (its world-asset bridge builds the
+  `apps/frontend/src/workspaces/editor/` (its world-asset bridge builds the
   `HostPreferences`, its boot machine and preference store re-export the progress types and
   `WorldLayerPrefs`, and its hydrate reports the mission segment); the editor smoke tests in
   `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which read
@@ -61,7 +61,7 @@ legacy/map_engine/src/streaming/bridge/
     (`split_range_covers_the_tile_exactly_contiguously_and_in_order`,
     `a_dropped_completion_fails_instead_of_shifting_the_run` and
     `an_out_of_range_slot_is_refused_rather_than_dropped` in
-    `apps/frontend/src/v2/apps/editor/tests/t628_boot_progress.rs`);
+    `apps/frontend/src/workspaces/editor/tests/t628_boot_progress.rs`);
   - `strips_visible` follows the toggles and the zoom only, never the buffer contents, so an empty
     strip buffer mid-hydration uploads as visible instead of blanking the lane;
   - the `window.__mapAssets` keys are the ones the editor smoke tests assert on

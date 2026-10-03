@@ -58,8 +58,8 @@ with it. The crate logs through `browser_platform`'s console macros.
 - Used by:
   - inside the crate: `crate::frame` (the timer, the clocks and `poll`);
   - the Mission Creator's viewport bridge
-    (`apps/frontend/src/v2/apps/editor/bridge/viewport.rs`) and canvas boot, and the debug
-    benches under `apps/frontend/src/v2/apps/debug/`;
+    (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`) and canvas boot, and the debug
+    benches under `apps/frontend/src/workspaces/debug/`;
   - the editor gate's smokes in `tools/developer_tools/src/browser_testing/`, which
     `cargo xtask mk leptos-gates` runs.
 - Rules: a check never writes the engine's frame tables, camera uniform or batch list, so it can

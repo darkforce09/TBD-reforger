@@ -3,7 +3,7 @@
 Read `.ai/artifacts/engine_split_phase3b/00_rules_every_agent_obeys.md` first. Every rule there
 applies to this brief.
 
-At this point the editor tree lives at `apps/frontend/src/v2/apps/editor/`, still in its
+At this point the editor tree lives at `apps/frontend/src/workspaces/editor/`, still in its
 old internal shape. This brief is the one split Phase 1 deliberately left alone.
 
 ## The file
@@ -54,7 +54,7 @@ lines 46–84 and again at the bottom). **Those re-exports are the seam**: the p
 sites, the `mission_editor::…` paths in `state/history.rs` and the panel test modules, and the
 evacuated pins' `use super::…` imports all spell the names through them. Repoint every one of
 them at its new home — engine names through `map_engine::editing::…`, hover names through
-`crate::v2::apps::editor::canvas::pointer_hover` — and **keep the `cfg` gates exactly as they
+`crate::workspaces::editor::canvas::pointer_hover` — and **keep the `cfg` gates exactly as they
 are**. Do not delete a re-export to "simplify"; that renames a call site in fifty places.
 
 The `#[cfg(test)]` block at the bottom of `mission_editor.rs` must stay after every production

@@ -73,5 +73,5 @@ a README at each level.
   and the walls `cargo xtask verify engine-layers` enforces.
 - [Graphics engine documentation](/documentation/legacy/graphics_engine/README.md) — the
   renderer this crate draws with.
-- [Mission Creator documentation](/documentation/apps/frontend/apps/editor/README.md) — the
+- [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md) — the
   app this crate backs.

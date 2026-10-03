@@ -110,7 +110,7 @@ action.
   - `match_telemetry`, `identity_and_access`, `missions`, `operations` and `command_center`,
     through the surface above;
   - over HTTP, the [server control](/documentation/glossary/n_to_z.md#server-control) and server intel
-    pages in `apps/frontend/src/v2/pages/`, the fleet host agent in
+    pages in `apps/frontend/src/pages/`, the fleet host agent in
     `apps/fleet_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler

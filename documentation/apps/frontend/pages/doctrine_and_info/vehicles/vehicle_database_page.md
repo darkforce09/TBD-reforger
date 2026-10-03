@@ -9,16 +9,16 @@ vehicles from the same page.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/doctrine_and_info/vehicles/`](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/):
+- Code: [`apps/frontend/src/pages/doctrine_and_info/vehicles/`](/apps/frontend/src/pages/doctrine_and_info/vehicles/):
   `page.rs` holds the route component `VehicleDatabasePage`, the list fetch and the write
   callbacks; `vehicle_grid.rs` the faction-grouped list and the "Add vehicle" action;
   `spec_drawer.rs` the dossier with its Edit and Delete actions; `vehicle_form_dialog.rs` and
   `delete_confirmation.rs` the two dialogs; `vehicle_draft.rs` the form's validation;
   `vehicle_writes.rs` the requests. The folder's
-  [README](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/README.md) describes each
+  [README](/apps/frontend/src/pages/doctrine_and_info/vehicles/README.md) describes each
   file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/README.md#routes).
+  [Routes](/apps/frontend/src/pages/doctrine_and_info/vehicles/README.md#routes).
 - Related: the [doctrine wiki page](/documentation/apps/frontend/pages/doctrine_and_info/wiki/wiki_page.md),
   which holds the written manuals; the [API](/documentation/glossary/a_to_f.md#api)'s
   [vehicle database handlers](/apps/api/src/community_content/handlers/vehicle_database/README.md),
@@ -28,7 +28,7 @@ vehicles from the same page.
 
 The page body sits in `AuthGate`; the session, loading, failure, empty, form, refusal and
 confirmation texts are in the README's
-[States](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/README.md#states).
+[States](/apps/frontend/src/pages/doctrine_and_info/vehicles/README.md#states).
 
 ### Reading
 
@@ -80,13 +80,13 @@ confirmation texts are in the README's
 
 - A profile image URL that passes the policy but fails to load shows the browser's broken image:
   the dossier falls back to the vehicle icon only for an empty or unsafe URL (`spec_drawer.rs` in
-  `apps/frontend/src/v2/pages/doctrine_and_info/vehicles/` sets no error handler).
+  `apps/frontend/src/pages/doctrine_and_info/vehicles/` sets no error handler).
 - A saved row takes its place by comparing names as text, while the API orders the list in the
   database's collation; the two orders can differ for mixed case until the page is loaded again.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/doctrine_and_info/vehicles/README.md#data)
+The README's [Data](/apps/frontend/src/pages/doctrine_and_info/vehicles/README.md#data)
 lists the calls and the fields the page reads and sends. Server-side, in
 `apps/api/src/community_content/handlers/vehicle_database/`:
 

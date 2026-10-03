@@ -40,17 +40,20 @@ fn crate_tiers_and_every_workspace_law_pass_this_checkout() {
 }
 
 #[test]
-fn frontend_layering_the_layer_table_maps_every_frontend_source_and_sits_at_its_ceiling() {
-    let (edges, unmapped) = layering_edges(&this_repo(), &FRONTEND_LAYERS[0]).unwrap();
-    assert_eq!(unmapped, Vec::<String>::new());
-    let production = edges.iter().filter(|edge| !edge.test).count();
+fn frontend_layering_the_layer_table_maps_every_frontend_source_and_holds_no_edge() {
+    let scan = layering_edges(&this_repo(), &FRONTEND_LAYERS[0]).unwrap();
+    assert_eq!(scan.unmapped, Vec::<String>::new());
+    assert!(
+        scan.unordered.is_empty(),
+        "every foundation sub-area sits in the order: {:?}",
+        scan.unordered
+    );
+    assert_eq!(scan.edges, Vec::new(), "the law is hard at zero");
+    let report = workspace_law_report(WorkspaceLaw::FrontendLayering, &this_repo());
+    assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
     assert_eq!(
-        (production, edges.len() - production),
-        (
-            FRONTEND_LAYERING_CEILING.production,
-            FRONTEND_LAYERING_CEILING.test
-        ),
-        "the ratchet ceiling equals today's edges: {edges:#?}"
+        report.lines.last().map(String::as_str),
+        Some("FRONTEND-LAYERING: PASS")
     );
 }
 

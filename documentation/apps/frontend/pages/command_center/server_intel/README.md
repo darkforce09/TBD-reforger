@@ -26,7 +26,7 @@ the page's files, calls and states.
 
 ## Code
 
-- [Server intel page](/apps/frontend/src/v2/pages/command_center/server_intel/) — the
+- [Server intel page](/apps/frontend/src/pages/command_center/server_intel/) — the
   route component `ServerIntelPage`, the panel and the stream subscription.
 - [Server infrastructure domain](/apps/api/src/server_infrastructure/) — the server
   list and the status stream the page reads.
@@ -36,7 +36,7 @@ the page's files, calls and states.
 - Depends on: the feature doc template; the page code, the server infrastructure handlers and the
   ticket registry in `.ai/tickets/`, which the feature doc is written from.
 - Used by: the page's in-code README, the command center pages README and the frontend API client
-  README in `apps/frontend/src/v2/core/api/`, which link the feature doc; the server
+  README in `apps/frontend/src/foundation/transport/`, which link the feature doc; the server
   control feature doc; the web app README's page table in `documentation/apps/frontend/`.
 - Rules: the feature doc keeps its name, which those links use; the blueprint set stays as it was
   captured and is never edited to match the built page.

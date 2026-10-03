@@ -27,7 +27,7 @@ page's files.
 
 ## Code
 
-- [Content manager page](/apps/frontend/src/v2/pages/administration/content_manager/) —
+- [Content manager page](/apps/frontend/src/pages/administration/content_manager/) —
   the route component `ContentManagerPage`, the post list, the editor and the hero upload.
 - [Community content domain](/apps/api/src/community_content/) — the announcement,
   Discord push and upload routes the page writes through.

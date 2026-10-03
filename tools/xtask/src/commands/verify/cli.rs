@@ -126,9 +126,9 @@ pub(crate) enum VerifyCmd {
     /// member under legacy/, and no member under legacy/ re-exports a new crate (a shim)
     #[command(name = "strangler")]
     Strangler,
-    /// Frontend-layering law (ratchet): a lower frontend layer never imports a higher one, pages
-    /// and workspaces never import each other, and one page area never imports another; more
-    /// edges than the ceiling fail
+    /// Frontend-layering law: a lower frontend layer never imports a higher one, pages and
+    /// workspaces never import each other, one page area never imports another, and a foundation
+    /// sub-area imports only the sub-areas before it in the declared order; any edge fails
     #[command(name = "frontend-layering")]
     FrontendLayering,
     /// Tailwind-sources law: every member that depends on leptos has an @source line in the app

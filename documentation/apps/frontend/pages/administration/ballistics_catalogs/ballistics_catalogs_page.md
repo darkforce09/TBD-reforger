@@ -11,15 +11,15 @@ through it.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/v2/pages/administration/ballistics_catalogs/`](/apps/frontend/src/v2/pages/administration/ballistics_catalogs/):
+- Code: [`apps/frontend/src/pages/administration/ballistics_catalogs/`](/apps/frontend/src/pages/administration/ballistics_catalogs/):
   `page.rs` holds the route component `BallisticsCatalogsPage` and the two-column layout;
   `upload_form.rs` the two file pickers and the multipart upload; `validation_report.rs` the
   outcome and the failed cases; `version_list.rs` the stored versions; `view_model.rs` the upload
   readiness, the outcome classes and the version rows. The folder's
-  [README](/apps/frontend/src/v2/pages/administration/ballistics_catalogs/README.md)
+  [README](/apps/frontend/src/pages/administration/ballistics_catalogs/README.md)
   describes each file.
 - Entry: the route, its tier and its layout are in the README's
-  [Routes](/apps/frontend/src/v2/pages/administration/ballistics_catalogs/README.md#routes).
+  [Routes](/apps/frontend/src/pages/administration/ballistics_catalogs/README.md#routes).
 - Related: the [mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md),
   which reads the published catalogs; the
   [game ballistics engine](/documentation/legacy/map_engine/data/scenario/ballistics/game_ballistics_engine.md),
@@ -28,7 +28,7 @@ through it.
 ## Behaviour
 
 The body renders inside `AdminGate`. The README's
-[How it works](/apps/frontend/src/v2/pages/administration/ballistics_catalogs/README.md#how-it-works)
+[How it works](/apps/frontend/src/pages/administration/ballistics_catalogs/README.md#how-it-works)
 quotes every headline and state text.
 
 ### Uploading a version
@@ -58,7 +58,7 @@ quotes every headline and state text.
 
 ## Data
 
-The README's [Data](/apps/frontend/src/v2/pages/administration/ballistics_catalogs/README.md#data)
+The README's [Data](/apps/frontend/src/pages/administration/ballistics_catalogs/README.md#data)
 lists each call with its DTO. Server-side:
 
 - `POST /api/v1/ballistics-catalogs` (`apps/api/src/operations/handlers/ballistics_catalogs/upload.rs`):

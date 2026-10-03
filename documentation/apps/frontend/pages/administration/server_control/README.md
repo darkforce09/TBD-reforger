@@ -19,7 +19,7 @@ documentation/apps/frontend/pages/administration/server_control/
 
 ## Code
 
-- [Server control page](/apps/frontend/src/v2/pages/administration/server_control/) — the
+- [Server control page](/apps/frontend/src/pages/administration/server_control/) — the
   route component `ServerControlPage`, the server card and its fleet command, deployment, fleet
   scenario and credential panels.
 - [Server infrastructure domain](/apps/api/src/server_infrastructure/) — the server,

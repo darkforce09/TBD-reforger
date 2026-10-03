@@ -47,8 +47,8 @@ are. A degenerate spread falls back to a due-east axis, so no result is NaN. Onl
     the patterns, aligns, spacing and orient;
   - `crate::editing::tools::placement`, which re-exports this vocabulary for the hosted selection
     transforms of `crate::editing::hosted_commands` and for the Mission Creator's arrange menu
-    (`apps/frontend/src/v2/apps/editor/ui/docks/top_strip/arrange.rs`) and bulk
-    confirmation (`apps/frontend/src/v2/apps/editor/bridge/host_state/`);
+    (`apps/frontend/src/workspaces/editor/ui/docks/top_strip/arrange.rs`) and bulk
+    confirmation (`apps/frontend/src/workspaces/editor/bridge/host_state/`);
   - `legacy/map_engine/tests/operation_boundaries.rs`.
 - Rules:
   - the patterns, aligns, spacing, orient and garrison positions match their goldens, and a move

@@ -26,7 +26,7 @@ page's files, calls and states.
 
 ## Code
 
-- [Leaderboards page](/apps/frontend/src/v2/pages/operations/leaderboards/) — the route
+- [Leaderboards page](/apps/frontend/src/pages/operations/leaderboards/) — the route
   component `LeaderboardsPage`, the podium, the roster and the dossier.
 - [Command center domain](/apps/api/src/command_center/) — the leaderboard and the
   per-player statistics the page reads.

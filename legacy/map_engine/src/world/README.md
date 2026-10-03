@@ -57,8 +57,8 @@ viewer also import directly.
   - `crate::streaming`, `crate::spatial`, `crate::frame`, `crate::overlay`, `crate::diagnostics`
     and `crate::editing::tools::line_of_sight`;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s canvas and input
-    handlers in `apps/frontend/src/v2/apps/editor/`, which read the elevation model, and
-    the debug benches in `apps/frontend/src/v2/apps/debug/`, which draw buildings;
+    handlers in `apps/frontend/src/workspaces/editor/`, which read the elevation model, and
+    the debug benches in `apps/frontend/src/workspaces/debug/`, which draw buildings;
   - the blueprint tooling, the world export, the map raster pipeline and the map checks in
     `tools/developer_tools/src/`.
 - Rules: the static world and the authored [mission](/documentation/glossary/g_to_m.md#mission)

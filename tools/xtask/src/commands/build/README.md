@@ -57,7 +57,7 @@ since half of them cover that module's pin.
   | `leptos-gates` | `leptos-build` once, `gate doctor`, `gate editor-suite` and `gate v-suite verify` |
   | `mortar-offline-gate` | `leptos-build`, then `gate mortar-offline`: the mortar calculator's offline pack, a reload with the server gone, and the page's solution against the native one; needs the Everon tile index and the recorded catalog reads |
   | `ballistics-wasm-agreement` | `leptos-build`, then `gate ballistics-agreement`: the seeded agreement cases solved by the browser bench `/debug/ballistics-agreement` against the native solves, one `case ballistics_wasm_agreement_<id>` line each; needs the recorded catalog reads |
-  | `ci-local-leptos` | `frontend` fmt, wasm32 clippy of all targets, native tests, then `trunk build --release` |
+  | `ci-local-leptos` | `frontend` fmt, clippy of all targets with `-D warnings` for wasm32 and natively, native tests, then `trunk build --release` |
 
 - Exit codes: 0 done, or a dry run printed; 2 no target, or an unknown one (`--list` with no
   target exits 0); the failing step's own code; 1 an ABI refusal or a spawn error; 127 a tool

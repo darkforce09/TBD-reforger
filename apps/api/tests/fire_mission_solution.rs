@@ -36,7 +36,7 @@
 //!    class where the regex is the *wider* of the two.
 //! 4. [`the_transcription_of_parse_grid_is_still_the_shipped_one`] — case 3 needs a copy of the
 //!    calculator's legacy `x, y` reader, `parse_legacy_grid` in
-//!    `frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs` (the frontend is a wasm
+//!    `apps/frontend/src/pages/field_tools/mortar/saved_fires/restore.rs` (the frontend is a wasm
 //!    crate and cannot be linked here); this pins the copy against the shipped function token
 //!    for token.
 //!
@@ -346,7 +346,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
 
 // ───────────────────────── the claim 0020 makes about its own regex ─────────────────────────────
 
-/// `frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs::parse_legacy_grid`, the
+/// `apps/frontend/src/pages/field_tools/mortar/saved_fires/restore.rs::parse_legacy_grid`, the
 /// calculator's reader of the legacy `x, y` grid text, transcribed.
 ///
 /// The frontend is a separate crate (`frontend`, built for `wasm32`) and cannot be linked
@@ -363,10 +363,10 @@ fn parse_legacy_grid(text: &str) -> Option<(f64, f64)> {
 
 /// The shipped source that defines the calculator's legacy grid reader.
 const SHIPPED_LEGACY_GRID_READER: &str =
-    include_str!("../../frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs");
+    include_str!("../../frontend/src/pages/field_tools/mortar/saved_fires/restore.rs");
 /// Where [`SHIPPED_LEGACY_GRID_READER`] lives, for failure messages.
 const SHIPPED_LEGACY_GRID_READER_PATH: &str =
-    "frontend/src/v2/pages/field_tools/mortar/saved_fires/restore.rs";
+    "apps/frontend/src/pages/field_tools/mortar/saved_fires/restore.rs";
 const MIGRATION_0020: &str = include_str!("../migrations/0020_fire_missions_solution.sql");
 
 /// The accept regex out of the shipped migration — both copies, which must be the same regex.

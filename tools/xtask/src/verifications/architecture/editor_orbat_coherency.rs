@@ -69,26 +69,27 @@ use verification_core::{NotRun, Pattern, Verdict, gate};
 // read and stripped back for the message, rather than mutating this process's cwd — tests run in
 // parallel threads.
 #[cfg(test)]
-const EDITOR_OPS: &str = "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs";
+const EDITOR_OPS: &str =
+    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/mod.rs";
 // The place path spans two crates: the document mutations in the map engine
 // (`data/store/operations` and the hosted commands that drive them) and the host half in the
 // frontend that arms a placement and commits it. Both sides are scanned together, and the scratch
 // fixtures perturb one of each, so moving a mutation across the crate boundary cannot bypass the
 // ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
-    "apps/frontend/src/v2/apps/editor/arsenal/loadout_commands.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/tactical_graphics_authoring.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/map_release.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/mod.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/palette_arming.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/armed_placement/zone_draw.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/attributes_modal.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/dock_mirrors.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/document_fields.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/installation.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/editor_context/mod.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/entity_selection.rs",
-    "apps/frontend/src/v2/apps/editor/bridge/host_state/undo_grouped_gestures.rs",
+    "apps/frontend/src/workspaces/editor/arsenal/loadout_commands.rs",
+    "apps/frontend/src/workspaces/editor/bridge/tactical_graphics_authoring.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/map_release.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/mod.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/palette_arming.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/zone_draw.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/attributes_modal.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/dock_mirrors.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/document_fields.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/installation.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/mod.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/entity_selection.rs",
+    "apps/frontend/src/workspaces/editor/bridge/host_state/undo_grouped_gestures.rs",
     "legacy/map_engine/src/data/store/operations/apply_faction/apply.rs",
     "legacy/map_engine/src/data/store/operations/apply_faction/authorship.rs",
     "legacy/map_engine/src/data/store/operations/apply_faction/library.rs",
@@ -149,21 +150,21 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
     "legacy/map_engine/src/editing/hosted_commands/zone_authoring.rs",
 ];
 const ORBAT_RS: &str = "legacy/map_engine/src/data/scenario/ast/factions/orbat_slot_template.rs";
-const ORBAT_MGR: &str = "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager.rs";
-const EDEN_CHROME: &str = "apps/frontend/src/v2/apps/editor/shell/eden_chrome.rs";
+const ORBAT_MGR: &str = "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager.rs";
+const EDEN_CHROME: &str = "apps/frontend/src/workspaces/editor/session/eden_chrome.rs";
 const SLOTS_GPU: &str = "legacy/map_engine/src/overlay/symbology/roles/classify.rs";
 
 /// Every UI source that can render the banned ORBAT copy, plus the editor shell.
 const ORBAT_UI_BAN_TARGETS: &[&str] = &[
     ORBAT_MGR,
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog.rs",
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/dialog_lifecycle.rs",
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/faction_templates.rs",
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/slot_inspector.rs",
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/snapshot.rs",
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/stats.rs",
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_panel.rs",
-    "apps/frontend/src/v2/apps/editor/ui/modals/orbat_manager/tree_rows.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/dialog.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/dialog_lifecycle.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/faction_templates.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/slot_inspector.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/snapshot.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/stats.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/tree_panel.rs",
+    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/tree_rows.rs",
     EDEN_CHROME,
 ];
 

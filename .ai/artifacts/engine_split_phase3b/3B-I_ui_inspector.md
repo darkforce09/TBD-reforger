@@ -33,7 +33,7 @@ the move, grep the crate for the old suffixes and paste the empty result.
 
 Sibling test files with their bottom-of-file declarations. Allowlist rows updated in the same
 commit. `//!` headers rewritten where they name `editor/panels`. Every
-`crate::v2::apps::editor::panels::…` call site for these eleven swept. `mission_editor.rs`'s mounts
+`crate::workspaces::editor::panels::…` call site for these eleven swept. `mission_editor.rs`'s mounts
 and re-exports repointed, never deleted. `xtask/` and `tools/` grepped for any path you moved.
 
 ## Verification — run once, at the end, from the repo root

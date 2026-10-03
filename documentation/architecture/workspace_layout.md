@@ -53,7 +53,7 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | Folder | Package | What it is |
 |---|---|---|
 | [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub, with the `api` server and the registry import and staging fixture tools |
-| [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk |
+| [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk; its `src/` holds five layers: `foundation/`, `features/`, `pages/`, `workspaces/` and `shell/` |
 | [`legacy/map_engine/`](/legacy/map_engine/README.md) | `map_engine` | map graphics, spatial computation, terrain formats, streaming and the mission domain |
 | [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | `graphics_engine` | GPU rendering primitives with no map concept |
 | [`apps/offline_service_worker/`](/apps/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs |
@@ -115,9 +115,9 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
   equipment exports and terrain tiles are ignored and rebuilt by the export tools.
 - **Documentation.** Every document lives under `documentation/`. A feature doc sits at the
   documentation root plus its code path without `src/`: `documentation/apps/api/` for `apps/api/`,
-  `documentation/legacy/map_engine/` for `legacy/map_engine/`. Two mirrors keep a shorter path
-  until a stage reshapes their code: the single-page app's documents also leave out `src/v2/`
-  (until S3), and the mod's leave out `apps/` and `Scripts/Game/TBD/` and sit in
+  `documentation/legacy/map_engine/` for `legacy/map_engine/`, `documentation/apps/frontend/workspaces/`
+  for `apps/frontend/src/workspaces/`. One mirror keeps a shorter path until a stage reshapes its
+  code: the mod's documents leave out `apps/` and `Scripts/Game/TBD/` and sit in
   `documentation/mod/` (until M1), as the
   [documentation standards](/documentation/standards/documentation_standards.md) set out.
 - **Deployment.** `deploy/` holds what runs the platform outside a developer machine: the API's
@@ -140,10 +140,11 @@ host agent's binary, systemd units and configuration folder included), gathered 
 files in `deploy/` with the Caddy site in its own `deploy/caddy/` folder, moved the recorded API
 responses to `contracts/fixtures/api_goldens/` and created the first two crates under `crates/`:
 `http_url_guard`, the one URL check the API and the single-page app link, and
-`offline_cache_policy`, the cache policy the service worker and the page share. The stages after
-it:
+`offline_cache_policy`, the cache policy the service worker and the page share. Stage S3 split
+the frontend's former domain tree in place into the `foundation/`, `features/`, `pages/`,
+`workspaces/` and `shell/` layers, with the transport, the route table and the Mission Creator's
+session and review workspace named for what they hold. The stages after it:
 
-- S3 splits the frontend's `src/v2/` layer in place.
 - S4 to S11 build the tiered crates under `crates/`, from the foundations through the
   mission, world, streaming, rendering, API, frontend and tool crates, and delete `legacy/` and
   the ticket engine.

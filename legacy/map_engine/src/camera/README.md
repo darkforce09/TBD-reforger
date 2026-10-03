@@ -46,7 +46,7 @@ markers.
   surface, device and damage), the slot and cluster methods of
   `crate::overlay::symbology::instances`, and `wasm-bindgen`.
 - Used by: the Mission Creator's bridge and input handlers under
-  `apps/frontend/src/v2/apps/editor/` and the debug benches under `apps/frontend/src/v2/apps/debug/`,
+  `apps/frontend/src/workspaces/editor/` and the debug benches under `apps/frontend/src/workspaces/debug/`,
   through `RenderEngine`'s JavaScript-facing methods.
 - Rules: only `viewport.rs` lives here, compiled for wasm32 with `render`; the cameras and the grid
   reference have one definition each, in `camera_math` and `map_coordinates`.
@@ -57,4 +57,4 @@ markers.
   their deck.gl parity.
 - [Map coordinates](/crates/geometry/map_coordinates/README.md) — the grid reference and the
   rounding rule.
-- [Mission Creator feature inventory: map viewport and camera](/documentation/apps/frontend/apps/editor/feature_inventory/map_viewport_and_camera.md) — pan, zoom and the map view in the Mission Creator.
+- [Mission Creator feature inventory: map viewport and camera](/documentation/apps/frontend/workspaces/editor/feature_inventory/map_viewport_and_camera.md) — pan, zoom and the map view in the Mission Creator.

@@ -204,7 +204,7 @@ Operator 2026-07-14: defer indefinitely; merge when **T-152.22** O1–O12 green.
 | [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md) | `iconKey` contract |
 | [`t090_render_lod_contract.md`](t090_render_lod_contract.md) | Zoom bands |
 | [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) | G8 declutter |
-| [`ROADMAP.md`](/documentation/apps/frontend/apps/editor/mission_creator_roadmap.md) | MC planning view |
+| [`ROADMAP.md`](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) | MC planning view |
 | [`.ai/artifacts/t152_10_verify_log.md`](../../../.ai/artifacts/t152_10_verify_log.md) | E2E gate (T-152.10) |
 | [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md) | Merge promotion |
 

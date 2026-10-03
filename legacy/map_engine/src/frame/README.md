@@ -93,8 +93,8 @@ it culls.
   - inside the crate: `crate::camera::viewport`, `crate::overlay`, `crate::world`,
     `crate::streaming`, `crate::spatial` (the viewshed texture), `crate::diagnostics`,
     `crate::doll` and `crate::editing`;
-  - the Mission Creator under `apps/frontend/src/v2/apps/editor/` (canvas mount, bridge,
-    input and tools) and the debug benches under `apps/frontend/src/v2/apps/debug/`;
+  - the Mission Creator under `apps/frontend/src/workspaces/editor/` (canvas mount, bridge,
+    input and tools) and the debug benches under `apps/frontend/src/workspaces/debug/`;
   - the engine-layers gate in `tools/xtask/src/verifications/architecture/`, which pins this
     folder's imports of the graphics engine.
 - Rules:

@@ -81,16 +81,15 @@ Run every command from the repository root.
    pass, exit 0. `cargo xtask ci <task>` runs any task `help` lists; an unknown name prints
    `xtask ci: no such task: <name>` and exits 2.
 
-5. Run the app lane alone: formatting, clippy for `wasm32-unknown-unknown`, the native tests and a
-   release Trunk build.
+5. Run the app lane alone: formatting, clippy for `wasm32-unknown-unknown` and natively, the
+   native tests and a release Trunk build.
 
    ```bash
    cargo xtask mk ci-local-leptos
    ```
 
-   Expected: the four command lines in turn, exit 0. Clippy runs without `-D warnings` here and in
-   the `frontend` job, so a warning prints and does not fail; the [API](/documentation/glossary/a_to_f.md#api) and engine lanes
-   deny warnings.
+   Expected: the five command lines in turn, exit 0. Both clippy runs pass `-D warnings` here and
+   in the `frontend` job, so a warning fails, as in the [API](/documentation/glossary/a_to_f.md#api) and engine lanes.
 
 6. Run the API's integration tests on a database of their own.
 
@@ -193,7 +192,7 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | API tests with Postgres (TEST-1) | `cargo xtask ci rust-test-it`; `cargo xtask db test-it` | in `rust-ci` | `api` (`cargo xtask ci api-test`) | wave |
 | developer_tools library tests | `cargo xtask ci developer-tools-test` | yes | `api` | wave, with the xtask tests |
 | tests of every workspace member without a dedicated task (derived from `Cargo.toml`, so a new member is tested by default) | `cargo xtask ci workspace-member-tests` | yes | `workspace-members` | wave, from the workspace members |
-| app: fmt, clippy (wasm32), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `frontend` | wasm32 check, clippy and tests; Trunk when the app changed |
+| app: fmt, clippy `-D warnings` (wasm32 and native), tests, Trunk build (TEST-2) | `cargo xtask mk ci-local-leptos` | yes | `frontend` | wasm32 check, clippy and tests; Trunk when the app changed |
 | generated contract types current | `cargo xtask ci verify-codegen-fresh` | in `ci-local-schema` | `schema`; `contracts.yml` | no |
 | schema validation (TEST-3, ENF-4) | `cargo xtask ci schema-validate` | in `ci-local-schema` | `schema`; `schema.yml` runs `cargo xtask schema validate` only | both |
 | `@contract` citations (TS-6, ENF-3) | `cargo xtask ci verify-citations` | in `ci-local-schema` | `schema`; `contracts.yml` | both, with the schema step |
