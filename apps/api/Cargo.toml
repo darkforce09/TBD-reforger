@@ -32,8 +32,14 @@ async-stream = "0.3.6"
 axum = { workspace = true, features = ["macros", "multipart"] }
 axum-extra = { version = "0.12.6", features = ["typed-header", "cookie"] }
 chrono = { workspace = true, features = ["serde"] }
+# The serde types generated from the contract schemas: the registry import decodes registry
+# envelopes into them, and the equipment data viewer and media upload answers are their types.
+contract_schema_types = { workspace = true }
 csv = "1.4.0"
 dotenvy = "0.15.7"
+# The fleet-command wire shapes, `ExecutorKind` and the machine credential format the ledger,
+# the machine credentials and the staging fixtures tool share with the fleet host agent.
+fleet_wire_contract = { workspace = true }
 futures = "0.3.32"
 governor = "0.10.4"
 hex = "0.4.3"
@@ -46,8 +52,6 @@ jsonschema = { workspace = true }
 jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto"] }
 pulldown-cmark = { version = "0.13.4", default-features = false }
 rand = { workspace = true }
-# typify-generated contract types validate string patterns via regress.
-regress = "0.10"
 reqwest = { workspace = true, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
 rust_decimal = { version = "1.42.1", features = ["db-postgres"] }
 rustls = { workspace = true, features = ["ring", "std", "tls12", "logging"] }
@@ -85,7 +89,11 @@ failpoints = []
 # through the guard and the database's approximation.
 http_url_guard = { workspace = true, features = ["test_fixtures"] }
 proptest = { workspace = true }
-# The repository-law scanners the `engineering_laws` suite runs.
-verification_core = { path = "../../tools/verification_core" }
+# The ECMA-262 engine the content URL policy tests compile the schemas' URL patterns with, the
+# engine the generated contract types check them with.
+regress = { workspace = true }
+# The repository laws and the pattern scanners the `engineering_laws` suite runs.
+repository_laws = { workspace = true }
+verification_core = { workspace = true }
 # The crate itself with `failpoints` on, for the lib unit tests and every `tests/*.rs` binary.
 api = { path = ".", features = ["failpoints"] }

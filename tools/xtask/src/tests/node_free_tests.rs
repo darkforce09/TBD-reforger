@@ -2,12 +2,8 @@ use super::*;
 use std::os::unix::fs::PermissionsExt;
 
 fn this_repo() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("tools/xtask has a parent")
-        .parent()
-        .expect("xtask is not the repo root")
-        .to_path_buf()
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root")
 }
 
 /// The member folders a [`TmpRepo`] workspace declares: the folders the repository's own members
@@ -20,7 +16,9 @@ const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
     "legacy/map_engine",
     "legacy/graphics_engine",
     "apps/offline_service_worker",
-    "tools/verification_core",
+    "tools/foundation/verification_core",
+    "tools/foundation/process_runner",
+    "tools/foundation/repository_laws",
     "tools/ticket_engine",
     "tools/xtask",
     "tools/developer_tools",
@@ -86,7 +84,9 @@ fn walk_is_nonempty_anti_vacuity() {
     for needle in [
         "/tools/xtask/",
         "/tools/developer_tools/",
-        "/tools/verification_core/",
+        "/tools/foundation/verification_core/",
+        "/tools/foundation/process_runner/",
+        "/tools/foundation/repository_laws/",
         "/tools/ticket_engine/",
         "/apps/ticketboard/src/",
         "/apps/api/src/",

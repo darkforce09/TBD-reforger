@@ -159,7 +159,7 @@ The agent may repeat the login but transmits the line once and never resends it;
 the reply up to 4,096 bytes with a truncation flag, and without a reply the command may or may not
 have run.
 
-In code: `FleetAction::ConsoleCommand` in `apps/api/src/server_infrastructure/models/fleet_command.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `apps/frontend/src/v2/pages/administration/server_control/fleet_commands/`.
+In code: `FleetAction::ConsoleCommand` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `HostCommand::ConsoleCommand` in `apps/fleet_host_agent/src/command_execution/host_command.rs` and `SessionRequest::ExecuteOnce` in `apps/fleet_host_agent/src/rcon/rcon_session.rs`; `console_command_form.rs` in `apps/frontend/src/v2/pages/administration/server_control/fleet_commands/`.
 
 See: [RCON](/documentation/glossary/n_to_z.md#rcon), [API decisions](/documentation/apps/api/decisions.md).
 
@@ -290,7 +290,7 @@ One operator command to one game server (`start`, `stop`, `restart`, `list_playe
 `kick`, `console_command`), kept in the API's command ledger from acceptance through an executor's claim to its
 outcome; [mission deployments](/documentation/glossary/g_to_m.md#mission-deployment) alone issue `load_mission` and `restart_with_mission`.
 
-In code: `FleetAction` in `apps/api/src/server_infrastructure/models/fleet_command.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `apps/api/src/server_infrastructure/handlers/`.
+In code: `FleetAction` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`; `fleet_commands.rs` and `fleet_executor.rs` in `apps/api/src/server_infrastructure/handlers/`.
 
 See: [fleet host agent](#fleet-host-agent), [console command](#console-command), [game runtime](/documentation/glossary/g_to_m.md#game-runtime), [server control](/documentation/glossary/n_to_z.md#server-control).
 

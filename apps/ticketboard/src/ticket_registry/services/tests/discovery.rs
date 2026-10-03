@@ -3,7 +3,8 @@ use crate::test_support::Scratch;
 use std::fs;
 
 fn mk_repo(root: &Path) {
-    fs::create_dir_all(root.join(ticket_engine::repository::TICKETS_DIR)).unwrap();
+    fs::create_dir_all(root.join(repository_layout::TICKETS_DIR)).unwrap();
+    fs::write(root.join(repository_layout::ROOT_MARKER), "").unwrap();
 }
 
 #[test]
@@ -44,7 +45,7 @@ fn ancestor_found_from_nested_cwd() {
     fs::create_dir_all(&cwd).unwrap();
     assert_eq!(resolve_repo_root(None, Some(&cwd)), Some(repo.clone()));
     // The repo root itself also resolves (ancestors() includes self).
-    assert_eq!(walk_up_for_tickets(&repo), Some(repo));
+    assert_eq!(resolve_repo_root(None, Some(&repo)), Some(repo));
 }
 
 #[test]

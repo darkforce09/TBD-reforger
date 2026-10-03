@@ -8,7 +8,7 @@ pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     if terrain != "everon" {
         bail!("build-landcover-mask: no SAP source registered for terrain \"{terrain}\"");
     }
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let sap = map_scratch_dir(&root, "everon").join("sap/everon-sap-ortho.png"); // E2c-allow
     // Checkout-relative spelling of `sap`, quoted verbatim in the meta JSON's provenance field and
     // in the missing-source error, where an absolute host path would be noise.
@@ -182,7 +182,7 @@ pub fn build_map_cartographic(terrain: &str) -> Result<u8> {
         );
         return Ok(1);
     }
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let tga = map_scratch_dir(&root, "everon").join("spike/TBD_SatExport_everon.tga"); // E2c-allow
     let out = map_scratch_dir(&root, "everon").join("map/everon-map-ortho.png"); // E2c-allow
     let water_mask_path = map_scratch_dir(&root, "everon").join("sap/water-inland-mask.png"); // E2c-allow

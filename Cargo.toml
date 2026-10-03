@@ -15,8 +15,10 @@ members = [
     # The library crates, one folder per category (`crates/<category>/<name>`): every manifest
     # under `crates/` is a member.
     "crates/*/*",
-    # Dependency-light verification and ticket libraries consumed by repository tooling.
-    "tools/verification_core",
+    # The tooling foundation crates (`tools/foundation/<name>`): every manifest under it is a
+    # member.
+    "tools/foundation/*",
+    # The dependency-light ticket library consumed by repository tooling.
     "tools/ticket_engine",
     "tools/xtask",
     "tools/developer_tools",
@@ -51,11 +53,17 @@ clap = "4"
 console_error_panic_hook = "0.1"
 # Lowercase hex SHA-256 and SHA-384 digests (`crates/foundation/content_digest`).
 content_digest = { path = "crates/foundation/content_digest" }
+# The serde types generated with typify from the contract JSON Schemas
+# (`crates/contracts/contract_schema_types`).
+contract_schema_types = { path = "crates/contracts/contract_schema_types" }
 # SplitMix64, the seeded deterministic generator (`crates/foundation/deterministic_random`).
 deterministic_random = { path = "crates/foundation/deterministic_random" }
 # Ear-clipping polygon triangulation behind `render_primitives`.
 earcutr = "0.5.0"
 flate2 = "1"
+# The fleet-command wire shapes, executor kind and machine credential format the API and the
+# fleet host agent share (`crates/contracts/fleet_wire_contract`).
+fleet_wire_contract = { path = "crates/contracts/fleet_wire_contract" }
 futures = "0.3"
 # Plain f64 geometry: vector products, 2D segment tests, rigid transforms, 3D boxes
 # (`crates/geometry/geometry_primitives`).
@@ -78,11 +86,22 @@ map_coordinates = { path = "crates/geometry/map_coordinates" }
 # (`crates/contracts/offline_cache_policy`).
 offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
 png = "0.17"
+# Child processes in their own process group, the container-to-host bridge and the ssh transport
+# (`tools/foundation/process_runner`).
+process_runner = { path = "tools/foundation/process_runner" }
 proptest = "1"
 rand = "0.10.2"
 regex = "1"
+# The ECMA-262 regular expressions the generated contract types check schema patterns with.
+regress = "0.10"
 # The renderer building blocks with no GPU handle (`crates/graphics/render_primitives`).
 render_primitives = { path = "crates/graphics/render_primitives" }
+# The structural engineering laws as pure checks over a checkout
+# (`tools/foundation/repository_laws`).
+repository_laws = { path = "tools/foundation/repository_laws" }
+# The checkout-root walk and the repository locations the tools share
+# (`tools/foundation/repository_layout`).
+repository_layout = { path = "tools/foundation/repository_layout" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
 # speaks HTTPS enables `rustls-no-provider` and installs the ring provider.
 reqwest = { version = "0.13.4", default-features = false }
@@ -105,6 +124,9 @@ tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
 url = "2.5"
 uuid = "1.23.4"
+# Fail-closed verdicts, pattern scans, the run report and the verification lock
+# (`tools/foundation/verification_core`).
+verification_core = { path = "tools/foundation/verification_core" }
 walkdir = "2"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"

@@ -20,8 +20,8 @@ use std::collections::{BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
+use process_runner::Run;
 use verification_core::NotRun;
-use verification_core::proc::Run;
 
 use super::path_mapping::parent_folder;
 

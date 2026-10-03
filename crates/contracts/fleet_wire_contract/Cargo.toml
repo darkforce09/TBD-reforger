@@ -1,0 +1,26 @@
+# The fleet-command wire contract the platform API and the fleet host agent share: the nine
+# `fleet-command.schema.json` shapes in both serde directions, the executor kind, their RFC 3339
+# timestamp spelling, the machine credential format and the secret-file limits.
+[package]
+name = "fleet_wire_contract"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Fleet-command wire shapes, executor kind, RFC 3339 spelling, machine credential format and secret-file limits shared by the API and the host agent."
+
+[package.metadata.layout]
+category = "crates/contracts"
+tier = 0
+targets = "any"
+
+[dependencies]
+chrono = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true, features = ["serde"] }
+
+[lints]
+workspace = true

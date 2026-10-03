@@ -36,11 +36,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use api::community_content::models::generated::equipment_data_viewer::{
-    dataset::EquipmentDatasetStatus, field_inventory::EquipmentFieldPage,
-    relationships::EquipmentRelationshipPage, resource_cards::EquipmentResourceCardPage,
-    resources::EquipmentResourcePage, source_inspection::EquipmentSourcePage,
-};
 use api::community_content::services::equipment_data_viewer::EquipmentDataService;
 use api::community_content::services::equipment_data_viewer::importing::generation_import;
 use api::core::application_state::AppState;
@@ -51,6 +46,11 @@ use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::ConnectInfo;
 use axum::http::{HeaderMap, Request, StatusCode, header};
+use contract_schema_types::community_content::equipment_data_viewer::{
+    dataset::EquipmentDatasetStatus, field_inventory::EquipmentFieldPage,
+    relationships::EquipmentRelationshipPage, resource_cards::EquipmentResourceCardPage,
+    resources::EquipmentResourcePage, source_inspection::EquipmentSourcePage,
+};
 use serde_json::Value;
 use tower::ServiceExt;
 

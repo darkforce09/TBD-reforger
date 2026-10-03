@@ -1,44 +1,18 @@
 //! Machine credentials: the per-server, per-executor secrets that authenticate a game host's
-//! control agent or a game runtime. The stored row never carries the secret itself.
+//! control agent or a game runtime. The stored row never carries the secret itself; the executor
+//! kind a credential authenticates is `fleet_wire_contract::ExecutorKind`.
 //!
 //! @contract machine-credential.schema.json#
-//! @contract machine-credential.schema.json#/definitions/ExecutorKind
 //! @contract machine-credential.schema.json#/definitions/MachineCredential
 //! @contract machine-credential.schema.json#/definitions/MachineCredentialIssue
 //! @contract machine-credential.schema.json#/definitions/MachineCredentialList
 
 use chrono::{DateTime, Utc};
+use fleet_wire_contract::ExecutorKind;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::core::wire_format::{rfc3339_utc, rfc3339_utc_opt};
-
-/// The program a credential authenticates on its server.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ExecutorKind {
-    /// The host process supervisor: process control and RCON delivery.
-    HostAgent,
-    /// The game runtime itself: runtime sessions, heartbeats, roster reads and deployments.
-    ModRuntime,
-}
-
-impl ExecutorKind {
-    pub fn as_str(self) -> &'static str {
-        match self {
-            Self::HostAgent => "host_agent",
-            Self::ModRuntime => "mod_runtime",
-        }
-    }
-
-    pub fn parse(value: &str) -> Option<Self> {
-        match value {
-            "host_agent" => Some(Self::HostAgent),
-            "mod_runtime" => Some(Self::ModRuntime),
-            _ => None,
-        }
-    }
-}
 
 /// One issued credential as administrators see it: provenance, use and revocation, no secret.
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]

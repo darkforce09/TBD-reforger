@@ -142,7 +142,7 @@ pub(super) fn flush() {
 /// capturing here would both hide a long build's progress and invent an interleaving.
 pub(super) fn spawn(cwd: Option<&str>, argv: &[&str]) -> i32 {
     flush();
-    let root = find_repo_root().unwrap_or_else(|_| PathBuf::from("."));
+    let root = find_repository_root().unwrap_or_else(|_| PathBuf::from("."));
     let mut c = Command::new(argv[0]);
     c.args(&argv[1..]);
     let dir = match cwd {
@@ -161,7 +161,7 @@ pub(super) fn spawn(cwd: Option<&str>, argv: &[&str]) -> i32 {
             {
                 use std::os::unix::process::ExitStatusExt;
                 if let Some(sig) = st.signal() {
-                    // A signal is not an exit code (verification_core::proc §1). Say so in the shared
+                    // A signal is not an exit code (process_runner §1). Say so in the shared
                     // library's words instead of letting 128+n read as an ordinary failure.
                     let nr = NotRun::Signalled {
                         tool: argv[0].to_string(),

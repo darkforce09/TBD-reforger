@@ -230,7 +230,7 @@ fn repoint(version: i64, checksum: &str) -> Result<u8> {
 /// applied bytes cannot be recovered from git and a human has verified the edit by hand.
 pub fn run(version: Option<i64>, force: bool) -> Result<u8> {
     echo("cargo xtask db repair-migration-checksum");
-    let repo_root = crate::core::repository_root::find_repo_root()?;
+    let repo_root = repository_layout::find_repository_root()?;
     let migrations = repo_root.join(WEB).join("migrations");
     let applied = applied_checksums()?;
     if applied.is_empty() {

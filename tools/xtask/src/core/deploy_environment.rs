@@ -8,8 +8,9 @@
 //! **Position:** shared plumbing under the `deploy`, `setup`, `debug` and `mod` command groups.
 //! [`deploy_environment_path`] picks the file (the `DEPLOY_ENV` variable, else
 //! [`crate::core::repository_layout::DEPLOY_ENV`] in the checkout); `assignment_syntax` owns the
-//! file's grammar, [`DeployHost`] the value of `TBD_SSH_HOST`, and [`DeployHostFolder`] the remote
-//! folders that default under the deploy user's home.
+//! file's grammar, [`DeployHost`] the value of `TBD_SSH_HOST`, [`DeployHostFolder`] the remote
+//! folders that default under the deploy user's home, and [`DeployEnvironment::ssh_base`] the ssh
+//! transport `process_runner` builds the remote argv with.
 //!
 //! **Signals & state:** a [`DeployEnvironment`] is an immutable snapshot of the file and of the
 //! process environment, taken when it is loaded; nothing here writes either.
@@ -23,6 +24,8 @@ use std::ffi::OsStr;
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
+
+use process_runner::secure_shell_transport::SshBase;
 
 use crate::core::repository_layout;
 
@@ -38,6 +41,12 @@ pub const DEPLOY_ENV_OVERRIDE_VARIABLE: &str = "DEPLOY_ENV";
 
 /// The setting that names the deploy host, as `user@host` or `host`.
 pub const DEPLOY_HOST_KEY: &str = "TBD_SSH_HOST";
+
+/// The setting holding the ssh password, when the deploy host takes one.
+pub const SSH_PASSWORD_KEY: &str = "TBD_SSH_PASS";
+
+/// The setting naming the ssh identity file, when the deploy host takes a key.
+pub const SSH_IDENTITY_FILE_KEY: &str = "TBD_SSH_IDENTITY_FILE";
 
 /// The deploy settings file this process reads, resolved by
 /// [`resolve_deploy_environment_path`] from `DEPLOY_ENV` and the working directory.
@@ -323,6 +332,15 @@ impl DeployEnvironment {
     pub fn deploy_host(&self) -> Result<DeployHost, SettingError> {
         let raw = self.required(DEPLOY_HOST_KEY)?;
         DeployHost::parse(raw).map_err(|problem| self.invalid(DEPLOY_HOST_KEY, problem))
+    }
+
+    /// How `ssh` reaches the deploy host: [`SshBase::from_settings`] over [`SSH_PASSWORD_KEY`]
+    /// (first) and [`SSH_IDENTITY_FILE_KEY`].
+    pub fn ssh_base(&self) -> SshBase {
+        SshBase::from_settings(
+            self.value(SSH_PASSWORD_KEY),
+            self.value(SSH_IDENTITY_FILE_KEY),
+        )
     }
 }
 

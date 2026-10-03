@@ -47,7 +47,7 @@ are the ones this module reads; the Workbench water exporter in
 - Depends on: `world_file_formats::archives` (`water`, `codec`, `version`),
   `world_file_formats::containers` (`header`, `tbdb`) and
   `map_engine::world::terrain::water::vectors::downsample_index`, which fix both formats;
-  `crate::repository_layout` and `crate::browser_testing::server::repo_root` for the folders.
+  `crate::repository_layout` (with `compiled_checkout_root` for the checkout root) for the folders.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (`map water`); no xtask recipe
   runs it, and no terrain commits its output.
 - Rules: the same staging files give the same bytes on any host

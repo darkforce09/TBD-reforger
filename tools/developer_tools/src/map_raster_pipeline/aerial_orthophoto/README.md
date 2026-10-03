@@ -53,7 +53,7 @@ paks (ENFUSION_GAME_PATH) ─▶ stitch-sap-ortho ─▶ everon-sap-ortho.png + 
 - Depends on: the parent's constants and types and `super::image_operations`;
   `crate::enfusion_pak::PakVfs`; `crate::world_export_pipeline::enfusion_texture_decoder` for the
   cell decode; `crate::repository_layout` for the scratch, terrain and artifact folders;
-  `crate::browser_testing::server::repo_root` for the checkout root.
+  `crate::repository_layout::compiled_checkout_root` for the checkout root.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (the `stitch-sap-ortho`,
   `blend-sap-seams`, `verify-sap-seams`, `analyze-sap-seams` and `verify-sap-ortho` subcommands);
   `verify-sap-ortho` is a step of `cargo xtask ci map-water-everon`.

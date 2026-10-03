@@ -18,10 +18,10 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use api::core::application_state::AppState;
-use api::server_infrastructure::models::machine_credential::ExecutorKind;
 use api::server_infrastructure::services::machine_credentials::{
     issue_machine_credential, revoke_machine_credential,
 };
+use fleet_wire_contract::ExecutorKind;
 use uuid::Uuid;
 
 use super::spec::{Actor, Executor, Role};

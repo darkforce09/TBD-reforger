@@ -25,18 +25,20 @@ pub(super) fn run_terrain_alignment_strict() -> anyhow::Result<u8> {
 }
 
 pub(super) fn run_no_select_star() -> anyhow::Result<u8> {
-    crate::verifications::database::sql_deserialization::verify_no_select_star(&find_repo_root()?)
+    crate::verifications::database::sql_deserialization::verify_no_select_star(
+        &find_repository_root()?,
+    )
 }
 
 pub(super) fn run_route_tags() -> anyhow::Result<u8> {
-    crate::verifications::architecture::route_tags::verify_route_tags(&find_repo_root()?)
+    crate::verifications::architecture::route_tags::verify_route_tags(&find_repository_root()?)
 }
 
 /// Judges the pinned Enfusion script roots against the comment card (no `--path` narrowing).
 pub(super) fn run_enfusion_comments() -> anyhow::Result<u8> {
     Ok(
         crate::verifications::mod_scripts::enfusion_comments::verify_enfusion_comments(
-            &find_repo_root()?,
+            &find_repository_root()?,
             &[],
         ),
     )
@@ -44,24 +46,24 @@ pub(super) fn run_enfusion_comments() -> anyhow::Result<u8> {
 
 pub(super) fn run_engine_layers() -> anyhow::Result<u8> {
     crate::verifications::architecture::engine_layer_boundaries::verify_engine_layers(
-        &find_repo_root()?,
+        &find_repository_root()?,
     )
 }
 
 pub(super) fn run_staging_compose_paths() -> anyhow::Result<u8> {
     crate::verifications::deployment::staging_compose_paths::verify_staging_compose_paths(
-        &find_repo_root()?,
+        &find_repository_root()?,
     )
 }
 
 pub(super) fn run_mission_rest_size_limits() -> anyhow::Result<u8> {
     crate::verifications::mod_scripts::mission_rest_size_limits::verify_mission_rest_size_limits(
-        &find_repo_root()?,
+        &find_repository_root()?,
     )
 }
 
 pub(super) fn run_ci_schema_parity() -> anyhow::Result<u8> {
-    crate::verifications::ci::schema_parity::verify_ci_schema_parity(&find_repo_root()?)
+    crate::verifications::ci::schema_parity::verify_ci_schema_parity(&find_repository_root()?)
 }
 
 /// `cargo xtask verify readme-coverage` over the whole repository's committed files, the view
@@ -69,7 +71,7 @@ pub(super) fn run_ci_schema_parity() -> anyhow::Result<u8> {
 pub(super) fn run_readme_coverage() -> anyhow::Result<u8> {
     Ok(
         crate::verifications::documentation::readme_coverage::verify_readme_coverage(
-            &find_repo_root()?,
+            &find_repository_root()?,
             &GateRequest::default(),
         ),
     )
@@ -80,7 +82,7 @@ pub(super) fn run_readme_coverage() -> anyhow::Result<u8> {
 pub(super) fn run_link_check() -> anyhow::Result<u8> {
     use crate::verifications::documentation::link_check::{BreakListing, verify_link_check};
     Ok(verify_link_check(
-        &find_repo_root()?,
+        &find_repository_root()?,
         &GateRequest::default(),
         BreakListing::First,
     ))
@@ -90,7 +92,7 @@ pub(super) fn run_link_check() -> anyhow::Result<u8> {
 pub(super) fn run_markdown_placement() -> anyhow::Result<u8> {
     Ok(
         crate::verifications::documentation::markdown_placement::verify_markdown_placement(
-            &find_repo_root()?,
+            &find_repository_root()?,
             &GateRequest::default(),
         ),
     )

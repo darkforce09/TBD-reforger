@@ -5,6 +5,7 @@
 use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::response::Json;
+use fleet_wire_contract::ExecutorKind;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
@@ -12,7 +13,6 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::path_parameters::PathParams;
 use crate::operations::models::live_occupancy::{DeploymentDecision, DeploymentRequest, EndedLife};
 use crate::operations::services::live_slot_occupancy::{authorize_deployment, end_life};
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 
 fn parse_id(raw: &str, field: &str) -> Result<Uuid, ApiError> {

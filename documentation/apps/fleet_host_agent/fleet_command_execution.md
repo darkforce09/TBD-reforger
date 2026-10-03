@@ -102,7 +102,7 @@ in the game runtime.
 ### Known discrepancies
 
 - The agent counts the RCON password's three-character minimum in characters but says bytes in
-  its error (`apps/fleet_host_agent/src/agent_configuration/secret_files.rs:84-95`). Only a
+  its error (`apps/fleet_host_agent/src/agent_configuration/secret_files.rs:67-79`). Only a
   password written by hand can meet the difference: `cargo xtask deploy staging` generates each
   fleet instance's password on the host as 32 lowercase hex digits and refuses an existing file of
   any other shape (`RCON_PASSWORD_SHAPE` in

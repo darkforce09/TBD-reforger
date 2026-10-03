@@ -214,7 +214,7 @@ fn run() -> anyhow::Result<ExitCode> {
             } else {
                 reclassify::Mode::Check
             };
-            let base = reclassify::resolve_out_base(out.as_deref());
+            let base = reclassify::resolve_out_base(out.as_deref())?;
             Ok(ExitCode::from(reclassify::reclassify_terrain(
                 &terrain,
                 mode,
@@ -234,7 +234,7 @@ fn run() -> anyhow::Result<ExitCode> {
             // just produced, so the archive is the JSON's centrelined twin by construction — see
             // `roads_emit`'s module docs. Both paths are printed because an operator who only
             // sees one of them cannot tell which lane a stale asset came from.
-            let dir = roads_emit::resolve_terrain_dir(&terrain, out.as_deref());
+            let dir = roads_emit::resolve_terrain_dir(&terrain, out.as_deref())?;
             let (rkyv, bytes) = roads_emit::emit_road_network(&dir)?;
             println!(
                 "build-roads: {} + {} ({bytes} bytes)",

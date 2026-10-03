@@ -48,7 +48,7 @@ states, and declares both files.
 
 - Depends on: `ticket_engine` (`corpus_pins`, `wave_lock`, `registry`),
   `crate::commands::platform::slice_worktree`, `crate::core::repository_layout::WORKTREES_DIR`,
-  `verification_core::proc::Run`, and `git`.
+  `process_runner::Run`, and `git`.
 - Used by: `tools/xtask/src/commands/mod_ops/wave_execution.rs`, which re-exports `run` to the
   `mod` dispatch.
 - Rules: a missing lock refuses instead of reporting every wave shipped

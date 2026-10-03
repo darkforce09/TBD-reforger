@@ -26,13 +26,13 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 
 use anyhow::Result;
-use verification_core::proc::{self, Run};
+use process_runner::Run;
 use verification_core::verdict::NotRun;
 
 use crate::core::deploy_environment::{
     DeployEnvironment, DeployHostFolder, SettingError, deploy_environment_path,
 };
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// Optional absolute ssh path for unit tests (avoids PATH mutation).
 const ENV_SSH: &str = "TBD_BOOTSTRAP_STAGING_SSH";
@@ -51,7 +51,7 @@ docker compose version 2>/dev/null || docker --version 2>/dev/null || echo "dock
 
 /// Entry for `xtask mod bootstrap-staging`.
 pub fn run() -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     match DeployEnvironment::load_if_present(&deploy_environment_path(&root)) {
         Ok(environment) => run_with_environment(&environment),
         Err(error) => {
@@ -183,7 +183,7 @@ fn resolve_tool(env_key: &str, name: &str) -> Result<PathBuf, NotRun> {
             return Err(NotRun::ToolAbsent(name.to_string()));
         }
     }
-    proc::which(name)
+    process_runner::which(name)
 }
 
 fn ssh_base(cfg: &Cfg) -> Result<(String, Vec<String>), u8> {

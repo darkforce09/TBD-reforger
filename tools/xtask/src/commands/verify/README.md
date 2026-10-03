@@ -17,7 +17,7 @@ tools/xtask/src/commands/verify/
 ## How it works
 
 `tools/xtask/src/cli/mod.rs` mounts `VerifyCmd` as the `verify` group. `dispatch::run` matches
-the verb, resolves the checkout root with `crate::core::repository_root::find_repo_root` where the
+the verb, resolves the checkout root with `repository_layout::find_repository_root` where the
 check takes one, and returns the check's exit code unchanged. The folder holds no check logic:
 `DocumentationGateArgs` (`--path`, `--with-untracked`) becomes the `GateRequest` of the
 documentation gates, and `--report` of `link-check` picks every break over the first ones.

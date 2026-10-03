@@ -33,12 +33,12 @@ use axum::response::Json;
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::community_content::models::generated::content_upload::{
-    ContentRefusalCode, UploadResponse, UploadResponseUrl,
-};
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::middleware::AdminUser;
+use contract_schema_types::community_content::content_upload::{
+    ContentRefusalCode, UploadResponse, UploadResponseUrl,
+};
 
 use image_format::UploadImageExtension;
 use upload_store::store_upload;

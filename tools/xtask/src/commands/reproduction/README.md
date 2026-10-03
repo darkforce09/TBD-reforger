@@ -71,7 +71,7 @@ Each runs as `cargo xtask repro <command>`; a clap usage error exits 2.
 
 ## Boundaries
 
-- Depends on: `verification_core::proc` for curl; `serde_json` and `regex`; curl; the website API
+- Depends on: `process_runner` for curl; `serde_json` and `regex`; curl; the website API
   with its dev login, `POST /api/v1/missions` and `POST /api/v1/missions/{id}/versions`.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; people reproducing an upload failure.
 - Rules: the token comes from the `access_token` of the dev-login redirect

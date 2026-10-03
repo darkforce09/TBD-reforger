@@ -1,7 +1,7 @@
 //! The write guard for every `enf` command whose output is a reference lane.
 //!
 //! **Role:** Resolves an output folder and accepts it only inside the references folder
-//! ([`crate::repository_layout::REFERENCES_DIR`]), and removes a previous output only when the
+//! ([`::repository_layout::REFERENCES_DIR`]), and removes a previous output only when the
 //! operator asked for it with `--replace`.
 //!
 //! **Position:** Called by [`crate::enfusion_tooling::cli`] before `enf carve`, `enf extract` and
@@ -23,13 +23,9 @@ use anyhow::{Context, Result, bail};
 ///
 /// A relative `out` resolves against the working directory, as the clap defaults do.
 pub fn checked_reference_output(out: &Path) -> Result<PathBuf> {
-    let root = crate::repository_paths::find_repo_root()?;
+    let root = ::repository_layout::find_repository_root()?;
     let cwd = std::env::current_dir().context("reading the working directory")?;
-    reference_output_within(
-        &root.join(crate::repository_layout::REFERENCES_DIR),
-        &cwd,
-        out,
-    )
+    reference_output_within(&root.join(::repository_layout::REFERENCES_DIR), &cwd, out)
 }
 
 /// Accept `out`, resolved against `cwd`, only strictly inside the existing folder `references`.

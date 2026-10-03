@@ -2,8 +2,12 @@ use super::*;
 
 const BASE: &str = "http://localhost:5196";
 
+fn corpus() -> PathBuf {
+    fixtures_dir().expect("fixture corpus")
+}
+
 fn stem(method: &str, path: &str) -> String {
-    match route(method, &format!("{BASE}{path}")) {
+    match route(&corpus(), method, &format!("{BASE}{path}")) {
         Reply::Missing(m) => m.expected_file,
         Reply::Fixture { path, .. } => path.file_name().unwrap().to_string_lossy().into_owned(),
         Reply::Canned(_) => "<canned>".into(),
@@ -51,7 +55,7 @@ fn a_query_string_does_not_change_which_fixture_answers() {
 #[test]
 fn the_status_stream_resolves_to_an_event_stream_fixture() {
     let url = format!("{BASE}/api/v1/servers/00000000-0000-4000-d000-000000000001/status/stream");
-    match route("GET", &url) {
+    match route(&corpus(), "GET", &url) {
         Reply::Fixture { path, content_type } => {
             assert_eq!(content_type, "text/event-stream");
             assert!(
@@ -71,7 +75,7 @@ fn the_status_stream_resolves_to_an_event_stream_fixture() {
 #[test]
 fn an_event_stream_body_keeps_its_literal_frame_delimiter() {
     let url = format!("{BASE}/api/v1/servers/00000000-0000-4000-d000-000000000001/status/stream");
-    let Reply::Fixture { path, content_type } = route("GET", &url) else {
+    let Reply::Fixture { path, content_type } = route(&corpus(), "GET", &url) else {
         panic!("the status stream must resolve to a committed SSE fixture");
     };
     let bytes = body_bytes(&path, content_type).expect("the SSE fixture is readable");
@@ -86,7 +90,9 @@ fn an_event_stream_body_keeps_its_literal_frame_delimiter() {
 /// compact body the backend sends.
 #[test]
 fn a_json_fixture_is_served_minified() {
-    let Reply::Fixture { path, content_type } = route("GET", &format!("{BASE}/api/v1/me")) else {
+    let Reply::Fixture { path, content_type } =
+        route(&corpus(), "GET", &format!("{BASE}/api/v1/me"))
+    else {
         panic!("GET__me.json is committed");
     };
     let bytes = body_bytes(&path, content_type).expect("GET__me.json is readable");
@@ -97,7 +103,11 @@ fn a_json_fixture_is_served_minified() {
 /// rendered a stable error state that the settle loop accepted as a baseline.
 #[test]
 fn an_unanswered_api_call_is_reported_rather_than_filled_in() {
-    match route("GET", &format!("{BASE}/api/v1/there-is-no-such-resource")) {
+    match route(
+        &corpus(),
+        "GET",
+        &format!("{BASE}/api/v1/there-is-no-such-resource"),
+    ) {
         Reply::Missing(m) => {
             assert_eq!(m.expected_file, "GET__there-is-no-such-resource.json");
             assert!(m.url.ends_with("/api/v1/there-is-no-such-resource"));
@@ -111,11 +121,15 @@ fn an_unanswered_api_call_is_reported_rather_than_filled_in() {
 #[test]
 fn a_non_api_request_passes_through_to_the_static_server() {
     assert!(matches!(
-        route("GET", &format!("{BASE}/index.html")),
+        route(&corpus(), "GET", &format!("{BASE}/index.html")),
         Reply::Passthrough
     ));
     assert!(matches!(
-        route("GET", &format!("{BASE}/map-assets/everon/terrain.tbdd")),
+        route(
+            &corpus(),
+            "GET",
+            &format!("{BASE}/map-assets/everon/terrain.tbdd")
+        ),
         Reply::Passthrough
     ));
 }
@@ -124,11 +138,11 @@ fn a_non_api_request_passes_through_to_the_static_server() {
 #[test]
 fn the_token_endpoints_are_answered_without_a_fixture() {
     assert!(matches!(
-        route("POST", &format!("{BASE}/api/v1/auth/refresh")),
+        route(&corpus(), "POST", &format!("{BASE}/api/v1/auth/refresh")),
         Reply::Canned(_)
     ));
     assert!(matches!(
-        route("POST", &format!("{BASE}/api/v1/auth/logout")),
+        route(&corpus(), "POST", &format!("{BASE}/api/v1/auth/logout")),
         Reply::Canned(_)
     ));
 }
@@ -138,7 +152,8 @@ fn the_token_endpoints_are_answered_without_a_fixture() {
 /// signed-in route would render its sign-in gate instead of the page.
 #[test]
 fn the_canned_refresh_answer_is_a_complete_bearer_token_pair() {
-    let Reply::Canned(pair) = route("POST", &format!("{BASE}/api/v1/auth/refresh")) else {
+    let Reply::Canned(pair) = route(&corpus(), "POST", &format!("{BASE}/api/v1/auth/refresh"))
+    else {
         panic!("the refresh exchange is answered without a fixture");
     };
     let mut fields: Vec<&str> = pair

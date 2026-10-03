@@ -38,8 +38,8 @@ editing a schema.
 ### How a schema reaches code
 
 - Generated types: `cargo xtask schema codegen` runs typify over each schema in `TARGETS` and
-  writes one module folder into the `models/generated/` or `contract/generated/` folder of the
-  owning API domain. Every generated file opens with a `DO NOT EDIT` header naming its source
+  writes one module folder into `crates/contracts/contract_schema_types/src/generated/`, under the
+  module of the API domain that serves or reads the schema. Every generated file opens with a `DO NOT EDIT` header naming its source
   schema, and `cargo xtask ci verify-codegen-fresh` fails on any missing, stale or stray file.
 - Hand-written models: `loadout-export.schema.json` stays out of codegen, because typify expands
   its versioned `oneOf` branches into empty structs, which is silent and wrong rather than loud and
@@ -106,8 +106,7 @@ emission and the mod's own version check.
   mission-deployment contracts use draft-07 without an `$id`; the others use draft 2020-12 with
   an `$id`, through which the gates resolve cross-file references. The [definitions README](/contracts/definitions/README.md#format)
   gives the naming and encoding rules.
-- The generated modules under `apps/api/src/*/models/generated/` and
-  `apps/api/src/missions/contract/generated/`.
+- The generated modules under `crates/contracts/contract_schema_types/src/generated/`.
 - A published mission artifact is validated once, when it is compiled, and its stored bytes are
   never reinterpreted under a newer schema.
 

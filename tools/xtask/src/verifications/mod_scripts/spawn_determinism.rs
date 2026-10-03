@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use regex::Regex;
-use verification_core::{Pattern, gate, proc};
+use verification_core::{Pattern, gate};
 
 #[path = "spawn_determinism_live.rs"]
 mod live;
@@ -65,7 +65,7 @@ pub(crate) fn keep_snapshots() -> bool {
 /// Reproduced deliberately — preflight then fail-fast with the actionable message.
 pub(crate) fn port_open() -> bool {
     let needle = format!(":{} ", wb_port());
-    match proc::Run::new("ss").arg("-tln").output() {
+    match process_runner::Run::new("ss").arg("-tln").output() {
         Ok(o) if o.code == 0 => o.stdout.lines().any(|l| l.contains(&needle)),
         _ => false,
     }

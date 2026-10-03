@@ -2,22 +2,20 @@
 //!
 //! A secret file must be an absolute path to a regular file that no other user can read or
 //! write (no group or other permission bits), at most 4 KiB, holding the secret as UTF-8 text;
-//! surrounding whitespace, such as a trailing newline, is ignored.
+//! surrounding whitespace, such as a trailing newline, is ignored. The size and permission limits
+//! and the machine credential format are the `fleet_wire_contract` ones the writer of the files
+//! applies.
 
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
+use fleet_wire_contract::machine_credential_format::check_machine_credential_format;
+use fleet_wire_contract::secret_file_limits::{SECRET_FILE_MAX_BYTES, SHARED_PERMISSION_BITS};
+
 use super::configuration_error::{ConfigurationError, SecretFileProblem};
 use crate::secret_text::SecretText;
 
-const SECRET_FILE_MAX_BYTES: u64 = 4096;
-/// Group and other permission bits.
-const SHARED_PERMISSIONS: u32 = 0o077;
-/// The shape of a machine credential secret (contracts machine-credential.schema.json).
-const CREDENTIAL_PREFIX: &str = "tbdm_";
-const CREDENTIAL_ID_HEX_DIGITS: usize = 32;
-const CREDENTIAL_RANDOM_HEX_DIGITS: usize = 64;
 /// Arma Reforger requires an RCON password of at least 3 characters without spaces.
 const RCON_PASSWORD_MIN_CHARS: usize = 3;
 /// The password travels in one login packet.
@@ -42,7 +40,7 @@ pub(super) fn read_secret_file(
         return Err(rejected(SecretFileProblem::NotRegularFile));
     }
     let mode = metadata.permissions().mode() & 0o777;
-    if mode & SHARED_PERMISSIONS != 0 {
+    if mode & SHARED_PERMISSION_BITS != 0 {
         return Err(rejected(SecretFileProblem::AccessibleToOthers { mode }));
     }
     if metadata.len() > SECRET_FILE_MAX_BYTES {
@@ -58,27 +56,12 @@ pub(super) fn read_secret_file(
     Ok(SecretText::new(secret))
 }
 
-/// `tbdm_<32 lowercase hex digits>_<64 lowercase hex digits>`.
+/// `tbdm_<32 lowercase hex digits>_<64 lowercase hex digits>`, checked by
+/// [`check_machine_credential_format`].
 pub(super) fn machine_credential_format(secret: &str) -> Result<(), &'static str> {
-    const PROBLEM: &str =
-        "a machine credential reads tbdm_<32 lowercase hex digits>_<64 lowercase hex digits>";
-    let lowercase_hex = |part: &str, digits: usize| {
-        part.len() == digits
-            && part
-                .bytes()
-                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-    };
-    let (id, random) = secret
-        .strip_prefix(CREDENTIAL_PREFIX)
-        .and_then(|rest| rest.split_once('_'))
-        .ok_or(PROBLEM)?;
-    if lowercase_hex(id, CREDENTIAL_ID_HEX_DIGITS)
-        && lowercase_hex(random, CREDENTIAL_RANDOM_HEX_DIGITS)
-    {
-        Ok(())
-    } else {
-        Err(PROBLEM)
-    }
+    check_machine_credential_format(secret).map_err(
+        |_| "a machine credential reads tbdm_<32 lowercase hex digits>_<64 lowercase hex digits>",
+    )
 }
 
 /// At least 3 characters, at most 256 bytes, no whitespace or control characters.

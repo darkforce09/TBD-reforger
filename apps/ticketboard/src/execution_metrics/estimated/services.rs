@@ -4,7 +4,7 @@ pub fn no_estimates_text() -> String {
     format!(
         "no estimates yet — {}/ has no files; estimate files are generated for shipped tickets \
          that never got a run receipt",
-        ticket_engine::repository::ESTIMATES_DIR
+        repository_layout::ESTIMATES_DIR
     )
 }
 
@@ -27,7 +27,7 @@ pub const NOTE_ABSENT_TIP: &str = "listed in estimated[] — this ticket carries
 pub const ABSENT_ESTIMATED_MARKER: &str = "— (estimated absent)";
 
 pub fn estimates_dir(repo_root: &Path) -> PathBuf {
-    repo_root.join(ticket_engine::repository::ESTIMATES_DIR)
+    repo_root.join(repository_layout::ESTIMATES_DIR)
 }
 
 pub(super) fn rel_of(repo_root: &Path, path: &Path) -> String {
@@ -92,7 +92,7 @@ pub fn load_raw(repo_root: &Path) -> RawEstimates {
                 rel: rel_of(repo_root, &path),
                 reason: format!(
                     "estimate files live flat at {}/<id>.json — unexpected subdirectory",
-                    ticket_engine::repository::ESTIMATES_DIR
+                    repository_layout::ESTIMATES_DIR
                 ),
             });
             continue;

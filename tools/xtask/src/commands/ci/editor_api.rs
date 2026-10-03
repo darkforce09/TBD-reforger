@@ -34,7 +34,7 @@ pub fn run() -> i32 {
 }
 
 fn run_inner() -> Result<(), String> {
-    let root = crate::core::repository_root::find_repo_root().map_err(|e| e.to_string())?;
+    let root = repository_layout::find_repository_root().map_err(|e| e.to_string())?;
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|s| s.parse().ok())
@@ -107,7 +107,8 @@ fn healthz(port: u16) -> bool {
 
 /// Regenerate in memory and compare every contract output, including untracked files.
 pub fn verify_codegen_fresh() -> i32 {
-    let result = crate::core::repository_root::find_repo_root()
+    let result = repository_layout::find_repository_root()
+        .map_err(anyhow::Error::from)
         .and_then(|root| crate::commands::generate::schema_types::verify_fresh(&root));
     match result {
         Ok(()) => {
@@ -126,7 +127,7 @@ pub fn verify_codegen_fresh() -> i32 {
 /// CI no longer uses `actions/setup-go`. GitHub-hosted runners still ship `go`; locally the
 /// binary already lives in `~/go/bin` (mk_ci PATH prepend). A missing tool is DidNotRun, never OK.
 pub fn verify_editorconfig() -> i32 {
-    let root = match crate::core::repository_root::find_repo_root() {
+    let root = match repository_layout::find_repository_root() {
         Ok(r) => r,
         Err(e) => {
             eprintln!("xtask: {e:#}");
@@ -148,7 +149,7 @@ pub fn verify_editorconfig() -> i32 {
             return 2;
         }
     };
-    match verification_core::proc::Run::new(&bin).cwd(&root).output() {
+    match process_runner::Run::new(&bin).cwd(&root).output() {
         Ok(out) => {
             print!("{}", out.stdout);
             eprint!("{}", out.stderr);
@@ -186,14 +187,14 @@ fn prepend_go_bins() {
 }
 
 fn ensure_editorconfig_checker() -> Result<PathBuf, verification_core::NotRun> {
-    if let Ok(p) = verification_core::proc::which("editorconfig-checker") {
+    if let Ok(p) = process_runner::which("editorconfig-checker") {
         return Ok(p);
     }
-    match verification_core::proc::Run::new("go")
+    match process_runner::Run::new("go")
         .args(["install", EDITORCONFIG_PIN])
         .status()
     {
-        Ok(0) => verification_core::proc::which("editorconfig-checker"),
+        Ok(0) => process_runner::which("editorconfig-checker"),
         Ok(code) => Err(verification_core::NotRun::ToolError {
             tool: "go install editorconfig-checker".into(),
             status: code,

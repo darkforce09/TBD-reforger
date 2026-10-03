@@ -19,8 +19,8 @@ use super::topo::{
     TOPO_AIRFIELD, TOPO_FARM_TRACK, TOPO_GRAVEL_COUNTRY_ROAD, TOPO_MAIN_HIGHWAY,
     TOPO_SECONDARY_ASPHALT, decode_topo,
 };
-use crate::browser_testing::server::repo_root;
 use crate::enfusion_pak::PakVfs;
+use crate::repository_layout::compiled_checkout_root;
 use crate::world_export_pipeline::forest_contours as forest;
 use crate::world_export_pipeline::forest_contours::{Tree, derive_forest_regions};
 use crate::world_export_pipeline::polygon_geometry::chunk_key;

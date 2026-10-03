@@ -10,7 +10,7 @@ mod mission_artifact_support;
 use axum::http::StatusCode;
 use serde_json::{Value, json};
 
-use api::missions::models::generated::{mission_deployment, mission_review};
+use contract_schema_types::missions::{mission_deployment, mission_review};
 use contract_support::{assert_decodes, assert_invalid, assert_valid};
 use mission_artifact_support::{MissionFixture, machine};
 

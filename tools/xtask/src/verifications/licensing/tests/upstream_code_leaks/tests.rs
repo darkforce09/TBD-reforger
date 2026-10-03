@@ -276,7 +276,7 @@ fn one_vanilla_pass_answers_every_guid_as_a_grep_per_guid_does() {
     let paks = vanilla_pak_probe::paks(&dir);
     let mut by_grep: BTreeSet<String> = BTreeSet::new();
     for g in &wanted {
-        let probe = verification_core::proc::Run::new("grep")
+        let probe = process_runner::Run::new("grep")
             .arg("-qla")
             .arg(g)
             .args(&paks);

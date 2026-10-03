@@ -220,7 +220,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
                 "wave lock",
                 &format!(
                     "cargo xtask wave check failed — stale or missing {}",
-                    ticket_engine::repository::WAVE_LOCK
+                    repository_layout::WAVE_LOCK
                 ),
             );
         }

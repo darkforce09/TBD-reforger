@@ -4,7 +4,7 @@ use super::*;
 use anyhow::Context;
 
 pub fn metrics_root(root: &Path) -> PathBuf {
-    root.join(crate::repository::METRICS_DIR)
+    root.join(repository_layout::METRICS_DIR)
 }
 
 /// The required token observation. `total` is ALWAYS the four-way sum; `reasoning` is a

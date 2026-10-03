@@ -1,8 +1,9 @@
 use super::*;
 
 pub(crate) fn fixture(name: &str) -> std::path::PathBuf {
-    // Compile-time root, not the cwd walk: see `root::test_repo_root` for the race.
-    crate::repository_paths::test_repo_root()
+    // The checkout this crate was compiled from, whatever directory the test runs in.
+    crate::repository_layout::compiled_checkout_root()
+        .expect("repository root")
         .join("tools/developer_tools/test_fixtures/blueprint")
         .join(name)
 }

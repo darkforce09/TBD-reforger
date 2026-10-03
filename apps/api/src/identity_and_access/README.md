@@ -93,8 +93,9 @@ administrator does to a member lives in `administration`.
 - Rules: handlers never import another domain's handlers, `routes.rs` exports the table the router
   merges, and only `core::application_state` and `core::http_router` name this domain from `core`
   (`apps/api/src/tests/architecture_rules.rs` checks all three); every handler carries
-  its `/// @route` tag (`cargo xtask verify route-tags`); `models/generated/` is written by
-  `cargo xtask ci schema-codegen` and never edited by hand.
+  its `/// @route` tag (`cargo xtask verify route-tags`); the domain's generated contract types
+  (`contract_schema_types::identity_and_access`) are written by `cargo xtask ci schema-codegen`
+  and never edited by hand.
 
 ## Related documentation
 

@@ -10,7 +10,6 @@ timestamps are RFC 3339.
 
 ```text
 apps/api/src/match_telemetry/models/
-├── generated/                 types generated from `match-telemetry.schema.json`
 ├── match_event.rs             the event batch, the seven event kinds and their payloads, the digest
 ├── match_event_page.rs        `MatchEventPage`, one page of stored events in `sequence` order
 ├── match_record.rs            `Match`, its `MissionOutcome` and the per-player `MatchPlayerStat` lines
@@ -52,8 +51,9 @@ services compare these digests to tell an inert retry from a conflict.
 
 - Depends on: `core::wire_format` for timestamps and the canonical digest, `core::text` for the URL
   guard on `aar_replay_url`, `core::error_handling` for the refusals;
-  `missions::models::mission::TerrainType`; serde and sqlx. `generated/` follows
-  `contracts/definitions/match-telemetry.schema.json`.
+  `missions::models::mission::TerrainType`; serde and sqlx. The types generated from
+  `contracts/definitions/match-telemetry.schema.json` are
+  `contract_schema_types::match_telemetry::match_telemetry`.
 - Used by: the domain's handlers and services; the member's
   [service record](/documentation/glossary/n_to_z.md#service-record) in
   `apps/api/src/operations/handlers/member_service_record.rs` (`Match`,
@@ -61,8 +61,9 @@ services compare these digests to tell an inert retry from a conflict.
   (`telemetry_revisions.rs`, `detailed_events.rs` and `telemetry_queue.rs` decode live answers
   into the generated types; the null-tolerance tests read `Match`).
 - Rules: every wire type carries its `@contract` tag into `match-telemetry.schema.json`
-  (`cargo xtask schema citations`); `generated/` is written by `cargo xtask ci schema-codegen` and
-  never edited by hand (`cargo xtask ci verify-codegen-fresh` checks it); `Match.winning_faction`,
+  (`cargo xtask schema citations`); the generated types are written by
+  `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
+  checks them); `Match.winning_faction`,
   `aar_replay_url` and `created_at` are plain fields over nullable columns, so every query that reads
   them coalesces them; `MissionOutcome` and the `mission_outcome` enum in the migrations change
   together; a refusal the runtime must act on is never a 404.

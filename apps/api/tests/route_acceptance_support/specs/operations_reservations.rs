@@ -7,10 +7,10 @@
 //! dimension that does not apply. Fixture keys other than a spec key are minted by
 //! `world/operations_reservations.rs`.
 
-use api::operations::models::generated::game_runtime_deployment::{DeploymentDecision, EndedLife};
-use api::operations::models::generated::game_runtime_roster::EventRoster;
-use api::operations::models::generated::reservation_response::ReservationResponse;
-use api::operations::models::generated::waitlist_promotion_response::WaitlistPromotionResponse;
+use contract_schema_types::operations::game_runtime_deployment::{DeploymentDecision, EndedLife};
+use contract_schema_types::operations::game_runtime_roster::EventRoster;
+use contract_schema_types::operations::reservation_response::ReservationResponse;
+use contract_schema_types::operations::waitlist_promotion_response::WaitlistPromotionResponse;
 use serde_json::json;
 
 use super::super::contracts::round_trip;

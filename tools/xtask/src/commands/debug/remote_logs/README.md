@@ -45,7 +45,7 @@ under, a `deploy.env` that does not load) exits 1.
 
 - Depends on: the patterns, `SshOut` and module wiring in
   `tools/xtask/src/commands/debug/remote_logs.rs`; `verification_core` (`Pattern`,
-  `gate::probe_str`, `proc::Run`); `crate::core::repository_root`,
+  `gate::probe_str`); `process_runner::Run`; `crate::core::repository_root`,
   `crate::core::deploy_environment` and, through
   `tools/xtask/src/commands/debug/staging_fleet_instance.rs`,
   `crate::commands::deploy::staging::fleet_instances`; ssh or sshpass.

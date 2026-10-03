@@ -38,7 +38,7 @@ any other exit is "git unavailable" with the reason.
 ## Boundaries
 
 - Depends on: `crate::core::process::BoundedLog` and `crate::core::time::utc_hms`, which
-  `check_status` re-exports; `ticket_engine::repository` (`TICKETS_DIR`, and `documentation`'s
+  `check_status` re-exports; `repository_layout` (`TICKETS_DIR`, and `documentation`'s
   `ROADMAP` and `GAP_ANALYSIS`).
 - Used by: `crate::application` (`mod.rs` holds the `CheckModel`, the git `Coalescer` and the
   `GitChip`; `background_events.rs` spawns the check and `git status` with `CHECK_ARGS` and

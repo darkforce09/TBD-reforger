@@ -58,8 +58,8 @@ snake_case database and wire contract. The eight domains are `administration`, `
   retired as a code rule; the documentation standards own it.
 - **GO-8 (Debuggability) — The static analyser runs with every check on.** Rust form: clippy with
   `-D warnings` over `--all-targets`; the generated contract types under
-  `apps/api/src/missions/contract/generated/` are exempt from the crate's prose tests
-  but not from clippy. Gate: CI-BLOCK, `cargo xtask mk rust-clippy`.
+  `crates/contracts/contract_schema_types/src/generated/` allow only the lints their typify
+  output trips, named and explained on the `generated` module in the crate's `lib.rs`. Gate: CI-BLOCK, `cargo xtask mk rust-clippy`.
 
 The `api` job labels its clippy step "GO-2..8 analog" and its format step "FMT-1 analog":
 clippy and `cargo fmt` stand in for the Go-era rules GO-2 to GO-8 and FMT-1 together.

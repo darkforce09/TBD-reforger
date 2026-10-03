@@ -9,16 +9,16 @@
 //! keys) and a reason for every dimension that does not apply. The equipment data viewer's
 //! request queries live here ([`equipment_query`]) so the spec and the world read one table.
 
-use api::administration::models::generated::audit_log::AuditLogPage;
-use api::administration::models::generated::personnel_roster::PersonnelPage;
-use api::community_content::models::generated::content_upload::UploadResponse;
-use api::community_content::models::generated::equipment_data_viewer::{
+use contract_schema_types::administration::audit_log::AuditLogPage;
+use contract_schema_types::administration::personnel_roster::PersonnelPage;
+use contract_schema_types::community_content::content_upload::UploadResponse;
+use contract_schema_types::community_content::equipment_data_viewer::{
     dataset::EquipmentDatasetStatus, field_inventory::EquipmentFieldPage,
     relationships::EquipmentRelationshipPage, resource_cards::EquipmentResourceCardPage,
     resources::EquipmentResourcePage, source_inspection::EquipmentSourcePage,
 };
-use api::community_content::models::generated::vehicle_database::{Vehicle, VehicleList};
-use api::community_content::models::generated::wiki_page::{
+use contract_schema_types::community_content::vehicle_database::{Vehicle, VehicleList};
+use contract_schema_types::community_content::wiki_page::{
     WikiArticle, WikiPageList, WikiRevision, WikiRevisionPage,
 };
 use serde_json::json;

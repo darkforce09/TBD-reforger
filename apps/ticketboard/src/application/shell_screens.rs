@@ -52,7 +52,7 @@ pub(super) fn norepo_ui(ui: &mut Ui, note: Option<&str>, picking: bool, actions:
     ui.add_space(8.0);
     ui.label(format!(
         "Ticketboard needs a repo root containing {}/ — two ways to point it at one:",
-        ticket_engine::repository::TICKETS_DIR
+        repository_layout::TICKETS_DIR
     ));
     ui.add_space(4.0);
     ui.horizontal(|ui| {
@@ -65,7 +65,7 @@ pub(super) fn norepo_ui(ui: &mut Ui, note: Option<&str>, picking: bool, actions:
         ui.label(format!(
             "Launch from anywhere inside the repo — the app walks up from the current \
              directory looking for {}/.",
-            ticket_engine::repository::TICKETS_DIR
+            repository_layout::TICKETS_DIR
         ));
     });
     if let Some(note) = note {
@@ -98,7 +98,7 @@ pub(super) fn loading_ui(ui: &mut Ui, repo_root: Option<&Path>) {
         if let Some(root) = repo_root {
             ui.monospace(format!(
                 "parsing {}/T-*.toml …",
-                root.join(ticket_engine::repository::TICKETS_DIR).display()
+                root.join(repository_layout::TICKETS_DIR).display()
             ));
         }
     });

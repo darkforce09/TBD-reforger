@@ -425,7 +425,7 @@ fn a_degenerate_ring_does_not_produce_nan() {
 /* ── the real everon catalogue ── */
 
 fn everon_objects() -> PathBuf {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let root = crate::repository_layout::compiled_checkout_root().expect("repository root");
     terrain_dir(&root, "everon").join("objects")
 }
 

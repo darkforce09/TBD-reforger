@@ -14,7 +14,7 @@
 
 use std::time::Duration;
 
-use verification_core::proc::Run;
+use process_runner::Run;
 
 use crate::commands::staging::staging_settings::StagingSettings;
 

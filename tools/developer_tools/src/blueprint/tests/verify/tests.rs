@@ -194,7 +194,7 @@ fn matches_through_the_building_yaw_and_skips_furniture_descendants() {
 /// Workbench recon dump (88 architectural children, 2026-09-03).
 #[test]
 fn farmhouse_sockets_match_the_workbench_recon() {
-    let root = crate::repository_paths::test_repo_root();
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let instances = crate::repository_layout::terrain_dir(&root, "everon")
         .join("prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json");
     let recon = root

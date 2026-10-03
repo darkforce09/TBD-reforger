@@ -92,7 +92,7 @@ impl Corpus {
 
     /// The ticket directory under the root — the one directory every ticket file lives in.
     pub fn tickets_dir(&self) -> PathBuf {
-        self.root.join(crate::repository::TICKETS_DIR)
+        self.root.join(repository_layout::TICKETS_DIR)
     }
 
     /// Load EVERY `.ai/tickets/T-*.toml` under `root` — parents and children alike

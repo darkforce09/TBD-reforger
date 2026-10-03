@@ -1,15 +1,13 @@
 //! Resource, relationship and native-field catalogs.
 use super::{ReadResult, failure, response, viewer_query};
-use crate::community_content::{
-    models::generated::equipment_data_viewer::{
-        field_inventory::EquipmentFieldPage, relationships::EquipmentRelationshipPage,
-        resources::EquipmentResourcePage,
-    },
-    services::equipment_data_viewer::queries::{self, ViewerQuery},
-};
+use crate::community_content::services::equipment_data_viewer::queries::{self, ViewerQuery};
 use crate::core::application_state::AppState;
 use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
+use contract_schema_types::community_content::equipment_data_viewer::{
+    field_inventory::EquipmentFieldPage, relationships::EquipmentRelationshipPage,
+    resources::EquipmentResourcePage,
+};
 
 /// @route GET /api/v1/debug/equipment-data/resources
 pub async fn resources(

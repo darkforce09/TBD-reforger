@@ -118,7 +118,7 @@ impl TicketboardApp {
                         note: Some(format!(
                             "picked folder {} has no {}/ directory",
                             root.display(),
-                            ticket_engine::repository::TICKETS_DIR
+                            repository_layout::TICKETS_DIR
                         )),
                     };
                 }

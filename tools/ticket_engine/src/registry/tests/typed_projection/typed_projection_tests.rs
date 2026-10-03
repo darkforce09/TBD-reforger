@@ -4,7 +4,7 @@ use super::*;
 /// brief an empty spec, goal or acceptance list.
 #[test]
 fn ready_class_tickets_carry_spec_main_goal_and_acceptance() {
-    let root = repo_root();
+    let root = worktree_root();
     if !tree_is_phase2(&root) {
         return;
     }
@@ -45,7 +45,7 @@ fn ready_class_tickets_carry_spec_main_goal_and_acceptance() {
 
 #[test]
 fn shipped_ticket_keeps_its_shipped_at_commit() {
-    let root = repo_root();
+    let root = worktree_root();
     if !tree_is_phase2(&root) {
         return;
     }
@@ -72,7 +72,7 @@ fn shipped_ticket_keeps_its_shipped_at_commit() {
 /// the parent projects as a program that lists that child.
 #[test]
 fn program_children_parse_as_work_and_their_parents_list_them() {
-    let root = repo_root();
+    let root = worktree_root();
     if !tree_is_phase2(&root) {
         return;
     }
@@ -104,7 +104,7 @@ fn program_children_parse_as_work_and_their_parents_list_them() {
 /// A ticket whose file carries a `[scope.engine]` table projects into [`Domain::Engine`].
 #[test]
 fn engine_scope_table_projects_to_the_engine_domain() {
-    let root = repo_root();
+    let root = worktree_root();
     if !tree_is_phase2(&root) {
         return;
     }
@@ -144,7 +144,7 @@ fn targets_from_scope_v2_outputs() {
 /// brief, show, get, sync and the queue view all consume the mirrored `Value`.
 #[test]
 fn value_to_ticket_accepts_ticket_to_value_output() {
-    let root = repo_root();
+    let root = worktree_root();
     if !tree_is_phase2(&root) {
         return;
     }
@@ -168,7 +168,7 @@ fn value_to_ticket_accepts_ticket_to_value_output() {
 ///    so this test's own source cannot satisfy the search it performs.
 #[test]
 fn mutators_never_reach_the_value_writer_pin() {
-    let root = repo_root();
+    let root = worktree_root();
     if !tree_is_phase2(&root) {
         return;
     }
@@ -181,7 +181,7 @@ fn mutators_never_reach_the_value_writer_pin() {
         "refusal must name the typed path: {msg}"
     );
 
-    let cli = crate::repository::find_repo_root()
+    let cli = repository_layout::find_repository_root()
         .unwrap()
         .join("tools/ticket_engine/src/cli");
     let cmds_src = walkdir::WalkDir::new(cli)

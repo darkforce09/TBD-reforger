@@ -43,7 +43,7 @@ enum Cmd {
     Carve {
         #[arg(long)]
         game: PathBuf,
-        #[arg(long, default_value = crate::repository_layout::VANILLA_REFERENCE)]
+        #[arg(long, default_value = ::repository_layout::VANILLA_REFERENCE)]
         out: PathBuf,
         /// Remove a previous `Carved/` output first; without it the command refuses one.
         #[arg(long)]
@@ -60,7 +60,7 @@ enum Cmd {
     /// Verify every `@idx lane#Symbol` citation in the docs resolves against an index.
     /// Exits 1 on any unresolved citation — hallucinated APIs fail the build.
     Citations {
-        #[arg(long, default_value = crate::repository_layout::documentation::DOCUMENTATION_ROOT)]
+        #[arg(long, default_value = ::repository_layout::documentation::DOCUMENTATION_ROOT)]
         docs: PathBuf,
         #[arg(long, default_value = crate::repository_layout::ENF_INDEX_DIR)]
         index_dir: PathBuf,
@@ -145,7 +145,7 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
                      (the reference lanes in {} are gitignored — fill them as its README.md \
                      describes before reindexing)",
                     root.display(),
-                    crate::repository_layout::REFERENCES_DIR
+                    ::repository_layout::REFERENCES_DIR
                 );
             }
             let st = index::build(&root, &out, prefix)?;

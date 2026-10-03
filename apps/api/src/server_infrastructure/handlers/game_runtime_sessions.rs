@@ -9,13 +9,13 @@ use axum::extract::rejection::BytesRejection;
 use axum::extract::{FromRequest, Request, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::response::Json;
+use fleet_wire_contract::ExecutorKind;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::path_parameters::PathParams;
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 use crate::server_infrastructure::services::runtime_sessions::{
     LoadedArtifactReport, StartedRuntimeSession, end_runtime_session, start_runtime_session,

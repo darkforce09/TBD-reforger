@@ -48,7 +48,7 @@ everon-sap-ortho.png + water-inland-mask.png + the elevation model
   `crate::world_export_pipeline::topo` for the road corridor;
   `crate::world_export_pipeline::json_number_formatting` for the numbers the record prints;
   `crate::repository_layout` for the scratch, terrain and artifact folders;
-  `crate::browser_testing::server::repo_root` for the checkout root.
+  `crate::repository_layout::compiled_checkout_root` for the checkout root.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (`analyze-water`,
   `composite-water`); the `map-water-everon` task in
   `tools/xtask/src/commands/ci/task_definitions.rs`; the cartographic render in

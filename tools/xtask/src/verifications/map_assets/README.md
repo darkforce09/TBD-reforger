@@ -17,7 +17,7 @@ tools/xtask/src/verifications/map_assets/
 
 - Depends on: `developer_tools::map_verification` (`blas_manifest.rs`, `object_goldens.rs`,
   `terrain_manifest.rs` and `labels.rs` under `tools/developer_tools/src/map_verification/`),
-  and `find_repo_root` in `tools/xtask/src/core/repository_root.rs`.
+  and `find_repository_root` in `tools/xtask/src/core/repository_root.rs`.
 - Used by:
   - `tools/xtask/src/commands/verify/dispatch.rs`, for `cargo xtask verify blas-manifest`;
   - `tools/xtask/src/commands/schema/dispatch.rs`, for `cargo xtask schema map-object-golden`,

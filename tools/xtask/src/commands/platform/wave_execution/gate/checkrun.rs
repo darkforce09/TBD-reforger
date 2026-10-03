@@ -81,7 +81,7 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     // from committed artifacts alone and exits 1 on disagreement. ~12 s.
     //
     // `checkrun`, NOT `hostrun`: `hostrun` bakes in the SHARED CARGO_TARGET_DIR, and
-    // `tools/developer_tools/src/browser_testing/server.rs` `repo_root()` is
+    // `tools/developer_tools/src/repository_layout.rs` `compiled_checkout_root()` walks up from
     // `env!("CARGO_MANIFEST_DIR")` — a COMPILE-TIME constant. A shared dir can therefore hand this
     // step a `world` binary that reads a DIFFERENT WORKTREE'S rules and catalogue while reporting
     // on yours, which is exactly the two inputs the verdict is about.

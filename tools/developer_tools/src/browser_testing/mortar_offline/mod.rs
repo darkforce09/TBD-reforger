@@ -35,8 +35,8 @@ use serde_json::{Value, json};
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::browser_testing::cdp::{self, Browser, Page};
-use crate::browser_testing::server::{ServeConfig, repo_root, start_server};
-use crate::repository_layout::MapAssetMounts;
+use crate::browser_testing::server::{ServeConfig, start_server};
+use crate::repository_layout::{MapAssetMounts, compiled_checkout_root};
 use api_down_visit::api_down_visit;
 use mission_entry::{enter_mission, solution_matches_native};
 use mission_plan::{COMMITTED_CATALOG, catalog_reads, read_catalog, require_files, required_files};
@@ -130,7 +130,7 @@ impl StepProgress {
 ///
 /// A driver failure (Chromium or the server would not start).
 pub async fn run(args: &MortarOfflineArgs) -> Result<u8> {
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let dist = root.join(&args.dist);
     let corpus = root.join(&args.api_corpus);
     let catalog = read_catalog(&root.join(COMMITTED_CATALOG))?;

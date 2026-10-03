@@ -21,7 +21,6 @@ apps/api/src/operations/models/
 ├── event_viewer_access.rs          what the viewer may see and reserve in one event
 ├── fire_mission.rs                 `FireMission` with its catalog inputs, `FireMissionGun`
 ├── game_runtime_roster.rs          the roster wire: seat assignments and compiled slots
-├── generated/                      types generated from the event and game-runtime schemas
 ├── leave_request.rs                `LeaveRequest` and its review states
 ├── live_occupancy.rs               player deployment requests, decisions and ended lives
 ├── mod.rs                          the module tree; re-exports the event, fire and leave models
@@ -48,8 +47,9 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
 
 ## Boundaries
 
-- Depends on: `core::wire_format` for timestamps; serde and sqlx. `generated/` follows the
-  schemas `event-access-administration`, `event-viewer-access`, `event-hub`, `event-orbat`,
+- Depends on: `core::wire_format` for timestamps; serde and sqlx.
+  `contract_schema_types::operations` holds the types generated from the schemas
+  `event-access-administration`, `event-viewer-access`, `event-hub`, `event-orbat`,
   `waitlist-promotion-response`, `game-runtime-roster`, `game-runtime-deployment` and
   `reservation-response` in `contracts/definitions/`. The hand-written wire types carry
   `@contract` tags: `event.rs` cites `event-schedule.schema.json` (`Event`, `EventStatus`,
@@ -64,8 +64,8 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
   `apps/api/tests/reservation_attendance_transactions.rs`, which decode live answers into
   the generated types. The web app's DTOs in `apps/frontend/src/v2/core/api/dto/`
   (`events.rs`, `event_access_administration.rs`, `event_viewer_access.rs`) mirror these shapes.
-- Rules: `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
-  (`cargo xtask ci verify-codegen-fresh` checks it); a new event's default policy admits TBD
+- Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by
+  hand (`cargo xtask ci verify-codegen-fresh` checks them); a new event's default policy admits TBD
   members only, and a closed policy is stated explicitly
   (`default_policy_requires_tbd_membership_and_closed_policy_is_explicit` in
   `tests/event_access_policy.rs`).

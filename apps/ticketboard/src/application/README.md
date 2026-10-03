@@ -29,7 +29,7 @@ apps/ticketboard/src/application/
 ## How it works
 
 `TicketboardApp::new` resolves the repository root: the positional argument when given, else the
-first folder holding `.ai/tickets/` found walking up from the working directory, else the root
+first folder holding `.ai/tickets/ROOT` found walking up from the working directory, else the root
 saved in the preferences, revalidated. A root without `.ai/tickets/` leaves the no-repository
 screen with a note and a native folder picker, which runs on its own thread. Adopting a root arms
 the file watch, starts a load and runs the launch strict check.
@@ -74,7 +74,7 @@ dialog and toasts. Features emit their own events, which `events.rs` turns into 
 
 - Depends on: every feature module (`ticket_registry`, `ticket_browser`, `ticket_actions`,
   `wave_plan`, `execution_metrics`, `document_viewer`, `repository_status`) and `crate::core`;
-  `ticket_engine` (`StatusName` and `repository::TICKETS_DIR`); the `eframe`, `egui_commonmark`
+  `ticket_engine` (`StatusName` and `repository_layout::TICKETS_DIR`); the `eframe`, `egui_commonmark`
   and `rfd` crates.
 - Used by: `apps/ticketboard/src/main.rs`, which passes `TicketboardApp::new` to
   `eframe::run_native`.

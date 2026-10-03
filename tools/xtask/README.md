@@ -29,7 +29,8 @@ selftest; the deploys read the repository root's `deploy/`. `src/core/repository
 each of them once.
 
 The crate owns repository operations and the orchestration of checks. Ticket storage and the wave
-lock belong to `ticket_engine`, process and verdict primitives to `verification_core`, and
+lock belong to `ticket_engine`, verdict primitives to `verification_core`, child processes, the
+host bridge and the ssh transport to `process_runner`, the structural laws to `repository_laws`, and
 engine-backed map, world and blueprint work to `developer_tools`, which alone reaches the map
 engine; xtask passes them the checkout root and keeps their results and exit codes.
 
@@ -61,8 +62,8 @@ The crate has no features and reads no configuration file of its own. What it re
 - `CARGO_TARGET_DIR`: kept when set; otherwise the `mk` and `ci` children get the primary
   checkout's `target/`, shared by every linked worktree
   (`src/core/cargo_target_directory.rs`), and `mk rust-api` builds into `target/dev-api`.
-- `.ai/tickets/ROOT`: the marker that identifies the checkout root (`find_repo_root` in
-  `tools/ticket_engine/src/repository.rs`).
+- `.ai/tickets/ROOT`: the marker that identifies the checkout root (`find_repository_root` in
+  `tools/foundation/repository_layout/src/repository_root.rs`).
 - `deploy/deploy.env`: the deploy host (`TBD_SSH_HOST`, the one place the staging host is named),
   credentials and remote paths, copied from `deploy/deploy.env.example` and never committed. Every
   command that reads it (`src/core/deploy_environment.rs`) lets the file decide every key it
@@ -78,7 +79,8 @@ The crate has no features and reads no configuration file of its own. What it re
 
 ## Boundaries
 
-- Depends on: `ticket_engine`, `developer_tools` and `verification_core` by path; clap, serde,
+- Depends on: `ticket_engine`, `developer_tools`, and the `tools/foundation` crates
+  `verification_core`, `process_runner` and `repository_laws`, by path; clap, serde,
   `jsonschema`, and `typify`, `schemars`, `syn` and `prettyplease` for the contract codegen; at
   run time cargo, trunk, podman, git and the other host tools each group names.
 - Used by:
@@ -90,9 +92,10 @@ The crate has no features and reads no configuration file of its own. What it re
   - the ticketboard in `apps/ticketboard/`, which runs `cargo xtask ticket` commands.
 - Rules:
   - xtask never depends on `map_engine` or `graphics_engine`, `developer_tools`
-    never depends on xtask, and `ticket_engine` and `verification_core` depend on no workspace
-    crate (`tooling_dependency_direction_is_enforced` and
-    `foundational_engines_have_no_workspace_dependencies` in
+    never depends on xtask, a `tools/foundation` crate depends only on lower `tools/foundation`
+    crates, and `ticket_engine` only on `tools/foundation` crates
+    (`tooling_dependency_direction_is_enforced` and
+    `foundation_crates_depend_only_on_lower_foundation_crates` in
     `src/tests/tooling_dependency_boundaries.rs`);
   - production files stay under 500 lines, test files under 1000 and `src/main.rs` under 150, and
     tests live in separate files (`tooling_source_files_stay_below_their_structural_limits`,

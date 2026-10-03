@@ -153,7 +153,7 @@ pub fn deploy(paths: &Paths, cli: &Cli) -> Result<u8> {
     }
 
     println!("==> rsync to {}", env.remote_dir);
-    if let Err(e) = proc::which("rsync") {
+    if let Err(e) = process_runner::which("rsync") {
         return Ok(not_run_exit(&e));
     }
     let mut rsync = base.with_password(Run::new("rsync"));

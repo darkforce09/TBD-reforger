@@ -96,7 +96,7 @@ moves one re-blesses the fixture or the assertion on purpose.
     sidecar and the instances, `cargo xtask map blueprint-from-voxels` the blueprint.
 - Consumers: the tests in the table;
   `compiler_fixtures_resolve_from_root_crate_and_source_directory`
-  (`tools/developer_tools/src/tests/repository_paths.rs`) and
+  (`tools/developer_tools/src/tests/repository_layout.rs`) and
   `nested_tooling_directories_resolve_repository_and_fixtures`
   (`tools/xtask/src/tests/repository_root_tests.rs`), which check that fixtures here resolve
   from nested working directories. `cargo xtask map parity-report`, `bvh-parity`,

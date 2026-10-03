@@ -1,8 +1,9 @@
+use repository_laws::workspace_members::read_workspace_members;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use syn::parse::{ParseStream, Parser};
 use toml::Value;
-use verification_core::repository_laws::workspace_members::read_workspace_members;
 
 fn rejects_dependency(value: &Value, forbidden: &str) {
     let Some(table) = value.as_table() else {
@@ -70,10 +71,15 @@ fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
     for relative in [
         "tools/xtask/Cargo.toml",
         "tools/developer_tools/Cargo.toml",
-        "tools/verification_core/Cargo.toml",
+        "tools/foundation/verification_core/Cargo.toml",
+        "tools/foundation/process_runner/Cargo.toml",
+        "tools/foundation/repository_laws/Cargo.toml",
+        "tools/foundation/repository_layout/Cargo.toml",
         "tools/ticket_engine/Cargo.toml",
-        // The three modules that own every repository path a crate spells, and the node package
-        // that sits outside all four crate roots so no crate walk treats it as source.
+        // The crate that owns the repository paths the tools share, the three modules that own
+        // the paths only one tool spells, and the node package that sits outside every crate root
+        // so no crate walk treats it as source.
+        "tools/foundation/repository_layout/src/lib.rs",
         "tools/ticket_engine/src/repository.rs",
         "tools/xtask/src/core/repository_layout.rs",
         "tools/developer_tools/src/repository_layout.rs",
@@ -83,20 +89,55 @@ fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
     }
 }
 
+/// The folder of the tooling foundation crates.
+const TOOL_FOUNDATION: &str = "tools/foundation";
+
+/// Each `tools/foundation` crate depends, among the workspace crates, only on `tools/foundation`
+/// crates of a lower declared tier, and `ticket_engine` only on `tools/foundation` crates — in
+/// every dependency table.
 #[test]
-fn foundational_engines_have_no_workspace_dependencies() {
+fn foundation_crates_depend_only_on_lower_foundation_crates() {
     let root = crate::core::repository_root::test_repo_root();
-    for name in ["ticket_engine", "verification_core"] {
-        let engine: Value = toml::from_str(
-            &fs::read_to_string(root.join(format!("tools/{name}/Cargo.toml"))).unwrap(),
-        )
-        .unwrap();
-        for member in read_workspace_members(&root).unwrap() {
-            let manifest: Value = toml::from_str(
-                &fs::read_to_string(root.join(&member.path).join("Cargo.toml")).unwrap(),
-            )
-            .unwrap();
-            rejects_dependency(&engine, manifest["package"]["name"].as_str().unwrap());
+    let members = read_workspace_members(&root).unwrap();
+    let workspace_packages: Vec<&str> = members
+        .iter()
+        .map(|member| member.package_name.as_str())
+        .collect();
+    let foundation: HashMap<&str, u32> = members
+        .iter()
+        .filter(|member| member.path.starts_with(&format!("{TOOL_FOUNDATION}/")))
+        .map(|member| {
+            let tier = member
+                .manifest
+                .layout
+                .as_ref()
+                .and_then(|layout| layout.tier_number())
+                .unwrap_or_else(|| panic!("{}: no declared layout tier", member.path));
+            (member.package_name.as_str(), tier)
+        })
+        .collect();
+    assert!(
+        foundation.contains_key("verification_core"),
+        "no crate under {TOOL_FOUNDATION}: {foundation:?}"
+    );
+    for member in &members {
+        let ceiling = match foundation.get(member.package_name.as_str()) {
+            Some(tier) => *tier,
+            None if member.package_name == "ticket_engine" => u32::MAX,
+            None => continue,
+        };
+        for edge in &member.manifest.dependencies {
+            if !workspace_packages.contains(&edge.package.as_str()) {
+                continue;
+            }
+            let allowed = foundation
+                .get(edge.package.as_str())
+                .is_some_and(|tier| *tier < ceiling);
+            assert!(
+                allowed,
+                "{}/Cargo.toml:{}: {} depends on {}, which is not a lower {TOOL_FOUNDATION} crate",
+                member.path, edge.line_no, member.package_name, edge.package
+            );
         }
     }
 }
@@ -134,19 +175,34 @@ fn ticket_implementations_have_one_owner() {
     }
 }
 
-/// Every crate under `tools`. The structural rules below — line limits, no inline test
-/// modules, no file-size exemptions — hold for all four, with no crate exempt from any of them.
-const TOOLING_CRATES: [&str; 4] = [
-    "xtask",
-    "developer_tools",
-    "verification_core",
-    "ticket_engine",
-];
+/// The tooling crates directly under `tools`; every crate under `tools/foundation` joins them from
+/// the folder. The structural rules below — line limits, no inline test modules, no file-size
+/// exemptions — hold for all of them, with no crate exempt from any of them.
+const TOOLING_CRATES: [&str; 3] = ["xtask", "developer_tools", "ticket_engine"];
+
+/// The folder of every tooling crate: [`TOOLING_CRATES`], then each `tools/foundation` folder
+/// holding a `Cargo.toml`.
+fn tooling_crate_folders(root: &Path) -> Vec<PathBuf> {
+    let mut folders: Vec<PathBuf> = TOOLING_CRATES
+        .iter()
+        .map(|name| root.join("tools").join(name))
+        .collect();
+    let foundation = root.join(TOOL_FOUNDATION);
+    let mut found: Vec<PathBuf> = fs::read_dir(&foundation)
+        .unwrap_or_else(|error| panic!("cannot list {}: {error}", foundation.display()))
+        .map(|entry| entry.unwrap().path())
+        .filter(|folder| folder.join("Cargo.toml").is_file())
+        .collect();
+    assert!(!found.is_empty(), "no crate under {}", foundation.display());
+    found.sort();
+    folders.extend(found);
+    folders
+}
 
 fn rust_sources(root: &Path) -> Vec<PathBuf> {
     let mut paths = Vec::new();
-    for name in TOOLING_CRATES {
-        let source = root.join("tools").join(name).join("src");
+    for folder in tooling_crate_folders(root) {
+        let source = folder.join("src");
         assert!(source.is_dir(), "missing source tree: {}", source.display());
         let before = paths.len();
         for entry in walkdir::WalkDir::new(&source) {

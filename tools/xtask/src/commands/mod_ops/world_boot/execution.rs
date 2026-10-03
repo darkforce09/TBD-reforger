@@ -11,7 +11,7 @@ pub fn run(args: &[String]) -> Result<u8> {
         let t = four_weapon_equip_selftest();
         return Ok(if v == 0 && t == 0 { 0 } else { 1 });
     }
-    boot(&find_repo_root()?, opts)
+    boot(&find_repository_root()?, opts)
 }
 
 pub(super) fn parse_args(args: &[String]) -> std::result::Result<Opts, u8> {
@@ -73,7 +73,7 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
         return Ok(env_fail(
             "no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine",
             Some(
-                "See tools/xtask/src/core/host_execution.rs: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all.",
+                "See tools/foundation/process_runner/src/host_execution.rs: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all.",
             ),
         ));
     }

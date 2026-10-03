@@ -16,15 +16,11 @@
 use super::*;
 use crate::commands::ci::workspace_member_tests::{DEDICATED_TEST_TASKS, member_packages_except};
 
-/// Repo root from the crate dir: tests run with CWD = `tools/xtask/`, and CARGO_MANIFEST_DIR is the one
-/// path that is stable regardless of how the test binary was invoked.
+/// Repo root walked up from the crate dir: tests run with CWD = `tools/xtask/`, and
+/// CARGO_MANIFEST_DIR is the one start that is stable regardless of how the test binary was invoked.
 fn root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("tools/xtask has a parent")
-        .parent()
-        .expect("tools/xtask/ has a parent")
-        .to_path_buf()
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root")
 }
 
 /// `ci-local`'s steps, in order, as `Step::Task` names plus the echo of anything that is not one.
@@ -455,9 +451,8 @@ fn line_tests_member(line: &str, package: &str, path: &str) -> bool {
 /// The workspace members no line or row reachable from `tasks` tests, as `package (path)`. The
 /// `workspace-member-tests` row tests every member outside its dedicated packages.
 fn untested_members(tasks: &[&str]) -> Vec<String> {
-    let members =
-        verification_core::repository_laws::workspace_members::read_workspace_members(&root())
-            .expect("the workspace members read");
+    let members = repository_laws::workspace_members::read_workspace_members(&root())
+        .expect("the workspace members read");
     let mut lines = Vec::new();
     let mut rows = std::collections::BTreeSet::new();
     for task in tasks {
@@ -487,9 +482,8 @@ fn untested_members(tasks: &[&str]) -> Vec<String> {
 /// never leaves it untested.
 #[test]
 fn every_dedicated_test_task_tests_its_package() {
-    let members =
-        verification_core::repository_laws::workspace_members::read_workspace_members(&root())
-            .expect("the workspace members read");
+    let members = repository_laws::workspace_members::read_workspace_members(&root())
+        .expect("the workspace members read");
     for (package, task) in DEDICATED_TEST_TASKS {
         let member = members
             .iter()

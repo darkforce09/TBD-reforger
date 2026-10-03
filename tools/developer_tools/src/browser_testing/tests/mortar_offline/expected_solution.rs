@@ -2,10 +2,15 @@ use super::*;
 use crate::browser_testing::mortar_offline::mission_plan::{
     COMMITTED_CATALOG, high_explosive_shell, read_catalog,
 };
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 
 fn committed_catalog() -> BallisticsCatalog {
-    read_catalog(&repo_root().join(COMMITTED_CATALOG)).unwrap()
+    read_catalog(
+        &compiled_checkout_root()
+            .expect("repository root")
+            .join(COMMITTED_CATALOG),
+    )
+    .unwrap()
 }
 
 fn mission_at(catalog: &BallisticsCatalog, distance_m: f64) -> TypedMission {

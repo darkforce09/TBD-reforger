@@ -19,18 +19,18 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 
 use super::route_contracts::{SchemaLocation, SchemaRef};
-use api::administration::models::generated::{audit_log, personnel_roster};
-use api::community_content::models::generated::equipment_data_viewer as equipment;
-use api::community_content::models::generated::{content_upload, vehicle_database, wiki_page};
-use api::identity_and_access::models::generated::current_profile;
-use api::match_telemetry::models::generated::match_telemetry;
-use api::missions::contract::generated::faction_library;
-use api::missions::models::generated::{mission_deployment, mission_review};
-use api::operations::models::generated::{
+use contract_schema_types::administration::{audit_log, personnel_roster};
+use contract_schema_types::community_content::equipment_data_viewer as equipment;
+use contract_schema_types::community_content::{content_upload, vehicle_database, wiki_page};
+use contract_schema_types::identity_and_access::current_profile;
+use contract_schema_types::match_telemetry::match_telemetry;
+use contract_schema_types::missions::faction_library;
+use contract_schema_types::missions::{mission_deployment, mission_review};
+use contract_schema_types::operations::{
     event_access_administration as event_access, event_hub, event_orbat, game_runtime_deployment,
     game_runtime_roster, reservation_response, waitlist_promotion_response,
 };
-use api::server_infrastructure::models::generated::{
+use contract_schema_types::server_infrastructure::{
     fleet_command, game_runtime_session, machine_credential,
 };
 

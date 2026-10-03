@@ -30,17 +30,17 @@ use serde_norway::{Mapping, Value};
 use verification_core::report::Report;
 use verification_core::verdict::{Kind, NotRun, Verdict};
 
-use crate::core::repository_root::find_repo_root;
 use crate::verifications::ci::workflow_shell_rules::{
     line_reason, logical_lines, shell_reason, uses_reason,
 };
+use repository_layout::find_repository_root;
 
 const WORKFLOWS: &str = ".github/workflows";
 const MAX_LOGICAL: usize = 3;
 
 /// CLI entry: `cargo xtask verify ci-shell`.
 pub fn verify_ci_shell() -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     Ok(run_on_workflows_dir(&root.join(WORKFLOWS)))
 }
 

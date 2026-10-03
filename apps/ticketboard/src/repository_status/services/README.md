@@ -38,7 +38,7 @@ span, so the command's last writes start no check.
 
 ## Boundaries
 
-- Depends on: `ticket_engine::repository` (`TICKETS_DIR` and `documentation::ROADMAP`); the
+- Depends on: `repository_layout` (`TICKETS_DIR` and `documentation::ROADMAP`); the
   `notify` crate; `std::sync::mpsc`.
 - Used by: `crate::application`: `arm_watch`, `poll_watch` and `set_verb_in_flight` in
   `apps/ticketboard/src/application/background_events.rs`, and the `Debouncer` held in

@@ -1,6 +1,6 @@
 use super::*;
+use repository_laws::workspace_members::read_workspace_members;
 use verification_core::NotRun;
-use verification_core::repository_laws::workspace_members::read_workspace_members;
 
 /// `Cargo.toml` dirs of every workspace crate that `include!`s an orphan `.rs` fragment.
 ///

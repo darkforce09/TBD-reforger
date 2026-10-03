@@ -46,7 +46,7 @@ files included, since it reads the working tree, and prints
 
 A pinned root or an explicit member folder that is missing, an unreadable file or a walk that
 finds no source file is a check that did not run (exit 2 or 1), never a pass. Generated Rust is
-not excluded: the contract types under `apps/api/src/missions/contract/generated/` are
+not excluded: the contract types under `crates/contracts/contract_schema_types/src/generated/` are
 held to the same limit.
 
 Outside the walk, and so unenforced by this gate:

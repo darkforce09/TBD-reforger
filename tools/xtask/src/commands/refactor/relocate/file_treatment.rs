@@ -30,10 +30,9 @@ use std::ops::Range;
 use ticket_engine::StatusName;
 
 use super::path_mapping::{PathMapping, is_at_or_below, parent_folder};
-use crate::core::repository_layout::TICKETS_DIR;
-use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, DOCUMENTATION_ROOT, TICKET_DOCUMENTS_DIR,
-};
+use crate::core::repository_layout::documentation::{ARCHIVE_DIR, TICKET_DOCUMENTS_DIR};
+use repository_layout::TICKETS_DIR;
+use repository_layout::documentation::DOCUMENTATION_ROOT;
 
 /// The relocation manifests' folder below the documentation root.
 const MANIFESTS_BELOW_DOCUMENTATION: &str = "restructure/manifests";

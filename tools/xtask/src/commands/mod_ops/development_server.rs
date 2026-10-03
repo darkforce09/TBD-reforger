@@ -14,7 +14,7 @@ use std::path::Path;
 
 use anyhow::Result;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// What a bare `cargo xtask mod dev-server` prints before exiting 2.
 fn usage() -> String {
@@ -46,7 +46,7 @@ instead of --mission to boot a compiled golden with no API running.\n";
 
 /// Entry for `xtask mod dev-server [args…]`.
 pub fn run(args: &[String]) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     run_with_root(&root, args)
 }
 

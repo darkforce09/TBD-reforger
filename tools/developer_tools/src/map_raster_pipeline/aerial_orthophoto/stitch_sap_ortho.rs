@@ -7,7 +7,7 @@ pub fn stitch_sap_ortho(terrain: &str) -> Result<u8> {
         eprintln!("only everon supported this slice (got {terrain})");
         return Ok(1);
     }
-    let out_dir = sap_dir();
+    let out_dir = sap_dir()?;
     let t0 = std::time::Instant::now();
     let vfs = PakVfs::open_default()?;
     let cells = enfusion_texture_decoder::list_eden_cells(&vfs);
@@ -132,7 +132,7 @@ pub fn blend_sap_seams_cli(terrain: &str) -> Result<u8> {
         eprintln!("only everon supported this slice (got {terrain})");
         return Ok(1);
     }
-    let sap = sap_dir();
+    let sap = sap_dir()?;
     let png_path = sap.join("everon-sap-ortho.png");
     let meta_path = sap.join("TBD_SatExport_meta.json");
     if !png_path.exists() {

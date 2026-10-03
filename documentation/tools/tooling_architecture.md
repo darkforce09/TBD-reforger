@@ -2,7 +2,7 @@
 
 # Tooling architecture
 
-How the developer tooling in `tools/` is put together: the four crates and the npm package, the
+How the developer tooling in `tools/` is put together: the crates and the npm package, the
 direction their dependencies run, the invariants that keep them apart, and the verification
 surface they build. Developers and AI agents read it before adding a command, a check or a
 module to the tooling; each crate's README then says what its own folders hold.
@@ -11,7 +11,10 @@ module to the tooling; each crate's README then says what its own folders hold.
 
 - Code: [`tools/`](/tools/README.md) with
   [`xtask/`](/tools/xtask/README.md), [`ticket_engine/`](/tools/ticket_engine/README.md),
-  [`verification_core/`](/tools/verification_core/README.md),
+  the [foundation crates](/tools/foundation/README.md)
+  ([`verification_core/`](/tools/foundation/verification_core/README.md),
+  [`process_runner/`](/tools/foundation/process_runner/README.md),
+  [`repository_laws/`](/tools/foundation/repository_laws/README.md)),
   [`developer_tools/`](/tools/developer_tools/README.md) and
   [`enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md); the
   [ticketboard](/apps/ticketboard/README.md) in `apps/ticketboard/` links `ticket_engine`.
@@ -29,7 +32,9 @@ module to the tooling; each crate's README then says what its own folders hold.
 |---|---|---|
 | `xtask` | binary | the command router: database, deploys, mod servers, map helpers, the platform factory, and every repository verification and CI task |
 | `ticket_engine` | library | the [ticket](/documentation/glossary/n_to_z.md#ticket) registry: typed storage and operations, validation, `queue.json` and the roadmap and gap-analysis markers, the [wave](/documentation/glossary/n_to_z.md#wave) lock, run receipts and estimates |
-| `verification_core` | library | the fail-closed primitives: verdicts, findings, pattern scans, child processes with deadlines, the report and the shared verification lock |
+| `verification_core` | library, `tools/foundation` tier 0 | the fail-closed primitives: verdicts, findings, pattern scans, the report and the shared verification lock |
+| `process_runner` | library, `tools/foundation` tier 1 | child processes in their own process group with deadlines and honest statuses, the container-to-host bridge, the ssh transport |
+| `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length, test placement, exemptions, engine layers, crate directions, workspace laws |
 | `developer_tools` | library and six binaries | the heavy offline work: [Enfusion](/documentation/glossary/a_to_f.md#enfusion) archives and the script oracle, the MCP broker, the headless browser gates, the blueprint compiler, the world export and map raster pipelines, map verification |
 | `enfusion_mcp_node_package` | npm data, not a crate | the pinned `enfusion-mcp` server that `mcpd` and `cargo xtask mcp` start |
 
@@ -40,10 +45,10 @@ the ticket rules are `ticket_engine::validation`.
 ### Dependency direction
 
 ```text
-verification_core        ticket_engine ◀──────── ticketboard (apps/ticketboard)
-        ▲                      ▲                 (foundational: no workspace dependency)
-        │                      │
-        └──────── xtask ───────┘
+verification_core ◀── process_runner, repository_laws        (tools/foundation, tiers 0 and 1)
+        ▲                      ▲
+        │                      │          ticket_engine ◀──── ticketboard (apps/ticketboard)
+        └──────── xtask ───────┴───────────────┘
                     │
                     ▼
              developer_tools ──▶ map_engine (legacy/map_engine)
@@ -51,8 +56,10 @@ verification_core        ticket_engine ◀──────── ticketboard (
                     └── mcpd starts ──▶ enfusion_mcp_node_package (after npm ci)
 ```
 
-1. `verification_core` and `ticket_engine` depend on no workspace crate, so either is read, tested
-   and reasoned about alone (`foundational_engines_have_no_workspace_dependencies`).
+1. A `tools/foundation` crate depends only on lower `tools/foundation` crates (`process_runner`
+   and `repository_laws` on `verification_core`, which depends on none), and `ticket_engine` only
+   on `tools/foundation` crates, so each is read, tested and reasoned about without the tools
+   above it (`foundation_crates_depend_only_on_lower_foundation_crates`).
 2. `developer_tools` never depends on `xtask`: the router calls the services, never the reverse
    (`tooling_dependency_direction_is_enforced`).
 3. `xtask` never depends on `map_engine` or `graphics_engine` directly; the map
@@ -67,18 +74,24 @@ binary names and the three layout modules are pinned by
 
 ### One owner per path
 
-Only three layout modules spell a repository path literal:
+Only the `repository_layout` crate and three layout modules spell a repository path literal:
 
 | Module | Owns |
 |---|---|
-| `tools/ticket_engine/src/repository.rs` | the ticket registry, its schemas, receipts and estimates, and in its `documentation` submodule every documentation path the registry writes or reads |
+| `tools/foundation/repository_layout` | the checkout-root walk and the locations more than one tool names: the ticket registry files, the artifact tree, the reference lanes, the documentation root, the roadmap and gap analysis, and the build output folder |
+| `tools/ticket_engine/src/repository.rs` | the handoff document, the sparse-checkout sets, and in its `documentation` submodule the documents only the ticket domain names |
 | `tools/xtask/src/core/repository_layout.rs` | the deploy tree, the server profiles, the MCP fixtures, the worktree base, the verdict receipts and the documentation pointers the router prints |
 | `tools/developer_tools/src/repository_layout.rs` | the contract and asset trees, the Enfusion index, the operations logs and the npm package folder |
 
-`xtask` resolves the checkout root through `ticket_engine::repository::find_repo_root`, which walks
-up to `.ai/tickets/ROOT`, so a command run in a linked worktree reads that worktree's files.
-`developer_tools` cannot depend on `ticket_engine` and keeps its own lookup in
-`repository_paths.rs`. `only_a_layout_module_spells_a_repository_path` in
+Every tool resolves the checkout root through `repository_layout::find_repository_root`
+(`tools/foundation/repository_layout`), which walks up to `.ai/tickets/ROOT`, so a command run in a
+linked worktree reads that worktree's files. `developer_tools` also anchors the same walk on its
+compile-time manifest folder (`compiled_checkout_root` in
+`tools/developer_tools/src/repository_layout.rs`) for the world export, raster, browser gate and
+Enfusion MCP broker code, which reads the checkout the binary was built from whatever the working
+directory; a manifest folder outside any checkout is an error, never a guessed folder. The same crate spells the locations more than one tool
+names: the ticket registry files, the artifact tree, the reference lanes, the documentation root
+and the build output folder. `only_a_layout_module_spells_a_repository_path` in
 `tools/xtask/src/tests/tooling_prose_rules.rs` holds the rule for production source.
 
 ### One outcome vocabulary
@@ -88,7 +101,7 @@ whose input is missing, whose tool is absent, whose child was killed or whose co
 reports did-not-run, never a pass; an empty input is never a clean tree. `Verdict` has no
 `From<bool>` and no `is_ok()`, so no expression folds the third outcome into the first. A `Report`
 turns the verdicts into the exit code, 0 held, 1 failed, 2 did not run, with 2 outranking 1. This
-is what makes a green run evidence; the [verification core README](/tools/verification_core/README.md#how-it-works)
+is what makes a green run evidence; the [verification core README](/tools/foundation/verification_core/README.md#how-it-works)
 gives the table and the lock rules.
 
 Gates that must not overlap (the platform wave gate, the MCP broker start) serialise on one
@@ -137,9 +150,6 @@ sit beside the code that reads them, and a layout module names each once.
   `Corpus::load`'s vocabulary and id-to-file checks and keeps its own copies of the wave-lock
   types, the scope vocabulary parsing and the estimate validation
   (`apps/ticketboard/src/execution_metrics/estimated/validation.rs`).
-- `developer_tools` has two root lookups, `repository_paths::find_repo_root` and
-  `browser_testing::server::repo_root` (`tools/developer_tools/src/browser_testing/server.rs:434`),
-  and the world export and raster code import the second.
 
 ## Data
 

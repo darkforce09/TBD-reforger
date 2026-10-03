@@ -55,7 +55,7 @@ fn legality_walks_the_tree() {
 fn missing_file_refuses_naming_path() {
     let dir = std::env::temp_dir().join(format!("t917-vocab-lib-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    std::fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).unwrap();
+    std::fs::create_dir_all(dir.join(repository_layout::TICKETS_DIR)).unwrap();
     let err = ScopeVocab::load(&dir).unwrap_err();
     assert!(err.contains("scope-vocab.toml"), "{err}");
     std::fs::write(dir.join(SCOPE_VOCAB), MINI).unwrap();

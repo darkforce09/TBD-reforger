@@ -4,7 +4,8 @@ use super::super::fixture_checkout::{
 };
 use super::super::path_regions::file_name;
 use super::*;
-use crate::core::repository_layout::documentation::{DOCUMENTATION_ROOT, PENDING_MERGE_DIR};
+use crate::core::repository_layout::documentation::PENDING_MERGE_DIR;
+use repository_layout::documentation::DOCUMENTATION_ROOT;
 
 fn run(fixture: &FixtureCheckout, scope: &[&str]) -> GateRun {
     judge(

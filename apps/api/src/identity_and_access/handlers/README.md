@@ -63,7 +63,8 @@ apps/api/src/identity_and_access/handlers/
   `discord_membership_cache`, `link_code_issuance`, `identity_linking`, `user_lookup`) and
   `models::current_profile`; `core` for the application state, the `AuthUser` extractor,
   `authentication_primitives`, `http_url_guard` and the RFC 3339 wire format;
-  `server_infrastructure` (`MachineCaller`, `ExecutorKind`) for the link confirmation's caller.
+  `server_infrastructure` (`MachineCaller`) and `fleet_wire_contract` (`ExecutorKind`) for the
+  link confirmation's caller.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
   and the navigation frame under `apps/frontend/src/v2/pages/`, the
   [API](/documentation/glossary/a_to_f.md#api) client's token refresh in

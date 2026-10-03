@@ -15,7 +15,7 @@ use map_engine::world::terrain::dem::png::decode_png_to_meters;
 use map_engine::world::terrain::dem::sampling::sample_elevation_from_meters_cache;
 use serde_json::{Map, Value, json};
 
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 use crate::world_export_pipeline::json_number_formatting::{js_math_round, js_num};
 
 /* ─────────────────────────── locations export ─────────────────────────── */

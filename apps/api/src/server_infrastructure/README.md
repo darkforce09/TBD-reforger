@@ -87,15 +87,18 @@ action.
 - `services::fleet_commands`: the command ledger mission deployments issue through, and
   `reconcile_fleet_commands` for its worker.
 - `models`: `Server`, `ServerStatus` with its `TelemetryQueueStatus`, and the `ServerStatusRow`
-  projection, read by the dashboard and the heartbeat; `ExecutorKind` and
-  `FleetAction`, read by `match_telemetry`, `missions` and `operations`; `generated/`, read by the
-  contract test `apps/api/tests/game_runtime_contract.rs`.
+  projection, read by the dashboard and the heartbeat. The domain's generated contract types
+  (`contract_schema_types::server_infrastructure`) are read by the contract test
+  `apps/api/tests/game_runtime_contract.rs`. `ExecutorKind` and `FleetAction`, which
+  `match_telemetry`, `missions` and `operations` read, live in the `fleet_wire_contract` crate.
 
 ## Boundaries
 
 - Depends on:
   - `core`: the application state, errors, extractors, `role_rank`, the authentication
     primitives, the realtime hub and the wire formats;
+  - `fleet_wire_contract` for the fleet command wire shapes, `FleetAction`, `ExecutorKind`, the
+    machine credential prefix and the secret-file limits it shares with the fleet host agent;
   - `community_content` for the modpack a server requires (`modpack_lookup`),
     `missions::models` for the terrain a server runs, `administration` for the audit rows of every
     registry, credential, command and scenario write, and `identity_and_access` for rechecking an
@@ -111,8 +114,8 @@ action.
     `apps/fleet_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`); `models/generated/` is written by
-  `cargo xtask ci schema-codegen` and never edited by hand; a machine acts only for its own server
+  carries its `/// @route` tag (`cargo xtask verify route-tags`); the domain's generated contract
+  types are written by `cargo xtask ci schema-codegen` and never edited by hand; a machine acts only for its own server
   and executor kind.
 
 ## Related documentation

@@ -12,10 +12,11 @@
 //! [`ConsoleCommandOutcome`] with a response of at most
 //! [`ConsoleCommandOutcome::RESPONSE_MAX_BYTES`] bytes; a failed one may carry it or nothing.
 
+use fleet_wire_contract::FleetAction;
+use fleet_wire_contract::console_command::ConsoleCommandOutcome;
 use serde_json::{Map, Value};
 
 use crate::core::error_handling::api_error::ApiError;
-use crate::server_infrastructure::models::fleet_command::{ConsoleCommandOutcome, FleetAction};
 
 /// The outcome of `action` as the ledger stores it, or the refusal of a reported outcome that
 /// breaks the action's contract.

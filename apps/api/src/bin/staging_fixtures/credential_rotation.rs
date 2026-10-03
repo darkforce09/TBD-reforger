@@ -20,9 +20,9 @@
 //! path holds the old secret or the new one at every instant. No secret reaches stdout or stderr.
 
 use api::core::authentication_primitives::hash_token;
-use api::server_infrastructure::models::machine_credential::ExecutorKind;
 use api::server_infrastructure::services::machine_credentials::issue_machine_credential;
 use chrono::Utc;
+use fleet_wire_contract::ExecutorKind;
 use sqlx::PgConnection;
 use uuid::Uuid;
 

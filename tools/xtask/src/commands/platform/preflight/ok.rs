@@ -74,11 +74,11 @@ pub(super) fn resolve_root() -> Result<PathBuf> {
     // Prefer $PWD (logical path) so dual-homed hosts (/home vs /var/home) match bash `cd … && pwd`.
     if let Some(pwd) = env::var_os("PWD") {
         let p = PathBuf::from(pwd);
-        if ticket_engine::repository::is_repo_root(&p) {
+        if repository_layout::is_repository_root(&p) {
             return Ok(p);
         }
     }
-    find_repo_root()
+    Ok(find_repository_root()?)
 }
 
 pub(super) fn free_gb(root: &Path) -> Option<u64> {
@@ -233,7 +233,7 @@ pub(super) fn wave_lock_open_count(root: &Path) -> Option<(usize, usize)> {
 }
 
 pub(super) fn stray_worktree_targets(root: &Path) -> u64 {
-    let base = root.join(crate::core::repository_layout::WORKTREES_DIR);
+    let base = root.join(repository_layout::WORKTREES_DIR);
     let mut n = 0u64;
     let Ok(rd) = fs::read_dir(&base) else {
         return 0;

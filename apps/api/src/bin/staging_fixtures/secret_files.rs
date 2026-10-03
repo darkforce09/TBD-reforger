@@ -30,18 +30,15 @@ use std::io::{ErrorKind, Write};
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
-use api::server_infrastructure::models::machine_credential::ExecutorKind;
+use fleet_wire_contract::ExecutorKind;
+use fleet_wire_contract::secret_file_limits::{
+    SECRET_FILE_MAX_BYTES, SECRET_FILE_MODE, SHARED_PERMISSION_BITS,
+};
 
 use crate::tool_failure::ToolFailure;
 
-/// The mode of a secret file: read and write for the owner only.
-const SECRET_FILE_MODE: u32 = 0o600;
 /// The mode of a directory this module creates: the owner only.
 const PRIVATE_DIRECTORY_MODE: u32 = 0o700;
-/// Group and other permission bits.
-const SHARED_PERMISSIONS: u32 = 0o077;
-/// A machine credential is 101 bytes; anything past this is not one.
-const SECRET_FILE_MAX_BYTES: u64 = 4096;
 
 /// Where each instance's credential files live under one secrets root.
 #[derive(Debug, Clone)]
@@ -121,7 +118,7 @@ pub(crate) fn inspect_secrets_directory(path: &Path) -> Result<DirectoryState, T
         )));
     }
     let mode = metadata.permissions().mode() & 0o777;
-    if mode & SHARED_PERMISSIONS != 0 {
+    if mode & SHARED_PERMISSION_BITS != 0 {
         return Err(ToolFailure::refused(format!(
             "{} is mode {mode:o}; a secrets directory admits its owner only (mode 700)",
             path.display()
@@ -184,7 +181,7 @@ pub(crate) fn read_private_secret_file(path: &Path) -> Result<Option<String>, To
         Err(error) => return Err(io_failure("cannot inspect", path, &error)),
     };
     let mode = metadata.permissions().mode() & 0o777;
-    if !metadata.is_file() || mode & SHARED_PERMISSIONS != 0 {
+    if !metadata.is_file() || mode & SHARED_PERMISSION_BITS != 0 {
         return Err(ToolFailure::refused(format!(
             "{} is not a private regular file (mode 600)",
             path.display()

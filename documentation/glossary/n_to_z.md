@@ -102,7 +102,7 @@ agent](/documentation/glossary/a_to_f.md#fleet-host-agent) uses it to list playe
 [console command](/documentation/glossary/a_to_f.md#console-command), one line transmitted once. Broadcasts and kicks run in the
 [game runtime](/documentation/glossary/g_to_m.md#game-runtime), and Reforger's RCON has no broadcast command.
 
-In code: `apps/fleet_host_agent/src/rcon/`; `FleetAction` in `apps/api/src/server_infrastructure/models/fleet_command.rs`.
+In code: `apps/fleet_host_agent/src/rcon/`; `FleetAction` in `crates/contracts/fleet_wire_contract/src/fleet_action.rs`.
 
 See: [fleet command](/documentation/glossary/a_to_f.md#fleet-command), [console command](/documentation/glossary/a_to_f.md#console-command).
 

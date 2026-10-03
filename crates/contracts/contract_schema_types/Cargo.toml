@@ -1,0 +1,26 @@
+# The serde types `cargo xtask schema codegen` generates with typify from the JSON Schemas in
+# `contracts/definitions/`, one module per API domain: the API decodes registry imports and
+# re-reads its answers into them, and its contract tests decode live answers into them.
+[package]
+name = "contract_schema_types"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Serde types generated with typify from the contract JSON Schemas, one module per API domain."
+
+[package.metadata.layout]
+category = "crates/contracts"
+tier = 0
+targets = "any"
+
+[dependencies]
+chrono = { workspace = true, features = ["serde"] }
+regress = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+uuid = { workspace = true, features = ["serde"] }
+
+[lints]
+workspace = true

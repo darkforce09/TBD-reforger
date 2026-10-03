@@ -1,17 +1,14 @@
 //! Tests for [`super`] — the gate reports the library's judgement of this checkout.
 //!
 //! The rules themselves are tested beside them in
-//! `tools/verification_core/src/repository_laws/engine_layers/tests/`; these pin the gate's
+//! `tools/foundation/repository_laws/src/engine_layers/tests/`; these pin the gate's
 //! delegation: its exit code over this checkout and over a checkout it cannot read.
 
 use super::*;
 
 fn this_repo() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("tools/xtask sits two levels below the repository root")
-        .to_path_buf()
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root")
 }
 
 #[test]

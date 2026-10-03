@@ -13,7 +13,7 @@ use super::super::drop_policy::DropTarget;
 use super::super::relay_settings::RelaySettings;
 use super::super::stub_upstream::TemporaryFolder;
 use super::{ControlRequest, RelayCommand, RelayCommandLine, run};
-use crate::repository_paths::find_repo_root;
+use ::repository_layout::find_repository_root;
 
 /// The unit the staging deploy installs, relative to the checkout root.
 const RELAY_UNIT: &str = "deploy/systemd/acknowledgement-dropping-relay@.service";
@@ -26,7 +26,8 @@ fn parse(arguments: &[&str]) -> Result<RelayCommand, clap::Error> {
 
 #[test]
 fn the_units_exec_start_line_parses_as_a_serve_command() {
-    let unit = fs::read_to_string(find_repo_root().unwrap().join(RELAY_UNIT)).expect("unit file");
+    let unit =
+        fs::read_to_string(find_repository_root().unwrap().join(RELAY_UNIT)).expect("unit file");
     let exec_start = unit
         .lines()
         .find_map(|line| line.strip_prefix("ExecStart="))

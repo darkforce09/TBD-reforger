@@ -23,7 +23,10 @@ serde_norway = "0.9"
 walkdir = { workspace = true }
 jsonschema = { workspace = true }
 developer_tools = { path = "../developer_tools" }
-verification_core = { path = "../verification_core" }
+verification_core = { workspace = true }
+process_runner = { workspace = true }
+repository_laws = { workspace = true }
+repository_layout = { workspace = true }
 ticket_engine = { path = "../ticket_engine" }
 libc = { workspace = true }
 typify = "0.7"
@@ -32,6 +35,8 @@ prettyplease = "0.2"
 syn = { version = "2", features = ["full", "visit"] }
 heck = "0.5"
 content_digest = { workspace = true }
+# The machine credential prefix the mod mission test recognises in a backend config.
+fleet_wire_contract = { workspace = true }
 
 [dev-dependencies]
 # Manifest parsing in the tooling dependency-boundary and deploy tests.

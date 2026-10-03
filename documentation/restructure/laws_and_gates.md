@@ -110,7 +110,7 @@ the deploy Dockerfile, and the operator-run `cargo xtask mod compile` and
 | Engine layer rules 1, 3a, 3b, 4, 6 and 7, with source pins | Manifest firewalls and category edges of the crate tiers law; deleted with the legacy engines in S8 |
 | Engine layer rule 2 (no map nouns in graphics) | Kept as a source regex over the graphics category |
 | Engine layer rule 5 (no browser crates in editing) | A category edge plus a source regex over mission editing |
-| The forbidden-edge list in `tools/verification_core/src/repository_laws/crate_dependencies.rs` | The allowed-edge category matrix and tier numbers |
+| The forbidden-edge list in `tools/foundation/repository_laws/src/crate_dependencies.rs` | The allowed-edge category matrix and tier numbers |
 | Source roots skip missing folders silently | Fail-closed roots derived from the workspace members (S0) |
 | The map engine's feature gate tripwire test | Replaced by the anatomy law's features rule; deleted in S8 |
 | No standards gate | Crate anatomy, strangler, frontend layering, tailwind sources |

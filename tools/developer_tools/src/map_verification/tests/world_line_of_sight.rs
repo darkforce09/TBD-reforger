@@ -18,8 +18,9 @@ use crate::blueprint::parity_report::ParityFile;
 use crate::blueprint::tests::fixture;
 
 fn assets() -> PathBuf {
-    // Compile-time root, not the cwd walk: see `root::test_repo_root` for the race.
-    terrain_dir(&crate::repository_paths::test_repo_root(), "everon")
+    // The checkout this crate was compiled from, whatever directory the test runs in.
+    let root = crate::repository_layout::compiled_checkout_root().expect("repository root");
+    terrain_dir(&root, "everon")
 }
 
 /// The door-parity oracle replayed through the WORLD occluder: the committed farmhouse

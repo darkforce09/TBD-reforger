@@ -40,7 +40,7 @@ parser before it reports `OK`.
   (`tools/developer_tools/src/blueprint/architectural_analysis/contour_tracing.rs`: the lattice,
   the padding and `generate_dump`); the dump parser
   (`tools/developer_tools/src/blueprint/voxel_processing/dump_parser.rs`) for the self-check;
-  `crate::repository_paths::find_repo_root`; `flate2`.
+  `repository_layout::find_repository_root` and `repository_layout::BUILD_OUTPUT_FOLDER`; `flate2`.
 - Used by: `mesh_voxelization.rs`, which re-exports `run_voxels_from_mesh`, `generate` and
   `write_dump`; `cargo xtask map voxels-from-mesh`, through
   `developer_tools::blueprint::run_voxels_from_mesh`; the tests in

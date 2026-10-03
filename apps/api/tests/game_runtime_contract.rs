@@ -10,8 +10,8 @@ mod contract_support;
 mod event_eligibility_support;
 mod fleet_support;
 
-use api::operations::models::generated::{game_runtime_deployment, game_runtime_roster};
-use api::server_infrastructure::models::generated::{
+use contract_schema_types::operations::{game_runtime_deployment, game_runtime_roster};
+use contract_schema_types::server_infrastructure::{
     fleet_command, game_runtime_session, machine_credential,
 };
 use contract_support::{assert_decodes, assert_invalid, assert_valid};

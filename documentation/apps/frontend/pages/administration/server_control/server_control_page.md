@@ -214,7 +214,7 @@ lists each call with the DTO it reads or sends. Server-side:
   `server.command_requested`, whose audit row carries a console command's line. `start`, `stop`,
   `restart`, `list_players` and `console_command` go to the fleet host agent; `broadcast` and
   `kick` go to the game runtime (`FleetAction` in
-  `apps/api/src/server_infrastructure/models/fleet_command.rs`). A console line is
+  `crates/contracts/fleet_wire_contract/src/fleet_action.rs`). A console line is
   stored trimmed and refused with 400 outside 1 to 256 bytes, with a control character or a line
   or paragraph separator, or starting with `@`; a succeeded console command reports
   `{response, response_truncated}`, the server's reply cut by the host agent on a character

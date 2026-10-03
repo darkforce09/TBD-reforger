@@ -1,9 +1,17 @@
 //! Contract codegen: JSON Schema → Rust serde types via `typify`, with no Node in the pipeline.
-//! Domain-specific schemas are generated. The loadout-export model is hand-maintained because
-//! its versioned root `oneOf` is provably lossy (the branches merge and `Wear{}`/`Equipment{}` come
-//! out empty), so it is hand-maintained in
-//! `apps/api/src/missions/contract/loadout_projection.rs` and guarded there by serde
-//! round-trip tests against the committed sample fixtures.
+//!
+//! **Role:** writes, and checks the freshness of, the generated module tree of the
+//! `contract_schema_types` crate: one module per API domain, one module folder per schema below
+//! it, and the `mod.rs` files that declare them.
+//! **Position:** `cargo xtask schema codegen` and `cargo xtask ci schema-codegen` call [`codegen`];
+//! `cargo xtask ci verify-codegen-fresh` calls [`verify_fresh`]. Reads `contracts/definitions/`.
+//! **Signals & state:** none; each run renders the whole tree in memory from the schemas.
+//! **Invariants:** everything under [`OUTPUT_DIR`] is generator output: a Rust file the render
+//! does not produce is removed by the codegen and refused by the freshness check. The
+//! loadout-export model is not generated: its versioned root `oneOf` is provably lossy (the
+//! branches merge and `Wear{}`/`Equipment{}` come out empty), so it is hand-maintained in
+//! `apps/api/src/missions/contract/loadout_projection.rs` and guarded there by serde round-trip
+//! tests against the committed sample fixtures.
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Write;
@@ -14,138 +22,118 @@ use anyhow::{Context, Result};
 
 use developer_tools::repository_layout::contract_definitions_dir;
 
-use crate::core::repository_root::find_repo_root as repo_root;
+use repository_layout::find_repository_root as repo_root;
 
 mod module_files;
 mod module_plan;
+mod module_tree;
 
-/// Where the generated modules live, relative to the repository root.
-const API_SOURCE_DIR: &str = "apps/api/src";
+/// The generated module tree, relative to the repository root: the `generated` folder of the
+/// `contract_schema_types` crate.
+const OUTPUT_DIR: &str = "crates/contracts/contract_schema_types/src/generated";
 
-/// Each schema file maps to the generated module directory of its owning domain.
+/// Each schema file maps to its module path inside [`OUTPUT_DIR`]: the API domain that serves or
+/// reads it, then the schema's own module.
 const TARGETS: [(&str, &str); 30] = [
-    (
-        "registry-items.schema.json",
-        "missions/contract/generated/registry_items",
-    ),
-    (
-        "registry-compat.schema.json",
-        "missions/contract/generated/registry_compat",
-    ),
+    ("registry-items.schema.json", "missions/registry_items"),
+    ("registry-compat.schema.json", "missions/registry_compat"),
     (
         "mission-editor-payload.schema.json",
-        "missions/contract/generated/mission_editor",
+        "missions/mission_editor",
     ),
-    (
-        "faction-library.schema.json",
-        "missions/contract/generated/faction_library",
-    ),
-    (
-        "mission-review.schema.json",
-        "missions/models/generated/mission_review",
-    ),
+    ("faction-library.schema.json", "missions/faction_library"),
+    ("mission-review.schema.json", "missions/mission_review"),
     (
         "mission-deployment.schema.json",
-        "missions/models/generated/mission_deployment",
+        "missions/mission_deployment",
     ),
     (
         "reservation-response.schema.json",
-        "operations/models/generated/reservation_response",
+        "operations/reservation_response",
     ),
     (
         "current-profile.schema.json",
-        "identity_and_access/models/generated/current_profile",
+        "identity_and_access/current_profile",
     ),
     (
         "event-access-administration.schema.json",
-        "operations/models/generated/event_access_administration",
+        "operations/event_access_administration",
     ),
     (
         "event-viewer-access.schema.json",
-        "operations/models/generated/event_viewer_access",
+        "operations/event_viewer_access",
     ),
-    (
-        "event-hub.schema.json",
-        "operations/models/generated/event_hub",
-    ),
-    (
-        "event-orbat.schema.json",
-        "operations/models/generated/event_orbat",
-    ),
+    ("event-hub.schema.json", "operations/event_hub"),
+    ("event-orbat.schema.json", "operations/event_orbat"),
     (
         "waitlist-promotion-response.schema.json",
-        "operations/models/generated/waitlist_promotion_response",
+        "operations/waitlist_promotion_response",
     ),
     (
         "game-runtime-roster.schema.json",
-        "operations/models/generated/game_runtime_roster",
+        "operations/game_runtime_roster",
     ),
     (
         "game-runtime-deployment.schema.json",
-        "operations/models/generated/game_runtime_deployment",
+        "operations/game_runtime_deployment",
     ),
     (
         "game-runtime-session.schema.json",
-        "server_infrastructure/models/generated/game_runtime_session",
+        "server_infrastructure/game_runtime_session",
     ),
     (
         "machine-credential.schema.json",
-        "server_infrastructure/models/generated/machine_credential",
+        "server_infrastructure/machine_credential",
     ),
     (
         "fleet-command.schema.json",
-        "server_infrastructure/models/generated/fleet_command",
+        "server_infrastructure/fleet_command",
     ),
     (
         "match-telemetry.schema.json",
-        "match_telemetry/models/generated/match_telemetry",
+        "match_telemetry/match_telemetry",
     ),
     (
         "personnel-roster.schema.json",
-        "administration/models/generated/personnel_roster",
+        "administration/personnel_roster",
     ),
-    (
-        "audit-log.schema.json",
-        "administration/models/generated/audit_log",
-    ),
+    ("audit-log.schema.json", "administration/audit_log"),
     (
         "vehicle-database.schema.json",
-        "community_content/models/generated/vehicle_database",
+        "community_content/vehicle_database",
     ),
-    (
-        "wiki-page.schema.json",
-        "community_content/models/generated/wiki_page",
-    ),
+    ("wiki-page.schema.json", "community_content/wiki_page"),
     (
         "content-upload.schema.json",
-        "community_content/models/generated/content_upload",
+        "community_content/content_upload",
     ),
     (
         "equipment-data-viewer/resource-cards.schema.json",
-        "community_content/models/generated/equipment_data_viewer/resource_cards",
+        "community_content/equipment_data_viewer/resource_cards",
     ),
     (
         "equipment-data-viewer/dataset.schema.json",
-        "community_content/models/generated/equipment_data_viewer/dataset",
+        "community_content/equipment_data_viewer/dataset",
     ),
     (
         "equipment-data-viewer/resources.schema.json",
-        "community_content/models/generated/equipment_data_viewer/resources",
+        "community_content/equipment_data_viewer/resources",
     ),
     (
         "equipment-data-viewer/source-inspection.schema.json",
-        "community_content/models/generated/equipment_data_viewer/source_inspection",
+        "community_content/equipment_data_viewer/source_inspection",
     ),
     (
         "equipment-data-viewer/relationships.schema.json",
-        "community_content/models/generated/equipment_data_viewer/relationships",
+        "community_content/equipment_data_viewer/relationships",
     ),
     (
         "equipment-data-viewer/field-inventory.schema.json",
-        "community_content/models/generated/equipment_data_viewer/field_inventory",
+        "community_content/equipment_data_viewer/field_inventory",
     ),
 ];
 
+/// Regenerate the whole module tree from the schemas.
 pub fn codegen() -> Result<u8> {
     let root = repo_root()?;
     write_generated_modules(&root)?;
@@ -153,53 +141,40 @@ pub fn codegen() -> Result<u8> {
     Ok(0)
 }
 
-/// Write every target's module directory, then remove what the schemas no longer produce:
-/// Rust files the render did not emit, directories they leave empty, and a target's single-file
-/// form, which would collide with its directory module.
+/// Write every file of the module tree, then remove what the schemas no longer produce: Rust
+/// files the render did not emit and the folders they leave empty.
 fn write_generated_modules(root: &Path) -> Result<()> {
-    let source_dir = root.join(API_SOURCE_DIR);
+    let files = render_tree(root)?;
+    let directory = root.join(OUTPUT_DIR);
+    for (relative, source) in &files {
+        let path = directory.join(relative);
+        fs::create_dir_all(path.parent().context("generated file parent")?)?;
+        fs::write(&path, source)?;
+    }
+    for relative in rust_files_under(&directory)? {
+        if !files.contains_key(&relative) {
+            fs::remove_file(directory.join(&relative))?;
+        }
+    }
+    remove_empty_directories(&directory)?;
     for (schema_file, output) in TARGETS {
-        let files = render_module(root, schema_file)?;
-        let directory = source_dir.join(output);
-        for (relative, source) in &files {
-            let path = directory.join(relative);
-            fs::create_dir_all(path.parent().context("generated file parent")?)?;
-            fs::write(&path, source)?;
-        }
-        for relative in rust_files_under(&directory)? {
-            if !files.contains_key(&relative) {
-                fs::remove_file(directory.join(&relative))?;
-            }
-        }
-        remove_empty_directories(&directory)?;
-        let single_file = directory.with_extension("rs");
-        if single_file.exists() {
-            fs::remove_file(&single_file)?;
-        }
-        println!("  {schema_file} -> src/{output}/ ({} files)", files.len());
+        let count = files
+            .keys()
+            .filter(|relative| relative.starts_with(&format!("{output}/")))
+            .count();
+        println!("  {schema_file} -> {OUTPUT_DIR}/{output}/ ({count} files)");
     }
     Ok(())
 }
 
-/// Compare every target's module directory to a fresh render without relying on Git tracking
-/// or mutating files: a missing, changed or unexpected file fails, and so does a leftover
-/// single-file form of the target.
+/// Compare the module tree to a fresh render without relying on Git tracking or mutating files:
+/// a missing, changed or unexpected Rust file fails.
 pub fn verify_fresh(root: &Path) -> Result<()> {
-    let source_dir = root.join(API_SOURCE_DIR);
-    for (schema_file, output) in TARGETS {
-        compare_module(&render_module(root, schema_file)?, &source_dir.join(output))?;
-    }
-    Ok(())
+    compare_tree(&render_tree(root)?, &root.join(OUTPUT_DIR))
 }
 
-/// Compare one target's module directory with its expected files.
-fn compare_module(expected: &BTreeMap<String, String>, directory: &Path) -> Result<()> {
-    let single_file = directory.with_extension("rs");
-    anyhow::ensure!(
-        !single_file.exists(),
-        "stray generated output: {}",
-        single_file.display()
-    );
+/// Compare the generated folder with its expected files, keyed by their path inside it.
+fn compare_tree(expected: &BTreeMap<String, String>, directory: &Path) -> Result<()> {
     for (relative, source) in expected {
         let path = directory.join(relative);
         let actual = fs::read_to_string(&path)
@@ -218,6 +193,23 @@ fn compare_module(expected: &BTreeMap<String, String>, directory: &Path) -> Resu
         );
     }
     Ok(())
+}
+
+/// Every file of the module tree, keyed by its path inside [`OUTPUT_DIR`]: each schema's module
+/// folder and the `mod.rs` files above them.
+fn render_tree(root: &Path) -> Result<BTreeMap<String, String>> {
+    let format = |source: &str| rustfmt(root, source);
+    let mut files = module_tree::render_tree_files(&TARGETS, &format)?;
+    for (schema_file, output) in TARGETS {
+        for (relative, source) in render_module(root, schema_file)? {
+            let path = format!("{output}/{relative}");
+            anyhow::ensure!(
+                files.insert(path.clone(), source).is_none(),
+                "two generated files would share the path {path}"
+            );
+        }
+    }
+    Ok(files)
 }
 
 /// Typify's output for one schema, with the schema document it came from.

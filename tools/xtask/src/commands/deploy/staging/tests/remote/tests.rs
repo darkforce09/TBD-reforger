@@ -1,7 +1,7 @@
 use super::*;
 use crate::commands::deploy::development_machine_only_paths::DEVELOPMENT_MACHINE_ONLY_PATHS;
 use crate::commands::deploy::staging::config::tests::base;
-use crate::core::secure_shell_transport::SSH_PASSWORD_VARIABLE;
+use process_runner::secure_shell_transport::SSH_PASSWORD_VARIABLE;
 
 // ── ARGV: the stand-in for live coverage ────────────────────────────────────────────────
 

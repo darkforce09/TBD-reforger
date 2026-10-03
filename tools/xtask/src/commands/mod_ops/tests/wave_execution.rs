@@ -15,8 +15,8 @@ fn throwaway(tag: &str) -> PathBuf {
     fs::create_dir_all(root.join(".ai/artifacts/worktrees")).unwrap();
     // The real corpus pins: the driver reads its programme id from them and refuses without.
     fs::copy(
-        crate::core::repository_root::test_repo_root().join(ticket_engine::repository::CORPUS_PINS),
-        root.join(ticket_engine::repository::CORPUS_PINS),
+        crate::core::repository_root::test_repo_root().join(repository_layout::CORPUS_PINS),
+        root.join(repository_layout::CORPUS_PINS),
     )
     .unwrap();
     root

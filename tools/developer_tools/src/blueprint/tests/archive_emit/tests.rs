@@ -4,7 +4,11 @@ use map_engine::spatial::los::world::descriptor::ArchiveBoot;
 use map_engine::spatial::los::world::descriptor::BuildingArchiveBytes;
 
 fn prefabs_dir() -> PathBuf {
-    terrain_dir(&crate::repository_paths::test_repo_root(), "everon").join("prefabs")
+    terrain_dir(
+        &::repository_layout::find_repository_root().expect("repository root"),
+        "everon",
+    )
+    .join("prefabs")
 }
 
 /// The archive read back through the loader's own entry point, plus the JSON it came from.

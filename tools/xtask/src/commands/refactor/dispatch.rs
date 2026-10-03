@@ -11,8 +11,8 @@
 
 use super::cli::{RefactorCmd, RelocateArgs};
 use super::relocate;
-use crate::core::repository_root::find_repo_root;
 use anyhow::{Result, bail};
+use repository_layout::find_repository_root;
 
 /// Run `cmd` and return its process exit code.
 pub(crate) fn run(cmd: RefactorCmd) -> Result<u8> {
@@ -22,7 +22,7 @@ pub(crate) fn run(cmd: RefactorCmd) -> Result<u8> {
 }
 
 fn run_relocate(args: RelocateArgs) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     if args.verify {
         return Ok(relocate::verify(&root, args.manifest.as_deref()));
     }

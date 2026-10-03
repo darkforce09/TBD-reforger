@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn frozen_27_matches_live_corpus() {
-    let root = repo_root();
+    let root = worktree_root();
     if crate::registry::typed_projection::tree_is_phase2(&root) {
         return;
     }
@@ -20,7 +20,7 @@ fn frozen_27_matches_live_corpus() {
 /// `.ai/tickets/schema.json` in a commit that says so.
 #[test]
 fn on_disk_keys_are_mapped_or_allowed_new() {
-    let root = repo_root();
+    let root = worktree_root();
     let dir = tickets_dir(&root);
     let legal: BTreeSet<&str> = ENCODING_C_KEYS
         .iter()
@@ -162,7 +162,7 @@ fn user_story_alias_maps_to_main_goal() {
 
 #[test]
 fn toml_roundtrip_is_byte_identical_to_the_registry_document() {
-    let root = repo_root();
+    let root = worktree_root();
     let (parsed, gold) = canonical_registry_document(&root);
     let n = parsed
         .get("tickets")
@@ -173,7 +173,7 @@ fn toml_roundtrip_is_byte_identical_to_the_registry_document() {
 
     let tmp = root.join("target").join("ticket-file-roundtrip");
     let _ = fs::remove_dir_all(&tmp);
-    fs::create_dir_all(tmp.join(crate::repository::TICKETS_DIR)).unwrap();
+    fs::create_dir_all(tmp.join(repository_layout::TICKETS_DIR)).unwrap();
     save_toml_tree(&tmp, &parsed).expect("save toml tree");
     let reloaded = load_toml_tree(&tmp).expect("load toml tree");
     let emitted = format_json_unicode_preserve(&reloaded).expect("emit");
@@ -201,7 +201,7 @@ fn toml_roundtrip_is_byte_identical_to_the_registry_document() {
 
 #[test]
 fn no_ticket_lost_set_equality() {
-    let root = repo_root();
+    let root = worktree_root();
     let v = load_toml_tree(&root).unwrap();
     let (parents, all) = corpus_ids(&v);
     let n = parents.len();

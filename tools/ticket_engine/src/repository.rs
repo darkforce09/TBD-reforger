@@ -1,105 +1,22 @@
-//! Every repository location the ticket domain reads or writes, spelled once each.
+//! The repository locations only the ticket domain names, spelled once each.
 //!
-//! The ticket registry, its schemas, its receipts and the documents generated from it all live
-//! outside this crate's own tree. A caller joins one of these repository-relative items onto a
-//! checkout root — [`find_repo_root`] for a running command, the scratch root a test builds — so
-//! that relocating any of them is one edit here plus the move itself, and so that reading a
-//! module tells you which file it touches without a search.
+//! The locations the tools share — the registry files, the artifact tree, the documentation root
+//! and the two documents `ticket sync` rewrites — live in [`repository_layout`], whose
+//! [`repository_layout::find_repository_root`] also finds the checkout root these paths are
+//! joined onto. What stays here is the ticket domain's own: the handoff document of a slice, the
+//! sparse-checkout set of each ticket target, and the documents a ticket cites, a scan walks or
+//! skips, or only historical commits carry.
 //!
 //! [`documentation`] holds the documents, nearly all of them under the documentation tree. Those
 //! are the items a relocation of that tree rewrites, gathered in one place so the relocation is a
 //! single edit rather than a survey.
-//!
-//! The crates that consume the ticket domain resolve these paths from here rather than declaring
-//! their own: `xtask` and `ticketboard` both read the same registry, and two spellings of one
-//! location is a way for them to disagree about where a file is.
 
-use anyhow::{Context, Result, bail};
-use std::path::{Path, PathBuf};
-
-/* ─────────────────────────────── the ticket registry ─────────────────────────────── */
-
-/// The registry itself: one `T-<id>.toml` per ticket, parents and children alike, beside the
-/// schemas and receipts that describe them.
-pub const TICKETS_DIR: &str = ".ai/tickets";
-
-/// The file whose presence marks a checkout root. Every root walk stops at it, so a worktree
-/// under another checkout resolves to itself rather than to its parent.
-pub const ROOT_MARKER: &str = ".ai/tickets/ROOT";
-
-/// Draft 2020-12 schema every ticket file is validated against by `ticket check`.
-pub const SCHEMA: &str = ".ai/tickets/schema.json";
-
-/// The four-level domain → layer → component → surface word list a ticket's `[scope]` block is
-/// resolved against at every corpus load.
-pub const SCOPE_VOCAB: &str = ".ai/tickets/scope-vocab.toml";
-
-/// The corpus facts no ticket file states: the ids that must never be minted, and which ticket
-/// implements an editor gap row the ticket itself does not claim. Read by
-/// [`crate::corpus_pins::load`].
-pub const CORPUS_PINS: &str = ".ai/tickets/corpus-pins.toml";
-
-/// The wave plan, compiled from the ticket files by `cargo xtask wave repack` — the ONE writer.
-pub const WAVE_LOCK: &str = ".ai/tickets/wave.lock";
-
-/// The dispatch queue `ticket sync` regenerates: batch size, concurrency, worktree base, and the
-/// ready tickets in order.
-pub const QUEUE_JSON: &str = ".ai/tickets/queue.json";
-
-/// Run receipts, one `<ticket id>/` subtree each. Deliberately outside the ticket files and the
-/// wave lock: parallel lands touch disjoint subtrees and never a shared file.
-pub const METRICS_DIR: &str = ".ai/tickets/metrics";
-
-/// The committed schema every run receipt must satisfy.
-pub const METRICS_SCHEMA: &str = ".ai/tickets/metrics.schema.json";
-
-/// Token estimates, one file per ticket — deliberately outside [`METRICS_DIR`], because an
-/// estimate is written before the work and a receipt after it.
-pub const ESTIMATES_DIR: &str = ".ai/tickets/estimates";
-
-/// The committed schema every estimate file must satisfy.
-pub const ESTIMATES_SCHEMA: &str = ".ai/tickets/estimates.schema.json";
-
-/// Pipeline output: run reports, verify logs, handoff documents and the worktree base. Nothing
-/// here is an input to a gate; everything is a record of a run.
-pub const ARTIFACTS_DIR: &str = ".ai/artifacts";
-
-/// Where a parallel ticket's git worktree is created, one directory per ticket id.
-pub const WORKTREES_DIR: &str = ".ai/artifacts/worktrees";
-
-/// Marker file holding the commit the last verifier examined, so the wave gate can report how
-/// many commits of unverified debt stand behind the tip.
-pub const LAST_VERIFIED_MARKER: &str = ".ai/artifacts/last-verified";
-
-/// Recorded gate verdicts, one file per gate run.
-pub const VERDICTS_DIR: &str = ".ai/artifacts/verdicts";
+use repository_layout::documentation::DOCUMENTATION_ROOT;
+use repository_layout::{ARTIFACTS_DIR, TICKETS_DIR};
 
 /// The handoff document an executing agent writes for one ticket or slice.
 pub fn handoff_doc(slug: &str) -> String {
     format!("{ARTIFACTS_DIR}/{slug}_claude_code_handoff.md")
-}
-
-/// Walk up from the current directory until a checkout root is found.
-///
-/// Answering from the cwd rather than from a compile-time constant is what makes a command run
-/// inside a slice worktree read that worktree's files: worktrees share one build directory, so
-/// the binary may have been compiled from a sibling checkout whose data is not the data at hand.
-pub fn find_repo_root() -> Result<PathBuf> {
-    let mut current = std::env::current_dir().context("cwd")?;
-    loop {
-        if current.join(ROOT_MARKER).is_file() {
-            return Ok(current);
-        }
-        if !current.pop() {
-            bail!("could not find repo root ({ROOT_MARKER})");
-        }
-    }
-}
-
-/// `true` when `candidate` is a checkout root — the probe callers use when they already hold a
-/// directory and only need to confirm it, rather than walking up from the cwd.
-pub fn is_repo_root(candidate: &Path) -> bool {
-    candidate.join(ROOT_MARKER).is_file()
 }
 
 /// The directories and files a sparse checkout needs for each ticket target, keyed by the target
@@ -146,7 +63,7 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
         &[
             TICKETS_DIR,
             ARTIFACTS_DIR,
-            documentation::TREE_DIR,
+            DOCUMENTATION_ROOT,
             "tools",
             ".cargo",
             "README.md",
@@ -162,8 +79,8 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
 /// that only historical commits carry. Relocating the documentation tree rewrites exactly this
 /// module and nothing else in the crate.
 pub mod documentation {
-    /// Root of the committed documentation tree.
-    pub const TREE_DIR: &str = "documentation";
+    use repository_layout::QUEUE_JSON;
+    use repository_layout::documentation::DOCUMENTATION_ROOT;
 
     /// The applications' documentation, which mirrors `apps/` (the game mod's documentation sits
     /// at [`MOD_DOCUMENTATION_DIR`]). A `website` slice checks it out beside the code.
@@ -195,17 +112,8 @@ pub mod documentation {
     }
 
     /// Ticket specifications — the documents most ticket `spec` fields name. One flat folder
-    /// inside [`TREE_DIR`].
+    /// inside [`DOCUMENTATION_ROOT`].
     pub const SPECS_DIR: &str = "documentation/tickets/specs";
-
-    /// The Mission Creator roadmap carrying the auto-generated "recommended next work" block that
-    /// `ticket sync` injects between its markers.
-    pub const ROADMAP: &str = "documentation/apps/frontend/apps/editor/mission_creator_roadmap.md";
-
-    /// The Eden gap-analysis table whose ticket column `ticket sync` keeps in step with the
-    /// registry.
-    pub const GAP_ANALYSIS: &str =
-        "documentation/apps/frontend/apps/editor/eden_editor_reference/eden_gap_analysis.md";
 
     /// The document of record for the tokens-per-line-changed factor. A test asserts the document
     /// quotes the compiled constant verbatim, so the two can never drift.
@@ -236,9 +144,10 @@ pub mod documentation {
     ];
 
     /// Where the stale-identifier scan looks. Files first, then directories walked in full.
-    /// [`SPECS_DIR`] sits inside [`TREE_DIR`] and under an exempt prefix, so no root names it.
+    /// [`SPECS_DIR`] sits inside [`DOCUMENTATION_ROOT`] and under an exempt prefix, so no root
+    /// names it.
     pub const STALE_TICKET_ID_SCAN_ROOTS: &[&str] =
-        &[TREE_DIR, super::QUEUE_JSON, "CLAUDE.md", "README.md"];
+        &[DOCUMENTATION_ROOT, QUEUE_JSON, "CLAUDE.md", "README.md"];
 
     /// Path prefixes the token estimator drops from a commit's changed-line count: the `.ai/`
     /// tree (the ticket registry and the agent artifact tree) and the retired queue views

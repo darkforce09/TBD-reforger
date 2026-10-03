@@ -24,7 +24,7 @@ use crate::commands::deploy::staging::fleet_instances::{
 use crate::core::deploy_environment::{
     DeployEnvironment, DeployHost, DeployHostFolder, deploy_environment_path,
 };
-use crate::core::secure_shell_transport::SshBase;
+use process_runner::secure_shell_transport::SshBase;
 
 /// The database every staging read and backup names.
 pub(crate) const STAGING_DATABASE: &str = "tbd_reforger";
@@ -102,7 +102,7 @@ impl StagingSettings {
             FleetSettings::from_environment(environment).map_err(|error| anyhow!("{error}"))?;
         let optional = |key: &str| environment.value(key).map(str::to_string);
         Ok(Self {
-            ssh: SshBase::from_deploy_environment(environment),
+            ssh: environment.ssh_base(),
             checkout: folder(DeployHostFolder::Checkout)?,
             server_install: folder(DeployHostFolder::ServerInstall)?,
             fleet,

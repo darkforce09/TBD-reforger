@@ -2,7 +2,7 @@
 
 use super::*;
 
-use crate::repository::{TICKETS_DIR, WORKTREES_DIR};
+use repository_layout::{TICKETS_DIR, WORKTREES_DIR};
 
 /// The statuses a ticket may carry, mirroring the `status` definition in the ticket schema.
 pub(super) const VALID_TICKET_STATUSES: &[&str] = &[

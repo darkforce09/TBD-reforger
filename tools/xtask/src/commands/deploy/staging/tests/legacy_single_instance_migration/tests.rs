@@ -1,7 +1,7 @@
 //! `--migrate-single-instance`: the check without the flag, and the migration with it.
 use super::*;
 use crate::commands::deploy::staging::config::tests::base;
-use crate::core::secure_shell_transport::{SshBase, ssh_argv};
+use process_runner::secure_shell_transport::{SshBase, ssh_argv};
 
 /// The migration goes to the host exactly as `ssh <host> bash -s` with the payload on stdin; the
 /// ssh password, when there is one, is in neither.

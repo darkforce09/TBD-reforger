@@ -71,7 +71,7 @@
 //! | file | owns |
 //! |---|---|
 //! | `playtest_server.rs` | the header record, CLI parsing, `usage_fail`/`env_fail`, preflight, orchestration |
-//! | `playtest_server/host.rs` | re-export of [`crate::core::host_execution`] — container detection, `distrobox-host-exec`/`host-spawn` |
+//! | `playtest_server/host.rs` | re-export of [`process_runner::host_execution`] — container detection, `distrobox-host-exec`/`host-spawn` |
 //! | `playtest_server/lifecycle.rs` | the tri-state liveness probe, `kill_run`, the run lock, `assert_no_live_server`, `--selftest` |
 //! | `playtest_server/render.rs` | the three former `python3` sites — backend config patch, admin list, `server.json` |
 //! | `playtest_server/platform_deployment` | the deployment the server runs: provision, confirm, release; or the offline artifact |
@@ -100,8 +100,8 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
-use crate::core::repository_root::find_repo_root;
 use host::Host;
+use repository_layout::find_repository_root;
 
 /// Printed verbatim by `-h` / `--help`.
 ///

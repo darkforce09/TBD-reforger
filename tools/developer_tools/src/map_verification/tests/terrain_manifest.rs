@@ -48,7 +48,7 @@ fn materialise(dir: &Path) {
 }
 
 fn live_instance_schema() -> Value {
-    let root = repo_root().expect("repo root");
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     read_json(&definition_path(&root, "map-object-instance.schema.json"))
         .expect("map-object-instance.schema.json")
 }
@@ -157,7 +157,7 @@ fn a_row_shape_this_build_cannot_read_is_refused() {
 /// not water: those emitters did not run). Every named path must resolve.
 #[test]
 fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {
-    let root = repo_root().expect("repo root");
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let dir = terrain_dir(&root, "everon");
     let m = read_json(&dir.join("manifest.json")).expect("everon manifest");
     let (declared, errs) = manifest_binary_failures(&m, &dir);
@@ -180,7 +180,7 @@ fn the_live_everon_manifest_declares_the_cutover_blocks_and_passes() {
 /// return back and this test goes red.
 #[test]
 fn occluder_init_still_fetches_the_blas_manifest_for_hot_chunks() {
-    let root = repo_root().expect("repo root");
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let src =
         fs::read_to_string(root.join("legacy/map_engine/src/streaming/loaders/occluder_loader.rs"))
             .expect("occluder_host.rs");

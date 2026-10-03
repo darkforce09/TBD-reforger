@@ -4,7 +4,7 @@ use crate::repository_layout::{
 };
 
 pub fn validate_export_artifacts() -> Result<u8> {
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let schemas = SchemaSet::load()?;
     let v_prefab = schemas.validator("map-object-prefab")?;
     let v_instance = schemas.validator("map-object-instance")?;
@@ -274,7 +274,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
     // Output captured (the Node script spawned with stdio:pipe) — surfaced only on failure.
     let inv_gate = std::process::Command::new("cargo")
         .args(["run", "-q", "-p", "xtask", "--", "schema", "type-inventory"])
-        .current_dir(repo_root())
+        .current_dir(&root)
         .output()?;
     if inv_gate.status.success() {
         pass("verify-type-inventory (I-gates) OK".into());
@@ -318,7 +318,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
                     "--phase",
                     "P1_buildings",
                 ])
-                .current_dir(repo_root())
+                .current_dir(&root)
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
                 .status()?;

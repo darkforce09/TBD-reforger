@@ -9,19 +9,14 @@
 //! does not contain. Each rule reads the tree itself, so a new file is covered the moment it is
 //! added — nothing has to be registered here.
 //!
-//! **Excluded scopes.** `missions/contract/generated/` is emitted by `cargo xtask ci
-//! schema-codegen`, so its prose belongs to the generator; this file and
-//! `architecture_rules.rs` hold every forbidden token as a literal needle. SQL files are read on
-//! their `--` comment lines only: a migration's statements carry data values (a quarantine
-//! table's provenance column, a seeded title) that are not prose.
+//! **Excluded scopes.** This file and `architecture_rules.rs` hold every forbidden token as a
+//! literal needle. SQL files are read on their `--` comment lines only: a migration's statements
+//! carry data values (a quarantine table's provenance column, a seeded title) that are not prose.
 
 use std::path::{Path, PathBuf};
 
 /// The rule files, relative to `src/` — excluded from their own scans.
 const RULE_FILES: [&str; 2] = ["tests/architecture_rules.rs", "tests/prose_rules.rs"];
-
-/// Codegen output, relative to `src/`.
-const GENERATED_SUBTREE: &str = "missions/contract/generated";
 
 /// Floors for each walk: a scan that returns fewer files than this has lost the tree, and every
 /// rule over it would pass vacuously.
@@ -95,8 +90,8 @@ fn crate_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-/// Every `.rs` file under `root`, sorted by path, skipping the excluded scopes.
-fn rust_files(root: &Path, skip_generated: bool) -> Vec<PathBuf> {
+/// Every `.rs` file under `root`, sorted by path, skipping the rule files.
+fn rust_files(root: &Path) -> Vec<PathBuf> {
     let mut files = Vec::new();
     collect(root, "rs", &mut files);
     files.retain(|path| {
@@ -105,9 +100,7 @@ fn rust_files(root: &Path, skip_generated: bool) -> Vec<PathBuf> {
             .unwrap_or(path)
             .display()
             .to_string();
-        let generated = skip_generated && relative.starts_with(GENERATED_SUBTREE);
-        let rule_file = RULE_FILES.contains(&relative.as_str());
-        !(generated || rule_file)
+        !RULE_FILES.contains(&relative.as_str())
     });
     files.sort();
     files
@@ -139,8 +132,8 @@ fn location(path: &Path, index: usize) -> String {
 /// Every line of every `.rs` file under `src/` and `tests/`.
 fn rust_lines() -> Vec<Line> {
     let root = crate_root();
-    let sources = rust_files(&root.join("src"), true);
-    let suites = rust_files(&root.join("tests"), false);
+    let sources = rust_files(&root.join("src"));
+    let suites = rust_files(&root.join("tests"));
     assert_floor(sources.len(), SOURCE_FLOOR, "src/");
     assert_floor(suites.len(), SUITE_FLOOR, "tests/");
     sources

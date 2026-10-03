@@ -10,7 +10,7 @@ use std::process::Command;
 use serde_json::Value;
 
 use crate::registry::ticket_file_storage::ticket_from_toml_str;
-use crate::repository::TICKETS_DIR;
+use repository_layout::TICKETS_DIR;
 
 /// The single JSON file the registry lived in before it became one file per ticket.
 const HISTORICAL_REGISTRY_FILE_NAME: &str = "registry.json";

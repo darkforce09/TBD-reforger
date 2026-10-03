@@ -7,11 +7,11 @@
 //! limits, foreign attachments and groups) and a reason for every dimension that does not
 //! apply. The fixture keys the probes name are minted by `world/operations_events.rs`.
 
-use api::operations::models::generated::event_access_administration::{
+use contract_schema_types::operations::event_access_administration::{
     AccessChangeOutcome, EventAccessAdministration, ParticipantAccessExplanation,
 };
-use api::operations::models::generated::event_hub::EventHub;
-use api::operations::models::generated::event_orbat::EventMissionOrbat;
+use contract_schema_types::operations::event_hub::EventHub;
+use contract_schema_types::operations::event_orbat::EventMissionOrbat;
 use serde_json::{Value, json};
 
 use super::super::contracts::round_trip;

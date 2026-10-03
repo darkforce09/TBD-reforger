@@ -145,7 +145,7 @@ pub fn run(args: &[String]) -> Result<u8> {
 
     // ROOT: the upward walk from the cwd for the ticket-registry root marker, the way every
     // command in this binary finds it, so it lands on the checkout the operator is standing in.
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     let host = Host::detect();
     Ok(main_with(&root, &home, &host, opts))
 }
@@ -218,7 +218,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     if !host.require_host() {
         return env_fail(
             "no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine",
-            "See tools/xtask/src/core/host_execution.rs: the container has an older glibc, so the game binary cannot run in here at all.",
+            "See tools/foundation/process_runner/src/host_execution.rs: the container has an older glibc, so the game binary cannot run in here at all.",
         );
     }
     if !is_executable(&server_bin) {

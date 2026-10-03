@@ -18,7 +18,6 @@ pub mod enfusion_tooling;
 pub mod map_raster_pipeline;
 pub mod map_verification;
 pub mod repository_layout;
-pub mod repository_paths;
 pub mod staging_verification;
 pub mod timestamp_formatting;
 pub mod world_export_pipeline;

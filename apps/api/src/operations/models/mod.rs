@@ -25,5 +25,4 @@ pub use event::{
 };
 pub use fire_mission::FireMission;
 pub use leave_request::{LeaveRequest, LeaveStatus};
-pub mod generated;
 pub mod reservation_response;

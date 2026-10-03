@@ -13,8 +13,8 @@ use crate::browser_testing::session_tokens::gate_refresh_answer;
 use serde_json::{Value, json};
 
 /// The fixture corpus — shared with the frontend's R-api round-trip tests and the editor smokes.
-pub(super) fn fixtures_dir() -> PathBuf {
-    crate::browser_testing::server::repo_root().join("contracts/fixtures/api_goldens")
+pub(super) fn fixtures_dir() -> anyhow::Result<PathBuf> {
+    Ok(crate::repository_layout::compiled_checkout_root()?.join("contracts/fixtures/api_goldens"))
 }
 
 /// An API request the fixture corpus does not answer.
@@ -67,18 +67,22 @@ const EXTENSIONS: [(&str, &str); 2] = [
     ("sse.txt", "text/event-stream"),
 ];
 
-/// The corpus file answering this request, if one is committed.
-pub(super) fn fixture_for(method: &str, url: &str) -> Option<(PathBuf, &'static str)> {
+/// The file of the corpus under `fixtures` answering this request, if one is committed.
+pub(super) fn fixture_for(
+    fixtures: &Path,
+    method: &str,
+    url: &str,
+) -> Option<(PathBuf, &'static str)> {
     let stem = stem_for(method, url)?;
-    let dir = fixtures_dir();
     EXTENSIONS.iter().find_map(|(ext, content_type)| {
-        let path = dir.join(format!("{stem}.{ext}"));
+        let path = fixtures.join(format!("{stem}.{ext}"));
         path.is_file().then_some((path, *content_type))
     })
 }
 
-/// Decide one request. `url` is the full request URL; `method` is its HTTP verb.
-pub(super) fn route(method: &str, url: &str) -> Reply {
+/// Decide one request against the corpus under `fixtures`. `url` is the full request URL;
+/// `method` is its HTTP verb.
+pub(super) fn route(fixtures: &Path, method: &str, url: &str) -> Reply {
     if url.contains("/api/v1/auth/refresh") {
         return Reply::Canned(gate_refresh_answer(
             "dom-oracle",
@@ -89,7 +93,7 @@ pub(super) fn route(method: &str, url: &str) -> Reply {
     if url.contains("/api/v1/auth/logout") {
         return Reply::Canned(json!({}));
     }
-    if let Some((path, content_type)) = fixture_for(method, url) {
+    if let Some((path, content_type)) = fixture_for(fixtures, method, url) {
         return Reply::Fixture { path, content_type };
     }
     match stem_for(method, url) {

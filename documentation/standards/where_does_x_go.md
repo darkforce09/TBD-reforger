@@ -39,7 +39,7 @@ engines and the app are in the [engine boundary rules](/documentation/standards/
 
 | X | Home |
 |---|---|
-| a JSON Schema for a shape that crosses a network, process or language boundary | `contracts/definitions/`; `cargo xtask ci schema-codegen` generates the API's Rust types into the `generated/` folders under `apps/api/src/` |
+| a JSON Schema for a shape that crosses a network, process or language boundary | `contracts/definitions/`; `cargo xtask ci schema-codegen` generates the Rust types into `crates/contracts/contract_schema_types/src/generated/` |
 | a golden fixture shared across crates | `contracts/fixtures/<family>/` (`missions`, `map`, `registry`, `enfusion_samples`, `bridge_samples`) |
 | a test fixture one crate reads | that crate's `tests/fixtures/`, beside the test; never `.ai/artifacts/` |
 | a catalog exported from Workbench for the platform to ingest | `contracts/catalogs/` |

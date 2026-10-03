@@ -423,7 +423,7 @@ nothing, and the arming helpers fail, fail once and pause exactly as named.
 
 ## Engineering laws
 
-`tests/engineering_laws.rs` checks the repository laws through `verification_core::repository_laws`,
+`tests/engineering_laws.rs` checks the repository laws through `repository_laws`,
 which shares its roots and rules with `cargo xtask verify file-length` and
 `cargo xtask verify engine-layers`:
 

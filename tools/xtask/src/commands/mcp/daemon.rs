@@ -21,10 +21,10 @@ use std::thread;
 use std::time::Duration;
 
 use developer_tools::enfusion_tooling::enfusion_mcp_entrypoint;
-use verification_core::proc::Run;
+use process_runner::Run;
 
 use crate::core::cargo_target_directory::{MCP_DAEMON_SUBFOLDER, build_output_subfolder};
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 const USAGE: &str = "usage: cargo xtask mcp daemon {start|stop|status|restart|stop-all}";
 
@@ -86,7 +86,7 @@ pub fn start_at(sock: &str, quiet: bool) -> i32 {
         let _ = fs::remove_file(sock); // stale socket
     }
 
-    let root = find_repo_root().unwrap_or_else(|_| PathBuf::from("."));
+    let root = find_repository_root().unwrap_or_else(|_| PathBuf::from("."));
     let entry = enfusion_mcp_entrypoint::resolve(&root).entry_path;
     // The child inherits these; every one has a default so a bare shell can start the daemon.
     let game = env::var("ENFUSION_GAME_PATH").unwrap_or_else(|_| default_game_path());

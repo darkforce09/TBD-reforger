@@ -12,7 +12,7 @@ use time::OffsetDateTime;
 use time::format_description::well_known::Rfc3339;
 use walkdir::WalkDir;
 
-use crate::repository::{METRICS_DIR, METRICS_SCHEMA};
+use repository_layout::{METRICS_DIR, METRICS_SCHEMA};
 
 pub mod estimates;
 

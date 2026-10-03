@@ -14,7 +14,7 @@ document, and the path from a saved version to a running server through immutabl
 
 ```text
 apps/api/src/missions/
-├── contract/    JSON Schema validation of every mission document, and the generated contract types
+├── contract/    JSON Schema validation of every mission document, and the hand-written loadout projection
 ├── handlers/    one HTTP handler module per mission surface
 ├── mod.rs       the module tree; re-exports `routes`
 ├── models/      the domain's rows and wire shapes, snake_case on the wire
@@ -126,8 +126,8 @@ with the artifact's compiled slots, which the event roster in `operations` reads
   - `core`: the application state, errors, extractors, `role_rank`, pagination, configuration and
     the wire formats;
   - `administration` for the audit rows, `identity_and_access` for session authorization, account
-    locks and administrator authority, `server_infrastructure` for `MachineCaller`, `ExecutorKind`,
-    `FleetAction` and the fleet command ledger, `operations::services` for the ORBAT template a
+    locks and administrator authority, `server_infrastructure` for `MachineCaller` and the fleet
+    command ledger, `fleet_wire_contract` for `ExecutorKind` and `FleetAction`, `operations::services` for the ORBAT template a
     deployment binds, and `community_content::models` for the modpack a registry belongs to;
   - `map_engine::data::scenario`, which compiles and checks mission documents;
   - the schemas in `contracts/definitions/`, embedded at compile time.
@@ -149,8 +149,9 @@ with the artifact's compiled slots, which the event roster in `operations` reads
   router merges (`domain_handlers_import_no_foreign_handlers` and
   `every_domain_exports_a_route_table` in `apps/api/src/tests/architecture_rules.rs`);
   every handler carries its `/// @route` tag (`cargo xtask verify route-tags`);
-  `contract/generated/` and `models/generated/` are written by `cargo xtask ci schema-codegen` and
-  never edited by hand (`cargo xtask ci verify-codegen-fresh` checks them); artifacts and saved
+  the domain's generated contract types (`contract_schema_types::missions`) are written by
+  `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
+  checks them); artifacts and saved
   versions are immutable, which triggers of `apps/api/migrations/` enforce.
 
 ## Related documentation

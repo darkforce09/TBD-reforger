@@ -9,8 +9,8 @@ use std::sync::mpsc::Sender;
 
 use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 
-use ticket_engine::repository::TICKETS_DIR;
-use ticket_engine::repository::documentation::ROADMAP;
+use repository_layout::TICKETS_DIR;
+use repository_layout::documentation::ROADMAP;
 
 /// Debounce window: fire after this much event quiet. The design bound is
 /// ≥500 ms; 600 gives editor write-bursts comfortable room.

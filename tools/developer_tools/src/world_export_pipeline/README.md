@@ -41,8 +41,8 @@ tools/developer_tools/src/world_export_pipeline/
 `tools/developer_tools/src/bin/world.rs` calls `cli::entrypoint`, which parses the
 subcommand with `clap`, runs it and exits with the code it returns; an error prints
 `world: <message>` and exits 1. Every path
-resolves against the checkout the binary was compiled in (`browser_testing::server::repo_root`
-reads `CARGO_MANIFEST_DIR`). An export runs in this order:
+resolves against the checkout the binary was compiled in (`repository_layout::compiled_checkout_root`
+walks up from `CARGO_MANIFEST_DIR`, and a missing root is an error). An export runs in this order:
 
 ```text
 Workbench: "Export TBD World Objects (full)" ─▶ profile TBD_WorldExport_full.jsonl + _meta.json
@@ -90,7 +90,7 @@ not certify the builder with its own code.
   (`io::archives`, `io::containers`, `io::density`, `io::pod`), its loaders
   (`streaming::loaders`) and its prefab, region, road and elevation code (`world::environment`,
   `world::terrain`); `crate::enfusion_pak`; `crate::repository_layout`;
-  `crate::browser_testing::server::repo_root`; `contracts/rules/prefab-classify.json` and the
+  `contracts/rules/prefab-classify.json` and the
   schemas in `contracts/definitions/`; `clap`, `serde_json`, `jsonschema`, `flate2`, `png` and
   `bcdec_rs`; `cargo`, which `census` and `validate-exports` run as a child process.
 - Used by: the `world` binary; `cargo xtask map export-terrain`

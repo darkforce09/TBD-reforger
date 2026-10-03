@@ -15,9 +15,8 @@ tools/developer_tools/test_fixtures/
 ## How it works
 
 Nothing here is compiled into the crate. The tests resolve each file from the checkout root at run
-time, through `test_repo_root()` or `find_repo_root()` in
-`tools/developer_tools/src/repository_paths.rs` and the `fixture(name)` helper of the blueprint
-tests, and only read it. `cargo test -p developer_tools` runs every test that reads this tree, and
+time, through `repository_layout::find_repository_root` and the `fixture(name)` helper of the
+blueprint tests, and only read it. `cargo test -p developer_tools` runs every test that reads this tree, and
 none needs a game install, a browser or a database. The
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) prefab text here is synthetic; every other file
 is recorded from the engine or emitted by the compiler.
@@ -38,7 +37,7 @@ is recorded from the engine or emitted by the compiler.
   `cargo xtask map` for the golden outputs, and people for the synthetic prefabs.
 - Consumers: the unit tests in `tools/developer_tools/src/blueprint/tests/` and
   `tools/developer_tools/src/map_verification/tests/`, the path-resolution test in
-  `tools/developer_tools/src/tests/repository_paths.rs`, and
+  `tools/developer_tools/src/tests/repository_layout.rs`, and
   `tools/xtask/src/tests/repository_root_tests.rs`, which checks that a fixture here resolves
   from inside `tools/xtask/`.
 
@@ -49,7 +48,7 @@ is recorded from the engine or emitted by the compiler.
 - Rules: the prose rules of `tools/xtask/src/tests/tooling_prose_rules.rs` exempt this tree from
   the ticket-id and Rust-file-name rules, since the recordings are data; tests address the tree by
   its full path, so a move updates `tools/developer_tools/src/blueprint/tests/module/tests.rs`,
-  `tools/developer_tools/src/tests/repository_paths.rs` and every other `git grep test_fixtures`
+  `tools/developer_tools/src/tests/repository_layout.rs` and every other `git grep test_fixtures`
   hit in the same change.
 
 ## Related documentation

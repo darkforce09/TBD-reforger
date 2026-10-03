@@ -19,24 +19,24 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
-use verification_core::proc::{self, Run};
+use process_runner::Run;
 use verification_core::{Kind, NotRun, Verdict};
 
 use super::IT_MAINT_DB;
 use crate::commands::deploy::database_operations as dbc;
 
-/// Bridge-aware argv, following [`crate::core::host_execution::Host::argv`]'s rule: prepend the bridge ONLY when
+/// Bridge-aware argv, following the rule of [`process_runner::host_execution::Host`]: prepend the bridge ONLY when
 /// containerised. `None` means "containerised with no usable bridge" — never silently local.
 pub(crate) fn bridged(cmd: &[&str]) -> Option<Vec<String>> {
-    if !crate::core::host_execution::in_container() {
+    if !process_runner::host_execution::in_container() {
         return Some(cmd.iter().map(|s| s.to_string()).collect());
     }
-    let host = crate::core::host_execution::Host::detect();
+    let host = process_runner::host_execution::Host::detect();
     if !host.require_host() {
         return None;
     }
     let bridge = host.instruction_name();
-    proc::which(bridge).ok()?;
+    process_runner::which(bridge).ok()?;
     let mut v = vec![bridge.to_string()];
     v.extend(cmd.iter().map(|s| s.to_string()));
     Some(v)

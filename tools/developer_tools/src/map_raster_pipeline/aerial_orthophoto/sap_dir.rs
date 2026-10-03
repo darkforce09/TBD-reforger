@@ -2,8 +2,8 @@ use super::*;
 
 use crate::repository_layout::map_scratch_dir;
 
-pub(super) fn sap_dir() -> PathBuf {
-    map_scratch_dir(&repo_root(), "everon").join("sap") // E2c-allow (SAP lane is Eden-only)
+pub(super) fn sap_dir() -> Result<PathBuf> {
+    Ok(map_scratch_dir(&compiled_checkout_root()?, "everon").join("sap")) // E2c-allow (SAP lane is Eden-only)
 }
 
 pub(super) fn r2(v: f64) -> f64 {
@@ -256,7 +256,7 @@ pub fn verify_sap_seams(terrain: &str) -> Result<u8> {
         eprintln!("only everon supported this slice (got {terrain})");
         return Ok(1);
     }
-    let ortho_path = sap_dir().join("everon-sap-ortho.png");
+    let ortho_path = sap_dir()?.join("everon-sap-ortho.png");
     if !ortho_path.exists() {
         eprintln!(
             "verify-sap-seams FAIL: missing {} — run the stitch first",

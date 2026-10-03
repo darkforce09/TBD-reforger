@@ -5,13 +5,9 @@
 //! kept in sibling files, and prose that describes the code as it stands. Each rule reads the tree
 //! itself, so a new file is covered the moment it is added — nothing has to be registered here.
 //!
-//! **Two scopes are excluded from the walk.**
-//!
-//! * `missions/contract/generated/` — emitted by `cargo xtask ci schema-codegen` from
-//!   `contracts`. Its prose belongs to the generator, so the prose rules would only ever
-//!   report the generator's own habits at a file no one edits.
-//! * the rule files under `tests/` — this one and `prose_rules.rs` — which hold every forbidden
-//!   token as a literal needle, so scanning them would make each rule report itself.
+//! **One scope is excluded from the walk:** the rule files under `tests/` — this one and
+//! `prose_rules.rs` — which hold every forbidden token as a literal needle, so scanning them
+//! would make each rule report itself.
 //!
 //! **The import rules read code lines only.** A rustdoc intra-doc link (`//!` / `///`) naming a
 //! path creates no compile-time dependency: it is a pointer for a reader, and the crate uses them
@@ -32,9 +28,6 @@ const DOMAINS: [&str; 8] = [
     "server_infrastructure",
 ];
 
-/// Codegen output: exempt from the prose rules (see the module header).
-const GENERATED_SUBTREE: &str = "missions/contract/generated";
-
 /// The rule files, relative to `src/` — excluded from the scans, since each holds every forbidden
 /// token as a literal needle.
 const RULE_FILES: [&str; 2] = ["tests/architecture_rules.rs", "tests/prose_rules.rs"];
@@ -54,7 +47,7 @@ fn source_root() -> PathBuf {
 }
 
 /// Every `.rs` file under `root`, paired with its text, sorted by path so a failure message reads
-/// the same on every machine. Skips the two excluded scopes.
+/// the same on every machine. Skips the rule files.
 fn rust_sources(root: &Path) -> Vec<(PathBuf, String)> {
     let mut files = Vec::new();
     collect_rust_sources(root, &mut files);
@@ -69,9 +62,7 @@ fn collect_rust_sources(dir: &Path, files: &mut Vec<(PathBuf, String)>) {
         .map(|entry| entry.expect("directory entry").path());
     for path in entries {
         if path.is_dir() {
-            if !path.ends_with(GENERATED_SUBTREE) {
-                collect_rust_sources(&path, files);
-            }
+            collect_rust_sources(&path, files);
         } else if path.extension().is_some_and(|ext| ext == "rs")
             && !RULE_FILES.contains(&relative(&path).as_str())
         {

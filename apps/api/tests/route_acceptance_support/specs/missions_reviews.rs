@@ -6,11 +6,11 @@
 //! the fixture-dependent ownership, malformed and boundary probes, the one documented
 //! divergence from a derived default, and a reason for every dimension that does not apply.
 
-use api::missions::models::generated::mission_deployment::{
+use contract_schema_types::missions::mission_deployment::{
     DeployableMissionList, FleetScenario, FleetScenarioList, MissionDeployment,
     MissionDeploymentPage, RuntimeDeployment,
 };
-use api::missions::models::generated::mission_review::{
+use contract_schema_types::missions::mission_review::{
     ApprovalQueuePage, MissionArtifact, MissionReviewHistory, MissionRow, ReviewComment,
 };
 use serde_json::json;

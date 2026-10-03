@@ -4,8 +4,8 @@
 use super::file_treatment::manifests_folder;
 use super::fixture_repository::FixtureRepository;
 use super::{EXAMPLE_MANIFEST, apply, dry_run, verify};
-use crate::core::repository_layout::TICKETS_DIR;
 use crate::core::repository_layout::documentation::{ARCHIVE_DIR, TICKET_DOCUMENTS_DIR};
+use repository_layout::TICKETS_DIR;
 
 #[test]
 fn relocate_folder_move_rewrites_root_and_slash_root_spellings() {

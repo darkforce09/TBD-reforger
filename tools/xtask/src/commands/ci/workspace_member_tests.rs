@@ -22,9 +22,9 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::{Context, Result, anyhow, bail};
-use verification_core::repository_laws::workspace_members::read_workspace_members;
+use repository_laws::workspace_members::read_workspace_members;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// The members a dedicated task of [`super::task_runner::TASKS`] tests, with that task, as
 /// `(package, task)`: the API against its database, the developer tools' library, the frontend
@@ -80,7 +80,7 @@ pub(crate) fn run() -> i32 {
 }
 
 fn run_every_package() -> Result<i32> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     let dedicated: Vec<&str> = DEDICATED_TEST_TASKS
         .iter()
         .map(|(package, _)| *package)

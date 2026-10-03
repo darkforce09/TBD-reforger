@@ -83,14 +83,13 @@ pub async fn smoke_mutations(dist: &str) -> Result<u8> {
 /// The R-auth single-flight refresh gate (no backend; Fetch-mocked).
 /// Exit map: 0 pass · 1 fail · 2 no dist · 3 driver error (mapped by the bin).
 pub async fn r_auth(dist_override: Option<String>) -> Result<u8> {
-    let dist = dist_override
-        .or_else(|| std::env::var("LEPTOS_DIST").ok())
-        .unwrap_or_else(|| {
-            repo_root()
-                .join(DIST_DEFAULT)
-                .to_string_lossy()
-                .into_owned()
-        });
+    let dist = match dist_override.or_else(|| std::env::var("LEPTOS_DIST").ok()) {
+        Some(dist) => dist,
+        None => compiled_checkout_root()?
+            .join(DIST_DEFAULT)
+            .to_string_lossy()
+            .into_owned(),
+    };
     if !PathBuf::from(&dist).join("index.html").exists() {
         eprintln!("gate_r_auth: no Leptos dist at {dist} (run `trunk build`)");
         return Ok(2);

@@ -6,7 +6,7 @@ static CWD_LOCK: Mutex<()> = Mutex::new(());
 /// Run `f` with the cwd pinned — the READER half of this module's contract.
 ///
 /// The module doc above states the rule ("every test that moves it must hold ONE lock"), and it
-/// binds readers too: a fixture helper resolving `find_repo_root()` from the cwd without the lock
+/// binds readers too: a fixture helper resolving `find_repository_root()` from the cwd without the lock
 /// can land inside a scratch tree mid-chdir and fail NotFound on a committed fixture — a race that
 /// shows up in a cold shared target dir and never in isolation.
 ///
@@ -27,7 +27,7 @@ pub(crate) struct CwdGuard {
 
 impl CwdGuard {
     /// Take the lock, THEN resolve the target via `f`, then chdir. Resolution happens under
-    /// the lock on purpose: `find_repo_root()` reads the cwd, so resolving before locking
+    /// the lock on purpose: `find_repository_root()` reads the cwd, so resolving before locking
     /// would race with whichever test currently owns it. `None` from `f` releases everything
     /// and returns `None` — the caller's skip path.
     pub(crate) fn enter_resolved(f: impl FnOnce() -> Option<PathBuf>) -> Option<CwdGuard> {

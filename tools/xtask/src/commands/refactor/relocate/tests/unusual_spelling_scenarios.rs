@@ -8,7 +8,8 @@
 use super::file_treatment::manifests_folder;
 use super::fixture_repository::FixtureRepository;
 use super::{apply, dry_run, verify};
-use crate::core::repository_layout::documentation::{ARCHIVE_DIR, DOCUMENTATION_ROOT};
+use crate::core::repository_layout::documentation::ARCHIVE_DIR;
+use repository_layout::documentation::DOCUMENTATION_ROOT;
 
 #[test]
 fn relocate_spellings_after_control_escapes_are_rewritten_and_verified() {

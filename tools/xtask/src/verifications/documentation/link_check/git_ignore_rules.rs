@@ -19,8 +19,8 @@ use std::collections::BTreeSet;
 use std::path::Path;
 use std::time::Duration;
 
+use process_runner::Run;
 use verification_core::NotRun;
-use verification_core::proc::Run;
 
 /// The program that reads the ignore rules.
 const GIT: &str = "git";

@@ -69,7 +69,7 @@ fn missing_lock_is_the_did_not_run_refusal() {
 #[test]
 fn unparsable_lock_refuses_with_verbatim_error() {
     let s = Scratch::new("lock-garbage");
-    let dir = s.path().join(ticket_engine::repository::TICKETS_DIR);
+    let dir = s.path().join(repository_layout::TICKETS_DIR);
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(lock_path(s.path()), "not = [valid toml").unwrap();
     match load_lock(s.path()) {
@@ -137,16 +137,8 @@ fn colliding_pairs_lists_every_pair() {
 #[test]
 #[ignore = "reads the live repo wave.lock; run explicitly with -- --ignored"]
 fn live_lock_parses_verbatim() {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let Some(root) =
-        crate::ticket_registry::services::discovery::walk_up_for_tickets(&manifest_dir)
-    else {
-        panic!(
-            "no {}/ above {}",
-            ticket_engine::repository::TICKETS_DIR,
-            manifest_dir.display()
-        );
-    };
+    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the checkout holding this crate");
     match load_lock(&root) {
         LockState::Loaded(lock) => {
             assert!(!lock.waves.is_empty());

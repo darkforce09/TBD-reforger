@@ -31,8 +31,8 @@ what that definition is and how its projections stay true to it.
   response bodies are defined by the Rust models in `apps/api/src/<domain>/models/`
   (law 9).
 - **Projections.** `cargo xtask ci schema-codegen` generates Rust types from the schemas into the
-  API's `generated/` folders (`apps/api/src/missions/contract/generated/` and each
-  domain's `models/generated/`), which nobody edits by hand; `cargo xtask ci verify-codegen-fresh`
+  `generated/` folder of the `contract_schema_types` crate
+  (`crates/contracts/contract_schema_types/src/generated/`), which nobody edits by hand; `cargo xtask ci verify-codegen-fresh`
   fails when they drift from the schemas. The web app's DTOs in
   `apps/frontend/src/v2/core/api/dto/` are hand-written and held to the API's answers by
   the golden responses in `contracts/fixtures/api_goldens/`

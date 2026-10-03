@@ -41,7 +41,7 @@ and rebuilds the visible board rows and tree rows from the verdicts.
 
 - Depends on: `crate::ticket_registry::models` (`Corpus`, the `projection` view, `Class`,
   `executor_label`, `column_of`); `ticket_engine` (`StatusName`, `Ticket`,
-  `repository::SCOPE_VOCAB`); the `toml` crate.
+  `repository_layout::SCOPE_VOCAB`); the `toml` crate.
 - Used by: `crate::ticket_browser::ui::filter_bar`; `crate::application` (`mod.rs`,
   `workspace_state.rs`, and `background_loading.rs`, which loads the vocabulary on the worker
   thread).

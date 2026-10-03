@@ -6,6 +6,9 @@ use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
+use fleet_wire_contract::operator_messages::{
+    FleetCommandList, FleetCommandReceipt, FleetCommandRequest,
+};
 use serde::Deserialize;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -15,9 +18,6 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::path_parameters::PathParams;
 use crate::core::middleware::{AdminUser, role_rank};
 use crate::identity_and_access::services::session_authorization::authorize_on_connection;
-use crate::server_infrastructure::models::fleet_command::{
-    FleetCommandList, FleetCommandReceipt, FleetCommandRequest,
-};
 use crate::server_infrastructure::services::fleet_commands::command_ledger::{
     cancel_command, enqueue_command, list_receipts, load_receipt,
 };

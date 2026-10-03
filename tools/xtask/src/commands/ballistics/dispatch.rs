@@ -2,14 +2,14 @@
 use super::catalog_extraction::VANILLA_MORTARS;
 use super::cli::BallisticsCmd;
 use super::trim_export::{TrimLocations, trim_export};
-use crate::core::repository_root::find_repo_root;
 use anyhow::Result;
+use repository_layout::find_repository_root;
 
 /// Runs `cmd` and returns the process exit code.
 pub(crate) fn run(cmd: BallisticsCmd) -> Result<u8> {
     match cmd {
         BallisticsCmd::TrimExport { generation, oracle } => {
-            let root = find_repo_root()?;
+            let root = find_repository_root()?;
             let locations = TrimLocations::in_checkout(&root, &generation, oracle);
             let report = trim_export(&locations, &generation, &VANILLA_MORTARS)?;
             println!("catalog      {}", locations.catalog_path.display());

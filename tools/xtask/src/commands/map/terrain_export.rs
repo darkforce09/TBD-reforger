@@ -14,16 +14,16 @@ use std::io::{self, Write};
 use std::path::Path;
 
 use anyhow::{Result, bail};
-use verification_core::proc::Run;
+use process_runner::Run;
 use verification_core::verdict::NotRun;
 
 use developer_tools::repository_layout::map_scratch_dir;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// Entry for `xtask map export-terrain …` (args after the subcommand, bash-shaped).
 pub fn run(args: &[String]) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     run_with_root(&root, args)
 }
 

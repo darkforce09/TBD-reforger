@@ -4,7 +4,7 @@ use serde_json::Value;
 use std::fs;
 use std::path::Path;
 
-use crate::repository::{self, TICKETS_DIR};
+use repository_layout::TICKETS_DIR;
 
 pub type Registry = Value;
 
@@ -19,7 +19,7 @@ pub fn load_registry(root: &Path) -> Result<Registry> {
         return crate::registry::typed_projection::load_phase2_tree(root);
     }
     let tickets_dir = root.join(TICKETS_DIR);
-    let has_toml = repository::is_repo_root(root)
+    let has_toml = repository_layout::is_repository_root(root)
         || tickets_dir.read_dir().ok().is_some_and(|rd| {
             rd.filter_map(|e| e.ok()).any(|e| {
                 let n = e.file_name();
@@ -308,7 +308,7 @@ pub fn slice_handoff_path(t: &Value, slice_id: Option<&str>) -> String {
         .or_else(|| opt_str(t, "active_slice").map(|s| s.to_string()))
         .unwrap_or_else(|| str_field(t, "id"));
     let slug = slice_id_to_artifact_slug(&sid);
-    repository::handoff_doc(&slug)
+    crate::repository::handoff_doc(&slug)
 }
 
 pub mod ticket_file_storage;

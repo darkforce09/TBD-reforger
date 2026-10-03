@@ -1,12 +1,8 @@
 use super::*;
 
 fn repo() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("tools/xtask has a parent")
-        .parent()
-        .expect("xtask parent")
-        .to_path_buf()
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root")
 }
 
 #[test]

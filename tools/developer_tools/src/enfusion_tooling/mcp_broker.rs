@@ -182,7 +182,8 @@ impl Broker {
 
     /// Spawn + initialize the enfusion-mcp child; register the stdout reader.
     async fn start_child(self: &Arc<Self>) -> anyhow::Result<()> {
-        let runner = enfusion_mcp_entrypoint::resolve(&crate::browser_testing::server::repo_root());
+        let runner =
+            enfusion_mcp_entrypoint::resolve(&crate::repository_layout::compiled_checkout_root()?);
         let (prog, args) = (runner.program, runner.args);
         dlog!(
             "spawning {prog} {} ({})",

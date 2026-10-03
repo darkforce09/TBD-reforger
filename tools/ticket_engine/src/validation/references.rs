@@ -2,10 +2,10 @@
 
 use super::*;
 
-use crate::repository::TICKETS_DIR;
 use crate::repository::documentation::{
     ARCHIVED_WAVE_PLAN_READERS, SCAN_EXEMPT_PREFIXES, STALE_TICKET_ID_SCAN_ROOTS,
 };
+use repository_layout::TICKETS_DIR;
 
 /// Parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
@@ -151,7 +151,7 @@ pub(super) fn fossil_paths_check(root: &Path) -> Vec<String> {
             "archived wave-plan reference in {path} — the wave plan is {}; a mention that is \
              genuinely about the past belongs on ARCHIVED_WAVE_PLAN_READERS in \
              tools/ticket_engine/src/repository.rs, with its reason",
-            crate::repository::WAVE_LOCK
+            repository_layout::WAVE_LOCK
         ));
     }
     errors

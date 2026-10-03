@@ -55,7 +55,7 @@ column emits `OpenAnchorDialog`, which the application answers with the anchor p
   for the estimated stamps and tokens; `crate::document_viewer::services::document_loading` to
   tell a document link from a file link; `crate::wave_plan::services::lock_file` for the ownership
   collision rule; `crate::core::ui`; `ticket_engine` (`StatusName`, `Ticket`,
-  `repository::SCOPE_VOCAB`); `toml`; `eframe::egui` and `egui_extras` in `ui/` only.
+  `repository_layout::SCOPE_VOCAB`); `toml`; `eframe::egui` and `egui_extras` in `ui/` only.
 - Used by: `crate::application` (`mod.rs`, `events.rs`, `feature_views.rs`, `workspace_state.rs`,
   `background_loading.rs`, `window.rs`).
 - Rules:

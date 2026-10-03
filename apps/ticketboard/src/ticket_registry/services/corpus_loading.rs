@@ -1,9 +1,9 @@
 pub use crate::ticket_registry::models::corpus::*;
+use repository_layout::TICKETS_DIR;
 use std::{
     fs,
     path::{Path, PathBuf},
 };
-use ticket_engine::repository::TICKETS_DIR;
 /// Child = dotted id (`T-915.1`); parent = undotted (`T-915`).
 pub fn is_child_id(id: &str) -> bool {
     id.contains('.')

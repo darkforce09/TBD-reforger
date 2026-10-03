@@ -12,11 +12,11 @@
 //! - Doxygen mangles `_` to `__` in file names, so `SCR_BaseGameMode` is stored as
 //!   `interfaceSCR__BaseGameMode.html`.
 //!
-//! Curl runs through [`verification_core::proc::Run`]. Offline runs answer from the cache; a
+//! Curl runs through [`process_runner::Run`]. Offline runs answer from the cache; a
 //! page that is absent is fetched with the same recipe, `TBD_FETCH_DELAY` (default 0.3 s) apart.
 //!
 //! `TBD_FETCH_VANILLA_API_CURL` — optional absolute path to a curl binary, checked before
-//! `proc::which("curl")`. Production leaves it unset. Tests use it instead of mutating `PATH`
+//! `process_runner::which("curl")`. Production leaves it unset. Tests use it instead of mutating `PATH`
 //! (which races under `cargo test --test-threads=N`).
 
 use std::fs::{self, OpenOptions};
@@ -26,7 +26,7 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
-use verification_core::proc::{self, Run};
+use process_runner::Run;
 
 const BASE: &str = "https://community.bistudio.com/wikidata/external-data/arma-reforger/ArmaReforgerScriptAPIPublic";
 const UA: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
@@ -202,7 +202,7 @@ fn err_line(s: &str) -> Result<()> {
 }
 
 /// `code=$(curl -sSL -A UA -o dest -w '%{http_code}' url || echo 000)`.
-/// Resolve curl: `TBD_FETCH_VANILLA_API_CURL` override, else `PATH` via [`proc::which`].
+/// Resolve curl: `TBD_FETCH_VANILLA_API_CURL` override, else `PATH` via [`process_runner::which`].
 fn resolve_curl() -> Result<PathBuf, verification_core::NotRun> {
     if let Ok(override_path) = std::env::var("TBD_FETCH_VANILLA_API_CURL") {
         let trimmed = override_path.trim();
@@ -210,7 +210,7 @@ fn resolve_curl() -> Result<PathBuf, verification_core::NotRun> {
             return Ok(PathBuf::from(trimmed));
         }
     }
-    proc::which("curl")
+    process_runner::which("curl")
 }
 
 fn curl_fetch(url: &str, dest: &Path) -> Result<String> {

@@ -197,17 +197,9 @@ fn broken_or_missing_vocab_is_none_never_a_crash() {
     assert_eq!(VocabTree::load(s.path()), None);
     // Present-but-broken file: still None.
     std::fs::create_dir_all(s.path().join(".ai/tickets")).unwrap();
-    std::fs::write(
-        s.path().join(ticket_engine::repository::SCOPE_VOCAB),
-        "domains = 3",
-    )
-    .unwrap();
+    std::fs::write(s.path().join(repository_layout::SCOPE_VOCAB), "domains = 3").unwrap();
     assert_eq!(VocabTree::load(s.path()), None);
     // Fixed on disk: loads.
-    std::fs::write(
-        s.path().join(ticket_engine::repository::SCOPE_VOCAB),
-        FIXTURE,
-    )
-    .unwrap();
+    std::fs::write(s.path().join(repository_layout::SCOPE_VOCAB), FIXTURE).unwrap();
     assert_eq!(VocabTree::load(s.path()), Some(fixture_vocab()));
 }

@@ -92,7 +92,7 @@ no finding.
 
 ## Boundaries
 
-- Depends on: `verification_core` (`Verdict`, `Report`, `NotRun`, `proc::Run` for git);
+- Depends on: `verification_core` (`Verdict`, `Report`, `NotRun`); `process_runner::Run` for git;
   `ticket_engine::StatusName` for the closed ticket statuses; the frozen-area constants in
   `tools/xtask/src/core/repository_layout.rs`; `git` on the path.
 - Used by: `tools/xtask/src/commands/refactor/dispatch.rs` only.

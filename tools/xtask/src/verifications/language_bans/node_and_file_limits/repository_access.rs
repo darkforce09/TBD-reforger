@@ -1,7 +1,7 @@
-//! The file-length gate's rendering over the library scan, the checkout lookup, and the font
-//! table generator.
+//! The file-length gate's rendering over the library scan and the font table
+//! generator.
 //!
-//! **Role:** runs [`verification_core::repository_laws::file_length::scan_file_lengths`] and
+//! **Role:** runs [`repository_laws::file_length::scan_file_lengths`] and
 //! prints its verdict as `verify file-length` output; generates the Spleen glyph table.
 //! **Position:** the bodies behind the parent module's re-exports.
 //! **Signals & state:** none; each entry reads the checkout and prints.
@@ -10,18 +10,13 @@
 //! summary prints on stdout.
 
 use super::*;
-use verification_core::repository_laws::file_length::scan_file_lengths;
-
-pub(super) fn repo_root() -> Result<PathBuf> {
-    let out = std::process::Command::new("git")
-        .args(["rev-parse", "--show-toplevel"])
-        .output()?;
-    Ok(PathBuf::from(String::from_utf8_lossy(&out.stdout).trim()))
-}
+use repository_laws::file_length::scan_file_lengths;
 
 /// The body of `cargo xtask verify file-length` over the current checkout.
 pub fn verify_file_length() -> Result<u8> {
-    Ok(verify_file_length_in(&repo_root()?))
+    Ok(verify_file_length_in(
+        &repository_layout::find_repository_root()?,
+    ))
 }
 
 /// The file-length gate over the checkout at `root`: 0 clean, 1 a file over its ceiling or an

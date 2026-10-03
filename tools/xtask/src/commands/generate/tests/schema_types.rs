@@ -1,6 +1,7 @@
-//! Contract codegen: the freshness check covers every file of every generated module directory
-//! independently of whether Git tracks it, and the split keeps every typify item while holding
-//! each generated file to the production source-size limit.
+//! Contract codegen: the freshness check covers every file of the generated module tree
+//! independently of whether Git tracks it, every generated file names the codegen command, and
+//! the split keeps every typify item while holding each generated file to the production
+//! source-size limit.
 use super::*;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -49,52 +50,52 @@ fn schema_freshness_detects_missing_changed_and_stray_outputs_without_git() {
     let scratch = generated_scratch();
     assert!(!scratch.0.join(".git").exists());
     verify_fresh(&scratch.0).unwrap();
-    for (schema, output) in TARGETS {
-        let expected = render_module(&scratch.0, schema).unwrap();
-        let directory = scratch.0.join(API_SOURCE_DIR).join(output);
-        let error = |directory: &Path| {
-            compare_module(&expected, directory)
-                .unwrap_err()
-                .to_string()
-        };
+    let expected = render_tree(&scratch.0).unwrap();
+    let directory = scratch.0.join(OUTPUT_DIR);
+    let error = || compare_tree(&expected, &directory).unwrap_err().to_string();
+    let mut perturbed = vec![
+        "mod.rs".to_string(),
+        "operations/mod.rs".to_string(),
+        "community_content/equipment_data_viewer/mod.rs".to_string(),
+    ];
+    for (_, output) in TARGETS {
+        let prefix = format!("{output}/");
         let nested = expected
             .keys()
-            .find(|relative| relative.contains('/'))
+            .find(|relative| {
+                relative
+                    .strip_prefix(&prefix)
+                    .is_some_and(|inner| inner.contains('/'))
+            })
             .cloned()
-            .unwrap_or_else(|| "mod.rs".to_string());
-        for relative in ["mod.rs".to_string(), nested] {
-            let path = directory.join(&relative);
-            let correct = fs::read_to_string(&path).unwrap();
-            fs::remove_file(&path).unwrap();
-            assert!(
-                error(&directory).contains("missing generated output"),
-                "{schema} {relative}"
-            );
-            fs::write(&path, format!("{correct}\n// Unrepresented change\n")).unwrap();
-            assert!(
-                error(&directory).contains("stale generated output"),
-                "{schema} {relative}"
-            );
-            fs::write(&path, correct).unwrap();
-        }
-
-        let stray = directory.join("hand_written.rs");
+            .unwrap_or_else(|| format!("{output}/error.rs"));
+        perturbed.extend([format!("{output}/mod.rs"), nested]);
+    }
+    for relative in &perturbed {
+        let path = directory.join(relative);
+        let correct = fs::read_to_string(&path).unwrap();
+        fs::remove_file(&path).unwrap();
+        assert!(error().contains("missing generated output"), "{relative}");
+        fs::write(&path, format!("{correct}\n// Unrepresented change\n")).unwrap();
+        assert!(error().contains("stale generated output"), "{relative}");
+        fs::write(&path, correct).unwrap();
+    }
+    for (schema, output) in TARGETS {
+        let stray = directory.join(output).join("hand_written.rs");
         fs::write(&stray, "pub struct HandWritten;\n").unwrap();
-        assert!(
-            error(&directory).contains("stray generated output"),
-            "{schema}"
-        );
+        assert!(error().contains("stray generated output"), "{schema}");
         fs::remove_file(&stray).unwrap();
 
-        let single_file = directory.with_extension("rs");
+        let single_file = directory.join(format!("{output}.rs"));
         fs::write(&single_file, "// the retired single-file form\n").unwrap();
-        assert!(
-            error(&directory).contains("stray generated output"),
-            "{schema}"
-        );
+        assert!(error().contains("stray generated output"), "{schema}");
         fs::remove_file(&single_file).unwrap();
-        compare_module(&expected, &directory).unwrap();
     }
+    let stray_domain = directory.join("retired_domain/mod.rs");
+    fs::create_dir_all(stray_domain.parent().unwrap()).unwrap();
+    fs::write(&stray_domain, "// retired\n").unwrap();
+    assert!(error().contains("stray generated output"));
+    fs::remove_dir_all(stray_domain.parent().unwrap()).unwrap();
     verify_fresh(&scratch.0).unwrap();
 }
 
@@ -102,18 +103,60 @@ fn schema_freshness_detects_missing_changed_and_stray_outputs_without_git() {
 fn schema_codegen_removes_what_the_schemas_no_longer_produce() {
     let scratch = generated_scratch();
     let (_, output) = TARGETS[0];
-    let directory = scratch.0.join(API_SOURCE_DIR).join(output);
-    fs::create_dir_all(directory.join("retired_definition")).unwrap();
-    fs::write(directory.join("retired_definition/mod.rs"), "// retired\n").unwrap();
+    let directory = scratch.0.join(OUTPUT_DIR);
+    let module = directory.join(output);
+    fs::create_dir_all(module.join("retired_definition")).unwrap();
+    fs::write(module.join("retired_definition/mod.rs"), "// retired\n").unwrap();
     fs::write(
-        directory.with_extension("rs"),
+        module.with_extension("rs"),
         "// the retired single-file form\n",
     )
     .unwrap();
+    fs::create_dir_all(directory.join("retired_domain/retired_schema")).unwrap();
+    fs::write(
+        directory.join("retired_domain/retired_schema/mod.rs"),
+        "// retired\n",
+    )
+    .unwrap();
     write_generated_modules(&scratch.0).unwrap();
-    assert!(!directory.join("retired_definition").exists());
-    assert!(!directory.with_extension("rs").exists());
+    assert!(!module.join("retired_definition").exists());
+    assert!(!module.with_extension("rs").exists());
+    assert!(!directory.join("retired_domain").exists());
     verify_fresh(&scratch.0).unwrap();
+}
+
+#[test]
+fn every_generated_file_names_the_codegen_command() {
+    let files = render_tree(&repo_root().unwrap()).unwrap();
+    for (relative, source) in &files {
+        assert!(
+            source.starts_with(
+                "// Code generated from JSON Schema using `cargo xtask schema codegen`"
+            ),
+            "{relative}"
+        );
+        assert!(
+            source.contains("regenerate with: cargo xtask ci schema-codegen"),
+            "{relative}"
+        );
+    }
+    for (_, output) in TARGETS {
+        let segments: Vec<&str> = output.split('/').collect();
+        for depth in 0..segments.len() {
+            let folder = segments[..depth].join("/");
+            let key = if folder.is_empty() {
+                "mod.rs".to_string()
+            } else {
+                format!("{folder}/mod.rs")
+            };
+            let declaration = format!("pub mod {};", segments[depth]);
+            assert!(
+                files[&key].lines().any(|line| line == declaration),
+                "{key} declares {}",
+                segments[depth]
+            );
+        }
+    }
 }
 
 /// The type and impl items of a parsed file, counted by their rendered signature, plus the

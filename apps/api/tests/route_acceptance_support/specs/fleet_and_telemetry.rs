@@ -7,16 +7,16 @@
 //! kinds, and a reason for every dimension that does not apply. Fixture keys name rows the
 //! world `world/fleet_and_telemetry.rs` mints per probe.
 
-use api::match_telemetry::models::generated::match_telemetry::{
+use contract_schema_types::match_telemetry::match_telemetry::{
     MatchEventBatchAnswer, MatchEventPage, MatchRegistrationAnswer, MatchResultsAnswer,
 };
-use api::server_infrastructure::models::generated::fleet_command::{
+use contract_schema_types::server_infrastructure::fleet_command::{
     ClaimedFleetCommand, FleetCommandList, FleetCommandReceipt,
 };
-use api::server_infrastructure::models::generated::game_runtime_session::{
+use contract_schema_types::server_infrastructure::game_runtime_session::{
     RuntimeSessionEnd, StartedRuntimeSession,
 };
-use api::server_infrastructure::models::generated::machine_credential::{
+use contract_schema_types::server_infrastructure::machine_credential::{
     IssuedMachineCredential, MachineCredential, MachineCredentialList,
 };
 use serde_json::json;

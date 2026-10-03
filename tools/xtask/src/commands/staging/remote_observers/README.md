@@ -29,12 +29,12 @@ holds no `;`; each value is bound with `-v` and used as `:'name'`, so no value i
 statement text. The metrics reader's script reads `OBSERVABILITY_TOKEN` from the API env file on
 the host and pipes `Authorization: Bearer …` to `curl -H @-`; the token is in no argument.
 
-`HostShell` builds `ssh_argv` from `crate::core::secure_shell_transport` with the command line as
+`HostShell` builds `ssh_argv` from `process_runner::secure_shell_transport` with the command line as
 the only remote argument and spawns it with a 120 s timeout for a read and 3600 s for a change.
 
 ## Boundaries
 
-- Depends on: `crate::core::secure_shell_transport`; `verification_core::proc`; on the host, bash,
+- Depends on: `process_runner::secure_shell_transport`; `process_runner`; on the host, bash,
   docker, `systemctl`, `journalctl`, curl and the `staging-fixtures` tool.
 - Used by: the procedure runner's probes, `support_commands/`, `environment_identity/`.
 - Rules: every observer builds a read; no command line or script carries a secret; the tests pin

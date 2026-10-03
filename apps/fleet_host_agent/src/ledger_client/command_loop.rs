@@ -19,10 +19,11 @@ use std::future::Future;
 use std::pin::pin;
 use std::time::Duration;
 
+use fleet_wire_contract::executor_messages::ClaimedFleetCommand;
 use tracing::{Instrument, error, info, info_span, warn};
 
 use super::ledger_api::{ClaimOutcome, LedgerApi, LedgerError};
-use super::ledger_messages::{ClaimedFleetCommand, ExecutionResult};
+use super::ledger_messages::execution_result_from_verdict;
 use super::retry_backoff::{BackoffPolicy, JitteredBackoff};
 use crate::action_verdict::ActionVerdict;
 use crate::command_execution::{FleetActionExecutor, HostCommand};
@@ -178,7 +179,7 @@ impl<E: FleetActionExecutor> CommandLoop<E> {
 
     /// Reports the verdict until the API acknowledges it or answers with a final refusal.
     async fn report_result(&self, claimed: &ClaimedFleetCommand, verdict: ActionVerdict) {
-        let result = ExecutionResult::from_verdict(claimed.fencing_token, verdict);
+        let result = execution_result_from_verdict(claimed.fencing_token, verdict);
         let mut backoff = JitteredBackoff::new(self.timings.report_retry);
         loop {
             match self.api.report_result(claimed.command_id, &result).await {

@@ -88,7 +88,7 @@ build `unversioned`. `Cargo.toml` pins edition 2024 and Rust 1.95.
 - Rules:
   - the crate depends on none of `api`, `frontend` or `graphics_engine`
     (`OFFLINE_SERVICE_WORKER_RULE` in
-    `tools/verification_core/src/repository_laws/crate_dependencies.rs`, test
+    `tools/foundation/repository_laws/src/crate_dependencies.rs`, test
     `the_offline_service_worker_may_link_none_of_the_server_page_or_renderer`);
   - the loader holds no policy: every decision lives in `offline_cache_policy` or in
     `src/range_slicing.rs`, and is unit-tested natively.

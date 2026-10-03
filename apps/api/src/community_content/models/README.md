@@ -8,7 +8,6 @@ keys, absent values skipped, RFC 3339 timestamps, and each enum mapped to a Post
 ```text
 apps/api/src/community_content/models/
 ├── announcement.rs      `Announcement`, with the `AnnouncementStatus` and `AnnouncementTag` enums
-├── generated/           typify types of the equipment data viewer, vehicle, wiki and upload schemas
 ├── mod.rs               the module tree; re-exports every model
 ├── modpack.rs           `Modpack`, a downloadable dependency set, and `ModpackMod`, one of its mods
 ├── vehicle_database.rs  `VehicleDatabase`, one vehicle row, and `VehicleDatabaseList`, the list
@@ -29,8 +28,8 @@ details, which carry `WikiMarkupFinding`s.
 ## Boundaries
 
 - Depends on: `core::wire_format` for timestamps, serde and sqlx; `services::wiki_markup` for the
-  wiki blocks and findings. `generated/` follows the
-  schemas under `contracts/definitions/equipment-data-viewer/`, and
+  wiki blocks and findings. `contract_schema_types::community_content` holds the types
+  generated from the schemas under `contracts/definitions/equipment-data-viewer/`, and
   `vehicle-database.schema.json` (`Vehicle`, `VehicleList`, `VehicleWrite`, `VehiclePatch`),
   `wiki-page.schema.json` (summaries, the article with its typed `WikiBlock` and `WikiInline`
   tree, the save and its refusal, the revisions) and `content-upload.schema.json`
@@ -43,5 +42,5 @@ details, which carry `WikiMarkupFinding`s.
   [registry](/documentation/glossary/n_to_z.md#registry) items (`Modpack`); the web app's
   `apps/frontend/src/v2/core/api/dto/content.rs` mirrors the modpack wire shape.
 - Rules: an enum here and its Postgres enum in `apps/api/migrations/` change together;
-  `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
-  (`cargo xtask ci verify-codegen-fresh` checks it).
+  the generated types are written by `cargo xtask ci schema-codegen` and never edited by hand
+  (`cargo xtask ci verify-codegen-fresh` checks them).

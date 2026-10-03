@@ -48,8 +48,8 @@ apps/api/src/match_telemetry/handlers/
 
 ## Boundaries
 
-- Depends on: `server_infrastructure` (`MachineCaller`, `ExecutorKind`, the runtime-session fence,
-  `publish_server_status_by_id`); `administration` (the low-FPS audit writer); the domain's
+- Depends on: `server_infrastructure` (`MachineCaller`, the runtime-session fence,
+  `publish_server_status_by_id`); `fleet_wire_contract` (`ExecutorKind`); `administration` (the low-FPS audit writer); the domain's
   models and services; `core` for errors and `AuthUser`.
 - Used by: the domain's `routes.rs`; over HTTP, the
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s session loop in

@@ -10,7 +10,6 @@ mod workspace_law_steps;
 
 use super::{Lane, Step, Task};
 use crate::commands::generate::schema_types::codegen;
-use crate::core::repository_root::find_repo_root;
 use crate::verifications::ci::workflow_shell::verify_ci_shell;
 use crate::verifications::language_bans::node_and_file_limits::{
     verify_file_length, verify_no_node,
@@ -22,6 +21,7 @@ use crate::verifications::schemas::checks::{
     citations, map_glyphs, map_object_enums, type_inventory, validate_all,
 };
 use map_asset_steps::{MAP_CARTOGRAPHIC_EVERON_STEPS, MAP_WATER_EVERON_STEPS};
+use repository_layout::find_repository_root;
 use verification_dispatch::{
     run_ci_schema_parity, run_enfusion_comments, run_engine_layers, run_height_labels,
     run_link_check, run_markdown_placement, run_mission_rest_size_limits, run_no_select_star,
@@ -101,7 +101,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "schema-codegen",
-        help: "Regenerate Rust contract types from contracts/definitions via typify (loadout_projection.rs is hand-maintained)",
+        help: "Regenerate the contract_schema_types crate from contracts/definitions via typify (loadout_projection.rs is hand-maintained)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema codegen", false, codegen)],

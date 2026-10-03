@@ -414,7 +414,7 @@ fn assert_response_contract(value: &Value) {
         .build(&schema)
         .unwrap();
     assert!(validator.is_valid(value));
-    let generated: api::operations::models::generated::reservation_response::ReservationResponse =
+    let generated: contract_schema_types::operations::reservation_response::ReservationResponse =
         serde_json::from_value(value.clone()).unwrap();
     assert_eq!(serde_json::to_value(generated).unwrap(), *value);
     let backend: api::operations::models::reservation_response::ReservationResponse =

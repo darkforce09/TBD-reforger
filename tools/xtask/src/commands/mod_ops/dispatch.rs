@@ -1,6 +1,6 @@
 use super::cli::ModCmd;
-use crate::core::repository_root::find_repo_root;
 use anyhow::Result;
+use repository_layout::find_repository_root;
 
 pub(crate) fn run(cmd: ModCmd) -> Result<u8> {
     match cmd {
@@ -27,7 +27,7 @@ pub(crate) fn run(cmd: ModCmd) -> Result<u8> {
             runs,
             world,
         } => crate::verifications::mod_scripts::spawn_determinism::run(
-            &find_repo_root()?,
+            &find_repository_root()?,
             preflight,
             selftest,
             runs.unwrap_or(5),

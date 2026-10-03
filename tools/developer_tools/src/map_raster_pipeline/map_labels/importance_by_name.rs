@@ -270,7 +270,7 @@ pub fn verify_locations_gates(locs: &[Value]) -> Vec<String> {
 }
 
 pub fn export_locations(terrain: &str, src: Option<PathBuf>, dry_run: bool) -> Result<u8> {
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let default_src = map_scratch_dir(&root, terrain).join("export/raw-entities.jsonl");
     let src = src.unwrap_or(default_src);
     let out_path = terrain_dir(&root, terrain).join("locations.json");

@@ -3,6 +3,9 @@
 //! fencing token of the claiming credential, so an executor whose lease lapsed cannot overwrite
 //! the command after another claim. Lock order: server, runtime session, command rows.
 
+use fleet_wire_contract::executor_messages::{ClaimedFleetCommand, ExecutionResult};
+use fleet_wire_contract::operator_messages::FleetCommandReceipt;
+use fleet_wire_contract::{ExecutorKind, FleetAction};
 use sqlx::PgConnection;
 use uuid::Uuid;
 
@@ -13,9 +16,8 @@ use crate::core::error_handling::api_error::ApiError;
 use crate::core::failpoints::fail_point;
 use crate::identity_and_access::services::account_authority::holds_administrator_authority;
 use crate::server_infrastructure::models::fleet_command::{
-    ClaimedFleetCommand, ExecutionResult, FleetAction, FleetCommandReceipt, FleetCommandState,
+    FleetCommandReceiptRow, FleetCommandState,
 };
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 use crate::server_infrastructure::services::runtime_sessions::share_open_session;
 
@@ -206,12 +208,15 @@ async fn receipt(
     connection: &mut PgConnection,
     command: Uuid,
 ) -> Result<FleetCommandReceipt, ApiError> {
-    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT {RECEIPT_COLUMNS} FROM fleet_commands WHERE id = $1"
-    )))
-    .bind(command)
-    .fetch_one(connection)
-    .await?)
+    Ok(
+        sqlx::query_as::<_, FleetCommandReceiptRow>(sqlx::AssertSqlSafe(format!(
+            "SELECT {RECEIPT_COLUMNS} FROM fleet_commands WHERE id = $1"
+        )))
+        .bind(command)
+        .fetch_one(connection)
+        .await?
+        .into(),
+    )
 }
 
 /// Record that the effect is starting. The intent is durable before the executor acts, so a

@@ -1,8 +1,13 @@
 use super::*;
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 
 fn committed_catalog() -> BallisticsCatalog {
-    read_catalog(&repo_root().join(COMMITTED_CATALOG)).unwrap()
+    read_catalog(
+        &compiled_checkout_root()
+            .expect("repository root")
+            .join(COMMITTED_CATALOG),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -41,7 +46,9 @@ fn mortar_offline_required_files_name_the_pack_sources_and_both_reads() {
 
 #[test]
 fn mortar_offline_require_files_names_every_missing_file() {
-    let present = repo_root().join(COMMITTED_CATALOG);
+    let present = compiled_checkout_root()
+        .expect("repository root")
+        .join(COMMITTED_CATALOG);
     let files = vec![
         (present.clone(), "the catalog".to_string()),
         (

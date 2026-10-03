@@ -6,7 +6,7 @@
 //! website crates, and a `failpoints` feature that only test builds compile.
 //! **Position:** an integration binary of `api`, run by
 //! `cargo xtask db test-it --test engineering_laws`; it needs no database. Every law is judged by
-//! `verification_core::repository_laws`, the same code `cargo xtask verify file-length` and
+//! `repository_laws`, the same code `cargo xtask verify file-length` and
 //! `verify engine-layers` print, so the gates and this binary never disagree about the tree.
 //! **Signals & state:** none; each case reads the checkout and asserts.
 //! **Invariants:** the repository root comes from `CARGO_MANIFEST_DIR`; every case asserts that
@@ -15,18 +15,18 @@
 
 use std::path::{Path, PathBuf};
 
-use verification_core::repository_laws::cargo_manifest::read_manifest;
-use verification_core::repository_laws::crate_dependencies::{
+use repository_laws::cargo_manifest::read_manifest;
+use repository_laws::crate_dependencies::{
     API_RULE, DependencyFinding, FRONTEND_RULE, GRAPHICS_ENGINE_RULE, MAP_ENGINE_RULE,
     crate_dependency_findings, rule_findings, test_only_feature_findings,
 };
-use verification_core::repository_laws::engine_layers::{
+use repository_laws::engine_layers::{
     EngineLayerReport, EngineLayerRule, check_engine_layers, map_engine_ui_framework_findings,
 };
-use verification_core::repository_laws::exemption_mechanisms::scan_exemption_mechanisms;
-use verification_core::repository_laws::file_length::scan_file_lengths;
-use verification_core::repository_laws::sibling_test_placement::scan_inline_test_modules;
-use verification_core::repository_laws::source_roots::{is_test_file, repository_relative};
+use repository_laws::exemption_mechanisms::scan_exemption_mechanisms;
+use repository_laws::file_length::scan_file_lengths;
+use repository_laws::sibling_test_placement::scan_inline_test_modules;
+use repository_laws::source_roots::{is_test_file, repository_relative};
 use verification_core::{Pattern, scan};
 
 /// The repository root: two levels above `apps/api`.

@@ -55,10 +55,7 @@ pub fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         // every host serves them from `assets/terrains`.
         "--exclude=packages/".into(),
         // The licensed upstream reference lanes: never shipped (see `deploy::staging::remote`).
-        format!(
-            "--exclude={}/",
-            crate::core::repository_layout::REFERENCES_DIR
-        ),
+        format!("--exclude={}/", repository_layout::REFERENCES_DIR),
         "--exclude=apps/mod/.local-test-profile/".into(),
     ];
     // What only a development machine holds, excluded by `deploy staging` too: the retired and

@@ -36,8 +36,11 @@ fn write_tile(root: &Path, terrain: &str, z: u32, x: u32, y: u32, bytes: usize) 
 }
 
 fn schema_validator() -> jsonschema::Validator {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../contracts/definitions/map-tile-index.schema.json");
+    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )))
+    .expect("repository root")
+    .join("contracts/definitions/map-tile-index.schema.json");
     let schema: Value =
         serde_json::from_str(&fs::read_to_string(&path).expect("schema file")).expect("schema");
     jsonschema::validator_for(&schema).expect("validator")

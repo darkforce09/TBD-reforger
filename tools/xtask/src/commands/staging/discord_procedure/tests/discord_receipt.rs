@@ -41,9 +41,10 @@ impl IsolatedRepository {
             .status()
             .expect("run git init");
         assert!(status.success(), "git init failed");
-        let register_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../..")
-            .join(API_READINESS_REGISTER);
+        let register_path =
+            repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+                .expect("repository root")
+                .join(API_READINESS_REGISTER);
         let real: Value = serde_json::from_slice(&std::fs::read(register_path).unwrap()).unwrap();
         let definition = real["checks"]
             .as_array()

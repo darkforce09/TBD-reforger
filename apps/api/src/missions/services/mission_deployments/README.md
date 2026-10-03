@@ -68,7 +68,8 @@ before every deployment read, and in `reconcile_mission_deployments`; every outc
 
 - Depends on: `models::mission_deployment`; `administration` for the audit rows;
   `identity_and_access` for account locks and administrator authority; `server_infrastructure`
-  for `FleetAction` and the command ledger (`enqueue_deployment_command`, `cancel_command`);
+  for the command ledger (`enqueue_deployment_command`, `cancel_command`); `fleet_wire_contract`
+  for `FleetAction`;
   `operations::services` for the ORBAT template; `core` for configuration, errors and `role_rank`.
 - Used by: the handlers `mission_deployments.rs` and `game_runtime_missions.rs` in
   `apps/api/src/missions/handlers/`; the event roster in

@@ -2,7 +2,7 @@
 //! `frontend-layering` and `tailwind-sources`.
 //!
 //! **Role:** prints the report of each law of
-//! [`verification_core::repository_laws::workspace_laws`] over a checkout and exits with its
+//! [`repository_laws::workspace_laws`] over a checkout and exits with its
 //! code; the `verify-workspace-laws` task row runs the five in order.
 //! **Position:** called by `tools/xtask/src/commands/verify/dispatch.rs` and the
 //! `verify-workspace-laws` row of the `ci` task table; the paths the laws read come from
@@ -14,19 +14,19 @@
 use std::path::Path;
 
 use anyhow::Result;
-use verification_core::repository_laws::workspace_laws::WorkspaceLawReport;
-use verification_core::repository_laws::workspace_laws::crate_anatomy::check_crate_anatomy;
-use verification_core::repository_laws::workspace_laws::crate_tiers::check_crate_tiers;
-use verification_core::repository_laws::workspace_laws::frontend_layering::{
+use repository_laws::workspace_laws::WorkspaceLawReport;
+use repository_laws::workspace_laws::crate_anatomy::check_crate_anatomy;
+use repository_laws::workspace_laws::crate_tiers::check_crate_tiers;
+use repository_laws::workspace_laws::frontend_layering::{
     FRONTEND_LAYERING_CEILING, check_frontend_layering,
 };
-use verification_core::repository_laws::workspace_laws::strangler::check_strangler;
-use verification_core::repository_laws::workspace_laws::tailwind_sources::check_tailwind_sources;
+use repository_laws::workspace_laws::strangler::check_strangler;
+use repository_laws::workspace_laws::tailwind_sources::check_tailwind_sources;
 
 use crate::core::repository_layout::workspace_laws::{
     FRONTEND_LAYERS, MANIFEST_SWEEP_ROOTS, TAILWIND_STYLESHEET,
 };
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 #[cfg(test)]
 #[path = "tests/workspace_laws.rs"]
@@ -96,5 +96,5 @@ pub fn verify_tailwind_sources() -> Result<u8> {
 
 /// [`verify_workspace_law`] over the checkout this command runs in.
 fn verify_here(law: WorkspaceLaw) -> Result<u8> {
-    verify_workspace_law(law, &find_repo_root()?)
+    verify_workspace_law(law, &find_repository_root()?)
 }

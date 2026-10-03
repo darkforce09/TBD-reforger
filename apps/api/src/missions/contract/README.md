@@ -2,13 +2,12 @@
 
 The [missions](/documentation/glossary/g_to_m.md#missions) domain's contract layer: JSON Schema
 validation of every document the domain accepts or serves, against the schemas in
-`contracts/definitions/`, and the Rust types projected from those schemas.
+`contracts/definitions/`, and the loadout projection written by hand beside them.
 
 ## Contents
 
 ```text
 apps/api/src/missions/contract/
-├── generated/             types generated from the registry, editor payload and faction schemas
 ├── loadout_projection.rs  `LoadoutExport`, the loadout-export document model, written by hand
 ├── mod.rs                 the module tree; re-exports the validators and the kit-alias table
 ├── schema_validators.rs   the embedded schemas and their `validate_*` entry points
@@ -49,11 +48,12 @@ both sample exports in `contracts/fixtures/registry/`.
   `jsonschema` crate; `map_engine::data::scenario` for the `wire_safety` scans, the cargo
   catalog type and the kit-alias table.
 - Used by: `missions::handlers` (`mission_versions`, `faction_library`) and `missions::services`
-  (`mission_artifacts`, `registry_import`, whose import decodes envelopes into the generated
-  [registry](/documentation/glossary/n_to_z.md#registry) types).
-- Rules: `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
-  (`cargo xtask ci verify-codegen-fresh` checks it), and `loadout_projection.rs` stays outside the
-  generator; `MISSION_FILE_MAX_BYTES`, the [mod](/documentation/glossary/g_to_m.md#mod) mission
+  (`mission_artifacts`, `registry_import`).
+- The types generated from the registry, editor payload and faction schemas live in
+  `contract_schema_types::missions`; `registry_import` decodes envelopes into its generated
+  [registry](/documentation/glossary/n_to_z.md#registry) types.
+- Rules: `loadout_projection.rs` stays outside the generator
+  (`cargo xtask ci schema-codegen`); `MISSION_FILE_MAX_BYTES`, the [mod](/documentation/glossary/g_to_m.md#mod) mission
   loader's 8 MiB limit, equals the schema's `x-tbd-missionFileMaxBytes`
   (`schema_x_tbd_mission_file_max_bytes_matches_mod_constant` in `tests/schema_validators.rs`); the
   zone pass rounds exactly as the compile does

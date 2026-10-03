@@ -13,9 +13,10 @@ pub(super) fn editor_auth_seed() -> Result<String> {
 /// The auth-interception pattern used by the arsenal + outliner smokes: /registry →
 /// the committed golden; other /api/v1/ → 401 {}; everything else continues. Returns a counter.
 pub(super) async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
-    let golden = std::fs::read_to_string(
-        repo_root().join("contracts/fixtures/api_goldens/GET__registry.json"),
-    )?;
+    let root = compiled_checkout_root()?;
+    let me_golden = root.join("contracts/fixtures/api_goldens/GET__me.json");
+    let golden =
+        std::fs::read_to_string(root.join("contracts/fixtures/api_goldens/GET__registry.json"))?;
     let golden: Value = serde_json::from_str(&golden)?;
     let hits = Arc::new(StdMutex::new(0u64));
     page.send(
@@ -75,10 +76,7 @@ pub(super) async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMut
                 .await
             } else if u.contains("/api/v1/me") {
                 let me: Value = serde_json::from_str(
-                    &std::fs::read_to_string(
-                        repo_root().join("contracts/fixtures/api_goldens/GET__me.json"),
-                    )
-                    .unwrap_or_else(|_| "{}".into()),
+                    &std::fs::read_to_string(&me_golden).unwrap_or_else(|_| "{}".into()),
                 )
                 .unwrap_or(json!({}));
                 rp.fulfill_json(request_id, 200, &me).await
@@ -103,7 +101,8 @@ pub(super) async fn serve_arsenal_golden(
 ) -> Result<(Arc<StdMutex<u64>>, Arc<StdMutex<u64>>, Arc<StdMutex<u64>>)> {
     const OPTIC: &str = "{ARSENAL_OPTIC}Prefabs/Weapons/Attachments/Optic_ACOG.et";
     const MAG: &str = "{ARSENAL_MAG}Prefabs/Weapons/Magazines/Mag_STANAG_30.et";
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
+    let me_golden = root.join("contracts/fixtures/api_goldens/GET__me.json");
     let mut registry: Value = serde_json::from_str(&std::fs::read_to_string(
         root.join("contracts/fixtures/api_goldens/GET__registry.json"),
     )?)?;
@@ -195,10 +194,7 @@ pub(super) async fn serve_arsenal_golden(
                 .await
             } else if u.contains("/api/v1/me") {
                 let me: Value = serde_json::from_str(
-                    &std::fs::read_to_string(
-                        repo_root().join("contracts/fixtures/api_goldens/GET__me.json"),
-                    )
-                    .unwrap_or_else(|_| "{}".into()),
+                    &std::fs::read_to_string(&me_golden).unwrap_or_else(|_| "{}".into()),
                 )
                 .unwrap_or(json!({}));
                 rp.fulfill_json(request_id, 200, &me).await

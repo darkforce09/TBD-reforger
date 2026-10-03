@@ -8,7 +8,7 @@
 
 use std::path::{Path, PathBuf};
 
-use verification_core::proc::Run;
+use process_runner::Run;
 use verification_core::{NotRun, Verdict};
 
 use super::tracked_tree::TrackedTree;

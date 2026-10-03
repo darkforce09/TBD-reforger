@@ -20,7 +20,8 @@ use sha2::{Digest, Sha256};
 
 use crate::browser_testing::cdp::{self, Browser};
 use crate::browser_testing::fixture_injection::{DOM_SERIALIZER_SRC, FREEZE_SRC};
-use crate::browser_testing::server::{ServeConfig, repo_root, start_server};
+use crate::browser_testing::server::{ServeConfig, start_server};
+use crate::repository_layout::compiled_checkout_root;
 
 // The committed seed golden ids (memory/fixtures): mission / event / event-mission.
 const MISSION: &str = "512d8658-7025-4a70-94e9-a1b44a7aa155";

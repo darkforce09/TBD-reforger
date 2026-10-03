@@ -14,7 +14,8 @@ Abbreviations in code spans: `me/` = `legacy/map_engine/src/`, `ge/` =
 `legacy/graphics_engine/src/`, `api/` = `apps/api/src/`, `fe/` =
 `apps/frontend/src/v2/`, `xt/` = `tools/xtask/src/`, `dt/` =
 `tools/developer_tools/src/`, `te/` = `tools/ticket_engine/src/`, `vc/` =
-`tools/verification_core/src/`.
+the verification core source folder (tools/verification_core/src/ until S4b, now
+the three crates under `tools/foundation/`).
 
 ## 1. Context
 

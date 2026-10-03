@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_paths::find_repo_root;
+use ::repository_layout::find_repository_root;
 
 /// The pattern `pkill -f` receives must match a real command line and must not match a neighbour.
 ///
@@ -20,7 +20,7 @@ fn the_process_pattern_is_the_escaped_installed_module_suffix() {
 /// tree rather than a synthetic root.
 #[test]
 fn an_installed_package_resolves_to_the_pinned_module() {
-    let root = find_repo_root().expect("active checkout");
+    let root = find_repository_root().expect("active checkout");
     if !enfusion_mcp_entrypoint(&root).is_file() {
         return;
     }

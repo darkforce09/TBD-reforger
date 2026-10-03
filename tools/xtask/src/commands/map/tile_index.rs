@@ -22,7 +22,7 @@ use anyhow::{Context, Result};
 use developer_tools::repository_layout::terrain_dir;
 use serde::{Deserialize, Serialize};
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// The file name of the index inside the pyramid directory.
 pub(crate) const TILE_INDEX_FILE_NAME: &str = "index.json";
@@ -140,7 +140,7 @@ pub(crate) fn parse_args(args: &[String]) -> TileIndexArgs {
 
 /// Entry for `cargo xtask map tile-index …`.
 pub fn run(args: &[String]) -> Result<u8> {
-    run_with_root(&find_repo_root()?, args)
+    run_with_root(&find_repository_root()?, args)
 }
 
 /// [`run`] against an explicit checkout root.

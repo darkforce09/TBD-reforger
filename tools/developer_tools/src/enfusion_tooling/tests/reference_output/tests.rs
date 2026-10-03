@@ -9,12 +9,12 @@ impl Scratch {
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&root).unwrap();
         if with_references {
-            std::fs::create_dir_all(root.join(crate::repository_layout::REFERENCES_DIR)).unwrap();
+            std::fs::create_dir_all(root.join(::repository_layout::REFERENCES_DIR)).unwrap();
         }
         Scratch(root)
     }
     fn references(&self) -> PathBuf {
-        self.0.join(crate::repository_layout::REFERENCES_DIR)
+        self.0.join(::repository_layout::REFERENCES_DIR)
     }
 }
 
@@ -55,7 +55,7 @@ fn an_output_outside_the_references_folder_is_refused() {
 #[test]
 fn a_checkout_without_the_references_folder_is_refused() {
     let s = Scratch::new("absent", false);
-    let lane = Path::new(crate::repository_layout::VANILLA_REFERENCE);
+    let lane = Path::new(::repository_layout::VANILLA_REFERENCE);
     let err = reference_output_within(&s.references(), &s.0, lane).unwrap_err();
     assert!(format!("{err:#}").contains("is missing"), "{err:#}");
     assert!(!s.references().exists(), "the refusal creates nothing");

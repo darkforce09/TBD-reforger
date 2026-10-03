@@ -16,7 +16,7 @@ pub fn phase_gate(terrain: &str, phase: &str) -> Result<u8> {
         "P10_full",
     ];
     let reg: Value = serde_json::from_str(&std::fs::read_to_string(terrain_registry_path(
-        &repo_root(),
+        &compiled_checkout_root()?,
     ))?)?;
     let Some(row) = reg["terrains"]
         .as_array()

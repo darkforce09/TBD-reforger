@@ -46,7 +46,7 @@ use world_file_formats::archives::roads::RoadSegmentArchive;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 use world_file_formats::ids::RoadSegmentId;
 
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 use crate::repository_layout::terrain_dir;
 
 /// The gzip-JSON road export, relative to a terrain directory.
@@ -135,9 +135,14 @@ pub fn build_road_network_archive(terrain_dir: &Path) -> Result<RoadNetworkArchi
 
 /// Resolve a `--terrain` value the way `build_roads_from_topo` resolves its `--out`: an explicit
 /// base wins, otherwise `assets/terrains/<terrain>`.
-#[must_use]
-pub fn resolve_terrain_dir(terrain: &str, out_base: Option<&Path>) -> PathBuf {
-    out_base.map_or_else(|| terrain_dir(&repo_root(), terrain), Path::to_path_buf)
+///
+/// # Errors
+/// When no base is given and no checkout root lies above this crate's manifest folder.
+pub fn resolve_terrain_dir(terrain: &str, out_base: Option<&Path>) -> Result<PathBuf> {
+    match out_base {
+        Some(base) => Ok(base.to_path_buf()),
+        None => Ok(terrain_dir(&compiled_checkout_root()?, terrain)),
+    }
 }
 
 /// Build and write `roads/road_network.rkyv` for one terrain directory. Returns the path written
@@ -163,7 +168,7 @@ pub fn emit_road_network(terrain_dir: &Path) -> Result<(PathBuf, usize)> {
 /// # Errors
 /// When the terrain directory or its road export is missing, or the emit fails.
 pub fn emit_road_network_cli(terrain: &str, out_base: Option<&Path>) -> Result<u8> {
-    let dir = resolve_terrain_dir(terrain, out_base);
+    let dir = resolve_terrain_dir(terrain, out_base)?;
     if !dir.is_dir() {
         eprintln!("roads-rkyv: no terrain directory at {}", dir.display());
         return Ok(1);

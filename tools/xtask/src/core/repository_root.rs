@@ -1,9 +1,11 @@
-use anyhow::Result;
-use std::path::PathBuf;
-
-pub fn find_repo_root() -> Result<PathBuf> {
-    ticket_engine::repository::find_repo_root()
-}
+//! The checkout root under the test working-directory lock.
+//!
+//! **Role:** [`test_repo_root`] answers the checkout root for test fixtures while holding the
+//! lock the working-directory-changing tests hold.
+//! **Position:** delegates to the `repository_layout` walk
+//! ([`repository_layout::find_repository_root`]); every xtask command calls that crate itself.
+//! **Signals & state:** the test lock of [`crate::commands::platform::wave_execution::testcwd`].
+//! **Invariants:** no walk of its own: the root is always the `repository_layout` answer.
 
 /// The repo root for TEST FIXTURES: the cwd walk, resolved under the cwd lock.
 ///
@@ -22,9 +24,9 @@ pub fn find_repo_root() -> Result<PathBuf> {
 ///
 /// Callers must not already hold a `CwdGuard`; the mutex is not reentrant.
 #[cfg(test)]
-pub fn test_repo_root() -> PathBuf {
+pub fn test_repo_root() -> std::path::PathBuf {
     crate::commands::platform::wave_execution::testcwd::resolve_under_lock(|| {
-        find_repo_root().expect("repo root")
+        repository_layout::find_repository_root().expect("repo root")
     })
 }
 

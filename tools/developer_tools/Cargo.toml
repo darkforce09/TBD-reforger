@@ -35,6 +35,8 @@ geometry_primitives = { workspace = true }
 map_coordinates = { workspace = true }
 futures-util = "0.3"
 regex = { workspace = true }
+# The checkout-root walk and the locations shared with the other tools.
+repository_layout = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }

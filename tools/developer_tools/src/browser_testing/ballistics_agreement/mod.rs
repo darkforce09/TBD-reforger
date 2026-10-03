@@ -29,7 +29,7 @@ use anyhow::{Context, Result};
 use map_engine::data::scenario::ballistics::catalog::BallisticsCatalog;
 use map_engine::data::scenario::ballistics::fire_mission::SOLVER_REVISION;
 
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 use bench_reading::decode_bench_reading;
 use browser_session::{BenchSession, read_bench};
 use case_verdict::{AgreementVerdict, RequestedRun, judge_reading};
@@ -71,7 +71,7 @@ pub struct AgreementArgs {
 ///
 /// An unreadable or undecodable committed catalog.
 pub async fn run(args: &AgreementArgs) -> Result<u8> {
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let catalog_path = under_root(&root, &args.catalog);
     let committed_bytes = std::fs::read(&catalog_path)
         .with_context(|| format!("read the committed catalog {}", catalog_path.display()))?;

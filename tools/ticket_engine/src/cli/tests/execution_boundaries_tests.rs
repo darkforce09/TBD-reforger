@@ -78,7 +78,7 @@ fn cleanup_resolution_preserves_defaults_and_performs_no_deletion() {
     let fixture = Fixture::new();
     let target = fixture
         .0
-        .join(crate::repository::WORKTREES_DIR)
+        .join(repository_layout::WORKTREES_DIR)
         .join("TBD-T-001");
     fs::create_dir_all(&target).unwrap();
     fs::write(target.join("keep.txt"), "retained").unwrap();
@@ -94,10 +94,10 @@ fn cleanup_resolution_preserves_defaults_and_performs_no_deletion() {
 #[test]
 fn cleanup_resolution_preserves_absolute_base_and_explicit_branch() {
     let fixture = Fixture::new();
-    fs::create_dir_all(fixture.0.join(crate::repository::TICKETS_DIR)).unwrap();
+    fs::create_dir_all(fixture.0.join(repository_layout::TICKETS_DIR)).unwrap();
     let base = fixture.0.join("custom-worktrees");
     fs::write(
-        fixture.0.join(crate::repository::QUEUE_JSON),
+        fixture.0.join(repository_layout::QUEUE_JSON),
         serde_json::to_vec(&json!({"worktree_base": base})).unwrap(),
     )
     .unwrap();

@@ -11,8 +11,8 @@ outbound HTTPS with this host's [machine credential](/documentation/glossary/g_t
 apps/fleet_host_agent/src/ledger_client/
 ├── command_loop.rs     `CommandLoop`, the claim loop and its reporting rules, and `LedgerTimings`
 ├── ledger_api.rs       `LedgerApi`, the three HTTP calls, and the `LedgerError` classification of failures
-├── ledger_messages.rs  the wire messages of the executor routes and the API's error envelope
-├── mod.rs              the module tree; re-exports the loop, the client, the messages and the backoff
+├── ledger_messages.rs  the result report built from a verdict, and the API's error envelope
+├── mod.rs              the module tree; re-exports the loop, the client and the backoff
 ├── retry_backoff.rs    `JitteredBackoff`, exponential backoff drawn from the upper half of each step
 └── tests/              unit tests for the failure classification and the backoff
 ```
@@ -72,9 +72,10 @@ HTTPS, and installs the `ring` TLS provider once.
 ## Boundaries
 
 - Depends on: `crate::command_execution` (`HostCommand`, `FleetActionExecutor`),
-  `crate::action_verdict` and `crate::secret_text`; the `reqwest` (rustls without a bundled
-  provider), `rustls`, `serde`, `serde_json`, `chrono`, `uuid`, `rand`, `tokio` and `tracing`
-  crates; the API's `/api/v1/fleet-executor/` routes in
+  `crate::action_verdict` and `crate::secret_text`; `fleet_wire_contract` for the wire shapes of
+  the executor routes (`ClaimedFleetCommand`, `ExecutionStart`, `ExecutionResult`), the ones the
+  API writes and reads; the `reqwest` (rustls without a bundled provider), `rustls`, `serde`,
+  `serde_json`, `uuid`, `rand`, `tokio` and `tracing` crates; the API's `/api/v1/fleet-executor/` routes in
   `apps/api/src/server_infrastructure/routes.rs`.
 - Used by: `apps/fleet_host_agent/src/main.rs`, which runs the loop until SIGTERM or SIGINT, and
   `apps/fleet_host_agent/tests/host_agent_ledger.rs`, which runs it against a stand-in of the

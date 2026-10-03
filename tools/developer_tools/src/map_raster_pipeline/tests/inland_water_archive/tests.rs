@@ -30,7 +30,9 @@ impl Scratch {
 
     /// Where `emit_water` will look for the export: through the same resolver it uses.
     fn staging(&self) -> PathBuf {
-        scratch_dir(self.0.to_str().expect("utf8")).join(STAGING_WATER)
+        scratch_dir(self.0.to_str().expect("utf8"))
+            .expect("scratch dir")
+            .join(STAGING_WATER)
     }
 
     /// Write the four staging files, then run the whole `emit_water` CLI path over them.
@@ -369,26 +371,30 @@ fn a_missing_terrain_or_staging_directory_exits_one() {
 
 #[test]
 fn terrain_dir_takes_an_id_or_a_directory() {
+    let here = compiled_checkout_root().expect("repository root");
     assert_eq!(
-        terrain_dir("everon"),
-        crate::repository_layout::terrain_dir(&repo_root(), "everon")
+        terrain_dir("everon").expect("terrain dir"),
+        crate::repository_layout::terrain_dir(&here, "everon")
     );
-    let here = repo_root();
-    assert_eq!(terrain_dir(here.to_str().expect("utf8")), here);
+    assert_eq!(
+        terrain_dir(here.to_str().expect("utf8")).expect("terrain dir"),
+        here
+    );
 }
 
 /// The export scratch is a sibling of the served tree, never nested inside it — for a terrain id
 /// through the repository layout, and for a directory argument under its own `scratch/`.
 #[test]
 fn scratch_dir_pairs_with_terrain_dir_without_nesting_inside_it() {
+    let here = compiled_checkout_root().expect("repository root");
+    let everon_scratch = scratch_dir("everon").expect("scratch dir");
     assert_eq!(
-        scratch_dir("everon"),
-        crate::repository_layout::map_scratch_dir(&repo_root(), "everon")
+        everon_scratch,
+        crate::repository_layout::map_scratch_dir(&here, "everon")
     );
-    assert!(!scratch_dir("everon").starts_with(terrain_dir("everon")));
-    let here = repo_root();
+    assert!(!everon_scratch.starts_with(terrain_dir("everon").expect("terrain dir")));
     assert_eq!(
-        scratch_dir(here.to_str().expect("utf8")),
+        scratch_dir(here.to_str().expect("utf8")).expect("scratch dir"),
         here.join("scratch")
     );
 }

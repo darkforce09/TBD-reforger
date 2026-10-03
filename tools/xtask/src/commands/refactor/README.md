@@ -47,7 +47,7 @@ file formats and the rules live in the `relocate/` README.
 
 ## Boundaries
 
-- Depends on: clap; `find_repo_root` in `tools/xtask/src/core/repository_root.rs`; the
+- Depends on: clap; `find_repository_root` in `tools/xtask/src/core/repository_root.rs`; the
   `relocate/` modules.
 - Used by: `tools/xtask/src/cli/dispatch.rs`, which routes the `refactor` group; the
   restructure program's stages, which run every move through it.

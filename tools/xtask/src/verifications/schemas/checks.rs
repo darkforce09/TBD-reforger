@@ -15,13 +15,13 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use verification_core::repository_laws::workspace_members::read_workspace_members;
+use repository_laws::workspace_members::read_workspace_members;
 
 use developer_tools::repository_layout::{
     contract_catalogs_dir, contract_definitions_dir, definition_path, registry_fixtures_dir,
 };
 
-use crate::core::repository_root::find_repo_root as repo_root;
+use repository_layout::find_repository_root as repo_root;
 
 /* ─────────────────────────── citations ─────────────────────────── */
 

@@ -181,7 +181,7 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
     // server_infrastructure::services::runtime_sessions::SessionState: an open session has no
     // end reason.
     ("server_runtime_sessions", "end_reason"),
-    // server_infrastructure::models::fleet_command::FleetCommandReceipt and the executor claim:
+    // server_infrastructure::models::fleet_command::FleetCommandReceiptRow and the executor claim:
     // an unclaimed command has no claim, and an unfinished one no outcome.
     ("fleet_commands", "claimed_by"),
     ("fleet_commands", "claimed_at"),

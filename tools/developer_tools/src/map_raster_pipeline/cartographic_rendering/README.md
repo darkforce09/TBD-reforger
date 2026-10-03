@@ -54,7 +54,7 @@ scratch/everon/spike/TBD_SatExport_everon.tga (4096²)
 - Depends on: `super::image_operations`; `crate::enfusion_pak::PakVfs` and
   `crate::world_export_pipeline::topo` for the road geometry; `resvg` for the strokes;
   `crate::repository_layout` for the scratch, terrain and artifact folders;
-  `crate::browser_testing::server::repo_root` for the checkout root.
+  `crate::repository_layout::compiled_checkout_root` for the checkout root.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (the `build-landcover`,
   `build-cartographic`, `build-pyramid`, `reset-water-meta`, `patch-unified-bytes`,
   `patch-map-tiles-meta` and `verify-cartographic` subcommands); the `map-water-everon` and

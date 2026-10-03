@@ -90,20 +90,17 @@ fn bites(name: &str, source: &str, body: &str, want: &[&str]) {
 /// the intended alarm: the pin needs repointing, not deleting.
 #[test]
 fn the_live_deploy_sources_hold() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("tools/xtask has a parent")
-        .parent()
-        .unwrap();
+    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root");
     assert_eq!(
-        audit(root)
+        audit(&root)
             .unwrap()
             .iter()
             .filter(|v| !matches!(v, Verdict::Held))
             .count(),
         0
     );
-    assert_eq!(verify_staging_compose_paths(root).unwrap(), 0);
+    assert_eq!(verify_staging_compose_paths(&root).unwrap(), 0);
 }
 
 /// The development stack beside the staging file.

@@ -47,8 +47,10 @@ code, not configured.
 
 - Depends on: `crate::process_control` (`ProcessControlSettings`, `SystemdUnitName`),
   `crate::rcon` (`RconSettings`, `RconTimings`), `crate::dedicated_server_config`
-  (`DedicatedServerConfig`) and `crate::secret_text`; the `toml`, `serde`, `reqwest` (`Url`) and
-  `thiserror` crates.
+  (`DedicatedServerConfig`) and `crate::secret_text`; `fleet_wire_contract` for the machine
+  credential format check and the secret-file size and permission limits, the ones the staging
+  fixtures tool writes the files under; the `toml`, `serde`, `reqwest` (`Url`) and `thiserror`
+  crates.
 - Used by: `apps/fleet_host_agent/src/main.rs`, which loads the file named on the command line and
   exits 78 on a `ConfigurationError`.
 - Rules: no error message quotes a secret; every key is validated at load time, never at first

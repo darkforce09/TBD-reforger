@@ -44,7 +44,7 @@ impl TicketboardApp {
                     note: Some(format!(
                         "{} has no {}/ directory",
                         root.display(),
-                        ticket_engine::repository::TICKETS_DIR
+                        repository_layout::TICKETS_DIR
                     )),
                 };
             }
@@ -63,7 +63,7 @@ impl TicketboardApp {
                             note: Some(format!(
                                 "saved path {} no longer contains {}/",
                                 root.display(),
-                                ticket_engine::repository::TICKETS_DIR
+                                repository_layout::TICKETS_DIR
                             )),
                         };
                     }

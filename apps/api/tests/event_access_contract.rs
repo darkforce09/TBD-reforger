@@ -9,7 +9,7 @@ mod common;
 mod contract_support;
 mod event_eligibility_support;
 
-use api::operations::models::generated::{
+use contract_schema_types::operations::{
     event_access_administration, event_hub, event_orbat, waitlist_promotion_response,
 };
 use contract_support::{assert_decodes, assert_invalid, assert_valid};

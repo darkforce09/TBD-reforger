@@ -25,7 +25,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// The default world when the operator names none.
 const DEFAULT_PATTERN: &str =
@@ -33,7 +33,7 @@ const DEFAULT_PATTERN: &str =
 
 /// Entry for `xtask mod spawn-verify`.
 pub fn run(selftest: bool, pattern: Option<String>) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     run_with_root(&root, selftest, pattern)
 }
 

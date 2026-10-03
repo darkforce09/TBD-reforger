@@ -232,7 +232,8 @@ on every unit-test run; `cargo xtask verify route-tags` checks that every handle
 schema cite it correctly.
 
 Contract parity follows Law 9 of `CLAUDE.md`: the domain models are the snake_case source of
-truth, the contract types are generated from `contracts/definitions/` by
+truth, the contract types are generated from `contracts/definitions/` into the
+[contract_schema_types](/crates/contracts/contract_schema_types/README.md) crate by
 `cargo xtask ci schema-codegen`, and the frontend DTOs in
 `apps/frontend/src/v2/core/api/dto/` mirror the models under golden tests. The missions
 domain's [contract layer](/apps/api/src/missions/contract/README.md) validates every

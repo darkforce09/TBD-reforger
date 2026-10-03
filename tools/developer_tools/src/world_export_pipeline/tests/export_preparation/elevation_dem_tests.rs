@@ -181,7 +181,7 @@ fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
 fn everon_elevation_dem_matches_the_shipped_png() {
     use map_engine::world::terrain::dem::sampling::uint16_to_meters;
 
-    let root = repo_root();
+    let root = compiled_checkout_root().expect("repository root");
     let png = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png");
     // An LFS pointer is ~133 B; the real 6400x6400 16-bit PNG is 71.9 MB. Anything in between
     // is neither, and is worth failing on rather than skipping past.

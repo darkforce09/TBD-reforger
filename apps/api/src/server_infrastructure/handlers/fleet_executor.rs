@@ -6,6 +6,8 @@ use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json, Response};
+use fleet_wire_contract::executor_messages::{ExecutionResult, ExecutionStart};
+use fleet_wire_contract::operator_messages::FleetCommandReceipt;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -13,9 +15,6 @@ use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::failpoints::fail_point;
 use crate::core::http::path_parameters::PathParams;
-use crate::server_infrastructure::models::fleet_command::{
-    ExecutionResult, ExecutionStart, FleetCommandReceipt,
-};
 use crate::server_infrastructure::services::fleet_commands::executor_claims::{
     claim_next_command, mark_executing, record_result,
 };

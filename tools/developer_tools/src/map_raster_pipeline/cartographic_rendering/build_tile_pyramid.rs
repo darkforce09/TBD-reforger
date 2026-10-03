@@ -97,7 +97,8 @@ pub fn build_tile_pyramid(
 
 /// `cargo xtask ci map-water-everon` step 2: drop the one-shot waterComposite block from the SAP meta.
 pub fn reset_water_meta(terrain: &str) -> Result<u8> {
-    let p = map_scratch_dir(&repo_root(), terrain).join("sap/TBD_SatExport_meta.json");
+    let p =
+        map_scratch_dir(&compiled_checkout_root()?, terrain).join("sap/TBD_SatExport_meta.json");
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&p)?)?;
     if let Some(obj) = m.as_object_mut() {
         obj.remove("waterComposite");
@@ -108,7 +109,7 @@ pub fn reset_water_meta(terrain: &str) -> Result<u8> {
 
 /// `cargo xtask ci map-water-everon` step 5: manifest.tiles.satellite.unified.bytes = bundle size.
 pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
-    let root = terrain_dir(&repo_root(), terrain);
+    let root = terrain_dir(&compiled_checkout_root()?, terrain);
     let mp = root.join("manifest.json");
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&mp)?)?;
     let bundle = root.join(
@@ -123,7 +124,7 @@ pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
 
 /// `cargo xtask ci map-cartographic-everon` step 3: tiles.map {source, encoding} patch.
 pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
-    let mp = terrain_manifest_path(&repo_root(), terrain);
+    let mp = terrain_manifest_path(&compiled_checkout_root()?, terrain);
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&mp)?)?;
     let map_block = m["tiles"]["map"]
         .as_object_mut()
@@ -136,8 +137,8 @@ pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
 
 /// The program-wide cartographic aggregator: committed slice logs plus live sub-verifiers.
 pub fn verify_cartographic() -> Result<u8> {
-    let root = repo_root();
-    let artifacts = root.join(crate::repository_layout::OPERATIONS_LOG_DIR);
+    let root = compiled_checkout_root()?;
+    let artifacts = root.join(::repository_layout::ARTIFACTS_DIR);
     let failures = std::cell::Cell::new(0usize);
     macro_rules! pass {
         ($($a:tt)*) => { println!("  PASS  {}", format!($($a)*)) };

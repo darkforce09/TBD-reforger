@@ -1,5 +1,5 @@
 //! The corpus facts no ticket file states, read from
-//! [`repository::CORPUS_PINS`](crate::repository::CORPUS_PINS).
+//! [`repository_layout::CORPUS_PINS`].
 //!
 //! Two rules need a list the ticket files cannot supply: the ids that must never be minted, and
 //! which ticket implements an editor gap row when the ticket itself does not claim it. Both are
@@ -16,9 +16,9 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde::Deserialize;
 
-use crate::repository::CORPUS_PINS;
+use repository_layout::CORPUS_PINS;
 
-/// Everything [`repository::CORPUS_PINS`](crate::repository::CORPUS_PINS) declares.
+/// Everything [`repository_layout::CORPUS_PINS`] declares.
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CorpusPins {

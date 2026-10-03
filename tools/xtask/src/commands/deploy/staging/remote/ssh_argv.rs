@@ -2,7 +2,7 @@
 //!
 //! **Role:** the pure `rsync` argv builder, the mapping of a spawn that did not run to an exit
 //! code, and the four-outcome reading of `mod remote-logs`; the `ssh` argv comes from
-//! [`crate::core::secure_shell_transport`].
+//! [`process_runner::secure_shell_transport`].
 //!
 //! **Position:** used by [`super::Runner`] and by the pipeline in `super::fleet_deploy`.
 //!
@@ -26,10 +26,7 @@ pub fn rsync_argv(base: &SshBase, mono_root: &Path, host: &str, remote_dir: &str
         "-avz".into(),
         "--delete".into(),
         "--exclude=.git/".into(),
-        format!(
-            "--exclude={}/",
-            crate::core::repository_layout::REFERENCES_DIR
-        ),
+        format!("--exclude={}/", repository_layout::REFERENCES_DIR),
         "--exclude=apps/mod/Tbd_framework/".into(),
         "--exclude=apps/mod/.local-test-profile/".into(),
         "--exclude=**/node_modules/".into(),

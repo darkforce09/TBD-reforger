@@ -137,18 +137,26 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     //
     // ONE dir, not one per tree (a per-tree dir grows without bound at ~1.7 GB each), plus a
     // CONTENT stamp: when this tree's xtask *and its path deps* hash differently from whatever last
-    // built here, the dir is thrown away and rebuilt. Every crate xtask depends on BY PATH must be
-    // a stamp root, or two trees can share this target dir under one stamp while a path dep
-    // differs. Content, not mtime — mtime is the thing that lies.
+    // built here, the dir is thrown away and rebuilt. Every crate xtask depends on BY PATH, directly
+    // or through another path dependency, must sit under a stamp root, or two trees can share this
+    // target dir under one stamp while a path dep differs: xtask's own, developer_tools and the
+    // map engine it links, ticket_engine, every `tools/foundation` crate, and the `crates/` the
+    // tools and the map engine link. Each root contributes its `.rs` sources and its `Cargo.toml`
+    // manifests. Content, not mtime — mtime is the thing that lies.
     let stamp_roots = [
-        "tools/xtask/src",
-        "legacy/map_engine/src",
-        "tools/developer_tools/src",
+        "tools/xtask",
+        "legacy/map_engine",
+        "tools/developer_tools",
+        "tools/ticket_engine",
+        "tools/foundation",
+        "crates",
     ];
     let mut srcs: Vec<PathBuf> = Vec::new();
     for r in stamp_roots {
         for e in walkdir::WalkDir::new(r).into_iter().flatten() {
-            if e.file_type().is_file() && e.path().extension().map(|x| x == "rs").unwrap_or(false) {
+            let is_source = e.path().extension().is_some_and(|x| x == "rs");
+            let is_manifest = e.file_name() == "Cargo.toml";
+            if e.file_type().is_file() && (is_source || is_manifest) {
                 srcs.push(e.path().to_path_buf());
             }
         }
@@ -172,12 +180,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
             blob.extend_from_slice(&b);
         }
     }
-    for m in [
-        "tools/xtask/Cargo.toml",
-        "legacy/map_engine/Cargo.toml",
-        "tools/developer_tools/Cargo.toml",
-        "Cargo.lock",
-    ] {
+    for m in ["Cargo.toml", "Cargo.lock"] {
         if let Ok(b) = std::fs::read(m) {
             blob.extend_from_slice(&b);
         }

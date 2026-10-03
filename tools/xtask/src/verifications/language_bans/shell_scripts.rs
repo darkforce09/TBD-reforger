@@ -34,7 +34,7 @@
 //! `python3` (a `#` or `//` line) is not command position.
 
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::{Context, Result};
 
@@ -102,24 +102,8 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
 }
 
 fn verify(label: Label) -> Result<u8> {
-    let root = repo_root()?;
+    let root = repository_layout::find_repository_root()?;
     run_at(&root, label)
-}
-
-fn repo_root() -> Result<PathBuf> {
-    let out = std::process::Command::new("git")
-        .args(["rev-parse", "--show-toplevel"])
-        .output()
-        .context("git rev-parse --show-toplevel")?;
-    if !out.status.success() {
-        anyhow::bail!(
-            "git rev-parse --show-toplevel exited {} — refusing to report OK on a check that did not run",
-            out.status
-        );
-    }
-    Ok(PathBuf::from(
-        String::from_utf8_lossy(&out.stdout).trim().to_string(),
-    ))
 }
 
 fn run_at(root: &Path, label: Label) -> Result<u8> {

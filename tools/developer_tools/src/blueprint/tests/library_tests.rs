@@ -252,7 +252,7 @@ fn write_is_schema_valid_and_deterministic() {
         layer_policy: crate::blueprint::batch::LayerPolicy::All,
     };
     let lib = build_library(&source, &rows, &census, &opts).unwrap();
-    let root = crate::repository_paths::test_repo_root();
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let schemas = contract_definitions_dir(&root);
     let out = dir.join("prefabs");
     let first = write_library(&out, &lib, &schemas, false).unwrap();
@@ -307,7 +307,7 @@ fn only_kind_and_limit_select_rows() {
 #[test]
 fn committed_farmhouse_descriptor_reproduces_its_instances_file() {
     use map_engine::world::architecture::compound::instances::InstancesFile;
-    let root = crate::repository_paths::test_repo_root();
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let prefabs = terrain_dir(&root, "everon").join("prefabs");
     let manifest: BlasManifest =
         serde_json::from_str(&fs::read_to_string(prefabs.join("blas-manifest.json")).unwrap())

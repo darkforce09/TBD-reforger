@@ -17,7 +17,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, ensure};
 use developer_tools::staging_verification::load_generation::{LoadReport, LoadRunPlan, run};
-use verification_core::proc::Run;
+use process_runner::Run;
 
 /// The body of a keying refresh: a refresh token no session was ever issued.
 pub(crate) const KEYING_REFRESH_BODY: &str = r#"{"refresh_token":"staging-keying-probe"}"#;

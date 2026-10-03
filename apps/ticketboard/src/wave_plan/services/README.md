@@ -39,7 +39,7 @@ working.
 
 ## Boundaries
 
-- Depends on: `ticket_engine::repository::WAVE_LOCK` for the path; `serde` and `toml`.
+- Depends on: `repository_layout::WAVE_LOCK` for the path; `serde` and `toml`.
 - Used by: `crate::wave_plan::models` and `crate::wave_plan::ui`;
   `crate::application::background_loading`, which calls `load_lock` on the load thread;
   `crate::ticket_browser::ui::detail_panel::comparison` (`collides`, `colliding_pairs`);

@@ -34,8 +34,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use anyhow::Result;
+use process_runner::Run;
 use regex::Regex;
-use verification_core::proc::{self, Run};
 use verification_core::verdict::NotRun;
 
 use crate::commands::debug::probes::{self, DirectJoinObservations};
@@ -48,7 +48,7 @@ use crate::commands::deploy::staging::fleet_instances::{
 use crate::core::deploy_environment::{
     DeployEnvironment, DeployHostFolder, deploy_environment_path,
 };
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// The single server's game port.
 pub(crate) const SINGLE_SERVER_GAME_PORT: u16 = 2001;
@@ -163,7 +163,7 @@ fn debug_log_path(root: &Path) -> PathBuf {
 
 /// Entry for `xtask debug direct-join [RUN_ID] [--instance N]`.
 pub fn run(run_id: Option<&str>, instance: Option<u16>) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("/"));
@@ -323,12 +323,12 @@ fn read_symlink(home: &Path) -> String {
 fn remote_probe(destination: &str, pass: Option<&str>, script: &str) -> String {
     // An absent ssh or sshpass is reported as itself, never as an empty remote section.
     let program_check = if pass.is_some() { "sshpass" } else { "ssh" };
-    if let Err(NotRun::ToolAbsent(_)) = proc::which(program_check) {
+    if let Err(NotRun::ToolAbsent(_)) = process_runner::which(program_check) {
         return "service=tool_absent".into();
     }
     if pass.is_some() {
         // sshpass invokes ssh — both must exist.
-        if let Err(NotRun::ToolAbsent(_)) = proc::which("ssh") {
+        if let Err(NotRun::ToolAbsent(_)) = process_runner::which("ssh") {
             return "service=tool_absent".into();
         }
     }

@@ -39,7 +39,7 @@ them. None takes an auth extractor.
 Every route reads the shared `services::equipment_data_viewer::queries::ViewerQuery`: `dataset`
 selects the dataset (`gameplay` when absent) and `generation` pins the generation the answer
 comes from. Every answer but `download` is re-read as its generated contract type from
-`models::generated::equipment_data_viewer` and refused when it serialises to more than
+`contract_schema_types::community_content::equipment_data_viewer` and refused when it serialises to more than
 `services::equipment_data_viewer::PAGE_BYTES` (256 KiB); a complete value is reached through
 document expansion instead. Any failure a handler raises answers 400 in the `{error}` envelope,
 and so does a query string that does not decode (a `field_id` that is not a number): `mod.rs`
@@ -51,7 +51,8 @@ attachment with `Cache-Control: private, no-store`.
 ## Boundaries
 
 - Depends on: `services::equipment_data_viewer` (dataset selection, queries, the source manifest)
-  through `AppState::equipment_data`, and `models::generated::equipment_data_viewer`.
+  through `AppState::equipment_data`, and
+  `contract_schema_types::community_content::equipment_data_viewer`.
 - Used by: the domain's `routes.rs`, which registers every handler here in development only;
   over HTTP, the equipment data viewer bench in `apps/frontend/src/v2/apps/debug/data_viewer/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`), and

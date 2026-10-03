@@ -43,7 +43,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use crate::core::repository_layout::VERDICTS_DIR;
+use repository_layout::VERDICTS_DIR;
 use serde::{Deserialize, Serialize};
 
 /// The green verdict — the exact token [`super::lock::GateState::verdict`] prints.

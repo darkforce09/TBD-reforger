@@ -34,7 +34,7 @@ tools/xtask/src/commands/mod_ops/playtest_server/lifecycle/
 
 ## Boundaries
 
-- Depends on: `super::host::Host` (the host bridge from `crate::core::host_execution`) and the
+- Depends on: `super::host::Host` (the host bridge from `process_runner::host_execution`) and the
   playtest `Opts`.
 - Used by: `tools/xtask/src/commands/mod_ops/playtest_server/usage_fail.rs` (lock, live-server
   refusal, `--selftest`) and `tools/xtask/src/commands/mod_ops/playtest_server/boot/on_stop_signal.rs`

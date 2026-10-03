@@ -4,12 +4,8 @@ use std::path::PathBuf;
 /// `tools/xtask/` -> repo root. The gate's whole job is the committed data, so the real tree is the
 /// fixture; no synthetic input reaches the alias checks past the `eligible == 333` equality.
 fn repo() -> PathBuf {
-    let here = Path::new(env!("CARGO_MANIFEST_DIR"));
-    here.parent()
-        .expect("tools")
-        .parent()
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root")
-        .to_path_buf()
 }
 
 /// A scratch repo root: real WB/MOD/FE, with the mod registry optionally rewritten.

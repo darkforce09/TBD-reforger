@@ -4,7 +4,7 @@ use super::*;
 /// the rule it feeds, so the shapes are asserted rather than only the parse.
 #[test]
 fn committed_pins_load_with_both_tables_populated() {
-    let root = crate::repository::find_repo_root().expect("repository root");
+    let root = repository_layout::find_repository_root().expect("repository root");
     let pins = load(&root).expect("committed corpus pins parse");
     assert!(!pins.never_minted.is_empty(), "never_minted is empty");
     assert!(
@@ -13,7 +13,7 @@ fn committed_pins_load_with_both_tables_populated() {
     );
     let programme = &pins.game_mod_programme_ticket;
     assert!(
-        root.join(crate::repository::TICKETS_DIR)
+        root.join(repository_layout::TICKETS_DIR)
             .join(format!("{programme}.toml"))
             .is_file(),
         "{programme} is pinned as a programme and has no ticket file"
@@ -21,7 +21,7 @@ fn committed_pins_load_with_both_tables_populated() {
     for id in &pins.never_minted {
         assert!(
             !root
-                .join(crate::repository::TICKETS_DIR)
+                .join(repository_layout::TICKETS_DIR)
                 .join(format!("{id}.toml"))
                 .exists(),
             "{id} is pinned as never minted and has a ticket file"
@@ -51,7 +51,7 @@ fn a_missing_file_is_an_error_naming_the_path() {
     std::fs::create_dir_all(&empty).expect("scratch dir");
     let error = load(&empty).expect_err("absent pins must fail");
     assert!(
-        format!("{error:#}").contains(crate::repository::CORPUS_PINS),
+        format!("{error:#}").contains(repository_layout::CORPUS_PINS),
         "{error:#}"
     );
 }

@@ -10,10 +10,10 @@ use anyhow::{Context, Result};
 use regex::Regex;
 use serde_json::json;
 
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 
 pub fn run() -> Result<u8> {
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let router = root.join("apps/frontend/src/router.rs");
     let oracle_path = root.join("tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv");
 

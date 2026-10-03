@@ -2,7 +2,7 @@
 //!
 //! Shared plumbing for backup-db / restore-db / backup-drill. Ported
 //! FIRST so three callers cannot invent three dump-verifiers. Same propagation argument as
-//! `tools/verification_core`.
+//! `tools/foundation/verification_core`.
 //!
 //! ── Closed fail-opens (measured in the bash header, preserved here) ─────────────────────────
 //!

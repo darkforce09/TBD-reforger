@@ -400,13 +400,18 @@ pub fn write_bathymetry(
 
 /// Resolve `--terrain`: a directory path when it names one, else a terrain id under
 /// `assets/terrains`.
-#[must_use]
-pub fn terrain_dir(terrain: &str) -> PathBuf {
+///
+/// # Errors
+/// When `terrain` names no directory and no checkout root lies above this crate's manifest folder.
+pub fn terrain_dir(terrain: &str) -> Result<PathBuf> {
     let as_path = PathBuf::from(terrain);
     if as_path.is_dir() {
-        return as_path;
+        return Ok(as_path);
     }
-    repository_layout::terrain_dir(&repo_root(), terrain)
+    Ok(repository_layout::terrain_dir(
+        &compiled_checkout_root()?,
+        terrain,
+    ))
 }
 
 /// The export scratch that pairs with `--terrain`: `assets/scratch/<id>` for a terrain id, or
@@ -415,11 +420,16 @@ pub fn terrain_dir(terrain: &str) -> PathBuf {
 /// A directory argument is a self-contained fixture root, and it keeps the repository's split in
 /// miniature: served outputs at its top level, gitignored intermediates under `scratch/`. Nothing
 /// downstream of an export may read from here, because a fresh clone does not have it.
-#[must_use]
-pub fn scratch_dir(terrain: &str) -> PathBuf {
+///
+/// # Errors
+/// When `terrain` names no directory and no checkout root lies above this crate's manifest folder.
+pub fn scratch_dir(terrain: &str) -> Result<PathBuf> {
     let as_path = PathBuf::from(terrain);
     if as_path.is_dir() {
-        return as_path.join("scratch");
+        return Ok(as_path.join("scratch"));
     }
-    repository_layout::map_scratch_dir(&repo_root(), terrain)
+    Ok(repository_layout::map_scratch_dir(
+        &compiled_checkout_root()?,
+        terrain,
+    ))
 }

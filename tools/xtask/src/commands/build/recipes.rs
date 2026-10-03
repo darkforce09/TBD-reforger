@@ -28,7 +28,7 @@
 //!
 //! 1. `make` collapses every failure to **rc 2** and prints `make: *** [Makefile:N: t] Error C` on
 //!    stderr. Here the child's **raw** exit code is propagated and nothing extra is printed. That
-//!    is [`verification_core::proc`]'s rule (`mod compile --selftest` passes only on exactly 1), and a
+//!    is [`process_runner`]'s rule (`mod compile --selftest` passes only on exactly 1), and a
 //!    Makefile line number is not something a Makefile-less tree can honestly print.
 //! 2. Composites (`rust-ci`, `leptos-gates`) call Rust functions instead of `$(MAKE) sub-target`,
 //!    so make's `make[1]: Entering/Leaving directory` scaffolding and its `make <target>` echo are

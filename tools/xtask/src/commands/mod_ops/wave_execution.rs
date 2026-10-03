@@ -24,12 +24,12 @@ use std::path::Path;
 use std::process::Command;
 
 use anyhow::Result;
+use process_runner::Run;
 use regex::Regex;
 use serde_json::Value;
-use verification_core::proc::Run;
 
-use crate::core::repository_layout::WORKTREES_DIR;
-use crate::core::repository_root::find_repo_root;
+use repository_layout::WORKTREES_DIR;
+use repository_layout::find_repository_root;
 
 /// What an unknown or empty subcommand prints: why the driver exists and every subcommand it
 /// accepts, so a session resuming with no memory of where it was can find out from the tool.

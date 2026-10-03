@@ -10,16 +10,16 @@
 use std::io::{self, Write};
 use std::path::Path;
 
+use process_runner::Run;
 use verification_core::NotRun;
-use verification_core::proc::Run;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 const TOOLS: &[&str] = &["wb_connect", "wb_state"];
 
 /// Entry for `xtask mcp smoke`.
 pub fn run() -> i32 {
-    let root = match find_repo_root() {
+    let root = match find_repository_root() {
         Ok(r) => r,
         Err(e) => {
             let _ = writeln!(io::stderr(), "mcp-smoke: FAIL (no repo root: {e})");

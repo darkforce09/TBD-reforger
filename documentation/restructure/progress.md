@@ -12,9 +12,9 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S3, S4, S5, S6 in parallel (decision D21) |
-| Last green commit | ac4101cd3 (M1, M2) |
-| Next action | Four stage orchestrators in their worktrees (see Handoff and the stage logs) |
+| Current stage | S3, S5, S6 in parallel (decision D21); S4 landed in two commits (S4a, S4b) |
+| Last green commit | the S4b stage commit (S4a: dcfeda907) |
+| Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); S4 lands the relocation tool fix (F-S4-06, F-S4-10) as its own commit |
 | Blocked on | nothing |
 
 Row format: `- [ ] <ID> (<budget>) <role> — status — commit — notes`. A status is `pending`,
@@ -88,12 +88,12 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [x] B5 (S) `world_file_formats` — done; B5b (M) its typed ids (F-S4-01) — done
 - [x] X4a (M) S4a switch: 51 shims and every forwarding facade deleted — done
 - [x] S4a stage commit — done (see the stage log)
-- [ ] B1a (L) `verification_core`, `process_runner`, `repository_laws` — pending
-- [ ] B1b (M) `repository_layout` — pending
-- [ ] B6a (M) `fleet_wire_contract` — pending
-- [ ] B6b (L) `contract_schema_types` — pending
-- [ ] B7 (S) engine rules retargeted — pending
-- [ ] S4b stage commit — pending
+- [x] B1a (L) `verification_core`, `process_runner`, `repository_laws` — done
+- [x] B1b (M) `repository_layout`; B1c (M) developer_tools' root finder and test roots — done
+- [x] B6a (M) `fleet_wire_contract` — done
+- [x] B6b (L) `contract_schema_types` — done
+- [x] B7 (S) engine rules retargeted — done
+- [x] S4b stage commit — done (see the stage log)
 
 ### S5 Mission and ballistics
 - [ ] D1 (L) mission authoring crates — pending
@@ -269,7 +269,7 @@ become tickets at S12.
 - **F-022 (FIX, R5): the manifests-folder exclusion also covers its live README**, which is neither rewritten nor verified. Reported by R1.
 - **F-023 (FIX, R5 and orchestrator): `.ai/tickets/wave.lock` was rewritten while the `owns` entries of 10 shipped tickets kept their old paths** (T-090.11, T-090.12, T-090.12.6, T-207, T-274, T-320, T-354, T-438, T-584, T-590), so the ticket engine's wave-lock test and `ticket check --strict` fail. Reported by R2 and R4.
 - **F-024 (FIX, R5 and orchestrator): files moved into the archive were treated as live by their old path**, so their prose was rewritten and no longer quotes its own history. Reported by R4.
-- **F-025 (FIX, S2 A4, D18): the deploy Dockerfile's trimmed workspace cannot build** (no root workspace tables, no `tools/verification_core` copy). Predates S1. Reported by R3 and the S2 drafter.
+- **F-025 (FIX, S2 A4, D18): the deploy Dockerfile's trimmed workspace cannot build** (no root workspace tables, no copy of the verification core crate). Predates S1. Reported by R3 and the S2 drafter.
 - **F-026 (NOTE, OC-deploy): the untracked development `.env` of the API still names the old equipment folder** (`EQUIPMENT_DATA_DIR`). Operator-local. Reported by R3.
 - **F-027 (NOTE): the slice-execution stub test failed once with "Text file busy"**, a race that predates the program. Reported by R2.
 - **F-028 (NOTE): a workspace-wide `cargo test` fails 24 developer_tools tests with "No rustls crypto provider"** because feature unification adds `rustls-no-provider` to reqwest (fleet host agent, API) while developer_tools installs no provider. CI and `ci-local` test per package, where they pass. Predates S1.
@@ -308,6 +308,10 @@ orchestrator session, following the [stage logs protocol](/documentation/restruc
 | S5 Mission and ballistics | `/run/media/system/Disk_2/Projects/tbd-restructure-s5` | `target/restructure-s5/ORCHESTRATOR_PROMPT.md` |
 | S6 World CPU | `/run/media/system/Disk_2/Projects/tbd-restructure-s6` | `target/restructure-s6/ORCHESTRATOR_PROMPT.md` |
 
+S4 is on `main` in two commits, S4a (the tier 0–1 crates S5 and S6 need) and S4b (tool foundations
+and contract crates). Duplicates S4 left in place, each with the stage that switches it, are in the
+"Handoff duplicates" table of [stage_logs/s4.md](/documentation/restructure/stage_logs/s4.md).
+
 Every remaining stage (S3–S12, M3) has its own worktree and orchestrator, managed by the
 "Restructure coordinator" session (decision D22; inputs per stage in the stage logs protocol). The
 launch prompts live in the gitignored run folders; if a worktree is lost, rebuild it with
@@ -318,9 +322,10 @@ Operator items left from S2: the server-side moves and `deploy staging --migrate
 before the next deploy, and the GitHub required checks `api (Rust 1.95 + Postgres 18)` and
 `frontend (Leptos SPA)`. M3 (objective behaviours) can run any time.
 
-Machine notes (this workstation). The orchestration folder is
-`target/api-progress-checkpoint/2026-10-02-restructure-s1/` (gitignored). Its `env.sh` puts two
-shims first on PATH: a `cargo` that runs host cargo against `~/.cache/tbd-target` with git-lfs on
-the PATH, and a `podman` that reaches the host. `git push` runs in the container. Prune
-`~/.cache/tbd-target/debug/incremental` and stale API test executables before a full
+Machine notes (this workstation). Each worktree's `env.sh` puts two shims from
+`~/.cache/tbd-bin/restructure-shims/` first on PATH: a `cargo` that runs host cargo with git-lfs on
+the PATH, and a `podman` that reaches the host. Each worktree builds in its own folder
+(`CARGO_TARGET_DIR=~/.cache/tbd-target-<stage>`), because a shared folder let `cargo xtask` run
+the xtask binary another worktree linked last (finding F-S6-03). `git push` runs in the container. Prune
+the build folder's `debug/incremental` and stale API test executables before a full
 `db test-it`.

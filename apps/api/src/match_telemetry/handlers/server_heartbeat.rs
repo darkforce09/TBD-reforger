@@ -13,6 +13,7 @@ use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::response::Json;
 use chrono::Utc;
+use fleet_wire_contract::ExecutorKind;
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -21,7 +22,6 @@ use crate::administration::services::audit_writer::write_audit;
 use crate::core::application_state::AppState;
 use crate::core::error_handling::api_error::ApiError;
 use crate::core::http::path_parameters::PathParams;
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 use crate::server_infrastructure::services::runtime_sessions::admit_heartbeat;
 use crate::server_infrastructure::services::status_broadcast::publish_server_status_by_id;

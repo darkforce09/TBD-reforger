@@ -151,11 +151,9 @@ fn failure_text_is_pinned() {
 /// The live tree must satisfy the gate — const AND seed file together.
 #[test]
 fn the_live_repo_contract_holds() {
-    let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("tools/xtask has a parent")
-        .parent()
-        .unwrap();
-    let v = first_failure(repo_root, SEEDS).unwrap();
+    let repo_root =
+        repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+            .expect("repository root");
+    let v = first_failure(&repo_root, SEEDS).unwrap();
     assert!(matches!(v, Verdict::Held), "{}", text(&v));
 }

@@ -28,7 +28,8 @@ use super::path_regions::{
 };
 use super::tracked_tree::TrackedTree;
 use super::{GateRequest, GateRun, Tally, judged_nothing, prepare, read_tracked, scope_line};
-use crate::core::repository_layout::documentation::{DOCUMENTATION_ROOT, RETIRED_DOCS_ROOT};
+use crate::core::repository_layout::documentation::RETIRED_DOCS_ROOT;
+use repository_layout::documentation::DOCUMENTATION_ROOT;
 
 /// The gate's name on its header and summary lines.
 const GATE: &str = "markdown-placement";

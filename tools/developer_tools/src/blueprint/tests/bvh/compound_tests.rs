@@ -19,7 +19,7 @@ use crate::repository_layout::terrain_dir;
 /// the commit message.
 #[test]
 fn farmhouse_compound_door_parity_is_pinned() {
-    let root = crate::repository_paths::test_repo_root();
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let buildings = terrain_dir(&root, "everon").join("prefabs/buildings");
     let shell_bytes = fs::read(buildings.join("FarmHouse_E_1L01_Wood.bvh")).expect("shell");
     let sc = BvhSidecar::parse(&shell_bytes).expect("shell parses");

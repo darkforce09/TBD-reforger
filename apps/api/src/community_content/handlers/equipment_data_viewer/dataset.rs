@@ -1,12 +1,10 @@
 //! Dataset availability and generation-pinned summaries.
 use super::{ReadResult, failure, response, viewer_query};
-use crate::community_content::{
-    models::generated::equipment_data_viewer::dataset::EquipmentDatasetStatus,
-    services::equipment_data_viewer::queries::ViewerQuery,
-};
+use crate::community_content::services::equipment_data_viewer::queries::ViewerQuery;
 use crate::core::application_state::AppState;
 use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
+use contract_schema_types::community_content::equipment_data_viewer::dataset::EquipmentDatasetStatus;
 
 /// @route GET /api/v1/debug/equipment-data/status
 pub async fn status(

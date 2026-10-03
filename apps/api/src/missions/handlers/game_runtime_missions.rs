@@ -6,6 +6,7 @@ use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::{Json, Response};
+use fleet_wire_contract::ExecutorKind;
 use serde_json::json;
 use uuid::Uuid;
 
@@ -24,7 +25,6 @@ use crate::missions::services::mission_deployments::deployment_requests::{
     Requester, request_deployment,
 };
 use crate::missions::services::mission_deployments::deployment_settlement::lock_and_settle;
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 
 /// `GET /api/v1/game-runtime/deployment` — the deployment this server runs: the one in flight,

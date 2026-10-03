@@ -60,9 +60,9 @@ mod treats as permanent. Reports about a source the server has not registered ar
   - `GET /api/v1/matches/{matchId}/events`: any signed-in user; a page of the match's events.
 - `models::match_record`: `Match`, `MissionOutcome` and `MatchPlayerStat`, read by the member
   [service record](/documentation/glossary/n_to_z.md#service-record) in `operations`.
-- `models::generated::match_telemetry`: the types generated from
-  `contracts/definitions/match-telemetry.schema.json`, which the integration tests deserialize
-  live answers into.
+- `contract_schema_types::match_telemetry::match_telemetry` (in the `contract_schema_types`
+  crate): the types generated from `contracts/definitions/match-telemetry.schema.json`, which the
+  integration tests deserialize live answers into.
 
 ## Boundaries
 
@@ -84,8 +84,8 @@ mod treats as permanent. Reports about a source the server has not registered ar
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); every wire model carries its
-  `@contract` tag into `match-telemetry.schema.json` (`cargo xtask schema citations`); the files
-  under `models/generated/` are regenerated, never edited (`cargo xtask ci schema-codegen`).
+  `@contract` tag into `match-telemetry.schema.json` (`cargo xtask schema citations`); the
+  generated types are regenerated, never edited (`cargo xtask ci schema-codegen`).
 
 ## Related documentation
 

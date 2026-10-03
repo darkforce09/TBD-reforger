@@ -53,10 +53,9 @@ in the map engine's `legacy/map_engine/src/data/scenario/ballistics/`.
 A new endpoint is a handler in `<domain>/handlers/` carrying its `/// @route <METHOD> <path>` tag,
 a registration in that domain's `routes.rs`, and, for anything a second caller needs, a function
 in that domain's `services/`. Unit tests live in sibling files under a `tests/` folder, declared
-from the production file with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. The
-`generated/` folders under `missions/contract/` and under the `models/` of `identity_and_access`,
-`missions`, `operations` and `server_infrastructure` hold types generated from
-`contracts/definitions/`.
+from the production file with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`. The types
+generated from `contracts/definitions/` live in the `contract_schema_types` crate
+(`crates/contracts/contract_schema_types/`), one module per domain.
 
 ## Public surface
 
@@ -87,10 +86,10 @@ from the production file with `#[cfg(test)] #[path = "tests/<file>.rs"] mod test
   - The Rust files of `src/` and of the integration suites, `.env.example`, and the comment lines
     of the seeds and migrations carry no ticket ids, no comparison with another implementation,
     no delivery-process vocabulary and no path the crate lacks (`tests/prose_rules.rs`).
-  - The `generated/` folders are written by `cargo xtask ci schema-codegen` and never edited by
-    hand (`cargo xtask ci verify-codegen-fresh`); `missions/contract/loadout_projection.rs` is the
-    one contract model maintained by hand, because the generator's output for the loadout
-    export's versioned root loses fields.
+  - The generated contract types are written into `contract_schema_types` by
+    `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`);
+    `missions/contract/loadout_projection.rs` is the one contract model maintained by hand,
+    because the generator's output for the loadout export's versioned root loses fields.
   - The snake_case models under each domain's `models/` are the API's wire contract; the
     single-page app's DTOs in `apps/frontend/src/v2/core/api/dto/` mirror them under
     golden tests, so a model change updates both.

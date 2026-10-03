@@ -109,7 +109,7 @@ fn run_reads_home_env() {
         .map(|key| (key, std::env::var_os(key)))
         .collect();
     // SAFETY: under ENV_LOCK; restored below. The root is INJECTED (`run_in`), never reached
-    // by chdir: `set_current_dir` is process-wide and made concurrent `find_repo_root`
+    // by chdir: `set_current_dir` is process-wide and made concurrent `find_repository_root`
     // callers in other test threads resolve this throwaway root (see `run_in`). No host is
     // configured, so the join hint asks no resolver.
     unsafe {

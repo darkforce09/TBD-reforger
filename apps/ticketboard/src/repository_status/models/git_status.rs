@@ -8,9 +8,9 @@ pub const GIT_ARGS: [&str; 7] = [
     "status",
     "--porcelain",
     "--",
-    ticket_engine::repository::TICKETS_DIR,
-    ticket_engine::repository::documentation::ROADMAP,
-    ticket_engine::repository::documentation::GAP_ANALYSIS,
+    repository_layout::TICKETS_DIR,
+    repository_layout::documentation::ROADMAP,
+    repository_layout::documentation::GAP_ANALYSIS,
     "CLAUDE.md",
 ];
 

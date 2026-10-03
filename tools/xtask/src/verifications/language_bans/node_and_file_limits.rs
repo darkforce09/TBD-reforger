@@ -1,7 +1,7 @@
 //! Source length, font-table generation, and Node tooling gates.
 //!
 //! **Role:** the file-length gate prints the size law of
-//! [`verification_core::repository_laws::file_length`] — every `.rs` and Enfusion `.c` source
+//! [`repository_laws::file_length`] — every `.rs` and Enfusion `.c` source
 //! under the law roots at or under its ceiling (production 500, test 1000) — and exits with its
 //! verdict. The Node gate refuses tracked scripts and invocations outside the Enfusion tooling
 //! floor, and the font-table generator turns a Spleen BDF into a Rust glyph table.
@@ -34,7 +34,6 @@ mod file_length_tests;
 
 mod repository_access;
 pub use repository_access::gen_font_table;
-use repository_access::repo_root;
 pub use repository_access::verify_file_length;
 
 mod verify_no_node;
@@ -45,12 +44,12 @@ pub use verify_no_node::verify_no_node;
 #[cfg(test)]
 use repository_access::verify_file_length_in;
 #[cfg(test)]
-use verification_core::repository_laws::file_length::{
+use repository_laws::file_length::{
     PRODUCTION_MAX_LINES as SIZE_3_PRODUCTION_MAX_LINES, TEST_MAX_LINES as SIZE_3_TEST_MAX_LINES,
     length_scan_summary,
 };
 #[cfg(test)]
-use verification_core::repository_laws::source_roots::{
+use repository_laws::source_roots::{
     MOD_SCRIPT_ROOTS, PINNED_SCRIPT_ROOTS, is_test_file, mod_pins_are_script_roots,
     walk_length_gated_sources,
 };

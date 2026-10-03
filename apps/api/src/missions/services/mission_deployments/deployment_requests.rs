@@ -3,6 +3,7 @@
 //! records the deployment, its slot bindings, its fleet command and the audit record in one
 //! transaction. Lock order: server, mission, event mission, requester account.
 
+use fleet_wire_contract::FleetAction;
 use serde_json::json;
 use sqlx::PgConnection;
 use uuid::Uuid;
@@ -19,7 +20,6 @@ use crate::identity_and_access::services::account_authority::holds_administrator
 use crate::identity_and_access::services::identity_ownership::lock_accounts;
 use crate::identity_and_access::services::session_authorization::authorize_on_connection;
 use crate::missions::models::mission_deployment::{DeploymentTransition, MissionDeployment};
-use crate::server_infrastructure::models::fleet_command::FleetAction;
 use crate::server_infrastructure::services::fleet_commands::command_ledger::{
     cancel_command, enqueue_deployment_command,
 };

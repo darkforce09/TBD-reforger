@@ -13,7 +13,6 @@ are skipped and timestamps are RFC 3339.
 ```text
 apps/api/src/missions/models/
 ├── faction.rs             `UserFaction`, one reusable faction of the caller's faction library
-├── generated/             types generated from the mission review and mission deployment schemas
 ├── mission.rs             the library row, its versions and armory lines, enums and override rows
 ├── mission_deployment.rs  deployment bodies, transitions, and what operators and runtimes read
 ├── mission_review.rs      a review, the review thread, and the approve, reject and comment bodies
@@ -40,9 +39,9 @@ each transition's wire name and confirmation deadline: `scenario_restart` 600 s,
 
 ## Boundaries
 
-- Depends on: `core::wire_format` for timestamps and `RawJson`; serde and sqlx. `generated/`
-  follows `contracts/definitions/mission-review.schema.json` and
-  `contracts/definitions/mission-deployment.schema.json`; `faction.rs` and `registry.rs` carry
+- Depends on: `core::wire_format` for timestamps and `RawJson`; serde and sqlx. The types
+  generated from `contracts/definitions/mission-review.schema.json` and
+  `contracts/definitions/mission-deployment.schema.json` are in `contract_schema_types::missions`; `faction.rs` and `registry.rs` carry
   the `@contract` tags of `faction-library.schema.json`, `registry-items.schema.json` and
   `registry-compat.schema.json`, and `faction.rs` also cites the faction row of
   `arsenal-envelopes.schema.json` (`UserFaction`, whose `doc` is the faction-library document).
@@ -56,8 +55,8 @@ each transition's wire name and confirmation deadline: `scenario_restart` 600 s,
   generated types. The web app's DTOs in `apps/frontend/src/v2/core/api/dto/`
   (`missions.rs`, `mission_reviews.rs`, `mission_deployments.rs`, `registry.rs`) mirror these
   shapes.
-- Rules: `generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
-  (`cargo xtask ci verify-codegen-fresh` checks it); every `@contract` tag resolves against
+- Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by
+  hand (`cargo xtask ci verify-codegen-fresh` checks them); every `@contract` tag resolves against
   `contracts/definitions/` (`cargo xtask schema citations`); a stored version is never updated,
   and the `mission_versions_are_immutable` trigger of
   `apps/api/migrations/0052_mission_version_immutability.sql` refuses any update.

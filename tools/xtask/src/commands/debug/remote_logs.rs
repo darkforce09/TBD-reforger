@@ -21,12 +21,12 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use process_runner::Run;
 use verification_core::NotRun;
 use verification_core::gate::probe_str;
 use verification_core::pattern::Pattern;
-use verification_core::proc::{self, Run};
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 const PAT_TAGGED: &str = r"\[TBD\]\[";
 const PAT_MISSION: &str = r"\[TBD\]\[Mission\] loaded id=";

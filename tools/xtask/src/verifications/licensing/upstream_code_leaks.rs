@@ -49,10 +49,8 @@ use anyhow::Result;
 use regex::Regex;
 use verification_core::{Kind, NotRun, Pattern, Verdict, scan};
 
-use crate::core::repository_layout::{
-    CRF_FRAMEWORK_REFERENCE, PLAYABLE_SELECTOR_OVERRIDE_ENV, PLAYABLE_SELECTOR_REFERENCE,
-    REFERENCES_DIR,
-};
+use crate::core::repository_layout::{PLAYABLE_SELECTOR_OVERRIDE_ENV, PLAYABLE_SELECTOR_REFERENCE};
+use repository_layout::{CRF_FRAMEWORK_REFERENCE, REFERENCES_DIR};
 
 /// The shipping addon whose scripts and assets must stay free of upstream code.
 const MOD_REL: &str = "apps/mod/tbd-framework";

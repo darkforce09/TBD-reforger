@@ -59,7 +59,7 @@ name starts with its group's prefix, which the verification register counts.
 | properties | `session_authority_properties`, `mission_artifact_properties`, `telemetry_revision_properties`, `fleet_command_properties`, `audit_publication_properties`, `reservation_transaction_properties` | `common::property_evidence`, the recorder every property runs through; `session_authority_support/` |
 | controlled races | `controlled_races_identity`, `controlled_races_reservations`, `controlled_races_missions_and_telemetry`, `controlled_races_audit` | `failpoint_and_race_support/`: arming, interleavings, row-lock barriers, persisted-state checks |
 | failure injection | `failure_injection_<area>` for `identity`, `operations`, `missions`, `telemetry`, `fleet`, `audit` and `discord`, and `failure_injection_self_checks` | `failpoint_and_race_support/` |
-| engineering laws | `engineering_laws` | the `verification_core` dev-dependency |
+| engineering laws | `engineering_laws` | the `repository_laws` and `verification_core` dev-dependencies |
 
 The design note linked under Related documentation specifies each group.
 
@@ -161,7 +161,8 @@ compiles every fault point to nothing. The `engineering_laws` suite holds both h
 ## Boundaries
 
 - Depends on: `map_engine` with its default `scenario` tier, which compiles and validates
-  missions and solves fire missions; the schemas in
+  missions and solves fire missions; `fleet_wire_contract`, the fleet command shapes and machine
+  credential format shared with the fleet host agent; the schemas in
   `contracts/definitions/`, embedded at compile time; Postgres 18; Discord's OAuth2 and REST
   APIs and a channel webhook; and, at run time, the asset trees in `assets/terrains/` and
   `assets/glyphs/`.

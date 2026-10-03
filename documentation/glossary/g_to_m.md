@@ -24,7 +24,7 @@ and 2 when a check could not run, so a missing input never reads as a pass: the 
 verifications, the headless browser gates of the `gate` binary, the mod compile gate, and the
 [factory](/documentation/glossary/a_to_f.md#factory)'s cheap slice gate and full wave gate.
 
-In code: `Verdict` in `tools/verification_core/src/verdict.rs`; `cargo xtask verify` over `tools/xtask/src/verifications/`; `tools/developer_tools/src/bin/gate.rs`; `cargo xtask platform wave gate`; `cargo xtask mod compile`.
+In code: `Verdict` in `tools/foundation/verification_core/src/verdict.rs`; `cargo xtask verify` over `tools/xtask/src/verifications/`; `tools/developer_tools/src/bin/gate.rs`; `cargo xtask platform wave gate`; `cargo xtask mod compile`.
 
 See: [slice](/documentation/glossary/n_to_z.md#slice), [Testing and CI](/documentation/runbooks/testing_and_ci.md), [Editor gates](/documentation/runbooks/editor_gates.md).
 
@@ -64,7 +64,7 @@ A per-server secret that authenticates one program on a game host: `host_agent` 
 [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) or `mod_runtime` for the [game runtime](#game-runtime). An
 administrator issues one (its secret shows once), lists them without secrets and revokes each alone.
 
-In code: `MachineCredential` and `ExecutorKind` in `apps/api/src/server_infrastructure/models/machine_credential.rs`.
+In code: `MachineCredential` in `apps/api/src/server_infrastructure/models/machine_credential.rs`; `ExecutorKind` in `crates/contracts/fleet_wire_contract/src/executor_kind.rs`.
 
 See: [Machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md).
 

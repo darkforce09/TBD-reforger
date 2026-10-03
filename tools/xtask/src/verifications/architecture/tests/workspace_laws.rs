@@ -1,12 +1,12 @@
 //! Tests for [`super`] — each gate reports the library's judgement of this checkout.
 //!
 //! The laws themselves are tested beside them in
-//! `tools/verification_core/src/repository_laws/workspace_laws/tests/`; these pin the gates'
+//! `tools/foundation/repository_laws/src/workspace_laws/tests/`; these pin the gates'
 //! delegation over this checkout, the frontend layer table xtask passes in, and the refusal of a
 //! checkout the gates cannot read.
 
 use super::*;
-use verification_core::repository_laws::workspace_laws::frontend_layering::layering_edges;
+use repository_laws::workspace_laws::frontend_layering::layering_edges;
 
 /// Every workspace law, in the order the task row runs them.
 const WORKSPACE_LAWS: &[WorkspaceLaw] = &[
@@ -18,11 +18,8 @@ const WORKSPACE_LAWS: &[WorkspaceLaw] = &[
 ];
 
 fn this_repo() -> std::path::PathBuf {
-    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("tools/xtask sits two levels below the repository root")
-        .to_path_buf()
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root")
 }
 
 #[test]

@@ -5,6 +5,7 @@ use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::Json;
+use fleet_wire_contract::ExecutorKind;
 use serde_json::Value;
 
 use crate::core::application_state::AppState;
@@ -13,7 +14,6 @@ use crate::match_telemetry::models::match_registration::{
     MatchRegistrationAnswer, decode_registration,
 };
 use crate::match_telemetry::services::match_registration::register_match;
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 
 /// Register a server-scoped source match: 201 for a new one, 200 for a repeat of the same body.

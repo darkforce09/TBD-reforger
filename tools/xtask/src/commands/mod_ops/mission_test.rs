@@ -16,20 +16,21 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use fleet_wire_contract::machine_credential_format::MACHINE_CREDENTIAL_PREFIX;
 use serde_json::Value;
 use verification_core::scan;
 
 use super::website_api_client::{
     ARTIFACT_CACHE_DIRECTORY, StagedArtifact, clear_artifact_cache, stage_artifact_cache,
 };
-use crate::core::repository_root::find_repo_root;
 use content_digest::sha256_hex;
+use repository_layout::find_repository_root;
 
 const CFG_REL: &str = ".local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile";
 
 /// Entry for `xtask mod test-mission [TARGET]`.
 pub fn run(target: Option<&str>) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     run_with_root(&root, target)
 }
 
@@ -128,7 +129,7 @@ fn show(cfg: &Path, prof: &Path) -> Result<()> {
     let config: Value =
         serde_json::from_str(&text).with_context(|| format!("parse {}", cfg.display()))?;
     let credential = config["machineCredential"].as_str().unwrap_or_default();
-    if credential.starts_with("tbdm_") {
+    if credential.starts_with(MACHINE_CREDENTIAL_PREFIX) {
         println!(
             "  machineCredential set: boots the deployment it reads from {}",
             config["backendUrl"].as_str().unwrap_or("?")

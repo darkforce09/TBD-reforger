@@ -32,7 +32,7 @@ own folder, so an import can never fall back to a sample and fill the
 [arsenal](/documentation/glossary/a_to_f.md#arsenal) with sample data while every test passes.
 
 ```text
-definitions/ ──schema codegen──▶ API models/generated/ and contract/generated/
+definitions/ ──schema codegen──▶ contract_schema_types crate (one module per API domain)
      ├── include_str! ──▶ API validators, Mission Creator zone and loadout checks
      ├── @contract tags ◀── mod DTO classes, API models (schema citations)
      └── schema gates ◀── fixtures/, catalogs/ (schema validate)

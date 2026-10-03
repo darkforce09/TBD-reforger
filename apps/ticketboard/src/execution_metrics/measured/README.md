@@ -20,7 +20,7 @@ apps/ticketboard/src/execution_metrics/measured/
 ## How it works
 
 `load_metrics(repo_root)` runs on the application's loading thread. A missing or file-less
-receipts folder (`ticket_engine::repository::METRICS_DIR`) is the explicit
+receipts folder (`repository_layout::METRICS_DIR`) is the explicit
 `MetricsState::NoReceipts`, never a table of zeros. Otherwise it walks the tree depth first in
 name order, and every file becomes either a validated run or an `ErrorRow` holding its
 repository-relative path and the reason verbatim; an unreadable folder is an error row too.
@@ -41,7 +41,7 @@ broken by key name.
 
 ## Boundaries
 
-- Depends on: `ticket_engine::repository::METRICS_DIR` and `ticket_engine::validate_rfc3339_utc`;
+- Depends on: `repository_layout::METRICS_DIR` and `ticket_engine::validate_rfc3339_utc`;
   the `serde`, `serde_json` and `time` crates; `std::fs`.
 - Used by: `crate::application` (`background_loading.rs` calls `load_metrics`;
   `action_dispatch.rs` calls `sort_rows`; `mod.rs` and `events.rs` hold the state and the sort

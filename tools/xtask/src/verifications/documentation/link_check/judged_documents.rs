@@ -16,11 +16,11 @@
 //! records and the archive are the frozen areas.
 
 use super::super::path_regions::{README, file_name, is_markdown, is_within, parent_folder};
-use crate::core::repository_layout::TICKETS_DIR;
 use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, ARTIFACTS_DIR, CURSOR_RULE_DIRS, DOCUMENTATION_ROOT, PROJECT_INSTRUCTIONS,
-    TICKET_DOCUMENTS_DIR,
+    ARCHIVE_DIR, CURSOR_RULE_DIRS, PROJECT_INSTRUCTIONS, TICKET_DOCUMENTS_DIR,
 };
+use repository_layout::TICKETS_DIR;
+use repository_layout::{ARTIFACTS_DIR, documentation::DOCUMENTATION_ROOT};
 
 /// The extension of a Cursor rule file, Markdown with a front matter header.
 const CURSOR_RULE_EXTENSION: &str = "mdc";

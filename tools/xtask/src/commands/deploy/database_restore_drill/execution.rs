@@ -75,7 +75,7 @@ pub fn run(args: &[String]) -> Result<u8> {
     }
 
     let migdir = env::var("TBD_GATE_MIGRATION_DIR").unwrap_or_else(|_| {
-        match find_repo_root() {
+        match find_repository_root() {
             Ok(root) => root
                 .join("apps/api/migrations")
                 .display()

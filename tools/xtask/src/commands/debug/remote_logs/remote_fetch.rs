@@ -76,7 +76,7 @@ fn remote_target(instance: Option<u16>) -> Result<Result<RemoteTarget, u8>> {
         eprintln!("{error}");
         Ok(Err(1))
     };
-    let path = deploy_environment_path(&find_repo_root()?);
+    let path = deploy_environment_path(&find_repository_root()?);
     let environment = match DeployEnvironment::load_if_present(&path) {
         Ok(environment) => environment,
         Err(error) => return refused(&error),
@@ -218,7 +218,7 @@ pub(super) fn ssh_cmd(
     args.extend(["-o".into(), "StrictHostKeyChecking=no".into(), host.into()]);
     args.extend(remote_args.iter().map(|a| (*a).to_string()));
 
-    let _ = proc::which(program)?;
+    let _ = process_runner::which(program)?;
     let mut run = Run::new(program);
     for a in &args {
         run = run.arg(a);

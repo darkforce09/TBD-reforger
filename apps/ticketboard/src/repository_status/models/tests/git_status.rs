@@ -1,6 +1,6 @@
 use super::*;
 
-use ticket_engine::repository::documentation::{GAP_ANALYSIS, ROADMAP};
+use repository_layout::documentation::{GAP_ANALYSIS, ROADMAP};
 
 /// Fixture mirroring a real dirty registry under [`GIT_ARGS`]: modified, staged,
 /// untracked, a rename — plus merged-stream pollution that must not count.

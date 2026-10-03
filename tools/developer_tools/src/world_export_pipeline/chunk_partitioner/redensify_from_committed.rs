@@ -19,7 +19,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
         bail!("worldBoundsM unsupported (expect square)");
     }
 
-    let terrain_dir = terrain_dir(&repo_root(), terrain);
+    let terrain_dir = terrain_dir(&compiled_checkout_root()?, terrain);
     let objects_dir = terrain_dir.join("objects");
     let chunks_dir = objects_dir.join("chunks");
     let density_dir = objects_dir.join("density");
@@ -121,7 +121,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
 /// cell-size change the committed fixture must be regenerated. No canopy blur — this validates the
 /// codec/accumulate pipeline, not the mass.
 pub fn gen_density_fixture() -> Result<()> {
-    let dir = density_fixtures_dir(&repo_root());
+    let dir = density_fixtures_dir(&compiled_checkout_root()?);
     let json_path = dir.join("density-fixture.json");
     let mut fx: Value = serde_json::from_str(&std::fs::read_to_string(&json_path)?)?;
     let world = fx["worldSizeM"].as_f64().unwrap_or(0.0);
@@ -304,9 +304,10 @@ pub fn build_roads_from_topo_opt(
         segments.is_empty(),
         "zero road segments — refusing empty roads.json.gz overwrite",
     )?;
-    let out_base: PathBuf = out_base
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| terrain_dir(&repo_root(), terrain));
+    let out_base: PathBuf = match out_base {
+        Some(base) => base.to_path_buf(),
+        None => terrain_dir(&compiled_checkout_root()?, terrain),
+    };
     let objects_dir = out_base.join("objects");
     std::fs::create_dir_all(&objects_dir)?;
     std::fs::write(
@@ -330,7 +331,8 @@ pub fn build_roads_from_topo_opt(
         "points": records.iter().map(|r| r.points.len()).sum::<usize>(),
     });
     if ops_log {
-        let ops_path = crate::repository_layout::export_operations_log(&repo_root(), terrain);
+        let ops_path =
+            crate::repository_layout::export_operations_log(&compiled_checkout_root()?, terrain);
         let mut ops: Value = if ops_path.exists() {
             serde_json::from_str(&std::fs::read_to_string(&ops_path)?)?
         } else {

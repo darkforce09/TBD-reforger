@@ -9,9 +9,8 @@
 //! then `merge-base(b,main) == b`, so the inequality can never hold) so that nobody later
 //! "repairs" it into something that actually reaps.
 use crate::commands::platform::slice_worktree::*;
-use crate::core::repository_layout::{
-    CRF_FRAMEWORK_REFERENCE, PLAYABLE_SELECTOR_REFERENCE, REFERENCES_DIR, VANILLA_REFERENCE,
-};
+use crate::core::repository_layout::PLAYABLE_SELECTOR_REFERENCE;
+use repository_layout::{CRF_FRAMEWORK_REFERENCE, REFERENCES_DIR, VANILLA_REFERENCE};
 
 /// Every reference lane `new` links, each required.
 const LANES: [&str; 3] = [

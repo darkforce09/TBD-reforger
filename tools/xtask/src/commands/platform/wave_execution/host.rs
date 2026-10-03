@@ -1,8 +1,8 @@
 //! `hostrun` / `checkrun` — the container→host bridge, as the wave driver defines it.
 //!
-//! ── WHAT IS SHARED WITH `crate::core::host_execution`, AND WHAT IS NOT ───────────────────────────────────
+//! ── WHAT IS SHARED WITH `process_runner::host_execution`, AND WHAT IS NOT ───────────────────────────────────
 //!
-//! The container test comes from [`crate::core::host_execution::in_container`] — the lifted primitive — rather
+//! The container test comes from [`process_runner::host_execution::in_container`] — the lifted primitive — rather
 //! than a third copy of distrobox's `distrobox-host-exec:130`. That module's own note asks for
 //! exactly this, and flags the one difference:
 //!
@@ -11,14 +11,14 @@
 //! > here is the one both existing Rust callers were built and measured against, so the lift keeps
 //! > it exactly. Widening it is a behaviour change and belongs in its own ticket.
 //!
-//! So [`in_container`] below is `crate::core::host_execution::in_container()` OR `$container`, which is this driver's
+//! So [`in_container`] below is `process_runner::host_execution::in_container()` OR `$container`, which is this driver's
 //! three-clause test to the letter, built on the shared two. Narrowing it to the shared form would
 //! change which side of the bridge this file believes it is on — a behaviour change in the
 //! highest-risk file in the program, introduced by a refactor.
 //!
 //! Three more things stay here because they are wave-driver semantics, not bridge semantics:
 //!
-//!   * BRIDGE SET. `crate::core::host_execution::Host::detect` accepts `distrobox-host-exec` **or** `host-spawn`.
+//!   * BRIDGE SET. `process_runner::host_execution::Host::detect` accepts `distrobox-host-exec` **or** `host-spawn`.
 //!     This driver knows only `distrobox-host-exec`. On a machine carrying `host-spawn` alone the
 //!     shared detector would bridge where the bash ran natively.
 //!   * ENV FORWARDING. `hostrun` bakes in `env CARGO_TARGET_DIR=… TEST_DATABASE_URL=…`, read at
@@ -77,7 +77,7 @@ pub struct Host {
 /// in_container() { [ -f /run/.containerenv ] || [ -f /.dockerenv ] || [ -n "${container:-}" ]; }
 /// ```
 fn in_container() -> bool {
-    crate::core::host_execution::in_container()
+    process_runner::host_execution::in_container()
         || std::env::var("container")
             .map(|v| !v.is_empty())
             .unwrap_or(false)
@@ -85,7 +85,7 @@ fn in_container() -> bool {
 
 /// `command -v <prog>` — a PATH lookup, matching what the bash actually tested.
 fn on_path(prog: &str) -> bool {
-    verification_core::proc::which(prog).is_ok()
+    process_runner::which(prog).is_ok()
 }
 
 impl Host {
@@ -210,7 +210,7 @@ impl Host {
 /// relabelling the most expensive step's deadline as a code error.
 ///
 /// A child killed by a signal has no exit code; bash's `$?` renders that as `128+n` and so does
-/// this, deliberately — the step runners were written against that number. (`verification_core::proc`
+/// this, deliberately — the step runners were written against that number. (`process_runner`
 /// models it honestly as `NotRun::Signalled`, which is the right shape for a NEW gate and the
 /// wrong one for a byte-for-byte port of a runner that already branches on 128+n.)
 pub fn capture(argv: &[String]) -> (String, i32) {

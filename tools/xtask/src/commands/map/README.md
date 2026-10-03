@@ -126,7 +126,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
 
 - Depends on: `developer_tools::blueprint`, `developer_tools::map_verification` and
   `developer_tools::repository_layout::map_scratch_dir`; `crate::core::repository_root`;
-  `verification_core::proc`; cargo, for the `world` binary; the game paks and the Workbench
+  `process_runner`; cargo, for the `world` binary; the game paks and the Workbench
   exports each command reads.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; people, following the export and blueprint steps
   in `assets/terrains/README.md` and the `apps/mod/tbd-export/` plugins, whose output these

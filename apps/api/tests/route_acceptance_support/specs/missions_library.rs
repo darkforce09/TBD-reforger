@@ -7,7 +7,7 @@
 //! refusals and boundaries, and a reason for every dimension that does not apply. Fixture keys
 //! other than route keys are resolved by `world/missions_library.rs`.
 
-use api::missions::models::generated::mission_review::{
+use contract_schema_types::missions::mission_review::{
     MissionRow, MissionVersion, ReviewWorkspace,
 };
 use serde_json::{Value, json};

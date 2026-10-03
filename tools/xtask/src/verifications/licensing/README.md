@@ -60,7 +60,7 @@ Each is a licence decision (re-author from vanilla or record an attribution), ne
 
 ## Boundaries
 
-- Depends on: `verification_core` (`scan`, `proc::Run`, `Verdict`, `NotRun`, `Pattern`); `regex`;
+- Depends on: `verification_core` (`scan`, `Verdict`, `NotRun`, `Pattern`); `process_runner::Run`; `regex`;
   the `grep` binary; `crate::core::repository_layout` (the lane paths and the documents the
   closing note names).
 - Used by: `tools/xtask/src/commands/verify/dispatch.rs`; the mod

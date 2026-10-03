@@ -17,7 +17,7 @@ tools/xtask/src/verifications/licensing/upstream_code_leaks/
 ## Boundaries
 
 - Depends on: the parent file's `Lanes`, `Log` and constants; `verification_core` (`scan`,
-  `proc::Run`, `Verdict`, `NotRun`); `regex`; the `grep` binary for the vanilla `.pak` probe;
+  `Verdict`, `NotRun`); `process_runner::Run`; `regex`; the `grep` binary for the vanilla `.pak` probe;
   `crate::core::repository_layout::documentation` for the two documents the failure text names.
 - Used by: the parent file, which re-exports `verify_crf_leak` to
   `tools/xtask/src/commands/verify/dispatch.rs`.

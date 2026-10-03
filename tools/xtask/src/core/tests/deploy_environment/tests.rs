@@ -181,3 +181,19 @@ fn the_committed_example_loads_and_masks_nothing() {
         );
     }
 }
+
+#[test]
+fn secure_shell_transport_reads_the_password_before_the_identity_file() {
+    assert_eq!(
+        settings(Some("TBD_SSH_PASS=pw\nTBD_SSH_IDENTITY_FILE=/k/id\n"), &[]).ssh_base(),
+        SshBase::Pass("pw".into())
+    );
+    assert_eq!(
+        settings(Some("TBD_SSH_IDENTITY_FILE=/k/id\n"), &[]).ssh_base(),
+        SshBase::Identity("/k/id".into())
+    );
+    assert_eq!(
+        settings(Some("TBD_SSH_PASS=\n"), &[]).ssh_base(),
+        SshBase::Plain
+    );
+}

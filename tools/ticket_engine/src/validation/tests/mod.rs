@@ -5,7 +5,7 @@ use serde_json::json;
 use std::path::PathBuf;
 
 fn worktree_root() -> PathBuf {
-    crate::repository::find_repo_root().expect("repository root")
+    repository_layout::find_repository_root().expect("repository root")
 }
 
 /// Scratch tickets dir carrying the minimal vocabulary the fail-closed corpus load
@@ -13,7 +13,7 @@ fn worktree_root() -> PathBuf {
 fn scratch_tickets_dir(tag: &str) -> (PathBuf, PathBuf) {
     let tmp = std::env::temp_dir().join(format!("{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&tmp);
-    let dir = tmp.join(crate::repository::TICKETS_DIR);
+    let dir = tmp.join(repository_layout::TICKETS_DIR);
     fs::create_dir_all(&dir).unwrap();
     fs::write(
             dir.join("scope-vocab.toml"),

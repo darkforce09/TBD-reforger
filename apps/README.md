@@ -82,7 +82,7 @@ cargo run -p ticketboard          # opens the ticket registry viewer; stays in t
 - Rules: the products share data only over the API and through the schemas in `contracts/`: no
   crate here depends on a crate of another product, apart from the website's three (the frontend
   links `offline_service_worker`); the path dependencies leaving `apps/` go to `legacy/` (the
-  engines), `crates/` and `tools/` (`verification_core` for the API, `ticket_engine` for
+  engines), `crates/` and `tools/` (`repository_laws` and `verification_core` for the API, `ticket_engine` for
   ticketboard); the engine layer rules are held by `cargo xtask verify engine-layers`.
 
 ## Related documentation

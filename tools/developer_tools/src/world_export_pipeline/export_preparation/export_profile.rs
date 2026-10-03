@@ -8,7 +8,7 @@ pub fn copy_world_export_profile(
     src: Option<String>,
     meta: Option<String>,
 ) -> Result<u8> {
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let profile_dir = profile
         .map(PathBuf::from)
         .or_else(|| std::env::var("PROFILE").ok().map(PathBuf::from))

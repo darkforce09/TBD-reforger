@@ -6,7 +6,7 @@ pub(crate) async fn run(dist: &str) -> Result<u8> {
         dist,
         5396,
         9496,
-        Some(MapAssetMounts::from_root(&repo_root())),
+        Some(MapAssetMounts::from_root(&compiled_checkout_root()?)),
         None,
         &[],
     )

@@ -22,7 +22,7 @@ fn rigid_from_enfusion_is_the_y_x_z_hypothesis() {
 /// recorded by the Workbench recon on 2026-09-03.
 #[test]
 fn garbage_container_lid_pins_y_x_z_with_negated_pitch_and_roll() {
-    let root = crate::repository_paths::test_repo_root();
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let fx = load_fixture(&root.join(
         "tools/developer_tools/test_fixtures/blueprint/rotation_pin_GarbageContainer_01.json",
     ))

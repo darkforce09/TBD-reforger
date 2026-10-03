@@ -1,10 +1,11 @@
 # Xtask shared plumbing
 
 The helpers every xtask command group shares: finding the checkout root, the one spelling of each
-repository location xtask reads, the one reader of the deploy settings file, the ssh transport to
-the deploy host, running host binaries from inside the development container, the cargo target
-directory policy, and the `PATH` guard tests use. The command groups use them
-without owning [ticket](/documentation/glossary/n_to_z.md#ticket) storage or map processing, which stay in `ticket_engine` and
+repository location xtask reads, the one reader of the deploy settings file (with the ssh
+transport it chooses for the deploy host), the cargo target directory policy, and the `PATH` guard
+tests use. Running host binaries from inside the development container and building the ssh argv
+are process mechanics and live in the `process_runner` crate. The command groups use these
+helpers without owning [ticket](/documentation/glossary/n_to_z.md#ticket) storage or map processing, which stay in `ticket_engine` and
 `developer_tools`.
 
 ## Contents
@@ -13,21 +14,18 @@ without owning [ticket](/documentation/glossary/n_to_z.md#ticket) storage or map
 tools/xtask/src/core/
 ├── cargo_target_directory.rs  the shared target directory, the build output subfolder names, the glibc stamp guard, and the target checks
 ├── deploy_environment/        the deploy settings grammar, the deploy host and the remote folder defaults
-├── deploy_environment.rs      `DeployEnvironment`: loads `deploy.env` under one precedence rule; errors
-├── host_execution.rs          `Host`: runs host binaries through the container bridge, or directly on the host
+├── deploy_environment.rs      `DeployEnvironment`: loads `deploy.env` under one precedence rule; the ssh transport; errors
 ├── mod.rs                     the module tree
 ├── repository_layout.rs       repository-relative locations, the ticket_engine ones re-exported, and `documentation`
-├── repository_root.rs         `find_repo_root` for commands, `test_repo_root` for tests
-├── secure_shell_transport.rs  `SshBase` and `ssh_argv`, the shared ssh transport to the deploy host
+├── repository_root.rs         `test_repo_root`: the checkout root for tests, under the working-directory lock
 ├── test_environment.rs        `PathGuard`: prepends a folder to `PATH` and keeps the system tools reachable
-└── tests/                     unit tests for the deploy settings, the host bridge, the `PATH` construction and the build output folders
+└── tests/                     unit tests for the deploy settings, the `PATH` construction and the build output folders
 ```
 
 ## How it works
 
-A command starts from `repository_root::find_repo_root`, which walks up from the working
-directory to the folder holding `.ai/tickets/ROOT` (`ticket_engine::repository::find_repo_root`),
-and joins the constants of `repository_layout` onto it: the deploy files and systemd units, the
+A command starts from the `repository_layout` crate's `find_repository_root`, which walks up from
+the working directory to the folder holding `.ai/tickets/ROOT`, and joins the constants of `repository_layout` onto it: the deploy files and systemd units, the
 dedicated-server profiles, the MCP transcript fixtures, the ticket locations re-exported from
 `ticket_engine::repository` (`TICKETS_DIR`, `WAVE_LOCK`, `WORKTREES_DIR` and others), and, in the
 `documentation` submodule, every document or documentation root a command names or walks: the
@@ -47,18 +45,12 @@ missing one `<KEY> is not set: add it to <path>`. `deploy_host` parses `TBD_SSH_
 `DeployHostFolder` defaults the remote folders under `/home/<user>`; the folder's README gives the
 grammar.
 
-`secure_shell_transport` is the one way a command reaches the deploy host over ssh: `SshBase`
-reads `TBD_SSH_PASS` (first) or `TBD_SSH_IDENTITY_FILE` and builds `ssh`, `ssh -i <file>` or
-`sshpass -e ssh`, and `ssh_argv` appends the destination and the remote words. The password
-reaches `sshpass` only through the spawned process's `SSHPASS` variable, and `SshBase`'s `Debug`
-redacts it.
-
-`host_execution::Host` exists because the development container cannot run host-linked binaries
-(Steam, [Workbench](/documentation/glossary/n_to_z.md#workbench), `ArmaReforgerServer`). `Host::detect` asks whether this process is in a
-container (`/run/.containerenv` or `/.dockerenv`) and which bridge is on `PATH`
-(`distrobox-host-exec`, then `host-spawn`); a command goes through the bridge only when both
-hold, and runs directly otherwise. With no bridge in a container, `run` prints a refusal and
-returns 127 and `capture` returns nothing. Cargo is never routed through the bridge.
+`DeployEnvironment::ssh_base` is the one way a command chooses how ssh reaches the deploy host:
+it reads `TBD_SSH_PASS` (first) or `TBD_SSH_IDENTITY_FILE` and hands them to
+`process_runner::secure_shell_transport::SshBase::from_settings`, which builds `ssh`,
+`ssh -i <file>` or `sshpass -e ssh`; `ssh_argv` there appends the destination and the remote
+words. The password reaches `sshpass` only through the spawned process's `SSHPASS` variable, and
+`SshBase`'s `Debug` redacts it.
 
 `cargo_target_directory` holds the build cache policy the `mk` recipes apply:
 
@@ -84,22 +76,17 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
 ## Boundaries
 
 - Depends on: `ticket_engine::repository` (the root marker and the ticket locations);
-  `verification_core` (`proc::Run`, `Verdict`, `NotRun`); `crate::commands::build::recipes` for
+  `verification_core` (`Verdict`, `NotRun`); `process_runner` (`Run`, and `SshBase` for
+  `deploy_environment`); `crate::commands::build::recipes` for
   the steps the target checks inspect; `libc` for the glibc version; `git`.
 - Used by:
-  - `repository_root` and `repository_layout`: nearly every command group and verification in
-    `tools/xtask/src/`;
+  - `repository_layout`: nearly every command group and verification in `tools/xtask/src/`;
+    `repository_root`: the unit tests that read fixtures from the checkout;
   - `deploy_environment`: `deploy website` and `deploy staging`
     (`tools/xtask/src/commands/deploy/`), `mod bootstrap-staging` and `setup client-addons`
     (`tools/xtask/src/commands/setup/`), `mod remote-logs`, `debug direct-join` and
-    `debug a2s-probe` (`tools/xtask/src/commands/debug/`);
-  - `secure_shell_transport`: `deploy staging`
-    (`tools/xtask/src/commands/deploy/staging/remote.rs`) and the `staging` harness
-    (`tools/xtask/src/commands/staging/remote_observers/host_shell.rs`);
-  - `host_execution`: the `db` group (`tools/xtask/src/commands/db/operations.rs`), the
-    playtest server of the `mod` group
-    (`tools/xtask/src/commands/mod_ops/playtest_server/host.rs`) and the platform [wave](/documentation/glossary/n_to_z.md#wave) driver
-    (`tools/xtask/src/commands/platform/wave_execution/host.rs`);
+    `debug a2s-probe` (`tools/xtask/src/commands/debug/`); its `ssh_base` by the staging harness
+    (`tools/xtask/src/commands/staging/staging_settings.rs`);
   - `cargo_target_directory`: the `mk` recipes (`tools/xtask/src/commands/build/recipes.rs`),
     the wave driver's flush and gate folders (`tools/xtask/src/commands/platform/wave_execution/`)
     and its reclaim sweep (`tools/xtask/src/commands/platform/wave_execution/reclaim/`);
@@ -114,9 +101,8 @@ returns 127 and `capture` returns nothing. Cargo is never routed through the bri
   - The file decides every key it assigns, even empty, over the process environment
     (`an_empty_assignment_in_the_file_beats_the_process_environment` in
     `tests/deploy_environment/tests.rs`), and the committed example loads and masks no optional
-    key (`the_committed_example_loads_and_masks_nothing`).
-  - The bridge is never used outside a container (`bridge_is_never_used_on_the_metal` in
-    `tests/host_execution/tests.rs`).
+    key (`the_committed_example_loads_and_masks_nothing`); the ssh password setting wins over the
+    identity file (`secure_shell_transport_reads_the_password_before_the_identity_file`).
   - A new `PATH` always keeps the system tools (`prepended_path_onto_stub_only_path_keeps_system_bins_reachable`
     in `tests/test_environment/tests.rs`).
   - The target directory tests live with the recipes that apply the policy, in

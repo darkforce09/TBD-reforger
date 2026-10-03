@@ -1,8 +1,8 @@
 use super::super::fixture_checkout::FixtureCheckout;
 use super::*;
+use process_runner::Output;
 use std::collections::BTreeSet;
 use verification_core::NotRun;
-use verification_core::proc::Output;
 
 fn names(set: &BTreeSet<String>) -> Vec<&str> {
     set.iter().map(String::as_str).collect()

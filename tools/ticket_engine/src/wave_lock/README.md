@@ -77,7 +77,7 @@ git history ──history──► wave_base (newest close) and floor (highest c
     `archived_wave_plans::tickets_at`) and its preflight, and the mod wave driver in
     `tools/xtask/src/commands/mod_ops/wave_execution/execution.rs`;
   - `crate::registry::shipping_status`, which reads statuses through `load_views`. The
-    ticketboard's wave lanes parse the lock themselves from `crate::repository::WAVE_LOCK`
+    ticketboard's wave lanes parse the lock themselves from `repository_layout::WAVE_LOCK`
     (`apps/ticketboard/src/wave_plan/services/lock_file.rs`).
 - Rules:
   - the repack is the only writer, and a compile renders byte for byte the same from the same

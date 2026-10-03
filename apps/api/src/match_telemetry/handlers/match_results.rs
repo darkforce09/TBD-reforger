@@ -3,6 +3,7 @@
 use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
 use axum::response::Json;
+use fleet_wire_contract::ExecutorKind;
 use serde_json::Value;
 
 use crate::core::application_state::AppState;
@@ -11,7 +12,6 @@ use crate::match_telemetry::models::match_results_revision::{
     MatchResultsAnswer, decode_results_revision,
 };
 use crate::match_telemetry::services::match_results_ingest::ingest_results_revision;
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 
 /// Validate the whole revision, then decide and apply it against the caller's registered match.

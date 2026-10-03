@@ -21,10 +21,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use verification_core::proc::{Output, Run};
+use process_runner::{Output, Run};
 
-use crate::core::repository_layout::WORKTREES_DIR;
-use crate::core::repository_root::find_repo_root;
+use repository_layout::WORKTREES_DIR;
+use repository_layout::find_repository_root;
 
 /// How the operator re-runs this tool, as printed in every refusal message.
 ///

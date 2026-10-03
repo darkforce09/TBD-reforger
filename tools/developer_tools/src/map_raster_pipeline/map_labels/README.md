@@ -42,7 +42,7 @@ assets/terrains/<terrain>/manifest.json + dem/everon-dem-16bit.png + locations.j
 - Depends on: `map_engine::world::environment::locations::peaks` and
   `map_engine::world::terrain::dem` for the elevation model and peak rules;
   `crate::world_export_pipeline::json_number_formatting` for the number spelling;
-  `crate::repository_layout` and `crate::browser_testing::server::repo_root` for the folders.
+  `crate::repository_layout` (with `compiled_checkout_root` for the checkout root) for the folders.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (`export-locations`,
   `export-height-labels`); `map labels-rkyv` reads both outputs; `cargo xtask schema locations` and
   `cargo xtask schema height-labels` check the committed files.

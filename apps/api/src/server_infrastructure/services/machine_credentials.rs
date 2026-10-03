@@ -5,6 +5,10 @@
 //! database read never yields a usable credential. Each credential authenticates one executor of
 //! one server, and every operation a caller requests is checked against that server.
 
+use fleet_wire_contract::ExecutorKind;
+use fleet_wire_contract::machine_credential_format::{
+    CREDENTIAL_ID_HEX_DIGITS, CREDENTIAL_RANDOM_HEX_DIGITS, MACHINE_CREDENTIAL_PREFIX,
+};
 use sqlx::{PgConnection, PgPool};
 use uuid::Uuid;
 
@@ -12,13 +16,12 @@ use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::authentication_primitives::{constant_time_equal, hash_token, random_token};
 use crate::core::error_handling::api_error::ApiError;
 use crate::server_infrastructure::models::machine_credential::{
-    ExecutorKind, IssuedMachineCredential, MachineCredential,
+    IssuedMachineCredential, MachineCredential,
 };
 use crate::server_infrastructure::services::runtime_sessions::{
     SessionEndReason, end_sessions_of_credential,
 };
 
-const SECRET_PREFIX: &str = "tbdm_";
 const CREDENTIAL_COLUMNS: &str = "id, server_id, executor_kind, label, created_by, created_at, \
      last_used_at, revoked_at, revoked_by, revoke_reason";
 
@@ -56,10 +59,10 @@ impl MachineCaller {
 
 /// The credential id a well-formed secret names.
 fn secret_credential_id(secret: &str) -> Option<Uuid> {
-    let rest = secret.strip_prefix(SECRET_PREFIX)?;
+    let rest = secret.strip_prefix(MACHINE_CREDENTIAL_PREFIX)?;
     let (id, random) = rest.split_once('_')?;
-    let well_formed = id.len() == 32
-        && random.len() == 64
+    let well_formed = id.len() == CREDENTIAL_ID_HEX_DIGITS
+        && random.len() == CREDENTIAL_RANDOM_HEX_DIGITS
         && random
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
@@ -86,7 +89,11 @@ pub async fn issue_machine_credential(
 ) -> Result<IssuedMachineCredential, ApiError> {
     let label = validated_text(label, "label", 128)?;
     let id = Uuid::new_v4();
-    let secret = format!("{SECRET_PREFIX}{}_{}", id.simple(), random_token(32));
+    let secret = format!(
+        "{MACHINE_CREDENTIAL_PREFIX}{}_{}",
+        id.simple(),
+        random_token(32)
+    );
     let credential: MachineCredential = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "INSERT INTO server_machine_credentials (id, server_id, executor_kind, secret_sha256, label, created_by)
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING {CREDENTIAL_COLUMNS}"

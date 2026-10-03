@@ -60,8 +60,8 @@ the wave and slice gates, but in no workflow.
 [laws and gates](/documentation/restructure/laws_and_gates.md#new-laws) in order and stops at
 the first failure; `ci-local` runs it right after `verify-engine-layers`, and the
 `language-gates` job of `ci.yml` runs the five commands as separate steps. The laws live in
-`tools/verification_core/src/repository_laws/workspace_laws/`
-([README](/tools/verification_core/src/repository_laws/workspace_laws/README.md)); xtask passes
+`tools/foundation/repository_laws/src/workspace_laws/`
+([README](/tools/foundation/repository_laws/src/workspace_laws/README.md)); xtask passes
 in every path that moves with the tree. Each law prints `<LAW>: PASS`, or `FAIL` with exit 1 on a
 finding and exit 2 when an input could not be read. The judged set is every workspace member that
 declares `[package.metadata.layout]` plus every member under `crates/<category…>/<name>` or

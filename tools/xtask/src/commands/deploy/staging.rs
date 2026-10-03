@@ -90,7 +90,7 @@ pub struct Paths {
 
 impl Paths {
     pub fn resolve() -> Result<Paths> {
-        let mono_root = crate::core::repository_root::find_repo_root()?;
+        let mono_root = repository_layout::find_repository_root()?;
         Ok(Paths {
             deploy_env: crate::core::deploy_environment::deploy_environment_path(&mono_root),
             mono_root,

@@ -20,7 +20,8 @@ tools/xtask/src/verifications/language_bans/
 ## How it works
 
 Each gate is a function the `verify` command group calls with no arguments; each finds the
-checkout with `git rev-parse --show-toplevel` and returns its exit code.
+checkout with `repository_layout::find_repository_root` and returns its exit code; a working
+directory outside a checkout is an error, never an empty root.
 
 `verify no-shell` and `verify no-python` run one walk over `git ls-files -z` and differ only in
 their closing line. A tracked path fails when:
@@ -40,7 +41,7 @@ it.
 
 `node_and_file_limits/` holds the `no-node` and `file-length` bodies; its README gives their
 rules. The file-length roots, ceilings and test-file rule live in
-`verification_core::repository_laws` and are shared with the `engineering_laws` test binary of
+`repository_laws` and are shared with the `engineering_laws` test binary of
 `api`.
 
 ## Public surface

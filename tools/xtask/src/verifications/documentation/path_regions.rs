@@ -18,8 +18,10 @@
 //! area), so a new top-level folder fails closed: it is judged until a rule says otherwise.
 
 use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, DOCUMENTATION_ROOT, GAP_ANALYSIS, PENDING_MERGE_DIR, RETIRED_DOCS_ROOT, ROADMAP,
-    TICKET_DOCUMENTS_DIR,
+    ARCHIVE_DIR, PENDING_MERGE_DIR, RETIRED_DOCS_ROOT, TICKET_DOCUMENTS_DIR,
+};
+use repository_layout::{
+    documentation::DOCUMENTATION_ROOT, documentation::GAP_ANALYSIS, documentation::ROADMAP,
 };
 
 /// The file every folder in the README span carries, and the only Markdown file name a code tree

@@ -18,7 +18,6 @@ tools/developer_tools/src/
 ├── map_raster_pipeline/     map images and archives: orthophoto, satellite, cartographic, labels, water
 ├── map_verification/        map-asset checks against the map engine: goldens, labels, manifests, sight
 ├── repository_layout.rs     every repository path the crate spells, as constants and path functions
-├── repository_paths.rs      checkout discovery: walks up to the ticket registry's root marker
 ├── staging_verification/    engines the staging harness runs against the staging host: the member load, the relay
 ├── tests/                   unit tests for the digest, the layout and the checkout discovery
 ├── timestamp_formatting.rs  UTC ISO-8601 timestamps with milliseconds for the emitted artifacts
@@ -29,15 +28,16 @@ tools/developer_tools/src/
 
 Each binary in `bin/` calls one subsystem's command-line entry, and the subsystems share three
 foundations: `enfusion_pak` reads the game's archives, `repository_layout` names every folder and
-file they touch, and `repository_paths` (or `browser_testing::server::repo_root`) finds the checkout
-root they resolve against. `map_engine` supplies the formats, geometry and spatial code;
+file they touch, and `repository_layout::find_repository_root` (from the working directory) or
+`repository_layout::compiled_checkout_root` (from the compile-time manifest folder) finds the
+checkout root they resolve against. `map_engine` supplies the formats, geometry and spatial code;
 nothing here is compiled for the browser.
 
 ```text
 bin/enf, bin/mcpd      ──▶ enfusion_tooling             ──┐
 bin/gate, bin/capture  ──▶ browser_testing              ──┤
 bin/world              ──▶ world_export_pipeline        ──┼──▶ enfusion_pak, repository_layout,
-bin/map                ──▶ map_raster_pipeline          ──┤    repository_paths, map_engine
+bin/map                ──▶ map_raster_pipeline          ──┤    repository_layout, map_engine
 cargo xtask map, schema ─▶ blueprint, map_verification  ──┘
 
 bin/acknowledgement_dropping_relay ──▶ staging_verification::acknowledgement_relay

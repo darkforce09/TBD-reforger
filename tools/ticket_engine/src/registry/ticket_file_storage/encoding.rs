@@ -10,11 +10,11 @@ pub(super) const ORD_KEY: &str = "__ord";
 pub(super) const KEYS_KEY: &str = "__keys";
 
 pub fn tickets_dir(root: &Path) -> PathBuf {
-    root.join(crate::repository::TICKETS_DIR)
+    root.join(repository_layout::TICKETS_DIR)
 }
 
 pub fn root_marker_path(root: &Path) -> PathBuf {
-    root.join(crate::repository::ROOT_MARKER)
+    root.join(repository_layout::ROOT_MARKER)
 }
 
 pub fn parent_toml_path(root: &Path, id: &str) -> PathBuf {

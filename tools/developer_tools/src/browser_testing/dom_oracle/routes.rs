@@ -120,8 +120,8 @@ fn record_missing(record: &Arc<Mutex<Vec<MissingFixture>>>, entry: MissingFixtur
     guard.push(entry);
 }
 
-pub(super) fn gold_dir() -> PathBuf {
-    repo_root().join("tools/developer_tools/fixtures/dom_oracle/oracle-freeze")
+pub(super) fn gold_dir() -> Result<PathBuf> {
+    Ok(compiled_checkout_root()?.join("tools/developer_tools/fixtures/dom_oracle/oracle-freeze"))
 }
 
 /// The localStorage auth seed — the stored VALUE is built with the same key order as the
@@ -129,7 +129,7 @@ pub(super) fn gold_dir() -> PathBuf {
 /// pub(crate): render-check's `--seed-auth` (behavioral probes) injects the same seed.
 pub(crate) fn seed_script() -> Result<String> {
     let me: Value = serde_json::from_str(
-        &std::fs::read_to_string(fixtures_dir().join("GET__me.json")).context("GET__me.json")?,
+        &std::fs::read_to_string(fixtures_dir()?.join("GET__me.json")).context("GET__me.json")?,
     )?;
     let inner = serde_json::to_string(&json!({
         "state": {
@@ -197,6 +197,7 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
     let missing: Arc<Mutex<Vec<MissingFixture>>> = Arc::new(Mutex::new(Vec::new()));
     let router_missing = Arc::clone(&missing);
     let authed = route.authed;
+    let fixtures = fixtures_dir()?;
     let router = tokio::spawn(async move {
         while let Some(p) = paused.recv().await {
             let Some(request_id) = p["requestId"].as_str() else {
@@ -211,7 +212,7 @@ pub(super) async fn capture_inner(browser: &Browser, port: u16, route: &Route) -
                     .await;
                 continue;
             }
-            let res = match fixture_router::route(method, url) {
+            let res = match fixture_router::route(&fixtures, method, url) {
                 Reply::Canned(body) => router_page.fulfill_json(request_id, 200, &body).await,
                 Reply::Fixture { path, content_type } => {
                     match fixture_router::body_bytes(&path, content_type) {
@@ -409,7 +410,7 @@ pub async fn run(args: &VSuiteArgs) -> Result<u8> {
              its source dist is deleted, and a capture from the live Leptos dist \
              would overwrite it. Use `verify` (regression) or `accept --only <slug> --note` \
              (intentional single-route divergence).",
-            gold_dir().display()
+            gold_dir()?.display()
         );
         return Ok(2);
     }
@@ -421,7 +422,7 @@ pub async fn run(args: &VSuiteArgs) -> Result<u8> {
         eprintln!("accept requires --only <slug> and --note \"<why the divergence is intended>\"");
         return Ok(2);
     }
-    let gold = gold_dir();
+    let gold = gold_dir()?;
     let all = routes();
     let selected = match select_routes(&all, &args.only) {
         Ok(selected) => selected,

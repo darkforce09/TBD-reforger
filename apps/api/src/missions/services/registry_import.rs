@@ -15,10 +15,10 @@ use serde::Serialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::missions::contract::generated::{registry_compat, registry_items};
 use crate::missions::contract::schema_validators::{
     ContractError, validate_registry_compat_envelope, validate_registry_items_envelope,
 };
+use contract_schema_types::missions::{registry_compat, registry_items};
 
 /// Rows per UNNEST statement. Arrays are single bind parameters (the 65k-param
 /// limit does not apply); chunking only bounds per-statement memory so envelope

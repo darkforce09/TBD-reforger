@@ -39,7 +39,7 @@ name, and walks the house from there, so the fixtures themselves hold no models.
   `walker_places_door_set_window_and_furniture_from_fixtures`
   (`tools/developer_tools/src/blueprint/tests/batch_tests.rs`) and
   `compiler_fixtures_resolve_from_root_crate_and_source_directory`
-  (`tools/developer_tools/src/tests/repository_paths.rs`).
+  (`tools/developer_tools/src/tests/repository_layout.rs`).
 
 ## Boundaries
 

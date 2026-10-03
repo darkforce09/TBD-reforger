@@ -2,12 +2,8 @@ use super::*;
 use std::path::PathBuf;
 
 fn repo() -> PathBuf {
-    let here = Path::new(env!("CARGO_MANIFEST_DIR"));
-    here.parent()
-        .expect("tools")
-        .parent()
+    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root")
-        .to_path_buf()
 }
 
 /// A scratch repo root holding copies of the five files the static half reads.
@@ -189,7 +185,7 @@ fn merged_capture_keeps_order_and_never_invents_an_exit_code() {
     // it. The assertions stay here because THIS gate is the one whose 803-line diff depends
     // on them.
     let sh = |script: &str| {
-        verification_core::proc::Run::new("sh")
+        process_runner::Run::new("sh")
             .arg("-c")
             .arg(script)
             .cwd(tmp)
@@ -202,7 +198,7 @@ fn merged_capture_keeps_order_and_never_invents_an_exit_code() {
     let big = sh("seq 1 40000; seq 1 40000 >&2").unwrap();
     assert_eq!(big.code, 0);
     assert_eq!(big.text.lines().count(), 80000);
-    let absent = verification_core::proc::Run::new("tbd-not-a-real-program-t180")
+    let absent = process_runner::Run::new("tbd-not-a-real-program-t180")
         .cwd(tmp)
         .env("PATH", "")
         .merged_output();

@@ -123,8 +123,8 @@ missing: <dependency>
 
 ## Boundaries
 
-- Depends on: `verification_core` (`Report`, `Verdict`, and `proc::Run` for git, the tool
-  versions and the check commands); the parent's `property_test_configuration.rs` for the seed;
+- Depends on: `verification_core` (`Report`, `Verdict`); `process_runner::Run` for git, the tool
+  versions and the check commands; the parent's `property_test_configuration.rs` for the seed;
   `API_READINESS_REGISTER`, `API_READINESS_EVIDENCE_PREFIX` and `DEPLOY_ENV` from
   `tools/xtask/src/core/repository_layout.rs`; `libc` for the directory-pinned writes; the
   `regex`, `serde_json` and `content_digest` crates.

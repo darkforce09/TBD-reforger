@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use crate::core::repository_layout::{REFERENCES_DIR, VANILLA_REFERENCE};
+use repository_layout::{REFERENCES_DIR, VANILLA_REFERENCE};
 
 /// The Script API pages `cargo xtask fetch vanilla-api` caches.
 pub(crate) const SCRIPT_API_PAGES: &str = "apidoc";

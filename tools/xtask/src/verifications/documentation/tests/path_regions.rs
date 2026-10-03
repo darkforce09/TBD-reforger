@@ -1,7 +1,9 @@
 use super::*;
 use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, DOCUMENTATION_ROOT, GAP_ANALYSIS, PENDING_MERGE_DIR, RETIRED_DOCS_ROOT, ROADMAP,
-    TICKET_DOCUMENTS_DIR,
+    ARCHIVE_DIR, PENDING_MERGE_DIR, RETIRED_DOCS_ROOT, TICKET_DOCUMENTS_DIR,
+};
+use repository_layout::{
+    documentation::DOCUMENTATION_ROOT, documentation::GAP_ANALYSIS, documentation::ROADMAP,
 };
 
 /// Top-level folders the span derives rather than lists: today's code trees, the ones the

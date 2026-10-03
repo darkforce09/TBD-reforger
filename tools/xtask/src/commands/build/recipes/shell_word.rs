@@ -12,7 +12,7 @@ pub(super) fn shell_word(a: &str) -> String {
 ///
 /// ── WHY NOT `proc::Run` HERE ─────────────────────────────────────────────────────────────────
 ///
-/// [`verification_core::proc::Run`] pipes both streams by design, which is right for a gate that parses
+/// [`process_runner::Run`] pipes both streams by design, which is right for a gate that parses
 /// output and wrong for this lane twice over: a ten-minute `cargo build` behind a pipe shows the
 /// operator nothing until it exits, and re-emitting captured text afterwards **invents an
 /// interleaving** — the hazard `Run::merged_output`'s own documentation warns about. `make` let

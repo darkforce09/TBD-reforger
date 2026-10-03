@@ -123,8 +123,8 @@ pins, refuses a client solution that disagrees, and stores the server's solution
     account and identity locks, session authorization, cached membership permissions, user
     lookups and the Discord membership enrollment of partner guilds; `missions` for mission titles
     and terrains, `MissionArmory` and the deployment a server runs; `server_infrastructure` for
-    `MachineCaller`, `ExecutorKind` and the open runtime session; `match_telemetry::models` for the
-    matches of a service record;
+    `MachineCaller` and the open runtime session; `fleet_wire_contract` for `ExecutorKind`;
+    `match_telemetry::models` for the matches of a service record;
   - `map_engine::data::scenario` for the ORBAT template, the faction join-key check and
     the ballistics.
 - Used by:
@@ -142,8 +142,9 @@ pins, refuses a client solution that disagrees, and stores the server's solution
   router merges (`domain_handlers_import_no_foreign_handlers` and
   `every_domain_exports_a_route_table` in `apps/api/src/tests/architecture_rules.rs`);
   every handler carries its `/// @route` tag (`cargo xtask verify route-tags`);
-  `models/generated/` is written by `cargo xtask ci schema-codegen` and never edited by hand
-  (`cargo xtask ci verify-codegen-fresh` checks it); every reservation writer takes the one lock
+  the domain's generated contract types (`contract_schema_types::operations`) are written by
+  `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
+  checks them); every reservation writer takes the one lock
   order of `services/event_reservations/reservation_scope.rs`.
 
 ## Related documentation

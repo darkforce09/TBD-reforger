@@ -48,7 +48,7 @@ reason in.
 
 Agent shells run in a `debian:12` container: glibc 2.36 and no C toolchain. The host is Fedora
 (glibc 2.43, gcc). Builds and game binaries reach the host through `distrobox-host-exec`, through
-`cargo xtask`, or through `tools/xtask/src/core/host_execution.rs`. An in-container
+`cargo xtask`, or through `tools/foundation/process_runner/src/host_execution.rs`. An in-container
 `cargo build` fails with `linker cc not found`, and a host-built binary run in the container fails
 with `GLIBC_2.39 not found`. Neither means the repository is broken; state this, with the reason,
 in every prompt, because an agent that reads either as a broken toolchain destroys working build

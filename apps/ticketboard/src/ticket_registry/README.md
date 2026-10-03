@@ -31,8 +31,8 @@ The raw lowercase status and class names are the labels everywhere.
 
 ## Public surface
 
-- `services::discovery`: `positional_arg` for `main.rs`; `resolve_repo_root`, `has_tickets_dir`
-  and `walk_up_for_tickets` for `crate::application` and the live tests.
+- `services::discovery`: `positional_arg` for `main.rs`; `resolve_repo_root` and
+  `has_tickets_dir` for `crate::application`.
 - `services::corpus_loading::load_corpus` and `is_child_id`, for the application's loading thread
   and the test fixtures.
 - `models::corpus`: `Corpus`, `LoadedTicket`, `Counts`, `LoadError`, `LoadResult`, read by every
@@ -43,7 +43,7 @@ The raw lowercase status and class names are the labels everywhere.
 ## Boundaries
 
 - Depends on: `ticket_engine` (`Ticket`, `Status`, `StatusName`, `ScopeV2`, `parse_ticket_toml`,
-  `repository::TICKETS_DIR`); `std::fs`. It depends on no other ticketboard module.
+  `repository_layout::TICKETS_DIR`); `std::fs`. It depends on no other ticketboard module.
 - Used by: `apps/ticketboard/src/main.rs`; `crate::application`; `crate::ticket_browser`,
   `crate::ticket_actions`, `crate::wave_plan` and `crate::execution_metrics`;
   `apps/ticketboard/src/tests/support/mod.rs`.

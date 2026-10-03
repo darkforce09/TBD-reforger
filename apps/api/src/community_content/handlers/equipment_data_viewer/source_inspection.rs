@@ -1,12 +1,10 @@
 //! Bounded source pages; explicit expansion exposes complete values.
 use super::{ReadResult, failure, response, viewer_query};
-use crate::community_content::{
-    models::generated::equipment_data_viewer::source_inspection::EquipmentSourcePage,
-    services::equipment_data_viewer::queries::{self, ViewerQuery},
-};
+use crate::community_content::services::equipment_data_viewer::queries::{self, ViewerQuery};
 use crate::core::application_state::AppState;
 use axum::extract::rejection::QueryRejection;
 use axum::extract::{Query, State};
+use contract_schema_types::community_content::equipment_data_viewer::source_inspection::EquipmentSourcePage;
 
 /// @route GET /api/v1/debug/equipment-data/selection
 pub async fn selection(
@@ -101,7 +99,7 @@ pub async fn documents(
 pub async fn resource_cards(
     State(state): State<AppState>,
     query: Result<Query<ViewerQuery>, QueryRejection>,
-) -> ReadResult<crate::community_content::models::generated::equipment_data_viewer::resource_cards::EquipmentResourceCardPage>{
+) -> ReadResult<contract_schema_types::community_content::equipment_data_viewer::resource_cards::EquipmentResourceCardPage>{
     let p = viewer_query(query)?;
     let service = state
         .equipment_data

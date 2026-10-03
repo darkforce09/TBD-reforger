@@ -13,7 +13,7 @@
 //! nothing); scratch TREES that go through `Corpus::load` must carry a minimal file.
 
 use crate::ScopeV2;
-use crate::repository::SCOPE_VOCAB;
+use repository_layout::SCOPE_VOCAB;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;

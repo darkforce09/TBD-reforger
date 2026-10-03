@@ -17,7 +17,7 @@
 //! - Paks are the folder's entries named `*.pak` that do not start with `.`, as the shell glob
 //!   `<folder>/*.pak` lists them.
 
-use verification_core::proc::Run;
+use process_runner::Run;
 
 use super::*;
 

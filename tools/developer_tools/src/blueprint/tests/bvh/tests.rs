@@ -11,8 +11,11 @@ fn farmhouse_bvh_sidecar_parity_is_pinned() {
     let golden =
         fs::read(fixture("FarmHouse_E_1L01_Wood.bvh.golden")).expect("golden sidecar fixture");
     // The shipping sidecar and the test golden are the same bytes, forever.
-    let shipping = terrain_dir(&crate::repository_paths::test_repo_root(), "everon")
-        .join("prefabs/buildings/FarmHouse_E_1L01_Wood.bvh");
+    let shipping = terrain_dir(
+        &::repository_layout::find_repository_root().expect("repository root"),
+        "everon",
+    )
+    .join("prefabs/buildings/FarmHouse_E_1L01_Wood.bvh");
     assert_eq!(
         golden,
         fs::read(&shipping).expect("shipping sidecar"),

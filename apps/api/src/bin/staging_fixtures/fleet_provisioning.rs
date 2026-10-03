@@ -21,11 +21,11 @@
 
 use std::path::PathBuf;
 
-use api::server_infrastructure::models::machine_credential::ExecutorKind;
 use api::server_infrastructure::services::machine_credentials::issue_machine_credential;
 use api::server_infrastructure::services::server_registration::{
     ServerRegistration, register_server,
 };
+use fleet_wire_contract::ExecutorKind;
 
 use crate::argument_list::ArgumentList;
 use crate::guarded_context::{GuardedContext, ParsedSubcommand};

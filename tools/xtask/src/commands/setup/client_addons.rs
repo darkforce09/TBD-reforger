@@ -21,7 +21,7 @@ use std::process::Command;
 use anyhow::{Context, Result};
 
 use crate::core::deploy_environment::{DeployEnvironment, deploy_environment_path};
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// The path pins, for an already-resolved monorepo root.
 struct Paths {
@@ -89,14 +89,14 @@ pub fn direct_join_hint(target: &DirectJoinTarget) -> String {
 
 /// Entry for `xtask setup client-addons`.
 pub fn run() -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     run_in(&root)
 }
 
 /// `run` with the repo root injected: reads `$HOME` and the deploy settings from the process.
 ///
 /// Split out so the `$HOME` test does not have to `set_current_dir` into a throwaway root to make
-/// `find_repo_root` land there: that chdir is process-wide, and every other test thread walking
+/// `find_repository_root` land there: that chdir is process-wide, and every other test thread walking
 /// from the working directory at that instant would resolve the throwaway root, which carries a
 /// `.ai/tickets/ROOT` marker.
 pub fn run_in(root: &Path) -> Result<u8> {

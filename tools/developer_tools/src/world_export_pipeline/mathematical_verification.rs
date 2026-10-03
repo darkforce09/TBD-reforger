@@ -16,7 +16,7 @@ use super::chunk_partitioner::{
 };
 use super::classify::{Classifier, load_rules, stream_raw_entities};
 use super::json_number_formatting::round2;
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 use crate::repository_layout::contract_definitions_dir;
 use crate::world_export_pipeline::forest_contours::{self as forest, Tree, derive_forest_regions};
 use crate::world_export_pipeline::polygon_geometry as geometry;
@@ -44,7 +44,7 @@ pub const MAP_OBJECT_SCHEMAS: [&str; 9] = [
 
 impl SchemaSet {
     pub fn load() -> Result<SchemaSet> {
-        let dir = contract_definitions_dir(&repo_root());
+        let dir = contract_definitions_dir(&compiled_checkout_root()?);
         let mut registered: Vec<(String, Value)> = Vec::new();
         let mut schemas = HashMap::new();
         for name in MAP_OBJECT_SCHEMAS {

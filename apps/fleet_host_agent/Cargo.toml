@@ -14,8 +14,9 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-chrono = { workspace = true, features = ["serde"] }
 crc32fast = "1.5.0"
+# The executor route shapes and the machine credential format, shared with the platform API.
+fleet_wire_contract = { workspace = true }
 rand = { workspace = true }
 # rustls-no-provider plus the ring provider installed before the client is built: HTTPS without
 # the aws-lc-rs C build, the same arrangement as the API crate.

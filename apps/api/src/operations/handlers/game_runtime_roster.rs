@@ -8,6 +8,7 @@
 
 use axum::extract::State;
 use axum::response::Json;
+use fleet_wire_contract::ExecutorKind;
 use uuid::Uuid;
 
 use crate::core::application_state::AppState;
@@ -17,7 +18,6 @@ use crate::missions::services::mission_deployments::deployment_reads::deployment
 use crate::missions::services::mission_deployments::deployment_settlement::lock_and_settle;
 use crate::operations::models::game_runtime_roster::{EventRoster, RosterAssignment, RosterSlot};
 use crate::operations::services::event_lookup::load_event;
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 
 /// `GET /api/v1/game-runtime/events/:id/roster` — identity → slot map for a running event

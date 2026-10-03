@@ -111,7 +111,7 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 - **`grep` may not be GNU grep in an agent's shell.** A harness can shadow it with another
   implementation that rejects bare ERE braces (`^GET /a/{id}$`), which every API route contains.
   Use `grep -F` for route-shaped patterns, read the exit status, and in Rust use
-  `verification_core::gate::{require, ban}` (`tools/verification_core/src/gate.rs`) instead of
+  `verification_core::gate::{require, ban}` (`tools/foundation/verification_core/src/gate.rs`) instead of
   hand-rolled scans.
 - **A grep answers a narrower question than the one asked.** `grep -w` is a narrowing step, not a
   verdict; read the matches before reporting a count.

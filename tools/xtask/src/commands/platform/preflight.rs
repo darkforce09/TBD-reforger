@@ -16,7 +16,7 @@ use std::time::{Duration, SystemTime};
 
 use anyhow::{Context, Result};
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 struct Counters {
     block: u32,

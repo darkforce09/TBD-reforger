@@ -9,11 +9,11 @@ mod common;
 mod contract_support;
 mod telemetry_support;
 
-use api::match_telemetry::models::generated::match_telemetry::{
-    MatchEvent, MatchEventBatch, MatchEventBatchAnswer, MatchEventPage, TelemetryRefusal,
-};
 use axum::Router;
 use axum::http::StatusCode;
+use contract_schema_types::match_telemetry::match_telemetry::{
+    MatchEvent, MatchEventBatch, MatchEventBatchAnswer, MatchEventPage, TelemetryRefusal,
+};
 use serde_json::{Value, json};
 use telemetry_support::match_reports::ReportingServer;
 use telemetry_support::report_fixtures::{

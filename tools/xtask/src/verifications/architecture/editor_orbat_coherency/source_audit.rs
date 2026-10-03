@@ -125,12 +125,12 @@ pub(super) fn cargo_test_pin(root: &Path, path_env: &str, args: &[&str]) -> Resu
     // `merged_output`, not `output`: cargo writes `Running unittests` to stderr while libtest
     // writes `running N tests` to stdout, and re-joining two separately-drained strings invents an
     // interleaving the child never produced. See the note on `Run::merged_output`.
-    let run = verification_core::proc::Run::new("cargo")
+    let run = process_runner::Run::new("cargo")
         .args(args)
         .cwd(root)
         .env("PATH", path_env);
     match run.merged_output() {
-        Ok(verification_core::proc::Merged { code, text, .. }) => {
+        Ok(process_runner::Merged { code, text, .. }) => {
             // EVERY trailing newline is stripped, which is why libtest's blank line after
             // `test result:` never appears between two pins in the log.
             println!("{}", text.trim_end_matches('\n'));

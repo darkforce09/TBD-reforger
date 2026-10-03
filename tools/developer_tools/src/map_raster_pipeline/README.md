@@ -65,7 +65,7 @@ read back through the map engine's validating reader before they are written.
 - Depends on:
   - `crate::enfusion_pak::PakVfs` for the game's paks, and `crate::world_export_pipeline` for the
     texture decoder, the `.topo` road decoder and the JSON number spelling;
-  - `crate::repository_layout`, `crate::browser_testing::server::repo_root` and
+  - `crate::repository_layout` (with `compiled_checkout_root` for the checkout root) and
     `crate::timestamp_formatting`;
   - `map_engine` (`io::archives`, `io::containers`, `world::terrain`,
     `world::environment::locations`), which fixes every binary format and the peak rules;

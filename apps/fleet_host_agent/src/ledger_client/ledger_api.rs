@@ -8,6 +8,9 @@ use std::error::Error as _;
 use std::sync::Once;
 use std::time::Duration;
 
+use fleet_wire_contract::executor_messages::{
+    ClaimedFleetCommand, ExecutionResult, ExecutionStart,
+};
 use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderValue};
 use reqwest::{Client, StatusCode, Url};
 use serde::Serialize;
@@ -15,7 +18,7 @@ use serde_json::Value;
 use thiserror::Error;
 use uuid::Uuid;
 
-use super::ledger_messages::{ClaimedFleetCommand, ErrorEnvelope, ExecutionResult, ExecutionStart};
+use super::ledger_messages::ErrorEnvelope;
 use crate::secret_text::SecretText;
 
 const CLAIM_PATH: &str = "api/v1/fleet-executor/commands/claim";

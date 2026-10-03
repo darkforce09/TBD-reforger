@@ -442,15 +442,6 @@ pub async fn start_server(cfg: ServeConfig, port: u16) -> Result<RunningServer> 
     })
 }
 
-/// Resolve the repo root from CARGO_MANIFEST_DIR (tools/developer_tools → ../..) or cwd.
-pub fn repo_root() -> PathBuf {
-    let here = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    here.parent()
-        .and_then(Path::parent)
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| PathBuf::from("."))
-}
-
 /// The `/api` proxy must **stream**, not buffer.
 ///
 /// These tests exist because the gate could not see something. `gate serve` used to do

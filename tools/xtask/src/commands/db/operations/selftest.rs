@@ -22,7 +22,7 @@
 //! `podman` does not exist in the agent container (measured — see the module header), so in here
 //! `make db-up` cannot get past `sh: 1: podman: not found`. Arm 6 therefore runs `make` through
 //! `distrobox-host-exec` where it CAN work, and the port in-container where the bridge does the
-//! same crossing. Bridge selection follows [`crate::core::host_execution`]: [`crate::core::host_execution::in_container`] answers
+//! same crossing. Bridge selection follows [`process_runner::host_execution`]: [`process_runner::host_execution::in_container`] answers
 //! "am I containerised" (`command -v distrobox-host-exec` does NOT — it is installed on the host
 //! too, where it refuses with 126).
 //!
@@ -39,7 +39,7 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
-use verification_core::proc::Run;
+use process_runner::Run;
 use verification_core::{Finding, Kind, NotRun, Report, Verdict};
 
 use super::IT_MAINT_DB;
@@ -53,7 +53,7 @@ use crate::commands::deploy::database_operations as dbc;
 use crate::core::cargo_target_directory::{
     BUILD_OUTPUT_FOLDER, DATABASE_SELFTEST_SUBFOLDER, build_output_subfolder,
 };
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// The pinned text of every line the lane echoes, as run from the repository root: the compose
 /// lines enter the folder of the development compose file and name the file with `-f`, and each
@@ -111,7 +111,7 @@ const ALLOWED_TAIL: &str = " | while read -r db; do \\\n\t[ -n \"$db\" ] || cont
 const ARM4_BASE: &str = "tbd_gate_selftest_arm4";
 
 pub fn run() -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     let mut report = Report::new("db lane");
     report.check(arm_frozen_baseline());
     report.check(arm_makefile_pin(&root));

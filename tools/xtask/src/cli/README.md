@@ -55,7 +55,7 @@ raw instead of as a clap tree: `mk` (the target list lives in
 ## Boundaries
 
 - Depends on: clap's derive API; each group's `cli.rs` and `dispatch.rs` under
-  `tools/xtask/src/commands/`; `find_repo_root` in `tools/xtask/src/core/repository_root.rs`
+  `tools/xtask/src/commands/`; `find_repository_root` in `tools/xtask/src/core/repository_root.rs`
   and `load_registry` for `registry-get`.
 - Used by: `tools/xtask/src/main.rs`, the only caller of `dispatch::run`; people and the CI
   workflows run the binary through the `cargo xtask` alias in `.cargo/config.toml`, the backup

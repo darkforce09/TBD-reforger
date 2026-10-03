@@ -7,8 +7,8 @@ use super::*;
 /// time, never hardcoded (the corpus grows weekly).
 #[test]
 fn corpus_roundtrip_real_tree_byte_identical() {
-    let root = repo_root();
-    let dir = root.join(crate::repository::TICKETS_DIR);
+    let root = worktree_root();
+    let dir = root.join(repository_layout::TICKETS_DIR);
     assert!(dir.is_dir(), "live tree missing at {}", dir.display());
     let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
     let mut files: Vec<PathBuf> = fs::read_dir(&dir)
@@ -95,7 +95,7 @@ fn corpus_roundtrip_real_tree_byte_identical() {
 /// newline-join stays stable through every future canonical rewrite.
 #[test]
 fn migration_legacy_ratchet_pin() {
-    let root = repo_root();
+    let root = worktree_root();
     let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
     let mut carriers = 0usize;
     for (id, t) in &corpus.tickets {
@@ -153,7 +153,7 @@ fn migration_legacy_ratchet_pin() {
 ///   commit** by the measured batch amount (t920 spec §the drain).
 #[test]
 fn title_debt_ratchet_pin() {
-    let root = repo_root();
+    let root = worktree_root();
     let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
     let mut debt = 0usize;
     for (id, t) in &corpus.tickets {
@@ -183,7 +183,7 @@ fn title_debt_ratchet_pin() {
 /// main_goal, and a quarantine mint past the cutover is red in check.
 #[test]
 fn main_goal_debt_ratchet_pin() {
-    let root = repo_root();
+    let root = worktree_root();
     let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
     let debt = corpus
         .tickets
@@ -248,12 +248,12 @@ fn load_refuses_naming_broken_file() {
     let root = scratch_dir("broken-load");
     let good = render_ticket_toml(&work("T-001", Status::Idea)).unwrap();
     fs::write(
-        root.join(crate::repository::TICKETS_DIR).join("T-001.toml"),
+        root.join(repository_layout::TICKETS_DIR).join("T-001.toml"),
         good,
     )
     .unwrap();
     fs::write(
-        root.join(crate::repository::TICKETS_DIR).join("T-002.toml"),
+        root.join(repository_layout::TICKETS_DIR).join("T-002.toml"),
         "id = \"T-002\"\nkind = \"nope\"\n",
     )
     .unwrap();
@@ -267,7 +267,7 @@ fn load_refuses_id_filename_mismatch() {
     let root = scratch_dir("stem-mismatch");
     let text = render_ticket_toml(&work("T-001", Status::Idea)).unwrap();
     fs::write(
-        root.join(crate::repository::TICKETS_DIR).join("T-777.toml"),
+        root.join(repository_layout::TICKETS_DIR).join("T-777.toml"),
         text,
     )
     .unwrap();
@@ -287,7 +287,7 @@ fn load_refuses_vocab_illegal_scope_and_missing_vocab() {
     };
     w.scope.layer = "ghost_layer".into();
     fs::write(
-        root.join(crate::repository::TICKETS_DIR).join("T-001.toml"),
+        root.join(repository_layout::TICKETS_DIR).join("T-001.toml"),
         render_ticket_toml(&Ticket::Work(w)).unwrap(),
     )
     .unwrap();
@@ -298,13 +298,13 @@ fn load_refuses_vocab_illegal_scope_and_missing_vocab() {
     );
 
     fs::write(
-        root.join(crate::repository::TICKETS_DIR).join("T-001.toml"),
+        root.join(repository_layout::TICKETS_DIR).join("T-001.toml"),
         render_ticket_toml(&work("T-001", Status::Idea)).unwrap(),
     )
     .unwrap();
     Corpus::load(&root).expect("legal scope loads");
 
-    fs::remove_file(root.join(crate::repository::SCOPE_VOCAB)).unwrap();
+    fs::remove_file(root.join(repository_layout::SCOPE_VOCAB)).unwrap();
     let err = Corpus::load(&root).expect_err("missing vocab must refuse");
     assert!(err.contains("scope-vocab.toml"), "{err}");
 }
@@ -319,12 +319,12 @@ fn write_back_is_surgical_and_clean() {
         .insert("T-001".into(), work("T-001", Status::Queued { order: 10 }));
     c.write_back(&["T-001".into()]).expect("write");
     let on_disk =
-        fs::read_to_string(root.join(crate::repository::TICKETS_DIR).join("T-001.toml")).unwrap();
+        fs::read_to_string(root.join(repository_layout::TICKETS_DIR).join("T-001.toml")).unwrap();
     assert_eq!(
         on_disk,
         render_ticket_toml(c.get("T-001").unwrap()).unwrap()
     );
-    let leftovers: Vec<_> = fs::read_dir(root.join(crate::repository::TICKETS_DIR))
+    let leftovers: Vec<_> = fs::read_dir(root.join(repository_layout::TICKETS_DIR))
         .unwrap()
         .filter_map(|e| e.ok())
         .map(|e| e.file_name().to_string_lossy().to_string())

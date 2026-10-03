@@ -20,9 +20,9 @@ tools/ticket_engine/
 
 The crate reads and writes the files under `.ai/tickets/` and nothing else in the checkout, apart
 from the two documents `ticket sync` writes into and git history. Every function takes the
-checkout root as an argument; `repository::find_repo_root` finds it for a running command by
-walking up to `.ai/tickets/ROOT`, so a command run inside a linked worktree reads that worktree's
-files.
+checkout root as an argument; `repository_layout::find_repository_root` finds it for a running
+command by walking up to `.ai/tickets/ROOT`, so a command run inside a linked worktree reads that
+worktree's files.
 
 ```text
 cargo xtask ticket <verb> ──► cli::cmd_<verb> ──► validation preflight ──► ops over store::Corpus
@@ -75,12 +75,14 @@ by hand after a change here.
 
 ## Boundaries
 
-- Depends on: `anyhow`, `regex`, `serde`, `serde_json`, `toml`, `time`, `walkdir` and
-  `jsonschema`, and no workspace crate; `git` on `PATH`.
+- Depends on: `repository_layout` (the root walk and the shared locations) among the workspace
+  crates; `anyhow`, `regex`, `serde`, `serde_json`, `toml`, `time`, `walkdir` and `jsonschema`;
+  `git` on `PATH`.
 - Used by: `tools/xtask/` (the `ticket`, `wave`, `platform`, `mod`, `fetch` and `schema`
   command groups and `src/core/`) and `apps/ticketboard/`, both by path dependency.
 - Rules:
-  - the crate depends on no workspace crate (`foundational_engines_have_no_workspace_dependencies`),
+  - the crate depends on no workspace crate outside `tools/foundation`
+    (`foundation_crates_depend_only_on_lower_foundation_crates`),
     and ticket logic lives here rather than in xtask, whose `ticket` and `wave` adapters must
     delegate to it (`ticket_implementations_have_one_owner`), both in
     `tools/xtask/src/tests/tooling_dependency_boundaries.rs`;

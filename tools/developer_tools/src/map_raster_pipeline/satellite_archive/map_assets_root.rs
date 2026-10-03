@@ -2,12 +2,12 @@ use super::*;
 
 use crate::repository_layout::terrain_assets_dir;
 
-pub(super) fn map_assets_root() -> PathBuf {
-    terrain_assets_dir(&repo_root())
+pub(super) fn map_assets_root() -> Result<PathBuf> {
+    Ok(terrain_assets_dir(&compiled_checkout_root()?))
 }
 
 pub fn verify_unified_satellite(terrain: &str) -> Result<u8> {
-    let root = map_assets_root();
+    let root = map_assets_root()?;
     let manifest_path = root.join(terrain).join("manifest.json");
     let die = |m: &str| {
         eprintln!("verify-unified-satellite: FAIL — {m}");
@@ -306,7 +306,7 @@ pub(super) fn verify_bundle_v1(
 
 pub fn verify_tile_pyramid(terrain: &str, view_map: bool, expect_lossless_env: bool) -> Result<u8> {
     let view = if view_map { "map" } else { "satellite" };
-    let root = map_assets_root();
+    let root = map_assets_root()?;
     let tiles_dir = root.join(terrain).join("tiles").join(view);
     let manifest_path = root.join(terrain).join("manifest.json");
 

@@ -12,7 +12,7 @@ pub fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Result<()
 }
 
 /// Regenerate the three sync outputs from `registry`, in this order: the dispatch queue
-/// ([`crate::repository::QUEUE_JSON`]), the roadmap's recommended-next-work block between its
+/// ([`repository_layout::QUEUE_JSON`]), the roadmap's recommended-next-work block between its
 /// markers, and the gap-analysis ticket column.
 ///
 /// The two document targets are optional: a checkout without the roadmap or the gap-analysis
@@ -20,10 +20,10 @@ pub fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Result<()
 /// refuses a structurally empty write through [`refuse_empty_write`], and the gap-analysis column
 /// refuses a table it cannot round-trip byte for byte.
 pub fn cmd_sync(root: &Path, registry: &Value) -> Result<()> {
-    use crate::repository::documentation as docs;
+    use repository_layout::documentation as docs;
 
     let queue = generate_queue_json(registry);
-    write_json_ascii(&root.join(crate::repository::QUEUE_JSON), &queue)?;
+    write_json_ascii(&root.join(repository_layout::QUEUE_JSON), &queue)?;
 
     let roadmap = root.join(docs::ROADMAP);
     if roadmap.is_file() {

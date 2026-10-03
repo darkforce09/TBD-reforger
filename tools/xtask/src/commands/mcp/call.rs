@@ -1,7 +1,7 @@
 //! `cargo xtask mcp call` — one Workbench tool call, through the daemon when it is up.
 //!
 //! Exit codes, pinned by `cargo xtask mcp selftest`: 0 success · 1 usage or empty after every
-//! retry · 2 initialize failed · 3 JSON-RPC tool error · 4 timeout. Internal 9 means "the daemon
+//! retry · 2 initialize failed (no checkout to start the server from included) · 3 JSON-RPC tool error · 4 timeout. Internal 9 means "the daemon
 //! is unavailable, run the call one-shot".
 //!
 //! Three failures deliberately do not stop the call, because none of them says the tool call
@@ -23,7 +23,6 @@ use std::time::Duration;
 
 use developer_tools::enfusion_tooling::enfusion_mcp_entrypoint;
 use verification_core::lock::flock_exclusive;
-use verification_core::proc;
 
 /// The usage line `cargo xtask mcp selftest` greps for.
 const USAGE: &str = "usage: cargo xtask mcp call <tool> '<json-args>'";
@@ -139,20 +138,21 @@ fn emit_requests(tool: &str, args: &str) -> String {
 }
 
 /// The argv that starts an `enfusion-mcp` server for the one-shot path.
-fn resolve_runner() -> Vec<String> {
-    let command = enfusion_mcp_entrypoint::resolve(&repository_root());
+fn resolve_runner() -> repository_layout::Result<Vec<String>> {
+    let command = enfusion_mcp_entrypoint::resolve(&repository_root()?);
     dbg(&format!("runner={}", command.source.label()));
-    command.argv()
+    Ok(command.argv())
 }
 
 /// The checkout to resolve the pinned server package against.
 ///
 /// The cwd walk answers for the worktree the call is being made from. When it cannot (the call
-/// was made from outside a checkout), the crate's own manifest directory locates the repository
-/// that built this binary.
-fn repository_root() -> PathBuf {
-    crate::core::repository_root::find_repo_root()
-        .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
+/// was made from outside a checkout), the walk from the crate's own manifest folder locates the
+/// repository that built this binary; when neither finds a root, the call cannot start a server.
+fn repository_root() -> repository_layout::Result<PathBuf> {
+    repository_layout::find_repository_root().or_else(|_| {
+        repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    })
 }
 
 fn ensure_daemon(sock: &str) -> bool {
@@ -254,7 +254,13 @@ fn daemon_try(tool: &str, args: &str, sock: &str) -> i32 {
 }
 
 fn oneshot(tool: &str, args: &str) -> i32 {
-    let runner = resolve_runner();
+    let runner = match resolve_runner() {
+        Ok(runner) => runner,
+        Err(cause) => {
+            eprintln!("mcp call: no checkout to start the enfusion-mcp server from: {cause}");
+            return 2;
+        }
+    };
     let timeout = timeout_secs();
     let max_retries = retries();
     let mut attempt = 0u32;
@@ -302,7 +308,7 @@ fn oneshot_pipe(
     errf: &Path,
 ) -> (i32, i32) {
     // Without `timeout(1)` an unresponsive server hangs this attempt for the whole wall clock.
-    if proc::which("timeout").is_err() {
+    if process_runner::which("timeout").is_err() {
         dbg("timeout(1) absent — oneshot attempt fails closed");
         return (1, 1);
     }

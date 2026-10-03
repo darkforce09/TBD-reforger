@@ -6,11 +6,22 @@
 //! widely cannot be moved without a survey. One expression per location makes the location a fact
 //! the build checks instead of a string the reader has to trust.
 //!
-//! Every function takes the checkout root explicitly. Callers that do not already hold one get it
-//! from [`crate::repository_paths::find_repo_root`], which walks up from the cwd — the running
-//! worktree, never the worktree a shared-target binary happened to be compiled in.
+//! Every location function takes the checkout root explicitly. A caller that does not already
+//! hold one gets it either from [`::repository_layout::find_repository_root`], which walks up from
+//! the working directory (the running worktree), or from [`compiled_checkout_root`], which walks up
+//! from this crate's compile-time manifest folder (the checkout the binary was built from, whatever
+//! the working directory).
 
 use std::path::{Path, PathBuf};
+
+/// The checkout this crate was compiled from: the [`::repository_layout`] walk anchored on the
+/// compile-time manifest folder, so the answer does not depend on the working directory.
+///
+/// A manifest folder outside any checkout is [`::repository_layout::Error::RootMarkerNotFound`],
+/// never a guessed folder.
+pub fn compiled_checkout_root() -> ::repository_layout::Result<PathBuf> {
+    ::repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+}
 
 /* ─────────────────────────────── wire contracts ─────────────────────────────── */
 
@@ -203,26 +214,11 @@ pub fn map_scratch_dir(root: &Path, terrain: &str) -> PathBuf {
     root.join("assets/scratch").join(terrain)
 }
 
-/* ─────────────────────────────── checkout root ─────────────────────────────── */
-
-/// The file whose presence marks a checkout root. [`crate::repository_paths::find_repo_root`]
-/// stops its upward walk here, so a worktree nested under another checkout resolves to itself.
-/// `ticket_engine::repository::ROOT_MARKER` is the same path spelled in the other foundational
-/// crate, for the reason that module header gives.
-pub const ROOT_MARKER: &str = ".ai/tickets/ROOT";
-
 /* ─────────────────────────────── upstream reference lanes ─────────────────────────────── */
 
-/// The gitignored folder holding the licensed upstream reference trees beside its tracked
-/// README.md. Every `enf` command that writes a lane writes inside it and refuses when it is
-/// absent, so no tool recreates a lane anywhere else.
-pub const REFERENCES_DIR: &str = "apps/mod/References";
-
-/// The Coalition Reforger Framework lane (Arma Public License), which `enf index crf` reads.
-pub const CRF_FRAMEWORK_REFERENCE: &str = "apps/mod/References/crf_framework";
-
-/// The vanilla lane: `enf carve` writes its `Carved/` folder here.
-pub const VANILLA_REFERENCE: &str = "apps/mod/References/vanilla_reference";
+// The checkout-root marker, the reference folder and its Coalition Reforger Framework and vanilla
+// lanes are shared with `xtask` and spelled once, in the `repository_layout` crate; the lane
+// subfolders below are this crate's own.
 
 /// Vanilla scripts `enf extract` copies out of the pak file table by name.
 pub const VANILLA_EXTRACTED_SCRIPTS: &str = "apps/mod/References/vanilla_reference/Scripts";
@@ -248,20 +244,19 @@ pub const CRF_SYMBOL_TABLE: &str = ".ai/artifacts/enf-index/crf_symbols.tsv";
 
 /* ─────────────────────────────── export operation logs ─────────────────────────────── */
 
-/// Where the world-export pipeline writes its per-terrain operation log and type inventory, and
-/// where its verifiers read them back.
-pub const OPERATIONS_LOG_DIR: &str = ".ai/artifacts";
+// The world-export pipeline writes its per-terrain operation log and type inventory into the
+// agent artifact tree, `repository_layout::ARTIFACTS_DIR`, where its verifiers read them back.
 
 /// One terrain's export operation log: every stage that ran, with what it produced.
 pub fn export_operations_log(root: &Path, terrain: &str) -> PathBuf {
-    root.join(OPERATIONS_LOG_DIR)
+    root.join(::repository_layout::ARTIFACTS_DIR)
         .join(format!("map_export_{terrain}.json"))
 }
 
 /// One terrain's object type inventory: every world-object type the export saw, and its census
 /// status.
 pub fn object_type_inventory(root: &Path, terrain: &str) -> PathBuf {
-    root.join(OPERATIONS_LOG_DIR)
+    root.join(::repository_layout::ARTIFACTS_DIR)
         .join(format!("type_inventory_{terrain}.json"))
 }
 
@@ -298,10 +293,9 @@ pub fn cartographic_rendering_artifacts_dir(root: &Path) -> PathBuf {
 ///
 /// Relocating the documentation tree rewrites this module and nothing else in the crate.
 pub mod documentation {
-    /// Root of the documentation tree. `enf citations` walks it whole, because the mod design
-    /// and the mod slice runbook carry `@idx lane#Symbol` citations from different folders, and
-    /// resolves every citation in its Markdown against the symbol index.
-    pub const DOCUMENTATION_ROOT: &str = "documentation";
+    // `enf citations` walks the whole documentation tree,
+    // `repository_layout::documentation::DOCUMENTATION_ROOT`, because the mod design and the mod
+    // slice runbook carry `@idx lane#Symbol` citations from different folders.
 
     /// The hand-authored verdict table `enf capability` joins the upstream symbol index against,
     /// so a framework file nobody has triaged is a build error rather than an oversight.

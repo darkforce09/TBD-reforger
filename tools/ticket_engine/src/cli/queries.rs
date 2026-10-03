@@ -150,7 +150,7 @@ pub fn cmd_prompt(
 }
 
 pub fn cmd_list(root: &Path, registry: &Value) -> Result<()> {
-    let queue_path = root.join(crate::repository::QUEUE_JSON);
+    let queue_path = root.join(repository_layout::QUEUE_JSON);
     let data = if queue_path.is_file() {
         serde_json::from_str(&fs::read_to_string(&queue_path)?)?
     } else {

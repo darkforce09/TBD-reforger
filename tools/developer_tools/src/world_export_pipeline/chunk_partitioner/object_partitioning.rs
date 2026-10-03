@@ -9,7 +9,7 @@ use serde_json::{Map, Value, json};
 use super::{
     CHUNK_SIZE_M, ChunkRow, KeptRow, PHASE_ORDER, compact, gz9, phase_kinds, pretty_nl, terrain_row,
 };
-use crate::browser_testing::server::repo_root;
+use crate::repository_layout::compiled_checkout_root;
 use crate::repository_layout::{map_scratch_dir, terrain_dir};
 use crate::world_export_pipeline::binary_emit;
 use crate::world_export_pipeline::classify::{Classifier, Rules, load_rules, stream_raw_entities};
@@ -65,8 +65,9 @@ pub(super) fn prepare_world_objects(
     }
     let world_size_m = max_x;
 
-    let terrain_dir = terrain_dir(&repo_root(), terrain);
-    let staging = map_scratch_dir(&repo_root(), terrain).join("export");
+    let root = compiled_checkout_root()?;
+    let terrain_dir = terrain_dir(&root, terrain);
+    let staging = map_scratch_dir(&root, terrain).join("export");
     let raw_path = staging.join("raw-entities.jsonl");
     let export_meta_path = staging.join("export-meta.json");
     let stamp_path = staging.join("staged-meta.json");

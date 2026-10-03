@@ -11,7 +11,7 @@ compiled document supplies offline.
 tools/xtask/src/commands/mod_ops/playtest_server/
 ├── boot/                   the launch, the wait for a verdict, the join banner and the Ctrl-C stop
 ├── boot.rs                 boot context and verdict types; declares the launch half in boot/
-├── host.rs                 re-export of the shared host bridge, `crate::core::host_execution::Host`
+├── host.rs                 re-export of the shared host bridge, `process_runner::host_execution::Host`
 ├── lifecycle/              the group probe, kill_run, the run lock and `--selftest`
 ├── lifecycle.rs            run paths, probe states and lock types; re-exports the lifecycle functions
 ├── logread.rs              reads of server.out and console.log: boot phase, error dump, local-addon gate
@@ -91,9 +91,9 @@ usage_fail::run ─ parse flags (a token acts where it stands: `--help` exits 0 
 
 ## Boundaries
 
-- Depends on: `crate::core::host_execution` (the host bridge), `crate::core::repository_layout`
+- Depends on: `process_runner::host_execution` (the host bridge), `crate::core::repository_layout`
   (`DEV_SERVER_PROFILE`), `crate::commands::mod_ops::website_api_client` (login, missions, fleet,
-  deployments, artifact cache, server status and match event reads), `verification_core` (`Pattern`, `proc::Run`), the `serde_json`,
+  deployments, artifact cache, server status and match event reads), `verification_core` (`Pattern`), `process_runner::Run`, the `serde_json`,
   `regex` and `libc` crates; the dedicated server under
   `$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server`; the website
   [API](/documentation/glossary/a_to_f.md#api) for `--mission`.

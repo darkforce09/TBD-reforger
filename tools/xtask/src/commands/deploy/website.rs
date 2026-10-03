@@ -11,7 +11,7 @@
 //! step's text comes from [`remote_steps`], so `--dry-run` prints exactly what a live run sends.
 //!
 //! **Signals & state:** none held; one run spawns `rsync`, `ssh` and `sshpass` through
-//! `verification_core::proc::Run` and prints their merged output.
+//! `process_runner::Run` and prints their merged output.
 //!
 //! **Invariants:** a missing, unreadable or malformed `deploy.env` exits 1 rather than deploying
 //! with defaults, and the file is parsed, never executed; a missing tool or a killed child is
@@ -30,14 +30,14 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 
 use anyhow::Result;
-use verification_core::proc::{self, Run};
+use process_runner::Run;
 use verification_core::verdict::NotRun;
 
 use crate::core::deploy_environment::{
     DeployEnvironment, DeployHostFolder, deploy_environment_path,
 };
 use crate::core::repository_layout;
-use crate::core::repository_root::find_repo_root;
+use ::repository_layout::find_repository_root;
 
 pub mod asset_preflight;
 pub mod help_text;
@@ -66,7 +66,7 @@ pub fn run(args: &[String]) -> Result<u8> {
         }
     }
 
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     let environment = match DeployEnvironment::load_required(&deploy_environment_path(&root)) {
         Ok(environment) => environment,
         Err(error) => {
@@ -330,7 +330,7 @@ impl DeployCfg {
         args.push(self.host.clone());
         args.push(remote_steps::login_shell(command));
         // Closed fail-open: absent ssh/sshpass is NotRun, not a silent success.
-        if let Err(e) = proc::which(&program) {
+        if let Err(e) = process_runner::which(&program) {
             return Err(not_run_exit(&e));
         }
         let mut run = Run::new(&program);
@@ -371,7 +371,7 @@ impl DeployCfg {
             "ssh -o StrictHostKeyChecking=no".to_string()
         };
 
-        if let Err(e) = proc::which("rsync") {
+        if let Err(e) = process_runner::which("rsync") {
             return Err(not_run_exit(&e));
         }
 

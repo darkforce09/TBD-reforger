@@ -8,7 +8,7 @@ fn write_est(root: &Path, name: &str, text: &str) -> String {
     let dir = estimates_dir(root);
     fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join(name), text).unwrap();
-    format!("{}/{name}", ticket_engine::repository::ESTIMATES_DIR)
+    format!("{}/{name}", repository_layout::ESTIMATES_DIR)
 }
 
 fn diff_loc_json(id: &str, loc: u64, factor: u64, shas: &[&str]) -> String {
@@ -94,7 +94,7 @@ fn hand_corpus() -> Corpus {
 #[test]
 fn absent_estimates_dir_is_the_explicit_no_estimates_state() {
     let s = Scratch::new("e-absent");
-    fs::create_dir_all(s.path().join(ticket_engine::repository::TICKETS_DIR)).unwrap();
+    fs::create_dir_all(s.path().join(repository_layout::TICKETS_DIR)).unwrap();
     let raw = load_raw(s.path());
     assert_eq!(raw, RawEstimates::default());
     assert_eq!(
@@ -365,7 +365,7 @@ fn checker_mirror_rules_each_produce_a_named_error_row() {
     assert!(reason_of(&keyless).contains("requires the cohort key"));
     assert!(reason_of(&bad_factor).contains("factor must be >= 1"));
     assert!(reason_of(&bad_id).contains("schema pattern"));
-    let subdir = format!("{}/T-11", ticket_engine::repository::ESTIMATES_DIR);
+    let subdir = format!("{}/T-11", repository_layout::ESTIMATES_DIR);
     assert!(reason_of(&subdir).contains("unexpected subdirectory"));
     assert_eq!(raw.errors.len(), 12, "{:?}", raw.errors);
 }
@@ -595,16 +595,8 @@ fn sort_rows_by_each_key_with_direction_toggle_and_stable_tiebreak() {
 #[test]
 #[ignore = "reads the live repo estimates; run explicitly with -- --ignored"]
 fn live_estimates_load_without_error_rows() {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let Some(root) =
-        crate::ticket_registry::services::discovery::walk_up_for_tickets(&manifest_dir)
-    else {
-        panic!(
-            "no {}/ above {}",
-            ticket_engine::repository::TICKETS_DIR,
-            manifest_dir.display()
-        );
-    };
+    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the checkout holding this crate");
     let raw = load_raw(&root);
     if !raw.present {
         println!("live estimates: directory absent — nothing to smoke");

@@ -1,11 +1,11 @@
 use super::*;
 use std::collections::BTreeSet;
+use std::path::{Path, PathBuf};
 
 /// Every [`documentation`] item that names locations a checkout must hold, by name, with each
 /// path it holds.
 fn required_documentation_locations() -> Vec<(&'static str, Vec<&'static str>)> {
     vec![
-        ("TREE_DIR", vec![documentation::TREE_DIR]),
         (
             "APPS_DOCUMENTATION_DIR",
             vec![documentation::APPS_DOCUMENTATION_DIR],
@@ -21,8 +21,6 @@ fn required_documentation_locations() -> Vec<(&'static str, Vec<&'static str>)> 
         ("PLANS_DIR", vec![documentation::PLANS_DIR]),
         ("PLAN_TEMPLATE", vec![documentation::PLAN_TEMPLATE]),
         ("SPECS_DIR", vec![documentation::SPECS_DIR]),
-        ("ROADMAP", vec![documentation::ROADMAP]),
-        ("GAP_ANALYSIS", vec![documentation::GAP_ANALYSIS]),
         (
             "TOKEN_ESTIMATE_FACTOR_DOC",
             vec![documentation::TOKEN_ESTIMATE_FACTOR_DOC],
@@ -120,7 +118,7 @@ fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_
 /// sources, so a new include is judged without a list to extend.
 #[test]
 fn the_website_sparse_set_carries_every_contracts_file_the_website_crates_compile_in() {
-    let root = find_repo_root().expect("repository root");
+    let root = repository_layout::find_repository_root().expect("repository root");
     let (_, website_set) = SPARSE_CHECKOUT_SETS
         .iter()
         .find(|(name, _)| *name == "website")
@@ -129,7 +127,8 @@ fn the_website_sparse_set_carries_every_contracts_file_the_website_crates_compil
         .iter()
         .copied()
         .filter(|entry| {
-            !lies_within(entry, CONTRACTS_DIR) && !lies_within(entry, documentation::TREE_DIR)
+            !lies_within(entry, CONTRACTS_DIR)
+                && !lies_within(entry, repository_layout::documentation::DOCUMENTATION_ROOT)
         })
         .collect();
     let compiled_in = contracts_files_compiled_in(&root, &source_trees);
@@ -172,7 +171,7 @@ fn a_handoff_document_lands_in_the_artifact_tree() {
 /// slice lacks the tree its work needs, and no command says so.
 #[test]
 fn every_sparse_checkout_path_exists_in_the_checkout() {
-    let root = find_repo_root().expect("repository root");
+    let root = repository_layout::find_repository_root().expect("repository root");
     let missing: Vec<String> = SPARSE_CHECKOUT_SETS
         .iter()
         .flat_map(|(target, paths)| paths.iter().map(move |path| (*target, *path)))
@@ -193,7 +192,7 @@ fn every_sparse_checkout_path_exists_in_the_checkout() {
 /// reader entry excuses nothing while it stays on the list.
 #[test]
 fn every_required_documentation_location_exists_in_the_checkout() {
-    let root = find_repo_root().expect("repository root");
+    let root = repository_layout::find_repository_root().expect("repository root");
     let missing: Vec<String> = required_documentation_locations()
         .into_iter()
         .flat_map(|(name, paths)| paths.into_iter().map(move |path| (name, path)))

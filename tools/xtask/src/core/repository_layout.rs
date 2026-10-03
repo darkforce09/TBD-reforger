@@ -1,7 +1,7 @@
 //! Locations inside a checkout that xtask commands read, written once each.
 //!
 //! These are repository-relative paths. A caller joins one onto the checkout root it already
-//! holds — [`crate::core::repository_root::find_repo_root`] for a running command, the scratch
+//! holds — [`repository_layout::find_repository_root`] for a running command, the scratch
 //! root a test builds. Spelling each location once means a relocation is one edit here plus the
 //! moves, and a command that reads a file can be traced to the file without a search.
 
@@ -45,19 +45,9 @@ pub const DEV_SERVER_PROFILE: &str =
 /// `cargo xtask mcp consume` to pin the exit code of every response shape without a Workbench.
 pub const MCP_TRANSCRIPT_FIXTURES_DIR: &str = "tools/xtask/fixtures/mcp";
 
-/// The licensed upstream reference trees, one gitignored lane each beside a tracked README.md.
-/// Nothing under it is committed or deployed, and `cargo xtask verify no-crf-leak` checks that
-/// none of it reaches the shipped addons. Every tool that writes a lane writes inside this folder
-/// and refuses when the folder is absent.
-pub const REFERENCES_DIR: &str = "apps/mod/References";
-
-/// Coalition Reforger Framework scripts and assets (Arma Public License): read and cite, never
-/// copy.
-pub const CRF_FRAMEWORK_REFERENCE: &str = "apps/mod/References/crf_framework";
-
-/// Vanilla Arma Reforger scripts and the official Script API pages (Bohemia Interactive
-/// copyright), written by `cargo xtask fetch` and the `enf` extractors.
-pub const VANILLA_REFERENCE: &str = "apps/mod/References/vanilla_reference";
+// The reference folder and its Coalition Reforger Framework and vanilla lanes are shared with
+// `developer_tools` and spelled once, in `repository_layout`; `cargo xtask verify no-crf-leak`
+// checks that none of them reaches the shipped addons.
 
 /// The PlayableSelector checkout, which carries no licence: design mirror only.
 pub const PLAYABLE_SELECTOR_REFERENCE: &str = "apps/mod/References/playable_selector";
@@ -68,10 +58,10 @@ pub const PLAYABLE_SELECTOR_OVERRIDE_ENV: &str = "TBD_PS_ORACLE";
 
 /// The locations the workspace laws (`cargo xtask verify crate-tiers` and its siblings) read.
 ///
-/// The laws themselves live in `verification_core::repository_laws::workspace_laws` and know no
+/// The laws themselves live in `repository_laws::workspace_laws` and know no
 /// path that moves with the tree; a stage that moves a folder rewrites these constants.
 pub mod workspace_laws {
-    use verification_core::repository_laws::workspace_laws::frontend_layering::{
+    use repository_laws::workspace_laws::frontend_layering::{
         FrontendCrateLayers, FrontendLayer, FrontendLayerRow,
     };
 
@@ -114,15 +104,8 @@ pub mod workspace_laws {
     }
 }
 
-/* ───────────────────────── the ticket domain's own locations ───────────────────────── */
-
-// The registry, the wave lock and the artifact tree belong to the ticket domain, which spells
-// them once in `ticket_engine::repository`. They are re-exported here so every xtask path
-// resolves through this one module, without a second spelling of any of them existing.
-#[allow(unused_imports)] // each is the one spelling of its path for the whole crate
-pub use ticket_engine::repository::{
-    LAST_VERIFIED_MARKER, ROOT_MARKER, TICKETS_DIR, VERDICTS_DIR, WAVE_LOCK, WORKTREES_DIR,
-};
+// The registry, the wave lock, the artifact tree and the root marker are shared with the other
+// tools and spelled once, in `repository_layout`.
 
 /// Documents xtask reads, walks or names in what it prints.
 ///
@@ -165,11 +148,8 @@ pub mod documentation {
     pub const API_READINESS_REGISTER: &str =
         "documentation/apps/api/verification_evidence/requirements.json";
 
-    // Root of the documentation tree: the deeper documents that code READMEs link to. Every
-    // tracked folder in it carries a README.md, and every live document in it stays at or under
-    // the size limit. Spelled once, in `ticket_engine::repository::documentation`, because the
-    // ticket domain walks and sparse-checks-out the same tree.
-    pub use ticket_engine::repository::documentation::TREE_DIR as DOCUMENTATION_ROOT;
+    // The documentation tree root, the artifact tree and the two documents `cargo xtask ticket
+    // sync` rewrites are shared with the other tools and spelled once, in `repository_layout`.
 
     /// Archived documents, one folder per topic. Frozen: never reworded, and exempt from the size
     /// limit.
@@ -194,8 +174,8 @@ pub mod documentation {
     pub const PROJECT_INSTRUCTIONS: &str = "CLAUDE.md";
 
     /// A documentation root that must not exist: every document lives under
-    /// [`DOCUMENTATION_ROOT`], and `cargo xtask verify markdown-placement` fails while this folder
-    /// holds a tracked file. `cargo xtask verify link-check` reads a backticked path under it as a
+    /// [`repository_layout::documentation::DOCUMENTATION_ROOT`], and
+    /// `cargo xtask verify markdown-placement` fails while this folder holds a tracked file. `cargo xtask verify link-check` reads a backticked path under it as a
     /// repository path whether or not the folder still holds files, so a live document that names
     /// the retired tree breaks.
     pub const RETIRED_DOCS_ROOT: &str = "docs";
@@ -211,16 +191,6 @@ pub mod documentation {
     /// looks the object of every blob or tree view pinned to a full commit up in the local
     /// history, and refuses a blob or tree view of a branch, a tag or an abbreviated commit.
     pub const PERMALINK_BASE: &str = "https://github.com/darkforce09/TBD-reforger/blob/";
-
-    // The agent artifact tree, spelled once in `ticket_engine::repository`: run reports, handoff
-    // notes and research dumps rather than documentation, so `cargo xtask verify link-check`
-    // judges none of its files, its README.md included.
-    pub use ticket_engine::repository::ARTIFACTS_DIR;
-
-    // The two ticket-domain documents `cargo xtask ticket sync` rewrites between markers,
-    // spelled once in `ticket_engine::repository::documentation`: their sync-managed tables stay
-    // in one file whatever their length.
-    pub use ticket_engine::repository::documentation::{GAP_ANALYSIS, ROADMAP};
 }
 
 #[cfg(test)]

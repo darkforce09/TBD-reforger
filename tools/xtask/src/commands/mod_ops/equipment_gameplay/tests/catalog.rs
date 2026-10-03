@@ -32,7 +32,7 @@ impl Fixture {
         fs::write(source.join("records/test/00/item.json"),json!({"resource_id":"guid:0123456789ABCDEF","resource_name":resource,"resource_guid":"0123456789ABCDEF","identity_kind":"resource_guid","source_addons":[],"names":[]}).to_string()).unwrap();
         fs::write(source.join("generation.json"),json!({"schema_version":2,"status":"completed","scope":"complete","generation_id":"source","started_at":"time","finished_at":"time","environment":{},"errors":[],"reader_verification":{"status":"passed"},"type_hierarchy":{"types":{}},"equipment_ids":["guid:0123456789ABCDEF"],"vehicle_ids":[],"resources":[{"resource_id":"guid:0123456789ABCDEF","resource_name":resource,"record_file":"records/test/00/item.json","source_file":"sources/test/00/item.json","domains":["equipment"]}]}).to_string()).unwrap();
         projection::project(
-            &crate::core::repository_root::find_repo_root().unwrap(),
+            &repository_layout::find_repository_root().unwrap(),
             &source,
             &input,
         )

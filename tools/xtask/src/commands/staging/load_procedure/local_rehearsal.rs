@@ -32,7 +32,7 @@ use anyhow::{Context, Result, anyhow, ensure};
 use developer_tools::staging_verification::load_generation::{
     FixtureEvent, LoadRunPlan, WorkloadPlan, reachable_member_accounts,
 };
-use verification_core::proc::Run;
+use process_runner::Run;
 
 use super::committed_load_data::CommittedLoadData;
 use super::load_preconditions::{keying_answers_hold, send_keying_refreshes, strict_buckets_hold};

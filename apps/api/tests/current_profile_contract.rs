@@ -1,14 +1,13 @@
 //! Validate actual /me responses against the schema, generated types, and frontend golden.
 use api::{
     core::{application_state::AppState, configuration::Config, database, http_router},
-    identity_and_access::models::{
-        current_profile::CurrentProfileResponse, generated::current_profile as generated,
-    },
+    identity_and_access::models::current_profile::CurrentProfileResponse,
 };
 use axum::{
     body::{Body, to_bytes},
     http::{Request, StatusCode},
 };
+use contract_schema_types::identity_and_access::current_profile as generated;
 use serde_json::Value;
 use tower::ServiceExt;
 mod common;

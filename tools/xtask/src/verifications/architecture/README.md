@@ -37,16 +37,16 @@ check that did not run, never as a pass.
 ### Engine layers
 
 `verify engine-layers` prints the report of
-`verification_core::repository_laws::engine_layers::check_engine_layers` line for line and exits
+`repository_laws::engine_layers::check_engine_layers` line for line and exits
 with its code. The eight rules, their matchers, pins and report text live in
-[`tools/verification_core/src/repository_laws/engine_layers/`](/tools/verification_core/src/repository_laws/engine_layers/README.md),
+[`tools/foundation/repository_laws/src/engine_layers/`](/tools/foundation/repository_laws/src/engine_layers/README.md),
 which the `engineering_laws` test binary of `api` reads as well, so the gate and that
 binary judge the tree the same way.
 
 ### Workspace laws
 
 Each of the five verbs prints the report of its law in
-[`tools/verification_core/src/repository_laws/workspace_laws/`](/tools/verification_core/src/repository_laws/workspace_laws/README.md)
+[`tools/foundation/repository_laws/src/workspace_laws/`](/tools/foundation/repository_laws/src/workspace_laws/README.md)
 line for line and exits with its code. The paths that move with the tree (the manifest sweep
 roots, the stylesheet, the frontend layer table) are the `workspace_laws` constants of
 `tools/xtask/src/core/repository_layout.rs`. The `verify-workspace-laws` task row runs the five
@@ -86,8 +86,8 @@ the first failure.
 
 ## Boundaries
 
-- Depends on: `verification_core` (patterns, gates, scans, verdicts, `proc::Run`, and
-  `repository_laws::engine_layers` and `repository_laws::workspace_laws` for the rules); the
+- Depends on: `verification_core` (patterns, gates, scans, verdicts); `process_runner::Run`;
+  `repository_laws::engine_layers` and `repository_laws::workspace_laws` for the rules; the
   `regex` and `syn` crates;
   `cargo` for the ORBAT test pins.
 - Used by:
@@ -111,7 +111,7 @@ the first failure.
   - every matcher is a compiled constant, probed on known subjects before it judges source;
   - the engine-layer gate passes this checkout with every rule judged
     (`engine_layer_gate_passes_this_checkout_with_every_rule_judged`); its pins and rules are
-    tested beside them in `tools/verification_core/src/repository_laws/engine_layers/tests/`.
+    tested beside them in `tools/foundation/repository_laws/src/engine_layers/tests/`.
 
 ## Related documentation
 

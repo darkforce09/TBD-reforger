@@ -4,7 +4,8 @@ use super::*;
 /// The doc also names the three LOC exclusions the miner enforces.
 #[test]
 fn factor_constant_is_pinned_in_the_doc() {
-    let doc = fs::read_to_string(repo_root().join(TOKEN_ESTIMATE_FACTOR_DOC)).expect("factor doc");
+    let doc =
+        fs::read_to_string(worktree_root().join(TOKEN_ESTIMATE_FACTOR_DOC)).expect("factor doc");
     let marker = format!("TOKENS_PER_LOC = {TOKENS_PER_LOC}");
     assert!(
         doc.contains(&marker),
@@ -63,7 +64,7 @@ fn median_is_deterministic() {
 /// key, all-key), one red per rule.
 #[test]
 fn estimates_schema_red_green() {
-    let text = fs::read_to_string(repo_root().join(ESTIMATES_SCHEMA)).expect("schema");
+    let text = fs::read_to_string(worktree_root().join(ESTIMATES_SCHEMA)).expect("schema");
     let schema: Value = serde_json::from_str(&text).expect("schema parses");
     let validator = jsonschema::validator_for(&schema).expect("schema compiles");
     let diff = |extra: fn(&mut Value)| {
@@ -340,7 +341,7 @@ fn scratch_generator_cohorts_fallthrough_and_idempotence() {
 #[test]
 fn planted_estimate_inside_metrics_reds_the_metrics_walker() {
     let root = scratch_root("collision");
-    let dir = root.join(crate::repository::METRICS_DIR).join("T-001");
+    let dir = root.join(repository_layout::METRICS_DIR).join("T-001");
     fs::create_dir_all(&dir).unwrap();
     let est = EstimateRecord {
         cohort: None,
@@ -389,7 +390,7 @@ fn mutual_exclusion_and_marker_coherence() {
     assert!(check_as_errors(&root).is_empty(), "coherent tree is green");
 
     // A receipt lands for the same id → red naming BOTH trees.
-    let rdir = root.join(crate::repository::METRICS_DIR).join("T-001");
+    let rdir = root.join(repository_layout::METRICS_DIR).join("T-001");
     fs::create_dir_all(&rdir).unwrap();
     fs::write(rdir.join("r.json"), "{}").unwrap();
     let errs = check_as_errors(&root);
@@ -401,7 +402,7 @@ fn mutual_exclusion_and_marker_coherence() {
         "{}",
         errs[0]
     );
-    fs::remove_dir_all(root.join(crate::repository::METRICS_DIR)).unwrap();
+    fs::remove_dir_all(root.join(repository_layout::METRICS_DIR)).unwrap();
     assert!(check_as_errors(&root).is_empty());
 
     // Marker without file → red naming ticket + the missing path.
@@ -612,7 +613,7 @@ fn summarize_by_agent_on_mixed_tree_equals_receipts_only() {
 /// xtask sources (included), so its included LOC is strictly positive.
 #[test]
 fn collect_numstat_live_repo_smoke() {
-    let root = repo_root();
+    let root = worktree_root();
     let map = collect_numstat(&root).expect("numstat over live history");
     assert!(map.len() > 1000, "live history has thousands of commits");
     let subjects = mine_subjects(&root).expect("mine live subjects");

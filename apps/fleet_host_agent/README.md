@@ -171,7 +171,8 @@ bits. `src/agent_configuration/README.md` lists every rule. `RUST_LOG` sets the 
 - Depends on: the API's executor routes in `apps/api/src/server_infrastructure/`, with
   a `host_agent` machine credential; the wire contracts
   `contracts/definitions/fleet-command.schema.json` and
-  `contracts/definitions/machine-credential.schema.json`; the calling user's systemd manager;
+  `contracts/definitions/machine-credential.schema.json`, through the `fleet_wire_contract` crate
+  (`crates/contracts/fleet_wire_contract`) the API shares; the calling user's systemd manager;
   the dedicated server's JSON config and its BattlEye RCon port.
 - Used by: `cargo xtask deploy staging` (`tools/xtask/src/commands/deploy/staging/host_agent.rs`),
   which builds it, configures one agent per fleet instance and runs each as an instance of

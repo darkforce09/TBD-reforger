@@ -9,8 +9,9 @@ pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
         eprintln!("only everon supported this slice (got {terrain})");
         return Ok(1);
     }
-    let ortho_path = sap_dir().join("everon-sap-ortho.png");
-    let out_path = aerial_orthophoto_artifacts_dir(&repo_root()).join("seam_analysis.json");
+    let ortho_path = sap_dir()?.join("everon-sap-ortho.png");
+    let out_path =
+        aerial_orthophoto_artifacts_dir(&compiled_checkout_root()?).join("seam_analysis.json");
     eprintln!("analyze-sap-seams: decoding {} …", ortho_path.display());
     let ortho = image_operations::load_png_rgb(&ortho_path)?;
     let res = analyze_seams(&ortho);
@@ -162,8 +163,8 @@ pub fn verify_sap_ortho(terrain: &str) -> Result<u8> {
         eprintln!("only everon supported this slice (got {terrain})");
         return Ok(1);
     }
-    let root = repo_root();
-    let sap = sap_dir();
+    let root = compiled_checkout_root()?;
+    let sap = sap_dir()?;
     let catalog_path = sap.join("cell-catalog.json");
     let meta_path = sap.join("TBD_SatExport_meta.json");
     let ortho_path = sap.join("everon-sap-ortho.png");

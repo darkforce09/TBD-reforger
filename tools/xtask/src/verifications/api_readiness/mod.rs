@@ -28,13 +28,14 @@ mod tool_identity;
 
 use anyhow::{Result, ensure};
 use evidence::Receipt;
+use process_runner::Run;
 use register::{Check, EvidenceClass};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use verification_core::{Kind, NotRun, Report, Verdict, proc::Run};
+use verification_core::{Kind, NotRun, Report, Verdict};
 
 pub(crate) fn verify(root: &Path, directory: &Path, execute: bool) -> Result<u8> {
     super::property_test_configuration::PropertyTestConfiguration::from_environment()?;

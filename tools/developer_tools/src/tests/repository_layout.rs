@@ -1,10 +1,9 @@
 use super::*;
-use crate::repository_paths::find_repo_root;
+use ::repository_layout::find_repository_root;
 use std::collections::BTreeSet;
 
 /// Every [`documentation`] constant that names a location a checkout must hold, by name.
-const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &str); 3] = [
-    ("DOCUMENTATION_ROOT", documentation::DOCUMENTATION_ROOT),
+const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &str); 2] = [
     ("CAPABILITY_VERDICTS", documentation::CAPABILITY_VERDICTS),
     ("EDITOR_GATE_RUNBOOK", documentation::EDITOR_GATE_RUNBOOK),
 ];
@@ -19,7 +18,7 @@ const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 0] = [];
 /// This pins the whole surface against the live tree so a relocation cannot half-land.
 #[test]
 fn every_declared_location_exists_in_the_checkout() {
-    let root = find_repo_root().expect("active checkout");
+    let root = find_repository_root().expect("active checkout");
 
     for dir in [
         contracts_dir(&root),
@@ -64,7 +63,7 @@ fn every_declared_location_exists_in_the_checkout() {
 /// intermediates to every map client.
 #[test]
 fn export_scratch_is_named_for_its_island_and_sits_outside_the_served_tree() {
-    let root = find_repo_root().expect("active checkout");
+    let root = find_repository_root().expect("active checkout");
     let scratch = map_scratch_dir(&root, "everon");
     assert!(scratch.ends_with("everon"), "{}", scratch.display());
     assert!(
@@ -117,7 +116,7 @@ fn locations_resolve_against_the_given_root() {
 /// font-cache diagnostic points at a dead runbook.
 #[test]
 fn every_required_documentation_location_exists_in_the_checkout() {
-    let root = find_repo_root().expect("active checkout");
+    let root = find_repository_root().expect("active checkout");
     let missing: Vec<String> = REQUIRED_DOCUMENTATION_LOCATIONS
         .iter()
         .filter(|(_, path)| !present(&root, path))
@@ -195,4 +194,32 @@ fn declared_documentation_items(source: &str) -> BTreeSet<&str> {
                 .next()
         })
         .collect()
+}
+
+/// The blueprint compiler's fixtures resolve from the checkout root, the crate folder and a
+/// source folder alike: the root walk answers the same checkout from each.
+#[test]
+fn compiler_fixtures_resolve_from_root_crate_and_source_directory() {
+    let root = ::repository_layout::find_repository_root().expect("active checkout");
+    for relative in [
+        "",
+        "tools/developer_tools",
+        "tools/developer_tools/src/blueprint",
+    ] {
+        let found = ::repository_layout::find_repository_root_from(&root.join(relative))
+            .expect("repository root");
+        assert_eq!(found, root);
+        for fixture in [
+            "FarmHouse_E_1L01_Wood.bvh.golden",
+            "FarmHouse_E_1L01_Wood_children.json",
+            "prefab/Prefabs/Houses/House_Wood.et",
+        ] {
+            assert!(
+                found
+                    .join("tools/developer_tools/test_fixtures/blueprint")
+                    .join(fixture)
+                    .is_file()
+            );
+        }
+    }
 }

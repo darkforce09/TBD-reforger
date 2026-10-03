@@ -23,7 +23,7 @@ impl VocabTree {
     /// Display-tier read: ANY failure (missing file, IO error, bad shape) is
     /// `None`, and the facets fall back to corpus-present values.
     pub fn load(root: &Path) -> Option<Self> {
-        let text = fs::read_to_string(root.join(ticket_engine::repository::SCOPE_VOCAB)).ok()?;
+        let text = fs::read_to_string(root.join(repository_layout::SCOPE_VOCAB)).ok()?;
         Self::parse(&text).ok()
     }
 

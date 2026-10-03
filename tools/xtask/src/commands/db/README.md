@@ -151,7 +151,7 @@ A clap usage error exits 2.
 
 - Depends on: `crate::commands::deploy` (the database helpers, backup, restore and drill);
   `crate::core::repository_root`, `crate::core::repository_layout` and
-  `crate::core::host_execution`; `crate::verifications::property_test_configuration`;
+  `process_runner::host_execution`; `crate::verifications::property_test_configuration`;
   `verification_core`; `deploy/compose.dev.yml`; the seeds and migrations of `apps/api/`; a
   container runtime, cargo and git.
 - Used by:

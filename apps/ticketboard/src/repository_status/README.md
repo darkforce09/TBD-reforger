@@ -53,7 +53,7 @@ analysis, which the `git status` chip does.
 ## Boundaries
 
 - Depends on: `crate::core` (`process::BoundedLog`, `time::utc_hms`, the `ui` colours and row
-  height); `ticket_engine::repository` (`TICKETS_DIR`, `documentation::ROADMAP` and
+  height); `repository_layout` (`TICKETS_DIR`, `documentation::ROADMAP` and
   `documentation::GAP_ANALYSIS`); the `notify` crate; `eframe::egui` in `ui/` only; at run time,
   `cargo xtask ticket check --strict` and `git`, which the application spawns.
 - Used by: `crate::application` (`mod.rs`, `background_events.rs`, `feature_views.rs` and

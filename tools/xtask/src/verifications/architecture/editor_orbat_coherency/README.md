@@ -15,7 +15,7 @@ tools/xtask/src/verifications/architecture/editor_orbat_coherency/
 ## Boundaries
 
 - Depends on: the parent's tables (`BANS`, `PINS`, `CARGO_PINS`) and target paths;
-  `verification_core` (`gate::ban`, `gate::require`, `Pattern`, `proc::Run::merged_output`); the
+  `verification_core` (`gate::ban`, `gate::require`, `Pattern`); `process_runner::Run::merged_output`; the
   `regex` crate for the `test result: … N passed` parse; `cargo` on `PATH`, with
   `$HOME/.cargo/bin` put first.
 - Used by: the parent module, which re-exports `verify_editor_orbat_coherency` for

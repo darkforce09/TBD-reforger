@@ -30,8 +30,8 @@
 use std::io::Write;
 use std::path::Path;
 
+use process_runner::Run;
 use serde_json::{Map, Value};
-use verification_core::proc::Run;
 
 use super::{Opts, env_fail};
 

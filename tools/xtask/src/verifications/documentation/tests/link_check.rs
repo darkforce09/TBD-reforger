@@ -6,11 +6,12 @@ use super::repository_permalinks::{BlobObject, ObjectLookup, PermalinkObjects};
 use super::*;
 use crate::cli::{Cli, TopCmd};
 use crate::commands::verify::cli::{DocumentationGateArgs, VerifyCmd};
-use crate::core::repository_layout::TICKETS_DIR;
 use crate::core::repository_layout::documentation::{
-    ARCHIVE_DIR, ARTIFACTS_DIR, CURSOR_RULE_DIRS, PROJECT_INSTRUCTIONS,
+    ARCHIVE_DIR, CURSOR_RULE_DIRS, PROJECT_INSTRUCTIONS,
 };
 use clap::Parser;
+use repository_layout::ARTIFACTS_DIR;
+use repository_layout::TICKETS_DIR;
 
 /// A history that holds no object at all: every permalink is unknown.
 struct EmptyHistory;

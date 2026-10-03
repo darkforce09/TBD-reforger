@@ -22,8 +22,8 @@
 use std::path::Path;
 use std::time::Duration;
 
+use process_runner::Run;
 use verification_core::NotRun;
-use verification_core::proc::Run;
 
 use super::target_resolution::{percent_decode, split_fragment};
 use crate::core::repository_layout::documentation::PERMALINK_BASE;

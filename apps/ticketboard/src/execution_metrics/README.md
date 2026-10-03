@@ -55,7 +55,7 @@ order, and a ticket link selects that ticket on the board.
 
 - Depends on: `crate::ticket_registry::models` (the corpus and a ticket's class); `crate::core::ui`
   (the verdict and estimate colours and `identifier_link`); `ticket_engine` (`Ticket`,
-  `repository::METRICS_DIR` and `repository::ESTIMATES_DIR`, `validate_rfc3339_utc`); `serde`,
+  `repository_layout::METRICS_DIR` and `repository_layout::ESTIMATES_DIR`, `validate_rfc3339_utc`); `serde`,
   `serde_json` and `time`; `eframe::egui` and `egui_extras` in `ui/` only.
 - Used by: `crate::application` (`background_loading.rs`, `workspace_state.rs`,
   `action_dispatch.rs`, `events.rs`, `feature_views.rs` and `mod.rs` in

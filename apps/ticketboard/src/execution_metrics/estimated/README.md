@@ -45,7 +45,7 @@ only when `tokens` is listed, and says so when no valid estimate file backs it.
 
 - Depends on: `crate::execution_metrics::measured` (`ErrorRow`, `format_tokens`,
   `valid_ticket_id`, `valid_git_sha`); `crate::ticket_registry::models` (`Corpus`, and
-  `projection` for a ticket's class); `ticket_engine` (`Ticket`, `repository::ESTIMATES_DIR`,
+  `projection` for a ticket's class); `ticket_engine` (`Ticket`, `repository_layout::ESTIMATES_DIR`,
   `validate_rfc3339_utc`); the `serde` and `serde_json` crates; `std::fs`.
 - Used by: `crate::application` (`background_loading.rs` calls `load_raw`, `workspace_state.rs`
   calls `build_state`, `action_dispatch.rs` calls `sort_rows`); `crate::ticket_browser`

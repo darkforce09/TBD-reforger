@@ -207,7 +207,7 @@ pub(super) fn validate_post_image(
                 return Err(format!(
                     "{id}: surface required for {} work ticket — scope names component {component} but surface is empty; set [scope] surface (vocabulary: {vocabulary}) or record \"scope\" in estimated[]",
                     w.status.name().as_str(),
-                    vocabulary = crate::repository::SCOPE_VOCAB,
+                    vocabulary = repository_layout::SCOPE_VOCAB,
                 ));
             }
         }

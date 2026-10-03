@@ -4,7 +4,7 @@ use crate::blueprint::verify::{load, verify};
 use crate::repository_layout::terrain_dir;
 
 fn objects_dir() -> std::path::PathBuf {
-    let root = crate::repository_paths::find_repo_root().unwrap();
+    let root = ::repository_layout::find_repository_root().unwrap();
     terrain_dir(&root, "everon").join("objects")
 }
 
@@ -34,7 +34,7 @@ fn chunk_id_is_the_floor_partition() {
 /// stayed 5-wide (trivial trailers are never padded).
 #[test]
 fn farmhouse_chunk_row_places_every_socket_child_within_2cm() {
-    let root = crate::repository_paths::test_repo_root();
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     let instances =
         terrain_dir(&root, "everon").join("prefabs/buildings/FarmHouse_E_1L01_Wood.instances.json");
     let recon = fixture("FarmHouse_E_1L01_Wood_children.json");

@@ -121,7 +121,7 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
                     "{rel}: measured receipt(s) exist under {}/{stem}/ — receipt and estimate \
                      are mutually exclusive; delete the estimate file in the commit that lands \
                      the receipt",
-                    crate::repository::METRICS_DIR
+                    repository_layout::METRICS_DIR
                 ));
             }
             match corpus.get(&stem) {

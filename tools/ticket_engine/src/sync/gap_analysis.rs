@@ -7,7 +7,7 @@ use std::sync::LazyLock;
 
 use crate::corpus_pins::{self, CorpusPins};
 use crate::registry::{str_field, tickets};
-use crate::repository::documentation::GAP_ANALYSIS;
+use repository_layout::documentation::GAP_ANALYSIS;
 
 /// A checkmark followed by a ticket id captures the id's parent: `T-` and three or more digits,
 /// without any dotted child suffix or trailing text.

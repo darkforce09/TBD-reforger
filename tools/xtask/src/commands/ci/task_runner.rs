@@ -75,7 +75,7 @@ use std::process::Command;
 
 use verification_core::verdict::NotRun;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// Which lane a row belongs to. `cargo xtask help` prints the tag beside the row so an operator
 /// can tell a gate step from a one-line wrapper at a glance.

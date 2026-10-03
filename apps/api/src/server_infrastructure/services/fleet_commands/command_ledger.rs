@@ -1,6 +1,8 @@
 //! Operator side of the ledger: accept a command (its intent is durable before any executor
 //! can act on it), cancel one that no executor has claimed, and read receipts.
 
+use fleet_wire_contract::FleetAction;
+use fleet_wire_contract::operator_messages::{FleetCommandReceipt, FleetCommandRequest};
 use sqlx::{PgConnection, PgPool};
 use uuid::Uuid;
 
@@ -8,7 +10,7 @@ use super::command_arguments::validated_arguments;
 use crate::administration::services::required_audit::append_actor_audit;
 use crate::core::error_handling::api_error::ApiError;
 use crate::server_infrastructure::models::fleet_command::{
-    FleetAction, FleetCommandReceipt, FleetCommandRequest, FleetCommandState,
+    FleetCommandReceiptRow, FleetCommandState,
 };
 
 /// Seconds an accepted command waits for an executor before it expires.
@@ -79,22 +81,24 @@ async fn insert_command(
     arguments: &serde_json::Value,
     actor: &str,
 ) -> Result<FleetCommandReceipt, ApiError> {
-    let receipt: FleetCommandReceipt = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "INSERT INTO fleet_commands (server_id, executor_kind, action, arguments, idempotent,
+    let receipt: FleetCommandReceipt =
+        sqlx::query_as::<_, FleetCommandReceiptRow>(sqlx::AssertSqlSafe(format!(
+            "INSERT INTO fleet_commands (server_id, executor_kind, action, arguments, idempotent,
              process_changing, requested_by, expires_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, clock_timestamp() + make_interval(secs => $8))
          RETURNING {RECEIPT_COLUMNS}"
-    )))
-    .bind(server_id)
-    .bind(action.executor().as_str())
-    .bind(action.as_str())
-    .bind(sqlx::types::Json(arguments))
-    .bind(action.idempotent())
-    .bind(action.process_changing())
-    .bind(actor)
-    .bind(QUEUED_LIFETIME_SECONDS as f64)
-    .fetch_one(&mut *connection)
-    .await?;
+        )))
+        .bind(server_id)
+        .bind(action.executor().as_str())
+        .bind(action.as_str())
+        .bind(sqlx::types::Json(arguments))
+        .bind(action.idempotent())
+        .bind(action.process_changing())
+        .bind(actor)
+        .bind(QUEUED_LIFETIME_SECONDS as f64)
+        .fetch_one(&mut *connection)
+        .await?
+        .into();
     append_actor_audit(
         connection,
         actor,
@@ -135,14 +139,16 @@ pub async fn cancel_command(
             &state,
         ));
     }
-    let receipt: FleetCommandReceipt = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "UPDATE fleet_commands SET state = 'cancelled', finished_at = clock_timestamp(),
+    let receipt: FleetCommandReceipt =
+        sqlx::query_as::<_, FleetCommandReceiptRow>(sqlx::AssertSqlSafe(format!(
+            "UPDATE fleet_commands SET state = 'cancelled', finished_at = clock_timestamp(),
              failure_reason = 'cancelled by an administrator'
          WHERE id = $1 RETURNING {RECEIPT_COLUMNS}"
-    )))
-    .bind(command)
-    .fetch_one(&mut *connection)
-    .await?;
+        )))
+        .bind(command)
+        .fetch_one(&mut *connection)
+        .await?
+        .into();
     append_actor_audit(
         connection,
         actor,
@@ -160,13 +166,14 @@ async fn load_receipt_on(
     server_id: Uuid,
     command: Uuid,
 ) -> Result<FleetCommandReceipt, ApiError> {
-    sqlx::query_as(sqlx::AssertSqlSafe(format!(
+    sqlx::query_as::<_, FleetCommandReceiptRow>(sqlx::AssertSqlSafe(format!(
         "SELECT {RECEIPT_COLUMNS} FROM fleet_commands WHERE id = $1 AND server_id = $2"
     )))
     .bind(command)
     .bind(server_id)
     .fetch_optional(connection)
     .await?
+    .map(FleetCommandReceipt::from)
     .ok_or_else(|| ApiError::not_found("command not found"))
 }
 
@@ -186,7 +193,7 @@ pub async fn list_receipts(
     limit: i64,
     offset: i64,
 ) -> Result<Vec<FleetCommandReceipt>, ApiError> {
-    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+    let rows = sqlx::query_as::<_, FleetCommandReceiptRow>(sqlx::AssertSqlSafe(format!(
         "SELECT {RECEIPT_COLUMNS} FROM fleet_commands WHERE server_id = $1
          ORDER BY requested_at DESC, id DESC LIMIT $2 OFFSET $3"
     )))
@@ -194,5 +201,6 @@ pub async fn list_receipts(
     .bind(limit)
     .bind(offset)
     .fetch_all(pool)
-    .await?)
+    .await?;
+    Ok(rows.into_iter().map(FleetCommandReceipt::from).collect())
 }

@@ -18,11 +18,13 @@ documentation/restructure/manifests/
 ├── s2_caddy_folder.tsv       stage S2: the Caddyfile into deploy/caddy/, the one folder the Caddy container mounts
 ├── s2_crate_births.tsv       stage S2: the API's URL guard and the worker's cache policy become crates/
 ├── s4_b0_dem_sample_tests.tsv  stage S4 B0: the dem/sample re-export module's tests beside the code they test
+├── s4_b1a_tool_foundations.tsv  stage S4 B1a: verification_core splits into the tools/foundation crates verification_core, process_runner and repository_laws
 ├── s4_b2b_browser_platform.tsv  stage S4 B2b: the map engine's console macros and fetch helpers become browser_platform
 ├── s4_b2b_content_digest.tsv  stage S4 B2b: developer_tools' SHA-384 helper becomes the content_digest crate
 ├── s4_b3_geometry.tsv  stage S4 B3: vector, segment, transform and box helpers, map coordinates and the cameras become the geometry crates
 ├── s4_b4_render_primitives.tsv  stage S4 B4: the graphics engine's GPU-free layouts, geometry, glyphs and shader become render_primitives
 ├── s4_b5_world_file_formats.tsv  stage S4 B5: the map engine's on-disk formats become the world_file_formats crate
+├── s4_b6b_contract_schema_types.tsv  stage S4 B6b: the API's importers of its generated contract types switch to the contract_schema_types crate
 └── s4_x4a_switch.tsv  stage S4 X4a: every consumer of the S4a crates imports them directly, and the legacy re-export shims go
 ```
 

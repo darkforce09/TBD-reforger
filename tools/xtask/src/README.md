@@ -22,12 +22,12 @@ main.rs ──▶ cli::dispatch::run ──▶ commands::<group>::dispatch::run 
                                           │                               │
                                           ├──▶ verifications::<group>     ├──▶ core (root, layout,
                                           │    (verify, ci, platform)     │    target dir, host)
-                                          └──▶ ticket_engine, developer_tools, verification_core
+                                          └──▶ ticket_engine, developer_tools, tools/foundation crates
 ```
 
 `main.rs` declares the modules, calls `cli::dispatch::run` and exits with the `u8` it returns, or
 prints `xtask: <error chain>` and exits 1 on an error. Every command finds the checkout from the
-working directory by walking up to `.ai/tickets/ROOT` (`find_repo_root` in `core/`), so a command
+working directory by walking up to `.ai/tickets/ROOT` (`find_repository_root` in `core/`), so a command
 run inside a linked worktree reads that worktree's files, and joins the repository paths it needs
 from the constants in `core/repository_layout.rs`. `commands/` holds the operational commands and
 `verifications/` the checks; `cargo xtask verify`, the `ci` task table and the platform wave gate
@@ -45,8 +45,9 @@ wired by the modules they test.
 ## Boundaries
 
 - Depends on: `ticket_engine` (ticket storage, the wave lock, repository paths and root
-  discovery), `developer_tools` (engine-backed map and blueprint work) and `verification_core`
-  (verdicts, process runs, scans), each by path; clap, serde and the other crates in
+  discovery), `developer_tools` (engine-backed map and blueprint work), `verification_core`
+  (verdicts, scans), `process_runner` (process runs, the host bridge, the ssh transport) and
+  `repository_laws` (the structural laws), each by path; clap, serde and the other crates in
   `tools/xtask/Cargo.toml`.
 - Used by: `tools/xtask/Cargo.toml`, whose one `[[bin]]` is `src/main.rs`.
 - Rules:

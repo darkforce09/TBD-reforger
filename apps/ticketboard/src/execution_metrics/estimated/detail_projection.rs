@@ -113,7 +113,7 @@ pub fn tokens_cell(
             tip: format!(
                 "\"tokens\" is listed in estimated[] but no valid estimate file loaded at \
                  {}/{id}.json (missing or malformed — see the Metrics tab)",
-                ticket_engine::repository::ESTIMATES_DIR
+                repository_layout::ESTIMATES_DIR
             ),
         },
     })

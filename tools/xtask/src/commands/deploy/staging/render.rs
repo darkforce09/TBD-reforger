@@ -91,11 +91,11 @@ pub fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
 fn fetch_modpack_url(env: &Env) -> Result<(String, String), u8> {
     let out = std::env::temp_dir().join(format!("tbd-modpack.{}.json", std::process::id()));
     let args = curl_argv(env, &out);
-    if verification_core::proc::which("curl").is_err() {
+    if process_runner::which("curl").is_err() {
         eprintln!("FAIL: could not reach {}", env.modpack_url);
         return Err(1);
     }
-    let mut run = verification_core::proc::Run::new("curl");
+    let mut run = process_runner::Run::new("curl");
     for a in &args {
         run = run.arg(a);
     }

@@ -118,7 +118,7 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // children alike; idea and cancelled tickets are exempt.
     errors.extend(check_spec_and_plan_files_exist(root));
 
-    let roadmap = root.join(crate::repository::documentation::ROADMAP);
+    let roadmap = root.join(repository_layout::documentation::ROADMAP);
     if roadmap.is_file() {
         let text = fs::read_to_string(&roadmap).unwrap_or_default();
         if !text.contains(NEXT_MARKER_START) || !text.contains(NEXT_MARKER_END) {
@@ -139,13 +139,13 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
                 matches.len()
             ));
         }
-        let gap = root.join(crate::repository::documentation::GAP_ANALYSIS);
+        let gap = root.join(repository_layout::documentation::GAP_ANALYSIS);
         if gap.is_file() {
             let text = fs::read_to_string(&gap).unwrap_or_default();
             if text.contains("| priority |") || PRIORITY_P.is_match(&text) {
                 errors.push(format!(
                     "{} still has priority column or numbered P backlog",
-                    crate::repository::documentation::GAP_ANALYSIS
+                    repository_layout::documentation::GAP_ANALYSIS
                 ));
             }
         }

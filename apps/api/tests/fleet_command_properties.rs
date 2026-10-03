@@ -34,9 +34,6 @@ use std::cell::Cell;
 use std::collections::HashMap;
 
 use api::core::error_handling::api_error::ApiError;
-use api::server_infrastructure::models::fleet_command::{
-    ExecutionResult, FleetAction, FleetCommandRequest,
-};
 use api::server_infrastructure::services::fleet_commands::command_ledger::enqueue_command;
 use api::server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
 use api::server_infrastructure::services::fleet_commands::executor_claims::{
@@ -47,6 +44,9 @@ use api::server_infrastructure::services::machine_credentials::{
 };
 use event_eligibility_support::{EventShape, Fixture};
 use fleet_support::{credential, register_server};
+use fleet_wire_contract::FleetAction;
+use fleet_wire_contract::executor_messages::ExecutionResult;
+use fleet_wire_contract::operator_messages::FleetCommandRequest;
 use proptest::prelude::*;
 use proptest::test_runner::TestCaseResult;
 use serde_json::{Value, json};

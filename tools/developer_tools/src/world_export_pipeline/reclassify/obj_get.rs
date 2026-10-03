@@ -324,7 +324,7 @@ pub(super) fn rebuild_inventory(
 /// `world reclassify` — see the module docs. Returns the process exit code: 0 = the committed
 /// catalogue already agrees with the rules (or the rebuild was written), 1 = drift in check mode.
 pub fn reclassify_terrain(terrain: &str, mode: Mode, out_base: Option<&Path>) -> Result<u8> {
-    let terrain_dir = terrain_dir(&repo_root(), terrain);
+    let terrain_dir = terrain_dir(&compiled_checkout_root()?, terrain);
     let objects = terrain_dir.join("objects");
     let prefabs_path = objects.join("prefabs.json.gz");
     if !prefabs_path.exists() {
@@ -440,13 +440,16 @@ pub fn reclassify_terrain(terrain: &str, mode: Mode, out_base: Option<&Path>) ->
 }
 
 /// Resolve `--out` against the repo root so callers can stage a rebuild outside `packages/`.
-#[must_use]
-pub fn resolve_out_base(out: Option<&Path>) -> Option<PathBuf> {
+///
+/// # Errors
+/// When a relative `out` is given and no checkout root lies above this crate's manifest folder.
+pub fn resolve_out_base(out: Option<&Path>) -> Result<Option<PathBuf>> {
     out.map(|p| {
         if p.is_absolute() {
-            p.to_path_buf()
+            Ok(p.to_path_buf())
         } else {
-            repo_root().join(p)
+            Ok(compiled_checkout_root()?.join(p))
         }
     })
+    .transpose()
 }

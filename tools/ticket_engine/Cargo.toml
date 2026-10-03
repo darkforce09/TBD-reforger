@@ -10,6 +10,8 @@ description = "Ticket storage, validation, operations, queue and document sync, 
 [dependencies]
 anyhow = { workspace = true }
 regex = { workspace = true }
+# The checkout-root walk and the registry, artifact and documentation locations the tools share.
+repository_layout = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 walkdir = { workspace = true }
 jsonschema = { workspace = true }

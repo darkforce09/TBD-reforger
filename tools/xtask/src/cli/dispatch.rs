@@ -1,8 +1,8 @@
 use super::{Cli, TopCmd};
-use crate::core::repository_root::find_repo_root;
 use crate::*;
 use anyhow::{Result, bail};
 use clap::Parser;
+use repository_layout::find_repository_root;
 
 pub(crate) fn run() -> Result<u8> {
     let args =
@@ -34,7 +34,7 @@ pub(crate) fn run() -> Result<u8> {
         TopCmd::Schema { cmd } => commands::schema::dispatch::run(cmd),
         TopCmd::Refactor { cmd } => commands::refactor::dispatch::run(cmd),
         TopCmd::RegistryGet { field } => {
-            let root = find_repo_root()?;
+            let root = find_repository_root()?;
             let reg = load_registry(&root)?;
             match reg.get(&field) {
                 Some(serde_json::Value::String(s)) => println!("{s}"),

@@ -56,7 +56,7 @@ Facts every topic relies on:
 - **Where commands run.** Every command runs on the host from the repository root. An agent
   container has no C toolchain and an older glibc, so `cargo` there fails with
   ``linker `cc` not found`` and host binaries with ``GLIBC_2.39 not found``
-  (`tools/xtask/src/core/host_execution.rs`); neither means anything is broken.
+  (`tools/foundation/process_runner/src/host_execution.rs`); neither means anything is broken.
 - **The run folder.** `cargo xtask mod playtest` stages everything under `--run-dir`, default
   `$HOME/tbd-playtest`: `addons/tbd-framework` (a link to the checkout), `server.json`,
   `server.out`, `server.pid` and `profile/`, whose game data sits one level down in

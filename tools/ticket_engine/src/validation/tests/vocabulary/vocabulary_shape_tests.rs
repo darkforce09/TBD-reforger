@@ -43,7 +43,7 @@ fn counted_shape_from_live_file() {
 fn missing_file_is_red_naming_path() {
     let dir = std::env::temp_dir().join(format!("t917-vocab-missing-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).unwrap();
+    fs::create_dir_all(dir.join(repository_layout::TICKETS_DIR)).unwrap();
     let errs = check_as_errors(&dir);
     assert_eq!(errs.len(), 1, "exactly one missing-file error: {errs:?}");
     assert!(

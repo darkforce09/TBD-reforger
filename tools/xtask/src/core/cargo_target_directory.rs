@@ -37,7 +37,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use anyhow::Result;
-use verification_core::proc::Run;
+use process_runner::Run;
 use verification_core::{Finding, Kind, NotRun, Verdict};
 
 use crate::commands::build::recipes::{Step, rust_api, rust_build};
@@ -59,7 +59,7 @@ pub(crate) const PIN_SOURCE_REL: &str = "tools/xtask/src/core/cargo_target_direc
 /// The checkout this process runs in. **Inside a worktree this is the worktree.** Used only for
 /// the development API's private directory ([`dev_api_target_dir`]); never for the shared cache.
 pub(crate) fn cwd_root() -> PathBuf {
-    crate::core::repository_root::find_repo_root().unwrap_or_else(|_| PathBuf::from("."))
+    repository_layout::find_repository_root().unwrap_or_else(|_| PathBuf::from("."))
 }
 
 /// The **primary** checkout: `git rev-parse --path-format=absolute --git-common-dir` with its

@@ -8,7 +8,7 @@ fn write_file(root: &Path, id: &str, name: &str, text: &str) -> String {
     let dir = metrics_dir(root).join(id);
     fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join(name), text).unwrap();
-    format!("{}/{id}/{name}", ticket_engine::repository::METRICS_DIR)
+    format!("{}/{id}/{name}", repository_layout::METRICS_DIR)
 }
 
 fn receipt(id: &str, agent: &str, input: u64, started: &str, finished: Option<&str>) -> String {
@@ -86,7 +86,7 @@ fn write_hand_corpus(root: &Path) {
 #[test]
 fn absent_metrics_dir_is_the_explicit_no_receipts_state() {
     let s = Scratch::new("m-absent");
-    fs::create_dir_all(s.path().join(ticket_engine::repository::TICKETS_DIR)).unwrap();
+    fs::create_dir_all(s.path().join(repository_layout::TICKETS_DIR)).unwrap();
     assert_eq!(load_metrics(s.path()), MetricsState::NoReceipts);
     // The pinned render text names the directory and the producer — no zeros.
     assert!(no_receipts_text().contains(".ai/tickets/metrics/"));

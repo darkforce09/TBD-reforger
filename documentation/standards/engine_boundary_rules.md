@@ -32,14 +32,18 @@ frontend ──► map_engine {world, io, store, editing}  every target
                      map_engine ──► graphics_engine  from the world tier up
 ```
 
-- The arrow runs from the map engine to the graphics engine and never back. The graphics engine
-  never learns a map noun; the map engine speaks the renderer's frame vocabulary, not the reverse
-  ([rule 1](#rule-1-the-graphics-engine-never-imports-the-map-engine),
-  [rule 2](#rule-2-no-map-noun-in-a-graphics-engine-declaration)).
-- The frontend never depends on the graphics engine. It hands the map engine a canvas, and
-  reaches the render loop through the map engine's re-export of `RafPump` and `FrameTarget`
-  (`legacy/map_engine/src/frame/mod.rs`, `frame/pump.rs`)
-  ([rule 6](#rule-6-the-frontend-never-imports-the-graphics-engine)).
+- The arrow runs from the map engine to the graphics layer and never back. The graphics layer is
+  the graphics engine and every member of the `crates/graphics` category (today
+  [`render_primitives`](/crates/graphics/render_primitives/README.md), the GPU-free building
+  blocks the graphics engine is built on). It never learns a map noun; the map engine speaks the
+  renderer's frame vocabulary, not the reverse
+  ([rule 1](#rule-1-the-graphics-layer-never-imports-the-map-engine),
+  [rule 2](#rule-2-no-map-noun-in-a-graphics-layer-declaration)).
+- The frontend never depends on the graphics engine or on a wasm-only graphics crate. It hands
+  the map engine a canvas, and reaches the render loop through the map engine's re-export of
+  `RafPump` and `FrameTarget` (`legacy/map_engine/src/frame/mod.rs`, `frame/pump.rs`)
+  ([rule 6](#rule-6-the-frontend-never-imports-the-gpu-layer)). A graphics crate built for every
+  target (`targets = "any"`) is CPU code the frontend may link.
 - Nothing in the compiler enforces either direction: a dependency edge pointing back would still
   build. The gate is the only wall.
 
@@ -211,10 +215,10 @@ step of `cargo xtask ci ci-local` (`tools/xtask/src/commands/ci/task_definitions
 a step of the `language-gates` job in `.github/workflows/ci.yml`, beside the language gates: it
 reads the working tree, needs no database, LFS object or wasm target, and takes seconds.
 `cargo xtask ci verify-engine-layers` is an alias of the same verb. The code is in
-`tools/verification_core/src/repository_laws/engine_layers/`: the rule catalogue and its
+`tools/foundation/repository_laws/src/engine_layers/`: the rule catalogue and its
 reasons in `mod.rs`, the matchers, pins and scanned roots in `rules.rs`, the head lines and
 messages in `report_text.rs`, the walks in `crate_walks.rs` and the pin arithmetic in
-`scanning.rs`, as its [README](/tools/verification_core/src/repository_laws/engine_layers/README.md)
+`scanning.rs`, as its [README](/tools/foundation/repository_laws/src/engine_layers/README.md)
 lists. `tools/xtask/src/verifications/architecture/engine_layer_boundaries.rs` prints that
 library's report for `cargo xtask verify engine-layers`, and the `engineering_laws` test binary of
 `api` reads the same library; the
@@ -223,13 +227,15 @@ all three architecture gates.
 
 ### How the gate judges
 
-- **Inputs.** It walks the `.rs` files under `legacy/graphics_engine/src`,
-  `legacy/map_engine/src` and `apps/frontend/src`, and reads
-  `legacy/graphics_engine/Cargo.toml` and `apps/frontend/Cargo.toml`. Untracked
+- **Inputs.** It walks the `.rs` files under `legacy/graphics_engine/src`, under the `src`
+  folder of every workspace member whose category is `crates/graphics` (read from the root
+  `Cargo.toml` members), under `legacy/map_engine/src` and under `apps/frontend/src`, and reads
+  the manifests of the graphics engine, of each graphics member and of the frontend. Untracked
   files count. A folder below the repository root named `target` or starting with `target-` is
   build output and is pruned.
-- **Self-probes.** Every matcher is a compiled constant, and before it judges source it runs over
-  subjects whose answer is known, positive and negative. A probe that answers wrongly fails the
+- **Self-probes.** Every matcher is a compiled constant, except rule 6's arm over the wasm-only
+  graphics crates, which is built from their crate names. Before any matcher judges source it
+  runs over subjects whose answer is known, positive and negative. A probe that answers wrongly fails the
   gate: a check whose matcher is broken is not a pass.
 - **Matching.** Each matcher is a line matcher over source text. Rules 1, 3a, 3b, 4, 5 and 7 see
   prose as well as code, on purpose; rules 2 and 6 match syntax, so prose describing the boundary
@@ -237,37 +243,48 @@ all three architecture gates.
 - **Pins.** Rules 3a, 3b and 4 allow enumerated sites: a file, its exact count and the reason. A
   pin is a ratchet. An unpinned file that matches fails; a pinned file whose count rises or falls
   fails; a pinned file that no longer exists fails.
-- **Exit codes.** 0 when every rule holds; 1 when a rule is broken, a self-probe fails, or a
-  scanned root holds no `.rs` file (a vacuous pass is refused); 2 when a root, a manifest or a
-  file could not be read, because "I never looked" is a different action from "I looked and it is
+- **Exit codes.** 0 when every rule holds; 1 when a rule is broken, a self-probe fails, a
+  scanned root holds no `.rs` file or the graphics category has no member (a vacuous pass is
+  refused); 2 when a root, a manifest, the workspace member list or a file could not be read, because "I never looked" is a different action from "I looked and it is
   dirty".
 
 | Rule | Subject | Must hold |
 |---|---|---|
-| 1 | `legacy/graphics_engine` | no `map_engine` in source, no `map_engine` edge in `Cargo.toml` |
-| 2 | `legacy/graphics_engine` | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
-| 3a | `legacy/map_engine/src` | `graphics_engine::frame` appears only in `frame/mod.rs`, exactly 8 times |
+| 1 | `legacy/graphics_engine` and each `crates/graphics` member | no `map_engine::` path or `extern crate map_engine` in source, no `map_engine` edge in `Cargo.toml` |
+| 2 | `legacy/graphics_engine` and each `crates/graphics` member | no declared name (after `struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`, `mod`) containing terrain, symbology, mission, orbat or arma, case-insensitive |
+| 3a | `legacy/map_engine/src` | `graphics_engine::frame` appears only in `frame/mod.rs`, exactly 5 times |
 | 3b | `legacy/map_engine/src` | `graphics_engine::` followed by `device`, `pipeline`, `shaders` or `r#loop` appears only at the pinned sites: 3 in `frame/mod.rs`, 2 in `frame/pump.rs` |
-| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted), outside two pinned `cfg(feature = "store")` test files |
+| 4 | `data/scenario` | names none of `crate::` `camera`, `diagnostics`, `doll`, `editing`, `frame`, `overlay`, `spatial`, `streaming`, `world`, `data::store`, nor `graphics_engine`, nor a `super::` chain ending on one of them (`diagnostics` excepted), outside two pinned `cfg(feature = "store")` test files |
 | 5 | `editing` | no `web_sys`, `leptos` or `wasm_bindgen`, prose included |
-| 6 | `apps/frontend` | no `graphics_engine::` path or `extern crate`, no `graphics_engine` edge in `Cargo.toml` |
-| 7 | `data` and `world` | `data/` names none of the ten sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
+| 6 | `apps/frontend` | no `graphics_engine::` path or `extern crate`, no `graphics_engine` edge in `Cargo.toml`; the same for each `crates/graphics` member declaring `targets = "wasm32"` |
+| 7 | `data` and `world` | `data/` names none of the nine sibling modules of rule 4 nor the graphics engine; `world/` names neither `crate::data` nor `yrs::` |
 
 The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
 
-### Rule 1: the graphics engine never imports the map engine
+### Rule 1: the graphics layer never imports the map engine
 
-- Subject: the `.rs` files under `legacy/graphics_engine/src` and its `Cargo.toml`.
-- Forbids: the text `map_engine` in source, and `map_engine` on a manifest line
-  that is not a `#` comment. The manifest arm closes the rename hole: a dependency renamed with
-  `package = "map_engine"` would make every `use` spell a name the source arm never sees.
+- Subject: the `.rs` files under `legacy/graphics_engine/src` and its `Cargo.toml`, and the
+  `.rs` files under the `src` folder and the `Cargo.toml` of every `crates/graphics` member.
+- Forbids: a `map_engine::` path or `extern crate map_engine` in source
+  (`MAP_ENGINE_IMPORT_RE`), and `map_engine` on a manifest line that is not a `#` comment. The
+  manifest arm closes the rename hole: a dependency renamed with `package = "map_engine"` would
+  make every `use` spell a name the source arm never sees.
 - Why: [dependency direction](#dependency-direction--non-negotiable). A reverse edge turns the
   arrow into a cycle.
+- Agreement with the crate-tier law: the category matrix lets a graphics crate depend on
+  foundation and graphics crates only, and the strangler rule forbids any edge into `legacy/`, so
+  a `crates/graphics` member's edge to the map engine or to a map crate is already a crate-tier
+  finding. Rule 1 forbids a subset of the same edges and adds the source arm; the two never
+  disagree. The legacy graphics engine is outside the crate-tier law, and rule 1 with the
+  `GRAPHICS_ENGINE_RULE` row of `tools/foundation/repository_laws/src/crate_dependencies.rs`
+  are its wall.
 - Exemptions and pins: none.
 
-### Rule 2: no map noun in a graphics engine declaration
+### Rule 2: no map noun in a graphics layer declaration
 
-- Subject: the `.rs` files under `legacy/graphics_engine/src`.
+- Subject: the `.rs` files under `legacy/graphics_engine/src` and under the `src` folder of
+  every `crates/graphics` member. The crate-tier law's graphics firewall reuses the same matcher
+  over the category, so the regex stays when the legacy engine is deleted.
 - Forbids: a declaration keyword (`struct`, `enum`, `trait`, `type`, `fn`, `const`, `static`,
   `mod`), whitespace, then a name containing `terrain`, `symbology`, `mission`, `orbat` or
   `arma`, case-insensitive (`DECL_RE`). `struct TerrainBlob` and `fn submit_mission` fail;
@@ -312,10 +329,14 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
 
 - Subject: the `.rs` files under `legacy/map_engine/src/data/scenario`.
 - Forbids (`RULE4_RE`): `crate::` followed by `camera`, `diagnostics`, `doll`, `editing`,
-  `frame`, `io`, `overlay`, `spatial`, `streaming`, `world` or `data::store`;
+  `frame`, `overlay`, `spatial`, `streaming`, `world` or `data::store`;
   `graphics_engine`; and a `super::` chain of any length ending on `store`, `camera`,
-  `doll`, `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming` or `world`. `diagnostics` is left out of the `super::` arm because
+  `doll`, `editing`, `frame`, `overlay`, `spatial`, `streaming` or `world`. `diagnostics` is left out of the `super::` arm because
   `data/scenario/compiler/flatten/diagnostics.rs` is a module inside the tree.
+- The list is the map engine's ten top-level modules minus `data`. Code that left the map engine
+  for a crate of its own (`world_file_formats`, `camera_math`, `map_coordinates`) is no module
+  of it, so no arm names it: the crate-tier law and the map engine's feature gates judge those
+  edges.
 - Why: [2A](#2a-the-apis-thin-tier). The `super::` arm exists because a `crate::`-only matcher
   would leave a one-line bypass, and a depth count would be unsound where `#[path]` separates file
   depth from module depth.
@@ -334,13 +355,18 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
   reach for `leptos` is the breach the rule exists to stop.
 - Exemptions and pins: none; a hard zero.
 
-### Rule 6: the frontend never imports the graphics engine
+### Rule 6: the frontend never imports the GPU layer
 
 - Subject: the `.rs` files under `apps/frontend/src` and `apps/frontend/Cargo.toml`.
 - Forbids: a `graphics_engine::` path or `extern crate graphics_engine`
   (`GRAPHICS_IMPORT_RE`), and `graphics_engine` on a manifest line that is not a `#`
-  comment. Prose naming the crate while describing the boundary passes.
-- Why: [section 4](#4-the-frontend-a-thin-browser-app).
+  comment; and the same two shapes for every `crates/graphics` member declaring
+  `targets = "wasm32"`, spelled with that member's crate and package names
+  (`wasm_only_graphics_import_re`). Prose naming a crate while describing the boundary passes.
+- Why: [section 4](#4-the-frontend-a-thin-browser-app). The rule keeps the frontend away from the
+  GPU layer, not from shared CPU code: a graphics member built for every target
+  (`targets = "any"`, such as `render_primitives`) holds byte layouts, geometry and glyph
+  packing the frontend may link.
 - Exemptions and pins: none.
 
 ### Rule 7: the static world and the authored document share nothing
@@ -348,7 +374,7 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
 - Subject: the `.rs` files under `legacy/map_engine/src/data` and
   `legacy/map_engine/src/world`, judged as one rule with one findings list.
 - Forbids: under `data/` (`RULE7_DATA_RE`), `crate::` followed by `camera`, `diagnostics`, `doll`,
-  `editing`, `frame`, `io`, `overlay`, `spatial`, `streaming` or `world`,
+  `editing`, `frame`, `overlay`, `spatial`, `streaming` or `world`,
   `graphics_engine`, or a `super::` chain ending on one of them but `diagnostics`; under
   `world/` (`RULE7_WORLD_RE`), `crate::data`, `yrs::` or a `super::` chain ending on `data`.
   `yrs::` rather than the bare word, so "3 yrs" in prose passes.
@@ -360,9 +386,9 @@ The paths of rules 4, 5 and 7 are under `legacy/map_engine/src/`.
 ### Changing a rule or a pin
 
 - A pin row is a reviewed edit to
-  `tools/verification_core/src/repository_laws/engine_layers/rules.rs`, carrying its file,
+  `tools/foundation/repository_laws/src/engine_layers/rules.rs`, carrying its file,
   exact count and reason; the unit tests in
-  `tools/verification_core/src/repository_laws/engine_layers/tests/` hold each rule's shape (`naming_the_frame_vocabulary_outside_the_boundary_fails`,
+  `tools/foundation/repository_laws/src/engine_layers/tests/` hold each rule's shape (`naming_the_frame_vocabulary_outside_the_boundary_fails`,
   `a_new_gpu_module_import_in_the_map_engine_fails`,
   `the_scenario_tree_reaching_outside_itself_fails`,
   `inputs_that_were_never_read_do_not_pass`).

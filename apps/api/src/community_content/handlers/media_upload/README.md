@@ -37,8 +37,8 @@ contract type `UploadResponseUrl` before it is sent.
 
 ## Boundaries
 
-- Depends on: `models::generated::content_upload` (`UploadResponse`, `UploadResponseUrl`,
-  `ContentRefusalCode`); `core` for the application state, the `AdminUser` extractor, `ApiError`
+- Depends on: `contract_schema_types::community_content::content_upload` (`UploadResponse`,
+  `UploadResponseUrl`, `ContentRefusalCode`); `core` for the application state, the `AdminUser` extractor, `ApiError`
   and `Config::upload_dir` (`UPLOAD_DIR`); tokio for the file writes.
 - Used by: the domain's `routes.rs`, which registers `upload_image` behind the multipart body
   limit; over HTTP, the hero upload of the content manager under

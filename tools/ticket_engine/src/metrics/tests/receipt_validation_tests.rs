@@ -208,12 +208,12 @@ fn land_stamp_two_tickets_touches_only_metrics_never_ticket_tomls() {
     };
     git(&["init", "-q"]);
     fs::write(
-        tmp.join(crate::repository::TICKETS_DIR).join("T-990.toml"),
+        tmp.join(repository_layout::TICKETS_DIR).join("T-990.toml"),
         "id = \"T-990\"\n",
     )
     .unwrap();
     fs::write(
-        tmp.join(crate::repository::TICKETS_DIR).join("T-991.toml"),
+        tmp.join(repository_layout::TICKETS_DIR).join("T-991.toml"),
         "id = \"T-991\"\n",
     )
     .unwrap();

@@ -7,12 +7,12 @@ use super::*;
 /// (rather than an error) when the terrain or staging directory is simply absent, matching the
 /// rest of the `map` lane.
 pub fn emit_water(terrain: &str) -> Result<u8> {
-    let dir = terrain_dir(terrain);
+    let dir = terrain_dir(terrain)?;
     if !dir.is_dir() {
         eprintln!("water: no terrain directory at {}", dir.display());
         return Ok(1);
     }
-    let staging = scratch_dir(terrain).join(STAGING_WATER);
+    let staging = scratch_dir(terrain)?.join(STAGING_WATER);
     if !staging.is_dir() {
         eprintln!(
             "water: no staging export at {} — run the Workbench inland-water exporter first",

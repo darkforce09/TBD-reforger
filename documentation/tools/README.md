@@ -18,14 +18,14 @@ documentation/tools/
 ## How it works
 
 Start with the [tooling architecture](/documentation/tools/tooling_architecture.md): it
-lays out the four crates and the npm package, the rules that keep them apart and the tests that
+lays out the crates and the npm package, the rules that keep them apart and the tests that
 hold those rules. The subfolders mirror the crate folders that have documents of their own:
 
 | Tooling unit | Code README | Documents |
 |---|---|---|
 | `xtask`, the `cargo xtask` command router and every repository verification | [`tools/xtask/`](/tools/xtask/README.md), with the [command line](/tools/xtask/src/cli/README.md) and [verifications](/tools/xtask/src/verifications/README.md) READMEs | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
 | `ticket_engine`, the ticket registry library | [`tools/ticket_engine/`](/tools/ticket_engine/README.md) | [`ticket_engine/`](/documentation/tools/ticket_engine/README.md) |
-| `verification_core`, the fail-closed verdict and lock primitives | [`tools/verification_core/`](/tools/verification_core/README.md) | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
+| `verification_core`, `process_runner` and `repository_laws`, the foundation crates: verdicts and the lock, child processes, the repository laws | [`tools/foundation/`](/tools/foundation/README.md) | [Tooling architecture](/documentation/tools/tooling_architecture.md) |
 | `developer_tools`, the six heavy executables | [`tools/developer_tools/`](/tools/developer_tools/README.md) | [`developer_tools/`](/documentation/tools/developer_tools/README.md) |
 | `enfusion_mcp_node_package`, the pinned MCP server | [`tools/enfusion_mcp_node_package/`](/tools/enfusion_mcp_node_package/README.md) | [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md) |
 

@@ -26,10 +26,10 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use verification_core::proc::{self, Run};
+use process_runner::Run;
 use verification_core::verdict::NotRun;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// Optional absolute psql path for unit tests (avoids PATH mutation).
 const ENV_PSQL: &str = "TBD_SEED_MILESTONE_PSQL";
@@ -74,7 +74,7 @@ const COMMAND: &str = "cargo xtask mod seed-announcement";
 
 /// Entry for `xtask mod seed-announcement`.
 pub fn run() -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     run_with_root(&root)
 }
 
@@ -159,7 +159,7 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     }
 }
 
-/// Resolve a tool: optional absolute override env, else `PATH` via [`proc::which`].
+/// Resolve a tool: optional absolute override env, else `PATH` via [`process_runner::which`].
 ///
 /// A set-but-missing override path is [`NotRun::ToolAbsent`] (test seam for "no psql" without
 /// wiping `PATH`). Empty / unset override falls through to `which`.
@@ -174,7 +174,7 @@ fn resolve_tool(env_key: &str, name: &str) -> Result<PathBuf, NotRun> {
             return Err(NotRun::ToolAbsent(name.to_string()));
         }
     }
-    proc::which(name)
+    process_runner::which(name)
 }
 
 fn run_sql(run: Run) -> Result<u8> {

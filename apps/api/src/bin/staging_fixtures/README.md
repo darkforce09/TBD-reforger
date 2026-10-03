@@ -72,11 +72,12 @@ database URL never reach stdout or stderr, and `ApiEnvironment`'s `Debug` prints
 
 - Depends on: the `api` library: `core::database`, `core::authentication_primitives`,
   `core::error_handling`, `server_infrastructure::services::{server_registration,
-  machine_credentials}`, `server_infrastructure::models::machine_credential` and
-  `identity_and_access::services::account_authority`,
+  machine_credentials}` and `identity_and_access::services::account_authority`,
   `operations::services::event_authoring::{event_creation, mission_attachment}`,
   `identity_and_access::services::{account_registration, discord_membership_cache,
-  session_issuance, discord_client}` and `administration::services::required_audit`; `dotenvy` for
+  session_issuance, discord_client}` and `administration::services::required_audit`;
+  `fleet_wire_contract` for `ExecutorKind` and the secret-file limits the host agent reads its
+  credential files under; `dotenvy` for
   the API env file, `reqwest` and `rustls` for the Discord reads, `tracing-subscriber` for the
   services' error logs on stderr.
 - Used by: the operator on the staging host;

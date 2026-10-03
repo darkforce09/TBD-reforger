@@ -10,8 +10,8 @@ use anyhow::{Result, bail};
 use serde_json::{Value, json};
 
 use super::image_operations::{self, Rgb8};
-use crate::browser_testing::server::repo_root;
 use crate::enfusion_pak::PakVfs;
+use crate::repository_layout::compiled_checkout_root;
 use crate::timestamp_formatting::iso_from_system_time;
 use crate::world_export_pipeline::json_number_formatting::js_num;
 use crate::world_export_pipeline::topo::decode_topo;

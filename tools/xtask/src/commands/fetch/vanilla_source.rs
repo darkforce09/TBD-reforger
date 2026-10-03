@@ -13,7 +13,7 @@
 //!   one state that would make every later lookup silently miss.
 //! - An HTTP miss counts as `miss` and leaves the exit code at 0.
 //!
-//! Curl runs through [`verification_core::proc::Run`]. Cache hits, an unknown name, `--grep`
+//! Curl runs through [`process_runner::Run`]. Cache hits, an unknown name, `--grep`
 //! usage and the empty-index refusal all work offline; a page that is absent is fetched with the
 //! same recipe.
 
@@ -24,8 +24,8 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
+use process_runner::Run;
 use regex::Regex;
-use verification_core::proc::{self, Run};
 
 const BASE: &str = "https://arexplorer.zeroy.com";
 const UA: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
@@ -251,7 +251,8 @@ fn lookup_page(map_path: &Path, name: &str) -> Result<Option<String>> {
 
 /// Fetch one document to `dest`. A curl failure here stops the command.
 fn curl_download(url: &str, dest: &Path) -> Result<()> {
-    let curl = proc::which("curl").map_err(|_| anyhow::anyhow!("curl: command not found"))?;
+    let curl =
+        process_runner::which("curl").map_err(|_| anyhow::anyhow!("curl: command not found"))?;
     let out = Run::new(curl)
         .args([
             "-sSL",
@@ -280,7 +281,7 @@ fn curl_fetch(url: &str, dest: &Path) -> Result<String> {
         .truncate(true)
         .open(dest);
 
-    match proc::which("curl") {
+    match process_runner::which("curl") {
         Err(_) => {
             let _ = fs::remove_file(dest);
             Ok("000".to_string())

@@ -9,7 +9,7 @@ use anyhow::Context;
 pub const TOKENS_PER_LOC: u64 = 150;
 
 pub fn estimates_root(root: &Path) -> PathBuf {
-    root.join(crate::repository::ESTIMATES_DIR)
+    root.join(repository_layout::ESTIMATES_DIR)
 }
 
 /// The WIDENED cohort key actually used — only the fields that constrained the

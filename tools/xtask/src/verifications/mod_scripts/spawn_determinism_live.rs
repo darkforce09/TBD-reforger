@@ -8,16 +8,15 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
 use regex::Regex;
-use verification_core::proc;
 
 use super::{
     assess_run, det_timeout, extract, keep_snapshots, normalize, port_open, tempfile_dir, wb_port,
 };
 
-fn mcp(repo_root: &Path, tool: &str, args_json: &str) -> proc::Merged {
+fn mcp(repo_root: &Path, tool: &str, args_json: &str) -> process_runner::Merged {
     // `cargo xtask mcp call`.
     // Callers inspect `.code` / `.text` (bash redirected most calls).
-    match proc::Run::new("cargo")
+    match process_runner::Run::new("cargo")
         .args([
             "run", "-q", "-p", "xtask", "--", "mcp", "call", tool, args_json,
         ])
@@ -25,7 +24,7 @@ fn mcp(repo_root: &Path, tool: &str, args_json: &str) -> proc::Merged {
         .merged_output()
     {
         Ok(m) => m,
-        Err(_) => proc::Merged {
+        Err(_) => process_runner::Merged {
             code: 127,
             text: String::new(),
             duration: Duration::ZERO,
@@ -67,14 +66,14 @@ fn latest_log() -> Option<PathBuf> {
 
 fn restart_wb_once(repo_root: &Path, world: &str) -> bool {
     // Bracket trick preserved in spirit: kill WorkbenchSteamDiag without matching ourselves.
-    let _ = proc::Run::new("pkill")
+    let _ = process_runner::Run::new("pkill")
         .arg("-f")
         .arg("WorkbenchSteamD[i]ag")
         .merged_output();
     thread::sleep(Duration::from_secs(5));
     if !port_open() {
         // bash: `steam -applaunch 1874910 2>/dev/null || true` — intentional launch fail-open.
-        let _ = proc::Run::new("steam")
+        let _ = process_runner::Run::new("steam")
             .arg("-applaunch")
             .arg("1874910")
             .merged_output();
@@ -119,7 +118,7 @@ fn restart_wb(repo_root: &Path, world: &str) {
 }
 
 fn sha256_file(path: &Path) -> Result<String> {
-    let out = proc::Run::new("sha256sum")
+    let out = process_runner::Run::new("sha256sum")
         .arg(path)
         .output()
         .map_err(|e| anyhow::anyhow!("sha256sum: {e:?}"))?;

@@ -42,7 +42,7 @@ pub fn phase_kinds(phase: &str) -> Option<&'static [&'static str]> {
 
 pub fn terrain_row(terrain: &str) -> Result<Value> {
     let reg: Value = serde_json::from_str(&std::fs::read_to_string(terrain_registry_path(
-        &repo_root(),
+        &compiled_checkout_root()?,
     ))?)?;
     reg["terrains"]
         .as_array()

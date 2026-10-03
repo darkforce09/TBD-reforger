@@ -9,10 +9,10 @@ mod common;
 mod contract_support;
 mod telemetry_support;
 
-use api::match_telemetry::models::generated::match_telemetry::{
+use axum::http::StatusCode;
+use contract_schema_types::match_telemetry::match_telemetry::{
     MatchResultsAnswer, MatchResultsRevision,
 };
-use axum::http::StatusCode;
 use serde_json::{Value, json};
 use telemetry_support::match_reports::ReportingServer;
 use telemetry_support::report_fixtures::{

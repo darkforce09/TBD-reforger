@@ -10,7 +10,7 @@ use super::*;
 /// each subject and skip it when the read fails — makes deleting a file retire the check that
 /// covered it, while the gate goes on printing `OK (none)` over a smaller reach.
 pub fn verify_no_node() -> Result<u8> {
-    let root = repo_root()?;
+    let root = repository_layout::find_repository_root()?;
     let mut fails = 0u64;
 
     println!("==> git ls-files '*.mjs' '*.cjs' (excl apps/mod)");

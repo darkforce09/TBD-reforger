@@ -50,8 +50,9 @@ servers, skipping rows another transaction holds. Lock order: server, runtime se
 
 ## Boundaries
 
-- Depends on: `models::fleet_command` and `models::machine_credential` of the domain,
-  `services::machine_credentials::MachineCaller` and `services::runtime_sessions::share_open_session`;
+- Depends on: `fleet_wire_contract` for `FleetAction`, `ExecutorKind` and the request,
+  receipt, claim, report and console shapes; `models::fleet_command` of the domain
+  (`FleetCommandState`, `FleetCommandReceiptRow`), `services::machine_credentials::MachineCaller` and `services::runtime_sessions::share_open_session`;
   `identity_and_access::services::account_authority::holds_administrator_authority`;
   `administration::services::required_audit`; `core` for errors.
 - Used by: the domain's `fleet_commands.rs` and `fleet_executor.rs` handlers; the mission

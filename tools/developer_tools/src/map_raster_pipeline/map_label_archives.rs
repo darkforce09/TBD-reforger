@@ -40,8 +40,8 @@ use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::labels::MapLabelsArchive;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
-use crate::browser_testing::server::repo_root;
 use crate::repository_layout;
+use crate::repository_layout::compiled_checkout_root;
 
 /// Terrain-relative source paths.
 pub const LOCATIONS_JSON: &str = "locations.json";
@@ -124,13 +124,18 @@ pub fn write_map_labels_rkyv(path: &Path, archive: &MapLabelsArchive) -> Result<
 
 /// Resolve the `--terrain` value: a directory path when it names one, else a terrain id under
 /// `assets/terrains`.
-#[must_use]
-pub fn terrain_dir(terrain: &str) -> PathBuf {
+///
+/// # Errors
+/// When `terrain` names no directory and no checkout root lies above this crate's manifest folder.
+pub fn terrain_dir(terrain: &str) -> Result<PathBuf> {
     let as_path = PathBuf::from(terrain);
     if as_path.is_dir() {
-        return as_path;
+        return Ok(as_path);
     }
-    repository_layout::terrain_dir(&repo_root(), terrain)
+    Ok(repository_layout::terrain_dir(
+        &compiled_checkout_root()?,
+        terrain,
+    ))
 }
 
 /// `map labels-rkyv --terrain <id|dir>`.
@@ -138,7 +143,7 @@ pub fn terrain_dir(terrain: &str) -> PathBuf {
 /// # Errors
 /// When the terrain directory is missing, or any step of the build/write fails.
 pub fn emit_map_labels(terrain: &str) -> Result<u8> {
-    let dir = terrain_dir(terrain);
+    let dir = terrain_dir(terrain)?;
     if !dir.is_dir() {
         eprintln!("labels-rkyv: no terrain directory at {}", dir.display());
         return Ok(1);

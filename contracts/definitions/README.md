@@ -24,8 +24,9 @@ A schema reaches code in one of three ways:
 
 - **Generated types.** `cargo xtask schema codegen` (the `schema-codegen` CI task) runs typify over
   the schemas listed in `TARGETS` in `tools/xtask/src/commands/generate/schema_types.rs` and
-  writes one module directory per schema into the `models/generated/` or `contract/generated/`
-  folder of its owning API domain. `cargo xtask ci verify-codegen-fresh` re-renders them in memory
+  writes one module directory per schema into
+  `crates/contracts/contract_schema_types/src/generated/`, under the module of the API domain that
+  serves or reads it. `cargo xtask ci verify-codegen-fresh` re-renders them in memory
   and fails on any missing, changed or stray file; it runs in `ci-local-schema` and in the
   `contracts.yml` workflow. `loadout-export.schema.json` stays out of codegen, because its
   versioned root `oneOf` does not survive typify; its model is hand-written in
@@ -56,9 +57,9 @@ A schema reaches code in one of three ways:
 | Web API responses without generated types | `service-health`, `session-token`, `profile-update`, `arma-link`, `personnel-actions`, `command-center`, `service-record`, `leave-request`, `event-schedule`, `reservation-actions`, `member-directory`, `fire-mission`, `announcement`, `modpack`, `mission-library`, `mission-default-overrides`, `arsenal-envelopes`, `server-intel`, `runtime-heartbeat-receipt` | the `@contract` tags of the hand-written API models and handlers; the API's route-acceptance and golden parity tests |
 | Fleet and machine credentials | `machine-credential`, `fleet-command` | generated API models; the fleet host agent's ledger client; API contract tests |
 | Game runtime | `game-runtime-session`, `game-runtime-roster`, `game-runtime-deployment` | generated API models; API contract tests; the [mod](/documentation/glossary/g_to_m.md#mod)'s API bridge, which calls these routes |
-| Administration | `personnel-roster`, `audit-log` | generated API models in `apps/api/src/administration/models/generated/`; API contract tests; the web app's DTOs |
-| Community content | `vehicle-database`, `wiki-page`, `content-upload` | generated API models in `apps/api/src/community_content/models/generated/`; API contract tests; the web app's DTOs |
-| Match telemetry | `match-telemetry` | generated API models in `apps/api/src/match_telemetry/models/generated/match_telemetry/`; the API's ingest decoders and the integration suites; the web app's DTOs; the mod's telemetry reports, queue and event wire |
+| Administration | `personnel-roster`, `audit-log` | generated types in `crates/contracts/contract_schema_types/src/generated/administration/`; API contract tests; the web app's DTOs |
+| Community content | `vehicle-database`, `wiki-page`, `content-upload` | generated types in `crates/contracts/contract_schema_types/src/generated/community_content/`; API contract tests; the web app's DTOs |
+| Match telemetry | `match-telemetry` | generated types in `crates/contracts/contract_schema_types/src/generated/match_telemetry/match_telemetry/`; the API's ingest decoders and the integration suites; the web app's DTOs; the mod's telemetry reports, queue and event wire |
 | Missions | `mission`, `mission-editor-payload`, `mission-review`, `mission-deployment` | API validators and generated models; the mod's mission DTOs; the Mission Creator; the map engine's tests |
 | Arsenal and factions | `registry-items`, `registry-compat`, `registry`, `loadout-export`, `faction-library` | API validators, generated and hand-written models; the registry export plugin; the mod's loadout equip path; the Mission Creator's [arsenal](/documentation/glossary/a_to_f.md#arsenal) |
 | Terrain | `terrain-manifest`, `terrain-anchors`, `terrain-registry`, `locations`, `height-labels` | the schema gate; the developer tools' map verifications |
@@ -118,9 +119,8 @@ other map-object schemas, the prefab classification rules and the glyph keys all
 
 - Producers: people; a schema change ships with its regenerated types and updated fixtures.
 - Consumers:
-  - the typify codegen in `tools/xtask/src/commands/generate/`, and the generated modules under
-    `apps/api/src/*/models/generated/` and
-    `apps/api/src/missions/contract/generated/`;
+  - the typify codegen in `tools/xtask/src/commands/generate/`, and the generated modules of
+    `crates/contracts/contract_schema_types/`;
   - the API's embedded validators in
     `apps/api/src/missions/contract/schema_validators.rs` and
     `apps/api/src/missions/handlers/mission_default_overrides.rs`, and its contract tests

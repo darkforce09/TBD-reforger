@@ -2,9 +2,9 @@ use super::*;
 
 use crate::{Domain, ScopeV2, Status, WorkTicket};
 
-/// Real repo root, the xtask-tests precedent: `CARGO_MANIFEST_DIR/../..`.
-fn repo_root() -> PathBuf {
-    crate::repository::find_repo_root().expect("repository root")
+/// The repository root, found by walking up from the working directory to its marker.
+fn worktree_root() -> PathBuf {
+    repository_layout::find_repository_root().expect("repository root")
 }
 
 /// Minimal vocabulary every scratch TREE carries (`Corpus::load` is
@@ -14,9 +14,9 @@ const MINI_VOCAB: &str = "[repo.docs]\n";
 fn scratch_dir(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("tbd-tickets-store-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR))
+    fs::create_dir_all(dir.join(repository_layout::TICKETS_DIR))
         .expect("mkdir scratch tickets dir");
-    fs::write(dir.join(crate::repository::SCOPE_VOCAB), MINI_VOCAB).expect("write scratch vocab");
+    fs::write(dir.join(repository_layout::SCOPE_VOCAB), MINI_VOCAB).expect("write scratch vocab");
     dir
 }
 

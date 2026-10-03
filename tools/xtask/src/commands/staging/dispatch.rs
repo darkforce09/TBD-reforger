@@ -33,11 +33,11 @@ use super::remote_observers::remote_command::{HostCommandRunner, RemoteCommand};
 use super::run_identity::recorded_command;
 use super::staging_settings::StagingSettings;
 use super::support_commands::{fingerprints, host_capacity, preflight, status};
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// Runs one `cargo xtask staging` subcommand and returns its exit code.
 pub(crate) fn run(cmd: StagingCmd) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     let mut stdout = io::stdout();
     let output: &mut dyn Write = &mut stdout;
     match cmd {

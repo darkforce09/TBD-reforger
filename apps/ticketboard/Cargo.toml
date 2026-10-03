@@ -48,6 +48,8 @@ serde = { workspace = true, features = ["derive"] }
 # The metrics dashboard's run-receipt JSON parse: the same parser `ticket check` reads the
 # receipts with, so the two never disagree on JSON dialect.
 serde_json = { workspace = true }
+# The checkout-root walk and the registry, metrics, estimates and wave-lock locations.
+repository_layout = { workspace = true }
 ticket_engine = { path = "../../tools/ticket_engine" }
 # Elapsed derivation (finished − started at query time): the same RFC 3339 parser
 # tools/ticket_engine/src/metrics/ uses, so elapsed never disagrees with the checker.

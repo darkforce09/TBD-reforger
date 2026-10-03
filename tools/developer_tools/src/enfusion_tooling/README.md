@@ -77,7 +77,7 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
 - Depends on: `crate::enfusion_pak::PakVfs` for `extract` and `dump-entry`;
   `crate::repository_layout` for the index folder, the references folder and its vanilla lane
   paths, the documentation root, the verdict table and the installed MCP module;
-  `crate::repository_paths::find_repo_root` for the output guard; `tokio` for the broker; `clap` and `regex`.
+  `repository_layout::find_repository_root` and `repository_layout::REFERENCES_DIR` for the output guard; `tokio` for the broker; `clap` and `regex`.
 - Used by:
   - `tools/developer_tools/src/bin/enf.rs` (`cli::entrypoint`) and
     `tools/developer_tools/src/bin/mcpd.rs` (`mcp_broker::run`);

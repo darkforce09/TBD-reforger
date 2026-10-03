@@ -6,7 +6,7 @@ fn nested_tooling_directories_resolve_repository_and_fixtures() {
     let root = test_repo_root();
     for relative in [".", "tools/xtask", "tools/xtask/src"] {
         let _cwd = CwdGuard::enter(&root.join(relative));
-        let resolved = find_repo_root().expect("repository root");
+        let resolved = repository_layout::find_repository_root().expect("repository root");
         assert_eq!(resolved, root);
         for fixture in [
             "contracts/definitions/mission.schema.json",

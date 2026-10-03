@@ -163,7 +163,7 @@ fn workspace_members_parse_is_not_empty_on_the_real_manifest() {
     // (whose tree carries `.ai/tickets/ROOT`) becomes the "repo root" this test reads.
     let Some(cwd) =
         crate::commands::platform::wave_execution::testcwd::CwdGuard::enter_resolved(|| {
-            crate::core::repository_root::find_repo_root().ok()
+            repository_layout::find_repository_root().ok()
         })
     else {
         return;

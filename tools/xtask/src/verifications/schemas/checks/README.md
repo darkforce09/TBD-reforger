@@ -57,7 +57,7 @@ error, which exits 1.
 
 - Depends on: `developer_tools::repository_layout` (contract, definition, catalog, fixture, glyph
   and terrain paths) and `developer_tools::world_export_pipeline::INSTANCE_KINDS`;
-  `verification_core::repository_laws::workspace_members` for the citation roots; `jsonschema`;
+  `repository_laws::workspace_members` for the citation roots; `jsonschema`;
   `regex`; `walkdir`; `serde_json`.
 - Used by: `checks.rs`, and through it the `schema` command group and the `schema-validate` and
   `verify-citations` rows of `tools/xtask/src/commands/ci/task_definitions.rs`.

@@ -21,7 +21,8 @@ const EVERON_ROAD_NAME_FLOOR: usize = 6;
 const ZOOMS: [f64; 7] = [-2.0, -0.5, 0.0, 0.5, 1.0, 2.0, 3.0];
 
 fn everon_dir() -> PathBuf {
-    crate::repository_layout::terrain_dir(&repo_root(), "everon")
+    let root = compiled_checkout_root().expect("repository root");
+    crate::repository_layout::terrain_dir(&root, "everon")
 }
 
 /// A copy of `bytes` starting on a 16-byte boundary — what a loader must do with the
@@ -228,7 +229,10 @@ fn road_names_without_geometry_are_refused() {
 
 #[test]
 fn terrain_dir_takes_an_id_or_a_directory() {
-    assert_eq!(terrain_dir("everon"), everon_dir());
-    let here = repo_root();
-    assert_eq!(terrain_dir(here.to_str().expect("utf8")), here);
+    assert_eq!(terrain_dir("everon").expect("terrain dir"), everon_dir());
+    let here = compiled_checkout_root().expect("repository root");
+    assert_eq!(
+        terrain_dir(here.to_str().expect("utf8")).expect("terrain dir"),
+        here
+    );
 }

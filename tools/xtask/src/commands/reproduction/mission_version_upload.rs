@@ -19,8 +19,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
+use process_runner::Run;
 use regex::Regex;
-use verification_core::proc::Run;
 use verification_core::verdict::NotRun;
 
 /// Entry for `xtask repro mission-upload`.

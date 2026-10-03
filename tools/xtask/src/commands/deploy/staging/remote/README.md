@@ -6,7 +6,7 @@ verdict per instance, the relay and host agents, and the final log check per ins
 `tools/xtask/src/commands/deploy/staging/remote.rs` declares the files here and holds
 `Runner`, which prints each ssh call under a dry run instead of spawning it; the transport it
 drives, `SshBase` (plain ssh, `sshpass -e` or an identity file) and the ssh argv, lives in
-`tools/xtask/src/core/secure_shell_transport.rs`, which the staging harness shares.
+`tools/foundation/process_runner/src/secure_shell_transport.rs`, which the staging harness shares.
 
 ## Contents
 
@@ -75,7 +75,7 @@ instance without one.
 - Depends on: `super::config::Env`, `super::fleet_instances`, `super::fleet_server_config`,
   `super::payloads`, `super::fleet_units`, `super::host_agent`, `super::acknowledgement_relay`,
   `super::legacy_single_instance_migration` and `super::boot`;
-  `crate::commands::deploy::development_machine_only_paths` for the exclusions both deploys share; `verification_core::proc` for spawns; ssh, sshpass and rsync on
+  `crate::commands::deploy::development_machine_only_paths` for the exclusions both deploys share; `process_runner` for spawns; ssh, sshpass and rsync on
   the development machine, and bash, curl, systemd user units and cargo on the host, with the
   website API that `cargo xtask deploy website` runs there.
 - Used by: `run` in `tools/xtask/src/commands/deploy/staging.rs`.

@@ -44,7 +44,7 @@ one-dot parent, so a sub-slice shares its parent's tree.
 
 ## Boundaries
 
-- Depends on: `verification_core::proc::Run`, `crate::core::repository_layout` (`WORKTREES_DIR`,
+- Depends on: `process_runner::Run`, `crate::core::repository_layout` (`WORKTREES_DIR`,
   `REFERENCES_DIR`, the three lane paths and `PLAYABLE_SELECTOR_OVERRIDE_ENV`),
   `crate::commands::platform::wave_execution::verdict`, and `git`.
 - Used by: `tools/xtask/src/commands/platform/slice_worktree.rs` (`run`, `run_at`); in-process

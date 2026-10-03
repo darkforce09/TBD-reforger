@@ -9,15 +9,15 @@ enum `user_role`, ordered `guest` < `enlisted` < `leader` < `mission_maker` < `a
 ```text
 apps/api/src/identity_and_access/models/
 ├── current_profile.rs  the `GET` and `PATCH /api/v1/me` answers, with link and membership flags
-├── generated/          types generated from `current-profile.schema.json`, read by the contract test
 ├── mod.rs              the module tree; re-exports the account types
 └── user_account.rs     `User`, `UserRole` and the Discord role, link code and refresh token rows
 ```
 
 ## Boundaries
 
-- Depends on: `core::wire_format` for timestamps, serde and sqlx; `generated/` follows
-  `contracts/definitions/current-profile.schema.json`. `current_profile.rs` and
+- Depends on: `core::wire_format` for timestamps, serde and sqlx; the types generated from
+  `contracts/definitions/current-profile.schema.json` are
+  `contract_schema_types::identity_and_access::current_profile`. `current_profile.rs` and
   `user_account.rs` carry `@contract` tags for `current-profile.schema.json` (the root and
   `UserAccount`) and `profile-update.schema.json` (`UpdatedProfile`, the `PATCH /api/v1/me`
   answer), which `cargo xtask schema citations` resolves.
@@ -27,6 +27,6 @@ apps/api/src/identity_and_access/models/
   generated types; the web app's `apps/frontend/src/v2/core/api/dto/auth.rs` mirrors the
   wire shape.
 - Rules: soft-delete columns stay out of these structs, since the queries filter them;
-  `RefreshToken.token_hash` never reaches the wire; `generated/` is written by
+  `RefreshToken.token_hash` never reaches the wire; the generated types are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
-  checks it).
+  checks them).

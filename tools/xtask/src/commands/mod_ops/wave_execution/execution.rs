@@ -2,7 +2,7 @@ use super::*;
 
 /// Entry for `xtask mod wave [args…]`.
 pub fn run(args: &[String]) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     Ok(run_with_root(&root, args))
 }
 

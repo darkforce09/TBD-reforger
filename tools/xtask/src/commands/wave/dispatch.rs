@@ -1,11 +1,11 @@
 use super::cli::WaveLockCmd;
-use crate::core::repository_root::find_repo_root;
 use crate::*;
 use anyhow::Result;
+use repository_layout::find_repository_root;
 
 pub(crate) fn run(cmd: WaveLockCmd) -> Result<u8> {
     {
-        let root = find_repo_root()?;
+        let root = find_repository_root()?;
         match cmd {
             WaveLockCmd::Repack { reserve } => {
                 let ids: Vec<String> = reserve

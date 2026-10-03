@@ -7,7 +7,6 @@
 //! [`crate::core::wire_format`]. The enums map to the Postgres ENUM types. Soft-delete columns
 //! are absent from these structs — the filter is enforced in the query layer.
 
-pub mod generated;
 pub mod match_event;
 pub mod match_event_page;
 pub mod match_record;

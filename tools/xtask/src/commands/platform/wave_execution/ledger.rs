@@ -191,19 +191,14 @@ pub fn has_work(id: &str) -> bool {
 /// The last-verified marker holds the sha the last verifier examined. Debt is the count of
 /// platform tickets marked shipped since. Nagging at 8, which is one wave's width.
 pub fn verify_debt(ctx: &Ctx) -> String {
-    let marker = ctx
-        .root
-        .join(crate::core::repository_layout::LAST_VERIFIED_MARKER);
+    let marker = ctx.root.join(repository_layout::LAST_VERIFIED_MARKER);
     let base = std::fs::read_to_string(&marker)
         .ok()
         .and_then(|s| s.lines().next().map(str::to_string))
         .map(|s| s.chars().filter(|c| !c.is_whitespace()).collect::<String>())
         .unwrap_or_default();
     if base.is_empty() {
-        return format!(
-            "unknown (no {})",
-            crate::core::repository_layout::LAST_VERIFIED_MARKER
-        );
+        return format!("unknown (no {})", repository_layout::LAST_VERIFIED_MARKER);
     }
     let log = git_stdout(&[
         "-C",

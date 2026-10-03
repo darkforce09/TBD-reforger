@@ -526,7 +526,7 @@ fn ship_gate_red_green_per_arm() {
     };
     let full = "shipped_at = \"abcdef12\"\ncreated_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n";
     let estimate_path = tmp
-        .join(crate::repository::ESTIMATES_DIR)
+        .join(repository_layout::ESTIMATES_DIR)
         .join("T-001.json");
     fs::create_dir_all(estimate_path.parent().unwrap()).unwrap();
     let with_estimate = || fs::write(&estimate_path, "{}").unwrap();
@@ -609,7 +609,7 @@ fn ship_gate_red_green_per_arm() {
         "{errs:?}"
     );
     // A receipt dir with one file satisfies the arm too.
-    let rdir = tmp.join(crate::repository::METRICS_DIR).join("T-001");
+    let rdir = tmp.join(repository_layout::METRICS_DIR).join("T-001");
     fs::create_dir_all(&rdir).unwrap();
     fs::write(rdir.join("r.json"), "{}").unwrap();
     assert!(

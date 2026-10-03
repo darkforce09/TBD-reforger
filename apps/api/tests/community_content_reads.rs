@@ -1,7 +1,6 @@
 //! Community-content reads — list envelopes, tier enforcement, the wiki save round trip and the
 //! vehicle create round trip. Needs `TEST_DATABASE_URL` (see `common::require_test_database_url`).
 
-use api::community_content::models::generated::wiki_page as wiki_contract;
 use api::core::application_state::AppState;
 use api::core::configuration::Config;
 use api::core::database;
@@ -9,6 +8,7 @@ use api::core::http_router;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
+use contract_schema_types::community_content::wiki_page as wiki_contract;
 use serde_json::Value;
 use tower::ServiceExt;
 

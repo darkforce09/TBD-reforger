@@ -12,10 +12,10 @@ use std::fs;
 use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
-use api::server_infrastructure::models::machine_credential::ExecutorKind;
 use api::server_infrastructure::services::machine_credentials::{
     authenticate_machine, revoke_machine_credential,
 };
+use fleet_wire_contract::ExecutorKind;
 use sqlx::PgPool;
 use tokio::sync::{Mutex, MutexGuard};
 use uuid::Uuid;

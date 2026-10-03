@@ -45,7 +45,7 @@ it writes. The same lock reader's `collides` and `colliding_pairs` give the deta
 ## Boundaries
 
 - Depends on: `crate::ticket_registry::models` (`Corpus`, `projection`, `palette`);
-  `ticket_engine` (`StatusName`, `Ticket`, `repository::WAVE_LOCK`); `serde` and `toml`;
+  `ticket_engine` (`StatusName`, `Ticket`, `repository_layout::WAVE_LOCK`); `serde` and `toml`;
   `eframe::egui` in `ui/` only.
 - Used by: `crate::application` (`background_loading.rs`, `workspace_state.rs`, `mod.rs`,
   `events.rs`, `feature_views.rs`) and its tests; `crate::ticket_browser::ui::detail_panel`.

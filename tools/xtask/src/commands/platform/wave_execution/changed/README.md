@@ -42,7 +42,7 @@ The wave gate passes `<base>..HEAD` from `super::base`, because `main...HEAD` is
 ## Boundaries
 
 - Depends on: `super::host` (host runs), `super::ledger`, the manifest and workspace member readers
-  of `verification_core::repository_laws`, the workspace and crate `Cargo.toml` manifests, `git`,
+  of `repository_laws`, the workspace and crate `Cargo.toml` manifests, `git`,
   `cargo` and `rustfmt`.
 - Used by: `super::gate` (both gate drivers) and `super::touch` (`touch_changed`,
   `touch_workspace`).

@@ -11,7 +11,7 @@ pub(super) static PRIORITY_P: LazyLock<Regex> =
 pub(super) const SCHEMA_ERROR_CAP: usize = 100;
 
 pub(super) fn ticket_schema_path(root: &Path) -> PathBuf {
-    root.join(crate::repository::SCHEMA)
+    root.join(repository_layout::SCHEMA)
 }
 
 /// Validate `registry` against the Draft 2020-12 ticket schema.

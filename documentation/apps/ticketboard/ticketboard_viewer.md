@@ -25,7 +25,7 @@ state of the work and to move tickets through their statuses.
 
 ### Opening a repository
 
-1. The root is the positional argument, else the first folder holding `.ai/tickets/` found
+1. The root is the positional argument, else the first folder holding `.ai/tickets/ROOT` found
    walking up from the working directory, else the root saved in the preferences. A root without
    `.ai/tickets/` shows the no-repository screen with a native folder picker.
 2. A worker thread loads the corpus, the wave lock, the run receipts, the estimates and the scope

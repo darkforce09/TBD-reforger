@@ -126,8 +126,15 @@ fn names_another_system(line: &str) -> bool {
     line.contains("default_value = \"scripts/\"") || line.contains("(E): @\"scripts/")
 }
 
-/// The three modules that own every repository path their crate spells.
-const LAYOUT_MODULES: [&str; 3] = [
+/// The `repository_layout` crate's location files and the three tool modules: the only production
+/// files that spell a repository path.
+const LAYOUT_MODULES: [&str; 9] = [
+    "tools/foundation/repository_layout/src/agent_artifacts.rs",
+    "tools/foundation/repository_layout/src/build_output.rs",
+    "tools/foundation/repository_layout/src/documentation.rs",
+    "tools/foundation/repository_layout/src/repository_root.rs",
+    "tools/foundation/repository_layout/src/ticket_registry.rs",
+    "tools/foundation/repository_layout/src/upstream_references.rs",
     "tools/ticket_engine/src/repository.rs",
     "tools/xtask/src/core/repository_layout.rs",
     "tools/developer_tools/src/repository_layout.rs",

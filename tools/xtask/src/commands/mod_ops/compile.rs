@@ -14,7 +14,7 @@ use regex::Regex;
 use crate::commands::mod_ops::compile_host::{
     Session, hostrun, is_executable, kill_run, mktemp_dir, require_host,
 };
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// bash `sed -n '2,44p' "$0"`.
 const HELP: &str = include_str!("compile_help.txt");

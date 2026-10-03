@@ -6,7 +6,6 @@
 
 pub mod audit_log;
 pub mod audit_stream;
-pub mod generated;
 pub mod personnel_page;
 pub mod warning;
 

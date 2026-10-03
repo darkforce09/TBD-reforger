@@ -1,7 +1,7 @@
 use super::cli::PlatformCmd;
 use crate::commands::ticket::*;
-use crate::core::repository_root::find_repo_root;
 use anyhow::Result;
+use repository_layout::find_repository_root;
 
 pub(crate) fn run(cmd: PlatformCmd) -> Result<u8> {
     match cmd {
@@ -16,7 +16,7 @@ pub(crate) fn run(cmd: PlatformCmd) -> Result<u8> {
             started,
             dry_run,
         } => {
-            let root = find_repo_root()?;
+            let root = find_repository_root()?;
             let reg = load_registry(&root)?;
             let opts = crate::commands::platform::slice_execution::SliceRunOpts {
                 fixture,

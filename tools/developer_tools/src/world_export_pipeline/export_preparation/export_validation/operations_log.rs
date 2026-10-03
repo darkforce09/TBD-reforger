@@ -6,7 +6,7 @@ use crate::repository_layout::{export_operations_log, map_scratch_dir};
 const SPIKE_SLICE: &str = "spike-subregion-export";
 
 pub fn verify_spike_ops_log(terrain: &str) -> Result<u8> {
-    let root = repo_root();
+    let root = compiled_checkout_root()?;
     let ops_path = export_operations_log(&root, terrain);
     let staging = map_scratch_dir(&root, terrain).join("spike");
     let raw_path = staging.join("raw-entities.jsonl");

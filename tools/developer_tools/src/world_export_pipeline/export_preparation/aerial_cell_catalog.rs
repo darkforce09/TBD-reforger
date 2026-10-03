@@ -14,7 +14,7 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
         eprintln!("only everon supported this slice (got {terrain})"); // E2c-allow
         return Ok(1);
     }
-    let out_dir = map_scratch_dir(&repo_root(), "everon").join("sap"); // E2c-allow
+    let out_dir = map_scratch_dir(&compiled_checkout_root()?, "everon").join("sap"); // E2c-allow
     let vfs = PakVfs::open_default()?;
     let cells = super::super::enfusion_texture_decoder::list_eden_cells(&vfs);
     if cells.len() as u32 != CELL_COUNT {

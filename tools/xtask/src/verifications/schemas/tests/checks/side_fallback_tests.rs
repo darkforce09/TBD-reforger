@@ -164,7 +164,7 @@ return failures == 0 ? 0 : 1;
     let input = dir.join("probe.cpp");
     let binary = dir.join("probe");
     fs::write(&input, program).expect("source probe");
-    let host = crate::core::host_execution::Host::detect();
+    let host = process_runner::host_execution::Host::detect();
     let compile = host.run(&[
         "c++",
         "-std=c++17",

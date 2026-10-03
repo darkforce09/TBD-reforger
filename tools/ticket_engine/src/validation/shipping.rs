@@ -166,7 +166,7 @@ pub(super) fn check_ship_gate(root: &Path) -> Vec<String> {
         }
         let has_receipt = crate::metrics::has_receipt(root, id);
         let has_estimate = root
-            .join(crate::repository::ESTIMATES_DIR)
+            .join(repository_layout::ESTIMATES_DIR)
             .join(format!("{id}.json"))
             .is_file();
         if !has_receipt && !has_estimate {
@@ -174,8 +174,8 @@ pub(super) fn check_ship_gate(root: &Path) -> Vec<String> {
                 "{id}: shipped with no token accounting — needs a run receipt under \
                  {}/{id}/ or an estimate at {}/{id}.json (`ticket stamp-sha {id} <sha>` \
                  generates one; both at once is the mutual-exclusion red)",
-                crate::repository::METRICS_DIR,
-                crate::repository::ESTIMATES_DIR
+                repository_layout::METRICS_DIR,
+                repository_layout::ESTIMATES_DIR
             ));
         }
     }

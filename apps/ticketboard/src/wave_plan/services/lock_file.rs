@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 
 pub fn lock_path(repo_root: &Path) -> PathBuf {
-    repo_root.join(ticket_engine::repository::WAVE_LOCK)
+    repo_root.join(repository_layout::WAVE_LOCK)
 }
 
 /// Mirror of xtask `LockWave` — no `deny_unknown_fields` (see module docs).

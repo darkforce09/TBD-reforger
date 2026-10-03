@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// Where the game runtime's machine credential comes from.
 const MACHINE_CREDENTIAL_VARIABLE: &str = "TBD_MACHINE_CREDENTIAL";
@@ -44,7 +44,7 @@ impl Paths {
 
 /// Entry for `xtask setup server-profile [PROFILE_DIR]`.
 pub fn run(profile_arg: Option<&Path>) -> Result<u8> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     run_with_root(&root, profile_arg)
 }
 

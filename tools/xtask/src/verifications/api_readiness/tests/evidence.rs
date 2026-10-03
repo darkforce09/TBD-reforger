@@ -44,7 +44,8 @@ fn current_successful_cases_are_accepted() {
 
 #[test]
 fn actual_register_patterns_recognize_cargo_success_cases_only() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("repository root");
     let acceptance = register::read(&root).expect("read and validate actual acceptance register");
 
     for (check_id, names) in [

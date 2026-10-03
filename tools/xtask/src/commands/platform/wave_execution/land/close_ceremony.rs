@@ -161,16 +161,11 @@ pub(super) fn close_ceremony(
     // the base just changed — but the guard costs nothing and lies about nothing).
     let lock_dirty = git_at(
         root,
-        &[
-            "status",
-            "--porcelain",
-            "--",
-            ticket_engine::repository::WAVE_LOCK,
-        ],
+        &["status", "--porcelain", "--", repository_layout::WAVE_LOCK],
     )
     .unwrap_or_default();
     if !lock_dirty.trim().is_empty() {
-        let committed = git_at(root, &["add", "--", ticket_engine::repository::WAVE_LOCK]).is_ok()
+        let committed = git_at(root, &["add", "--", repository_layout::WAVE_LOCK]).is_ok()
             && git_at(root, &["commit", "-m", "wave.lock: repack after close"]).is_ok();
         if !committed {
             wprintln!("could not commit the wave.lock refresh — commit it by hand before pushing");

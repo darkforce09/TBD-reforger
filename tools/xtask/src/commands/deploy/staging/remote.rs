@@ -35,14 +35,14 @@ use std::path::Path;
 use std::time::Duration;
 
 use anyhow::Result;
-use verification_core::proc::{self, Run};
+use process_runner::Run;
 use verification_core::verdict::NotRun;
 
 use super::boot::{self, Out};
 use super::config::Env;
 use super::fleet_instances::FleetInstance;
 use super::{Cli, Paths};
-use crate::core::secure_shell_transport::{SshBase, ssh_argv};
+use process_runner::secure_shell_transport::{SshBase, ssh_argv};
 
 /// The bash `run()` wrapper: echo under `--dry-run`, execute otherwise.
 ///
@@ -74,7 +74,7 @@ impl Runner {
             return Ok(0);
         }
         let (program, _) = base.program_args();
-        if let Err(e) = proc::which(&program) {
+        if let Err(e) = process_runner::which(&program) {
             return Err(not_run_exit(&e));
         }
         let mut run = base.with_password(Run::new(&program));
@@ -124,7 +124,7 @@ impl Runner {
             return Ok((0, String::new()));
         }
         let (program, _) = base.program_args();
-        if let Err(e) = proc::which(&program) {
+        if let Err(e) = process_runner::which(&program) {
             return Err(not_run_exit(&e));
         }
         let mut run = base.with_password(Run::new(&program));

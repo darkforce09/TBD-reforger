@@ -1,8 +1,8 @@
 use super::cli::DebugCmd;
 use crate::commands::debug::probes::DirectJoinObservations;
 use crate::core::deploy_environment::{DeployEnvironment, SettingError, deploy_environment_path};
-use crate::core::repository_root::find_repo_root;
 use anyhow::{Result, bail};
+use repository_layout::find_repository_root;
 
 pub(crate) fn run(cmd: DebugCmd) -> Result<u8> {
     match cmd {
@@ -18,7 +18,7 @@ pub(crate) fn run(cmd: DebugCmd) -> Result<u8> {
             let host = match host {
                 Some(host) => host,
                 None => {
-                    let path = deploy_environment_path(&find_repo_root()?);
+                    let path = deploy_environment_path(&find_repository_root()?);
                     let default = DeployEnvironment::load_if_present(&path)
                         .map_err(|error| error.to_string())
                         .and_then(|environment| default_probe_host(&environment));

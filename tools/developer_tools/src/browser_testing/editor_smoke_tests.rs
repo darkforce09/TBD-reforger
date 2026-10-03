@@ -16,8 +16,8 @@ use anyhow::{Result, anyhow};
 use serde_json::{Map, Value, json};
 
 use crate::browser_testing::cdp::{self, Browser, Page};
-use crate::browser_testing::server::{RunningServer, ServeConfig, repo_root, start_server};
-use crate::repository_layout::MapAssetMounts;
+use crate::browser_testing::server::{RunningServer, ServeConfig, start_server};
+use crate::repository_layout::{MapAssetMounts, compiled_checkout_root};
 
 mod outliner_drag;
 

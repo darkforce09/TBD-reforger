@@ -89,7 +89,7 @@ error instead, and an error any entry returns reaches xtask as a failure.
     (`world::architecture::compound`), the sidecar and BVH (`spatial::bvh`), the descriptors and
     manifest (`spatial::los::world::descriptor`) and the archive (`io::archives`);
   - the pak reader in `tools/developer_tools/src/enfusion_pak/`, and
-    `crate::repository_layout` and `crate::repository_paths` for the checkout's paths;
+    `crate::repository_layout` and the `repository_layout` crate for the checkout's paths;
   - the schemas in `contracts/definitions/`; the game paks and loose extract, and the
     Workbench exports, dumps, parity files and recon dumps the commands read.
 - Used by: the `cargo xtask map` adapters in `tools/xtask/src/commands/map/mod.rs`; the world

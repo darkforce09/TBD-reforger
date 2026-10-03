@@ -14,5 +14,3 @@ pub use announcement::{Announcement, AnnouncementStatus, AnnouncementTag};
 pub use modpack::{Modpack, ModpackMod};
 pub use vehicle_database::VehicleDatabase;
 pub use wiki::WikiPage;
-
-pub mod generated;

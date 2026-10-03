@@ -93,20 +93,18 @@ gate's server, its fixtures or its request interception.
 
 - `cli::run` and `capture_cli::run`, the entry points of `tools/developer_tools/src/bin/gate.rs`
   and `tools/developer_tools/src/bin/capture.rs`.
-- `server::repo_root`, the checkout root the Enfusion MCP broker in
-  `tools/developer_tools/src/enfusion_tooling/mcp_broker.rs` resolves its runner from.
 - The other modules are public inside the crate for the binaries and each other; nothing else
   imports them.
 
 ## Boundaries
 
-- Depends on: `crate::repository_layout` for the map asset and glyph folders; `tokio`, `axum`,
+- Depends on: `crate::repository_layout` for the checkout root (`compiled_checkout_root`) and the
+  map asset and glyph folders; `tokio`, `axum`,
   `reqwest`, `tokio-tungstenite`, `clap`, `image` and `sha2`; a Chromium build from
   `CHROME_HEADLESS_SHELL`, `PLAYWRIGHT_BROWSERS_PATH` or the Playwright cache; the pins in `tools/developer_tools/gate-env.json`; the built
   app in `apps/frontend/dist`, the fixtures in `contracts/fixtures/api_goldens/`
   and the goldens in `tools/developer_tools/fixtures/dom_oracle/`.
-- Used by: `tools/developer_tools/src/bin/gate.rs` and `capture.rs`; `repo_root` in
-  `tools/developer_tools/src/enfusion_tooling/mcp_broker.rs`; `cargo xtask mk gate-doctor` and
+- Used by: `tools/developer_tools/src/bin/gate.rs` and `capture.rs`; `cargo xtask mk gate-doctor` and
   `cargo xtask mk leptos-gates`, and `.github/workflows/editor-gates.yml`, which also installs the
   pinned Chromium with `cargo xtask ci ci-chrome`; people, for `smoke`, `render-check`, `serve` and
   `capture`.

@@ -16,7 +16,7 @@ use crate::is_sha_shaped;
 use walkdir::WalkDir;
 
 use crate::repository::documentation::TOKEN_ESTIMATE_FACTOR_DOC;
-use crate::repository::{ESTIMATES_DIR, ESTIMATES_SCHEMA};
+use repository_layout::{ESTIMATES_DIR, ESTIMATES_SCHEMA};
 
 mod model;
 

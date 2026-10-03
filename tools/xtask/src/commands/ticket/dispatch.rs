@@ -1,11 +1,11 @@
 use super::cli::TicketCmd;
 use crate::commands::ticket::*;
-use crate::core::repository_root::find_repo_root;
 use anyhow::Result;
+use repository_layout::find_repository_root;
 
 pub(crate) fn run(cmd: TicketCmd) -> Result<u8> {
     {
-        let root = find_repo_root()?;
+        let root = find_repository_root()?;
         match cmd {
             TicketCmd::Sync => {
                 let reg = load_registry(&root)?;

@@ -6,8 +6,8 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::repository::WAVE_LOCK;
 use crate::{StatusName, Ticket};
+use repository_layout::WAVE_LOCK;
 
 pub mod archived_wave_plans;
 pub mod collisions;

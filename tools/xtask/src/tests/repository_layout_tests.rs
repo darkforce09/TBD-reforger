@@ -4,7 +4,7 @@ use std::{collections::BTreeSet, path::Path};
 
 /// Every [`documentation`] item that names locations a checkout must hold, by name, with every
 /// location it names: one for a path constant or a re-export, each element for a list.
-const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 17] = [
+const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 13] = [
     ("FACTORY_PACK_WAVE", &[documentation::FACTORY_PACK_WAVE]),
     ("HOME_SERVER_RUNBOOK", &[documentation::HOME_SERVER_RUNBOOK]),
     (
@@ -32,7 +32,6 @@ const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 17] = [
         "API_READINESS_REGISTER",
         &[documentation::API_READINESS_REGISTER],
     ),
-    ("DOCUMENTATION_ROOT", &[documentation::DOCUMENTATION_ROOT]),
     ("ARCHIVE_DIR", &[documentation::ARCHIVE_DIR]),
     (
         "TICKET_DOCUMENTS_DIR",
@@ -43,9 +42,6 @@ const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 17] = [
         "PROJECT_INSTRUCTIONS",
         &[documentation::PROJECT_INSTRUCTIONS],
     ),
-    ("ARTIFACTS_DIR", &[documentation::ARTIFACTS_DIR]),
-    ("ROADMAP", &[documentation::ROADMAP]),
-    ("GAP_ANALYSIS", &[documentation::GAP_ANALYSIS]),
 ];
 
 /// [`documentation`] items that name no location a checkout must hold, each with the reason.
@@ -283,7 +279,8 @@ fn the_reexport_reader_sees_every_statement_shape() {
 /// relocating the root cannot leave one of them behind.
 #[test]
 fn the_documentation_areas_sit_inside_the_documentation_root() {
-    use documentation::{ARCHIVE_DIR, DOCUMENTATION_ROOT, PENDING_MERGE_DIR, TICKET_DOCUMENTS_DIR};
+    use documentation::{ARCHIVE_DIR, PENDING_MERGE_DIR, TICKET_DOCUMENTS_DIR};
+    use repository_layout::documentation::DOCUMENTATION_ROOT;
     for area in [ARCHIVE_DIR, TICKET_DOCUMENTS_DIR, PENDING_MERGE_DIR] {
         assert!(
             area.starts_with(&format!("{DOCUMENTATION_ROOT}/")),
@@ -298,7 +295,7 @@ fn the_documentation_areas_sit_inside_the_documentation_root() {
 #[test]
 fn the_documentation_gate_roots_are_distinct_top_level_folders() {
     let roots = [
-        documentation::DOCUMENTATION_ROOT,
+        repository_layout::documentation::DOCUMENTATION_ROOT,
         documentation::RETIRED_DOCS_ROOT,
     ];
     for root in &roots {

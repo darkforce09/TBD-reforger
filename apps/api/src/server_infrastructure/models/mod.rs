@@ -6,6 +6,5 @@
 
 pub mod fleet_command;
 pub mod fleet_scenario;
-pub mod generated;
 pub mod machine_credential;
 pub mod server;

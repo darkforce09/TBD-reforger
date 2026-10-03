@@ -4,7 +4,7 @@
 //! returns its exit code and standard output.
 //!
 //! **Position:** the [`HostCommandRunner`] of every live harness command; built from
-//! [`StagingSettings`]; the argv comes from [`crate::core::secure_shell_transport`].
+//! [`StagingSettings`]; the argv comes from [`process_runner::secure_shell_transport`].
 //!
 //! **Signals & state:** holds the ssh base and destination; each call spawns one process.
 //!
@@ -15,11 +15,11 @@
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};
-use verification_core::proc::{self, Run};
+use process_runner::Run;
 
 use super::remote_command::{CommandOutput, CommandPurpose, HostCommandRunner, RemoteCommand};
 use crate::commands::staging::staging_settings::StagingSettings;
-use crate::core::secure_shell_transport::{SshBase, ssh_argv};
+use process_runner::secure_shell_transport::{SshBase, ssh_argv};
 
 /// How long one read may take before it counts as not run.
 const READ_TIMEOUT: Duration = Duration::from_secs(120);
@@ -55,7 +55,7 @@ impl HostShell {
 impl HostCommandRunner for HostShell {
     fn run(&mut self, command: &RemoteCommand) -> Result<CommandOutput> {
         let argv = self.argv(command);
-        proc::which(&argv[0]).map_err(|error| anyhow!("{error:?}"))?;
+        process_runner::which(&argv[0]).map_err(|error| anyhow!("{error:?}"))?;
         let mut run = self.ssh.with_password(Run::new(&argv[0]));
         for argument in &argv[1..] {
             run = run.arg(argument);

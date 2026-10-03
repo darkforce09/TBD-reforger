@@ -8,7 +8,7 @@
 //!
 //! **Position:** reached through `TopCmd::Staging` in `tools/xtask/src/cli/`; reads
 //! `deploy.env` through `crate::core::deploy_environment`, reaches the host through
-//! `crate::core::secure_shell_transport`, and hands every recorded run to
+//! `process_runner::secure_shell_transport`, and hands every recorded run to
 //! `crate::verifications::api_readiness::operational_recording`.
 //!
 //! **Signals & state:** none held across commands; a recorded run owns its folder under

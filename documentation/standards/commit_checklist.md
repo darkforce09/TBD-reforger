@@ -48,7 +48,7 @@ working context.
   Eden gap analysis is not among them: sync rewrites only gap tables whose header still has a
   `priority` column, and the analysis's tables have a `ticket` column, so that column is edited by
   hand.
-- The generated contract types in the `generated/` folders under `apps/api/src/`;
+- The generated contract types under `crates/contracts/contract_schema_types/src/generated/`;
   regenerate them.
 - The frozen records: `documentation/tickets/` once a ticket ships or is cancelled, and
   `documentation/archive/`. Only their links change.

@@ -5,8 +5,8 @@ use crate::registry::ticket_status_history::historical_registry_json;
 
 use std::collections::BTreeSet;
 
-fn repo_root() -> PathBuf {
-    crate::repository::find_repo_root().expect("repository root")
+fn worktree_root() -> PathBuf {
+    repository_layout::find_repository_root().expect("repository root")
 }
 
 /// The whole registry as one JSON document, read from the revision that last carried it, and

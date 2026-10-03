@@ -5,12 +5,12 @@
 //! during its effect makes it indeterminate instead of sending the line again, and the request
 //! audit carries the line.
 
-use api::server_infrastructure::models::generated::fleet_command::{
-    ConsoleCommandArguments, ConsoleCommandOutcome,
-};
 use api::server_infrastructure::services::fleet_commands::command_reconciliation::reconcile_fleet_commands;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
+use contract_schema_types::server_infrastructure::fleet_command::{
+    ConsoleCommandArguments, ConsoleCommandOutcome,
+};
 use serde_json::{Value, json};
 use tower::ServiceExt;
 use uuid::Uuid;

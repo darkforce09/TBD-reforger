@@ -1,8 +1,8 @@
 use super::*;
 use crate::commands::platform::wave_execution::gate_folder;
 use crate::core::cargo_target_directory;
-use verification_core::repository_laws::cargo_manifest::read_manifest;
-use verification_core::repository_laws::workspace_members::read_workspace_members;
+use repository_laws::cargo_manifest::read_manifest;
+use repository_laws::workspace_members::read_workspace_members;
 
 /// The changed-Rust-file list, and the one distinction the change-scoped steps kept getting wrong.
 ///

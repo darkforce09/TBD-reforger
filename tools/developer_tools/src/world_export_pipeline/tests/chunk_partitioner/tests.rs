@@ -6,7 +6,7 @@
 #[test]
 fn the_road_census_reads_the_committed_roads_file() {
     let objects = crate::repository_layout::terrain_dir(
-        &crate::browser_testing::server::repo_root(),
+        &crate::repository_layout::compiled_checkout_root().expect("repository root"),
         "everon",
     )
     .join("objects");

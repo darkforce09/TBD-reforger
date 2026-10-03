@@ -34,14 +34,14 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::repository::SCOPE_VOCAB;
+use repository_layout::SCOPE_VOCAB;
 
 /// The closed domain set — the only legal top-level tables, sorted. Changes ~never
 /// (spec §Scope v2: "`domain` stays a closed Rust enum").
 pub const DOMAINS: [&str; 5] = ["engine", "mod", "repo", "schema", "website"];
 
 pub fn vocab_path(root: &Path) -> PathBuf {
-    root.join(crate::repository::SCOPE_VOCAB)
+    root.join(repository_layout::SCOPE_VOCAB)
 }
 
 /// Validate the vocabulary file's shape. Every error names the file, the path into the

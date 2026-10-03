@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 
 use crate::core::repository_layout::DEVELOPMENT_COMPOSE_FILE;
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// Names another folder holding a compose file under the development file's name. The self-test
 /// points it at a throwaway project so a `db down` in a comparison never stops the shared
@@ -119,7 +119,7 @@ impl ComposeProject {
     /// The project of this run: the [`PROJECT_FOLDER_OVERRIDE`] folder when it is set and not
     /// empty, else the checkout's own.
     pub(crate) fn resolve() -> Result<Self> {
-        let root = find_repo_root()?;
+        let root = find_repository_root()?;
         match std::env::var_os(PROJECT_FOLDER_OVERRIDE).filter(|value| !value.is_empty()) {
             Some(value) => Ok(Self::in_override_folder(
                 &value.to_string_lossy(),

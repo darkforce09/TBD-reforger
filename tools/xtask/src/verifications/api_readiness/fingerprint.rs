@@ -20,13 +20,13 @@
 
 use anyhow::{Result, ensure};
 use content_digest::Sha256Hasher;
+use process_runner::Run;
 use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsString,
     fs::Metadata,
     path::{Component, Path, PathBuf},
 };
-use verification_core::proc::Run;
 
 /// The Git index mode of a symbolic link; its blob holds the link text.
 const GIT_SYMLINK_MODE: &str = "120000";

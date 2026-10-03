@@ -29,7 +29,7 @@
 //! lives on the host, and the only way to it is `distrobox-host-exec`. Every compose/psql target
 //! here therefore crosses the bridge. It does NOT reimplement it: [`crate::commands::deploy::database_operations::
 //! resolve_runtime`] already resolves `podman` → `docker` → `distrobox-host-exec {podman,docker}`,
-//! and [`crate::core::host_execution`] documents why presence of `distrobox-host-exec` is not a container test
+//! and [`process_runner::host_execution`] documents why presence of `distrobox-host-exec` is not a container test
 //! (it is installed on the host too, where it refuses with exit 126).
 //!
 //! Consequence worth stating plainly: **five of these targets are simply broken in-container today
@@ -56,7 +56,7 @@
 //! 2. **Exit status is the child's, not make's.** A failed recipe makes `make` print
 //!    `make: *** [Makefile:70: db-up] Error 127` and exit **2**, folding every rc into one. The
 //!    port returns the child's raw rc (127 stays 127) and reports a signalled child as a signal —
-//!    the `verification_core::proc` thesis. Nothing consumes make's `Error N` line; several things would
+//!    the `process_runner` thesis. Nothing consumes make's `Error N` line; several things would
 //!    like the real rc.
 //! 3. **`seed` stops at the first failed statement.** Its `psql` runs carry `-v ON_ERROR_STOP=1`
 //!    ([`seed_psql_arguments`]), so a seed that fails part-way exits non-zero where the make
@@ -107,8 +107,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
 use crate::commands::deploy::database_operations as dbc;
-use crate::core::repository_root::find_repo_root;
 use development_compose::{ComposeProject, compose_argv};
+use repository_layout::find_repository_root;
 
 pub mod ab;
 pub mod development_compose;
@@ -313,7 +313,7 @@ pub(crate) struct Web {
 
 /// The API crate folder of this checkout.
 pub(crate) fn web() -> Result<Web> {
-    let root = find_repo_root()?;
+    let root = find_repository_root()?;
     Ok(Web {
         rel: WEB.to_string(),
         abs: root.join(WEB),

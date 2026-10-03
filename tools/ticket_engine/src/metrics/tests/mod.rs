@@ -3,7 +3,7 @@ use super::*;
 use serde_json::json;
 
 fn fixture(name: &str) -> Value {
-    let path = crate::repository::find_repo_root()
+    let path = repository_layout::find_repository_root()
         .unwrap()
         .join("tools/ticket_engine/tests/fixtures/execution_receipts")
         .join(name);
@@ -13,7 +13,7 @@ fn fixture(name: &str) -> Value {
 fn scratch(tag: &str) -> PathBuf {
     let tmp = std::env::temp_dir().join(format!("tbd-metrics-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&tmp);
-    fs::create_dir_all(tmp.join(crate::repository::TICKETS_DIR)).expect("mk scratch");
+    fs::create_dir_all(tmp.join(repository_layout::TICKETS_DIR)).expect("mk scratch");
     // The real committed schema, so scratch trees validate exactly like the repo.
     let schema = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()

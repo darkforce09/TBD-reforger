@@ -11,12 +11,12 @@ mod common;
 mod contract_support;
 mod telemetry_support;
 
-use api::match_telemetry::models::generated::match_telemetry::{
-    TelemetryQueueReading, TelemetryQueueStatus,
-};
 use api::server_infrastructure::services::status_broadcast::publish_all_server_statuses;
 use axum::Router;
 use axum::http::StatusCode;
+use contract_schema_types::match_telemetry::match_telemetry::{
+    TelemetryQueueReading, TelemetryQueueStatus,
+};
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use telemetry_support::match_reports::ReportingServer;

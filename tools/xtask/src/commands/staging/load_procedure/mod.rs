@@ -70,10 +70,10 @@ use crate::commands::staging::remote_observers::database_reader::select;
 use crate::commands::staging::remote_observers::remote_command::HostCommandRunner;
 use crate::commands::staging::staging_settings::StagingSettings;
 use crate::commands::staging::support_commands::preflight::PreflightCheck;
-use crate::core::repository_root::find_repo_root;
 use crate::verifications::api_readiness::operational_recording::{
     FixtureManifest, Observations, StagingCheck,
 };
+use repository_layout::find_repository_root;
 
 /// The load procedure: the token file, the settings and root of a recorded run, and the
 /// workstation that sends its requests.
@@ -119,7 +119,7 @@ impl LoadProcedure {
     fn data(&self) -> Result<CommittedLoadData> {
         let root = match &self.repository_root {
             Some(root) => root.clone(),
-            None => find_repo_root()?,
+            None => find_repository_root()?,
         };
         CommittedLoadData::read(&root)
     }

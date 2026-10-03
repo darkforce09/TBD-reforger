@@ -102,7 +102,7 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 ## Boundaries
 
 - Depends on: `crate::core::repository_root`, `crate::core::repository_layout` (the staging
-  runbook) and `crate::core::deploy_environment` (the deploy host and the remote folders); `verification_core::proc` for `ssh` and `sshpass`; `mkdir`, `ln` and
+  runbook) and `crate::core::deploy_environment` (the deploy host and the remote folders); `process_runner` for `ssh` and `sshpass`; `mkdir`, `ln` and
   `whoami`; `serde_json` for the backend config.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, which mounts the group, and

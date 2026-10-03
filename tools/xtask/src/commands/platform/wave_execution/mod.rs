@@ -220,16 +220,16 @@ impl Ctx {
     ///
     /// REFUSE RATHER THAN GUESS A ROOT. A driver that guesses describes a directory that is not
     /// the repository and reports `open: 0 / 0 tickets` about it —
-    /// [`crate::core::repository_root::find_repo_root`] walks up for the ticket ledger and errors
+    /// [`repository_layout::find_repository_root`] walks up for the ticket ledger and errors
     /// instead.
     pub fn enter() -> Result<Ctx> {
-        let root = crate::core::repository_root::find_repo_root()?;
+        let root = repository_layout::find_repository_root()?;
         std::env::set_current_dir(&root)?;
 
         // The committed lock IS the plan: one file, one writer. There is no env override, and
         // with the TSVs; the generation floor died with them — landed generations live in the
         // lock's wave 0, so waves 1+ are open work only.
-        let plan = ticket_engine::repository::WAVE_LOCK.to_string();
+        let plan = repository_layout::WAVE_LOCK.to_string();
 
         // `git rev-parse --path-format=absolute --git-common-dir`, falling back to
         // `<root>/.git` when git cannot answer.
@@ -274,8 +274,8 @@ impl Ctx {
 
         Ok(Ctx {
             plan,
-            registry: ticket_engine::repository::TICKETS_DIR.into(),
-            worktrees: crate::core::repository_layout::WORKTREES_DIR.into(),
+            registry: repository_layout::TICKETS_DIR.into(),
+            worktrees: repository_layout::WORKTREES_DIR.into(),
             gate_timeout: host.timeout_secs,
             gate_trunk_target: envd(
                 "TBD_GATE_TRUNK_TARGET",
@@ -400,7 +400,7 @@ mod run_target_tests;
 /// [`base::wave_close_is_newest_wave`]) against fabricated scratch repos, and those functions
 /// are cwd-bound by design (the driver chdirs once at [`Ctx::enter`]). `cargo test` is
 /// multi-threaded and the cwd is process state, so every test that moves it must hold ONE lock —
-/// otherwise a concurrent `find_repo_root()` (the scratch repos carry `.ai/tickets/ROOT`, which
+/// otherwise a concurrent `find_repository_root()` (the scratch repos carry `.ai/tickets/ROOT`, which
 /// is exactly what that function looks for) resolves inside somebody's scratch tree and a test
 /// fails an assertion about a repo it was never meant to read.
 #[cfg(test)]

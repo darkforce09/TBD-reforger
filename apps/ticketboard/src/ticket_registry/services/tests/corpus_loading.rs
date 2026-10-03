@@ -17,7 +17,7 @@ layer = "docs"
 
 /// 3 parents + 2 children, plus non-ticket noise that the glob must ignore.
 fn write_corpus(root: &Path) -> PathBuf {
-    let dir = root.join(ticket_engine::repository::TICKETS_DIR);
+    let dir = root.join(repository_layout::TICKETS_DIR);
     fs::create_dir_all(&dir).unwrap();
     fs::write(dir.join("T-1.toml"), work("T-1", "status = \"idea\"")).unwrap();
     fs::write(
@@ -115,12 +115,9 @@ fn fail_closed_on_semantic_error_too() {
 fn missing_tickets_dir_refuses_with_the_path() {
     let s = Scratch::new("no-dir");
     let err = load_corpus(s.path()).unwrap_err();
-    assert_eq!(
-        err.file,
-        s.path().join(ticket_engine::repository::TICKETS_DIR)
-    );
+    assert_eq!(err.file, s.path().join(repository_layout::TICKETS_DIR));
     assert!(
-        err.error.contains(ticket_engine::repository::TICKETS_DIR),
+        err.error.contains(repository_layout::TICKETS_DIR),
         "{}",
         err.error
     );
@@ -140,16 +137,8 @@ fn child_id_classification() {
 #[test]
 #[ignore = "reads the live repo corpus; run explicitly with -- --ignored"]
 fn live_corpus_loads_and_counts_sum() {
-    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let Some(root) =
-        crate::ticket_registry::services::discovery::walk_up_for_tickets(&manifest_dir)
-    else {
-        panic!(
-            "no {}/ above {}",
-            ticket_engine::repository::TICKETS_DIR,
-            manifest_dir.display()
-        );
-    };
+    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the checkout holding this crate");
     let corpus = load_corpus(&root).unwrap_or_else(|e| panic!("live corpus refused: {e}"));
     assert!(corpus.counts.total > 0);
     assert_eq!(

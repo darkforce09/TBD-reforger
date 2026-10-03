@@ -5,7 +5,7 @@
 //! success status and contract, the fixture-dependent probes, and a reason for every dimension
 //! that does not apply.
 
-use api::identity_and_access::models::generated::current_profile::CurrentProfileResponse;
+use contract_schema_types::identity_and_access::current_profile::CurrentProfileResponse;
 use serde_json::json;
 
 use super::super::contracts::round_trip;

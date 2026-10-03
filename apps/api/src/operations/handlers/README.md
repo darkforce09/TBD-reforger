@@ -76,8 +76,8 @@ server.
   wire formats and the URL guard; `administration` for the audit rows; `identity_and_access` for
   user lookups and the Discord membership enrollment of partner guilds; `missions` for the mission
   title and terrain, `MissionArmory` and the deployment in effect; `match_telemetry::models` for
-  the matches of the service record; `server_infrastructure` for `MachineCaller` and
-  `ExecutorKind`; `map_engine::data::scenario` for the faction join-key check and the
+  the matches of the service record; `server_infrastructure` for `MachineCaller`;
+  `fleet_wire_contract` for `ExecutorKind`; `map_engine::data::scenario` for the faction join-key check and the
   ballistics.
 - Used by: the domain's `routes.rs`; over HTTP, the operations pages in
   `apps/frontend/src/v2/pages/operations/`, the

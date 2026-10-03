@@ -18,7 +18,7 @@ Abbreviations in code spans:
 | `xt` | `tools/xtask/src/` |
 | `dt` | `tools/developer_tools/src/` |
 | `te` | `tools/ticket_engine/src/` |
-| `vc` | `tools/verification_core/src/` |
+| `vc` | the verification core source folder: tools/verification_core/src/ until S4b, now split into `tools/foundation/` |
 
 A bare module path such as `world/scene.rs` is relative to the map engine's source folder. "W" marks a
 wasm-only crate. Tiers follow tier = 1 + the highest dependency tier, and the crate-tiers law
@@ -40,6 +40,12 @@ checks them.
 | S4a | camera_math | `crates/geometry/camera_math/` | 1 |
 | S4a | world_file_formats | `crates/world_formats/world_file_formats/` | 1 |
 | S4a | render_primitives | `crates/graphics/render_primitives/` | 0 |
+| S4b | fleet_wire_contract | `crates/contracts/fleet_wire_contract/` | 0 |
+| S4b | contract_schema_types | `crates/contracts/contract_schema_types/` | 0 |
+| S4b | verification_core | `tools/foundation/verification_core/` | 0 |
+| S4b | process_runner | `tools/foundation/process_runner/` | 1 |
+| S4b | repository_laws | `tools/foundation/repository_laws/` | 1 |
+| S4b | repository_layout | `tools/foundation/repository_layout/` | 0 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 

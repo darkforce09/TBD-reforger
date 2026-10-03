@@ -24,9 +24,9 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::Result;
-use verification_core::proc::Run;
+use process_runner::Run;
 
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 /// What to run again once the operator has done the manual step this command cannot do.
 const RERUN_COMMAND: &str = "cargo xtask mod dev-bootstrap";
@@ -55,7 +55,7 @@ pub fn run(args: &[String]) -> Result<u8> {
     // TBD_DEV_BOOTSTRAP_ROOT lets a test point this command at a throwaway tree.
     let root = match std::env::var_os("TBD_DEV_BOOTSTRAP_ROOT") {
         Some(p) => PathBuf::from(p),
-        None => find_repo_root()?,
+        None => find_repository_root()?,
     };
     run_with_root(&root, args)
 }

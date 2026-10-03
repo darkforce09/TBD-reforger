@@ -92,7 +92,7 @@ Migrations 0057–0060 are pinned (B adds 0060); the next migration is 0061. Ver
   cases cover last seat, refresh, replay, assignment against withdrawal, linking, approval,
   ingest and commit ordering; 27 failure-injection cases cover rollback before commit,
   idempotent or documented retries after commit, and external-effect boundaries.
-- **Engineering laws.** `verification_core::repository_laws` holds the file-length,
+- **Engineering laws.** `repository_laws` holds the file-length,
   test-placement, no-exemption, crate-direction and engine-layer laws; `verify file-length` and
   `verify engine-layers` delegate to it; the frontend `doc_audit` grandfather table is gone
   (T-1041).

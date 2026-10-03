@@ -14,8 +14,8 @@
 //! no version line fails the capture instead of yielding a blank identity.
 
 use anyhow::{Result, ensure};
+use process_runner::Run;
 use std::{path::Path, time::Duration};
-use verification_core::proc::Run;
 
 /// The tools whose `--version` line every receipt records, in receipt order.
 const IDENTIFIED_TOOLS: [&str; 3] = ["rustc", "cargo", "git"];

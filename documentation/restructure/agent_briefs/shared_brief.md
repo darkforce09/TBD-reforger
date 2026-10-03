@@ -64,7 +64,7 @@ only the parts your prompt names; do not re-derive the plan.
 - Stop at your budget line and report what is done and not done.
 
 ## Spec (authoritative, verified)
-- Packages today: `xtask` (tools/xtask), `verification_core` (tools/verification_core),
+- Packages today: `xtask` (tools/xtask), `verification_core`, `process_runner`, `repository_laws` (tools/foundation),
   `ticket_engine`, `developer_tools`, `api` (apps/api), `frontend`,
   `map_engine`, `graphics_engine`, `offline_service_worker`,
   `fleet_host_agent`, `ticketboard`. Rust 1.95.0, edition 2024 except the frontend (2021).

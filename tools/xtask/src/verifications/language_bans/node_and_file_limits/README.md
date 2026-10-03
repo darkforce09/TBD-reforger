@@ -9,15 +9,15 @@ holds the no-node scan subjects and re-exports the entry points.
 
 ```text
 tools/xtask/src/verifications/language_bans/node_and_file_limits/
-├── repository_access.rs  the checkout lookup, the file-length report over the library scan, and the font table generator
+├── repository_access.rs  the file-length report over the library scan, and the font table generator
 └── verify_no_node.rs     the no-node gate: tracked Node scripts, node and npx calls, setup-node steps
 ```
 
 ## How it works
 
-`verify file-length` runs `verification_core::repository_laws::file_length::scan_file_lengths`
+`verify file-length` runs `repository_laws::file_length::scan_file_lengths`
 and prints its result. The scan walks every `.rs` and `.c` file under the law roots of
-[`repository_laws`](/tools/verification_core/src/repository_laws/README.md): the folder of
+[`repository_laws`](/tools/foundation/repository_laws/src/README.md): the folder of
 every workspace member the root `Cargo.toml` names, plus the script roots in `PINNED_SCRIPT_ROOTS`
 (`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`). A file is a test file when a path component is `tests` or
 its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000 lines (`TEST_MAX_LINES`), any
@@ -54,7 +54,7 @@ run; `no-node` 0 clean, 1 any check failed.
 ## Boundaries
 
 - Depends on: the constants and imports of the parent file;
-  `verification_core::repository_laws::file_length` for the roots, ceilings and scan, and its
+  `repository_laws::file_length` for the roots, ceilings and scan, and its
   `NotRun` causes; `git` for the tracked-file list.
 - Used by: `tools/xtask/src/commands/verify/dispatch.rs` (`verify file-length`,
   `verify no-node`); `tools/xtask/src/commands/generate/dispatch.rs` (`gen font-table`); the

@@ -204,7 +204,9 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── content_digest/                  <-- SHA-256 and SHA-384 hex digests, framed hashing
 │   └── browser_platform/                <-- Browser console macros and fetch helpers (wasm32 only)
 ├── contracts/                           <-- Crates that hold one boundary contract
-│   └── offline_cache_policy/            <-- Offline cache names, request classes, offline pack and network fallback rules the service worker applies
+│   ├── offline_cache_policy/            <-- Offline cache names, request classes, offline pack and network fallback rules the service worker applies
+│   ├── fleet_wire_contract/             <-- Fleet-command wire shapes, executor kinds, the machine-credential format and secret-file limits
+│   └── contract_schema_types/           <-- Rust types generated from contracts/definitions (`cargo xtask ci schema-codegen`)
 ├── geometry/                            <-- Engine geometry: vectors, segments, rigid transforms, map coordinates, cameras
 │   ├── geometry_primitives/             <-- 3D vector ops, 2D segment geometry, rigid transforms, axis-aligned boxes
 │   ├── map_coordinates/                 <-- Terrain frames (map centres, bounds), chunk math, rounding, grid references
@@ -218,8 +220,12 @@ deploy/                                  <-- Release Dockerfile (context narrowe
 ├── caddy/                               <-- Caddy site on :3080; the one folder the staging Caddy container mounts
 └── systemd/                             <-- User units and timers: API, game-server fleet, host agents, relay, database backups
 
-tools/                                   <-- Every developer tool in the repository; four crates plus one npm package
-├── verification_core/                   <-- Fail-closed verdicts, pattern scans, process isolation, repository verification lock
+tools/                                   <-- Every developer tool in the repository; the tool crates plus one npm package
+├── foundation/                          <-- The tools' tiered base crates
+│   ├── verification_core/               <-- Fail-closed verdicts, pattern scans, gates, the repository verification lock
+│   ├── process_runner/                  <-- Process isolation, deadlines, host-bridge execution, the secure shell transport
+│   ├── repository_laws/                 <-- Every repository law: crate tiers, anatomy, strangler, engine layers, file length
+│   └── repository_layout/               <-- The repository root finder and the paths every tool shares
 ├── ticket_engine/                       <-- Ticket storage, validation, queue and roadmap sync, wave lock, metrics
 ├── developer_tools/                     <-- Heavy async CLI suite, blueprint compiler, map verification
 │   ├── src/bin/                         <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay

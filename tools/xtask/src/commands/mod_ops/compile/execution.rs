@@ -11,7 +11,7 @@ pub fn run(args: &[String]) -> Result<u8> {
             print!("{HELP}");
             Ok(0)
         }
-        Ok(Parse::Run(opts)) => Ok(run_with_root(&find_repo_root()?, &opts)),
+        Ok(Parse::Run(opts)) => Ok(run_with_root(&find_repository_root()?, &opts)),
     }
 }
 
@@ -37,7 +37,7 @@ pub fn run_selftest() -> Result<u8> {
         selftest: true,
         ..Opts::default()
     };
-    let rc = run_with_root(&find_repo_root()?, &opts);
+    let rc = run_with_root(&find_repository_root()?, &opts);
     Ok(match rc {
         1 => {
             println!("SELFTEST OK: gate correctly rejected broken source (exit 1)");
@@ -79,7 +79,7 @@ pub fn run_selftest() -> Result<u8> {
 /// (exit 1). A check that did not find the depot must not print SELFTEST OK — that is
 /// `run_selftest`'s job, and it already refuses exit 0 / 3 as a pass.
 pub fn run_preflight() -> Result<u8> {
-    Ok(preflight_with_root(&find_repo_root()?))
+    Ok(preflight_with_root(&find_repository_root()?))
 }
 
 pub fn preflight_with_root(root: &Path) -> u8 {
@@ -114,7 +114,7 @@ pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
         return env_fail(
             "no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine",
             Some(
-                "See tools/xtask/src/core/host_execution.rs: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all.",
+                "See tools/foundation/process_runner/src/host_execution.rs: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all.",
             ),
         );
     }

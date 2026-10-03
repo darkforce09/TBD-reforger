@@ -24,7 +24,7 @@ Both commands cache in the `vanilla_reference` lane of the
 fetch a page whose cached copy is non-empty. `reference_cache::prepare_vanilla_cache` creates the
 command's cache folder inside the lane and refuses, before any fetch, when the checkout has no
 `apps/mod/References/` folder; it never creates that folder. Each fetch is a `curl` run through
-`verification_core::proc::Run` with a browser user agent, because the upstream hosts refuse curl's
+`process_runner::Run` with a browser user agent, because the upstream hosts refuse curl's
 default, and a pause of `TBD_FETCH_DELAY` seconds after each page fetched from the network. Both
 end by printing the `enf` command that indexes what they cached. `TBD_FETCH_ROOT` points either
 command at another root, which the tests use; otherwise `vanilla-source` finds the checkout root
@@ -67,8 +67,8 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
 
 ## Boundaries
 
-- Depends on: `verification_core::proc` for curl; `find_repo_root` in
-  `tools/xtask/src/core/repository_root.rs` and `is_repo_root` from `ticket_engine::repository`;
+- Depends on: `process_runner` for curl; `find_repository_root` and `is_repository_root` from
+  `repository_layout`;
   the references folder and vanilla lane paths in `tools/xtask/src/core/repository_layout.rs`;
   curl and network access to the two upstream sites.
 - Used by: people; `tools/xtask/src/cli/dispatch.rs` routes the group. The `enf apidoc` and

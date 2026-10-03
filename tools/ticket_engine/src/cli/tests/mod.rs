@@ -9,7 +9,7 @@ use serde_json::json;
 use std::path::PathBuf;
 
 fn worktree_root() -> PathBuf {
-    crate::repository::find_repo_root().expect("repository root")
+    repository_layout::find_repository_root().expect("repository root")
 }
 
 /// Break a required enum so schema check goes red (in-memory only).
@@ -61,33 +61,33 @@ fn scratch_registry(tag: &str) -> PathBuf {
     use crate::{Domain, ProgramTicket, ScopeV2, Status, Ticket, WorkTicket};
     let dir = std::env::temp_dir().join(format!("t916-cmds-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).unwrap();
+    fs::create_dir_all(dir.join(repository_layout::TICKETS_DIR)).unwrap();
     fs::create_dir_all(dir.join("docs")).unwrap();
     fs::write(
-        dir.join(crate::repository::ROOT_MARKER),
+        dir.join(repository_layout::ROOT_MARKER),
         "# ticket-registry root marker\n",
     )
     .unwrap();
     // The real schema: a stub would silently weaken the very preflight these tests keep
     // in front of the typed ops.
     fs::copy(
-        worktree_root().join(crate::repository::SCHEMA),
-        dir.join(crate::repository::SCHEMA),
+        worktree_root().join(repository_layout::SCHEMA),
+        dir.join(repository_layout::SCHEMA),
     )
     .unwrap();
-    fs::write(dir.join(crate::repository::SCOPE_VOCAB), "[repo.docs]\n").unwrap();
+    fs::write(dir.join(repository_layout::SCOPE_VOCAB), "[repo.docs]\n").unwrap();
     // The real corpus pins: `check` refuses without them, and a stub would retire the
     // never-minted rule inside the scratch.
     fs::copy(
-        worktree_root().join(crate::repository::CORPUS_PINS),
-        dir.join(crate::repository::CORPUS_PINS),
+        worktree_root().join(repository_layout::CORPUS_PINS),
+        dir.join(repository_layout::CORPUS_PINS),
     )
     .unwrap();
     // The estimates schema rides along so a stamp-sha-generated
     // estimate validates under the REAL contract inside the scratch too.
     fs::copy(
-        worktree_root().join(crate::repository::ESTIMATES_SCHEMA),
-        dir.join(crate::repository::ESTIMATES_SCHEMA),
+        worktree_root().join(repository_layout::ESTIMATES_SCHEMA),
+        dir.join(repository_layout::ESTIMATES_SCHEMA),
     )
     .unwrap();
     fs::write(dir.join("docs/spec.md"), "# spec\n").unwrap();
@@ -248,7 +248,7 @@ fn scratch_registry(tag: &str) -> PathBuf {
 
 fn parse_scratch_ticket(root: &Path, id: &str) -> crate::Ticket {
     crate::parse_ticket_toml(
-        &fs::read_to_string(root.join(format!("{}/{id}.toml", crate::repository::TICKETS_DIR)))
+        &fs::read_to_string(root.join(format!("{}/{id}.toml", repository_layout::TICKETS_DIR)))
             .unwrap(),
     )
     .unwrap_or_else(|e| panic!("{id}: {e}"))
@@ -256,7 +256,7 @@ fn parse_scratch_ticket(root: &Path, id: &str) -> crate::Ticket {
 
 fn queue_rows(root: &Path) -> Vec<(String, String)> {
     let queue: Value = serde_json::from_str(
-        &fs::read_to_string(root.join(crate::repository::QUEUE_JSON)).unwrap(),
+        &fs::read_to_string(root.join(repository_layout::QUEUE_JSON)).unwrap(),
     )
     .unwrap();
     queue["tickets"]

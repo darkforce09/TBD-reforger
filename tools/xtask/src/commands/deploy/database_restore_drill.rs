@@ -19,7 +19,7 @@ use crate::commands::deploy::database_operations::{
     require_container, require_pg_tool, warn,
 };
 use crate::commands::deploy::database_restore::RestoreArgs;
-use crate::core::repository_root::find_repo_root;
+use repository_layout::find_repository_root;
 
 struct ScratchGuard {
     scratch: String,

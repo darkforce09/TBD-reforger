@@ -112,7 +112,7 @@ leaves a member untested.
   `map` binary of `developer_tools`, cargo, trunk, podman, git-lfs, go, curl, unzip and apt-get as
   subprocesses; `TARGETS` of `tools/xtask/src/commands/build/recipes.rs` and `LANE_COMMANDS` of
   `tools/xtask/src/commands/db/operations.rs` for `help`;
-  `verification_core::repository_laws::workspace_members` for the members `workspace-member-tests`
+  `repository_laws::workspace_members` for the members `workspace-member-tests`
   derives.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, for `ci` and `help`;

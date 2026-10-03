@@ -129,7 +129,7 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
     `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the `routes`
   table that `core::http_router` merges (`apps/api/src/tests/architecture_rules.rs`
-  checks both); `contract/generated/` and `models/generated/` are written by
+  checks both); the domain's generated contract types in `contract_schema_types` are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
   checks them), with `contract/loadout_projection.rs` as the one hand-maintained contract model.
 

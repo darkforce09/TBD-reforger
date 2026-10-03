@@ -1,16 +1,16 @@
 use super::cli::FetchCmd;
-use crate::core::repository_root::find_repo_root;
 use anyhow::Result;
+use repository_layout::find_repository_root;
 use std::path::PathBuf;
 
 pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
     match cmd {
         FetchCmd::VanillaSource { args } => {
             // TBD_FETCH_ROOT: throwaway fixture roots for the comparison arms.
-            // Production callers leave it unset → find_repo_root().
+            // Production callers leave it unset → find_repository_root().
             let root = match std::env::var_os("TBD_FETCH_ROOT") {
                 Some(p) => PathBuf::from(p),
-                None => find_repo_root()?,
+                None => find_repository_root()?,
             };
             crate::commands::fetch::vanilla_source::run(&root, &args)
         }
@@ -22,13 +22,13 @@ pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
                 None => match std::env::var_os("PWD") {
                     Some(pwd) => {
                         let p = PathBuf::from(pwd);
-                        if ticket_engine::repository::is_repo_root(&p) {
+                        if repository_layout::is_repository_root(&p) {
                             p
                         } else {
-                            find_repo_root()?
+                            find_repository_root()?
                         }
                     }
-                    None => find_repo_root()?,
+                    None => find_repository_root()?,
                 },
             };
             crate::commands::fetch::vanilla_api::run(&root, &args)

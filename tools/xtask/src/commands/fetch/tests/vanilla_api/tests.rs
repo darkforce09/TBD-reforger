@@ -111,7 +111,7 @@ fn from_file_usage_line_names_the_runnable_command() {
 #[test]
 fn a_checkout_without_the_references_folder_is_refused() {
     let root = scratch("no-references");
-    fs::remove_dir_all(root.join(crate::core::repository_layout::REFERENCES_DIR)).unwrap();
+    fs::remove_dir_all(root.join(repository_layout::REFERENCES_DIR)).unwrap();
     let err = run(&root, &[]).unwrap_err();
     assert!(format!("{err:#}").contains("is missing"), "{err:#}");
     assert!(

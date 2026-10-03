@@ -5,8 +5,8 @@ use serde_json::json;
 
 use crate::{Domain, ProgramTicket, ScopeV2, Status, WorkTicket};
 
-fn repo_root() -> PathBuf {
-    crate::repository::find_repo_root().expect("repository root")
+fn worktree_root() -> PathBuf {
+    repository_layout::find_repository_root().expect("repository root")
 }
 
 /// Scratch tree with the vocab the fail-closed corpus load needs plus copies of
@@ -14,14 +14,14 @@ fn repo_root() -> PathBuf {
 fn scratch_root(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("tbd-estimates-{name}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&dir);
-    fs::create_dir_all(dir.join(crate::repository::TICKETS_DIR)).expect("mkdir scratch");
+    fs::create_dir_all(dir.join(repository_layout::TICKETS_DIR)).expect("mkdir scratch");
     fs::write(
-        dir.join(crate::repository::SCOPE_VOCAB),
+        dir.join(repository_layout::SCOPE_VOCAB),
         "[repo.docs]\n\n[website.backend]\n\n[website.frontend]\n",
     )
     .expect("vocab");
-    for rel in [ESTIMATES_SCHEMA, crate::repository::METRICS_SCHEMA] {
-        fs::copy(repo_root().join(rel), dir.join(rel)).expect("copy schema");
+    for rel in [ESTIMATES_SCHEMA, repository_layout::METRICS_SCHEMA] {
+        fs::copy(worktree_root().join(rel), dir.join(rel)).expect("copy schema");
     }
     dir
 }

@@ -88,7 +88,7 @@ as a bearer token on curl's stdin, else from the single `TBD_WORKSHOP_MOD_ID`.
 ## Boundaries
 
 - Depends on: `crate::core::repository_root` and `crate::core::deploy_environment` (the settings
-  file, the deploy host and the remote folder defaults); `verification_core::proc`; `serde_json` and
+  file, the deploy host and the remote folder defaults); `process_runner`; `serde_json` and
   `regex`; the three template units of `deploy/systemd/`, embedded by
   `fleet_units.rs`; on the host, the website API that `cargo xtask deploy website` runs there, the
   credential files `cargo xtask staging provision-fleet` writes, `cargo xtask setup server-profile`,

@@ -183,9 +183,10 @@ pub fn run_voxels_from_mesh(_root: &std::path::Path, args: &[String]) -> Result<
     };
     let dump = generate(&mesh, ident);
     let out_dir = out_dir.unwrap_or_else(|| {
-        crate::repository_paths::find_repo_root()
-            .map(|r| r.join("target/mesh-dumps"))
-            .unwrap_or_else(|_| PathBuf::from("target/mesh-dumps"))
+        ::repository_layout::find_repository_root()
+            .map(|r| r.join(::repository_layout::BUILD_OUTPUT_FOLDER))
+            .unwrap_or_else(|_| PathBuf::from(::repository_layout::BUILD_OUTPUT_FOLDER))
+            .join("mesh-dumps")
     });
     let out_path = out_dir.join(format!("{slug}_voxels.jsonl.gz"));
     let lines = write_dump(&dump, &out_path)?;

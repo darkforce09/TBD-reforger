@@ -3,7 +3,7 @@ use super::*;
 pub fn no_receipts_text() -> String {
     format!(
         "no receipts yet — {}/ has no runs; receipts appear when platform slice-run lands one",
-        ticket_engine::repository::METRICS_DIR
+        repository_layout::METRICS_DIR
     )
 }
 
@@ -13,7 +13,7 @@ pub const COVERAGE_NOTE: &str = "coverage: platform slice-run / ticket run recei
      in-chat Task dispatch is not captured; elapsed is derived finished − started at query time";
 
 pub fn metrics_dir(repo_root: &Path) -> PathBuf {
-    repo_root.join(ticket_engine::repository::METRICS_DIR)
+    repo_root.join(repository_layout::METRICS_DIR)
 }
 
 // ---- validation (the check_as_errors mirror) ----

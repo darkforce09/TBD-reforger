@@ -1,7 +1,5 @@
 //! Terrain manifest validation against schema, spatial dimensions, and binary contracts.
 use crate::repository_layout::{definition_path, terrain_dir, terrain_manifest_path};
-#[cfg(test)]
-use crate::repository_paths::find_repo_root as repo_root;
 use anyhow::{Context, Result};
 use map_engine::streaming::loaders::chunk_bin::chunk_bin_path;
 use map_engine::streaming::loaders::manifest::parse_manifest_binary;

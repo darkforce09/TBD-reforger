@@ -1,0 +1,53 @@
+# Stage S4 B1a — tools/verification_core splits into the tools/foundation crates verification_core,
+# process_runner and repository_laws, and process_runner takes xtask's host bridge and ssh transport.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the verdict, pattern, scan, gate, lock and report modules stay one crate, now under tools/foundation
+path	tools/verification_core/Cargo.toml	tools/foundation/verification_core/Cargo.toml
+path	tools/verification_core/README.md	tools/foundation/verification_core/README.md
+path	tools/verification_core/src/README.md	tools/foundation/verification_core/src/README.md
+path	tools/verification_core/src/gate.rs	tools/foundation/verification_core/src/gate.rs
+path	tools/verification_core/src/lib.rs	tools/foundation/verification_core/src/lib.rs
+path	tools/verification_core/src/lock.rs	tools/foundation/verification_core/src/lock.rs
+path	tools/verification_core/src/pattern.rs	tools/foundation/verification_core/src/pattern.rs
+path	tools/verification_core/src/report.rs	tools/foundation/verification_core/src/report.rs
+path	tools/verification_core/src/scan.rs	tools/foundation/verification_core/src/scan.rs
+path	tools/verification_core/src/verdict.rs	tools/foundation/verification_core/src/verdict.rs
+path	tools/verification_core/src/tests/gate_tests.rs	tools/foundation/verification_core/src/tests/gate_tests.rs
+path	tools/verification_core/src/tests/lock_tests.rs	tools/foundation/verification_core/src/tests/lock_tests.rs
+path	tools/verification_core/src/tests/pattern_tests.rs	tools/foundation/verification_core/src/tests/pattern_tests.rs
+path	tools/verification_core/src/tests/report_tests.rs	tools/foundation/verification_core/src/tests/report_tests.rs
+path	tools/verification_core/src/tests/scan_tests.rs	tools/foundation/verification_core/src/tests/scan_tests.rs
+path	tools/verification_core/src/tests/verdict_tests.rs	tools/foundation/verification_core/src/tests/verdict_tests.rs
+#
+# the child-process module becomes the process_runner crate: its vocabulary becomes run.rs
+path	tools/verification_core/src/proc/mod.rs	tools/foundation/process_runner/src/run.rs
+path	tools/verification_core/src/proc/README.md	tools/foundation/process_runner/src/README.md
+path	tools/verification_core/src/proc/lookup.rs	tools/foundation/process_runner/src/lookup.rs
+path	tools/verification_core/src/proc/runner.rs	tools/foundation/process_runner/src/runner.rs
+path	tools/verification_core/src/proc/stream.rs	tools/foundation/process_runner/src/stream.rs
+path	tools/verification_core/src/tests/proc_tests.rs	tools/foundation/process_runner/src/tests/run_tests.rs
+#
+# xtask's container-to-host bridge and ssh transport are process mechanics and join process_runner
+path	tools/xtask/src/core/host_execution.rs	tools/foundation/process_runner/src/host_execution.rs
+path	tools/xtask/src/core/tests/host_execution/tests.rs	tools/foundation/process_runner/src/tests/host_execution_tests.rs
+path	tools/xtask/src/core/secure_shell_transport.rs	tools/foundation/process_runner/src/secure_shell_transport.rs
+path	tools/xtask/src/core/tests/secure_shell_transport/tests.rs	tools/foundation/process_runner/src/tests/secure_shell_transport_tests.rs
+#
+# the repository laws become the repository_laws crate: the module root becomes the crate root
+path	tools/verification_core/src/repository_laws/mod.rs	tools/foundation/repository_laws/src/lib.rs
+path	tools/verification_core/src/repository_laws	tools/foundation/repository_laws/src
+#
+# consumers name the split crates
+rust_path	verification_core::proc::	process_runner::
+rust_path	verification_core::repository_laws::	repository_laws::
+rust_path	crate::core::host_execution::	process_runner::host_execution::	tools/xtask
+rust_path	crate::core::secure_shell_transport::	process_runner::secure_shell_transport::	tools/xtask
+#
+# the moved laws name their own items from the crate root, and the verdict, scan and pattern
+# modules from verification_core
+rust_path	crate::repository_laws::	crate::	tools/verification_core/src/repository_laws
+rust_path	crate::verdict::	verification_core::verdict::	tools/verification_core/src/repository_laws
+rust_path	crate::scan::	verification_core::scan::	tools/verification_core/src/repository_laws
+rust_path	crate::pattern::	verification_core::pattern::	tools/verification_core/src/repository_laws

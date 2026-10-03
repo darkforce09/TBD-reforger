@@ -6,12 +6,12 @@
 //! @contract arma-link.schema.json#/definitions/LinkConfirmation
 use crate::core::{application_state::AppState, error_handling::api_error::ApiError};
 use crate::identity_and_access::services::identity_linking::confirm_identity;
-use crate::server_infrastructure::models::machine_credential::ExecutorKind;
 use crate::server_infrastructure::services::machine_credentials::MachineCaller;
 use axum::{
     extract::{State, rejection::JsonRejection},
     response::Json,
 };
+use fleet_wire_contract::ExecutorKind;
 use serde::Deserialize;
 use serde_json::{Value, json};
 

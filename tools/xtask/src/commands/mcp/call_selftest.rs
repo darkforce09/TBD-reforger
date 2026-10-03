@@ -13,11 +13,11 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::Path;
 
+use process_runner::Run;
 use verification_core::NotRun;
-use verification_core::proc::Run;
 
 use crate::core::repository_layout;
-use crate::core::repository_root::find_repo_root;
+use ::repository_layout::find_repository_root;
 
 /// Where an arm's captured stderr is parked so a failing run can be read after the fact.
 const CAPTURED_STDERR_PATH: &str = "/tmp/xtask-mcp-selftest-stderr";
@@ -69,7 +69,7 @@ fn env_pairs(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
 
 /// Entry for `xtask mcp selftest`.
 pub fn run() -> i32 {
-    let root = match find_repo_root() {
+    let root = match find_repository_root() {
         Ok(r) => r,
         Err(e) => {
             let _ = writeln!(io::stderr(), "mcp-call-selftest: FAIL (no repo root: {e})");

@@ -11,11 +11,12 @@
 //! byte bound and no control character; a console line is one line that does not start with
 //! `@`; the deployment-only actions are refused here.
 
+use fleet_wire_contract::FleetAction;
+use fleet_wire_contract::console_command::ConsoleCommandArguments;
 use serde_json::{Map, Value};
 use uuid::Uuid;
 
 use crate::core::error_handling::api_error::ApiError;
-use crate::server_infrastructure::models::fleet_command::{ConsoleCommandArguments, FleetAction};
 
 /// Printable text without control characters, trimmed, of 1 to `max` bytes.
 fn bounded_text(arguments: &Map<String, Value>, key: &str, max: usize) -> Result<String, ApiError> {

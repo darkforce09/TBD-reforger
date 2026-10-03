@@ -1,8 +1,6 @@
 use super::*;
-use crate::core::repository_layout::{
-    CRF_FRAMEWORK_REFERENCE, PLAYABLE_SELECTOR_OVERRIDE_ENV, PLAYABLE_SELECTOR_REFERENCE,
-    REFERENCES_DIR, VANILLA_REFERENCE,
-};
+use crate::core::repository_layout::{PLAYABLE_SELECTOR_OVERRIDE_ENV, PLAYABLE_SELECTOR_REFERENCE};
+use repository_layout::{CRF_FRAMEWORK_REFERENCE, REFERENCES_DIR, VANILLA_REFERENCE};
 
 /// Plain `git`, run from `dir`. The bash uses bare `git` everywhere except the calls listed on
 /// [`git_lfs_safe`], and that distinction is deliberate rather than sloppy — see [`cmd_merge`].
@@ -32,7 +30,7 @@ pub(super) fn git_lfs_safe(dir: &Path) -> Run {
 }
 
 /// Run git, capturing both streams and preserving the raw exit code. `NotRun` (git absent, killed
-/// by a signal) becomes an `Err`, never an exit code: `verification_core::proc` exists so "the OOM killer
+/// by a signal) becomes an `Err`, never an exit code: `process_runner` exists so "the OOM killer
 /// shot git" is not reported as "git found a problem", and here a 137 misread as "no output, tree
 /// is clean" is exactly how work gets deleted.
 pub(super) fn git(run: Run) -> Result<Output> {
@@ -124,7 +122,7 @@ pub(super) fn parent_slice(s: &str) -> String {
 pub(super) fn resolve_root() -> Result<PathBuf> {
     match std::env::var("TBD_SLICE_WORKTREE_ROOT") {
         Ok(v) if !v.is_empty() => Ok(PathBuf::from(v)),
-        _ => find_repo_root(),
+        _ => Ok(find_repository_root()?),
     }
 }
 
@@ -138,7 +136,7 @@ pub fn run(args: &[String]) -> Result<u8> {
 /// call this instead — in-process, so there is no second cargo resolution and no chance of the
 /// child picking a different `CARGO_TARGET_DIR` than the process that launched it. They already
 /// hold the root they mean, so they pass it rather than re-deriving it through
-/// `TBD_SLICE_WORKTREE_ROOT`/`find_repo_root`.
+/// `TBD_SLICE_WORKTREE_ROOT`/`find_repository_root`.
 pub fn run_at(root: &Path, args: &[String]) -> Result<u8> {
     dispatch(root, args)
 }
