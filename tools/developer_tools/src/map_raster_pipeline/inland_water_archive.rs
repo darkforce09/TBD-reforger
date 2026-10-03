@@ -51,7 +51,7 @@ use world_file_formats::archives::water::WaterVectorsArchive;
 use world_file_formats::containers::header::ContainerHeader;
 use world_file_formats::containers::tbdb::TbdbHeader;
 
-use crate::repository_layout::compiled_checkout_root;
+use ::repository_layout::find_repository_root;
 
 /// Where the Workbench inland-water export lands, relative to the export scratch: under
 /// `assets/scratch/<terrain>/` for a terrain id, under `<dir>/scratch/` for a directory

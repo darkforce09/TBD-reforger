@@ -96,7 +96,7 @@ keeps 127 files instead of 610.
 
 - [Mod design](/documentation/mod/tbd-framework/mod_design.md) — §5 cites the facts these lanes
   proved
-- [Enfusion tooling](/tools/developer_tools/src/enfusion_tooling/README.md) — the `enf`
+- [Enfusion tooling](/tools/enfusion/enfusion_script_index/src/README.md) — the `enf`
   subcommands
-- [Enfusion pak reader](/tools/developer_tools/src/enfusion_pak/README.md) — the pak file table
+- [Enfusion pak reader](/tools/enfusion/enfusion_pak/src/README.md) — the pak file table
   and payload decoding the extract lane uses

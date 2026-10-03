@@ -1,10 +1,10 @@
 # Developer tool executables
 
-The seven executables of the `developer_tools` crate: the
+The eight executables of the `developer_tools` crate: the
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) script oracle, the headless browser gates, the
 enfusion-mcp broker, the world-export and map-image pipelines, [Mission
-Creator](/documentation/glossary/g_to_m.md#mission-creator) captures, and the staging host's
-acknowledgement-dropping relay. Developers run them by hand, and
+Creator](/documentation/glossary/g_to_m.md#mission-creator) captures, the staging host's
+acknowledgement-dropping relay, and the staging member load. Developers run them by hand, and
 xtask recipes and CI tasks run them by name.
 
 ## Contents
@@ -17,24 +17,27 @@ tools/developer_tools/src/bin/
 ├── gate.rs                            the `gate` binary: the headless browser gates of the single-page app
 ├── map.rs                             the `map` binary: satellite, cartographic, label, water and glyph map assets
 ├── mcpd.rs                            the `mcpd` binary: the persistent enfusion-mcp broker and its offline stub
+├── staging_load.rs                    the `staging-load` binary: the staging member load, a plan in and its report out
 └── world.rs                           the `world` binary: the world-export pipeline and its verification gates
 ```
 
 ## How it works
 
-Each file is a three-line `main` that calls one entry function of the `developer_tools` library and
-returns its `ExitCode`; the `[[bin]]` tables of `tools/developer_tools/Cargo.toml` name the
-binaries. Argument parsing, help text and error reporting live in the owning module: six binaries
+Each file is a three-line `main` that calls one entry function of the `developer_tools` library (or,
+for `mcpd`, `enf`, `acknowledgement-dropping-relay` and `staging-load`, of the `enfusion_mcp_broker`,
+`enfusion_script_index`, `acknowledgement_dropping_relay` and `staging_load_generator` crates) and returns its `ExitCode`; the `[[bin]]` tables of `tools/developer_tools/Cargo.toml` name the
+binaries. Argument parsing, help text and error reporting live in the owning module: seven binaries
 parse with clap's derive API, and `mcpd` reads its few flags itself.
 
 ```text
-enf.rs      ──▶ enfusion_tooling::cli::entrypoint
+enf.rs      ──▶ enfusion_script_index::run_command_line
 gate.rs     ──▶ browser_testing::cli::run
 capture.rs  ──▶ browser_testing::capture_cli::run
-mcpd.rs     ──▶ enfusion_tooling::mcp_broker::run
+mcpd.rs     ──▶ enfusion_mcp_broker::run
 world.rs    ──▶ world_export_pipeline::cli::entrypoint
 map.rs      ──▶ map_raster_pipeline::cli::entrypoint
-acknowledgement_dropping_relay.rs ──▶ staging_verification::acknowledgement_relay::entrypoint
+acknowledgement_dropping_relay.rs ──▶ acknowledgement_dropping_relay::entrypoint
+staging_load.rs ──▶ staging_load_generator::entrypoint
 ```
 
 Default paths such as `apps/frontend/dist` and `.ai/artifacts/enf-index` are relative to the
@@ -69,7 +72,7 @@ a subcommand prints its usage, and a clap usage error exits 2.
   equipment data viewer through a running website (`equipment-data-viewer`), and the mortar
   calculator with the server gone (`mortar-offline`), and the fire-mission solver's WebAssembly
   build against its native build (`ballistics-agreement`); `doctor` is the
-  preflight the others rely on, checked against `tools/developer_tools/gate-env.json`.
+  preflight the others rely on, checked against `tools/browser_testing/browser_gate_suites/gate-env.json`.
 - Exit codes: 0 green; 1 a gate failed; 2 usage; 3 a driver error.
 - Example: `cargo run -q -p developer_tools --bin gate -- doctor`
 
@@ -137,6 +140,20 @@ a subcommand prints its usage, and a clap usage error exits 2.
 - Example: `cargo run -q -p developer_tools --bin acknowledgement-dropping-relay -- control
   --control-socket "$XDG_RUNTIME_DIR/acknowledgement-dropping-relay-5/control.sock" status`
 
+### staging-load
+
+- Synopsis: `staging-load [--plan <path>] [--report <path>]`.
+- Does: reads a `LoadRunPlan` as JSON from `--plan`, or from standard input without it; checks it,
+  confirms every source address is this machine's, runs the member load it describes against the
+  plan's target origin for the ramp and the measured window, and writes the `LoadReport` as one
+  JSON line to `--report`, or to standard output without it. Nothing else reaches standard output;
+  an error goes to standard error as one `staging-load: …` line, and no token reaches either.
+- Exit codes: 0 the report was written; 1 the plan was refused or undecodable, the account file or
+  a source address was refused, the run could not start, or the report could not be written; 2
+  usage.
+- Example: `cargo xtask staging load --rehearse-local`, which builds the binary and runs it with
+  the rehearsal's plan on standard input.
+
 ## Boundaries
 
 - Depends on: the `developer_tools` library modules in the diagram, in
@@ -152,10 +169,12 @@ a subcommand prints its usage, and a clap usage error exits 2.
     vanilla-source` print the `enf` step that follows them;
   - `cargo xtask deploy staging`, which builds and installs `acknowledgement-dropping-relay` on the
     staging host for the unit `acknowledgement-dropping-relay@N`, and the staging fleet procedure,
-    which runs its `control` command there.
+    which runs its `control` command there;
+  - `cargo xtask staging load` (the recorded run and `--rehearse-local`), which builds
+    `staging-load` and runs it as a child process.
 - Rules: an entry file holds only `main` and its one call, and stays under 250 lines
   (`tooling_source_files_stay_below_their_structural_limits` in
-  `tools/xtask/src/tests/tooling_dependency_boundaries.rs`); the seven binary names are stable,
+  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`); the eight binary names are stable,
   because xtask recipes and CI tasks call them by `--bin <name>`
   (`the_tooling_tree_holds_its_executables_manifests_and_layout_modules`); a new binary adds its
   `[[bin]]` table and its file in the same change.

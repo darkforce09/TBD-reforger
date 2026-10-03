@@ -106,7 +106,7 @@ in the game runtime.
   password written by hand can meet the difference: `cargo xtask deploy staging` generates each
   fleet instance's password on the host as 32 lowercase hex digits and refuses an existing file of
   any other shape (`RCON_PASSWORD_SHAPE` in
-  `tools/xtask/src/commands/deploy/staging/payloads.rs`).
+  `tools/commands/deployment/src/staging/payloads.rs`).
 
 ## Data
 

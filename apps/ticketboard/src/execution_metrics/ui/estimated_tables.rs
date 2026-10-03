@@ -1,12 +1,12 @@
 use super::*;
 use crate::core::ui::*;
-use crate::execution_metrics::{
+use eframe::egui::{RichText, Ui};
+use egui_extras::{Column as TableColumn, TableBuilder};
+use ticketboard_model::execution_metrics::{
     estimated::{self as estimates, EstimatedTableKind, EstimatesState},
     events::MetricsEvent as Action,
     models::MetricsView,
 };
-use eframe::egui::{RichText, Ui};
-use egui_extras::{Column as TableColumn, TableBuilder};
 
 // ---- estimated (historical) panel ----
 

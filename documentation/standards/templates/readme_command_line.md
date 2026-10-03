@@ -3,7 +3,7 @@
 # README template: command-line
 
 **When to use:** the entry points of executables, or one command group: a crate's `src/bin/`, or a
-command group folder such as `tools/xtask/src/commands/db/`. The
+command group folder such as `tools/commands/database_operations/src/`. The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the command-line kind adds Commands.
 
@@ -86,10 +86,10 @@ binaries. Argument parsing, help text and error reporting live in the owning mod
 parse with clap's derive API, and `mcpd` reads its few flags itself.
 
 ```text
-enf.rs      ──▶ enfusion_tooling::cli::entrypoint
+enf.rs      ──▶ enfusion_script_index::run_command_line
 gate.rs     ──▶ browser_testing::cli::run
 capture.rs  ──▶ browser_testing::capture_cli::run
-mcpd.rs     ──▶ enfusion_tooling::mcp_broker::run
+mcpd.rs     ──▶ enfusion_mcp_broker::run
 world.rs    ──▶ world_export_pipeline::cli::entrypoint
 map.rs      ──▶ map_raster_pipeline::cli::entrypoint
 ```

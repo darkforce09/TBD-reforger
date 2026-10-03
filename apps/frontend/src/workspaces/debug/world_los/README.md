@@ -80,7 +80,7 @@ east, up, north), `&eye=` (the cut height above the ground, default 1.8 m) and `
   No test covers these browser-only files; the pure scene code they call is tested in
   `apps/frontend/src/workspaces/debug/tests/world_los_scene/`. The route's row in
   `apps/frontend/src/foundation/route_table/mod.rs` must match
-  `tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv` (`gate s-routes`).
+  `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv` (`gate s-routes`).
 
 ## Related documentation
 

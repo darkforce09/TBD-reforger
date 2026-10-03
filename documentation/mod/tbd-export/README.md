@@ -53,7 +53,7 @@ Workbench, apps/mod/tbd-export/addon.gproj open
 - [Map commands](/tools/xtask/src/commands/map/) and the
   [world export pipeline](/tools/developer_tools/src/world_export_pipeline/) — the tools that
   read the map exports.
-- [Equipment and vehicle validation](/tools/xtask/src/commands/mod_ops/equipment_vehicle_export/)
+- [Equipment and vehicle validation](/tools/commands/mod_operations/src/equipment_vehicle_export/)
   — `cargo xtask mod validate-equipment-vehicle-export` and `publish-equipment-vehicle-export`.
 
 ## Boundaries

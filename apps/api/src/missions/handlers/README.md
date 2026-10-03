@@ -74,7 +74,7 @@ missing one, and a write by someone who may not edit the mission answers 403.
   `apps/frontend/src/pages/administration/`, the
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
   `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
-  `tools/xtask/src/commands/mod_ops/website_api_client/`.
+  `tools/commands/mod_operations/src/website_api_client/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); every
   mission write takes `MissionMakerUser` as well as ownership, so a demotion revokes it

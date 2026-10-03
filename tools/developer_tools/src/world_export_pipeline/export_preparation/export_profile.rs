@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::map_scratch_dir;
+use ::repository_layout::map_scratch_dir;
 
 pub fn copy_world_export_profile(
     terrain: &str,
@@ -8,7 +8,7 @@ pub fn copy_world_export_profile(
     src: Option<String>,
     meta: Option<String>,
 ) -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let profile_dir = profile
         .map(PathBuf::from)
         .or_else(|| std::env::var("PROFILE").ok().map(PathBuf::from))

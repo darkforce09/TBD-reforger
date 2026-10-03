@@ -1,9 +1,9 @@
 use super::*;
-use crate::ticket_actions::{
+use eframe::egui::{Checkbox, RichText, TextEdit, Ui};
+use ticketboard_model::ticket_actions::{
     events::TicketActionEvent as Action,
     services::commands::{self as verbs, FileChangeGuard},
 };
-use eframe::egui::{Checkbox, RichText, TextEdit, Ui};
 
 pub(crate) fn add_body_ui(
     ui: &mut Ui,

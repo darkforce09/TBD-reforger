@@ -146,7 +146,7 @@ each feature doc's Design section lists how the page differs from its set.
 ### Adding a page
 
 A new route gets a row in `app_routes.rs` and in `ROUTES` (the route drift gate diffs `ROUTES`
-against `tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv`), an in-code README
+against `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`), an in-code README
 in its page folder, a folder here under its area named like the code folder, with a README and
 its feature doc, and a row in the route table above.
 

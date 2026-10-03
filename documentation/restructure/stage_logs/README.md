@@ -73,7 +73,7 @@ These files are edited own-lines-only, with a re-read right before each edit:
 - the root `Cargo.toml` (new crates are members through the `crates/*/*` glob);
 - `CLAUDE.md` §2 (the stage's own subtree lines only);
 - `documentation/restructure/crate_catalogue.md` ("Built so far" rows are added in the final rebased commit);
-- `tools/xtask/src/core/repository_layout.rs`;
+- the `repository_layout` crate's `src/lib.rs` and location modules (`tools/foundation/repository_layout/src/`);
 - `legacy/map_engine/src/lib.rs` and the map engine's features;
 - the manifests README (the stage's own row).
 

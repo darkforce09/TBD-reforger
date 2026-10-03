@@ -7,7 +7,6 @@ pub fn build_unified_satellite(
     tile_threshold: usize,
     container_version: u16,
 ) -> Result<u8> {
-    use sha2::Digest as _;
     if container_version != 1 && container_version != 2 {
         eprintln!("unsupported --container-version {container_version} (expected 1 or 2)");
         return Ok(1);
@@ -81,14 +80,7 @@ pub fn build_unified_satellite(
     }
     log(&format!("encoded {} VP8L blocks", blocks.len()));
 
-    let input_sha256 = {
-        let mut hsh = sha2::Sha256::new();
-        hsh.update(std::fs::read(input)?);
-        hsh.finalize()
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect::<String>()
-    };
+    let input_sha256 = content_digest::sha256_hex(&std::fs::read(input)?);
     let mut source_meta = Value::Null;
     let meta_path = input
         .parent()

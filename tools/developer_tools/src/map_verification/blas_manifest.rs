@@ -21,7 +21,7 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use crate::repository_layout::{contract_definitions_dir, terrain_dir};
+use ::repository_layout::{contract_definitions_dir, terrain_dir};
 use spatial_indexes::bounding_volume_hierarchy::sidecar::BvhSidecar;
 use world_line_of_sight::occluder_library::BlasManifest;
 use world_line_of_sight::occluder_library::PrefabDescriptor;

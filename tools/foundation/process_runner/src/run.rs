@@ -42,9 +42,12 @@
 //! ── THE MODULE TREE ──────────────────────────────────────────────────────────────────────────
 //!
 //! This file holds the vocabulary. `runner.rs` spawns, isolates and reaps; `stream.rs` drains the
-//! pipes; `lookup.rs` resolves programs on `PATH` and waits on conditions.
+//! pipes; `lookup.rs` resolves programs on `PATH` and waits on conditions; `run_modes/` holds the
+//! runs that do not capture text: the inherited terminal, byte pipes, output files, a detached
+//! child, a line stream and the process replacement.
 
 use std::ffi::OsStr;
+use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -84,7 +87,20 @@ pub struct Run {
     pub(crate) envs: Vec<(String, String)>,
     pub(crate) env_removes: Vec<String>,
     pub(crate) timeout: Option<Duration>,
-    pub(crate) stdin: Option<String>,
+    pub(crate) stdin: StdinSource,
+}
+
+/// What a child reads on stdin.
+pub(crate) enum StdinSource {
+    /// Nothing chosen: `/dev/null` for every run except [`Run::terminal`] and
+    /// [`Run::replace_process`], which inherit this process's stdin.
+    Unset,
+    /// `/dev/null`, whatever the run.
+    Null,
+    /// Bytes written to a pipe by a writer thread, which then closes it.
+    Bytes(Vec<u8>),
+    /// An open file the child reads directly, as a shell's `< file`.
+    File(File),
 }
 
 impl Run {
@@ -97,7 +113,7 @@ impl Run {
             envs: Vec::new(),
             env_removes: Vec::new(),
             timeout: None,
-            stdin: None,
+            stdin: StdinSource::Unset,
         }
     }
 
@@ -145,7 +161,26 @@ impl Run {
 
     /// Writes `body` to the child's stdin and closes it; without a body stdin is `/dev/null`.
     pub fn stdin(mut self, body: impl Into<String>) -> Run {
-        self.stdin = Some(body.into());
+        self.stdin = StdinSource::Bytes(body.into().into_bytes());
+        self
+    }
+
+    /// Writes the raw bytes `body` to the child's stdin and closes it — a binary archive, say.
+    pub fn stdin_bytes(mut self, body: impl Into<Vec<u8>>) -> Run {
+        self.stdin = StdinSource::Bytes(body.into());
+        self
+    }
+
+    /// Hands the child the open `file` as its stdin, as a shell's `< file` does.
+    pub fn stdin_file(mut self, file: File) -> Run {
+        self.stdin = StdinSource::File(file);
+        self
+    }
+
+    /// Gives the child `/dev/null` as its stdin even where a run would inherit this process's
+    /// stdin ([`Run::terminal`], [`Run::replace_process`]).
+    pub fn stdin_null(mut self) -> Run {
+        self.stdin = StdinSource::Null;
         self
     }
 

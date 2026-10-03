@@ -1,6 +1,6 @@
 use super::*;
 use crate::blueprint::tests::fixture;
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 
 /// The door-parity pin: the committed shell + every architectural instance
 /// (doors closed — the editor's `InitialAngle 0`; furniture excluded because the Workbench

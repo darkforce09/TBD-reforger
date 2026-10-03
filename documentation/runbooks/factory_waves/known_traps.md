@@ -170,7 +170,7 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
 
 - [Slice agent brief](/documentation/runbooks/factory_waves/slice_agent_brief.md) — the rules
   these traps produced.
-- [Platform wave driver](/tools/xtask/src/commands/platform/wave_execution/README.md) — the
+- [Platform wave driver](/tools/commands/platform_execution/src/wave_execution/README.md) — the
   target folders, the run stamp and the step capture.
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — every check and where it runs.
 - [Editor gates](/documentation/runbooks/editor_gates.md) — headless browser traps of the

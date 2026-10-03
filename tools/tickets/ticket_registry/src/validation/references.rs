@@ -1,0 +1,211 @@
+//! References between tickets, and between tickets and the documents they cite.
+//!
+//! **Role:** reds a `children` entry without a file, a child whose parent file is missing, a
+//! cited spec or plan file that does not exist, a stale ticket id in the scanned documents,
+//! and a live mention of the retired wave-plan files.
+//! **Position:** under `ticket check`; reads the typed corpus, the documents under the scan
+//! roots and the tracked tree through `git grep`.
+//! **Signals & state:** none; reads files and runs `git grep`.
+//! **Invariants:** a guard that cannot scan reports why instead of reporting clean; the
+//! dotted child-id shape rule stays in the operations gate, so committed history stays green.
+
+use super::*;
+use process_runner::Run;
+
+use repository_layout::TICKETS_DIR;
+use ticket_model::repository::documentation::{
+    ARCHIVED_WAVE_PLAN_READERS, SCAN_EXEMPT_PREFIXES, STALE_TICKET_ID_SCAN_ROOTS,
+};
+
+/// Parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
+/// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
+/// the pair:
+///
+/// - every `children[]` entry must have an on-disk `T-<child>.toml` — no writer deletes files a
+///   `children[]` list stops naming, so a listing without a file would otherwise be INVISIBLE;
+/// - every child file's `parent` must exist on disk — a removed parent would otherwise strand
+///   its children as permanently unreachable rows.
+///
+/// There is no allowlist. A parked program cross-listing another program's child satisfies both
+/// rules because the file and its parent both exist; only a dotted-extension SHAPE rule would
+/// red it, and that rule deliberately lives in the ops post-image gate (changed programs only),
+/// not here, exactly so frozen history stays green.
+///
+/// Fail-closed: a corpus that cannot load reports the load error — a guard that cannot scan
+/// must not report clean (the fossil-guard precedent).
+pub(super) fn check_children_integrity(root: &Path) -> Vec<String> {
+    let corpus = match ticket_model::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for (id, ticket) in &corpus.tickets {
+        match ticket {
+            ticket_model::Ticket::Program(p) => {
+                for child in &p.children {
+                    if !corpus.tickets.contains_key(child.as_str()) {
+                        errors.push(format!(
+                            "{id}: children[] names {child}, which has no {TICKETS_DIR}/{child}.toml on disk"
+                        ));
+                    }
+                }
+            }
+            ticket_model::Ticket::Work(w) => {
+                if let Some(parent) = &w.parent
+                    && !corpus.tickets.contains_key(parent.as_str())
+                {
+                    errors.push(format!(
+                        "{id}: parent {parent} has no {TICKETS_DIR}/{parent}.toml on disk"
+                    ));
+                }
+            }
+        }
+    }
+    errors
+}
+
+/// Every `spec` and `plan` a ticket file names exists on disk, over EVERY
+/// `.ai/tickets/T-*.toml`: parents and dotted children alike, because the typed corpus holds
+/// both, while the parents-only registry projection never carries a child's own fields.
+///
+/// The exemptions are by status. An `idea` may name a document it has yet to write, and a
+/// `cancelled` ticket's document may be gone for good; every other status binds, shipped history
+/// included. Only existence is this rule's business: whether a ticket must name a plan at all is
+/// [`check_plan_ready_gate`], and whether it must name a spec is the ready-class parse refusal,
+/// so a missing document is reported once.
+///
+/// Fail-closed: a corpus that cannot load reports the load error.
+pub(super) fn check_spec_and_plan_files_exist(root: &Path) -> Vec<String> {
+    let corpus = match ticket_model::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for (id, ticket) in &corpus.tickets {
+        if matches!(
+            ticket.status().name(),
+            ticket_model::StatusName::Idea | ticket_model::StatusName::Cancelled
+        ) {
+            continue;
+        }
+        let (spec, plan) = match ticket {
+            ticket_model::Ticket::Program(p) => (p.spec.as_deref(), p.plan.as_deref()),
+            ticket_model::Ticket::Work(w) => (w.spec.as_deref(), w.plan.as_deref()),
+        };
+        for (field, named) in [("spec", spec), ("plan", plan)] {
+            let path = named.unwrap_or("").trim();
+            if !path.is_empty() && !root.join(path).is_file() {
+                errors.push(format!("{id}: {field} missing on disk: {path}"));
+            }
+        }
+    }
+    errors
+}
+
+/// Fossil-path guard: the wave-plan TSVs and their env knobs are dead, and any LIVE
+/// mention of them is a regression vector — a reader quietly retargeted at a missing file
+/// reports a false green. Greps the tracked tree (working
+/// contents, so an uncommitted plant is caught) minus a tight historical allowlist.
+///
+/// Needles are assembled at runtime, like the `const DEPS` tripwire, so this
+/// file's own source cannot satisfy the scan it performs.
+pub(super) fn fossil_needles() -> [String; 3] {
+    [
+        format!("wave_plan{}", ".tsv"),
+        format!("TBD_WAVE{}", "_PLAN"),
+        format!("TBD_WAVE_GENERATION{}", "_FLOOR"),
+    ]
+}
+
+pub(super) fn fossil_paths_check(root: &Path) -> Vec<String> {
+    let needles = fossil_needles();
+    let mut cmd = Run::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["grep", "-l", "-I", "--fixed-strings"]);
+    for n in &needles {
+        cmd = cmd.args(["-e", n]);
+    }
+    let out = match cmd.args(["--", "."]).output() {
+        Ok(o) => o,
+        Err(e) => return vec![format!("fossil-path guard could not run git grep: {e}")],
+    };
+    // git grep: 0 = matches, 1 = no matches, anything else = failure. Fail closed — a guard
+    // that cannot scan must not report clean.
+    match out.code {
+        0 | 1 => {}
+        other => {
+            return vec![format!(
+                "fossil-path guard: git grep failed (rc {:?}): {}",
+                Some(other),
+                out.stderr.trim()
+            )];
+        }
+    }
+    let mut errors = Vec::new();
+    for path in out.stdout.lines() {
+        let path = path.trim();
+        if path.is_empty() {
+            continue;
+        }
+        if ARCHIVED_WAVE_PLAN_READERS
+            .iter()
+            .any(|(p, _)| path.starts_with(p))
+        {
+            continue;
+        }
+        errors.push(format!(
+            "archived wave-plan reference in {path} — the wave plan is {}; a mention that is \
+             genuinely about the past belongs on ARCHIVED_WAVE_PLAN_READERS in \
+             tools/tickets/ticket_model/src/repository.rs, with its reason",
+            repository_layout::WAVE_LOCK
+        ));
+    }
+    errors
+}
+
+pub(super) fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
+    let mut hits: HashMap<String, Vec<String>> = HashMap::new();
+    let scan_roots: Vec<PathBuf> = STALE_TICKET_ID_SCAN_ROOTS
+        .iter()
+        .map(|rel| root.join(rel))
+        .collect();
+    for base in scan_roots {
+        let files: Vec<PathBuf> = if base.is_file() {
+            vec![base]
+        } else if base.is_dir() {
+            WalkDir::new(&base)
+                .into_iter()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().is_file())
+                .map(|e| e.path().to_path_buf())
+                .collect()
+        } else {
+            continue;
+        };
+        for f in files {
+            let rel = match f.strip_prefix(root) {
+                Ok(r) => r.to_string_lossy().replace('\\', "/"),
+                Err(_) => continue,
+            };
+            if SCAN_EXEMPT_PREFIXES
+                .iter()
+                .any(|p| rel.starts_with(p) || rel.contains(p))
+            {
+                continue;
+            }
+            let text = match fs::read_to_string(&f) {
+                Ok(t) => t,
+                Err(_) => continue,
+            };
+            let matches: Vec<String> = STRICT_RE
+                .find_iter(&text)
+                .map(|m| m.as_str().to_string())
+                .collect();
+            if !matches.is_empty() {
+                hits.insert(rel, matches);
+            }
+        }
+    }
+    hits
+}

@@ -1,58 +1,48 @@
 mod action_dispatch;
 mod background_events;
-mod background_loading;
 mod command_execution;
-mod events;
 mod feature_views;
 mod lifecycle;
-mod preferences;
 mod shell_screens;
 mod ticket_command_views;
 mod window;
-mod window_layout;
-mod workspace_state;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant};
 
 use eframe::egui::{self, Align, Button, Id, Layout, Panel, RichText, ScrollArea, Spinner, Ui};
 use egui_commonmark::CommonMarkCache;
-use ticket_engine::StatusName;
+use ticket_model::StatusName;
 
-use crate::core::process::{self as subproc, BoundedLog, ProcessEvent, ProcessHandle};
-use crate::document_viewer::services::document_loading::{self as viewer, ViewerState};
-use crate::execution_metrics::estimated::{
-    self as estimates, EstimatedSortPair, EstimatedTableKind, EstimatesState,
+use ticket_command_views as mutate;
+use ticketboard_model::application_state::background_loading::{self, LoadBundle};
+use ticketboard_model::core::process::{self as subproc, BoundedLog, ProcessEvent, ProcessHandle};
+use ticketboard_model::document_viewer::services::document_loading::{self as viewer, ViewerState};
+use ticketboard_model::execution_metrics::estimated::{
+    self as estimates, EstimatedTableKind, EstimatesState,
 };
-use crate::execution_metrics::measured::{self as metrics, MetricsState, SortPair, TableKind};
-use crate::repository_status::models::check_status::{self as trust, CheckModel, Coalescer};
-use crate::repository_status::models::git_status::{self as gitstatus, GitChip};
-use crate::repository_status::services::file_watch::{self as watch, Debouncer};
-use crate::ticket_actions::models::{
+use ticketboard_model::execution_metrics::measured::{self as metrics, MetricsState, TableKind};
+use ticketboard_model::repository_status::models::check_status::{
+    self as trust, CheckModel, Coalescer,
+};
+use ticketboard_model::repository_status::models::git_status::{self as gitstatus, GitChip};
+use ticketboard_model::repository_status::services::file_watch::{self as watch, Debouncer};
+use ticketboard_model::ticket_actions::models::{
     CommandExecutionState, CommandOutcome, Dialog, MutationContext, Toast,
 };
-use crate::ticket_actions::services::commands as verbs;
-use crate::ticket_browser::models::program_tree::{self as tree, TreeModel};
-use crate::ticket_browser::models::status_board::BoardModel;
-use crate::ticket_browser::services::filtering::{FilterIndex, Filters};
-use crate::ticket_browser::services::scope_facets::{self as facets, FacetOptions, VocabTree};
-use crate::ticket_registry::models::corpus::{Corpus, LoadError};
-use crate::ticket_registry::models::projection as board;
-use crate::ticket_registry::services::discovery;
-use crate::wave_plan::models::wave_projection::WavesModel;
-use crate::wave_plan::services::lock_file::LockState;
-use background_loading::LoadBundle;
-use ticket_command_views as mutate;
+use ticketboard_model::ticket_actions::services::commands as verbs;
+use ticketboard_model::ticket_registry::models::corpus::LoadError;
+use ticketboard_model::ticket_registry::services::discovery;
 
-use crate::core::process::external_open::open_path;
-use crate::core::time::epoch_secs;
 use crate::ticket_browser::ui::filter_bar::filter_bar_ui;
-use events::*;
 use feature_views::*;
-use preferences::*;
 use shell_screens::*;
-use window_layout::*;
-use workspace_state::*;
+use ticketboard_model::application_state::events::*;
+use ticketboard_model::application_state::preferences::*;
+use ticketboard_model::application_state::window_layout::*;
+use ticketboard_model::application_state::workspace_state::*;
+use ticketboard_model::core::process::external_open::open_path;
+use ticketboard_model::core::time::utc_hms_now;
 pub struct TicketboardApp {
     repo_root: Option<PathBuf>,
     state: State,
@@ -101,8 +91,6 @@ pub struct TicketboardApp {
     /// while the column is on screen, persisted in `save`.
     viewer_w: f32,
 }
-
-mod workspace_reload;
 
 #[cfg(test)]
 #[path = "tests/rendering.rs"]

@@ -3,7 +3,7 @@
 //! **Role:** answers which members the layout laws judge, which class a category belongs to,
 //! what a crate's declared targets are, and whether a dependency edge between two categories is
 //! allowed (rule 5 of the crate-tier law).
-//! **Position:** shared by [`super::crate_tiers`], [`super::crate_firewalls`],
+//! **Position:** shared by [`super::crate_tiers`], `super::crate_firewalls`,
 //! [`super::crate_anatomy`] and [`super::strangler`]; reads parsed members only.
 //! **Signals & state:** none; constants and pure functions.
 //! **Invariants:** the judged set is every member that declares `[package.metadata.layout]` plus

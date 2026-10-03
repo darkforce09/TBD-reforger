@@ -27,8 +27,8 @@ only the parts your prompt names; do not re-derive the plan.
   never reorder or reformat other lines. This wave's shared files are:
   `tools/xtask/src/cli/mod.rs`, `tools/xtask/src/cli/dispatch.rs`,
   `tools/xtask/src/commands/mod.rs`, `tools/xtask/src/commands/README.md`,
-  `tools/xtask/src/commands/ci/task_definitions.rs`, `.github/workflows/ci.yml`,
-  `tools/xtask/src/commands/build/recipes.rs` (T3 only), `tools/xtask/README.md`.
+  `tools/commands/ci_task_catalog/src/task_definitions.rs`, `.github/workflows/ci.yml`,
+  `tools/commands/ci_task_catalog/src/build_lane/recipes.rs` (T3 only), `tools/xtask/README.md`.
   Cargo manifests and `Cargo.lock` belong to T2 alone; if you need a dependency added, do not edit a
   manifest: report it as a FIX finding and work without it (or with an existing dependency).
 - Keep every crate compiling at every save point: write complete new files first, add the `mod`
@@ -65,7 +65,8 @@ only the parts your prompt names; do not re-derive the plan.
 
 ## Spec (authoritative, verified)
 - Packages today: `xtask` (tools/xtask), `verification_core`, `process_runner`, `repository_laws` (tools/foundation),
-  `ticket_engine`, `developer_tools`, `api` (apps/api), `frontend`,
+  `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry` (tools/tickets),
+  `developer_tools`, `api` (apps/api), `frontend`,
   `map_engine`, `graphics_engine`, `offline_service_worker`,
   `fleet_host_agent`, `ticketboard`. Rust 1.95.0, edition 2024 except the frontend (2021).
 - `<scratch>` = `<scratch>`.

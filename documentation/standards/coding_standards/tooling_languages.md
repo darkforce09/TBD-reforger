@@ -4,7 +4,7 @@
 
 Rules LANG-1, LANG-2 and LANG-3: which language repository tooling is written in. Every rule here
 is live and gated. The gate bodies and their exact matching rules are in the
-[language ban gates README](/tools/xtask/src/verifications/language_bans/README.md); this page
+[language ban gates README](/tools/checks/repository_checks/src/language_bans/README.md); this page
 states the rules and why they exist.
 
 ## Rules
@@ -21,7 +21,7 @@ states the rules and why they exist.
   stays stable. Gate: CI-SCRIPT, `cargo xtask verify no-python`.
 - **LANG-3 (Debuggability) — Both are bans, not ratchets.** One table,
   `TRACKED_LANGUAGE_BANS` in
-  [shell_scripts.rs](/tools/xtask/src/verifications/language_bans/shell_scripts.rs), covers
+  [shell_scripts.rs](/tools/checks/repository_checks/src/language_bans/shell_scripts.rs), covers
   shell, Make, Python and the Node script extensions `.mjs` and `.cjs`. Any tracked match fails.
   There is no inventory, no allowlist and no "may only shrink" count. No path prefix is skipped:
   `apps/mod/` is scanned like everything else, and [EnfScript](/documentation/glossary/a_to_f.md#enfscript)
@@ -37,7 +37,7 @@ A companion gate, `cargo xtask verify no-node`, holds Node to the
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) MCP runtime: no tracked `.mjs` or `.cjs` file
 outside `apps/mod/`, no `node` or `npx` call in a workflow or shell line under `.github/`, and no
 `actions/setup-node` step. It has no rule code; the
-[file length and Node ban README](/tools/xtask/src/verifications/language_bans/node_and_file_limits/README.md)
+[file length and Node ban README](/tools/checks/repository_checks/src/language_bans/node_and_file_limits/README.md)
 describes it.
 
 ## Why the bans exist
@@ -63,6 +63,6 @@ the platform [wave](/documentation/glossary/n_to_z.md#wave) gate. The full matri
 [Testing and CI](/documentation/runbooks/testing_and_ci.md#gate-matrix).
 
 The tests that hold the rules: `planted_sh_fails`, `makefile_is_banned` and
-`leftover_py_file_fails` in `tools/xtask/src/verifications/language_bans/tests/python_scripts/tests.rs`;
+`leftover_py_file_fails` in `tools/checks/repository_checks/src/language_bans/tests/python_scripts/tests.rs`;
 `does_not_sweep_in_rust_inner_attributes` and `python3_command_position_ignores_comments` in
-`tools/xtask/src/verifications/language_bans/tests/shell_scripts/tests.rs`.
+`tools/checks/repository_checks/src/language_bans/tests/shell_scripts/tests.rs`.

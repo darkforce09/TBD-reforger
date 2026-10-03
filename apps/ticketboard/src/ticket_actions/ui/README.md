@@ -44,9 +44,9 @@ control that could dispatch is disabled while `MutationContext::busy` is true.
 
 ## Boundaries
 
-- Depends on: `crate::ticket_actions::models`, `crate::ticket_actions::services` and
-  `crate::ticket_actions::events`; `crate::ticket_registry::models::projection` (`STATUS_ORDER`,
-  the ticket view); `crate::core::ui` (the verdict colours); `ticket_engine` (`StatusName`,
+- Depends on: `ticketboard_model::ticket_actions::models`, `ticketboard_model::ticket_actions::services` and
+  `ticketboard_model::ticket_actions::events`; `ticketboard_model::ticket_registry::models::projection` (`STATUS_ORDER`,
+  the ticket view); `crate::core::ui` (the verdict colours); `ticket_model` (`StatusName`,
   `Ticket`); `eframe::egui`.
 - Used by: `crate::application` (`feature_views.rs` and `ticket_command_views.rs`); the browser
   reaches the menus only through those callbacks.

@@ -56,4 +56,4 @@ the road files under `$profile:TBD_Export/everon/roads/`.
 - Rules: the header boots only the export world, never a framework world; the addon is Workbench
   tooling, so the header is never deployed to a game server
   (`cargo xtask deploy staging` excludes `apps/mod/tbd-export/`,
-  `tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`).
+  `tools/commands/deployment/src/staging/remote/ssh_argv.rs`).

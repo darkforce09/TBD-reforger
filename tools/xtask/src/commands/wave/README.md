@@ -10,13 +10,13 @@ drivers that run a wave are `cargo xtask platform wave` and `cargo xtask mod wav
 ```text
 tools/xtask/src/commands/wave/
 ├── cli.rs       the `WaveLockCmd` clap enum: `repack` with `--reserve`, and `check`
-├── dispatch.rs  finds the checkout root and calls the ticket_engine command
+├── dispatch.rs  finds the checkout root and calls the ticket_wave_lock command
 └── mod.rs       the module tree; re-exports `cmd_check` and `cmd_repack`, and runs `slice-collisions`
 ```
 
 ## How it works
 
-Every command delegates to `ticket_engine::wave_lock`. `repack` compiles the lock from the ticket
+Every command delegates to `ticket_wave_lock`. `repack` compiles the lock from the ticket
 files: it packs the dispatchable tickets, in `order` then id order, into waves whose tickets own
 no common files, honouring each ticket's `depends_on` and `pack_last`, with at most
 `TBD_MAX_CONCURRENT` tickets per wave (when unset, the width the committed lock records, else 8);
@@ -26,7 +26,7 @@ which open tickets can run together: two tickets collide when one owned path equ
 another.
 
 `slice-collisions` is declared in `tools/xtask/src/cli/mod.rs` with raw trailing arguments,
-and `mod.rs` passes them to `ticket_engine::wave_lock::collisions::run` with the root from
+and `mod.rs` passes them to `ticket_wave_lock::collisions::run` with the root from
 `repository_layout::find_repository_root`.
 
 ## Commands
@@ -65,21 +65,22 @@ error exits 2.
 
 ## Boundaries
 
-- Depends on: `ticket_engine::wave_lock` (`cmd_repack`, `cmd_check`, `collisions`);
-  `crate::core::repository_root`; `git` for `slice-collisions`.
+- Depends on: `ticket_wave_lock` (`cmd_repack`, `cmd_check`, `collisions`); `ticket_model`
+  (`TicketId`);
+  `tool_test_support`; `git` for `slice-collisions`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, which mounts both commands;
-  - `cargo xtask ticket ship` and `ticket set-status`, which repack through `ticket_engine`, and
+  - `cargo xtask ticket ship` and `ticket set-status`, which repack through `ticket_wave_lock`, and
     `ticket check`, which runs the lock check;
   - the platform preflight and wave gate, which run `wave check`; `platform wave prep`, which
     runs `slice-collisions` (`COLLIDE` in
-    `tools/xtask/src/commands/platform/wave_execution/mod.rs`); wave landing and closing,
+    `tools/commands/platform_execution/src/wave_execution/mod.rs`); wave landing and closing,
     which repack;
   - the [orchestrator](/documentation/glossary/n_to_z.md#orchestrator) and people planning a wave.
 - Rules: the lock has one writer, `wave repack`, and `slice-collisions --repack` calls that same
-  writer; the compilation and packing stay in `ticket_engine`, and `mod.rs` must delegate to it
+  writer; the compilation and packing stay in `ticket_wave_lock`, and `mod.rs` must delegate to it
   (`ticket_implementations_have_one_owner` in
-  `tools/xtask/src/tests/tooling_dependency_boundaries.rs`).
+  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`).
 
 ## Related documentation
 

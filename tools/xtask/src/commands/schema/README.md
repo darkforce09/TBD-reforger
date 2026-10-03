@@ -11,27 +11,25 @@ gates run the `schema-validate` set.
 tools/xtask/src/commands/schema/
 ├── cli.rs                 the `SchemaCmd` clap enum: sixteen subcommands and their flags
 ├── dispatch.rs            routes each subcommand to the codegen, the gate or the tool that runs it
-├── mission_flattening.rs  `flatten-orbat-slots`: builds a mission's `slots[]` from its ORBAT roles
-├── mod.rs                 the module tree
-└── tests/                 unit tests for the flattening's preserve and refuse rules
+└── mod.rs                 the module tree
 ```
 
 ## How it works
 
 `tools/xtask/src/cli/mod.rs` mounts `SchemaCmd` as the `schema` group and `dispatch::run`
-calls one function per subcommand, returning its exit code. This folder owns only the flattening
-tool; every other subcommand runs code elsewhere:
+calls one function per subcommand, returning its exit code. This folder owns only the command
+line; every subcommand runs code elsewhere:
 
 ```text
-codegen                    ─▶ tools/xtask/src/commands/generate/schema_types.rs
-list-gates                 ─▶ tools/xtask/src/commands/ci/ (the schema-validate row)
-validate, validate-file,   ─▶ tools/xtask/src/verifications/schemas/
+codegen                    ─▶ tools/commands/schema_tooling/src/generate/schema_types.rs
+list-gates                 ─▶ tools/commands/ci_task_catalog/src/ (the schema-validate row)
+validate, validate-file,   ─▶ tools/commands/schema_tooling/src/schema_checks/
 citations, map-glyphs,
 map-object-enums, type-inventory
 map-object-golden, height-labels, terrain-alignment, locations,
-town-labels, road-names, terrain-manifest ─▶ tools/xtask/src/verifications/map_assets/
+town-labels, road-names, terrain-manifest ─▶ tools/commands/ci_task_catalog/src/map_asset_checks/
                                               (developer_tools map_verification)
-flatten-orbat-slots        ─▶ mission_flattening.rs
+flatten-orbat-slots        ─▶ tools/commands/schema_tooling/src/mission_flattening.rs
 ```
 
 ## Commands
@@ -116,18 +114,16 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 ## Boundaries
 
-- Depends on: `tools/xtask/src/verifications/schemas/` and
-  `tools/xtask/src/verifications/map_assets/` for the gates;
-  `tools/xtask/src/commands/generate/schema_types.rs` for `codegen`;
-  `tools/xtask/src/commands/ci/task_runner/` for `list-gates`;
-  `ticket_engine::sync::refuse_empty_write` and `serde_json` for the flattening.
+- Depends on: the `schema_tooling` crate for the contract gates, `codegen` and the flattening;
+  `tools/commands/ci_task_catalog/src/map_asset_checks/` for the map asset gates;
+  `tools/commands/ci_task_catalog/src/task_runner/` for `list-gates`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, which mounts the group;
   - the `schema-validate`, `schema-codegen`, `verify-citations` and `verify-terrain` rows of
-    `tools/xtask/src/commands/ci/task_definitions.rs`, and through them `ci-local-schema` and
+    `tools/commands/ci_task_catalog/src/task_definitions.rs`, and through them `ci-local-schema` and
     `ci-local`;
   - the platform wave gate's schema step
-    (`tools/xtask/src/commands/platform/wave_execution/schema.rs`), which runs the listed gates
+    (`tools/commands/platform_execution/src/wave_execution/schema.rs`), which runs the listed gates
     as `cargo xtask schema <gate>` subprocesses;
   - `.github/workflows/schema.yml` (`schema validate`) and the `schema` job of
     `.github/workflows/ci.yml` (through `ci ci-local-schema`);
@@ -135,7 +131,7 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 - Rules:
   - The flattening refuses a lossy write on both the stdout and the `--in-place` path
     (`flatten_in_place_refuses_lossy_loadout_drop` and `flatten_stdout_refuses_lossy_loadout_drop`
-    in `tests/mission_flattening.rs`), and never overwrites a `schemaVersion` the file already
+    in `tools/commands/schema_tooling/src/tests/mission_flattening.rs`), and never overwrites a `schemaVersion` the file already
     has (`flatten_in_place_preserves_schema_version_1_0`).
   - The `schema-validate` gate set is defined once, in the `ci` task table, and `list-gates`,
     the wave gate and `cargo xtask verify ci-schema-parity` read it from there.
@@ -144,5 +140,5 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 - [Contract definitions](/contracts/definitions/README.md) — the schemas these commands
   generate from and validate against.
-- [Contract schema gates](/tools/xtask/src/verifications/schemas/README.md) — what each
-  contract gate checks.
+- [Schema tooling](/tools/commands/schema_tooling/README.md) — the crate behind these
+  commands and what each contract gate checks.

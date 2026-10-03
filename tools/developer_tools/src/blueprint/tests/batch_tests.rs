@@ -381,7 +381,7 @@ fn walker_places_door_set_window_and_furniture_from_fixtures() {
         instances: w.instances.clone(),
         notes: w.notes.clone(),
     };
-    let schema = crate::repository_layout::definition_path(
+    let schema = ::repository_layout::definition_path(
         &::repository_layout::find_repository_root().unwrap(),
         "building-instances.schema.json",
     );

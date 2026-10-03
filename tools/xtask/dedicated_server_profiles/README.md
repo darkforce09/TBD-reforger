@@ -28,8 +28,8 @@ What each command overrides before the server sees the file:
 
 | Command | Fields it writes | Reader |
 |---|---|---|
-| `cargo xtask mod world-boot` | `bindPort` and `publicPort` (21000 plus the process id modulo 4000), `a2s.port` (26000 plus the same), `game.mods` (the `TBD_Framework` addon GUID) | `write_server_json` in `tools/xtask/src/commands/mod_ops/world_boot/compiled_lane.rs` |
-| `cargo xtask mod playtest` (and `cargo xtask mod dev-server`, which forwards to it) | the bind and public addresses and ports, the `a2s` block, `game.name`, `game.scenarioId` (the profile's own unless `--scenario=<id>` is given), `game.maxPlayers`, `game.visible` (true), `game.mods` and `game.admins` | `render_server_json` in `tools/xtask/src/commands/mod_ops/playtest_server/render.rs` |
+| `cargo xtask mod world-boot` | `bindPort` and `publicPort` (21000 plus the process id modulo 4000), `a2s.port` (26000 plus the same), `game.mods` (the `TBD_Framework` addon GUID) | `write_server_json` in `tools/commands/mod_operations/src/world_boot/compiled_lane.rs` |
+| `cargo xtask mod playtest` (and `cargo xtask mod dev-server`, which forwards to it) | the bind and public addresses and ports, the `a2s` block, `game.name`, `game.scenarioId` (the profile's own unless `--scenario=<id>` is given), `game.maxPlayers`, `game.visible` (true), `game.mods` and `game.admins` | `render_server_json` in `tools/commands/mod_operations/src/playtest_server/render.rs` |
 
 Both commands also read `game.scenarioId` from the profile to name the mission header they boot.
 
@@ -45,12 +45,12 @@ Both commands also read `game.scenarioId` from the profile to name the mission h
 - Depends on: the Arma Reforger dedicated server's config format, and
   `apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf`, the mission header `scenarioId` names.
 - Used by: `cargo xtask mod world-boot` and `cargo xtask mod playtest`, through
-  `DEV_SERVER_PROFILE` in `tools/xtask/src/core/repository_layout.rs`
-  (`tools/xtask/src/commands/mod_ops/world_boot/execution.rs`,
-  `tools/xtask/src/commands/mod_ops/playtest_server/usage_fail.rs`).
+  `DEV_SERVER_PROFILE` in `tools/foundation/repository_layout/src/tool_inputs.rs`
+  (`tools/commands/mod_operations/src/world_boot/execution.rs`,
+  `tools/commands/mod_operations/src/playtest_server/usage_fail.rs`).
 - Rules: the file keeps its name and folder, which the layout constants spell and
   `every_committed_location_exists_in_the_checkout` in
-  `tools/xtask/src/tests/repository_layout_tests.rs` checks; `mods` stays present as a list,
+  `tools/foundation/repository_layout/src/tests/command_locations_tests.rs` checks; `mods` stays present as a list,
   because the playtest render replaces it in place and keeps the key order; the profile carries
   development values only.
 

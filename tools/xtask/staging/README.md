@@ -16,7 +16,7 @@ tools/xtask/staging/
 ## How it works
 
 `load_workload.json` is a `WorkloadPlan` of
-`tools/developer_tools/src/staging_verification/load_generation/workload_plan.rs`, decoded with
+`tools/staging/staging_load_plan/src/workload_plan.rs`, decoded with
 unknown fields refused: the seed, a 60 s ramp, 1,800 measured seconds, 100 clients over 5 source
 addresses at 27 requests a second, 11 accounts per client switched every 160 s, ±5 % jitter, a 10 s
 request timeout, 10 s census windows, and the per-address ceilings (8 requests in any second, one
@@ -38,7 +38,7 @@ integer, workload first.
 
 ## Boundaries
 
-- Read by: `tools/xtask/src/commands/staging/load_procedure/` (`staging load --record`,
+- Read by: `tools/commands/staging_procedures/src/load_procedure/` (`staging load --record`,
   `--rehearse-local`, `seed-load`, `action-list load`).
 - Rules: the population's fixture plan equals the host tool's fixed plan in
   `apps/api/src/bin/staging_fixtures/load_fixture_events/fixture_plan.rs`, which a unit

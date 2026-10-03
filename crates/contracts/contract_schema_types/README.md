@@ -16,7 +16,7 @@ crates/contracts/contract_schema_types/
 
 ## How it works
 
-The codegen (`tools/xtask/src/commands/generate/schema_types.rs`) maps each schema file to a
+The codegen (`tools/commands/schema_tooling/src/generate/schema_types.rs`) maps each schema file to a
 module path: the API domain that serves or reads the schema, then the schema's own module, such
 as `operations::event_hub` for `event-hub.schema.json` or
 `community_content::equipment_data_viewer::dataset` for
@@ -79,7 +79,7 @@ None: the crate reads no environment variable and declares no feature.
 
 - [Contract definitions](/contracts/definitions/README.md) — the schemas the types are generated
   from.
-- [Code generators](/tools/xtask/src/commands/generate/README.md) — the codegen and its
+- [Code generators](/tools/commands/schema_tooling/src/generate/README.md) — the codegen and its
   freshness check.
 - [Schema evolution policy](/documentation/contracts/schema_evolution_policy.md) — how a schema
   change reaches its generated types.

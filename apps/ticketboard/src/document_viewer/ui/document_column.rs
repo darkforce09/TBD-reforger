@@ -1,10 +1,10 @@
 use crate::core::ui::*;
-use crate::document_viewer::{
-    events::DocumentEvent as Action, services::document_loading::ViewerState,
-};
 use eframe::egui::{Align, Layout, RichText, ScrollArea, Spinner, Ui};
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 use std::path::{Path, PathBuf};
+use ticketboard_model::document_viewer::{
+    events::DocumentEvent as Action, services::document_loading::ViewerState,
+};
 
 /// Render a read-only document column beside the ticket detail panel. Back closes
 /// only this column. The header also offers external opening; the body shows Markdown,

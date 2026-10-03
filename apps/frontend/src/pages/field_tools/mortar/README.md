@@ -144,7 +144,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
   `apps/frontend/src/foundation/route_table/mod.rs`; the sidebar's "Mortar Calculator" link in
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; the offline pack trigger in
   `apps/frontend/src/foundation/offline/offline_pack.rs`; the DOM oracle's `mortar` capture
-  in `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules:
   - the page's solution is the engine's `solve_fire_mission` answer byte for byte
     (`the_solution_is_the_engine_fire_mission_solution_byte_for_byte`), from inputs pinned to the

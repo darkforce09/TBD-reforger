@@ -54,7 +54,7 @@ No feature, and the crate reads no environment variable. The lock settings belon
 `cargo xtask platform wave` takes the lock path from `TBD_GATE_LOCK` (default:
 `GATE_LOCK_RELPATH` under the primary checkout), the heartbeat from `TBD_GATE_LOCK_POLL` (30 s)
 and the deadline from `TBD_GATE_LOCK_MAX` (3600 s), in
-`tools/xtask/src/commands/platform/wave_execution/mod.rs`. The crate's own `DEFAULT_POLL` and
+`tools/commands/platform_execution/src/wave_execution/mod.rs`. The crate's own `DEFAULT_POLL` and
 `DEFAULT_MAX` constants hold the same values.
 
 ## Public surface
@@ -69,25 +69,26 @@ and the deadline from `TBD_GATE_LOCK_MAX` (3600 s), in
 
 - Depends on: `regex` and `thiserror`, and no workspace crate.
 - Used by: `process_runner` and `repository_laws`, which report through `NotRun` and `Verdict`;
-  `xtask`: its verifications under `tools/xtask/src/verifications/`, its command groups under
+  the check crates under `tools/checks/` and the command crates under `tools/commands/`;
+  `xtask`: its command groups under
   `tools/xtask/src/commands/` (the lock holders are the platform wave driver and the MCP broker
-  start in `tools/xtask/src/commands/mcp/call.rs`), and `tools/xtask/src/core/`; and `api`, as a
+  start in `tools/commands/enfusion_mcp/src/call.rs`); and `api`, as a
   dev-dependency, whose `apps/api/tests/engineering_laws.rs` uses its patterns and scans.
 - Rules:
   - the crate depends on no workspace crate
     (`foundation_crates_depend_only_on_lower_foundation_crates` in
-    `tools/xtask/src/tests/tooling_dependency_boundaries.rs`; tier 0 in
+    `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`; tier 0 in
     `cargo xtask verify crate-tiers`);
   - production files stay under 500 lines and test files under 1,000, with tests in separate
     files (`tooling_source_files_stay_below_their_structural_limits` and
     `tooling_test_modules_live_in_separate_files`, same file);
   - every tracked file here is held to the prose rules of
-    `tools/xtask/src/tests/tooling_prose_rules.rs`;
+    `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`;
   - "did not run" never becomes a pass, which each module's tests in `src/tests/` hold.
 
 ## Related documentation
 
 - [Tooling foundation crates](/tools/foundation/README.md) — the three crates and their tiers.
-- [Verifications](/tools/xtask/src/verifications/README.md) — the gates built on this crate.
+- [Check crates](/tools/checks/README.md) — the gates built on this crate.
 - [Tooling architecture](/documentation/tools/tooling_architecture.md) — the one outcome
   vocabulary and the shared lock across the tooling.

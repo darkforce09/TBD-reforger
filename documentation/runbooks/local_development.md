@@ -16,7 +16,7 @@ restores, the checksum repair, sample data) is in
   clippy and the `wasm32-unknown-unknown` target, and rustup installs it on the first `cargo`
   call in the checkout. Check: `rustc --version` from the repository root prints `1.95.0`.
 - Trunk, for the app: `trunk --version`. The gate harness pins 0.21.14
-  (`tools/developer_tools/gate-env.json`); Trunk fetches the Tailwind 4.3.2 binary that
+  (`tools/browser_testing/browser_gate_suites/gate-env.json`); Trunk fetches the Tailwind 4.3.2 binary that
   `apps/frontend/Trunk.toml` names by itself.
 - A container runtime with a compose provider. `cargo xtask db` takes `TBD_CONTAINER_RUNTIME`
   when set, then `podman`, then `docker`, then `distrobox-host-exec podman` or `docker` from
@@ -326,7 +326,7 @@ Expected: `{"status":"ok"}` with status 200; `curl` exits 22 when the probe answ
 does while the database is down or `_sqlx_migrations` records a failed migration. `/healthz` and
 `/metrics` sit at the root, outside `/api/v1`. Then `http://localhost:3000` shows the app, signed
 in after step 6. Before pushing, `cargo xtask ci ci-local` replays the CI suite; it needs step 2
-first (the [CI task commands](/tools/xtask/src/commands/ci/README.md) list its steps). The
+first (the [CI task commands](/tools/commands/ci_task_catalog/src/README.md) list its steps). The
 [testing and CI runbook](/documentation/runbooks/testing_and_ci.md) runs the gates one by one
 and says where each one also runs.
 
@@ -361,8 +361,8 @@ and says where each one also runs.
 - [API environment variables](/documentation/apps/api/environment_variables.md) — every
   variable `.env` can set.
 - [Website API](/apps/api/README.md) — the crate, its binaries and its configuration.
-- [Database commands](/tools/xtask/src/commands/db/README.md) and
-  [build and development-server commands](/tools/xtask/src/commands/build/README.md) — every
+- [Database commands](/tools/commands/database_operations/src/README.md) and
+  [build and development-server commands](/tools/commands/ci_task_catalog/src/build_lane/README.md) — every
   `cargo xtask db` and `cargo xtask mk` command.
 - [Website deployment](/documentation/runbooks/website_deployment.md) — the same stack on the
   home server.

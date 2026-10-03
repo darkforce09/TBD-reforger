@@ -83,18 +83,18 @@ policy's digest.
 - Consumers:
   - the world export's classifier, `tools/developer_tools/src/world_export_pipeline/classify.rs`,
     which reads `prefab-classify.json` through `prefab_classify_path`
-    (`tools/developer_tools/src/repository_layout.rs`), and its `reclassify` command;
+    (`tools/foundation/repository_layout/src/contracts.rs`), and its `reclassify` command;
   - `cargo xtask schema map-object-enums`
-    (`tools/xtask/src/verifications/schemas/checks/object_enumerations.rs`), which checks every
+    (`tools/commands/schema_tooling/src/schema_checks/object_enumerations.rs`), which checks every
     rule's and the fallback's `kind` and `class` against the closed enums;
   - the [wave](/documentation/glossary/n_to_z.md#wave) gate's catalogue-drift step in
-    `tools/xtask/src/commands/platform/wave_execution/gate/checkrun.rs`, which runs `reclassify`;
+    `tools/commands/platform_execution/src/wave_execution/gate/checkrun.rs`, which runs `reclassify`;
   - the map engine's mission compiler, which embeds `kit-aliases.json`
     (`crates/mission/mission_payload/src/kit_aliases/aliases.rs`), and through it the
     [API](/documentation/glossary/a_to_f.md#api)'s mission compile; the API's release image copies the
     file (`deploy/Dockerfile`);
   - `cargo xtask schema validate`
-    (`tools/xtask/src/verifications/schemas/checks/mission_validation.rs`), which requires every
+    (`tools/commands/schema_tooling/src/schema_checks/mission_validation.rs`), which requires every
     `kit:` alias of the spawn registry to appear in `kits` with the same prefab and the reverse, and
     every faction default to resolve in the registry;
   - the xtask equipment gameplay and equipment export commands, the export addon's generated

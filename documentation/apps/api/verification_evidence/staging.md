@@ -8,7 +8,7 @@ Design for the three operational requirements of the acceptance register: `stagi
 `identity_discord_revocation`). An operational check has no command in the register: an external
 runner observes the staging environment and writes a receipt, and `cargo xtask verify
 api-readiness` judges that receipt against the thresholds in
-`tools/xtask/src/verifications/api_readiness/operational.rs`. This note fixes how the runner
+`tools/commands/api_readiness_checks/src/operational.rs`. This note fixes how the runner
 observes, what it records and when a receipt may pass. Acceptance evidence is the receipt set in
 `target/api-readiness/` and the execution record in `progress_checkpoint.md`.
 
@@ -48,7 +48,7 @@ secret leaves the host.
 
 ### The receipt
 
-`tools/xtask/src/verifications/api_readiness/operational_recording.rs` records every operational
+`tools/commands/api_readiness_checks/src/operational_recording.rs` records every operational
 run. At the start it reads the register, snapshots the source and configuration fingerprints, the
 start time and the tool versions. At the end it:
 
@@ -229,11 +229,11 @@ Declared cases (10): `population_seeded`, `refresh_paced`, `sustained_rate`, `co
 
 | Part | Code |
 |---|---|
-| Receipt recorder | `tools/xtask/src/verifications/api_readiness/operational_recording.rs` |
-| Harness and procedures | `tools/xtask/src/commands/staging/` (`cargo xtask staging …`) |
-| Load engine and relay | `tools/developer_tools/src/staging_verification/` |
+| Receipt recorder | `tools/commands/api_readiness_checks/src/operational_recording.rs` |
+| Harness and procedures | `tools/commands/staging_procedures/src/` (`cargo xtask staging …`) |
+| Load engine and relay | `tools/staging/` (`staging_load_plan`, `staging_load_generator`, `acknowledgement_dropping_relay`) |
 | Host tool | `apps/api/src/bin/staging_fixtures/` (`staging-fixtures`, built on the host by the website deploy) |
-| Multi-instance deploy | `tools/xtask/src/commands/deploy/staging/`, units in `deploy/systemd/` |
+| Multi-instance deploy | `tools/commands/deployment/src/staging/`, units in `deploy/systemd/` |
 | Console command | the fleet command ledger (migration 0061), the host agent's at-most-once RCON path, the Server Control console box |
 
 The harness commands: `preflight`, `status`, `fingerprints` and `action-list` read only;
@@ -285,8 +285,9 @@ password generated on the host. The line never reaches a host shell.
 ## Register
 
 The register lists each staging requirement's implementation paths and adds the checks that prove
-the tooling itself: `staging_harness` (`cargo test -p xtask --locked commands::staging::`),
-`staging_verification_engines` (`cargo test -p developer_tools --locked staging_verification::`),
+the tooling itself: `staging_harness` (`cargo test -p staging_procedures --locked`),
+`staging_verification_engines` (`cargo test -p staging_load_plan -p staging_load_generator -p
+acknowledgement_dropping_relay --locked`),
 `staging_fixture_tool` (the `staging_fixtures_*` cases of `cargo xtask db test-it`) and the
 recorder's tests inside `readiness_self_tests`. The console command is its own requirement,
 `fleet_console_command`. The operational minimums are the declared case counts (50, 13 and 10), so a

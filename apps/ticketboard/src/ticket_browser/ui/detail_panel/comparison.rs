@@ -1,14 +1,16 @@
 use super::*;
 use crate::core::ui::*;
-use crate::ticket_browser::{events::BrowserEvent as Action, models::view::BrowserView};
-use crate::ticket_registry::models::projection as board;
-use crate::wave_plan::services::lock_file as wavelock;
 use eframe::egui::{Align, Layout, RichText, Ui};
 use std::collections::HashSet;
+use ticketboard_model::ticket_browser::{
+    events::BrowserEvent as Action, models::view::BrowserView,
+};
+use ticketboard_model::ticket_registry::models::projection as board;
+use ticketboard_model::wave_plan::services::lock_file as wavelock;
 
 /// Owns-collision explainer: with exactly two tickets selected,
 /// both owns lists plus EVERY colliding pair under the prefix-containment rule
-/// (`wavelock::paths_collide`, the `wave_lock::collides` mirror) and the verdict —
+/// (`wavelock::paths_collide`) and the verdict of `ticket_wave_lock::collides` —
 /// why these two can never share a wave, or that they can.
 pub(crate) fn compare_ui(
     ui: &mut Ui,
@@ -30,7 +32,7 @@ pub(crate) fn compare_ui(
     ui.monospace(format!("{}  vs  {}", a.id, z.id));
     // The verdict IS the mirrored rule; the pairs are its explanation.
     let pairs = wavelock::colliding_pairs(a.owns, z.owns);
-    if !wavelock::collides(a.owns, z.owns) {
+    if !ticket_wave_lock::collides(a.owns, z.owns) {
         ui.label(RichText::new("no collision").color(VERDICT_OK).strong());
         ui.label(
             RichText::new(
@@ -63,8 +65,8 @@ pub(crate) fn compare_ui(
     }
     let left: HashSet<&String> = pairs.iter().map(|(x, _)| x).collect();
     let right: HashSet<&String> = pairs.iter().map(|(_, y)| y).collect();
-    owns_compare_list(ui, a.id, a.owns, &left);
-    owns_compare_list(ui, z.id, z.owns, &right);
+    owns_compare_list(ui, a.id.as_str(), a.owns, &left);
+    owns_compare_list(ui, z.id.as_str(), z.owns, &right);
     ui.add_space(6.0);
 }
 

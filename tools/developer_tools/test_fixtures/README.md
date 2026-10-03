@@ -3,7 +3,7 @@
 Committed inputs and blessed outputs that the `developer_tools` library's unit tests load from
 disk. They pin the building blueprint compiler and the world line-of-sight model against
 [Workbench](/documentation/glossary/n_to_z.md#workbench) recordings of the engine. The reference data
-the browser gates compare against lives in `tools/developer_tools/fixtures/`.
+the browser gates compare against lives in `tools/browser_testing/browser_gate_suites/fixtures/`.
 
 ## Contents
 
@@ -37,19 +37,18 @@ is recorded from the engine or emitted by the compiler.
   `cargo xtask map` for the golden outputs, and people for the synthetic prefabs.
 - Consumers: the unit tests in `tools/developer_tools/src/blueprint/tests/` and
   `tools/developer_tools/src/map_verification/tests/`, the path-resolution test in
-  `tools/developer_tools/src/tests/repository_layout.rs`, and
-  `tools/xtask/src/tests/repository_root_tests.rs`, which checks that a fixture here resolves
+  `tools/developer_tools/src/blueprint/tests/module/tests.rs`, and
+  `tools/foundation/tool_test_support/src/tests/repository_root_tests.rs`, which checks that a fixture here resolves
   from inside `tools/xtask/`.
 
 ## Boundaries
 
 - Depends on: the committed Everon assets in `assets/terrains/everon/` that the pins pair with.
 - Used by: the tests above; `cargo xtask ci developer-tools-test` runs them in CI.
-- Rules: the prose rules of `tools/xtask/src/tests/tooling_prose_rules.rs` exempt this tree from
+- Rules: the prose rules of `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` exempt this tree from
   the ticket-id and Rust-file-name rules, since the recordings are data; tests address the tree by
-  its full path, so a move updates `tools/developer_tools/src/blueprint/tests/module/tests.rs`,
-  `tools/developer_tools/src/tests/repository_layout.rs` and every other `git grep test_fixtures`
-  hit in the same change.
+  its full path, so a move updates `tools/developer_tools/src/blueprint/tests/module/tests.rs` and
+  every other `git grep test_fixtures` hit in the same change.
 
 ## Related documentation
 

@@ -86,5 +86,5 @@ its `EndTrigger`, and returns the first trigger that fired and the winning side.
   `TBD_ObjectivesComponent.OnDelete` calls `Clear`. `cargo xtask verify destroy-target-diagnostics`
   pins the destroy-target reasons in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/Destroy/TBD_ObjectiveDestroyTargets.c`, and
-  `tools/xtask/src/verifications/schemas/tests/checks/staged_golden_tests.rs` requires every
+  `tools/commands/schema_tooling/src/tests/schema_checks/staged_golden_tests.rs` requires every
   key the staged 1.3 golden authors under `objectives[]` to be a member of the reader's structs.

@@ -66,7 +66,7 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
   and breadcrumbs `apps/frontend/src/foundation/route_table/mod.rs` declares; the Administration section of
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; the source pins in
   `apps/frontend/src/foundation/test_support/pins.rs`; the DOM oracle captures in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: every page renders its body inside `AdminGate`, and an `admin` route has no denial
   redirect (`denial_redirects_to_overview_with_role_notice` in
   `apps/frontend/src/foundation/route_table/tests/route_authorization.rs`); every route here declares the `admin`

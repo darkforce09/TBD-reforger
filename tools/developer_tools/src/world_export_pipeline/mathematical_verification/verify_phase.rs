@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::{map_scratch_dir, terrain_dir, terrain_registry_path};
+use ::repository_layout::{map_scratch_dir, terrain_dir, terrain_registry_path};
 
 /// The full verify-phase gate run. Returns the process exit code.
 pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
@@ -10,7 +10,7 @@ pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
     let phase_kind_set: HashSet<&str> = kinds.iter().copied().collect();
     let density_phase = phase == "P2_trees";
 
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let terrain_dir = terrain_dir(&root, terrain);
     let objects_dir = terrain_dir.join("objects");
     let chunks_dir = objects_dir.join("chunks");

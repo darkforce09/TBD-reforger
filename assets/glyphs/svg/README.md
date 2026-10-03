@@ -35,7 +35,7 @@ building badge overlays (`building-badge-military.svg`, `building-badge-bunker.s
 - Producers: people; no tool writes these files.
 - Consumers: the atlas builder `build_glyph_atlas` in
   `tools/developer_tools/src/map_raster_pipeline/glyphs.rs`, and `cargo xtask schema map-glyphs`
-  (`tools/xtask/src/verifications/schemas/checks/map_glyphs.rs`), which checks that every
+  (`tools/commands/schema_tooling/src/schema_checks/map_glyphs.rs`), which checks that every
   manifest entry's file exists and is an SVG with a `viewBox`.
 
 ## Boundaries

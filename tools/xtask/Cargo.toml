@@ -13,31 +13,53 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-flate2 = { workspace = true }
-tar = "0.4"
 clap = { workspace = true, features = ["derive"] }
-regex = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order", "raw_value"] }
-serde_norway = "0.9"
-walkdir = { workspace = true }
-jsonschema = { workspace = true }
 developer_tools = { path = "../developer_tools" }
+# The `cargo xtask mcp` commands: the Enfusion MCP client and the daemon control.
+enfusion_mcp = { workspace = true }
+# The vanilla page mirrors behind `cargo xtask fetch`.
+enfusion_script_index = { workspace = true }
 verification_core = { workspace = true }
 process_runner = { workspace = true }
-repository_laws = { workspace = true }
 repository_layout = { workspace = true }
-ticket_engine = { path = "../ticket_engine" }
-libc = { workspace = true }
-typify = "0.7"
-schemars = "0.8"
-prettyplease = "0.2"
-syn = { version = "2", features = ["full", "visit"] }
-heck = "0.5"
-content_digest = { workspace = true }
-# The machine credential prefix the mod mission test recognises in a backend config.
-fleet_wire_contract = { workspace = true }
+# The structural, language-ban, licensing and registry checks behind `cargo xtask verify`.
+repository_checks = { workspace = true }
+# The documentation gates behind `cargo xtask verify` and the ci lane.
+documentation_checks = { workspace = true }
+# The Enfusion mod script checks behind `cargo xtask verify`.
+mod_script_checks = { workspace = true }
+# The `refactor relocate` modes: manifest-driven moves and the retired-spelling verification.
+repository_relocation = { workspace = true }
+# The `db` group, `deploy db` and the database source checks behind `cargo xtask verify`.
+database_operations = { workspace = true }
+# The `deploy` group, the staging fleet layout and the staging compose-path check.
+deployment = { workspace = true }
+# The `verify api-readiness` judge, the staging recorder and the property-test seed.
+api_readiness_checks = { workspace = true }
+# The `setup` commands.
+workstation_setup = { workspace = true }
+# The `debug` and `repro` groups.
+remote_debugging = { workspace = true }
+# The `staging` group: the staging acceptance harness, its host actions and recorded receipts.
+staging_procedures = { workspace = true }
+# The `ci`, `help` and `mk` lanes, the cargo target pin, the CI workflow checks and the map asset checks.
+ci_task_catalog = { workspace = true }
+# The `platform` group: the wave driver, slice runs, slice worktrees and the preflight.
+platform_execution = { workspace = true }
+# The `mod` group: the compile gate, the world boot, the playtest server, the equipment export
+# publication and the mod wave driver.
+mod_operations = { workspace = true }
+ticket_metrics = { workspace = true }
+ticket_model = { workspace = true }
+ticket_registry = { workspace = true }
+ticket_wave_lock = { workspace = true }
+# The contract codegen, the font-table generator, the schema gates and the ORBAT slot flattening.
+schema_tooling = { workspace = true }
+# The ballistics catalog trim behind `ballistics trim-export`.
+ballistics_oracle_tooling = { workspace = true }
 
 [dev-dependencies]
-# Manifest parsing in the tooling dependency-boundary and deploy tests.
-toml = { workspace = true }
+# The tile index schema the map tests validate against.
+jsonschema = { workspace = true }

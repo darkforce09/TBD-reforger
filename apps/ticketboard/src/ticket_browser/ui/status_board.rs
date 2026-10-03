@@ -1,14 +1,14 @@
 use super::*;
-use crate::ticket_browser::{
+use eframe::egui::{DragAndDrop, RichText, ScrollArea, Sense, StrokeKind, Ui};
+use ticket_model::StatusName;
+use ticketboard_model::ticket_browser::{
     events::BrowserEvent as Action,
     models::{
         status_board::{self},
         view::{BrowserView, DraggedTicket},
     },
 };
-use crate::ticket_registry::models::projection as board;
-use eframe::egui::{DragAndDrop, RichText, ScrollArea, Sense, StrokeKind, Ui};
-use ticket_engine::StatusName;
+use ticketboard_model::ticket_registry::models::projection as board;
 
 /// Card height includes the title, identifier, executor, and scope breadcrumb rows.
 pub(crate) const CARD_H: f32 = 64.0;

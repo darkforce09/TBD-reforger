@@ -57,10 +57,10 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
   [missions](/documentation/glossary/g_to_m.md#missions) domain.
 - Used by: the parent module, whose `OrbatManagerDialog` `session::eden_chrome` re-exports for
   `apps/frontend/src/workspaces/editor/mission_editor.rs`; the headless editor gates in
-  `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which open the dialog by the
+  `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`, which open the dialog by the
   "ORBAT Manager" label and read its heading, rows and `window.__outlinerStats`;
   `cargo xtask verify editor-orbat-coherency`
-  (`tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans the
+  (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which scans the
   parent module and every source file in this folder; the test
   `orbat_manager_overlay_derives_z_from_the_modal_stack` in
   `apps/frontend/src/foundation/ui/tests/ui.rs`, which reads `dialog.rs`.

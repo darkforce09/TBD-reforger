@@ -1,9 +1,9 @@
 use super::*;
-use crate::ticket_browser::{
+use eframe::egui::{RichText, ScrollArea, Ui};
+use ticketboard_model::ticket_browser::{
     events::BrowserEvent as Action,
     models::{program_tree as tree, view::BrowserView},
 };
-use eframe::egui::{RichText, ScrollArea, Ui};
 
 pub(crate) const TREE_ROW_H: f32 = 18.0;
 
@@ -46,7 +46,7 @@ pub(crate) fn tree_row_ui(
         let selected_now = b.selected == Some(row.index) || b.compare == Some(row.index);
         let response = ui.selectable_label(
             selected_now,
-            RichText::new(ticket.id()).monospace().color(color),
+            RichText::new(ticket.id().as_str()).monospace().color(color),
         );
         if response.clicked() {
             actions.push(select_or_compare(ui, row.index));

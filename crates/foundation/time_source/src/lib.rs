@@ -19,7 +19,7 @@
 //!   [`ManualClock`], and the injected wasm `fn() -> u64` is no longer needed because
 //!   `BrowserClock` reads `Date.now()` itself; a `yrs::sync::Clock` adapter over
 //!   `Arc<dyn Clock>` keeps their floor of 1 ms;
-//! - developer tools `iso_from_system_time` and ticket engine `now_utc_rfc3339` and
+//! - developer tools `iso_from_system_time` and ticket tools `now_utc_rfc3339` and
 //!   `validate_rfc3339_utc`: the same names here, byte-identical output, and an [`Error`] whose
 //!   text is the old message.
 //!

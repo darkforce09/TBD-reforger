@@ -1,0 +1,251 @@
+//! `wave test --slice <id> -p <crate> …`: an ad-hoc `cargo test` in a private per-slice target
+//! folder.
+//!
+//! **Role:** `cmd_test` runs `cargo test` for one slice into `$HOME/.cache/tbd-target-<slice>`,
+//! after invalidating the fingerprints of what the slice changed, and deletes the folder
+//! afterwards.
+//!
+//! **Position:** reached through the wave command table; uses `touch::touch_changed` and the host
+//! bridge.
+//!
+//! **Signals & state:** none held; creates and deletes the private target folder and spawns cargo
+//! with `CARGO_INCREMENTAL=0`.
+//!
+//! **Invariants:** `cargo test` builds and then runs a binary, so a shared target folder can run
+//! another worktree's test binary — the private folder is the isolation, and the shared gate lock
+//! is not taken; the folder may be overridden (`TBD_ADHOC_TARGET_DIR`) only to that same default or
+//! a non-slice verifier path; `/tmp` and the true shared roots (`$HOME/.cache/tbd-target`, the main
+//! checkout's `target/`) are refused; an explicit `-p` / `--package` is required; a foreign slice's
+//! or a live worktree's folder is never deleted.
+
+use std::path::{Path, PathBuf};
+
+use super::changed::realpath_m;
+use super::{Ctx, host, touch};
+use crate::wave_execution::{werr, wprintln};
+
+pub(crate) fn cmd_test(ctx: &Ctx, argv: &[String]) -> u8 {
+    let mut tid = String::new();
+    let mut args: Vec<String> = Vec::new();
+    let mut i = 0usize;
+    while i < argv.len() {
+        match argv[i].as_str() {
+            "--slice" => {
+                tid = argv.get(i + 1).cloned().unwrap_or_default();
+                if tid.is_empty() {
+                    werr!("test: REFUSING — --slice needs a ticket id (T-nnn)");
+                    return 2;
+                }
+                i += 2;
+            }
+            "--" => {
+                // Keep cargo's `--` separator (e.g. `… -- --list`). Dropping it made `cargo test`
+                // see `--list` as its own flag and refuse.
+                args.push("--".into());
+                i += 1;
+                while i < argv.len() {
+                    args.push(argv[i].clone());
+                    i += 1;
+                }
+                break;
+            }
+            other => {
+                args.push(other.to_string());
+                i += 1;
+            }
+        }
+    }
+    if tid.is_empty() {
+        wprintln!("test: REFUSING — --slice T-nnn is required.");
+        wprintln!("        Bare `cargo test` against the shared CARGO_TARGET_DIR is the");
+        wprintln!("        cross-worktree false-binary class. Sanctioned path:");
+        wprintln!("          cargo xtask platform wave test --slice <id> -p frontend");
+        return 2;
+    }
+    // `case "$tid" in [Tt]-[0-9]*)`
+    let shaped = (tid.starts_with("T-") || tid.starts_with("t-"))
+        && tid[2..]
+            .chars()
+            .next()
+            .map(|c| c.is_ascii_digit())
+            .unwrap_or(false);
+    if !shaped {
+        werr!("test: REFUSING — slice id '{tid}' (expected T-nnn)");
+        return 2;
+    }
+    // Uppercase the id prefix without touching digits. `${tid#*[Tt]-}` strips through the FIRST
+    // `T-`/`t-`.
+    let tid = format!("T-{}", strip_through_first_t_dash(&tid));
+
+    if args.is_empty() {
+        wprintln!("test: REFUSING — pass cargo test args (at least -p <crate>).");
+        wprintln!(
+            "        An unbounded invocation would inflate the private dir toward a full workspace"
+        );
+        wprintln!("        build. Keep ad-hoc dirs lean (frontend-only measured ~2.7 GB).");
+        wprintln!("        Example: cargo xtask platform wave test --slice {tid} -p frontend");
+        return 2;
+    }
+
+    // NIT: prose said "at least -p <crate>"; enforce it — non-empty args without -p/--package still
+    // accept unbounded / mis-aimed invocations that inflate the private dir.
+    let has_pkg = args.iter().any(|a| {
+        a == "-p"
+            || a == "--package"
+            || (a.starts_with("-p") && a.len() > 2)
+            || a.starts_with("--package=")
+    });
+    if !has_pkg {
+        wprintln!("test: REFUSING — cargo test args must include -p / --package <crate>.");
+        wprintln!("        Example: cargo xtask platform wave test --slice {tid} -p frontend");
+        return 2;
+    }
+
+    let home = std::env::var("HOME").unwrap_or_default();
+    let default_priv = format!("{home}/.cache/tbd-target-{tid}");
+    let adhoc_env = std::env::var("TBD_ADHOC_TARGET_DIR").unwrap_or_default();
+    let privd = if adhoc_env.is_empty() {
+        default_priv.clone()
+    } else {
+        adhoc_env.clone()
+    };
+    if privd.starts_with("/tmp/") || privd.starts_with("/var/tmp/") {
+        wprintln!("test: REFUSING — private target dir must not be under /tmp ({privd}).");
+        wprintln!("        Host-native rule: never /tmp for CARGO_TARGET_DIR.");
+        return 2;
+    }
+    if std::fs::create_dir_all(&privd).is_err() {
+        werr!("test: cannot create {privd}");
+        return 2;
+    }
+    let _ = std::fs::create_dir_all(&default_priv);
+
+    let priv_r = canon(&privd);
+    let default_r = canon(&default_priv);
+    // F1: compare ONLY against true shared roots — never against whatever CARGO_TARGET_DIR
+    // currently holds (that false-refused when env already pointed at the per-slice private dir).
+    let cache_r = canon(&format!("{home}/.cache/tbd-target"));
+    let main_r = canon(&ctx.main_root.join("target").display().to_string());
+    if priv_r == cache_r || priv_r == main_r {
+        wprintln!(
+            "test: REFUSING — private dir collapsed onto the shared CARGO_TARGET_DIR ({priv_r})."
+        );
+        wprintln!(
+            "        That is exactly the cross-worktree defect. Unset TBD_ADHOC_TARGET_DIR or point it at"
+        );
+        wprintln!("        a per-slice path under $HOME/.cache/tbd-target-{tid}.");
+        return 2;
+    }
+
+    // F2: TBD_ADHOC_TARGET_DIR must resolve to this slice's default OR a non-`T-*` verifier path
+    // (basename lacks `tbd-target-T-<digits>` — e.g. `tbd-target-wave138-verify`). A foreign-slice
+    // A dir named for ANOTHER slice is REFUSED — never print rm -rf for it.
+    let base = Path::new(&priv_r)
+        .file_name()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let token = adhoc_token(&base);
+    if !adhoc_env.is_empty()
+        && priv_r != default_r
+        && let Some(tok) = &token
+    {
+        wprintln!(
+            "test: REFUSING — TBD_ADHOC_TARGET_DIR is not the default per-slice path ({priv_r})."
+        );
+        if *tok != tid {
+            wprintln!("        Foreign-slice token '{tok}' != --slice '{tid}'.");
+        }
+        wprintln!(
+            "        Allowed overrides: $HOME/.cache/tbd-target-{tid}, or a non-T-* verifier"
+        );
+        wprintln!("        path (e.g. $HOME/.cache/tbd-target-wave138-verify).");
+        return 2;
+    }
+    // token empty → non-T-* verifier path — allowed (documented above).
+
+    // Never advertise rm -rf for a path whose ticket token differs from --slice or is a live
+    // worktree's foreign cache. Default per-slice for THIS tid + non-T-* verifier OK.
+    //
+    // PRESERVED AS WRITTEN: the bash sets `allow_rm=0` unconditionally inside the foreign-token
+    // branch AND repeats the same test twice more afterwards ("defence in depth"), so the
+    // live-worktree scan cannot change the outcome. Reproduced rather than simplified — the
+    // redundant arms are how the bash guarantees a foreign token never reaches the banner.
+    let mut allow_rm = true;
+    if token.as_deref().map(|t| t != tid).unwrap_or(false) {
+        allow_rm = false;
+    }
+    if token.is_none() || priv_r == default_r {
+        allow_rm = true;
+    }
+    // Foreign token always blocks the banner even if somehow past the refuse (defence in depth).
+    if token.as_deref().map(|t| t != tid).unwrap_or(false) {
+        allow_rm = false;
+    }
+
+    wprintln!("═══ ad-hoc test {tid} ═══");
+    wprintln!("CARGO_TARGET_DIR={priv_r}  (private — not the shared cache)");
+    if allow_rm {
+        wprintln!("delete before report: rm -rf '{priv_r}'");
+    } else {
+        wprintln!("delete before report: (omitted — path token is foreign or live; do not rm -rf)");
+    }
+
+    // Same mtime-bump the gate uses so a WARM private dir cannot keep fingerprints from before this
+    // worktree's own edits. Cross-worktree isolation is the private dir; this covers the
+    // same-worktree stale-fingerprint half of the pattern.
+    let rc = touch::touch_changed("");
+    if rc != 0 {
+        return rc as u8;
+    }
+
+    // hostrun + explicit env: distrobox-host-exec does not forward the shell environment.
+    let mut cmd: Vec<String> = vec![
+        "env".into(),
+        format!("CARGO_TARGET_DIR={priv_r}"),
+        "CARGO_INCREMENTAL=0".into(),
+        "cargo".into(),
+        "test".into(),
+    ];
+    cmd.extend(args);
+    host::inherit(&ctx.host.hostrun_argv(&cmd)) as u8
+}
+
+/// `${tid#*[Tt]-}` — drop everything through the first `T-` or `t-`.
+fn strip_through_first_t_dash(s: &str) -> String {
+    let b = s.as_bytes();
+    for i in 0..b.len().saturating_sub(1) {
+        if (b[i] == b'T' || b[i] == b't') && b[i + 1] == b'-' {
+            return s[i + 2..].to_string();
+        }
+    }
+    s.to_string()
+}
+
+/// `sed -n 's/^tbd-target-\([Tt]-[0-9][0-9]*\).*/\1/p'` then the same `T-` normalisation.
+fn adhoc_token(base: &str) -> Option<String> {
+    let rest = base.strip_prefix("tbd-target-")?;
+    let head = rest.as_bytes();
+    if head.len() < 3 {
+        return None;
+    }
+    if !(head[0] == b'T' || head[0] == b't') || head[1] != b'-' {
+        return None;
+    }
+    let digits: String = rest[2..].chars().take_while(char::is_ascii_digit).collect();
+    if digits.is_empty() {
+        return None;
+    }
+    Some(format!("T-{digits}"))
+}
+
+/// `readlink -f -- "$p" 2>/dev/null || printf '%s' "$p"`.
+fn canon(p: &str) -> String {
+    match std::fs::canonicalize(p) {
+        Ok(c) => c.display().to_string(),
+        Err(_) => realpath_m(&PathBuf::from(p)).display().to_string(),
+    }
+}
+
+#[cfg(test)]
+#[path = "tests/test_cmd/tests.rs"]
+mod tests;

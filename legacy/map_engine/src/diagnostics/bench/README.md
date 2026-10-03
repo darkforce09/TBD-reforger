@@ -46,7 +46,7 @@ and `clear_vector_lane` call it.
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport bridge
   (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`), which publishes `render_bench`
   as `window.__editorBench(n)` and shows `stats()` in its debug HUD once a second; the editor
-  gate's smoke harness in `tools/developer_tools/src/browser_testing/editor_smoke_tests.rs`,
+  gate's smoke harness in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests.rs`,
   which calls `window.__editorBench` when it exists; the upload belts, through `set_vector_stat`.
   No code in the repository calls `seed_stress` or `clear_stress`.
 - Rules: `stats()` is one flat JSON object whose keys the HUD reads by name (`chunks`,

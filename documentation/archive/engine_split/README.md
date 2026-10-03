@@ -21,7 +21,7 @@ documentation/archive/engine_split/
 - [Graphics engine](/legacy/graphics_engine/) and [map engine](/legacy/map_engine/) —
   the crates the split produced.
 - [Frontend](/apps/frontend/) — the browser app the editing logic left.
-- [Engine layer gate](/tools/xtask/src/verifications/architecture/) —
+- [Engine layer gate](/tools/checks/repository_checks/src/architecture/) —
   `cargo xtask verify engine-layers`, which holds the rules the program set.
 
 ## Boundaries

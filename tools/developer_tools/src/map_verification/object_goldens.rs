@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
-use crate::repository_layout::contracts_dir;
+use ::repository_layout::contracts_dir;
 use serde_json::{Value, json};
 
 use crate::world_export_pipeline::binary_emit::{

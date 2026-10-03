@@ -69,8 +69,8 @@ or a case disagrees; 3 the committed catalog is unreadable or a driver error.
 ## Boundaries
 
 - Depends on: `ballistics_agreement_cases`, `ballistics_model` (`catalog`) and
-  `fire_mission_planning` (`fire_mission`, `fire_mission_comparison`); `crate::browser_testing::server` and
-  `crate::browser_testing::cdp`; `sha2`, `serde_json`, `tokio`.
+  `fire_mission_planning` (`fire_mission`, `fire_mission_comparison`); `browser_gate_suites::server`
+  and `chrome_devtools_protocol`; `content_digest`, `serde_json`, `tokio`.
 - Used by: `crate::browser_testing::cli` (`gate ballistics-agreement`) and
   `cargo xtask mk ballistics-wasm-agreement`, which runs `trunk build --release` first.
 - Rules: the case-to-inputs mapping, the lead summary and the bit walk are the
@@ -83,5 +83,5 @@ or a case disagrees; 3 the committed catalog is unreadable or a driver error.
 
 - [Ballistics agreement bench](/apps/frontend/src/workspaces/debug/ballistics_agreement/README.md) —
   the browser half and its reading.
-- [Build and development-server commands](/tools/xtask/src/commands/build/README.md) —
+- [Build and development-server commands](/tools/commands/ci_task_catalog/src/build_lane/README.md) —
   `cargo xtask mk ballistics-wasm-agreement`.

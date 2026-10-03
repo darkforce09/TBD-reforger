@@ -8,7 +8,7 @@
     "dist",
     "apps/mod/",
     "contracts/fixtures/api_goldens/",
-    "tools/developer_tools/fixtures/",
+    "tools/browser_testing/browser_gate_suites/fixtures/",
     "\\.ai/artifacts/",
     "documentation/.*/visual_references/",
     "documentation/design_system/token_exports/",

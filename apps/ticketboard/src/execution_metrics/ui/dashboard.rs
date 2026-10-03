@@ -1,9 +1,9 @@
 use super::*;
 use crate::core::ui::*;
-use crate::execution_metrics::{
+use eframe::egui::{ScrollArea, Ui};
+use ticketboard_model::execution_metrics::{
     events::MetricsEvent as Action, measured::MetricsState, models::MetricsView,
 };
-use eframe::egui::{ScrollArea, Ui};
 
 // ---- metrics dashboard (measured + estimated) ----
 

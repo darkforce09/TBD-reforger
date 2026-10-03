@@ -4,10 +4,10 @@ use serde_json::{Value, json};
 
 use super::*;
 use crate::browser_testing::ballistics_agreement::COMMITTED_CATALOG;
-use crate::repository_layout::compiled_checkout_root;
+use ::repository_layout::find_repository_root;
 
 fn committed() -> (Vec<u8>, BallisticsCatalog) {
-    let path = compiled_checkout_root()
+    let path = find_repository_root()
         .expect("repository root")
         .join(COMMITTED_CATALOG);
     let bytes = std::fs::read(&path).unwrap_or_else(|error| {
@@ -144,4 +144,14 @@ fn a_list_without_the_version_fails() {
     .unwrap();
     let cause = check_served_goldens(&dir, &bytes, &catalog).expect_err("not listed");
     assert!(cause.contains("does not list"), "{cause}");
+}
+
+/// The committed catalog's digest is the lowercase hex SHA-256 of its bytes, the spelling the API
+/// serves as `catalog_sha256`.
+#[test]
+fn the_committed_catalog_digest_is_the_lowercase_hex_sha256() {
+    assert_eq!(
+        sha256_hex(b"abc"),
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
 }

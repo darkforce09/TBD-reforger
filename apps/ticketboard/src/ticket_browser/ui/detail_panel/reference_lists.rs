@@ -1,7 +1,7 @@
 use super::*;
-use crate::ticket_browser::events::BrowserEvent as Action;
 use eframe::egui::{RichText, Ui};
 use std::collections::HashMap;
+use ticketboard_model::ticket_browser::events::BrowserEvent as Action;
 
 /// Clickable when the id exists in the corpus; plain monospace when dangling.
 pub(crate) fn id_link_ui(

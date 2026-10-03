@@ -86,7 +86,7 @@ the harness.
     redo in `apps/frontend/src/workspaces/editor/ui/docks/top_strip/`, the Mission Settings
     dialog in `apps/frontend/src/workspaces/editor/ui/modals/settings_modal/`, and the loadout
     commands in `apps/frontend/src/workspaces/editor/arsenal/`;
-  - the headless editor gates in `tools/developer_tools/src/browser_testing/editor_smoke_tests/`,
+  - the headless editor gates in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`,
     through `window.__missionDoc` and `window.__editorHistory`;
   - the source pins that read `history.rs`: in `apps/frontend/src/workspaces/editor/tests/`,
     the helper `live_document_history` in

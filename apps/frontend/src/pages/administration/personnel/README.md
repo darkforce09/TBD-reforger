@@ -110,7 +110,7 @@ build renders the failure branch.
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; `personnel_source` in
   `apps/frontend/src/foundation/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `personnel` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the role note offers no website override, with no picker, no input and no role request
   (`role_ui_explains_discord_authority_without_website_override`); a ban or a warning is never sent
   without a trimmed reason (`ok_with_blank_is_refused_before_any_request`,

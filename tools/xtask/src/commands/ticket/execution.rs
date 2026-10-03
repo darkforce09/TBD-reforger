@@ -2,9 +2,10 @@
 use anyhow::Result;
 use serde_json::Value;
 use std::{fs, path::Path, process::Command};
+use ticket_model::TicketId;
 
-pub fn cmd_clean(root: &Path, registry: &Value, id: &str) -> Result<()> {
-    let targets = ticket_engine::cli::cleanup_targets(root, registry, id)?;
+pub(super) fn cmd_clean(root: &Path, registry: &Value, id: &TicketId) -> Result<()> {
+    let targets = ticket_registry::verbs::cleanup_targets(root, registry, id)?;
     let wt = targets.worktree;
     let branch = targets.branch;
     if wt.is_dir() {
@@ -34,21 +35,28 @@ pub fn cmd_clean(root: &Path, registry: &Value, id: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn cmd_done(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
+pub(super) fn cmd_done(root: &Path, registry: &mut Value, id: &TicketId) -> Result<()> {
     cmd_clean(root, registry, id)?;
-    ticket_engine::cli::cmd_ship(root, registry, id)
+    Ok(ticket_registry::verbs::cmd_ship(root, registry, id)?)
 }
 
-pub fn cmd_run(root: &Path, registry: &Value, dry_run: bool, stream: Option<&str>) -> Result<()> {
-    ticket_engine::cli::cmd_run(root, registry, dry_run, stream, |root, registry, id| {
-        crate::commands::platform::slice_execution::run_slice(
+pub(super) fn cmd_run(
+    root: &Path,
+    registry: &Value,
+    dry_run: bool,
+    stream: Option<&str>,
+) -> Result<()> {
+    ticket_registry::verbs::cmd_run(root, registry, dry_run, stream, |root, registry, id| {
+        platform_execution::slice_execution::run_slice(
             root,
             registry,
             id,
-            &crate::commands::platform::slice_execution::SliceRunOpts::default(),
+            &platform_execution::slice_execution::SliceRunOpts::default(),
         )
         .map(|_| ())
-    })
+        .map_err(Into::into)
+    })?;
+    Ok(())
 }
 
 #[cfg(test)]

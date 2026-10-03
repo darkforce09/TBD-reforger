@@ -55,7 +55,7 @@ pub(super) async fn probe_db(pool: &PgPool) -> (bool, Duration, Option<String>) 
 /// Putting auth in front of the whole route is the wrong fix: `/healthz` is probed **without
 /// credentials** by `cargo xtask platform preflight`, `deploy/caddy/Caddyfile`,
 /// `.github/workflows/editor-gates.yml:95` and
-/// `tools/developer_tools/src/browser_testing/editor_smoke_tests.rs:2714`, and it stays open
+/// `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests.rs:2714`, and it stays open
 /// for exactly that reason while `/metrics` sits behind the `OBSERVABILITY_TOKEN` bearer.
 ///
 /// So the split is by **payload**, never by status code:

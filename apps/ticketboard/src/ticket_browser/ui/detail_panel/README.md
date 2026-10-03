@@ -28,7 +28,7 @@ apps/ticketboard/src/ticket_browser/ui/detail_panel/
    return wrapped in `BrowserEvent::TicketAction`.
 3. When a second ticket is shift-clicked, `compare_ui`: "never the same wave" with every colliding
    `owns` pair, or "no collision", by `collides` and `colliding_pairs` of
-   `crate::wave_plan::services::lock_file`; otherwise the hint "shift-click another ticket to
+   `ticketboard_model::wave_plan::services::lock_file`; otherwise the hint "shift-click another ticket to
    compare owns".
 4. A table of `status`, `executor` (marked "(default)" when unset), `priority`, `spec`, `plan`,
    `parent`, `active`, the `shipped_at`, `created_at` and `completed_at` stamps, a "tokens
@@ -47,15 +47,15 @@ tooltip; the panel never shows a measured token count, which the Metrics tab own
 
 ## Boundaries
 
-- Depends on: `crate::ticket_browser::models` (`BrowserView`, `detail_sections`) and the browser's
-  `appearance` colours; `crate::ticket_registry::models::projection` (the ticket view, labels,
-  breadcrumbs, `Class`); `crate::execution_metrics::estimated` (`stamp_cell`, `tokens_cell`, the
-  estimate glyph and markers); `crate::document_viewer::services::document_loading::wants_viewer`;
-  `crate::wave_plan::services::lock_file` (`collides`, `colliding_pairs`); `crate::core::ui`;
+- Depends on: `ticketboard_model::ticket_browser::models` (`BrowserView`, `detail_sections`) and the browser's
+  `appearance` colours; `ticketboard_model::ticket_registry::models::projection` (the ticket view, labels,
+  breadcrumbs, `Class`); `ticketboard_model::execution_metrics::estimated` (`stamp_cell`, `tokens_cell`, the
+  estimate glyph and markers); `ticketboard_model::document_viewer::services::document_loading::wants_viewer`;
+  `ticketboard_model::wave_plan::services::lock_file` (`collides`, `colliding_pairs`); `crate::core::ui`;
   `eframe::egui` and `egui_extras::TableBuilder`.
 - Used by: `crate::application::feature_views`, which calls `metadata::detail_ui` with the
   borrowed view and the action-strip callback.
 - Rules: the panel only emits `BrowserEvent`s and changes nothing itself; the comparison takes its
-  verdict and its pairs from `crate::wave_plan::services::lock_file`, the viewer's one copy of the
+  verdict and its pairs from `ticketboard_model::wave_plan::services::lock_file`, the viewer's one copy of the
   collision rule, and keeps none of its own;
   `apps/ticketboard/src/application/tests/rendering.rs` paints the details headlessly.

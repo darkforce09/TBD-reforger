@@ -1,8 +1,9 @@
 use super::*;
-use crate::ticket_actions::{
+use eframe::egui::{self, Align, Button, Id, Layout, Modal, RichText, Ui};
+use ticket_model::TicketId;
+use ticketboard_model::ticket_actions::{
     events::TicketActionEvent as Action, models::*, services::commands::TicketCommand,
 };
-use eframe::egui::{self, Align, Button, Id, Layout, Modal, RichText, Ui};
 pub(crate) mod anchor_picker;
 pub(crate) mod confirmation;
 pub(crate) mod mark_ready;

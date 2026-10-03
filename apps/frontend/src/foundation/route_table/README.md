@@ -84,7 +84,7 @@ renders padded in a scrolling one.
 - Depends on: `Role` and `has_min_role_authed` from `foundation/transport/dto/role.rs`.
 - Used by: the route guard in `foundation/auth/`; the frame, the top bar and the sidebar in
   `apps/frontend/src/shell/`; the route drift gate in
-  `tools/developer_tools/src/browser_testing/route_drift.rs`, which reads `mod.rs`; the headless
+  `tools/browser_testing/browser_gate_suites/src/route_drift.rs`, which reads `mod.rs`; the headless
   browser gates of `tools/developer_tools/src/browser_testing/`, which drive the built app by its
   routes.
 - Rules:
@@ -97,7 +97,7 @@ renders padded in a scrolling one.
     `the_review_workspace_declares_mission_maker_and_redirects_to_its_mission`), all in
     `tests/route_authorization.rs`;
   - `cargo run -q -p developer_tools --bin gate -- s-routes` diffs `ROUTES` against the manifest
-    `tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv`, so a route change updates
+    `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`, so a route change updates
     that manifest too.
 
 ## Related documentation

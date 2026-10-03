@@ -24,8 +24,8 @@ lines), and the chip's porcelain lines when the chip is dirty and expanded. Clic
 
 ## Boundaries
 
-- Depends on: `crate::repository_status::models` (`StatusView`, `Tone`, `GitChip`, `CHECK_COMMAND`,
-  `STRICT_TOOLTIP`, `GIT_ARGS`) and `crate::repository_status::events`; `crate::core::process`
+- Depends on: `ticketboard_model::repository_status::models` (`StatusView`, `Tone`, `GitChip`, `CHECK_COMMAND`,
+  `STRICT_TOOLTIP`, `GIT_ARGS`) and `ticketboard_model::repository_status::events`; `ticketboard_model::core::process`
   (`BoundedLog`) and `crate::core::ui` (`VERDICT_OK`, `VERDICT_COLLIDE`, `OUTPUT_ROW_H`);
   `eframe::egui`.
 - Used by: `trust_banner_ui` in `apps/ticketboard/src/application/feature_views.rs`, which lends

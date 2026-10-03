@@ -7,7 +7,7 @@
 
 use anyhow::{Result, bail};
 
-use crate::enfusion_pak::PakVfs;
+use enfusion_pak::PakVfs;
 
 pub const EDEN_DATA_DIR: &str = "worlds/Eden/Eden/.Data";
 pub const GRID: u32 = 50;

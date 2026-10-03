@@ -14,7 +14,7 @@ use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
 use super::batch::{decode_asset, open_sources};
 use super::surface_kind::{gamemat_stem, parse_kind_override};
 use super::xob;
-use crate::enfusion_pak::{AssetSource, PakSet};
+use enfusion_pak::{AssetSource, PakSet};
 
 /// `map xob-inspect <file.xob | Assets/…/X.xob> [--paks <dir>] [--extract <dir>]
 /// [--strings] [--kind <record>=<kind>]…`

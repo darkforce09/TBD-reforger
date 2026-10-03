@@ -55,14 +55,14 @@ server runs the mission deployed to it on the platform.
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_BackendConfig.c` reads the profile copy of
   `backend.example.json`.
 - `cargo xtask setup server-profile` copies both files into the profile, `registry.json` as
-  `TBD_Registry.json` (`tools/xtask/src/commands/setup/server_profile.rs`);
+  `TBD_Registry.json` (`tools/commands/workstation_setup/src/server_profile.rs`);
   `cargo xtask mod test-mission` and `cargo xtask mod world-boot` copy `registry.json` the same
   way.
 - `cargo xtask schema validate` reads `registry.json` to check every golden mission's kit aliases
   and that `contracts/rules/kit-aliases.json` mirrors its kit rows
-  (`tools/xtask/src/verifications/schemas/checks/mission_validation.rs`).
+  (`tools/commands/schema_tooling/src/schema_checks/mission_validation.rs`).
 - `cargo xtask verify object-registry-aliases` checks the Objects palette's `prop:` and `comp:`
-  aliases against it (`tools/xtask/src/verifications/registry/object_registry_aliases.rs`), and
+  aliases against it (`tools/checks/repository_checks/src/registry/object_registry_aliases.rs`), and
   `cargo xtask verify no-crf-leak` scans it for upstream-only prefab GUIDs.
 - The Mission Creator embeds `registry.json` at compile time to know which object aliases the mod
   can spawn (`apps/frontend/src/workspaces/editor/arsenal/asset_catalog.rs`).

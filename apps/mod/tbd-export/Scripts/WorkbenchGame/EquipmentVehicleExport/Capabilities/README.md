@@ -66,7 +66,7 @@ None: Workbench runs these scripts in the editor.
   `organized_capability_cannot_silently_omit_properties`,
   `ancestor_installations_cannot_leak_into_effective_capabilities` and
   `type_inventory_and_hierarchy_must_close` tests
-  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) hold the
+  (`tools/commands/mod_operations/src/equipment_vehicle_export/tests/validation.rs`) hold the
   written form, and the capability names are the schema's closed list.
 
 ## Related documentation

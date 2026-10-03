@@ -52,7 +52,7 @@ streaming module (the `streaming` feature); `statistics` needs wasm32 with `rend
   `apps/frontend/src/workspaces/editor/` (its world-asset bridge builds the
   `HostPreferences`, its boot machine and preference store re-export the progress types and
   `WorldLayerPrefs`, and its hydrate reports the mission segment); the editor smoke tests in
-  `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which read
+  `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`, which read
   `window.__mapAssets`.
 - Rules:
   - `split_range` spans are inclusive, contiguous and cover the tile exactly, and `Ordered`
@@ -64,4 +64,4 @@ streaming module (the `streaming` feature); `statistics` needs wasm32 with `rend
   - `strips_visible` follows the toggles and the zoom only, never the buffer contents, so an empty
     strip buffer mid-hydration uploads as visible instead of blanking the lane;
   - the `window.__mapAssets` keys are the ones the editor smoke tests assert on
-    (`tools/developer_tools/src/browser_testing/editor_smoke_tests/fullmap.rs`).
+    (`tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/fullmap.rs`).

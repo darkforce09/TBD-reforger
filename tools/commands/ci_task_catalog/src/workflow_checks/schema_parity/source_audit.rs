@@ -1,0 +1,430 @@
+//! The pins of `verify ci-schema-parity`: the `ci.yml` schema job, the task rows and the wave
+//! gate sources.
+//!
+//! **Role:** [`verify_ci_schema_parity`] reads `ci.yml` and both wave gate implementations and
+//! runs every pin over them and over [`crate::task_runner::TASKS`].
+//! **Position:** behind [`super`]; called by the xtask binary's `verify ci-schema-parity` and by
+//! the `ci-local` row's direct step.
+//! **Signals & state:** none; reads the checkout.
+//! **Invariants:** a missing or unreadable input is a failure, never a pass; the task pins read
+//! the table that runs, in process.
+
+use super::*;
+
+pub(super) use repository_checks::architecture::wave_gate_sources::WAVE_CHILDREN;
+use repository_checks::architecture::wave_gate_sources::{
+    wave_children_are_linked, wave_function_opener_pattern,
+};
+
+/// Checks the CI recipe and both linked wave gate implementations, failing on unreadable inputs.
+pub fn verify_ci_schema_parity(repo_root: &Path) -> Result<u8> {
+    let ci_path = repo_root.join(CI_REL);
+    if !ci_path.is_file() {
+        println!("FAIL: missing {}", ci_path.display());
+        return Ok(1);
+    }
+
+    let src = match std::fs::read_to_string(&ci_path) {
+        Ok(s) => s,
+        Err(e) => {
+            println!("FAIL: cannot read {}: {e}", ci_path.display());
+            return Ok(1);
+        }
+    };
+
+    let wave_path = repo_root.join(WAVE_REL);
+    let Some(mut wave) = read_wave_source(&wave_path) else {
+        return Ok(1);
+    };
+    if !wave_children_are_linked(&wave) {
+        println!("FAIL: gate.rs must declare and crate-export both wave gate implementations");
+        return Ok(1);
+    }
+    for (module, _) in WAVE_CHILDREN {
+        let child_path = wave_path.with_extension("").join(format!("{module}.rs"));
+        let Some(child) = read_wave_source(&child_path) else {
+            return Ok(1);
+        };
+        wave.push('\n');
+        wave.push_str(&child);
+    }
+
+    let fail = run_pins(&src, Some(&wave));
+    if fail != 0 {
+        println!("ci-schema-parity: FAIL");
+        return Ok(1);
+    }
+    println!("ci-schema-parity: PASS");
+    Ok(0)
+}
+
+/// Reads each source owner independently so a facade cannot hide a missing implementation.
+fn read_wave_source(path: &Path) -> Option<String> {
+    if !path.is_file() {
+        println!("FAIL: missing {}", path.display());
+        return None;
+    }
+    match std::fs::read_to_string(path) {
+        Ok(source) => Some(source),
+        Err(error) => {
+            println!("FAIL: cannot read {}: {error}", path.display());
+            None
+        }
+    }
+}
+
+/// Runs every pin. Returns `0` when clean, `1` when any pin failed.
+pub(super) fn run_pins(ci_src: &str, wave: Option<&str>) -> i32 {
+    let stripped = strip_yaml_hash_comments(ci_src);
+    let lines: Vec<&str> = stripped.lines().collect();
+
+    let schema_job_re = Regex::new(r"^  schema:\s*$").expect("schema job");
+    let schema_start = lines.iter().position(|line| schema_job_re.is_match(line));
+    let Some(schema_start) = schema_start else {
+        println!("FAIL: no top-level `schema:` job in .github/workflows/ci.yml");
+        return 1;
+    };
+
+    let job_key = Regex::new(r"^  [A-Za-z0-9_-]+:\s*$").expect("job key");
+    let mut schema_lines: Vec<&str> = Vec::new();
+    for line in &lines[schema_start + 1..] {
+        if job_key.is_match(line) {
+            break;
+        }
+        schema_lines.push(line);
+    }
+    if schema_lines.is_empty() {
+        println!("FAIL: schema job has empty body");
+        return 1;
+    }
+
+    let run_re = Regex::new(r"^\s+-\s+run:\s*(.+?)\s*$|^\s+run:\s*(.+?)\s*$").expect("run step");
+    let mut runs: Vec<String> = Vec::new();
+    for line in &schema_lines {
+        let Some(caps) = run_re.captures(line) else {
+            continue;
+        };
+        let mut cmd = caps
+            .get(1)
+            .or_else(|| caps.get(2))
+            .map(|m| m.as_str().trim().to_string())
+            .unwrap_or_default();
+        if (cmd.starts_with('\'') && cmd.ends_with('\''))
+            || (cmd.starts_with('"') && cmd.ends_with('"'))
+        {
+            cmd = cmd[1..cmd.len() - 1].to_string();
+        }
+        runs.push(cmd);
+    }
+
+    let mut fail = 0;
+
+    if runs.is_empty() {
+        println!("FAIL: schema job has no `run:` steps after comment strip");
+        fail = 1;
+    }
+
+    let has_good = runs.iter().any(|r| ci_run_is_good(r));
+
+    if !has_good {
+        println!("FAIL: schema job must run `{GOOD_RUN}` (full gate set)");
+        println!("      found run steps:");
+        for r in &runs {
+            println!("        - {r}");
+        }
+        println!("      validate + citations alone misses map-object-enums.");
+        fail = 1;
+    }
+
+    let narrow_re = Regex::new(r"schema\s+validate\b").expect("narrow");
+    let narrow: Vec<&String> = runs
+        .iter()
+        .filter(|r| {
+            narrow_re.is_match(r)
+                && !r.contains("ci-local-schema")
+                && !r.contains("schema-validate")
+        })
+        .collect();
+    if !narrow.is_empty() && !has_good {
+        println!("FAIL: schema job uses narrow `schema validate` without ci-local-schema:");
+        for r in &narrow {
+            println!("      {r}");
+        }
+        fail = 1;
+    }
+
+    fail |= task_pins();
+
+    match wave {
+        None => {
+            println!("FAIL: missing {WAVE_REL} (the dual-path pin would be vacuous)");
+            fail = 1;
+        }
+        Some(w) => {
+            fail |= wave_pins(w);
+        }
+    }
+
+    fail
+}
+
+/// Does this ci.yml `run:` line invoke the full schema gate set?
+///
+/// Both spellings of the same command are accepted, because `.cargo/config.toml` defines
+/// `xtask = "run --package xtask --"` and CI may use either. Nothing looser: a `|| true` or
+/// `--help` suffix must not satisfy it, which is why this is equality after normalisation and
+/// not a `contains`.
+pub(super) fn ci_run_is_good(run: &str) -> bool {
+    let normalised = run.split_whitespace().collect::<Vec<_>>().join(" ");
+    normalised == GOOD_RUN || normalised == "cargo run -q -p xtask -- ci ci-local-schema"
+}
+
+/// THE TASK-BODY PINS (see module docs for the table of subjects).
+///
+/// Reads [`crate::task_runner::TASKS`] in-process. That is a stronger subject than a
+/// text file: the table is what `cargo xtask ci` executes, so hollowing it is the only way to
+/// hollow the tasks, and a hollowed row fails here.
+pub(super) fn task_pins() -> i32 {
+    let mut fail = 0;
+
+    // Pin 1 — `ci-local-schema` must delegate to both halves of the schema set.
+    match crate::task_runner::find("ci-local-schema") {
+        None => {
+            println!("FAIL: mk_ci::TASKS missing `ci-local-schema` (the CI pin would be vacuous)");
+            fail = 1;
+        }
+        Some(t) => {
+            let invoked: HashSet<&str> = crate::task_runner::invoked_tasks(t).into_iter().collect();
+            let missing: Vec<&str> = ["schema-validate", "verify-citations"]
+                .into_iter()
+                .filter(|need| !invoked.contains(need))
+                .collect();
+            if missing.is_empty() {
+            } else {
+                println!(
+                    "FAIL: `ci-local-schema` must invoke: {} (real Step::Task rows, \
+                     not an echo and not a comment)",
+                    missing.join(", ")
+                );
+                println!("      found steps:");
+                for s in t.steps {
+                    println!("        {}", describe_step(s));
+                }
+                fail = 1;
+            }
+        }
+    }
+
+    // Pin 2 — `verify-mission-rest-size-limits` must still carry the cargo verify call.
+    match crate::task_runner::find("verify-mission-rest-size-limits") {
+        None => {
+            println!(
+                "FAIL: TASKS missing `verify-mission-rest-size-limits` (the pin would be vacuous)"
+            );
+            fail = 1;
+        }
+        Some(t) => {
+            if !t.steps.iter().any(|s| {
+                crate::task_runner::step_echo(s) == Some(TASK_ECHO_MISSION_REST_SIZE_LIMITS)
+            }) {
+                println!(
+                    "FAIL: `verify-mission-rest-size-limits` must invoke: \
+                     {TASK_ECHO_MISSION_REST_SIZE_LIMITS}"
+                );
+                println!("      found steps:");
+                for s in t.steps {
+                    println!("        {}", describe_step(s));
+                }
+                println!("      exact echo, not a hollow Step::Cmd and not a rename.");
+                fail = 1;
+            }
+        }
+    }
+
+    // Pin 3 — THE SELF-PIN. `ci-local` must reach this gate DIRECTLY.
+    //
+    // Routing this gate through a `Step::Task("verify-ci-schema-parity")` would let a hollowed
+    // dispatcher green the very tripwire that polices dispatch. So the row must carry an echoing
+    // step, and there must be no `verify-ci-schema-parity` task for anyone to reach instead.
+    match crate::task_runner::find("ci-local") {
+        None => {
+            println!("FAIL: TASKS missing `ci-local` (the self-pin would be vacuous)");
+            fail = 1;
+        }
+        Some(t) => {
+            if !t
+                .steps
+                .iter()
+                .any(|s| crate::task_runner::step_echo(s) == Some(TASK_ECHO_CI_SCHEMA_PARITY))
+            {
+                println!("FAIL: `ci-local` must invoke `{TASK_ECHO_CI_SCHEMA_PARITY}` directly");
+                println!("      found steps:");
+                for s in t.steps {
+                    println!("        {}", describe_step(s));
+                }
+                fail = 1;
+            }
+            if crate::task_runner::invoked_tasks(t).contains(&"verify-ci-schema-parity") {
+                println!(
+                    "FAIL: `ci-local` reaches this gate through \
+                     Step::Task(\"verify-ci-schema-parity\") — the circularity is back"
+                );
+                println!(
+                    "      A hollowed dispatch table would then green the gate that polices it."
+                );
+                fail = 1;
+            }
+        }
+    }
+    if crate::task_runner::find("verify-ci-schema-parity").is_some() {
+        println!(
+            "FAIL: TASKS grew a `verify-ci-schema-parity` row — this gate stays off the \
+             dispatch table it polices"
+        );
+        fail = 1;
+    }
+
+    fail
+}
+
+/// One [`crate::task_runner::Step`] in the evidence dump. The wave driver shows the
+/// last 15 lines of a failed gate, so the operator has to be able to see WHICH step was mistaken
+/// for an invocation.
+pub(super) fn describe_step(s: &crate::task_runner::Step) -> String {
+    match crate::task_runner::step_echo(s) {
+        Some(echo) => format!("'{}'", py_repr_ascii(echo)),
+        None => match s {
+            crate::task_runner::Step::Task(n) => format!("Step::Task({n:?})"),
+            _ => "Step::Native".to_string(),
+        },
+    }
+}
+
+/// Pin `gate_slice` + `cmd_gate` to their VERIFY_STEPS rows and to the checkrun argv. A hollow
+/// `r.run(label, || 0)` must fail.
+pub(super) fn wave_pins(wave: &str) -> i32 {
+    let stripped = strip_hash_comments(wave);
+    let mut fail = 0;
+    for (gate, row) in [
+        ("mission-rest-size-limits", ROW_MISSION_REST_SIZE_LIMITS),
+        ("ci-schema-parity", ROW_CI_SCHEMA_PARITY),
+    ] {
+        if !stripped.contains(row) {
+            println!("FAIL: gate.rs VERIFY_STEPS missing the {gate} row (dual-path pin)");
+            fail = 1;
+        }
+    }
+    for (name, role) in [("gate_slice", "slice gate"), ("cmd_gate", "cold gate")] {
+        let Some(body) = extract_fn_body(&stripped, name) else {
+            println!("FAIL: gate.rs missing `{name}()` ({role}) after comment strip");
+            fail = 1;
+            continue;
+        };
+        if !body.contains(VERIFY_LOOP) {
+            println!(
+                "FAIL: gate.rs `{name}()` ({role}) does not iterate VERIFY_STEPS (dual-path pin)"
+            );
+            fail = 1;
+        }
+        if !body.contains(CHECKRUN_ARGV) {
+            println!(
+                "FAIL: gate.rs `{name}()` ({role}) does not invoke checkrun verify via                  VERIFY_STEPS name"
+            );
+            fail = 1;
+        }
+    }
+    fail
+}
+
+/// Strip `#` and `//` comments outside quotes, so a commented-out row cannot satisfy a pin.
+pub(super) fn strip_hash_comments(text: &str) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    let n = chars.len();
+    let mut out = String::with_capacity(text.len());
+    let (mut i, mut in_squote, mut in_dquote) = (0usize, false, false);
+    while i < n {
+        let c = chars[i];
+        if in_squote {
+            out.push(c);
+            if c == '\'' && !(i + 1 < n && chars[i + 1] == '\'') {
+                in_squote = false;
+            } else if c == '\'' && i + 1 < n && chars[i + 1] == '\'' {
+                out.push(chars[i + 1]);
+                i += 2;
+                continue;
+            }
+            i += 1;
+            continue;
+        }
+        if in_dquote {
+            out.push(c);
+            if c == '\\' && i + 1 < n {
+                out.push(chars[i + 1]);
+                i += 2;
+                continue;
+            }
+            if c == '"' {
+                in_dquote = false;
+            }
+            i += 1;
+            continue;
+        }
+        if c == '\'' {
+            in_squote = true;
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        if c == '"' {
+            in_dquote = true;
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        if c == '#' {
+            while i < n && chars[i] != '\n' {
+                i += 1;
+            }
+            continue;
+        }
+        if c == '/' && i + 1 < n && chars[i + 1] == '/' {
+            while i < n && chars[i] != '\n' {
+                i += 1;
+            }
+            continue;
+        }
+        out.push(c);
+        i += 1;
+    }
+    out
+}
+
+/// Brace-balanced `{ … }` body of the named function.
+pub(super) fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Option<&'a str> {
+    let opener = Regex::new(&wave_function_opener_pattern(fn_name)).expect("fn opener");
+    let m = opener.find(src)?;
+    // A signature may span lines, so the opening brace is found after the `fn name(` match.
+    let brace = src[m.start()..].find('{')?;
+    let start = m.start() + brace;
+    let mut depth = 0i32;
+    for (offset, ch) in src[start..].char_indices() {
+        match ch {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(&src[start..start + offset + 1]);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Python-`repr`-style escaping for the ASCII step lines this gate dumps (tab → `\t`, quotes).
+pub(super) fn py_repr_ascii(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace('\t', "\\t")
+        .replace('\'', "\\'")
+}

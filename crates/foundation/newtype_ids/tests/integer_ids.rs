@@ -49,6 +49,12 @@ fn displays_and_parses_as_its_integer() {
     assert_eq!(event, EventNumber::new(42));
     assert_eq!(event.to_string(), "42");
     assert_eq!(
+        format!("{event:>5}|"),
+        "   42|",
+        "width reaches the integer's `Display`"
+    );
+    assert_eq!(format!("{event:<5}|"), format!("{:<5}|", 42_i64));
+    assert_eq!(
         "4x".parse::<EventNumber>().unwrap_err(),
         "4x".parse::<i64>().unwrap_err()
     );

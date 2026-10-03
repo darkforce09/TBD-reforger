@@ -105,12 +105,12 @@ name.
   ahead of the Mission Creator emitting their fields.
 - Consumers:
   - `cargo xtask schema validate`, also the `schema-validate` CI task, in
-    `tools/xtask/src/verifications/schemas/checks/`: `mission_validation.rs` builds both folder
+    `tools/commands/schema_tooling/src/schema_checks/`: `mission_validation.rs` builds both folder
     paths itself and checks every file, and `kit_registry_references.rs` cross-checks the kit
     aliases;
   - `cargo xtask mod world-boot --mission <name>`, which resolves the name in `valid/` through
-    `mission_fixtures_valid_dir` (`tools/developer_tools/src/repository_layout.rs`, called from
-    `tools/xtask/src/commands/mod_ops/world_boot/execution.rs`), and
+    `mission_fixtures_valid_dir` (`tools/foundation/repository_layout/src/contracts.rs`, called from
+    `tools/commands/mod_operations/src/world_boot/execution.rs`), and
     `cargo xtask mod test-mission <name>`, which stages the mission it finds by file name under
     `contracts/`; `cargo xtask mod dev-server` only names `valid/bridgehead-at-levie.json` in its
     usage text, as the offline `--artifact-file` for `cargo xtask mod playtest`;

@@ -6,8 +6,8 @@
 //! golden bytes over `Fetch.requestPaused`, opens `/debug/ballistics-agreement`, waits for the
 //! bench to leave `loading` and returns the text of its `<pre>`.
 //! **Position:** called by [`super::run`] with the [`ServedGoldens`] that
-//! [`super::golden_provenance`] proved; built on [`crate::browser_testing::server`] and
-//! [`crate::browser_testing::cdp`].
+//! [`super::golden_provenance`] proved; built on [`browser_gate_suites::server`] and
+//! [`chrome_devtools_protocol`].
 //! **Signals & state:** owns one server, one browser and one page for the length of a run; a
 //! spawned task answers intercepted requests and records the API paths nothing answers.
 //! **Invariants:** the page never reaches a live API: every `/api/v1/` request is answered here,
@@ -23,8 +23,8 @@ use anyhow::{Result, anyhow, bail};
 use serde_json::{Value, json};
 
 use super::golden_provenance::ServedGoldens;
-use crate::browser_testing::cdp::{self, Page};
-use crate::browser_testing::server::{ServeConfig, start_server};
+use browser_gate_suites::server::{ServeConfig, start_server};
+use chrome_devtools_protocol::{self as cdp, Page};
 
 /// Where and what the browser half opens.
 #[derive(Clone, Debug)]
@@ -72,7 +72,7 @@ pub async fn read_bench(session: &BenchSession, goldens: &ServedGoldens) -> Resu
         Ok(browser) => browser,
         Err(error) => {
             server.close().await;
-            return Err(error);
+            return Err(error.into());
         }
     };
     let outcome = drive(session, goldens, &browser, server.port).await;
@@ -163,9 +163,13 @@ async fn answer_catalog_reads(
     let recorded = Arc::clone(&unanswered);
     tokio::spawn(async move {
         while let Some(event) = paused.recv().await {
-            let Some(request_id) = event["requestId"].as_str() else {
+            let Some(request_id) = event["requestId"]
+                .as_str()
+                .map(chrome_devtools_protocol::InterceptedRequestId::new)
+            else {
                 continue;
             };
+            let request_id = &request_id;
             let path = request_path(&event);
             let body = if path == "/api/v1/ballistics-catalogs" {
                 Some(&goldens.list_body)

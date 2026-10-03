@@ -45,7 +45,7 @@ entry or a Net API call. Both modules write to the Workbench profile, mostly und
   module READMEs list.
 - Rules: nothing in `Game/` names a class from `WorkbenchGame/`, which a game never compiles; the
   addon holds no copy of a framework class. `cargo xtask mod compile` compiles the framework addon
-  alone (`tools/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only
+  alone (`tools/commands/mod_operations/src/compile/execution.rs`), so these scripts compile only
   when Workbench or a game loads `tbd-export`.
 
 ## Related documentation

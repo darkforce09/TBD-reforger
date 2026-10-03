@@ -177,7 +177,7 @@ host of `TBD_SSH_HOST`, or says to set it when `deploy.env` names none.
 
 ## Related
 
-- [Debug command group](/tools/xtask/src/commands/debug/README.md) — every probe
+- [Debug command group](/tools/commands/remote_debugging/src/debug/README.md) — every probe
   `debug direct-join` runs.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a joinable
   server on a development machine with `cargo xtask mod playtest`.

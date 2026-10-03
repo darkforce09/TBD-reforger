@@ -56,7 +56,7 @@ window blur or unmounting the tree cancels them at once.
   `apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/`, for `drag_set_for`;
   `apps/frontend/src/workspaces/editor/bridge/host_state/entity_selection.rs`, for the folder
   slot reads; the outliner smoke tests in
-  `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which read the stats, the
+  `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`, which read the stats, the
   scroller and the guide toggles.
 - Rules: the tests in `apps/frontend/src/workspaces/editor/ui/outliner/tests/tree/` hold
   these: every row class states the one height `ROW_H` reads back

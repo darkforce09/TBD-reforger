@@ -70,7 +70,7 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/Core/ExportDestination/`, which runs
   `TBD_VehicleDeepExportPlugin.ExportTo` and probes doors through `TBD_VehicleCompartmentExtractor`;
   the first publication of a source export, which moves the unversioned `vehicles/` folder into its
-  archive (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/publication.rs`).
+  archive (`tools/commands/mod_operations/src/equipment_vehicle_export/publication.rs`).
 - Rules: a value the configuration does not declare stays null; every installed instance keeps its
   own record. The scripts compile only when Workbench loads `tbd-export`, and a new script file
   appears after a Workbench cold restart.

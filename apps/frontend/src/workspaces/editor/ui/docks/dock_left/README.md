@@ -71,7 +71,7 @@ view and selection state: none of them edits the document or adds an undo step.
   - the browser's local storage, through `web_sys`.
 - Used by: the chrome re-export and the editor page above; the tests in
   `apps/frontend/src/workspaces/editor/ui/docks/tests/dock_left/`; and the outliner smoke
-  test in `tools/developer_tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`,
+  test in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/outliner_palette.rs`,
   which finds the dock by its "Layers" and "Locations" tabs.
 - Rules: the tests in
   `apps/frontend/src/workspaces/editor/ui/docks/tests/dock_left/` hold these:

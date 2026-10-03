@@ -5,7 +5,7 @@
 //! [`chromeless`] for the frame, [`role_may_enter`] and [`auth_denial_redirect`] for the route
 //! guard. [`navigation_menu`] holds the sidebar's sections and links. Paths use the React shape
 //! (`/events/:id`) so the table extracted by the S-routes gate diffs byte-equal against
-//! `tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv`.
+//! `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`.
 //! **Position:** a foundation module above `transport`, below `auth`; read by the route guard in
 //! `foundation::auth::route_guard`, by the shell's frame and sidebar, and by the route drift gate.
 //! The render form of the table, binding each path to its component, is `app_routes.rs`.
@@ -29,7 +29,7 @@ pub struct RouteDef {
     /// The path in the React shape, `:param` segments matching any value (`/events/:id`).
     pub path: &'static str,
     // No shipped Rust code reads this field: the route-drift extractor
-    // (`tools/developer_tools/src/browser_testing/route_drift.rs`) reads it from this source text,
+    // (`tools/browser_testing/browser_gate_suites/src/route_drift.rs`) reads it from this source text,
     // and the route tests read it, so the lint is wrong outside the test build.
     /// The name of the component `app_routes.rs` renders for the path.
     #[cfg_attr(not(test), allow(dead_code))]

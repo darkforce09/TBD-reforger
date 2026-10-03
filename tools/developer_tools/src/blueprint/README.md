@@ -88,8 +88,8 @@ error instead, and an error any entry returns reaches xtask as a failure.
     the compound building and instances (`building_interiors::compound`), the sidecar and BVH
     (`spatial_indexes::bounding_volume_hierarchy`), the descriptors and manifest
     (`world_line_of_sight::occluder_library`) and the archive (`world_file_formats::archives`);
-  - the pak reader in `tools/developer_tools/src/enfusion_pak/`, and
-    `crate::repository_layout` and the `repository_layout` crate for the checkout's paths;
+  - the pak reader in `tools/enfusion/enfusion_pak/src/`, and
+    the `repository_layout` crate for the checkout root and its paths;
   - the schemas in `contracts/definitions/`; the game paks and loose extract, and the
     Workbench exports, dumps, parity files and recon dumps the commands read.
 - Used by: the `cargo xtask map` adapters in `tools/xtask/src/commands/map/mod.rs`; the world

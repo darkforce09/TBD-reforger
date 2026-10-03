@@ -18,7 +18,7 @@ does not repeat it.
   `chromium-*/chrome-linux64/chrome` or `chromium-*/chrome-linux/chrome` under
   `PLAYWRIGHT_BROWSERS_PATH`, then under `~/.cache/ms-playwright`, and adds `--headless=new`. The
   headless shell aborts on per-character font fallback, and the doctor warns when it resolves to
-  one. The pinned version is `chromium.version` in `tools/developer_tools/gate-env.json`. Check:
+  one. The pinned version is `chromium.version` in `tools/browser_testing/browser_gate_suites/gate-env.json`. Check:
   the doctor's `chromium` line.
 - **The toolchain** pinned by the root `rust-toolchain.toml` (1.95.0 with the
   `wasm32-unknown-unknown` target) and Trunk at the version in `gate-env.json`. Check: the doctor's
@@ -93,7 +93,7 @@ is in [Factory waves](/documentation/runbooks/factory_waves/README.md).
    `--strict` turns any warning into exit 1; `--dist <dir>` points it at another build.
 
 5. Run one smoke by name; the names are the table in the
-   [smoke tests README](/tools/developer_tools/src/browser_testing/editor_smoke_tests/README.md).
+   [smoke tests README](/tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/README.md).
 
    ```bash
    cargo run -q -p developer_tools --bin gate -- smoke cur
@@ -118,7 +118,7 @@ The capture that `accept` writes is the same capture `verify` compares, so a rou
 are missing or broken cannot be accepted: an API request with no
 fixture fails the route with every unanswered URL and the fixture file that would answer it.
 The fixture naming and the capture's settle rules are in the
-[DOM oracle README](/tools/developer_tools/src/browser_testing/dom_oracle/README.md).
+[DOM oracle README](/tools/browser_testing/browser_gate_suites/src/dom_oracle/README.md).
 
 7. Once a route's populated state and every difference `verify` printed are reviewed as intended,
    accept that one route.
@@ -129,7 +129,7 @@ The fixture naming and the capture's settle rules are in the
 
    Expected: `accept <slug> <bytes> B <digest>  (react ref kept)` and exit 0, with
    `<slug>.dom.json`, `<slug>.png` and the route's `manifest.json` row (note, size, SHA-256)
-   rewritten in the golden folder under `tools/developer_tools/fixtures/dom_oracle/`; the
+   rewritten in the golden folder under `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/`; the
    first accept of a route also keeps the original golden as `<slug>.react.dom.json`. Without
    `--only` and `--note` it exits 2; a capture that fails or is empty or undersized is a driver
    error, exit 3, and writes no golden. Accept each changed route separately with its own note,
@@ -197,7 +197,7 @@ Expected: `26/26 routes match the frozen oracle` and exit 0.
 - **Chromium's output pipes must be drained.** A pipe holds 64 KiB, and Chromium with
   `--enable-logging=stderr --v=1` writes more than that in its first second. An undrained pipe
   blocks whichever Chromium thread writes next; when that is the browser's main thread, the
-  DevTools endpoint stops answering and the doctor reports that the browser died. `cdp::launch`
+  DevTools endpoint stops answering and the doctor reports that the browser died. `chrome_devtools_protocol::launch`
   drains both pipes from spawn and keeps the last 200 lines for `Browser::recent_output()`, the
   only copy of Chromium's own abort reason. A probe that spawns Chromium itself drains its pipes,
   sends them to a file or uses `Stdio::null()`, and never calls `Command::output()`, which waits
@@ -258,13 +258,13 @@ check first.
 
 - [Browser testing](/tools/developer_tools/src/browser_testing/README.md) — every `gate`
   command, what it asserts and its exit codes.
-- [Gate doctor and font cache](/tools/developer_tools/src/browser_testing/diagnostics/README.md)
+- [Gate doctor and font cache](/tools/browser_testing/browser_gate_suites/src/diagnostics/README.md)
   — each doctor check and the font cache.
-- [Mission Creator smoke tests](/tools/developer_tools/src/browser_testing/editor_smoke_tests/README.md)
+- [Mission Creator smoke tests](/tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/README.md)
   — the smokes, `r-auth` and `render-check`.
-- [DOM oracle gate](/tools/developer_tools/src/browser_testing/dom_oracle/README.md) — the
+- [DOM oracle gate](/tools/browser_testing/browser_gate_suites/src/dom_oracle/README.md) — the
   routes, the fixture router and the accept rules.
-- [DOM oracle fixtures](/tools/developer_tools/fixtures/dom_oracle/README.md) — the goldens and
+- [DOM oracle fixtures](/tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/README.md) — the goldens and
   the route table.
 - [KB-002](/documentation/known_bugs/kb_002_editor_gate_boot_wedge.md) — the headless-shell
   font-fallback crash.

@@ -35,7 +35,7 @@ contracts/rules/equipment-gameplay/
 ## How it works
 
 `policy.json` lists the class files in `class_files`, and `Policy::load` in
-`tools/xtask/src/commands/mod_ops/equipment_gameplay/policy.rs` reads them in that order. Each
+`tools/commands/mod_operations/src/equipment_gameplay/policy.rs` reads them in that order. Each
 file is a JSON array of class rows; a row names a native class, its ancestor types, the section it
 belongs to and its rules, and each rule gives a set of `{property, native_type}` fields one
 disposition, the section that owns them, whether a reference is followed, and the reason:
@@ -96,7 +96,7 @@ class whose native type must equal or inherit the accepted one.
 - Depends on: the native class, property and type names of the Enfusion classes the Workbench
   equipment export reads, as a complete diagnostic generation reports them.
 - Used by: the xtask equipment gameplay and equipment export commands in
-  `tools/xtask/src/commands/mod_ops/`, the generated selection tables and
+  `tools/commands/mod_operations/src/`, the generated selection tables and
   `TBD_GameplaySelectionPolicy` in the export addon, and the API's equipment data viewer
   services.
 - Rules: every (class, property, native type) field appears in exactly one rule and every class

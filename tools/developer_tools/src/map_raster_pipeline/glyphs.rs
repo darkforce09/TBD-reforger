@@ -7,14 +7,14 @@ use anyhow::{Context, Result};
 use serde_json::{Map, Value, json};
 
 use super::image_operations::{self, Rgba8};
-use crate::repository_layout::compiled_checkout_root;
-use crate::repository_layout::glyph_assets_dir;
+use ::repository_layout::find_repository_root;
+use ::repository_layout::glyph_assets_dir;
 
 const CELL_PX: u32 = 128;
 const MAX_ATLAS_PX: u32 = 4096;
 
 pub fn build_glyph_atlas() -> Result<u8> {
-    let glyph_dir = glyph_assets_dir(&compiled_checkout_root()?);
+    let glyph_dir = glyph_assets_dir(&find_repository_root()?);
     let atlas_dir = glyph_dir.join("atlas");
     let fail = |m: &str| {
         eprintln!("build-glyph-atlas: FAIL — {m}");

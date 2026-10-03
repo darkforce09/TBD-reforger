@@ -7,9 +7,9 @@
 //! `cargo xtask verify engine-layers` prints, with each rule's finding count alongside.
 //!
 //! **Position:** part of [`crate`]. [`check_engine_layers`] runs three steps:
-//! [`matcher_probes`] proves every matcher, [`crate_walks`] walks the crates, [`evaluation`]
-//! judges the rules; [`rules`] holds the matchers and pins, [`report_text`] the fixed report
-//! lines and [`scanning`] the shared helpers. [`ui_framework_ban`] is judged separately and is
+//! `matcher_probes` proves every matcher, `crate_walks` walks the crates, `evaluation`
+//! judges the rules; `rules` holds the matchers and pins, `report_text` the fixed report
+//! lines and `scanning` the shared helpers. `ui_framework_ban` is judged separately and is
 //! not part of the report.
 //!
 //! **Signals & state:** none; every function is pure over the checkout it is handed.

@@ -1,5 +1,5 @@
 use super::cli::MapCmd;
-use crate::*;
+use crate::commands;
 use anyhow::Result;
 
 pub(crate) fn run(cmd: MapCmd) -> Result<u8> {

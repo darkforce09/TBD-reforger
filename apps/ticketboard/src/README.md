@@ -1,24 +1,24 @@
 # Ticketboard source
 
 The source tree of the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard) binary: the entry
-point, one composition module, one module of shared foundations, and seven feature modules, each
-owning one part of the viewer of the [ticket](/documentation/glossary/n_to_z.md#ticket) registry.
+point, one composition module, the shared interface primitives, and the egui views of six features.
+The models, services, events and application state the views paint are in
+[`ticketboard_model`](/tools/tickets/ticketboard_model/README.md).
 
 ## Contents
 
 ```text
 apps/ticketboard/src/
-├── application/        the eframe application: session state, preferences, background jobs, dispatch
-├── core/               subprocesses, bounded logs, clock labels and the shared interface primitives
-├── document_viewer/    repository documents read on a worker thread, shown as Markdown or raw text
-├── execution_metrics/  measured run receipts and historical token estimates, kept apart
+├── application/        the eframe application: session, preferences, background jobs, dispatch, rendering tests
+├── core/               the shared interface primitives: accent colours, row height, identifier link
+├── document_viewer/    the document column: Markdown or raw text with its note, Back, open externally
+├── execution_metrics/  the Metrics tab: the measured and the estimated tables and strips
 ├── main.rs             the command line and the native window
-├── repository_status/  the strict-check banner, the `git status` chip and the debounced file watch
-├── tests/              the architecture tests, their source inspection and shared test fixtures
-├── ticket_actions/     `cargo xtask ticket` commands, file-change guards, the queue, dialogs, feedback
-├── ticket_browser/     the status board, program tree, filters, ticket details and comparisons
-├── ticket_registry/    repository discovery, corpus loading and the ticket models every feature shares
-└── wave_plan/          the recorded wave lock, its lanes as stored, and ownership collisions
+├── repository_status/  the status banner: strict check, output pane, `git status` chip, watch notes
+├── tests/              the architecture tests of this crate
+├── ticket_actions/     the ticket menus, action strip, mutation dialogs, command chip, drawer, toasts
+├── ticket_browser/     the filter bar, status board, cards, program tree and ticket details
+└── wave_plan/          the Waves tab: the recorded lanes, wave 0 and the pack-last tickets
 ```
 
 ## How it works
@@ -28,23 +28,22 @@ repository root, opens a 1500 by 950 window (720 by 480 at least) titled "Ticket
 it `application::TicketboardApp::new`. The renderer is wgpu, or glow in a `--features glow`
 build.
 
-`application` composes everything else. Each feature keeps its data in `models/` and `services/`,
-free of egui, and draws in `ui/` from a narrow borrowed view the application lends it; what the
-viewer does there comes back as that feature's events (`events.rs`), which the application turns
-into actions and applies after the frame. The application also hands the browser the ticket menus
-and the detail panel's action strip of `ticket_actions` as callbacks, so neither feature imports
-the other's `ui`. `ticket_registry` is the shared data every feature reads, and `core` holds what
-any module may use.
+`application` composes everything else. Each feature folder here holds only `ui/`: the egui views
+that paint a narrow borrowed view of that feature's models from `ticketboard_model`. What the
+viewer does there comes back as the feature's events (`ticketboard_model::<feature>::events`),
+which `ticketboard_model::application_state::events` turns into actions and the application
+applies after the frame. The application also hands the browser the ticket menus and the detail
+panel's action strip of `ticket_actions` as callbacks, so neither feature imports the other's
+`ui`. `core` holds the interface primitives any module may use.
 
 ```text
-main.rs ──▶ application ──▶ the six features: ticket_browser, ticket_actions, wave_plan,
+main.rs ──▶ application ──▶ the six feature views: ticket_browser, ticket_actions, wave_plan,
                 │            execution_metrics, document_viewer, repository_status
-                │                          │ through models, services and events
+                │                          │ paint models, emit events
                 ▼                          ▼
-          ticket_registry ◀────────────────┘
+     ticketboard_model (application_state, feature models, services and events, core)
 
-every module but core and document_viewer ──▶ ticket_engine (tools/ticket_engine)
-any module ──▶ core (process, time, ui)
+any module ──▶ core (ui)
 ```
 
 ## Public surface
@@ -54,18 +53,18 @@ and its argument are described in the crate README.
 
 ## Boundaries
 
-- Depends on: `ticket_engine` for the ticket model, validation, repository paths and the wave
-  lock; `eframe`, `egui_commonmark`, `egui_extras`, `notify`, `rfd`, `serde`, `serde_json`,
-  `time` and `toml`; at run time `cargo xtask ticket` and `git`, run as subprocesses.
+- Depends on: `ticketboard_model` for every model, service, event and the application state;
+  `ticket_model` for the status vocabulary; `ticket_wave_lock` for the collision verdict;
+  `repository_layout` for the `.ai/tickets` folder name; `eframe`, `egui_commonmark`,
+  `egui_extras` and `rfd`; at run time `cargo xtask ticket` and `git`, run as subprocesses.
 - Used by: nothing in the repository links it; people run the binary.
 - Rules: each held by a test in `tests/architecture_rules.rs`:
-  - the top level holds only `main.rs`, this README, `tests/` and the nine module folders, each
-    with a `mod.rs`, and the crate README exists
-    (`module_roots_and_documentation_describe_the_entire_source_tree`);
-  - `core` imports no feature and nothing from `ticket_engine`; no feature imports `application`;
-    a feature imports no other feature's `ui`, `core::ui` excepted; `ticket_registry` imports no
-    consuming feature; `models/` and `services/` (and `execution_metrics`' `measured/` and
-    `estimated/`) never name egui; no source declares an inline module or unit test
+  - the top level holds only `main.rs`, this README, `tests/` and the eight module folders, each
+    with a `mod.rs`, every folder but `application` holds only `mod.rs`, its README and `ui/`, and
+    the crate README exists (`module_roots_and_documentation_describe_the_entire_source_tree`);
+  - `core` imports no feature and nothing from `ticket_model`; no feature imports `application`
+    or `ticketboard_model::application_state`; a feature imports no other feature's `ui`,
+    `core::ui` excepted; no source declares an inline module or unit test
     (`dependency_boundaries_and_external_test_placement_are_enforced`);
   - a production file stays under 500 lines and a test file at or under 1000
     (`source_files_respect_the_size_limits_without_exemptions`), which

@@ -39,14 +39,14 @@ repeat it.
 
 1. `cargo xtask verify file-length`: SIZE-3.
 2. `cargo xtask verify enfusion-comments`: the Enfusion comment card (rules ECM-1 to ECM-9 of the
-   [comment gate README](/tools/xtask/src/verifications/mod_scripts/enfusion_comments/README.md),
+   [comment gate README](/tools/checks/mod_script_checks/src/enfusion_comments/README.md),
    sections 6 and 7 of the
    [documentation standards](/documentation/standards/documentation_standards.md#6-enfusion-comments))
    over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts` and
    `apps/mod/tbd-emcp/Scripts`.
 3. `cargo xtask verify no-select-star`: no `SELECT *` or `RETURNING *` in the API's SQL, outside
    the two tables with no nullable column; the
-   [database verifications README](/tools/xtask/src/verifications/database/README.md) has the
+   [database verifications README](/tools/commands/database_operations/src/database_checks/README.md) has the
    rule. It has no rule code.
 4. `cargo xtask verify route-tags`: GO-7.
 
@@ -95,13 +95,14 @@ crate outside `prelude.rs`. Binary crates are exempt.
 
 `cargo xtask verify strangler` fails when a member outside `legacy/` depends on a legacy member
 (apps and the `tools/xtask` and `tools/developer_tools` binaries excepted while legacy exists), and
-when a legacy member's sources hold a `pub use` of a non-legacy workspace crate: a shim, which
-never survives a commit.
+when a legacy member's sources re-export a non-legacy workspace crate in any form (a path, an alias
+`pub use <crate> as x;`, a leading `::`, a group such as `pub use {<crate> as x};`, a statement over
+several lines, `pub extern crate`): a shim, which never survives a commit.
 
 ### WS-4 frontend layering
 
 `cargo xtask verify frontend-layering` maps the frontend's sources onto foundation, features,
-pages, workspaces and the shell through the layer table in `tools/xtask/src/core/repository_layout.rs`
+pages, workspaces and the shell through the layer table in `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`
 and reports the import edges where a lower layer names a higher one, pages and workspaces name
 each other, or one page area names another. Inside the foundation, `FOUNDATION_SUB_AREA_ORDER` in
 the same file orders the sub-areas ui < utils < transport < route_table < auth < {offline,
@@ -123,7 +124,7 @@ README.md and its Contents block), `cargo xtask verify link-check` (links, backt
 cited commands) and `cargo xtask verify markdown-placement` (no Markdown but README.md in a code
 tree, live documents at or under 500 lines). `ci-local` runs the task as one step, and the
 `language-gates` job of `ci.yml` runs the three commands as separate steps. The
-[documentation gates README](/tools/xtask/src/verifications/documentation/README.md) holds the
+[documentation gates README](/tools/checks/documentation_checks/src/README.md) holds the
 rules.
 
 ## Adding a rule

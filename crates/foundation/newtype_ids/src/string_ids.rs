@@ -6,7 +6,8 @@
 //! **Position:** expanded in the calling crate; names serde through [`crate::__private`].
 //! **Signals & state:** none; the expansion is a plain data type.
 //! **Invariants:** the id hashes, compares and orders exactly as its string, which is what makes
-//! `Borrow<str>` sound; it serialises as the bare string; parsing never fails.
+//! `Borrow<str>` sound; it serialises as the bare string; it displays as `str` does, honouring
+//! width, fill, alignment and precision; parsing never fails.
 
 /// Declares a newtype identifier over a `String`.
 ///
@@ -70,7 +71,7 @@ macro_rules! string_id {
 
         impl ::core::fmt::Display for $name {
             fn fmt(&self, formatter: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                formatter.write_str(&self.0)
+                formatter.pad(&self.0)
             }
         }
 

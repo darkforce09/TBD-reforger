@@ -1,0 +1,31 @@
+# The Chrome DevTools Protocol client the headless browser gates drive Chromium with: Chromium
+# discovery, the headless launch in its own process group, one WebSocket per page and the gate's
+# own fontconfig cache. tokio carries the browser child, its output drains and the page sockets;
+# `libc` signals the browser's process group, which std cannot.
+[package]
+name = "chrome_devtools_protocol"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Chrome DevTools Protocol client of the browser gates: Chromium discovery and launch, pages over WebSockets, the gate font cache"
+
+[package.metadata.layout]
+category = "tools/browser_testing"
+tier = 1
+targets = "any"
+
+[dependencies]
+base64 = { workspace = true }
+futures-util = { workspace = true }
+libc = { workspace = true }
+newtype_ids = { workspace = true }
+reqwest = { workspace = true, features = ["json", "charset"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util", "net", "process", "rt", "sync", "time"] }
+tokio-tungstenite = { workspace = true }
+
+[lints]
+workspace = true

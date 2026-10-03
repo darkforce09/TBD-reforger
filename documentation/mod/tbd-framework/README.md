@@ -36,16 +36,16 @@ the screens; each screen folder holds its `<screen>_specification.md` feature do
 - [Mod suite](/apps/mod/README.md) — the addons beside the framework; the CRF checkout the verdict
   table triages is the `crf_framework` lane of the
   [reference lanes](/apps/mod/References/README.md), gitignored and reference only.
-- [Enfusion tooling](/tools/developer_tools/src/enfusion_tooling/) — `enf citations`,
+- [Enfusion tooling](/tools/enfusion/enfusion_script_index/src/) — `enf citations`,
   `enf capability` and the vanilla lanes.
 
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md)
   for the screen specifications; the CRF and vanilla symbol indexes in `.ai/artifacts/enf-index/`.
-- Used by: `MOD_DESIGN` in `tools/xtask/src/core/repository_layout.rs` (named by
+- Used by: `MOD_DESIGN` in `tools/foundation/repository_layout/src/documentation_locations.rs` (named by
   `cargo xtask verify no-crf-leak`); `CAPABILITY_VERDICTS` in
-  `tools/developer_tools/src/repository_layout.rs`; EnfScript comments that cite
+  `tools/enfusion/enfusion_script_index/src/script_index_layout.rs`; EnfScript comments that cite
   `mod_design.md` sections; the in-code READMEs under `apps/mod/tbd-framework/`.
 - Rules: `mod_design.md` and `capability_verdicts.tsv` keep their paths, since code names them;
   the headings of §2, §5 and §6 of the mod design stay as spelled; every `@idx` citation resolves

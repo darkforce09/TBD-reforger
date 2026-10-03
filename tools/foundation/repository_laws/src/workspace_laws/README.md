@@ -37,7 +37,7 @@ verdict line `<LAW>: PASS`, `<LAW>: FAIL (<n> finding(s))` (exit 1) or `<LAW>: F
 |---|---|---|
 | Crate tiers | `crate_tiers::check_crate_tiers(root, sweep_roots)` | 1 every `Cargo.toml` under the sweep roots (outside `tests`, `fixtures`, `test_fixtures`, `target`, `node_modules`) is a member; 2 the layout is declared; 3 category equals the parent folder, package equals the folder name; 4 declared tier equals 1 plus the highest judged dependency tier (0 with none), edges strictly down; 5 the category matrix, and a wasm-only crate reached from an `any` crate only through a wasm32 table; 6 the firewalls; 7 no edge onto a member under `legacy/`; 8 no dev-dependency onto `apps/` or `legacy/` |
 | Crate anatomy | `crate_anatomy::check_crate_anatomy(root)` | each judged library crate: `lib.rs` ≤ 80 lines of doc comments, attributes, `mod` and `pub use` lines; `pub mod prelude`; a `thiserror` `error.rs` when a `pub fn` returns `Result`; no `anyhow`; a README Contents block; inherited `edition`, `rust-version`, `[lints]` and dependencies; only `test_fixtures` and `failpoints`, enabled only by dev-dependencies; no primitive public `id` / `*_id` outside `generated/` and `#[wasm_bindgen]`; no `pub use` of another workspace crate outside the crate's prelude module |
-| Strangler | `strangler::check_strangler(root)` | no member outside `legacy/` (apps and `tools/xtask`, `tools/developer_tools` excepted) depends on a member under `legacy/`; no source under `legacy/` holds a `pub use` statement re-exporting a workspace crate outside `legacy/` — an item, a module or the crate root, under its own name or an alias (`pub use satellite_imagery as streamer;`), in a grouped root, on one line or across several |
+| Strangler | `strangler::check_strangler(root)` | no member outside `legacy/` (apps and `tools/xtask`, `tools/developer_tools` excepted) depends on a member under `legacy/`; no source under `legacy/` re-exports a workspace crate outside `legacy/` in any form — an item, a module or the crate root: `pub use <crate>::…`, `pub use <crate>;`, an alias (`pub use satellite_imagery as streamer;`), a leading `::`, a group at the top or nested (`pub use {<crate> as x};`, `pub use <crate>::{self as x};`), a statement over several lines, `pub extern crate <crate> as x;` |
 | Frontend layering | `frontend_layering::check_frontend_layering(root, crates)` | import edges where a lower layer names a higher one, pages and workspaces name each other, one page area names another, a sub-area of an ordered folder names a sibling at or above its own tier, or a production file names a test-only sub-area; one finding per (file, target place), production and test apart; hard at zero, so any edge fails, as does a source no row maps or a child of an ordered folder in no tier |
 | Tailwind sources | `tailwind_sources::check_tailwind_sources(root, stylesheet)` | every member with a `leptos` dependency has an `@source` glob, resolved from the stylesheet's folder, ending in `/**/*.rs` over its `src` folder or an ancestor |
 
@@ -69,8 +69,8 @@ braced `use` groups included.
   `sits_in_layout_folder`, `is_under`, `is_wasm32_only_cfg`, the root and category constants and
   `UNJUDGED_MEMBERS_FAIL`.
 - `strangler`: `check_strangler`, `strangler_outcome`, `legacy_dependency_findings`,
-  `reexported_crates` (every crate root of every `pub use` statement, with its line),
-  `reexported_crate` (the one-line form the crate-anatomy law reads),
+  `reexported_crates` (every crate root of every re-export statement of a text, with its line),
+  `reexported_crate` (the first crate of one line, which the crate-anatomy law reads),
   `LEGACY_DEPENDENT_TOOL_BINARIES`.
 - `frontend_layering`: `check_frontend_layering`, `frontend_layering_outcome`, `layering_edges`,
   `FrontendLayer`, `FrontendLayerRow`, `SubAreaOrder`, `FrontendCrateLayers`, `LayeringEdge`,
@@ -83,7 +83,7 @@ braced `use` groups included.
 - Depends on: `super::workspace_members`, `super::cargo_manifest`, `super::source_roots`,
   `super::engine_layers` (rule 2's map-noun matcher), `crate::scan`, `crate::pattern`,
   `crate::verdict`; `regex`.
-- Used by: `tools/xtask/src/verifications/architecture/workspace_laws.rs`.
+- Used by: `tools/checks/repository_checks/src/architecture/workspace_laws.rs`.
 - Rules:
   - a missing member folder, root manifest, stylesheet or crate source folder is "did not run",
     never a pass (`crate_tiers_a_missing_member_folder_did_not_run`,

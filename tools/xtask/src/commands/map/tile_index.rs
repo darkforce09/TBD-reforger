@@ -19,7 +19,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use developer_tools::repository_layout::terrain_dir;
+use repository_layout::terrain_dir;
 use serde::{Deserialize, Serialize};
 
 use repository_layout::find_repository_root;

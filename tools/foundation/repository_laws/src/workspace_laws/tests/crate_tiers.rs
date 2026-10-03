@@ -171,6 +171,92 @@ fn crate_tiers_wgpu_in_a_cpu_crate_and_sqlx_outside_api_are_rule_6() {
 }
 
 #[test]
+fn crate_tiers_axum_in_a_browser_testing_or_staging_harness_server_passes() {
+    let mut workspace = green_workspace("tiers-harness-axum");
+    workspace.layout_crate(
+        "tools/browser_testing/browser_gate_suites",
+        0,
+        "any",
+        &[normal("axum")],
+    );
+    workspace.layout_crate(
+        "tools/staging/acknowledgement_dropping_relay",
+        0,
+        "any",
+        &[normal("axum")],
+    );
+    let found = findings(&workspace);
+    assert!(found.is_empty(), "{found:#?}");
+}
+
+#[test]
+fn crate_tiers_axum_in_any_other_tools_category_is_rule_6() {
+    let mut workspace = green_workspace("tiers-tools-axum");
+    workspace.layout_crate("tools/commands/deployment", 0, "any", &[normal("axum")]);
+    let found = findings(&workspace);
+    assert_eq!(found.len(), 1, "{found:#?}");
+    assert!(
+        found[0].contains("tools/commands/deployment/Cargo.toml")
+            && found[0].contains("axum — sqlx and axum live only in api crates"),
+        "{found:#?}"
+    );
+}
+
+#[test]
+fn crate_tiers_sqlx_in_a_browser_testing_or_staging_crate_is_rule_6() {
+    let mut workspace = green_workspace("tiers-harness-sqlx");
+    workspace.layout_crate(
+        "tools/browser_testing/browser_gate_suites",
+        0,
+        "any",
+        &[normal("sqlx")],
+    );
+    workspace.layout_crate(
+        "tools/staging/acknowledgement_dropping_relay",
+        0,
+        "any",
+        &[normal("sqlx")],
+    );
+    let found = findings(&workspace);
+    assert_eq!(found.len(), 2, "{found:#?}");
+    for crate_path in [
+        "tools/browser_testing/browser_gate_suites/Cargo.toml",
+        "tools/staging/acknowledgement_dropping_relay/Cargo.toml",
+    ] {
+        assert!(
+            found
+                .iter()
+                .any(|f| f.contains(crate_path) && f.contains("sqlx — sqlx and axum")),
+            "{crate_path}: {found:#?}"
+        );
+    }
+}
+
+#[test]
+fn crate_tiers_axum_from_a_harness_server_in_the_xtask_closure_is_rule_6() {
+    let mut workspace = green_workspace("tiers-harness-xtask");
+    workspace.layout_crate(
+        "tools/browser_testing/browser_gate_suites",
+        0,
+        "any",
+        &[normal("axum")],
+    );
+    workspace.layout_crate(
+        "tools/commands/xtask",
+        1,
+        "any",
+        &[normal("browser_gate_suites")],
+    );
+    let found = findings(&workspace);
+    assert_eq!(found.len(), 1, "{found:#?}");
+    assert!(
+        found[0].contains("tools/browser_testing/browser_gate_suites/Cargo.toml")
+            && found[0].contains("axum enters the dependency closure of xtask"),
+        "{found:#?}"
+    );
+}
+
+#[test]
 fn crate_tiers_browser_leptos_and_map_noun_firewalls_hold() {
     let mut workspace = green_workspace("tiers-browser");
     workspace.layout_crate(

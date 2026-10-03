@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S7 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6 and M3 landed |
-| Last green commit | the M3 stage commit (S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Current stage | S7 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3 and S11a landed |
+| Last green commit | the S11a stage commit (M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
@@ -157,12 +157,45 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [ ] Stage commit — pending
 
 ### S11 Tools
-- [ ] J0 (M) tool cycles — pending
-- [ ] J1 (L) ticket crates, legacy ticket engine deleted — pending
-- [ ] J2a–f (M) command and check crates — pending
-- [ ] J3a–d (M) developer_tools crates — pending
-- [ ] J4 (S) thin binaries, anyhow out of libraries — pending
-- [ ] Stage commit — pending
+- [x] J0a (L) xtask cuts, deploy_settings, tool_test_support, shared layout — done — commit: (S11a stage commit) — xtask `core/` dissolved; `deploy_settings` (25 tests) and `tool_test_support` (dev-only) born; xtask layout into `repository_layout`; C2, C3, C4, C7, C9, C10 cut; 7 member globs; xtask 1364 → 1322 (43 moved, counted); ran to about 540k tokens (F-S11-04)
+- [x] J0b (M) developer_tools cuts in place — done — commit: (S11a stage commit) — shared layout into `repository_layout`, `timestamp_formatting` → `time_source`, sha2 → `content_digest`, cdp↔diagnostics cut, tokio-free load plan split; 6 spawns → `process_runner`; developer_tools 403 → 406
+- [x] J1 (L) ticket crates, tools/ticket_engine deleted — done — commit: (S11a stage commit) — `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry` born; toml 1.x; 8 library exits → `Refused`; 9 git spawns → `process_runner`; round trip byte-identical; 235 of 238 tests (3 identical in `time_source`); handed off at its budget
+- [x] J1c (L) finish the ticket crates — done — commit: (S11a stage commit) — `TicketId` and `EditorGapRowId` typed across the ticket crates and their consumers; 53 anatomy findings gone; docs, lints and READMEs; launched five nested agents (F-S11-04); found F-S11-01
+- [x] J1b (M) ticketboard_model — done — commit: (S11a stage commit) — ticketboard's headless half born as `ticketboard_model` (tier 4); 1727-ticket and `wave.lock` round trip through the board's readers green before and after; duplicates switched per S11-D6, two kept (NOTE); 179 + 3 tests moved
+- [x] J2a (M) repository_checks, mod_script_checks — done — commit: (S11a stage commit) — 154 tests moved by name; tooling tests find tool crates by folder (S11-D7, no assertion dropped); 5 library exits → exit 2; found F-S11-05
+- [x] J2b (M) schema_tooling, ballistics_oracle_tooling — done — commit: (S11a stage commit) — 61 tests moved; codegen byte-identical; typify, schemars, prettyplease, syn leave xtask; temporary edge `schema_tooling` → developer_tools (`INSTANCE_KINDS`, J3e removes it)
+- [x] J2c (M) api_readiness_checks, workstation_setup — done — commit: (S11a stage commit) — 113 tests moved by name; requirements register retargeted; fingerprint `INPUT_ROOTS` moved unchanged for S9; 3 spawns → `Run`
+- [x] J2d (M) enfusion_mcp, enfusion_mcp_broker — done — commit: (S11a stage commit) — xtask −20, developer_tools −4 tests, counted; `mcp selftest` 20/20; library exit replaced by a stop channel
+- [x] J2e (M) repository_relocation — done — commit: (S11a stage commit) — born from xtask `refactor` (47 tests, same names); `relocate --verify` output identical; located F-S11-05's cause
+- [x] J2f (L) database_operations, deployment — done — commit: (S11a stage commit) — 218 tests moved; both deploy dry runs and eight refusals identical; 36 `die()` and 2 library exits → `Error::Stop`; stopped at the 450k line
+- [x] J2f-b (M) finish database_operations and deployment — done — commit: (S11a stage commit) — `local_database.rs` split, four-point headers on 30 files, strict rustdoc green; database_operations 82, deployment 137
+- [x] J3a (M) enfusion_pak, enfusion_script_index — done — commit: (S11a stage commit) — 51 tests moved by name (with xtask `fetch`); the mod wave gate's `enf::` filter retargeted; error texts byte-identical
+- [x] J3b (L) chrome_devtools_protocol, browser_gate_suites — done — commit: (S11a stage commit) — 46 browser tests moved with `fixtures/dom_oracle/`; the ballistics and mortar suites (39) stay for J3f; raised F-S11-09
+- [x] J3c (M) staging_load_plan, staging_load_generator, acknowledgement_dropping_relay — done — commit: (S11a stage commit) — 84 tests moved; `staging-load` bin; xtask's `WorkstationLoad` seam runs it as a subprocess (S11-D3), seam round trips byte-identical; about 502k tokens (F-S11-04)
+- [x] J2g1 (L) staging_procedures — done — commit: (S11a stage commit) — 99 tests moved; anyhow → thiserror over 53 files; 33 of 34 command outputs byte-identical (`fingerprints` differs by design)
+- [x] J2g2 (M) remote_debugging — done — commit: (S11a stage commit) — 25 tests moved; typed `RunId`/`HypothesisId`; the `ping` spawn → `Run`
+- [x] J2h1 (L) documentation_checks — done — commit: (S11a stage commit) — 231 tests moved; the four documentation gates give byte-identical output; the bin hands the link check its command vocabulary
+- [x] J2h2 (L) ci_task_catalog — done — commit: (S11a stage commit) — 76 tests moved from xtask `ci`, `build`, `verifications/{ci,map_assets}`; xtask `verifications` gone; xtask 347 → 271; temporary edge to developer_tools (`map_verification`, J3d and J4 remove it)
+- [x] J2i (L) platform_execution — done — commit: (S11a stage commit) — 110 tests moved by name + 1; all 43 production spawns on `process_runner`; F-S11-10 fixed (ten full runs green); xtask 271 → 161
+- [x] J2j (L) mod_operations — done — commit: (S11a stage commit) — 129 tests moved by name; all 16 production spawns on `process_runner` (new `server_launcher`); `mod --help` identical; xtask 161 → 32; NOTE F-S11-12
+- [x] G-W1 (S) W1 closing batch — done — commit: (S11a stage commit) — F-S11-01 fixed (`formatter.pad`); leftover `ticket_engine` prose fixed
+- [x] G-W2 (M) W2 closing batch — done — commit: (S11a stage commit) — prose rules over `ticketboard_model` green; F-S11-06 split (29 names kept); ticketboard docs; `epoch_secs` → `time_source`
+- [x] G-S5 (M) relocation verify composition, strangler re-export forms — done — commit: (S11a stage commit) — F-S5-09, F-S5-10 and F-S11-05 fixed; the dry-run gap closed; 6 red-first tests, 6 perturbations
+- [x] G-FW (S) axum firewall clause for tool harness servers — done — commit: (S11a stage commit) — F-S11-09: `HARNESS_SERVER_CATEGORIES` (tools/browser_testing, tools/staging) may use axum, sqlx stays api-only; `laws_and_gates.md` rule 6 updated
+- [x] G-W3 (M) W3 closing batch — done — commit: (S11a stage commit) — strict rustdoc green over all S11 crates; `SeededRandom` wraps `deterministic_random::SplitMix64`; the relay's clock is `time_source`
+- [x] G-RB (L) rebase onto S6 — done — commit: (S11a stage commit) — 26 conflicts merged; one strangler reader over the union of S6's and G-S5's forms; `relocate --verify` 1128
+- [x] G-RB2 (L) rebase onto S5 — done — commit: (S11a stage commit) — 13 conflicts merged; S5's ballistics edits carried into `ballistics_oracle_tooling`; found the manifest name-order issue (wave prefixes); `relocate --verify` 1394
+- [x] G-RL (S) relocation climbing-token rule — done — commit: (S11a stage commit) — a `<lead>/../…` literal is a path only when its lead is a tracked folder at the anchor; aligned with S9's F-S9-04
+- [x] G-RL2 (M) relocation anchors against the planned tree — done — commit: (S11a stage commit) — F-S7-07: a moved file's crate resolves against the planned tree; no crate → unresolved, never root-anchored
+- [x] G-PR (L) process_runner modes for the spawns kept raw — done — commit: (S11a stage commit) — F-S11-11: terminal, binary-output, file-output, detached, line-streaming and exec modes (40 → 63 tests); every kept-raw production spawn switched
+- [x] G-W5 (M) finish platform_execution — done — commit: (S11a stage commit) — four-point headers on 39 files; the wave gate's tool clippy step lints every tool package derived from the workspace
+- [x] G-RV (M) fast `relocate --verify` — done — commit: (S11a stage commit) — F-M3-06: 8 min 15 s → 5.5 s with byte-identical output; one Aho-Corasick pass over every manifest's retired spellings; oracle test
+- [x] G-S11a (M) S11a records and the last module headers — done — commit: (S11a stage commit) — four-point headers on the 25 `mod_operations` files that lacked them (history wording made present-tense); progress, catalogue, target tree, workspace layout, atlas and `tools/README.md` brought to the S11a tree
+- [ ] J3d (L) blueprint_compiler, map_asset_verification — pending (S11b)
+- [ ] J3e (L) world_export_pipeline, map_raster_pipeline; `INSTANCE_KINDS` → `prefab_catalog` — pending (S11b)
+- [ ] J3f (M) ballistics gate suites into browser_gate_suites — pending (S11b)
+- [ ] J4 (M) thin binaries, firewall, legacy exceptions, anyhow out of libraries — pending (S11b)
+- [ ] S11b stage commit — pending
 
 ### M3 Objective behaviours
 - [x] M3a (S) switch-site catalogue — done — no `switch` exists; 22 kind-branching methods in 11 files, catalogued by the planning explorer (stage log)
@@ -257,16 +290,16 @@ become tickets at S12.
 - **F-006 (FIX, closing batch): the map engine READMEs still list `earcutr`** (`legacy/map_engine/README.md:103`, `legacy/map_engine/src/README.md:86`). Reported by T2.
 - **F-007 (decided, D14): `clippy::unwrap_used` in the workspace lint policy also fires in `#[cfg(test)]` code.** New crates' tests then use `expect`. The alternative is a root `clippy.toml` with `allow-unwrap-in-tests = true`. Reported by T2.
 - **F-008 (NOTE, environment): one verification_core `file_length` test fails in this container because it runs as root, which can read a mode-000 file.** The test assumes a non-root user, as CI is. Gates run here record it as environmental. Reported by T2.
-- **F-009 (FIX, closing batch): two tools still create root-level build folders.** `tools/xtask/src/commands/mcp/daemon.rs:96` (`target-dev-mcpd`) and `tools/xtask/src/commands/db/operations/selftest.rs:365` (`target-mk-db-selftest`) move under `target/`. Reported by T3.
+- **F-009 (FIX, closing batch): two tools still create root-level build folders.** `tools/commands/enfusion_mcp/src/daemon.rs:96` (`target-dev-mcpd`) and `tools/commands/database_operations/src/local_database/selftest.rs:365` (`target-mk-db-selftest`) move under `target/`. Reported by T3.
 - **F-010 (FIX, closing batch): a slice-agent brief still tells agents to use `target-<id>-api`** (`slice_agent_brief.md:72`). Reported by T3.
 - **F-011 (NOTE, environment): eight developer_tools library tests read Git LFS objects this container has not pulled.** The S0 gate pulls the LFS objects those tests need before running them.
-- **F-012 (decided, D13): the name of the parking folder.** The repository's prose rule (`tools/xtask/src/tests/tooling_prose_rules.rs:65`) bans the word "legacy" as history vocabulary, which is the planned folder name of decision D12. The laws T4 wrote name that folder, so one xtask prose test fails now. Either rename the parking folder to a present-tense name, or exempt the folder name from the rule. Reported by T4.
+- **F-012 (decided, D13): the name of the parking folder.** The repository's prose rule (`tools/checks/repository_checks/src/tests/tooling_prose_rules.rs:65`) bans the word "legacy" as history vocabulary, which is the planned folder name of decision D12. The laws T4 wrote name that folder, so one xtask prose test fails now. Either rename the parking folder to a present-tense name, or exempt the folder name from the rule. Reported by T4.
 - **F-013 (NOTE, S2): a legacy map engine that re-exports the graphics engine would show about 28 shims.** The S2 and S4 prompts must cut or switch them in the stage that creates them. Reported by T4.
-- **F-014 (FIX, before the S0 gate): the xtask prose-rule tests fail on T4's law files.** `tools/xtask/src/tests/tooling_prose_rules.rs` flags the word "legacy" (see F-012) and planned paths such as crates/map_rendering and `prelude.rs` written in prose. Reported by T1b and T4.
+- **F-014 (FIX, before the S0 gate): the xtask prose-rule tests fail on T4's law files.** `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` flags the word "legacy" (see F-012) and planned paths such as crates/map_rendering and `prelude.rs` written in prose. Reported by T1b and T4.
 - **F-015 (NOTE): a relocation `path` row never rewrites `mod` declarations**; each stage's author edits them. Reported by T1b.
 - **F-016 (FIX, done by G0b): `.ai/tickets/T-086.toml` was not in canonical form** (hand-edited in milestone S), so the ticket store's round-trip test failed.
 - **F-017 (FIX, done by G0b): `ticket check --strict` rejected plan slice ids** in `documentation/mod/script_modularisation_progress_checkpoint.md` that match the retired priority-backlog id pattern.
-- **F-018 (NOTE, environment): the `rust-test-it` task calls `podman` directly** (`tools/xtask/src/commands/ci/task_definitions.rs`), unlike `cargo xtask db test-it`, which resolves the runtime. This container uses a `podman`→`docker` shim. A code fix to resolve the runtime in that task belongs to S2 (A2 owns the db lane).
+- **F-018 (NOTE, environment): the `rust-test-it` task calls `podman` directly** (`tools/commands/ci_task_catalog/src/task_definitions.rs`), unlike `cargo xtask db test-it`, which resolves the runtime. This container uses a `podman`→`docker` shim. A code fix to resolve the runtime in that task belongs to S2 (A2 owns the db lane).
 - **F-019 (NOTE, environment): the outliner-drag and perf browser smokes time out in `Runtime.evaluate` in this container.** Outliner-drag fails identically on the pre-S0 commit; perf shows the same signature. The container's Chromium is 141, while the gate pins 149.
 - **F-020 (NOTE, S12 records batch): `.ai/tickets/T-1073.toml` is an open ticket whose bug R1 fixed in S1** (`cases_3.rs:434` climbed two folders from the map engine instead of three, so it missed the repository root). The fixed relocation tool rewrites the open ticket's text, so `relocate --verify` passes; `ticket ship` refuses an idea-tier ticket without its body, so the records batch fills the body and ships it.
 - **F-021 (FIX, R5): the relocation tool's dry run reported 0 unresolved while the apply's verify found 5 leftovers.** Paths right after a `\n`/`\0` escape, `file://` URLs and `/../` pieces in macro arguments are not rewritten. Reported by R1.
@@ -333,6 +366,18 @@ base and its kind lookup, Capture, Destroy, HoldUntil), and no code outside it b
 The operator regenerates `apps/mod/tbd-framework/resourceDatabase.rdb` in Workbench on `main` as a
 follow-up commit; `cargo xtask mod compile` is clean without it. Findings F-M3-01..05 and the S12
 per-kind playtest checklist are in [stage_logs/m3.md](/documentation/restructure/stage_logs/m3.md).
+
+S11a is on `main`: the tools are 35 crates under `tools/{foundation, tickets, commands, checks,
+enfusion, browser_testing, staging}`; the ticket engine crate is gone (four ticket crates and
+`ticketboard_model`; toml 1.x, the 1725-ticket round trip byte-identical); xtask keeps the command
+line, dispatch and the ticket, wave, verify, schema, fetch, refactor, map and agent-context groups
+(32 tests); every production spawn of the born crates runs through `process_runner` (only async tokio
+sites stay raw); `cargo xtask refactor relocate --verify` takes seconds (one pass). S11b waits for
+S8 only for its legacy-empty check: J3d–f (the map asset crates on S6's world crates, the
+ballistics gate suites on S5's crates), J4 (thin binaries, the xtask dependency firewall green, the
+temporary developer_tools edges in the s11 log removed). Decisions, findings (F-S11-01..12), the
+coordinator rulings pending operator review (the axum harness-server clause) and the relocation
+rules later stages converge on are in [stage_logs/s11.md](/documentation/restructure/stage_logs/s11.md).
 
 Every remaining stage (S3–S12, M3) has its own worktree and orchestrator, managed by the
 "Restructure coordinator" session (decision D22; inputs per stage in the stage logs protocol). The

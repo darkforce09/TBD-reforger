@@ -1,12 +1,11 @@
 use super::*;
 
-use crate::repository_layout::{
-    INLAND_WATER_ARTIFACTS_DIR, inland_water_artifacts_dir, terrain_dir, terrain_manifest_path,
-};
+use crate::map_pipeline_layout::{INLAND_WATER_ARTIFACTS_DIR, inland_water_artifacts_dir};
+use ::repository_layout::{terrain_dir, terrain_manifest_path};
 
 #[allow(clippy::too_many_lines)]
 pub fn analyze_water_sources() -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let sap = sap_dir()?;
     let ortho_path = sap.join("everon-sap-ortho.png");
     let dem_path = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png"); // E2c-allow

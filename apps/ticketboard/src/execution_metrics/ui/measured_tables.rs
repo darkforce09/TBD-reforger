@@ -1,12 +1,12 @@
 use super::*;
 use crate::core::ui::*;
-use crate::execution_metrics::{
+use eframe::egui::{RichText, Ui};
+use egui_extras::{Column as TableColumn, TableBuilder};
+use ticketboard_model::execution_metrics::{
     events::MetricsEvent as Action,
     measured::{self as metrics, TableKind},
     models::MetricsView,
 };
-use eframe::egui::{RichText, Ui};
-use egui_extras::{Column as TableColumn, TableBuilder};
 
 /// The acceptance-1 surface: an ABSENT (or empty) receipts directory is
 /// this explicit state — never a table of zeros.

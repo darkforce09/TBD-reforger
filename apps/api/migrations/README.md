@@ -58,10 +58,10 @@ No file holds versions 0022, 0023 and 0024, and none may.
     `0021_rate_limit_buckets.sql` against `RATE_LIMIT_BUCKETS_DDL`, and the `*_migration.rs`
     suites check individual data migrations;
   - `cargo xtask db repair-migration-checksum`
-    (`tools/xtask/src/commands/db/operations/repair_migration_checksum.rs`), which repoints a
+    (`tools/commands/database_operations/src/local_database/repair_migration_checksum.rs`), which repoints a
     recorded checksum only after proving from git history that the statements are unchanged;
   - the migration step of `cargo xtask platform wave gate`
-    (`tools/xtask/src/commands/platform/wave_execution/migrate.rs`), which audits the recorded
+    (`tools/commands/platform_execution/src/wave_execution/migrate.rs`), which audits the recorded
     checksums and applies pending migrations to a database it never drops;
   - `GET /healthz`, which turns red when `_sqlx_migrations` records a failed migration;
   - the prose rules in `apps/api/src/tests/prose_rules.rs`, which read the comment

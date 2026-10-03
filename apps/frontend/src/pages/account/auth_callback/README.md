@@ -73,7 +73,7 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
   `apps/frontend/src/foundation/route_table/mod.rs`; the frame in
   `apps/frontend/src/shell/layout.rs`, which renders this path bare; the DOM
   oracle's `callback` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`; over redirects, the Discord
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`; over redirects, the Discord
   callback and the dev login in `apps/api/src/identity_and_access/handlers/`.
 - Rules: the fragment is scrubbed with a history replace, never a push; the path stays reachable
   signed out and stays named in the frame's `classify_frame` (`classify_frame_kinds` in

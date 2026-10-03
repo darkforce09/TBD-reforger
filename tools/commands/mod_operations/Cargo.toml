@@ -1,0 +1,58 @@
+# `cargo xtask mod`: the game mod's operations. The headless compile check, the world boot, the
+# playtest server, the equipment and vehicle export validation and publication, the website API
+# client the mod commands drive, and the mod wave driver. `thiserror` carries its errors.
+[package]
+name = "mod_operations"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The game mod's operations: compile check, world boot, playtest server, equipment export publication, website API client and the mod wave driver"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 8
+targets = "any"
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+content_digest = { workspace = true }
+# The `mod seed-announcement` milestone post.
+database_operations = { workspace = true }
+# The MCP daemon the development bootstrap starts.
+enfusion_mcp = { workspace = true }
+flate2 = { workspace = true }
+# The machine credential prefix the mission test recognises in a backend config.
+fleet_wire_contract = { workspace = true }
+heck = { workspace = true }
+jsonschema = { workspace = true }
+# The compile check's and the playtest server's signal handlers and the probe group's liveness test.
+libc = { workspace = true }
+# The `mod spawn-determinism` and `mod spawn-verify` runs.
+mod_script_checks = { workspace = true }
+# The slice worktrees the mod wave driver prepares, lands and reaps.
+platform_execution = { workspace = true }
+process_runner = { workspace = true }
+regex = { workspace = true }
+# The `mod remote-logs` verdict.
+remote_debugging = { workspace = true }
+repository_layout = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order", "raw_value"] }
+tar = { workspace = true }
+thiserror = { workspace = true }
+ticket_model = { workspace = true }
+ticket_registry = { workspace = true }
+ticket_wave_lock = { workspace = true }
+verification_core = { workspace = true }
+walkdir = { workspace = true }
+# The staging host check of `mod bootstrap-staging` and the MCP game root.
+workstation_setup = { workspace = true }
+
+[dev-dependencies]
+# The environment and working-directory locks and the test checkout root.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

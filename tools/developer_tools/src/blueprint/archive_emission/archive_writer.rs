@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 use building_interiors::blueprint::structure::BuildingBlueprint as JsonBlueprint;
 use world_file_formats::archives::blueprints::BuildingBlueprintArchive;
 use world_file_formats::archives::blueprints::BuildingLevel as WireLevel;

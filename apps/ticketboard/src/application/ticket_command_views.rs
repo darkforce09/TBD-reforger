@@ -1,11 +1,10 @@
 use super::*;
-use crate::ticket_actions::{
-    models::TicketActionContext,
-    services::dialog_builders,
-    ui::{dialogs, feedback},
-};
 pub(super) use dialog_builders::add_dialog;
 pub(super) use feedback::toasts_ui;
+use {
+    crate::ticket_actions::ui::{dialogs, feedback},
+    ticketboard_model::ticket_actions::{models::TicketActionContext, services::dialog_builders},
+};
 pub(super) fn context(b: &WorkspaceState) -> TicketActionContext<'_> {
     TicketActionContext {
         corpus: &b.corpus,

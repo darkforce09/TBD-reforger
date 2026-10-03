@@ -412,7 +412,7 @@ pub fn build_world_objects_opt(
     });
     if ops_log {
         let ops_path =
-            crate::repository_layout::export_operations_log(&compiled_checkout_root()?, terrain);
+            crate::map_pipeline_layout::export_operations_log(&find_repository_root()?, terrain);
         let mut ops: Value = if ops_path.exists() {
             serde_json::from_str(&std::fs::read_to_string(&ops_path)?)?
         } else {

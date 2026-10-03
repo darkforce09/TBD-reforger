@@ -84,8 +84,8 @@ jobs:
         run: cargo xtask mk rust-clippy
       - name: build
         run: cargo xtask mk rust-build
-      # The developer_tools library suite. The mod gate scopes itself to
-      # `--lib enfusion_tooling::` and the wave gate's `test workspace members` step is
+      # The developer_tools library suite. The mod gate scopes itself to the
+      # `enfusion_script_index` crate and the wave gate's `test workspace members` step is
       # local-only, so this is the only push-triggered check of the density grid and the world
       # export unit tests.
       # `working-directory: .` for the same reason as the fmt step: the job default is

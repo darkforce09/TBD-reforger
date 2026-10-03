@@ -1,14 +1,14 @@
 use super::super::*;
 use super::*;
-use crate::execution_metrics::estimated::{self as estimates, EstimatesState};
-use crate::ticket_browser::{
-    events::BrowserEvent as Action,
-    models::{detail_sections as detail, view::BrowserView},
-};
-use crate::ticket_registry::models::{projection as board, projection::Class};
 use eframe::egui::{Align, Layout, RichText, ScrollArea, Ui};
 use egui_extras::{Column as TableColumn, TableBuilder};
 use std::path::{Path, PathBuf};
+use ticketboard_model::execution_metrics::estimated::{self as estimates, EstimatesState};
+use ticketboard_model::ticket_browser::{
+    events::BrowserEvent as Action,
+    models::{detail_sections as detail, view::BrowserView},
+};
+use ticketboard_model::ticket_registry::models::{projection as board, projection::Class};
 
 pub(crate) fn detail_ui(
     ui: &mut Ui,
@@ -26,7 +26,7 @@ pub(crate) fn detail_ui(
 
     ui.add_space(4.0);
     ui.horizontal(|ui| {
-        ui.label(RichText::new(v.id).monospace().size(16.0).strong());
+        ui.label(RichText::new(v.id.as_str()).monospace().size(16.0).strong());
         ui.label(RichText::new(v.kind).weak().small());
         // class chip — colored accent, absent class renders nothing.
         if let Some(class) = v.class.and_then(Class::parse) {
@@ -195,7 +195,7 @@ pub(crate) fn detail_ui(
                             ui,
                             v.id,
                             v.migration_legacy,
-                            b.legacy_expanded,
+                            b.quarantine_expanded,
                             actions,
                         );
                     }

@@ -1,6 +1,6 @@
 use super::*;
 use crate::blueprint::tests::fixture;
-use crate::enfusion_pak::DirSource;
+use enfusion_pak::DirSource;
 
 #[test]
 fn tokenizer_and_block_shapes() {

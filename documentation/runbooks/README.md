@@ -84,8 +84,8 @@ feature folder, rather than here; this index lists it so every procedure is foun
   for settings.
 - Used by: xtask code that prints or pins runbook paths (`HOME_SERVER_RUNBOOK`,
   `STAGING_SERVER_RUNBOOK`, `SLICE_WORKFLOW_RUNBOOK`, `PLATFORM_FACTORY_RUNBOOK` and
-  `SPAWN_DETERMINISM_RUNBOOK` in `tools/xtask/src/core/repository_layout.rs`;
-  `EDITOR_GATE_RUNBOOK` in `tools/developer_tools/src/repository_layout.rs`); comments in the
+  `SPAWN_DETERMINISM_RUNBOOK` in `tools/foundation/repository_layout/src/documentation_locations.rs`;
+  `EDITOR_GATE_RUNBOOK` in `tools/browser_testing/browser_gate_suites/src/gate_layout.rs`); comments in the
   browser testing drivers, the deploy units, `Caddyfile`,
   `deploy/compose.staging.yml`, `apps/api/.env.example` and mod scripts;
   the Cursor rules under `.cursor/rules/`; the code READMEs of the folders above; the glossary and

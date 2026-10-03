@@ -34,7 +34,7 @@ reason in.
   describes; `TBD_PS_ORACLE` may name another PlayableSelector checkout in place of the last.
 - The Arma Reforger dedicated server under Steam and a host bridge (`distrobox-host-exec` or
   `host-spawn`), which `mod compile` and the world boot need; the
-  [mod commands](/tools/xtask/src/commands/mod_ops/README.md) list the exit codes.
+  [mod commands](/tools/commands/mod_operations/src/README.md) list the exit codes.
 - The wave plan: the program's dotted child [tickets](/documentation/glossary/n_to_z.md#ticket) in
   `.ai/tickets/wave.lock`, each with an `owns` list. `cargo xtask wave repack` is the only writer
   of the lock; the corpus pin `game_mod_programme_ticket` in `.ai/tickets/corpus-pins.toml` names
@@ -95,9 +95,9 @@ output trying to fix it.
 **Branches.** `CLAUDE.md` Law 2 puts every commit on `main` and forbids creating branches. Its one
 exception is the `slice/<id>` branch that the xtask slice and wave tooling creates and deletes
 itself: `slice-worktree new` creates it from `main`
-(`tools/xtask/src/commands/platform/slice_worktree/git_plain.rs`), `merge` merges it back with
+(`tools/commands/platform_execution/src/slice_worktree/git_plain.rs`), `merge` merges it back with
 `--no-ff`, and `drop` and `reap` delete it
-(`tools/xtask/src/commands/platform/slice_worktree/drop.rs`). Nothing else creates a branch;
+(`tools/commands/platform_execution/src/slice_worktree/drop.rs`). Nothing else creates a branch;
 there are no long-lived branches and no pull requests.
 
 ## Steps
@@ -164,7 +164,7 @@ Run every step from the repository root of the main checkout unless it says the 
    `.ai/artifacts/verdicts/<slice id>.json` in the main checkout, written on pass and on fail. Run
    from `main`, the range is empty and the gate refuses with exit 2. A commit after the gate makes
    the receipt stale, so the agent gates again after its last commit. The step list is in the
-   [wave gate README](/tools/xtask/src/commands/platform/wave_execution/gate/README.md).
+   [wave gate README](/tools/commands/platform_execution/src/wave_execution/gate/README.md).
 
 6. Repeat step 1 until every slice is READY (committed, clean, with commits ahead of `main`).
 
@@ -213,16 +213,15 @@ prints `PASS` or `FAIL` for each with the last 12 lines of a failure, and ends `
 | oracle citations | `cargo run -q -p developer_tools --bin enf -- citations` |
 | no-crf-leak | `cargo run -q -p xtask -- verify no-crf-leak` |
 | ticket registry | `cargo run -q -p xtask -- ticket check`, through `distrobox-host-exec` |
-| enf unit tests | `cargo test -q -p developer_tools --lib enf::`, through `distrobox-host-exec` |
+| enf unit tests | `cargo test -q -p enfusion_script_index --lib`, through `distrobox-host-exec` |
 
 `enf capability` exits 1 when a framework file matches no verdict rule (UNTRIAGED); `enf citations`
 exits 1 on any `@idx` citation that does not resolve. `verify no-crf-leak` exits 1 on a leak and 2
 (did not run) when the CRF or PlayableSelector lane is missing; the gate counts both as `FAIL`, and
-the check's [README](/tools/xtask/src/verifications/licensing/README.md) describes what it scans.
+the check's [README](/tools/checks/repository_checks/src/licensing/README.md) describes what it scans.
 
 On the current tree the gate cannot pass: `verify ui-layouts` finds no layout because it does not
-walk the subfolders of `apps/mod/tbd-framework/UI/layouts/`. The `enf::` filter matches no test,
-so that step passes without testing anything.
+walk the subfolders of `apps/mod/tbd-framework/UI/layouts/`.
 
 ## Verify
 
@@ -237,7 +236,7 @@ then names the next wave, or prints `ALL PLANNED WAVES SHIPPED`.
 ## Worktree mechanics
 
 `mod wave prep`, `land` and the reap call these in-process; run them by hand to repair one slice.
-The [slice worktree README](/tools/xtask/src/commands/platform/slice_worktree/README.md) has
+The [slice worktree README](/tools/commands/platform_execution/src/slice_worktree/README.md) has
 every guard.
 
 ```bash
@@ -357,9 +356,9 @@ exposure for no benefit, and the main checkout holds the lanes as real folders, 
 exclude ships every lane.
 
 **Adding a lane takes four edits:** its path constant in
-`tools/xtask/src/core/repository_layout.rs`, the link step in
-`tools/xtask/src/commands/platform/slice_worktree/git_plain.rs`, the prefix and lane in
-`tools/xtask/src/verifications/licensing/upstream_code_leaks.rs` when it is a licensed code lane,
+`tools/foundation/repository_layout/src/documentation_locations.rs`, the link step in
+`tools/commands/platform_execution/src/slice_worktree/git_plain.rs`, the prefix and lane in
+`tools/checks/repository_checks/src/licensing/upstream_code_leaks.rs` when it is a licensed code lane,
 and its row in the [reference lanes README](/apps/mod/References/README.md). The deploy excludes
 need no edit, because they exclude the folder. A lane missing any of them is a liability.
 
@@ -449,11 +448,11 @@ UI slice as done when it only compiles.
   Enfusion facts every slice meets.
 - [Mod program spec](/documentation/tickets/specs/t181_event_mod_program.md) — the program the
   waves carry out.
-- [Mod wave driver](/tools/xtask/src/commands/mod_ops/wave_execution/README.md) — `status`,
+- [Mod wave driver](/tools/commands/mod_operations/src/wave_execution/README.md) — `status`,
   `prep`, `gate`, `land` and `push` in code.
-- [Slice worktree lifecycle](/tools/xtask/src/commands/platform/slice_worktree/README.md) — the
+- [Slice worktree lifecycle](/tools/commands/platform_execution/src/slice_worktree/README.md) — the
   worktree commands and their guards.
-- [Platform wave driver](/tools/xtask/src/commands/platform/wave_execution/README.md) — the slice
+- [Platform wave driver](/tools/commands/platform_execution/src/wave_execution/README.md) — the slice
   gate and its verdict receipt.
 - [Factory waves](/documentation/runbooks/factory_waves/README.md) — the same worktree cycle for
   the platform program.
@@ -461,9 +460,9 @@ UI slice as done when it only compiles.
   Workbench and the MCP tools up with `mod dev-bootstrap`.
 - [Loadouts](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/README.md) — the dev harness
   that equips `$profile:TBD_LoadoutTest.json` on a test body.
-- [Enfusion script oracle](/tools/developer_tools/src/enfusion_tooling/README.md) — `enf lookup`,
+- [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md) — `enf lookup`,
   `citations` and `capability`.
-- [Upstream code leak gate](/tools/xtask/src/verifications/licensing/README.md) —
+- [Upstream code leak gate](/tools/checks/repository_checks/src/licensing/README.md) —
   `verify no-crf-leak` in full.
 - [Vanilla source coverage](/documentation/mod/tbd-framework/vanilla_source_coverage.md) — which
   lane answers which vanilla question.

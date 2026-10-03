@@ -35,7 +35,7 @@ Chromium's Skia font manager aborts on any per-character font fallback:
 The Mission Creator's text needs fallback glyphs (icons, dashes, symbol ranges). In
 `chrome-headless-shell` the abort kills the renderer at boot; the harness sees only a dead
 DevTools socket, so the `Runtime.evaluate` call waits out its 130 s timeout (`send` in
-`tools/developer_tools/src/browser_testing/cdp.rs`). It depends on the machine's fonts: the same
+`tools/browser_testing/chrome_devtools_protocol/src/browser_session.rs`). It depends on the machine's fonts: the same
 shell build ran clean until a font change made the fallback necessary. The full `chrome` build
 reaches the same abort from its browser process when it resolves no font at all, which happens
 when a container sharing the home directory has written its own `~/.cache/fontconfig`.
@@ -53,16 +53,16 @@ resolved and whether the gate's font cache is in place.
 
 ## Fix
 
-- `find_chromium` (`tools/developer_tools/src/browser_testing/cdp/sleep_ms.rs`) prefers the full
+- `find_chromium` (`tools/browser_testing/chrome_devtools_protocol/src/browser_launch.rs`) prefers the full
   `chrome` build (`chrome-linux64/chrome`) over `chrome-headless-shell`, and `launch_with_gpu`,
   behind `launch`, passes it `--headless=new`; the shell is used only when no full build exists.
 - The same launch sets the Chromium child's `XDG_CACHE_HOME` to the font cache the gate owns
-  (`gate_font_cache_dir` in `tools/developer_tools/src/browser_testing/diagnostics.rs`), so a
+  (`gate_font_cache_dir` in `tools/browser_testing/chrome_devtools_protocol/src/gate_font_cache.rs`), so a
   cache written by another distribution is never read.
 - `gate doctor`, which `cargo xtask mk leptos-gates` runs first, checks the resolved build, probes
   Chromium's log for `Could not find any font` and runs a liveness probe of about 15 s, so a
   recurrence fails in seconds with a diagnosis. Its pins live in
-  [`tools/developer_tools/gate-env.json`](/tools/developer_tools/gate-env.json).
+  [`tools/browser_testing/browser_gate_suites/gate-env.json`](/tools/browser_testing/browser_gate_suites/gate-env.json).
 
 The [editor gates runbook](/documentation/runbooks/editor_gates.md#known-wedge-modes) lists
 both wedge modes and the debug recipe for a recurrence, and the

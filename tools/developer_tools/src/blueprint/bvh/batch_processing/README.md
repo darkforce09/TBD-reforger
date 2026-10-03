@@ -44,10 +44,10 @@ nothing.
 ## Boundaries
 
 - Depends on: the parent's `Walker`, `AssetCache`, `Asset`, `LayerPolicy` and `SceneSpec`; the pak
-  reader in `tools/developer_tools/src/enfusion_pak/`; the model decoders in
+  reader in `tools/enfusion/enfusion_pak/src/`; the model decoders in
   `tools/developer_tools/src/blueprint/mesh_decoding/`; the surface classification in
   `tools/developer_tools/src/blueprint/architectural_analysis/surface_classification.rs`;
-  `crate::repository_layout` (`terrain_dir`, `definition_path`); `spatial_indexes`
+  the `repository_layout` crate (`terrain_dir`, `definition_path`); `spatial_indexes`
   for the sidecar codec and `building_interiors::compound` for the instance records; `jsonschema`.
 - Used by: `batch_processing.rs`, which re-exports `run_bvh_batch`, `open_sources`,
   `decode_asset`, `classify_prefab` and `cover_for_prefab`; the prefab library and archive writer in

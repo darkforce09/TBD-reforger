@@ -1,4 +1,6 @@
-use crate::ticket_actions::{
+use eframe::egui::{Button, ComboBox, RichText, Ui};
+use ticket_model::{StatusName, Ticket};
+use ticketboard_model::ticket_actions::{
     events::TicketActionEvent as Action,
     models::*,
     services::{
@@ -6,9 +8,7 @@ use crate::ticket_actions::{
         dialog_builders::*,
     },
 };
-use crate::ticket_registry::models::projection as board;
-use eframe::egui::{Button, ComboBox, RichText, Ui};
-use ticket_engine::{StatusName, Ticket};
+use ticketboard_model::ticket_registry::models::projection as board;
 
 // ---- card context menu + detail action strip ----
 
@@ -83,7 +83,7 @@ pub fn action_strip_ui(
     let loaded = &b.corpus.tickets[index];
     let status = loaded.ticket.status().name();
     let is_program = matches!(loaded.ticket, Ticket::Program(_));
-    let id = loaded.ticket.id().to_owned();
+    let id = loaded.ticket.id().clone();
 
     ui.horizontal_wrapped(|ui| {
         let offered = verbs::offered_transitions(status);

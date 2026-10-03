@@ -37,7 +37,7 @@ rewording these files.
 - [Equipment diagnostics](/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/) and
   [vehicle diagnostics](/apps/mod/tbd-export/Scripts/WorkbenchGame/VehicleExport/) — the diagnostic
   actions that call the same exporter and whose generations the publisher rejects.
-- [Validation and publication](/tools/xtask/src/commands/mod_ops/equipment_vehicle_export/) —
+- [Validation and publication](/tools/commands/mod_operations/src/equipment_vehicle_export/) —
   the two `cargo xtask mod` commands.
 - [Export contract](/contracts/definitions/equipment-vehicle-export.schema.json) — the schema a
   generation validates against.
@@ -46,7 +46,7 @@ rewording these files.
 
 - Depends on: the exporter and the xtask commands above, whose acceptance the evidence records.
 - Used by: the exporter's README in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/`
-  and the validation README in `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`, which
+  and the validation README in `tools/commands/mod_operations/src/equipment_vehicle_export/`, which
   point here.
 - Rules: the evidence stays byte-for-byte as recorded; only its folder indexes change.
 

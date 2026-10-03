@@ -1,0 +1,23 @@
+# Read-only access to Enfusion `.pak` archives and loose extracted folders: the FORM/PAC1 parser,
+# the merged virtual file system under the blueprint and world reader policies, and the loose and
+# layered sources. `flate2` inflates zlib and raw deflate entries; `thiserror` carries the error.
+[package]
+name = "enfusion_pak"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Enfusion FORM/PAC1 archive reader: merged virtual file system, loose and layered sources"
+
+[package.metadata.layout]
+category = "tools/enfusion"
+tier = 0
+targets = "any"
+
+[dependencies]
+flate2 = { workspace = true }
+thiserror = { workspace = true }
+
+[lints]
+workspace = true

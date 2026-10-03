@@ -56,10 +56,30 @@ futures-util = "0.3"
 regex = { workspace = true }
 # The checkout-root walk and the locations shared with the other tools.
 repository_layout = { workspace = true }
+# The broker the `mcpd` binary runs.
+enfusion_mcp_broker = { workspace = true }
+# The relay the `acknowledgement-dropping-relay` binary runs and the load generator the
+# `staging-load` binary runs.
+acknowledgement_dropping_relay = { workspace = true }
+staging_load_generator = { workspace = true }
+# The pak archive reader the blueprint compiler and the map pipelines read the game through.
+enfusion_pak = { workspace = true }
+# The script oracle the `enf` binary runs.
+enfusion_script_index = { workspace = true }
+# The browser gate suites the `gate` and `capture` binaries run, and the DevTools protocol client
+# the ballistics agreement and offline mortar suites drive Chromium with.
+browser_gate_suites = { workspace = true }
+chrome_devtools_protocol = { workspace = true }
+# The process runner every synchronous child process goes through, and the `NotRun` cause it
+# reports for a child that never ran or died on a signal.
+process_runner = { workspace = true }
+verification_core = { workspace = true }
+# UTC artifact stamps and SHA-256 digests, spelled once in the foundation crates.
+time_source = { workspace = true }
+content_digest = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
-sha2 = { workspace = true }
 tokio = { version = "1.52", features = ["full"] }
 tokio-tungstenite = "0.30"
 
@@ -90,6 +110,10 @@ path = "src/bin/capture.rs"
 [[bin]]
 name = "acknowledgement-dropping-relay"
 path = "src/bin/acknowledgement_dropping_relay.rs"
+
+[[bin]]
+name = "staging-load"
+path = "src/bin/staging_load.rs"
 
 [lib]
 name = "developer_tools"

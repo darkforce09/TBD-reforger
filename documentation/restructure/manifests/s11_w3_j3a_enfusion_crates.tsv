@@ -1,0 +1,35 @@
+# Stage S11a, agent J3a — the Enfusion archive reader and the script oracle leave developer_tools.
+# developer_tools' pak reader becomes the enfusion_pak crate; its script oracle (the `enf`
+# library) and xtask's vanilla page mirrors behind `cargo xtask fetch` become the
+# enfusion_script_index crate, while the `fetch` command line stays in xtask and calls it. The
+# crate roots, the empty-write guard's module and the read-policy module are written by hand.
+# Paths name the tree before the moves.
+kind	from	to	scope
+#
+# enfusion_pak: the module root becomes the crate root; the module README lands as the source README
+path	tools/developer_tools/src/enfusion_pak/mod.rs	tools/enfusion/enfusion_pak/src/lib.rs
+path	tools/developer_tools/src/enfusion_pak	tools/enfusion/enfusion_pak/src
+#
+# enfusion_script_index: the oracle module, its command line and its tests
+path	tools/developer_tools/src/enfusion_tooling/mod.rs	tools/enfusion/enfusion_script_index/src/lib.rs
+path	tools/developer_tools/src/enfusion_tooling/cli.rs	tools/enfusion/enfusion_script_index/src/command_line.rs
+path	tools/developer_tools/src/enfusion_tooling/tests/module/refuse_empty_tests.rs	tools/enfusion/enfusion_script_index/src/tests/empty_write_guard/tests.rs
+path	tools/developer_tools/src/enfusion_tooling	tools/enfusion/enfusion_script_index/src
+#
+# enfusion_script_index: the vanilla page mirrors behind `cargo xtask fetch`
+path	tools/xtask/src/commands/fetch/reference_cache.rs	tools/enfusion/enfusion_script_index/src/vanilla_page_fetch/reference_cache.rs
+path	tools/xtask/src/commands/fetch/vanilla_api.rs	tools/enfusion/enfusion_script_index/src/vanilla_page_fetch/vanilla_api.rs
+path	tools/xtask/src/commands/fetch/vanilla_source.rs	tools/enfusion/enfusion_script_index/src/vanilla_page_fetch/vanilla_source.rs
+path	tools/xtask/src/commands/fetch/tests	tools/enfusion/enfusion_script_index/src/vanilla_page_fetch/tests
+#
+# the feature document follows the crate into the enfusion mirror
+path	documentation/tools/developer_tools/enfusion_script_oracle.md	documentation/tools/enfusion/enfusion_script_index.md
+#
+# the moved code names its own crate
+rust_path	crate::enfusion_tooling::	crate::	tools/developer_tools/src/enfusion_tooling
+rust_path	crate::commands::fetch::	crate::vanilla_page_fetch::	tools/xtask/src/commands/fetch/reference_cache.rs
+#
+# consumers name the crates
+rust_path	crate::enfusion_pak::	enfusion_pak::	tools/developer_tools/src
+rust_path	crate::commands::fetch::vanilla_api::	enfusion_script_index::vanilla_page_fetch::vanilla_api::	tools/xtask/src/commands/fetch/dispatch.rs
+rust_path	crate::commands::fetch::vanilla_source::	enfusion_script_index::vanilla_page_fetch::vanilla_source::	tools/xtask/src/commands/fetch/dispatch.rs

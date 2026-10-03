@@ -35,7 +35,7 @@ never edited after it lands.
 
 ## Code
 
-- [xtask documentation gates](/tools/xtask/src/verifications/documentation/) — the readme-coverage,
+- [xtask documentation gates](/tools/checks/documentation_checks/src/) — the readme-coverage,
   link-check and markdown-placement gates the program built and ran.
 
 ## Boundaries

@@ -158,8 +158,8 @@ or a strike.
    [Eden gap analysis](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md).
    Is AI skill authorable? No ticket.
 7. **Steam app id.** xtask reads the dedicated server's build from app id 1874900
-   (`tools/xtask/src/commands/debug/direct_join.rs:98`) and tells the operator to install app
-   id 1890870 (`tools/xtask/src/commands/mod_ops/compile/execution.rs:132`). Which is right?
+   (`tools/commands/remote_debugging/src/debug/direct_join.rs:98`) and tells the operator to install app
+   id 1890870 (`tools/commands/mod_operations/src/compile/execution.rs:132`). Which is right?
    T-1096 (idea).
 8. **Realtime collaboration.** T-295 is ready, yet the editor keeps one writer tab per mission and
    the backlog planned a solo first version; T-132 builds on T-295, and its notes place the diff

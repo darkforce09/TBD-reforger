@@ -23,7 +23,7 @@ contracts/definitions/
 A schema reaches code in one of three ways:
 
 - **Generated types.** `cargo xtask schema codegen` (the `schema-codegen` CI task) runs typify over
-  the schemas listed in `TARGETS` in `tools/xtask/src/commands/generate/schema_types.rs` and
+  the schemas listed in `TARGETS` in `tools/commands/schema_tooling/src/generate/schema_types.rs` and
   writes one module directory per schema into
   `crates/contracts/contract_schema_types/src/generated/`, under the module of the API domain that
   serves or reads it. `cargo xtask ci verify-codegen-fresh` re-renders them in memory
@@ -111,7 +111,7 @@ other map-object schemas, the prefab classification rules and the glyph keys all
   shapes and the rules that hold there. The API's models keep snake_case keys, the game-runtime
   roster uses camelCase, as its description says, and the mission and map contracts use camelCase.
 - Adding a file: write the schema here; for generated types, add it to `TARGETS` in
-  `tools/xtask/src/commands/generate/schema_types.rs` and run `cargo xtask schema codegen`; cite
+  `tools/commands/schema_tooling/src/generate/schema_types.rs` and run `cargo xtask schema codegen`; cite
   it with `@contract <file>#<pointer>` where code implements it; then run
   `cargo xtask ci ci-local-schema`.
 
@@ -119,7 +119,7 @@ other map-object schemas, the prefab classification rules and the glyph keys all
 
 - Producers: people; a schema change ships with its regenerated types and updated fixtures.
 - Consumers:
-  - the typify codegen in `tools/xtask/src/commands/generate/`, and the generated modules of
+  - the typify codegen in `tools/commands/schema_tooling/src/generate/`, and the generated modules of
     `crates/contracts/contract_schema_types/`;
   - the API's embedded validators in
     `apps/api/src/missions/contract/schema_validators.rs` and
@@ -128,12 +128,12 @@ other map-object schemas, the prefab classification rules and the glyph keys all
   - the Mission Creator's embeds in
     `apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`
     and `apps/frontend/src/workspaces/editor/arsenal/rules/export_schema_contract.rs`;
-  - the xtask schema gates in `tools/xtask/src/verifications/schemas/checks/` and the
+  - the xtask schema gates in `tools/commands/schema_tooling/src/schema_checks/` and the
     equipment-export validation in
-    `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/validation.rs`;
+    `tools/commands/mod_operations/src/equipment_vehicle_export/validation.rs`;
   - the developer tools' map verifications, world export and blueprint compiler in
     `tools/developer_tools/src/`, which find the folder through `contract_definitions_dir` and
-    `definition_path` (`tools/developer_tools/src/repository_layout.rs`);
+    `definition_path` (`tools/foundation/repository_layout/src/contracts.rs`);
   - the map engine's native tests, which embed `mission.schema.json` and
     `mission-editor-payload.schema.json`;
   - the mod's scripts, whose `@contract` tags cite `mission.schema.json`,

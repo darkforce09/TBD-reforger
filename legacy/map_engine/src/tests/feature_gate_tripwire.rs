@@ -13,8 +13,8 @@
 fn map_engine_tests_require_all_features() {
     // Every module of this crate sits behind a feature tier, so a bare `cargo test -p map_engine`
     // compiles almost none of them and passes on code it never read — the vacuous-pass hole
-    // `tools/xtask/src/commands/platform/wave_execution/gate/gate_dispatch.rs` and
-    // `tools/xtask/src/commands/platform/wave_execution/touch.rs` guard by passing
+    // `tools/commands/platform_execution/src/wave_execution/gate/gate_dispatch.rs` and
+    // `tools/commands/platform_execution/src/wave_execution/touch.rs` guard by passing
     // `--all-features`. One assertion names every tier.
     assert!(
         cfg!(feature = "render")

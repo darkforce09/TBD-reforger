@@ -66,7 +66,7 @@ backbone as missing and falls back to its script-side channel table.
 - `apps/mod/tbd-framework/Missions/TBD_Dev_POC_Arland.conf`, by resource GUID:
   `World "{C664C066F1476634}worlds/TBD_Dev_POC_Arland.ent"`.
 - `cargo xtask mod spawn-determinism`, whose world argument defaults to `worlds/TBD_Dev_POC.ent`
-  (`tools/xtask/src/commands/mod_ops/dispatch.rs`).
+  (`tools/commands/mod_operations/src/mod_dispatch.rs`).
 - Through the mission header, `cargo xtask mod world-boot`, `cargo xtask mod playtest`, the
   dedicated-server profiles, the deploy settings and the
   [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario) seeds.

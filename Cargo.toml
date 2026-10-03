@@ -18,8 +18,15 @@ members = [
     # The tooling foundation crates (`tools/foundation/<name>`): every manifest under it is a
     # member.
     "tools/foundation/*",
-    # The dependency-light ticket library consumed by repository tooling.
-    "tools/ticket_engine",
+    # The tool crates, one folder per category (`tools/<category>/<name>`): every manifest under
+    # these folders is a member.
+    "tools/tickets/*",
+    "tools/commands/*",
+    "tools/checks/*",
+    "tools/enfusion/*",
+    "tools/browser_testing/*",
+    "tools/staging/*",
+    "tools/map_assets/*",
     "tools/xtask",
     "tools/developer_tools",
 ]
@@ -38,7 +45,14 @@ publish = false
 # beside `workspace = true`, so a feature stays the choice of the member that needs it. A member
 # whose version requirement differs keeps its own specification.
 [workspace.dependencies]
+aho-corasick = "1"
 anyhow = "1"
+# The loopback relay that withholds one fleet executor answer on the staging host
+# (`tools/staging/acknowledgement_dropping_relay`).
+acknowledgement_dropping_relay = { path = "tools/staging/acknowledgement_dropping_relay" }
+# The API readiness judge: acceptance register, evidence receipts, fingerprints and the staging
+# recorder (`tools/commands/api_readiness_checks`).
+api_readiness_checks = { path = "tools/commands/api_readiness_checks" }
 axum = "0.8.9"
 base64 = "0.22"
 # The seeded lattice of battery fire problems for native/wasm32 agreement
@@ -50,8 +64,14 @@ ballistics_calibration = { path = "crates/ballistics/ballistics_calibration" }
 # The ballistics catalog, shell flight model, wind and angular units
 # (`crates/ballistics/ballistics_model`).
 ballistics_model = { path = "crates/ballistics/ballistics_model" }
+# The ballistics catalog and calibration fixtures trimmed from a gameplay export and the
+# ballistics oracle's output (`tools/commands/ballistics_oracle_tooling`).
+ballistics_oracle_tooling = { path = "tools/commands/ballistics_oracle_tooling" }
 # The firing solver, crest clearance and impact dispersion (`crates/ballistics/ballistics_solver`).
 ballistics_solver = { path = "crates/ballistics/ballistics_solver" }
+# The browser gates of the single-page app: static server, DOM oracle, route drift, editor smokes,
+# data viewer gate, screen capture, doctor (`tools/browser_testing/browser_gate_suites`).
+browser_gate_suites = { path = "tools/browser_testing/browser_gate_suites" }
 # Building blueprints, compounds and section cuts
 # (`crates/world_objects/building_interiors`).
 building_interiors = { path = "crates/world_objects/building_interiors" }
@@ -62,7 +82,13 @@ bytemuck = "1"
 # The cameras' f64 arithmetic: deck.gl-parity orthographic camera, orbit camera, gl-matrix 4x4
 # (`crates/geometry/camera_math`).
 camera_math = { path = "crates/geometry/camera_math" }
+# The Chrome DevTools Protocol client of the browser gates: Chromium discovery and launch, pages
+# over WebSockets, the gate font cache (`tools/browser_testing/chrome_devtools_protocol`).
+chrome_devtools_protocol = { path = "tools/browser_testing/chrome_devtools_protocol" }
 chrono = "0.4.45"
+# The CI task table and runner, the build lane recipes, the cargo target pin and the CI workflow
+# checks (`tools/commands/ci_task_catalog`).
+ci_task_catalog = { path = "tools/commands/ci_task_catalog" }
 clap = "4"
 console_error_panic_hook = "0.1"
 # Lowercase hex SHA-256 and SHA-384 digests (`crates/foundation/content_digest`).
@@ -70,10 +96,37 @@ content_digest = { path = "crates/foundation/content_digest" }
 # The serde types generated with typify from the contract JSON Schemas
 # (`crates/contracts/contract_schema_types`).
 contract_schema_types = { path = "crates/contracts/contract_schema_types" }
+# The local database lane, the verified backup, the guarded restore, the restore drill and the
+# database source checks (`tools/commands/database_operations`).
+database_operations = { path = "tools/commands/database_operations" }
+# The `deploy/deploy.env` reader: settings, the deploy host, its remote folders and the ssh
+# transport (`tools/foundation/deploy_settings`).
+deploy_settings = { path = "tools/foundation/deploy_settings" }
+# The website and staging deploy drivers and the staging compose-path check
+# (`tools/commands/deployment`).
+deployment = { path = "tools/commands/deployment" }
+# The developer tool library (map pipelines, browser gates, Enfusion tooling); a tool crate's
+# temporary edge into it is listed in the S11 stage log (`tools/developer_tools`).
+developer_tools = { path = "tools/developer_tools" }
 # SplitMix64, the seeded deterministic generator (`crates/foundation/deterministic_random`).
 deterministic_random = { path = "crates/foundation/deterministic_random" }
+# The documentation gates: README coverage, Markdown placement and the link check
+# (`tools/checks/documentation_checks`).
+documentation_checks = { path = "tools/checks/documentation_checks" }
 # Ear-clipping polygon triangulation behind `render_primitives`.
 earcutr = "0.5.0"
+# The Enfusion MCP client: daemon control, tool calls, the selftest and the server command
+# (`tools/commands/enfusion_mcp`).
+enfusion_mcp = { path = "tools/commands/enfusion_mcp" }
+# The `mcpd` broker over one enfusion-mcp server, and its offline stub
+# (`tools/enfusion/enfusion_mcp_broker`).
+enfusion_mcp_broker = { path = "tools/enfusion/enfusion_mcp_broker" }
+# The Enfusion FORM/PAC1 archive reader and its virtual file system
+# (`tools/enfusion/enfusion_pak`).
+enfusion_pak = { path = "tools/enfusion/enfusion_pak" }
+# The Enfusion script oracle behind `enf` and the vanilla page mirrors behind `cargo xtask fetch`
+# (`tools/enfusion/enfusion_script_index`).
+enfusion_script_index = { path = "tools/enfusion/enfusion_script_index" }
 # The fire-mission assembler, fuzes, comparison rule and solution wording
 # (`crates/ballistics/fire_mission_planning`).
 fire_mission_planning = { path = "crates/ballistics/fire_mission_planning" }
@@ -82,12 +135,16 @@ flate2 = "1"
 # fleet host agent share (`crates/contracts/fleet_wire_contract`).
 fleet_wire_contract = { path = "crates/contracts/fleet_wire_contract" }
 futures = "0.3"
+futures-util = "0.3"
 # Plain f64 geometry: vector products, 2D segment tests, rigid transforms, 3D boxes
 # (`crates/geometry/geometry_primitives`).
 geometry_primitives = { path = "crates/geometry/geometry_primitives" }
 gloo-net = "0.6"
+heck = "0.5"
 # The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).
 http_url_guard = { path = "crates/foundation/http_url_guard" }
+# Default features off; members select the codecs they decode and encode.
+image = { version = "0.25", default-features = false }
 js-sys = "0.3"
 # The `string_id!`, `integer_id!` and `uuid_id!` newtype identifier macros
 # (`crates/foundation/newtype_ids`).
@@ -95,6 +152,8 @@ newtype_ids = { path = "crates/foundation/newtype_ids" }
 # Line of sight inside a building: compound traces, the shared sight-line evaluation and floor
 # washes (`crates/line_of_sight/interior_line_of_sight`).
 interior_line_of_sight = { path = "crates/line_of_sight/interior_line_of_sight" }
+# File-change notification (inotify on Linux; no async runtime), the ticketboard's registry watch.
+notify = "8"
 # Default features off drop the HTTP `$ref` resolver (reqwest and the aws-lc-rs C build): every
 # schema is local or embedded, so core draft 2020-12 validation is all a member needs.
 jsonschema = { version = "0.46.10", default-features = false }
@@ -137,6 +196,12 @@ mission_document = { path = "crates/mission/mission_document" }
 # The authoring commands and row projections of the mission document
 # (`crates/mission/mission_operations`).
 mission_operations = { path = "crates/mission/mission_operations" }
+# The Enfusion mod script checks: comment card, identity comments, layouts, spawn runs
+# (`tools/checks/mod_script_checks`).
+mod_script_checks = { path = "tools/checks/mod_script_checks" }
+# The game mod's operations: compile gate, world boot, playtest server, equipment export
+# publication, website API client and the mod wave driver (`tools/commands/mod_operations`).
+mod_operations = { path = "tools/commands/mod_operations" }
 # The offline cache policy the service worker and the page share
 # (`crates/contracts/offline_cache_policy`).
 offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
@@ -146,9 +211,13 @@ overlay_instances = { path = "crates/map_overlay/overlay_instances" }
 # Spot heights, town labels and road names, their declutter, the labels archive and their glyph
 # packing (`crates/world_objects/place_names`).
 place_names = { path = "crates/world_objects/place_names" }
+# The platform factory: the wave driver, slice execution, slice worktrees and the unattended-run
+# preflight (`tools/commands/platform_execution`).
+platform_execution = { path = "tools/commands/platform_execution" }
 png = "0.17"
 # A terrain's prefab catalogue and world payload decoding (`crates/world_formats/prefab_catalog`).
 prefab_catalog = { path = "crates/world_formats/prefab_catalog" }
+prettyplease = "0.2"
 # Child processes in their own process group, the container-to-host bridge and the ssh transport
 # (`tools/foundation/process_runner`).
 process_runner = { path = "tools/foundation/process_runner" }
@@ -159,12 +228,21 @@ regex = "1"
 regress = "0.10"
 # The renderer building blocks with no GPU handle (`crates/graphics/render_primitives`).
 render_primitives = { path = "crates/graphics/render_primitives" }
+# The staging server-join probes, the remote log verdict and the mission upload reproduction
+# (`tools/commands/remote_debugging`).
+remote_debugging = { path = "tools/commands/remote_debugging" }
+# The structural, language-ban, licensing and registry checks of the repository
+# (`tools/checks/repository_checks`).
+repository_checks = { path = "tools/checks/repository_checks" }
 # The structural engineering laws as pure checks over a checkout
 # (`tools/foundation/repository_laws`).
 repository_laws = { path = "tools/foundation/repository_laws" }
 # The checkout-root walk and the repository locations the tools share
 # (`tools/foundation/repository_layout`).
 repository_layout = { path = "tools/foundation/repository_layout" }
+# Manifest-driven relocation of tracked paths and the retired-spelling verification
+# (`tools/commands/repository_relocation`).
+repository_relocation = { path = "tools/commands/repository_relocation" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
 # speaks HTTPS enables `rustls-no-provider` and installs the ring provider.
 reqwest = { version = "0.13.4", default-features = false }
@@ -179,13 +257,30 @@ rustls = { version = "0.23.41", default-features = false }
 # The satellite container reader: header, both tile index versions, checks, level picks
 # (`crates/terrain/satellite_imagery`).
 satellite_imagery = { path = "crates/terrain/satellite_imagery" }
+# The contract codegen, the font-table generator, the contract schema gates and the ORBAT slot
+# flattening (`tools/commands/schema_tooling`).
+schema_tooling = { path = "tools/commands/schema_tooling" }
+schemars = "0.8"
 serde = "1"
 serde_json = "1"
+# The YAML reader of the CI workflow checks.
+serde_norway = "0.9"
 # The triangle BVH, its sidecar format, the point grid and the clusters
 # (`crates/geometry/spatial_indexes`).
 spatial_indexes = { path = "crates/geometry/spatial_indexes" }
 # The SHA-2 hash functions behind `content_digest`.
 sha2 = "0.11"
+# The staging member load generator: open-loop virtual clients over several source addresses
+# (`tools/staging/staging_load_generator`).
+staging_load_generator = { path = "tools/staging/staging_load_generator" }
+# The staging member load's plan and report, without tokio (`tools/staging/staging_load_plan`).
+staging_load_plan = { path = "tools/staging/staging_load_plan" }
+# The staging acceptance harness: the fleet, Discord and load procedures and the commands around
+# them (`tools/commands/staging_procedures`).
+staging_procedures = { path = "tools/commands/staging_procedures" }
+syn = "2"
+# The tar archive writer of the equipment export upload bundle.
+tar = "0.4"
 # A terrain's elevation model: raster placement, PNG and raw grid decoding, sampling, the vector
 # grid (`crates/terrain/terrain_elevation`).
 terrain_elevation = { path = "crates/terrain/terrain_elevation" }
@@ -196,13 +291,34 @@ terrain_relief = { path = "crates/terrain/terrain_relief" }
 # (`crates/line_of_sight/terrain_line_of_sight`).
 terrain_line_of_sight = { path = "crates/line_of_sight/terrain_line_of_sight" }
 thiserror = "2.0.18"
+# The run receipts, their check and summary, and the token estimates
+# (`tools/tickets/ticket_metrics`).
+ticket_metrics = { path = "tools/tickets/ticket_metrics" }
+# The typed ticket, its canonical TOML encoding, the corpus store and the ticket repository paths
+# (`tools/tickets/ticket_model`).
+ticket_model = { path = "tools/tickets/ticket_model" }
+# The registry projection, the typed operations, sync, the checks and the ticket command verbs
+# (`tools/tickets/ticket_registry`).
+ticket_registry = { path = "tools/tickets/ticket_registry" }
+# The wave lock compiler, reader and checker (`tools/tickets/ticket_wave_lock`).
+ticket_wave_lock = { path = "tools/tickets/ticket_wave_lock" }
+# The ticketboard's headless half: corpus, projections, filters, wave lanes, metrics, documents,
+# ticket commands and the application state (`tools/tickets/ticketboard_model`).
+ticketboard_model = { path = "tools/tickets/ticketboard_model" }
 time = "0.3"
 # Wall-clock and monotonic time and RFC 3339 UTC stamps (`crates/foundation/time_source`).
 time_source = { path = "crates/foundation/time_source" }
 tokio = "1.52.3"
-toml = "0.8"
+tokio-tungstenite = "0.30"
+# The test environment lock, the working-directory lock and the test checkout root; a
+# dev-dependency only (`tools/foundation/tool_test_support`).
+tool_test_support = { path = "tools/foundation/tool_test_support" }
+toml = "1.1.3"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
+# The compile-fail test runner.
+trybuild = "1"
+typify = "0.7"
 # Side tints, unit and vehicle classes, the symbol atlas, markers and squad links
 # (`crates/map_overlay/unit_symbology`).
 unit_symbology = { path = "crates/map_overlay/unit_symbology" }
@@ -222,6 +338,9 @@ water_bodies = { path = "crates/terrain/water_bodies" }
 web-sys = "0.3"
 # Default features off: each member selects the browser backends (`webgpu`, `webgl`) and `wgsl`.
 wgpu = { version = "29", default-features = false }
+# The workstation setup commands: server profiles, the Workbench link, the MCP game root, client
+# addons and the staging host check (`tools/commands/workstation_setup`).
+workstation_setup = { path = "tools/commands/workstation_setup" }
 # Line of sight through a terrain's placed objects, chunk by chunk
 # (`crates/line_of_sight/world_line_of_sight`).
 world_line_of_sight = { path = "crates/line_of_sight/world_line_of_sight" }

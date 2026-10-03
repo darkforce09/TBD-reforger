@@ -67,11 +67,11 @@ Requirement identifiers start with their area: `events` (14), `identity` (13), `
 
 ### What the readiness check reads
 
-`cargo xtask verify api-readiness` (`tools/xtask/src/verifications/api_readiness/`) reads this
+`cargo xtask verify api-readiness` (`tools/commands/api_readiness_checks/src/`) reads this
 folder in two ways:
 
 1. It reads and validates `requirements.json`, named by `API_READINESS_REGISTER` in
-   `tools/xtask/src/core/repository_layout.rs`, before it judges any receipt: unknown fields,
+   `tools/foundation/repository_layout/src/documentation_locations.rs`, before it judges any receipt: unknown fields,
    duplicate identifiers, a missing implementation path, a check no requirement names or a check
    without its marker or pattern stop the run.
 2. Its source fingerprint covers every file here with a source extension, Markdown included,
@@ -102,15 +102,15 @@ code wins:
 
 - [API crate](/apps/api/) — the domains the requirements and notes describe; each
   requirement's `implementation` entries name the exact paths.
-- [API readiness check](/tools/xtask/src/verifications/api_readiness/) — the verifier that
+- [API readiness check](/tools/commands/api_readiness_checks/src/) — the verifier that
   validates the register, fingerprints this folder and judges the receipts.
-- [Repository layout](/tools/xtask/src/core/repository_layout.rs) — `API_READINESS_REGISTER`
+- [Repository layout](/tools/foundation/repository_layout/src/documentation_locations.rs) — `API_READINESS_REGISTER`
   and `API_READINESS_EVIDENCE_PREFIX`, the two constants that name this folder.
 
 ## Boundaries
 
 - Depends on: the API code and its test suites, which the checks run; the readiness check's
-  register schema in `tools/xtask/src/verifications/api_readiness/register.rs`.
+  register schema in `tools/commands/api_readiness_checks/src/register.rs`.
 - Used by: `cargo xtask verify api-readiness`; the READMEs of the API domains, workers and
   services, the glossary and the frontend administration docs, which link the design notes.
 - Rules: the register stays valid for `register.rs` (the check refuses to run otherwise); a
@@ -124,5 +124,5 @@ code wins:
   requirements cover.
 - [API decisions](/documentation/apps/api/decisions.md) — the cross-domain decisions the
   notes build on.
-- [API readiness verification](/tools/xtask/src/verifications/api_readiness/README.md) — how
+- [API readiness verification](/tools/commands/api_readiness_checks/src/README.md) — how
   each receipt is judged.

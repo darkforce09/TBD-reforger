@@ -64,10 +64,10 @@ gives each ticket a whole context of its own. The rules every wave follows:
 **Branches.** `CLAUDE.md` Law 2 puts every commit on `main` and forbids creating branches. Its
 one exception is the `slice/<id>` branch that the xtask slice and wave tooling creates and deletes
 itself: `cargo xtask platform slice-worktree -- new <id>` creates `slice/<id>` from `main`
-(`tools/xtask/src/commands/platform/slice_worktree/git_plain.rs`); `drop` force-deletes it and
-`reap` deletes the merged ones (`tools/xtask/src/commands/platform/slice_worktree/drop.rs`);
+(`tools/commands/platform_execution/src/slice_worktree/git_plain.rs`); `drop` force-deletes it and
+`reap` deletes the merged ones (`tools/commands/platform_execution/src/slice_worktree/drop.rs`);
 `platform wave land` merges them with `--no-ff`
-(`tools/xtask/src/commands/platform/wave_execution/land/merge_execution.rs`); and
+(`tools/commands/platform_execution/src/wave_execution/land/merge_execution.rs`); and
 `cargo xtask mod wave` uses the same names for the [mod](/documentation/glossary/g_to_m.md#mod)
 program. No agent and no orchestrator creates a branch by hand, and there are no pull requests.
 
@@ -102,22 +102,22 @@ about to edit application code itself.
 
 ## Code
 
-- [Platform factory commands](/tools/xtask/src/commands/platform/README.md) — the `platform`
+- [Platform factory commands](/tools/commands/platform_execution/src/README.md) — the `platform`
   group: `slice-worktree`, `preflight`, `wave` and `slice-run`.
-- [Platform wave driver](/tools/xtask/src/commands/platform/wave_execution/README.md) —
+- [Platform wave driver](/tools/commands/platform_execution/src/wave_execution/README.md) —
   `platform wave`: status, gates, land, close, push, run and test.
-- [Platform wave gate drivers](/tools/xtask/src/commands/platform/wave_execution/gate/README.md)
+- [Platform wave gate drivers](/tools/commands/platform_execution/src/wave_execution/gate/README.md)
   — the slice gate and the wave gate, step by step.
-- [Platform wave landing and close](/tools/xtask/src/commands/platform/wave_execution/land/README.md)
+- [Platform wave landing and close](/tools/commands/platform_execution/src/wave_execution/land/README.md)
   — `land`, `revert`, `verified` and `wave --close`.
-- [Wave gate base derivation](/tools/xtask/src/commands/platform/wave_execution/base/README.md)
+- [Wave gate base derivation](/tools/commands/platform_execution/src/wave_execution/base/README.md)
   — the marker grammar and the oracles behind the gate's base.
-- [Slice worktree lifecycle internals](/tools/xtask/src/commands/platform/slice_worktree/README.md)
+- [Slice worktree lifecycle internals](/tools/commands/platform_execution/src/slice_worktree/README.md)
   — `new`, `list`, `merge`, `drop` and `reap` with their guards.
-- [Platform factory preflight checks](/tools/xtask/src/commands/platform/preflight/README.md)
+- [Platform factory preflight checks](/tools/commands/platform_execution/src/preflight/README.md)
   — every preflight check.
 - [Wave lock command group](/tools/xtask/src/commands/wave/README.md) and
-  [Wave lock](/tools/ticket_engine/src/wave_lock/README.md) — the plan and its compiler.
+  [Wave lock](/tools/tickets/ticket_wave_lock/src/README.md) — the plan and its compiler.
 - [Ticket command group](/tools/xtask/src/commands/ticket/README.md) — `ship`, `stamp-sha`,
   `add` and `set-status`.
 
@@ -127,10 +127,10 @@ about to edit application code itself.
   `platform`, `wave`, `ticket`, `mk` and `db` command trees; the ticket files and
   `.ai/tickets/wave.lock`; `CLAUDE.md` Law 2.
 - Used by: `cargo xtask platform wave`, whose help names this README
-  (`PLATFORM_FACTORY_RUNBOOK` in `tools/xtask/src/core/repository_layout.rs`); code comments in
-  `tools/xtask/src/commands/platform/`, `build/recipes/shell_word.rs` and
+  (`PLATFORM_FACTORY_RUNBOOK` in `tools/foundation/repository_layout/src/documentation_locations.rs`); code comments in
+  `tools/commands/platform_execution/src/`, `build/recipes/shell_word.rs` and
   `agent_context/guards.rs`; tickets that cite this README; the READMEs of the code folders
-  above, `tools/`, the ticketboard and the ticket engine; the glossary's wave entry; the
+  above, `tools/`, the ticketboard and the ticket crates; the glossary's wave entry; the
   editor gates, testing and CI and mod slice workflow runbooks; `.cursor/rules/`.
 - Rules: this README keeps its path, because the xtask layout pins it and tickets cite it; a
   topic file stays at or under 500 lines; every command in a topic file is checked against the

@@ -4,7 +4,7 @@
 
 Rules SIZE-1, SIZE-2, SIZE-3 and COMP-1: how large a source file and a function may grow. SIZE-3
 is the live, gated rule; CLAUDE.md law 7 states the same ceilings. The gate's walk and exit codes
-are in the [file length and Node ban README](/tools/xtask/src/verifications/language_bans/node_and_file_limits/README.md).
+are in the [file length and Node ban README](/tools/checks/repository_checks/src/language_bans/node_and_file_limits/README.md).
 
 ## Rules
 
@@ -16,11 +16,11 @@ are in the [file length and Node ban README](/tools/xtask/src/verifications/lang
   `cargo xtask ci verify-coding-standards` in `ci-local` and by the `language-gates` job of
   `.github/workflows/ci.yml`. The limits are `SIZE_3_PRODUCTION_MAX_LINES` and
   `SIZE_3_TEST_MAX_LINES` in
-  [node_and_file_limits.rs](/tools/xtask/src/verifications/language_bans/node_and_file_limits.rs).
+  [node_and_file_limits.rs](/tools/checks/repository_checks/src/language_bans/node_and_file_limits.rs).
 - **SIZE-2 (Scalability) — File-level exemptions.** Retired. No allowlist file exists, none may be
   created, and the gate reads none: a planted exemption file does not exempt anything
   (`size3_has_zero_exemptions_even_if_allowlist_is_attempted` and `allowlist_file_must_not_exist`
-  in `tools/xtask/src/tests/node_free_tests.rs`).
+  in `tools/checks/repository_checks/src/language_bans/tests/node_free_tests.rs`).
 - **SIZE-1 (Scalability) — A soft warning at 600 lines.** Retired; SIZE-3's hard limit replaces
   it. Some code comments still describe a large file as "a SIZE-1 file"; read that as a file near
   the SIZE-3 limit.
@@ -53,7 +53,7 @@ Outside the walk, and so unenforced by this gate:
 
 - The addon scripts of `apps/mod/tbd-export`, until they are pinned.
   `MOD_SCRIPT_ROOTS` in
-  [node_and_file_limits.rs](/tools/xtask/src/verifications/language_bans/node_and_file_limits.rs)
+  [node_and_file_limits.rs](/tools/checks/repository_checks/src/language_bans/node_and_file_limits.rs)
   names the three roots the gate may pin, and T-1092 pins them one addon at a time once its
   scripts meet the ceilings: `apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`
   are pinned, and `apps/mod/tbd-export/Scripts` follows at P6-C. The gitignored

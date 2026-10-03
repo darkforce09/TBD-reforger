@@ -19,9 +19,9 @@ documentation/mod/tbd-emcp/
   README holds the upgrade procedure.
 - [Enfusion MCP handlers](/apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/) — the nineteen
   `EMCP_WB_*` handlers and the MCP tool each one serves.
-- [MCP commands](/tools/xtask/src/commands/mcp/) — `cargo xtask mcp call`, `wbcall`, `daemon`,
+- [MCP commands](/tools/commands/enfusion_mcp/src/) — `cargo xtask mcp call`, `wbcall`, `daemon`,
   `smoke` and `selftest`.
-- [Bootstrap](/tools/xtask/src/commands/mod_ops/) — `cargo xtask mod dev-bootstrap`, which
+- [Bootstrap](/tools/commands/mod_operations/src/) — `cargo xtask mod dev-bootstrap`, which
   brings the bridge up.
 
 ## Boundaries

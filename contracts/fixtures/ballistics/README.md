@@ -38,7 +38,7 @@ catalog upload runs the same evaluator.
 
 ## Producers and consumers
 
-- Producer: `cargo xtask ballistics trim-export` (`tools/xtask/src/commands/ballistics/`).
+- Producer: `cargo xtask ballistics trim-export` (`tools/commands/ballistics_oracle_tooling/src/`).
 - Consumers: `cargo xtask schema validate`, which validates each bundle and cross-checks its
   provenance and coverage against its catalog; the `ballistics_calibration` tests, which run every
   case and require each negative variant to fail for its own reason; the catalog upload of

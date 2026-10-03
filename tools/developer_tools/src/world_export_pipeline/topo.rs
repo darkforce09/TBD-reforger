@@ -18,7 +18,7 @@
 
 use anyhow::{Result, anyhow, bail};
 
-use crate::enfusion_pak::PakVfs;
+use enfusion_pak::PakVfs;
 
 pub struct TopoCfg {
     pub topo_path: &'static str,

@@ -60,5 +60,5 @@ reads `DESTROYED` or `intact <destroyed>/<required>`; the HUD glyph is `#`.
 
 ## Related documentation
 
-- [Destroy-target diagnostics gate](/tools/xtask/src/verifications/mod_scripts/destroy_target_diagnostics/README.md)
+- [Destroy-target diagnostics gate](/tools/checks/mod_script_checks/src/destroy_target_diagnostics/README.md)
   — what the gate pins in the target search and why

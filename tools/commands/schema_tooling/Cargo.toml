@@ -1,0 +1,48 @@
+# The contract tooling of `cargo xtask schema` and `cargo xtask gen`: the typify codegen of the
+# `contract_schema_types` crate from `contracts/definitions/`, the Spleen font-table generator, the
+# contract schema gates (document validation, `@contract` citations, map-object enums, the type
+# inventory, the glyph manifest) and the ORBAT slot flattening. `thiserror` carries its errors.
+[package]
+name = "schema_tooling"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Contract codegen, the font-table generator, the contract schema gates and the ORBAT slot flattening"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 5
+targets = "any"
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+content_digest = { workspace = true }
+# Temporary edge: the world-export pipeline's census kind list the type-inventory gate pins its own
+# copy against (`world_export_pipeline::INSTANCE_KINDS`).
+developer_tools = { workspace = true }
+# The built glyph atlas is read gzip-compressed.
+flate2 = { workspace = true }
+heck = { workspace = true }
+jsonschema = { workspace = true }
+prettyplease = { workspace = true }
+process_runner = { workspace = true }
+regex = { workspace = true }
+repository_laws = { workspace = true }
+repository_layout = { workspace = true }
+schemars = { workspace = true }
+serde_json = { workspace = true, features = ["preserve_order"] }
+syn = { workspace = true, features = ["full", "visit"] }
+thiserror = { workspace = true }
+# The empty-write refusal the ORBAT slot flattening shares with the ticket sync.
+ticket_registry = { workspace = true }
+typify = { workspace = true }
+walkdir = { workspace = true }
+
+[dev-dependencies]
+# The test checkout root.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

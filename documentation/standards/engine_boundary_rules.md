@@ -219,7 +219,7 @@ engine as values and closures, and keeps the state [section 1](#where-state-live
 ## 5. Gate rules
 
 `cargo xtask verify engine-layers` checks the rules below. It runs as the `verify-engine-layers`
-step of `cargo xtask ci ci-local` (`tools/xtask/src/commands/ci/task_definitions.rs:48`) and as
+step of `cargo xtask ci ci-local` (`tools/commands/ci_task_catalog/src/task_definitions.rs:48`) and as
 a step of the `language-gates` job in `.github/workflows/ci.yml`, beside the language gates: it
 reads the working tree, needs no database, LFS object or wasm target, and takes seconds.
 `cargo xtask ci verify-engine-layers` is an alias of the same verb. The code is in
@@ -227,10 +227,10 @@ reads the working tree, needs no database, LFS object or wasm target, and takes 
 reasons in `mod.rs`, the matchers, pins and scanned roots in `rules.rs`, the head lines and
 messages in `report_text.rs`, the walks in `crate_walks.rs` and the pin arithmetic in
 `scanning.rs`, as its [README](/tools/foundation/repository_laws/src/engine_layers/README.md)
-lists. `tools/xtask/src/verifications/architecture/engine_layer_boundaries.rs` prints that
+lists. `tools/checks/repository_checks/src/architecture/engine_layer_boundaries.rs` prints that
 library's report for `cargo xtask verify engine-layers`, and the `engineering_laws` test binary of
 `api` reads the same library; the
-[architecture gates README](/tools/xtask/src/verifications/architecture/README.md) summarises
+[architecture gates README](/tools/checks/repository_checks/src/architecture/README.md) summarises
 all three architecture gates.
 
 ### How the gate judges
@@ -392,7 +392,7 @@ mission crates' isolation is the crate-tier law's
   concepts the five nouns do not catch (`crates/graphics/render_primitives/src/draw/instances.rs`,
   `pipeline/`).
 - **The wave gate does not run it.** `VERIFY_STEPS` in
-  `tools/xtask/src/commands/platform/wave_execution/gate.rs:59` has no engine-layers row; only
+  `tools/commands/platform_execution/src/wave_execution/gate.rs:59` has no engine-layers row; only
   `ci-local` and CI run the gate.
 
 Tickets:
@@ -410,7 +410,7 @@ Tickets:
   streaming, editing layer and draft persistence.
 - [Graphics engine documentation](/documentation/legacy/graphics_engine/README.md) — the pure
   renderer.
-- [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the gate's
+- [Architecture gates](/tools/checks/repository_checks/src/architecture/README.md) — the gate's
   inputs, exit codes and unit tests.
 - [Engine split program](/documentation/archive/engine_split/engine_split_program.md) — the
   archived program these rules come from.

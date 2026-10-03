@@ -28,7 +28,7 @@ contracts/fixtures/bridge_samples/
 
 - Producers: people; no tool writes these files.
 - Consumers: `cargo xtask schema validate`
-  (`tools/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs`), which
+  (`tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs`), which
   validates every `.json` file here against the bridge schema; nothing else in the repository
   reads them.
 

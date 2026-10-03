@@ -1,0 +1,27 @@
+# The wave lock (`.ai/tickets/wave.lock`): the compiler that packs ready tickets into waves, its
+# TOML reader and writer, its check against the ticket files, the wave-close history read from
+# git, and the slice collision report.
+[package]
+name = "ticket_wave_lock"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The wave lock compiler, reader, writer and checker, and the slice collision report"
+
+[package.metadata.layout]
+category = "tools/tickets"
+tier = 3
+targets = "any"
+
+[dependencies]
+process_runner = { workspace = true }
+repository_layout = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+ticket_model = { workspace = true }
+toml = { workspace = true }
+
+[lints]
+workspace = true

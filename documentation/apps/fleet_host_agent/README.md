@@ -34,7 +34,7 @@ RCON wire protocol. The folder mirrors `apps/fleet_host_agent/` with `apps/` lef
 ## Boundaries
 
 - Depends on: the agent's code, the API's fleet executor routes, the game runtime's fleet command
-  scripts and `tools/xtask/src/commands/deploy/staging/host_agent.rs`, which every claim is
+  scripts and `tools/commands/deployment/src/staging/host_agent.rs`, which every claim is
   checked against; the feature doc template; the ticket registry for open work.
 - Used by: the `apps/fleet_host_agent/` README, which links this folder under Related
   documentation.

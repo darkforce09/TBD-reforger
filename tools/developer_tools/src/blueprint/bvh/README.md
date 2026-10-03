@@ -78,7 +78,7 @@ solid intervals for wall extraction.
 - Depends on: `tools/developer_tools/src/blueprint/mesh_decoding/` (models, node tables),
   `tools/developer_tools/src/blueprint/architectural_analysis/surface_classification.rs`, and
   `Params` and `SolidInterval` from `tools/developer_tools/src/blueprint/voxel_processing/`;
-  the pak reader in `tools/developer_tools/src/enfusion_pak/`; `crate::repository_layout`;
+  the pak reader in `tools/enfusion/enfusion_pak/src/`; the `repository_layout` crate;
   `spatial_indexes::bounding_volume_hierarchy` (the sidecar codec, the BVH and `SurfaceKind`),
   `building_interiors::compound` (instances, doors, `CompoundBuilding`),
   `geometry_primitives::rigid_transform::Rigid` and `interior_line_of_sight::compound_walk`; the

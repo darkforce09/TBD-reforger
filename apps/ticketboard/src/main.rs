@@ -1,6 +1,6 @@
 //! Ticketboard — a native egui projection of the `.ai/tickets/` registry.
 //!
-//! Every `T-*.toml`, parents AND children, is parsed through `ticket_engine` and rendered as a
+//! Every `T-*.toml`, parents AND children, is parsed through `ticket_model` and rendered as a
 //! status board with a full-field detail panel, verbatim wave lanes off `wave.lock`, a program
 //! tree, composable filters and the owns-collision explainer.
 //!
@@ -33,12 +33,8 @@ mod core;
 mod document_viewer;
 mod execution_metrics;
 mod repository_status;
-#[cfg(test)]
-#[path = "tests/support/mod.rs"]
-mod test_support;
 mod ticket_actions;
 mod ticket_browser;
-mod ticket_registry;
 mod wave_plan;
 
 use eframe::egui;
@@ -58,7 +54,7 @@ fn main() -> eframe::Result {
         print!("{USAGE}");
         return Ok(());
     }
-    let arg_root = ticket_registry::services::discovery::positional_arg(args);
+    let arg_root = ticketboard_model::ticket_registry::services::discovery::positional_arg(args);
     let cwd = std::env::current_dir().ok();
 
     let options = eframe::NativeOptions {

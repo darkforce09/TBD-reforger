@@ -24,16 +24,16 @@ impl TicketboardApp {
                 }
                 Action::SetTab(tab) => self.tab = tab,
                 Action::CopyText(text) => ctx.copy_text(text),
-                Action::ToggleLegacyExpand => {
+                Action::ToggleQuarantineExpand => {
                     if let State::Board(b) = &mut self.state {
-                        b.legacy_expanded = !b.legacy_expanded;
+                        b.quarantine_expanded = !b.quarantine_expanded;
                     }
                 }
                 Action::Select(index) => {
                     if let State::Board(b) = &mut self.state {
                         if b.selected != Some(index) {
                             // A different ticket's quarantine starts collapsed.
-                            b.legacy_expanded = false;
+                            b.quarantine_expanded = false;
                         }
                         b.selected = Some(index);
                         if b.compare == Some(index) {
@@ -46,7 +46,7 @@ impl TicketboardApp {
                         && let Some(&index) = b.board.id_to_index.get(&id)
                     {
                         if b.selected != Some(index) {
-                            b.legacy_expanded = false;
+                            b.quarantine_expanded = false;
                         }
                         b.selected = Some(index);
                         if b.compare == Some(index) {
@@ -127,13 +127,13 @@ impl TicketboardApp {
                     if let State::Board(b) = &mut self.state {
                         b.selected = None;
                         b.compare = None;
-                        b.legacy_expanded = false;
+                        b.quarantine_expanded = false;
                     }
                 }
                 Action::OpenAnchorDialog(index) => {
                     if let State::Board(b) = &self.state {
                         self.dialog = Some(
-                            crate::ticket_actions::services::dialog_builders::anchor_dialog(
+                            ticketboard_model::ticket_actions::services::dialog_builders::anchor_dialog(
                                 &mutate::context(b),
                                 index,
                             ),

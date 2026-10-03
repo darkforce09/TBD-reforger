@@ -79,7 +79,7 @@ check branches on `status`, which records how far a terrain's export has come.
 - Producers: the registry is written by hand, and a registry bump follows a phase that
   `world verify-phase` passes. The terrain folders are written by the developer tools in
   `tools/developer_tools/`, which resolve these paths through
-  `tools/developer_tools/src/repository_layout.rs`: the world export pipeline, the map raster
+  `tools/foundation/repository_layout/src/map_assets.rs`: the world export pipeline, the map raster
   pipeline and the blueprint compiler, from the raw exports of the `tbd-export` addon's
   [Workbench](/documentation/glossary/n_to_z.md#workbench) plugins.
 - Consumers:
@@ -92,7 +92,7 @@ check branches on `status`, which records how far a terrain's export has come.
   - `cargo xtask deploy website`, whose rsync excludes this folder, so each host keeps its own
     copy, and whose asset preflight treats a host's `assets/terrains/terrain-registry.json` as
     the sign that its copy is in place
-    (`tools/xtask/src/commands/deploy/website/asset_preflight.rs`);
+    (`tools/commands/deployment/src/website/asset_preflight.rs`);
   - the staging compose file `deploy/compose.staging.yml`, which mounts this folder
     read-only into the API container as `MAP_ASSETS_DIR`, and the API's systemd unit
     `deploy/systemd/tbd-website-api.service`, which points `MAP_ASSETS_DIR` here.

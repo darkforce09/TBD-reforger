@@ -80,5 +80,5 @@ class TBD_TaskHud
 
 - [Documentation standards](/documentation/standards/documentation_standards.md) — the
   in-code documentation rules this card applies to Enfusion scripts.
-- [Mod script checks](/tools/xtask/src/verifications/mod_scripts/README.md) — the
+- [Mod script checks](/tools/checks/mod_script_checks/src/README.md) — the
   `enfusion-comments` gate that enforces the card.

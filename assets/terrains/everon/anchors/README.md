@@ -43,7 +43,7 @@ assets/terrains/everon/anchors/
     warning. With `--strict` it refuses the example, fewer than 10 anchors, or a manifest with no
     height map. The `cargo xtask ci verify-terrain` and `verify-terrain-strict` tasks run it.
   - `cargo xtask schema validate`, which validates `verification.example.json`
-    (`tools/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs`).
+    (`tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs`).
   - Nothing reads `surface-y-log.txt`.
 
 ## Boundaries

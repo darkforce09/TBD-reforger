@@ -1,0 +1,34 @@
+# The staging member load's plan and report without the engine that runs it: the committed
+# workload and a run's bindings with their checks, the compiled request mix, the seeded pacing,
+# the records an exchange leaves and the report folded from them. No async runtime and no HTTP
+# client, so xtask's load procedure builds plans and judges reports through it while the tokio
+# generator runs in its own process. `thiserror` carries its errors.
+[package]
+name = "staging_load_plan"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The staging member load's plan, request catalog, pacing, records and report, without tokio"
+
+[package.metadata.layout]
+category = "tools/staging"
+tier = 1
+targets = "any"
+
+[dependencies]
+deterministic_random = { workspace = true }
+newtype_ids = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+url = { workspace = true }
+
+[features]
+# The sample workloads, templates and fixture events the load generator's tests build plans
+# from; enabled only from `[dev-dependencies]`.
+test_fixtures = []
+
+[lints]
+workspace = true

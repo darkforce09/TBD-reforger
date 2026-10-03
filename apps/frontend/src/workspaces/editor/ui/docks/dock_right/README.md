@@ -79,7 +79,7 @@ registers both at mount, and each cleanup removes only its own registration.
     browser's local storage.
 - Used by: the callers above; the tests in
   `apps/frontend/src/workspaces/editor/ui/docks/tests/dock_right/`; the outliner smoke test
-  in `tools/developer_tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which
+  in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/outliner_palette.rs`, which
   drives the Factions tab and drags a leaf onto the map.
 - Rules: the dock's source checks read the production files listed in
   `DOCK_RIGHT_PRODUCTION_SOURCE` in

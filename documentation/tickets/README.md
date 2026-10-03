@@ -44,10 +44,10 @@ plan file is missing, and defaults an unset `plan` to the id-derived path.
 
 ## Code
 
-- [Ticket engine](/tools/ticket_engine/) — `SPECS_DIR`, `PLANS_DIR` and `plan_path` in
-  `tools/ticket_engine/src/repository.rs`; the existence and plan ready-gate checks in
-  `tools/ticket_engine/src/validation/`; `mark_ready` in
-  `tools/ticket_engine/src/ops/readiness.rs`.
+- [Ticket crates](/tools/tickets/README.md) — `SPECS_DIR`, `PLANS_DIR` and `plan_path` in
+  `tools/tickets/ticket_model/src/repository.rs`; the existence and plan ready-gate checks in
+  `tools/tickets/ticket_registry/src/validation/`; `mark_ready` in
+  `tools/tickets/ticket_registry/src/ops/readiness.rs`.
 - [Ticketboard](/apps/ticketboard/) — shows each ticket's `spec` and `plan` in its detail panel
   and opens a Markdown one in the in-app document viewer.
 - [Ticket commands](/tools/xtask/src/commands/ticket/) — `ticket mark-ready`, `ticket check`,
@@ -58,7 +58,7 @@ plan file is missing, and defaults an unset `plan` to the id-derived path.
 
 - Depends on: the ticket registry in `.ai/tickets/`, whose `spec` and `plan` fields name these
   files; the templates `.ai/tickets/spec_template.md` and `.ai/tickets/plan_template.md`.
-- Used by: the ticket engine and the `cargo xtask ticket` commands above; the ticketboard; the
+- Used by: the ticket crates and the `cargo xtask ticket` commands above; the ticketboard; the
   platform slice dispatch (`tools/xtask/src/commands/platform/slice_execution.rs`), which reads
   a ticket's `spec`; `TICKET_DOCUMENTS_DIR` in `tools/xtask/src/core/repository_layout.rs`,
   through which the documentation gates judge the tree as frozen records; feature docs and

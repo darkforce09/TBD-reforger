@@ -1,0 +1,39 @@
+# The `cargo xtask debug` and `cargo xtask repro` commands and the `mod remote-logs` verdict: the
+# server-join probes of the staging host, the direct-join report, the remote console log verdict
+# and the mission-version upload reproduction. `thiserror` carries its errors.
+[package]
+name = "remote_debugging"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Remote debugging: staging server-join probes, the remote log verdict and the mission upload reproduction"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 6
+targets = "any"
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+deploy_settings = { workspace = true }
+# The staging fleet's instances, ports, folders and unit names (`staging::fleet_instances`).
+deployment = { workspace = true }
+# The typed run and hypothesis ids of the NDJSON debug rows.
+newtype_ids = { workspace = true }
+process_runner = { workspace = true }
+regex = { workspace = true }
+repository_layout = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# The wall clock of the NDJSON rows' `timestamp`.
+time_source = { workspace = true }
+verification_core = { workspace = true }
+
+[dev-dependencies]
+# The environment lock the tests that prepend to `PATH` hold.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

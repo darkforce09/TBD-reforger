@@ -56,15 +56,15 @@ None: Workbench runs these scripts in the editor.
   search; the engine's world, container and file classes; the loaded addons' prefabs, configs and
   entity catalogs; nothing from `tbd-framework`.
 - Used by: people, through the Workbench menu; `cargo xtask mcp wbcall`, which reaches the two Net
-  API handlers (`tools/xtask/src/commands/mcp/`); the developer tools that read the map exports
+  API handlers (`tools/commands/enfusion_mcp/src/`); the developer tools that read the map exports
   (listed in the [map export README](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/README.md)); `cargo xtask mod validate-equipment-vehicle-export` and
   `publish-equipment-vehicle-export`, which read the source export
-  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`); and, through the copied
+  (`tools/commands/mod_operations/src/equipment_vehicle_export/`); and, through the copied
   catalogs, `cargo xtask db registry-import` and `cargo xtask schema validate`.
 - Rules: nothing under `Scripts/Game/` may name a class from here, because a game never compiles
   this module; the scripts compile only when Workbench loads `tbd-export`, since
   `cargo xtask mod compile` compiles the framework addon alone
-  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`); a new script file needs a
+  (`tools/commands/mod_operations/src/compile/execution.rs`); a new script file needs a
   Workbench cold restart before its class exists; a Net API handler stays out of any `EnfusionMCP/`
   folder, which the MCP's `wb_cleanup` deletes.
 

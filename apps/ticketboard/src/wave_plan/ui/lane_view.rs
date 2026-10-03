@@ -1,5 +1,8 @@
-use crate::ticket_registry::models::palette::status_rgb;
-use crate::wave_plan::{
+use eframe::egui::{Color32, RichText, ScrollArea, Ui};
+use std::path::Path;
+use ticket_model::StatusName;
+use ticketboard_model::ticket_registry::models::palette::status_rgb;
+use ticketboard_model::wave_plan::{
     events::WavePlanEvent as Action,
     models::{
         view::WavePlanView,
@@ -7,9 +10,6 @@ use crate::wave_plan::{
     },
     services::lock_file::LockState,
 };
-use eframe::egui::{Color32, RichText, ScrollArea, Ui};
-use std::path::Path;
-use ticket_engine::StatusName;
 fn status_color(status: StatusName) -> Color32 {
     let (r, g, b) = status_rgb(status);
     Color32::from_rgb(r, g, b)
@@ -187,7 +187,7 @@ pub(crate) fn wave_chip_ui(
     actions: &mut Vec<Action>,
 ) {
     let dimmed = b.filters_active && chip.corpus_index.is_none_or(|i| !b.matches[i]);
-    let mut text = RichText::new(&chip.id).monospace();
+    let mut text = RichText::new(chip.id.as_str()).monospace();
     match chip.status {
         Some(status) => {
             let mut color = status_color(status);

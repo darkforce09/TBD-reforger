@@ -1,0 +1,34 @@
+# `cargo xtask ballistics trim-export`: the vanilla mortar ballistics catalog, its calibration
+# bundle, the refused bundles and their provenance, trimmed from one gameplay export generation and
+# the ballistics oracle's output for it. `thiserror` carries its errors.
+[package]
+name = "ballistics_oracle_tooling"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The ballistics catalog and calibration fixtures trimmed from a gameplay export and the ballistics oracle"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 1
+targets = "any"
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+content_digest = { workspace = true }
+repository_layout = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+# The committed catalog's schema check in the synthetic export tests.
+jsonschema = { workspace = true }
+# The test checkout root.
+tool_test_support = { workspace = true }
+walkdir = { workspace = true }
+
+[lints]
+workspace = true

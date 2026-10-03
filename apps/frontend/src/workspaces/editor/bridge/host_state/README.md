@@ -81,7 +81,7 @@ rather than an error.
   confirmation is the host's, handed to the engine as a closure, so no browser dialog lives inside
   the engine; every file here but `mod.rs` is on the place path that
   `cargo xtask verify editor-orbat-coherency` scans
-  (`tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which bans
+  (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which bans
   `ensure_default_squad` there and fails when a listed file is missing.
 
 ## Related documentation

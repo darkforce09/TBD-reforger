@@ -17,7 +17,7 @@ document places it in the whole terrain flow.
   folder below it.
 - Entry: `cargo run -q -p developer_tools --bin map -- <subcommand>`; the one-button tasks
   `cargo xtask ci map-water-everon`, `cargo xtask ci map-cartographic-everon` and
-  `cargo xtask ci map-cartographic-verify` in `tools/xtask/src/commands/ci/task_definitions.rs`.
+  `cargo xtask ci map-cartographic-verify` in `tools/commands/ci_task_catalog/src/task_definitions.rs`.
 - Related features: the [world export pipeline](/tools/developer_tools/src/world_export_pipeline/README.md),
   whose texture and road decoders the raster lanes reuse; the
   [Everon terrain assets](/assets/terrains/everon/README.md) the lanes write; the
@@ -78,7 +78,7 @@ complete and agrees with the manifest.
 ### Known discrepancies
 
 - `cargo xtask ci map-water-everon` runs `build-unified` without `--container-version`
-  (`tools/xtask/src/commands/ci/task_definitions.rs:199-201`), so it writes version 2 — the
+  (`tools/commands/ci_task_catalog/src/task_definitions.rs:199-201`), so it writes version 2 — the
   Everon manifest declares `tbd-sat-v1` (`assets/terrains/everon/manifest.json:55`), so the
   same task's `verify-unified` refuses the result.
 - The inland-water archive reads `TBD_InlandWaterExport_*` staging files

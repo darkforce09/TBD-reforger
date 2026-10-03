@@ -91,9 +91,9 @@ package name, and a `#` comment never produces an edge.
 ## Boundaries
 
 - Depends on: `verification_core` (`scan`, `pattern` and `verdict`), `regex` and `thiserror`.
-- Used by: `tools/xtask/src/verifications/language_bans/node_and_file_limits/` (`verify
-  file-length`), `tools/xtask/src/verifications/architecture/engine_layer_boundaries.rs`
-  (`verify engine-layers`), `tools/xtask/src/verifications/architecture/workspace_laws.rs`
+- Used by: `tools/checks/repository_checks/src/language_bans/node_and_file_limits/` (`verify
+  file-length`), `tools/checks/repository_checks/src/architecture/engine_layer_boundaries.rs`
+  (`verify engine-layers`), `tools/checks/repository_checks/src/architecture/workspace_laws.rs`
   (the five workspace-law verbs), and `apps/api/tests/engineering_laws.rs`.
 - Rules:
   - a missing root or unreadable file is `NotRun`, never zero findings

@@ -371,10 +371,10 @@ fn a_missing_terrain_or_staging_directory_exits_one() {
 
 #[test]
 fn terrain_dir_takes_an_id_or_a_directory() {
-    let here = compiled_checkout_root().expect("repository root");
+    let here = find_repository_root().expect("repository root");
     assert_eq!(
         terrain_dir("everon").expect("terrain dir"),
-        crate::repository_layout::terrain_dir(&here, "everon")
+        ::repository_layout::terrain_dir(&here, "everon")
     );
     assert_eq!(
         terrain_dir(here.to_str().expect("utf8")).expect("terrain dir"),
@@ -386,11 +386,11 @@ fn terrain_dir_takes_an_id_or_a_directory() {
 /// through the repository layout, and for a directory argument under its own `scratch/`.
 #[test]
 fn scratch_dir_pairs_with_terrain_dir_without_nesting_inside_it() {
-    let here = compiled_checkout_root().expect("repository root");
+    let here = find_repository_root().expect("repository root");
     let everon_scratch = scratch_dir("everon").expect("scratch dir");
     assert_eq!(
         everon_scratch,
-        crate::repository_layout::map_scratch_dir(&here, "everon")
+        ::repository_layout::map_scratch_dir(&here, "everon")
     );
     assert!(!everon_scratch.starts_with(terrain_dir("everon").expect("terrain dir")));
     assert_eq!(

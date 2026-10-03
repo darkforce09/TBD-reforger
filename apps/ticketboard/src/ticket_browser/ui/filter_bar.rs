@@ -1,10 +1,10 @@
 use super::*;
-use crate::ticket_browser::services::{
+use eframe::egui::{Button, ComboBox, RichText, TextEdit, Ui};
+use ticketboard_model::ticket_browser::services::{
     filtering::{Filters, KindFilter},
     scope_facets::{FacetOption, FacetOptions},
 };
-use crate::ticket_registry::models::{projection as board, projection::Class};
-use eframe::egui::{Button, ComboBox, RichText, TextEdit, Ui};
+use ticketboard_model::ticket_registry::models::{projection as board, projection::Class};
 
 /// One scope-facet dropdown. Options are the narrowed vocab ∪ corpus
 /// union from `facets::compute`; corpus values the vocabulary does not know are

@@ -50,10 +50,10 @@ and never imports that feature's `ui`.
 
 ## Boundaries
 
-- Depends on: `crate::ticket_browser::models` and `crate::ticket_browser::services`;
-  `crate::ticket_registry::models` (`palette`, `projection`); `crate::ticket_actions::events` for
-  the callback types; `crate::execution_metrics::estimated`, `crate::document_viewer::services`
-  and `crate::wave_plan::services` in `detail_panel/`; `crate::core::ui`; `ticket_engine`
+- Depends on: `ticketboard_model::ticket_browser::models` and `ticketboard_model::ticket_browser::services`;
+  `ticketboard_model::ticket_registry::models` (`palette`, `projection`); `ticketboard_model::ticket_actions::events` for
+  the callback types; `ticketboard_model::execution_metrics::estimated`, `ticketboard_model::document_viewer::services`
+  and `ticketboard_model::wave_plan::services` in `detail_panel/`; `crate::core::ui`; `ticket_model`
   (`StatusName`); `eframe::egui` and `egui_extras`.
 - Used by: `crate::application` (`feature_views.rs` and `mod.rs`).
 - Rules: rendering emits events and mutates only the `Filters` it is handed; it imports no other

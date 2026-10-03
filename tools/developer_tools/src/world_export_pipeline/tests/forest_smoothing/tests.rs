@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use super::*;
-use crate::repository_layout::terrain_dir;
 use crate::world_export_pipeline::forest_contours::REGION_CELL_M;
+use ::repository_layout::terrain_dir;
 
 fn closed(v: &[(f64, f64)]) -> Vec<(f64, f64)> {
     let mut r = v.to_vec();
@@ -425,7 +425,7 @@ fn a_degenerate_ring_does_not_produce_nan() {
 /* ── the real everon catalogue ── */
 
 fn everon_objects() -> PathBuf {
-    let root = crate::repository_layout::compiled_checkout_root().expect("repository root");
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     terrain_dir(&root, "everon").join("objects")
 }
 

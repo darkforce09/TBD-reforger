@@ -13,6 +13,26 @@ documentation/restructure/manifests/
 ├── example.tsv               the commented format sample the tests run; never judged as a stage manifest
 ├── m2_objectives_engine.tsv  stage M2: the mod's four objectives engine folders into Objectives/Engine/
 ├── m3_objective_types.tsv    stage M3: the destroy target search beside the destroy objective behaviour
+├── s11_w1_j0a_xtask_core.tsv  stage S11 J0a: xtask's core folder empties into deploy_settings, tool_test_support, process_runner, repository_layout and the ci group
+├── s11_w1_j0b_developer_tools_cuts.tsv  stage S11 J0b: developer_tools' layout module keeps the map pipelines' paths; xtask imports the shared ones from repository_layout
+├── s11_w1_j0b_staging_load_plan.tsv  stage S11 J0b: the staging load's plan and report types into the tokio-free load_plan module
+├── s11_w1_j1_ticket_crates.tsv  stage S11 J1: the ticket engine dissolves into ticket_model, ticket_metrics, ticket_wave_lock and ticket_registry
+├── s11_w2_j1b_ticketboard_model.tsv  stage S11 J1b: the ticketboard's models, services, process helpers and egui-free application state become ticketboard_model
+├── s11_w2_j2a_check_crates.tsv  stage S11 J2a: the architecture, language-ban, licensing and registry checks and the tooling tests become repository_checks; the mod script checks become mod_script_checks
+├── s11_w2_j2b_schema_and_ballistics.tsv  stage S11 J2b: the contract codegen, the schema gates and the flattening become schema_tooling; the ballistics trim becomes ballistics_oracle_tooling
+├── s11_w2_j2c_readiness_and_setup.tsv  stage S11 J2c: the API readiness verification and its property-test seed become api_readiness_checks; the setup group becomes workstation_setup
+├── s11_w2_j2d_enfusion_mcp.tsv  stage S11 J2d: xtask's mcp group and developer_tools' server entrypoint become enfusion_mcp; the mcpd broker becomes enfusion_mcp_broker
+├── s11_w2_j2e_repository_relocation.tsv  stage S11 J2e: the relocation tool leaves xtask as the repository_relocation crate under tools/commands
+├── s11_w3_j2f_database_and_deployment.tsv  stage S11 J2f: the db group, the deploy-side database verbs and the database checks become database_operations; the deploy group and the compose-path check become deployment
+├── s11_w4a_j2g1_staging_procedures.tsv  stage S11 J2g1: xtask's staging acceptance harness becomes staging_procedures under tools/commands
+├── s11_w4a_j2g2_remote_debugging.tsv  stage S11 J2g2: xtask's debug and repro groups and the remote log verdict become remote_debugging under tools/commands
+├── s11_w4a_j2h1_documentation_checks.tsv  stage S11 J2h1: the readme-coverage, markdown-placement and link-check gates become documentation_checks under tools/checks
+├── s11_w4b_j2h2_ci_task_catalog.tsv  stage S11 J2h2: xtask's ci and mk lanes, the cargo target pin, the CI workflow checks and the map asset checks become ci_task_catalog under tools/commands
+├── s11_w5_j2i_platform_execution.tsv  stage S11 J2i: xtask's platform group (the wave driver, slice runs, slice worktrees, the preflight) becomes platform_execution under tools/commands
+├── s11_w6_j2j_mod_operations.tsv  stage S11 J2j: xtask's mod group (the compile gate, world boot, playtest server, equipment export, website API client, mod wave driver) becomes mod_operations under tools/commands
+├── s11_w3_j3a_enfusion_crates.tsv  stage S11 J3a: developer_tools' pak reader becomes enfusion_pak; its script oracle and xtask's vanilla page mirrors become enfusion_script_index
+├── s11_w3_j3b_browser_testing.tsv  stage S11 J3b: developer_tools' DevTools protocol client becomes chrome_devtools_protocol; its gate suites, DOM oracle fixtures and gate pin become browser_gate_suites
+├── s11_w3_j3c_staging_tools.tsv  stage S11 J3c: developer_tools' staging verification engines become staging_load_plan, staging_load_generator and acknowledgement_dropping_relay under tools/staging
 ├── s1_global_renames.tsv     stage S1: top-level folder and tool package renames, archived records
 ├── s2_apps_and_deploy.tsv    stage S2: website crates to apps/ and legacy/, snake_case packages, deploy/
 ├── s2_brief_archive.tsv      stage S2: the executed S1 agent briefs into the archive
@@ -72,23 +92,29 @@ as it stands before the manifest's moves.
 A `path` row rewrites repository-root spellings (`from/…`, the `/from/…` of repository-root Markdown
 links, and `from` behind a deployment prefix in strings, TOML, YAML, systemd units, `.gitattributes`
 and `.gitignore`) and relative references (`include_str!` and its kin, `#[path]`, literals built on
-`CARGO_MANIFEST_DIR`, Cargo `path = "…"`, Markdown link destinations and any `./` or `../` token).
-A relative reference is read from the file's folder, the owning crate's folder or the repository
-root, and rewritten so it names the moved target from the same anchor; one that cannot be re-read,
-or that two anchors read differently, makes `--apply` refuse the whole manifest with its
-`path:line` before anything is written. A literal whose syntax does not fix its anchor (a token in
-a Rust literal or comment, a climbing token in prose) is rewritten only when its spelling pins it
-to one reading; one every crate spells for its own files (`src/lib.rs`), a fixture path relative
-to a temporary checkout (`../../legacy/map_engine` in a test's synthetic `Cargo.toml`) or an
-example path whose tail names nothing stays as written and is listed as ambiguous with its
-`path:line`, for review, without stopping the run. When a moved module's code reaches outside the
-moved subtree through `self::` or `super::` chains, a `rust_path` row turns those chains into
-absolute `crate::` paths first. Rows of one manifest compose: a path moves by the longest `from`
-that contains it, and each row lands exactly at its `to` in any manifest order, so folder rows may
-share a destination parent (one folder becomes `crate/src`, two others `crate/src/ortho` and
-`crate/src/orbit`). Rows that would put two things in one place are refused by the dry run with
-both lines: two rows with the same `to`, a `to` inside its own `from`, a file landing where another
-row's moved files already lie, and rows no order of moves can make (two folders that swap names).
+`CARGO_MANIFEST_DIR`, Cargo `path = "…"`, Markdown link destinations and any `./` or `../` token). A
+relative reference is read from the file's folder, the owning crate's folder or the repository root,
+and rewritten so it names the moved target from the same anchor; one that cannot be re-read, or that
+two anchors read differently, makes `--apply` refuse the whole manifest with its `path:line` before
+anything is written. A moved file's owning crate (the anchor of its `CARGO_MANIFEST_DIR` joins) is
+the nearest folder holding a `Cargo.toml` in the tree the manifest leaves, counting a `Cargo.toml` the
+same manifest moves there and an untracked one already on disk, so a crate being born takes its
+files' joins; where no folder below the repository root holds one (the root manifest is the
+workspace's), the join is unresolved, never re-anchored at the root. A climbing token `<seg>/../…` is a relative reference only under an anchor
+where its named lead (the segments before its first `..`) is a tracked folder, so a datum such as `"7/../.."` is left as
+written and never makes an apply refuse. A literal whose syntax does not fix its anchor (a token in
+a Rust literal or comment, a climbing token in prose) is rewritten only when its spelling pins it to
+one reading; one every crate spells for its own files (`src/lib.rs`), a fixture path relative to a
+temporary checkout (`../../legacy/map_engine` in a test's synthetic `Cargo.toml`) or an example path
+whose tail names nothing stays as written and is listed as ambiguous with its `path:line`, for
+review, without stopping the run. When a moved module's code reaches outside the moved subtree
+through `self::` or `super::` chains, a `rust_path` row turns those chains into absolute `crate::`
+paths first. Rows of one manifest compose: a path moves by the longest `from` that contains it, and
+each row lands exactly at its `to` in any manifest order, so folder rows may share a destination
+parent (one folder becomes `crate/src`, two others `crate/src/ortho` and `crate/src/orbit`). Rows
+that would put two things in one place are refused by the dry run with both lines: two rows with the
+same `to`, a `to` inside its own `from`, a file landing where another row's moved files already lie,
+and rows no order of moves can make (two folders that swap names).
 
 Frozen records change as little as their checks need: Markdown under the archive and the ticket
 documents gets only its link destinations rewritten, prose and backticks staying as history; a
@@ -115,12 +141,25 @@ it) move byte-identical and are never edited or verified.
    (frozen records and the manifests themselves excluded), and no `rust_path` prefix is left in its
    scope. Exit 0 pass, 1 findings, 2 did not run.
 
+Committed manifests are never edited, so `--verify` judges an earlier manifest's `rust_path`
+scope where the later manifests left it. The manifests are ordered by the first commit of the
+checkout's history that added each one (`git log --topo-order --reverse --no-renames
+--diff-filter=A` over this folder), manifests one commit added by file name, and manifests no
+commit added yet (untracked or only staged) last, by file name; a shallow clone is a did-not-run.
+Each scope, relocated by its own manifest's `path` rows, then follows every later manifest's `path`
+rows in that order: a scope a later row moved, or moved with a parent, is judged at its new folder;
+a scope that is gone because a later row took files out of it holds nothing to judge, so its row
+holds and the output prints a `note:` line naming that row; a scope gone with no later row to
+explain it is still a did-not-run. A manifest named with `--manifest` composes the same way when
+it is a stage manifest of this folder; a dry run and an apply judge their own manifest alone.
+`text` rows rewrite at apply time only and are not judged by `--verify`.
+
 A stage commits its manifest here with the moves it made, named after the stage (for example
 `s1_global_renames.tsv`), and never edits it afterwards.
 
 ## Code
 
-- [Relocation](/tools/xtask/src/commands/refactor/relocate/) — the parser, the passes, the moves
+- [Repository relocation](/tools/commands/repository_relocation/) — the parser, the passes, the moves
   and the verification that read these files.
 
 ## Boundaries

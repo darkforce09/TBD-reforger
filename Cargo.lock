@@ -134,6 +134,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "acknowledgement_dropping_relay"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "clap",
+ "newtype_ids",
+ "repository_layout",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "time_source",
+ "tokio",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -344,6 +360,23 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
+ "verification_core",
+]
+
+[[package]]
+name = "api_readiness_checks"
+version = "0.1.0"
+dependencies = [
+ "content_digest",
+ "deploy_settings",
+ "libc",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tool_test_support",
  "verification_core",
 ]
 
@@ -778,6 +811,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ballistics_oracle_tooling"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "content_digest",
+ "jsonschema",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tool_test_support",
+ "walkdir",
+]
+
+[[package]]
 name = "ballistics_solver"
 version = "0.1.0"
 dependencies = [
@@ -962,6 +1010,28 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
+]
+
+[[package]]
+name = "browser_gate_suites"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "base64",
+ "chrome_devtools_protocol",
+ "content_digest",
+ "futures-util",
+ "image",
+ "libc",
+ "newtype_ids",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "reqwest",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "url",
 ]
 
 [[package]]
@@ -1194,6 +1264,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "chrome_devtools_protocol"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "futures-util",
+ "libc",
+ "newtype_ids",
+ "reqwest",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-tungstenite",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1205,6 +1290,31 @@ dependencies = [
  "serde",
  "wasm-bindgen",
  "windows-link",
+]
+
+[[package]]
+name = "ci_task_catalog"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "database_operations",
+ "deployment",
+ "developer_tools",
+ "documentation_checks",
+ "libc",
+ "mod_script_checks",
+ "process_runner",
+ "regex",
+ "repository_checks",
+ "repository_laws",
+ "repository_layout",
+ "schema_tooling",
+ "serde",
+ "serde_json",
+ "serde_norway",
+ "thiserror 2.0.18",
+ "tool_test_support",
+ "verification_core",
 ]
 
 [[package]]
@@ -1333,8 +1443,8 @@ dependencies = [
  "convert_case 0.6.0",
  "pathdiff",
  "serde_core",
- "toml 1.1.3+spec-1.1.0",
- "winnow 1.0.3",
+ "toml",
+ "winnow",
 ]
 
 [[package]]
@@ -1694,6 +1804,49 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 
 [[package]]
+name = "database_operations"
+version = "0.1.0"
+dependencies = [
+ "api_readiness_checks",
+ "clap",
+ "content_digest",
+ "process_runner",
+ "regex",
+ "repository_checks",
+ "repository_layout",
+ "thiserror 2.0.18",
+ "tool_test_support",
+ "verification_core",
+]
+
+[[package]]
+name = "deploy_settings"
+version = "0.1.0"
+dependencies = [
+ "process_runner",
+ "repository_layout",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "deployment"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "database_operations",
+ "deploy_settings",
+ "newtype_ids",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "serde_json",
+ "thiserror 2.0.18",
+ "toml",
+ "tool_test_support",
+ "verification_core",
+]
+
+[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1729,14 +1882,21 @@ version = "0.1.0"
 name = "developer_tools"
 version = "0.1.0"
 dependencies = [
+ "acknowledgement_dropping_relay",
  "anyhow",
  "axum",
  "ballistics_agreement_cases",
  "ballistics_model",
  "base64",
  "bcdec_rs",
+ "browser_gate_suites",
  "building_interiors",
+ "chrome_devtools_protocol",
  "clap",
+ "content_digest",
+ "enfusion_mcp_broker",
+ "enfusion_pak",
+ "enfusion_script_index",
  "fire_mission_planning",
  "flate2",
  "futures-util",
@@ -1752,6 +1912,7 @@ dependencies = [
  "place_names",
  "png 0.17.16",
  "prefab_catalog",
+ "process_runner",
  "regex",
  "repository_layout",
  "reqwest",
@@ -1759,12 +1920,14 @@ dependencies = [
  "road_network",
  "serde",
  "serde_json",
- "sha2 0.11.0",
  "spatial_indexes",
+ "staging_load_generator",
  "terrain_elevation",
+ "time_source",
  "tokio",
  "tokio-tungstenite",
  "vegetation",
+ "verification_core",
  "water_bodies",
  "webp",
  "world_chunks",
@@ -1842,6 +2005,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61"
 dependencies = [
  "litrs",
+]
+
+[[package]]
+name = "documentation_checks"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "tool_test_support",
+ "verification_core",
 ]
 
 [[package]]
@@ -2177,6 +2352,54 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66b7e2430c6dff6a955451e2cfc438f09cea1965a9d6f87f7e3b90decc014099"
 
 [[package]]
+name = "enfusion_mcp"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "libc",
+ "process_runner",
+ "repository_layout",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tool_test_support",
+ "verification_core",
+]
+
+[[package]]
+name = "enfusion_mcp_broker"
+version = "0.1.0"
+dependencies = [
+ "enfusion_mcp",
+ "repository_layout",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "enfusion_pak"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "enfusion_script_index"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "content_digest",
+ "enfusion_pak",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "thiserror 2.0.18",
+ "tool_test_support",
+ "verification_core",
+]
+
+[[package]]
 name = "enum-map"
 version = "2.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2445,7 +2668,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
- "toml 1.1.3+spec-1.1.0",
+ "toml",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -4415,6 +4638,51 @@ dependencies = [
 ]
 
 [[package]]
+name = "mod_operations"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "content_digest",
+ "database_operations",
+ "enfusion_mcp",
+ "flate2",
+ "fleet_wire_contract",
+ "heck",
+ "jsonschema",
+ "libc",
+ "mod_script_checks",
+ "platform_execution",
+ "process_runner",
+ "regex",
+ "remote_debugging",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "tar",
+ "thiserror 2.0.18",
+ "ticket_model",
+ "ticket_registry",
+ "ticket_wave_lock",
+ "tool_test_support",
+ "verification_core",
+ "walkdir",
+ "workstation_setup",
+]
+
+[[package]]
+name = "mod_script_checks"
+version = "0.1.0"
+dependencies = [
+ "content_digest",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "thiserror 2.0.18",
+ "tool_test_support",
+ "verification_core",
+]
+
+[[package]]
 name = "moxcms"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5405,6 +5673,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
 
 [[package]]
+name = "platform_execution"
+version = "0.1.0"
+dependencies = [
+ "ci_task_catalog",
+ "clap",
+ "process_runner",
+ "regex",
+ "repository_laws",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "ticket_metrics",
+ "ticket_model",
+ "ticket_registry",
+ "ticket_wave_lock",
+ "time_source",
+ "tool_test_support",
+ "verification_core",
+ "walkdir",
+]
+
+[[package]]
 name = "png"
 version = "0.17.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5581,7 +5872,7 @@ version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e67ba7e9b2b56446f1d419b1d807906278ffa1a658a8a5d8a39dcb1f5a78614f"
 dependencies = [
- "toml_edit 0.25.12+spec-1.1.0",
+ "toml_edit",
 ]
 
 [[package]]
@@ -6121,6 +6412,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "remote_debugging"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "deploy_settings",
+ "deployment",
+ "newtype_ids",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "serde_json",
+ "thiserror 2.0.18",
+ "time_source",
+ "tool_test_support",
+ "verification_core",
+]
+
+[[package]]
 name = "rend"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6153,6 +6462,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
+name = "repository_checks"
+version = "0.1.0"
+dependencies = [
+ "process_runner",
+ "regex",
+ "repository_laws",
+ "repository_layout",
+ "serde_json",
+ "syn 2.0.118",
+ "thiserror 2.0.18",
+ "toml",
+ "tool_test_support",
+ "verification_core",
+ "walkdir",
+]
+
+[[package]]
 name = "repository_laws"
 version = "0.1.0"
 dependencies = [
@@ -6166,6 +6492,18 @@ name = "repository_layout"
 version = "0.1.0"
 dependencies = [
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "repository_relocation"
+version = "0.1.0"
+dependencies = [
+ "aho-corasick",
+ "process_runner",
+ "repository_layout",
+ "ticket_model",
+ "tool_test_support",
+ "verification_core",
 ]
 
 [[package]]
@@ -6602,6 +6940,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "schema_tooling"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "content_digest",
+ "developer_tools",
+ "flate2",
+ "heck",
+ "jsonschema",
+ "prettyplease",
+ "process_runner",
+ "regex",
+ "repository_laws",
+ "repository_layout",
+ "schemars",
+ "serde_json",
+ "syn 2.0.118",
+ "thiserror 2.0.18",
+ "ticket_registry",
+ "tool_test_support",
+ "typify",
+ "walkdir",
+]
+
+[[package]]
 name = "schemars"
 version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6817,15 +7180,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.3",
-]
-
-[[package]]
-name = "serde_spanned"
-version = "0.6.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -7396,6 +7750,54 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
+name = "staging_load_generator"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "clap",
+ "futures",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "staging_load_plan",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "staging_load_plan"
+version = "0.1.0"
+dependencies = [
+ "deterministic_random",
+ "newtype_ids",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "url",
+]
+
+[[package]]
+name = "staging_procedures"
+version = "0.1.0"
+dependencies = [
+ "api_readiness_checks",
+ "clap",
+ "content_digest",
+ "deploy_settings",
+ "deployment",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "staging_load_plan",
+ "thiserror 2.0.18",
+ "time_source",
+ "toml",
+ "tool_test_support",
+]
+
+[[package]]
 name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7705,20 +8107,68 @@ dependencies = [
 ]
 
 [[package]]
-name = "ticket_engine"
+name = "ticket_metrics"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "jsonschema",
+ "process_runner",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "ticket_model",
+ "time",
+ "time_source",
+ "walkdir",
+]
+
+[[package]]
+name = "ticket_model"
+version = "0.1.0"
+dependencies = [
+ "newtype_ids",
+ "process_runner",
  "proptest",
  "regex",
  "repository_layout",
  "serde",
- "serde_json",
+ "thiserror 2.0.18",
  "time",
- "toml 0.8.23",
+ "time_source",
+ "toml",
  "trybuild",
+]
+
+[[package]]
+name = "ticket_registry"
+version = "0.1.0"
+dependencies = [
+ "jsonschema",
+ "newtype_ids",
+ "process_runner",
+ "regex",
+ "repository_layout",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "ticket_metrics",
+ "ticket_model",
+ "ticket_wave_lock",
+ "time_source",
+ "toml",
  "walkdir",
+]
+
+[[package]]
+name = "ticket_wave_lock"
+version = "0.1.0"
+dependencies = [
+ "process_runner",
+ "repository_layout",
+ "serde",
+ "thiserror 2.0.18",
+ "ticket_model",
+ "toml",
 ]
 
 [[package]]
@@ -7728,14 +8178,30 @@ dependencies = [
  "eframe",
  "egui_commonmark",
  "egui_extras",
- "notify",
  "repository_layout",
  "rfd",
+ "ticket_model",
+ "ticket_wave_lock",
+ "ticketboard_model",
+]
+
+[[package]]
+name = "ticketboard_model"
+version = "0.1.0"
+dependencies = [
+ "notify",
+ "process_runner",
+ "repository_layout",
  "serde",
  "serde_json",
- "ticket_engine",
+ "thiserror 2.0.18",
+ "ticket_metrics",
+ "ticket_model",
+ "ticket_wave_lock",
  "time",
- "toml 0.8.23",
+ "time_source",
+ "toml",
+ "verification_core",
 ]
 
 [[package]]
@@ -7920,39 +8386,17 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.8.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362"
-dependencies = [
- "indexmap",
- "serde",
- "serde_spanned 0.6.9",
- "toml_datetime 0.6.11",
- "toml_edit 0.22.27",
-]
-
-[[package]]
-name = "toml"
 version = "1.1.3+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "53c96ecdfa941c8fc4fcaed14f99ada8ebed502eef533015095a07e3301d4c3c"
 dependencies = [
  "indexmap",
  "serde_core",
- "serde_spanned 1.1.1",
- "toml_datetime 1.1.1+spec-1.1.0",
+ "serde_spanned",
+ "toml_datetime",
  "toml_parser",
  "toml_writer",
- "winnow 1.0.3",
-]
-
-[[package]]
-name = "toml_datetime"
-version = "0.6.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c"
-dependencies = [
- "serde",
+ "winnow",
 ]
 
 [[package]]
@@ -7966,28 +8410,14 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.22.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
-dependencies = [
- "indexmap",
- "serde",
- "serde_spanned 0.6.9",
- "toml_datetime 0.6.11",
- "toml_write",
- "winnow 0.7.15",
-]
-
-[[package]]
-name = "toml_edit"
 version = "0.25.12+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2153edc6955a6c354fad8f5efd38b6a8769bdccf9fe50f8e1329f81b0baa5d7"
 dependencies = [
  "indexmap",
- "toml_datetime 1.1.1+spec-1.1.0",
+ "toml_datetime",
  "toml_parser",
- "winnow 1.0.3",
+ "winnow",
 ]
 
 [[package]]
@@ -7996,20 +8426,21 @@ version = "1.1.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2abe9b86193656635d2411dc43050282ca48aa31c2451210f4202550afb7526"
 dependencies = [
- "winnow 1.0.3",
+ "winnow",
 ]
-
-[[package]]
-name = "toml_write"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
 name = "toml_writer"
 version = "1.1.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2"
+
+[[package]]
+name = "tool_test_support"
+version = "0.1.0"
+dependencies = [
+ "repository_layout",
+]
 
 [[package]]
 name = "tower"
@@ -8163,7 +8594,7 @@ dependencies = [
  "serde_json",
  "target-triple",
  "termcolor",
- "toml 1.1.3+spec-1.1.0",
+ "toml",
 ]
 
 [[package]]
@@ -9562,15 +9993,6 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.7.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df79d97927682d2fd8adb29682d1140b343be4ac0f08fd68b7765d9c059d3945"
-dependencies = [
- "memchr",
-]
-
-[[package]]
-name = "winnow"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0592e1c9d151f854e6fd382574c3a0855250e1d9b2f99d9281c6e6391af352f1"
@@ -9583,6 +10005,20 @@ name = "wit-bindgen"
 version = "0.57.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+
+[[package]]
+name = "workstation_setup"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "deploy_settings",
+ "process_runner",
+ "repository_layout",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tool_test_support",
+ "verification_core",
+]
 
 [[package]]
 name = "world_chunks"
@@ -9742,30 +10178,35 @@ name = "xtask"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api_readiness_checks",
+ "ballistics_oracle_tooling",
+ "ci_task_catalog",
  "clap",
- "content_digest",
+ "database_operations",
+ "deployment",
  "developer_tools",
- "flate2",
- "fleet_wire_contract",
- "heck",
+ "documentation_checks",
+ "enfusion_mcp",
+ "enfusion_script_index",
  "jsonschema",
- "libc",
- "prettyplease",
+ "mod_operations",
+ "mod_script_checks",
+ "platform_execution",
  "process_runner",
- "regex",
- "repository_laws",
+ "remote_debugging",
+ "repository_checks",
  "repository_layout",
- "schemars",
+ "repository_relocation",
+ "schema_tooling",
  "serde",
  "serde_json",
- "serde_norway",
- "syn 2.0.118",
- "tar",
- "ticket_engine",
- "toml 0.8.23",
- "typify",
+ "staging_procedures",
+ "ticket_metrics",
+ "ticket_model",
+ "ticket_registry",
+ "ticket_wave_lock",
  "verification_core",
- "walkdir",
+ "workstation_setup",
 ]
 
 [[package]]
@@ -9850,7 +10291,7 @@ dependencies = [
  "uds_windows",
  "uuid",
  "windows-sys 0.61.2",
- "winnow 1.0.3",
+ "winnow",
  "zbus_macros",
  "zbus_names",
  "zvariant",
@@ -9902,7 +10343,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8bf88b4a3ff53e883001e0e0115b297a9d53c31b9c1edd2bfdd853e3428624e"
 dependencies = [
  "serde",
- "winnow 1.0.3",
+ "winnow",
  "zvariant",
 ]
 
@@ -9913,7 +10354,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d1586c021a01ca0a9216dcd874e546382e156a5cbab5fab6cb5f10087e22682a"
 dependencies = [
  "serde",
- "winnow 1.0.3",
+ "winnow",
  "zbus_names",
  "zvariant",
 ]
@@ -10051,7 +10492,7 @@ dependencies = [
  "endi",
  "enumflags2",
  "serde",
- "winnow 1.0.3",
+ "winnow",
  "zcheapstr",
  "zvariant_derive",
  "zvariant_utils",
@@ -10080,5 +10521,5 @@ dependencies = [
  "quote",
  "serde",
  "syn 3.0.3",
- "winnow 1.0.3",
+ "winnow",
 ]

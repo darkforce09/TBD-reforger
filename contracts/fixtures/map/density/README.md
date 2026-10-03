@@ -30,7 +30,7 @@ contracts/fixtures/map/density/
   (`gen_density_fixture` in
   `tools/developer_tools/src/world_export_pipeline/chunk_partitioner/redensify_from_committed.rs`)
   reads them and rewrites `density-fixture.bin`, `expectedCorners` and `expectedFileBytes` in the
-  folder `density_fixtures_dir` names (`tools/developer_tools/src/repository_layout.rs`).
+  folder `density_fixtures_dir` names (`tools/developer_tools/src/map_pipeline_layout.rs`).
 - Consumers:
   - gate S13 in `tools/developer_tools/src/map_verification/object_goldens/spatial_invariants.rs`,
     run by `cargo xtask schema map-object-golden` and the `schema-validate` CI task: encoding the

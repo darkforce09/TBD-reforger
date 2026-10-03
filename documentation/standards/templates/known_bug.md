@@ -97,14 +97,14 @@ resolved and whether the gate's font cache is in place.
 
 ## Fix
 
-- `find_chromium` (`tools/developer_tools/src/browser_testing/cdp/sleep_ms.rs`) prefers the
+- `find_chromium` (`tools/browser_testing/chrome_devtools_protocol/src/browser_launch.rs`) prefers the
   full `chrome` build (`chrome-linux64/chrome`) over `chrome-headless-shell`, and
   `launch_with_gpu`, behind `launch`, passes it `--headless=new`.
 - The same launch points the Chromium child's `XDG_CACHE_HOME` at a font cache the gate owns, so a
   cache written by another distribution is never read.
 - `gate doctor`, which `cargo xtask mk leptos-gates` runs first, checks the resolved build and runs
   a short liveness probe, so a recurrence fails in seconds; its pins live in
-  `tools/developer_tools/gate-env.json`.
+  `tools/browser_testing/browser_gate_suites/gate-env.json`.
 
 ## Related tickets
 

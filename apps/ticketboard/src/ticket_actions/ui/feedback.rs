@@ -1,15 +1,15 @@
 use super::*;
 use crate::core::ui::*;
-use crate::ticket_actions::{
-    events::TicketActionEvent as Action,
-    models::*,
-    services::commands::{self as verbs},
-};
 use eframe::egui::{
     self, Align, Align2, Area, Color32, Frame, Id, Layout, Order, RichText, ScrollArea, Spinner,
     Ui, vec2,
 };
 use std::time::Instant;
+use ticketboard_model::ticket_actions::{
+    events::TicketActionEvent as Action,
+    models::*,
+    services::commands::{self as verbs},
+};
 
 /// Transient top-right toasts (success tails, CAS refusals, queue notes).
 pub fn toasts_ui(ctx: &egui::Context, toasts: &mut Vec<Toast>) {

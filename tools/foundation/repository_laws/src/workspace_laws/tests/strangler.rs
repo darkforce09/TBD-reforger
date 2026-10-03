@@ -81,32 +81,104 @@ fn strangler_reads_only_pub_use_lines_as_reexports() {
 }
 
 #[test]
-fn strangler_reads_bare_aliased_and_grouped_crate_reexports() {
-    let at = |text: &str| reexported_crates(text);
+fn strangler_aliased_grouped_rooted_and_multi_line_reexports_inside_legacy_are_shims() {
+    let workspace = workspace("strangler-alias-shim");
+    workspace.write(
+        "legacy/map_engine/src/data.rs",
+        "pub use mission_model as model;\n\
+         pub use ::mission_model as rooted;\n\
+         pub use mission_model::{self as grouped};\n\
+         pub use {std::fmt, mission_model as braced};\n\
+         pub use mission_model;\n\
+         pub extern crate mission_model as external;\n\
+         pub use {\n    std::io,\n    mission_model as spread,\n};\n\
+         pub use\n    mission_model::Unit;\n\
+         pub use std as standard;\n\
+         pub(crate) use mission_model as private;\n\
+         use mission_model as local;\n\
+         // pub use mission_model as commented;\n",
+    );
+    let report = check_strangler(workspace.root());
+    assert_eq!(report.exit_code, 1, "{}", report.lines.join("\n"));
+    let shim_lines: Vec<&String> = report
+        .lines
+        .iter()
+        .filter(|line| line.starts_with("FAIL:"))
+        .collect();
+    let expected: Vec<String> = [1, 2, 3, 4, 5, 6, 7, 11]
+        .iter()
+        .map(|line| {
+            format!(
+                "FAIL: legacy/map_engine/src/data.rs:{line}: shim — a member under legacy/ \
+                 re-exports `mission_model`; move the callers instead"
+            )
+        })
+        .collect();
+    assert_eq!(
+        shim_lines,
+        expected.iter().collect::<Vec<_>>(),
+        "{}",
+        report.lines.join("\n")
+    );
+}
+
+#[test]
+fn strangler_reads_every_reexport_form_of_a_crate() {
     let one = |name: &str| vec![(1, name.to_owned())];
-    assert_eq!(at("pub use mission_model;"), one("mission_model"));
-    assert_eq!(
-        at("#[cfg(test)]\npub use satellite_imagery as streamer;"),
-        vec![(2, "satellite_imagery".to_owned())]
-    );
-    assert_eq!(
-        at("    pub use ::mission_model as model;"),
-        one("mission_model")
-    );
-    assert_eq!(at("pub use mission_model::Mission;"), one("mission_model"));
-    assert_eq!(
-        at("pub use {mission_model::{Mission, Unit}, std::fmt, crate::data};"),
-        vec![(1, "mission_model".to_owned()), (1, "std".to_owned())]
-    );
-    assert_eq!(
-        at("pub use mission_model as model; // a shim\n"),
-        one("mission_model")
-    );
-    assert_eq!(at("pub use crate::data as model;"), Vec::new());
-    assert_eq!(at("pub use self::data;\npub use super::data;"), Vec::new());
-    assert_eq!(at("pub(crate) use mission_model as model;"), Vec::new());
-    assert_eq!(at("use mission_model as model;"), Vec::new());
-    assert_eq!(at("pub user_name: String,"), Vec::new());
+    let names = |names: &[&str]| -> Vec<(usize, String)> {
+        names.iter().map(|name| (1, (*name).to_owned())).collect()
+    };
+    for (text, expected) in [
+        ("pub use mission_model;", one("mission_model")),
+        ("pub use mission_model::Mission;", one("mission_model")),
+        ("pub use mission_model as model;", one("mission_model")),
+        ("pub use ::mission_model as rooted;", one("mission_model")),
+        (
+            "    pub use ::mission_model as model;",
+            one("mission_model"),
+        ),
+        (
+            "pub use mission_model::{self as grouped};",
+            one("mission_model"),
+        ),
+        (
+            "pub use {mission_model as braced, ::other_crate::Item};",
+            names(&["mission_model", "other_crate"]),
+        ),
+        (
+            "pub use { std::{fmt, io}, mission_model::* };",
+            names(&["std", "mission_model"]),
+        ),
+        (
+            "pub use {mission_model::{Mission, Unit}, std::fmt, crate::data};",
+            names(&["mission_model", "std"]),
+        ),
+        (
+            "pub use {{mission_model, ::other_crate}, self::local};",
+            names(&["mission_model", "other_crate"]),
+        ),
+        (
+            "pub extern crate mission_model as external;",
+            one("mission_model"),
+        ),
+        (
+            "pub use mission_model as model; // a shim\n",
+            one("mission_model"),
+        ),
+        (
+            "#[cfg(test)]\npub use satellite_imagery as streamer;",
+            vec![(2, "satellite_imagery".to_owned())],
+        ),
+        ("pub use {crate::data, self::local, super::parent};", vec![]),
+        ("pub use crate::data as model;", vec![]),
+        ("pub use self::data;\npub use super::data;", vec![]),
+        ("pub(crate) use mission_model as private;", vec![]),
+        ("pub(super) use mission_model::Mission;", vec![]),
+        ("use mission_model as local;", vec![]),
+        ("pub user_model: Model,", vec![]),
+    ] {
+        assert_eq!(reexported_crates(text), expected, "{text}");
+    }
 }
 
 #[test]
@@ -119,37 +191,6 @@ fn strangler_reads_a_reexport_spread_over_several_lines() {
             (6, "std".to_owned()),
             (6, "mission_model".to_owned()),
         ]
-    );
-}
-
-#[test]
-fn strangler_an_aliased_or_multi_line_crate_reexport_inside_legacy_is_a_shim() {
-    let workspace = workspace("strangler-alias");
-    workspace.write(
-        "legacy/map_engine/src/data.rs",
-        "pub use mission_model as model;\npub use mission_model;\npub use\n    mission_model::Unit;\npub use std as standard;\n",
-    );
-    let report = check_strangler(workspace.root());
-    assert_eq!(report.exit_code, 1, "{}", report.lines.join("\n"));
-    let failing: Vec<&String> = report
-        .lines
-        .iter()
-        .filter(|line| line.starts_with("FAIL:"))
-        .collect();
-    let expected: Vec<String> = [1, 2, 3]
-        .iter()
-        .map(|line| {
-            format!(
-                "FAIL: legacy/map_engine/src/data.rs:{line}: shim — a member under legacy/ \
-                 re-exports `mission_model`; move the callers instead"
-            )
-        })
-        .collect();
-    assert_eq!(
-        failing,
-        expected.iter().collect::<Vec<_>>(),
-        "{}",
-        report.lines.join("\n")
     );
 }
 

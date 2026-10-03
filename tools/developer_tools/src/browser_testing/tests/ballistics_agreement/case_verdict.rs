@@ -8,13 +8,13 @@ use super::*;
 use crate::browser_testing::ballistics_agreement::COMMITTED_CATALOG;
 use crate::browser_testing::ballistics_agreement::bench_reading::decode_bench_reading;
 use crate::browser_testing::ballistics_agreement::native_reference::native_cases;
-use crate::repository_layout::compiled_checkout_root;
+use ::repository_layout::find_repository_root;
 
 const SEED: u64 = 0x5EED_0000_0000_0003;
 const COUNT: usize = 3;
 
 fn committed_catalog() -> BallisticsCatalog {
-    let path = compiled_checkout_root()
+    let path = find_repository_root()
         .expect("repository root")
         .join(COMMITTED_CATALOG);
     let bytes = std::fs::read(&path).unwrap_or_else(|error| {

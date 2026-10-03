@@ -79,7 +79,7 @@ comment, and one that is in neither was not recorded and is re-derived from the 
 
    Expected: the live slices listed as spared, one line per removed folder with its size, and the
    free space at the end. The warm gate folders stay unless `--gate-dirs` is passed; the
-   [reclaim README](/tools/xtask/src/commands/platform/wave_execution/reclaim/README.md) lists
+   [reclaim README](/tools/commands/platform_execution/src/wave_execution/reclaim/README.md) lists
    every sweep.
 
 5. Check the machine and the checkout.
@@ -91,7 +91,7 @@ comment, and one that is in neither was not recorded and is re-derived from the 
    Expected: one line per check and `PREFLIGHT: PASS (<n> warn)`, exit 0. Two warnings are
    normal: `CARGO_TARGET_DIR` unset in this shell, and worktrees of parked slices. Fix every
    `✗ BLOCK` line before anything else; the
-   [preflight README](/tools/xtask/src/commands/platform/preflight/README.md) gives each check's
+   [preflight README](/tools/commands/platform_execution/src/preflight/README.md) gives each check's
    BLOCK and WARN conditions.
 
 6. Read where the program stands.
@@ -144,5 +144,5 @@ clean ones.
 
 - [Local development](/documentation/runbooks/local_development.md) — the local stack in full.
 - [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) — the next step.
-- [Platform factory commands](/tools/xtask/src/commands/platform/README.md) — every
+- [Platform factory commands](/tools/commands/platform_execution/src/README.md) — every
   `platform` subcommand and its exit codes.

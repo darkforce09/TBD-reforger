@@ -45,7 +45,7 @@ and each LAN client by its own.
 ## Configuration
 
 The site reads no setting: its port, headers, upstream and site root are written in `Caddyfile`.
-Its location in the checkout is `CADDYFILE` in `tools/xtask/src/core/repository_layout.rs`.
+Its location in the checkout is `CADDYFILE` in `tools/foundation/repository_layout/src/deployment.rs`.
 
 ## Installed by
 
@@ -59,10 +59,10 @@ Its location in the checkout is `CADDYFILE` in `tools/xtask/src/core/repository_
   networking, the two read-only mounts); the API on `127.0.0.1:8080`; the app built into
   `apps/frontend/dist`.
 - Used by: `cargo xtask deploy website`, whose web server step names the file at
-  `/etc/tbd-caddy/Caddyfile` (`tools/xtask/src/commands/deploy/website/remote_steps.rs`); the
+  `/etc/tbd-caddy/Caddyfile` (`tools/commands/deployment/src/website/remote_steps.rs`); the
   Cloudflare Tunnel, which targets `http://127.0.0.1:3080`; `apps/api/tests/forwarded_for_trust.rs`,
   which pins the `reverse_proxy 127.0.0.1:8080` upstream; the deploy tests in
-  `tools/xtask/src/commands/deploy/tests/website/tests.rs`.
+  `tools/commands/deployment/src/tests/website/tests.rs`.
 - Rules: this folder holds the Caddy site alone, since everything in it is readable inside the
   container (`the_caddy_service_mounts_no_folder_holding_the_deploy_secrets`); the compose
   service's mounts, the reload's path and the site root agree

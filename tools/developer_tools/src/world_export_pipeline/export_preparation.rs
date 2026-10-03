@@ -15,10 +15,10 @@ use world_file_formats::containers::tbde::TbdeHeader;
 use super::chunk_partitioner::CHUNK_SIZE_M;
 use super::classify::{Classifier, Rules, load_rules};
 use super::mathematical_verification::{SchemaSet, gunzip_json};
-use crate::repository_layout::compiled_checkout_root;
 use crate::world_export_pipeline::forest_contours as forest;
 use crate::world_export_pipeline::polygon_geometry::cell_of;
 use crate::world_export_pipeline::vegetation_density as density;
+use ::repository_layout::find_repository_root;
 
 /* ─────────────────────────── verify-spike-k1 ─────────────────────────── */
 
@@ -82,4 +82,4 @@ pub use dem_elevation::write_elevation_dem;
 mod aerial_cell_catalog;
 pub use aerial_cell_catalog::catalog_sap_cells;
 
-use crate::timestamp_formatting::iso_from_system_time;
+use time_source::iso_from_system_time;

@@ -1,5 +1,5 @@
 //! Terrain manifest validation against schema, spatial dimensions, and binary contracts.
-use crate::repository_layout::{definition_path, terrain_dir, terrain_manifest_path};
+use ::repository_layout::{definition_path, terrain_dir, terrain_manifest_path};
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::fs;

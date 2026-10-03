@@ -33,7 +33,7 @@ land ─▶ merge each ─▶ wave gate on merged main ─▶ drop worktrees ─
 - `TBD_GATE_MIGRATION_0016=apps/api/migrations/0016_backfill_linked_match_stats.sql`
   exported in the orchestrator's shell and each slice agent's. The gate's `db_migrate claim body`
   step defaults to a migration file name the migrations folder does not hold
-  (`tools/xtask/src/commands/platform/wave_execution/migrate/gate_db_migrate_claim_body.rs`),
+  (`tools/commands/platform_execution/src/wave_execution/migrate/gate_db_migrate_claim_body.rs`),
   so without the variable that step fails in both gates.
 
 ## Steps
@@ -97,7 +97,7 @@ land ─▶ merge each ─▶ wave gate on merged main ─▶ drop worktrees ─
    Expected: one `PASS` or `FAIL` line per step, then `SLICE GATE: PASS`, and a verdict receipt at
    `.ai/artifacts/verdicts/<ticket id>.json` in the main checkout, stamped with the slice's tip
    commit. Run from `main` it refuses with exit 2 (an empty `main...HEAD` range). The
-   [gate README](/tools/xtask/src/commands/platform/wave_execution/gate/README.md) lists the
+   [gate README](/tools/commands/platform_execution/src/wave_execution/gate/README.md) lists the
    steps of both gates side by side.
 
 6. Accept or reject each report with the reject table of the
@@ -284,9 +284,9 @@ before it is `wave <n> CLOSED — <summary>`.
 ## Related
 
 - [Factory waves](/documentation/runbooks/factory_waves/README.md) — the index and the rules.
-- [Platform wave driver](/tools/xtask/src/commands/platform/wave_execution/README.md) — every
+- [Platform wave driver](/tools/commands/platform_execution/src/wave_execution/README.md) — every
   `platform wave` subcommand.
-- [Platform wave landing and close](/tools/xtask/src/commands/platform/wave_execution/land/README.md)
+- [Platform wave landing and close](/tools/commands/platform_execution/src/wave_execution/land/README.md)
   — `land`, `revert`, `verified` and `wave --close` in code.
 - [Ticket command group](/tools/xtask/src/commands/ticket/README.md) — `ship`, `stamp-sha`,
   `add` and `set-status`.

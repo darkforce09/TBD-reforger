@@ -1,8 +1,7 @@
 use super::*;
 
-use crate::repository_layout::{
-    aerial_orthophoto_artifacts_dir, terrain_dir, terrain_manifest_path,
-};
+use crate::map_pipeline_layout::aerial_orthophoto_artifacts_dir;
+use ::repository_layout::{terrain_dir, terrain_manifest_path};
 
 pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
     if terrain != "everon" {
@@ -11,7 +10,7 @@ pub fn analyze_sap_seams(terrain: &str) -> Result<u8> {
     }
     let ortho_path = sap_dir()?.join("everon-sap-ortho.png");
     let out_path =
-        aerial_orthophoto_artifacts_dir(&compiled_checkout_root()?).join("seam_analysis.json");
+        aerial_orthophoto_artifacts_dir(&find_repository_root()?).join("seam_analysis.json");
     eprintln!("analyze-sap-seams: decoding {} …", ortho_path.display());
     let ortho = image_operations::load_png_rgb(&ortho_path)?;
     let res = analyze_seams(&ortho);
@@ -163,7 +162,7 @@ pub fn verify_sap_ortho(terrain: &str) -> Result<u8> {
         eprintln!("only everon supported this slice (got {terrain})");
         return Ok(1);
     }
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let sap = sap_dir()?;
     let catalog_path = sap.join("cell-catalog.json");
     let meta_path = sap.join("TBD_SatExport_meta.json");

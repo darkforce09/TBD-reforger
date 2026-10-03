@@ -20,18 +20,24 @@ The [ticketboard viewer](/documentation/apps/ticketboard/ticketboard_viewer.md) 
 exact about the modules: the [crate README](/apps/ticketboard/README.md) for running and checking
 the viewer, the [source README](/apps/ticketboard/src/README.md) for the module layout and its
 architecture tests, and one README per feature module (`ticket_actions`, `ticket_browser`,
-`wave_plan`, `execution_metrics`, `document_viewer`, `repository_status`). The folder mirrors
-`apps/ticketboard/` with `apps/` left out.
+`wave_plan`, `execution_metrics`, `document_viewer`, `repository_status`), each holding that
+feature's egui views. The feature models, services and application state are documented in the
+[`ticketboard_model` README](/tools/tickets/ticketboard_model/README.md) and its module READMEs.
+The folder mirrors `apps/ticketboard/` with `apps/` left out.
 
 ## Code
 
 - [Ticketboard](/apps/ticketboard/) — the crate the viewer document covers.
-- [Ticket actions](/apps/ticketboard/src/ticket_actions/) — the command dispatch and file-change
-  guard the document's "Changing a ticket" flow describes.
+- [Ticketboard model](/tools/tickets/ticketboard_model/) — the headless models, services and
+  application state the crate paints.
+- [Ticket actions](/tools/tickets/ticketboard_model/src/ticket_actions/) — the command dispatch and
+  file-change guard the document's "Changing a ticket" flow describes, with its views in
+  [`apps/ticketboard/src/ticket_actions/`](/apps/ticketboard/src/ticket_actions/).
 
 ## Boundaries
 
-- Depends on: the ticketboard code, the `ticket_engine` crate and the `cargo xtask ticket`
+- Depends on: the ticketboard code (`apps/ticketboard/` and `tools/tickets/ticketboard_model/`),
+  the `ticket_model` crate and the `cargo xtask ticket`
   commands it runs, which every claim is checked against; the feature doc template; the ticket
   registry for open work.
 - Used by: the `apps/ticketboard/` README, which links this folder under Related documentation;
@@ -42,6 +48,6 @@ architecture tests, and one README per feature module (`ticket_actions`, `ticket
 ## Related documentation
 
 - [Tooling architecture](/documentation/tools/tooling_architecture.md) — the dependency rule
-  that the ticketboard reads tickets through `ticket_engine`.
+  that the ticketboard reads tickets through `ticket_model`.
 - [Ticket registry](/.ai/tickets/README.md) — the files, statuses and commands the viewer shows
   and runs.

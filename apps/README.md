@@ -34,8 +34,8 @@ server, the [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agen
 [RCON](/documentation/glossary/n_to_z.md#rcon) commands, a switch of the server's
 [mission header](/documentation/glossary/g_to_m.md#mission-header)) and reports every step to the
 command ledger. [Ticketboard](/documentation/glossary/n_to_z.md#ticketboard) stands apart: it
-reads `.ai/tickets/` through the `ticket_engine` crate in `tools/` and talks to none of the
-others.
+reads `.ai/tickets/` through the `ticket_model` crate in `tools/tickets/` and talks to none of
+the others.
 
 ```text
 browser ── frontend ──▶ api ◀── HTTPS ── fleet_host_agent ─┐ controls
@@ -44,7 +44,7 @@ browser ── frontend ──▶ api ◀── HTTPS ── fleet_host_agent �
                          │
                       Postgres
 
-ticketboard ──▶ ticket_engine (tools/) ──▶ .ai/tickets/
+ticketboard ──▶ ticket_model (tools/tickets/) ──▶ .ai/tickets/
 ```
 
 The five Rust crates (`api`, `frontend`, `offline_service_worker`, `fleet_host_agent` and
@@ -74,15 +74,15 @@ cargo run -p ticketboard          # opens the ticket registry viewer; stays in t
 ## Boundaries
 
 - Depends on: `contracts/`, the schemas and rules shared across the API, the mod and the host
-  agent; `assets/`, the map data the API serves; `tools/ticket_engine/`, which ticketboard
-  reads the registry through; Postgres, Discord and the Arma Reforger dedicated server.
+  agent; `assets/`, the map data the API serves; `tools/tickets/ticket_model/`, which
+  ticketboard reads the registry through; Postgres, Discord and the Arma Reforger dedicated server.
 - Used by: the members' browsers and the game servers at run time; the xtask commands in
   `tools/xtask/` that build, test, check and deploy the products; and the developer tools in
   `tools/developer_tools/`, which link the map engine and drive the app in a headless browser.
 - Rules: the products share data only over the API and through the schemas in `contracts/`: no
   crate here depends on a crate of another product, apart from the website's three (the frontend
   links `offline_service_worker`); the path dependencies leaving `apps/` go to `legacy/` (the
-  engines), `crates/` and `tools/` (`repository_laws` and `verification_core` for the API, `ticket_engine` for
+  engines), `crates/` and `tools/` (`repository_laws` and `verification_core` for the API, `ticket_model` for
   ticketboard); the engine layer rules are held by `cargo xtask verify engine-layers`.
 
 ## Related documentation

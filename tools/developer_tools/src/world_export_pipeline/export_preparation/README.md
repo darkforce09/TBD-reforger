@@ -62,8 +62,8 @@ returns the process exit code: 0 done, 1 refused or failed. Paths below are unde
 - Depends on: the sibling modules `classify`, `chunk_partitioner` (`CHUNK_SIZE_M`),
   `enfusion_texture_decoder`, `mathematical_verification` (`SchemaSet`, `gunzip_json`),
   `forest_contours`, `polygon_geometry`, `vegetation_density` and `json_number_formatting`;
-  `crate::enfusion_pak::PakVfs`; `world_file_formats::containers::tbde`,
-  `world_file_formats::density::tbdd` and `terrain_elevation::raw`; `crate::repository_layout`; `png`.
+  `enfusion_pak::PakVfs`; `world_file_formats::containers::tbde`,
+  `world_file_formats::density::tbdd` and `terrain_elevation::raw`; the `repository_layout` crate; `time_source`; `png`.
 - Used by: `tools/developer_tools/src/world_export_pipeline/cli.rs`; people, following the
   operator steps `cargo xtask map export-terrain` prints when no export is staged.
 - Rules: a copy or a write never replaces staged or committed data with an empty set

@@ -5,12 +5,12 @@ use std::process::ExitCode;
 
 use std::path::PathBuf;
 
-use crate::enfusion_pak::PakVfs;
 use crate::world_export_pipeline::{
     chunk_partitioner, enfusion_texture_decoder, export_preparation, mathematical_verification,
     reclassify, roads_emit, topo,
 };
 use clap::{Parser, Subcommand};
+use enfusion_pak::PakVfs;
 
 #[derive(Parser)]
 #[command(name = "world", about = "World-export pipeline")]

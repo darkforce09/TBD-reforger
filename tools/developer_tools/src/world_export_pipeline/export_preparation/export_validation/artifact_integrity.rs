@@ -1,10 +1,10 @@
 use super::*;
-use crate::repository_layout::{
+use ::repository_layout::{
     map_scratch_dir, terrain_assets_dir, terrain_dir, terrain_registry_path,
 };
 
 pub fn validate_export_artifacts() -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let schemas = SchemaSet::load()?;
     let v_prefab = schemas.validator("map-object-prefab")?;
     let v_instance = schemas.validator("map-object-instance")?;
@@ -272,18 +272,18 @@ pub fn validate_export_artifacts() -> Result<u8> {
 
     // Inventory gates (I1-I7 subset) — delegate to `cargo xtask schema type-inventory`.
     // Output captured (the Node script spawned with stdio:pipe) — surfaced only on failure.
-    let inv_gate = std::process::Command::new("cargo")
+    let inv_gate = process_runner::Run::new("cargo")
         .args(["run", "-q", "-p", "xtask", "--", "schema", "type-inventory"])
-        .current_dir(&root)
+        .cwd(&root)
         .output()?;
-    if inv_gate.status.success() {
+    if inv_gate.code == 0 {
         pass("verify-type-inventory (I-gates) OK".into());
     } else {
         failures += 1;
         fail(format!(
             "verify-type-inventory: {} {}",
-            String::from_utf8_lossy(&inv_gate.stdout).trim(),
-            String::from_utf8_lossy(&inv_gate.stderr).trim()
+            inv_gate.stdout.trim(),
+            inv_gate.stderr.trim()
         ));
     }
 
@@ -305,7 +305,7 @@ pub fn validate_export_artifacts() -> Result<u8> {
             let tid = t["terrainId"].as_str().unwrap_or("");
             // The export stage runs as `cargo run -q -p xtask -- map export-terrain …`
             // (inherits CARGO_TARGET_DIR when set — same pin as Makefile / checkrun gates).
-            let status = std::process::Command::new("cargo")
+            let export = process_runner::Run::new("cargo")
                 .args([
                     "run",
                     "-q",
@@ -318,19 +318,22 @@ pub fn validate_export_artifacts() -> Result<u8> {
                     "--phase",
                     "P1_buildings",
                 ])
-                .current_dir(&root)
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .status()?;
-            if status.code() == Some(2) {
+                .cwd(&root)
+                .output();
+            // The export's own output is discarded; a signal reads as no exit code.
+            let code = match export {
+                Ok(output) => Some(output.code),
+                Err(verification_core::NotRun::Signalled { .. }) => None,
+                Err(not_run) => return Err(not_run.into()),
+            };
+            if code == Some(2) {
                 pass(format!(
                     "E2b: xtask map export-terrain {tid} -> exit 2 (operator-instructions branch, same code path)"
                 ));
             } else {
                 failures += 1;
                 fail(format!(
-                    "E2b: xtask map export-terrain {tid} expected exit 2, got {:?}",
-                    status.code()
+                    "E2b: xtask map export-terrain {tid} expected exit 2, got {code:?}"
                 ));
             }
         }

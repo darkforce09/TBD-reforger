@@ -60,7 +60,7 @@ the same way.
   selection router in `apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`;
   the tests in `apps/frontend/src/workspaces/editor/ui/docks/tests/dock_right/`; the outliner
   smoke test in
-  `tools/developer_tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which
+  `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/outliner_palette.rs`, which
   opens the Factions tab by its `aria-label`.
 - Rules: that tests folder holds these: the strip fits the 240 px dock and every glyph tab keeps
   its name (`the_tab_strip_fits_the_dock` and `every_glyph_tab_keeps_its_name` in

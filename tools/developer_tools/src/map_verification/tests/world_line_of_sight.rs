@@ -19,7 +19,7 @@ use crate::blueprint::tests::fixture;
 
 fn assets() -> PathBuf {
     // The checkout this crate was compiled from, whatever directory the test runs in.
-    let root = crate::repository_layout::compiled_checkout_root().expect("repository root");
+    let root = ::repository_layout::find_repository_root().expect("repository root");
     terrain_dir(&root, "everon")
 }
 

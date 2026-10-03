@@ -2,7 +2,7 @@
 //!
 //! **Role:** the documentation tree root and the two ticket-domain documents `ticket sync`
 //! rewrites between markers.
-//! **Position:** `ticket_engine` writes the two documents and walks the tree; `xtask` judges the
+//! **Position:** `ticket_registry` writes the two documents and walks the tree; `xtask` judges the
 //! tree's links and placement; `developer_tools` resolves citations across it; `ticketboard`
 //! watches the two documents. A document only one tool names stays in that tool's own layout
 //! module.

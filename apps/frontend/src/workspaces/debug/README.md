@@ -86,7 +86,7 @@ because the app's mount chain that names them, `apps/frontend/src/app_routes.rs`
   (`walls_never_use_borrowed_lanes`). The ballistics agreement bench's reading and case mapping
   are mirrored by the gate `gate ballistics-agreement` in
   `tools/developer_tools/src/browser_testing/ballistics_agreement/`. The four route rows must match
-  `tools/developer_tools/fixtures/dom_oracle/manifests/routes.csv`, which the route-drift gate
+  `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`, which the route-drift gate
   `gate s-routes` of `tools/developer_tools/` compares.
 
 ## Related documentation

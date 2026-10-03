@@ -16,9 +16,9 @@ agent's 20-second timeout and then closes the connection, so the staging fleet c
 lost acknowledgement neither repeats nor loses a [fleet command](#fleet-command); it never stores or
 logs the `Authorization` header.
 
-In code: the `acknowledgement-dropping-relay` executable (`serve`; `control arm drop-next-claim-response|drop-next-result-response`, `disarm`, `status`) in `tools/developer_tools/src/staging_verification/acknowledgement_relay/`; `deploy/systemd/acknowledgement-dropping-relay@.service`.
+In code: the `acknowledgement-dropping-relay` executable (`serve`; `control arm drop-next-claim-response|drop-next-result-response`, `disarm`, `status`) in `tools/staging/acknowledgement_dropping_relay/src/`; `deploy/systemd/acknowledgement-dropping-relay@.service`.
 
-See: [staging harness](/documentation/glossary/n_to_z.md#staging-harness), [Acknowledgement relay](/tools/developer_tools/src/staging_verification/acknowledgement_relay/README.md).
+See: [staging harness](/documentation/glossary/n_to_z.md#staging-harness), [Acknowledgement relay](/tools/staging/acknowledgement_dropping_relay/src/README.md).
 
 ### administration
 
@@ -269,7 +269,7 @@ time, gives each to a [slice](/documentation/glossary/n_to_z.md#slice) agent in 
 worktree, lands the slices whose [gate](/documentation/glossary/g_to_m.md#gate) passed on `main`
 and has one adversarial verifier attack the result. The mod program runs the same shape.
 
-In code: `cargo xtask platform wave` and `cargo xtask platform slice-worktree` in `tools/xtask/src/commands/platform/`; `cargo xtask mod wave` in `tools/xtask/src/commands/mod_ops/wave_execution/`.
+In code: `cargo xtask platform wave` and `cargo xtask platform slice-worktree` in `tools/commands/platform_execution/src/`; `cargo xtask mod wave` in `tools/commands/mod_operations/src/wave_execution/`.
 
 See: [Factory waves](/documentation/runbooks/factory_waves/README.md), [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md).
 
@@ -315,9 +315,9 @@ unit `tbd-reforger@N.service`, its own [fleet host agent](#fleet-host-agent)
 `fleet_host_agent@N.service`, its own [machine credentials](/documentation/glossary/g_to_m.md#machine-credential) and RCON password, and the game port
 2000+N, the A2S port 17776+N and the loopback RCON port 19998+N.
 
-In code: `tools/xtask/src/commands/deploy/staging/fleet_instances.rs`; `deploy/systemd/tbd-reforger@.service` and `fleet_host_agent@.service`; on the host, `~/tbd/fleet/instance-N/`.
+In code: `tools/commands/deployment/src/staging/fleet_instances.rs`; `deploy/systemd/tbd-reforger@.service` and `fleet_host_agent@.service`; on the host, `~/tbd/fleet/instance-N/`.
 
-See: [acknowledgement-dropping relay](#acknowledgement-dropping-relay), [Deploy staging](/tools/xtask/src/commands/deploy/staging/README.md).
+See: [acknowledgement-dropping relay](#acknowledgement-dropping-relay), [Deploy staging](/tools/commands/deployment/src/staging/README.md).
 
 ### fleet scenario
 

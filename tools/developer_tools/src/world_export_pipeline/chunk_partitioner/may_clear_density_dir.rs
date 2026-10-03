@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::terrain_registry_path;
+use ::repository_layout::terrain_registry_path;
 
 /// Only an intentional density rebuild may wipe `objects/density/`.
 /// Non-density phases must leave the 625 committed bins alone.
@@ -42,7 +42,7 @@ pub fn phase_kinds(phase: &str) -> Option<&'static [&'static str]> {
 
 pub fn terrain_row(terrain: &str) -> Result<Value> {
     let reg: Value = serde_json::from_str(&std::fs::read_to_string(terrain_registry_path(
-        &compiled_checkout_root()?,
+        &find_repository_root()?,
     ))?)?;
     reg["terrains"]
         .as_array()

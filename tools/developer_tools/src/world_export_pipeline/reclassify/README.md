@@ -36,11 +36,11 @@ one equal to the old rule's template is replaced by the new rule's template. The
 
 - Depends on: the sibling modules `classify` (the rules and the classifier), `chunk_partitioner`
   (`gunzip`, `gz9`, `road_census`), `catalog_emit` and `json_number_formatting`;
-  `crate::repository_layout`.
+  the `repository_layout` crate.
 - Used by: `world reclassify` (`tools/developer_tools/src/world_export_pipeline/cli.rs`); the
   platform wave gate, which runs it in check mode
-  (`tools/xtask/src/commands/platform/wave_execution/gate/gate_dispatch.rs`,
-  `tools/xtask/src/commands/platform/wave_execution/gate/checkrun.rs`).
+  (`tools/commands/platform_execution/src/wave_execution/gate/gate_dispatch.rs`,
+  `tools/commands/platform_execution/src/wave_execution/gate/checkrun.rs`).
 - Rules: empty rules or an empty catalogue are refused rather than reported as drift, and a
   measured `spatial` block survives a rebuild
   (`empty_rules_are_refused_not_reported_as_massive_drift`,

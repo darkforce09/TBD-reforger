@@ -179,8 +179,8 @@ checkout root, where its default API env file, `apps/api/.env`, resolves.
   `operations::services::event_authoring::{event_creation, mission_attachment}` and
   `administration::services::required_audit` for `staging-fixtures`.
 - Used by: `cargo xtask mk rust-api` and `cargo xtask db registry-import`
-  (`tools/xtask/src/commands/build/recipes/shell_word.rs` and
-  `tools/xtask/src/commands/db/operations.rs`); the `editor-api-boot` task of `cargo xtask ci`;
+  (`tools/commands/ci_task_catalog/src/build_lane/recipes/shell_word.rs` and
+  `tools/commands/database_operations/src/local_database.rs`); the `editor-api-boot` task of `cargo xtask ci`;
   the release image built by `deploy/Dockerfile`, whose entry point is `api`; the systemd
   unit `deploy/systemd/tbd-website-api.service`, which runs the release `api`;
   `apps/api/tests/audit_replay_shutdown.rs`, which starts the `api` binary and stops

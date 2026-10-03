@@ -13,7 +13,7 @@ tools/xtask/
 ├── Cargo.toml                  the `xtask` package: one binary, path dependencies on three tooling crates
 ├── dedicated_server_profiles/  the dedicated-server profile the local mod servers start from
 ├── fixtures/                   recorded tool output that the commands' selftests replay
-├── src/                        the binary: command tree, command groups, verifications, shared core
+├── src/                        the binary: command tree and command groups
 └── staging/                    committed load workload and population the staging load receipt runs
 ```
 
@@ -22,14 +22,15 @@ tools/xtask/
 `cargo xtask` is the alias `run --package xtask --` in `.cargo/config.toml`, so every call builds
 the crate if needed and runs `src/main.rs`. The binary parses the command line with clap
 (`src/cli/`), finds the checkout by walking up from the working directory to `.ai/tickets/ROOT`,
-and hands the command to its group under `src/commands/`, which does the work, runs checks from
-`src/verifications/`, or calls a library crate. The data folders beside `src/` are what the
+and hands the command to its group under `src/commands/`, which does the work or calls a library
+crate (the check crates under `tools/checks/`, the command crates under `tools/commands/`). The data folders beside `src/` are what the
 commands read: `dedicated_server_profiles/` for the local game servers and `fixtures/` for the MCP
-selftest; the deploys read the repository root's `deploy/`. `src/core/repository_layout.rs` names
-each of them once.
+selftest; the deploys read the repository root's `deploy/`. The `repository_layout` crate
+(`tools/foundation/repository_layout`) names each of them once, and `deploy_settings`
+(`tools/foundation/deploy_settings`) reads `deploy/deploy.env`.
 
 The crate owns repository operations and the orchestration of checks. Ticket storage and the wave
-lock belong to `ticket_engine`, verdict primitives to `verification_core`, child processes, the
+lock belong to the ticket crates in `tools/tickets/`, verdict primitives to `verification_core`, child processes, the
 host bridge and the ssh transport to `process_runner`, the structural laws to `repository_laws`, and
 engine-backed map, world and blueprint work to `developer_tools`, which alone reaches the map
 engine; xtask passes them the checkout root and keeps their results and exit codes.
@@ -61,7 +62,8 @@ The crate has no features and reads no configuration file of its own. What it re
 
 - `CARGO_TARGET_DIR`: kept when set; otherwise the `mk` and `ci` children get the primary
   checkout's `target/`, shared by every linked worktree
-  (`src/core/cargo_target_directory.rs`), and `mk rust-api` builds into `target/dev-api`.
+  (`tools/commands/ci_task_catalog/src/cargo_target_pin.rs`), and `mk rust-api` builds into
+  `target/dev-api`.
 - `.ai/tickets/ROOT`: the marker that identifies the checkout root (`find_repository_root` in
   `tools/foundation/repository_layout/src/repository_root.rs`).
 - `deploy/deploy.env`: the deploy host (`TBD_SSH_HOST`, the one place the staging host is named),
@@ -79,7 +81,8 @@ The crate has no features and reads no configuration file of its own. What it re
 
 ## Boundaries
 
-- Depends on: `ticket_engine`, `developer_tools`, and the `tools/foundation` crates
+- Depends on: `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry`,
+  `developer_tools`, and the `tools/foundation` crates
   `verification_core`, `process_runner` and `repository_laws`, by path; clap, serde,
   `jsonschema`, and `typify`, `schemars`, `syn` and `prettyplease` for the contract codegen; at
   run time cargo, trunk, podman, git and the other host tools each group names.
@@ -93,15 +96,17 @@ The crate has no features and reads no configuration file of its own. What it re
 - Rules:
   - xtask never depends on `map_engine` or `graphics_engine`, `developer_tools`
     never depends on xtask, a `tools/foundation` crate depends only on lower `tools/foundation`
-    crates, and `ticket_engine` only on `tools/foundation` crates
-    (`tooling_dependency_direction_is_enforced` and
-    `foundation_crates_depend_only_on_lower_foundation_crates` in
+    crates, and a `tools/tickets` crate only on `tools/foundation` crates, three
+    `crates/foundation` crates and lower ticket crates
+    (`tooling_dependency_direction_is_enforced`,
+    `foundation_crates_depend_only_on_lower_foundation_crates` and
+    `ticket_crates_depend_only_on_foundations_and_lower_ticket_crates` in
     `src/tests/tooling_dependency_boundaries.rs`);
   - production files stay under 500 lines, test files under 1000 and `src/main.rs` under 150, and
     tests live in separate files (`tooling_source_files_stay_below_their_structural_limits`,
     `tooling_test_modules_live_in_separate_files`);
   - tests read fixtures from the checkout they run in: the execution receipts in
-    `tools/ticket_engine/tests/fixtures/execution_receipts/` and the blueprint fixtures in
+    `tools/tickets/ticket_metrics/tests/fixtures/execution_receipts/` and the blueprint fixtures in
     `tools/developer_tools/test_fixtures/blueprint/`.
 
 ## Related documentation

@@ -93,7 +93,7 @@ trim, so every native row of every kept table is in the bundle.
 
 ## Producers and consumers
 
-- Producer: `cargo xtask ballistics trim-export` (`tools/xtask/src/commands/ballistics/`).
+- Producer: `cargo xtask ballistics trim-export` (`tools/commands/ballistics_oracle_tooling/src/`).
 - Consumers: `cargo xtask schema validate`, whose ballistics section checks both documents and their
   provenance and coverage; the `ballistics_calibration` tests; the upload of the catalog pair through
   `POST /api/v1/ballistics-catalogs`.

@@ -64,7 +64,7 @@ every README of a kind has the same headings.
 
 `cargo xtask verify readme-coverage` reads the Contents block and checks it against the folder. The
 grammar below is stated exactly as the gate's own
-[README](/tools/xtask/src/verifications/documentation/README.md#the-contents-grammar) states it,
+[README](/tools/checks/documentation_checks/src/README.md#the-contents-grammar) states it,
 and the gate's code is the final word.
 
 The Contents block is the first fenced code block whose info string is exactly `text` and that opens
@@ -145,7 +145,7 @@ table, with a skeleton and a worked sample written from a real folder; the
 | leaf | none | `readme_leaf.md` | `crates/line_of_sight/interior_line_of_sight/src/` |
 | page | Routes, Data, States | `readme_page.md` | `apps/frontend/src/pages/operations/schedule/` |
 | app | Routes, Public surface | `readme_app.md` | `apps/frontend/src/workspaces/editor/` |
-| command-line | Commands | `readme_command_line.md` | `tools/developer_tools/src/bin/`, `tools/xtask/src/commands/db/` |
+| command-line | Commands | `readme_command_line.md` | `tools/developer_tools/src/bin/`, `tools/commands/database_operations/src/` |
 | data (contracts, assets, fixtures, migrations, seeds) | Format, Producers and consumers | `readme_data.md` | `contracts/fixtures/missions/`, `apps/api/migrations/` |
 | mod scripts | Authority | `readme_mod_scripts.md` | `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` |
 | mod assets | Format, Referenced by | `readme_mod_assets.md` | `apps/mod/tbd-framework/Prefabs/` |
@@ -208,7 +208,7 @@ Go down this list and take the first kind that fits.
    (`contracts/definitions/`, `apps/api/seeds/`, `assets/`, `assets/terrains/`).
 8. **command-line**: a crate's `src/bin/`, and each folder directly under
    `tools/xtask/src/commands/` (`tools/developer_tools/src/bin/`,
-   `apps/api/src/bin/`, `tools/xtask/src/commands/db/`). Any other folder that
+   `apps/api/src/bin/`, `tools/commands/database_operations/src/`). Any other folder that
    parses or runs commands, such as a folder inside a command group, is a domain or a leaf and
    links the command-line README it belongs to.
 9. **app**: a workspace directly under `apps/frontend/src/workspaces/`.
@@ -300,7 +300,7 @@ configures or runs by hand, such as a crate's `rustfmt.toml`, needs only its Con
 
 Three gates check documentation. Each takes a repeatable `--path <dir>` that limits it to part of the
 repository, and exits 0 when every judged item held, 1 when at least one broke a rule, and 2 when a
-check could not run. The [documentation gates README](/tools/xtask/src/verifications/documentation/README.md)
+check could not run. The [documentation gates README](/tools/checks/documentation_checks/src/README.md)
 specifies every rule.
 
 | Gate | What it checks |

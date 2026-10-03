@@ -18,7 +18,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 
 const PROFILE_CANDIDATES: [&str; 2] = [
     ".local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/TBD_Export",

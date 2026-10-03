@@ -9,14 +9,14 @@ use serde_json::{Map, Value, json};
 use super::{
     CHUNK_SIZE_M, ChunkRow, KeptRow, PHASE_ORDER, compact, gz9, phase_kinds, pretty_nl, terrain_row,
 };
-use crate::repository_layout::compiled_checkout_root;
-use crate::repository_layout::{map_scratch_dir, terrain_dir};
 use crate::world_export_pipeline::binary_emit;
 use crate::world_export_pipeline::classify::{Classifier, Rules, load_rules, stream_raw_entities};
 use crate::world_export_pipeline::json_number_formatting::{
     chunk_row_values, js_normalize, js_num, norm_heading, round2, round3, trailers_trivial,
 };
 use crate::world_export_pipeline::polygon_geometry::{cell_of, chunk_key};
+use ::repository_layout::find_repository_root;
+use ::repository_layout::{map_scratch_dir, terrain_dir};
 
 /// Catalog state shared by density generation, inventory emission, and manifest updates.
 pub(super) struct PreparedWorldObjects {
@@ -65,7 +65,7 @@ pub(super) fn prepare_world_objects(
     }
     let world_size_m = max_x;
 
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let terrain_dir = terrain_dir(&root, terrain);
     let staging = map_scratch_dir(&root, terrain).join("export");
     let raw_path = staging.join("raw-entities.jsonl");

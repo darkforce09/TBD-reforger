@@ -51,14 +51,15 @@ scratch/everon/spike/TBD_SatExport_everon.tga (4096²)
 
 ## Boundaries
 
-- Depends on: `super::image_operations`; `crate::enfusion_pak::PakVfs` and
+- Depends on: `super::image_operations`; `enfusion_pak::PakVfs` and
   `crate::world_export_pipeline::topo` for the road geometry; `resvg` for the strokes;
-  `crate::repository_layout` for the scratch, terrain and artifact folders;
-  `crate::repository_layout::compiled_checkout_root` for the checkout root.
+  the `repository_layout` crate for the scratch and terrain folders and
+  `crate::map_pipeline_layout` for the artifact folders;
+  `repository_layout::find_repository_root` for the checkout root.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (the `build-landcover`,
   `build-cartographic`, `build-pyramid`, `reset-water-meta`, `patch-unified-bytes`,
   `patch-map-tiles-meta` and `verify-cartographic` subcommands); the `map-water-everon` and
-  `map-cartographic-everon` tasks in `tools/xtask/src/commands/ci/task_definitions.rs`.
+  `map-cartographic-everon` tasks in `tools/commands/ci_task_catalog/src/task_definitions.rs`.
 - Rules: the pyramid lands in the terrain's `tiles/` folder, which git ignores
   (`assets/terrains/**/tiles/` in `.gitignore`), while the manifest patches change the committed
   `manifest.json`; the land-cover thresholds and tint colours are named constants in

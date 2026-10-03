@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::{definition_path, terrain_dir};
+use ::repository_layout::{definition_path, terrain_dir};
 
 /// `map bvh-batch --prefab <Prefabs/…/X.et> [--slug <s>] [--out <dir>] [--paks <dir>]
 /// [--extract <dir>] [--scene <spec.json>] [--kind <record>=<kind>]… [--dry-run]`

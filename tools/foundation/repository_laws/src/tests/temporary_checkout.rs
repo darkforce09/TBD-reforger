@@ -26,7 +26,7 @@ pub(super) const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
     "tools/foundation/verification_core",
     "tools/foundation/process_runner",
     "tools/foundation/repository_laws",
-    "tools/ticket_engine",
+    "tools/tickets/ticket_model",
     "tools/xtask",
     "tools/developer_tools",
     "tools/foundation/repository_layout",

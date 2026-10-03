@@ -63,9 +63,9 @@ network domain enabled so each response says whether the service worker answered
 
 ## Boundaries
 
-- Depends on: `crate::browser_testing::cdp` (launch, pages, input, screenshots),
-  `crate::browser_testing::server` (the server and its `api_fixture_corpus`),
-  `crate::repository_layout::MapAssetMounts`; `map_engine` (`camera::grid_reference`);
+- Depends on: `chrome_devtools_protocol` (launch, pages, input, screenshots),
+  `browser_gate_suites::server` (the server and its `api_fixture_corpus`),
+  `browser_gate_suites::gate_layout::MapAssetMounts`; `map_engine` (`camera::grid_reference`);
   `ballistics_model` (`catalog`) and `fire_mission_planning` (`fire_mission`, `battery`,
   `solution_wording`); `image` for the
   screenshot; the committed catalog in `contracts/catalogs/ballistics/`.

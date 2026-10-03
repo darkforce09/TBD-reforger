@@ -48,7 +48,7 @@ previews an override. `pak-cat` prints one pak entry of any type to stdout, the 
 
 ## Boundaries
 
-- Depends on: the pak reader in `tools/developer_tools/src/enfusion_pak/` (`PakSet`,
+- Depends on: the pak reader in `tools/enfusion/enfusion_pak/src/` (`PakSet`,
   `AssetSource`); the source stack and asset decoder of
   `tools/developer_tools/src/blueprint/bvh/batch_processing.rs`; the surface classification and
   convex hulls in `tools/developer_tools/src/blueprint/architectural_analysis/`;

@@ -4,7 +4,7 @@
 //! sweep roots is a workspace member (1); each judged member declares its layout (2) and sits at
 //! its category plus its name (3); tiers are recomputed from dependencies and edges point strictly
 //! down (4); the category edge matrix and the wasm-only edge rule hold (5); the firewalls hold (6,
-//! [`super::crate_firewalls`]); nothing new depends on a member under `legacy/` (7,
+//! `super::crate_firewalls`); nothing new depends on a member under `legacy/` (7,
 //! [`super::strangler`]); and dev-dependencies never point at `apps/` or `legacy/` (8).
 //! **Position:** `cargo xtask verify crate-tiers` prints [`check_crate_tiers`]; xtask passes the
 //! sweep roots. Reads [`crate::workspace_members`].

@@ -19,7 +19,7 @@ tickets or before a wave looks wrong in `platform wave status`. The commands are
 The plan is `.ai/tickets/wave.lock`. `cargo xtask wave repack` compiles it from the ticket files
 and is its only writer; `ticket ship`, `ticket set-status`, `platform wave land` and
 `platform wave wave --close` call the same compiler. The
-[wave lock README](/tools/ticket_engine/src/wave_lock/README.md) holds the full algorithm; the
+[wave lock README](/tools/tickets/ticket_wave_lock/src/README.md) holds the full algorithm; the
 facts an orchestrator needs are these.
 
 | Fact | Rule |
@@ -137,7 +137,7 @@ ticket per repack, no repack ever sees the whole set shipped, no `[[emptied]]` e
 
 - [Wave lock command group](/tools/xtask/src/commands/wave/README.md) — `wave repack`,
   `wave check` and `slice-collisions`.
-- [Wave lock](/tools/ticket_engine/src/wave_lock/README.md) — the compiler, the numbering and
+- [Wave lock](/tools/tickets/ticket_wave_lock/src/README.md) — the compiler, the numbering and
   the emptied waves in full.
 - [Ticket registry](/.ai/tickets/README.md) — the ticket fields the plan is compiled from.
 - [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) — dispatching the

@@ -51,7 +51,7 @@ keep their hyphenated spelling. A new acceptance run adds new evidence beside a 
 
 - [Equipment and vehicle source exporter](/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/)
   — the Workbench scripts the Workbench cases and code hashes cover.
-- [Validation and publication](/tools/xtask/src/commands/mod_ops/equipment_vehicle_export/) —
+- [Validation and publication](/tools/commands/mod_operations/src/equipment_vehicle_export/) —
   the validator and publisher the summaries and the publication proof come from.
 
 ## Boundaries
@@ -59,7 +59,7 @@ keep their hyphenated spelling. A new acceptance run adds new evidence beside a 
 - Depends on: the exporter and the xtask commands above at the hashed revision, and the contract
   `contracts/definitions/equipment-vehicle-export.schema.json`.
 - Used by: the exporter README in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/`
-  and the validation README in `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`.
+  and the validation README in `tools/commands/mod_operations/src/equipment_vehicle_export/`.
 - Rules: nothing here is edited after acceptance; only the folder indexes and the report's links
   change.
 

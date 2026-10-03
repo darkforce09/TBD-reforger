@@ -169,7 +169,7 @@ now-free files as its `owns`. Completion agents commit a checkpoint after each s
 - [Running a wave](/documentation/runbooks/factory_waves/running_a_wave.md) — where the brief
   is dispatched and the report is read.
 - [Known traps](/documentation/runbooks/factory_waves/known_traps.md) — why each rule exists.
-- [Slice worktree lifecycle internals](/tools/xtask/src/commands/platform/slice_worktree/README.md)
+- [Slice worktree lifecycle internals](/tools/commands/platform_execution/src/slice_worktree/README.md)
   — the worktree the agent works in.
 - [Agent context guards](/tools/xtask/src/commands/agent_context/README.md) — `ai guard` and
   `ai run`.

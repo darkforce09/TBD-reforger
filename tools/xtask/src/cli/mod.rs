@@ -1,22 +1,21 @@
 use crate::commands::agent_context::cli::AiCmd;
-use crate::commands::ballistics::cli::BallisticsCmd;
-use crate::commands::debug::cli::DebugCmd;
-use crate::commands::deploy::cli::DeployCmd;
 use crate::commands::fetch::cli::FetchCmd;
-use crate::commands::generate::cli::GenCmd;
 use crate::commands::map::cli::MapCmd;
-use crate::commands::mcp::cli::McpCmd;
-use crate::commands::mod_ops::cli::ModCmd;
-use crate::commands::platform::cli::PlatformCmd;
 use crate::commands::refactor::cli::RefactorCmd;
-use crate::commands::reproduction::cli::ReproCmd;
 use crate::commands::schema::cli::SchemaCmd;
-use crate::commands::setup::cli::SetupCmd;
-use crate::commands::staging::cli::StagingCmd;
 use crate::commands::ticket::cli::TicketCmd;
 use crate::commands::verify::cli::VerifyCmd;
 use crate::commands::wave::cli::WaveLockCmd;
+use ballistics_oracle_tooling::BallisticsCmd;
 use clap::{Parser, Subcommand};
+use deployment::DeployCmd;
+use enfusion_mcp::McpCmd;
+use mod_operations::ModCmd;
+use platform_execution::PlatformCmd;
+use remote_debugging::{DebugCmd, ReproCmd};
+use schema_tooling::GenCmd;
+use staging_procedures::StagingCmd;
+use workstation_setup::SetupCmd;
 
 #[derive(Parser, Debug)]
 // `disable_help_subcommand` frees the `help` name for `cargo xtask help`, which lists the TASK
@@ -72,7 +71,7 @@ pub(crate) enum TopCmd {
     /// covers rather than keeping an unchecked third copy of the list.
     Db {
         #[command(subcommand)]
-        cmd: crate::commands::db::operations::DbCmd,
+        cmd: database_operations::local_database::DbCmd,
     },
     /// Staging acceptance harness: preflight, status, host actions and the recorded receipts
     Staging {
@@ -165,4 +164,17 @@ pub(crate) enum TopCmd {
     Help,
 }
 
+pub(crate) mod command_vocabulary;
 pub(crate) mod dispatch;
+
+#[cfg(test)]
+#[path = "tests/documentation_command_tree_tests.rs"]
+mod documentation_command_tree_tests;
+
+#[cfg(test)]
+#[path = "tests/documentation_gate_arguments_tests.rs"]
+mod documentation_gate_arguments_tests;
+
+#[cfg(test)]
+#[path = "tests/workbench_logs_file_argument_tests.rs"]
+mod workbench_logs_file_argument_tests;

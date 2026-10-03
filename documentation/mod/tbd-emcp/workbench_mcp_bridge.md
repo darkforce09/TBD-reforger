@@ -12,11 +12,12 @@ export handlers. Mod developers and agents working in Workbench read it.
 - Code: [`apps/mod/tbd-emcp/`](/apps/mod/tbd-emcp/README.md), whose
   [`Scripts/WorkbenchGame/EnfusionMCP/`](/apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/README.md)
   holds the nineteen Net API handlers; the command side is
-  [`tools/xtask/src/commands/mcp/`](/tools/xtask/src/commands/mcp/README.md), the broker
-  `tools/developer_tools/src/bin/mcpd.rs` and the pinned package in
+  [`tools/commands/enfusion_mcp/src/`](/tools/commands/enfusion_mcp/README.md), the broker
+  [`tools/enfusion/enfusion_mcp_broker/`](/tools/enfusion/enfusion_mcp_broker/README.md) behind
+  `tools/developer_tools/src/bin/mcpd.rs`, and the pinned package in
   `tools/enfusion_mcp_node_package/package.json` (`enfusion-mcp` 0.6.1).
 - Entry: `cargo xtask mod dev-bootstrap`
-  (`tools/xtask/src/commands/mod_ops/development_bootstrap.rs`) brings the bridge up;
+  (`tools/commands/mod_operations/src/development_bootstrap.rs`) brings the bridge up;
   `cargo xtask mcp call` and `cargo xtask mcp wbcall` use it.
 - Related: the [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md)
   (the broker, exit codes, environment and live checks) and the
@@ -92,7 +93,7 @@ brokers and servers.
   loads the project; an edited one needs a script reload (`wb_reload`).
 - A dedicated server never loads the addon: `cargo xtask deploy staging` excludes
   `apps/mod/tbd-emcp/` and `apps/mod/tbd-export/` from its rsync
-  (`tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs:31-32`).
+  (`tools/commands/deployment/src/staging/remote/ssh_argv.rs:31-32`).
 
 ### Native MCP tools in an editor session
 
@@ -126,9 +127,9 @@ plugin's menu entry is commented out today, so the registry step has no entry po
   — `apps/mod/tbd-export/addon.gproj:5-8` depends on vanilla and `TBD_EMCP` only.
 - The dedicated server's Steam app id disagrees between commands: `cargo xtask debug direct-join`
   reads the server build from `appmanifest_1874900.acf`
-  (`tools/xtask/src/commands/debug/direct_join.rs:98`) — the compile, world-boot and playtest
+  (`tools/commands/remote_debugging/src/debug/direct_join.rs:98`) — the compile, world-boot and playtest
   gates tell the operator to install app 1890870
-  (`tools/xtask/src/commands/mod_ops/compile/execution.rs:94` and `:132`). Workbench (1874910) and the
+  (`tools/commands/mod_operations/src/compile/execution.rs:94` and `:132`). Workbench (1874910) and the
   client (1874880) are consistent.
 
 ## Data
@@ -136,7 +137,7 @@ plugin's menu entry is commented out today, so the registry step has no entry po
 - Net API: one TCP connection per request on `ENFUSION_WORKBENCH_HOST`:`ENFUSION_WORKBENCH_PORT`
   (default 127.0.0.1:5775), length-prefixed strings carrying protocol version 1, a client id,
   `JsonRPC` and the JSON object with `APIFunc` set to the handler class
-  (`tools/xtask/src/commands/mcp/netapi.rs`). Each handler fills a request `JsonApiStruct` and
+  (`tools/commands/enfusion_mcp/src/netapi.rs`). Each handler fills a request `JsonApiStruct` and
   answers a response struct as JSON; a handler with several operations switches on `action` and
   answers an unknown one with `status` `error` and the valid actions.
 - MCP: three JSON-RPC lines per call (`initialize`, `notifications/initialized`, `"tools/call"` with

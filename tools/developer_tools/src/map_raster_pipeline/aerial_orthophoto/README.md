@@ -29,7 +29,7 @@ paks (ENFUSION_GAME_PATH) ─▶ stitch-sap-ortho ─▶ everon-sap-ortho.png + 
                   verify-sap-ortho               ◀─┘  catalogue, metadata, size, orientation, tile 0/0/0
 ```
 
-- `stitch_sap_ortho` opens the game's paks through `crate::enfusion_pak::PakVfs`, decodes all 2,500
+- `stitch_sap_ortho` opens the game's paks through `enfusion_pak::PakVfs`, decodes all 2,500
   Eden cells with `crate::world_export_pipeline::enfusion_texture_decoder`, places cell `N = y*50 +
   x` with the south row at the image bottom, bridges the interior seams with `bridge_seams`, and
   writes the PNG and its metadata JSON. It refuses to write when any cell is missing or failed to
@@ -51,9 +51,10 @@ paks (ENFUSION_GAME_PATH) ─▶ stitch-sap-ortho ─▶ everon-sap-ortho.png + 
 ## Boundaries
 
 - Depends on: the parent's constants and types and `super::image_operations`;
-  `crate::enfusion_pak::PakVfs`; `crate::world_export_pipeline::enfusion_texture_decoder` for the
-  cell decode; `crate::repository_layout` for the scratch, terrain and artifact folders;
-  `crate::repository_layout::compiled_checkout_root` for the checkout root.
+  `enfusion_pak::PakVfs`; `crate::world_export_pipeline::enfusion_texture_decoder` for the
+  cell decode; the `repository_layout` crate for the scratch and terrain folders and
+  `crate::map_pipeline_layout` for the artifact folders;
+  `repository_layout::find_repository_root` for the checkout root.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (the `stitch-sap-ortho`,
   `blend-sap-seams`, `verify-sap-seams`, `analyze-sap-seams` and `verify-sap-ortho` subcommands);
   `verify-sap-ortho` is a step of `cargo xtask ci map-water-everon`.

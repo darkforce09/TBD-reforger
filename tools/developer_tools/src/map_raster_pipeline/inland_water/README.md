@@ -44,14 +44,15 @@ everon-sap-ortho.png + water-inland-mask.png + the elevation model
 
 ## Boundaries
 
-- Depends on: `super::image_operations`; `crate::enfusion_pak::PakVfs` and
+- Depends on: `super::image_operations`; `enfusion_pak::PakVfs` and
   `crate::world_export_pipeline::topo` for the road corridor;
   `crate::world_export_pipeline::json_number_formatting` for the numbers the record prints;
-  `crate::repository_layout` for the scratch, terrain and artifact folders;
-  `crate::repository_layout::compiled_checkout_root` for the checkout root.
+  the `repository_layout` crate for the scratch and terrain folders and
+  `crate::map_pipeline_layout` for the artifact folders;
+  `repository_layout::find_repository_root` for the checkout root.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (`analyze-water`,
   `composite-water`); the `map-water-everon` task in
-  `tools/xtask/src/commands/ci/task_definitions.rs`; the cartographic render in
+  `tools/commands/ci_task_catalog/src/task_definitions.rs`; the cartographic render in
   `tools/developer_tools/src/map_raster_pipeline/cartographic_rendering/` reads the mask.
 - Rules: the composite is applied once per stitched image, held by the `waterComposite` check and
   undone only by restoring the `.pre-water.png` copy and running `map reset-water-meta`; the

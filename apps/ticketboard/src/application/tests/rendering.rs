@@ -1,7 +1,7 @@
 use super::*;
-use crate::test_support::{corpus_of, work};
-use crate::ticket_actions::services::{commands, dialog_builders};
-use crate::wave_plan::services::lock_file::{LockWave, WaveLock};
+use ticketboard_model::test_support::{corpus_of, work};
+use ticketboard_model::ticket_actions::services::{commands, dialog_builders};
+use ticketboard_model::wave_plan::services::lock_file::{LockState, LockWave, WaveLock};
 
 fn workspace() -> WorkspaceState {
     let corpus = corpus_of(vec![

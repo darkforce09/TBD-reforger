@@ -77,7 +77,7 @@ None: Workbench runs these scripts in the editor.
 - Rules: a layer writes only below the config's destination, through `TBD_MapExportPaths`; the
   addon holds no copy of a framework class; sources stay ASCII. `cargo xtask mod compile` compiles
   only the framework addon
-  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
+  (`tools/commands/mod_operations/src/compile/execution.rs`), so these scripts compile only when
   Workbench loads `tbd-export`.
 
 ## Related documentation
@@ -90,7 +90,7 @@ None: Workbench runs these scripts in the editor.
   blueprint steps.
 - [Map commands](/tools/xtask/src/commands/map/README.md) — the `cargo xtask map` commands that
   read these exports.
-- [MCP commands](/tools/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
+- [MCP commands](/tools/commands/enfusion_mcp/README.md) — `cargo xtask mcp wbcall`.
 - [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every layer, its entry point, the pipeline to committed data and its known gaps.
 - [Terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —

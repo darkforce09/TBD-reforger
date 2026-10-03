@@ -1,12 +1,13 @@
 use super::*;
-use crate::repository_layout::{export_operations_log, map_scratch_dir};
+use crate::map_pipeline_layout::export_operations_log;
+use ::repository_layout::map_scratch_dir;
 
 /// The export stage this gate accepts an operations log from: the subregion spike, whose log
 /// carries the K-gate verdicts and the sampled rows the checks below read.
 const SPIKE_SLICE: &str = "spike-subregion-export";
 
 pub fn verify_spike_ops_log(terrain: &str) -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let ops_path = export_operations_log(&root, terrain);
     let staging = map_scratch_dir(&root, terrain).join("spike");
     let raw_path = staging.join("raw-entities.jsonl");

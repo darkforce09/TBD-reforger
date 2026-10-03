@@ -147,7 +147,7 @@ impl TicketboardApp {
                         self.check_log.push(line);
                     }
                     ProcessEvent::Exited { code } => {
-                        self.check.on_exit(code, trust::utc_hms(epoch_secs()));
+                        self.check.on_exit(code, utc_hms_now());
                         if code != Some(0) {
                             // Red auto-opens the verbatim pane — the errors are
                             // the point, not a number.
@@ -156,8 +156,7 @@ impl TicketboardApp {
                         finished = true;
                     }
                     ProcessEvent::SpawnFailed(error) => {
-                        self.check
-                            .on_spawn_failed(error, trust::utc_hms(epoch_secs()));
+                        self.check.on_spawn_failed(error, utc_hms_now());
                         finished = true;
                     }
                 }

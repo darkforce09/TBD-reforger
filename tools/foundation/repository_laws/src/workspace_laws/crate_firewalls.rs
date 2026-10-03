@@ -3,9 +3,11 @@
 //! **Role:** keeps each heavy or platform-bound external crate inside the categories built for
 //! it: wgpu in the GPU device, frame and core crates, the map renderers and the paper-doll
 //! renderer; the browser crates in wasm-only crates, `time_source` behind a target table and the
-//! frontend, and never in mission editing; sqlx and axum in api crates; leptos in frontend
-//! crates; no tokio, axum, reqwest, resvg or image in the dependency closure of xtask; and no map
-//! noun in a declared name of a graphics crate.
+//! frontend, and never in mission editing; sqlx and axum in api crates, with axum (never sqlx)
+//! also in the `tools/browser_testing` and `tools/staging` crates, which are test and staging
+//! harness servers rather than product code; leptos in frontend crates; no tokio, axum, reqwest,
+//! resvg or image in the dependency closure of xtask (which keeps the harness servers out of it);
+//! and no map noun in a declared name of a graphics crate.
 //! **Position:** called by [`super::crate_tiers`] over the judged members.
 //! **Signals & state:** none; reads parsed manifests and the graphics crates' sources.
 //! **Invariants:** only normal and build edges count (dev-dependencies never ship), an edge is
@@ -42,6 +44,10 @@ pub(crate) const BROWSER_CRATES: &[&str] = &[
 ];
 /// The one foundation package that may reach the browser, from a target table only.
 pub(crate) const TIME_SOURCE_PACKAGE: &str = "time_source";
+/// The tool categories whose crates are test and staging harness servers (the gate's static
+/// server, the staging relay): axum, never sqlx, is allowed there; [`XTASK_CLOSURE_BANS`] keeps
+/// them out of xtask.
+pub(crate) const HARNESS_SERVER_CATEGORIES: &[&str] = &["tools/browser_testing", "tools/staging"];
 /// External crates that never enter the dependency closure of xtask.
 pub(crate) const XTASK_CLOSURE_BANS: &[&str] = &["tokio", "axum", "reqwest", "resvg", "image"];
 /// The package name of the xtask binary.
@@ -112,12 +118,15 @@ fn breached_firewall(
              the frontend",
         );
     }
-    let server = ["sqlx", "axum"]
-        .iter()
-        .any(|crate_name| name == *crate_name || name.starts_with(&format!("{crate_name}-")));
-    if server {
-        return (class != Some(CategoryClass::Api))
-            .then_some("sqlx and axum live only in api crates");
+    let is_crate =
+        |crate_name: &str| name == crate_name || name.starts_with(&format!("{crate_name}-"));
+    if is_crate("sqlx") || is_crate("axum") {
+        let allowed = class == Some(CategoryClass::Api)
+            || (is_crate("axum") && HARNESS_SERVER_CATEGORIES.contains(&category));
+        return (!allowed).then_some(
+            "sqlx and axum live only in api crates; axum also in the browser_testing and staging \
+             harness servers",
+        );
     }
     if name == "leptos" || name.starts_with("leptos_") || name.starts_with("leptos-") {
         return (class != Some(CategoryClass::Frontend))

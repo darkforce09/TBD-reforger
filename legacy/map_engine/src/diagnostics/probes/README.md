@@ -34,7 +34,7 @@ offset to the south, which fails if the map is drawn upside down. The promise re
   `window.__selfChecks.calibration`, published by
   `register_self_checks` in `apps/frontend/src/workspaces/editor/bridge/viewport.rs`; the
   editor gate's `selfcheck` smoke
-  (`tools/developer_tools/src/browser_testing/editor_smoke_tests/editor_boot_scenarios.rs`)
+  (`tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/editor_boot_scenarios.rs`)
   calls it under WebGL2, and `cargo xtask mk leptos-gates` runs that smoke.
 - Rules: the check uses its own target, uniform and pipeline and leaves the engine's frame state
   alone, so it can run beside the live render loop; the expected bytes are exact, which holds

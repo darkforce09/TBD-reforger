@@ -20,14 +20,14 @@ deploy/
 
 ## How it works
 
-Every path here is a constant in `tools/xtask/src/core/repository_layout.rs` (`DEPLOY_DIR`,
+Every path here is a constant in `tools/foundation/repository_layout/src/deployment.rs` (`DEPLOY_DIR`,
 `DEPLOY_ENV`, `DEPLOY_ENV_EXAMPLE`, `CADDYFILE`, `SYSTEMD_UNITS_DIR`, `WEBSITE_API_UNIT`), which
 the command that reads a file joins onto the checkout root. The operator's `deploy.env` holds the
 host, the credentials and the remote paths; `TBD_SSH_HOST` there is the one place the deploy host
 is named. The repository's root `.gitignore` names it, and both rsync lanes exclude it, so a
 development machine never overwrites the server's copy.
 
-Every command reads it through `tools/xtask/src/core/deploy_environment.rs`, the same way:
+Every command reads it through `tools/foundation/deploy_settings/src/deploy_environment.rs`, the same way:
 
 - `KEY=VALUE` lines, parsed and never executed: an optional `export `, values in `"…"` or `'…'`
   taken verbatim, a comment on its own line or after whitespace; a line that breaks the grammar
@@ -65,7 +65,7 @@ systemd/            ──see that folder's README for what installs each unit
 - Remote folders, each defaulting under `/home/<user>` of `TBD_SSH_HOST` and required when it names
   no user: `TBD_REMOTE_DIR` (`tbd/repo`), `TBD_PROFILE_DIR` (`tbd/profile`), `TBD_ADDONS_STAGING`
   (`tbd/addons-staging`) and `TBD_SERVER_DIR` (`steam/arma-reforger-server`).
-- Website, read by `tools/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR`, which must
+- Website, read by `tools/commands/deployment/src/website.rs`: `TBD_REMOTE_DIR`, which must
   sit under `/home/<user>/tbd/` (the `--delete` guard `require_tbd_remote_prefix` checks, so a
   `TBD_SSH_HOST` without a user is refused); `TBD_POSTGRES_HOST_PORT` (default 5432), the host port
   of the staging compose Postgres; `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`);
@@ -73,7 +73,7 @@ systemd/            ──see that folder's README for what installs each unit
   Caddy), `TBD_SKIP_SPA_BUILD` (the app build only: Caddy still starts and serves the build
   already on the host) and `TBD_SKIP_API_BUILD`. `TBD_REMOTE_DIR`, `TBD_SSH_HOST` and
   `TBD_PROFILE_DIR` are refused when they contain `prairielearn` in any case.
-- Game server fleet, read by `tools/xtask/src/commands/deploy/staging/config.rs` and
+- Game server fleet, read by `tools/commands/deployment/src/staging/config.rs` and
   `fleet_instances.rs` beside it: `TBD_FLEET_INSTANCES` (5, at most 5) instances, instance N on game
   port `TBD_FLEET_GAME_PORT_BASE` + N (2000), A2S port `TBD_FLEET_A2S_PORT_BASE` + N (17776) and
   loopback RCON port `TBD_FLEET_RCON_PORT_BASE` + N (19998), all distinct; the host agent of
@@ -133,17 +133,17 @@ covers the site, the mounts and the forwarded-address trust.
   user units and a container runtime with compose on the host, which runs Caddy from the staging
   compose file.
 - Used by: the `deploy`, `mod`, `setup` and `debug` commands above, through the layout constants
-  and the loader in `tools/xtask/src/core/deploy_environment.rs`; the `caddy` service of
+  and the loader in `tools/foundation/deploy_settings/src/deploy_environment.rs`; the `caddy` service of
   `deploy/compose.staging.yml`, which mounts `caddy/` alone; the API's forwarded-for
   test, which reads the Caddyfile; the API's configuration test, which reads the staging compose
   file.
 - Rules: `deploy.env` is never committed and never rsynced (both exclude lists name
   `DEPLOY_ENV`, and `the_deploy_secrets_file_sits_beside_its_example` in
-  `tools/xtask/src/tests/repository_layout_tests.rs` pins its place beside the example), and no
+  `tools/foundation/repository_layout/src/tests/command_locations_tests.rs` pins its place beside the example), and no
   container mounts the folder that holds it
   (`the_caddy_service_mounts_no_folder_holding_the_deploy_secrets` in
-  `tools/xtask/src/commands/deploy/tests/website/tests.rs`); a
-  path the deploy commands read gets its constant in `tools/xtask/src/core/repository_layout.rs`, which
+  `tools/commands/deployment/src/tests/website/tests.rs`); a
+  path the deploy commands read gets its constant in `tools/foundation/repository_layout/src/deployment.rs`, which
   `every_committed_location_exists_in_the_checkout` checks; the example loads under the grammar
   and assigns no optional key empty (`the_committed_example_loads_and_masks_nothing`); documents
   name the host only as `TBD_SSH_HOST`, and no production file under `tools` names a

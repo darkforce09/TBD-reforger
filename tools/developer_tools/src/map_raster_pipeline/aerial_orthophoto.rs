@@ -15,10 +15,10 @@ use anyhow::{Result, bail};
 use serde_json::{Value, json};
 
 use super::image_operations::{self, Rgb8};
-use crate::enfusion_pak::PakVfs;
-use crate::repository_layout::compiled_checkout_root;
-use crate::timestamp_formatting::iso_from_system_time;
 use crate::world_export_pipeline::enfusion_texture_decoder;
+use ::repository_layout::find_repository_root;
+use enfusion_pak::PakVfs;
+use time_source::iso_from_system_time;
 
 pub const HW: usize = 4;
 pub const ANCHOR: usize = HW + 1;

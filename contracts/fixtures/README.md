@@ -59,9 +59,9 @@ instead of letting malformed missions through until one reaches a live
   two-faction mission in `missions/valid/`, the density tile in `map/density/`, and everything in
   `ballistics/`, which `cargo xtask ballistics trim-export` writes.
 - Consumers:
-  - the xtask schema gates in `tools/xtask/src/verifications/schemas/checks/` and the
+  - the xtask schema gates in `tools/commands/schema_tooling/src/schema_checks/` and the
     map-object golden gates in `tools/developer_tools/src/map_verification/object_goldens/`,
-    which reach these folders through `tools/developer_tools/src/repository_layout.rs`;
+    which reach these folders through `tools/foundation/repository_layout/src/contracts.rs`;
   - the xtask mod commands `world-boot`, `test-mission` and `dev-server`;
   - tests in `apps/api/`, `apps/frontend/`, `legacy/map_engine/` and
     `tools/`, named in each folder's README.

@@ -1,5 +1,6 @@
 use super::*;
-use crate::repository_layout::{density_fixtures_dir, terrain_dir};
+use crate::map_pipeline_layout::density_fixtures_dir;
+use ::repository_layout::terrain_dir;
 
 /// Re-derive the TBDD density grids from the **committed** objects (no staging /
 /// Workbench). Reads `objects/prefabs.json.gz` (prefabId→kind) + every `objects/chunks/*.json.gz`
@@ -19,7 +20,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
         bail!("worldBoundsM unsupported (expect square)");
     }
 
-    let terrain_dir = terrain_dir(&compiled_checkout_root()?, terrain);
+    let terrain_dir = terrain_dir(&find_repository_root()?, terrain);
     let objects_dir = terrain_dir.join("objects");
     let chunks_dir = objects_dir.join("chunks");
     let density_dir = objects_dir.join("density");
@@ -121,7 +122,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
 /// cell-size change the committed fixture must be regenerated. No canopy blur — this validates the
 /// codec/accumulate pipeline, not the mass.
 pub fn gen_density_fixture() -> Result<()> {
-    let dir = density_fixtures_dir(&compiled_checkout_root()?);
+    let dir = density_fixtures_dir(&find_repository_root()?);
     let json_path = dir.join("density-fixture.json");
     let mut fx: Value = serde_json::from_str(&std::fs::read_to_string(&json_path)?)?;
     let world = fx["worldSizeM"].as_f64().unwrap_or(0.0);
@@ -306,7 +307,7 @@ pub fn build_roads_from_topo_opt(
     )?;
     let out_base: PathBuf = match out_base {
         Some(base) => base.to_path_buf(),
-        None => terrain_dir(&compiled_checkout_root()?, terrain),
+        None => terrain_dir(&find_repository_root()?, terrain),
     };
     let objects_dir = out_base.join("objects");
     std::fs::create_dir_all(&objects_dir)?;
@@ -332,7 +333,7 @@ pub fn build_roads_from_topo_opt(
     });
     if ops_log {
         let ops_path =
-            crate::repository_layout::export_operations_log(&compiled_checkout_root()?, terrain);
+            crate::map_pipeline_layout::export_operations_log(&find_repository_root()?, terrain);
         let mut ops: Value = if ops_path.exists() {
             serde_json::from_str(&std::fs::read_to_string(&ops_path)?)?
         } else {

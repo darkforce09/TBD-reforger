@@ -88,7 +88,7 @@ nonzero; both render in a hidden element of the menu row.
     [missions](/documentation/glossary/g_to_m.md#missions) domain.
 - Used by: the callers above; the tests in
   `apps/frontend/src/workspaces/editor/ui/docks/tests/top_strip/`; the outliner smoke test in
-  `tools/developer_tools/src/browser_testing/editor_smoke_tests/outliner_palette.rs`, which
+  `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/outliner_palette.rs`, which
   opens the ORBAT manager from its button.
 - Rules: that tests folder holds these: the menu bar renders the shared Arrange list in order,
   and a menu click and a chord share one invoker

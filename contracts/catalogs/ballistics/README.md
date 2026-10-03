@@ -38,10 +38,10 @@ tolerance. Catalogs are immutable once uploaded: a changed catalog is a new vers
 
 ## Producers and consumers
 
-- Producer: `cargo xtask ballistics trim-export` (`tools/xtask/src/commands/ballistics/`).
+- Producer: `cargo xtask ballistics trim-export` (`tools/commands/ballistics_oracle_tooling/src/`).
 - Consumers:
   - `cargo xtask schema validate`, whose ballistics section
-    (`tools/xtask/src/verifications/schemas/checks/ballistics_validation.rs`) validates the
+    (`tools/commands/schema_tooling/src/schema_checks/ballistics_validation.rs`) validates the
     catalog and cross-checks it with its calibration bundle;
   - the `ballistics_calibration` tests, which load the catalog and bundle and run the flight model
     over every case;

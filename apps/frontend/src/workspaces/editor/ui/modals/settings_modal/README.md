@@ -62,7 +62,7 @@ unchanged rows, and a row whose owner can be selected selects it through the val
   `MaterialIcon`, the `MissionEnv` DTO); over HTTP, `/api/v1/missions/{id}`.
 - Used by: the parent module, whose `MissionSettingsDialog` `session::eden_chrome` re-exports for
   `apps/frontend/src/workspaces/editor/mission_editor.rs`; the smoke test
-  `tools/developer_tools/src/browser_testing/editor_smoke_tests/cur.rs`, which finds the dialog
+  `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/cur.rs`, which finds the dialog
   by its "Mission Settings" heading.
 - Rules: all three dialogs answer Escape only while topmost
   (`settings_dialogs_gate_escape_on_modal_stack`), a row load that races a patch never applies

@@ -1,7 +1,8 @@
-use crate::core::process::BoundedLog;
 use crate::core::ui::*;
-use crate::repository_status::models::git_status as gitstatus;
-use crate::repository_status::{
+use eframe::egui::{Align, Color32, Layout, RichText, ScrollArea, Spinner, Ui};
+use ticketboard_model::core::process::BoundedLog;
+use ticketboard_model::repository_status::models::git_status as gitstatus;
+use ticketboard_model::repository_status::{
     events::StatusEvent as Action,
     models::{
         check_status::{self as trust, Tone},
@@ -9,7 +10,6 @@ use crate::repository_status::{
         view::StatusView,
     },
 };
-use eframe::egui::{Align, Color32, Layout, RichText, ScrollArea, Spinner, Ui};
 
 pub(crate) const OUTPUT_MAX_H: f32 = 260.0;
 

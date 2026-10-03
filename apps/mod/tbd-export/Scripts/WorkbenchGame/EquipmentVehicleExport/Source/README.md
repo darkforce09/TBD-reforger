@@ -73,7 +73,7 @@ None: Workbench runs these scripts in the editor.
   validator's `explicit_zero_false_and_empty_values_are_preserved`,
   `shared_ancestor_objects_cannot_replace_effective_objects` and
   `native_enums_vectors_units_and_precision_survive_without_conversion` tests
-  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) hold the
+  (`tools/commands/mod_operations/src/equipment_vehicle_export/tests/validation.rs`) hold the
   written form.
 
 ## Related documentation

@@ -11,8 +11,8 @@ use std::path::Path;
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
-use crate::repository_layout::compiled_checkout_root;
-use crate::repository_layout::prefab_classify_path;
+use ::repository_layout::find_repository_root;
+use ::repository_layout::prefab_classify_path;
 
 pub struct Rules {
     pub doc: Value,
@@ -27,7 +27,7 @@ pub struct Classification {
 }
 
 pub fn load_rules() -> Result<Rules> {
-    let p = prefab_classify_path(&compiled_checkout_root()?);
+    let p = prefab_classify_path(&find_repository_root()?);
     let doc: Value = serde_json::from_str(
         &std::fs::read_to_string(&p).with_context(|| p.display().to_string())?,
     )?;

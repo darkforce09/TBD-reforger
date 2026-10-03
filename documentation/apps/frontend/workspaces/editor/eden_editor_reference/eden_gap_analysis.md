@@ -59,7 +59,7 @@ A ticket ID is the registry ticket that delivers or owns the row, checked in `.a
 marks a shipped one, and an open one carries no mark. `—` means no ticket. `wb` marks a row whose
 remaining work is `executor: workbench`. The column is written by hand: `cargo xtask ticket sync`
 rewrites only tables whose header carries a `priority` column
-(`tools/ticket_engine/src/sync/gap_analysis.rs`), and these tables have none, so the sync
+(`tools/tickets/ticket_registry/src/sync/gap_analysis.rs`), and these tables have none, so the sync
 leaves them untouched.
 
 ## Part 1 — Interaction parity (83 IDs)

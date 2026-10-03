@@ -114,7 +114,7 @@ once without an admin, and again with the id. Each start takes a few minutes.
 ## What the command does
 
 `cargo xtask mod playtest` replaces the hand-assembled server: the
-[playtest server README](/tools/xtask/src/commands/mod_ops/playtest_server/README.md) holds its
+[playtest server README](/tools/commands/mod_operations/src/playtest_server/README.md) holds its
 full order.
 
 - It stages `<run dir>` (default `$HOME/tbd-playtest`): the profile from
@@ -176,7 +176,7 @@ deployment's own artifact from the profile cache); and
 
 ## Related
 
-- [Playtest server code](/tools/xtask/src/commands/mod_ops/playtest_server/README.md) — the
+- [Playtest server code](/tools/commands/mod_operations/src/playtest_server/README.md) — the
   staging order, the boot verdict and the lifecycle guards.
 - [Session: join to deploy](/documentation/runbooks/two_client_playtest/session_join_to_deploy.md)
   — the next runbook.

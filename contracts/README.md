@@ -79,7 +79,7 @@ once `cargo xtask db up` has started it.
   - `tools/xtask/` (the schema gates, codegen, `db registry-import` and the `mod` commands that
     stage fixture missions) and `tools/developer_tools/` (world export, blueprint compiler and
     map verification), which find these folders through
-    `tools/developer_tools/src/repository_layout.rs`;
+    `tools/foundation/repository_layout/src/contracts.rs`;
   - the `schema.yml` and `contracts.yml` workflows, which run on every change under
     `contracts/`.
 - Rules:

@@ -24,7 +24,7 @@ apps/api/seeds/
 `psql -v ON_ERROR_STOP=1 -U tbd -d tbd_reforger` inside the `db` container of
 `deploy/compose.dev.yml`:
 `discord_roles.sql`, `registry_dev.sql`, `faction_library.sql`, `vehicle_database.sql`,
-`wiki_pages.sql`. The order is the `SEEDS` list in `tools/xtask/src/commands/db/operations.rs`.
+`wiki_pages.sql`. The order is the `SEEDS` list in `tools/commands/database_operations/src/local_database.rs`.
 Each `psql` run stops at its first failed statement and exits 3, and the command stops at that
 file with that code. The tables come from the migrations, which only the API applies, so seed
 after the API has logged `migrations applied`; seeding earlier fails on the first statement of
@@ -98,9 +98,9 @@ value.
   `wiki-formatting-guide` page and the revision rows included, repeat the matching rows of
   `content_golden.sql`, so a change to one changes the other.
 - Consumers:
-  - `cargo xtask db seed`, through `SEEDS` in `tools/xtask/src/commands/db/operations.rs`;
+  - `cargo xtask db seed`, through `SEEDS` in `tools/commands/database_operations/src/local_database.rs`;
   - `cargo xtask verify wiki-seeds` and `cargo xtask verify faction-library-seeds`
-    (`tools/xtask/src/verifications/database/`), which check that `SEEDS` lists the wiki and
+    (`tools/commands/database_operations/src/database_checks/`), which check that `SEEDS` lists the wiki and
     faction seeds and that the files hold the `field-manual` page and the `US Army 1980s` faction;
   - `apps/api/tests/leaderboards_paging.rs`, which embeds `content_golden.sql`,
     applies it to its own scratch database and adds thirty tied players on top;
@@ -108,7 +108,7 @@ value.
     reads the `wiki-formatting-guide` body out of `wiki_pages.sql` and checks it saves with no
     finding and shows every construct;
   - the migration step of `cargo xtask platform wave gate`
-    (`tools/xtask/src/commands/platform/wave_execution/migrate.rs`), which applies
+    (`tools/commands/platform_execution/src/wave_execution/migrate.rs`), which applies
     `content_golden.sql` after each run so its database stays populated;
   - the capture recipe that closes `content_golden.sql`, which applies `registry_dev.sql` and then
     `content_golden.sql` to rebuild the recorded API fixtures, and people applying
@@ -130,5 +130,5 @@ value.
 
 - [Local development](/documentation/runbooks/local_development.md) — seeding a local database
   and mapping the guild's roles.
-- [Database commands](/tools/xtask/src/commands/db/README.md) — `cargo xtask db` and its seed
+- [Database commands](/tools/commands/database_operations/src/README.md) — `cargo xtask db` and its seed
   step.

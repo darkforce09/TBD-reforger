@@ -20,7 +20,7 @@ use serde_json::{Value, json};
 
 use super::expected_solution::SolutionTables;
 use super::map_pixels::CssRect;
-use crate::browser_testing::cdp::{Page, sleep_ms};
+use chrome_devtools_protocol::{Page, sleep_ms};
 
 /// The pack states after which the pack never becomes `ready` in this page lifetime.
 const TERMINAL_STATES: [&str; 4] = ["incomplete", "quota-short", "unsupported", "failed"];

@@ -145,7 +145,7 @@ with the artifact's compiled slots, which the event roster in `operations` reads
     `apps/frontend/src/pages/administration/`, the
     [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
     `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands through
-    `tools/xtask/src/commands/mod_ops/website_api_client/`.
+    `tools/commands/mod_operations/src/website_api_client/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and
   `every_domain_exports_a_route_table` in `apps/api/src/tests/architecture_rules.rs`);

@@ -117,7 +117,7 @@ shows its banner while the membership is stale or the profile says the viewer ma
 - Used by: `apps/frontend/src/main.rs`, which mounts `AppLayout`; the fallback of
   `apps/frontend/src/app_routes.rs` and the `*` row of
   `apps/frontend/src/foundation/route_table/mod.rs`, which name `NotFoundPage`; the DOM oracle's `notfound`
-  capture in `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`, whose captures of
+  capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`, whose captures of
   the chromed pages hold the frame too.
 - Rules: `classify_frame` is the one place a frame is chosen, naming only `/login` and
   `/auth/callback` and reading every other layout from the route table (`classify_frame_kinds` in

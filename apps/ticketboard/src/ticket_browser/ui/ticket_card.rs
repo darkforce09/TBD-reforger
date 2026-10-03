@@ -1,9 +1,9 @@
 use super::status_board::CARD_H;
 use super::*;
 use crate::core::ui::*;
-use crate::ticket_browser::models::status_board::Card;
-use crate::ticket_registry::models::projection as board;
 use eframe::egui::{self, Align2, FontId, Rect, Sense, StrokeKind, Ui, pos2, vec2};
+use ticketboard_model::ticket_browser::models::status_board::Card;
+use ticketboard_model::ticket_registry::models::projection as board;
 
 /// Card paint: one allocated rect, painter-only text — no nested widgets, so a
 /// virtualized column stays well inside the 17 ms frame budget. `draggable`

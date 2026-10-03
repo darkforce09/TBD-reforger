@@ -16,7 +16,8 @@ alwaysApply: true
   `legacy/map_engine/` (package `map_engine`) · `legacy/graphics_engine/` (package
   `graphics_engine`) · `crates/` (library crates by tier) · `deploy/` (Dockerfile, compose,
   Caddy, systemd units) · `apps/mod/` (the Enfusion addons) · `tools/` (packages `xtask`,
-  `verification_core`, `ticket_engine`, `developer_tools`) · `contracts/` · `assets/`; the
+  `verification_core`, `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry`,
+  `developer_tools`) · `contracts/` · `assets/`; the
   [workspace layout](/documentation/architecture/workspace_layout.md) describes the whole tree.
   Where a new file goes: [Where does X go?](/documentation/standards/where_does_x_go.md).
 - **Documentation ships with its code.** A change updates, in the same commit, the comments of the
@@ -34,7 +35,7 @@ alwaysApply: true
 - **Tickets.** One `.ai/tickets/T-<id>.toml` file per ticket, parent and child alike, beside the
   `.ai/tickets/ROOT` marker; the [ticket registry README](/.ai/tickets/README.md) lists the folder
   and the commands. A ticket file is created only by `cargo xtask ticket add` (or `add-child`); a
-  hand edit keeps the ticket engine's canonical form; then run `cargo xtask ticket check --strict`.
+  hand edit keeps the canonical form `ticket_model` renders; then run `cargo xtask ticket check --strict`.
   The whole lifecycle is
   [Taking a ticket from idea to shipped](/documentation/runbooks/ticket_run_pipeline.md).
 - **Executor gate.** A ticket's `executor` says who may take it: `claude-code` means any AI coding

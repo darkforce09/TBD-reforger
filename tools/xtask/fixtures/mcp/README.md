@@ -17,8 +17,8 @@ tools/xtask/fixtures/mcp/
 
 ## How it works
 
-`cargo xtask mcp selftest` (`tools/xtask/src/commands/mcp/call_selftest.rs`) joins
-`MCP_TRANSCRIPT_FIXTURES_DIR` from `tools/xtask/src/core/repository_layout.rs` onto the
+`cargo xtask mcp selftest` (`tools/commands/enfusion_mcp/src/call_selftest.rs`) joins
+`MCP_TRANSCRIPT_FIXTURES_DIR` from `tools/foundation/repository_layout/src/tool_inputs.rs` onto the
 checkout root, runs `cargo xtask mcp consume` once per file with the file on stdin, and checks the
 exit code and output against the expectation in each Contents role. `mcp consume` prints the
 result of the message whose `id` is 2, the tool call that follows the `id` 1 initialize reply. The
@@ -41,13 +41,13 @@ that half reads no file here.
 
 - Producers: people, from recorded enfusion-mcp output; no command writes these files.
 - Consumers: `cargo xtask mcp selftest`, which names each file in
-  `tools/xtask/src/commands/mcp/call_selftest.rs`.
+  `tools/commands/enfusion_mcp/src/call_selftest.rs`.
 
 ## Boundaries
 
 - Depends on: the exit-code contract of `cargo xtask mcp consume` (0 success, 1 empty,
   2 initialize failed, 3 tool error), declared on `McpCmd` in
-  `tools/xtask/src/commands/mcp/cli.rs`.
+  `tools/commands/enfusion_mcp/src/command_line.rs`.
 - Used by: `cargo xtask mcp selftest` alone.
 - Rules: a file keeps its name, because the selftest names each one; `mcp selftest` must exit 0
   after any change here. A missing file reads as an empty transcript (`xtask_consume` falls back

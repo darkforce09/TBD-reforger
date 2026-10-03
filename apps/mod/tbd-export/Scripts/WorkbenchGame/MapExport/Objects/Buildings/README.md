@@ -103,7 +103,7 @@ None: Workbench runs these scripts in the editor.
   `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/`; the engine's `NetApiHandler`,
   `JsonApiStruct`, `BaseWorld.TraceMove` and `QueryEntitiesByAABB`.
 - Used by:
-  - `cargo xtask mcp wbcall` (`tools/xtask/src/commands/mcp/netapi.rs`), which calls the
+  - `cargo xtask mcp wbcall` (`tools/commands/enfusion_mcp/src/netapi.rs`), which calls the
     handler over the Net API;
   - `cargo xtask map ingest-blueprints` (`tools/developer_tools/src/blueprint/ingest.rs`), which
     copies `prefabs/buildings/*.json` from the profile into
@@ -127,6 +127,6 @@ None: Workbench runs these scripts in the editor.
   interpretation of the dumps and the parity tools.
 - [Map commands](/tools/xtask/src/commands/map/README.md) — the `cargo xtask map` blueprint and
   parity commands.
-- [MCP commands](/tools/xtask/src/commands/mcp/README.md) — `cargo xtask mcp wbcall`.
+- [MCP commands](/tools/commands/enfusion_mcp/README.md) — `cargo xtask mcp wbcall`.
 - [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API that
   `cargo xtask mcp wbcall` reaches.

@@ -41,7 +41,7 @@ resolved and the proof of what resolved it.
 - Used by: the [editor gates runbook](/documentation/runbooks/editor_gates.md), which cites
   KB-002; the Cursor rule `.cursor/rules/acceptance-gates-reproducible.mdc`, which sends a recorded
   gate defect here; comments in the gate's screen capture
-  (`tools/developer_tools/src/browser_testing/screen_capture.rs`) that name KB-002; the ticket
+  (`tools/browser_testing/browser_gate_suites/src/screen_capture.rs`) that name KB-002; the ticket
   registry, whose tickets cite the entries; and the known bug and documentation folder templates,
   whose samples are written from these entries.
 - Rules: one bug per file; a number is never reused, so a dropped number stays unused; a resolved

@@ -9,7 +9,7 @@
 //! **Position:** runs between the online visit and the listener stop of `super::run`; marks the
 //! API up again before it returns.
 //! **Signals & state:** the process-wide down mark of
-//! [`crate::browser_testing::server::api_fixture_corpus::set_api_down`] for the gate's corpus.
+//! [`browser_gate_suites::server::api_fixture_corpus::set_api_down`] for the gate's corpus.
 //! **Invariants:** a `502` from the proxy is never shown as "No offline copy"; the catalog list
 //! the page fetches is `200` with the saved-copy marker, so a worker that falls back only on
 //! network errors fails `catalog_list_from_worker_cache`; the pack never ends `failed` because a
@@ -25,8 +25,8 @@ use serde_json::{Value, json};
 use super::mission_entry::{enter_mission, solution_matches_native};
 use super::page_driver::{wait_for_pack_ready, wait_true};
 use super::{MORTAR_PATH, PACK_BUDGET, StepProgress};
-use crate::browser_testing::cdp::{Browser, Page};
-use crate::browser_testing::server::api_fixture_corpus::set_api_down;
+use browser_gate_suites::server::api_fixture_corpus::set_api_down;
+use chrome_devtools_protocol::{Browser, Page};
 
 /// The header the offline worker adds to a saved copy it answers with (the offline worker's
 /// `network_fallback::SAVED_COPY_HEADER`).

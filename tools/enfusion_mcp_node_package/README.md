@@ -18,10 +18,10 @@ tools/enfusion_mcp_node_package/
 
 `npm ci` in this folder installs the locked tree into `node_modules/`, which git ignores; the
 server's entry module is then `node_modules/enfusion-mcp/dist/index.js`, which
-`ENFUSION_MCP_ENTRYPOINT` in `tools/developer_tools/src/repository_layout.rs` names. The folder
+`ENFUSION_MCP_ENTRYPOINT` in `tools/foundation/repository_layout/src/enfusion_mcp_node_package.rs` names. The folder
 sits outside every crate root, so no crate-scoped file walk ever reads that installed tree.
 
-`enfusion_mcp_entrypoint::resolve` in `tools/developer_tools/src/enfusion_tooling/` decides
+`server_entrypoint::resolve` in `tools/commands/enfusion_mcp/src/` decides
 what starts the server, in this order:
 
 1. `ENFUSION_MCP_BIN`, when it names an existing file;
@@ -62,17 +62,17 @@ carries on, so the resolver falls to the npm cache or a download. To install by 
 
 - Depends on: npm and Node.js, and the npm registry for `npm ci`.
 - Used by:
-  - `tools/developer_tools/src/repository_layout.rs`, which names this folder and the entry
-    module, and `enfusion_mcp_entrypoint` in `tools/developer_tools/src/enfusion_tooling/`,
-    which starts it for `mcpd`;
-  - `cargo xtask mcp call` and `cargo xtask mcp daemon` (`tools/xtask/src/commands/mcp/`),
+  - `tools/foundation/repository_layout/src/enfusion_mcp_node_package.rs`, which names this folder and the entry
+    module, and `server_entrypoint` in `tools/commands/enfusion_mcp/src/`,
+    which resolves it for `mcpd`;
+  - `cargo xtask mcp call` and `cargo xtask mcp daemon` (`tools/commands/enfusion_mcp/src/`),
     through that resolver, and `cargo xtask mod dev-bootstrap`, which runs `npm ci` here;
   - the repository root's `.cursor/mcp.json`, which starts the installed module with `node` by an
     absolute path. `apps/mod/.mcp.json` starts `npx -y enfusion-mcp` instead, which this package
     does not pin.
-- Rules: `tools/xtask/src/tests/tooling_dependency_boundaries.rs` requires `package.json` to
+- Rules: `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs` requires `package.json` to
   exist here; the entry module must stay under this folder's `node_modules/`
-  (`tools/developer_tools/src/tests/repository_layout.rs`); only the manifest, the lockfile and
+  (`tools/foundation/repository_layout/src/tests/enfusion_mcp_node_package_tests.rs`); only the manifest, the lockfile and
   `.nvmrc` are tracked.
 
 ## Related documentation

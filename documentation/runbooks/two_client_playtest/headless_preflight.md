@@ -121,7 +121,7 @@ version and submit it again.
 
 ## Related
 
-- [World boot](/tools/xtask/src/commands/mod_ops/world_boot/README.md) — the harness, its
+- [World boot](/tools/commands/mod_operations/src/world_boot/README.md) — the harness, its
   environment variables and exit codes.
 - [Playtest server](/documentation/runbooks/two_client_playtest/playtest_server.md) — the next
   runbook: the joinable server.

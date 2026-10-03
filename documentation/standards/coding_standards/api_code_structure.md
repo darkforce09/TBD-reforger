@@ -80,7 +80,7 @@ GO-7 is the one GO rule clippy and `cargo fmt` cannot see: `@route` lives in a d
 does not read doc comments and `cargo fmt` only reflows them. A tag that names a route which does
 not exist, or a route whose handler has no tag, compiles cleanly; only the route-tag gate turns it
 red. The gate's guards and exit codes are in the
-[architecture verifications README](/tools/xtask/src/verifications/architecture/README.md#route-tags);
+[architecture verifications README](/tools/checks/repository_checks/src/architecture/README.md#route-tags);
 the tag grammar is in the [documentation standards](/documentation/standards/documentation_standards.md).
 
 ## Forbidden

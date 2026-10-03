@@ -42,7 +42,7 @@ None: Workbench runs these scripts in the editor.
   `generation.json`; the reader verification in `Verification/` round-trips 2,001 escaped and
   Unicode strings through `Strings` on every export start. The scripts compile only when Workbench
   loads `tbd-export`; `cargo xtask mod compile` compiles the framework addon alone
-  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`).
+  (`tools/commands/mod_operations/src/compile/execution.rs`).
 
 ## Related documentation
 

@@ -23,7 +23,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 use map_coordinates::chunk_math::TerrainSizeM;
 use prefab_catalog::prefab_rows::build_prefab_maps;
 use prefab_catalog::prefab_rows::narrow_prefab_rows;

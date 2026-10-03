@@ -71,7 +71,7 @@ default state and each furniture record's footprint size (`wire_blueprint`).
   - `building_interiors::blueprint` (the JSON blueprint), `world_file_formats::archives`
     (`BuildingBlueprintArchive`, the codec, the archive schema version) and
     `world_line_of_sight::occluder_library` (descriptors, manifest);
-  - `crate::repository_layout`, `jsonschema`, and the schemas in `contracts/definitions/`.
+  - the `repository_layout` crate, `jsonschema`, and the schemas in `contracts/definitions/`.
 - Used by: the blueprint root's `run` and `interpret_one`; `run_bvh_batch` in
   `tools/developer_tools/src/blueprint/bvh/batch_processing/run_bvh_batch.rs`; through them
   `cargo xtask map blueprint-from-voxels` and `cargo xtask map bvh-batch --all-prefabs`.

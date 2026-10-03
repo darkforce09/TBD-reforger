@@ -48,7 +48,7 @@ wire field, and refuses every `negative/` one.
   defines `EquipmentResourceCard` and `EquipmentSourceFact`. Every root is closed
   (`"additionalProperties": false`), so an unknown key fails validation.
 - Adding a file: add the schema here, register it in the schema list of
-  `tools/xtask/src/commands/generate/schema_types.rs`, run `cargo xtask ci schema-codegen`, add
+  `tools/commands/schema_tooling/src/generate/schema_types.rs`, run `cargo xtask ci schema-codegen`, add
   a `positive/` and a `negative/` fixture, and mirror the type in the frontend DTO module.
 
 ## Producers and consumers

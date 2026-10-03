@@ -1,0 +1,33 @@
+# The `cargo xtask setup` commands and the staging host check: the dedicated-server profile, the
+# Proton Workbench link, the enfusion-mcp game root, the client addon link and the read-only
+# discovery of the staging host. `thiserror` carries its errors.
+[package]
+name = "workstation_setup"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Workstation setup: server profile, Workbench link, MCP game root, client addons and the staging host check"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 3
+targets = "any"
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+deploy_settings = { workspace = true }
+process_runner = { workspace = true }
+repository_layout = { workspace = true }
+# `preserve_order` keeps the backend config's keys in the order the example file writes them.
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+verification_core = { workspace = true }
+
+[dev-dependencies]
+# The environment lock the tests that set `HOME`, `PATH` and the deploy keys hold.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,175 @@
+//! Resolution of one intercepted browser request into the reply the oracle serves for it.
+//!
+//! The oracle renders every route against the committed fixture corpus rather than a live backend,
+//! so this table is the entire data surface a captured page can see. It is deliberately total: an
+//! API call either has a fixture behind it, is one of the two protocol replies below, or is
+//! reported as missing. Nothing is answered with a placeholder, because a page whose data silently
+//! failed to arrive still renders a *stable* empty or error screen, and a stable screen is exactly
+//! what the capture's settle loop accepts and `accept` would then write into a golden.
+//!
+//! **Role:** decides one intercepted request: a committed API golden, a canned answer, a refusal or
+//! a passthrough.
+//! **Position:** a child of `routes.rs`; the DOM oracle's request interception asks it per paused
+//! request.
+//! **Signals & state:** none; pure functions over the fixture folder.
+//! **Invariants:** every API request is answered from `contracts/fixtures/api_goldens/` or recorded
+//! as unanswered; nothing reaches a live API.
+
+use std::path::{Path, PathBuf};
+
+use crate::session_tokens::gate_refresh_answer;
+use serde_json::{Value, json};
+
+/// The fixture corpus — shared with the frontend's R-api round-trip tests and the editor smokes.
+pub(super) fn fixtures_dir() -> crate::Result<PathBuf> {
+    Ok(::repository_layout::find_repository_root()?.join("contracts/fixtures/api_goldens"))
+}
+
+/// An API request the fixture corpus does not answer.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MissingFixture {
+    /// The request as the page made it, query string included.
+    pub url: String,
+    /// The corpus file that would have answered it.
+    pub expected_file: String,
+}
+
+/// What the router does with one intercepted request.
+pub(super) enum Reply {
+    /// Protocol plumbing the corpus deliberately does not own: the token endpoints have no
+    /// rendered consumer, and pinning a token in a fixture would date the corpus, not describe it.
+    Canned(Value),
+    /// A fixture file, served with the media type its extension names.
+    Fixture {
+        path: PathBuf,
+        content_type: &'static str,
+    },
+    /// Not an API call. The local static server answers it (the SPA bundle, fonts, map assets).
+    Passthrough,
+    /// An API call with nothing behind it.
+    Missing(MissingFixture),
+}
+
+/// `/api/v1/<path>[?…]` + method → corpus file stem: `<METHOD>__` + the path with its trailing
+/// slash stripped and every `/` replaced by `__`.
+///
+/// The method is part of the name because the corpus holds more than one verb for the same path;
+/// a `GET`-only rule leaves a committed `POST__…` fixture unreachable and its route unfed.
+fn stem_for(method: &str, url: &str) -> Option<String> {
+    let idx = url.find("/api/v1/")?;
+    let rest = &url[idx + "/api/v1/".len()..];
+    let end = rest.find(['?', '#']).unwrap_or(rest.len());
+    Some(format!(
+        "{}__{}",
+        method.to_ascii_uppercase(),
+        rest[..end].trim_end_matches('/').replace('/', "__")
+    ))
+}
+
+/// Corpus extensions, in resolution order, with the media type each one is served as.
+///
+/// `.sse.txt` exists because a Server-Sent Events body is delimited by a literal `\n\n` and is
+/// therefore not expressible as JSON — see [`chrome_devtools_protocol::Page::fulfill_raw`].
+const EXTENSIONS: [(&str, &str); 2] = [
+    ("json", "application/json"),
+    ("sse.txt", "text/event-stream"),
+];
+
+/// The file of the corpus under `fixtures` answering this request, if one is committed.
+pub(super) fn fixture_for(
+    fixtures: &Path,
+    method: &str,
+    url: &str,
+) -> Option<(PathBuf, &'static str)> {
+    let stem = stem_for(method, url)?;
+    EXTENSIONS.iter().find_map(|(ext, content_type)| {
+        let path = fixtures.join(format!("{stem}.{ext}"));
+        path.is_file().then_some((path, *content_type))
+    })
+}
+
+/// Decide one request against the corpus under `fixtures`. `url` is the full request URL;
+/// `method` is its HTTP verb.
+pub(super) fn route(fixtures: &Path, method: &str, url: &str) -> Reply {
+    if url.contains("/api/v1/auth/refresh") {
+        return Reply::Canned(gate_refresh_answer(
+            "dom-oracle",
+            "rt-v2",
+            "2026-01-01T01:00:00Z",
+        ));
+    }
+    if url.contains("/api/v1/auth/logout") {
+        return Reply::Canned(json!({}));
+    }
+    if let Some((path, content_type)) = fixture_for(fixtures, method, url) {
+        return Reply::Fixture { path, content_type };
+    }
+    match stem_for(method, url) {
+        Some(stem) => Reply::Missing(MissingFixture {
+            url: url.to_string(),
+            expected_file: format!("{stem}.json"),
+        }),
+        None => Reply::Passthrough,
+    }
+}
+
+/// Whether the API refuses `url` as sent, for a capture that starts from a stored session.
+///
+/// Every `/api/v1/` route authenticates its caller except the refresh and logout exchanges, which
+/// carry their own credential. A seeded capture's first requests leave before the SPA holds an
+/// access token; the API answers them `401`, and the SPA's refresh-and-retry is what installs the
+/// session, so the corpus answers them the same way.
+pub(super) fn refuses_without_bearer(url: &str, headers: &Value) -> bool {
+    url.contains("/api/v1/")
+        && !url.contains("/api/v1/auth/refresh")
+        && !url.contains("/api/v1/auth/logout")
+        && !carries_bearer(headers)
+}
+
+/// Whether the request headers carry a non-empty `Authorization: Bearer` credential.
+fn carries_bearer(headers: &Value) -> bool {
+    headers.as_object().is_some_and(|headers| {
+        headers.iter().any(|(name, value)| {
+            name.eq_ignore_ascii_case("authorization")
+                && value
+                    .as_str()
+                    .and_then(|value| value.strip_prefix("Bearer "))
+                    .is_some_and(|token| !token.trim().is_empty())
+        })
+    })
+}
+
+/// The capture failure raised when a route's data never arrived.
+///
+/// It names the corpus files rather than the symptom, because the symptom — an empty table, a
+/// "Failed to load" line — is indistinguishable from a real UI state once it is serialized.
+pub(super) fn missing_fixture_error(route_path: &str, missing: &[MissingFixture]) -> String {
+    let mut lines = vec![format!(
+        "{} request(s) at {route_path} have no fixture; capture refused \
+         (an unfed page renders a stable error state, which is not a baseline):",
+        missing.len()
+    )];
+    for m in missing {
+        lines.push(format!(
+            "  {} — add contracts/fixtures/api_goldens/{}",
+            m.url, m.expected_file
+        ));
+    }
+    lines.join("\n")
+}
+
+/// Read a fixture file as the bytes to serve. JSON is minified through `serde_json` so a
+/// pretty-printed corpus file reaches the page as one compact body, exactly as the backend sends
+/// it; every other media type is served byte for byte.
+pub(super) fn body_bytes(path: &Path, content_type: &str) -> Option<Vec<u8>> {
+    let raw = std::fs::read(path).ok()?;
+    if content_type == "application/json" {
+        let value: Value = serde_json::from_slice(&raw).ok()?;
+        return serde_json::to_vec(&value).ok();
+    }
+    Some(raw)
+}
+
+#[cfg(test)]
+#[path = "../tests/dom_oracle/fixture_router.rs"]
+mod tests;

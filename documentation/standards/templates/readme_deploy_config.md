@@ -80,7 +80,7 @@ deploy/
 
 ## How it works
 
-Every path here is a constant in `tools/xtask/src/core/repository_layout.rs` (`DEPLOY_DIR`,
+Every path here is a constant in `tools/foundation/repository_layout/src/deployment.rs` (`DEPLOY_DIR`,
 `DEPLOY_ENV`, `CADDYFILE`, `SYSTEMD_UNITS_DIR`), which the command that reads a file joins onto the
 checkout root. The operator's `deploy.env` holds the host, the credentials and the remote paths; git
 ignores it, and both rsync lanes exclude it, so a development machine never overwrites the server's
@@ -95,13 +95,13 @@ copy. The commands parse it as `KEY=VALUE` lines and never execute it. The deplo
   the one place the host is named; `TBD_SSH_PASS` (for sshpass) or `TBD_SSH_IDENTITY_FILE` (for
   `ssh -i`), both optional. The file decides every key it assigns, an empty value counting as
   unset, and the process environment fills only the others.
-- Website, read by `tools/xtask/src/commands/deploy/website.rs`: `TBD_REMOTE_DIR`, by default
+- Website, read by `tools/commands/deployment/src/website.rs`: `TBD_REMOTE_DIR`, by default
   `/home/<user>/tbd/repo` and held under `/home/<user>/tbd/`;
   `TBD_POSTGRES_HOST_PORT` (default 5432), the host port of the staging compose Postgres;
   `TBD_WEBSITE_SYSTEMD_UNIT` (default `tbd-website-api.service`); and `TBD_SKIP_COMPOSE`,
   `TBD_SKIP_SPA_BUILD` and `TBD_SKIP_API_BUILD`, which skip a step when set to 1. A `DEPLOY_ENV`
   environment variable points every command at another settings file.
-- Game server, read by `tools/xtask/src/commands/deploy/staging/config.rs`:
+- Game server, read by `tools/commands/deployment/src/staging/config.rs`:
   `TBD_MOD_RUNTIME_CREDENTIAL` (a `mod_runtime` machine credential, the mod's only secret) is
   required; the remote folders default under `/home/<user>`, and `TBD_PUBLIC_ADDRESS` to the first
   IPv4 address `TBD_SSH_HOST` resolves to at deploy time. `TBD_SERVER_MODE` defaults to `config`, which also
@@ -140,7 +140,7 @@ and the app's folder read-only, so the site root holds wherever the checkout sit
 - Used by: the `deploy`, `mod` and `debug` commands above, through the layout constants; the API's
   forwarded-for test, which reads the Caddyfile.
 - Rules: `deploy.env` is never committed and never rsynced; a path added here gets its constant in
-  `tools/xtask/src/core/repository_layout.rs`, the one place the commands take it from.
+  `tools/foundation/repository_layout/src/deployment.rs`, the one place the commands take it from.
 
 ## Related documentation
 

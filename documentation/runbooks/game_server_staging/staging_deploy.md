@@ -289,7 +289,7 @@ Expected: eleven `active` lines, then one UDP listener on `0.0.0.0` for each gam
 
 ## Related
 
-- [Staging deploy code](/tools/xtask/src/commands/deploy/staging/README.md) — the module
+- [Staging deploy code](/tools/commands/deployment/src/staging/README.md) — the module
   layout, the settings check and the tests that pin each payload.
 - [Deploy files](/deploy/README.md) — `deploy.env.example` and the systemd units.
 - [Fleet host agent](/documentation/apps/fleet_host_agent/README.md) — the agent's configuration and

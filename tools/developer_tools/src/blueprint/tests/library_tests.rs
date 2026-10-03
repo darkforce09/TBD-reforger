@@ -8,8 +8,8 @@ use super::*;
 use crate::blueprint::xob::tests::{coll_box_record_with_material, with_coll};
 use crate::blueprint::xob_nodes::XobNode;
 use crate::blueprint::xob_nodes::tests::{synth_head, wrap_xob};
-use crate::enfusion_pak::DirSource;
-use crate::repository_layout::{contract_definitions_dir, definition_path, terrain_dir};
+use ::repository_layout::{contract_definitions_dir, definition_path, terrain_dir};
+use enfusion_pak::DirSource;
 
 fn write(dir: &Path, rel: &str, bytes: &[u8]) {
     let p = dir.join(rel);

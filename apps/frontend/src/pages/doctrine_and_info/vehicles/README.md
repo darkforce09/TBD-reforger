@@ -100,7 +100,7 @@ selection falls back to the first row. Paths carry the id percent-encoded as one
 - Used by: the `/vehicles` route in `apps/frontend/src/app_routes.rs` and
   `apps/frontend/src/foundation/route_table/mod.rs`; the sidebar's "Vehicle Database" link in
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; the DOM oracle's `vehicles`
-  capture in `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: groups keep the order each faction first appears (`factions_preserve_first_seen_order` in
   `tests/vehicle_grid.rs`); the form's rules match the backend validator's boundaries
   (`each_limit_admits_its_boundary_and_refuses_one_character_more` and

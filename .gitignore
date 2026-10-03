@@ -98,8 +98,8 @@ assets/terrains/**/tiles/
 # ==============================================================================
 # 9. Tooling & Pipeline Artifacts (.ai/, tools/)
 # ==============================================================================
-# Ticket engine trybuild test output
-/tools/ticket_engine/wip/
+# Ticket model trybuild test output
+/tools/tickets/ticket_model/wip/
 
 # T-159 gate run artifacts only (regenerable)
 /.ai/artifacts/t159_gates/v/

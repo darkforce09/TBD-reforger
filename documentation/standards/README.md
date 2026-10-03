@@ -43,23 +43,24 @@ these answers; a rule that fits an existing standard goes into it.
 
 ## Code
 
-- [Verification gates](/tools/xtask/src/verifications/) — the `cargo xtask verify` checks the
+- [Verification gates](/tools/checks/) — the `cargo xtask verify` checks the
   standards cite: file length, README coverage, link check, markdown placement, route tags,
   contract citations and the engine layer walls.
-- [CI task list](/tools/xtask/src/commands/ci/) — the `ci-local` steps that run those gates.
+- [CI task list](/tools/commands/ci_task_catalog/src/) — the `ci-local` steps that run those gates.
 - [Graphics engine](/legacy/graphics_engine/), [map engine](/legacy/map_engine/) and
   [frontend](/apps/frontend/) — the crates the engine boundary rules govern.
-- [Ticket engine](/tools/ticket_engine/) — the id, spec and plan paths the ticket identifiers
-  standard describes.
+- [Ticket model](/tools/tickets/ticket_model/) — the id, spec and plan paths the ticket
+  identifiers standard describes.
 
 ## Boundaries
 
 - Depends on: `CLAUDE.md`, whose laws the standards expand; the gate code under
-  `tools/xtask/src/verifications/`, which is the final word where a standard and a gate differ;
+  `tools/checks/` and the command crates under `tools/commands/`, which is the final word where a
+  standard and a gate differ;
   the [glossary](/documentation/glossary/README.md) for terms.
 - Used by: every README and document under `documentation/` and the code trees, which follow
   the README standard and the templates; gate code and CI that cite a standard by section
-  (`tools/xtask/src/commands/ci/task_definitions.rs`,
+  (`tools/commands/ci_task_catalog/src/task_definitions.rs`,
   `tools/foundation/repository_laws/src/engine_layers/`,
   `.github/workflows/ci.yml`, `.github/workflows/contracts.yml`, `.editorconfig`); the Cursor rule
   `.cursor/rules/tbd-platform.mdc`; the runbooks and the entry README.

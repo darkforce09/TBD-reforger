@@ -34,10 +34,11 @@ use ballistics_model::catalog::BallisticsCatalog;
 use serde_json::{Value, json};
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use crate::browser_testing::cdp::{self, Browser, Page};
-use crate::browser_testing::server::{ServeConfig, start_server};
-use crate::repository_layout::{MapAssetMounts, compiled_checkout_root};
+use ::repository_layout::find_repository_root;
 use api_down_visit::api_down_visit;
+use browser_gate_suites::gate_layout::MapAssetMounts;
+use browser_gate_suites::server::{ServeConfig, start_server};
+use chrome_devtools_protocol::{self as cdp, Browser, Page};
 use mission_entry::{enter_mission, solution_matches_native};
 use mission_plan::{COMMITTED_CATALOG, catalog_reads, read_catalog, require_files, required_files};
 use page_driver::{map_canvas_rect, wait_for_pack_ready, wait_true};
@@ -130,7 +131,7 @@ impl StepProgress {
 ///
 /// A driver failure (Chromium or the server would not start).
 pub async fn run(args: &MortarOfflineArgs) -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let dist = root.join(&args.dist);
     let corpus = root.join(&args.api_corpus);
     let catalog = read_catalog(&root.join(COMMITTED_CATALOG))?;

@@ -110,7 +110,7 @@ probe and the click with one resolution, so a row is clickable only when a click
 
 - [Mission document](/crates/mission/mission_document/README.md) — the document this
   layer edits and the operations it calls.
-- [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the
+- [Architecture gates](/tools/checks/repository_checks/src/architecture/README.md) — the
   `engine-layers` and `editor-orbat-coherency` gates that scan this tree.
 - [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
   — the Mission Creator features this layer backs.

@@ -48,9 +48,9 @@ source PNG (+ TBD_SatExport_meta.json beside it)
 - Depends on: `super::image_operations` for PNG decode, resizing and WebP encode;
   `super::satellite_archive_container` for the version 2 index, bytes and checks, and through it
   `world_file_formats::archives::satellite` and `world_file_formats::containers::tbds`;
-  `crate::repository_layout::terrain_assets_dir` and
-  `crate::repository_layout::compiled_checkout_root` for
-  `assets/terrains/`; `crate::timestamp_formatting` and
+  `repository_layout::terrain_assets_dir` and
+  `repository_layout::find_repository_root` for
+  `assets/terrains/`; `time_source`, `content_digest` and
   `crate::world_export_pipeline::json_number_formatting` for the version 1 table.
 - Used by: `tools/developer_tools/src/map_raster_pipeline/cli.rs` (`build-unified`,
   `verify-unified`, `verify-pyramid`); the `map-water-everon`, `map-cartographic-everon` and

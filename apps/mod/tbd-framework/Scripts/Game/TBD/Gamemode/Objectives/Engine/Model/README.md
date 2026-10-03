@@ -55,5 +55,5 @@ behaviour's `StatusText`: `DESTROYED` or `intact n/m`, `HELD` or `hold ns left (
   `TBD_EObjectiveKind`.
 - Rules: no geometry here, containment is the zone's; an untyped objective leaves every typed field
   empty and renders exactly its label and status; board text stays ASCII (`--`, never an arrow
-  glyph); `tools/xtask/src/verifications/schemas/tests/checks/side_fallback_tests.rs` runs
+  glyph); `tools/commands/schema_tooling/src/tests/schema_checks/side_fallback_tests.rs` runs
   `RoleOf`, `TitleFor`, `TaskTextFor` and `MayOwn` from this source.

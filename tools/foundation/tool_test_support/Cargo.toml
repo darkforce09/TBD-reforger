@@ -1,0 +1,23 @@
+# The locks and the checkout root the tool crates' tests share: the process-environment lock, the
+# working-directory lock with its guard, and the test checkout root resolved under that lock. A
+# dev-dependency only: its code is plain library code, since `cfg(test)` items are invisible to the
+# crates that test with it.
+[package]
+name = "tool_test_support"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Test-only locks and the test checkout root the tool crates share (dev-dependency only)"
+
+[package.metadata.layout]
+category = "tools/foundation"
+tier = 1
+targets = "any"
+
+[dependencies]
+repository_layout = { workspace = true }
+
+[lints]
+workspace = true

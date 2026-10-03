@@ -36,9 +36,13 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
      renderer crates;
    - web-sys, js-sys, wasm-bindgen and gloo only in wasm-only crates, `time_source` (behind a
      cfg) and the frontend;
-   - sqlx and axum only in api crates;
+   - sqlx and axum only in api crates, with one category clause: axum (never sqlx) is also
+     allowed in crates whose category is `tools/browser_testing` or `tools/staging`, because
+     those are test and staging harness servers (the gate's static server, the staging relay),
+     not product code; there is no per-crate allowlist;
    - leptos only in frontend crates;
-   - no tokio, axum, reqwest, resvg or image in the dependency closure of xtask;
+   - no tokio, axum, reqwest, resvg or image in the dependency closure of xtask (this ban stays
+     hard and keeps the harness servers out of xtask);
    - no map nouns in the graphics category (today's engine rule 2);
    - no browser crates in mission editing (today's engine rule 5).
 7. Nothing outside the legacy folder depends on it, apart from apps and the two tool binaries

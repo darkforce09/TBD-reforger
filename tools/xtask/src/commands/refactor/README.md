@@ -3,7 +3,7 @@
 The `cargo xtask refactor` group: tools that reshape the checkout itself. Its one command,
 `relocate`, moves tracked files and folders and rewrites every reference to them from a manifest,
 so no path is ever rewritten by hand, and proves afterwards that no retired spelling is left in a
-live file.
+live file. The work lives in the `repository_relocation` crate; this folder holds the command line.
 
 ## Contents
 
@@ -11,16 +11,16 @@ live file.
 tools/xtask/src/commands/refactor/
 ├── cli.rs       the `RefactorCmd` clap enum and the `relocate` flags
 ├── dispatch.rs  finds the checkout root, checks the flags, runs the chosen mode
-├── mod.rs       the module tree
-└── relocate/    the manifest, the plan, the rewrite passes, the moves and the verification
+└── mod.rs       the module tree
 ```
 
 ## How it works
 
 `dispatch.rs` resolves the checkout root from the working directory and hands the mode to
-`relocate/`: `--dry-run` and `--apply` need `--manifest`; `--verify` takes it optionally and
-otherwise judges every committed manifest. All three return the process exit code; the work, the
-file formats and the rules live in the `relocate/` README.
+[`repository_relocation`](/tools/commands/repository_relocation/README.md): `--dry-run` and
+`--apply` need `--manifest`; `--verify` takes it optionally and otherwise judges every committed
+manifest. All three return the process exit code; the work, the file formats and the rules live
+in that crate's `src/README.md`.
 
 ## Commands
 
@@ -47,8 +47,8 @@ file formats and the rules live in the `relocate/` README.
 
 ## Boundaries
 
-- Depends on: clap; `find_repository_root` in `tools/xtask/src/core/repository_root.rs`; the
-  `relocate/` modules.
+- Depends on: clap; `find_repository_root` in `tools/foundation/repository_layout/src/repository_root.rs`; the
+  modes of `repository_relocation` (`tools/commands/repository_relocation`).
 - Used by: `tools/xtask/src/cli/dispatch.rs`, which routes the `refactor` group; the
   restructure program's stages, which run every move through it.
 - Rules: the group's flags stay in `cli.rs`, and exactly one mode flag is accepted per run (clap's

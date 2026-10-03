@@ -1,7 +1,7 @@
 id = "T-1246"
 kind = "work"
 title = "Retire the unread equipment_vehicle_exports/legacy archive folder"
-summary = "After the archive rename (tools/xtask/src/commands/mod_ops/equipment_vehicle_export/unversioned_export_archive.rs:34), publication archives into unversioned_exports/, so an existing local equipment_vehicle_exports/legacy/ folder is never read again and no journal is pending; move its contents or delete it (operator)."
+summary = "After the archive rename (tools/commands/mod_operations/src/equipment_vehicle_export/unversioned_export_archive.rs:34), publication archives into unversioned_exports/, so an existing local equipment_vehicle_exports/legacy/ folder is never read again and no journal is pending; move its contents or delete it (operator)."
 class = "chore"
 status = "idea"
 executor = "human"

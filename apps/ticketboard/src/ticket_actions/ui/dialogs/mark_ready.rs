@@ -1,18 +1,18 @@
 use super::*;
 use crate::core::ui::*;
-use crate::ticket_actions::{
+use eframe::egui::{RichText, TextEdit, Ui};
+use ticketboard_model::ticket_actions::{
     events::TicketActionEvent as Action,
     services::commands::{self as verbs, FileChangeGuard},
 };
-use crate::ticket_registry::models::projection as board;
-use eframe::egui::{RichText, TextEdit, Ui};
+use ticketboard_model::ticket_registry::models::projection as board;
 
 #[expect(clippy::too_many_arguments)] // dialog fields destructured by the one caller
 pub(crate) fn ready_body_ui(
     ui: &mut Ui,
     b: &TicketActionContext<'_>,
     mctx: MutationContext<'_>,
-    id: &str,
+    id: &TicketId,
     guard: &FileChangeGuard,
     spec: &mut String,
     stat: &mut Option<(String, bool)>,
@@ -64,7 +64,7 @@ pub(crate) fn ready_body_ui(
     // Current main_goal / acceptance — READ-ONLY on purpose: the CLI verb
     // takes only id + spec; story/acceptance backfill is the verb's own
     // behavior. The UI must not pretend it can set them.
-    if let Some(&index) = b.id_to_index.get(id) {
+    if let Some(&index) = b.id_to_index.get(id.as_str()) {
         let v = board::view(&b.corpus.tickets[index].ticket);
         ui.add_space(6.0);
         ui.label(RichText::new("main_goal (current)").strong().small());

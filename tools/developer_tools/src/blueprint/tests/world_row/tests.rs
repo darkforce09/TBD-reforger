@@ -1,7 +1,7 @@
 use super::*;
 use crate::blueprint::tests::fixture;
 use crate::blueprint::verify::{load, verify};
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 
 fn objects_dir() -> std::path::PathBuf {
     let root = ::repository_layout::find_repository_root().unwrap();

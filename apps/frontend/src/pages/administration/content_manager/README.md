@@ -92,7 +92,7 @@ because a publish refuses a relative one. Every request runs in the browser buil
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; `content_source` in
   `apps/frontend/src/foundation/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `content` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the page boots from the announcements list, never from built-in posts
   (`content_boots_from_cms_list_not_mock_docs`), and a failed list is never seeded as an empty one
   (`content_list_error_does_not_seed_as_empty_success`); every category, SOP included, maps to a

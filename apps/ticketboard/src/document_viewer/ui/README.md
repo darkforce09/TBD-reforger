@@ -23,8 +23,8 @@ text. Clicks come back as `DocumentEvent::CloseViewer` and `DocumentEvent::OpenP
 
 ## Boundaries
 
-- Depends on: `crate::document_viewer::events` and the `ViewerState` re-exported by
-  `crate::document_viewer::services::document_loading`; `crate::core::ui` (`OUTPUT_ROW_H`);
+- Depends on: `ticketboard_model::document_viewer::events` and the `ViewerState` re-exported by
+  `ticketboard_model::document_viewer::services::document_loading`; `crate::core::ui` (`OUTPUT_ROW_H`);
   `eframe::egui` and `egui_commonmark`.
 - Used by: `viewer_pane_ui` in `apps/ticketboard/src/application/feature_views.rs`, which lends
   the state, the render cache and the repository root and turns the events into actions.

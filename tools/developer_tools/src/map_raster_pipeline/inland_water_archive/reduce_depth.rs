@@ -1,6 +1,5 @@
 use super::*;
 
-use crate::repository_layout;
 use world_file_formats::ids::WaterFeatureId;
 
 /// Spec §3.3: a coarse texel keeps the **deepest** depth of the block it covers.
@@ -409,7 +408,7 @@ pub fn terrain_dir(terrain: &str) -> Result<PathBuf> {
         return Ok(as_path);
     }
     Ok(repository_layout::terrain_dir(
-        &compiled_checkout_root()?,
+        &find_repository_root()?,
         terrain,
     ))
 }
@@ -429,7 +428,7 @@ pub fn scratch_dir(terrain: &str) -> Result<PathBuf> {
         return Ok(as_path.join("scratch"));
     }
     Ok(repository_layout::map_scratch_dir(
-        &compiled_checkout_root()?,
+        &find_repository_root()?,
         terrain,
     ))
 }

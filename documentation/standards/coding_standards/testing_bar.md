@@ -44,7 +44,7 @@ forbidden (CLAUDE.md law 7). Three test suites hold the rule, each in the crate'
 - the app's `src/` tree: `frontend_production_files_meet_the_documentation_standard` in
   `apps/frontend/src/tests/doc_audit/mod.rs`;
 - the four `tools` crates: `tooling_test_modules_live_in_separate_files` in
-  `tools/xtask/src/tests/tooling_dependency_boundaries.rs`.
+  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`.
 
 The map engine, the graphics engine, the ticketboard and the fleet host agent are unenforced. A
 test file may hold 1000 lines; see

@@ -2,7 +2,9 @@
 
 The composition layer of the [ticketboard](/documentation/glossary/n_to_z.md#ticketboard):
 `TicketboardApp`, the eframe application that owns the session state and the preferences, starts
-and drains every background job, paints the feature views, and applies the actions they emit.
+and drains every background job, paints the feature views, and applies the actions they emit. The
+state it changes (the actions, `WorkspaceState`, reloads, the column layout, the preference keys
+and the background load) is `ticketboard_model::application_state`, which paints nothing.
 
 ## Contents
 
@@ -10,20 +12,14 @@ and drains every background job, paints the feature views, and applies the actio
 apps/ticketboard/src/application/
 ├── action_dispatch.rs       `apply`, which carries out the actions a frame collected
 ├── background_events.rs     the strict check, `git status` and file-watch jobs, polled each frame
-├── background_loading.rs    `LoadBundle` and `spawn_load`, the combined load on a worker thread
 ├── command_execution.rs     ticket commands: change guard, single-flight queue, completion
-├── events.rs                the `Tab` list and `Action`, with a conversion from each feature's events
 ├── feature_views.rs         adapters that lend each feature its borrowed view
 ├── lifecycle.rs             `TicketboardApp::new`, root adoption, loads, picker, document opening
 ├── mod.rs                   the module tree and the `TicketboardApp` state
-├── preferences.rs           the eframe storage keys and the saved viewer width, clamped on load
 ├── shell_screens.rs         the top bar and the no-repository, loading and refusal screens
-├── tests/                   unit tests for rendering, the window layout and workspace reloads
+├── tests/                   the headless rendering tests
 ├── ticket_command_views.rs  the renderers of ticket-action dialogs, command chip, drawer, toasts
-├── window.rs                the `eframe::App` frame and `save`
-├── window_layout.rs         which right-hand columns fit: detail, document viewer or both
-├── workspace_reload.rs      `WorkspaceState::reload`, keeping selections, filters and sorts
-└── workspace_state.rs       the `State` machine and `WorkspaceState`, the loaded board
+└── window.rs                the `eframe::App` frame and `save`
 ```
 
 ## How it works
@@ -44,13 +40,15 @@ Each frame, `window.rs` first polls every job without blocking: the load, the pi
 read, the strict check, `git status`, the watch debouncer and the running ticket command. It then
 paints the status banner, the top bar, the filter bar, the footer, the command drawer, the right
 columns and the active tab, each feature through its adapter in `feature_views.rs`, and the open
-dialog and toasts. Features emit their own events, which `events.rs` turns into `Action`s, and
-`action_dispatch.rs` applies them after painting.
+dialog and toasts. Features emit their own events, which
+`ticketboard_model::application_state::events` turns into `Action`s, and `action_dispatch.rs`
+applies them after painting.
 
-- Loading: `background_loading.rs` reads the corpus, the wave lock, the run receipts, the
+- Loading: `ticketboard_model::application_state::background_loading` reads the corpus, the wave lock, the run receipts, the
   estimates and the scope vocabulary on one worker thread. A malformed ticket refuses the whole
   corpus, while wave, receipt, estimate and vocabulary failures stay local to their displays.
-  Combined loading lives here so the registry loader depends on no consuming feature.
+  Combined loading lives in the application state so the registry loader depends on no consuming
+  feature.
 - Reloads: `WorkspaceState::reload` rebuilds the cards, tree rows, facets and aggregates, carries
   the filters and the separate measured and estimated sort choices, and finds the selected and
   compared tickets again by id; a watch-triggered reload keeps the board on screen until the new
@@ -72,10 +70,11 @@ dialog and toasts. Features emit their own events, which `events.rs` turns into 
 
 ## Boundaries
 
-- Depends on: every feature module (`ticket_registry`, `ticket_browser`, `ticket_actions`,
-  `wave_plan`, `execution_metrics`, `document_viewer`, `repository_status`) and `crate::core`;
-  `ticket_engine` (`StatusName` and `repository_layout::TICKETS_DIR`); the `eframe`, `egui_commonmark`
-  and `rfd` crates.
+- Depends on: the feature view modules (`ticket_browser`, `ticket_actions`, `wave_plan`,
+  `execution_metrics`, `document_viewer`, `repository_status`) and `crate::core`;
+  `ticketboard_model` (`application_state`, every feature's models, services and events, and
+  `core`'s process and clock helpers); `ticket_model` (`StatusName`) and `repository_layout`
+  (`TICKETS_DIR`); the `eframe`, `egui_commonmark` and `rfd` crates.
 - Used by: `apps/ticketboard/src/main.rs`, which passes `TicketboardApp::new` to
   `eframe::run_native`.
 - Rules: no feature imports this module (the test

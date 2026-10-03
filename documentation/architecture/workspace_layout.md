@@ -26,8 +26,9 @@ TBD-reforger/
 ├── legacy/          the map and graphics engines, parked while their code moves into crates/
 ├── deploy/          the release Dockerfile, compose files, Caddy site (caddy/), deploy settings,
 │                    systemd units
-├── tools/           the developer tools: xtask, the foundation/ crates, ticket_engine,
-│                    developer_tools, and the pinned Enfusion MCP npm package
+├── tools/           the developer tools: xtask, developer_tools, the crates by category
+│                    (foundation/, tickets/, commands/, checks/, enfusion/, browser_testing/,
+│                    staging/), and the pinned Enfusion MCP npm package
 ├── contracts/       JSON Schemas, rules, catalogs and fixtures of every shape that crosses a boundary
 ├── assets/          terrain datasets (Git LFS), the world-object glyph set, the storage specification
 ├── documentation/   every document: feature docs, runbooks, standards, glossary, tickets, archive
@@ -58,7 +59,7 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`legacy/graphics_engine/`](/legacy/graphics_engine/README.md) | `graphics_engine` | GPU rendering primitives with no map concept |
 | [`apps/offline_service_worker/`](/apps/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs |
 | [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md) | `fleet_host_agent` | the agent beside each game-server instance that carries out fleet commands |
-| [`apps/ticketboard/`](/apps/ticketboard/README.md) | `ticketboard` | the egui desktop viewer of the ticket registry |
+| [`apps/ticketboard/`](/apps/ticketboard/README.md) | `ticketboard` | the egui desktop viewer of the ticket registry; its headless models are `ticketboard_model` in `tools/tickets/` |
 | [`crates/foundation/http_url_guard/`](/crates/foundation/http_url_guard/README.md) | `http_url_guard` | the HTTP(S) URL check the API and the single-page app share |
 | [`crates/contracts/offline_cache_policy/`](/crates/contracts/offline_cache_policy/README.md) | `offline_cache_policy` | the offline cache names, request classes and fallback rules the service worker applies |
 | [`crates/foundation/newtype_ids/`](/crates/foundation/newtype_ids/README.md) | `newtype_ids` | macros declaring serde-transparent typed ids |
@@ -87,13 +88,43 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`crates/ballistics/fire_mission_planning/`](/crates/ballistics/fire_mission_planning/README.md) | `fire_mission_planning` | the fire-mission assembler: battery solutions, time fuzes, the comparison rule and the wording |
 | [`crates/ballistics/ballistics_calibration/`](/crates/ballistics/ballistics_calibration/README.md) | `ballistics_calibration` | a ballistics catalog judged against the game's native tables, wind tables and engine oracle samples |
 | [`crates/ballistics/ballistics_agreement_cases/`](/crates/ballistics/ballistics_agreement_cases/README.md) | `ballistics_agreement_cases` | the seeded lattice of battery fire problems and the bit patterns of their solutions |
-| [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command router: builds, gates, deploys, repository verifications |
+| [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command line and dispatch onto the tool crates, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` command groups |
 | [`tools/foundation/verification_core/`](/tools/foundation/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, gates and the verification lock |
 | [`tools/foundation/process_runner/`](/tools/foundation/process_runner/README.md) | `process_runner` | process isolation, deadlines, host-bridge execution and the secure shell transport |
 | [`tools/foundation/repository_laws/`](/tools/foundation/repository_laws/README.md) | `repository_laws` | every repository law: crate tiers, anatomy, strangler, engine layers, file length |
 | [`tools/foundation/repository_layout/`](/tools/foundation/repository_layout/README.md) | `repository_layout` | the repository root finder and the paths every tool shares |
-| [`tools/ticket_engine/`](/tools/ticket_engine/README.md) | `ticket_engine` | ticket storage, validation, queue and roadmap sync |
-| [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the heavy executables: script index, browser gates, MCP broker, world export, map assets, capture |
+| [`tools/foundation/deploy_settings/`](/tools/foundation/deploy_settings/README.md) | `deploy_settings` | the one reader of `deploy/deploy.env` and its precedence rule over exported variables |
+| [`tools/foundation/tool_test_support/`](/tools/foundation/tool_test_support/README.md) | `tool_test_support` | the test locks (process variables, working directory) and the checkout root the tool crates' tests share (dev-only) |
+| [`tools/tickets/ticket_model/`](/tools/tickets/ticket_model/README.md) | `ticket_model` | the typed ticket, its canonical TOML encoding, the corpus store and the ticket-domain paths |
+| [`tools/tickets/ticket_metrics/`](/tools/tickets/ticket_metrics/README.md) | `ticket_metrics` | slice-run receipts and token estimates |
+| [`tools/tickets/ticket_wave_lock/`](/tools/tickets/ticket_wave_lock/README.md) | `ticket_wave_lock` | the wave lock compiler, reader and checker |
+| [`tools/tickets/ticket_registry/`](/tools/tickets/ticket_registry/README.md) | `ticket_registry` | ticket operations, validation, queue and roadmap sync, the `cargo xtask ticket` verbs |
+| [`tools/tickets/ticketboard_model/`](/tools/tickets/ticketboard_model/README.md) | `ticketboard_model` | the ticketboard's headless half: registry, wave lock and metrics models, events and the egui-free application state |
+| [`tools/commands/repository_relocation/`](/tools/commands/repository_relocation/README.md) | `repository_relocation` | manifest-driven moves of tracked paths and the retired-spelling verification behind `cargo xtask refactor relocate` |
+| [`tools/commands/schema_tooling/`](/tools/commands/schema_tooling/README.md) | `schema_tooling` | the contract codegen, the contract schema gates, the ORBAT slot flattening and the font-table generator behind `cargo xtask schema` and `cargo xtask gen` |
+| [`tools/commands/ballistics_oracle_tooling/`](/tools/commands/ballistics_oracle_tooling/README.md) | `ballistics_oracle_tooling` | the ballistics catalog and calibration fixtures behind `cargo xtask ballistics trim-export` |
+| [`tools/commands/enfusion_mcp/`](/tools/commands/enfusion_mcp/README.md) | `enfusion_mcp` | the Enfusion MCP client behind `cargo xtask mcp`: daemon control, tool calls, the offline selftest, Workbench NET API calls, log verdicts |
+| [`tools/commands/api_readiness_checks/`](/tools/commands/api_readiness_checks/README.md) | `api_readiness_checks` | the API readiness judge behind `cargo xtask verify api-readiness`: acceptance register, evidence receipts, fingerprints, the staging recorder, the property-test seed |
+| [`tools/commands/workstation_setup/`](/tools/commands/workstation_setup/README.md) | `workstation_setup` | the `cargo xtask setup` commands and the staging host check of `cargo xtask mod bootstrap-staging` |
+| [`tools/commands/database_operations/`](/tools/commands/database_operations/README.md) | `database_operations` | the local database lane behind `cargo xtask db`, the database container layer and the verified backup, guarded restore and restore drill behind `cargo xtask deploy db`, the milestone announcement seed, and the seed and SQL-shape checks behind `cargo xtask verify` |
+| [`tools/commands/deployment/`](/tools/commands/deployment/README.md) | `deployment` | the website and staging fleet deploys behind `cargo xtask deploy website` and `cargo xtask deploy staging`, and the staging compose-path check behind `cargo xtask verify` |
+| [`tools/commands/remote_debugging/`](/tools/commands/remote_debugging/README.md) | `remote_debugging` | the staging server-join probes and the direct-join report behind `cargo xtask debug`, the remote console log verdict behind `cargo xtask mod remote-logs`, and the mission-version upload reproduction behind `cargo xtask repro` |
+| [`tools/commands/staging_procedures/`](/tools/commands/staging_procedures/README.md) | `staging_procedures` | the staging acceptance harness behind `cargo xtask staging`: the fleet, Discord and load procedures and their receipts, the confirmed host actions and the read-only commands around them |
+| [`tools/commands/ci_task_catalog/`](/tools/commands/ci_task_catalog/README.md) | `ci_task_catalog` | the CI task table and its runner behind `cargo xtask ci` and `cargo xtask help`, the build lane recipes behind `cargo xtask mk`, the shared cargo target pin and its checks, the `verify ci-shell` and `verify ci-schema-parity` gates, and the map asset checks |
+| [`tools/commands/platform_execution/`](/tools/commands/platform_execution/README.md) | `platform_execution` | the platform factory behind `cargo xtask platform`: the wave driver, slice runs and their receipts, the slice worktree lifecycle and the unattended-run preflight |
+| [`tools/commands/mod_operations/`](/tools/commands/mod_operations/README.md) | `mod_operations` | the game mod's operations behind `cargo xtask mod`: the headless compile gate, the world boot, the playtest server, the equipment and vehicle export publication, the website API client and the mod wave driver |
+| [`tools/checks/repository_checks/`](/tools/checks/repository_checks/README.md) | `repository_checks` | the engine-layer, workspace-law, route-tag, ORBAT coherency, language-ban, file-length, upstream code-leak and registry alias checks behind `cargo xtask verify`, and the tooling rules over every tool crate |
+| [`tools/checks/mod_script_checks/`](/tools/checks/mod_script_checks/README.md) | `mod_script_checks` | the Enfusion comment card, the mod script pins, the UI layout gate and the Workbench spawn runs behind `cargo xtask verify` and `cargo xtask mod` |
+| [`tools/checks/documentation_checks/`](/tools/checks/documentation_checks/README.md) | `documentation_checks` | the README coverage, Markdown placement and link-check gates behind `cargo xtask verify` and `cargo xtask ci verify-documentation` |
+| [`tools/enfusion/enfusion_mcp_broker/`](/tools/enfusion/enfusion_mcp_broker/README.md) | `enfusion_mcp_broker` | the `mcpd` broker over one enfusion-mcp server behind a Unix socket, and its offline stub |
+| [`tools/enfusion/enfusion_pak/`](/tools/enfusion/enfusion_pak/README.md) | `enfusion_pak` | the Enfusion `.pak` archive reader: the merged virtual file system under the blueprint and world policies, the loose and layered sources |
+| [`tools/enfusion/enfusion_script_index/`](/tools/enfusion/enfusion_script_index/README.md) | `enfusion_script_index` | the Enfusion script oracle behind `enf` (symbol indexes, lookups, citation and capability checks, vanilla extraction) and the vanilla page mirrors behind `cargo xtask fetch` |
+| [`tools/browser_testing/chrome_devtools_protocol/`](/tools/browser_testing/chrome_devtools_protocol/README.md) | `chrome_devtools_protocol` | the Chrome DevTools Protocol client of the browser gates: Chromium discovery and launch, pages over WebSockets, the gate font cache |
+| [`tools/browser_testing/browser_gate_suites/`](/tools/browser_testing/browser_gate_suites/README.md) | `browser_gate_suites` | the browser gates of the single-page app behind `gate` and `capture`: the static server, the DOM oracle, route drift, the Mission Creator smokes, the data viewer gate, the capture rig, the doctor |
+| [`tools/staging/staging_load_plan/`](/tools/staging/staging_load_plan/README.md) | `staging_load_plan` | the staging member load's plan, request catalog, pacing, records, report and their JSON codec, without tokio |
+| [`tools/staging/staging_load_generator/`](/tools/staging/staging_load_generator/README.md) | `staging_load_generator` | the staging member load's virtual clients and the `staging-load` executable's command line |
+| [`tools/staging/acknowledgement_dropping_relay/`](/tools/staging/acknowledgement_dropping_relay/README.md) | `acknowledgement_dropping_relay` | the loopback relay that withholds one fleet executor answer, and the `acknowledgement-dropping-relay` command line |
+| [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the heavy executables: script index, browser gates, MCP broker, world export, map assets, capture, the staging load and relay entry points |
 
 Every package is named after its folder, in snake_case. A crate under `crates/` sits in the
 folder of its category and declares its tier in its manifest, and none depends on a crate in
@@ -107,7 +138,7 @@ Cargo code: its three Enfusion addons are built by Workbench and checked by `car
 code ─────────── apps/<product>/            products, one folder each
                  crates/<category>/<crate>/ library crates, by category
                  legacy/<engine>/           the two engines while their code moves to crates/
-                 tools/<tool>/              repository tooling
+                 tools/<category>/<crate>/  repository tooling (xtask and developer_tools directly under tools/)
 deploy ───────── deploy/                    release image, compose files, Caddy, systemd units
 shapes ───────── contracts/definitions/     JSON Schemas, the source of generated contract types
                  contracts/fixtures/        golden test data, positive and negative

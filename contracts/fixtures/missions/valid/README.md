@@ -14,13 +14,13 @@ contracts/fixtures/missions/valid/
 ## How it works
 
 `cargo xtask schema validate`
-(`tools/xtask/src/verifications/schemas/checks/mission_validation.rs`) checks every file against
+(`tools/commands/schema_tooling/src/schema_checks/mission_validation.rs`) checks every file against
 `contracts/definitions/mission.schema.json`, keeps every file under the schema's
 `x-tbd-missionFileMaxBytes` ceiling (8 MiB, the value of `MISSION_FILE_MAX_BYTES` in the
 [mod](/documentation/glossary/g_to_m.md#mod)'s `TBD_MissionLoader.c`), and requires every `kit:` alias
 in `slots[]` and in the [ORBAT](/documentation/glossary/n_to_z.md#orbat) roles to be defined in the
 mod's spawn registry. The four UK kits of `last-stand-at-montfort.json` are the only waived aliases
-(`KNOWN_UNRESOLVABLE_KITS` in `tools/xtask/src/verifications/schemas/checks.rs`), since vanilla
+(`KNOWN_UNRESOLVABLE_KITS` in `tools/commands/schema_tooling/src/schema_checks.rs`), since vanilla
 Reforger ships no UK faction. Some files carry a further pin:
 
 | Fixture | Schema version | What it holds open |
@@ -62,10 +62,10 @@ readers can ship before writers.
   - `cargo xtask schema validate`, as above, which is also the first step of the
     `schema-validate` CI task;
   - `cargo xtask mod world-boot --mission <name>`, which resolves a bare name here through
-    `mission_fixtures_valid_dir` (`tools/developer_tools/src/repository_layout.rs`, called from
-    `tools/xtask/src/commands/mod_ops/world_boot/execution.rs`), and
+    `mission_fixtures_valid_dir` (`tools/foundation/repository_layout/src/contracts.rs`, called from
+    `tools/commands/mod_operations/src/world_boot/execution.rs`), and
     `cargo xtask mod test-mission <name>`, which stages the golden it finds by file name under
-    `contracts/` (`tools/xtask/src/commands/mod_ops/mission_test.rs`);
+    `contracts/` (`tools/commands/mod_operations/src/mission_test.rs`);
     `cargo xtask mod dev-server` names `bridgehead-at-levie.json` in its usage text as the offline
     `--artifact-file`;
   - the map engine's compiler flatten tests in
@@ -76,7 +76,7 @@ readers can ship before writers.
     `apps/api/src/missions/contract/tests/schema_validators.rs`, which pads
     `last-stand-at-montfort.json` past the byte ceiling;
   - the xtask schema tests `staged_golden_tests.rs` and `side_fallback_tests.rs` in
-    `tools/xtask/src/verifications/schemas/tests/checks/`, which read
+    `tools/commands/schema_tooling/src/tests/schema_checks/`, which read
     `schema-1_3-wire-fields.json`.
 
 ## Boundaries

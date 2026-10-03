@@ -40,7 +40,7 @@ The catalogs state Eden's behaviour only; where one says how the Mission Creator
 it is in a section headed Mission Creator counterpart, read from the code and linked to the
 inventory area. Parity itself lives in the gap analysis, one row per ID, whose ticket column is
 kept by hand: `cargo xtask ticket sync` rewrites only a table whose header holds `priority |`
-(`parse_gap_analysis` in `tools/ticket_engine/src/sync/gap_analysis.rs`), and these tables
+(`parse_gap_analysis` in `tools/tickets/ticket_registry/src/sync/gap_analysis.rs`), and these tables
 head that column `ticket`, so the sync writes the file back unchanged.
 
 Eden calls the document it edits a scenario and works in a 3D scene as well as on a 2D map. The
@@ -55,8 +55,8 @@ domain's pattern, and the gap analysis gets its row; a new wiki page gets a mani
 
 - [Mission Creator](/apps/frontend/src/workspaces/editor/) — the workspace the catalogs'
   Mission Creator counterpart sections and the gap analysis describe.
-- [Ticket engine](/tools/ticket_engine/src/) — `GAP_ANALYSIS` in `repository.rs` names the gap
-  analysis that `ticket sync` and `ticket check` read.
+- [Repository layout](/tools/foundation/repository_layout/src/) — `GAP_ANALYSIS` in
+  `documentation.rs` names the gap analysis that `ticket sync` and `ticket check` read.
 
 ## Boundaries
 
@@ -68,7 +68,7 @@ domain's pattern, and the gap analysis gets its row; a new wiki page gets a mani
   right dock, context menu, inspector, Attributes dialog and outliner READMEs), which link the
   catalog their folder follows; the feature inventory's README and entry schema; the
   [roadmap](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md); the ticket
-  engine's `tools/ticket_engine/src/repository.rs`, `ticket sync`, which reads the gap
+  model's `tools/tickets/ticket_model/src/repository.rs`, `ticket sync`, which reads the gap
   analysis and writes it back unchanged, and `ticket check`, which reads it; the source test in `apps/frontend/src/workspaces/editor/arsenal/tests/shell_wiring.rs`,
   which reads the gap analysis; and the ticket registry, whose tickets cite the IDs.
 - Rules: an ID is never renumbered or reused, because the gap analysis, the roadmap and the

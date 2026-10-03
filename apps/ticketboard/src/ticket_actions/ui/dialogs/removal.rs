@@ -1,17 +1,17 @@
 use super::*;
 use crate::core::ui::*;
-use crate::ticket_actions::{
+use eframe::egui::{Checkbox, RichText, ScrollArea, TextEdit, Ui};
+use ticketboard_model::ticket_actions::{
     events::TicketActionEvent as Action,
     services::commands::{self as verbs, FileChangeGuard},
 };
-use eframe::egui::{Checkbox, RichText, ScrollArea, TextEdit, Ui};
 
 #[expect(clippy::too_many_arguments)] // dialog fields destructured by the one caller
 pub(crate) fn remove_body_ui(
     ui: &mut Ui,
     b: &TicketActionContext<'_>,
     mctx: MutationContext<'_>,
-    id: &str,
+    id: &TicketId,
     is_program: bool,
     guard: &FileChangeGuard,
     force: &mut bool,
@@ -35,7 +35,7 @@ pub(crate) fn remove_body_ui(
             .color(VERDICT_COLLIDE),
     ));
     if *force {
-        let kids = verbs::descendants(b.corpus.tickets.iter().map(|t| t.ticket.id()), id);
+        let kids = verbs::descendants(b.corpus.tickets.iter().map(|t| t.ticket.id().as_str()), id);
         if kids.is_empty() {
             ui.label(
                 RichText::new("no descendant files in the corpus")

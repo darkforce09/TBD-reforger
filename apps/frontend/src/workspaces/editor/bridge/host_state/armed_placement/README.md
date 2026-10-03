@@ -71,7 +71,7 @@ write. An arm itself is never document state and never an undo step.
   since the tab can change between the pick-up and the commit; every file here is on the place path
   that `cargo xtask verify editor-orbat-coherency` scans, which bans `ensure_default_squad` and
   fails when a listed file is missing, so a renamed file updates the gate's list in
-  `tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`.
+  `tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`.
 
 ## Related documentation
 

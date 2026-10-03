@@ -16,9 +16,9 @@ start, every observation with the SHA-256 of its raw artifact, and one case line
 It passes only when every declared case is ok and the judge accepts it; a partial run still writes
 a failing receipt that names its missing dependencies.
 
-In code: `tools/xtask/src/verifications/api_readiness/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation/apps/api/verification_evidence/requirements.json`.
+In code: `tools/commands/api_readiness_checks/src/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation/apps/api/verification_evidence/requirements.json`.
 
-See: [Verification evidence](/documentation/apps/api/verification_evidence/README.md), [API readiness judge](/tools/xtask/src/verifications/api_readiness/README.md).
+See: [Verification evidence](/documentation/apps/api/verification_evidence/README.md), [API readiness judge](/tools/commands/api_readiness_checks/src/README.md).
 
 ### operations
 
@@ -41,9 +41,9 @@ page goldens that `gate v-suite` holds the built app to. The ballistics oracle i
 Workbench plugin and play-mode component that record the engine's own shell flights, against
 which a ballistics catalog is calibrated.
 
-In code: `tools/developer_tools/src/enfusion_tooling/` (the `enf` binary); the lane links in `tools/xtask/src/commands/platform/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `tools/developer_tools/src/browser_testing/dom_oracle/` and the goldens in `tools/developer_tools/fixtures/dom_oracle/`; `apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
+In code: `tools/enfusion/enfusion_script_index/src/` (the `enf` binary); the lane links in `tools/commands/platform_execution/src/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `tools/browser_testing/browser_gate_suites/src/dom_oracle/` and the goldens in `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/`; `apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
 
-See: [Enfusion script oracle](/tools/developer_tools/src/enfusion_tooling/README.md), [Oracle lanes](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes), [DOM oracle fixtures](/tools/developer_tools/fixtures/dom_oracle/README.md), [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
+See: [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md), [Oracle lanes](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes), [DOM oracle fixtures](/tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/README.md), [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
 
 ### ORBAT
 
@@ -216,7 +216,7 @@ branch `slice/<slice>` made from `main`. The agent runs the slice
 [gate](/documentation/glossary/g_to_m.md#gate) and reports; the orchestrator lands it. A
 sub-slice, with two dots in its ID, shares its parent's worktree.
 
-In code: `cargo xtask platform slice-worktree` in `tools/xtask/src/commands/platform/slice_worktree/`, which also links the [oracle](#oracle) lanes; `cargo xtask platform slice-run`; `cargo xtask platform wave gate`.
+In code: `cargo xtask platform slice-worktree` in `tools/commands/platform_execution/src/slice_worktree/`, which also links the [oracle](#oracle) lanes; `cargo xtask platform slice-run`; `cargo xtask platform wave gate`.
 
 See: [wave](#wave), [Factory waves](/documentation/runbooks/factory_waves/README.md).
 
@@ -249,9 +249,9 @@ and polls its read-only observers (host shell, database, unit journal, console l
 member reads, saved Chrome page reads) until the effect shows or the deadline passes, without ever
 reading stdin.
 
-In code: `tools/xtask/src/commands/staging/` with `procedure_runner/` and the `fleet_procedure/`, `discord_procedure/` and `load_procedure/` step tables; the host tool `staging-fixtures` in `apps/api/src/bin/staging_fixtures/`.
+In code: `tools/commands/staging_procedures/src/` with `procedure_runner/` and the `fleet_procedure/`, `discord_procedure/` and `load_procedure/` step tables; the host tool `staging-fixtures` in `apps/api/src/bin/staging_fixtures/`.
 
-See: [fleet instance](/documentation/glossary/a_to_f.md#fleet-instance), [acknowledgement-dropping relay](/documentation/glossary/a_to_f.md#acknowledgement-dropping-relay), [load workload](/documentation/glossary/g_to_m.md#load-workload), [Staging harness](/tools/xtask/src/commands/staging/README.md).
+See: [fleet instance](/documentation/glossary/a_to_f.md#fleet-instance), [acknowledgement-dropping relay](/documentation/glossary/a_to_f.md#acknowledgement-dropping-relay), [load workload](/documentation/glossary/g_to_m.md#load-workload), [Staging harness](/tools/commands/staging_procedures/src/README.md).
 
 ### Stitch visual reference
 
@@ -273,7 +273,7 @@ One of the 1,100 member accounts the staging load run signs in as, created by
 reserved accounts only. Seeding refuses while the API's Discord bot token is set or when any reserved
 id already exists.
 
-In code: `apps/api/src/bin/staging_fixtures/reserved_accounts.rs` and `load_population/`; `tools/xtask/staging/load_population.json`; `account_rotation.rs` in `tools/developer_tools/src/staging_verification/load_generation/`.
+In code: `apps/api/src/bin/staging_fixtures/reserved_accounts.rs` and `load_population/`; `tools/xtask/staging/load_population.json`; `account_rotation.rs` in `tools/staging/staging_load_generator/src/`.
 
 See: [load workload](/documentation/glossary/g_to_m.md#load-workload), [staging harness](#staging-harness).
 
@@ -283,7 +283,7 @@ One unit of planned work, stored as `.ai/tickets/T-<id>.toml` for parents and do
 alike, with a status of `idea`, `queued`, `ready`, `running`, `review`, `shipped`, `deferred` or
 `cancelled`. Every ticket operation is a `cargo xtask ticket` command.
 
-In code: `load_registry` in `tools/ticket_engine/src/registry/mod.rs`; `StatusName` in `tools/ticket_engine/src/model/status.rs`.
+In code: `load_registry` in `tools/tickets/ticket_registry/src/registry/mod.rs`; `StatusName` in `tools/tickets/ticket_model/src/model/status.rs`.
 
 See: [wave](#wave), [ticketboard](#ticketboard), [Ticket registry](/.ai/tickets/README.md).
 
@@ -293,7 +293,7 @@ The native desktop viewer of the ticket registry, built on egui: parent and chil
 lanes, the program tree, run receipts and estimates, with specs and documents beside them. Every
 change it makes runs a `cargo xtask ticket` command.
 
-In code: `apps/ticketboard/`, which reads the registry through `tools/ticket_engine/`.
+In code: `apps/ticketboard/`, which reads the registry through `tools/tickets/ticket_model/`.
 
 See: [Ticketboard](/apps/ticketboard/README.md).
 
@@ -316,7 +316,7 @@ A numbered group of [tickets](#ticket) in `.ai/tickets/wave.lock`, which `cargo 
 alone writes. Tickets run in parallel only when the files they own do not overlap;
 `cargo xtask platform wave` and `cargo xtask mod wave` drive a wave for the platform and the mod.
 
-In code: `tools/ticket_engine/src/wave_lock/`; `tools/xtask/src/commands/wave/cli.rs`.
+In code: `tools/tickets/ticket_wave_lock/src/`; `tools/xtask/src/commands/wave/cli.rs`.
 
 See: [Factory waves](/documentation/runbooks/factory_waves/README.md).
 

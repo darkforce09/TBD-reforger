@@ -70,7 +70,7 @@ and the [agent continuation handoff](/documentation/archive/handoffs_and_kickoff
 - [Game framework](/apps/mod/tbd-framework/) — `TBD_Framework`.
 - [Export addon](/apps/mod/tbd-export/) — `TBD_Export`.
 - [MCP bridge addon](/apps/mod/tbd-emcp/) — `TBD_EMCP`.
-- [Mod commands](/tools/xtask/src/commands/mod_ops/) — every `cargo xtask mod` command.
+- [Mod commands](/tools/commands/mod_operations/src/) — every `cargo xtask mod` command.
 
 ## Boundaries
 

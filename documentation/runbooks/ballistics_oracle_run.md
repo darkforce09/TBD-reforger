@@ -23,7 +23,7 @@ the trim and the checks a few minutes.
 - For step 9, the local stack of [local development](/documentation/runbooks/local_development.md)
   and an administrator session (dev login with `role=admin` in development).
 - For a game build after 1.8.0.13: `CATALOG_VERSION` in
-  `tools/xtask/src/commands/ballistics/trim_export.rs` raised by one, so the trim writes a new
+  `tools/commands/ballistics_oracle_tooling/src/trim_export.rs` raised by one, so the trim writes a new
   catalog version instead of replacing the stored one. A stored version never changes.
 
 ## Steps
@@ -154,7 +154,7 @@ Expected: `200`, `etag` equal to the catalog sha256 the trim printed, and
   — what the oracle measures and why.
 - [Ballistics oracle plugin](/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/README.md)
   — the edit-mode half, its dialog and its output.
-- [Ballistics trim](/tools/xtask/src/commands/ballistics/README.md) — the trim command's rules
+- [Ballistics trim](/tools/commands/ballistics_oracle_tooling/src/README.md) — the trim command's rules
   and exit codes.
 - [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md)
   — the fixture lifecycle, the calibration criterion and the operator decisions.

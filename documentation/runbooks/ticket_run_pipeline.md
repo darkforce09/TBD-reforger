@@ -211,7 +211,7 @@ this pipeline creates either, and `done` never stamps, so step 11 still follows.
 
 ## Editing a ticket file by hand
 
-A ticket file is TOML that the ticket engine renders in one canonical form, and every command that
+A ticket file is TOML that `ticket_model` renders in one canonical form, and every command that
 writes a ticket renders the whole file again. Keep a hand edit in that form, or the next command
 rewrites it and the diff grows:
 
@@ -220,7 +220,7 @@ rewrites it and the diff grows:
   `children`, `active`, `main_goal`, `context`, `requirement`, `current_state`, `approach`,
   `verify`, `acceptance`, `citations`, `shipped_at`, `created_at`, `completed_at`, `estimated`,
   `estimate_note`, `migration_legacy`, `owns`, `pack_last`, then the `[scope]` table last
-  (`TicketFile` in `tools/ticket_engine/src/encoding.rs`);
+  (`TicketFile` in `tools/tickets/ticket_model/src/encoding.rs`);
 - no key the schema does not define: a new key goes into `ALLOWED_NEW`, `TicketFile` and
   `.ai/tickets/schema.json` in one commit;
 - never `status`, `order`, `shipped_at` or `completed_at` by hand: those belong to `reorder`,
@@ -234,7 +234,7 @@ rewrites it and the diff grows:
 `corpus_roundtrip_real_tree_byte_identical` does, and neither CI nor the wave gate runs it:
 
 ```bash
-cargo test -p ticket_engine corpus_roundtrip_real_tree_byte_identical
+cargo test -p ticket_model corpus_roundtrip_real_tree_byte_identical
 ```
 
 Expected: one `test result: ok. 1 passed` line; the other test binaries of the crate report 0
@@ -273,10 +273,10 @@ prints `(no run files under .ai/tickets/metrics/)` when the work ran outside `sl
 
 - [Ticket command group](/tools/xtask/src/commands/ticket/README.md) — every `ticket`
   subcommand, its flags and exit codes.
-- [Platform command group](/tools/xtask/src/commands/platform/README.md) — `slice-run`,
+- [Platform command group](/tools/commands/platform_execution/src/README.md) — `slice-run`,
   `slice-worktree` and the wave driver.
-- [Ticket engine](/tools/ticket_engine/README.md) — the crate behind the ticket files, the
-  queue and the run receipts.
+- [Ticket crates](/tools/tickets/README.md) — the crates behind the ticket files, the queue and
+  the run receipts.
 - [Ticket identifiers](/documentation/standards/ticket_identifiers.md) — the ticket fields, spec
   and plan names, and ids in commit subjects.
 - [Commit checklist](/documentation/standards/commit_checklist.md) — what the landing commit

@@ -78,10 +78,10 @@ script list when it loads the project.
 - `addon.gproj`: ID `TBD_EMCP`, GUID `D4E5F6A7B8C90123`, title "TBD EMCP", one dependency, the
   vanilla data addon `58D0FB3206B6F859`, and empty `PC` and `HEADLESS` configurations.
 - `ENFUSION_WORKBENCH_HOST` and `ENFUSION_WORKBENCH_PORT` (defaults `127.0.0.1` and `5775`): where
-  `cargo xtask mcp wbcall` reaches the Net API (`tools/xtask/src/commands/mcp/netapi.rs`);
+  `cargo xtask mcp wbcall` reaches the Net API (`tools/commands/enfusion_mcp/src/netapi.rs`);
   `mod dev-bootstrap` and `mod spawn-determinism` read the port too.
 - `TBD_WB_WAIT_SEC` (default 180): how long `mod dev-bootstrap` waits for the Net API port after
-  launching Workbench (`tools/xtask/src/commands/mod_ops/development_bootstrap.rs`).
+  launching Workbench (`tools/commands/mod_operations/src/development_bootstrap.rs`).
 
 ## Public surface
 

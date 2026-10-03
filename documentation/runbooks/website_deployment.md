@@ -62,7 +62,7 @@ sets up on Ubuntu:
   `ss -tlnp`. The host runs other services; the deploy refuses a `TBD_REMOTE_DIR`,
   `TBD_SSH_HOST` or `TBD_PROFILE_DIR` that contains `prairielearn` in any case, and a
   `TBD_REMOTE_DIR` outside the deploy user's `/home/<user>/tbd/` that
-  `require_tbd_remote_prefix` checks (`tools/xtask/src/commands/deploy/website.rs`), because
+  `require_tbd_remote_prefix` checks (`tools/commands/deployment/src/website.rs`), because
   the rsync runs with `--delete`.
 - Disk space: the website needs little; the game server install beside it needs at least 30 GB
   (`df -h ~`).
@@ -105,9 +105,9 @@ Run the development-machine steps from the repository root; a step that runs on 
    `==> remote: restart tbd-website-api.service`,
    `==> unit: deploy/systemd/tbd-website-api.service is installed by hand (see documentation/runbooks/website_deployment.md Phase D)`,
    the smoke hints and `==> done`. The printed list is the authority; the code is
-   `tools/xtask/src/commands/deploy/website/rsync_argv.rs`, and the development-machine-only
+   `tools/commands/deployment/src/website/rsync_argv.rs`, and the development-machine-only
    paths, which `cargo xtask deploy staging` excludes too, are in
-   `tools/xtask/src/commands/deploy/development_machine_only_paths.rs`.
+   `tools/commands/deployment/src/development_machine_only_paths.rs`.
 
    | Remote step, as printed | What runs on the host |
    |---|---|
@@ -234,7 +234,7 @@ checkout, with `terrain-registry.json` at its top; see
    under its state directory (`StateDirectory=tbd-website-api`); the
    [systemd README](/deploy/systemd/README.md#configuration) explains each line.
    When a deploy's restart fails, the deploy prints steps 7 to 10 as one line
-   (`install_command` in `tools/xtask/src/commands/deploy/website/systemd_unit.rs`).
+   (`install_command` in `tools/commands/deployment/src/website/systemd_unit.rs`).
 
 9. On the host, make systemd read the new unit.
 
@@ -468,5 +468,5 @@ On a Podman host, `podman exec` takes the same arguments.
 - [API environment variables](/documentation/apps/api/environment_variables.md) — every
   setting of the server's `.env`.
 - [Deployment templates](/deploy/README.md) — `deploy.env`, the Caddyfile and the
-  units; [the deploy commands](/tools/xtask/src/commands/deploy/website/README.md) — how
+  units; [the deploy commands](/tools/commands/deployment/src/website/README.md) — how
   `deploy website` works.

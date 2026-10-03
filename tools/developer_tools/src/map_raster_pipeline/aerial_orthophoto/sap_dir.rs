@@ -1,9 +1,9 @@
 use super::*;
 
-use crate::repository_layout::map_scratch_dir;
+use ::repository_layout::map_scratch_dir;
 
 pub(super) fn sap_dir() -> Result<PathBuf> {
-    Ok(map_scratch_dir(&compiled_checkout_root()?, "everon").join("sap")) // E2c-allow (SAP lane is Eden-only)
+    Ok(map_scratch_dir(&find_repository_root()?, "everon").join("sap")) // E2c-allow (SAP lane is Eden-only)
 }
 
 pub(super) fn r2(v: f64) -> f64 {

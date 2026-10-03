@@ -25,7 +25,7 @@ contracts/fixtures/registry/
 `cargo xtask schema validate` checks every file against its schema: the two alias registries
 through `registry_validation.rs`, together with the item and compatibility samples, and the other
 four in `contract_validation/validate_all.rs` (both in
-`tools/xtask/src/verifications/schemas/checks/`). The item and compatibility samples also pass
+`tools/commands/schema_tooling/src/schema_checks/`). The item and compatibility samples also pass
 the same referential checks as the live catalogues in `contracts/catalogs/`: every item's
 `addon` is a declared addon, every `variant_of` names another item and never the item itself, and
 both ends of every compatibility edge are items of the paired items file.
@@ -47,8 +47,8 @@ platform ingests.
   versions, told apart by `loadoutVersion`), `faction-library.schema.json` and
   `mission-editor-payload.schema.json`, all in `contracts/definitions/`.
 - Adding a file: add the sample, name it in
-  `tools/xtask/src/verifications/schemas/checks/registry_validation.rs` or
-  `tools/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs`, which read
+  `tools/commands/schema_tooling/src/schema_checks/registry_validation.rs` or
+  `tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs`, which read
   each file by name, and run `cargo xtask schema validate`.
 
 ## Producers and consumers

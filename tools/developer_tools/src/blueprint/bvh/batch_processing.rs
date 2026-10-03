@@ -44,7 +44,7 @@ use super::prefab::{PrefabResolver, ResolvedPrefab};
 use super::surface_kind::{kind_for_gamemat, kind_for_layer, parse_kind_override};
 use super::xob::{self, XobMesh};
 use super::xob_nodes::{XobNodes, parse_head_nodes};
-use crate::enfusion_pak::{AssetSource, DirSource, LayeredSource, PakSet};
+use enfusion_pak::{AssetSource, DirSource, LayeredSource, PakSet};
 
 /// Recursion bound for the child walk (door set → leaf is depth 2; compositions 2–3).
 const MAX_DEPTH: usize = 8;
@@ -146,11 +146,11 @@ impl<'a> AssetCache<'a> {
 
     /// `--kind` overrides apply to one XOB (the shell).
     pub fn set_overrides(&mut self, xob_path: &str, overrides: Vec<(u16, SurfaceKind)>) {
-        self.overrides_for = Some((crate::enfusion_pak::normalize_path(xob_path), overrides));
+        self.overrides_for = Some((enfusion_pak::normalize_path(xob_path), overrides));
     }
 
     pub fn load(&mut self, xob_path: &str) -> Result<Rc<Asset>> {
-        let key = crate::enfusion_pak::normalize_path(xob_path);
+        let key = enfusion_pak::normalize_path(xob_path);
         if let Some(a) = self.by_path.get(&key) {
             return Ok(a.clone());
         }

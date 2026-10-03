@@ -79,7 +79,7 @@ compiles every surface.
   - the headless editor gates in `tools/developer_tools/src/browser_testing/`, which drive these
     surfaces through the DOM;
   - `cargo xtask verify editor-orbat-coherency`
-    (`tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`), which scans
+    (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which scans
     `modals/orbat_manager.rs` and every source file in `modals/orbat_manager/` for banned
     interface text;
   - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in

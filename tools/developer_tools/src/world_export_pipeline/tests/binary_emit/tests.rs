@@ -7,8 +7,8 @@ use world_file_formats::containers::header::HEADER_BYTES;
 use world_file_formats::pod::instance::POD_BYTES;
 
 use super::*;
-use crate::repository_layout::compiled_checkout_root;
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::find_repository_root;
+use ::repository_layout::terrain_dir;
 
 /// Every committed everon chunk. Re-pin deliberately if the export ever changes shape — a
 /// silently shrinking corpus is how a parity test stops proving anything.
@@ -18,11 +18,7 @@ const EVERON_CHUNKS: usize = 315;
 const EVERON_INSTANCE_FLOOR: usize = 1_200_000;
 
 fn objects_dir() -> PathBuf {
-    terrain_dir(
-        &compiled_checkout_root().expect("repository root"),
-        "everon",
-    )
-    .join("objects")
+    terrain_dir(&find_repository_root().expect("repository root"), "everon").join("objects")
 }
 
 /// A copy of `bytes` whose first byte sits on a 4-byte boundary, so the zero-copy

@@ -38,8 +38,8 @@ follows the [feature doc template](/documentation/standards/templates/feature_do
 ## Boundaries
 
 - Depends on: the schemas and fixtures in `contracts/`, the codegen in
-  `tools/xtask/src/commands/generate/` and the schema gates in
-  `tools/xtask/src/verifications/schemas/`, which every claim is checked against; the feature
+  `tools/commands/schema_tooling/src/generate/` and the schema gates in
+  `tools/commands/schema_tooling/src/schema_checks/`, which every claim is checked against; the feature
   doc template; the ticket registry in `.ai/tickets/` for open work.
 - Used by: the READMEs of `contracts/`, `contracts/definitions/` and
   `contracts/fixtures/bridge_samples/`, which link these documents; the [mod](/documentation/glossary/g_to_m.md#mod)'s radio hook class

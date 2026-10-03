@@ -194,7 +194,7 @@ RCON route. Every request runs in the browser build only; the views that run the
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; `server_control_source` in
   `apps/frontend/src/foundation/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `servercontrol` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the page never calls an RCON route (`no_rcon_route_is_called_or_served`) and shows no
   invented server or console (`no_mock_servers_or_fabricated_console`); every card builds the
   state of its own server and is keyed on the selection alone

@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 
 pub(super) fn obj_get<'a>(v: &'a Value, k: &str) -> Option<&'a Value> {
     v.as_object().and_then(|m| m.get(k))
@@ -324,7 +324,7 @@ pub(super) fn rebuild_inventory(
 /// `world reclassify` — see the module docs. Returns the process exit code: 0 = the committed
 /// catalogue already agrees with the rules (or the rebuild was written), 1 = drift in check mode.
 pub fn reclassify_terrain(terrain: &str, mode: Mode, out_base: Option<&Path>) -> Result<u8> {
-    let terrain_dir = terrain_dir(&compiled_checkout_root()?, terrain);
+    let terrain_dir = terrain_dir(&find_repository_root()?, terrain);
     let objects = terrain_dir.join("objects");
     let prefabs_path = objects.join("prefabs.json.gz");
     if !prefabs_path.exists() {
@@ -448,7 +448,7 @@ pub fn resolve_out_base(out: Option<&Path>) -> Result<Option<PathBuf>> {
         if p.is_absolute() {
             Ok(p.to_path_buf())
         } else {
-            Ok(compiled_checkout_root()?.join(p))
+            Ok(find_repository_root()?.join(p))
         }
     })
     .transpose()

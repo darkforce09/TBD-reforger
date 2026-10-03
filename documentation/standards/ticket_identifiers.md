@@ -46,7 +46,7 @@ those two are never edited by hand. The ticket column of the Eden gap analysis i
 | spec | `documentation/tickets/specs/t<id>_<subject>.md`, the id without its `T-` and with dots as underscores (`t062_1_1_batch_save.md`); the ticket's `spec` field names it |
 | plan | `documentation/tickets/plans/t-<id>_plan.md`, the id lowercased with dots as underscores (`t-067_1_plan.md`) |
 
-The plan path is `plan_path` in `tools/ticket_engine/src/repository.rs`.
+The plan path is `plan_path` in `tools/tickets/ticket_model/src/repository.rs`.
 `cargo xtask ticket mark-ready <id> [SPEC] [PLAN]` defaults an unset `plan` field to that path and
 refuses while the file is absent. The ticket templates are `.ai/tickets/spec_template.md`,
 `.ai/tickets/plan_template.md` and `.ai/tickets/handoff_template.md`. A spec is live while its
@@ -57,7 +57,7 @@ knowledge then moves to the feature doc.
 
 `cargo xtask ticket stamp-sha` and the token estimator find the commits that belong to a ticket by
 reading ids out of commit subjects (`subject_ids` in
-`tools/ticket_engine/src/cli/shipping/commit_subjects.rs`):
+`tools/tickets/ticket_model/src/commit_subjects.rs`):
 
 - an id is `T-[0-9]+(\.[0-9]+)*`, taken to its last dotted number, so `T-068.10.1` counts as
   itself and not as `T-068`;
@@ -75,7 +75,7 @@ A commit that lands a ticket names its full id in the subject, for example
   cell from, in order, a checkmark followed by a parent id in the row's notes (`✅` then `T-` and
   three or more digits; a dotted suffix is not captured), a ticket whose `implements` lists the
   row's id, the gap implementations in `.ai/tickets/corpus-pins.toml`, else `—` (`CHECKMARK_TICKET`
-  and `lookup_ticket_for_gap` in `tools/ticket_engine/src/sync/gap_analysis.rs`); it rewrites
+  and `lookup_ticket_for_gap` in `tools/tickets/ticket_registry/src/sync/gap_analysis.rs`); it rewrites
   only a table whose header holds `priority |`, and the gap analysis heads that column `ticket`,
   so the writer changes nothing there.
 - **Retired planning codes.** Planning codes from before the `T-` registry (priority tiers,
@@ -83,10 +83,10 @@ A commit that lands a ticket names its full id in the subject, for example
   are retired. `cargo xtask ticket check --strict` fails on any of them in `documentation/`,
   `.ai/tickets/queue.json`, `CLAUDE.md` and the root `README.md`, outside the frozen records and
   the design exports; the patterns are `STRICT_LEGACY` in
-  `tools/ticket_engine/src/validation/constants.rs`. Use the ticket id instead.
+  `tools/tickets/ticket_registry/src/validation/constants.rs`. Use the ticket id instead.
 - **Where no id goes.** READMEs never cite tickets; a feature doc links its open tickets under
   `## Open work`. Code comments carry no ticket ids: tests hold this for every tracked file under
-  `tools/` (`tools/xtask/src/tests/tooling_prose_rules.rs`), for the API's sources
+  `tools/` (`tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`), for the API's sources
   (`no_ticket_references_in_source` in `apps/api/src/tests/architecture_rules.rs`) and
   for the app's `src/` tree (`apps/frontend/src/tests/doc_audit/mod.rs`).
 

@@ -2,8 +2,8 @@
 
 # Target file tree
 
-The exact end state of the repository after the program's last stage: 148 workspace members
-(5 apps, 106 crates under the crates folder, 37 under the tools folder). The close stage diffs the
+The exact end state of the repository after the program's last stage: 153 workspace members
+(5 apps, 106 crates under the crates folder, 42 under the tools folder). The close stage diffs the
 real tree against this document and fixes or records every difference. Crate details are in
 [crate_catalogue.md](/documentation/restructure/crate_catalogue.md).
 
@@ -117,21 +117,22 @@ TBD-reforger/
 │   ├── xtask/                 binary: command line and dispatch only; keeps the data folders
 │   │                          dedicated_server_profiles/, fixtures/mcp/ and staging/
 │   ├── developer_tools/       one-line binaries: enf · gate · mcpd · world · map · capture ·
-│   │                          acknowledgement_dropping_relay
+│   │                          acknowledgement_dropping_relay · staging_load
 │   ├── foundation/            repository_layout · process_runner · verification_core · repository_laws
+│   │                          deploy_settings · tool_test_support (dev-only)
 │   ├── tickets/               ticket_model · ticket_metrics · ticket_registry · ticket_wave_lock
 │   │                          ticketboard_model
 │   ├── commands/              ci_task_catalog · database_operations · deployment · staging_procedures
 │   │                          api_readiness_checks · mod_operations · platform_execution
 │   │                          schema_tooling · enfusion_mcp · ballistics_oracle_tooling
-│   │                          workstation_setup · remote_debugging
+│   │                          workstation_setup · remote_debugging · repository_relocation
 │   ├── checks/                documentation_checks · mod_script_checks · repository_checks
-│   ├── enfusion/              enfusion_pak · enfusion_script_index
+│   ├── enfusion/              enfusion_pak · enfusion_script_index · enfusion_mcp_broker
 │   ├── map_assets/            blueprint_compiler · world_export_pipeline · map_raster_pipeline
 │   │                          map_asset_verification
 │   ├── browser_testing/       chrome_devtools_protocol · browser_gate_suites (with fixtures/dom_oracle/)
-│   ├── staging/               staging_load_generator · acknowledgement_dropping_relay ·
-│   │                          staging_fixtures (binary)
+│   ├── staging/               staging_load_plan · staging_load_generator
+│   │                          acknowledgement_dropping_relay · staging_fixtures (binary)
 │   └── enfusion_mcp_node_package/   pinned npm package
 │
 ├── deploy/

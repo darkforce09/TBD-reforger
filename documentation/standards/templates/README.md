@@ -56,7 +56,7 @@ the standard names.
 
 ## Code
 
-- [Documentation gates](/tools/xtask/src/verifications/documentation/README.md) — the
+- [Documentation gates](/tools/checks/documentation_checks/src/README.md) — the
   `readme-coverage`, `markdown-placement` and `link-check` gates that check every README and
   document these templates shape.
 

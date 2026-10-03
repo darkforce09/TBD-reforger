@@ -55,7 +55,7 @@ pending edit.
     which imports the three views, and `tab_content.rs` and `tab_content/selection_grid.rs`, which
     render them;
   - the source pins in `apps/frontend/src/workspaces/editor/arsenal/tests/shell_wiring.rs`;
-  - the Arsenal smoke test in `tools/developer_tools/src/browser_testing/editor_smoke_tests/arsenal.rs`,
+  - the Arsenal smoke test in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/arsenal.rs`,
     which clicks the compatibility panel's buttons by `data-value`.
 - Rules: a panel renders and reports; the loadout rules, the serialisation and the document write
   stay in the Arsenal. Every option button carries `data-value` with its resource name, which the

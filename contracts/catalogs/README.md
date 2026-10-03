@@ -63,14 +63,14 @@ fill the arsenal with sample data while every test still passes.
   the committed source, so the menu entry its header names ("Plugins, TBD, Export TBD Registry
   Items") does not register.
 - Consumers:
-  - `cargo xtask db registry-import` (`tools/xtask/src/commands/db/operations.rs`), which runs
+  - `cargo xtask db registry-import` (`tools/commands/database_operations/src/local_database.rs`), which runs
     `import-registry` (`apps/api/src/bin/import_registry.rs`) with both paths;
   - `cargo xtask schema validate`, whose `registry_validation.rs` in
-    `tools/xtask/src/verifications/schemas/checks/` validates both files and checks that every
+    `tools/commands/schema_tooling/src/schema_checks/` validates both files and checks that every
     item's addon is declared, every `variant_of` names another item, and every edge joins two
     items of the catalogue;
   - `cargo xtask verify object-registry-aliases`
-    (`tools/xtask/src/verifications/registry/object_registry_aliases.rs`), which requires a
+    (`tools/checks/repository_checks/src/registry/object_registry_aliases.rs`), which requires a
     spawn registry row for every crate and other item the Mission Creator's objects palette offers;
   - the API's integration test `apps/api/tests/registry_compat.rs`, which imports both
     as ground truth under a test modpack;

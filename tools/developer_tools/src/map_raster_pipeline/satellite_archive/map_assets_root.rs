@@ -1,9 +1,9 @@
 use super::*;
 
-use crate::repository_layout::terrain_assets_dir;
+use ::repository_layout::terrain_assets_dir;
 
 pub(super) fn map_assets_root() -> Result<PathBuf> {
-    Ok(terrain_assets_dir(&compiled_checkout_root()?))
+    Ok(terrain_assets_dir(&find_repository_root()?))
 }
 
 pub fn verify_unified_satellite(terrain: &str) -> Result<u8> {

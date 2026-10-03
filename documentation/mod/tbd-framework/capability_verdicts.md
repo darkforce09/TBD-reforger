@@ -19,7 +19,7 @@ build error.
 - Matching: the longest prefix wins, so a rule for one file overrides the rule for its folder;
   prefixes of equal length keep file order.
 - Verdicts, the only legal values (`VERDICTS` in
-  `tools/developer_tools/src/enfusion_tooling/capability.rs`; anything else fails the load):
+  `tools/enfusion/enfusion_script_index/src/capability.rs`; anything else fails the load):
 
 | Verdict | Meaning |
 |---|---|
@@ -41,7 +41,7 @@ those screens ship.
 - Written by hand and reviewed: the verdict is product judgement, the aggregation is mechanical.
   A new CRF file that no prefix covers needs a new row.
 - `cargo run -q -p developer_tools --bin enf -- capability` reads the table from
-  `CAPABILITY_VERDICTS` (`tools/developer_tools/src/repository_layout.rs`), joins it against
+  `CAPABILITY_VERDICTS` (`tools/enfusion/enfusion_script_index/src/script_index_layout.rs`), joins it against
   the CRF index (`crf_files.tsv` and `crf_symbols.tsv` in `.ai/artifacts/enf-index/`), prints one
   row per capability (verdict, files, lines, symbols, note, heaviest first) and writes the same
   matrix to `.ai/artifacts/enf-index/capability_matrix.tsv`. Each matrix row carries the verdict
@@ -62,5 +62,5 @@ those screens ship.
 
 - [Mod design](/documentation/mod/tbd-framework/mod_design.md) — §4 names the spine the
   `BUILD` rows serve, §6 the deferrals
-- [Enfusion tooling](/tools/developer_tools/src/enfusion_tooling/README.md) — the `enf`
+- [Enfusion tooling](/tools/enfusion/enfusion_script_index/src/README.md) — the `enf`
   commands that build the CRF index and run the check

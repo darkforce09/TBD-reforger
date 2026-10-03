@@ -59,14 +59,15 @@ scan::walk_files + matching_lines ──► Result<Vec<Hit>, NotRun>   (the call
 ## Public surface
 
 - At the crate root: `Verdict`, `NotRun`, `Finding`, `Kind`, `Pattern`, `Report`, `GateLock`,
-  `flock_exclusive`, `Error` and `Result`, imported across `tools/xtask/src/verifications/`,
-  `tools/xtask/src/commands/`, `process_runner` and `repository_laws`.
+  `flock_exclusive`, `Error` and `Result`, imported across the check and command crates under
+  `tools/checks/` and `tools/commands/`, `tools/xtask/src/commands/`, `process_runner` and
+  `repository_laws`.
 - `gate`: the verifications and the `debug`, `deploy` and `mcp` command groups.
 - `scan`: the `architecture`, `database`, `language_bans`, `licensing` and `mod_scripts`
-  verifications, the CI task runner and `mod_ops/mission_test.rs`.
-- `lock`: the platform wave driver (`tools/xtask/src/commands/platform/wave_execution/lock.rs`
+  verifications, the CI task runner and `tools/commands/mod_operations/src/mission_test.rs`.
+- `lock`: the platform wave driver (`tools/commands/platform_execution/src/wave_execution/lock.rs`
   and `mod.rs`, which resolves `GATE_LOCK_RELPATH`) and the MCP broker start
-  (`tools/xtask/src/commands/mcp/call.rs`, one lock per socket).
+  (`tools/commands/enfusion_mcp/src/call.rs`, one lock per socket).
 
 ## Boundaries
 

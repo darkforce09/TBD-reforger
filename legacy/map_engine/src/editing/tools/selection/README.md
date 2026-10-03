@@ -59,7 +59,7 @@ when the dragged entity is selected, otherwise that entity alone.
     bridge's host state and overlays, the right dock, the toolbelt and the outliner under
     `apps/frontend/src/workspaces/editor/`;
   - the headless marquee gate
-    (`tools/developer_tools/src/browser_testing/editor_smoke_tests/marquee_drag.rs`), which
+    (`tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/marquee_drag.rs`), which
     calls `marquee_selfcheck` through the browser.
 - Rules: slot hits are square, vehicle hits circular, ties go to the slot and a marquee lists slots
   before vehicles (`square_slots_circular_vehicles_and_equal_distance_policy` and

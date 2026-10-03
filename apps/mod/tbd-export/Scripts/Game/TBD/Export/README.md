@@ -103,7 +103,7 @@ whichever runs last replaces the other's files.
   Workbench `TBD_MapExport*` classes, because a game or server compiles `Scripts/Game/` without
   `Scripts/WorkbenchGame/`; they write only below `$profile:TBD_Export/`; lines added stay ASCII.
   `cargo xtask mod compile` compiles only the framework addon
-  (`tools/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
+  (`tools/commands/mod_operations/src/compile/execution.rs`), so these scripts compile only when
   Workbench or a game loads `tbd-export`.
 
 ## Related documentation

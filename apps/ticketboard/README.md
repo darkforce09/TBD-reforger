@@ -11,14 +11,15 @@ desktop.
 
 ```text
 apps/ticketboard/
-├── Cargo.toml  the `ticketboard` package: one binary, the `glow` feature, the `ticket_engine` path dependency
-└── src/        the entry point, the application, the shared core and the seven feature modules
+├── Cargo.toml  the `ticketboard` package: one binary, the `glow` feature, egui and the `ticketboard_model` crate
+└── src/        the entry point, the application, the shared core and the egui views of six features
 ```
 
 ## How it works
 
-The viewer reads the registry only through the `ticket_engine` crate in `tools/ticket_engine/`
-and changes it only by running `cargo xtask ticket <verb>` as a subprocess, one command at a time,
+The viewer is the egui half over `ticketboard_model` (`tools/tickets/ticketboard_model/`), which
+loads and projects the registry through the `ticket_model` crate and holds the application state;
+this crate paints those models and applies the actions its views emit. It changes the registry only by running `cargo xtask ticket <verb>` as a subprocess, one command at a time,
 behind a check that the ticket file has not changed since the action was offered. It writes no
 file under the repository: its one direct write is its preferences, kept in eframe storage in the
 user's configuration directory.
@@ -76,15 +77,18 @@ cargo xtask verify file-length
 
 ## Boundaries
 
-- Depends on: `tools/ticket_engine/` for the ticket model, validation, repository paths and the
-  wave lock format; `cargo xtask ticket` and `git`, run as subprocesses; the files under
-  `.ai/tickets/`; the `eframe`, `egui_commonmark`, `egui_extras`, `notify`, `rfd`, `serde`,
-  `serde_json`, `time` and `toml` crates.
+- Depends on: `tools/tickets/ticketboard_model/` for every model, service and the application
+  state; `tools/tickets/ticket_model/` for the ticket and status vocabulary;
+  `tools/tickets/ticket_wave_lock/` for the ownership-collision verdict;
+  `tools/foundation/repository_layout/` for the `.ai/tickets` folder name; `cargo xtask ticket`
+  and `git`, run as subprocesses; the files under `.ai/tickets/`; the `eframe`,
+  `egui_commonmark`, `egui_extras` and `rfd` crates.
 - Used by: people at a desktop; no crate or command in the repository runs it.
 - Rules: every ticket change goes through a `cargo xtask ticket` command, and the viewer never
   runs `wave repack` itself; the module layout, the dependency directions and the file-size limits
-  hold under `src/tests/architecture_rules.rs`, whose `source_inspection.rs` reads grouped imports
-  and aliases and ignores comments and string literals; `cargo xtask verify file-length` covers
+  hold under `src/tests/architecture_rules.rs`, whose source inspection
+  (`ticketboard_model`'s `test_fixtures`) reads grouped imports and aliases and ignores comments
+  and string literals; `cargo xtask verify file-length` covers
   `src/` too.
 
 ## Related documentation

@@ -79,7 +79,7 @@ to the top level through the map engine's single-folder latch.
     `apps/frontend/src/workspaces/editor/ui/docks/`, the zones panel in
     `apps/frontend/src/workspaces/editor/ui/inspector/`, and the ORBAT manager in
     `apps/frontend/src/workspaces/editor/ui/modals/`;
-  - the outliner smoke tests in `tools/developer_tools/src/browser_testing/editor_smoke_tests/`.
+  - the outliner smoke tests in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`.
 - Rules: the tests in `tests/` hold these:
   - the tree's shape (Unfiled root, folder order, dangling ids, cycles, inherited flags, comment
     placement) is fixed by `tests/outliner_model/outliner_hierarchy_visibility_and_comments.rs`;

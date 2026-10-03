@@ -150,7 +150,7 @@ minute apart, so a credential pasted in later takes effect without a restart.
   also authenticates its ingest routes; the wire shapes in `contracts/definitions/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
   the fleet host agent in `apps/fleet_host_agent/` boot; the gates of `cargo xtask mod` in
-  `tools/xtask/src/commands/mod_ops/`, which `.github/workflows/mod-gates.yml` runs; and the
+  `tools/commands/mod_operations/src/`, which `.github/workflows/mod-gates.yml` runs; and the
   Mission Creator in `apps/frontend/`, through `Data/registry.json`.
 - Rules: `addon.gproj` names the vanilla data addon as its only dependency, and the addon carries no
   `Scripts/WorkbenchGame/` (`cargo xtask mod compile`); no upstream reference code or upstream-only

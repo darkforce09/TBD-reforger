@@ -43,7 +43,7 @@ otherwise. A missing S15 binary is a failure, never a skipped gate.
   `prefab_catalog::prefab_rows` and the container constants of `world_file_formats`
   (`containers::header`, `pod::instance`, `density::tbdd`); the fixtures and schemas under `contracts/`.
 - Used by: `cargo xtask schema map-object-golden`, through
-  `tools/xtask/src/verifications/map_assets/mod.rs`, and the CI task `schema-validate`.
+  `tools/commands/ci_task_catalog/src/map_asset_checks/mod.rs`, and the CI task `schema-validate`.
 - Rules: the gate computes with the exporter's and the loader's own functions, never a copy, so a
   golden that passes here is what the pipeline writes and the map reads; after a density cell-size
   change, `world gen-density-fixture` rewrites the S13 fixture.

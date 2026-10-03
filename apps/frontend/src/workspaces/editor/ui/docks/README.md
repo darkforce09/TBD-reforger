@@ -96,7 +96,7 @@ native test build compiles all five surfaces.
   - the Mission Settings and [ORBAT](/documentation/glossary/n_to_z.md#orbat) manager dialogs in
     `apps/frontend/src/workspaces/editor/ui/modals/`;
   - the headless editor smoke tests in
-    `tools/developer_tools/src/browser_testing/editor_smoke_tests/`, which drive the docks
+    `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`, which drive the docks
     through the DOM.
 - Rules:
   - a surface's tests live in `tests/<surface>/`, mounted from its module root with `#[path]`;

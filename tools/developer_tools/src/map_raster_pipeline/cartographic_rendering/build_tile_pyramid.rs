@@ -1,6 +1,6 @@
 use super::*;
 
-use crate::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
+use ::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
 
 /// XYZ WebP levels from a full-extent ortho (+full.webp).
 #[allow(clippy::too_many_arguments)]
@@ -97,8 +97,7 @@ pub fn build_tile_pyramid(
 
 /// `cargo xtask ci map-water-everon` step 2: drop the one-shot waterComposite block from the SAP meta.
 pub fn reset_water_meta(terrain: &str) -> Result<u8> {
-    let p =
-        map_scratch_dir(&compiled_checkout_root()?, terrain).join("sap/TBD_SatExport_meta.json");
+    let p = map_scratch_dir(&find_repository_root()?, terrain).join("sap/TBD_SatExport_meta.json");
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&p)?)?;
     if let Some(obj) = m.as_object_mut() {
         obj.remove("waterComposite");
@@ -109,7 +108,7 @@ pub fn reset_water_meta(terrain: &str) -> Result<u8> {
 
 /// `cargo xtask ci map-water-everon` step 5: manifest.tiles.satellite.unified.bytes = bundle size.
 pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
-    let root = terrain_dir(&compiled_checkout_root()?, terrain);
+    let root = terrain_dir(&find_repository_root()?, terrain);
     let mp = root.join("manifest.json");
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&mp)?)?;
     let bundle = root.join(
@@ -124,7 +123,7 @@ pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
 
 /// `cargo xtask ci map-cartographic-everon` step 3: tiles.map {source, encoding} patch.
 pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
-    let mp = terrain_manifest_path(&compiled_checkout_root()?, terrain);
+    let mp = terrain_manifest_path(&find_repository_root()?, terrain);
     let mut m: Value = serde_json::from_str(&std::fs::read_to_string(&mp)?)?;
     let map_block = m["tiles"]["map"]
         .as_object_mut()
@@ -137,7 +136,7 @@ pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
 
 /// The program-wide cartographic aggregator: committed slice logs plus live sub-verifiers.
 pub fn verify_cartographic() -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let artifacts = root.join(::repository_layout::ARTIFACTS_DIR);
     let failures = std::cell::Cell::new(0usize);
     macro_rules! pass {
@@ -197,18 +196,23 @@ pub fn verify_cartographic() -> Result<u8> {
             "cargo run -p developer_tools --bin world -- {}",
             args.join(" ")
         );
-        let r = std::process::Command::new("cargo")
+        let run = process_runner::Run::new("cargo")
             .args(["run", "-q", "-p", "developer_tools", "--bin", "world", "--"])
             .args(args)
-            .current_dir(&root)
-            .output()
-            .expect("spawn cargo");
-        if r.status.success() {
+            .cwd(&root)
+            .output();
+        let r = match run {
+            Ok(r) => r,
+            Err(not_run) => {
+                failm!("{label} did not run: {not_run}");
+                return;
+            }
+        };
+        if r.code == 0 {
             pass!("{label} exit 0");
         } else {
-            failm!("{label} exit {}", r.status.code().unwrap_or(1));
-            let err = String::from_utf8_lossy(&r.stderr);
-            let tail: Vec<&str> = err.trim().lines().rev().take(8).collect();
+            failm!("{label} exit {}", r.code);
+            let tail: Vec<&str> = r.stderr.trim().lines().rev().take(8).collect();
             for l in tail.iter().rev() {
                 println!("{l}");
             }
@@ -216,16 +220,15 @@ pub fn verify_cartographic() -> Result<u8> {
     };
     let run_cargo = |args: &[&str]| {
         let label = format!("cargo xtask {}", args.join(" "));
-        let r = std::process::Command::new("cargo")
+        let run = process_runner::Run::new("cargo")
             .args(["run", "-q", "-p", "xtask", "--"])
             .args(args)
-            .current_dir(&root)
-            .output()
-            .expect("spawn cargo");
-        if r.status.success() {
-            pass!("{label} exit 0");
-        } else {
-            failm!("{label} exit {}", r.status.code().unwrap_or(1));
+            .cwd(&root)
+            .output();
+        match run {
+            Ok(r) if r.code == 0 => pass!("{label} exit 0"),
+            Ok(r) => failm!("{label} exit {}", r.code),
+            Err(not_run) => failm!("{label} did not run: {not_run}"),
         }
     };
 

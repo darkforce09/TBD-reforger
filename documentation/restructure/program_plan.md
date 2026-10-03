@@ -13,7 +13,7 @@ and the risks. The goal tree is in
 Abbreviations in code spans: `me/` = `legacy/map_engine/src/`, `ge/` =
 `legacy/graphics_engine/src/`, `api/` = `apps/api/src/`, `fe/` =
 `apps/frontend/src/`, `xt/` = `tools/xtask/src/`, `dt/` =
-`tools/developer_tools/src/`, `te/` = `tools/ticket_engine/src/`, `vc/` =
+`tools/developer_tools/src/`, `te/` = tools/ticket_engine/src/, `vc/` =
 the verification core source folder (tools/verification_core/src/ until S4b, now
 the three crates under `tools/foundation/`).
 

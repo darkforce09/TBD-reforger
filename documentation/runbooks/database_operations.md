@@ -345,9 +345,9 @@ server, `journalctl --user -u tbd-website-backup.service -n 50` shows the last b
   the API and the first seed.
 - [Website deployment](/documentation/runbooks/website_deployment.md) — the home server, its
   database container and the deploy that repairs checksums.
-- [Database commands](/tools/xtask/src/commands/db/README.md) — every `cargo xtask db` command
+- [Database commands](/tools/commands/database_operations/src/README.md) — every `cargo xtask db` command
   and its exit codes.
-- [Deploy commands](/tools/xtask/src/commands/deploy/README.md) — every `cargo xtask deploy db`
+- [Deploy commands](/tools/commands/deployment/src/README.md) — every `cargo xtask deploy db`
   command, the dump checks and the drill.
 - [Database migrations](/apps/api/migrations/README.md) and
   [database seeds](/apps/api/seeds/README.md) — the schema files and the seed files.

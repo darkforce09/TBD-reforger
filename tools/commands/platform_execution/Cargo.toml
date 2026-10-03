@@ -1,0 +1,44 @@
+# `cargo xtask platform`: the platform factory. The wave driver (worktrees, tiered gates, per-slice
+# landing, the push), the slice runner that writes run receipts, the slice worktree lifecycle and
+# the preflight an unattended run must pass. `thiserror` carries its errors.
+[package]
+name = "platform_execution"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The platform factory: the wave driver, slice execution, slice worktrees and the unattended-run preflight"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 7
+targets = "any"
+
+[dependencies]
+# The wave gate's schema-validate gate list, its member package list and the glibc stamp guard.
+ci_task_catalog = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+process_runner = { workspace = true }
+regex = { workspace = true }
+# The workspace member list and the manifests the wave gate reads.
+repository_laws = { workspace = true }
+repository_layout = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+ticket_metrics = { workspace = true }
+ticket_model = { workspace = true }
+ticket_registry = { workspace = true }
+ticket_wave_lock = { workspace = true }
+# The RFC 3339 UTC stamps of run receipts and gate verdicts.
+time_source = { workspace = true }
+verification_core = { workspace = true }
+walkdir = { workspace = true }
+
+[dev-dependencies]
+# The working-directory lock and the test checkout root.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

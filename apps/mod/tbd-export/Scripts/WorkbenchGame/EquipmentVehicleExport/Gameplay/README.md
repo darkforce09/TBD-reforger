@@ -65,5 +65,5 @@ None: Workbench runs these scripts in the editor.
 
 - [Equipment gameplay selection policy](/contracts/rules/equipment-gameplay/README.md) — the
   reviewed rows the tables are generated from.
-- [Equipment gameplay commands](/tools/xtask/src/commands/mod_ops/equipment_gameplay/README.md)
+- [Equipment gameplay commands](/tools/commands/mod_operations/src/equipment_gameplay/README.md)
   — table generation, projection and validation of gameplay generations.

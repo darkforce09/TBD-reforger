@@ -17,9 +17,9 @@ use super::image_operations;
 use super::satellite_archive_container::{
     BundleSummary, TileBuf, mip_dims, tbds_v2_bytes, tbds_v2_index, verify_bundle_v2,
 };
-use crate::repository_layout::compiled_checkout_root;
-use crate::timestamp_formatting::iso_from_system_time;
 use crate::world_export_pipeline::json_number_formatting::js_num;
+use ::repository_layout::find_repository_root;
+use time_source::iso_from_system_time;
 
 /* ─────────────────────────── verify-unified-satellite ─────────────────────────── */
 

@@ -46,9 +46,9 @@ verbatim into the command drawer.
 
 ## Boundaries
 
-- Depends on: `crate::ticket_actions::models` (`Dialog`, `MutationContext`,
-  `TicketActionContext`) and `crate::ticket_actions::services` (the verb builders,
-  `remove_gate_ok`, `descendants`, `anchor_candidates`); `crate::ticket_registry::models::projection`
+- Depends on: `ticketboard_model::ticket_actions::models` (`Dialog`, `MutationContext`,
+  `TicketActionContext`) and `ticketboard_model::ticket_actions::services` (the verb builders,
+  `remove_gate_ok`, `descendants`, `anchor_candidates`); `ticketboard_model::ticket_registry::models::projection`
   (the ticket view, `truncate_chars`); `crate::core::ui` (`VERDICT_OK`, `VERDICT_COLLIDE`); the
   sizes in `crate::ticket_actions::ui`; `eframe::egui`.
 - Used by: `crate::application::ticket_command_views`, which calls `dialog_ui` each frame a

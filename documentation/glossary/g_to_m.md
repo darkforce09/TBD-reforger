@@ -24,7 +24,7 @@ and 2 when a check could not run, so a missing input never reads as a pass: the 
 verifications, the headless browser gates of the `gate` binary, the mod compile gate, and the
 [factory](/documentation/glossary/a_to_f.md#factory)'s cheap slice gate and full wave gate.
 
-In code: `Verdict` in `tools/foundation/verification_core/src/verdict.rs`; `cargo xtask verify` over `tools/xtask/src/verifications/`; `tools/developer_tools/src/bin/gate.rs`; `cargo xtask platform wave gate`; `cargo xtask mod compile`.
+In code: `Verdict` in `tools/foundation/verification_core/src/verdict.rs`; `cargo xtask verify` over the check crates in `tools/checks/`; `tools/developer_tools/src/bin/gate.rs`; `cargo xtask platform wave gate`; `cargo xtask mod compile`.
 
 See: [slice](/documentation/glossary/n_to_z.md#slice), [Testing and CI](/documentation/runbooks/testing_and_ci.md), [Editor gates](/documentation/runbooks/editor_gates.md).
 
@@ -54,7 +54,7 @@ seed, a 60-second ramp and 1,800 measured seconds, 100 virtual clients over five
 mix with each request's class, method, path and body templates and expected statuses. The run's
 `workload_sha256` covers it and `load_population.json`, each length-framed.
 
-In code: `workload_plan.rs` in `tools/developer_tools/src/staging_verification/load_generation/`, which refuses unknown fields; the data folder `tools/xtask/staging/`.
+In code: `workload_plan.rs` in `tools/staging/staging_load_plan/src/`, which refuses unknown fields; the data folder `tools/xtask/staging/`.
 
 See: [synthetic load account](/documentation/glossary/n_to_z.md#synthetic-load-account), [staging harness](/documentation/glossary/n_to_z.md#staging-harness), [Staging load data](/tools/xtask/staging/README.md).
 

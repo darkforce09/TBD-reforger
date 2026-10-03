@@ -16,7 +16,7 @@
 use std::path::Path;
 
 use ballistics_model::catalog::BallisticsCatalog;
-use sha2::{Digest, Sha256};
+use content_digest::sha256_hex;
 
 /// The captured list golden's file name.
 pub const LIST_GOLDEN: &str = "GET__ballistics-catalogs.json";
@@ -33,14 +33,6 @@ pub struct ServedGoldens {
 /// The captured document golden's file name for one catalog version.
 pub fn document_golden(catalog_id: &str, catalog_version: u32) -> String {
     format!("GET__ballistics-catalogs__{catalog_id}__versions__{catalog_version}.json")
-}
-
-/// Lowercase hexadecimal SHA-256 of `bytes`.
-pub fn sha256_hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect()
 }
 
 /// Reads the goldens in `fixtures_dir` and proves them the committed catalog whose file bytes

@@ -16,9 +16,9 @@ documentation/archive/documentation_v2_refactor/
 
 ## Code
 
-- [Ticket engine](/tools/ticket_engine/) — `tools/ticket_engine/src/repository.rs`, where
+- [Ticket engine](/tools/tickets/ticket_model/) — `tools/ticket_engine/src/repository.rs`, where
   the ticket domain spells the documentation paths the plan moved.
-- [xtask repository layout](/tools/xtask/src/core/) — the documentation path constants the
+- [xtask repository layout](/tools/foundation/repository_layout/) — the documentation path constants the
   documentation gates read.
 
 ## Boundaries

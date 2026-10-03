@@ -77,7 +77,7 @@ cargo xtask db registry-import       # the registry catalogs, once copied into c
 ```
 
 `cargo xtask mod compile` compiles only the framework addon
-(`tools/xtask/src/commands/mod_ops/compile/execution.rs`), so these scripts compile only when
+(`tools/commands/mod_operations/src/compile/execution.rs`), so these scripts compile only when
 Workbench, or a game, loads `tbd-export`.
 
 ## Configuration
@@ -115,14 +115,14 @@ Workbench, or a game, loads `tbd-export`.
   in `apps/mod/tbd-emcp/`, for the Net API bridge; the export schemas in `contracts/definitions/`
   that its files follow. Nothing from `apps/mod/tbd-framework/`.
 - Used by: `cargo xtask mod dev-bootstrap`, which opens this project
-  (`tools/xtask/src/commands/mod_ops/development_bootstrap.rs`); `cargo xtask mcp wbcall`; the
+  (`tools/commands/mod_operations/src/development_bootstrap.rs`); `cargo xtask mcp wbcall`; the
   map commands and world export pipeline that read the map exports
   (`tools/xtask/src/commands/map/`, `tools/developer_tools/src/world_export_pipeline/`); the
-  equipment and vehicle validation in `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`;
+  equipment and vehicle validation in `tools/commands/mod_operations/src/equipment_vehicle_export/`;
   and, through the copied catalogs in `contracts/catalogs/`, `cargo xtask db registry-import`.
 - Rules: the dependencies stay vanilla and `TBD_EMCP`, never `TBD_Framework`, and the addon holds
   no copy of a framework class; the addon never ships: `cargo xtask deploy staging` excludes
-  `apps/mod/tbd-export/` (`tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`);
+  `apps/mod/tbd-export/` (`tools/commands/deployment/src/staging/remote/ssh_argv.rs`);
   `resourceDatabase.rdb` belongs to Workbench and is never edited by hand; no upstream framework
   identifier or reused GUID enters the scripts (`cargo xtask verify no-crf-leak`).
 

@@ -88,9 +88,9 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
     the viewport, the armed placement, the editor context), `mission_editor.rs` and
     `mission_editor/` (the registry loading and the canvas mount), and the page tests under
     `tests/`;
-  - `tools/developer_tools/src/browser_testing/editor_smoke_tests/arsenal.rs`, which drives the
+  - `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/arsenal.rs`, which drives the
     tab in a headless browser;
-  - `tools/xtask/src/verifications/architecture/editor_orbat_coherency.rs`, which scans
+  - `tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`, which scans
     `loadout_commands.rs`.
 - Rules:
   - a pick reaches the document only through `loadout_commands` and the map engine's hosted

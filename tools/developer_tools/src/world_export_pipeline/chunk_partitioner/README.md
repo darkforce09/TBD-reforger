@@ -52,8 +52,8 @@ objects/density/<cx>_<cy>.bin, forest-regions.json.gz, type-inventory.json, and 
 
 - Depends on: the sibling modules `classify`, `binary_emit`, `catalog_emit`, `forest_contours`,
   `forest_smoothing`, `json_number_formatting`, `polygon_geometry`, `topo` and
-  `vegetation_density`; `crate::enfusion_pak::PakVfs` for the road build;
-  `world_file_formats::density::tbdd` encoder; `crate::repository_layout`.
+  `vegetation_density`; `enfusion_pak::PakVfs` for the road build;
+  `world_file_formats::density::tbdd` encoder; the `repository_layout` crate and `crate::map_pipeline_layout`.
 - Used by: `tools/developer_tools/src/world_export_pipeline/cli.rs`; the determinism gate in
   `tools/developer_tools/src/world_export_pipeline/mathematical_verification/`; the road census
   in `world reclassify`; `cargo xtask map export-terrain`, which runs `world build-objects

@@ -105,7 +105,7 @@ code as it stands, in the present tense.
 Two test suites hold parts of these rules, and run with their crate's tests:
 `apps/api/src/tests/prose_rules.rs` refuses ticket identifiers, delivery vocabulary,
 narrative about another implementation and retired paths in the API crate's sources, tests,
-`.env.example`, seeds and migration comments; `tools/xtask/src/tests/tooling_prose_rules.rs`
+`.env.example`, seeds and migration comments; `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`
 refuses ticket identifiers, retired names and deleted script names in every tracked file under
 `tools/`. Elsewhere review holds them. The comment below states an engine constraint and the
 invariant that follows from it
@@ -261,7 +261,7 @@ on the method that posts the telemetry queue's head entry, one tag per route it 
 
 **Gate.** `cargo xtask verify enfusion-comments` checks the rules of this section and section 7
 (rules ECM-1 to ECM-9, specified in the
-[comment gate README](/tools/xtask/src/verifications/mod_scripts/enfusion_comments/README.md))
+[comment gate README](/tools/checks/mod_script_checks/src/enfusion_comments/README.md))
 over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts` and
 `apps/mod/tbd-emcp/Scripts`; `--path` narrows it to
 any folder or file under `apps/mod/`. `cargo xtask ci verify-coding-standards` and the CI
@@ -387,7 +387,7 @@ link-check, so no application grows a documentation tree of its own.
 - **Size.** A live document stays at or under 500 lines; a longer one splits by topic into a folder
   with a README.md index. Frozen and archived documents are exempt, and so are the two documents
   `cargo xtask ticket sync` targets (`SYNC_MANAGED_DOCUMENTS` in
-  `tools/xtask/src/verifications/documentation/path_regions.rs`):
+  `tools/checks/documentation_checks/src/path_regions.rs`):
   `documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md`, whose next-work
   block it rewrites between markers, and
   `documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md`,
@@ -458,7 +458,7 @@ Scripts roots, and `cargo xtask ci verify-coding-standards` runs it too. Review 
 comment rules, apart from the prose tests section 4 names.
 
 Three gates check the documents, specified in the
-[documentation gates README](/tools/xtask/src/verifications/documentation/README.md):
+[documentation gates README](/tools/checks/documentation_checks/src/README.md):
 `cargo xtask verify readme-coverage` (every folder in the README span has a README.md whose
 Contents block matches the folder), `cargo xtask verify markdown-placement` (the code trees hold no
 Markdown besides README.md, and live documents stay within 500 lines) and

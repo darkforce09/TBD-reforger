@@ -1,9 +1,9 @@
 use super::*;
 
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 
 pub fn export_height_labels(terrain: &str) -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let terrain_dir = terrain_dir(&root, terrain);
     let manifest_path = terrain_dir.join("manifest.json");
     let dem_path = terrain_dir.join("dem/everon-dem-16bit.png");

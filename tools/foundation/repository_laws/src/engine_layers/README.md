@@ -76,7 +76,7 @@ frameworks.
 - Depends on: `crate::scan`, `crate::gate`, `crate::Pattern`, `crate::Verdict` and `NotRun`;
   `crate::repository_laws::cargo_manifest` for the UI-framework ban; `crate::workspace_members`
   and `crate::workspace_laws::crate_layout` for the graphics category's members and targets.
-- Used by: `tools/xtask/src/verifications/architecture/engine_layer_boundaries.rs`, which
+- Used by: `tools/checks/repository_checks/src/architecture/engine_layer_boundaries.rs`, which
   prints the report; `apps/api/tests/engineering_laws.rs`.
 - Rules:
   - the report text is the gate's output contract and is byte-stable;
@@ -95,5 +95,5 @@ frameworks.
 
 - [Engine boundary rules](/documentation/standards/engine_boundary_rules.md) — the rules and
   the dependency direction they enforce.
-- [Architecture verifications](/tools/xtask/src/verifications/architecture/README.md) — the
+- [Architecture verifications](/tools/checks/repository_checks/src/architecture/README.md) — the
   gate that prints this report.

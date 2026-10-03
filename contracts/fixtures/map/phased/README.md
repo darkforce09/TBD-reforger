@@ -35,7 +35,7 @@ contracts/fixtures/map/phased/
     gates S2 and S4 to S7 over both bundles and gate S12 (anchor check, partition consistency and
     exclusions) over `P1-anchor-fixture.json`;
   - `cargo xtask schema validate`
-    (`tools/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs`), which
+    (`tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs`), which
     validates `P1-buildings.json` against the catalogue schema.
 
 ## Boundaries
@@ -45,5 +45,5 @@ contracts/fixtures/map/phased/
 - Used by: the two xtask schema gates above, both steps of the `schema-validate` CI task.
 - Rules: the gates name each file by path, so a rename updates
   `tools/developer_tools/src/map_verification/object_goldens/map_object_golden.rs` and
-  `tools/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs` in the same
+  `tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs` in the same
   change.

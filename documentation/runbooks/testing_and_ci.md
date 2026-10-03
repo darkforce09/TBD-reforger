@@ -6,7 +6,7 @@ Runs the repository's gates on a developer machine before a push to `main`, and 
 gate runs besides: the local replay `cargo xtask ci ci-local`, the GitHub workflows, the platform
 [wave](/documentation/glossary/n_to_z.md#wave) gate and the documentation gates. `ci-local` takes 15 to
 40 minutes; a single gate takes seconds to a few minutes. What each `cargo xtask ci` task runs,
-step by step, is in the [CI task commands README](/tools/xtask/src/commands/ci/README.md); this
+step by step, is in the [CI task commands README](/tools/commands/ci_task_catalog/src/README.md); this
 runbook does not repeat it.
 
 ## Prerequisites
@@ -56,7 +56,7 @@ Run every command from the repository root.
    `verify-documentation`, `ci-local-leptos`, `ci-local-schema`, `verify-staging-compose-paths`,
    `verify-mission-rest-size-limits` and `cargo xtask verify ci-schema-parity`; exit 0 when all
    pass. The run stops at the first failing step and exits with its code. The order is pinned by
-   `ci_local_step_set_is_frozen` in `tools/xtask/src/commands/ci/tests/task_runner.rs`.
+   `ci_local_step_set_is_frozen` in `tools/commands/ci_task_catalog/src/tests/task_runner.rs`.
 
 ### Run one gate
 
@@ -163,7 +163,7 @@ Run every command from the repository root.
     Expected: one `PASS` or `FAIL` line per step (every step runs; a failure shows its last 15
     lines), then `GATE: PASS` and exit 0. The base defaults to the last `wave N CLOSED` commit;
     `--slice <id>` runs the cheap slice gate in a slice worktree instead. The step lists of both
-    are in the [wave gate README](/tools/xtask/src/commands/platform/wave_execution/gate/README.md),
+    are in the [wave gate README](/tools/commands/platform_execution/src/wave_execution/gate/README.md),
     and the whole wave procedure in [Factory waves](/documentation/runbooks/factory_waves/README.md).
 
 ## Gate matrix
@@ -246,10 +246,10 @@ GitHub's branch protection rule for `main` names its required status checks by t
 
 ## Related
 
-- [CI task commands](/tools/xtask/src/commands/ci/README.md) — every `cargo xtask ci` task and
+- [CI task catalog](/tools/commands/ci_task_catalog/src/README.md) — every `cargo xtask ci` task and
   its steps.
-- [Repository verifications](/tools/xtask/src/verifications/README.md) — what each
-  `cargo xtask verify` gate checks.
+- [Verify command group](/tools/xtask/src/commands/verify/README.md) — what each
+  `cargo xtask verify` gate checks, and the crate that holds it.
 - [Editor gates](/documentation/runbooks/editor_gates.md) — the browser gates in detail.
 - [Local development](/documentation/runbooks/local_development.md) — the local stack the gates
   run against.

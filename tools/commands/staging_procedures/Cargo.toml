@@ -1,0 +1,47 @@
+# `cargo xtask staging`: the harness that records the staging_fleet, staging_discord and
+# staging_load receipts against the staging host, the read-only and confirmed commands around those
+# runs, and the local load rehearsal. The load generator runs as the `staging-load` subprocess, so
+# no async runtime or HTTP stack links here. `thiserror` carries its errors.
+[package]
+name = "staging_procedures"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The staging acceptance harness: the fleet, Discord and load procedures, their receipts and the commands around them"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 6
+targets = "any"
+
+[dependencies]
+# The recorder, the fingerprints and the receipts every recorded run hands its outcome to.
+api_readiness_checks = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+content_digest = { workspace = true }
+deploy_settings = { workspace = true }
+# The fleet's instances, folders, units and API origin, shared with `deploy staging`.
+deployment = { workspace = true }
+process_runner = { workspace = true }
+repository_layout = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+# Journal lines, manifests and receipt parts keep the key order they are built in.
+serde_json = { workspace = true, features = ["preserve_order"] }
+# The load plan and report the `staging-load` subprocess reads and writes.
+staging_load_plan = { workspace = true }
+thiserror = { workspace = true }
+# The wall clock of live runs and the rehearsal's scratch stamp.
+time_source = { workspace = true }
+
+[dev-dependencies]
+# The load tests read constants out of the load generator's source.
+regex = { workspace = true }
+# The load seam test reads the `staging-load` binary's declaration from developer_tools' manifest.
+toml = { workspace = true }
+# The environment lock the recording tests hold while they read the process environment.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

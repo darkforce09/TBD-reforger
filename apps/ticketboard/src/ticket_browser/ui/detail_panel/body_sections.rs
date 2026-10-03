@@ -1,8 +1,10 @@
 use super::*;
 use crate::core::ui::*;
-use crate::document_viewer::services::document_loading as viewer;
-use crate::ticket_browser::{events::BrowserEvent as Action, models::detail_sections as detail};
 use eframe::egui::{Align, Frame, Layout, RichText, Stroke, Ui};
+use ticketboard_model::document_viewer::services::document_loading as viewer;
+use ticketboard_model::ticket_browser::{
+    events::BrowserEvent as Action, models::detail_sections as detail,
+};
 
 pub(crate) fn section_header(ui: &mut Ui, title: &str) {
     ui.add_space(10.0);
@@ -65,17 +67,17 @@ pub(crate) fn body_section_ui(
 /// exists (no quarantine is the healthy state, unlike the ten body fields whose
 /// absence is an explicit em-dash). Visually fenced with the amber tint + border
 /// so unprocessed v1 wall text never reads as authored body: verbatim lines,
-/// collapsed by default beyond [`detail::LEGACY_COLLAPSE_THRESHOLD`], and the
-/// "Copy for triage" affordance — the Program T drain feed (id + verbatim legacy
+/// collapsed by default beyond [`detail::QUARANTINE_COLLAPSE_THRESHOLD`], and the
+/// "Copy for triage" affordance — the Program T drain feed (id + verbatim parked prose
 /// + the empty ten-field skeleton) onto the clipboard.
 pub(crate) fn quarantine_section_ui(
     ui: &mut Ui,
-    id: &str,
-    legacy: &[String],
+    id: &ticket_model::TicketId,
+    parked_lines: &[String],
     expanded: bool,
     actions: &mut Vec<Action>,
 ) {
-    if legacy.is_empty() {
+    if parked_lines.is_empty() {
         return;
     }
     ui.add_space(10.0);
@@ -87,7 +89,7 @@ pub(crate) fn quarantine_section_ui(
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(
-                    RichText::new(format!("migration_legacy ({})", legacy.len()))
+                    RichText::new(format!("migration_legacy ({})", parked_lines.len()))
                         .strong()
                         .small(),
                 );
@@ -95,12 +97,12 @@ pub(crate) fn quarantine_section_ui(
                     if ui
                         .small_button("Copy for triage")
                         .on_hover_text(
-                            "copy ticket id + verbatim legacy + the empty ten-field \
+                            "copy ticket id + verbatim parked prose + the empty ten-field \
                              skeleton — the Program T drain block",
                         )
                         .clicked()
                     {
-                        actions.push(Action::CopyText(detail::triage_block(id, legacy)));
+                        actions.push(Action::CopyText(detail::triage_block(id, parked_lines)));
                     }
                 });
             });
@@ -114,8 +116,8 @@ pub(crate) fn quarantine_section_ui(
                  Program T decomposes it into the ten typed fields and deletes \
                  this section in the same edit",
             );
-            let (visible, hidden) = detail::legacy_visible(legacy.len(), expanded);
-            for line in &legacy[..visible] {
+            let (visible, hidden) = detail::quarantine_visible(parked_lines.len(), expanded);
+            for line in &parked_lines[..visible] {
                 ui.label(RichText::new(line).monospace().small());
             }
             if hidden > 0 {
@@ -123,12 +125,12 @@ pub(crate) fn quarantine_section_ui(
                     .small_button(format!("expand — {hidden} more line(s)"))
                     .clicked()
                 {
-                    actions.push(Action::ToggleLegacyExpand);
+                    actions.push(Action::ToggleQuarantineExpand);
                 }
-            } else if legacy.len() > detail::LEGACY_COLLAPSE_THRESHOLD
+            } else if parked_lines.len() > detail::QUARANTINE_COLLAPSE_THRESHOLD
                 && ui.small_button("collapse").clicked()
             {
-                actions.push(Action::ToggleLegacyExpand);
+                actions.push(Action::ToggleQuarantineExpand);
             }
         });
 }

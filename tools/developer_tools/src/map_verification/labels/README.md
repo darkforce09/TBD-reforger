@@ -39,11 +39,11 @@ height). With `strict` set, both cases fail, as does a file with fewer than 10 a
   (`place_names::peaks`), town-label importance (`label_layout::importance`), road-name
   placement (`place_names::route_placement`, `route_geometry`, `route_labels`) and the road
   network (`road_network::network`); the schemas in `contracts/definitions/`;
-  `crate::repository_layout` for every path.
+  the `repository_layout` crate for every path.
 - Used by: `cargo xtask schema height-labels`, `locations`, `town-labels`, `road-names` and
-  `terrain-alignment`, through `tools/xtask/src/verifications/map_assets/mod.rs`; the CI tasks
+  `terrain-alignment`, through `tools/commands/ci_task_catalog/src/map_asset_checks/mod.rs`; the CI tasks
   `schema-validate` (height labels), `verify-terrain` and `verify-terrain-strict` (alignment)
-  in `tools/xtask/src/commands/ci/task_definitions.rs`.
+  in `tools/commands/ci_task_catalog/src/task_definitions.rs`.
 - Rules: the gates run the map engine's placement and declutter functions rather than copies of
   them, so a gate and the map cannot disagree; `--strict` alignment refuses the example anchors
   and a stub DEM (`cargo xtask schema terrain-alignment --terrain everon --strict`).

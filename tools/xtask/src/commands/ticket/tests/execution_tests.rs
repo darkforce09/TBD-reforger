@@ -44,7 +44,12 @@ fn cleanup_removes_an_unregistered_worktree_directory() {
     let fixture = Fixture::new();
     let target = fixture.worktree();
     let registry = json!({"tickets": [{"id": "T-001"}]});
-    cmd_clean(&fixture.0, &registry, "T-001").unwrap();
+    cmd_clean(
+        &fixture.0,
+        &registry,
+        &ticket_model::TicketId::from("T-001"),
+    )
+    .unwrap();
     assert!(!target.exists());
     assert!(fixture.0.join(".git").is_dir());
 }
@@ -54,6 +59,13 @@ fn done_cleans_before_a_shipping_refusal() {
     let fixture = Fixture::new();
     let target = fixture.worktree();
     let mut registry = json!({"tickets": [{"id": "T-001"}]});
-    assert!(cmd_done(&fixture.0, &mut registry, "T-001").is_err());
+    assert!(
+        cmd_done(
+            &fixture.0,
+            &mut registry,
+            &ticket_model::TicketId::from("T-001")
+        )
+        .is_err()
+    );
     assert!(!target.exists());
 }

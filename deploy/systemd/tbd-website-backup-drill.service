@@ -1,7 +1,7 @@
 ; Weekly restore DRILL. Proves the backups can actually be recovered from.
 ;
 ; WHY THIS IS A SCHEDULED LANE AND NOT THE WAVE GATE — the reasoning is recorded in
-; tools/xtask/src/commands/deploy/database_restore_drill.rs. Briefly: the drill's input
+; tools/commands/database_operations/src/restore_drill.rs. Briefly: the drill's input
 ; is the BACKUP FILE ON DISK, which no code change can alter, so running it per-wave pays a
 ; recurring cost to re-answer a question the diff cannot have changed. What decays here is
 ; time and the environment — a full disk, a stopped timer, a rotated password, a migration
@@ -27,7 +27,7 @@
 
 [Unit]
 Description=TBD website — weekly backup restore drill
-Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/tools/xtask/src/commands/deploy/database_restore_drill.rs
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/tools/commands/database_operations/src/restore_drill.rs
 After=network-online.target
 
 [Service]

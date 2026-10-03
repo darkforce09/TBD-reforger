@@ -1,0 +1,34 @@
+# Stage S11 J2a — xtask's repository verifications become two check crates under tools/checks:
+# repository_checks (the architecture, language-ban, licensing and registry checks, and the tooling
+# tests that judge every tool crate by folder) and mod_script_checks (the Enfusion mod script
+# checks; the module root becomes the crate root). The crate roots, the preludes, the errors and the
+# crate READMEs are written by hand. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# repository_checks: four verification groups and the tooling tests
+path	tools/xtask/src/verifications/architecture	tools/checks/repository_checks/src/architecture
+path	tools/xtask/src/verifications/language_bans	tools/checks/repository_checks/src/language_bans
+path	tools/xtask/src/verifications/licensing	tools/checks/repository_checks/src/licensing
+path	tools/xtask/src/verifications/registry	tools/checks/repository_checks/src/registry
+path	tools/xtask/src/tests/node_free_tests.rs	tools/checks/repository_checks/src/language_bans/tests/node_free_tests.rs
+path	tools/xtask/src/tests/tooling_dependency_boundaries.rs	tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs
+path	tools/xtask/src/tests/tooling_prose_rules.rs	tools/checks/repository_checks/src/tests/tooling_prose_rules.rs
+#
+# mod_script_checks: the mod script verifications; their module root becomes the crate root
+path	tools/xtask/src/verifications/mod_scripts/mod.rs	tools/checks/mod_script_checks/src/lib.rs
+path	tools/xtask/src/verifications/mod_scripts	tools/checks/mod_script_checks/src
+#
+# xtask's consumers name the crate that now holds each check
+rust_path	crate::verifications::architecture::	repository_checks::architecture::	tools/xtask/src/commands
+rust_path	crate::verifications::architecture::	repository_checks::architecture::	tools/xtask/src/verifications/ci
+rust_path	crate::verifications::architecture::	repository_checks::architecture::	tools/xtask/src/verifications/database
+rust_path	crate::verifications::language_bans::	repository_checks::language_bans::	tools/xtask/src/commands
+rust_path	crate::verifications::licensing::	repository_checks::licensing::	tools/xtask/src/commands
+rust_path	crate::verifications::registry::	repository_checks::registry::	tools/xtask/src/commands
+rust_path	crate::verifications::mod_scripts::	mod_script_checks::	tools/xtask/src/commands
+#
+# the moved checks name their siblings in the crate that now holds them
+rust_path	crate::verifications::architecture::	crate::architecture::	tools/xtask/src/verifications/architecture
+rust_path	crate::verifications::registry::	crate::registry::	tools/xtask/src/verifications/architecture
+rust_path	crate::verifications::language_bans::	crate::language_bans::	tools/xtask/src/verifications/language_bans
+rust_path	crate::verifications::mod_scripts::	crate::	tools/xtask/src/verifications/mod_scripts

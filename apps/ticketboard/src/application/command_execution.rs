@@ -90,7 +90,7 @@ impl TicketboardApp {
         self.verb.last = Some(CommandOutcome {
             display: display.clone(),
             code,
-            at: trust::utc_hms(epoch_secs()),
+            at: utc_hms_now(),
             spawn_error,
             hint,
         });

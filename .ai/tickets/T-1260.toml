@@ -4,7 +4,7 @@ title = "Hold the environment lock in the wave host test"
 summary = "The platform wave host test sets CARGO_TARGET_DIR and TEST_DATABASE_URL without the process environment lock, so a parallel test can read them mid-change."
 class = "bug"
 status = "idea"
-notes = "tools/xtask/src/commands/platform/wave_execution/tests/host/tests.rs:19-20 calls std::env::set_var for CARGO_TARGET_DIR and TEST_DATABASE_URL without holding the environment lock that serialises environment-mutating tests, so a test running in parallel can read them mid-change. Take the shared lock for the test's whole span, or hand the values to the child process instead of the process environment. Source: milestone S review (A1 finding F3), note N-b."
+notes = "tools/commands/platform_execution/src/wave_execution/tests/host/tests.rs:19-20 calls std::env::set_var for CARGO_TARGET_DIR and TEST_DATABASE_URL without holding the environment lock that serialises environment-mutating tests, so a test running in parallel can read them mid-change. Take the shared lock for the test's whole span, or hand the values to the child process instead of the process environment. Source: milestone S review (A1 finding F3), note N-b."
 created_at = "2026-09-29T16:28:39Z"
 
 [scope]

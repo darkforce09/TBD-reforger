@@ -5,7 +5,7 @@ name: editor-gates
 # software-GL headless chrome), so it runs nightly + on demand, and on PRs that touch the gate or the
 # editor. This exists so gate-infra regressions are caught by machines, not by a person mid-change.
 #
-# The pinned chromium version stays in lockstep with tools/developer_tools/gate-env.json (single
+# The pinned chromium version stays in lockstep with tools/browser_testing/browser_gate_suites/gate-env.json (single
 # source of truth for the dev box; mirrored here because CI installs Chrome-for-Testing directly,
 # Node-free).
 
@@ -18,6 +18,7 @@ on:
     paths:
       - "apps/frontend/**"
       - "tools/developer_tools/**"
+      - "tools/browser_testing/**"
       - "legacy/map_engine/**"
       - ".github/workflows/editor-gates.yml"
 
@@ -29,7 +30,7 @@ permissions:
   contents: read
 
 env:
-  # Keep in lockstep with tools/developer_tools/gate-env.json → chromium.version.
+  # Keep in lockstep with tools/browser_testing/browser_gate_suites/gate-env.json → chromium.version.
   CHROME_VERSION: "149.0.7827.55"
 
 jobs:
@@ -71,7 +72,7 @@ jobs:
         with:
           tool: trunk
       - name: install pinned full chrome (Chrome-for-Testing, Node-free — NOT chrome-headless-shell)
-        # The headless SHELL FATAL-crashes on per-character font fallback (see cdp.rs find_chromium);
+        # The headless SHELL FATAL-crashes on per-character font fallback (see chrome_devtools_protocol find_chromium);
         # the full `chrome` build has the real font backend. find_chromium honors CHROME_HEADLESS_SHELL.
         run: cargo xtask ci ci-chrome
       - name: migrate + seed the database (via the API on boot) and start the API

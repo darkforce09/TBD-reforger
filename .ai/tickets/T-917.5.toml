@@ -60,7 +60,7 @@ owns = [
     ".ai/tickets/estimates",
     ".ai/tickets/estimates.schema.json",
     "xtask/src",
-    "documentation/tools/ticket_engine/token_estimate_factor.md",
+    "documentation/tools/tickets/token_estimate_factor.md",
 ]
 
 [scope]

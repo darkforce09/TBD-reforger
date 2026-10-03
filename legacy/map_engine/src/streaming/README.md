@@ -92,7 +92,7 @@ buffers and the budget also run natively, as the crate's tests use them.
   - the Mission Creator in `apps/frontend/src/workspaces/editor/`, the shared map mount in
     `apps/frontend/src/foundation/map_view/` and the debug world line-of-sight bench in
     `apps/frontend/src/workspaces/debug/world_los/`;
-  - the editor smoke tests in `tools/developer_tools/src/browser_testing/editor_smoke_tests/`,
+  - the editor smoke tests in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`,
     which read `window.__mapAssets`.
 - Rules:
   - the tree reaches the render engine only through `crate::frame` and names no
@@ -110,7 +110,7 @@ buffers and the budget also run natively, as the crate's tests use them.
 ## Related documentation
 
 - [Terrain assets](/assets/terrains/README.md) — the served terrain tree the loaders read.
-- [Architecture gates](/tools/xtask/src/verifications/architecture/README.md) — the
+- [Architecture gates](/tools/checks/repository_checks/src/architecture/README.md) — the
   `engine-layers` gate that scans this tree.
 - [Map streaming](/documentation/legacy/map_engine/map_streaming.md) — the boot sequence,
   viewport passes, residency, memory budget and loaders as one flow, with open work and decisions.

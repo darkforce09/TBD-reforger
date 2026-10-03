@@ -132,7 +132,7 @@ is added to that log by hand.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the `mcp call` path
   the gate drives Workbench through, and `cargo xtask mcp wb-logs`, a single Play log's spawn
   verdict.
-- [Mod verification gates](/tools/xtask/src/verifications/mod_scripts/README.md) — the gate's
+- [Mod verification gates](/tools/checks/mod_script_checks/src/README.md) — the gate's
   code beside the other mod script checks.
 - [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's spawn rules.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — where the gate sits in

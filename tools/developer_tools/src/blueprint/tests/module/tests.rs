@@ -2,7 +2,7 @@ use super::*;
 
 pub(crate) fn fixture(name: &str) -> std::path::PathBuf {
     // The checkout this crate was compiled from, whatever directory the test runs in.
-    crate::repository_layout::compiled_checkout_root()
+    ::repository_layout::find_repository_root()
         .expect("repository root")
         .join("tools/developer_tools/test_fixtures/blueprint")
         .join(name)
@@ -166,4 +166,32 @@ fn farmhouse_golden_parity_is_pinned() {
         model_blocked_engine_clear, 0,
         "phantom geometry blocks rays the engine clears"
     );
+}
+
+/// The blueprint compiler's fixtures resolve from the checkout root, the crate folder and a
+/// source folder alike: the root walk answers the same checkout from each.
+#[test]
+fn compiler_fixtures_resolve_from_root_crate_and_source_directory() {
+    let root = ::repository_layout::find_repository_root().expect("active checkout");
+    for relative in [
+        "",
+        "tools/developer_tools",
+        "tools/developer_tools/src/blueprint",
+    ] {
+        let found = ::repository_layout::find_repository_root_from(&root.join(relative))
+            .expect("repository root");
+        assert_eq!(found, root);
+        for fixture in [
+            "FarmHouse_E_1L01_Wood.bvh.golden",
+            "FarmHouse_E_1L01_Wood_children.json",
+            "prefab/Prefabs/Houses/House_Wood.et",
+        ] {
+            assert!(
+                found
+                    .join("tools/developer_tools/test_fixtures/blueprint")
+                    .join(fixture)
+                    .is_file()
+            );
+        }
+    }
 }

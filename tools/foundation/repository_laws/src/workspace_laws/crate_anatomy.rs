@@ -4,7 +4,7 @@
 //! no `anyhow` dependency; `edition`, `rust-version` and `[lints]` from the workspace; every
 //! dependency `workspace = true`; features only `test_fixtures` and `failpoints`, each enabled only
 //! by a dev-dependency — and the README's Contents block, then hands the sources to
-//! [`super::crate_anatomy_sources`] (`lib.rs`, prelude, `error.rs`, typed ids, re-exports).
+//! `super::crate_anatomy_sources` (`lib.rs`, prelude, `error.rs`, typed ids, re-exports).
 //! **Position:** `cargo xtask verify crate-anatomy` prints [`check_crate_anatomy`].
 //! **Signals & state:** none; reads the checkout.
 //! **Invariants:** a crate is a library when it declares `[lib]` or holds `src/lib.rs`; a crate

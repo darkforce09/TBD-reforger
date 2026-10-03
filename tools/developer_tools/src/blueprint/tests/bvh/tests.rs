@@ -1,6 +1,6 @@
 use super::*;
 use crate::blueprint::tests::fixture;
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 
 /// The engine-free parity pin: the committed sidecar replayed against the committed
 /// 400-pair Workbench oracle — CI re-proves the 3D lane without the (unshippable)

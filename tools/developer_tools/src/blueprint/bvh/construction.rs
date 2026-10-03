@@ -26,7 +26,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
 
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 use building_interiors::compound::assembly::CompoundBuilding;
 use building_interiors::compound::doors::DoorState;
 use building_interiors::compound::instances::InstanceKind;

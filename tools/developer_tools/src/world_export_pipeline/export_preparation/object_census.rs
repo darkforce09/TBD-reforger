@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::{map_scratch_dir, terrain_dir};
+use ::repository_layout::{map_scratch_dir, terrain_dir};
 
 pub(super) fn classified_rows(
     rules: &Rules,
@@ -36,7 +36,7 @@ pub(super) fn entry_is_k1_building(row: &Value, kind: &str) -> bool {
 }
 
 pub fn verify_spike_k1(terrain: &str) -> Result<u8> {
-    let raw = map_scratch_dir(&compiled_checkout_root()?, terrain).join("spike/raw-entities.jsonl");
+    let raw = map_scratch_dir(&find_repository_root()?, terrain).join("spike/raw-entities.jsonl");
     if !raw.exists() {
         eprintln!(
             "verify-spike-k1: FAIL — raw-entities.jsonl not found: {}",
@@ -68,7 +68,7 @@ pub fn verify_spike_k1(terrain: &str) -> Result<u8> {
 }
 
 pub fn census_spike(terrain: &str) -> Result<u8> {
-    let staging = map_scratch_dir(&compiled_checkout_root()?, terrain).join("spike");
+    let staging = map_scratch_dir(&find_repository_root()?, terrain).join("spike");
     let raw = staging.join("raw-entities.jsonl");
     let out_path = staging.join("type-inventory-spike.json");
     if !raw.exists() {
@@ -205,15 +205,18 @@ pub fn census_spike(terrain: &str) -> Result<u8> {
 pub(super) fn spawn_type_inventory_gate() -> Result<bool> {
     // The I-gates live in `xtask schema type-inventory` — the Rust home for
     // `cargo xtask schema type-inventory`.
-    let status = std::process::Command::new("cargo")
+    // The gate's report is captured and printed whole once it exits, stdout then stderr.
+    let gate = process_runner::Run::new("cargo")
         .args(["run", "-q", "-p", "xtask", "--", "schema", "type-inventory"])
-        .current_dir(compiled_checkout_root()?)
-        .status()?;
-    Ok(status.success())
+        .cwd(::repository_layout::find_repository_root()?)
+        .output()?;
+    print!("{}", gate.stdout);
+    eprint!("{}", gate.stderr);
+    Ok(gate.code == 0)
 }
 
 pub fn census_types(terrain: &str) -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let inventory_path = terrain_dir(&root, terrain).join("objects/type-inventory.json");
     if !inventory_path.exists() {
         eprintln!("map-census: missing {}", inventory_path.display());
@@ -248,7 +251,7 @@ pub fn census_types(terrain: &str) -> Result<u8> {
         inv["censusStatus"].as_str().unwrap_or("")
     );
     std::fs::write(
-        crate::repository_layout::object_type_inventory(&root, terrain),
+        crate::map_pipeline_layout::object_type_inventory(&root, terrain),
         serde_json::to_string_pretty(&inv)? + "\n",
     )?;
     Ok(0)

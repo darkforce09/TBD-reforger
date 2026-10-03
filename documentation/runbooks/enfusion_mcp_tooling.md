@@ -8,7 +8,7 @@ back a Workbench Play log, and cleans up the broker. [Mod](/documentation/glossa
 task needs Workbench. The first call pays a one-time index load of about 35 seconds; later calls go
 to the warm broker. How the bridge is built, and the `mcp call` against `mcp wbcall` choice, is in
 [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md); every command's
-synopsis and exit codes are in the [MCP commands README](/tools/xtask/src/commands/mcp/README.md).
+synopsis and exit codes are in the [MCP commands README](/tools/commands/enfusion_mcp/README.md).
 
 ## Prerequisites
 
@@ -159,7 +159,7 @@ two concurrent calls never start two). `daemon stop-all` kills every `mcpd --soc
 any server child left behind, and removes the `tbd-mcp-*` files in `XDG_RUNTIME_DIR` and `/tmp`.
 
 The server command comes from the first tier that resolves
-(`tools/developer_tools/src/enfusion_tooling/enfusion_mcp_entrypoint.rs`):
+(`tools/commands/enfusion_mcp/src/server_entrypoint.rs`):
 
 1. `ENFUSION_MCP_BIN`, when it names an existing file;
 2. `tools/enfusion_mcp_node_package/node_modules/enfusion-mcp/dist/index.js`, after `npm ci`;
@@ -168,13 +168,15 @@ The server command comes from the first tier that resolves
 
 ## Related
 
-- [MCP commands](/tools/xtask/src/commands/mcp/README.md) — every `cargo xtask mcp` command, its
+- [MCP commands](/tools/commands/enfusion_mcp/README.md) — every `cargo xtask mcp` command, its
   flow and its exit codes.
 - [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the bootstrap
   order, the loading rules and the known gaps.
 - [TBD EMCP addon](/apps/mod/tbd-emcp/README.md) — the nineteen Net API handlers and the
   `enfusion-mcp` upgrade procedure.
-- [Developer tool executables](/tools/developer_tools/src/bin/README.md) — the `mcpd` broker.
+- [Developer tool executables](/tools/developer_tools/src/bin/README.md) — the `mcpd` binary.
+- [Enfusion MCP broker](/tools/enfusion/enfusion_mcp_broker/README.md) — the broker `mcpd` runs,
+  its limits and its offline stub.
 - [MCP transcript fixtures](/tools/xtask/fixtures/mcp/README.md) — the recorded replies the
   self-test replays.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — the Workbench gate that

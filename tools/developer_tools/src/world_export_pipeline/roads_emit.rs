@@ -46,8 +46,8 @@ use world_file_formats::archives::roads::RoadSegmentArchive;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 use world_file_formats::ids::RoadSegmentId;
 
-use crate::repository_layout::compiled_checkout_root;
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::find_repository_root;
+use ::repository_layout::terrain_dir;
 
 /// The gzip-JSON road export, relative to a terrain directory.
 pub const ROADS_GZ: &str = "objects/roads.json.gz";
@@ -141,7 +141,7 @@ pub fn build_road_network_archive(terrain_dir: &Path) -> Result<RoadNetworkArchi
 pub fn resolve_terrain_dir(terrain: &str, out_base: Option<&Path>) -> Result<PathBuf> {
     match out_base {
         Some(base) => Ok(base.to_path_buf()),
-        None => Ok(terrain_dir(&compiled_checkout_root()?, terrain)),
+        None => Ok(terrain_dir(&find_repository_root()?, terrain)),
     }
 }
 

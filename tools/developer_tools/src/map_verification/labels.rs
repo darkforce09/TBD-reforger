@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use serde_json::Value;
 
-use crate::repository_layout::{definition_path, terrain_dir};
+use ::repository_layout::{definition_path, terrain_dir};
 
 use place_names::peaks::HeightLabel;
 use place_names::peaks::HeightLabelKind;

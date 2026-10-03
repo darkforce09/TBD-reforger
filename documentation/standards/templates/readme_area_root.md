@@ -82,7 +82,7 @@ server runs the mod, which reads its mission deployment from the API's `/api/v1/
 routes and reports results to `/api/v1/ingest/`. Beside the server, the
 [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) polls
 `/api/v1/fleet-executor/` over outbound HTTPS and carries out each fleet command. Ticketboard
-stands apart: it reads `.ai/tickets/` through the `ticket_engine` crate in `tools/`.
+stands apart: it reads `.ai/tickets/` through the `ticket_model` crate in `tools/tickets/`.
 
 ```text
 browser ── frontend ──▶ api ◀── HTTPS ── fleet_host_agent ─┐ controls

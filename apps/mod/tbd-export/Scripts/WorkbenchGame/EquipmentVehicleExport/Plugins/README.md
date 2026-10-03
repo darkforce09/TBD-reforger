@@ -49,5 +49,5 @@ None: Workbench runs these scripts in the editor.
   or its gameplay subclass, so there is one reader and one identity; a diagnostic generation never
   publishes, which the
   validator's `partial_and_unverified_exports_cannot_publish` test
-  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`) holds. A new
+  (`tools/commands/mod_operations/src/equipment_vehicle_export/tests/validation.rs`) holds. A new
   plugin class appears in the menu after a Workbench cold restart.

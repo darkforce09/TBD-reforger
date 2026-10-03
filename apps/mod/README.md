@@ -99,7 +99,7 @@ Other mod commands:
   `enfusion-mcp` package in `tools/enfusion_mcp_node_package/`.
 - Used by: the dedicated servers that `cargo xtask mod playtest`, `cargo xtask deploy staging` and
   the fleet host agent in `apps/fleet_host_agent/` boot; the gates in
-  `tools/xtask/src/commands/mod_ops/`, run by `.github/workflows/mod-gates.yml`; the Mission
+  `tools/commands/mod_operations/src/`, run by `.github/workflows/mod-gates.yml`; the Mission
   Creator in `apps/frontend/`, which embeds the framework's alias registry; and the
   importers of the Workbench exports in `contracts/catalogs/` and `assets/terrains/`.
 - Rules:
@@ -113,7 +113,7 @@ Other mod commands:
     guessed; the upstream reference lanes in `apps/mod/References/` are read only, never
     committed, never deployed and never opened in Workbench.
   - A dedicated server takes `-config` or `-addons`, never both; `-addonsDir` combines with
-    `-config` (`tools/xtask/src/commands/deploy/staging/remote/ssh_argv.rs`).
+    `-config` (`tools/commands/deployment/src/staging/remote/ssh_argv.rs`).
   - `resourceDatabase.rdb` in each addon is written by Workbench only.
 
 ## Related documentation

@@ -22,7 +22,7 @@ use super::page_driver::{
     click_at, field_value, map_canvas_rect, press_calculate, read_solution_tables, set_field,
     wait_true,
 };
-use crate::browser_testing::cdp::Page;
+use chrome_devtools_protocol::Page;
 
 /// The page script that lists every input and picker value of the calculator.
 const INPUT_VALUES: &str = "Array.from(document.querySelectorAll('[data-mortar-inputs] input, \

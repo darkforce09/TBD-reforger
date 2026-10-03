@@ -120,8 +120,8 @@ now maps to a page:
 | Cited as | Cited by | Page |
 |---|---|---|
 | §0.3 (CI-2) | `.github/workflows/ci.yml` header | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md) |
-| §7 (FMT-2) | `.editorconfig` header; the `verify-editorconfig` help in `tools/xtask/src/commands/ci/task_definitions.rs` | [formatting.md](/documentation/standards/coding_standards/formatting.md) |
-| §11 | the `verify-coding-standards` help in `tools/xtask/src/commands/ci/task_definitions.rs` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#verify-coding-standards) |
+| §7 (FMT-2) | `.editorconfig` header; the `verify-editorconfig` help in `tools/commands/ci_task_catalog/src/task_definitions.rs` | [formatting.md](/documentation/standards/coding_standards/formatting.md) |
+| §11 | the `verify-coding-standards` help in `tools/commands/ci_task_catalog/src/task_definitions.rs` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#verify-coding-standards) |
 
 ### Before a commit
 
@@ -139,12 +139,12 @@ now maps to a page:
 
 ## Code
 
-- [Language ban gates](/tools/xtask/src/verifications/language_bans/) — LANG-1 to LANG-3 and
+- [Language ban gates](/tools/checks/repository_checks/src/language_bans/) — LANG-1 to LANG-3 and
   SIZE-3.
-- [Architecture verifications](/tools/xtask/src/verifications/architecture/) — GO-7, and the
+- [Architecture verifications](/tools/checks/repository_checks/src/architecture/) — GO-7, and the
   engine wall of TS-2.
-- [Schema gates](/tools/xtask/src/verifications/schemas/) — ENF-3, ENF-4, TEST-3.
-- [CI task commands](/tools/xtask/src/commands/ci/) — `ci-local`, `verify-coding-standards`,
+- [Schema gates](/tools/commands/schema_tooling/src/schema_checks/) — ENF-3, ENF-4, TEST-3.
+- [CI task commands](/tools/commands/ci_task_catalog/src/) — `ci-local`, `verify-coding-standards`,
   `verify-editorconfig` (FMT-2).
 - [API layout tests](/apps/api/src/tests/) — GO-9 and the API's test placement.
 - [Handler errors](/apps/api/src/core/error_handling/) — ERR-1 and ERR-4.
@@ -158,9 +158,9 @@ now maps to a page:
   and [engine boundary rules](/documentation/standards/engine_boundary_rules.md) for the rules
   they own.
 - Used by: rule codes and this README's path in `.github/workflows/ci.yml`, `.editorconfig`,
-  `tools/xtask/src/commands/ci/task_definitions.rs`,
-  `tools/xtask/src/verifications/architecture/route_tags.rs`,
-  `tools/xtask/src/verifications/language_bans/shell_scripts.rs` and
+  `tools/commands/ci_task_catalog/src/task_definitions.rs`,
+  `tools/checks/repository_checks/src/architecture/route_tags.rs`,
+  `tools/checks/repository_checks/src/language_bans/shell_scripts.rs` and
   `tools/developer_tools/src/map_raster_pipeline/satellite_archive_container.rs`; the READMEs of
   the language ban, file length, architecture and verify folders; the
   [Testing and CI](/documentation/runbooks/testing_and_ci.md) runbook, whose gate matrix uses

@@ -17,7 +17,7 @@ Abbreviations in code spans:
 | `fe` | `apps/frontend/src/` |
 | `xt` | `tools/xtask/src/` |
 | `dt` | `tools/developer_tools/src/` |
-| `te` | `tools/ticket_engine/src/` |
+| `te` | the ticket tool source folder: tools/ticket_engine/src/ until S11, now split into `tools/tickets/` |
 | `vc` | the verification core source folder: tools/verification_core/src/ until S4b, now split into `tools/foundation/` |
 
 A bare module path such as `world/scene.rs` is relative to the map engine's source folder. "W" marks a
@@ -79,6 +79,37 @@ checks them.
 | S5 | fire_mission_planning | `crates/ballistics/fire_mission_planning/` | 3 |
 | S5 | ballistics_calibration | `crates/ballistics/ballistics_calibration/` | 3 |
 | S5 | ballistics_agreement_cases | `crates/ballistics/ballistics_agreement_cases/` | 4 |
+| S11a | deploy_settings | `tools/foundation/deploy_settings/` | 2 |
+| S11a | tool_test_support | `tools/foundation/tool_test_support/` | 1 |
+| S11a | ticket_model | `tools/tickets/ticket_model/` | 2 |
+| S11a | ticket_metrics | `tools/tickets/ticket_metrics/` | 3 |
+| S11a | ticket_wave_lock | `tools/tickets/ticket_wave_lock/` | 3 |
+| S11a | ticket_registry | `tools/tickets/ticket_registry/` | 4 |
+| S11a | ticketboard_model | `tools/tickets/ticketboard_model/` | 4 |
+| S11a | repository_checks | `tools/checks/repository_checks/` | 2 |
+| S11a | mod_script_checks | `tools/checks/mod_script_checks/` | 2 |
+| S11a | schema_tooling | `tools/commands/schema_tooling/` | 5 |
+| S11a | ballistics_oracle_tooling | `tools/commands/ballistics_oracle_tooling/` | 1 |
+| S11a | api_readiness_checks | `tools/commands/api_readiness_checks/` | 3 |
+| S11a | workstation_setup | `tools/commands/workstation_setup/` | 3 |
+| S11a | enfusion_mcp | `tools/commands/enfusion_mcp/` | 2 |
+| S11a | enfusion_mcp_broker | `tools/enfusion/enfusion_mcp_broker/` | 3 |
+| S11a | repository_relocation | `tools/commands/repository_relocation/` | 3 |
+| S11a | database_operations | `tools/commands/database_operations/` | 4 |
+| S11a | deployment | `tools/commands/deployment/` | 5 |
+| S11a | enfusion_pak | `tools/enfusion/enfusion_pak/` | 0 |
+| S11a | enfusion_script_index | `tools/enfusion/enfusion_script_index/` | 2 |
+| S11a | chrome_devtools_protocol | `tools/browser_testing/chrome_devtools_protocol/` | 1 |
+| S11a | browser_gate_suites | `tools/browser_testing/browser_gate_suites/` | 2 |
+| S11a | staging_load_plan | `tools/staging/staging_load_plan/` | 1 |
+| S11a | staging_load_generator | `tools/staging/staging_load_generator/` | 2 |
+| S11a | acknowledgement_dropping_relay | `tools/staging/acknowledgement_dropping_relay/` | 1 |
+| S11a | staging_procedures | `tools/commands/staging_procedures/` | 6 |
+| S11a | remote_debugging | `tools/commands/remote_debugging/` | 6 |
+| S11a | documentation_checks | `tools/checks/documentation_checks/` | 2 |
+| S11a | ci_task_catalog | `tools/commands/ci_task_catalog/` | 6 |
+| S11a | platform_execution | `tools/commands/platform_execution/` | 7 |
+| S11a | mod_operations | `tools/commands/mod_operations/` | 8 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -210,17 +241,24 @@ The api app (apps/api) keeps the router composition, the `api` and `import_regis
 
 ## tools/
 
+Built in S11a unless marked planned; planned crates are S11b's and their folders do not exist yet.
+
 | Family | Crates |
 |---|---|
-| foundation | `repository_layout` (the 7 root finders, the 4 layout modules, root walkers, `target/` subdirectories) · `process_runner` (vc `proc`, `xt core/host_execution.rs`, `secure_shell_transport`) · `verification_core` (verdict, scan, pattern, gate, lock, report) · `repository_laws` (all laws; `source_scrub` dev helper) |
-| tickets | `ticket_model` (with `commit_subjects`) · `ticket_metrics` · `ticket_registry` (store, registry, ops, sync, validation, verbs; sits above metrics) · `ticket_wave_lock` · `ticketboard_model` (headless) |
-| commands | `ci_task_catalog` (threads the injected `clap::Command` for link-check) · `database_operations` (`commands/db`, `verifications/database`, `deploy/database_*`) · `deployment` (→ database_operations) · `staging_procedures` · `api_readiness_checks` · `mod_operations` · `platform_execution` (`wprintln!` internal) · `schema_tooling` (with `gen_font_table`) · `enfusion_mcp` (xt daemon plus dt broker) · `ballistics_oracle_tooling` · `workstation_setup` · `remote_debugging` |
-| checks | `documentation_checks` · `mod_script_checks` · `repository_checks` |
-| enfusion | `enfusion_pak` · `enfusion_script_index` |
-| map_assets | `blueprint_compiler` · `world_export_pipeline` · `map_raster_pipeline` · `map_asset_verification` |
-| browser_testing | `chrome_devtools_protocol` · `browser_gate_suites` (`dom_oracle`, gate server, capture) |
-| staging | `staging_load_generator` · `acknowledgement_dropping_relay` · `staging_fixtures` (bin) |
+| foundation | `repository_layout` (the one root finder, the shared layout modules, root walkers, `target/` subdirectories) · `process_runner` (vc `proc`, the host bridge, `secure_shell_transport`, the terminal, binary, file, detached and streaming modes) · `verification_core` (verdict, scan, pattern, gate, lock, report) · `repository_laws` (all laws; `source_scrub` dev helper) · `deploy_settings` (`xt core/deploy_environment*`) · `tool_test_support` (dev-only: the test env lock, the working-directory guard, the test repository root) |
+| tickets | `ticket_model` (with `commit_subjects`, `TicketId`) · `ticket_metrics` · `ticket_wave_lock` · `ticket_registry` (store, registry, ops, sync, validation, verbs; sits above metrics) · `ticketboard_model` (ticketboard's headless half) |
+| commands | `ci_task_catalog` (`commands/{ci,build}`, `verifications/ci`, the cargo-target verification, the map asset checks over the developer_tools library until S11b) · `database_operations` (`commands/db`, `verifications/database`, `deploy/database_*`) · `deployment` (`commands/deploy`, `verifications/deployment`; → database_operations) · `staging_procedures` (`commands/staging`) · `api_readiness_checks` (`verifications/api_readiness`, property test configuration) · `mod_operations` (`commands/mod_ops`) · `platform_execution` (`commands/platform`; `wprintln!` internal) · `schema_tooling` (`commands/{generate,schema}`, `verifications/schemas`, with the font table) · `enfusion_mcp` (xt `mcp` plus dt `enfusion_mcp_entrypoint`) · `ballistics_oracle_tooling` (`commands/ballistics`) · `workstation_setup` (`commands/setup`) · `remote_debugging` (`commands/{debug,reproduction}`) · `repository_relocation` (`commands/refactor`) |
+| checks | `documentation_checks` (`verifications/documentation`; the bin injects the `clap::Command` factory) · `mod_script_checks` (`verifications/mod_scripts`) · `repository_checks` (`verifications/{architecture,language_bans,licensing,registry}` and the cross-cutting tooling tests) |
+| enfusion | `enfusion_pak` (dt `enfusion_pak`) · `enfusion_script_index` (dt `enfusion_tooling` plus xt `fetch`) · `enfusion_mcp_broker` (dt `mcp_broker`; the `mcpd` bin calls it) |
+| map_assets (planned, S11b) | blueprint_compiler · world_export_pipeline · map_raster_pipeline · map_asset_verification |
+| browser_testing | `chrome_devtools_protocol` (dt `browser_testing/cdp`) · `browser_gate_suites` (`dom_oracle`, gate server, capture; the ballistics and mortar suites join in S11b) |
+| staging | `staging_load_plan` (the tokio-free plan and report types) · `staging_load_generator` (dt `load_generation`; the `staging-load` bin) · `acknowledgement_dropping_relay` · staging_fixtures (bin; S9 K4, decision S11-D5) |
 
-- `tools/xtask` keeps only the CLI and dispatch; the `TopCmd` tests move here.
-- `tools/developer_tools` keeps 7 one-line bins.
-
+- `tools/xtask` holds the command line and the dispatch plus the command groups that are still its
+  own modules (`agent_context`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify`, `wave`;
+  most of them thin command lines over the crates above); planned (S11b, J4): the CLI and
+  dispatch only, the `TopCmd` tests moved.
+- `tools/developer_tools` holds 8 bins (`enf`, `gate`, `mcpd`, `world`, `map`, `capture`,
+  `acknowledgement-dropping-relay`, `staging-load`) and the library parts S11b moves (map assets,
+  blueprints, the ballistics and mortar gate suites); planned (S11b, J4): one-line bins, the library
+  deleted.

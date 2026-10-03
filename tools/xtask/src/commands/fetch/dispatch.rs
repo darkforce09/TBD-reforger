@@ -12,7 +12,7 @@ pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
                 Some(p) => PathBuf::from(p),
                 None => find_repository_root()?,
             };
-            crate::commands::fetch::vanilla_source::run(&root, &args)
+            Ok(enfusion_script_index::vanilla_page_fetch::vanilla_source::run(&root, &args)?)
         }
         FetchCmd::VanillaApi { args } => {
             // Prefer $PWD (logical path) so cache: lines match bash `cd … && pwd`
@@ -31,7 +31,9 @@ pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
                     None => find_repository_root()?,
                 },
             };
-            crate::commands::fetch::vanilla_api::run(&root, &args)
+            Ok(enfusion_script_index::vanilla_page_fetch::vanilla_api::run(
+                &root, &args,
+            )?)
         }
     }
 }

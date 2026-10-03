@@ -28,7 +28,7 @@ pub mod topo;
 /// ONE CONST, NOT ONE PER CALL SITE: every census bucket in this module is minted from this
 /// array, so a classified prefab whose kind has no bucket is a hard failure at the census
 /// rather than a missing row in the emitted inventory. A second copy lives in
-/// `tools/xtask/src/verifications/schemas/checks.rs`, which verifies the emitted document
+/// `tools/commands/schema_tooling/src/schema_checks.rs`, which verifies the emitted document
 /// from outside this crate and therefore may not read this one.
 ///
 /// The order is the emitted `type-inventory.json` `byKind` key order (serde_json is built with

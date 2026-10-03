@@ -1,9 +1,11 @@
 //! Draining a child's pipes for the whole of its life.
 //!
-//! **Role:** the threads that drain a child's pipes.
-//! **Position:** private to the crate; `crate::runner` starts them before it waits.
-//! **Signals & state:** one reader thread per pipe, joined by the runner.
-//! **Invariants:** every pipe is read to EOF for the child's whole life; decoding is lossy.
+//! **Role:** the threads that drain a child's pipes, whole or line by line.
+//! **Position:** private to the crate; `crate::runner` and `crate::run_modes` start them before
+//! they wait.
+//! **Signals & state:** one reader thread per pipe, joined by the runner or ended by EOF.
+//! **Invariants:** every pipe is read to EOF for the child's whole life; text decoding is lossy,
+//! and the byte drain decodes nothing.
 //!
 //! A pipe buffer is about 64 KiB. A parent that reads stdout to the end before touching stderr
 //! deadlocks the moment the child fills the stderr buffer: the child blocks writing, the parent
@@ -14,14 +16,15 @@
 //! must not leave a gate unable to run — that is exactly the "did not run, reported as a result"
 //! shape this crate exists to prevent.
 
-use std::io::{PipeReader, Read};
+use std::io::{BufRead, BufReader, PipeReader, Read};
 use std::process::Child;
+use std::sync::mpsc::Sender;
 use std::thread::JoinHandle;
 
 /// The two threads draining a child's separate stdout and stderr pipes.
 pub(super) struct SeparateDrains {
-    stdout: JoinHandle<String>,
-    stderr: JoinHandle<String>,
+    stdout: JoinHandle<Vec<u8>>,
+    stderr: JoinHandle<Vec<u8>>,
 }
 
 impl SeparateDrains {
@@ -40,9 +43,54 @@ impl SeparateDrains {
     /// A panicked reader yields an empty string rather than propagating: the child's status is
     /// the verdict, and losing captured text must not turn into losing the exit code.
     pub(super) fn join(self) -> (String, String) {
+        let (stdout, stderr) = self.join_bytes();
+        (
+            String::from_utf8_lossy(&stdout).into_owned(),
+            String::from_utf8_lossy(&stderr).into_owned(),
+        )
+    }
+
+    /// Wait for both threads and hand back `(stdout, stderr)` as the bytes the child wrote.
+    pub(super) fn join_bytes(self) -> (Vec<u8>, Vec<u8>) {
         let stdout = self.stdout.join().unwrap_or_default();
         let stderr = self.stderr.join().unwrap_or_default();
         (stdout, stderr)
+    }
+}
+
+/// Start one thread per pipe of `child` that sends each line, decoded lossily and without its
+/// `\n` or `\r\n`, to `lines`; each thread ends at its pipe's EOF or when the receiver is gone.
+pub(super) fn start_line_drains(child: &mut Child, lines: &Sender<String>) {
+    if let Some(pipe) = child.stdout.take() {
+        let lines = lines.clone();
+        std::thread::spawn(move || send_lines(pipe, &lines));
+    }
+    if let Some(pipe) = child.stderr.take() {
+        let lines = lines.clone();
+        std::thread::spawn(move || send_lines(pipe, &lines));
+    }
+}
+
+fn send_lines(pipe: impl Read, lines: &Sender<String>) {
+    let mut reader = BufReader::new(pipe);
+    let mut buf = Vec::new();
+    loop {
+        buf.clear();
+        match reader.read_until(b'\n', &mut buf) {
+            Ok(0) | Err(_) => return,
+            Ok(_) => {
+                if buf.last() == Some(&b'\n') {
+                    buf.pop();
+                    if buf.last() == Some(&b'\r') {
+                        buf.pop();
+                    }
+                }
+                let line = String::from_utf8_lossy(&buf).into_owned();
+                if lines.send(line).is_err() {
+                    return;
+                }
+            }
+        }
     }
 }
 
@@ -51,11 +99,12 @@ pub(super) fn start_merged_drain(mut reader: PipeReader) -> JoinHandle<String> {
     std::thread::spawn(move || read_to_string_lossy(&mut reader))
 }
 
-fn drain(pipe: &mut Option<impl Read>) -> String {
-    match pipe.as_mut() {
-        Some(p) => read_to_string_lossy(p),
-        None => String::new(),
+fn drain(pipe: &mut Option<impl Read>) -> Vec<u8> {
+    let mut buf = Vec::new();
+    if let Some(p) = pipe.as_mut() {
+        let _ = p.read_to_end(&mut buf);
     }
+    buf
 }
 
 /// Read to EOF, replacing invalid UTF-8 instead of refusing the bytes.

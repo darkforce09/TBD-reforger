@@ -73,7 +73,7 @@ each check's status, latency and error, the migration counts and the pool gauges
   - over HTTP: the Caddy site in `deploy/caddy/Caddyfile` publishes
     `/healthz`, and `cargo xtask platform preflight`, the `editor-api-boot` task of
     `cargo xtask ci` and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
-    smoke gates in `tools/developer_tools/src/browser_testing/editor_smoke_tests/` probe it
+    smoke gates in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/` probe it
     without credentials.
 - Rules: `observe` stays outside panic recovery and the rate limiter, which the router's own tests
   check (`throttled_requests_are_counted` in

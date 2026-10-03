@@ -18,7 +18,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use axum::http::Method;
 use ballistics_model::catalog::{BallisticsCatalog, ShellRole};
 
-use crate::browser_testing::server::api_fixture_corpus::corpus_file_name;
+use browser_gate_suites::server::api_fixture_corpus::corpus_file_name;
 
 /// The committed vanilla catalog, relative to the repository root.
 pub const COMMITTED_CATALOG: &str = "contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json";

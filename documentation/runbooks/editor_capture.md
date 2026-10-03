@@ -7,7 +7,7 @@ Chromium on the real GPU: the interface through the DevTools protocol and the ma
 canvas. Run it to judge layout, copy and the map by eye, or to hand an agent an image of the live
 editor. A capture takes about half a minute once the stack is up. The drivers are the `capture`
 binary of `tools/developer_tools`, described in the
-[capture drivers README](/tools/developer_tools/src/browser_testing/screen_capture/README.md).
+[capture drivers README](/tools/browser_testing/browser_gate_suites/src/screen_capture/README.md).
 
 ## Prerequisites
 
@@ -87,7 +87,7 @@ Three facts about headless Chromium that the capture encodes; changing any of th
    fonts and the renderer aborts on its first text layout, logging
    `Could not find any font: , sans` and `glyph_count: 0`. The capture launch gets the same
    gate-owned cache as the gates (`gate_font_cache_dir` in
-   `tools/developer_tools/src/browser_testing/diagnostics/`); wedge mode 4 of
+   `tools/browser_testing/chrome_devtools_protocol/src/gate_font_cache.rs`); wedge mode 4 of
    [Editor gates](/documentation/runbooks/editor_gates.md) has the cause.
 2. **`--use-angle=vulkan`, never SwiftShader and never `gl`.** The map is a WebGPU engine, and
    only ANGLE over Vulkan on the real device boots it:
@@ -98,7 +98,7 @@ Three facts about headless Chromium that the capture encodes; changing any of th
    | `--use-angle=gl` | `RenderEngine::create: webgl2 not available or canvas already in use`; the engine never starts |
    | `--use-angle=vulkan` | boots: the satellite basemap loads at 12800² with 14 mip levels, `maxTextureDimension2D` 16384 |
 
-   `cdp::launch_with_gpu` with `GpuBackend::Vulkan` passes
+   `chrome_devtools_protocol::launch_with_gpu` with `GpuBackend::Vulkan` passes
    `--use-angle=vulkan --enable-features=Vulkan --use-vulkan --ignore-gpu-blocklist`; the gates
    keep SwiftShader because they need no GPU and do not boot the WebGPU map.
 3. **The map is read off the canvas, not the compositor.** Headless Chromium logs
@@ -124,7 +124,7 @@ performance.
 
 ## Related
 
-- [Mission Creator capture drivers](/tools/developer_tools/src/browser_testing/screen_capture/README.md)
+- [Mission Creator capture drivers](/tools/browser_testing/browser_gate_suites/src/screen_capture/README.md)
   — what `shot`, `zoomsweep` and `crop` do, step by step.
 - [Developer tool executables](/tools/developer_tools/src/bin/README.md) — the `capture`
   synopsis and exit codes.

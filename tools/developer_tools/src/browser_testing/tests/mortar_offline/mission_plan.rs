@@ -1,9 +1,9 @@
 use super::*;
-use crate::repository_layout::compiled_checkout_root;
+use ::repository_layout::find_repository_root;
 
 fn committed_catalog() -> BallisticsCatalog {
     read_catalog(
-        &compiled_checkout_root()
+        &find_repository_root()
             .expect("repository root")
             .join(COMMITTED_CATALOG),
     )
@@ -46,7 +46,7 @@ fn mortar_offline_required_files_name_the_pack_sources_and_both_reads() {
 
 #[test]
 fn mortar_offline_require_files_names_every_missing_file() {
-    let present = compiled_checkout_root()
+    let present = find_repository_root()
         .expect("repository root")
         .join(COMMITTED_CATALOG);
     let files = vec![

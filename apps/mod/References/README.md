@@ -59,5 +59,5 @@ worktree and for the leak check alike.
 
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes): the oracle
   lanes, their licences and how a slice uses them.
-- [Enfusion script oracle](/documentation/tools/developer_tools/enfusion_script_oracle.md): the
+- [Enfusion script oracle](/documentation/tools/enfusion/enfusion_script_index.md): the
   `enf` indexes built from the lanes.

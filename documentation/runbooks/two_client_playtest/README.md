@@ -75,11 +75,11 @@ Facts every topic relies on:
 
 ## Code
 
-- [Playtest server](/tools/xtask/src/commands/mod_ops/playtest_server/README.md) —
+- [Playtest server](/tools/commands/mod_operations/src/playtest_server/README.md) —
   `cargo xtask mod playtest`: staging, the platform deployment, the boot verdict and the stop.
-- [World boot](/tools/xtask/src/commands/mod_ops/world_boot/README.md) —
+- [World boot](/tools/commands/mod_operations/src/world_boot/README.md) —
   `cargo xtask mod world-boot`, the headless rehearsal.
-- [Mod commands](/tools/xtask/src/commands/mod_ops/README.md) — the `mod` group, its exit
+- [Mod commands](/tools/commands/mod_operations/src/README.md) — the `mod` group, its exit
   contract and `mod dev-server`.
 - [Development server profile](/tools/xtask/dedicated_server_profiles/README.md) — the server
   config the playtest renders from.

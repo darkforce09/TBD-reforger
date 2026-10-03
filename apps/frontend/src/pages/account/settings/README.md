@@ -66,7 +66,7 @@ puts the shipped placeholder in place of anything else. The Arma Identity card c
   `apps/frontend/src/foundation/route_table/mod.rs`; the top bar's account menu in
   `apps/frontend/src/shell/top_nav.rs`, which links `/settings` and
   `/settings#arma-link`; the DOM oracle's `settings` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the cards wait for both fetches; the avatar source passes through `safe_avatar_url`
   (`profile_avatar_src_only_keeps_http_urls` in `tests/settings.rs`, over the cases in
   `crates/foundation/http_url_guard/src/cases.rs`); the Arma Identity card keeps the id `arma-link`

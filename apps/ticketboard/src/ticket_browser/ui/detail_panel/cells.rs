@@ -1,11 +1,11 @@
 use super::*;
 use crate::core::ui::*;
-use crate::document_viewer::services::document_loading as viewer;
-use crate::execution_metrics::estimated::{self as estimates, StampCell, TokensCell};
-use crate::ticket_browser::events::BrowserEvent as Action;
-use crate::ticket_registry::models::projection as board;
 use eframe::egui::{RichText, Ui};
 use std::{collections::HashMap, path::PathBuf};
+use ticketboard_model::document_viewer::services::document_loading as viewer;
+use ticketboard_model::execution_metrics::estimated::{self as estimates, StampCell, TokensCell};
+use ticketboard_model::ticket_browser::events::BrowserEvent as Action;
+use ticketboard_model::ticket_registry::models::projection as board;
 
 // ---- detail panel ----
 

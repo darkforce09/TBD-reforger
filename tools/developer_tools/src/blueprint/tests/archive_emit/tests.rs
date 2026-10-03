@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::terrain_dir;
 use world_line_of_sight::occluder_library::ArchiveBoot;
 use world_line_of_sight::occluder_library::BuildingArchiveBytes;
 

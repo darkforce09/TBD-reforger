@@ -107,7 +107,7 @@ every request run in the browser build only; the views that run them exist in th
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; `audit_source` in
   `apps/frontend/src/foundation/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `audit` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`, which answers the stream
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`, which answers the stream
   from `contracts/fixtures/api_goldens/GET__admin__audit-logs__stream.sse.txt`.
 - Rules, all in `tests/`: the paths and the continuation (`first_page_path_has_no_before`,
   `continuation_path_forwards_cursor_as_before`, `merge_appends_and_returns_cursor`,

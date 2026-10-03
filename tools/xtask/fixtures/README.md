@@ -16,20 +16,20 @@ tools/xtask/fixtures/
   holds newline-delimited JSON-RPC 2.0.
 - Schema: none in `contracts/`; the command that replays a folder defines what it expects.
 - Adding a file: add it to the folder of its kind, with the check that reads it, and name the
-  folder in `tools/xtask/src/core/repository_layout.rs` when it is new.
+  folder in `tools/foundation/repository_layout/src/tool_inputs.rs` when it is new.
 
 ## Producers and consumers
 
 - Producers: people, from recorded tool output.
 - Consumers: `cargo xtask mcp selftest`, for `mcp/`, through `MCP_TRANSCRIPT_FIXTURES_DIR` in
-  `tools/xtask/src/core/repository_layout.rs`.
+  `tools/foundation/repository_layout/src/tool_inputs.rs`.
 
 ## Boundaries
 
 - Depends on: the commands whose output the recordings stand in for.
-- Used by: `tools/xtask/src/commands/mcp/call_selftest.rs`.
+- Used by: `tools/commands/enfusion_mcp/src/call_selftest.rs`.
 - Rules: a fixture folder is reached only through its constant in
-  `tools/xtask/src/core/repository_layout.rs`, and
+  `tools/foundation/repository_layout/src/tool_inputs.rs`, and
   `every_committed_location_exists_in_the_checkout` in
-  `tools/xtask/src/tests/repository_layout_tests.rs` checks the folder exists; test fixtures of the other tooling crates live with
+  `tools/foundation/repository_layout/src/tests/command_locations_tests.rs` checks the folder exists; test fixtures of the other tooling crates live with
   those crates.

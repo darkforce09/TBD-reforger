@@ -28,8 +28,8 @@ instead of hiding them, so a lane always shows the lock's exact membership. A cl
 
 ## Boundaries
 
-- Depends on: `crate::wave_plan::models` and `crate::wave_plan::services::lock_file::LockState`;
-  `crate::ticket_registry::models::palette::status_rgb`; `ticket_engine::StatusName`;
+- Depends on: `ticketboard_model::wave_plan::models` and `ticketboard_model::wave_plan::services::lock_file::LockState`;
+  `ticketboard_model::ticket_registry::models::palette::status_rgb`; `ticket_model::StatusName`;
   `eframe::egui`.
 - Used by: `crate::application::feature_views`, which paints the Waves tab.
 - Rules: the tab only reads and emits events; it never reorders or recomputes a lane, and filters

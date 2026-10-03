@@ -175,7 +175,7 @@ apps/
 │       ├── crf_framework/               <-- Upstream Coalition Reforger Framework scripts and assets
 │       ├── vanilla_reference/           <-- Extracted vanilla Reforger scripts and Script API pages
 │       └── playable_selector/           <-- PlayableSelector checkout (design-mirror only)
-└── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets
+└── ticketboard/                         <-- Native egui/eframe desktop viewer for .ai/tickets; its models live in tools/tickets/ticketboard_model
 
 legacy/                                  <-- Parking folder of the two engine monoliths while their code moves into crates/; no new crate depends on it
 ├── map_engine/                          <-- World, spatial computation, formats, and the mission editing seam
@@ -263,25 +263,63 @@ deploy/                                  <-- Release Dockerfile (context narrowe
 ├── caddy/                               <-- Caddy site on :3080; the one folder the staging Caddy container mounts
 └── systemd/                             <-- User units and timers: API, game-server fleet, host agents, relay, database backups
 
-tools/                                   <-- Every developer tool in the repository; the tool crates plus one npm package
+tools/                                   <-- Every developer tool in the repository; the tool crates by category plus one npm package
 ├── foundation/                          <-- The tools' tiered base crates
 │   ├── verification_core/               <-- Fail-closed verdicts, pattern scans, gates, the repository verification lock
-│   ├── process_runner/                  <-- Process isolation, deadlines, host-bridge execution, the secure shell transport
+│   ├── process_runner/                  <-- Child processes (deadlines; terminal, binary, file, detached and streaming modes), host-bridge execution, the secure shell transport
 │   ├── repository_laws/                 <-- Every repository law: crate tiers, anatomy, strangler, engine layers, file length
-│   └── repository_layout/               <-- The repository root finder and the paths every tool shares
-├── ticket_engine/                       <-- Ticket storage, validation, queue and roadmap sync, wave lock, metrics
+│   ├── repository_layout/               <-- The repository root finder and the paths every tool shares
+│   ├── deploy_settings/                 <-- The one reader of deploy/deploy.env and its precedence over exported variables
+│   └── tool_test_support/               <-- Test locks and the checkout root the tool crates' tests share (dev-only)
+├── tickets/                             <-- Ticket crates
+│   ├── ticket_model/                    <-- Typed ticket, its canonical TOML encoding, the corpus store
+│   ├── ticket_metrics/                  <-- Slice-run receipts and token estimates
+│   ├── ticket_wave_lock/                <-- Wave lock compiler, reader and checker
+│   ├── ticket_registry/                 <-- Ticket operations, validation, queue and roadmap sync, the `ticket` verbs
+│   └── ticketboard_model/               <-- The ticketboard's headless half: models, events, egui-free application state
+├── commands/                            <-- Command crates behind the xtask groups
+│   ├── ci_task_catalog/                 <-- CI task table and runner (`ci`, `help`), build lane recipes (`mk`), cargo target pin, CI workflow checks, map asset checks
+│   ├── platform_execution/              <-- Platform factory (`platform`): wave driver, slice runs, slice worktrees, preflight
+│   ├── mod_operations/                  <-- Game mod operations (`mod`): compile gate, world boot, playtest server, equipment export, mod wave driver
+│   ├── database_operations/             <-- Local database lane (`db`), database container layer, verified backup, guarded restore, restore drill (`deploy db`), seed checks
+│   ├── deployment/                      <-- Website and staging fleet deploys (`deploy website`, `deploy staging`), staging compose-path check
+│   ├── staging_procedures/              <-- Staging acceptance harness (`staging`): fleet, Discord and load procedures, their receipts, host actions
+│   ├── api_readiness_checks/            <-- API readiness judge (`verify api-readiness`): acceptance register, evidence receipts, fingerprints, property-test seed
+│   ├── schema_tooling/                  <-- Contract codegen, schema gates, ORBAT slot flattening, font table (`schema`, `gen`)
+│   ├── repository_relocation/           <-- Manifest-driven moves and the retired-spelling verification (`refactor relocate`)
+│   ├── enfusion_mcp/                    <-- Enfusion MCP client (`mcp`): daemon control, tool calls, offline selftest, Workbench NET API calls
+│   ├── ballistics_oracle_tooling/       <-- Ballistics catalog and calibration fixtures (`ballistics`)
+│   ├── workstation_setup/               <-- Workstation setup (`setup`) and the staging host check
+│   └── remote_debugging/                <-- Staging join probes (`debug`), remote console log verdict, upload reproduction (`repro`)
+├── checks/                              <-- Check crates behind `cargo xtask verify`
+│   ├── repository_checks/               <-- Engine layers, workspace laws, route tags, language bans, licensing, registry aliases, tooling rules
+│   ├── mod_script_checks/               <-- Enfusion comment card, mod script pins, UI layout gate, Workbench spawn runs
+│   └── documentation_checks/            <-- README coverage, Markdown placement and link-check gates
+├── enfusion/                            <-- Enfusion tool crates
+│   ├── enfusion_pak/                    <-- The `.pak` archive reader and its merged virtual file system
+│   ├── enfusion_script_index/           <-- The script oracle behind `enf` and the vanilla page mirrors behind `fetch`
+│   └── enfusion_mcp_broker/             <-- The `mcpd` broker over one enfusion-mcp server
+├── browser_testing/                     <-- Browser gate crates
+│   ├── chrome_devtools_protocol/        <-- DevTools protocol client: Chromium discovery and launch, pages, the gate font cache
+│   └── browser_gate_suites/             <-- Gate suites behind `gate` and `capture`: static server, DOM oracle, route drift, editor smokes
+│       └── fixtures/dom_oracle/         <-- DOM goldens, screenshots and route inventories the browser gates compare against
+├── staging/                             <-- Staging crates
+│   ├── staging_load_plan/               <-- The member load's plan, request catalog, pacing and report, without tokio
+│   ├── staging_load_generator/          <-- The member load's virtual clients behind `staging-load`
+│   └── acknowledgement_dropping_relay/  <-- Relay that withholds one fleet executor answer
+├── map_assets/                          <-- Reserved for the map asset crates (README only, no code)
 ├── developer_tools/                     <-- Heavy async CLI suite, blueprint compiler, map verification
-│   ├── src/bin/                         <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay
+│   ├── src/bin/                         <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay, staging-load
 │   │   ├── enf                          <-- Symbol indexes, lookups and checks over Enfusion scripts
 │   │   ├── gate                         <-- Headless CDP Chrome gates of the single-page app
 │   │   ├── mcpd                         <-- Enfusion MCP broker daemon
 │   │   ├── world                        <-- World-export pipeline and its verification gates
 │   │   ├── map                          <-- Satellite, cartographic, label, water and glyph map assets
 │   │   ├── capture                      <-- Mission Creator screenshots, zoom sweeps, crops
-│   │   └── acknowledgement-dropping-relay <-- Staging fault injection: withholds one fleet executor answer
-│   ├── fixtures/dom_oracle/             <-- DOM goldens, screenshots and route inventories the browser gates compare against
+│   │   ├── acknowledgement-dropping-relay <-- Staging fault injection: withholds one fleet executor answer
+│   │   └── staging-load                 <-- Staging member load: a plan as JSON in, its report as JSON out
 │   └── test_fixtures/blueprint/         <-- Prefab and world-object inputs for the blueprint compiler tests
-├── xtask/                               <-- `cargo xtask` command router, repository verifications, platform execution
+├── xtask/                               <-- `cargo xtask` command line and dispatch, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` groups
 │   ├── dedicated_server_profiles/       <-- Dedicated-server profile the local mod servers start from
 │   ├── fixtures/mcp/                    <-- Recorded MCP transcripts `cargo xtask mcp selftest` replays
 │   └── staging/                         <-- Committed load workload and population of the staging load receipt

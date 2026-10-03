@@ -59,7 +59,7 @@ resolver test resolves them alone.
   - `walker_places_door_set_window_and_furniture_from_fixtures` in
     `tools/developer_tools/src/blueprint/tests/batch_tests.rs`;
   - `compiler_fixtures_resolve_from_root_crate_and_source_directory` in
-    `tools/developer_tools/src/tests/repository_layout.rs`, which checks that
+    `tools/developer_tools/src/blueprint/tests/module/tests.rs`, which checks that
     `Houses/House_Wood.et` is reachable.
 
 ## Boundaries

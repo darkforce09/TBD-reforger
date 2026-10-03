@@ -37,7 +37,7 @@ apps/frontend/src/pages/account/login/
   `apps/frontend/src/foundation/auth/gates.rs`, of the top bar in
   `apps/frontend/src/shell/top_nav.rs` and of the sign-in callback's failure
   view; the DOM oracle's `login` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the flow starts with a full-page navigation, never a request, since it continues off-site;
   the path stays reachable signed out and stays named in the frame's `classify_frame`
   (`classify_frame_kinds` in `apps/frontend/src/shell/tests/layout.rs`).

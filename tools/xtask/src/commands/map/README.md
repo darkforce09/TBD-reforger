@@ -125,7 +125,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
 ## Boundaries
 
 - Depends on: `developer_tools::blueprint`, `developer_tools::map_verification` and
-  `developer_tools::repository_layout::map_scratch_dir`; `crate::core::repository_root`;
+  `repository_layout::map_scratch_dir`; `tool_test_support`;
   `process_runner`; cargo, for the `world` binary; the game paks and the Workbench
   exports each command reads.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; people, following the export and blueprint steps
@@ -137,7 +137,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   never writes an index over a missing or empty pyramid, and what it writes validates against
   `map-tile-index.schema.json` (`tests/tile_index/tests.rs`); the crate
   takes no dependency on `map_engine`
-  (`tools/xtask/src/tests/tooling_dependency_boundaries.rs`), so engine-backed work stays in
+  (`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`), so engine-backed work stays in
   `developer_tools`.
 
 ## Related documentation

@@ -26,7 +26,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 ## Code
 
 - [API crate](/apps/api/) — the crate the milestones completed.
-- [API readiness check](/tools/xtask/src/verifications/api_readiness/) — the verifier that
+- [API readiness check](/tools/commands/api_readiness_checks/src/) — the verifier that
   judges the register the milestones fill.
 
 ## Boundaries

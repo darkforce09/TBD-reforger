@@ -20,11 +20,11 @@ contracts/definitions/equipment-gameplay/
 
 `cargo xtask mod validate-equipment-vehicle-export` and `publish-equipment-vehicle-export` read
 the generation folder's `generation.json`; when its `document_type` is `gameplay_generation`,
-`tools/xtask/src/commands/mod_ops/equipment_gameplay/validation.rs` validates
+`tools/commands/mod_operations/src/equipment_gameplay/validation.rs` validates
 `generation.json`, `resource_index.json` and `field_definitions.json` against their schemas and
 every resource file the index names (each under `resources/`) against `resource.schema.json`,
 then checks the files against each other. Publishing builds the publication receipt in
-`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/gameplay_receipt.rs`, validates it
+`tools/commands/mod_operations/src/equipment_vehicle_export/gameplay_receipt.rs`, validates it
 against `publication-receipt.schema.json`, and checks that its generation id and byte counts
 match the validated generation. Every schema is embedded with `include_str!`, so a schema change
 takes effect on the next xtask build.
@@ -46,7 +46,7 @@ takes effect on the next xtask build.
   gameplay export in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/`,
   and the receipt from `publish-equipment-vehicle-export`.
 - Consumers: `equipment_gameplay/validation.rs` and
-  `equipment_vehicle_export/gameplay_receipt.rs` under `tools/xtask/src/commands/mod_ops/`,
+  `equipment_vehicle_export/gameplay_receipt.rs` under `tools/commands/mod_operations/src/`,
   run by `cargo xtask mod validate-equipment-vehicle-export` and
   `cargo xtask mod publish-equipment-vehicle-export`.
 

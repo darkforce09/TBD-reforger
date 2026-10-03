@@ -26,7 +26,7 @@ tools/developer_tools/src/map_verification/
 
 The folder has no binary. Each gate is a function that takes the checkout root (and a terrain id
 where it varies), prints one `PASS` or `FAIL` line per check, and returns its exit code as a
-`u8`; `tools/xtask/src/verifications/map_assets/mod.rs` and
+`u8`; `tools/commands/ci_task_catalog/src/map_asset_checks/mod.rs` and
 `tools/xtask/src/commands/map/mod.rs` adapt each to a command.
 
 | Function | Command | Reads |
@@ -56,7 +56,7 @@ unreported.
 
 - `terrain_manifest::terrain_manifest`, `blas_manifest::verify_blas_manifest`,
   `object_goldens::map_object_golden` and the five `labels` gates: the xtask schema and verify
-  commands, through `tools/xtask/src/verifications/map_assets/mod.rs`.
+  commands, through `tools/commands/ci_task_catalog/src/map_asset_checks/mod.rs`.
 - `world_line_of_sight::run`: `cargo xtask map world-los`.
 - `labels::REQUIRED_EVERON_TOWNS`, `labels::MAJOR_EVERON_ROADS`, and the `world_line_of_sight`
   types (`Dem`, `WorldParityFile`, `ReplayReport`) and loaders (`load_cell`, `load_dem`,
@@ -69,12 +69,12 @@ unreported.
   `place_names` and `label_layout` (label placement), `road_network`, `spatial_indexes`,
   `building_interiors` and `world_line_of_sight` (the world occluder); the world export pipeline's emitters and geometry
   (`tools/developer_tools/src/world_export_pipeline/`), for the golden gate;
-  `crate::repository_layout` for every path; `jsonschema` and the schemas in
+  the `repository_layout` crate for every path; `jsonschema` and the schemas in
   `contracts/definitions/`.
-- Used by: `tools/xtask/src/verifications/map_assets/mod.rs` and
+- Used by: `tools/commands/ci_task_catalog/src/map_asset_checks/mod.rs` and
   `tools/xtask/src/commands/map/mod.rs`; the CI tasks `schema-validate` (map-object golden and
   height labels), `verify-terrain` and `verify-terrain-strict` in
-  `tools/xtask/src/commands/ci/task_definitions.rs`, which check the terrain gates for
+  `tools/commands/ci_task_catalog/src/task_definitions.rs`, which check the terrain gates for
   `everon` only.
 - Rules: a gate writes nothing under `assets/` or `contracts/`; a path a manifest block
   names that does not exist, and a missing S15 golden binary, are failures, never skips

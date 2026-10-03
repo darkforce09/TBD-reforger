@@ -14,7 +14,7 @@ comparable across tickets, instead of each chat inventing its own send-off.
 **The canonical prompt text is a fenced block in the spec**, under a heading that starts
 `## Claude Code prompt` (for example `## Claude Code prompt — <slice id>`).
 `cargo xtask ticket prompt <id> [--slice <slice id>]` prints the first fenced block after that
-heading; the heading text is fixed by the extractor in `tools/ticket_engine/src/cli/prompt.rs`,
+heading; the heading text is fixed by the extractor in `tools/tickets/ticket_registry/src/verbs/prompt.rs`,
 so keep it even when another agent runs the prompt. `--header` also prints the handoff path.
 
 `cargo xtask ticket run` does not read the block: `cargo xtask platform slice-run` gives the agent a
@@ -24,7 +24,7 @@ agent started by hand in a chat.
 
 The handoff slug is `t`, the slice id without `T-`, dots as underscores, lowercased: slice
 `T-<n>.<m>` → `.ai/artifacts/t<n>_<m>_claude_code_handoff.md` (`slice_id_to_artifact_slug` in
-`tools/ticket_engine/src/registry/mod.rs`).
+`tools/tickets/ticket_registry/src/registry/mod.rs`).
 
 ## Prompt skeleton
 

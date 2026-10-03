@@ -22,8 +22,8 @@ documentation/design_system/token_exports/
 Each file is a Stitch export kept byte for byte: YAML front matter with the `colors`,
 `typography`, `rounded` and `spacing` tokens, then Stitch's prose on brand, colour, type, layout,
 elevation, shapes and components. Because they are generated, they carry no status line, the
-`.editorconfig-checker.json` exclusions skip them, and the ticket engine's stale-identifier scan
-exempts them (`SCAN_EXEMPT_PREFIXES` in `tools/ticket_engine/src/repository.rs`); the Aegis
+`.editorconfig-checker.json` exclusions skip them, and the stale-identifier scan of `ticket check`
+exempts them (`SCAN_EXEMPT_PREFIXES` in `tools/tickets/ticket_model/src/repository.rs`); the Aegis
 file also ends without a final newline. `dark_tactical_operations_design_tokens.md` holds a second
 export pasted after its own prose, a Stitch screen path and the Reforger Dark Tactical front
 matter, kept as exported.
@@ -51,7 +51,7 @@ several screens share it; one screen's tokens go into its set's `design_tokens.m
 - Depends on: Stitch, which produced the exports.
 - Used by: the Mission Creator's and the arsenal's `visual_references/` READMEs and the Mission
   Creator prototype set, which link the Aegis export; the design tokens document;
-  `.editorconfig-checker.json` and `tools/ticket_engine/src/repository.rs`, which exempt this
+  `.editorconfig-checker.json` and `tools/tickets/ticket_model/src/repository.rs`, which exempt this
   folder by path.
 - Rules: an export is never edited, only replaced by a new export; its differences from the built
   interface are written in the design tokens document or the screen's feature doc, never into the

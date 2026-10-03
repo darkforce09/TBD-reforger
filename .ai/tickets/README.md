@@ -2,8 +2,9 @@
 
 Every [ticket](/documentation/glossary/n_to_z.md#ticket) of the project as one TOML file, the
 schemas and derived files around them, and the templates and instructions agents follow to write a
-ticket's spec, plan, handoff and prompt. The `ticket_engine` crate reads and writes the folder
-through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md) shows it.
+ticket's spec, plan, handoff and prompt. The [ticket crates](/tools/tickets/README.md) read and
+write the folder through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md)
+shows it.
 
 ## Contents
 
@@ -32,7 +33,7 @@ through `cargo xtask ticket`; the [ticketboard](/apps/ticketboard/README.md) sho
 `kind` (`program` with child [slices](/documentation/glossary/n_to_z.md#slice), or `work`), `status`, `order`, `spec`, `plan`, `executor`,
 body fields and `[scope]` table, validated against `schema.json` and `scope-vocab.toml`. The ticket
 engine renders every file in one canonical form (`TicketFile` in
-`tools/ticket_engine/src/encoding.rs`), and every command that writes a ticket renders the
+`tools/tickets/ticket_model/src/encoding.rs`), and every command that writes a ticket renders the
 whole file again.
 
 - A ticket file is created only by `cargo xtask ticket add` or `ticket add-child`, which mint the
@@ -128,14 +129,16 @@ exit code.
 
 ## Boundaries
 
-- Depends on: the `ticket_engine` crate (`tools/ticket_engine/`), which owns the storage,
-  validation, sync and wave packing; the xtask `ticket`, `wave` and `platform` command groups.
+- Depends on: the ticket crates in `tools/tickets/`: `ticket_model` (storage and the canonical
+  encoding), `ticket_registry` (validation and sync), `ticket_wave_lock` (wave packing) and
+  `ticket_metrics` (run receipts and estimates); the xtask `ticket`, `wave` and `platform`
+  command groups.
 - Used by: `cargo xtask ticket`, `cargo xtask wave`, `cargo xtask slice-collisions` and the
   platform and mod wave drivers; the ticketboard; the `language-gates` job of
   `.github/workflows/ci.yml` (`ticket check --strict`); agents and people.
 - Rules: the ticket files, `queue.json` and `wave.lock` change only through the commands above,
   apart from hand edits of body fields in canonical form; `cargo xtask ticket check --strict` passes
-  after every change; `cargo test -p ticket_engine corpus_roundtrip_real_tree_byte_identical` proves
+  after every change; `cargo test -p ticket_model corpus_roundtrip_real_tree_byte_identical` proves
   every file is in canonical form.
 
 ## Related documentation
@@ -148,4 +151,4 @@ exit code.
   their lifecycle.
 - [Commit checklist](/documentation/standards/commit_checklist.md) — what a landing commit
   carries.
-- [Ticket engine](/tools/ticket_engine/README.md) — the crate behind the registry.
+- [Ticket crates](/tools/tickets/README.md) — the crates behind the registry.

@@ -11,13 +11,14 @@ state of the work and to move tickets through their statuses.
 
 ## Where it lives
 
-- Code: [`apps/ticketboard/`](/apps/ticketboard/README.md), with one README per module under
-  [`src/`](/apps/ticketboard/src/README.md); it links
-  [`tools/ticket_engine/`](/tools/ticket_engine/README.md) for the ticket model.
+- Code: [`apps/ticketboard/`](/apps/ticketboard/README.md), the egui application, with one README
+  per module under [`src/`](/apps/ticketboard/src/README.md); it paints the models, services and
+  application state of [`tools/tickets/ticketboard_model/`](/tools/tickets/ticketboard_model/README.md),
+  which reads the registry through [`tools/tickets/ticket_model/`](/tools/tickets/ticket_model/).
 - Entry: `cargo run -p ticketboard [-- <repository root>]`; `src/main.rs` opens the window and
   `application::TicketboardApp::new` resolves the root.
 - Related features: the [ticket registry](/.ai/tickets/README.md) and its commands; the
-  [token estimate factor](/documentation/tools/ticket_engine/token_estimate_factor.md) behind
+  [token estimate factor](/documentation/tools/tickets/token_estimate_factor.md) behind
   the estimated totals; the [factory waves runbook](/documentation/runbooks/factory_waves/README.md)
   that writes the wave lock the Waves tab shows.
 
@@ -68,24 +69,26 @@ state of the work and to move tickets through their statuses.
 ### Known discrepancies
 
 - The Remove dialog lists only dotted-id descendants
-  (`apps/ticketboard/src/ticket_actions/services/commands/transitions.rs:195-208`) — `remove
-  --force` cascades over `children[]` and parent links (`tools/ticket_engine/src/ops/ordering.rs:5-12`),
+  (`tools/tickets/ticketboard_model/src/ticket_actions/services/commands/transitions.rs:197-209`) — `remove
+  --force` cascades over `children[]` and parent links (`tools/tickets/ticket_registry/src/ops/ordering.rs:5-12`),
   so it can delete a listed child the dialog does not show.
 - The Mark ready form asks only for a spec path and mentions only the dependency gate
   (`apps/ticketboard/src/ticket_actions/ui/dialogs/mark_ready.rs:64-106`) — `mark-ready` also
   refuses without a plan document on disk and while a ready-tier body field is empty
-  (`tools/ticket_engine/src/ops/readiness.rs:17-31`).
+  (`tools/tickets/ticket_registry/src/ops/readiness.rs:17-31`).
 - The `git status` chip reports the gap analysis
-  (`apps/ticketboard/src/repository_status/models/git_status.rs:13`) — the file watch does not
-  reload on a change to it alone (`apps/ticketboard/src/repository_status/services/file_watch.rs:121-132`).
-- The crate README says the viewer reads the registry only through `ticket_engine` — it keeps its
-  own copies of the wave-lock types, the scope vocabulary parsing and the receipt and estimate
-  checks, the latter without the `TOKENS_PER_LOC` factor rule
-  (`apps/ticketboard/src/execution_metrics/estimated/validation.rs`).
+  (`tools/tickets/ticketboard_model/src/repository_status/models/git_status.rs:13`) — the file watch does not
+  reload on a change to it alone (`tools/tickets/ticketboard_model/src/repository_status/services/file_watch.rs:119-134`).
+- The crate README says the viewer reads the registry only through `ticket_model` — the model crate
+  keeps its own tolerant wave-lock types (`tools/tickets/ticketboard_model/src/wave_plan/services/lock_file.rs`)
+  and its own copies of the receipt and estimate checks, the latter without the `TOKENS_PER_LOC`
+  factor rule (`tools/tickets/ticketboard_model/src/execution_metrics/estimated/validation.rs`);
+  the scope vocabulary, the receipt shapes, the lock path and the collision rule are the ticket
+  crates' own.
 
 ## Data
 
-- Reads, through `ticket_engine` where it can: `.ai/tickets/T-*.toml`, the wave lock and its
+- Reads, through `ticket_model` where it can: `.ai/tickets/T-*.toml`, the wave lock and its
   history, `.ai/tickets/metrics/<id>/` (run receipts), `.ai/tickets/estimates/` and the scope
   vocabulary; `git status`; any Markdown file inside the repository.
 - Runs: `cargo xtask ticket <verb>` for every change and `cargo xtask ticket check --strict` for
@@ -98,9 +101,10 @@ state of the work and to move tickets through their statuses.
 - One window, 1500 by 950 at start and 720 by 480 at least: a top bar, a filter bar, the active
   tab, a 420-point detail column and the document column (280 to 1600 points, 560 by default);
   below a 1100-point width only the document column shows, and Back closes it alone.
-- Every feature keeps its data free of egui and draws from a view the application lends it, so
-  the architecture tests in `apps/ticketboard/src/tests/architecture_rules.rs` can hold the module
-  boundaries.
+- Every feature keeps its models, services and events in `ticketboard_model`, which names no egui
+  type, and draws in `apps/ticketboard` from a view the application lends it; the architecture
+  tests in `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs` and
+  `apps/ticketboard/src/tests/architecture_rules.rs` hold the module boundaries of both crates.
 - No design reference set exists; the viewer is a developer tool.
 
 ## Open work
@@ -114,7 +118,7 @@ state of the work and to move tickets through their statuses.
   (idea, no plan): the chip stays current when only the gap analysis changes, or stops reporting
   it.
 - [T-1142 — Decide whether the ticketboard imports the ticket_engine logic it copies](/.ai/tickets/T-1142.toml)
-  (idea, no plan): the copies of engine logic go, or are recorded as intended.
+  (idea, no plan): the copies of ticket crate logic go, or are recorded as intended.
 - [T-1145 — Cleanup ticketboard comment residue, stale names and misplaced tests](/.ai/tickets/T-1145.toml)
   (idea, no plan): comments, test names and test placement match the code.
 - [T-1137 — Gate ticket_engine, verification_core, ticketboard and fleet agent tests and clippy](/.ai/tickets/T-1137.toml)

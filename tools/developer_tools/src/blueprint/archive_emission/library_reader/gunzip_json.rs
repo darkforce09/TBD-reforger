@@ -247,7 +247,11 @@ pub fn build_library(
                 .ok()
                 .and_then(|p| p.mesh.clone())
             {
-                match source.read(&mesh).and_then(|d| xob::parse_xob(&d, None)) {
+                match source
+                    .read(&mesh)
+                    .map_err(anyhow::Error::from)
+                    .and_then(|d| xob::parse_xob(&d, None))
+                {
                     Ok(vis) => match canopy_sidecar(&vis.verts) {
                         Some(bytes) => {
                             let stem = root_asset

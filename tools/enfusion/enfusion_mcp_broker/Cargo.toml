@@ -1,0 +1,27 @@
+# The `mcpd` broker: one enfusion-mcp server child kept initialised behind a Unix socket, and the
+# offline stub that stands in for the server in `cargo xtask mcp selftest`. tokio streams the
+# child's stdio and serves the socket for the daemon's whole life, which is why this crate is
+# separate from `enfusion_mcp` and stays out of xtask's dependency closure.
+[package]
+name = "enfusion_mcp_broker"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The mcpd broker over one enfusion-mcp server child behind a Unix socket, and its offline stub"
+
+[package.metadata.layout]
+category = "tools/enfusion"
+tier = 3
+targets = "any"
+
+[dependencies]
+enfusion_mcp = { workspace = true }
+repository_layout = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+
+[lints]
+workspace = true

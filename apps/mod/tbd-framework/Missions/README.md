@@ -64,7 +64,7 @@ changes its terrain, so the fleet host agent restarts the server process for it.
   `game.scenarioId`; `cargo xtask mod playtest` and `cargo xtask mod world-boot` boot from that
   profile, and the world-boot verdict expects the header in the server log.
 - `deploy/deploy.env.example` sets `TBD_SCENARIO` to it, and
-  `cargo xtask deploy staging` uses it as the default (`tools/xtask/src/commands/deploy/staging/config.rs`).
+  `cargo xtask deploy staging` uses it as the default (`tools/commands/deployment/src/staging/config.rs`).
 - `apps/api/seeds/content_golden.sql` seeds it as the `everon` fleet scenario, which the
   platform sends to the fleet host agent in `apps/fleet_host_agent/` when it deploys a mission.
 - `cargo xtask setup server-profile` names `Missions/TBD_Dev_POC.conf` in its Workbench checklist.

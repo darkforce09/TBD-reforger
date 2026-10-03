@@ -113,8 +113,8 @@
         "apps/api/src/identity_and_access",
         "apps/frontend/src/foundation/auth",
         "apps/frontend/src/foundation/transport/client",
-        "tools/developer_tools/src/browser_testing/session_tokens.rs",
-        "tools/developer_tools/src/browser_testing/tests/session_tokens.rs",
+        "tools/browser_testing/browser_gate_suites/src/session_tokens.rs",
+        "tools/browser_testing/browser_gate_suites/src/tests/session_tokens.rs",
         "apps/api/tests/authentication_session_transactions.rs"
       ],
       "checks": [
@@ -576,7 +576,7 @@
         "apps/fleet_host_agent/src/dedicated_server_config/atomic_replacement.rs",
         "apps/fleet_host_agent/src/dedicated_server_config/mod.rs",
         "apps/fleet_host_agent/src/dedicated_server_config/scenario_id_location.rs",
-        "tools/xtask/src/commands/deploy/staging/host_agent.rs",
+        "tools/commands/deployment/src/staging/host_agent.rs",
         "deploy/systemd/fleet_host_agent@.service",
         "apps/fleet_host_agent/src/command_execution/mod.rs",
         "apps/fleet_host_agent/src/command_execution/host_command.rs",
@@ -595,7 +595,7 @@
         "apps/fleet_host_agent/tests/process_control.rs",
         "apps/fleet_host_agent/tests/test_support/fake_systemctl.rs",
         "apps/api/tests/fleet_command_ledger.rs",
-        "tools/xtask/src/commands/deploy/staging/tests/host_agent/tests.rs"
+        "tools/commands/deployment/src/staging/tests/host_agent/tests.rs"
       ],
       "checks": [
         "fleet_process_control",
@@ -791,8 +791,8 @@
         "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionArtifactCache.c",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256.c",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RosterLoader.c",
-        "tools/xtask/src/commands/mod_ops/world_boot/compiled_lane.rs",
-        "tools/xtask/src/commands/mod_ops/playtest_server/platform_deployment.rs",
+        "tools/commands/mod_operations/src/world_boot/compiled_lane.rs",
+        "tools/commands/mod_operations/src/playtest_server/platform_deployment.rs",
         "apps/api/src/missions/handlers/artifact_document_response.rs",
         "apps/api/tests/mission_deployment_transitions.rs",
         "apps/api/tests/mission_review_contract.rs",
@@ -800,9 +800,9 @@
         "apps/mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256Job.c",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256SelfTest.c",
         "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RuntimeDeploymentStruct.c",
-        "tools/xtask/src/commands/mod_ops/website_api_client/mission_artifact_cache.rs",
-        "tools/xtask/src/commands/mod_ops/website_api_client/mission_publication.rs",
-        "tools/xtask/src/commands/mod_ops/website_api_client/fleet_provisioning.rs"
+        "tools/commands/mod_operations/src/website_api_client/mission_artifact_cache.rs",
+        "tools/commands/mod_operations/src/website_api_client/mission_publication.rs",
+        "tools/commands/mod_operations/src/website_api_client/fleet_provisioning.rs"
       ],
       "checks": [
         "missions_artifact_consumers",
@@ -1111,7 +1111,7 @@
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry",
         "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeStatusReadings.c",
         "apps/frontend/src/pages/administration/server_control/server_card_telemetry.rs",
-        "tools/xtask/src/commands/mod_ops/playtest_server/telemetry_check.rs"
+        "tools/commands/mod_operations/src/playtest_server/telemetry_check.rs"
       ],
       "checks": [
         "telemetry_telemetry_queue",
@@ -1265,7 +1265,7 @@
         "apps/frontend/src/foundation/transport/dto/administration.rs",
         "contracts/fixtures/api_goldens/GET__admin__audit-logs.json",
         "contracts/fixtures/api_goldens/GET__admin__audit-logs__stream.sse.txt",
-        "tools/developer_tools/fixtures/dom_oracle/oracle-freeze/audit.dom.json"
+        "tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/audit.dom.json"
       ],
       "checks": [
         "administration_audit_frontend",
@@ -1296,7 +1296,7 @@
         "apps/frontend/src/foundation/transport/dto/vehicles.rs",
         "apps/frontend/src/foundation/utils/safe_url.rs",
         "contracts/fixtures/api_goldens/GET__vehicle-database.json",
-        "tools/developer_tools/fixtures/dom_oracle/oracle-freeze/vehicles.dom.json"
+        "tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/vehicles.dom.json"
       ],
       "checks": [
         "content_vehicle_mutations",
@@ -1331,8 +1331,8 @@
         "contracts/fixtures/api_goldens/GET__wiki__field-manual.json",
         "contracts/fixtures/api_goldens/GET__wiki__field-manual__revisions.json",
         "contracts/fixtures/api_goldens/GET__wiki__wiki-formatting-guide.json",
-        "tools/developer_tools/fixtures/dom_oracle/oracle-freeze/wiki.dom.json",
-        "tools/developer_tools/fixtures/dom_oracle/oracle-freeze/wikislug.dom.json"
+        "tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/wiki.dom.json",
+        "tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/wikislug.dom.json"
       ],
       "checks": [
         "content_wiki_features",
@@ -1492,7 +1492,7 @@
       "behavior": "Absent TEST_DATABASE_URL fails CI/gates; unique invocation databases and exact cleanup prevent false passes or cross-run deletion.",
       "implementation": [
         "apps/api/tests/common/database.rs",
-        "tools/xtask/src/commands/db/operations/test_it.rs"
+        "tools/commands/database_operations/src/local_database/test_it.rs"
       ],
       "checks": [
         "verification_database_harness",
@@ -1506,10 +1506,10 @@
       "id": "verification_readiness_gate",
       "behavior": "Missing empty stale skipped timed-out or failed evidence cannot produce readiness success.",
       "implementation": [
-        "tools/xtask/src/verifications/api_readiness",
-        "tools/xtask/src/verifications/property_test_configuration.rs",
+        "tools/commands/api_readiness_checks/src",
+        "tools/commands/api_readiness_checks/src/property_test_configuration.rs",
         "apps/api/src/tests/property_evidence.rs",
-        "tools/xtask/src/verifications/api_readiness/fingerprint.rs"
+        "tools/commands/api_readiness_checks/src/fingerprint.rs"
       ],
       "checks": [
         "readiness_self_tests",
@@ -1653,7 +1653,7 @@
         "contracts/fixtures/ballistics",
         "apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle",
         "apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle",
-        "tools/xtask/src/commands/ballistics"
+        "tools/commands/ballistics_oracle_tooling/src"
       ],
       "checks": [
         "game_ballistics_calibration"
@@ -1743,11 +1743,11 @@
       "id": "staging_fleet",
       "behavior": "Five real staging servers and clients verify remote controls identity and both terrain transitions.",
       "implementation": [
-        "tools/xtask/src/commands/staging/fleet_procedure",
-        "tools/xtask/src/commands/staging/procedure_runner",
-        "tools/xtask/src/verifications/api_readiness/operational_recording.rs",
+        "tools/commands/staging_procedures/src/fleet_procedure",
+        "tools/commands/staging_procedures/src/procedure_runner",
+        "tools/commands/api_readiness_checks/src/operational_recording.rs",
         "deploy/systemd",
-        "tools/developer_tools/src/staging_verification/acknowledgement_relay"
+        "tools/staging/acknowledgement_dropping_relay/src"
       ],
       "checks": [
         "staging_fleet",
@@ -1767,7 +1767,7 @@
       "id": "staging_discord",
       "behavior": "Real Discord healthy changes, cached outage grace, partner eligibility, admin override and non-blocking warnings.",
       "implementation": [
-        "tools/xtask/src/commands/staging/discord_procedure",
+        "tools/commands/staging_procedures/src/discord_procedure",
         "apps/api/src/bin/staging_fixtures"
       ],
       "checks": [
@@ -1787,8 +1787,9 @@
       "id": "staging_load",
       "behavior": "1000 accounts 100 concurrent clients 20 requests/sec for30 minutes; p95 JSON reads<=500ms writes<=1s with environment and request mix recorded.",
       "implementation": [
-        "tools/xtask/src/commands/staging/load_procedure",
-        "tools/developer_tools/src/staging_verification/load_generation",
+        "tools/commands/staging_procedures/src/load_procedure",
+        "tools/staging/staging_load_generator/src",
+        "tools/staging/staging_load_plan/src",
         "tools/xtask/staging"
       ],
       "checks": [
@@ -3141,14 +3142,13 @@
         "cargo",
         "test",
         "-p",
-        "xtask",
-        "api_readiness",
+        "api_readiness_checks",
         "--locked"
       ],
       "timeout_seconds": 600,
       "minimum_cases": 77,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test verifications::api_readiness::(?:[A-Za-z0-9_]+::)*(?:tests|source_tests)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test (?:case_count|fingerprint|operational_recording|property_evidence|readiness_verification)::(?:[A-Za-z0-9_]+::)*(?:tests|source_tests)::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "identity_property_sequences",
@@ -3263,14 +3263,14 @@
         "cargo",
         "test",
         "-p",
-        "xtask",
+        "api_readiness_checks",
         "property_test_configuration",
         "--locked"
       ],
       "timeout_seconds": 600,
       "minimum_cases": 8,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test verifications::property_test_configuration::tests::[A-Za-z0-9_]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test property_test_configuration::tests::[A-Za-z0-9_]+ \\.\\.\\. ok$"
     },
     {
       "id": "identity_deleted_owner_reclamation",
@@ -3437,14 +3437,13 @@
         "cargo",
         "test",
         "-p",
-        "xtask",
-        "--locked",
-        "commands::staging::"
+        "staging_procedures",
+        "--locked"
       ],
       "timeout_seconds": 600,
       "minimum_cases": 96,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test commands::staging::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test [A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "staging_verification_engines",
@@ -3453,14 +3452,17 @@
         "cargo",
         "test",
         "-p",
-        "developer_tools",
-        "--locked",
-        "staging_verification::"
+        "staging_load_plan",
+        "-p",
+        "staging_load_generator",
+        "-p",
+        "acknowledgement_dropping_relay",
+        "--locked"
       ],
       "timeout_seconds": 900,
-      "minimum_cases": 84,
+      "minimum_cases": 93,
       "success_marker": "test result: ok.",
-      "case_pattern": "(?m)^test staging_verification::[A-Za-z0-9_:]+ \\.\\.\\. ok$"
+      "case_pattern": "(?m)^test [A-Za-z0-9_:]+ \\.\\.\\. ok$"
     },
     {
       "id": "staging_fixture_tool",

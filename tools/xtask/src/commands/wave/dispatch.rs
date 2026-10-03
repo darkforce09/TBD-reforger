@@ -1,5 +1,4 @@
 use super::cli::WaveLockCmd;
-use crate::*;
 use anyhow::Result;
 use repository_layout::find_repository_root;
 
@@ -8,15 +7,15 @@ pub(crate) fn run(cmd: WaveLockCmd) -> Result<u8> {
         let root = find_repository_root()?;
         match cmd {
             WaveLockCmd::Repack { reserve } => {
-                let ids: Vec<String> = reserve
+                let ids: Vec<ticket_model::TicketId> = reserve
                     .as_deref()
                     .unwrap_or_default()
                     .split_whitespace()
-                    .map(str::to_string)
+                    .map(ticket_model::TicketId::new)
                     .collect();
-                commands::wave::cmd_repack(&root, &ids)
+                Ok(ticket_wave_lock::cmd_repack(&root, &ids)?)
             }
-            WaveLockCmd::Check => commands::wave::cmd_check(&root),
+            WaveLockCmd::Check => Ok(ticket_wave_lock::cmd_check(&root)?),
         }
     }
 }

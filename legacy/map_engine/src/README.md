@@ -93,7 +93,7 @@ engine, and `doll` is a second, small renderer for the
   fetched as `/map-assets` at run time and read by the tests.
 - Used by: the Mission Creator, the mission library and the debug benches under
   `apps/frontend/src/`; the tools in `tools/developer_tools/src/`; and the gates in
-  `tools/xtask/src/verifications/` that read this tree.
+  `tools/checks/` and `tools/commands/` that read this tree.
 - Rules:
   - the crate's tests run with `--all-features` (`map_engine_tests_require_all_features` in
     `tests/feature_gate_tripwire.rs`);

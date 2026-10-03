@@ -1,0 +1,221 @@
+//! Ordering, slice advance and removal.
+//!
+//! **Role:** [`reorder`] moves a ticket after an anchor, [`advance_slice`] moves a program's
+//! `active` to its next child, and [`remove`] deletes a ticket (a program only with `force`,
+//! with every descendant).
+//! **Position:** under the operations module; the `ticket reorder`, `ticket advance-slice` and
+//! `ticket remove` verbs call it.
+//! **Signals & state:** mutates only the corpus it is given.
+//! **Invariants:** no operation leaves a dangling `children` entry or a new duplicate live
+//! order; a program never loses its last child to a removal.
+
+use super::*;
+
+/// Remove a ticket from the corpus. A work ticket: delete its
+/// file; when its `parent` names a program in the corpus, scrub it from that
+/// program's `children[]` — refusing when the scrub would empty the list (programs
+/// require children; remove the program itself, or add another child first). A
+/// program: REFUSE unless `force`, which cascade-deletes every descendant file
+/// (closure over `children[]` edges AND work `parent` back-edges). A cascade happens only
+/// when asked for by name, never as a side effect of rewriting a `children` list.
+///
+/// Any OTHER program still listing a removed id (double listings exist: two programs
+/// listing one child) makes the post-image referential check refuse the whole
+/// op — fail-closed, naming the listing program — rather than strand a dangling
+/// `children[]` entry.
+pub fn remove(
+    c: &mut Corpus,
+    id: &TicketId,
+    force: bool,
+    now_utc: &str,
+) -> Result<OpOutcome, String> {
+    validate_clock(now_utc)?;
+    let target = c.tickets.get(id).ok_or_else(|| unknown(id))?;
+    let mut post = c.tickets.clone();
+    let mut changed: BTreeSet<TicketId> = BTreeSet::new();
+    let mut deleted: BTreeSet<TicketId> = BTreeSet::new();
+    match target {
+        Ticket::Work(w) => {
+            deleted.insert(id.clone());
+            post.remove(id);
+            if let Some(pid) = w.parent.clone()
+                && let Some(Ticket::Program(p)) = post.get_mut(pid.as_str())
+            {
+                p.children.retain(|cid| id != cid.as_str());
+                if p.children.is_empty() {
+                    return Err(format!(
+                        "removing {id} would leave program {pid} with no children — a program requires children; remove the program itself (force cascades) or add another child first"
+                    ));
+                }
+                changed.insert(TicketId::new(pid));
+            }
+        }
+        Ticket::Program(p) => {
+            if !force {
+                return Err(format!(
+                    "{id} is a program — removing it cascade-deletes every descendant file ({} children listed); pass force to do that deliberately",
+                    p.children.len()
+                ));
+            }
+            let mut queue = vec![id.clone()];
+            while let Some(current) = queue.pop() {
+                if !deleted.insert(current.clone()) {
+                    continue;
+                }
+                if let Some(Ticket::Program(cp)) = post.get(&current) {
+                    for child in &cp.children {
+                        if !deleted.contains(child.as_str()) {
+                            queue.push(TicketId::new(child.as_str()));
+                        }
+                    }
+                }
+                for (other_id, other) in &post {
+                    if deleted.contains(other_id) {
+                        continue;
+                    }
+                    if let Ticket::Work(ow) = other
+                        && ow.parent.as_deref() == Some(current.as_str())
+                    {
+                        queue.push(other_id.clone());
+                    }
+                }
+            }
+            for gone in &deleted {
+                post.remove(gone);
+            }
+        }
+    }
+    commit(c, post, changed, deleted, BTreeSet::new())
+}
+
+/// The order [`reorder`] gives a ticket anchored after `anchor_order`: the next integer.
+fn order_after(anchor_order: i64) -> i64 {
+    anchor_order + 1
+}
+
+/// The order that places a ticket after every ordered ticket in `tickets`, parents and children
+/// alike: the value [`reorder`] mints when anchored after the highest-ordered ticket. `ticket
+/// check` reads an order of 0 as absent, so the anchor floors at 0 and a corpus without a
+/// positive order yields 1.
+pub(super) fn append_order(tickets: &BTreeMap<TicketId, Ticket>) -> i64 {
+    let highest = tickets
+        .values()
+        .filter_map(|t| t.status().order())
+        .fold(0, i64::max);
+    order_after(highest)
+}
+
+/// Move `id` after `after`: the anchor must exist AND carry an order (both failure
+/// modes print the same string), the new order is `order_after` the anchor's, and an `idea`
+/// ticket flips to `queued` — every other status keeps its variant and only moves its order.
+/// A resulting duplicate LIVE order refuses at the post-image gate instead of landing red
+/// state on disk: `validate_registry` reds duplicate live orders, and every later verb's
+/// preflight would then refuse until a hand-edit.
+pub fn reorder(
+    c: &mut Corpus,
+    id: &TicketId,
+    after: &TicketId,
+    now_utc: &str,
+) -> Result<OpOutcome, String> {
+    validate_clock(now_utc)?;
+    let t = c.tickets.get(id).ok_or_else(|| unknown(id))?;
+    let anchor_order = c
+        .tickets
+        .get(after)
+        .and_then(|a| a.status().order())
+        .ok_or_else(|| format!("Unknown anchor ticket: {after}"))?;
+    let new_order = order_after(anchor_order);
+    let was_idea = matches!(t.status(), Status::Idea);
+    let new_status = match t.status().clone() {
+        Status::Idea => Status::Queued { order: new_order },
+        Status::Queued { .. } => Status::Queued { order: new_order },
+        Status::Ready {
+            spec,
+            main_goal,
+            acceptance,
+            ..
+        } => Status::Ready {
+            order: new_order,
+            spec,
+            main_goal,
+            acceptance,
+        },
+        Status::Running {
+            spec,
+            main_goal,
+            acceptance,
+            ..
+        } => Status::Running {
+            order: new_order,
+            spec,
+            main_goal,
+            acceptance,
+        },
+        Status::Review {
+            spec,
+            main_goal,
+            acceptance,
+            ..
+        } => Status::Review {
+            order: new_order,
+            spec,
+            main_goal,
+            acceptance,
+        },
+        Status::Shipped { shipped_at, .. } => Status::Shipped {
+            shipped_at,
+            order: Some(new_order),
+        },
+        Status::Deferred { .. } => Status::Deferred {
+            order: Some(new_order),
+        },
+        Status::Cancelled { .. } => Status::Cancelled {
+            order: Some(new_order),
+        },
+    };
+    let mut post = c.tickets.clone();
+    set_ticket_status(post.get_mut(id).expect("looked up above"), new_status);
+    let mut made_live = BTreeSet::new();
+    if was_idea {
+        made_live.insert(id.clone());
+    }
+    let changed = BTreeSet::from([id.clone()]);
+    commit(c, post, changed, BTreeSet::new(), made_live)
+}
+
+/// Advance a program's `active` over the typed [`ProgramTicket::children`]: no active → first
+/// child; else the next child
+/// after the current one; refuse past the end and refuse an active that is not in the
+/// list. Refusal strings come back verbatim so the command layer can pass them
+/// through.
+pub fn advance_slice(c: &mut Corpus, id: &TicketId, now_utc: &str) -> Result<OpOutcome, String> {
+    validate_clock(now_utc)?;
+    let t = c.tickets.get(id).ok_or_else(|| unknown(id))?;
+    let p = match t {
+        Ticket::Program(p) => p,
+        Ticket::Work(_) => return Err(format!("{id} has no slices[]")),
+    };
+    if p.children.is_empty() {
+        return Err(format!("{id} has no slices[]"));
+    }
+    let new_active = match &p.active {
+        None => p.children[0].clone(),
+        Some(active) => {
+            let idx = p
+                .children
+                .iter()
+                .position(|child| child == active)
+                .ok_or_else(|| format!("active_slice {active} not in slices[]"))?;
+            if idx + 1 >= p.children.len() {
+                return Err(format!("{id}: no slice after {active}"));
+            }
+            p.children[idx + 1].clone()
+        }
+    };
+    let mut post = c.tickets.clone();
+    if let Some(Ticket::Program(program)) = post.get_mut(id) {
+        program.active = Some(new_active);
+    }
+    let changed = BTreeSet::from([id.clone()]);
+    commit(c, post, changed, BTreeSet::new(), BTreeSet::new())
+}

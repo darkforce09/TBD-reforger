@@ -212,9 +212,9 @@ entries.
 
 ## Related
 
-- [Remote log verdict code](/tools/xtask/src/commands/debug/remote_logs/README.md) — the
+- [Remote log verdict code](/tools/commands/remote_debugging/src/debug/remote_logs/README.md) — the
   patterns and the four outcomes.
-- [Staging deploy code](/tools/xtask/src/commands/deploy/staging/README.md) — where the boot
+- [Staging deploy code](/tools/commands/deployment/src/staging/README.md) — where the boot
   verdict of each instance runs in the deploy.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — the spawn checks over
   Workbench logs.

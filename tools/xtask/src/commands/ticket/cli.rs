@@ -1,4 +1,5 @@
 use clap::Subcommand;
+use ticket_model::TicketId;
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum TicketCmd {
@@ -8,17 +9,17 @@ pub(crate) enum TicketCmd {
         strict: bool,
     },
     Brief {
-        id: String,
+        id: TicketId,
     },
     Prompt {
-        id: String,
+        id: TicketId,
         #[arg(long, default_value = "")]
         slice: String,
         #[arg(long)]
         header: bool,
     },
     Show {
-        id: String,
+        id: TicketId,
     },
     Next,
     List,
@@ -26,7 +27,7 @@ pub(crate) enum TicketCmd {
     PlanBatch,
     #[command(name = "sparse-paths")]
     SparsePaths {
-        id: String,
+        id: TicketId,
     },
     #[command(name = "gap-round-trip")]
     GapRoundTrip,
@@ -44,7 +45,7 @@ pub(crate) enum TicketCmd {
     /// Mint the next free dotted child under an existing parent.
     #[command(name = "add-child")]
     AddChild {
-        parent: String,
+        parent: TicketId,
         title: String,
         #[arg(long, default_value = "")]
         summary: String,
@@ -54,17 +55,17 @@ pub(crate) enum TicketCmd {
         promote: bool,
     },
     Remove {
-        id: String,
+        id: TicketId,
         /// Required to remove a program: cascade-deletes every descendant ticket file.
         #[arg(long)]
         force: bool,
     },
     Reorder {
-        id: String,
-        after: String,
+        id: TicketId,
+        after: TicketId,
     },
     Ship {
-        id: String,
+        id: TicketId,
         /// Skip the wave-lock refresh so a whole wave can be shipped and then repacked
         /// ONCE — a wave repacked per-id dissolves before any repack sees it fully landed, and
         /// never forms the pending entry `wave --close` needs. Run `cargo xtask wave repack`
@@ -80,12 +81,12 @@ pub(crate) enum TicketCmd {
     /// `ticket ship <id>` → commit → `ticket stamp-sha <id> $(git rev-parse --short HEAD)`.
     #[command(name = "stamp-sha")]
     StampSha {
-        id: String,
+        id: TicketId,
         sha: String,
     },
     #[command(name = "mark-ready")]
     MarkReady {
-        id: String,
+        id: TicketId,
         spec: Option<String>,
         /// Plan ready-gate: path to this ticket's own plan document. Defaults to the
         /// derived path under the plans directory, which must already exist — copy the
@@ -94,7 +95,7 @@ pub(crate) enum TicketCmd {
     },
     #[command(name = "advance-slice")]
     AdvanceSlice {
-        id: String,
+        id: TicketId,
     },
     #[command(name = "ready-ids")]
     ReadyIds {
@@ -105,11 +106,11 @@ pub(crate) enum TicketCmd {
     },
     #[command(name = "set-status")]
     SetStatus {
-        id: String,
+        id: TicketId,
         status: String,
     },
     Get {
-        id: String,
+        id: TicketId,
         field: Option<String>,
     },
     Config {
@@ -122,10 +123,10 @@ pub(crate) enum TicketCmd {
         stream: Option<String>,
     },
     Done {
-        id: String,
+        id: TicketId,
     },
     Clean {
-        id: String,
+        id: TicketId,
     },
     /// Report per-run receipts from the metrics tree: elapsed and token sums come from the
     /// receipt files, and a broken file is an ERROR rather than a reported zero.

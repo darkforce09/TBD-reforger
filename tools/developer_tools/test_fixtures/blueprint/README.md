@@ -96,9 +96,9 @@ moves one re-blesses the fixture or the assertion on purpose.
     sidecar and the instances, `cargo xtask map blueprint-from-voxels` the blueprint.
 - Consumers: the tests in the table;
   `compiler_fixtures_resolve_from_root_crate_and_source_directory`
-  (`tools/developer_tools/src/tests/repository_layout.rs`) and
+  (`tools/developer_tools/src/blueprint/tests/module/tests.rs`) and
   `nested_tooling_directories_resolve_repository_and_fixtures`
-  (`tools/xtask/src/tests/repository_root_tests.rs`), which check that fixtures here resolve
+  (`tools/foundation/tool_test_support/src/tests/repository_root_tests.rs`), which check that fixtures here resolve
   from nested working directories. `cargo xtask map parity-report`, `bvh-parity`,
   `instances-verify`, `rotation-pin` and `world-los` accept files of these shapes by path.
 
@@ -118,7 +118,7 @@ moves one re-blesses the fixture or the assertion on purpose.
     byte-identical to their shipped copies (`farmhouse_bvh_sidecar_parity_is_pinned`,
     `farmhouse_compound_door_parity_is_pinned`), so a re-emit re-blesses both;
   - the pipeline reproduces the blueprint golden (`farmhouse_dump_matches_golden_blueprint`);
-  - the prose rules of `tools/xtask/src/tests/tooling_prose_rules.rs` exempt this tree from the
+  - the prose rules of `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` exempt this tree from the
     ticket-id and Rust-file-name rules, since the recordings are data.
 
 ## Related documentation

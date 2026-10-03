@@ -64,12 +64,12 @@ None: Workbench runs these scripts in the editor.
   `TBD_SourceExportJson` in `Serialization/`; the engine's `NetApiHandler`, `JsonApiStruct`,
   `BaseContainerTools` and `JsonLoadContext`; the installed vanilla prefabs the checks name.
 - Used by: `TBD_SourceExportGeneration` in `Generation/`, which runs the verification; over the Net
-  API, `cargo xtask mcp wbcall` (`tools/xtask/src/commands/mcp/`). `cargo xtask verify no-crf-leak`
+  API, `cargo xtask mcp wbcall` (`tools/commands/enfusion_mcp/src/`). `cargo xtask verify no-crf-leak`
   scans this folder with the rest of the addon and reports the backpack prefab GUID the checks name
-  (`tools/xtask/src/verifications/licensing/README.md`).
+  (`tools/checks/repository_checks/src/licensing/README.md`).
 - Rules: a generation whose reader verification did not pass never publishes
   (`partial_and_unverified_exports_cannot_publish` in
-  `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`); the handler
+  `tools/commands/mod_operations/src/equipment_vehicle_export/tests/validation.rs`); the handler
   answers only while Workbench has `apps/mod/tbd-export/addon.gproj` open, the one project that
   compiles these scripts. The Unicode fixture string is the one non-ASCII literal, and it is
   deliberate.

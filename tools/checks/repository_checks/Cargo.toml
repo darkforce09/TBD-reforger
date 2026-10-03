@@ -1,0 +1,39 @@
+# The repository's structural, language, licensing and registry checks as libraries: the engine
+# layer, workspace-law, route-tag and ORBAT coherency gates, the shell, Python and Node bans with
+# the file-length gate, the upstream code-leak gate and the object registry alias gate, plus the
+# tests that hold every tool crate, found by folder, to the tooling rules. The xtask binary and its
+# task table run each check and print its verdict.
+[package]
+name = "repository_checks"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The repository's structural, language-ban, licensing and registry checks"
+
+[package.metadata.layout]
+category = "tools/checks"
+tier = 2
+targets = "any"
+
+[dependencies]
+process_runner = { workspace = true }
+regex = { workspace = true }
+repository_laws = { workspace = true }
+repository_layout = { workspace = true }
+serde_json = { workspace = true }
+syn = { workspace = true, features = ["full"] }
+thiserror = { workspace = true }
+verification_core = { workspace = true }
+
+[dev-dependencies]
+# The test checkout root.
+tool_test_support = { workspace = true }
+# Manifest parsing in the tooling dependency-boundary tests.
+toml = { workspace = true }
+# The source walk of the tooling structural tests.
+walkdir = { workspace = true }
+
+[lints]
+workspace = true

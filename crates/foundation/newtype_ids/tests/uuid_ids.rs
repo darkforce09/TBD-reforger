@@ -40,6 +40,12 @@ fn orders_as_its_uuid() {
 fn displays_and_parses_as_its_uuid() {
     let account: AccountKey = TEXT.parse().unwrap();
     assert_eq!(account.to_string(), TEXT);
+    let uuid = Uuid::parse_str(TEXT).unwrap();
+    assert_eq!(
+        format!("{account:<40}|"),
+        format!("{uuid:<40}|"),
+        "formatting options reach `Uuid`'s own `Display`"
+    );
     let upper: AccountKey = TEXT.to_uppercase().parse().unwrap();
     assert_eq!(upper, account, "parsing accepts what `Uuid` accepts");
     assert_eq!(

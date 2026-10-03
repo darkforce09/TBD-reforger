@@ -1,0 +1,102 @@
+//! `cargo xtask setup workbench`: install the Enfusion Workbench prerequisites on Linux.
+//!
+//! Symlinks the Steam Arma Reforger `addons/data` tree to `$HOME/ArmaReforger-Base/data` so
+//! Proton Workbench can browse a simple home path when "Locate base game" appears.
+//!
+//! Env:
+//! - `HOME` — required (bash `set -u`); link root is `$HOME/ArmaReforger-Base`
+//! - `STEAM_BASE` — optional override of the Steam common install dir (default under `$HOME`)
+//!
+//! Acceptance is bash/port stdout+stderr+rc on a clean tree and ≥2 broken arms.
+//! Throwaway `$HOME` / `STEAM_BASE` only — never clobber the operator's real Steam tree.
+//!
+//! Preserved oddities:
+//! - Proton path uses `$(whoami)` (real login name), not a basename of `$HOME`.
+//! - Success tip lines are byte-identical to the former script.
+
+use std::fs;
+use std::io::{self, Write};
+use std::os::unix::fs as unix_fs;
+use std::path::Path;
+
+use crate::error::{Error, Result, ResultExt};
+use process_runner::Run;
+
+/// Entry for `xtask setup workbench`.
+pub fn run() -> Result<u8> {
+    let home = std::env::var("HOME").context("HOME is unset (bash set -u would fail)")?;
+    let steam_base = std::env::var("STEAM_BASE")
+        .unwrap_or_else(|_| format!("{home}/.local/share/Steam/steamapps/common/Arma Reforger"));
+    run_with_paths(Path::new(&home), Path::new(&steam_base))
+}
+
+/// Testable entry that does not read process env for paths.
+pub fn run_with_paths(home: &Path, steam_base: &Path) -> Result<u8> {
+    let src = steam_base.join("addons/data");
+    let gproj = src.join("ArmaReforger.gproj");
+    let link_root = home.join("ArmaReforger-Base");
+
+    if !gproj.is_file() {
+        eprintln!("Base game not found at:");
+        eprintln!("  {}", gproj.display());
+        eprintln!("Install Arma Reforger via Steam first.");
+        return Ok(1);
+    }
+
+    fs::create_dir_all(&link_root).with_context(|| format!("mkdir -p {}", link_root.display()))?;
+
+    let link = link_root.join("data");
+    force_symlink(&src, &link)?;
+
+    let user = whoami_name()?;
+    println!("Symlink ready:");
+    println!("  Linux:  {}/ArmaReforger.gproj", link.display());
+    println!("  Proton: Z:\\home\\{user}\\ArmaReforger-Base\\data\\ArmaReforger.gproj");
+    println!();
+    println!(
+        "In Workbench 'Locate base game', browse to ArmaReforger.gproj at one of the paths above."
+    );
+    println!(
+        "Tip: Launch Arma Reforger (the game) once, quit, then open Workbench — auto-detect may work after that."
+    );
+
+    Ok(0)
+}
+
+/// `ln -sfn "$target" "$link"` — replace existing file/symlink at `link`.
+fn force_symlink(target: &Path, link: &Path) -> Result<()> {
+    match fs::symlink_metadata(link) {
+        Ok(meta) => {
+            if meta.file_type().is_dir() && !meta.file_type().is_symlink() {
+                fs::remove_dir_all(link).with_context(|| format!("rm -rf {}", link.display()))?;
+            } else {
+                fs::remove_file(link).with_context(|| format!("rm -f {}", link.display()))?;
+            }
+        }
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {}
+        Err(e) => {
+            return Err(e).with_context(|| format!("stat {}", link.display()));
+        }
+    }
+    unix_fs::symlink(target, link)
+        .with_context(|| format!("ln -sfn {} {}", target.display(), link.display()))?;
+    Ok(())
+}
+
+/// Match bash `$(whoami)` — login name, independent of `$HOME`.
+fn whoami_name() -> Result<String> {
+    let out = Run::new("whoami").output().context("whoami")?;
+    if out.code != 0 {
+        let mut err = io::stderr().lock();
+        let _ = err.write_all(out.stderr.as_bytes());
+        return Err(Error::Refused(format!(
+            "whoami exited exit status: {}",
+            out.code
+        )));
+    }
+    Ok(out.stdout.trim_end_matches(['\n', '\r']).to_string())
+}
+
+#[cfg(test)]
+#[path = "tests/workbench_linux_tests.rs"]
+mod tests;

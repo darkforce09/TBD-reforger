@@ -122,7 +122,7 @@ red ("CAUTION", "CRITICAL RULE").
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; `wiki_source` in
   `apps/frontend/src/foundation/test_support/pins.rs`, which joins every production file of
   the page for its guard tests; the DOM oracle's `wiki` and `wikislug` captures in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`, answered from
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`, answered from
   `GET__wiki.json`, `GET__wiki__field-manual.json` and `GET__wiki__field-manual__revisions.json`.
 - Rules: the edit, save and restore controls are gated by the `is_admin` memo over
   `has_min_role_authed`, never by the browse-mode `has_min_role`

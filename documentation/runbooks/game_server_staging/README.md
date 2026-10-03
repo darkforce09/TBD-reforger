@@ -124,14 +124,14 @@ Facts every topic relies on:
 
 ## Code
 
-- [Staging deploy](/tools/xtask/src/commands/deploy/staging/) — `cargo xtask deploy staging`:
+- [Staging deploy](/tools/commands/deployment/src/staging/) — `cargo xtask deploy staging`:
   the settings check, the fleet's instances and units, the remote payloads, the single-instance
   migration and the boot verdict per instance.
-- [Debug commands](/tools/xtask/src/commands/debug/) — `debug direct-join --instance` and the
+- [Debug commands](/tools/commands/remote_debugging/src/debug/) — `debug direct-join --instance` and the
   `mod remote-logs` verdict.
-- [Setup commands](/tools/xtask/src/commands/setup/) — `setup server-profile`,
+- [Setup commands](/tools/commands/workstation_setup/src/) — `setup server-profile`,
   `setup client-addons` and the `mod bootstrap-staging` discovery.
-- [Mod commands](/tools/xtask/src/commands/mod_ops/) — `mod bootstrap-staging`,
+- [Mod commands](/tools/commands/mod_operations/src/) — `mod bootstrap-staging`,
   `mod remote-logs`, `mod test-game-runtime-api` and `mod playtest`.
 - [Deploy files](/deploy/) — `deploy.env.example` and the systemd units.
 - [Staging fixtures host tool](/apps/api/src/bin/staging_fixtures/README.md) — the
@@ -148,9 +148,9 @@ Facts every topic relies on:
   `cargo xtask deploy website` puts there with the host tools; the mod's log lines under
   `apps/mod/tbd-framework/Scripts/Game/TBD/`.
 - Used by: `cargo xtask mod bootstrap-staging` and `cargo xtask mod dev-server`, which print this
-  README's path (`STAGING_SERVER_RUNBOOK` in `tools/xtask/src/core/repository_layout.rs`); code
+  README's path (`STAGING_SERVER_RUNBOOK` in `tools/foundation/repository_layout/src/documentation_locations.rs`); code
   comments in `TBD_Log.c`, `TBD_FrameworkManager.c`, `modpack_admin.rs` and
-  `tools/xtask/src/commands/mod_ops/playtest_server/usage_fail.rs`; the READMEs of the code
+  `tools/commands/mod_operations/src/playtest_server/usage_fail.rs`; the READMEs of the code
   folders above and of `apps/mod/`; the glossary; the fleet host agent, two-client playtest and
   staging verification docs.
 - Rules: this README keeps its path, because the xtask layout pins it; a topic file stays at or

@@ -192,7 +192,7 @@ No call reads the tokens: Tailwind compiles them into the stylesheet that Trunk 
 `apps/frontend/dist/`, and the mod compiles them into its scripts. `cargo xtask verify
 editor-orbat-coherency` pins the map's side tints to their RGBA literals; nothing checks that
 `TBD_UITheme` matches `aegis.css`. The `save-dialog-rect` editor smoke
-(`tools/developer_tools/src/browser_testing/editor_smoke_tests/save_dialog_rect.rs`) measures
+(`tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/save_dialog_rect.rs`) measures
 that a dialog first-paints where it settles, the guard for the entrance-animation rule.
 
 ## Design

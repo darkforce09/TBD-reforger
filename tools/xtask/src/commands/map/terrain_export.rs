@@ -17,7 +17,7 @@ use anyhow::{Result, bail};
 use process_runner::Run;
 use verification_core::verdict::NotRun;
 
-use developer_tools::repository_layout::map_scratch_dir;
+use repository_layout::map_scratch_dir;
 
 use repository_layout::find_repository_root;
 

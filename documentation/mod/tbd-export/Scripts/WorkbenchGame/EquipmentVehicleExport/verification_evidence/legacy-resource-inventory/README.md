@@ -15,7 +15,7 @@ documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verifi
 
 ## Code
 
-- [Validation and publication](/tools/xtask/src/commands/mod_ops/equipment_vehicle_export/) —
+- [Validation and publication](/tools/commands/mod_operations/src/equipment_vehicle_export/) —
   the commands whose acceptance checked these references.
 
 ## Boundaries

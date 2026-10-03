@@ -1,0 +1,193 @@
+# Repository relocation source
+
+The body of `cargo xtask refactor relocate`: it reads a relocation manifest, computes every move and
+every reference rewrite the manifest asks for before anything is written, verifies in memory that
+the tree the plan would leave spells no retired path or Rust prefix in a live tracked file, applies
+the plan in one pass, and verifies the checkout again afterwards.
+
+## Contents
+
+```text
+tools/commands/repository_relocation/src/
+├── file_treatment.rs     what a file may receive: live, frozen record, closed ticket, excluded
+├── lib.rs                the crate root: module header, `mod` lines and the re-exported modes
+├── manifest.rs           the manifest parser, refusing the whole manifest on any bad row
+├── manifest_chronology.rs  the stage manifests in the order they entered the history
+├── move_placement.rs     where the moves land, the rows that collide, the order the moves run in
+├── path_mapping.rs       where each path lands after the moves, and the relative-path math
+├── path_references/      the `path` row pass: repository-root spellings and relative literals
+├── plan_application.rs   the `git mv` moves and the file writes, undone byte-identically on any failure
+├── plan_summary.rs       the per-row summary a dry run and an apply print
+├── planned_tree.rs       the tree a plan would leave, read in memory for the verification
+├── prelude.rs            `dry_run`, `apply` and `verify` for glob import
+├── relocation_modes.rs   the three modes (dry run, apply, verify) and their exit codes
+├── relocation_plan.rs    the plan: checked moves, rewritten files, unresolved and ambiguous literals
+├── repository_files.rs   the tracked files, which are text, the crate each sits in, the judged tree
+├── retired_spellings.rs  the verification: no retired `from` left in a live file or scope
+├── retired_spellings/   the verification's read-once tree text and its combined spelling matcher
+├── rust_lexer.rs         a lossless Rust tokenizer telling code, literals and comments apart
+├── rust_paths/           the `rust_path` row pass: `use` trees, code paths, doc links, chains
+├── scope_history.rs      where an earlier manifest's scope lies after the later manifests' moves
+├── tests/                unit tests and whole runs on throwaway git checkouts
+├── text_edits.rs         byte-span edits, their merge and application, and the allowed spans
+└── text_tokens.rs        the `text` row pass: identifier-like tokens on word boundaries
+```
+
+## How it works
+
+```text
+manifest.rs ─rows─▶ relocation_plan.rs ─plan─▶ plan_summary.rs           (--dry-run, --apply)
+                     │ per tracked text file:   ├─▶ planned_tree.rs ─▶ retired_spellings.rs
+                     │  1. path_references/     │   (--dry-run, --apply before any write)
+                     │  2. rust_paths/ (live .rs)
+                     │  3. text_tokens.rs (live)└─▶ plan_application.rs (--apply, clean plan)
+                     └─ repository_files.rs,                │
+                        file_treatment.rs,                  ▼
+                        move_placement.rs        retired_spellings.rs
+                                                 (--verify, end of --apply)
+```
+
+`repository_files.rs` lists the index (`git ls-files -z`) and asks `git check-attr` which files
+carry a non-text attribute; a file is edited only when no attribute marks it binary, it holds no
+NUL in its first 8000 bytes, it is UTF-8 and it is not a Git LFS pointer. Binaries and pointers
+move with their folders unread.
+
+`file_treatment.rs` sorts each file before any pass runs. Live files take every rewrite. Markdown
+under the archive and the ticket documents takes link destination rewrites only; other files there,
+the `.tsv` manifests of the manifests folder (their `from` columns name retired paths on purpose),
+the manifest being run and every SQL migration (a `.sql` file directly in a `migrations` folder,
+the files `sqlx` reads and pins by checksum once applied) take none; the rest of the manifests
+folder, its README included, is live, and so is every other `.sql` file (a seed, a file in a
+subfolder of a `migrations` folder) and every other file of a `migrations` folder. A ticket record whose `status` `ticket_model` calls shipped or cancelled takes rewrites on
+its `spec`, `plan` and `owns` values only (a multi-line `owns` array through its closing line), the
+fields the ticket crates resolve against the tree and the wave lock; an open ticket is live. A
+file is treated by where it lies after the moves, with the areas moved where the manifest puts
+them, exactly as the verification treats it: a file a row moves into the archive is frozen (its
+prose keeps quoting its history), one a row moves out of it is live, and the areas are found
+whether this build of the tool names them as they lie before or after the moves.
+
+`path_mapping.rs` turns the `path` rows into one mapping that relocates a path by its longest moved
+prefix, so nested rows compose. `relocation_plan.rs` runs the three passes, each over the text the
+previous one produced, refuses the whole plan when a `from` is not tracked or a `to` exists, and
+records every literal it could not rewrite and every literal it left as written as ambiguous (a
+relative literal its spelling does not pin to one anchor; see `path_references/`). Ambiguous
+literals are printed with `path:line` for review and never stop a run. The crate folders that anchor
+`CARGO_MANIFEST_DIR`-relative literals are the tracked crate manifests plus the untracked ones on
+disk (crates being born), the same set before and after the moves, so a literal is rewritten only
+when a row moves what it names or the file holding it. After the moves a file's owning crate is
+read from the planned tree: the nearest folder holding a crate manifest once the rows have moved
+every path, so a manifest a row moves into the destination, or an untracked one already there,
+owns the files moved below it. When no folder below the repository root holds one (the root
+manifest is the workspace's and builds no package), a literal read from the crate folder is
+unresolved and the apply refuses; it is never re-anchored at the root.
+
+`move_placement.rs` proves that the mapping's tree is one `git mv` can make, and refuses the plan
+otherwise, naming both manifest lines of each conflict: two rows with the same `to`, a `to` inside
+its own `from`, two files landing on one path or a file landing where another needs a folder, and
+a file landing inside another row's `to` unless it comes from that row's `from` or from a row whose
+`to` lies strictly inside it. Folder rows that only share a destination parent, such as a folder
+that becomes `crate/src` and two folders that become `crate/src/ortho` and `crate/src/orbit`, are
+no conflict. It then orders the moves: a move runs after every move whose `to` holds its `to` (that
+one needs its `to` absent, or `git mv` would nest the folder inside it) and after every move whose
+`from` holds its `to` (that one frees the place); otherwise shallower `from` first, then manifest
+order. Rows no order satisfies, such as two folders that swap names, are refused. Last, it replays
+the moves in that order over the tracked paths and refuses, with the message the apply itself would
+stop on, a move whose source is gone or whose `to` is already occupied when it runs, such as a file
+row whose folder row has already carried the file to that `to`; so a dry run refuses whatever the
+apply would refuse.
+
+`planned_tree.rs` presents the checkout as the plan would leave it, in memory: every tracked path
+relocated, every rewritten file holding its planned text, every other file read where it lies.
+`--dry-run` prints the plan and then runs `retired_spellings.rs` over that planned tree, the same
+verification `--verify` runs after an apply, listing every finding as `path:line` at its new path;
+it exits 1 when anything is unresolved or the planned tree keeps a retired spelling. `--apply` runs
+the same two checks first and writes nothing unless both are clean; then `plan_application.rs` runs
+the moves in that order, each into a `to` it checks is absent, writes every rewritten file at its
+new path, and `retired_spellings.rs` judges the same manifest on the checkout. Every step is
+journaled; a failure at any step restores the rewritten files' original bytes, renames the moves
+back last first, removes the folders the apply created and writes back the index file copied
+before the first move, so the index and the working tree are byte-identical to before. A plan that passes
+its dry run therefore leaves a checkout that verifies clean, whatever spelling a pass missed: the
+miss shows in the dry run instead of after the apply.
+
+The verification reads the same files and the same allowed spans as the passes
+(`path_references::allowed_spans`, `file_treatment.rs`), with the frozen areas moved where the
+manifest's own moves put them, and classifies each occurrence with the same
+`path_tokens::classify_occurrence`. A spelling of a retired `from` that, read with the segments
+before it or with the escape letter glued to it, names a path that exists now is another path and
+no finding.
+
+The verification is one pass however many manifests it judges (`retired_spellings/`): the tree's
+text files are read once, every manifest's `path` spellings and `rust_path` prefix segments go into
+one Aho-Corasick automaton that scans each file once, and each hit is judged for every row that
+retires it under that row's manifest's treatment of the file and within that row's scope. A file's
+treatment is computed once per distinct set of moved frozen areas, its allowed spans once per
+treatment and only when it holds a hit, and the Rust path pass runs on a file only for a prefix
+whose every segment the file spells. Each manifest gets the verdicts, notes and offence order it
+gets judged alone; the per-row judge this replaces is kept as the oracle of
+`relocate_verify_single_pass_matches_the_per_row_judge_over_composed_manifests`.
+
+`--verify` with no manifest judges every stage manifest in the order `manifest_chronology.rs`
+reads from the history: the first commit that added each one, manifests one commit added by name,
+uncommitted ones last by name; a shallow clone is a did-not-run. A committed manifest is never
+edited, so `scope_history.rs` follows each `rust_path` row's folder or glob scope, relocated by its
+own manifest, through the `path` rows of every manifest after it: a scope a later row moved is
+judged at its new folder, a scope a later row emptied holds with a `note:` line naming that row,
+and a missing scope no later row explains is a did-not-run. `path` rows need no composition (a
+retired path stays retired) and `text` rows are not judged.
+
+## Public surface
+
+- `dry_run(root, manifest)`, `apply(root, manifest)` and `verify(root, Option<manifest>)` in
+  `relocation_modes.rs`, re-exported at the crate root and in `prelude.rs` and called by
+  `tools/xtask/src/commands/refactor/dispatch.rs`; each returns the exit code (0 clean, 1
+  findings, 2 did not run).
+- `EXAMPLE_MANIFEST` (crate-internal): the format sample's file name, never judged as a stage
+  manifest.
+
+## Boundaries
+
+- Depends on: `verification_core` (`Verdict`, `Report`, `NotRun`); `process_runner::Run` for git;
+  `aho-corasick` for the verification's combined matcher;
+  `ticket_model::StatusName` for the closed ticket statuses; the frozen-area constants in
+  `tools/foundation/repository_layout/src/documentation_locations.rs`; `git` on the path.
+- Used by: `tools/xtask/src/commands/refactor/dispatch.rs` only.
+- Rules: nothing is written before the whole plan is computed, free of unresolved items
+  (`relocate_unresolvable_literal_fails_apply_with_nothing_written`) and its planned tree verifies
+  clean (`relocate_dry_run_verifies_the_planned_tree_and_fails_on_a_hidden_leftover`); a SQL
+  migration moves byte-identical and is never judged, while every other `.sql` file is live
+  (`relocate_sql_migrations_move_byte_identical_and_are_not_verified`); a spelling that only looks
+  like a path is never rewritten: a literal of separators alone and a plain fixture path that only
+  starts with a moved folder's name stay as written
+  (`relocate_lone_separator_literals_name_no_path`,
+  `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); a literal every crate
+  spells for its own files, a fixture path relative to a temporary checkout and a path whose tail
+  names nothing stay as written in a file that leaves its crate, listed as ambiguous
+  (`relocate_crate_generic_literals_in_a_file_leaving_its_crate_stay_as_written`); each move lands
+  exactly at its `to` in any manifest order
+  (`relocate_folder_rows_sharing_a_parent_each_land_at_their_to`), colliding rows are refused with
+  both lines (`relocate_rows_that_collide_are_refused_with_both_lines`), and a failure after any
+  step leaves the index and the working tree byte-identical
+  (`relocate_failed_apply_leaves_index_and_tree_byte_identical`), and the dry run refuses a row
+  the apply would meet occupied (`relocate_dry_run_refuses_a_file_row_its_folder_row_already_lands`);
+  a crate whose manifest git does not track yet keeps its literals through an unrelated apply
+  (`relocate_crate_with_an_untracked_manifest_survives_an_unrelated_apply`); a file moved into a new
+  crate folder re-anchors its `CARGO_MANIFEST_DIR` joins at the crate manifest the same manifest
+  moves there or an untracked one on disk, and a file moved where no crate manifest lies below the
+  root leaves them unresolved
+  (`relocate_manifest_dir_joins_follow_a_crate_manifest_the_same_manifest_moves`,
+  `relocate_manifest_dir_joins_follow_an_untracked_crate_manifest_at_the_destination`,
+  `relocate_manifest_dir_joins_into_a_folder_with_no_crate_manifest_are_unresolved`); an earlier manifest's
+  scope is judged where later manifests moved it, holds when they emptied it and fails closed
+  otherwise (`relocate_verify_judges_an_earlier_scope_where_a_later_manifest_moved_it`,
+  `relocate_verify_passes_a_scope_a_later_manifest_emptied_and_fails_an_unexplained_one`); the passes
+  and the verification share `file_treatment.rs`, `path_references::allowed_spans` and
+  `path_tokens::classify_occurrence`, so they judge the same bytes the same way; tests are named
+  `relocate_*` and run on throwaway checkouts, never on this one.
+
+## Related documentation
+
+- [Relocation manifests](/documentation/restructure/manifests/README.md) — the manifest format
+  and the stage manifests.
+- [Path coupling research](/documentation/archive/restructure_research/02_path_coupling.md) —
+  every kind of path reference a move breaks.

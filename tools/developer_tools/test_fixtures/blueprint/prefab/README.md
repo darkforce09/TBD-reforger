@@ -17,7 +17,7 @@ tools/developer_tools/test_fixtures/blueprint/prefab/
 The tests reach this folder as `fixture("prefab")`, the helper in
 `tools/developer_tools/src/blueprint/tests/module/tests.rs` that joins the checkout root to
 `tools/developer_tools/test_fixtures/blueprint/`. The resolver test serves it through
-`DirSource` (`tools/developer_tools/src/enfusion_pak/loose_source.rs`), which stands in for the
+`DirSource` (`tools/enfusion/enfusion_pak/src/loose_source.rs`), which stands in for the
 game paks and matches each path component case-insensitively. The walker test copies the whole
 folder into a temporary directory, writes synthetic `.xob` models at the mesh paths the prefabs
 name, and walks the house from there, so the fixtures themselves hold no models.
@@ -39,7 +39,7 @@ name, and walks the house from there, so the fixtures themselves hold no models.
   `walker_places_door_set_window_and_furniture_from_fixtures`
   (`tools/developer_tools/src/blueprint/tests/batch_tests.rs`) and
   `compiler_fixtures_resolve_from_root_crate_and_source_directory`
-  (`tools/developer_tools/src/tests/repository_layout.rs`).
+  (`tools/developer_tools/src/blueprint/tests/module/tests.rs`).
 
 ## Boundaries
 

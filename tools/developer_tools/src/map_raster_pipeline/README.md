@@ -63,18 +63,18 @@ read back through the map engine's validating reader before they are written.
 ## Boundaries
 
 - Depends on:
-  - `crate::enfusion_pak::PakVfs` for the game's paks, and `crate::world_export_pipeline` for the
+  - `enfusion_pak::PakVfs` for the game's paks, and `crate::world_export_pipeline` for the
     texture decoder, the `.topo` road decoder and the JSON number spelling;
-  - `crate::repository_layout` (with `compiled_checkout_root` for the checkout root) and
-    `crate::timestamp_formatting`;
+  - the `repository_layout` crate (with `find_repository_root` for the checkout root),
+    `crate::map_pipeline_layout` for the decision records, and `time_source` for the stamps;
   - `world_file_formats` (`archives`, `containers`, `ids`), `terrain_elevation`, `water_bodies`,
     `road_network`, `prefab_catalog::world_payload` and `place_names`, which fix every binary
     format and the peak rules;
   - the `image`, `png`, `image-webp`, `webp` and `resvg` crates.
 - Used by: `tools/developer_tools/src/bin/map.rs`; the `map-water-everon`,
   `map-cartographic-everon` and `map-cartographic-verify` tasks in
-  `tools/xtask/src/commands/ci/task_definitions.rs`, run as `cargo xtask ci <task>`; the hint in
-  `tools/xtask/src/verifications/schemas/checks/map_glyphs.rs` that names `build-glyph-atlas`;
+  `tools/commands/ci_task_catalog/src/task_definitions.rs`, run as `cargo xtask ci <task>`; the hint in
+  `tools/commands/schema_tooling/src/schema_checks/map_glyphs.rs` that names `build-glyph-atlas`;
   and people, for the other subcommands.
 - Rules: no empty write over a committed asset (`refuse_empty_write_reds_on_empty` in
   `tests/module/refuse_empty_tests.rs`); the archive emitters give the same bytes for the same
@@ -87,7 +87,7 @@ read back through the map engine's validating reader before they are written.
 - [Everon terrain assets](/assets/terrains/everon/README.md) — the committed files these lanes
   write.
 - [Glyph assets](/assets/glyphs/README.md) — the glyph sources and the atlas.
-- [CI command group](/tools/xtask/src/commands/ci/README.md) — the map tasks that run this
+- [CI command group](/tools/commands/ci_task_catalog/src/README.md) — the map tasks that run this
   pipeline.
 - [Map raster pipeline](/documentation/tools/developer_tools/map_raster_pipeline.md) — the
   satellite, Map view, label, water and glyph lanes in depth, with their rules and open work.

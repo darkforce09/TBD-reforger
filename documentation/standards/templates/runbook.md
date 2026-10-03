@@ -60,8 +60,8 @@ a step. A runbook never writes a host address (the deploy host is `TBD_SSH_HOST`
 
 ## Worked sample
 
-Written from the xtask database and build commands (`tools/xtask/src/commands/db/operations.rs`,
-`tools/xtask/src/commands/build/recipes/shell_word.rs`), the API's boot and health probe, and a
+Written from the xtask database and build commands (`tools/commands/database_operations/src/local_database.rs`,
+`tools/commands/ci_task_catalog/src/build_lane/recipes/shell_word.rs`), the API's boot and health probe, and a
 safe `cargo xtask db --help` run; the `Expected:` lines of the compose steps are quoted from the
 code that prints them. The sample sits in a fenced block, so no gate reads its links.
 

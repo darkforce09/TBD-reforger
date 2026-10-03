@@ -64,7 +64,7 @@ reads it yet.
   (`tools/developer_tools/src/world_export_pipeline/`), the map raster pipeline, which also
   builds the glyph atlas (`tools/developer_tools/src/map_raster_pipeline/`), and the blueprint
   compiler (`tools/developer_tools/src/blueprint/`), which resolve these paths through
-  `tools/developer_tools/src/repository_layout.rs`. The glyph SVG sources are hand-authored.
+  `tools/foundation/repository_layout/src/map_assets.rs`. The glyph SVG sources are hand-authored.
 - Consumers:
   - the API's `/map-assets` and `/map-assets/glyphs` mounts, in
     `apps/api/src/core/http_router.rs`;

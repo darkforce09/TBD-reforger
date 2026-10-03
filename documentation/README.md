@@ -123,7 +123,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
   [documentation standards](/documentation/standards/documentation_standards.md) and the
   [templates](/documentation/standards/templates/README.md) that shape it.
 - Used by: the code READMEs, comments and `CLAUDE.md`, which link its documents;
-  `cargo xtask ticket sync` (`tools/ticket_engine/`), which updates the Mission Creator roadmap
+  `cargo xtask ticket sync` (`tools/tickets/ticket_registry/`), which updates the Mission Creator roadmap
   between markers and runs its ticket-column writer over the Eden gap analysis, which finds no
   table to rewrite there; ticketboard, which opens each ticket's spec and plan
   from `tickets/`; `cargo run -q -p developer_tools --bin enf -- citations`, which checks every

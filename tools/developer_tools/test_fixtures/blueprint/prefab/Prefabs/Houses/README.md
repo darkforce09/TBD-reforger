@@ -40,7 +40,7 @@ tools/developer_tools/test_fixtures/blueprint/prefab/Prefabs/Houses/
     instance, and validates the result against
     `contracts/definitions/building-instances.schema.json`;
   - `compiler_fixtures_resolve_from_root_crate_and_source_directory` in
-    `tools/developer_tools/src/tests/repository_layout.rs` checks that `House_Wood.et` resolves
+    `tools/developer_tools/src/blueprint/tests/module/tests.rs` checks that `House_Wood.et` resolves
     from the checkout root, the crate and the blueprint source folder.
 
 ## Boundaries

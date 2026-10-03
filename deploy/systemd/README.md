@@ -65,7 +65,7 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
 - `tbd-website-backup.service`: runs `cargo run -q -p xtask -- deploy db backup` from the checkout
   with `TBD_BACKUP_KEEP=14` (dumps kept, by count), `TBD_BACKUP_DB=tbd_reforger`,
   `TBD_BACKUP_DIR=%h/tbd-backups/website` and `TBD_DB_CONTAINER=tbd_reforger_db`, read by
-  `tools/xtask/src/commands/deploy/database_backup.rs`; oneshot, no restart, 30-minute limit,
+  `tools/commands/database_operations/src/backup.rs`; oneshot, no restart, 30-minute limit,
   umask 0077.
 - `tbd-website-backup-drill.service`: runs `cargo run -q -p xtask -- deploy db drill` with the same
   database, folder and container, and `TBD_DRILL_DB=tbd_drill_probe`, a scratch name inside the
@@ -78,7 +78,7 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
 
 - `tbd-reforger@.service`, `fleet_host_agent@.service` and `acknowledgement-dropping-relay@.service`:
   `cargo xtask deploy staging` embeds the three files at build time
-  (`tools/xtask/src/commands/deploy/staging/fleet_units.rs`), writes them to
+  (`tools/commands/deployment/src/staging/fleet_units.rs`), writes them to
   `~/.config/systemd/user/` on the game host, enables and restarts `tbd-reforger@N` for every
   instance, the relay unit for the relay instance and `fleet_host_agent@N` for every instance, each
   agent with its `~/.config/fleet_host_agent/instance-N/agent.toml`, and disables and stops the
@@ -89,7 +89,7 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
 - `tbd-website-api.service`: installed by hand once, by replacing `TBD_REPO_DIR_PLACEHOLDER` with
   `TBD_REMOTE_DIR` minus its leading slash and writing the result to
   `~/.config/systemd/user/`; when the restart fails, `cargo xtask deploy website` prints that exact
-  command (`install_command` in `tools/xtask/src/commands/deploy/website/systemd_unit.rs`). Each
+  command (`install_command` in `tools/commands/deployment/src/website/systemd_unit.rs`). Each
   deploy then runs `systemctl --user restart` on it, or on `TBD_WEBSITE_SYSTEMD_UNIT`.
 - `tbd-website-backup.service` and `.timer`, `tbd-website-backup-drill.service` and `.timer`:
   installed by hand as each service file's header shows (substitute the placeholder with its
@@ -104,7 +104,7 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
   `apps/fleet_host_agent/` and `tools/developer_tools/`; the `deploy db backup` and `deploy db drill` commands; the
   `tbd_reforger_db` Postgres container.
 - Used by: `cargo xtask deploy website` and `cargo xtask deploy staging` (through
-  `SYSTEMD_UNITS_DIR` and `WEBSITE_API_UNIT` in `tools/xtask/src/core/repository_layout.rs`, and
+  `SYSTEMD_UNITS_DIR` and `WEBSITE_API_UNIT` in `tools/foundation/repository_layout/src/deployment.rs`, and
   the `include_str!` of the three fleet templates); each fleet host agent, which restarts its
   instance's `tbd-reforger@N.service` by name.
 - Rules: the repository placeholder keeps its leading slash, so the templates verify as they stand;
@@ -112,7 +112,7 @@ tbd-website-backup*.{service,timer} ── sed and cp by hand ──▶ timers r
   the API unit's `.env` stays on the host and is never rsynced; the template it is copied from,
   `apps/api/.env.example`, sets none of the variables the API unit pins
   (`the_env_template_sets_none_of_the_variables_the_unit_pins` in
-  `tools/xtask/src/commands/deploy/tests/website/tests.rs`).
+  `tools/commands/deployment/src/tests/website/tests.rs`).
 
 ## Related documentation
 

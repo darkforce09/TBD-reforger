@@ -2,8 +2,8 @@ use prefab_catalog::prefab_rows::prefab_map_key;
 use world_chunks::terrain_manifest::parse_manifest_binary;
 
 use super::*;
-use crate::repository_layout::compiled_checkout_root;
-use crate::repository_layout::terrain_dir;
+use ::repository_layout::find_repository_root;
+use ::repository_layout::terrain_dir;
 
 /// The committed everon export: 1623 prefabs, 36 land-cover regions, 1,216,066 instances.
 /// (`map_engine`'s census pin says the same three numbers.) Re-pin
@@ -14,10 +14,7 @@ const EVERON_REGIONS: usize = 36;
 const EVERON_INSTANCES: u64 = 1_216_066;
 
 fn everon_dir() -> PathBuf {
-    terrain_dir(
-        &compiled_checkout_root().expect("repository root"),
-        "everon",
-    )
+    terrain_dir(&find_repository_root().expect("repository root"), "everon")
 }
 
 fn tmp_dir(tag: &str) -> PathBuf {

@@ -27,9 +27,10 @@
 //! # Three files, two of them versioned
 //!
 //! `prefabs.rkyv` and `forest-regions.rkyv` carry `schema_version`. `type-inventory.rkyv` does
-//! not — `TypeInventory` has no such field (`map_engine`'s `io::archives`), so the standalone census is
-//! the *convenience* copy and the one inside `PrefabCatalogArchive` is the checked one. Both are
-//! written from a single value here, and `standalone_census_matches_the_catalogue` pins that.
+//! not — `TypeInventory` has no such field (`world_file_formats::archives::prefabs`), so the
+//! standalone census is the *convenience* copy and the one inside `PrefabCatalogArchive` is the
+//! checked one. Both are written from a single value here, and
+//! `standalone_census_matches_the_catalogue` pins that.
 
 use std::path::{Path, PathBuf};
 

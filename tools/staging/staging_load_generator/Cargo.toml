@@ -1,0 +1,38 @@
+# The staging member load: open-loop virtual clients spread over several source addresses, each
+# rotating through its own accounts, measured over a fixed window, and the `staging-load`
+# executable's command line (a plan as JSON in, the report as JSON out). tokio drives the clients
+# and reqwest sends their requests, which is why the engine runs in its own process and stays out
+# of xtask's dependency closure. `thiserror` carries its errors.
+[package]
+name = "staging_load_generator"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The staging member load generator and the staging-load executable's command line"
+
+[package.metadata.layout]
+category = "tools/staging"
+tier = 2
+targets = "any"
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+reqwest = { workspace = true, features = ["json", "charset"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+staging_load_plan = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time"] }
+
+[dev-dependencies]
+# The stub API the run tests drive the clients against.
+axum = { workspace = true }
+futures = { workspace = true }
+# The sample workloads, templates and fixture events.
+staging_load_plan = { workspace = true, features = ["test_fixtures"] }
+tokio = { workspace = true, features = ["macros", "net"] }
+
+[lints]
+workspace = true

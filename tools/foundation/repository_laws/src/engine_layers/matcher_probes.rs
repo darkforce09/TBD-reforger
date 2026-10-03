@@ -192,7 +192,7 @@ pub(super) fn probe_matchers(o: &mut Vec<String>) -> Result<BoundaryPatterns, (u
             "/// this app touches — through the map engine, never by depending on \
              `graphics_engine`",
             "use map_engine::frame::EngineHandle;",
-            "use crate::v2::apps::editor::input::tools::ruler_tool::install_seam;",
+            "use crate::workspaces::editor::input::tools::ruler_tool::install_seam;",
         ],
     )?;
 

@@ -43,7 +43,7 @@ value. Everything the formatters write passes it.
 | map engine `streaming/host/viewport.rs`, `world_loader/ingest.rs` `Date.now()` | `BrowserClock.now_unix_ms_f64()` | identical values |
 | map engine CRDT undo-group `RealClock`, `ManualClock`, injected wasm clock | `PlatformClock`, `ManualClock`, `BrowserClock` | the `yrs::sync::Clock` adapter keeps the old floor of 1 ms |
 | developer tools `iso_from_system_time` | `iso_from_system_time` | byte-identical |
-| ticket engine `now_utc_rfc3339`, `validate_rfc3339_utc` | the same names | byte-identical output; `Error` replaces `String`, with the same text |
+| ticket tools `now_utc_rfc3339`, `validate_rfc3339_utc` | the same names | byte-identical output; `Error` replaces `String`, with the same text |
 
 ## Getting started
 
@@ -71,9 +71,10 @@ No features and no environment variables. The browser crates are dependencies on
 
 - Depends on: `thiserror`, `time` (parsing); on `wasm32`, `js-sys` and `web-sys` (`Window`,
   `Performance`).
-- Used by: nothing yet. It replaces the map engine's five clock readings, the developer tools'
-  millisecond formatter and the ticket engine's timestamp rule.
-- Rules: the ticket engine's accept and reject cases hold (`accepts_canonical_utc`,
+- Used by: `developer_tools`, `xtask`, `ticket_model`, `ticket_metrics`, `ticket_registry` and
+  `ticketboard`. It replaces the map engine's five clock readings, the developer tools'
+  millisecond formatter and the ticket tools' timestamp rule.
+- Rules: the ticket tools' accept and reject cases hold (`accepts_canonical_utc`,
   `rejects_malformed_and_non_utc`); the whole-second form matches the `time` crate's RFC 3339
   output (`the_whole_second_form_matches_the_time_crate`); the crate firewall admits browser
   crates here only from the `wasm32` target table (`cargo xtask verify crate-tiers`).

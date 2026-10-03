@@ -86,7 +86,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use crate::blueprint::ingest::find_profile_subdirs;
-use crate::repository_layout::{definition_path, terrain_dir};
+use ::repository_layout::{definition_path, terrain_dir};
 use emit::BandProducts;
 use params::Params;
 use walls::Algo;

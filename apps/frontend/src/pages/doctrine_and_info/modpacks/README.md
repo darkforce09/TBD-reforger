@@ -87,7 +87,7 @@ and a create selects the new pack. Sizes print through `format_download_size` of
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; `modpacks_source` in
   `apps/frontend/src/foundation/test_support/pins.rs`, which joins the seven source files for
   the page's test; the DOM oracle's `modpacks` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the write controls are gated by the `is_admin` memo over `has_min_role_authed`, never by
   the browse-mode `has_min_role` (`admin_affordance_uses_authed_reactive_role` in
   `tests/modpacks.rs`); both panes read the one fetched list; the make-current button never shows

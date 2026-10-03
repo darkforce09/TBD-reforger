@@ -1,5 +1,5 @@
 use super::*;
-use crate::repository_layout::map_scratch_dir;
+use ::repository_layout::map_scratch_dir;
 
 /// Enumerate Everon SAP supertexture cells → `assets/scratch/<terrain>/sap/cell-catalog.json`
 /// (fast index; the
@@ -8,13 +8,13 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
     use super::super::enfusion_texture_decoder::{
         CELL_COUNT, CELL_M, CELL_PX, GRID, WORLD_M, cell_grid, cell_path,
     };
-    use crate::enfusion_pak::PakVfs;
+    use enfusion_pak::PakVfs;
     if terrain != "everon" {
         // E2c-allow: the SAP lane is Eden-only this slice (matches the .mjs guard)
         eprintln!("only everon supported this slice (got {terrain})"); // E2c-allow
         return Ok(1);
     }
-    let out_dir = map_scratch_dir(&compiled_checkout_root()?, "everon").join("sap"); // E2c-allow
+    let out_dir = map_scratch_dir(&find_repository_root()?, "everon").join("sap"); // E2c-allow
     let vfs = PakVfs::open_default()?;
     let cells = super::super::enfusion_texture_decoder::list_eden_cells(&vfs);
     if cells.len() as u32 != CELL_COUNT {

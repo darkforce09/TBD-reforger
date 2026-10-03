@@ -34,7 +34,7 @@ use std::rc::Rc;
 
 use anyhow::{Context, Result, bail};
 
-use crate::enfusion_pak::AssetSource;
+use enfusion_pak::AssetSource;
 
 /// One parsed `{ … }` node.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -382,7 +382,7 @@ impl<'a> PrefabResolver<'a> {
         path: &str,
         visiting: &mut HashSet<String>,
     ) -> Result<Rc<ResolvedPrefab>> {
-        let key = crate::enfusion_pak::normalize_path(path);
+        let key = enfusion_pak::normalize_path(path);
         if let Some(r) = self.cache.get(&key) {
             return Ok(r.clone());
         }

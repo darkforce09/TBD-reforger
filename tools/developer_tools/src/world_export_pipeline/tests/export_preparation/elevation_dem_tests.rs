@@ -5,7 +5,7 @@ use terrain_elevation::raw::RawDem;
 use world_file_formats::containers::header::HEADER_BYTES;
 
 use super::*;
-use crate::repository_layout::{terrain_dir, terrain_manifest_path};
+use ::repository_layout::{terrain_dir, terrain_manifest_path};
 
 /// A distinct, non-square grid: a width/height swap anywhere in the emit or the read is a
 /// different file, and both `u16` endpoints are present.
@@ -181,7 +181,7 @@ fn elevation_dem_falls_back_to_the_v4_range_when_meta_omits_it() {
 fn everon_elevation_dem_matches_the_shipped_png() {
     use terrain_elevation::sampling::uint16_to_meters;
 
-    let root = compiled_checkout_root().expect("repository root");
+    let root = find_repository_root().expect("repository root");
     let png = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png");
     // An LFS pointer is ~133 B; the real 6400x6400 16-bit PNG is 71.9 MB. Anything in between
     // is neither, and is worth failing on rather than skipping past.

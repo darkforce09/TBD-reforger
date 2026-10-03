@@ -15,8 +15,8 @@ use terrain_elevation::manifest::DemManifest;
 use terrain_elevation::png::decode_png_to_meters;
 use terrain_elevation::sampling::sample_elevation_from_meters_cache;
 
-use crate::repository_layout::compiled_checkout_root;
 use crate::world_export_pipeline::json_number_formatting::{js_math_round, js_num};
+use ::repository_layout::find_repository_root;
 
 /* ─────────────────────────── locations export ─────────────────────────── */
 

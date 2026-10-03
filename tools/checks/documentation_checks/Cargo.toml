@@ -1,0 +1,33 @@
+# The documentation gates as a library: README coverage with its Contents check, Markdown placement
+# with its size limit, and the link check with its backticked-path and command-citation rules. Each
+# gate lists the checkout through git, judges it and prints its verdicts; the xtask binary's verify
+# verbs and its ci task table run them and hand the link check xtask's command vocabulary as data.
+[package]
+name = "documentation_checks"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The documentation gates: README coverage, Markdown placement and the link check"
+
+[package.metadata.layout]
+category = "tools/checks"
+tier = 2
+targets = "any"
+
+[dependencies]
+clap = { workspace = true }
+process_runner = { workspace = true }
+regex = { workspace = true }
+repository_layout = { workspace = true }
+verification_core = { workspace = true }
+
+[dev-dependencies]
+# The derived value enum of the command-citation tests' own command tree.
+clap = { workspace = true, features = ["derive"] }
+# The test checkout root.
+tool_test_support = { workspace = true }
+
+[lints]
+workspace = true

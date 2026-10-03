@@ -219,7 +219,7 @@ doing nothing; the pool settings stay outside `Config` because the binary hands 
 `cargo xtask verify api-readiness` binds its evidence to the configuration: its fingerprint
 covers the three `.env` files, `deploy/deploy.env` and a fixed list of these
 variables, without printing any value
-(`tools/xtask/src/verifications/api_readiness/fingerprint.rs`).
+(`tools/commands/api_readiness_checks/src/fingerprint.rs`).
 
 ## Open work
 

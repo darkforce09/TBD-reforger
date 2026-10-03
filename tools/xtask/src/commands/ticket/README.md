@@ -3,7 +3,7 @@
 The `cargo xtask ticket` group and the top-level `cargo xtask registry-get`: every read and write
 of the [ticket](/documentation/glossary/n_to_z.md#ticket) registry, the TOML files under
 `.ai/tickets/`. Agents, the command center, the ticketboard and people run them; the storage,
-validation, sync and shipping logic lives in the `ticket_engine` crate, and this folder adds the
+validation, sync and shipping logic lives in the ticket crates in `tools/tickets/`, and this folder adds the
 side effects that need xtask: running an agent and deleting worktrees and branches.
 
 ## Contents
@@ -11,18 +11,19 @@ side effects that need xtask: running an agent and deleting worktrees and branch
 ```text
 tools/xtask/src/commands/ticket/
 ├── cli.rs        the `TicketCmd` clap enum: twenty-seven subcommands and their flags
-├── dispatch.rs   loads the registry and calls the ticket_engine command for each subcommand
+├── dispatch.rs   loads the registry and calls the ticket_registry command for each subcommand
 ├── execution.rs  `clean`, `done` and `run`: worktree and branch removal, and slice runs through the agent
-├── mod.rs        the module tree; re-exports the ticket_engine commands and `load_registry`
+├── mod.rs        the module tree; re-exports the ticket_registry commands and `load_registry`
 └── tests/        unit tests for the cleanup of an unregistered worktree and cleanup before a refused ship
 ```
 
 ## How it works
 
 `tools/xtask/src/cli/mod.rs` mounts `TicketCmd` as the `ticket` group. `dispatch::run` finds
-the checkout root, loads the registry with `ticket_engine::registry::load_registry` (every verb
+the checkout root, loads the registry with `ticket_registry::load_registry` (every verb
 but `stamp-sha`, `gap-round-trip`, `metrics` and `scope-histogram`, which read the files
-themselves), calls one `cmd_*` function of `ticket_engine::cli`, `sync`, `validation` or `metrics`,
+themselves), calls one `cmd_*` function of `ticket_registry::verbs`, `sync` or `validation`, or
+`ticket_metrics::cmd_metrics`,
 and returns 0. `registry-get` is dispatched in `tools/xtask/src/cli/dispatch.rs` and uses the
 same `load_registry`.
 
@@ -40,7 +41,7 @@ then writes the ticket files, reloads the registry and refreshes the derived fil
 ticket's worktree, `TBD-<id>` under the configured `worktree_base` (`git worktree remove --force`,
 then a plain delete), and deletes its branch, `ticket/<id>` unless the ticket names another; it
 never creates a branch. `done` runs `clean` and then `ship`. `run` hands each ready ticket to
-`slice_execution::run_slice` in `tools/xtask/src/commands/platform/`.
+`slice_execution::run_slice` in `tools/commands/platform_execution/src/`.
 
 ## Commands
 
@@ -118,22 +119,23 @@ other error (`xtask: <cause>`); 2 a clap usage error.
 
 ## Boundaries
 
-- Depends on: `ticket_engine` (`cli`, `registry`, `sync`, `validation`, `metrics`);
-  `crate::core::repository_root`; `crate::commands::platform::slice_execution` for `run`; `git`
+- Depends on: `ticket_registry` (`verbs`, `registry`, `sync`, `validation`); `ticket_metrics`
+  (`cmd_metrics`); `ticket_model` (`TicketId`);
+  `tool_test_support`; `crate::commands::platform::slice_execution` for `run`; `git`
   for `clean`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, and `tools/xtask/src/main.rs`, which imports
     `load_registry`;
-  - `tools/xtask/src/commands/platform/dispatch.rs`, which loads the registry for
+  - `tools/commands/platform_execution/src/platform_dispatch.rs`, which loads the registry for
     `platform slice-run`;
   - the platform preflight and wave gate and the mod wave gate, which run `ticket check`;
   - the `language-gates` job of `.github/workflows/ci.yml` (`ticket check --strict`);
   - the ticketboard (`apps/ticketboard/`), whose every change is a `cargo xtask ticket` command;
     agents, the command center and people.
 - Rules:
-  - Ticket storage, validation, sync and wave packing stay in `ticket_engine`; `mod.rs` must
-    delegate to it (`ticket_implementations_have_one_owner` in
-    `tools/xtask/src/tests/tooling_dependency_boundaries.rs`).
+  - Ticket storage, validation, sync and wave packing stay in the ticket crates; `mod.rs` must
+    delegate to `ticket_registry` (`ticket_implementations_have_one_owner` in
+    `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`).
   - `clean` removes a worktree even when git does not know it
     (`cleanup_removes_an_unregistered_worktree_directory` in `tests/execution_tests.rs`), and
     `done` cleans before a ship that is refused (`done_cleans_before_a_shipping_refusal`).

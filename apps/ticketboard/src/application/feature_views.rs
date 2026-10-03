@@ -1,8 +1,17 @@
 use super::*;
-use crate::execution_metrics::{models::MetricsView, ui as metrics_ui};
-use crate::repository_status::{models::view::StatusView, ui as status_ui};
-use crate::ticket_browser::{models::view::BrowserView, ui as browser_ui};
-use crate::wave_plan::{models::view::WavePlanView, ui as wave_ui};
+use {
+    crate::execution_metrics::ui as metrics_ui,
+    ticketboard_model::execution_metrics::models::MetricsView,
+};
+use {
+    crate::repository_status::ui as status_ui,
+    ticketboard_model::repository_status::models::view::StatusView,
+};
+use {
+    crate::ticket_browser::ui as browser_ui,
+    ticketboard_model::ticket_browser::models::view::BrowserView,
+};
+use {crate::wave_plan::ui as wave_ui, ticketboard_model::wave_plan::models::view::WavePlanView};
 
 fn browser_view(b: &WorkspaceState) -> BrowserView<'_> {
     BrowserView {
@@ -14,7 +23,7 @@ fn browser_view(b: &WorkspaceState) -> BrowserView<'_> {
         compare: b.compare,
         tree: &b.tree,
         tree_flat: &b.tree_flat,
-        legacy_expanded: b.legacy_expanded,
+        quarantine_expanded: b.quarantine_expanded,
         estimates: &b.estimates,
     }
 }

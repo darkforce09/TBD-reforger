@@ -1,15 +1,13 @@
-//! Executable ownership, documentation, and file-size rules for the ticket board.
+//! Executable ownership, documentation, and file-size rules for the ticket board's egui half.
 
-#[path = "source_inspection.rs"]
-mod source_inspection;
-
-use source_inspection::{dependencies, is_test, resolve_path, rust_sources, tokens};
 use std::path::{Path, PathBuf};
+use ticketboard_model::test_support::source_inspection::{
+    dependencies, is_test, resolve_path, rust_sources, tokens,
+};
 
 const MODULES: &[&str] = &[
     "application",
     "core",
-    "ticket_registry",
     "ticket_browser",
     "ticket_actions",
     "wave_plan",
@@ -66,6 +64,20 @@ fn module_roots_and_documentation_describe_the_entire_source_tree() {
             module.join("mod.rs").is_file(),
             "missing module root: {name}"
         );
+        if *name == "application" {
+            continue;
+        }
+        // A feature keeps only its views here; its models, services and events live in
+        // `ticketboard_model`.
+        for entry in std::fs::read_dir(&module).unwrap() {
+            let path = entry.unwrap().path();
+            let child = path.file_name().unwrap().to_str().unwrap();
+            assert!(
+                matches!(child, "mod.rs" | "README.md" | "ui"),
+                "headless code belongs in ticketboard_model: {}",
+                path.display()
+            );
+        }
     }
 }
 
@@ -98,32 +110,20 @@ fn dependency_boundaries_and_external_test_placement_are_enforced() {
                 relative.display()
             ));
         }
-        let pure = relative
-            .components()
-            .any(|part| matches!(part.as_os_str().to_str(), Some("models" | "services")))
-            || (feature == "execution_metrics"
-                && relative.components().nth(1).is_some_and(|part| {
-                    matches!(part.as_os_str().to_str(), Some("measured" | "estimated"))
-                }));
-        if pure
-            && code.iter().any(|token| {
-                ["egui", "eframe", "egui_extras", "egui_commonmark"].contains(&token.as_str())
-            })
-        {
-            failures.push(format!(
-                "{}: model/service code depends on rendering",
-                relative.display()
-            ));
-        }
         for dependency in dependencies(&code) {
             let dependency = resolve_path(relative, &dependency);
             let Some(target) = dependency.first().map(String::as_str) else {
                 continue;
             };
             let violation = if feature == "core"
-                && ((MODULES.contains(&target) && target != "core") || target == "ticket_engine")
+                && ((MODULES.contains(&target) && target != "core") || target == "ticket_model")
             {
                 Some("core depends on a feature or ticket domain")
+            } else if target == "ticketboard_model"
+                && dependency.get(1).map(String::as_str) == Some("application_state")
+                && feature != "application"
+            {
+                Some("feature depends on application state")
             } else if MODULES.contains(&feature)
                 && feature != "application"
                 && target == "application"
@@ -136,11 +136,6 @@ fn dependency_boundaries_and_external_test_placement_are_enforced() {
             {
                 // Shared core widgets are the one rendering dependency features may reuse.
                 (target != "core").then_some("feature imports another feature's UI")
-            } else if feature == "ticket_registry"
-                && MODULES.contains(&target)
-                && !["ticket_registry", "core"].contains(&target)
-            {
-                Some("registry depends on a consuming feature")
             } else {
                 None
             };
@@ -154,33 +149,4 @@ fn dependency_boundaries_and_external_test_placement_are_enforced() {
         }
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
-}
-
-#[test]
-fn source_inspection_handles_grouped_imports_aliases_and_ignored_prose() {
-    let source = r###"
-        // use crate::application::State;
-        /* outer /* use crate::application; */ comment */
-        const NOTE: &str = r#"use crate::application;"#;
-        use crate::{ticket_browser::{models::View, ui as forbidden_ui}, core::process};
-        use super::super::services::load;
-        fn action() { crate::document_viewer::models::State::Closed; }
-    "###;
-    let code = tokens(source);
-    let paths = dependencies(&code);
-    assert!(!paths.iter().flatten().any(|part| part == "application"));
-    assert!(paths.contains(&vec!["crate".into(), "ticket_browser".into(), "ui".into()]));
-    assert!(paths.contains(&vec!["crate".into(), "core".into(), "process".into()]));
-    assert_eq!(
-        resolve_path(
-            Path::new("ticket_browser/ui/cards.rs"),
-            &[
-                "super".into(),
-                "super".into(),
-                "services".into(),
-                "load".into()
-            ]
-        ),
-        ["ticket_browser", "services", "load"]
-    );
 }

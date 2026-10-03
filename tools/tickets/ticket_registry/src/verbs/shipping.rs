@@ -1,0 +1,224 @@
+//! `ticket ship`, `ticket done` and `ticket stamp-sha`.
+//!
+//! **Role:** ships one ticket (with or without the wave lock refresh), and stamps a shipped
+//! ticket's landing SHA, generating its token estimate when it has no receipt.
+//! **Position:** called by the xtask `ticket` command group and the platform wave driver's batch
+//! ship; uses `crate::ops`, `ticket_metrics` and `ticket_wave_lock`.
+//! **Signals & state:** none; writes ticket files, the sync outputs, estimate files and the wave
+//! lock, and prints the result.
+//! **Invariants:** `ship` runs the check preflight (the batch form waives only repack-fixable
+//! lock findings); `stamp-sha` runs no preflight, no sync and no repack, and proves the wave
+//! lock bytes are unchanged.
+
+use crate::verbs::*;
+
+use ticket_model::commit_subjects::{SubjectCommit, mine_subjects};
+
+/// Ship `id` and refresh the wave lock: [`cmd_ship_opt`] with `refresh` set.
+///
+/// # Errors
+/// As [`cmd_ship_opt`].
+pub fn cmd_ship(root: &Path, registry: &mut Value, id: &TicketId) -> Result<()> {
+    cmd_ship_opt(root, registry, id, true)
+}
+
+/// `ship` with the wave.lock refresh made optional — the BATCH SHIP.
+///
+/// WHY A WAVE COULD NOT EMPTY. `wave --close` can only close a pending `[[emptied]]` entry, and
+/// `wave_lock::carry_emptied` freezes one only when a repack sees a wave whose EVERY ticket has
+/// landed. But this verb repacks after each id, and the repack re-packs from scratch: the id just
+/// shipped moves to wave 0 and the wave it came from is a different, smaller wave by the time the
+/// next ship runs. A wave shipped one ticket at a time therefore dissolves an id at a time and no
+/// repack ever sees the whole set landed: three ships, three repacks, zero pending entries, and
+/// an unclosable wave.
+///
+/// So the command center ships the wave's ids with `--no-repack` and repacks ONCE at the end:
+/// that repack sees all of them shipped together and freezes the full set. The lock is still
+/// refreshed before anything is committed (the lifecycle invariant) — only the point at
+/// which it happens moves, from per-id to per-wave.
+///
+/// `refresh: true` is the single-ship path.
+///
+/// # Errors
+/// When the ticket is unknown, the preflight is red, the operation refuses (missing
+/// `created_at` or ready-tier body), or a write fails.
+pub fn cmd_ship_opt(root: &Path, registry: &mut Value, id: &TicketId, refresh: bool) -> Result<()> {
+    // Membership first (`require_ticket` before check), but against the
+    // full typed corpus so dotted child ids resolve.
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        return Err(unknown_ticket(id));
+    }
+    // Refuse to mark shipped when the registry fails ticket check
+    // (including Draft 2020-12 .ai/tickets/schema.json). Check runs first so a
+    // red registry never gets a status write + sync.
+    if refresh {
+        require_check_ok(root, registry, &format!("ship {id}"))?;
+    } else {
+        // The batch window leaves the lock stale on purpose; waive only the errors whose
+        // own text names a repack as the fix (see `require_check_ok_deferring_repack`).
+        crate::validation::require_check_ok_deferring_repack(
+            root,
+            registry,
+            &format!("ship {id}"),
+        )?;
+    }
+
+    // Typed op: status→shipped preserving shipped_at and any existing order, minting the
+    // append order for an order-less parent, stamping completed_at in the same mutation
+    // (ship never invents the SHA; `ticket stamp-sha` writes `shipped_at` once the commit
+    // exists), clear `active` on the ticket AND on any program whose `active` names it. The
+    // op's post-image validation is a second net behind the preflight above, not a
+    // replacement.
+    let outcome =
+        ops::ship(&mut corpus, id, &time_source::now_utc_rfc3339()).map_err(Error::msg)?;
+    corpus.write_back(&outcome.changed).map_err(Error::msg)?;
+
+    reload_registry(root, registry)?;
+    cmd_sync(root, registry)?;
+    if refresh {
+        refresh_wave_lock(root)?;
+    } else {
+        println!("{id}: wave.lock NOT refreshed (--no-repack) — run `cargo xtask wave repack`");
+        println!("      once the rest of the wave has shipped, or `wave check` stays red.");
+    }
+    println!("{id} -> shipped");
+    Ok(())
+}
+
+/// `ticket stamp-sha <id> <sha>`: step 3 of the ship lifecycle (see
+/// `ops::ship`). Writes `shipped_at` through the typed op, then closes the token
+/// accounting: when the ticket has neither a run receipt under `metrics/<id>/` nor
+/// an `estimates/<id>.json`, the `diff_loc` estimate is generated on the spot from
+/// the ticket's subject commits INCLUDING the just-passed landing sha (cohort_median
+/// at zero included LOC) and `"tokens"` is appended to `estimated[]`.
+///
+/// Deliberately NO `require_check_ok` preflight and NO sync/repack: between `ship`
+/// and `stamp-sha` the tree is transiently gate-red BY DESIGN (the SHA cannot exist
+/// before the commit), and this is the verb that moves it back to green — a full-
+/// check preflight would deadlock the lifecycle it exists to close. Stamps, markers
+/// and estimate files feed no `ticket sync` output and are not wave.lock inputs (the byte
+/// tripwire at the end proves the latter every run).
+pub fn cmd_stamp_sha(root: &Path, id: &TicketId, sha: &str) -> Result<()> {
+    let subjects = mine_subjects(root)?;
+    let sha_loc = ticket_metrics::estimates::collect_numstat(root)?;
+    for line in stamp_sha_with_inputs(
+        root,
+        id,
+        sha,
+        &subjects,
+        &sha_loc,
+        &time_source::now_utc_rfc3339(),
+    )? {
+        println!("{line}");
+    }
+    Ok(())
+}
+
+/// The testable core of [`cmd_stamp_sha`] — mined inputs injected so scratch tests
+/// never need real git history. Returns the report lines the verb prints.
+pub fn stamp_sha_with_inputs(
+    root: &Path,
+    id: &TicketId,
+    sha: &str,
+    subjects: &std::collections::BTreeMap<TicketId, Vec<SubjectCommit>>,
+    sha_loc: &std::collections::BTreeMap<String, u64>,
+    now_utc: &str,
+) -> Result<Vec<String>> {
+    let lock_path = root.join(repository_layout::WAVE_LOCK);
+    let lock_before = fs::read(&lock_path).ok();
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        return Err(unknown_ticket(id));
+    }
+    let sha = sha.trim();
+    let mut lines: Vec<String> = Vec::new();
+
+    // 1. The shipped_at write (typed op: shape/status/overwrite refusals live there).
+    let outcome = ops::stamp_sha(&mut corpus, id, sha, now_utc).map_err(Error::msg)?;
+    let stamped = !outcome.changed.is_empty();
+    if stamped {
+        lines.push(format!("{id}: shipped_at -> {sha:?}"));
+    } else {
+        lines.push(format!(
+            "{id}: shipped_at already {sha:?} — no-op (re-stamp of the same sha)"
+        ));
+    }
+
+    // 2. Token accounting. Exactly one of receipt XOR estimate must exist for the
+    // gate; generate the estimate only when NEITHER does.
+    let mut to_write: Vec<TicketId> = outcome.changed.clone();
+    if ticket_metrics::has_receipt(root, id) {
+        lines.push(format!(
+            "{id}: measured receipt(s) under {}/{id}/ — no estimate generated",
+            repository_layout::METRICS_DIR
+        ));
+    } else {
+        let existing = ticket_metrics::estimates::load_existing(root)?;
+        if existing.contains_key(id) {
+            lines.push(format!(
+                "{id}: {}/{id}.json already exists — estimate untouched",
+                repository_layout::ESTIMATES_DIR
+            ));
+        } else {
+            let subject_shas: Vec<String> = subjects
+                .get(id)
+                .map(|v| v.iter().map(|c| c.sha.clone()).collect())
+                .unwrap_or_default();
+            let shas = ticket_metrics::estimates::derivation_shas(&subject_shas, sha);
+            let rec = ticket_metrics::estimates::plan_estimate_for_id(
+                &corpus, id, &shas, sha_loc, &existing, now_utc,
+            )?;
+            ticket_metrics::estimates::write_estimate_file(root, &rec)?;
+            match rec.source.as_str() {
+                "diff_loc" => lines.push(format!(
+                    "{id}: diff_loc estimate written — {} LOC over {} commit(s) x factor {} = {} tokens",
+                    rec.loc_changed.unwrap_or(0),
+                    shas.len(),
+                    rec.factor,
+                    rec.tokens_estimated
+                )),
+                _ => lines.push(format!(
+                    "{id}: cohort_median estimate written — {} tokens over a cohort of {} (zero included LOC over {} commit(s))",
+                    rec.tokens_estimated,
+                    rec.cohort_size.unwrap_or(0),
+                    shas.len()
+                )),
+            }
+            let t = corpus
+                .tickets
+                .get_mut(id)
+                .expect("membership checked above");
+            let estimated = match t {
+                Ticket::Program(p) => &mut p.estimated,
+                Ticket::Work(w) => &mut w.estimated,
+            };
+            if !estimated.iter().any(|e| e == "tokens") {
+                estimated.push("tokens".to_string());
+                lines.push(format!("{id}: \"tokens\" appended to estimated[]"));
+            }
+            if !to_write.contains(id) {
+                to_write.push(id.clone());
+            }
+        }
+    }
+
+    if to_write.is_empty() {
+        lines.push(format!("{id}: nothing to write"));
+    } else {
+        corpus.write_back(&to_write).map_err(Error::msg)?;
+        lines.push(format!(
+            "{} ticket file(s) written via Corpus::write_back",
+            to_write.len()
+        ));
+    }
+    let lock_after = fs::read(&lock_path).ok();
+    if lock_before != lock_after {
+        return Err(Error::msg(format!(
+            "{} bytes changed — stamps and estimates are not lock inputs; stamp-sha \
+             perturbed something it must not",
+            repository_layout::WAVE_LOCK
+        )));
+    }
+    Ok(lines)
+}

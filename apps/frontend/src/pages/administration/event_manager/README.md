@@ -154,7 +154,7 @@ browser build only; the views that run them exist in that build only.
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; `event_manager_source` in
   `apps/frontend/src/foundation/test_support/pins.rs`, which joins the page's sources for its
   tests; the DOM oracle's `eventmgr` capture in
-  `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the edit form sends only changed fields and clears the briefing and banner with an empty
   string (`edit_dialog_reattach_and_empty_string_clear_are_wired`); the delete confirmation never
   promises a permanent cascade (`delete_confirm_copy_matches_the_soft_delete_handler`), both in

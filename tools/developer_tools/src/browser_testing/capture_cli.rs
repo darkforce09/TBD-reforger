@@ -16,7 +16,7 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use crate::browser_testing::screen_capture::{self as capture, ShotOptions, Step};
+use browser_gate_suites::screen_capture::{self as capture, ShotOptions, Step};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -98,6 +98,7 @@ pub fn run() -> ExitCode {
             };
             let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
             rt.block_on(capture::shot(&out, &steps, opts))
+                .map_err(anyhow::Error::from)
         }
         Cmd::Zoomsweep {
             out_prefix,
@@ -113,7 +114,12 @@ pub fn run() -> ExitCode {
                 return ExitCode::from(2);
             }
             let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
-            rt.block_on(capture::zoomsweep(&out_prefix, &mission_id, &parsed))
+            rt.block_on(capture::zoomsweep(
+                &out_prefix,
+                &capture::MissionId::new(mission_id),
+                &parsed,
+            ))
+            .map_err(anyhow::Error::from)
         }
         Cmd::Crop {
             img,
@@ -123,7 +129,7 @@ pub fn run() -> ExitCode {
             h,
             scale,
             out,
-        } => capture::crop(&img, x, y, w, h, scale, &out),
+        } => capture::crop(&img, x, y, w, h, scale, &out).map_err(anyhow::Error::from),
     };
     match result {
         Ok(code) => ExitCode::from(code),

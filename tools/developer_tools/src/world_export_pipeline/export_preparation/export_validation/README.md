@@ -47,7 +47,7 @@ sampled rows and the files the log names.
 - Depends on: `SchemaSet` and `gunzip_json` from
   `tools/developer_tools/src/world_export_pipeline/mathematical_verification.rs`; the sibling
   `vegetation_density` and `polygon_geometry` modules; the
-  `world_file_formats::density::tbdd` decoder; `crate::repository_layout`; `cargo`, for the two child runs.
+  `world_file_formats::density::tbdd` decoder; the `repository_layout` crate and `crate::map_pipeline_layout`; `process_runner` running `cargo`, for the two child runs.
 - Used by: `world validate-exports` and `world spike-ops-log`
   (`tools/developer_tools/src/world_export_pipeline/cli.rs`); nothing runs either in CI.
 - Rules: both only read; the registry `status` gates nothing, because a terrain is checked exactly

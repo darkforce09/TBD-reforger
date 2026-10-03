@@ -1,0 +1,13 @@
+# Stage S11 J2e — the relocation tool leaves xtask: the `relocate` module of the `refactor` command
+# group becomes the repository_relocation crate under tools/commands, flattened to the crate's src
+# folder. Its module root becomes the named module of the three modes; the crate root, the prelude
+# and the README files are written by hand, and the `refactor` group's command line and dispatch
+# stay in the xtask binary. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the module root becomes the modes module; the folder, its README included, becomes src
+path	tools/xtask/src/commands/refactor/relocate/mod.rs	tools/commands/repository_relocation/src/relocation_modes.rs
+path	tools/xtask/src/commands/refactor/relocate	tools/commands/repository_relocation/src
+#
+# the moved code's absolute paths into its own module now start at the crate root
+rust_path	crate::commands::refactor::relocate::	crate::	tools/xtask/src/commands/refactor/relocate

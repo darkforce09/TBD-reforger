@@ -15,7 +15,7 @@ contracts/fixtures/enfusion_samples/
 ## How it works
 
 `cargo xtask schema validate`
-(`tools/xtask/src/verifications/schemas/checks/contract_validation/validate_all.rs`) walks the
+(`tools/commands/schema_tooling/src/schema_checks/contract_validation/validate_all.rs`) walks the
 folder in name order and takes the name before `.sample.json` as a definition of
 `contracts/definitions/mission.schema.json`. `root.sample.json` is validated as a whole
 mission; every other file is validated against `#/$defs/<name>`, and a file whose name has no

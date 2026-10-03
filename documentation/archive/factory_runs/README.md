@@ -34,7 +34,7 @@ the [ticket](/documentation/glossary/n_to_z.md#ticket) files record what the run
 
 ## Code
 
-- [Platform commands](/tools/xtask/src/commands/platform/) — `cargo xtask platform wave` and the
+- [Platform commands](/tools/commands/platform_execution/src/) — `cargo xtask platform wave` and the
   slice worktrees the runs drove.
 - [Wave commands](/tools/xtask/src/commands/wave/) — the wave lock the runs planned against.
 

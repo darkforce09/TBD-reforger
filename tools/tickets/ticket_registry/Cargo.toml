@@ -1,0 +1,35 @@
+# The ticket registry as one JSON projection, the typed operations that change ticket files, the
+# derived files `ticket sync` writes, `ticket check`, and the body of every `cargo xtask ticket`
+# verb. `serde_json` keeps key order so `queue.json` renders stably.
+[package]
+name = "ticket_registry"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The ticket registry projection, typed operations, sync, checks and the ticket command verbs"
+
+[package.metadata.layout]
+category = "tools/tickets"
+tier = 4
+targets = "any"
+
+[dependencies]
+jsonschema = { workspace = true }
+newtype_ids = { workspace = true }
+process_runner = { workspace = true }
+regex = { workspace = true }
+repository_layout = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["preserve_order"] }
+thiserror = { workspace = true }
+ticket_metrics = { workspace = true }
+ticket_model = { workspace = true }
+ticket_wave_lock = { workspace = true }
+time_source = { workspace = true }
+toml = { workspace = true, features = ["preserve_order"] }
+walkdir = { workspace = true }
+
+[lints]
+workspace = true

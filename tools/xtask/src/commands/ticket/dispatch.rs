@@ -1,9 +1,34 @@
 use super::cli::TicketCmd;
-use crate::commands::ticket::*;
+use super::execution::{cmd_clean, cmd_done, cmd_run};
 use anyhow::Result;
 use repository_layout::find_repository_root;
+use ticket_metrics::cmd_metrics;
+use ticket_registry::load_registry;
+use ticket_registry::sync::cmd_sync;
+use ticket_registry::validation::cmd_check;
+use ticket_registry::verbs::{
+    cmd_add, cmd_add_child, cmd_advance_slice, cmd_brief, cmd_config, cmd_gap_round_trip, cmd_get,
+    cmd_list, cmd_mark_ready, cmd_next, cmd_plan_batch, cmd_prompt, cmd_ready_ids, cmd_remove,
+    cmd_reorder, cmd_scope_histogram, cmd_set_status, cmd_ship_opt, cmd_show, cmd_sparse_paths,
+    cmd_stamp_sha,
+};
 
+/// Runs one `ticket` verb. A [`ticket_registry::Error::Refused`] prints its message bare on
+/// stderr and exits 1, with no `xtask:` prefix; every other failure goes to the bin's handler.
 pub(crate) fn run(cmd: TicketCmd) -> Result<u8> {
+    match run_verb(cmd) {
+        Err(error) => match error.downcast_ref::<ticket_registry::Error>() {
+            Some(ticket_registry::Error::Refused { message }) => {
+                eprintln!("{message}");
+                Ok(1)
+            }
+            _ => Err(error),
+        },
+        answer => answer,
+    }
+}
+
+fn run_verb(cmd: TicketCmd) -> Result<u8> {
     {
         let root = find_repository_root()?;
         match cmd {

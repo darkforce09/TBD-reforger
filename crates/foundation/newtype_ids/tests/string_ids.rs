@@ -65,6 +65,18 @@ fn displays_and_parses_as_its_string() {
 }
 
 #[test]
+fn display_honours_width_fill_and_alignment_like_str() {
+    let lead = Callsign::new("T-12");
+    assert_eq!(format!("{lead}"), "T-12");
+    assert_eq!(format!("{lead:<8}|"), "T-12    |");
+    assert_eq!(format!("{lead:>8}|"), "    T-12|");
+    assert_eq!(format!("{lead:*^8}"), "**T-12**");
+    assert_eq!(format!("{lead:.2}"), "T-");
+    assert_eq!(format!("{lead:<8}"), format!("{:<8}", "T-12"));
+    assert_eq!(format!("{lead:<2}"), "T-12");
+}
+
+#[test]
 fn converts_and_compares_with_strings() {
     let from_owned = TerrainName::from(String::from("everon"));
     let from_slice = TerrainName::from("everon");

@@ -11,12 +11,12 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use crate::browser_testing::diagnostics as doctor;
-use crate::browser_testing::dom_oracle as vsuite;
-use crate::browser_testing::editor_smoke_tests;
-use crate::browser_testing::route_drift as sroutes;
-use crate::browser_testing::server as serve;
-use crate::repository_layout::MapAssetMounts;
+use browser_gate_suites::diagnostics as doctor;
+use browser_gate_suites::dom_oracle as vsuite;
+use browser_gate_suites::editor_smoke_tests;
+use browser_gate_suites::gate_layout::MapAssetMounts;
+use browser_gate_suites::route_drift as sroutes;
+use browser_gate_suites::server as serve;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -188,29 +188,27 @@ pub fn run() -> ExitCode {
     let result: anyhow::Result<u8> = rt.block_on(async {
         match cli.cmd {
             Cmd::EquipmentDataViewer { website, output } => {
-                crate::browser_testing::equipment_data_viewer::run(&website, &output).await
+                Ok(browser_gate_suites::equipment_data_viewer::run(&website, &output).await?)
             }
             Cmd::VSuite {
                 mode,
                 leptos_dir,
                 only,
                 note,
-            } => {
-                vsuite::run(&vsuite::VSuiteArgs {
-                    mode,
-                    leptos_dir,
-                    only,
-                    note,
-                })
-                .await
-            }
-            Cmd::SRoutes => sroutes::run(),
+            } => Ok(vsuite::run(&vsuite::VSuiteArgs {
+                mode,
+                leptos_dir,
+                only,
+                note,
+            })
+            .await?),
+            Cmd::SRoutes => Ok(sroutes::run()?),
             Cmd::Smoke { name, dist, path } => {
-                editor_smoke_tests::run_smoke(&name, dist, path).await
+                Ok(editor_smoke_tests::run_smoke(&name, dist, path).await?)
             }
-            Cmd::EditorSuite { dist } => editor_smoke_tests::editor_suite(dist).await,
-            Cmd::Doctor { dist, strict } => doctor::run(dist, strict).await,
-            Cmd::RAuth { dist } => editor_smoke_tests::r_auth(dist).await,
+            Cmd::EditorSuite { dist } => Ok(editor_smoke_tests::editor_suite(dist).await?),
+            Cmd::Doctor { dist, strict } => Ok(doctor::run(dist, strict).await?),
+            Cmd::RAuth { dist } => Ok(editor_smoke_tests::r_auth(dist).await?),
             Cmd::RenderCheck {
                 dir,
                 path,
@@ -224,7 +222,7 @@ pub fn run() -> ExitCode {
                 map_assets,
                 inject_js,
                 no_freeze,
-            } => {
+            } => Ok(
                 editor_smoke_tests::render_check(&editor_smoke_tests::RenderCheckArgs {
                     dir,
                     path,
@@ -239,8 +237,8 @@ pub fn run() -> ExitCode {
                     inject_js,
                     no_freeze,
                 })
-                .await
-            }
+                .await?,
+            ),
             Cmd::MortarOffline {
                 dist,
                 port,

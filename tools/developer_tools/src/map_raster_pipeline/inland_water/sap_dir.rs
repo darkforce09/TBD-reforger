@@ -1,11 +1,10 @@
 use super::*;
 
-use crate::repository_layout::{
-    INLAND_WATER_ARTIFACTS_DIR, map_scratch_dir, terrain_dir, terrain_manifest_path,
-};
+use crate::map_pipeline_layout::INLAND_WATER_ARTIFACTS_DIR;
+use ::repository_layout::{map_scratch_dir, terrain_dir, terrain_manifest_path};
 
 pub(super) fn sap_dir() -> Result<PathBuf> {
-    Ok(map_scratch_dir(&compiled_checkout_root()?, "everon").join("sap")) // E2c-allow (Eden-only lane)
+    Ok(map_scratch_dir(&find_repository_root()?, "everon").join("sap")) // E2c-allow (Eden-only lane)
 }
 
 pub(super) fn read_dem_u16(path: &std::path::Path) -> Result<(Vec<u16>, usize, usize)> {
@@ -22,7 +21,7 @@ pub(super) fn read_dem_u16(path: &std::path::Path) -> Result<(Vec<u16>, usize, u
 }
 
 pub fn composite_water_ortho() -> Result<u8> {
-    let root = compiled_checkout_root()?;
+    let root = find_repository_root()?;
     let sap = sap_dir()?;
     let ortho_path = sap.join("everon-sap-ortho.png");
     let backup = sap.join("everon-sap-ortho.pre-water.png");

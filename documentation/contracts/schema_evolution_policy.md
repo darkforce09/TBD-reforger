@@ -13,7 +13,7 @@ editing a schema.
 - Code: the schemas in
   [`contracts/definitions/`](/contracts/definitions/README.md), their fixtures in
   [`contracts/fixtures/`](/contracts/fixtures/README.md), and the typify codegen in
-  [`tools/xtask/src/commands/generate/`](/tools/xtask/src/commands/generate/) (`TARGETS` in
+  [`tools/commands/schema_tooling/src/generate/`](/tools/commands/schema_tooling/src/generate/) (`TARGETS` in
   `schema_types.rs`, 24 schemas).
 - Entry: `cargo xtask schema codegen`, `cargo xtask schema validate` and
   `cargo xtask schema citations`, and the CI tasks `schema-codegen`, `verify-codegen-fresh` and
@@ -67,7 +67,7 @@ older server keeps loading it (`mission_compile_flatten.rs` in
 `apps/api/src/missions/services/tests/` pins the bump to `1.2` on the first slot
 height). The mod's `TBD_MissionValidator.CheckSchemaVersion` admits `1.1`, `1.2` and `1.3`. A
 `1.3` field that no shipped reader handles yet is listed by the unread-wire-field check
-(`tools/xtask/src/verifications/schemas/checks/wire_field_readers.rs`), and a field loses its
+(`tools/commands/schema_tooling/src/schema_checks/wire_field_readers.rs`), and a field loses its
 row when its reader lands.
 
 ### Breaking changes

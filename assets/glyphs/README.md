@@ -72,7 +72,7 @@ the instanced glyph pass.
   - the map engine's native tests in
     `legacy/map_engine/src/streaming/scheduler/residency/t152_3_tests/`, which read the
     manifest's keys;
-  - the headless-browser test server in `tools/developer_tools/src/browser_testing/server.rs`,
+  - the headless-browser test server in `tools/browser_testing/browser_gate_suites/src/server.rs`,
     which serves `/map-assets/glyphs/` itself;
   - `cargo xtask deploy website`, whose rsync ships this folder (it excludes `assets/terrains/`),
     and the staging compose file `deploy/compose.staging.yml`, which mounts it

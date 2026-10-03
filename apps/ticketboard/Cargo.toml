@@ -1,8 +1,8 @@
 # Ticketboard — native egui projection of the ticket registry.
 #
-# Parses every .ai/tickets/T-*.toml via `ticket_engine` and renders a status board +
-# detail panel; every mutation shells a `cargo xtask ticket <verb>` subprocess —
-# the app itself writes NO ticket bytes anywhere under the repo; the only direct
+# Paints the models of `ticketboard_model` (corpus, board, waves, metrics, documents, ticket
+# commands) as a status board + detail panel; every mutation shells a `cargo xtask ticket <verb>`
+# subprocess — the app itself writes NO ticket bytes anywhere under the repo; the only direct
 # file write is the preference store (eframe Storage in the user config dir,
 # "persistence").
 #
@@ -34,27 +34,22 @@ egui_commonmark = { version = "0.25.0", default-features = false, features = [
 # Detail-panel field table. default-features = false drops mime_guess2 (image-loader
 # support the app does not use).
 egui_extras = { version = "0.36.1", default-features = false }
-# File watch on .ai/tickets + the sync targets. The
-# default feature set only selects the macOS backend flavor (fsevent) — on Linux this
-# is inotify with no extra runtime: no crossbeam, no mio, no tokio.
-notify = "8"
 # Native folder picker for the no-repo refusal screen (xdg-portal + pollster on Linux;
 # no async runtime).
 rfd = "0.17.2"
-# wave.lock mirror parse: the same serde derive and toml 0.8 workspace entries ticket_engine
-# writes the lock with, so the verbatim lock render never disagrees with the writer on TOML
-# dialect.
-serde = { workspace = true, features = ["derive"] }
-# The metrics dashboard's run-receipt JSON parse: the same parser `ticket check` reads the
-# receipts with, so the two never disagree on JSON dialect.
-serde_json = { workspace = true }
-# The checkout-root walk and the registry, metrics, estimates and wave-lock locations.
+# The `.ai/tickets` folder name the no-repository and loading screens name.
 repository_layout = { workspace = true }
-ticket_engine = { path = "../../tools/ticket_engine" }
-# Elapsed derivation (finished − started at query time): the same RFC 3339 parser
-# tools/ticket_engine/src/metrics/ uses, so elapsed never disagrees with the checker.
-time = { workspace = true, features = ["parsing"] }
-toml = { workspace = true }
+# The ticket and status vocabulary the board, lanes, menus and set-status dropdown render.
+ticket_model = { workspace = true }
+# The packer's ownership-collision rule, the verdict of the two-ticket comparison.
+ticket_wave_lock = { workspace = true }
+# Every model, service and the application state the views paint and the actions change.
+ticketboard_model = { workspace = true }
+
+[dev-dependencies]
+# The scratch folders, ticket and corpus builders and source inspection the rendering and
+# architecture tests share with the model crate's own tests.
+ticketboard_model = { workspace = true, features = ["test_fixtures"] }
 
 [features]
 # Driver-quirk fallback: `--features glow` builds the glow backend

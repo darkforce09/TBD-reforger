@@ -1,9 +1,9 @@
-use crate::ticket_registry::models::{
+use eframe::egui::Color32;
+use ticket_model::StatusName;
+use ticketboard_model::ticket_registry::models::{
     palette::{scope_level_rgb, status_rgb},
     projection::{Class, ScopeLevel},
 };
-use eframe::egui::Color32;
-use ticket_engine::StatusName;
 
 pub(crate) fn status_color(status: StatusName) -> Color32 {
     let (r, g, b) = status_rgb(status);

@@ -98,7 +98,7 @@ the views that run them exist in that build only.
 - Used by: the `/admin/approvals` route in `apps/frontend/src/app_routes.rs` and
   `apps/frontend/src/foundation/route_table/mod.rs`; the sidebar's "Mission Approvals" link in
   `apps/frontend/src/foundation/route_table/navigation_menu.rs`; the DOM oracle's `approvals`
-  capture in `tools/developer_tools/src/browser_testing/dom_oracle/routes.rs`.
+  capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: every decision names the artifact under review
   (`every_decision_names_the_artifact_under_review`); a stale refusal reads the queue again and
   says why (`stale_decisions_reload_the_queue_and_say_why`,

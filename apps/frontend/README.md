@@ -76,7 +76,7 @@ cargo xtask mk leptos-gates     # release build, then gate doctor, editor-suite 
 
 The workspace `rust-toolchain.toml` pins Rust 1.95.0 with the `wasm32-unknown-unknown` target, so
 rustup installs the target itself. Trunk has to be on `PATH`; the gates pin Trunk 0.21.14 and
-`wasm-bindgen` 0.2.126 in `tools/developer_tools/gate-env.json`, and Trunk fetches the
+`wasm-bindgen` 0.2.126 in `tools/browser_testing/browser_gate_suites/gate-env.json`, and Trunk fetches the
 `wasm-bindgen` and Tailwind CSS versions it needs on its first build, with no npm involved.
 `cargo xtask mk leptos-debug` serves an unoptimised build that rebuilds faster but whose frame
 rates mean nothing, and `cargo xtask mk leptos-build` writes a release build into `dist/` without

@@ -140,7 +140,7 @@ gameplay data the compiler cannot represent is refused at compilation with 422
   read-only artifact workspace (`pages/mission_hub/review_workspace/`), and Server Control's
   deployments and fleet scenarios (`pages/administration/server_control/mission_deployments/`,
   `fleet_scenarios/`).
-- **Tooling** (`tools/xtask/src/commands/mod_ops/`): `mod playtest --mission` submits, approves
+- **Tooling** (`tools/commands/mod_operations/src/`): `mod playtest --mission` submits, approves
   and deploys through the platform and waits for the runtime session's confirmation;
   `--artifact-file`, `mod world-boot --mission` and `mod test-mission` stage a document into the
   artifact cache; `mod world-boot --compiled` stages the artifact the platform compiled on

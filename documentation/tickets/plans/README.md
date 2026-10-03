@@ -17,7 +17,7 @@ documentation/tickets/plans/
 
 A plan's name is `t-`, its ticket's id lowercased with dots as underscores, then `_plan.md`: the
 plan of ticket `T-<n>.<m>` is `t-<n>_<m>_plan.md`. `plan_path` in
-`tools/ticket_engine/src/repository.rs` derives that path, and the ticket's `plan` field in
+`tools/tickets/ticket_model/src/repository.rs` derives that path, and the ticket's `plan` field in
 `.ai/tickets/T-<id>.toml` records it.
 
 A plan is a copy of `.ai/tickets/plan_template.md` with its four sections filled: Context,
@@ -37,10 +37,10 @@ record, never reworded, once the ticket ships or is cancelled.
 
 ## Code
 
-- [Ticket engine](/tools/ticket_engine/) — `PLANS_DIR`, `PLAN_TEMPLATE` and `plan_path` in
-  `tools/ticket_engine/src/repository.rs`; `mark_ready` in
-  `tools/ticket_engine/src/ops/readiness.rs`; the plan ready-gate in
-  `tools/ticket_engine/src/validation/readiness.rs`.
+- [Ticket crates](/tools/tickets/README.md) — `PLANS_DIR`, `PLAN_TEMPLATE` and `plan_path` in
+  `tools/tickets/ticket_model/src/repository.rs`; `mark_ready` in
+  `tools/tickets/ticket_registry/src/ops/readiness.rs`; the plan ready-gate in
+  `tools/tickets/ticket_registry/src/validation/readiness.rs`.
 - [Ticketboard](/apps/ticketboard/) — shows a ticket's `plan` and opens it in the in-app document
   viewer with one click.
 
@@ -49,7 +49,7 @@ record, never reworded, once the ticket ships or is cancelled.
 - Depends on: the plan template `.ai/tickets/plan_template.md`; the `plan` field of the ticket
   files in `.ai/tickets/`.
 - Used by: `cargo xtask ticket mark-ready`, `ticket check` and `ticket brief`, which prints the
-  plan to read; the ticketboard; the ticket engine's tests, which build a plan under `PLANS_DIR`.
+  plan to read; the ticketboard; the `ticket_registry` tests, which build a plan under `PLANS_DIR`.
 - Rules: one plan per ticket at its id-derived path unless the ticket's `plan` field names another;
   no subfolders; a work ticket goes ready only with its plan on disk (`cargo xtask ticket check`,
   `mark_ready`); a frozen plan is never reworded, and the gates judge it only on its links

@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
-use crate::repository_layout::{contract_definitions_dir, terrain_dir};
+use ::repository_layout::{contract_definitions_dir, terrain_dir};
 use world_line_of_sight::occluder_library::BlasEntry;
 
 use super::batch::open_sources;

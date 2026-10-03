@@ -60,7 +60,7 @@ use super::hull::hull_triangles;
 use super::prefab::strip_guid;
 use super::world_row::load_rows;
 use super::xob;
-use crate::enfusion_pak::AssetSource;
+use enfusion_pak::AssetSource;
 
 /// Default size of the `hot` prefetch set.
 pub const DEFAULT_HOT: usize = 100;

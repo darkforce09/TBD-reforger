@@ -14,7 +14,7 @@ contracts/fixtures/missions/
 ## How it works
 
 `cargo xtask schema validate` reads both folders
-(`tools/xtask/src/verifications/schemas/checks/mission_validation.rs`). Every file in `valid/`
+(`tools/commands/schema_tooling/src/schema_checks/mission_validation.rs`). Every file in `valid/`
 must pass `contracts/definitions/mission.schema.json`, stay under the schema's
 `x-tbd-missionFileMaxBytes` ceiling (8 MiB, the value of `MISSION_FILE_MAX_BYTES` in the
 [mod](/documentation/glossary/g_to_m.md#mod)'s mission loader) and use only kit aliases that the mod's

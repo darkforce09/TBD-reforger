@@ -14,7 +14,7 @@ contracts/fixtures/missions/invalid/
 ## How it works
 
 `cargo xtask schema validate` reads every `.json` file here in name order
-(`tools/xtask/src/verifications/schemas/checks/mission_validation.rs`). For each wrapper it takes
+(`tools/commands/schema_tooling/src/schema_checks/mission_validation.rs`). For each wrapper it takes
 `mustFail.gate`, `mustFail.at` and `document`, and a wrapper missing any of them fails the run. A
 `schema` fixture must be rejected by `contracts/definitions/mission.schema.json`, and every
 finding must sit at or below `mustFail.at`. A `registry` fixture must pass the schema and fail only
@@ -48,7 +48,7 @@ any other reason fails the run, so each file stays pinned to its reason.
 - Consumers: `cargo xtask schema validate`, which is also the first step of the `schema-validate`
   CI task and of the `schema.yml` workflow; `mission_validation.rs` builds this folder's path
   itself and uses `dangling_kits` from
-  `tools/xtask/src/verifications/schemas/checks/kit_registry_references.rs` for the
+  `tools/commands/schema_tooling/src/schema_checks/kit_registry_references.rs` for the
   `registry` gate.
 
 ## Boundaries

@@ -66,16 +66,16 @@ None: Workbench runs these scripts in the editor.
   the `start`, `step`, `status` and `diagnostic` actions of `EMCP_WB_SourceExport` in
   `Verification/`; then, as files, `cargo xtask mod validate-equipment-vehicle-export` and
   `cargo xtask mod publish-equipment-vehicle-export`
-  (`tools/xtask/src/commands/mod_ops/equipment_vehicle_export/`).
+  (`tools/commands/mod_operations/src/equipment_vehicle_export/`).
 - Rules: a generation never changes after `Finish`, and only publication makes it current; a
   diagnostic, failed or unverified generation never publishes
   (`partial_and_unverified_exports_cannot_publish` in
-  `tools/xtask/src/commands/mod_ops/equipment_vehicle_export/tests/validation.rs`); the folder
+  `tools/commands/mod_operations/src/equipment_vehicle_export/tests/validation.rs`); the folder
   holds no file the index does not list (`duplicate_json_keys_and_unlisted_stale_files_fail`).
 
 ## Related documentation
 
-- [Export validation and publication](/tools/xtask/src/commands/mod_ops/equipment_vehicle_export/README.md)
+- [Export validation and publication](/tools/commands/mod_operations/src/equipment_vehicle_export/README.md)
   — what the two commands check and how a generation becomes current.
 - [Export contract](/contracts/definitions/equipment-vehicle-export.schema.json) — the
   `export_generation` document.

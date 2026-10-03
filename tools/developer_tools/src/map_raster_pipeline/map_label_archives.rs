@@ -40,8 +40,7 @@ use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::labels::MapLabelsArchive;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
-use crate::repository_layout;
-use crate::repository_layout::compiled_checkout_root;
+use ::repository_layout::find_repository_root;
 
 /// Terrain-relative source paths.
 pub const LOCATIONS_JSON: &str = "locations.json";
@@ -133,7 +132,7 @@ pub fn terrain_dir(terrain: &str) -> Result<PathBuf> {
         return Ok(as_path);
     }
     Ok(repository_layout::terrain_dir(
-        &compiled_checkout_root()?,
+        &find_repository_root()?,
         terrain,
     ))
 }

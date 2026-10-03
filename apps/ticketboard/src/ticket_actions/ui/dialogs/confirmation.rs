@@ -1,8 +1,8 @@
 use super::*;
-use crate::ticket_actions::{
+use eframe::egui::{RichText, Ui};
+use ticketboard_model::ticket_actions::{
     events::TicketActionEvent as Action, services::commands::TicketCommand,
 };
-use eframe::egui::{RichText, Ui};
 
 pub(crate) fn confirm_body_ui(
     ui: &mut Ui,

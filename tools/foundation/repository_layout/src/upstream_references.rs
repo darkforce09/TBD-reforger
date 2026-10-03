@@ -1,9 +1,11 @@
 //! The licensed upstream reference lanes.
 //!
-//! **Role:** the repository-relative paths of the gitignored reference folder and the two lanes
-//! both `xtask` and `developer_tools` name.
-//! **Position:** `xtask` fetches into the lanes and checks none of them reaches a shipped addon;
-//! the `enf` commands of `developer_tools` index, carve and extract them.
+//! **Role:** the repository-relative paths of the gitignored reference folder, the two lanes
+//! both `xtask` and `developer_tools` name, and the PlayableSelector lane with the variable that
+//! points it elsewhere.
+//! **Position:** `xtask` fetches into the lanes, links the PlayableSelector lane into a slice
+//! worktree and checks none of them reaches a shipped addon; the `enf` commands of
+//! `developer_tools` index, carve and extract them.
 //! **Signals & state:** none; constants.
 //! **Invariants:** every lane lies under [`REFERENCES_DIR`]; a tool that writes a lane writes
 //! inside that folder and refuses when it is absent.
@@ -18,3 +20,10 @@ pub const CRF_FRAMEWORK_REFERENCE: &str = "apps/mod/References/crf_framework";
 /// The vanilla lane: extracted Arma Reforger scripts and the official Script API pages (Bohemia
 /// Interactive copyright).
 pub const VANILLA_REFERENCE: &str = "apps/mod/References/vanilla_reference";
+
+/// The PlayableSelector checkout, which carries no licence: design mirror only.
+pub const PLAYABLE_SELECTOR_REFERENCE: &str = "apps/mod/References/playable_selector";
+
+/// An environment variable naming another PlayableSelector checkout. When it is set and not
+/// empty it replaces [`PLAYABLE_SELECTOR_REFERENCE`] as the lane's source.
+pub const PLAYABLE_SELECTOR_OVERRIDE_ENV: &str = "TBD_PS_ORACLE";

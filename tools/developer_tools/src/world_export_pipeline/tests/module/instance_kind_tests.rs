@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use super::INSTANCE_KINDS;
-use crate::repository_layout::compiled_checkout_root;
-use crate::repository_layout::definition_path;
+use ::repository_layout::definition_path;
+use ::repository_layout::find_repository_root;
 
 /// The guard that catches a kind added to the schema and not to this constant.
 ///
@@ -12,7 +12,7 @@ use crate::repository_layout::definition_path;
 #[test]
 fn instance_kinds_match_enums_schema() {
     let p = definition_path(
-        &compiled_checkout_root().expect("repository root"),
+        &find_repository_root().expect("repository root"),
         "map-object-enums.schema.json",
     );
     let doc: serde_json::Value =

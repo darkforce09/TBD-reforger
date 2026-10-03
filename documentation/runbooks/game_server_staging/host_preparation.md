@@ -151,7 +151,7 @@ that network's address with its last byte 0; `ip -4 route` on the host prints bo
     `cargo xtask staging update-game-server`. The server's game version must match the clients'
     (see [client join](/documentation/runbooks/game_server_staging/client_join_and_mod_updates.md));
     the "Server build" that `debug direct-join` prints is the build of server app 1874900 on the
-    development machine (`tools/xtask/src/commands/debug/direct_join.rs`), not the host's.
+    development machine (`tools/commands/remote_debugging/src/debug/direct_join.rs`), not the host's.
 
 12. Deploy the platform API to the same host. The staging deploy starts nothing of the website:
     before it changes anything on the host it checks that the API answers `/healthz` at
@@ -328,7 +328,7 @@ to
   the facts every step relies on.
 - [Website deployment](/documentation/runbooks/website_deployment.md) — the API, Postgres,
   Caddy and the host tools on the same host.
-- [Setup command group](/tools/xtask/src/commands/setup/README.md) — what
+- [Setup command group](/tools/commands/workstation_setup/src/README.md) — what
   `mod bootstrap-staging` and `setup server-profile` do.
 - [Deploy files](/deploy/README.md) — `deploy.env.example`, the Caddyfile and the
   systemd units.
