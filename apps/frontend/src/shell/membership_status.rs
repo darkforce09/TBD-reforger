@@ -1,8 +1,20 @@
 //! Discord membership freshness warnings and audited administrator access extensions.
 //!
-//! Profile polling keeps cached-permission status visible while Discord verification is delayed.
+//! **Role:** the status strip in the frame's bottom-left corner: it warns when the session runs on
+//! cached permissions because Discord verification is delayed, says when an administrative access
+//! extension is active, and gives an administrator the control that extends a member's cached
+//! access by 48 hours with a recorded reason.
+//! **Position:** a frame component of the shell, mounted by `AppLayout` beside the routed content;
+//! it reads the session store and calls `GET /me` and
+//! `POST /admin/users/{discord_id}/membership-grace` through the transport crate.
+//! **Signals & state:** reads the session store's membership flags; owns the reason, target,
+//! in-flight and result signals, and a 30-second profile poll that runs while a session is signed
+//! in and stops when the strip unmounts.
+//! **Invariants:** renders nothing unless the membership is stale or the viewer may manage
+//! extensions; at most one profile poll is in flight; an extension is sent only with a non-empty
+//! reason and an all-digit Discord account ID.
 
-use crate::foundation::auth::AuthStore;
+use frontend_session::AuthStore;
 use leptos::prelude::*;
 
 /// Show stale membership status and the reason-bearing access extension controls for administrators.
@@ -26,8 +38,8 @@ pub fn MembershipStatus() -> impl IntoView {
                 polling.set(true);
                 let profile_request = store.begin_profile_request();
                 leptos::task::spawn_local(async move {
-                    if let Ok(profile) = crate::foundation::transport::client::api_get::<
-                        crate::foundation::transport::dto::MeResponse,
+                    if let Ok(profile) = frontend_transport::client::api_get::<
+                        frontend_api_dtos::MeResponse,
                     >(store, "/me")
                     .await
                     {
@@ -50,7 +62,7 @@ pub fn MembershipStatus() -> impl IntoView {
         };
         let entered = target.get_untracked();
         let target_id = if entered.trim().is_empty() {
-            user.discord_id
+            user.discord_id.into_inner()
         } else {
             entered.trim().to_owned()
         };
@@ -61,7 +73,7 @@ pub fn MembershipStatus() -> impl IntoView {
         let body = serde_json::json!({"reason": reason.get_untracked(), "duration_hours": 48});
         busy.set(true);
         leptos::task::spawn_local(async move {
-            match crate::foundation::transport::client::api_post_ok(
+            match frontend_transport::client::api_post_ok(
                 store,
                 &format!("/admin/users/{target_id}/membership-grace"),
                 body,
@@ -71,18 +83,15 @@ pub fn MembershipStatus() -> impl IntoView {
                 Ok(()) => {
                     result.set("Cached access extended for 48 hours. The reason is recorded in the audit log.".into());
                     let profile_request = store.begin_profile_request();
-                    if let Ok(profile) = crate::foundation::transport::client::api_get::<
-                        crate::foundation::transport::dto::MeResponse,
+                    if let Ok(profile) = frontend_transport::client::api_get::<
+                        frontend_api_dtos::MeResponse,
                     >(store, "/me")
                     .await
                     {
                         store.adopt_profile(profile_request, &profile);
                     }
                 }
-                Err(error) => result.set(crate::foundation::transport::client::api_error_message(
-                    &error,
-                    "Access extension failed",
-                )),
+                Err(error) => result.set(error.message_or("Access extension failed")),
             }
             busy.set(false);
         });

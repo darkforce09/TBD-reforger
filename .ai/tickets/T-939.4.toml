@@ -61,7 +61,7 @@ owns = [
     "apps/frontend/src/pages/public/server_intel.rs",
     "apps/frontend/src/pages/public/vehicles.rs",
     "apps/frontend/src/editor/library/mission_library.rs",
-    "apps/frontend/src/pages/operations/event_hub.rs",
+    "crates/frontend/pages/operations_pages/src/event_hub.rs",
     "contracts/fixtures/api_goldens/GET__cms__announcements.json",
     "contracts/fixtures/api_goldens/GET__me__leave-requests.json",
     "contracts/fixtures/api_goldens/GET__admin__leave-requests.json",

@@ -69,7 +69,7 @@ layer. `show_satellite_basemap` sets that layer's opacity back to 1.
 - Used by: the map host of `map_streaming_host`, which calls `load_satellite` at boot and
   `load_map_basemap` and `show_satellite_basemap` when the basemap view changes; and a
   source-scanning test of the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) in
-  `apps/frontend/src/workspaces/editor/tests/`, which reads all nine files by path.
+  `crates/frontend/workspaces/mission_creator_workspace/src/tests/`, which reads all nine files by path.
 - Rules: the folder compiles only for wasm32 and runs only in a
   browser, so that source-scanning test holds its rules: a level is never chosen without the GPU's
   reported texture limit, a downscaled basemap always says why, and the full load logs what it

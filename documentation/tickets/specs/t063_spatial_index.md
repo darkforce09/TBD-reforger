@@ -4,7 +4,7 @@
 
 **Status:** **shipped + verified** — FE build/lint clean; manual @ ~367k: click/marquee significantly faster vs Deck GPU pick (2026-06-24).  
 **Git tag on ship:** **T-063** (`078960e`)  
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/workspaces/editor/decisions.md) §ACTIVE SLICE · [t061_drag_move_hotfix.md](t061_drag_move_hotfix.md) · [t057_map_performance_hotfix.md](t057_map_performance_hotfix.md)
+**Authority:** [MC ROADMAP](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) §ACTIVE SLICE · [t061_drag_move_hotfix.md](t061_drag_move_hotfix.md) · [t057_map_performance_hotfix.md](t057_map_performance_hotfix.md)
 
 **Prerequisites:** T-062.1.1 shipped (`4baf5fa`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 

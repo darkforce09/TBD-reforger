@@ -2,7 +2,7 @@
 //!
 //! **Role:** `touch_changed` bumps the modification time of every file a range changed;
 //! `touch_workspace` does the same for every workspace member's sources; `clippy_changed` lints the
-//! crates a slice changed.
+//! crates a slice changed, a crate of the frontend family for wasm32 and natively.
 //!
 //! **Position:** called by both gates inside the gate lock, before their first cargo step, and by
 //! `test_cmd`.
@@ -23,6 +23,7 @@ use super::changed::{
 };
 use super::{Ctx, host};
 use crate::wave_execution::{wprint, wprintln};
+use ci_task_catalog::frontend_package_lane::frontend_packages;
 
 /// `touch` the given paths. Batched, because the bash's `-exec touch {} +` is one process for 289
 /// files rather than 289 processes, and that difference is measurable at wave-gate scale.
@@ -334,18 +335,28 @@ pub(crate) fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
         wprintln!("        fine'. (Files listed: {}.)", files.len());
         return 1;
     }
+    // The frontend family (the app and every crate under `crates/frontend`), derived from the
+    // workspace: a changed crate of it is linted for both targets.
+    let frontend_family = match frontend_packages(&ctx.root) {
+        Ok(packages) => packages,
+        Err(error) => {
+            wprintln!("clippy: {error}");
+            return 1;
+        }
+    };
     for c in &crates {
         let runs: Vec<Vec<String>> = match c.as_str() {
             // --all-targets is load-bearing (see function header): without it, #[cfg(test)]
             // lints are invisible here. The browser build and the native test build compile
-            // different `cfg(target_arch)` halves, so each is linted, both with `-D warnings`,
-            // matching the wave-gate `clippy frontend` steps and ci.yml.
-            "frontend" => vec![
+            // different `cfg(target_arch)` halves, so each changed crate of the frontend family is
+            // linted for both, with `-D warnings`, matching the wave-gate `clippy frontend` steps
+            // and ci.yml.
+            family if frontend_family.iter().any(|package| package == family) => vec![
                 host::v(&[
                     "cargo",
                     "clippy",
                     "-p",
-                    "frontend",
+                    family,
                     "--target",
                     "wasm32-unknown-unknown",
                     "--all-targets",
@@ -358,7 +369,7 @@ pub(crate) fn clippy_changed(ctx: &Ctx, base: &str) -> i32 {
                     "cargo",
                     "clippy",
                     "-p",
-                    "frontend",
+                    family,
                     "--all-targets",
                     "--locked",
                     "--quiet",

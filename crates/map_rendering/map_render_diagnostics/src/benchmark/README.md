@@ -44,7 +44,7 @@ texture and the lane pool.
   `crate::readback::scene` (the async sleep), and `render_primitives::draw::instances`
   (`QuadInstance`, `CHUNK_CAPACITY`).
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport
-  bridge (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`), which publishes
+  bridge (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs`), which publishes
   `render_bench` as `window.__editorBench(n)` and `seed_stress` and `clear_stress` as its
   properties; the editor gate's smoke harness in
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests.rs`, which calls

@@ -21,12 +21,12 @@ page with the extra key, so it fails on the unknown key alone.
 - Schema: the root type of the schema of the same name in
   `contracts/definitions/equipment-data-viewer/`, broken on purpose.
 - Adding a file: write a page the matching schema refuses, named after the schema, and add its
-  refusal to `apps/frontend/src/foundation/transport/dto/tests/equipment_data_viewer_parity.rs`.
+  refusal to `crates/frontend/foundation/frontend_api_dtos/src/tests/equipment_data_viewer_parity.rs`.
 
 ## Producers and consumers
 
 - Producers: people.
-- Consumers: `apps/frontend/src/foundation/transport/dto/tests/equipment_data_viewer_parity.rs`,
+- Consumers: `crates/frontend/foundation/frontend_api_dtos/src/tests/equipment_data_viewer_parity.rs`,
   which requires every page to fail decoding into its DTO.
 
 ## Boundaries

@@ -2,8 +2,8 @@
 //!
 //! **Role:** `cmd_gate` resolves and verifies the wave's base, takes the gate lock, invalidates
 //! fingerprints and runs the wave gate's steps in order: cargo check, wasm32, format, the clippy
-//! steps (API, map engine, frontend twice, every tool crate), the migration and test steps, the
-//! trunk build when the SPA's scope changed, the schema, catalogue, ticket and wave-lock steps, the
+//! steps (API, map engine, the frontend family twice, every tool crate), the migration and test
+//! steps, the trunk build when the SPA's scope changed, the schema, catalogue, ticket and wave-lock steps, the
 //! shared verify steps and the language gates.
 //!
 //! **Position:** re-exported by the parent `gate` module and reached through `wave gate [<base>]`;
@@ -14,11 +14,12 @@
 //! **Invariants:** a base git cannot resolve, a base that does not cover the wave and an empty
 //! range each refuse with exit 2 before any step runs; the lock is held across every step, so the
 //! verdict describes one tree; each clippy step lints with the flags of its CI job and `-D
-//! warnings`; the API, map engine and frontend tests run in private target folders, and every other
+//! warnings`; the API, map engine and frontend family tests run in private target folders, and every other
 //! workspace member is tested by `test workspace members`, one `cargo test -p` per package.
 
 use super::*;
 use crate::wave_execution::gate_folder;
+use ci_task_catalog::frontend_package_lane::{frontend_family_argv, frontend_packages};
 use repository_layout::build_output;
 
 /// Full gate — runs once per wave on merged main.
@@ -165,18 +166,17 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             ],
         )
     });
-    // The frontend is linted twice, both with `-D warnings`, as `ci-local-leptos` and
-    // clippy_changed do: for wasm32 (the browser build) and natively (the native test build),
-    // since each compiles a different `cfg(target_arch)` half. --all-targets is load-bearing for
+    // The frontend family (the app and every crate under `crates/frontend`, derived from the
+    // workspace) is linted twice, both with `-D warnings`, as `ci-local-leptos` and clippy_changed
+    // do: for wasm32 (the browser build) and natively (the native test build), since each
+    // compiles a different `cfg(target_arch)` half. --all-targets is load-bearing for
     // `#[cfg(test)]` code and benches.
     r.run("clippy frontend", || {
-        checkrun(
+        frontend_family_step(
             ctx,
+            checkrun,
+            &["cargo", "clippy"],
             &[
-                "cargo",
-                "clippy",
-                "-p",
-                "frontend",
                 "--target",
                 "wasm32-unknown-unknown",
                 "--all-targets",
@@ -188,13 +188,11 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
         )
     });
     r.run("clippy frontend (native)", || {
-        checkrun(
+        frontend_family_step(
             ctx,
+            checkrun,
+            &["cargo", "clippy"],
             &[
-                "cargo",
-                "clippy",
-                "-p",
-                "frontend",
                 "--all-targets",
                 "--locked",
                 "--quiet",
@@ -226,23 +224,17 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // Frontend tests get a PRIVATE target dir. With a shared CARGO_TARGET_DIR,
     // `cargo test -p frontend` runs a stale `frontend-<hash>` test binary built by
     // ANOTHER worktree, reporting that worktree's test count. Same package name + version across
-    // worktrees = same artifact hash = clobbering.
+    // worktrees = same artifact hash = clobbering. The step tests the whole frontend family.
     let frontend_dir = format!(
         "CARGO_TARGET_DIR={}",
         gate_folder(&ctx.main_root, build_output::GATE_FRONTEND_SUBFOLDER)
     );
     r.run("test frontend", || {
-        hostrun(
+        frontend_family_step(
             ctx,
-            &[
-                "env",
-                &frontend_dir,
-                "cargo",
-                "test",
-                "-p",
-                "frontend",
-                "--quiet",
-            ],
+            hostrun,
+            &["env", &frontend_dir, "cargo", "test"],
+            &["--quiet"],
         )
     });
     // Every workspace member the three test steps above do not run, derived from the root
@@ -388,19 +380,60 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     0
 }
 
+/// The package `test api` tests against the gate database, with every API crate, which the step
+/// derives.
+pub(super) const WAVE_GATE_API_TEST_PACKAGE: &str = "api";
+
 /// The members whose tests a step of [`cmd_gate`] other than `test workspace members` runs:
-/// `test api` against the gate database (with every API crate, which the step derives)
-/// and `test frontend`.
-pub(super) const WAVE_GATE_DEDICATED_TEST_PACKAGES: [&str; 2] = ["api", "frontend"];
+/// [`WAVE_GATE_API_TEST_PACKAGE`] and the frontend family `test frontend` tests, derived from the
+/// workspace under `root`.
+///
+/// # Errors
+/// The frontend family cannot be derived.
+pub(super) fn wave_gate_dedicated_test_packages(
+    root: &std::path::Path,
+) -> ci_task_catalog::Result<Vec<String>> {
+    let mut packages = vec![WAVE_GATE_API_TEST_PACKAGE.to_string()];
+    packages.extend(frontend_packages(root)?);
+    Ok(packages)
+}
+
+/// Derives `leading -p <package>… trailing` over the frontend family and runs it through `run`
+/// (`checkrun` or `hostrun`); red when the family cannot be derived, never a step over fewer
+/// packages.
+fn frontend_family_step(
+    ctx: &Ctx,
+    run: fn(&Ctx, &[&str]) -> i32,
+    leading: &[&str],
+    trailing: &[&str],
+) -> i32 {
+    match frontend_family_argv(&ctx.root, leading, trailing) {
+        Ok(argv) => {
+            let words: Vec<&str> = argv.iter().map(String::as_str).collect();
+            run(ctx, &words)
+        }
+        Err(error) => {
+            wprintln!("    {error}");
+            1
+        }
+    }
+}
 
 /// `test workspace members`: `cargo test -p <package>` in `target_dir_assignment`'s private target
-/// directory for every workspace member outside [`WAVE_GATE_DEDICATED_TEST_PACKAGES`] and the API
+/// directory for every workspace member outside [`wave_gate_dedicated_test_packages`] and the API
 /// family `test api` covers, each its own run; the first red package's code, after every package ran. A workspace whose members
 /// cannot be derived is red, never an empty step.
 fn test_workspace_members(ctx: &Ctx, target_dir_assignment: &str) -> i32 {
+    let dedicated = match wave_gate_dedicated_test_packages(&ctx.root) {
+        Ok(dedicated) => dedicated,
+        Err(error) => {
+            wprintln!("    {error:#}");
+            return 1;
+        }
+    };
+    let dedicated: Vec<&str> = dedicated.iter().map(String::as_str).collect();
     let packages = match ci_task_catalog::workspace_member_tests::member_packages_outside_api_family(
-        &ctx.root,
-        &WAVE_GATE_DEDICATED_TEST_PACKAGES,
+        &ctx.root, &dedicated,
     ) {
         Ok(packages) => packages,
         Err(error) => {

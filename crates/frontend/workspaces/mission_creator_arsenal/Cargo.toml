@@ -1,0 +1,71 @@
+# The Mission Creator's Arsenal: the per-slot loadout editor tab, its pure loadout core (the
+# loadout JSON, the export and import gates, the copy-and-apply buffer and the receipts), its writes
+# to the mission document, the panels drawn around a slot's loadout and the 3D paper doll host.
+[package]
+name = "mission_creator_arsenal"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's Arsenal: the per-slot loadout editor, its loadout core and export and import gates, its document writes, its panels and the 3D paper doll host."
+
+[package.metadata.layout]
+category = "crates/frontend/workspaces"
+tier = 11
+targets = "any"
+
+[dependencies]
+# The loadout rows, the compatibility feed, the weight arithmetic and the export schema gate.
+mission_creator_state = { workspace = true }
+# The hosted document's undo drive and dirty flag, and the bulk-step confirmation of a buffer
+# apply across a selection.
+mission_creator_engine_bridge = { workspace = true }
+# The JSON download behind the loadout export.
+mission_creator_session = { workspace = true }
+# The registry gear rows the catalog lists.
+frontend_api_dtos = { workspace = true }
+# The cargo rules and the composition rows a loadout carries.
+mission_operations = { workspace = true }
+# The hosted commands the Arsenal reads and writes a slot's loadout through.
+mission_editing_commands = { workspace = true }
+# The hosted document a loadout write runs against.
+mission_editing_session = { workspace = true }
+# The slot identity the tab edits and a loadout write names.
+orbat_slot_ids = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde_json = { workspace = true }
+# The crate's error type.
+thiserror = { workspace = true }
+
+# The browser half: the paper doll renderer and its canvas, the file picker of the loadout import
+# and the `window.__arsenalDoll` hooks the headless harness drives.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+paper_doll_renderer = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlCanvasElement",
+    "HtmlInputElement",
+    "CssStyleDeclaration",
+    "DomRect",
+    "Event",
+    "EventTarget",
+    "Blob",
+    "File",
+    "FileList",
+] }
+
+[dev-dependencies]
+# The repository-root finder, the source scrubber and the source shards the source pins read.
+frontend_test_support = { workspace = true }
+# The production half of a source file and the live entity operation sources.
+mission_creator_engine_bridge = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

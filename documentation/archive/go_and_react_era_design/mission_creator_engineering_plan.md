@@ -108,7 +108,7 @@ features/tactical-map/
 ### 1.2 The Creator wrapper — `features/mission-creator/`
 
 > **Superseded (T-035):** Actual layout uses docked `LeftSidebar`/`AssetPalette`/`AttributesModal`.
-> File tree below is historical — see live tree in [`agent_execution.md`](/documentation/apps/frontend/workspaces/editor/decisions.md).
+> File tree below is historical — see live tree in [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md).
 
 ```
 features/mission-creator/
@@ -430,7 +430,7 @@ OutlinerPanel
 
 > **Superseded (T-035):** The right panel is **always-on `AssetPalette`** — it does NOT swap to
 > `InspectorPanel` on selection. Attributes edit via **double-click → AttributesModal**. See
-> [`agent_execution.md`](/documentation/apps/frontend/workspaces/editor/decisions.md) Decisions log.
+> [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) Decisions log.
 
 The right panel defaults to the **Asset Browser**. This MUST be a nested, collapsible tree view (e.g., Faction → Category → Class) mimicking the Eden Editor, NOT a flat list of pill buttons. Users drag items from this tree directly onto the map.
 When an entity is selected, it switches to the `InspectorPanel` based on `selection.kind`:
@@ -483,7 +483,7 @@ JetBrains-Mono readout). Tools: Select, Ruler, Line-of-Sight. (Unit placement is
 > (**T-090**/**T-091**), 5 (**T-068** registry), 6, 8 stay blocked on external assets/backend or Eden
 > queue. **T-110** terrain base (millions of map props) is separate from mission-layer scale — see
 > [`t110_terrain_base_mission_layers.md`](/documentation/tickets/specs/t110_terrain_base_mission_layers.md). Use
-> [`agent_execution.md`](/documentation/apps/frontend/workspaces/editor/decisions.md) for live status of each sub-phase.
+> [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) for live status of each sub-phase.
 
 **Phase 0 — Dependencies & scaffold**
 `npm i deck.gl @deck.gl/core @deck.gl/layers @deck.gl/react @luma.gl/core yjs y-indexeddb comlink idb`.

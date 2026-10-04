@@ -204,7 +204,7 @@ Expected: `26/26 routes match the frozen oracle` and exit 0.
   for EOF on pipes that Chromium's zygote and crashpad children inherit.
 - **`innerText` returns the text CSS renders.** Under `text-transform: uppercase`, `innerText`
   reads `ATTACHED MISSIONS` where `textContent` reads `Attached Missions` (the heading in
-  `apps/frontend/src/pages/administration/event_manager/mission_picker.rs:216` carries
+  `crates/frontend/pages/administration_pages/src/event_manager/mission_picker.rs:216` carries
   the `uppercase` class). `render-check --expect` matches against `document.body.innerText`; use
   `textContent` in `--assert-js` for source-exact text, or compare case-insensitively.
 - **`aside` is ambiguous.** The desktop sidebar

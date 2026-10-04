@@ -1,0 +1,40 @@
+# The single-page app's wire types: one Rust shape per JSON body the API sends or accepts, grouped
+# by domain, and the serde-transparent typed identifiers every one of them holds.
+[package]
+name = "frontend_api_dtos"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The single-page app's API wire types, mirroring the API's models, and the typed identifiers they hold."
+
+[package.metadata.layout]
+category = "crates/frontend/foundation"
+tier = 7
+targets = "any"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+# The `string_id!` and `integer_id!` macros behind the typed identifiers.
+newtype_ids = { workspace = true }
+# The mission crates whose types the mission DTOs carry: the faction library of a user faction
+# and the compiled-row metadata the Mission Creator's server-truth export reads.
+mission_operations = { workspace = true }
+mission_compiler = { workspace = true }
+# The ballistics crates whose types the catalog and fire-mission DTOs carry.
+ballistics_model = { workspace = true }
+ballistics_solver = { workspace = true }
+fire_mission_planning = { workspace = true }
+
+# The browser console the server status decoder warns on in the browser build.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = ["console"] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

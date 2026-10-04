@@ -18,7 +18,7 @@
 //!   otherwise.
 //!
 //! The last two mirror the route table directly: the chromeless branch asks
-//! [`crate::foundation::route_table::chromeless`] and the `<main>` class asks [`crate::foundation::route_table::full_bleed`], so a
+//! [`frontend_route_table::chromeless`] and the `<main>` class asks [`frontend_route_table::full_bleed`], so a
 //! route's layout is declared once, in the table, and never restated here. The bare branch is the
 //! exception — those two paths are named in this file because they are the frame's own boundary,
 //! not a route-table flag.
@@ -27,7 +27,7 @@
 #[cfg(target_arch = "wasm32")]
 use crate::app_routes::AppRoutes;
 #[cfg(target_arch = "wasm32")]
-use crate::foundation::auth::AuthStore;
+use frontend_session::AuthStore;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
@@ -75,7 +75,7 @@ enum FrameKind {
 fn classify_frame(path: &str) -> FrameKind {
     if path == "/login" || path == "/auth/callback" {
         FrameKind::Bare
-    } else if crate::foundation::route_table::chromeless(path) {
+    } else if frontend_route_table::chromeless(path) {
         FrameKind::Chromeless
     } else {
         FrameKind::Chrome
@@ -93,11 +93,11 @@ fn classify_frame(path: &str) -> FrameKind {
 pub fn AppLayout() -> impl IntoView {
     // Provided here, at the root, so every page below reads the same instance.
     provide_context(AuthStore::new());
-    crate::foundation::ui::toast::provide_toasts();
+    frontend_ui::toast::provide_toasts();
     // Restore a stored session on a cold load; a no-op for a guest with nothing saved.
     let pathname = use_location().pathname;
     if pathname.get_untracked() != "/auth/callback" {
-        leptos::task::spawn_local(crate::foundation::auth::session_refresh::bootstrap(
+        leptos::task::spawn_local(frontend_session::session_refresh::bootstrap(
             expect_context::<AuthStore>(),
         ));
     } else {
@@ -120,7 +120,7 @@ pub fn AppLayout() -> impl IntoView {
         // Chromed: sidebar, top bar, and the padded or full-bleed main region.
         FrameKind::Chrome => {
             let main_class = move || {
-                if crate::foundation::route_table::full_bleed(&pathname.get()) {
+                if frontend_route_table::full_bleed(&pathname.get()) {
                     "min-h-0 flex-1 bg-background overflow-hidden"
                 } else {
                     "min-h-0 flex-1 bg-background overflow-y-auto p-6"
@@ -168,7 +168,7 @@ pub fn AppLayout() -> impl IntoView {
     view! {
         {frame}
         <super::membership_status::MembershipStatus />
-        <crate::foundation::ui::toast::ToastViewport />
+        <frontend_ui::toast::ToastViewport />
     }
 }
 

@@ -63,8 +63,8 @@ API's `LEADERBOARD_REFRESH_INTERVAL_SECS`
   uuid.
 - Used by: the API application (`apps/api`): its router merges `routes`, and the integration
   suites call the leaderboard handler. Over HTTP: the dashboard in
-  `apps/frontend/src/pages/command_center/dashboard/` and the leaderboards in
-  `apps/frontend/src/pages/operations/leaderboards/`.
+  `crates/frontend/pages/command_center_pages/src/dashboard/` and the leaderboards in
+  `crates/frontend/pages/operations_pages/src/leaderboards/`.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
   `apps/api/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.

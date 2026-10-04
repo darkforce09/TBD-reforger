@@ -2,46 +2,47 @@
 
 # Full-screen workspaces documentation
 
-The documentation of the web app's full-screen workspaces, one folder per workspace folder of the
-code: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), the debug benches, and
-the two workspaces that are planned but not built, the mission planner and the after-action
-review. Developers and AI agents read it before changing a workspace or starting a new one.
+The documentation of the web app's planned full-screen workspaces, the two that are not built and
+so have no crate yet: the mission planner and the after-action review. Every built workspace is a
+crate under `crates/frontend/workspaces/`, documented under
+[workspace crate documentation](/documentation/crates/frontend/workspaces/README.md): the
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) and the debug benches.
+Developers and AI agents read it before starting a new workspace.
 
 ## Contents
 
 ```text
 documentation/apps/frontend/workspaces/
 ├── aar/      the after-action review workspace, planned and not built: design notes and open work
-├── debug/    the debug benches: the building viewer and the world line-of-sight bench
-├── editor/   the Mission Creator: feature inventory, UX, roadmap, decisions, Eden reference, arsenal
 └── planner/  the mission planner workspace, planned and not built: design notes and open work
 ```
 
 ## How it works
 
-The folders mirror the workspace folders under `apps/frontend/src/workspaces/` and keep their
-spelling. Each holds a README index and its feature docs; the Mission Creator's folder also holds
-its reference catalogs and design references, and splits its feature docs into subfolders. A
-workspace is a full-bleed, chromeless route that mounts its own map canvas rather than a page
-inside the platform frame; the
-[workspaces README](/apps/frontend/src/workspaces/README.md) describes what they share.
+A planned workspace has no code, so its folder here mirrors no code folder: it holds a README
+index and the feature doc of its design and open work. A workspace is a full-bleed, chromeless
+route that mounts its own map canvas rather than a page inside the platform frame; the
+[workspace crates README](/crates/frontend/workspaces/README.md) describes what the built ones
+share.
 
 | Workspace | Route | State | Start at |
 |---|---|---|---|
-| Mission Creator | `/missions/:id/edit`, and the mission hub's review workspace | built | [editor/README.md](/documentation/apps/frontend/workspaces/editor/README.md) |
-| Debug benches | `/debug/building-viewer`, `/debug/world-los`, `/debug/ballistics-agreement` | built | [debug/README.md](/documentation/apps/frontend/workspaces/debug/README.md) |
-| Mission planner | none | planned; the code folder holds only its README | [planner/README.md](/documentation/apps/frontend/workspaces/planner/README.md) |
-| After-action review | none | planned; the code folder holds only its README | [aar/README.md](/documentation/apps/frontend/workspaces/aar/README.md) |
+| Mission Creator | `/missions/:id/edit`, and the mission hub's review workspace | built | [mission_creator_workspace/README.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
+| Debug benches | `/debug/building-viewer`, `/debug/world-los`, `/debug/ballistics-agreement` | built | [debug_benches/README.md](/documentation/crates/frontend/workspaces/debug_benches/README.md) |
+| Mission planner | none | planned; no code | [planner/README.md](/documentation/apps/frontend/workspaces/planner/README.md) |
+| After-action review | none | planned; no code | [aar/README.md](/documentation/apps/frontend/workspaces/aar/README.md) |
 
-A new workspace gets a folder here named like its code folder, with a README and its feature docs,
-and a line in Contents and a row in the table.
+A newly planned workspace gets a folder here with a README and its feature doc, a line in Contents
+and a row in the table. When a planned workspace is built, it becomes a crate under
+`crates/frontend/workspaces/` and its folder moves to
+`documentation/crates/frontend/workspaces/<crate>/`, the crate's documentation mirror.
 
 ## Code
 
-- [Full-screen workspaces](/apps/frontend/src/workspaces/) — the workspace folders these
-  documents describe, and the module tree that declares the built ones.
+- [Frontend workspace crates](/crates/frontend/workspaces/README.md) — the built workspaces,
+  each a crate, where a planned workspace is built.
 - [Route table](/apps/frontend/src/app_routes.rs) and
-  [route access table](/apps/frontend/src/foundation/route_table/mod.rs) — the workspace routes and their
+  [route access table](/crates/frontend/foundation/frontend_route_table/src/routes.rs) — the workspace routes and their
   full-bleed, chromeless layout.
 
 ## Boundaries
@@ -51,15 +52,16 @@ and a line in Contents and a row in the table.
   the [glossary](/documentation/glossary/README.md); the workspace code and the ticket registry in
   `.ai/tickets/`, which the documents are written from.
 - Used by: the [frontend documentation README](/documentation/apps/frontend/README.md),
-  whose Contents names this folder; the in-code READMEs of the workspace folders, which link their
-  documents under Related documentation.
-- Rules: one folder per workspace folder of the code, spelled the same; a planned workspace's
-  documents say it is not built and describe only its design and open work, never code that does
-  not exist.
+  whose Contents names this folder; the
+  [Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md),
+  which links it.
+- Rules: one folder per planned workspace; a planned workspace's documents say it is not built and
+  describe only its design and open work, never code that does not exist; a built workspace's
+  documents live in its crate's documentation mirror, never here.
 
 ## Related documentation
 
 - [Frontend documentation](/documentation/apps/frontend/README.md) — the route table from
   every route to its code folder and feature doc.
-- [Pages documentation](/documentation/apps/frontend/pages/README.md) — the routed pages
+- [Page crate documentation](/documentation/crates/frontend/pages/README.md) — the routed pages
   inside the platform frame.

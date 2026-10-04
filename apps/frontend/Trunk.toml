@@ -2,40 +2,42 @@
 target = "index.html"
 dist = "dist"
 
-# CI parity: aegis.css is Tailwind v4 syntax (@import/@source/@theme). Locally trunk finds the
-# v4 binary on PATH; in CI it would auto-download its 3.x default and fail — pin the version.
+# aegis.css is Tailwind v4 syntax (@import/@source/@theme). Trunk downloads its own default (a 3.x
+# release) when no version is pinned, which fails on that syntax, so the version is pinned.
 [tools]
 tailwindcss = "4.3.2"
 
 # Trunk's default watch set is the whole crate directory, which includes the paths trunk and the
-# Tailwind v4 pass write into. Measured 2026-08-01: one `trunk serve --release` produced THREE builds
-# back to back — `✅ success` immediately followed by `📦 starting build`, and the third finished in
-# 0.11s, i.e. cargo found nothing changed. So the trigger was the build's own output, not a source
-# edit. Every one of those pushes a browser reload, which aborts the 152 MB
-# `everon-sat.tbd-sat` fetch mid-flight and leaves the Mission Creator showing a heightmap with no
-# satellite layer, and an empty Asset Browser.
+# Tailwind v4 pass write into: the build's own output then triggers further builds with nothing
+# changed. Every rebuild pushes a browser reload, which aborts the 152 MB `everon-sat.tbd-sat`
+# fetch mid-flight and leaves the Mission Creator showing a heightmap with no satellite layer and
+# an empty Asset Browser.
+#
+# `watch` replaces that default set: the app folder itself (".") and the frontend library crates
+# under `crates/frontend`, both relative to this file. Trunk refuses to start `serve` or `watch`
+# when a listed folder does not exist.
 [watch]
+watch = [".", "../../crates/frontend"]
 ignore = ["dist", "style/aegis.css"]
 
 [serve]
 address = "127.0.0.1"
 port = 3000
-# Cross-origin isolation — crossOriginIsolated === true so the SharedArrayBuffer / wasm-GPU path
-# is available from the Mission Creator slices onward. The gate harness serves the built dist via
-# `gate serve` (tools/developer_tools), which sets the same two headers.
+# Cross-origin isolation: crossOriginIsolated === true, so the SharedArrayBuffer and wasm GPU path
+# is available to the Mission Creator. The gate harness serves the built dist through `gate serve`
+# (tools/browser_testing/browser_gate_suites), which sets the same two headers.
 headers = { "Cross-Origin-Opener-Policy" = "same-origin", "Cross-Origin-Embedder-Policy" = "credentialless" }
 
-# T-159.24 — dev API proxy (the Vite `/api → :8080` equivalent). Relative `/api/v1/*` calls from the
-# app now reach the backend under `trunk serve`; the gate harness keeps stubbing via CDP instead.
-# Trunk has no proxy timeout knob — the large mission-version POST was proven through this path in
-# the T-159.24 upload spike (see verify log) rather than configured around.
+# The development API proxy: relative `/api/v1/*` calls from the app reach the backend on :8080
+# under `trunk serve`; the gate harness stubs them through the DevTools protocol instead. Trunk has
+# no proxy timeout setting; the large mission-version POST passes through this proxy as it is.
 [[proxy]]
 backend = "http://127.0.0.1:8080/api"
 # Pass 302s through (dev-login / Discord → FRONTEND_URL/auth/callback#…). Following them here
 # strips the fragment and leaves the browser on /api/v1/auth/dev-login → SPA 404.
 no_redirect = true
 
-# T-159.24 — map-asset passthrough. Dead (404) until the backend serves /map-assets (T-159.29 flip
-# build-out); declared now so the dev origin story is fixed: same-origin absolute /map-assets/*.
+# The map-asset passthrough: the app fetches same-origin absolute `/map-assets/*` paths, and the
+# backend serves them.
 [[proxy]]
 backend = "http://127.0.0.1:8080/map-assets"

@@ -1,0 +1,90 @@
+# The Mission Creator's browser session: the IndexedDB draft writer and its autosave status, the
+# server hydrate and its conflict prompt, the cross-tab writer role, the warm-session marker, the
+# title preference, the payload-size readout and the browser transport behind Save, Export and
+# the clipboard commands.
+[package]
+name = "mission_creator_session"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's browser session: draft persistence, autosave status, server hydrate and conflict prompt, cross-tab writer role, Save and Export transport."
+
+[package.metadata.layout]
+category = "crates/frontend/workspaces"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The editor's state vocabulary: the review mode the writer obeys and the world-layer preferences
+# the hydrate restores.
+mission_creator_state = { workspace = true }
+# The hosted document handle, its undo drive and dirty flag, and the edit-persist hook the draft
+# writer registers.
+mission_creator_engine_bridge = { workspace = true }
+# The toasts, the byte formatting and the clipboard the save status and the commands report with.
+frontend_ui = { workspace = true }
+# The mission and review wire rows the hydrate and Save read and write.
+frontend_api_dtos = { workspace = true }
+# The authed client and the mission endpoints behind the hydrate, Save and the review restore.
+frontend_transport = { workspace = true }
+# The signed-in account the drafts are scoped to and the auth store the commands carry.
+frontend_session = { workspace = true }
+# The mission model, document, payload, compiler, rules and operations the commands and the size
+# readout read.
+mission_model = { workspace = true }
+mission_document = { workspace = true }
+mission_payload = { workspace = true }
+mission_compiler = { workspace = true }
+mission_validation = { workspace = true }
+mission_operations = { workspace = true }
+# The decidable half of the drafts: the record policy, the server adoption and the save scheduler
+# rules.
+mission_persistence = { workspace = true }
+# The hosted commands and the document text rules Save, Export and the clipboard commands run.
+mission_editing_commands = { workspace = true }
+# The world-layer preferences the hydrate restores.
+map_streaming_model = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+# The crate's error type.
+thiserror = { workspace = true }
+
+# The browser half: IndexedDB, `sessionStorage`, the Web Locks and broadcast channel of the writer
+# election, the file download and the fetch and stream readers of the hydrate.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+idb = { workspace = true }
+futures = { workspace = true }
+gloo-net = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlAnchorElement",
+    "Blob",
+    "BlobPropertyBag",
+    "Url",
+    "Storage",
+    "BroadcastChannel",
+    "MessageEvent",
+    "EventTarget",
+    "Navigator",
+    "LockManager",
+    "RequestCredentials",
+    "ReadableStreamDefaultReader",
+] }
+
+[dev-dependencies]
+# The repository-root finder, the source scrubber and the source shards the source pins read.
+frontend_test_support = { workspace = true }
+# The production half of a source file and the live entity operation sources.
+mission_creator_engine_bridge = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

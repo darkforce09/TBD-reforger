@@ -1,5 +1,6 @@
 //! Unit tests for [`crate::wasm32_lint_lane`]: the derived package set over this checkout, its
-//! split between the two lanes that lint it, and the refusals over fixture workspaces.
+//! split between the two lanes that lint it, the frontend crates and the refusals over fixture
+//! workspaces.
 
 use super::*;
 use repository_laws::workspace_members::read_workspace_members;
@@ -44,18 +45,20 @@ fn every_declared_wasm32_member_is_linted() {
     }
 }
 
-/// The browser applications are linted too, and nothing else is.
+/// The browser applications and every crate under `crates/frontend` are linted too, and nothing
+/// else is.
 #[test]
-fn the_lint_covers_exactly_the_wasm32_members_and_the_applications() {
-    let members: Vec<String> = read_workspace_members(&root())
-        .expect("the workspace members read")
-        .into_iter()
-        .map(|member| member.package_name)
-        .collect();
+fn the_lint_covers_exactly_the_wasm32_members_the_applications_and_the_frontend_crates() {
+    let members = read_workspace_members(&root()).expect("the workspace members read");
     let mut expected = declared_wasm32_packages();
     for package in &BROWSER_APPLICATIONS {
-        if members.iter().any(|member| member == package) {
+        if members.iter().any(|member| member.package_name == *package) {
             expected.push((*package).to_string());
+        }
+    }
+    for member in &members {
+        if member.path.starts_with("crates/frontend/") && !expected.contains(&member.package_name) {
+            expected.push(member.package_name.clone());
         }
     }
     let mut linted = wasm32_lint_packages(&root()).expect("the lint packages derive");
@@ -65,31 +68,84 @@ fn the_lint_covers_exactly_the_wasm32_members_and_the_applications() {
 }
 
 /// The two lanes together lint the whole set, each package once: `wasm-ci` everything but the
-/// frontend, and `ci-local-leptos` the frontend with every target.
+/// frontend family, and `ci-local-leptos` the family with every target, through its derived
+/// wasm32 line.
 #[test]
-fn wasm_ci_and_the_own_lanes_partition_the_lint() {
+fn wasm_ci_and_the_frontend_lane_partition_the_lint() {
+    use crate::frontend_package_lane::{
+        FRONTEND_LANE, FrontendLine, frontend_line_argv, frontend_line_of, frontend_packages,
+    };
     let all = wasm32_lint_packages(&root()).expect("the lint packages derive");
     let wasm_ci = wasm_ci_lint_packages(&root()).expect("the wasm-ci packages derive");
-    for (package, lane) in OWN_LANE_WASM32_LINTS {
-        assert!(!wasm_ci.iter().any(|p| p == package), "{package} twice");
-        let row = crate::task_runner::find(lane).expect("the own lane is a task row");
-        let lints_it = row.steps.iter().any(|step| {
-            crate::task_runner::step_echo(step).is_some_and(|line| {
-                line.starts_with("cargo clippy")
-                    && line.contains(&format!("-p {package} "))
-                    && line.contains("--target wasm32-unknown-unknown")
-            })
-        });
-        assert!(lints_it, "`{lane}` does not lint {package} for wasm32");
+    let family = frontend_packages(&root()).expect("the frontend family derives");
+    for package in &family {
+        assert!(!wasm_ci.contains(package), "{package} twice");
     }
-    let mut union: Vec<String> = wasm_ci
-        .into_iter()
-        .chain(OWN_LANE_WASM32_LINTS.iter().map(|(p, _)| (*p).to_string()))
-        .collect();
+    let row = crate::task_runner::find(FRONTEND_LANE).expect("the frontend lane is a task row");
+    let lints_for_wasm32 = row.steps.iter().any(|step| {
+        matches!(step, crate::task_runner::Step::Native { run }
+            if frontend_line_of(*run) == Some(FrontendLine::Wasm32Clippy))
+    });
+    assert!(
+        lints_for_wasm32,
+        "`{FRONTEND_LANE}` has no wasm32 lint step"
+    );
+    let line = frontend_line_argv(&root(), FrontendLine::Wasm32Clippy)
+        .expect("the frontend line derives")
+        .join(" ");
+    for package in &family {
+        assert!(
+            format!("{line} ").contains(&format!("-p {package} ")),
+            "`{FRONTEND_LANE}` does not lint {package} for wasm32: {line}"
+        );
+    }
+    let mut union: Vec<String> = wasm_ci.into_iter().chain(family).collect();
     let mut all_sorted = all;
     union.sort();
     all_sorted.sort();
     assert_eq!(union, all_sorted);
+}
+
+/// A `targets = "any"` crate under `crates/frontend` is linted for wasm32, by the frontend lane
+/// and not by `wasm-ci`; a `targets = "any"` crate elsewhere is not linted for wasm32.
+#[test]
+fn an_any_target_frontend_crate_is_linted_for_wasm32_by_the_frontend_lane() {
+    let folder = std::env::temp_dir().join(format!(
+        "wasm32-lint-lane-any-frontend-crate-{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&folder);
+    let write = |relative: &str, body: &str| {
+        let path = folder.join(relative);
+        std::fs::create_dir_all(path.parent().expect("a parent")).unwrap();
+        std::fs::write(path, body).unwrap();
+    };
+    let any = "\n[package.metadata.layout]\ntargets = \"any\"\n";
+    write(
+        "Cargo.toml",
+        "[workspace]\nmembers = [\"apps/*\", \"crates/foundation/*\", \"crates/frontend/*/*\"]\n",
+    );
+    write(
+        "apps/frontend/Cargo.toml",
+        "[package]\nname = \"frontend\"\n",
+    );
+    write(
+        "apps/offline_service_worker/Cargo.toml",
+        "[package]\nname = \"offline_service_worker\"\n",
+    );
+    write(
+        "crates/foundation/time_source/Cargo.toml",
+        &format!("[package]\nname = \"time_source\"\n{any}"),
+    );
+    write(
+        "crates/frontend/foundation/frontend_ui/Cargo.toml",
+        &format!("[package]\nname = \"frontend_ui\"\n{any}"),
+    );
+    let all = wasm32_lint_packages(&folder).expect("the fixture reads");
+    let wasm_ci = wasm_ci_lint_packages(&folder).expect("the fixture reads");
+    std::fs::remove_dir_all(&folder).unwrap();
+    assert_eq!(all, ["frontend", "offline_service_worker", "frontend_ui"]);
+    assert_eq!(wasm_ci, ["offline_service_worker"]);
 }
 
 /// The command line names each package once, then the wasm32 target and `-D warnings`.

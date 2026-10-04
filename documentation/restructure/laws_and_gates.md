@@ -15,7 +15,10 @@ current tree cannot pass yet start in ratchet mode and turn hard at the stage na
 
 ### Crate tiers (`cargo xtask verify crate-tiers`)
 
-1. Every manifest under the apps, crates, tools and legacy folders is a workspace member.
+1. Every manifest under the apps, crates, tools and legacy folders (outside test trees, fixtures
+   and build output) is a workspace member. The root `members` list reaches the library crates
+   through one glob per category (`crates/<category>/*`, and `crates/frontend/*/*` for the
+   frontend's layer folders), so a manifest under `crates/` that no glob reaches fails this rule.
 2. Each member declares `[package.metadata.layout]` with `category`, `tier` and `targets`.
 3. A crate's path is its category plus its name, and the package name equals the folder name.
 4. Dependency edges point strictly down, and each declared tier equals 1 plus the highest
@@ -79,12 +82,26 @@ For every library crate:
 
 - **Strangler** (`cargo xtask verify strangler`): the shim ledger is empty at commit, and no new crate
   depends on legacy.
-- **Frontend layering** (`cargo xtask verify frontend-layering`): foundation does not import features,
-  pages, workspaces or the app shell; features do not import pages or workspaces; inside foundation
-  a sub-area imports only sub-areas before it in the order ui, utils, transport, route_table, auth,
-  then offline and map_view as peers (test_support only from test files). Hard from S3.
-- **Tailwind sources** (`cargo xtask verify tailwind-sources`): every frontend crate has an `@source`
-  line in the app's stylesheet. Hard from S10.
+- **Frontend layering** (`cargo xtask verify frontend-layering`), hard at zero, in two modes:
+  - crate-edge mode: every normal, dev and build dependency edge between frontend crates is
+    judged. A crate's layer is its folder `crates/frontend/<layer>/` (foundation below features
+    below pages and workspaces) and the app `apps/frontend` is the shell; a lower layer never
+    depends on a higher one, page crates never depend on each other, and pages and workspaces
+    never depend on each other. The foundation crates keep their order: `frontend_ui` <
+    `frontend_api_dtos` < {`frontend_transport`, `frontend_route_table`} < `frontend_session` <
+    {`frontend_offline`, `frontend_map_view`}, with `frontend_test_support` reached only through
+    dev-dependencies. The Mission Creator crates form the order `mission_creator_state` <
+    `mission_creator_engine_bridge` < `mission_creator_session` < `mission_creator_arsenal` <
+    `mission_creator_workspace`; `debug_benches` is an order of its own that no Mission Creator
+    crate touches. A frontend crate outside every layer folder or order, and a crate an order
+    names that no member carries, are findings;
+  - in-crate mode: the module-level rules that remain inside one crate, through a layer table the
+    caller passes; the app's table maps its entry point, route rendering, platform frame and
+    tests onto the shell.
+- **Tailwind sources** (`cargo xtask verify tailwind-sources`): the app's stylesheet holds exactly
+  one `@source "<relative path>/src/**/*.rs";` line per workspace member that depends on leptos,
+  the app included; a missing line and a stale line (naming no such member) are findings.
+  Trunk's `[watch]` list covers `crates/frontend`. Hard from S10.
 - **Relocation** (`cargo xtask refactor relocate --verify`): no retired spelling in a live file.
 - **Fail-closed roots:** the file-length and law root walkers derive their roots from the
   workspace members and fail on a missing root instead of skipping it.
@@ -98,7 +115,7 @@ own log:
 
 1. `cargo fmt --all --check`
 2. `cargo clippy --workspace --all-targets --locked -- -D warnings`
-3. wasm32 clippy over the frontend and every wasm-only crate
+3. wasm32 clippy over the frontend app, every frontend crate and every wasm-only crate
 4. `cargo xtask ci ci-local`
 5. `cargo xtask db up` then `cargo xtask db test-it`
 6. `cargo xtask mk ci-local-leptos`
@@ -134,6 +151,8 @@ the deploy Dockerfile, and the operator-run `cargo xtask mod compile` and
 | The map engine's feature gate tripwire test | Replaced by the anatomy law's features rule; deleted with the map engine (done in S8) |
 | No standards gate | Crate anatomy, strangler, frontend layering, tailwind sources |
 | 84 frontend paths pinned by the editor ORBAT coherency check | Rewritten by the relocation tool at every move |
+| Frontend layering over the module paths of the single frontend crate | The crate-edge mode over the dependency edges between the frontend crates; the in-crate mode keeps the app shell's table (done in S10) |
+| One ancestor `@source` glob over the frontend sources | One exact `@source` line per leptos member, a stale line a finding (done in S10) |
 
 ## End-state verification
 

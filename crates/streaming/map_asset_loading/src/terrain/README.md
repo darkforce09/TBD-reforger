@@ -53,7 +53,7 @@ the satellite image fills the basemap texture. Positions are world metres inside
   `crate::asset_statistics`, `crate::live_memory_budget`, `crate::mesh_composition`;
   `browser_platform` (fetches and Range fetches); `map_draw_lanes` (zoom gates and lanes).
 - Used by: the map host of `map_streaming_host`, which loads, holds and syncs everything here;
-  the Mission Creator's tests in `apps/frontend/src/workspaces/editor/`, which read the satellite
+  the Mission Creator's tests in `crates/frontend/workspaces/mission_creator_workspace/src/`, which read the satellite
   and relief code by path.
 - Rules: a binary file is validated before it is read, and one of another schema or container
   version is refused rather than guessed; a manifest block this build cannot read (another

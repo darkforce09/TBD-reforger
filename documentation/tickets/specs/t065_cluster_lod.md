@@ -4,7 +4,7 @@
 
 **Status:** **shipped** — T-065 + T-065.1 + T-065.2; FE build/lint clean. **Product call (2026-06):** good enough — daily edit zoom stays detail @ ~160 fps; extreme-zoom clusters acceptable; no further cluster perf polish unless regression.  
 **Git tag on ship:** **T-065**  
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/workspaces/editor/decisions.md) §ACTIVE SLICE · [t061_drag_move_hotfix.md](t061_drag_move_hotfix.md) · [t063_spatial_index.md](t063_spatial_index.md)
+**Authority:** [MC ROADMAP](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) §ACTIVE SLICE · [t061_drag_move_hotfix.md](t061_drag_move_hotfix.md) · [t063_spatial_index.md](t063_spatial_index.md)
 
 **Prerequisites:** T-064 shipped (`8838e58`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 
@@ -32,7 +32,7 @@ Original premise: @ min zoom, Deck draws ~367k `IconLayer` markers wastefully �
 
 **T-065.2 fix:** full-terrain `getClusterMarkers` module cache + `ZOOM_CLUSTER_MAX = -4` so default load never enters cluster band.
 
-**Eden parity (deferred nuance):** [`eden/ui_anatomy.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/ui_anatomy.md) — group icons stacked when zoomed out. Geo clusters at extreme zoom only for v1.
+**Eden parity (deferred nuance):** [`eden/ui_anatomy.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/ui_anatomy.md) — group icons stacked when zoomed out. Geo clusters at extreme zoom only for v1.
 
 ---
 

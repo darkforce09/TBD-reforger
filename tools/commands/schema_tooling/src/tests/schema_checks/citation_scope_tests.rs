@@ -134,7 +134,8 @@ fn empty_corpus_is_a_scope_failure_not_a_pass() {
 
 /// The printed scope sentence is generated from the extensions and the roots the scan walks, so
 /// it cannot drift from the walker; over the live checkout those roots hold the top-level folder
-/// of every workspace member, `apps/` and `tools/` among them.
+/// of every workspace member, `apps/`, `crates/` (the frontend crates' `@contract` tags among
+/// them) and `tools/` among them.
 #[test]
 fn scope_line_is_generated_from_the_walked_roots() {
     let root = tool_test_support::test_repo_root();
@@ -156,7 +157,7 @@ fn scope_line_is_generated_from_the_walked_roots() {
         );
     }
     assert!(CODE_EXTS.contains(&"rs"), "T-611: rs must stay scanned");
-    for r in ["apps", "tools"] {
+    for r in ["apps", "crates", "tools"] {
         assert!(roots.iter().any(|root| root == r), "{r}/ must stay scanned");
     }
 }

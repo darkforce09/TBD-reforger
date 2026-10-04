@@ -19,7 +19,7 @@ documentation/archive/handoffs_and_kickoffs/
 
 ## Code
 
-- [Mission Creator](/apps/frontend/src/workspaces/editor/) — the editor the first two
+- [Mission Creator](/crates/frontend/workspaces/mission_creator_workspace/src/) — the editor the first two
   documents plan work on.
 - [Mod](/apps/mod/) — the addons the continuation pointer concerns.
 
@@ -33,7 +33,7 @@ documentation/archive/handoffs_and_kickoffs/
 
 ## Related documentation
 
-- [Mission Creator decisions](/documentation/apps/frontend/workspaces/editor/decisions.md) — the
+- [Mission Creator decisions](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) — the
   decisions the execution contract recorded, as live entries.
 - [Ticket run pipeline](/documentation/runbooks/ticket_run_pipeline.md) and
   [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how agent work starts

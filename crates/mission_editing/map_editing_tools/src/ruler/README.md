@@ -48,13 +48,13 @@ injected world-to-pixel projector and key each node by its world endpoints quant
   height.
 - Used by:
   - the Mission Creator's ruler overlay
-    (`apps/frontend/src/workspaces/editor/input/tools/ruler_tool.rs`), which installs the
+    (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/ruler_tool.rs`), which installs the
     chain into `RULER_CHAIN`, and the canvas mount
-    (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`), which creates it;
-  - the pointer gestures (`apps/frontend/src/workspaces/editor/input/pointer_gestures.rs` and
-    `apps/frontend/src/workspaces/editor/input/pointer_gestures/pointer_down.rs`), the editor
-    page (`apps/frontend/src/workspaces/editor/mission_editor.rs`) and the toolbelt
-    (`apps/frontend/src/workspaces/editor/ui/docks/toolbelt/`), which read `EditorTool`.
+    (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount.rs`), which creates it;
+  - the pointer gestures (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures.rs` and
+    `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/pointer_down.rs`), the editor
+    page (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs`) and the toolbelt
+    (`crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/toolbelt/`), which read `EditorTool`.
 - Rules:
   - nothing here names the document or its mutators (`the_ruler_never_writes_the_document` in
     `tests/session_local.rs`);
@@ -65,4 +65,4 @@ injected world-to-pixel projector and key each node by its world endpoints quant
 
 ## Related documentation
 
-- [Mission Creator feature inventory: bottom toolbelt](/documentation/apps/frontend/workspaces/editor/feature_inventory/bottom_toolbelt.md) — the Ruler as the mission maker uses it.
+- [Mission Creator feature inventory: bottom toolbelt](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/bottom_toolbelt.md) — the Ruler as the mission maker uses it.

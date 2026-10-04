@@ -65,7 +65,7 @@ None: no feature and no environment variable. The GPU layers are selected by the
   `wgpu` and `web-sys` (`ImageBitmap`) in the WebAssembly build.
 - Used by: `map_renderer`, whose render engine holds the layers, keeps the textured lane records
   and forwards the asset sink's uploads; the Mission Creator and the debug building viewer under
-  `apps/frontend/src/workspaces/` through `RenderEngine::with_terrain_line_of_sight_overlay`.
+  `crates/frontend/workspaces/` through `RenderEngine::with_terrain_line_of_sight_overlay`.
 - Rules: map rendering tier 3 (`cargo xtask verify crate-tiers`); no layer names the renderer; a
   refusal's message starts with its call's stable tag (`LayerCall::tag`).
 

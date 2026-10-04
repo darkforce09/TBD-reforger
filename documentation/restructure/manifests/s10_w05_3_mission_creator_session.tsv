@@ -1,0 +1,12 @@
+# Stage S10 H3a, third Mission Creator crate: the editor's browser session (the IndexedDB draft
+# writer and its status surface, the server hydrate and its conflict prompt, the cross-tab writer
+# role, the warm-session marker, the title preference, the payload-size readout and the browser
+# transport behind Save, Export and the clipboard commands) becomes
+# crates/frontend/workspaces/mission_creator_session. The folder becomes the crate's `src`, its
+# module tree `lib.rs`, and its README the source tree README. The prefix is one `crate::` row
+# scoped to the moved folder and one `mission_creator_session::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/workspaces/editor/session	crates/frontend/workspaces/mission_creator_session/src
+path	apps/frontend/src/workspaces/editor/session/mod.rs	crates/frontend/workspaces/mission_creator_session/src/lib.rs
+rust_path	crate::workspaces::editor::session::	crate::	apps/frontend/src/workspaces/editor/session
+rust_path	crate::workspaces::editor::session::	mission_creator_session::	apps/frontend/src

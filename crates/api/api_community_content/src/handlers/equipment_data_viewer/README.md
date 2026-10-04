@@ -54,7 +54,7 @@ attachment with `Cache-Control: private, no-store`.
   through `AppState::equipment_data`, and
   `contract_schema_types::community_content::equipment_data_viewer`.
 - Used by: the domain's `routes.rs`, which registers every handler here in development only;
-  over HTTP, the equipment data viewer bench in `apps/frontend/src/workspaces/debug/data_viewer/`.
+  over HTTP, the equipment data viewer bench in `crates/frontend/workspaces/debug_benches/src/data_viewer/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`), and
   `apps/api/tests/debug_routes_are_development_only.rs` proves the production 404 and
   the development registration for every tagged debug route.

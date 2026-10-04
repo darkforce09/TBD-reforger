@@ -840,11 +840,11 @@ fn mission_editor_move_commit_names_the_atomic_mix_api() {
     let editor = strip_rust_lexical_noise(concat!(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs"
+            "/../../frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount.rs"
         )),
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../apps/frontend/src/workspaces/editor/input/pointer_gestures/pointer_up.rs"
+            "/../../frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/pointer_up.rs"
         ))
     ));
 

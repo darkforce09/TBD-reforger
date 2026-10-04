@@ -53,7 +53,7 @@ cargo test -p overlay_instances   # slot instance cases and fire-mission mark ca
 - Used by: `symbology_layers_gpu`, whose slot symbology packs the slot, vehicle, comment, drag
   and cluster lanes with it (`crates/map_rendering/symbology_layers_gpu/src/slot_symbology/`);
   the Mission Creator's select tool and the mortar page's map
-  picker (`apps/frontend/src/pages/field_tools/mortar/map_picker/`).
+  picker (`crates/frontend/pages/field_tools_pages/src/mortar/map_picker/`).
 - Rules: the side tints stay three distinct colours with BLUFOR as the default
   (`side_tint_three_distinct`, `missing_side_defaults_blufor`); the symbology degrades to dots
   past the stated scale (`symbology_degrades_to_dots_past_the_stated_m_per_px`); every emitted
@@ -61,4 +61,4 @@ cargo test -p overlay_instances   # slot instance cases and fire-mission mark ca
 
 ## Related documentation
 
-- [Mission Creator feature inventory: performance at scale](/documentation/apps/frontend/workspaces/editor/feature_inventory/performance_at_scale.md) — the selection patches, drag overlay and clusters at scale.
+- [Mission Creator feature inventory: performance at scale](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/performance_at_scale.md) — the selection patches, drag overlay and clusters at scale.

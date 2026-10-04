@@ -67,7 +67,7 @@ map_rendering, paper_doll ──► streaming, map_overlay, terrain, … (engine
 | the decisions behind serialising and hydrating a draft (`crates/mission_editing/mission_persistence/`) | the tab lock, the save-status signal and the title (`editor/shell/`) |
 
 A file whose home is unclear goes where this rule sends it. The frontend paths are under
-`apps/frontend/src/workspaces/editor/`. Where the bytes of a draft are stored (IndexedDB) and how
+`crates/frontend/workspaces/mission_creator_workspace/src/`. Where the bytes of a draft are stored (IndexedDB) and how
 they travel is the frontend's; what they mean is `mission_persistence`'s.
 
 ## 2. Walls between the crates

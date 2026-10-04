@@ -1,0 +1,43 @@
+# The account pages of the single-page app: sign-in, the page the sign-in redirect lands on, and
+# the account settings with the Arma identity link.
+[package]
+name = "account_pages"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The sign-in page, the sign-in callback page and the account settings page."
+
+[package.metadata.layout]
+category = "crates/frontend/pages"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The profile, link status, link code and session token wire types.
+frontend_api_dtos = { workspace = true }
+# The HTTP client the settings page and the callback fetch the profile and the link through.
+frontend_transport = { workspace = true }
+# The session store, its persistence, the refresh lock and the sign-in gate around settings.
+frontend_session = { workspace = true }
+# The page header, icons, toasts and the avatar URL guard the settings page draws with.
+frontend_ui = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+
+# The browser halves: the page navigation that starts the sign-in, the fragment the callback reads
+# and scrubs from history, the boxed future the refresh lock takes, and the link request body.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+futures = { workspace = true }
+js-sys = { workspace = true }
+serde_json = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = ["Window", "Location", "History"] }
+
+[dev-dependencies]
+# The guard's case table (`http_url_guard::cases`), which the settings page's avatar test runs
+# through its render path.
+http_url_guard = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

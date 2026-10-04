@@ -2,7 +2,7 @@
 //!
 //! **Role:** owns the application frame — the sidebar, the top bar, the membership status strip,
 //! the classifier that decides which frame a route gets, and the fallback page shown when no route
-//! matches. The navigation menu the sidebar reads lives in `foundation::route_table`.
+//! matches. The navigation menu the sidebar reads lives in `frontend_route_table`.
 //! **Position:** the top layer of the frontend (foundation < features < pages, workspaces <
 //! shell), mounted once at the application root by `main.rs`, outside the router's outlet.
 //! Navigating between standard pages swaps the outlet only; the frame stays mounted.
@@ -24,3 +24,7 @@ pub mod not_found;
 #[cfg(target_arch = "wasm32")]
 pub mod sidebar;
 pub mod top_nav;
+
+#[cfg(test)]
+#[path = "tests/route_mounts.rs"]
+mod route_mounts;

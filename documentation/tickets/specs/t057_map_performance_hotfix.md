@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-057)
 **Git tag on ship:** T-057
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) §Map performance (contract + scale program) · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §4.4 · [agent_execution.md](/documentation/apps/frontend/workspaces/editor/decisions.md)
+**Authority:** [MC ROADMAP](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) §Map performance (contract + scale program) · [engineering_plan.md](/documentation/archive/go_and_react_era_design/mission_creator_engineering_plan.md) §4.4 · [agent_execution.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md)
 
 ---
 
@@ -144,11 +144,11 @@ hovering an icon (no per-move hover pick). Click/dbl-click/marquee/drag picking 
 
 ## Docs synced (same commit)
 
-`CLAUDE.md` §Status (T-057 bullet + latest-feature line), MC [ROADMAP.md](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md)
+`CLAUDE.md` §Status (T-057 bullet + latest-feature line), MC [ROADMAP.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md)
 §Map performance (T-057 row → done), [docs/TAGS.md](/documentation/standards/ticket_identifiers.md),
 [docs/website/frontend/ROADMAP.md](/documentation/apps/frontend/README.md),
-[docs/website/frontend/pages/mission-editor.md](/documentation/apps/frontend/workspaces/editor/ux_spec.md),
-[agent_execution.md](/documentation/apps/frontend/workspaces/editor/decisions.md) Decisions log + todo status.
+[docs/website/frontend/pages/mission-editor.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md),
+[agent_execution.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) Decisions log + todo status.
 
 ## After T-057
 

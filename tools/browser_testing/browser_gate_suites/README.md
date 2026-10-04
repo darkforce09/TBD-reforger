@@ -41,7 +41,7 @@ frame by frame, and serves `/map-assets/` from the terrain and glyph folders wit
 | `gate doctor` | `diagnostics/` | Chromium, pins, memory, stray processes and fonts, then a 15 s Mission Creator liveness probe | 0, 1 |
 | `gate v-suite verify` | `dom_oracle/` | each of 26 routes' normalised DOM equals its golden, with every [API](/documentation/glossary/a_to_f.md#api) call fed from fixtures | 0, 1, 2 |
 | `gate v-suite accept` | `dom_oracle/` | replaces one route's golden, with a note | 0, 2 |
-| `gate s-routes` | `route_drift.rs` | the `ROUTES` table of `apps/frontend/src/foundation/route_table/mod.rs` equals `manifests/routes.csv` | 0, 1 |
+| `gate s-routes` | `route_drift.rs` | the `static ROUTES` table of the file `ROUTE_TABLE_SOURCE` names (`crates/frontend/foundation/frontend_route_table/src/routes.rs`) equals `manifests/routes.csv`; a source without the table is an error | 0, 1 |
 | `gate smoke <name>`, `gate editor-suite` | `editor_smoke_tests/` | the Mission Creator smokes, one or all in `EDITOR_SUITE` order | 0, 1, 2 |
 | `gate r-auth` | `editor_smoke_tests/` | a refused session refreshes exactly once | 0, 1, 2 |
 | `gate render-check` | `editor_smoke_tests/` | a path renders, contains `--expect` and passes `--assert-js` | 0, 1 |

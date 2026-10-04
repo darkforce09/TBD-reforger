@@ -9,12 +9,12 @@ after it ends.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/workspaces/aar/`](/apps/frontend/src/workspaces/aar/README.md),
-  a reserved folder that holds only its README; `apps/frontend/src/workspaces/mod.rs` declares
-  no `aar` module.
-- Entry: none. `apps/frontend/src/app_routes.rs` and `apps/frontend/src/foundation/route_table/mod.rs`
+- Code: none. The workspace is built as its own crate under `crates/frontend/workspaces/`
+  ([frontend workspace crates](/crates/frontend/workspaces/README.md)); no crate, module or code
+  folder exists for it yet.
+- Entry: none. `apps/frontend/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`
   have no replay route.
-- Related features: the [deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md),
+- Related features: the [deployments page](/documentation/crates/frontend/pages/operations_pages/deployments/deployments_page.md),
   whose service record links each match's external replay; the
   [match telemetry domain](/crates/api/api_match_telemetry/src/README.md), which takes in the
   match results.
@@ -63,8 +63,8 @@ AAR") and the workspace's first design draft. No visual reference set exists.
 - [T-136 — 3D AAR / OCAP-style replay](/documentation/tickets/specs/t131_north_star_backlog.md)
   (ready, [plan](/documentation/tickets/plans/t-136_plan.md)): a replay read that returns a
   match's timeline at 1 Hz, paged, and a map scrubber with play, pause and speed that the
-  deployments page links to. Its plan places the page among the routed pages rather than in this
-  workspace folder, and names code paths that no longer exist.
+  deployments page links to. Its plan places the page among the routed pages rather than in a
+  workspace crate, and names code paths that no longer exist.
 - [T-940.13 — Combat, medical and vehicle telemetry events](/documentation/tickets/specs/t940_website_platform.md)
   (ready, [plan](/documentation/tickets/plans/t-940_13_plan.md)): a telemetry-events schema
   and an ingest that stores the events, the data the replay plays.
@@ -73,8 +73,12 @@ AAR") and the workspace's first design draft. No visual reference set exists.
 
 ## Decisions
 
-- The folder is reserved and holds no code until the workspace is built: a workspace is added with
-  its module line, its route and its README together, as the
-  [workspaces README](/apps/frontend/src/workspaces/README.md) rules require.
+- No code folder is reserved: the workspace is added as one crate under
+  `crates/frontend/workspaces/`, with its manifest, its README, its route component, a row in
+  `apps/frontend/src/app_routes.rs` and one in
+  `crates/frontend/foundation/frontend_route_table/src/routes.rs`, together; the crate depends on
+  the foundation and feature crates and the map crates, never on a page crate or another
+  workspace's crates, and its documentation then moves to
+  `documentation/crates/frontend/workspaces/<crate>/`.
 - Until the replay exists, the platform stores and shows only a link to a replay hosted elsewhere,
   checked as an `http(s)` URL on ingest and again when the page renders it.

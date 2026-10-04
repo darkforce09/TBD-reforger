@@ -76,12 +76,12 @@ or a case disagrees; 3 the committed catalog is unreadable or a driver error.
 - Rules: the case-to-inputs mapping, the lead summary and the bit walk are the
   `ballistics_agreement_cases` crate's (`crates/ballistics/ballistics_agreement_cases/`, tested there),
   called by both the gate and the bench, so they cannot drift; `bench_reading.rs` mirrors the
-  reading of `apps/frontend/src/workspaces/debug/ballistics_agreement/agreement_report.rs`
+  reading of `crates/frontend/workspaces/debug_benches/src/ballistics_agreement/agreement_report.rs`
   and decodes it strictly. A missing golden fails the gate; nothing is skipped.
 
 ## Related documentation
 
-- [Ballistics agreement bench](/apps/frontend/src/workspaces/debug/ballistics_agreement/README.md) —
+- [Ballistics agreement bench](/crates/frontend/workspaces/debug_benches/src/ballistics_agreement/README.md) —
   the browser half and its reading.
 - [Build and development-server commands](/tools/commands/ci_task_catalog/src/build_lane/README.md) —
   `cargo xtask mk ballistics-wasm-agreement`.

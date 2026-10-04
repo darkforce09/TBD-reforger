@@ -56,7 +56,7 @@ engine's). No environment variables.
   `orbat_slot_ids`, `time_source`, `yrs`, `serde_json`, `thiserror`; dev: `mission_payload`,
   `mission_compiler`.
 - Used by: `mission_operations`, the map engine's editing layer, its integration tests, and the
-  Mission Creator in `apps/frontend/src/workspaces/editor/`.
+  Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`.
 - Rules: mission tier 5 (`cargo xtask verify crate-tiers`); the Yjs maps and the exported editor
   payload stay byte-identical (the hydrate and compile round-trip tests); a local write is one
   undo step and a batch is one.

@@ -7,7 +7,7 @@
 //! readback self-check; [`instance_packing`] packs the instance stream it draws from.
 //! **Position:** paper doll category, tier 3, over `gpu_device`, `paper_doll_scene` and
 //! `camera_math`; the Arsenal host in the frontend
-//! (`apps/frontend/src/workspaces/editor/arsenal/doll.rs`) creates and drives it and puts its
+//! (`crates/frontend/workspaces/mission_creator_arsenal/src/doll.rs`) creates and drives it and puts its
 //! self-check on `window.__arsenalDoll`.
 //! **Signals & state:** the GPU handles, buffers, yaw, CSS size, region states, hover and dirty
 //! flag inside one renderer, owned by its host; single-threaded.

@@ -48,7 +48,7 @@ conversion folds the five `telemetry_queue_*` columns, all set or all null, into
 - Used by: the domain's handlers and services and `api_command_center` (`ServerStatus`,
   `ServerStatusRow`); the contract test `apps/api/tests/game_runtime_contract.rs`, which decodes
   live answers into the generated types; the web app's DTOs in
-  `apps/frontend/src/foundation/transport/dto/` (`servers.rs`, `fleet_commands.rs`,
+  `crates/frontend/foundation/frontend_api_dtos/src/` (`servers.rs`, `fleet_commands.rs`,
   `fleet_scenarios.rs`) mirror these shapes.
 - Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by
   hand (`cargo xtask ci verify-codegen-fresh` checks them); a new action gets its executor, idempotence,

@@ -56,7 +56,7 @@ cargo test -p mission_persistence   # keys, ids, blobs, retry, merge, fingerprin
 - Depends on: `mission_editing_session` (`host::DocHandle`), `mission_document`, `mission_model`
   (`MissionId`), `mission_payload` (`compile_payload`), `serde_json`; dev `futures` (the executor
   the merge-ordering tests drive the async read with).
-- Used by: the Mission Creator's shell in `apps/frontend/src/workspaces/editor/session/` and its
+- Used by: the Mission Creator's shell in `crates/frontend/workspaces/mission_creator_session/src/` and its
   review restore, directly.
 - Rules: two accounts never share a key, a record from another mission is never applied, only a
   real difference prompts, and the adopt mode alone decides undoability (the tests named in the

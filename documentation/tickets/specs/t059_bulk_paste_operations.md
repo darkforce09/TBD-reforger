@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-059) — batch append + selection/outliner caps
 **Git tag on ship:** T-059
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/workspaces/editor/decisions.md) §ACTIVE SLICE
+**Authority:** [MC ROADMAP](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) §ACTIVE SLICE
 
 **Prerequisites:** **T-057** shipped (pan/zoom ≥55 fps @ 200+; validated **100+ fps @ 10k**). **T-058** shipped (OBJ/SEL toolbelt telemetry).
 
@@ -123,12 +123,12 @@ export function runBulk(md, fn) { bulkDepth++; try { fn() } finally { bulkDepth-
 | Doc | Update |
 |-----|--------|
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-059 bullet; validation notes; Next → **T-060.1.1** |
-| [`ROADMAP.md`](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) | Scale table T-059 ✅; Next → **T-060.1.1** |
+| [`ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) | Scale table T-059 ✅; Next → **T-060.1.1** |
 | [`t056_copy_paste.md`](t056_copy_paste.md) | Note: bulk scale limits addressed T-059 |
-| [`feature_inventory.md`](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md) | ACTION-PASTE bulk row or amend KEY-COPY-001 |
-| [`agent_execution.md`](/documentation/apps/frontend/workspaces/editor/decisions.md) | Decisions log; ACTIVE SLICE → **T-060.1.1** |
+| [`feature_inventory.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | ACTION-PASTE bulk row or amend KEY-COPY-001 |
+| [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) | Decisions log; ACTIVE SLICE → **T-060.1.1** |
 | [`docs/TAGS.md`](/documentation/standards/ticket_identifiers.md) | T-059 shipped row |
-| [`mission-editor.md`](/documentation/apps/frontend/workspaces/editor/ux_spec.md) | M3.14 milestone; PERF-002 bulk paste |
+| [`mission-editor.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md) | M3.14 milestone; PERF-002 bulk paste |
 
 ---
 

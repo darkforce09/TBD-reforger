@@ -2,7 +2,7 @@
 
 # README template: app
 
-**When to use:** a workspace directly under `apps/frontend/src/workspaces/`, a standalone tool
+**When to use:** a workspace crate directly under `crates/frontend/workspaces/`, a standalone tool
 that mounts full screen from its own routes. The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the app kind adds Routes and Public surface.
@@ -55,7 +55,7 @@ clause; the child's own README holds the detail.>
 
 ## Worked sample
 
-Written from `apps/frontend/src/workspaces/editor/`. The sample sits in a fenced block, so no
+Written from `crates/frontend/workspaces/mission_creator_workspace/src/`. The sample sits in a fenced block, so no
 gate reads it as a README; the folder's own README.md is written from the same code and may differ.
 
 ````markdown
@@ -70,7 +70,7 @@ the read-only review workspace that opens the editor on a submitted version.
 ## Contents
 
 ```text
-apps/frontend/src/workspaces/editor/
+crates/frontend/workspaces/mission_creator_workspace/src/
 ├── arsenal/           the loadout editor: loadout rows, compatibility, asset catalog, paper doll
 ├── bridge/            the engine seam: boot, document host, viewport, overlays, tactical graphics
 ├── input/             pointer and keyboard events turned into map-engine commands; the map tools
@@ -128,7 +128,7 @@ it and every write path refuses.
 
 ## Related documentation
 
-- [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md) — the
+- [Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) — the
   feature inventory, the UX specification, the decisions and the roadmap.
 - [Editor gates runbook](/documentation/runbooks/editor_gates.md) — running the headless editor
   gates.

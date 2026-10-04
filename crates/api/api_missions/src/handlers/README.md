@@ -68,10 +68,10 @@ missing one, and a write by someone who may not edit the mission answers 403.
   `api_community_content::models` for a registry's modpack; `mission_compiler` for
   the save-time type scan; `contracts/definitions/mission.schema.json`, embedded.
 - Used by: the domain's `routes.rs`; over HTTP, the Mission Creator in
-  `apps/frontend/src/workspaces/editor/`, the mission hub pages in
-  `apps/frontend/src/pages/mission_hub/`, the approvals and
+  `crates/frontend/workspaces/mission_creator_workspace/src/`, the mission hub pages in
+  `crates/frontend/pages/mission_hub_pages/src/`, the approvals and
   [server control](/documentation/glossary/n_to_z.md#server-control) pages in
-  `apps/frontend/src/pages/administration/`, the
+  `crates/frontend/pages/administration_pages/src/`, the
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
   `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
   `tools/commands/mod_operations/src/website_api_client/`.
@@ -90,5 +90,5 @@ missing one, and a write by someone who may not edit the mission answers 403.
 
 - [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
   — submission, review decisions, artifact reads and deployments.
-- [Mission approvals page](/documentation/apps/frontend/pages/administration/approvals/mission_approvals_page.md)
+- [Mission approvals page](/documentation/crates/frontend/pages/administration_pages/approvals/mission_approvals_page.md)
   — the review queue as administrators use it.

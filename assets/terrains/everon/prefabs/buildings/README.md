@@ -60,8 +60,8 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
   profile (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/`).
 - Consumers:
   - the debug building viewer and interior bench
-    (`apps/frontend/src/workspaces/debug/building_viewer/`,
-    `apps/frontend/src/workspaces/debug/building_interior.rs`), over `/map-assets`, and their
+    (`crates/frontend/workspaces/debug_benches/src/building_viewer/`,
+    `crates/frontend/workspaces/debug_benches/src/building_interior.rs`), over `/map-assets`, and their
     tests, which read `FarmHouse_E_1L01.json` from disk;
   - `cargo xtask map blueprint-from-voxels archive`, which folds every blueprint here into
     `prefabs/building_blueprints.rkyv`;
@@ -84,5 +84,5 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
 
 - [Building interiors](/crates/world_objects/building_interiors/README.md) — the
   blueprint, compound and section model these files feed.
-- [Building viewer bench](/apps/frontend/src/workspaces/debug/building_viewer/README.md) —
+- [Building viewer bench](/crates/frontend/workspaces/debug_benches/src/building_viewer/README.md) —
   the debug bench that draws them.

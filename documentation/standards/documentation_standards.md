@@ -33,9 +33,9 @@ what that definition is and how its projections stay true to it.
   `generated/` folder of the `contract_schema_types` crate
   (`crates/contracts/contract_schema_types/src/generated/`), which nobody edits by hand; `cargo xtask ci verify-codegen-fresh`
   fails when they drift from the schemas. The web app's DTOs in
-  `apps/frontend/src/foundation/transport/dto/` are hand-written and held to the API's answers by
+  `crates/frontend/foundation/frontend_api_dtos/src/` are hand-written and held to the API's answers by
   the golden responses in `contracts/fixtures/api_goldens/`
-  (`apps/frontend/src/foundation/transport/dto/tests/r_api.rs`). EnfScript has no code generator:
+  (`crates/frontend/foundation/frontend_api_dtos/src/tests/r_api.rs`). EnfScript has no code generator:
   its DTOs are hand-written, carry `@contract`, and the golden missions in
   `contracts/fixtures/missions/` are validated against the schemas by
   `cargo xtask schema validate`.
@@ -333,9 +333,9 @@ documentation/
   code without `src/`, keeping the code's folder spellings: the documents on
   `tools/developer_tools/src/` are in `documentation/tools/developer_tools/`, and those on
   `apps/api/src/` in `documentation/apps/api/`; the single-page app follows the same rule
-  (`apps/frontend/src/pages/operations/schedule/` is documented under
-  `documentation/apps/frontend/pages/operations/schedule/`, and
-  `apps/frontend/src/workspaces/editor/` under `documentation/apps/frontend/workspaces/editor/`).
+  (`crates/frontend/pages/operations_pages/src/schedule/` is documented under
+  `documentation/crates/frontend/pages/operations_pages/schedule/`, and
+  `crates/frontend/workspaces/mission_creator_workspace/src/` under `documentation/crates/frontend/workspaces/mission_creator_workspace/`).
   One mirror keeps a shorter path until a stage of the
   [workspace restructure](/documentation/restructure/README.md) reshapes its code: until M1 a
   mirror of the mod leaves out `apps/` and `Scripts/Game/TBD/` and sits under
@@ -347,7 +347,7 @@ documentation/
   documents never fall behind the code they mirror.
 - **Feature grouping.** Everything about one feature lives together: behaviour, interface design,
   the design target and its `visual_references/`, roadmap, research and evidence. All Mission
-  Creator material sits under `documentation/apps/frontend/workspaces/editor/`.
+  Creator material sits under `documentation/crates/frontend/workspaces/mission_creator_workspace/`.
 - **Feature docs.** Each feature doc is its own file beside its folder's README index, built from
   the [feature doc template](/documentation/standards/templates/feature_doc.md): a page's doc is
   `<page component>_page.md` (`personnel_roster_page.md`), the account pages share
@@ -385,9 +385,9 @@ link-check, so no application grows a documentation tree of its own.
   with a README.md index. Frozen and archived documents are exempt, and so are the two documents
   `cargo xtask ticket sync` targets (`SYNC_MANAGED_DOCUMENTS` in
   `tools/checks/documentation_checks/src/path_regions.rs`):
-  `documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md`, whose next-work
+  `documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md`, whose next-work
   block it rewrites between markers, and
-  `documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md`,
+  `documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md`,
   whose tables its ticket-column writer parses but leaves unchanged, since their header has no
   `priority` column; that ticket column is kept by hand.
 - **Links.** Links are repository-root (`[README standard](/documentation/standards/readme_standard.md)`,

@@ -10,7 +10,7 @@ editor tree owes no header or `pub`-item documentation.
 ## What this brief does — and what it deliberately does not
 
 This is a **relocation, not a reshape**. `apps/frontend/src/editor/` moves to
-`apps/frontend/src/workspaces/editor/` with its internal shape byte-identical: `panels/` is
+`crates/frontend/workspaces/mission_creator_workspace/src/` with its internal shape byte-identical: `panels/` is
 still `panels/`, `canvas/` is still `canvas/`, `state/` is still `state/`. The reshape into
 `ui/ input/ bridge/ shell/ arsenal/` is briefs 3B-E through 3B-K, one destination folder at a time.
 

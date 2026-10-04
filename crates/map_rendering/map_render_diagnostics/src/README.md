@@ -68,7 +68,7 @@ renderer holds.
   `wgpu`, `wasm-bindgen`, `wasm-bindgen-futures`, `js-sys` and `web-sys`.
 - Used by:
   - the Mission Creator's viewport bridge
-    (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`);
+    (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs`);
   - the editor gate's smokes in `tools/browser_testing/browser_gate_suites/`, which
     `cargo xtask mk leptos-gates` runs.
 - Rules: a check never writes the engine's frame tables, camera uniform or batch list, so it can

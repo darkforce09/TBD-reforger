@@ -1,0 +1,416 @@
+//! The Arsenal's view panels — the cargo editor, the doll host, the compatibility and
+//! attachment readouts, and the SVG paper-doll.
+//!
+//! **Role:** draws the surfaces the Arsenal raises beside its pick rows: the per-container cargo
+//! editor with its budget bar, the 3D doll host that falls back to the SVG paper-doll, the
+//! attachment picker for the selected weapon and the compatibility verdict for the loadout.
+//! **Position:** a leaf of `workspaces::editor::arsenal`. `ArsenalTab` is the only caller; the
+//! serialization the panels read lives beside it, and the rules in the state layer's
+//! `arsenal_rules`.
+//! **Signals & state:** none of its own. Each panel takes the pick, cargo and catalog signals the
+//! Arsenal owns and reports every edit through the `on_change` callback it was handed.
+//! **Invariants:** a cargo mutation commits on the spot — the panel updates its signal and calls
+//! `on_change` in the same handler, so nothing stages behind a Save the Arsenal does not have.
+
+#[cfg(target_arch = "wasm32")]
+use std::collections::HashMap;
+
+#[cfg(target_arch = "wasm32")]
+use leptos::prelude::*;
+
+#[cfg(target_arch = "wasm32")]
+use crate::arsenal_tab::MaterialCheck;
+#[cfg(target_arch = "wasm32")]
+use crate::arsenal_tab::region_title;
+#[cfg(target_arch = "wasm32")]
+use crate::loadout::{ATTACHMENT_EDGE, attachments_key, attachments_of, pack_attachments};
+#[cfg(target_arch = "wasm32")]
+use frontend_api_dtos::RegistryItem;
+#[cfg(target_arch = "wasm32")]
+use mission_creator_state::arsenal_rules::{self as rules, CompatFeed, index_by_name, row_options};
+
+mod cargo_panel;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use cargo_panel::cargo_panel;
+
+/// The center doll: `ArsenalDoll` (wgpu) with the SVG `paper_doll` as the create-error fallback
+/// (contract).
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn doll_view(
+    picks: RwSignal<HashMap<String, String>>,
+    active_key: RwSignal<String>,
+    names: StoredValue<HashMap<String, String>>,
+    unavailable: RwSignal<bool>,
+) -> AnyView {
+    {
+        if !unavailable.get() {
+            return view! {
+                <crate::doll::ArsenalDoll
+                    picks
+                    active_key
+                    names
+                    unavailable
+                    on_select=Callback::new(move |key: String| active_key.set(key))
+                />
+            }
+            .into_any();
+        }
+    }
+    paper_doll(picks, active_key).into_any()
+}
+
+/// the **ATTACHMENTS** block of the compat panel: the `attachment_on_weapon` set the active
+/// weapon accepts, rendered as toggles. This is the Arsenal's one multi-select surface, because it
+/// is the one slot a weapon holds several of at once.
+///
+/// Returns `None` when the active region is not a weapon, when no weapon is picked, or when the
+/// graph offers nothing **and** nothing is picked — so a family with no edges (vanilla
+/// launcher/handgun/throwable all have zero) adds no empty section to the panel.
+#[cfg(target_arch = "wasm32")]
+fn attachments_panel(
+    active: &str,
+    map: &HashMap<String, String>,
+    feed: &CompatFeed,
+    names: StoredValue<HashMap<String, String>>,
+    items: StoredValue<Vec<RegistryItem>>,
+    pick_item: impl Fn(String, String) + Copy + 'static,
+) -> Option<AnyView> {
+    let &(weapon_key, _, _) = rules::WEAPON_SLOTS.iter().find(|(k, _, _)| *k == active)?;
+    let host = map.get(weapon_key).filter(|s| !s.is_empty())?.clone();
+    let its = items.get_value();
+    let idx = index_by_name(&its);
+    // Synthesised here rather than added as a 15th `LOADOUT_ROWS` entry: the set must stay out of
+    // the single-value row machinery (weight, validation, the doll rail all key off that table),
+    // while still reusing the row RULES verbatim — graph-fed, abstract/variant filtered,
+    // display-name sorted. `depends_on` is the weapon key, so the graph lookup is host-agnostic.
+    let row = rules::LoadoutRow {
+        key: "attachments",
+        label: "Attachments",
+        source: rules::RowSource::Edge {
+            edge: ATTACHMENT_EDGE,
+            depends_on: weapon_key,
+        },
+    };
+    let mut opts = row_options(&row, "", map, &its, &idx, feed.ready_graph());
+    let picked = attachments_of(map, weapon_key);
+    let display =
+        |rn: &str| names.with_value(|n| n.get(rn).cloned().unwrap_or_else(|| rn.to_string()));
+    // A pick the option list dropped stays VISIBLE — deselecting it is the only way to remove it.
+    // It is flagged only when the graph actually REJECTS it: an `abstract`/variant prefab the
+    // filter hid is still a compatible pick, and an outage is not evidence of anything at all.
+    for rn in &picked {
+        if opts.iter().any(|o| &o.value == rn) {
+            continue;
+        }
+        let ok = feed
+            .ready_graph()
+            .is_none_or(|g| g.accepts(&host, rn, ATTACHMENT_EDGE));
+        opts.push(rules::RowOption {
+            value: rn.clone(),
+            label: if ok {
+                display(rn)
+            } else {
+                format!("{} — incompatible", display(rn))
+            },
+            incompatible: !ok,
+        });
+    }
+    if opts.is_empty() {
+        return None;
+    }
+    let rows = opts
+        .into_iter()
+        .map(|o| {
+            let selected = picked.contains(&o.value);
+            let cls = match (selected, o.incompatible) {
+                (true, true) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm bg-error/10 text-error",
+                (true, false) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm bg-primary/15 text-primary",
+                (false, true) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm text-error transition-colors hover:bg-white/10",
+                (false, false) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface",
+            };
+            // The toggled set is computed HERE, not in the handler: `pick_item` is the one
+            // persist path (`insert`-or-`remove` + one undo step), so a toggle is just a normal
+            // pick whose value happens to be the packed set.
+            let mut next = picked.clone();
+            match next.iter().position(|p| *p == o.value) {
+                Some(at) => {
+                    next.remove(at);
+                }
+                None => next.push(o.value.clone()),
+            }
+            let packed = pack_attachments(&next);
+            let akey = attachments_key(weapon_key);
+            // `data-value` keeps the panel's uniform click contract (the smoke harness in
+            // `tbd-tools` sweeps `[data-value]`); `data-attachment` additionally marks this as a
+            // TOGGLE, since a second click removes rather than replaces. `resource_name` is unique
+            // per registry row, so the extra nodes cannot shadow a weapon/optic lookup.
+            let data_value = o.value.clone();
+            let data_attachment = o.value.clone();
+            view! {
+                <button
+                    type="button"
+                    data-value=data_value
+                    data-attachment=data_attachment
+                    aria-pressed=selected.to_string()
+                    class=cls
+                    on:click=move |_| pick_item(akey.clone(), packed.clone())
+                >
+                    <span class="truncate normal-case">{o.label}</span>
+                    {selected.then(|| view! { <MaterialCheck /> })}
+                </button>
+            }
+        })
+        .collect_view();
+    Some(
+        view! {
+            <p class="mt-3 font-mono text-[10px] tracking-widest text-outline uppercase">
+                "Attachments"
+            </p>
+            {rows}
+        }
+        .into_any(),
+    )
+}
+
+/// The right compat panel: the active pick's display name, each edge slot that depends on the
+/// active region (screen 04: OPTIC "Nothing compatible." / MAGAZINE list), and — for a weapon
+/// region — the multi-select attachment set. Rows click-pick.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn compat_panel(
+    picks: RwSignal<HashMap<String, String>>,
+    active_key: RwSignal<String>,
+    compat: RwSignal<CompatFeed>,
+    names: StoredValue<HashMap<String, String>>,
+    items: StoredValue<Vec<RegistryItem>>,
+    pick_item: impl Fn(String, String) + Copy + 'static,
+) -> AnyView {
+    let key = active_key.get();
+    let map = picks.get();
+    let host = map.get(key.as_str()).cloned().unwrap_or_default();
+    let head = if host.is_empty() {
+        format!("{} — empty", region_title(&key))
+    } else {
+        names.with_value(|n| n.get(&host).cloned().unwrap_or_else(|| host.clone()))
+    };
+    let dependents: Vec<&'static rules::LoadoutRow> = rules::LOADOUT_ROWS
+        .iter()
+        .filter(
+            |r| matches!(r.source, rules::RowSource::Edge { depends_on, .. } if depends_on == key),
+        )
+        .collect();
+    let feed = compat.get();
+    let attachments = attachments_panel(&key, &map, &feed, names, items, pick_item);
+    let body = if dependents.is_empty() {
+        // "No dependent slots." is a claim about the whole panel, so it must not survive an
+        // attachment set — a modded launcher has no edge ROWS but can still have attachments.
+        if attachments.is_none() {
+            view! {
+                <p class="mt-2 text-label-sm normal-case text-outline">"No dependent slots."</p>
+            }
+            .into_any()
+        } else {
+            ().into_any()
+        }
+    } else {
+        dependents
+            .into_iter()
+            .map(|row| {
+                let rules::RowSource::Edge { edge, .. } = row.source else {
+                    unreachable!()
+                };
+                let section = view! {
+                    <p class="mt-3 font-mono text-[10px] tracking-widest text-outline uppercase">
+                        {row.label}
+                    </p>
+                };
+                let content = if host.is_empty() {
+                    view! {
+                        <p class="text-label-sm normal-case text-outline">
+                            {format!("Pick a {} first.", region_title(&key).to_lowercase())}
+                        </p>
+                    }
+                    .into_any()
+                } else if let Some(g) = feed.ready_graph() {
+                    let options = g.items_for(&host, edge);
+                    if options.is_empty() {
+                        view! {
+                            <p class="text-label-sm normal-case text-outline">"Nothing compatible."</p>
+                        }
+                        .into_any()
+                    } else {
+                        let current = map.get(row.key).cloned().unwrap_or_default();
+                        let row_key = row.key;
+                        options
+                            .into_iter()
+                            .map(|rn| {
+                                let label = names
+                                    .with_value(|n| n.get(&rn).cloned().unwrap_or_else(|| rn.clone()));
+                                let is_current = rn == current;
+                                let cls = if is_current {
+                                    "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm bg-primary/15 text-primary"
+                                } else {
+                                    "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+                                };
+                                let data_value = rn.clone();
+                                view! {
+                                    <button
+                                        type="button"
+                                        data-value=data_value
+                                        class=cls
+                                        on:click=move |_| pick_item(row_key.to_string(), rn.clone())
+                                    >
+                                        <span class="truncate normal-case">{label}</span>
+                                        {is_current.then(|| view! { <MaterialCheck /> })}
+                                    </button>
+                                }
+                            })
+                            .collect_view()
+                            .into_any()
+                    }
+                } else {
+                    view! {
+                        <p class="text-label-sm normal-case text-outline">"Compat unavailable."</p>
+                    }
+                    .into_any()
+                };
+                view! {
+                    {section}
+                    {content}
+                }
+                .into_any()
+            })
+            .collect::<Vec<_>>()
+            .collect_view()
+            .into_any()
+    };
+    view! {
+        <p class="text-label-md font-semibold normal-case text-on-surface">{head}</p>
+        {body}
+        {attachments}
+    }
+    .into_any()
+}
+
+/// The Mode-D 2D **SVG paper-doll** (SoldierSilhouette.tsx port). Keyboard-accessible
+/// `<g role="button">` hotspots per `DOLL_REGIONS` (optic/magazine nest on the rifle group); three
+/// visual states — empty (dashed), equipped (`primary/15`), active (`primary/25`). A hotspot click
+/// sets `active_key` (two-way synced with the row list); it never mutates the loadout itself.
+#[cfg(target_arch = "wasm32")]
+fn paper_doll(
+    picks: RwSignal<HashMap<String, String>>,
+    active_key: RwSignal<String>,
+) -> impl IntoView {
+    // (key, label, svg path/rect element) — geometry adapted from the React ref (viewBox 360×640).
+    // Each region is one `<g>` hotspot; `shape` is its clickable silhouette.
+    struct Region {
+        key: &'static str,
+        shape: &'static str, // an SVG element string (rect/path) sans fill/stroke.
+    }
+    // Ordered back-to-front (paint order): backpack, body, wear, then the rifle group last.
+    const REGIONS: &[Region] = &[
+        Region {
+            key: "backpack",
+            shape: r#"<rect x="84" y="165" width="44" height="120" rx="12"/>"#,
+        },
+        Region {
+            key: "launcher",
+            shape: r#"<rect x="246" y="72" width="18" height="120" rx="6" transform="rotate(28 255 132)"/>"#,
+        },
+        Region {
+            key: "jacket",
+            shape: r#"<rect x="140" y="132" width="80" height="150" rx="10"/>"#,
+        },
+        Region {
+            key: "pants",
+            shape: r#"<rect x="146" y="282" width="68" height="196" rx="8"/>"#,
+        },
+        Region {
+            key: "boots",
+            shape: r#"<rect x="146" y="484" width="68" height="40" rx="6"/>"#,
+        },
+        Region {
+            key: "handwear",
+            shape: r#"<path d="M108 288 h22 v22 h-22 z M230 288 h22 v22 h-22 z"/>"#,
+        },
+        Region {
+            key: "vest",
+            shape: r#"<rect x="150" y="150" width="60" height="64" rx="6"/>"#,
+        },
+        Region {
+            key: "armoredVest",
+            shape: r#"<rect x="142" y="142" width="76" height="110" rx="8"/>"#,
+        },
+        Region {
+            key: "headCover",
+            shape: r#"<circle cx="180" cy="92" r="26"/>"#,
+        },
+        Region {
+            key: "throwable",
+            shape: r#"<rect x="112" y="326" width="26" height="30" rx="4"/>"#,
+        },
+        Region {
+            key: "handgun",
+            shape: r#"<rect x="222" y="312" width="26" height="34" rx="4"/>"#,
+        },
+    ];
+    // The rifle group (primary + nested optic/magazine), drawn front-most.
+    const RIFLE: &[Region] = &[
+        Region {
+            key: "primary",
+            shape: r#"<rect x="96" y="322" width="150" height="14" rx="3"/>"#,
+        },
+        Region {
+            key: "optic",
+            shape: r#"<rect x="150" y="306" width="26" height="12" rx="3"/>"#,
+        },
+        Region {
+            key: "magazine",
+            shape: r#"<path d="M168 336 q6 26 18 30 l6 -4 q-10 -6 -12 -28 z"/>"#,
+        },
+    ];
+
+    let hotspot = move |r: &'static Region| {
+        let key = r.key;
+        let cls = move || {
+            let equipped = picks.with(|m| m.get(key).map(|v| !v.is_empty()).unwrap_or(false));
+            let active = active_key.get() == key;
+            let base = "cursor-pointer transition-colors";
+            if active {
+                format!("{base} fill-primary/25 stroke-primary [stroke-width:2.5]")
+            } else if equipped {
+                format!("{base} fill-primary/15 stroke-primary/60 [stroke-width:1.5]")
+            } else {
+                format!(
+                    "{base} fill-on-surface/5 stroke-outline/50 [stroke-width:1.2] [stroke-dasharray:4_3]"
+                )
+            }
+        };
+        let label = rules::row(key).map(|r| r.label).unwrap_or(key);
+        // inject the shape verbatim; add the reactive class on the group.
+        view! {
+            <g
+                role="button"
+                tabindex="0"
+                aria-label=label
+                aria-pressed=move || (active_key.get() == key).to_string()
+                class=cls
+                on:click=move |ev: leptos::ev::MouseEvent| { ev.stop_propagation(); active_key.set(key.to_string()); }
+                inner_html=r.shape
+            ></g>
+        }
+    };
+
+    view! {
+        <svg viewBox="0 0 360 640" class="mx-auto h-[52vh] w-full" role="group" aria-label="Loadout paper-doll">
+            // decorative head/neck (non-clickable)
+            <circle cx="180" cy="92" r="22" class="fill-on-surface/10"></circle>
+            <rect x="170" y="112" width="20" height="18" class="fill-on-surface/10"></rect>
+            {REGIONS.iter().map(hotspot).collect_view()}
+            {RIFLE.iter().map(hotspot).collect_view()}
+        </svg>
+    }
+}
+
+#[cfg(test)]
+#[path = "tests/panels/cargo_persistence.rs"]
+mod cargo_persistence_tests;

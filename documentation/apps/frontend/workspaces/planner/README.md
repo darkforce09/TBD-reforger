@@ -17,8 +17,11 @@ documentation/apps/frontend/workspaces/planner/
 
 ## Code
 
-- [Mission planner workspace](/apps/frontend/src/workspaces/planner/) — the reserved code
-  folder, which holds only its README: no module, no route.
+- None yet: no crate, module or route exists for the workspace. It is built as one crate under
+  [frontend workspace crates](/crates/frontend/workspaces/README.md); until then
+  `apps/frontend/src/app_routes.rs` and
+  `crates/frontend/foundation/frontend_route_table/src/routes.rs` have no planner route, and
+  nothing compiles for it.
 
 ## Boundaries
 
@@ -27,6 +30,11 @@ documentation/apps/frontend/workspaces/planner/
   `documentation/archive/go_and_react_era_design/mission_creator_design.md`; the ticket registry
   in `.ai/tickets/`.
 - Used by: the [full-screen workspaces documentation](/documentation/apps/frontend/workspaces/README.md)
-  and the in-code README of the reserved folder.
+  and the [product roadmap](/documentation/product_roadmap.md), which links the feature doc.
 - Rules: the documents describe a planned workspace and say so; they never describe code that does
-  not exist as if it did, and they move to the built behaviour once the workspace lands.
+  not exist as if it did, and they move to the built behaviour once the workspace lands. The
+  workspace is added as a crate under `crates/frontend/workspaces/` with its manifest, README,
+  route component and a row in both `apps/frontend/src/app_routes.rs` and
+  `crates/frontend/foundation/frontend_route_table/src/routes.rs`; it depends on the foundation
+  and feature crates and the map crates, never on a page crate or another workspace's crates; its
+  documents then move to `documentation/crates/frontend/workspaces/<crate>/`.

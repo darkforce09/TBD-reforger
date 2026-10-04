@@ -61,7 +61,7 @@ None: no feature and no environment variable. The checks are selected by the `wa
   `bytemuck`; `wgpu`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures` and `web-sys` in the
   WebAssembly build.
 - Used by: the Mission Creator's viewport bridge
-  (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`).
+  (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs`).
 - Rules: map rendering tier 6 (`cargo xtask verify crate-tiers`); a diagnostic names no engine
   field, only `map_renderer::diagnostic_accessors`.
 

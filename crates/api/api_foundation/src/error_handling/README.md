@@ -63,7 +63,7 @@ whole chain: the Discord OAuth failure log and the equipment export watcher's pr
   `api_http_layer::authentication_primitives`, whose `SessionAuthority` refuses with it; two
   integration suites under `apps/api/tests/`; and, over HTTP, the single-page app, which
   reads `error` and a string-array `details` in
-  `apps/frontend/src/foundation/transport/client/errors.rs`.
+  `crates/frontend/foundation/frontend_transport/src/client/errors.rs`.
 - Rules: `error` stays a string and `details` stays optional, the shape the single-page app
   parses; a database error never reaches the client as text; the rejection mapping answers `413`,
   `415` and `400` exactly as `ContentRefusal` in

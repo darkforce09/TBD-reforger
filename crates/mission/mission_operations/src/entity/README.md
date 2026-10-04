@@ -79,13 +79,13 @@ ring below three vertices.
     authoring commands), and the sibling modules
     `crates/mission/mission_operations/src/attrs.rs`, `cargo.rs`, `document_index.rs`
     and `transform.rs`;
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the armed placement and
-    zone draw in `apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/`, the
-    editor context and selection in `apps/frontend/src/workspaces/editor/bridge/host_state/`,
-    the debug seed in `apps/frontend/src/workspaces/editor/bridge/document_host/doc_host.rs`,
-    the pointer release in `apps/frontend/src/workspaces/editor/input/pointer_gestures/`, the
-    zones panel in `apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/` and the
-    outliner in `apps/frontend/src/workspaces/editor/ui/outliner/`;
+  - the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`: the armed placement and
+    zone draw in `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/armed_placement/`, the
+    editor context and selection in `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/`,
+    the debug seed in `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/document_host/doc_host.rs`,
+    the pointer release in `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/`, the
+    zones panel in `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/zones_panel/` and the
+    outliner in `crates/frontend/workspaces/mission_creator_workspace/src/ui/outliner/`;
   - `crates/mission/mission_operations/tests/operation_boundaries.rs` and the prelude-surface tests in
     `crates/mission/mission_operations/src/tests/prelude_surface.rs`.
 - Rules:
@@ -105,5 +105,5 @@ ring below three vertices.
 
 ## Related documentation
 
-- [Mission Creator feature inventory: placement](/documentation/apps/frontend/workspaces/editor/feature_inventory/placement.md) — what a map release commits, per kind.
-- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/workspaces/editor/feature_inventory/transform_and_delete.md) — what Delete removes.
+- [Mission Creator feature inventory: placement](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/placement.md) — what a map release commits, per kind.
+- [Mission Creator feature inventory: transform and delete](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/transform_and_delete.md) — what Delete removes.

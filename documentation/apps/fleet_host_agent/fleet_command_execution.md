@@ -24,7 +24,7 @@ developers changing either half, read this for the design and its limits.
   acknowledgement-dropping relay on loopback.
 - Related features: the API's [fleet command ledger](/documentation/apps/api/verification_evidence/fleet_command_ledger.md)
   and [machine credentials](/documentation/apps/api/verification_evidence/machine_credentials.md);
-  the [server control page](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md),
+  the [server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md),
   where operators issue commands; the [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s own executor in
   [`apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`](/apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/README.md);
   the [game server staging runbook](/documentation/runbooks/game_server_staging/README.md).

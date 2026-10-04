@@ -1,7 +1,7 @@
 //! The active-link rule and the frame classifier, plus the avatar sink the top bar renders through.
 
-use super::{classify_frame, is_active, FrameKind};
-use crate::foundation::ui::DEFAULT_AVATAR;
+use super::{FrameKind, classify_frame, is_active};
+use frontend_ui::DEFAULT_AVATAR;
 use http_url_guard::cases::IS_HTTP_URL_CASES;
 
 #[test]
@@ -34,7 +34,7 @@ fn classify_frame_kinds() {
 fn topnav_avatar_src_only_keeps_http_urls() {
     let mut wrong = Vec::new();
     for (input, ok) in IS_HTTP_URL_CASES {
-        let got = crate::foundation::utils::safe_avatar_url(input);
+        let got = frontend_ui::safe_avatar_url(input);
         if *ok {
             if got != *input {
                 wrong.push(format!("  dropped a legitimate avatar {input:?}"));
@@ -51,8 +51,5 @@ fn topnav_avatar_src_only_keeps_http_urls() {
         wrong.join("\n")
     );
     // Empty input falls back to the placeholder.
-    assert_eq!(
-        crate::foundation::utils::safe_avatar_url(""),
-        DEFAULT_AVATAR
-    );
+    assert_eq!(frontend_ui::safe_avatar_url(""), DEFAULT_AVATAR);
 }

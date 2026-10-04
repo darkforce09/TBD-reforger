@@ -403,7 +403,8 @@ fn the_runtime_scan_sees_a_runtime_wherever_a_shell_runs_it() {
 }
 
 /// Every line the task `name` runs, its `Step::Task` rows followed, and every row it reaches. A
-/// native step that runs a derived API line contributes that line, as this checkout derives it.
+/// native step that runs a derived API or frontend line contributes that line, as this checkout
+/// derives it.
 fn reachable(name: &str) -> (Vec<String>, std::collections::BTreeSet<&'static str>) {
     let mut lines = Vec::new();
     let mut rows = std::collections::BTreeSet::new();
@@ -421,6 +422,11 @@ fn reachable(name: &str) -> (Vec<String>, std::collections::BTreeSet<&'static st
                     if let Some(line) = crate::api_package_lane::api_line_of(*run) {
                         let argv = crate::api_package_lane::api_line_argv(&root(), line)
                             .expect("the API packages derive");
+                        lines.push(argv.join(" "));
+                    } else if let Some(line) = crate::frontend_package_lane::frontend_line_of(*run)
+                    {
+                        let argv = crate::frontend_package_lane::frontend_line_argv(&root(), line)
+                            .expect("the frontend family derives");
                         lines.push(argv.join(" "));
                     }
                 }

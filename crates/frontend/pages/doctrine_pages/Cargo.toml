@@ -1,0 +1,41 @@
+# The doctrine and info pages of the single-page app: the doctrine wiki with its revision history,
+# the vehicle database with its dossier, and the modpack manifests.
+[package]
+name = "doctrine_pages"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The doctrine wiki, vehicle database and modpacks pages."
+
+[package.metadata.layout]
+category = "crates/frontend/pages"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The wiki, vehicle and modpack wire types and the data envelope they arrive in.
+frontend_api_dtos = { workspace = true }
+# The HTTP client and its typed reads and writes.
+frontend_transport = { workspace = true }
+# The session store and the role checks that offer an administrator the write controls.
+frontend_session = { workspace = true }
+# The design-system primitives (split pane, toasts) and the safe URL and formatting helpers.
+frontend_ui = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde_json = { workspace = true }
+
+# The browser halves: the wiki's route parameter and navigation hooks, and the typed revision
+# reads.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+leptos_router = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+# The repository-root finder, the captured API responses behind `golden!`, the source shards the
+# guard tests read through and the `view!` attribute scanner.
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

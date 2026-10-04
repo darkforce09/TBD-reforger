@@ -70,8 +70,8 @@ pub fn run(args: &[String]) -> Result<u8> {
 /// targets that compute or delete instead of running a recipe, and for a name that is no target.
 ///
 /// # Errors
-/// A recipe that derives its lines from the workspace (`wasm-ci`, and `rust-ci` through it)
-/// cannot read it.
+/// A recipe that derives its lines from the workspace (`wasm-ci`, `ci-local-leptos`, and
+/// `rust-ci` through `wasm-ci`) cannot read it.
 pub(crate) fn recipe_lines(target: &str) -> Result<Option<Vec<String>>> {
     if target == "rust-ci" {
         return rust_ci_lines().map(Some);
@@ -95,7 +95,7 @@ fn recipe_steps(target: &str) -> Result<Option<Vec<Step>>> {
         "leptos-gates" => leptos_gates(),
         "mortar-offline-gate" => mortar_offline_gate(),
         "ballistics-wasm-agreement" => ballistics_wasm_agreement(),
-        "ci-local-leptos" => ci_local_leptos(),
+        "ci-local-leptos" => ci_local_leptos(&cwd_root())?,
         _ => return Ok(None),
     }))
 }

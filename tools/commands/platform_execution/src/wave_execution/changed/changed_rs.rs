@@ -1,9 +1,10 @@
 //! The changed Rust files, and the format, wasm32 and frontend-test checks scoped to them.
 //!
 //! **Role:** lists the `.rs` files a range changed (committed and working-tree), runs `rustfmt
-//! --check` over them with each file's edition, derives the wasm scope (the frontend and every
-//! workspace crate it compiles in) and runs the wasm32 check and the frontend tests when that scope
-//! changed; resolves a file's owning package.
+//! --check` over them with each file's edition, derives the wasm scope (the frontend family, the app
+//! and every crate under `crates/frontend`, and every workspace crate they compile in) and runs the
+//! wasm32 check and the tests of the frontend family when that scope changed; resolves a file's
+//! owning package.
 //!
 //! **Position:** called through the parent `changed` module by both gates, `touch` and `test_cmd`;
 //! the workspace members and manifests come from [`repository_laws`].
@@ -19,6 +20,7 @@
 
 use super::*;
 use crate::wave_execution::gate_folder;
+use ci_task_catalog::frontend_package_lane::{frontend_family_argv, is_frontend_member};
 use repository_laws::cargo_manifest::read_manifest;
 use repository_laws::workspace_members::read_workspace_members;
 use repository_layout::build_output;
@@ -164,7 +166,8 @@ pub(crate) fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 /// the reason never even reached the log: the vacuity was invisible in the transcript.
 ///
 /// The scope is DERIVED, not listed, because a hand-kept list is the same bug with a slower fuse:
-/// walk the dependency edges out of `apps/frontend/Cargo.toml` and keep walking. An edge leads to
+/// walk the dependency edges out of `apps/frontend/Cargo.toml` and out of every crate under
+/// `crates/frontend`, and keep walking. An edge leads to
 /// a workspace crate when it names a `path`, or when it takes its source from
 /// `[workspace.dependencies]` (`workspace = true`) and names a workspace member's package — the
 /// shared crates under `crates/` are reached that way. The walk reaches every `crates/` member
@@ -175,8 +178,18 @@ pub(crate) fn fmt_changed(ctx: &Ctx, base: &str) -> i32 {
 /// the gate's `cargo check` step before this scope matters.
 pub(crate) fn wasm_scope_prefixes(root: &Path) -> Vec<String> {
     let members = read_workspace_members(root).unwrap_or_default();
-    let mut seen: Vec<String> = vec![FRONTEND_DIR.to_string()];
-    let mut queue: Vec<String> = vec![FRONTEND_DIR.to_string()];
+    // The walk starts at the app and at every crate of the frontend family, so a frontend crate
+    // the app does not depend on yet is in scope too.
+    let mut seen: Vec<String> = std::iter::once(FRONTEND_DIR.to_string())
+        .chain(
+            members
+                .iter()
+                .filter(|member| is_frontend_member(member))
+                .map(|member| member.path.clone())
+                .filter(|path| path != FRONTEND_DIR),
+        )
+        .collect();
+    let mut queue: Vec<String> = seen.clone();
     while let Some(dir) = queue.pop() {
         let Ok(manifest) = read_manifest(&root.join(&dir).join("Cargo.toml")) else {
             continue;
@@ -253,18 +266,20 @@ pub(crate) fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
     // is neither, and leaving it would have left a check step on the shared dir in the one file
     // whose subject is check steps on the shared dir. Same dir as the rest — cargo namespaces by
     // target triple, so wasm32 and native coexist without either evicting the other.
-    let argv = ctx.host.checkrun_argv(
-        &ctx.gate_check_target,
-        &host::v(&[
-            "cargo",
-            "check",
-            "-p",
-            "frontend",
-            "--target",
-            "wasm32-unknown-unknown",
-            "--quiet",
-        ]),
-    );
+    // Every package of the frontend family, derived from the workspace: a crate under
+    // `crates/frontend` is checked for wasm32 from the moment the workspace names it.
+    let check = match frontend_family_argv(
+        &ctx.root,
+        &["cargo", "check"],
+        &["--target", "wasm32-unknown-unknown", "--quiet"],
+    ) {
+        Ok(argv) => argv,
+        Err(error) => {
+            wprintln!("    {error}");
+            return 1;
+        }
+    };
+    let argv = ctx.host.checkrun_argv(&ctx.gate_check_target, &check);
     let (out, rc) = host::capture(&argv);
     wprint!("{out}");
     rc
@@ -348,9 +363,14 @@ pub(crate) fn frontend_tests_changed(ctx: &Ctx, base: &str, slice: &str) -> i32 
         &ctx.main_root,
         &format!("{}{slice}", build_output::GATE_SLICE_FRONTEND_PREFIX),
     );
-    let argv = ctx
-        .host
-        .checkrun_argv(&private, &host::v(&["cargo", "test", "-p", "frontend"]));
+    let test = match frontend_family_argv(&ctx.root, &["cargo", "test"], &[]) {
+        Ok(argv) => argv,
+        Err(error) => {
+            wprintln!("    {error}");
+            return 1;
+        }
+    };
+    let argv = ctx.host.checkrun_argv(&private, &test);
     let (out, rc) = host::capture(&argv);
     wprint!("{out}");
     rc
@@ -375,7 +395,8 @@ pub(super) fn frontend_include_input_touched<'a>(
         .any(|p| set.contains(&realpath_m(&root.join(p))))
 }
 
-/// The wasm-scope crates' `include_str!`/`include_bytes!` inputs, as absolute paths.
+/// The wasm-scope crates' `include_str!`/`include_bytes!` inputs and the repository files their
+/// tests read through the repository-root finder ([`repository_reads_under`]), as absolute paths.
 ///
 /// **Absolute, deliberately.** [`workspace_members`] and [`rs_files_under`] resolve against the
 /// PROCESS CWD, so passing the repo-relative `wasm_scope_prefixes` straight through makes the answer
@@ -388,7 +409,10 @@ pub(super) fn frontend_include_inputs(root: &Path) -> HashSet<PathBuf> {
         .into_iter()
         .map(|d| root.join(d).display().to_string())
         .collect();
-    include_inputs_under(&dirs).into_iter().collect()
+    include_inputs_under(&dirs)
+        .into_iter()
+        .chain(repository_reads_under(root, &dirs))
+        .collect()
 }
 
 /// Directory of the `[package]` `Cargo.toml` owning a `.rs` path, or `None`.

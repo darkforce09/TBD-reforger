@@ -81,7 +81,7 @@ cargo test -p terrain_elevation   # sampling, vector grid, PNG, raw grid and ful
   - the streaming crates (`map_streaming_host`'s terrain boot and `map_asset_loading`'s raw grid
     loader and airfield apron), `place_names` (the spot heights), `road_network`,
     `terrain_line_of_sight` and `map_editing_tools`, which take a `DemManifest`;
-  - the Mission Creator's canvas and pointer handlers in `apps/frontend/src/workspaces/editor/`,
+  - the Mission Creator's canvas and pointer handlers in `crates/frontend/workspaces/mission_creator_workspace/src/`,
     which read heights with `sample_grid_meters`;
   - the world export in `tools/map_assets/world_export_pipeline/src/`, which writes
     `dem/elevation.dem` with `raw::to_bytes`, and the label and alignment checks in

@@ -12,12 +12,12 @@
 //! credential under the refresh lock, and reports any failure to revoke the server session.
 
 #[cfg(any(target_arch = "wasm32", test))]
-use crate::foundation::transport::dto::User;
+use frontend_api_dtos::User;
 // Wasm-only imports: `TopNav`, their one user, is mounted only by `start_app` through the frame.
 #[cfg(target_arch = "wasm32")]
-use crate::foundation::auth::AuthStore;
+use frontend_session::AuthStore;
 #[cfg(target_arch = "wasm32")]
-use crate::foundation::ui::MaterialIcon;
+use frontend_ui::MaterialIcon;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
@@ -41,11 +41,12 @@ impl AccountBadge {
     fn of(user: &User) -> Self {
         Self {
             username: user.username.clone(),
-            avatar: crate::foundation::utils::safe_avatar_url(&user.avatar_url),
+            avatar: frontend_ui::safe_avatar_url(&user.avatar_url),
             // Counts as linked only when the identity id is present and non-empty.
             linked_identity_prefix: user
                 .arma_id
-                .as_deref()
+                .as_ref()
+                .map(|id| id.as_str())
                 .filter(|id| !id.is_empty())
                 .map(|id| id.chars().take(8).collect()),
         }
@@ -61,7 +62,7 @@ impl AccountBadge {
 /// while closed and is dismissed by a click anywhere or by the escape key.
 #[cfg(target_arch = "wasm32")]
 #[component]
-pub(crate) fn TopNav() -> impl IntoView {
+pub fn TopNav() -> impl IntoView {
     let pathname = use_location().pathname;
     let auth = expect_context::<AuthStore>();
     // Memoized, so a token rotation or a profile poll that leaves the name, the avatar and the
@@ -88,16 +89,16 @@ pub(crate) fn TopNav() -> impl IntoView {
         {
             let rt = auth.refresh_token.get_untracked();
             let departing = auth.persist_state();
-            let toasts = crate::foundation::ui::toast::use_toasts();
+            let toasts = frontend_ui::toast::use_toasts();
             auth.clear_session();
             leptos::task::spawn_local(async move {
                 use futures::future::FutureExt;
-                let cleared = crate::foundation::auth::session_refresh::with_refresh_lock(
+                let cleared = frontend_session::session_refresh::with_refresh_lock(
                     async move {
-                        use crate::foundation::auth::session::{
+                        use frontend_session::session::{
                             clear_persisted, persisted_belongs_to_session,
                         };
-                        if crate::foundation::auth::load_persisted()
+                        if frontend_session::load_persisted()
                             .is_none_or(|saved| persisted_belongs_to_session(&saved, &departing))
                         {
                             return clear_persisted();
@@ -112,19 +113,18 @@ pub(crate) fn TopNav() -> impl IntoView {
                         "Signed out locally, but this browser could not clear the stored session",
                     );
                 }
-                if let Some(rt) = rt {
-                    if let Err(error) = crate::foundation::transport::client::api_post_ok(
+                if let Some(rt) = rt
+                    && let Err(error) = frontend_transport::client::api_post_ok(
                         auth,
                         "/auth/logout",
                         serde_json::json!({ "refresh_token": rt }),
                     )
                     .await
-                    {
-                        toasts.error(crate::foundation::transport::client::api_error_message(
-                            &error,
+                {
+                    toasts
+                        .error(error.message_or(
                             "Signed out locally, but server session revocation failed",
                         ));
-                    }
                 }
             });
         }
@@ -132,7 +132,7 @@ pub(crate) fn TopNav() -> impl IntoView {
     view! {
         <header class="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface-container-low/70 px-6 backdrop-blur-xl">
             <div class="flex h-full min-w-0 items-center gap-2 pl-12 lg:pl-0">
-                {move || match crate::foundation::route_table::breadcrumb(&pathname.get()) {
+                {move || match frontend_route_table::breadcrumb(&pathname.get()) {
                     Some((parent, current)) => view! {
                         <>
                             <span class="text-label-md text-on-surface-variant">{parent}</span>

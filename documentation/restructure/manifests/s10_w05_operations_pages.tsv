@@ -1,0 +1,12 @@
+# Stage S10 H2b, page crate: the operations pages (the event schedule, the event hub with its
+# inline slotting, the standalone ORBAT selection page, the service record and the leaderboards)
+# become crates/frontend/pages/operations_pages. The folder becomes the crate's `src`, its module
+# tree `lib.rs`, and its README the source tree README; the feature docs move to their mirror under
+# documentation/crates/frontend/pages/operations_pages. The prefix is one `crate::` row scoped to
+# the moved folder and one `operations_pages::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/pages/operations	crates/frontend/pages/operations_pages/src
+path	apps/frontend/src/pages/operations/mod.rs	crates/frontend/pages/operations_pages/src/lib.rs
+path	documentation/apps/frontend/pages/operations	documentation/crates/frontend/pages/operations_pages
+rust_path	crate::pages::operations::	crate::	apps/frontend/src/pages/operations
+rust_path	crate::pages::operations::	operations_pages::	apps/frontend/src

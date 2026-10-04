@@ -27,7 +27,7 @@ repeat an id in a squad, so a duplicate arrives through a hydrated payload.
 - Depends on: `mission_document::MissionDocCore` (`small_maps_json`, `slot_exists`);
   `serde_json`.
 - Used by: the Mission Creator's save in
-  `apps/frontend/src/workspaces/editor/session/document_commands.rs`, which refuses the save
+  `crates/frontend/workspaces/mission_creator_session/src/document_commands.rs`, which refuses the save
   before compiling when the list is not empty and shows the pairs through
   `duplicate_slot_id_report` in `crates/mission_editing/mission_editing_commands/src/document_text/merge_report.rs`.
 - Rules: a document built by the store's own writes reports nothing, and a hydrated squad that

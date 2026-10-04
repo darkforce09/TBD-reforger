@@ -225,9 +225,9 @@ Expected: `{"version":2,"eventId":…,"missionId":…,"assignments":[…],"slots
 
 ## Related
 
-- [Server control page](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md)
+- [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the servers, and the credentials, deployments and fleet command panels.
-- [Event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md)
+- [Event manager page](/documentation/crates/frontend/pages/administration_pages/event_manager/event_manager_page.md)
   — binding an operation to its game server.
 - [Staging fixtures host tool](/tools/staging/staging_fixtures/src/README.md) — the
   `provision-fleet` and `rotate-credential` subcommands and their guards.

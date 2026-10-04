@@ -387,3 +387,116 @@ fn a_fragment_with_no_package_ancestor_resolves_to_the_packages_that_include_it(
     assert_eq!(owner, None, "the fragment sits outside every package");
     assert_eq!(consumers, [consumer]);
 }
+
+/// Every crate of the frontend family is in the wasm scope, with what it compiles in, even one
+/// the app does not depend on yet: the walk starts at the app and at every member under
+/// `crates/frontend`.
+#[test]
+fn the_wasm_scope_starts_at_every_frontend_crate() {
+    let root = scratch_tree(
+        "frontend-family",
+        &[
+            (
+                "Cargo.toml",
+                "[workspace]\nmembers = [\"apps/*\", \"crates/foundation/*\", \
+                 \"crates/frontend/*/*\"]\n\n[workspace.dependencies]\n\
+                 guard = { path = \"crates/foundation/guard\" }\n",
+            ),
+            (
+                "apps/frontend/Cargo.toml",
+                "[package]\nname = \"frontend\"\n",
+            ),
+            ("apps/api/Cargo.toml", "[package]\nname = \"api\"\n"),
+            (
+                "crates/frontend/pages/zz_probe_pages/Cargo.toml",
+                "[package]\nname = \"zz_probe_pages\"\n\n[dependencies]\n\
+                 guard = { workspace = true }\n",
+            ),
+            (
+                "crates/foundation/guard/Cargo.toml",
+                "[package]\nname = \"guard\"\n",
+            ),
+        ],
+    );
+    let scope = wasm_scope_prefixes(&root);
+    let _ = std::fs::remove_dir_all(&root);
+    assert_eq!(
+        scope,
+        [
+            "apps/frontend",
+            "crates/foundation/guard",
+            "crates/frontend/pages/zz_probe_pages",
+        ]
+    );
+}
+
+/// The repository reads of the frontend test support are inputs of the package that makes them:
+/// a `golden!("<file>")` call names that golden, a `golden!` forwarding a macro argument names the
+/// whole golden folder, and `repository_text` / `repository_path` name their repository-root path
+/// (a folder: every file under it), wrapped across lines or not. A path naming nothing is no
+/// input, and a package that makes no read contributes nothing.
+#[test]
+fn the_repository_reads_of_a_frontend_crate_are_its_inputs() {
+    let root = scratch_tree(
+        "repository-reads",
+        &[
+            ("contracts/fixtures/api_goldens/GET__me.json", "{}\n"),
+            ("contracts/fixtures/api_goldens/GET__events.json", "[]\n"),
+            ("contracts/definitions/mission.schema.json", "{}\n"),
+            ("crates/api/api_missions/src/routes.rs", "// routes\n"),
+            ("assets/terrains/everon/manifest.json", "{}\n"),
+            ("assets/terrains/everon/heights.bin", "0\n"),
+            (
+                "crates/frontend/pages/zz_probe_pages/src/tests/reads.rs",
+                "let me = golden!(\"GET__me.json\");\n\
+                 let schema = crate::test_support::repository_text(\n    \
+                 env!(\"CARGO_MANIFEST_DIR\"),\n    \"contracts/definitions/mission.schema.json\",\n);\n\
+                 let routes = repository_text(manifest_dir, \"crates/api/api_missions/src/routes.rs\");\n\
+                 let terrain = repository_path(env!(\"CARGO_MANIFEST_DIR\"), \"assets/terrains/everon\");\n\
+                 let missing = repository_text(manifest_dir, \"contracts/nothing_here.json\");\n",
+            ),
+            (
+                "crates/frontend/foundation/frontend_test_support/src/golden.rs",
+                "macro_rules! golden_pair { ($f:literal) => { golden!($f) }; }\n",
+            ),
+            (
+                "crates/frontend/foundation/frontend_ui/src/lib.rs",
+                "//! No repository read.\n",
+            ),
+        ],
+    );
+    let package = |path: &str| vec![root.join(path).display().to_string()];
+    let reads = |path: &str| -> Vec<String> {
+        repository_reads_under(&root, &package(path))
+            .iter()
+            .map(|file| {
+                file.strip_prefix(&root)
+                    .expect("under the root")
+                    .display()
+                    .to_string()
+            })
+            .collect()
+    };
+    let probe = reads("crates/frontend/pages/zz_probe_pages");
+    let forwarding = reads("crates/frontend/foundation/frontend_test_support");
+    let silent = reads("crates/frontend/foundation/frontend_ui");
+    let _ = std::fs::remove_dir_all(&root);
+    assert_eq!(
+        probe,
+        [
+            "assets/terrains/everon/heights.bin",
+            "assets/terrains/everon/manifest.json",
+            "contracts/definitions/mission.schema.json",
+            "contracts/fixtures/api_goldens/GET__me.json",
+            "crates/api/api_missions/src/routes.rs",
+        ]
+    );
+    assert_eq!(
+        forwarding,
+        [
+            "contracts/fixtures/api_goldens/GET__events.json",
+            "contracts/fixtures/api_goldens/GET__me.json",
+        ]
+    );
+    assert!(silent.is_empty(), "{silent:?}");
+}

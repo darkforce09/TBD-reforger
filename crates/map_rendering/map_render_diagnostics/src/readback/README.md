@@ -61,7 +61,7 @@ never binds an offscreen target; `readback_rgba(engine, x, y)` returns one pixel
 - Used by: the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
   `window.__selfChecks.calibration` (`calibration_self_check`) and
   `window.__selfChecks.texture` (`texture_self_check`), both published in
-  `apps/frontend/src/workspaces/editor/bridge/viewport.rs` and called by the editor gate's
+  `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs` and called by the editor gate's
   `selfcheck` smoke; `crate::benchmark` (`readback_sleep_ms`). The other seven map checks and
   `readback_rgba` hang on the same `window.__selfChecks` under their own names; no gate calls
   them. The Arsenal paper doll's

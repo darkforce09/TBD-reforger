@@ -70,7 +70,7 @@ No feature and no environment variable.
   - streaming category, tier 7, wasm32: no GPU crate and no rendering crate
     (`cargo xtask verify crate-tiers`);
   - the Mission Creator's boot-progress tests read the boot's sources by path
-    (`apps/frontend/src/workspaces/editor/tests/t628_boot_progress.rs`).
+    (`crates/frontend/workspaces/mission_creator_workspace/src/tests/t628_boot_progress.rs`).
 
 ## Related documentation
 

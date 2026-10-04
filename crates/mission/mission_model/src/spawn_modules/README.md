@@ -39,7 +39,7 @@ under the same cap of 32.
 - Depends on: `serde_json`.
 - Used by: `crate::authored_blocks`, whose `spawnModules` row calls `validate`; the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s spawn modules panel
-  (`apps/frontend/src/workspaces/editor/ui/inspector/spawn_modules.rs`), which offers `KINDS`
+  (`crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/spawn_modules.rs`), which offers `KINDS`
   and `FACTION_KEYS`, bounds counts by `MAX_ALIVE` and checks each edit with `validate`, and whose
   tests use `placement_is_exclusive`.
 - Rules: a module is placed by position or by zone, exactly one of them

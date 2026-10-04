@@ -15,8 +15,10 @@ apps/frontend/style/
 
 - Encoding: UTF-8 CSS in Tailwind CSS 4 syntax, one file, dark theme only
   (`apps/frontend/index.html` puts `class="dark"` on `<html>`).
-- Schema, top to bottom: `@import 'tailwindcss'`; `@source "../src/**/*.rs"`, which makes
-  Tailwind scan the class strings in the Rust sources' `view!` macros; the `dark` custom variant;
+- Schema, top to bottom: `@import 'tailwindcss'`; the `@source` lines, one per workspace crate
+  that depends on leptos, each naming exactly that crate's `src/**/*.rs` relative to this folder
+  (`@source "../src/**/*.rs"` for the app), which make Tailwind scan the class strings in the
+  Rust sources' `view!` macros; the `dark` custom variant;
   the `@theme` block with the colour tokens (`--color-*`), the fonts (`--font-*`), the typography
   scale (`--text-*`), spacing and a radius, which classes such as `bg-surface-container` and
   `text-headline-lg` come from; the base layer
@@ -28,6 +30,10 @@ apps/frontend/style/
 - Adding a style: a token goes into `@theme` and becomes usable as a Tailwind class at once; a
   class written in a Rust view needs no entry here, because `@source` finds it; a hand-written
   class or keyframe goes below the base layer.
+- Adding a leptos crate: add its own line, `@source "<path to the crate>/src/**/*.rs";`, and drop
+  the line of a crate that leaves; `cargo xtask verify tailwind-sources` fails on a crate without
+  its line, on a crate named by two lines and on a line that names no leptos crate (an ancestor
+  or wildcard folder counts as naming none).
 
 ## Producers and consumers
 
@@ -41,13 +47,14 @@ apps/frontend/style/
 
 ## Boundaries
 
-- Depends on: Tailwind CSS 4.3.2, run by Trunk; the class strings in
-  `apps/frontend/src/`, which `@source` scans.
+- Depends on: Tailwind CSS 4.3.2, run by Trunk; the class strings in `apps/frontend/src/` and in
+  the `src/` folder of every other leptos crate, which the `@source` lines scan.
 - Used by: `apps/frontend/index.html`, whose Trunk link compiles it, and through the
   compiled stylesheet every view of the app.
-- Rules: `apps/frontend/Trunk.toml` leaves this file and `apps/frontend/dist/` out
-  of the watch set of `trunk serve`, as paths the build itself writes into, so an edit here shows
-  only after a rebuild that another change triggers, or after the server restarts; a token that
+- Rules: `apps/frontend/Trunk.toml` watches the app folder and the frontend crates
+  (`crates/frontend/<layer>/<crate>/`) and leaves this file and `apps/frontend/dist/` out of the
+  watch set of `trunk serve`, as paths the build itself writes into, so an edit here shows only
+  after a rebuild that another change triggers, or after the server restarts; a token that
   classes use keeps its name, since Tailwind generates nothing for a class whose token is gone and
   reports no error.
 

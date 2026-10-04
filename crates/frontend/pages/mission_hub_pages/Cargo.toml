@@ -1,0 +1,64 @@
+# The mission hub pages: the mission library with its slide-over dossier, the mission overview
+# with its Edit Armory dialog, and the New Mission dialog that hands an author to the Mission
+# Creator.
+[package]
+name = "mission_hub_pages"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The mission library, the mission overview with its armory editor, and the New Mission dialog."
+
+[package.metadata.layout]
+category = "crates/frontend/pages"
+tier = 11
+targets = "any"
+
+[dependencies]
+# The mission card, detail and page wire types, the role ladder and their typed identifiers.
+frontend_api_dtos = { workspace = true }
+# The mission endpoints and the error lines an upload refusal is read from.
+frontend_transport = { workspace = true }
+# The signed-in store the fetches read and the gate that hides a page's data from a guest.
+frontend_session = { workspace = true }
+# The badges, icons, dialogs, sheets and toasts the pages draw with.
+frontend_ui = { workspace = true }
+# A mission's review record and the submit control the dossier and the overview mount.
+mission_review_record = { workspace = true }
+# The upload body of a new mission version, written without cloning the parsed document.
+mission_payload = { workspace = true }
+# The scheme guard on every stored link and image source the cards and the dossier render.
+http_url_guard = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+leptos_router = { workspace = true }
+serde_json = { workspace = true }
+
+# The browser halves: the search query encoding, the document picker and its file read, and the
+# hand-off to the Mission Creator by a full page load.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Location",
+    "Document",
+    "Element",
+    "Event",
+    # The document picker: `<input type=file>` and the file it hands back. `File` extends `Blob`,
+    # whose `text()` reads it; `FileList` is required for `HtmlInputElement::files()`.
+    "HtmlInputElement",
+    "File",
+    "FileList",
+    "Blob",
+] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+# The guard's case table (`http_url_guard::cases`), which the card art test runs through its
+# render path.
+http_url_guard = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

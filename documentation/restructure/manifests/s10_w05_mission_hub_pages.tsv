@@ -1,0 +1,12 @@
+# Stage S10 H2c, a page crate: the mission hub (the mission library with its slide-over dossier,
+# the mission overview with its Edit Armory dialog, and the New Mission dialog) becomes
+# crates/frontend/pages/mission_hub_pages. The area folder becomes the crate's `src`, its module
+# tree `lib.rs`, and its README the source tree README; the pages' feature docs move to the
+# crate's documentation mirror. The prefix is one `crate::` row scoped to the moved folder and one
+# `mission_hub_pages::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/pages/mission_hub	crates/frontend/pages/mission_hub_pages/src
+path	apps/frontend/src/pages/mission_hub/mod.rs	crates/frontend/pages/mission_hub_pages/src/lib.rs
+path	documentation/apps/frontend/pages/mission_hub	documentation/crates/frontend/pages/mission_hub_pages
+rust_path	crate::pages::mission_hub::	crate::	apps/frontend/src/pages/mission_hub
+rust_path	crate::pages::mission_hub::	mission_hub_pages::	apps/frontend/src

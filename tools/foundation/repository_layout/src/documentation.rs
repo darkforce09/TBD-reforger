@@ -15,8 +15,7 @@ pub const DOCUMENTATION_ROOT: &str = "documentation";
 /// The Mission Creator roadmap carrying the generated "recommended next work" block that
 /// `ticket sync` injects between its markers.
 pub const ROADMAP: &str =
-    "documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md";
+    "documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md";
 
 /// The Eden gap-analysis table whose ticket column `ticket sync` keeps in step with the registry.
-pub const GAP_ANALYSIS: &str =
-    "documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md";
+pub const GAP_ANALYSIS: &str = "documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md";

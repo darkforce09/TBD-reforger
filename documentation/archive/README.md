@@ -57,7 +57,7 @@ authority.
 | Documentation program records | [documentation entry](/documentation/README.md), [documentation standards](/documentation/standards/documentation_standards.md) |
 | Engine split | [engine boundary rules](/documentation/standards/crate_boundary_rules.md) |
 | Factory runs | [factory waves](/documentation/runbooks/factory_waves/README.md) |
-| Frontend move and Go and React era designs | [frontend documentation](/documentation/apps/frontend/README.md), [Mission Creator](/documentation/apps/frontend/workspaces/editor/README.md), [design system](/documentation/design_system/README.md) |
+| Frontend move and Go and React era designs | [frontend documentation](/documentation/apps/frontend/README.md), [Mission Creator](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md), [design system](/documentation/design_system/README.md) |
 | Improved layout proposals | [restructure program](/documentation/restructure/README.md), [workspace layout](/documentation/architecture/workspace_layout.md) |
 | Restructure agent briefs | [restructure program](/documentation/restructure/README.md), [shared agent brief](/documentation/restructure/agent_briefs/shared_brief.md) |
 | Tooling restructuring | [tooling documentation](/documentation/tools/README.md) |

@@ -5,7 +5,7 @@
 //! buffer and depth target on it, and takes the Arsenal's resizes, turns, hover, region states,
 //! picks and anchor queries; its frame is drawn by `frame_render`, its self-check by
 //! `self_check`.
-//! **Position:** the type the Arsenal host (`apps/frontend/src/workspaces/editor/arsenal/doll.rs`)
+//! **Position:** the type the Arsenal host (`crates/frontend/workspaces/mission_creator_arsenal/src/doll.rs`)
 //! creates once per mounted canvas, drives from pointer events and an animation-frame loop, and
 //! drops on unmount.
 //! **Signals & state:** the GPU context and buffers, the yaw, the CSS size, the 14 region

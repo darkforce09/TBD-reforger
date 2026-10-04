@@ -49,8 +49,8 @@ are. A degenerate spread falls back to a due-east axis, so no result is NaN. Onl
   - `mission_operations::transform`, which reads the selection's positions and commits the
     patterns, aligns, spacing and orient;
   - the hosted selection transforms of `mission_editing_commands::hosted_commands`, the Mission
-    Creator's arrange menu (`apps/frontend/src/workspaces/editor/ui/docks/top_strip/arrange.rs`)
-    and its bulk confirmation (`apps/frontend/src/workspaces/editor/bridge/host_state/`), which
+    Creator's arrange menu (`crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/arrange.rs`)
+    and its bulk confirmation (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/`), which
     name its vocabulary directly;
   - `crates/mission/mission_operations/tests/operation_boundaries.rs`.
 - Rules:

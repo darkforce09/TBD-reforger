@@ -66,7 +66,7 @@ the panel can select it.
   and `scan_cargo_capacity`), `newtype_ids` (the ids), `serde_json` and `thiserror`.
 - Used by:
   - the Mission Creator's validation panel
-    (`apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`), which evaluates
+    (`crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/validation_panel/`), which evaluates
     the compiled payload with `known_asset_ids` from the item
     [registry](/documentation/glossary/n_to_z.md#registry) and no other fact, and renders every
     `Finding`, compile findings included;

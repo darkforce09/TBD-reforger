@@ -1,4 +1,5 @@
-//! Tests for [`super`] — the layer order and the sub-area order over a fixture frontend crate.
+//! Tests for [`super`] — the in-crate mode: the layer order and the sub-area order over a
+//! fixture frontend crate. The crate-edge mode is tested in `frontend_layering_crate_edges.rs`.
 
 use std::collections::BTreeSet;
 
@@ -32,20 +33,53 @@ const ROWS: &[FrontendLayerRow] = &[
         has_areas: true,
     },
 ];
-const ORDERS: &[SubAreaOrder] = &[SubAreaOrder {
+const FOUNDATION_ORDER: SubAreaOrder = SubAreaOrder {
     parent: "src/foundation",
-    tiers: &[&["ui"], &["transport"], &["auth"], &["offline", "map_view"]],
+    tiers: &[
+        SubAreaTier::peers(&["ui"]),
+        SubAreaTier::peers(&["transport"]),
+        SubAreaTier::peers(&["auth"]),
+        SubAreaTier::peers(&["offline", "map_view"]),
+    ],
     test_only: &["test_support"],
-}];
+};
+const EDITOR_ORDER: SubAreaOrder = SubAreaOrder {
+    parent: "src/workspaces/editor",
+    tiers: &[
+        SubAreaTier::peers(&["state"]),
+        SubAreaTier::group(&["bridge", "input"]),
+        SubAreaTier::peers(&["session"]),
+        SubAreaTier::group(&["ui", "mission_editor", "tests"]),
+    ],
+    test_only: &[],
+};
 const CRATES: &[FrontendCrateLayers] = &[FrontendCrateLayers {
     crate_path: "apps/web",
     rows: ROWS,
-    sub_area_orders: ORDERS,
+    sub_area_orders: &[FOUNDATION_ORDER],
+}];
+/// No frontend library crate: the crate-edge mode places the app alone.
+const NO_CRATE_EDGES: FrontendCrateEdges = FrontendCrateEdges {
+    shell_crate: "apps/web",
+    crates_root: "crates/frontend",
+    layer_folders: &[],
+    crate_orders: &[],
+};
+const LAYERING: &FrontendLayering = &FrontendLayering {
+    in_crate: CRATES,
+    crate_edges: NO_CRATE_EDGES,
+};
+const EDITOR_CRATES: &[FrontendCrateLayers] = &[FrontendCrateLayers {
+    crate_path: "apps/web",
+    rows: ROWS,
+    sub_area_orders: &[FOUNDATION_ORDER, EDITOR_ORDER],
 }];
 
 fn checkout(name: &str) -> TemporaryCheckout {
     let checkout = TemporaryCheckout::empty(&format!("layering-{name}"));
     for (rel, body) in [
+        ("Cargo.toml", "[workspace]\nmembers = [\"apps/web\"]\n"),
+        ("apps/web/Cargo.toml", "[package]\nname = \"web\"\n"),
         (
             "apps/web/src/main.rs",
             "mod foundation;\nmod pages;\nmod shell;\nmod workspaces;\nuse crate::pages::account::Page;\n",
@@ -115,12 +149,13 @@ fn owned(expected: &[(&str, &str, bool)]) -> Vec<(String, String, bool)> {
 #[test]
 fn frontend_layering_a_tree_in_order_passes() {
     let checkout = checkout("green");
-    let report = check_frontend_layering(checkout.root(), CRATES);
+    let report = check_frontend_layering(checkout.root(), LAYERING);
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
     assert_eq!(
         report.lines.first().map(String::as_str),
         Some(
-            "==> frontend-layering — 0 production and 0 test layering edge(s); the law allows none"
+            "==> frontend-layering — 0 production and 0 test layering edge(s) between modules; 0 \
+             normal and 0 dev edge(s) between 1 frontend crate(s); the law allows none"
         )
     );
     assert_eq!(
@@ -150,7 +185,7 @@ fn frontend_layering_a_single_foundation_import_of_a_workspace_fails() {
         ),
         ("foundation/ui", "workspaces/editor", 1)
     );
-    let report = check_frontend_layering(checkout.root(), CRATES);
+    let report = check_frontend_layering(checkout.root(), LAYERING);
     assert_eq!(report.exit_code, 1);
     assert!(
         report.lines.contains(
@@ -193,12 +228,13 @@ fn frontend_layering_pages_workspaces_shell_and_page_areas_are_judged() {
             ("workspaces/editor", "pages/mission_hub", false),
         ])
     );
-    let report = check_frontend_layering(checkout.root(), CRATES);
+    let report = check_frontend_layering(checkout.root(), LAYERING);
     assert_eq!(report.exit_code, 1);
     assert_eq!(
         report.lines.first().map(String::as_str),
         Some(
-            "==> frontend-layering — 3 production and 1 test layering edge(s); the law allows none"
+            "==> frontend-layering — 3 production and 1 test layering edge(s) between modules; 0 \
+             normal and 0 dev edge(s) between 1 frontend crate(s); the law allows none"
         )
     );
     assert!(
@@ -233,7 +269,7 @@ fn frontend_layering_comments_strings_and_relative_paths_resolve_correctly() {
 fn frontend_layering_an_unmapped_file_is_a_finding_and_a_missing_crate_did_not_run() {
     let checkout = checkout("unmapped");
     checkout.write("apps/web/src/stray.rs", "fn f() {}\n");
-    let report = check_frontend_layering(checkout.root(), CRATES);
+    let report = check_frontend_layering(checkout.root(), LAYERING);
     assert_eq!(report.exit_code, 1);
     assert!(
         report.lines.contains(
@@ -242,7 +278,7 @@ fn frontend_layering_an_unmapped_file_is_a_finding_and_a_missing_crate_did_not_r
     );
     std::fs::remove_dir_all(checkout.root().join("apps/web/src")).unwrap();
     assert_eq!(
-        check_frontend_layering(checkout.root(), CRATES).exit_code,
+        check_frontend_layering(checkout.root(), LAYERING).exit_code,
         2
     );
 }
@@ -375,9 +411,119 @@ fn frontend_layering_a_child_of_an_ordered_folder_in_no_tier_is_a_finding() {
             "apps/web/src/foundation/stray".to_string(),
         ])
     );
-    let report = check_frontend_layering(checkout.root(), CRATES);
+    let report = check_frontend_layering(checkout.root(), LAYERING);
     assert_eq!(report.exit_code, 1);
     assert!(report.lines.contains(
         &"FAIL: apps/web/src/foundation/stray sits in no tier of its folder's order".to_string()
     ));
+}
+
+#[test]
+fn frontend_layering_a_mutual_group_imports_itself_and_lower_tiers_only() {
+    let checkout = checkout("editor-order");
+    for (rel, body) in [
+        (
+            "apps/web/src/workspaces/editor/state/model.rs",
+            "use crate::foundation::ui;\n",
+        ),
+        (
+            "apps/web/src/workspaces/editor/bridge/host.rs",
+            "use crate::workspaces::editor::input::Pointer;\nuse crate::workspaces::editor::state::Model;\n",
+        ),
+        (
+            "apps/web/src/workspaces/editor/input/pointer.rs",
+            "use super::super::bridge::host::Host;\n",
+        ),
+        (
+            "apps/web/src/workspaces/editor/session/persist.rs",
+            "use crate::workspaces::editor::bridge::host;\n",
+        ),
+        (
+            "apps/web/src/workspaces/editor/ui/dock.rs",
+            "use crate::workspaces::editor::{mission_editor::Page, session::persist};\n",
+        ),
+        (
+            "apps/web/src/workspaces/editor/mission_editor.rs",
+            "use crate::workspaces::editor::ui::dock;\n",
+        ),
+        (
+            "apps/web/src/workspaces/editor/tests/flow.rs",
+            "use crate::workspaces::editor::{ui::dock, input::pointer};\n",
+        ),
+    ] {
+        checkout.write(rel, body);
+    }
+    let editor_scan = || layering_edges(checkout.root(), &EDITOR_CRATES[0]).expect("the scan runs");
+    assert_eq!(
+        editor_scan().edges,
+        Vec::new(),
+        "a group and every lower tier"
+    );
+    assert_eq!(editor_scan().unordered, BTreeSet::new());
+    checkout.write(
+        "apps/web/src/workspaces/editor/state/model.rs",
+        "use crate::workspaces::editor::session::persist;\n",
+    );
+    checkout.write(
+        "apps/web/src/workspaces/editor/bridge/host.rs",
+        "use super::super::input::Pointer;\nfn f() { crate::workspaces::editor::ui::dock::open(); }\n",
+    );
+    assert_eq!(
+        triples(editor_scan().edges),
+        owned(&[
+            ("workspaces/editor/bridge", "workspaces/editor/ui", false),
+            (
+                "workspaces/editor/state",
+                "workspaces/editor/session",
+                false
+            ),
+        ])
+    );
+}
+
+#[test]
+fn frontend_layering_a_configured_path_that_no_longer_exists_is_a_note() {
+    const STALE_ROWS: &[FrontendLayerRow] = &[
+        FrontendLayerRow {
+            path: "src/main.rs",
+            layer: FrontendLayer::Shell,
+            has_areas: false,
+        },
+        FrontendLayerRow {
+            path: "src",
+            layer: FrontendLayer::Shell,
+            has_areas: false,
+        },
+        FrontendLayerRow {
+            path: "src/features",
+            layer: FrontendLayer::Features,
+            has_areas: false,
+        },
+    ];
+    const STALE: &FrontendLayering = &FrontendLayering {
+        in_crate: &[FrontendCrateLayers {
+            crate_path: "apps/web",
+            rows: STALE_ROWS,
+            sub_area_orders: &[SubAreaOrder {
+                parent: "src/workspaces/planner",
+                tiers: &[],
+                test_only: &[],
+            }],
+        }],
+        crate_edges: NO_CRATE_EDGES,
+    };
+    let checkout = checkout("absent-paths");
+    let report = check_frontend_layering(checkout.root(), STALE);
+    assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
+    assert_eq!(
+        report.lines[1..3],
+        [
+            "note: apps/web/src/features is configured in the layer table but does not exist; \
+             drop its row"
+                .to_string(),
+            "note: apps/web/src/workspaces/planner is configured in the layer table but does not \
+             exist; drop its row"
+                .to_string(),
+        ]
+    );
 }

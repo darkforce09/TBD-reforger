@@ -28,12 +28,12 @@ offline tools share.
   [`world_chunks`](/crates/world_formats/world_chunks/README.md) and
   [`prefab_catalog`](/crates/world_formats/prefab_catalog/README.md) crates.
 - Entry: `map_streaming_host::bootstrap`, which the Mission Creator calls once its render engine
-  exists (`apps/frontend/src/workspaces/editor/bridge/world_assets.rs`); the settle and
+  exists (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/world_assets.rs`); the settle and
   `flush_viewport` calls, which its pointer and wheel gestures and camera dock make after the
   camera moves.
 - Related features: the [map rendering overview](/documentation/crates/map_rendering/map_rendering_overview.md),
   the [terrain assets](/assets/terrains/README.md) the loaders read, and the Mission Creator's
-  [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+  [feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
   for the map features streaming backs.
 
 ## Behaviour

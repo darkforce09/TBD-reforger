@@ -71,9 +71,9 @@ behind the camera.
   `scale_in_place`, `invert`, `transform_vector`) and `camera_math::orbit::projection`.
 - Used by: `paper_doll_renderer` (`crates/paper_doll/paper_doll_renderer/`), which packs the
   parts, uploads the meshes and calls the picks and anchors. The Arsenal in
-  `apps/frontend/src/workspaces/editor/arsenal/doll.rs` reaches the scene only through that
+  `crates/frontend/workspaces/mission_creator_arsenal/src/doll.rs` reaches the scene only through that
   renderer, and sends its region states in the order of its own `RAIL_REGIONS`
-  (`apps/frontend/src/workspaces/editor/arsenal/rules/paper_doll_and_weight.rs`).
+  (`crates/frontend/workspaces/mission_creator_state/src/arsenal_rules/paper_doll_and_weight.rs`).
 - Rules:
   - `REGION_KEYS` and the frontend's `RAIL_REGIONS` list the same 14 keys in the same order,
     because the state bytes and the pick index are positional; no test compares the two lists
@@ -85,7 +85,7 @@ behind the camera.
 
 ## Related documentation
 
-- [Arsenal](/apps/frontend/src/workspaces/editor/arsenal/README.md) — the workspace whose
+- [Arsenal](/crates/frontend/workspaces/mission_creator_arsenal/src/README.md) — the workspace whose
   rail and loadout rows the regions stand for.
 - [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the fixed-orbit camera the
   picks and anchors project with.

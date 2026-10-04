@@ -3,8 +3,8 @@
 #![cfg(not(target_arch = "wasm32"))]
 
 use super::*;
-use crate::foundation::transport::dto::role::Role;
-use crate::foundation::ui::DEFAULT_AVATAR;
+use frontend_api_dtos::role::Role;
+use frontend_ui::DEFAULT_AVATAR;
 
 fn member() -> User {
     User {
@@ -41,7 +41,7 @@ fn a_linked_identity_shows_its_first_eight_characters() {
 fn an_absent_or_empty_identity_counts_as_unlinked() {
     let mut user = member();
     assert_eq!(AccountBadge::of(&user).linked_identity_prefix, None);
-    user.arma_id = Some(String::new());
+    user.arma_id = Some(Default::default());
     assert_eq!(AccountBadge::of(&user).linked_identity_prefix, None);
 }
 

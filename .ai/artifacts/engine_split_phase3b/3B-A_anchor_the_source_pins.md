@@ -16,7 +16,7 @@ declarations and `use` paths only.
 
 ## The idiom — already live in this crate
 
-`apps/frontend/src/foundation/test_support/editor_operations.rs` already does exactly this:
+`crates/frontend/workspaces/mission_creator_engine_bridge/src/test_support/editor_operations.rs` already does exactly this:
 
 ```rust
 include_str!(concat!(

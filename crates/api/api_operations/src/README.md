@@ -137,10 +137,10 @@ pins, refuses a client solution that disagrees, and stores the server's solution
     `crates/api/api_background_workers/src/`;
   - `api_command_center`, the staging fixtures tool and the API's integration suites,
     through the surface above;
-  - over HTTP, the operations pages in `apps/frontend/src/pages/operations/`, the
+  - over HTTP, the operations pages in `crates/frontend/pages/operations_pages/src/`, the
     [event manager](/documentation/glossary/a_to_f.md#event-manager) in
-    `apps/frontend/src/pages/administration/event_manager/`, the mortar calculator in
-    `apps/frontend/src/pages/field_tools/mortar/`, and the game runtime's roster loader
+    `crates/frontend/pages/administration_pages/src/event_manager/`, the mortar calculator in
+    `crates/frontend/pages/field_tools_pages/src/mortar/`, and the game runtime's roster loader
     and deployment queues in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and
@@ -161,7 +161,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
   — the locks every event change takes.
 - [Live slot occupancy](/documentation/apps/api/verification_evidence/live_occupancy.md)
   — player deployment authorization.
-- [Event schedule page](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md),
-  [Event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md)
-  and [Deployments page](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md)
+- [Event schedule page](/documentation/crates/frontend/pages/operations_pages/schedule/event_schedule_page.md),
+  [Event hub page](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md)
+  and [Deployments page](/documentation/crates/frontend/pages/operations_pages/deployments/deployments_page.md)
   — the member pages over these routes.

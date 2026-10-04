@@ -20,4 +20,4 @@ every target because they never construct a `RenderEngine`.
 A pinned function renamed away or a source file moved fails the case loudly; run the crate suite
 with `--all-features`. The pin that both document rebinds of the frontend's history host feed
 `comments_bind` lives with that host, in
-`apps/frontend/src/workspaces/editor/bridge/tests/document_host/history_rebind_feeds_comments.rs`.
+`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tests/document_host/history_rebind_feeds_comments.rs`.

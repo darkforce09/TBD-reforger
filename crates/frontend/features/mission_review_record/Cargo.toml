@@ -1,0 +1,35 @@
+# A mission's review record as every page that shows it shares it: the history and thread views,
+# the comment composer, the artifact provenance and findings, the submission control with its
+# refusal panel, and the wording under them.
+[package]
+name = "mission_review_record"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A mission's review history, thread, comment composer, artifact provenance and submission control."
+
+[package.metadata.layout]
+category = "crates/frontend/features"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The review, comment, artifact and finding wire types and their typed identifiers.
+frontend_api_dtos = { workspace = true }
+# The review endpoints, the path encoding and the refusal error a submission answers with.
+frontend_transport = { workspace = true }
+# The signed-in store the browser calls of the composer, the submission and the record read.
+frontend_session = { workspace = true }
+# The badges, icons, UTC instants and toasts the views draw with.
+frontend_ui = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

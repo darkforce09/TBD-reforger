@@ -52,7 +52,7 @@ each transition's wire name and confirmation deadline: `scenario_restart` 600 s,
   [event](/documentation/glossary/a_to_f.md#event) hub); the [API](/documentation/glossary/a_to_f.md#api) tests
   `apps/api/tests/models_serde.rs`, `apps/api/tests/models_fromrow.rs` and
   `apps/api/tests/mission_review_contract.rs`, which decodes live answers into the
-  generated types. The web app's DTOs in `apps/frontend/src/foundation/transport/dto/`
+  generated types. The web app's DTOs in `crates/frontend/foundation/frontend_api_dtos/src/`
   (`missions.rs`, `mission_reviews.rs`, `mission_deployments.rs`, `registry.rs`) mirror these
   shapes.
 - Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by

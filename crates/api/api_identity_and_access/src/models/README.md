@@ -24,7 +24,7 @@ crates/api/api_identity_and_access/src/models/
   answer), which `cargo xtask schema citations` resolves.
 - Used by: the domain's handlers and services; the contract test
   `apps/api/tests/current_profile_contract.rs`, which decodes live answers into the
-  generated types; the web app's `apps/frontend/src/foundation/transport/dto/auth.rs` mirrors the
+  generated types; the web app's `crates/frontend/foundation/frontend_api_dtos/src/auth.rs` mirrors the
   wire shape.
 - Rules: soft-delete columns stay out of these structs, since the queries filter them;
   `RefreshToken.token_hash` never reaches the wire; the generated types are written by

@@ -1,0 +1,100 @@
+# The engine diagnostics benches the single-page app mounts at `/debug/*`: the building viewer,
+# the world line-of-sight bench, the equipment data viewer and the ballistics agreement bench, with
+# the interior plan lanes and scene geometry the map benches share.
+[package]
+name = "debug_benches"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The single-page app's URL-only engine benches: building viewer, world line of sight, equipment data viewer, ballistics agreement."
+
+[package.metadata.layout]
+category = "crates/frontend/workspaces"
+tier = 9
+targets = "any"
+
+[dependencies]
+# The building blueprints, compounds, section cuts and their line of sight the map benches draw.
+building_interiors = { workspace = true }
+interior_line_of_sight = { workspace = true }
+# The triangle BVH and its sidecar the building bench probes through.
+spatial_indexes = { workspace = true }
+# The polyline strip expansion every bench lane is stroked with.
+road_network = { workspace = true }
+# The render crate's lane ids the interior and scene lanes upload to.
+map_draw_lanes = { workspace = true }
+# The rigid transform of a compound's instances, the ear-clipping footprint fill, the viewshed
+# texture packing and the visibility wash of the building viewer.
+geometry_primitives = { workspace = true }
+render_primitives = { workspace = true }
+map_editing_tools = { workspace = true }
+terrain_line_of_sight = { workspace = true }
+# The orthographic camera's zoom band and the world anchor the building sits at.
+camera_math = { workspace = true }
+map_coordinates = { workspace = true }
+# The agreement bench's catalog, seeded cases and fire-mission solutions.
+ballistics_model = { workspace = true }
+ballistics_agreement_cases = { workspace = true }
+fire_mission_planning = { workspace = true }
+# The equipment data viewer and ballistics catalog wire types.
+frontend_api_dtos = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# The data viewer's query strings.
+url = { workspace = true }
+
+# The browser half: the route components, the anonymous API reads, the render engine and its
+# frame pump, the world bench's chunk loaders, and the DOM listeners and observers.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+frontend_transport = { workspace = true }
+browser_platform = { workspace = true }
+gpu_frame = { workspace = true }
+map_renderer = { workspace = true }
+map_asset_loading = { workspace = true }
+world_line_of_sight = { workspace = true }
+chunk_draw_buffers = { workspace = true }
+leptos_router = { workspace = true }
+futures = { workspace = true }
+gloo-net = { workspace = true }
+gloo-timers = { workspace = true, features = ["futures"] }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Location",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlCanvasElement",
+    "DomRect",
+    "Event",
+    "EventTarget",
+    "AddEventListenerOptions",
+    "MouseEvent",
+    "PointerEvent",
+    "WheelEvent",
+    "KeyboardEvent",
+    # The building viewer's `?prefab=` override parse.
+    "UrlSearchParams",
+    # The data viewer's panel sizing and its lazy card loading.
+    "ResizeObserver",
+    "ResizeObserverEntry",
+    "IntersectionObserver",
+    "IntersectionObserverEntry",
+    "IntersectionObserverInit",
+    # Cancels the data viewer's in-flight reads when the route is left.
+    "AbortController",
+    "AbortSignal",
+] }
+
+[dev-dependencies]
+# The route rows the data viewer's navigation tests read.
+frontend_route_table = { workspace = true }
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

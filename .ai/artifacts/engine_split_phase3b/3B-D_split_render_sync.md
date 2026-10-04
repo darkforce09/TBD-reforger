@@ -3,7 +3,7 @@
 Read `.ai/artifacts/engine_split_phase3b/00_rules_every_agent_obeys.md` first. Every rule there
 applies to this brief.
 
-At this point the editor tree lives at `apps/frontend/src/workspaces/editor/`, still in its
+At this point the editor tree lives at `crates/frontend/workspaces/mission_creator_workspace/src/`, still in its
 old internal shape. This brief is the one split Phase 1 deliberately left alone.
 
 ## The file

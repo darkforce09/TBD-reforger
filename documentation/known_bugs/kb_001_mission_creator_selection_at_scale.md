@@ -42,11 +42,11 @@ every icon), the virtual outliner and the colour attribute of the map layer. It 
 
 The code the entry describes no longer exists: `git ls-files apps/frontend/src/features`
 lists nothing. In the Rust Mission Creator, the marquee release and a paste still select every id
-they reach with no cap (`apps/frontend/src/workspaces/editor/input/pointer_gestures/pointer_up.rs`,
+they reach with no cap (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/pointer_up.rs`,
 `paste_at_cursor` in `crates/mission_editing/mission_editing_commands/src/hosted_commands/entity_clipboard.rs`), and
 a selection change patches only the icon rows whose selected state flips (`set_selection` in
 `crates/map_rendering/symbology_layers_gpu/src/slot_symbology/slot_lane.rs`). The
-[performance at scale](/documentation/apps/frontend/workspaces/editor/feature_inventory/performance_at_scale.md)
+[performance at scale](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/performance_at_scale.md)
 inventory holds what the Rust pipeline does at scale.
 
 ## Workaround

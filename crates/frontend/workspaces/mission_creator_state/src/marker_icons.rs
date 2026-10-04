@@ -1,0 +1,181 @@
+//! The closed marker icon vocabulary and the canonical picker rows it folds into.
+//!
+//! **Role:** reads the `$defs/marker.icon` alias list out of the embedded mission schema, answers
+//! whether an alias may be authored, and folds the aliases into one picker row per canonical map
+//! glyph with the slug a pick stores.
+//! **Position:** part of the editor's state layer. The marker writes in the bridge and the right
+//! dock's markers panel read it; it reads the zone vocabulary's schema embed and the glyph mapper
+//! and glyph count of `unit_symbology`.
+//! **Signals & state:** none; the alias list is parsed once per process.
+//! **Invariants:** the schema is the one source of the vocabulary; the row count equals the map's
+//! glyph count, and a row's slug folds back to that row's glyph.
+
+/// `mission.schema.json` via the crate's single embed — the ONE source of the marker icon vocabulary.
+pub const MISSION_SCHEMA_JSON: &str = crate::zones::MISSION_SCHEMA;
+
+/// The closed `$defs/marker.icon` alias list, in schema order, parsed once.
+///
+/// Schema order is kept rather than sorted alphabetically: the enum opens with the paired base
+/// glyphs (`dot` / `dot2`, `objective_marker` / `objective_marker2`, …) and then runs through the
+/// semantic aliases, which is a more useful browse order than the alphabet, and it is the order a
+/// reader comparing this list against the schema will see.
+///
+/// An empty list is the honest answer if the schema ever stops declaring the enum — every writer
+/// gates on [`marker_icon_is_authorable`], so the surface would refuse to author rather than fall
+/// back to a guess.
+#[must_use]
+pub fn marker_icons() -> &'static [String] {
+    static ICONS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    ICONS.get_or_init(|| {
+        let Ok(schema) = serde_json::from_str::<serde_json::Value>(MISSION_SCHEMA_JSON) else {
+            return Vec::new();
+        };
+        schema
+            .get("$defs")
+            .and_then(|d| d.get("marker"))
+            .and_then(|m| m.get("properties"))
+            .and_then(|p| p.get("icon"))
+            .and_then(|i| i.get("enum"))
+            .and_then(serde_json::Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(ToString::to_string))
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// Is `icon` one of the closed `$defs/marker.icon` aliases?
+///
+/// Every marker write in [`mission_editing_commands::hosted_commands::map_markers`] passes through this. It is exact and
+/// case-SENSITIVE: the enum is lower-case and `additionalProperties`-style validators do not
+/// case-fold, so accepting `"Objective"` here would author a value the schema rejects at save time,
+/// far from the control that produced it.
+#[must_use]
+pub fn marker_icon_is_authorable(icon: &str) -> bool {
+    marker_icons().iter().any(|a| a == icon)
+}
+
+/// The alias a fresh place uses when the author has not picked one — the schema enum's first entry
+/// (`dot`), not a literal. Empty only if the schema stopped declaring the enum.
+#[must_use]
+pub fn default_marker_icon() -> &'static str {
+    marker_icons().first().map_or("", String::as_str)
+}
+
+/// The icon rows a search box shows: a case-insensitive SUBSTRING match over the closed list, with
+/// an empty/whitespace query meaning "all of them".
+///
+/// Substring rather than prefix because the aliases are compound (`point_of_interest`,
+/// `rally_point`, `observation_post`) and an author looking for a rally point types "rally" or
+/// "point" with equal likelihood. The match also folds `_` to a space so typing "rally point"
+/// finds `rally_point` — the alias is a token, but nobody reads it as one.
+#[must_use]
+pub fn filter_marker_icons(query: &str) -> Vec<&'static str> {
+    let q = query.trim().to_ascii_lowercase();
+    marker_icons()
+        .iter()
+        .map(String::as_str)
+        .filter(|a| q.is_empty() || a.contains(&q) || a.replace('_', " ").contains(&q))
+        .collect()
+}
+
+/// One representative schema alias per canonical [`unit_symbology::markers::MarkerGlyph`] family,
+/// in the schema-order the families first appear in (the browse order the picker keeps).
+///
+/// The table has exactly [`unit_symbology::markers::MARKER_GLYPH_COUNT`] entries, so the picker's
+/// row count is the map's glyph count by construction: a glyph set of another size fails to compile.
+/// Each entry is (a) a member of the closed `$defs/marker.icon` enum — so a pick validates and saves —
+/// and (b) folds back to its own family via [`unit_symbology::markers::marker_glyph_for_alias`], so
+/// picking it makes the map draw that family's glyph. The markers panel's
+/// `picker_has_one_row_per_canonical_icon` test asserts both; [`canonical_marker_rows`] still falls
+/// back to a family's first alias should a slug ever stop folding to its glyph.
+///
+/// The label a row shows is `humanize_token` of the slug, so the human-readable stem was chosen over
+/// the schema's paired base glyph where they differ (`objective`, not `objective_marker`; `medical`,
+/// not `cross`) — the base still lives in that family and matches search via the alias list.
+pub const CANONICAL_MARKER_SLUGS: [&str; unit_symbology::markers::MARKER_GLYPH_COUNT] = [
+    "dot",               // Disc      — dot / point / mark / marker (mod FALLBACK_ICON) family
+    "objective",         // Square    — objective(_marker) / obj / target / task family
+    "point_of_interest", // Diamond   — point_of_interest / poi / intel / contact family
+    "observation_post",  // Target    — observation_post / op / observe / overwatch / recon family
+    "destroy",           // Ex        — destroy / demolish / demo / sabotage family
+    "attack",   // TriangleUp — attack / assault / capture / seize / advance / ambush family
+    "defend",   // TriangleDown — defend / hold / garrison / fallback family
+    "waypoint", // Chevron   — waypoint / move / wp / route / phase_line family
+    "flag",     // Flag      — flag / rally / rally_point / base / hq / spawn family
+    "medical",  // Cross     — cross / medical / medic / aid / casevac / medevac family
+    "circle",   // Ring      — circle / area / zone / ao family
+];
+
+/// A canonical picker row: the glyph to draw, the slug to STORE on pick (and show in the tooltip),
+/// its human label, and every schema alias that folds into this family (the search-match set).
+pub struct CanonicalMarkerRow {
+    /// The glyph the row draws.
+    pub glyph: unit_symbology::markers::MarkerGlyph,
+    /// The canonical slug written to the document on pick — a closed-enum member.
+    pub slug: &'static str,
+    /// `humanize_token(slug)`, the label that takes the row width.
+    pub label: String,
+    /// Every `$defs/marker.icon` alias that folds to this glyph, for search + the tooltip.
+    pub aliases: Vec<&'static str>,
+}
+
+/// The canonical picker rows, built by folding the live schema alias list through the real
+/// [`unit_symbology::markers::marker_glyph_for_alias`] so DISPLAY and MAP can never disagree.
+///
+/// Row order is schema-first-seen (the same browse order [`marker_icons`] documents). Each row's
+/// `slug` is [`CANONICAL_MARKER_SLUGS`] chosen for that glyph, its `aliases` are every schema alias
+/// that folds into it, and `filter` (empty ⇒ all) keeps a row when the human label, the slug, or any
+/// alias substring-matches — so "Search icons" still matches slugs and names.
+pub fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
+    use crate::zones::humanize_token;
+    use unit_symbology::markers::MARKER_GLYPH_COUNT;
+    use unit_symbology::markers::MarkerGlyph;
+    use unit_symbology::markers::marker_glyph_for_alias;
+
+    let mut order: Vec<MarkerGlyph> = Vec::with_capacity(MARKER_GLYPH_COUNT);
+    let mut aliases_by_glyph: Vec<(MarkerGlyph, Vec<&'static str>)> = Vec::new();
+    for alias in marker_icons() {
+        let g = marker_glyph_for_alias(alias);
+        if let Some(slot) = aliases_by_glyph.iter_mut().find(|(gg, _)| *gg == g) {
+            slot.1.push(alias.as_str());
+        } else {
+            order.push(g);
+            aliases_by_glyph.push((g, vec![alias.as_str()]));
+        }
+    }
+
+    let q = filter.trim().to_ascii_lowercase();
+    order
+        .into_iter()
+        .map(|g| {
+            let aliases = aliases_by_glyph
+                .iter()
+                .find(|(gg, _)| *gg == g)
+                .map(|(_, a)| a.clone())
+                .unwrap_or_default();
+            let slug = *CANONICAL_MARKER_SLUGS
+                .iter()
+                .find(|s| marker_glyph_for_alias(s) == g)
+                .unwrap_or_else(|| aliases.first().unwrap_or(&"dot"));
+            CanonicalMarkerRow {
+                glyph: g,
+                slug,
+                label: humanize_token(slug),
+                aliases,
+            }
+        })
+        .filter(|row| {
+            q.is_empty()
+                || row.label.to_ascii_lowercase().contains(&q)
+                || row.slug.contains(&q)
+                || row.slug.replace('_', " ").contains(&q)
+                || row
+                    .aliases
+                    .iter()
+                    .any(|a| a.contains(&q) || a.replace('_', " ").contains(&q))
+        })
+        .collect()
+}

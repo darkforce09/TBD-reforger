@@ -21,7 +21,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 6. **Strict Boundary Layers**:
    - Graphics crates (`crates/graphics/`: `render_primitives`, `gpu_device`, `gpu_frame`, `renderer_core`): Map-agnostic rendering — byte layouts, the GPU context, the frame vocabulary, pipelines, draw encoding, the renderer contracts. Knows **zero** map concepts.
    - Map crates (`crates/streaming/`, `crates/map_rendering/`, `crates/paper_doll/` over the engine categories `crates/geometry/`, `crates/terrain/`, `crates/world_objects/`, `crates/line_of_sight/`, `crates/map_overlay/`): streaming, spatial computation, terrain formats, the render engine and its typed GPU layers. Streaming crates never depend on rendering crates or `wgpu`; the mission domain lives in `crates/mission/` and the editing layer in `crates/mission_editing/`. Zero UI/Leptos dependencies ([crate boundary rules](/documentation/standards/crate_boundary_rules.md)).
-   - `frontend` (`apps/frontend/`): Presentation, navigation, and CAD workspaces, in five layers under `src/` (foundation < features < pages, workspaces < shell); consumes engine crates.
+   - Frontend (`crates/frontend/` and the thin app `apps/frontend/`): Presentation, navigation, and CAD workspaces as Leptos crates in four layers (foundation < features < pages < workspaces) under the app shell; consumes engine crates.
    - `api` (`apps/api/`): Axum REST API and SSE realtime hub.
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
    - Production files must stay **at or under 500 lines**.
@@ -56,7 +56,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 9. **API & Contract Parity**:
    - Backend Rust models (`crates/api/api_<domain>/src/models/`) are the snake_case API source of truth.
    - Contract types are generated from `contracts/definitions/*.json` via `cargo xtask ci schema-codegen`.
-   - Frontend DTOs (`apps/frontend/src/foundation/transport/dto/`) mirror models with strict R-api golden test parity.
+   - Frontend DTOs (`crates/frontend/foundation/frontend_api_dtos/src/`) mirror models with strict R-api golden test parity.
 10. **Documentation Ships With the Code**:
     - Documentation lands in the same commit as the code it describes, whichever agent writes that code: the comments of the code it alters, the README.md of every folder whose contents, surface, commands or boundaries change, and the feature docs whose behaviour changes.
     - [documentation/README.md](/documentation/README.md) is the documentation entry (map and authority ladder); [documentation/standards/](/documentation/standards/README.md) holds the documentation, README and coding standards and the templates.
@@ -76,61 +76,11 @@ apps/
 │   │   ├── bin/                         <-- The `api` server and the `import-registry` tool
 │   │   └── tests/                       <-- Executable layout rules (crate graph, domain graph) and prose rules, router pins
 │   └── tests/                           <-- 150 integration binaries, each on its own database
-├── frontend/                            <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000)
-│   └── src/                             <-- Five layers in one crate: foundation < features < pages, workspaces < shell
-│       ├── main.rs, app_routes.rs       <-- Entry point (mounts the shell) and the render form of the route table
-│       ├── foundation/                  <-- Shared foundations every layer builds on
-│       │   ├── transport/               <-- HTTP client, DTOs and the role ladder, endpoints, SSE subscriber
-│       │   ├── auth/                    <-- Session storage and refresh, sign-out hooks, route guard, content gates
-│       │   ├── route_table/             <-- Every route's path, layout flags and access tier; the sidebar's navigation menu
-│       │   ├── map_view/                <-- Shared map mount seam (Mission Creator, mortar map picker), terrain heights
-│       │   ├── offline/                 <-- Service worker registration, offline pack download, storage quota, offline state
-│       │   ├── ui/                      <-- Reusable design system primitives (dialogs, sheets, selects, toasts)
-│       │   ├── utils/                   <-- Time formatting, clipboard, sanitising helpers
-│       │   └── test_support/            <-- Source scrubber, captured API responses, source pins (tests only)
-│       ├── features/                    <-- Capabilities several pages and workspaces show
-│       │   └── mission_review_record/   <-- Shared review record: history, thread, artifact provenance, submit control
-│       ├── pages/                       <-- Standard platform document pages, one folder per navigation area
-│       │   ├── account/                 <-- User login, OAuth callback, settings
-│       │   ├── command_center/          <-- Dashboard, announcements, live server intel
-│       │   ├── operations/              <-- Event schedule, event detail, slotting, deployments, leaderboards
-│       │   │   ├── schedule/            <-- Upcoming events with the selected event's hub
-│       │   │   ├── event_detail/        <-- Event briefing dossier and slot signups
-│       │   │   ├── orbat_selection/     <-- Dedicated full-screen slotting view
-│       │   │   ├── deployments/         <-- "My Deployments": the viewer's service record and upcoming slots
-│       │   │   └── leaderboards/        <-- Community player rankings with a slide-over dossier
-│       │   ├── mission_hub/             <-- Mission library, overview dossier, create dialog
-│       │   │   ├── library/             <-- Filterable community mission catalog
-│       │   │   ├── overview/            <-- Mission dossier: briefing, details, armory, review record
-│       │   │   └── create_dialog/       <-- "New Mission" dialog that opens the Mission Creator
-│       │   ├── field_tools/             <-- Interactive tactical utilities
-│       │   │   └── mortar/              <-- Mortar calculator: catalog-driven on-device firing solutions, map picker, offline pack
-│       │   ├── doctrine_and_info/       <-- Knowledgebase and reference catalogs
-│       │   │   ├── wiki/                <-- Markdown tactical doctrine and rules articles
-│       │   │   ├── vehicles/            <-- Vehicle identification index and dossiers
-│       │   │   └── modpacks/            <-- Modpack manifests and Workshop collection links
-│       │   └── administration/          <-- Management and administrative control panels
-│       │       ├── event_manager/       <-- Event scheduling and operations calendar admin
-│       │       ├── server_control/      <-- Game-server state, fleet commands, mission deployment, host credentials
-│       │       ├── personnel/           <-- Member roster, rank, and permission management
-│       │       ├── approvals/           <-- Mission submission review and approval queue
-│       │       ├── content_manager/     <-- Announcement authoring ("Comms Broadcaster")
-│       │       ├── audit_logs/          <-- Audit trail of administrative actions
-│       │       └── ballistics_catalogs/ <-- Calibrated ballistics catalog uploads and stored versions
-│       ├── workspaces/                  <-- Standalone CAD workspaces & interactive tools
-│       │   ├── editor/                  <-- Mission Creator: top-down 2D CAD workspace (3D only in the Arsenal paper doll)
-│       │   │   ├── mission_editor/      <-- Route component parts: canvas mount, page effects, registry loading, transforms
-│       │   │   ├── ui/                  <-- CAD docks, outliner, inspectors, Arsenal tab, modals
-│       │   │   ├── input/               <-- DOM pointer/keyboard events -> map engine commands and tools
-│       │   │   ├── bridge/              <-- Engine seam: boot, viewport and frame timing, hosted mission document, overlays
-│       │   │   ├── session/             <-- Per-tab session: IndexedDB drafts, hydrate, cross-tab lock, review mode, layout prefs
-│       │   │   ├── review_workspace/    <-- Mission Creator opened read-only on a submitted version
-│       │   │   └── arsenal/             <-- Loadout domain, gear catalog trees, 3D paper doll
-│       │   ├── planner/                 <-- Reserved for the mission planner whiteboard (README only, no code)
-│       │   ├── aar/                     <-- Reserved for the after-action review replay (README only, no code)
-│       │   └── debug/                   <-- URL-only benches: building viewer, building interior, world line of sight, ballistics agreement
-│       ├── shell/                       <-- App frame around every route: layout, top nav, sidebar, membership status, not-found page
-│       └── tests/doc_audit/             <-- Documentation audit of every production file of the crate
+├── frontend/                            <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000): the thin app the crates/frontend/ crates assemble into
+│   ├── src/                             <-- main.rs (entry point, mounts the shell) · app_routes.rs (the render form of the route table)
+│   │   ├── shell/                       <-- App frame around every route: layout, top nav, sidebar, membership status, not-found page
+│   │   └── tests/doc_audit/             <-- Documentation audit of every production file of the app and of every frontend crate
+│   └── style/                           <-- Tailwind v4 stylesheet: one @source line for the app and one per leptos crate
 ├── offline_service_worker/              <-- Rust/WASM service worker: offline pack caches, Range→206 from cache (no JS policy)
 ├── fleet_host_agent/                    <-- Agent per game-server instance: claims fleet commands from the API, runs process control, RCON reads and console lines, mission header switches
 ├── mod/                                 <-- Enfusion engine mod suite (three addons)
@@ -261,6 +211,33 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── api_operations/                  <-- Domain: events, ORBAT slotting, reservations, service records, fire missions, ballistics catalogs
 │   ├── api_command_center/              <-- Domain: dashboard, leaderboards, per-player statistics
 │   └── api_background_workers/          <-- Workers: the interval tasks the API binary arms at boot
+├── frontend/                            <-- The single-page app's crates (Leptos only here): foundation < features < pages, workspaces < the app shell
+│   ├── foundation/                      <-- Shared foundations every layer builds on, lowest crate first
+│   │   ├── frontend_ui/                 <-- Reusable design system primitives (dialogs, sheets, selects, toasts); time formatting, clipboard, sanitising helpers
+│   │   ├── frontend_api_dtos/           <-- API request and response DTOs, the role ladder, the frontend's typed ids
+│   │   ├── frontend_transport/          <-- HTTP client, endpoints, SSE subscriber, the token provider seam
+│   │   ├── frontend_route_table/        <-- Every route's path, layout flags and access tier; the sidebar's navigation menu
+│   │   ├── frontend_map_view/           <-- Shared map mount seam (Mission Creator, mortar map picker), terrain heights
+│   │   ├── frontend_session/            <-- Session storage and refresh, sign-out hooks, route guard, content gates
+│   │   ├── frontend_offline/            <-- Service worker registration, offline pack download, storage quota, offline state
+│   │   └── frontend_test_support/       <-- Source scrubber, captured API responses, the repository-root finder (dev-dependency only)
+│   ├── features/                        <-- Capabilities several pages and workspaces show
+│   │   └── mission_review_record/       <-- Shared review record: history, thread, artifact provenance, submit control
+│   ├── pages/                           <-- Standard platform document pages, one crate per navigation area
+│   │   ├── account_pages/               <-- User login, OAuth callback, settings
+│   │   ├── command_center_pages/        <-- Dashboard, announcements, live server intel
+│   │   ├── operations_pages/            <-- Event schedule, event detail, full-screen ORBAT slotting, "My Deployments", leaderboards
+│   │   ├── mission_hub_pages/           <-- Mission library, overview dossier (briefing, details, armory, review record), "New Mission" dialog
+│   │   ├── field_tools_pages/           <-- Mortar calculator: catalog-driven on-device firing solutions, map picker, offline pack
+│   │   ├── doctrine_pages/              <-- Markdown doctrine wiki, vehicle identification index, modpack manifests
+│   │   └── administration_pages/        <-- Event manager, server control, personnel, approvals, content manager, audit logs, ballistics catalogs
+│   └── workspaces/                      <-- Standalone CAD workspaces & interactive tools
+│       ├── mission_creator_state/       <-- Mission Creator state: layout tokens, review mode, world-layer prefs, asset catalog and rules, outliner model, zones
+│       ├── mission_creator_engine_bridge/ <-- Engine seam: boot, viewport and frame timing, hosted mission document, overlays; pointer/keyboard input -> map tools
+│       ├── mission_creator_session/     <-- Per-tab session: IndexedDB drafts, hydrate, cross-tab lock, save status, conflict dialog
+│       ├── mission_creator_arsenal/     <-- Loadout domain, gear catalog trees, Arsenal tab, 3D paper doll
+│       ├── mission_creator_workspace/   <-- Mission Creator page (top-down 2D CAD): docks, outliner, inspectors, modals, canvas mount, read-only review workspace
+│       └── debug_benches/               <-- URL-only benches: building viewer, building interior, world line of sight, ballistics agreement, data viewer
 ├── map_rendering/                       <-- The map's typed GPU layers and its renderer (may name map things; wgpu)
 │   ├── map_render_diagnostics/          <-- The renderer's byte-exact readback self-checks, scene readback, frame benchmark, stress pool
 │   ├── map_renderer/                    <-- The render engine: GPU context, pipelines, camera, batch list, lane sinks, upload belts, statistics, asset sink

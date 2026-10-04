@@ -2,10 +2,12 @@
 //!
 //! The laws themselves are tested beside them in
 //! `tools/foundation/repository_laws/src/workspace_laws/tests/`; these pin the gates'
-//! delegation over this checkout, the frontend layer table xtask passes in, and the refusal of a
-//! checkout the gates cannot read.
+//! delegation over this checkout, the frontend-layering configuration xtask passes in (the
+//! app's layer table and the frontend crate orders), and the refusal of a checkout the gates
+//! cannot read.
 
 use super::*;
+use repository_laws::workspace_laws::frontend_layering::crate_edges::crate_edge_scan;
 use repository_laws::workspace_laws::frontend_layering::layering_edges;
 
 /// Every workspace law, in the order the task row runs them.
@@ -41,20 +43,44 @@ fn crate_tiers_and_every_workspace_law_pass_this_checkout() {
 
 #[test]
 fn frontend_layering_the_layer_table_maps_every_frontend_source_and_holds_no_edge() {
-    let scan = layering_edges(&this_repo(), &FRONTEND_LAYERS[0]).unwrap();
-    assert_eq!(scan.unmapped, Vec::<String>::new());
-    assert!(
-        scan.unordered.is_empty(),
-        "every foundation sub-area sits in the order: {:?}",
-        scan.unordered
-    );
-    assert_eq!(scan.edges, Vec::new(), "the law is hard at zero");
+    for layers in FRONTEND_LAYERS.in_crate {
+        let scan = layering_edges(&this_repo(), layers).unwrap();
+        assert_eq!(scan.unmapped, Vec::<String>::new());
+        assert!(
+            scan.unordered.is_empty(),
+            "every child of an ordered folder sits in its order: {:?}",
+            scan.unordered
+        );
+        assert_eq!(scan.edges, Vec::new(), "the law is hard at zero");
+        assert_eq!(
+            scan.absent_paths,
+            Vec::<String>::new(),
+            "a crate birth drops the rows of the folders it moves"
+        );
+    }
     let report = workspace_law_report(WorkspaceLaw::FrontendLayering, &this_repo());
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
     assert_eq!(
         report.lines.last().map(String::as_str),
         Some("FRONTEND-LAYERING: PASS")
     );
+}
+
+#[test]
+fn frontend_layering_every_frontend_crate_sits_in_its_layer_folder_and_order_with_no_edge() {
+    let scan = crate_edge_scan(&this_repo(), &FRONTEND_LAYERS.crate_edges).unwrap();
+    assert!(
+        scan.crates.iter().any(|path| path == "apps/frontend"),
+        "the app is the shell: {:?}",
+        scan.crates
+    );
+    assert_eq!(scan.misplaced, Vec::<String>::new());
+    assert_eq!(
+        scan.absent,
+        Vec::<String>::new(),
+        "every crate the crate orders name is a workspace member"
+    );
+    assert_eq!(scan.edges, Vec::new(), "the law is hard at zero");
 }
 
 #[test]

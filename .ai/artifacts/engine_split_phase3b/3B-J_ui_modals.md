@@ -41,7 +41,7 @@ Re-derive every line number; they move the moment you edit.
 5. `shell/eden_chrome.rs` re-exports `OrbatManagerDialog`. **Repoint the re-export; do not delete
    it** — a symbol search for the dialog lands on it, and the editor's mount path depends on it.
 
-`xtask/src/gate_t180.rs`'s `ORBAT_MGR` const names `apps/frontend/src/pages/operations/
+`xtask/src/gate_t180.rs`'s `ORBAT_MGR` const names `crates/frontend/pages/operations_pages/src/
 orbat_manager.rs` and its tests `fs::copy(...).unwrap()` it, so a stale path panics every test in
 that gate. Repoint it, then grep the rest of `xtask/` and `tools/`.
 

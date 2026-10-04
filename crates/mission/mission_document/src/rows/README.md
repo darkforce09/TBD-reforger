@@ -107,7 +107,7 @@ is added.
   - `mission_operations` and its integration tests (`crates/mission/mission_operations/tests/`),
     and the mission editing crates (`crates/mission_editing/`: the host, history, hosted
     commands, persistence, picking, lanes and tools);
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the document host, editor
+  - the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`: the document host, editor
     context, overlays and tactical-graphics lane in `bridge/`, the canvas mount and the document
     helpers in `mission_editor/`, the hydrate, persistence and document commands in `session/`,
     and the inspector, the settings dialog and the outliner in `ui/`.

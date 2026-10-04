@@ -15,9 +15,9 @@ Developers and agents read it before writing a class string, a layout colour or 
   `apps/frontend/index.html` puts `class="dark"` on `<html>` and loads the Material
   Symbols Outlined font.
 - [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) chrome: the class constants in
-  `apps/frontend/src/workspaces/editor/session/layout.rs` (`HOVER_FILL`, `TOGGLED_PLATE`,
+  `crates/frontend/workspaces/mission_creator_state/src/layout.rs` (`HOVER_FILL`, `TOGGLED_PLATE`,
   `DISABLED_GLYPH`, the dock and strip panels), which the form controls in
-  [`apps/frontend/src/foundation/ui/`](/apps/frontend/src/foundation/ui/README.md) also
+  [`crates/frontend/foundation/frontend_ui/src/`](/crates/frontend/foundation/frontend_ui/README.md) also
   import.
 - Mod: `TBD_UITheme` in
   [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md)
@@ -38,7 +38,7 @@ The palette has two blues, and a surface uses one of them for one purpose.
   `bg-action text-on-action` button such as "Schedule Operation" in the event manager or the
   content manager's publish button, usually with a blue glow shadow written inline.
 
-`badge_class` in `apps/frontend/src/foundation/ui/badge.rs` maps the status pill variants
+`badge_class` in `crates/frontend/foundation/frontend_ui/src/badge.rs` maps the status pill variants
 onto the palette: `primary`, `tertiary`, `warning` (`tactical-yellow`), `success`, `error`
 (`error-alert`) and a neutral fallback.
 
@@ -86,9 +86,9 @@ stylesheet declares no `@font-face` and `index.html` links only Material Symbols
 renders in Inter only where the viewer has it installed. `text-label-sm` is the metadata and pill
 size, the most used token of the scale; `font-mono` carries coordinates, timers, IDs and values.
 Icons are Material Symbols Outlined glyphs through `MaterialIcon`
-(`apps/frontend/src/foundation/ui/icons.rs`), set by `.material-symbols-outlined` to
+(`crates/frontend/foundation/frontend_ui/src/icons.rs`), set by `.material-symbols-outlined` to
 `FILL 0`, `wght 400`, `GRAD 0`, `opsz 24`. How timestamps read is in the
-[utilities README](/apps/frontend/src/foundation/utils/README.md).
+[utilities README](/crates/frontend/foundation/frontend_ui/src/README.md).
 
 ### Spacing and radii
 

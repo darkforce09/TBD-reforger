@@ -61,11 +61,11 @@ terrain.
     `compile_payload`;
   - the API, which reads the kit aliases (`crates/api/api_missions/src/contract/mod.rs`);
   - the Mission Creator's Save and Export
-    (`apps/frontend/src/workspaces/editor/session/document_commands.rs`), its validation
-    panel's payload (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount.rs`) and
-    its zone inspector (`apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/`);
+    (`crates/frontend/workspaces/mission_creator_session/src/document_commands.rs`), its validation
+    panel's payload (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount.rs`) and
+    its zone inspector (`crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/zones_panel/`);
   - the mission library's document upload, through `version_body_to_writer`
-    (`apps/frontend/src/pages/mission_hub/library/dossier_upload_panel.rs`).
+    (`crates/frontend/pages/mission_hub_pages/src/library/dossier_upload_panel.rs`).
 - Rules:
   - a saved payload has no `orbat` key, and an export's ORBAT runs faction, squad, then `index`
     (`save_payload_omits_orbat_and_has_editor_shape`,

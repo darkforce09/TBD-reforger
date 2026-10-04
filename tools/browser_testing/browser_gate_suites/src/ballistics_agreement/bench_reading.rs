@@ -3,7 +3,7 @@
 //!
 //! **Role:** the typed shape of the bench's JSON reading and its strict decoder.
 //! **Position:** mirrors `AgreementReport` and `AgreementCaseReport` of
-//! `apps/frontend/src/workspaces/debug/ballistics_agreement/agreement_report.rs`; fed by
+//! `crates/frontend/workspaces/debug_benches/src/ballistics_agreement/agreement_report.rs`; fed by
 //! [`super::browser_session`], consumed by [`super::case_verdict`].
 //! **Signals & state:** none.
 //! **Invariants:** decoding refuses unknown keys and missing required keys, so a drift between

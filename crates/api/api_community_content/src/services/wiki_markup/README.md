@@ -82,5 +82,5 @@ level; findings are ordered by line.
 
 - [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md)
   — the wiki markup, revision and save design.
-- [Wiki page](/documentation/apps/frontend/pages/doctrine_and_info/wiki/wiki_page.md) — the
+- [Wiki page](/documentation/crates/frontend/pages/doctrine_pages/wiki/wiki_page.md) — the
   page that renders the blocks.

@@ -157,6 +157,28 @@ checks them.
 | S8 | map_render_diagnostics | `crates/map_rendering/map_render_diagnostics/` | 6 |
 | S8 | paper_doll_scene | `crates/paper_doll/paper_doll_scene/` | 2 |
 | S8 | paper_doll_renderer | `crates/paper_doll/paper_doll_renderer/` | 3 |
+| S10 | frontend_test_support | `crates/frontend/foundation/frontend_test_support/` | 0 |
+| S10 | frontend_ui | `crates/frontend/foundation/frontend_ui/` | 1 |
+| S10 | frontend_api_dtos | `crates/frontend/foundation/frontend_api_dtos/` | 7 |
+| S10 | frontend_transport | `crates/frontend/foundation/frontend_transport/` | 8 |
+| S10 | frontend_route_table | `crates/frontend/foundation/frontend_route_table/` | 8 |
+| S10 | frontend_map_view | `crates/frontend/foundation/frontend_map_view/` | 8 |
+| S10 | frontend_session | `crates/frontend/foundation/frontend_session/` | 9 |
+| S10 | frontend_offline | `crates/frontend/foundation/frontend_offline/` | 9 |
+| S10 | mission_review_record | `crates/frontend/features/mission_review_record/` | 10 |
+| S10 | account_pages | `crates/frontend/pages/account_pages/` | 10 |
+| S10 | command_center_pages | `crates/frontend/pages/command_center_pages/` | 10 |
+| S10 | doctrine_pages | `crates/frontend/pages/doctrine_pages/` | 10 |
+| S10 | field_tools_pages | `crates/frontend/pages/field_tools_pages/` | 10 |
+| S10 | operations_pages | `crates/frontend/pages/operations_pages/` | 10 |
+| S10 | administration_pages | `crates/frontend/pages/administration_pages/` | 11 |
+| S10 | mission_hub_pages | `crates/frontend/pages/mission_hub_pages/` | 11 |
+| S10 | mission_creator_state | `crates/frontend/workspaces/mission_creator_state/` | 8 |
+| S10 | mission_creator_engine_bridge | `crates/frontend/workspaces/mission_creator_engine_bridge/` | 9 |
+| S10 | debug_benches | `crates/frontend/workspaces/debug_benches/` | 9 |
+| S10 | mission_creator_session | `crates/frontend/workspaces/mission_creator_session/` | 10 |
+| S10 | mission_creator_arsenal | `crates/frontend/workspaces/mission_creator_arsenal/` | 11 |
+| S10 | mission_creator_workspace | `crates/frontend/workspaces/mission_creator_workspace/` | 12 |
 
 Every other crate in this catalogue is still planned; its From column names the code it will take.
 
@@ -276,25 +298,57 @@ its 4 suites, so the total stays 154.
 
 ## crates/frontend (Leptos only here)
 
-- **foundation/:**
-  - `frontend_route_table` (the `router.rs` table plus `NAVIGATION`)
-  - `frontend_ui` (`core/{ui,utils}` plus tokens)
-  - `frontend_api_dtos` (newtype IDs)
-  - `frontend_transport` (defines `TokenProvider`)
-  - `frontend_session` (auth plus logout hooks)
-  - `frontend_offline`
-  - `frontend_map_view` (W)
-  - `frontend_test_support` (dev-only: fixtures, `editor_operations`, `class_r_scrub`; the `pins.rs` pins move to their owners)
-- **features/:** `mission_review_record`
-- **pages/:** `administration_pages`, `operations_pages`, `mission_hub_pages`, `doctrine_pages`, `field_tools_pages`, `command_center_pages`, `account_pages`
-- **workspaces/:**
-  - `mission_creator_state` (lifted: outliner and inspector models, toolbelt and layout tokens, the arsenal catalog and rules model, `ConflictInfo`, `WidgetVariant`, `AssetPickerState`, `review_mode`, `world_layer_prefs`)
-  - `mission_creator_engine_bridge` (bridge plus input)
-  - `mission_creator_session` (shell)
-  - `mission_creator_arsenal`
-  - `mission_creator_workspace` (ui plus page)
-  - `debug_benches`
-- **Behaviour edges that cannot lift become injected callbacks:** `schedule_edit_persist`, `hydrate`, `build_catalog_tree`, `map_render_slot_soa`, `context_menu::open`, `publish_compile_findings`, `record_placed`. Any pair still cyclic after that is merged and recorded.
+Built in S10. Every crate is `targets = "any"`: browser crates (web-sys, js-sys, wasm-bindgen,
+gloo, idb) and wasm-only workspace crates sit in a `[target.'cfg(target_arch = "wasm32")'.dependencies]`
+table, so native tests and the wasm32 build share one manifest. The frontend-layering law's
+crate-edge mode judges every edge between these crates
+([laws_and_gates.md](/documentation/restructure/laws_and_gates.md#other-laws)); the app
+`apps/frontend` keeps `main.rs`, `app_routes.rs`, `shell/`, the stylesheet and Trunk.
+
+| Layer | Crate | From (`fe`) | Frontend dependencies | Tier |
+|---|---|---|---|---|
+| foundation | `frontend_test_support` | `foundation/test_support` (fixtures, `golden!`, the repository-root finder every `CARGO_MANIFEST_DIR` join goes through, `class_r_scrub`; the `pins.rs` pins moved to their owners) | none; reached only through dev-dependencies | 0 |
+| foundation | `frontend_ui` | `foundation/{ui,utils}` plus tokens | none | 1 |
+| foundation | `frontend_api_dtos` | `foundation/transport/dto`, with its own `string_id!` / `integer_id!` newtypes on `newtype_ids` (serde-transparent, the names of `api_identifiers`) | none | 7 |
+| foundation | `frontend_transport` | `foundation/transport` (defines `TokenProvider`; one `Error`) | `frontend_api_dtos` | 8 |
+| foundation | `frontend_route_table` | `foundation/route_table` (the route table plus `NAVIGATION`) | `frontend_api_dtos`, for `Role` | 8 |
+| foundation | `frontend_map_view` | `foundation/map_view` (the map mount seam, terrain heights; its native math modules and tests stay native) | none | 8 |
+| foundation | `frontend_session` | `foundation/auth` (the session store, the one `TokenProvider` implementation, the route guard, logout hooks) | `frontend_transport`, `frontend_route_table`, `frontend_ui` | 9 |
+| foundation | `frontend_offline` | `foundation/offline` | `frontend_transport` | 9 |
+| features | `mission_review_record` | `features/mission_review_record` | `frontend_session`, `frontend_transport`, `frontend_ui` | 10 |
+| pages | `account_pages`, `command_center_pages`, `doctrine_pages`, `field_tools_pages`, `operations_pages` | `pages/<area>` | foundation crates only | 10 |
+| pages | `administration_pages`, `mission_hub_pages` | `pages/<area>` | foundation crates and `mission_review_record` | 11 |
+| workspaces | `mission_creator_state` | the lifts below | `frontend_ui` | 8 |
+| workspaces | `mission_creator_engine_bridge` | `workspaces/editor/{bridge,input}` plus the hover helpers of `mission_editor/document_helpers.rs`; the source-text helpers `editor_operations` and `production_half` behind its dev-only `test_fixtures` feature | `mission_creator_state`, `frontend_ui`, `frontend_map_view` | 9 |
+| workspaces | `mission_creator_session` | `workspaces/editor/session` plus `bridge/overlays/conflict_dialog.rs` | `mission_creator_engine_bridge`, `frontend_transport`, `frontend_session`, `frontend_ui` | 10 |
+| workspaces | `mission_creator_arsenal` | `workspaces/editor/{arsenal,ui/arsenal}` | `mission_creator_session` | 11 |
+| workspaces | `mission_creator_workspace` | `workspaces/editor/{ui,mission_editor,review_workspace,tests}` and `mission_editor.rs`; the Mission Creator docs that span the five crates | `mission_creator_arsenal`, `mission_review_record`, foundation crates | 12 |
+| workspaces | `debug_benches` | `workspaces/debug` | `frontend_api_dtos`, `frontend_transport` | 9 |
+
+Every crate that names a DTO depends on `frontend_api_dtos` too; the column lists the edges that
+set the order. `frontend_api_dtos` re-exports no other workspace crate: every consumer imports the
+mission and ballistics types from their own crates (crate-anatomy).
+
+- **The Mission Creator DAG:** `mission_creator_state` < `mission_creator_engine_bridge` <
+  `mission_creator_session` < `mission_creator_arsenal` < `mission_creator_workspace`, each crate
+  depending only on crates before it; `debug_benches` depends on no Mission Creator crate.
+- **Lifted into `mission_creator_state`:** the layout tokens (`layout.rs`, `STATUSBAR_H_PX`),
+  `review_mode`, `world_layer_prefs`, the arsenal asset catalog and rules model with
+  `build_catalog_tree`, the pure outliner node model and its two selection functions
+  (`active_folder` stays in the workspace), the validation seam registration, the toolbelt
+  `scale_math`, the zone schema vocabulary, zone geometry and marker icon tables, `transform.rs`
+  (`WidgetVariant`, `SnapState`), `armed_place`, and the recent placements recorder. `ConflictInfo`
+  and `AssetPickerState` stay in the bridge's overlays; `map_render_slot_soa` is imported from
+  `mission_editing_session` directly.
+- **Injected callbacks:** a lower crate owns a `thread_local!` slot and a `register_*` function,
+  and the upper crate registers once at mount:
+  - the edit persist hook (`register_edit_persist_hook`, bridge history → session's
+    `schedule_edit_persist`);
+  - the canvas context menu opener (`register_context_menu_opener`, bridge input → the
+    workspace's `context_menu::open` with `resolve_target`);
+  - the compile findings publisher (`register_compile_findings_publisher`, session → the
+    workspace's validation panel, with `PanelFinding::from_finding`);
+  - the recent placements recorder (`register_recent_recorder`, a slot in the state crate).
 
 ## tools/
 

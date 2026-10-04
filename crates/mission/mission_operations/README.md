@@ -61,7 +61,7 @@ No features and no environment variables. The undo-grouping tests enable `missio
   bounds), `mission_validation` (`AssetId`), `orbat_slot_ids` (`SlotUid`), `formation_geometry`,
   `map_coordinates`, `serde`, `serde_json`, `thiserror`.
 - Used by: the map engine (`crates/mission_editing/mission_editing_commands/src/hosted_commands/` borrows the hosted
-  document and calls these), the Mission Creator in `apps/frontend/src/workspaces/editor/`, the
+  document and calls these), the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`, the
   editing session's pick tests (`mission_editing_session`) and this crate's integration suites.
 - Rules: mission tier 6 (`cargo xtask verify crate-tiers`); every write goes through a
   `MissionDocCore` mutator, so a command is one undo step and a refusal writes nothing; no
@@ -72,5 +72,5 @@ No features and no environment variables. The undo-grouping tests enable `missio
 - [Mission crates](/crates/mission/README.md) — the mission domain's crates and their tiers.
 - [Mission document](/crates/mission/mission_document/README.md) — the document these commands
   edit.
-- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
   — the placement, arrange, loadout, zone and ORBAT features these operations serve.

@@ -55,12 +55,12 @@ order during one materialize, and `NONE_IDX` marks a slot with no tag or no laye
     `crates/mission_editing/map_editing_tools/src/selection/`, the slot fingerprint in
     `crates/mission_editing/mission_persistence/src/` and the slot attributes command in
     `crates/mission_editing/mission_editing_commands/src/hosted_commands/`);
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/` through `SlotSoa`: the
+  - the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/` through `SlotSoa`: the
     document handle, the undo driver and its render lanes in
-    `apps/frontend/src/workspaces/editor/bridge/document_host/`, the select-in-view of
-    `apps/frontend/src/workspaces/editor/bridge/host_state/`,
-    `apps/frontend/src/workspaces/editor/input/tools/select_tool.rs`, and the canvas mount and
-    the document helpers in `apps/frontend/src/workspaces/editor/mission_editor/`.
+    `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/document_host/`, the select-in-view of
+    `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/`,
+    `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/select_tool.rs`, and the canvas mount and
+    the document helpers in `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/`.
 - Rules:
   - `SlotSoa` columns stay row-aligned by id and a hidden slot has no row while the document
     keeps it (the materialise tests of the mission document);

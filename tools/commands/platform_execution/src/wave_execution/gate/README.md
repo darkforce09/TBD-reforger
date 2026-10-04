@@ -26,8 +26,8 @@ step.
 | | Slice gate: `gate --slice <id>` | Wave gate: `gate [<base>]` |
 |---|---|---|
 | Range | `main...HEAD`; an empty range (run from `main`) refuses with exit 2 | `<base>..HEAD`; the base is derived from the last `wave N CLOSED` commit when omitted and verified by `super::base` |
-| Build and style | cargo check, wasm32 (frontend), fmt (changed), clippy `-D warnings` (changed crates; the frontend for wasm32 and natively) | cargo check, wasm32 (frontend), fmt (changed), clippy `-D warnings` for the API, map engine, frontend (wasm32 and native) and every tool crate (the `clippy xtask+developer_tools` step: each workspace member under `tools/`, derived from the root `Cargo.toml`) |
-| Tests | frontend tests, when changed | API (on the gate database), map engine with all features, frontend, then every other workspace member (`test workspace members`, derived from the root `Cargo.toml`, one `cargo test -p` per package) |
+| Build and style | cargo check, wasm32 (the frontend family), fmt (changed), clippy `-D warnings` (changed crates; a crate of the frontend family for wasm32 and natively) | cargo check, wasm32 (the frontend family), fmt (changed), clippy `-D warnings` for the API, map engine, the frontend family (`frontend` and every crates/frontend package, wasm32 and native) and every tool crate (the `clippy xtask+developer_tools` step: each workspace member under `tools/`, derived from the root `Cargo.toml`) |
+| Tests | the frontend family's tests, when changed | API (on the gate database), map engine with all features, the frontend family, then every other workspace member (`test workspace members`, derived from the root `Cargo.toml`, one `cargo test -p` per package) |
 | Frontend build | none | trunk build, when the wave touched the frontend's scope |
 | Data and contracts | schema, catalogue drift (`world reclassify --terrain everon`) | the same, plus ticket registry and wave lock |
 | Migrations | claim body; persist database in audit mode | claim body; persist database in advance mode |

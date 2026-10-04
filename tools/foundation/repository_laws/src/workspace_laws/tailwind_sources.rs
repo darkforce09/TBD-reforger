@@ -1,19 +1,22 @@
-//! The Tailwind-sources law: every leptos crate's sources are scanned by the app stylesheet.
+//! The Tailwind-sources law: the app stylesheet names every leptos crate's sources, one line each.
 //!
-//! **Role:** finds every workspace member that depends on `leptos` and checks that an `@source`
-//! line of the app stylesheet, resolved relative to the stylesheet's folder, covers that member's
-//! `src/**/*.rs`; a member no line covers ships classes Tailwind never generates.
+//! **Role:** finds every workspace member that depends on `leptos` (outside dev-dependencies) and
+//! checks that exactly one `@source` line of the app stylesheet, resolved relative to the
+//! stylesheet's folder, names that member's `src/**/*.rs`; a member no line names ships classes
+//! Tailwind never generates. A line that names no leptos member's sources is stale.
 //! **Position:** `cargo xtask verify tailwind-sources` prints [`check_tailwind_sources`]; xtask
 //! passes the stylesheet path.
 //! **Signals & state:** none; reads the checkout.
-//! **Invariants:** a glob covers a member when it ends in `/**/*.rs` and its folder part (whose
-//! segments may hold `*`) is the member's `src` folder or an ancestor of it; `@source not` lines
-//! never cover. A missing stylesheet is [`NotRun::TargetMissing`].
+//! **Invariants:** a line names a member when, `..` and `.` folded, its glob is exactly
+//! `<member>/src/**/*.rs`: an ancestor folder or a wildcard folder names no member. A member
+//! named by no line or by several lines is a finding, and so is every line naming no leptos
+//! member (a glob climbing above the repository root included); `@source not` lines are never
+//! read. A missing stylesheet is [`NotRun::TargetMissing`].
 
 use std::path::Path;
 
 use super::{LawOutcome, WorkspaceLawReport};
-use crate::workspace_members::{read_workspace_members, wildcard_matches};
+use crate::workspace_members::read_workspace_members;
 use verification_core::verdict::NotRun;
 
 /// The package whose dependents the stylesheet must scan.
@@ -39,9 +42,12 @@ pub fn tailwind_sources_outcome(repo_root: &Path, stylesheet: &str) -> Result<La
         source,
     })?;
     let stylesheet_folder = stylesheet.rsplit_once('/').map_or("", |(folder, _)| folder);
-    let globs: Vec<String> = source_globs(&text)
-        .iter()
-        .filter_map(|glob| resolved(stylesheet_folder, glob))
+    let globs: Vec<(String, Option<String>)> = source_globs(&text)
+        .into_iter()
+        .map(|glob| {
+            let resolved = resolved(stylesheet_folder, &glob);
+            (glob, resolved)
+        })
         .collect();
     let leptos_members: Vec<&str> = members
         .iter()
@@ -54,16 +60,39 @@ pub fn tailwind_sources_outcome(repo_root: &Path, stylesheet: &str) -> Result<La
         })
         .map(|member| member.path.as_str())
         .collect();
-    let findings = leptos_members
-        .iter()
-        .filter(|member| !globs.iter().any(|glob| covers(glob, member)))
-        .map(|member| {
-            format!(
-                "{member} depends on leptos but no @source line of {stylesheet} covers \
-                 {member}/src/**/*.rs"
-            )
-        })
-        .collect();
+    let mut findings = Vec::new();
+    for member in &leptos_members {
+        let source = member_source_glob(member);
+        let naming = globs
+            .iter()
+            .filter(|(_, resolved)| resolved.as_deref() == Some(source.as_str()))
+            .count();
+        match naming {
+            0 => findings.push(format!(
+                "{member} depends on leptos but no @source line of {stylesheet} names \
+                 {source} (one line per crate, its own src folder)"
+            )),
+            1 => {}
+            lines => findings.push(format!(
+                "{lines} @source lines of {stylesheet} name {source}; keep one"
+            )),
+        }
+    }
+    findings.extend(
+        globs
+            .iter()
+            .filter(|(_, resolved)| {
+                !leptos_members
+                    .iter()
+                    .any(|member| resolved.as_deref() == Some(member_source_glob(member).as_str()))
+            })
+            .map(|(glob, _)| {
+                format!(
+                    "@source \"{glob}\" in {stylesheet} names no leptos member's \
+                     src/**/*.rs: a stale line"
+                )
+            }),
+    );
     Ok(LawOutcome {
         summary: format!(
             "{} leptos member(s), {} @source glob(s) in {stylesheet}",
@@ -105,19 +134,9 @@ fn resolved(folder: &str, glob: &str) -> Option<String> {
     Some(parts.join("/"))
 }
 
-/// True when the resolved `glob` covers `member/src/**/*.rs`.
-fn covers(glob: &str, member: &str) -> bool {
-    let Some(folder) = glob.strip_suffix("/**/*.rs") else {
-        return false;
-    };
-    let source = format!("{member}/src");
-    let glob_parts: Vec<&str> = folder.split('/').collect();
-    let source_parts: Vec<&str> = source.split('/').collect();
-    glob_parts.len() <= source_parts.len()
-        && glob_parts
-            .iter()
-            .zip(&source_parts)
-            .all(|(pattern, name)| wildcard_matches(pattern, name))
+/// The one glob that names the sources of the member at `member`: `<member>/src/**/*.rs`.
+fn member_source_glob(member: &str) -> String {
+    format!("{member}/src/**/*.rs")
 }
 
 #[cfg(test)]

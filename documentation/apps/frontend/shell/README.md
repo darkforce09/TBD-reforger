@@ -35,9 +35,9 @@ translucent surface.
 
 - [App shell](/apps/frontend/src/shell/) — `AppLayout`, the sidebar, the top bar, the
   membership panel and the not-found page.
-- [Route table](/apps/frontend/src/foundation/route_table/) — the layout flags and breadcrumbs the
+- [Route table](/crates/frontend/foundation/frontend_route_table/src/) — the layout flags and breadcrumbs the
   frame reads for each route, and the sidebar's link table.
-- [Session and access](/apps/frontend/src/foundation/auth/) — the session store the frame
+- [Session and access](/crates/frontend/foundation/frontend_session/src/) — the session store the frame
   creates and the [role](/documentation/glossary/n_to_z.md#role) checks the sidebar applies.
 
 ## Boundaries
@@ -48,15 +48,14 @@ translucent surface.
   administration handlers it calls, and the ticket registry in `.ai/tickets/`, which the feature
   doc is written from.
 - Used by: the [frontend documentation](/documentation/apps/frontend/README.md) route table
-  and the [page areas](/documentation/apps/frontend/pages/README.md) index; the frame's
-  in-code README, which links the feature doc.
+  and page crate index; the frame's in-code README, which links the feature doc.
 - Rules: `app_layout_and_navigation.md` keeps its name, which those links use; it stays within
   500 lines; design references live only in `visual_references/`, and no document holds a
   screenshot of the built UI.
 
 ## Related documentation
 
-- [Account pages](/documentation/apps/frontend/pages/account/account_pages.md) — the
+- [Account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md) — the
   sign-in pages the frame renders bare and the settings page its account menu opens.
 - [Design tokens](/documentation/design_system/design_tokens.md) — the theme the frame is drawn
   with.

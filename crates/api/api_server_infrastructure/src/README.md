@@ -112,7 +112,7 @@ action.
   - `api_match_telemetry`, `api_missions`, `api_operations` and `api_command_center`, through the surface above,
     and the `staging-fixtures` host tool in `tools/staging/staging_fixtures/`;
   - over HTTP, the [server control](/documentation/glossary/n_to_z.md#server-control) and server intel
-    pages in `apps/frontend/src/pages/`, the fleet host agent in
+    pages in the page crates under `crates/frontend/pages/`, the fleet host agent in
     `apps/fleet_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
@@ -133,5 +133,5 @@ action.
   — the ledger's commands, states, rules and executors.
 - [Live slot occupancy](/documentation/apps/api/verification_evidence/live_occupancy.md)
   — how player lives hold a runtime session open.
-- [Server control page](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md)
+- [Server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md)
   — the administrators' console over these routes.

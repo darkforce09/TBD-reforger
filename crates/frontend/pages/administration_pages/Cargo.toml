@@ -1,0 +1,71 @@
+# The administration pages of the single-page app: the operations calendar with its access panel,
+# the mission approvals queue, server control with its fleet commands, mission deployments, fleet
+# scenarios and machine credentials, the personnel roster, the content manager, the audit trail and
+# the ballistics catalogs.
+[package]
+name = "administration_pages"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The administrators' pages: events, approvals, server control, personnel, content, audit trail and ballistics catalogs."
+
+[package.metadata.layout]
+category = "crates/frontend/pages"
+tier = 11
+targets = "any"
+
+[dependencies]
+# The event, access, review, server, fleet, member, announcement, audit and ballistics catalog
+# wire types and their typed identifiers.
+frontend_api_dtos = { workspace = true }
+# The HTTP client, the typed endpoint calls, the multipart upload and the audit stream.
+frontend_transport = { workspace = true }
+# The session store and the administrator gate every page renders inside.
+frontend_session = { workspace = true }
+# The design-system primitives and the date, clipboard and formatting helpers.
+frontend_ui = { workspace = true }
+# The route paths the pages link to.
+frontend_route_table = { workspace = true }
+# The review history, thread, provenance and wording the approvals queue and the mission
+# deployments panel reuse.
+mission_review_record = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+futures = { workspace = true }
+serde_json = { workspace = true }
+# The query string of the personnel roster's paged search.
+url = { workspace = true }
+
+# The browser halves: the roster's router hooks, the JavaScript dates of the calendar and the
+# forms, the file inputs and multipart bodies of the hero image and catalog uploads, and the
+# polling timers of the fleet commands and mission deployments.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+leptos_router = { workspace = true }
+gloo-timers = { workspace = true, features = ["futures"] }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Location",
+    "Document",
+    "Element",
+    "Event",
+    "EventTarget",
+    "HtmlElement",
+    "HtmlInputElement",
+    # The upload inputs: `HtmlInputElement::files()` needs `FileList`; a picked file is a `File`
+    # sent as a field of a `FormData` body.
+    "FileList",
+    "File",
+    "Blob",
+    "FormData",
+] }
+
+[dev-dependencies]
+# The repository-root finder, the captured API responses behind `golden!`, the source scrubber,
+# the source shards and the `view!` attribute guard the guard tests read through.
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

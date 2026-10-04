@@ -9,14 +9,14 @@ without editing the mission, and carry that plan into the game.
 
 ## Where it lives
 
-- Code: [`apps/frontend/src/workspaces/planner/`](/apps/frontend/src/workspaces/planner/README.md),
-  a reserved folder that holds only its README; `apps/frontend/src/workspaces/mod.rs` declares
-  no `planner` module.
-- Entry: none. `apps/frontend/src/app_routes.rs` and `apps/frontend/src/foundation/route_table/mod.rs`
+- Code: none. The workspace is built as its own crate under `crates/frontend/workspaces/`
+  ([frontend workspace crates](/crates/frontend/workspaces/README.md)); no crate, module or code
+  folder exists for it yet.
+- Entry: none. `apps/frontend/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`
   have no planner route.
-- Related features: the [Mission Creator](/documentation/apps/frontend/workspaces/editor/README.md),
+- Related features: the [Mission Creator](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md),
   whose map, briefing markers and tactical graphics the planner would draw on; the
-  [event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md),
+  [event hub page](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md),
   where an event's missions and [ORBAT](/documentation/glossary/n_to_z.md#orbat) are read today.
 
 ## Behaviour
@@ -69,8 +69,12 @@ None: no ticket in `.ai/tickets/` covers the planner workspace. T-131, "Route pl
 
 ## Decisions
 
-- The folder is reserved and holds no code until the workspace is built: a workspace is added with
-  its module line, its route and its README together, as the
-  [workspaces README](/apps/frontend/src/workspaces/README.md) rules require.
+- No code folder is reserved: the workspace is added as one crate under
+  `crates/frontend/workspaces/`, with its manifest, its README, its route component, a row in
+  `apps/frontend/src/app_routes.rs` and one in
+  `crates/frontend/foundation/frontend_route_table/src/routes.rs`, together; the crate depends on
+  the foundation and feature crates and the map crates, never on a page crate or another
+  workspace's crates, and its documentation then moves to
+  `documentation/crates/frontend/workspaces/<crate>/`.
 - A plan never edits the mission: planners draw over a published mission, the mission maker's
   document stays as it was reviewed, and each planner's markup sits beside it.

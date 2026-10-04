@@ -6,7 +6,7 @@ with its picks, marquees and index self-checks, the session-local ruler, the lin
 viewshed disc with the object layer over both, and the viewshed job scheduler that runs one
 budgeted, cancellable visibility job per tool. A tool here holds phase and geometry, driven by
 explicit world coordinates; the browser half (pointer events, overlays, the frame pump and the
-browser clock) lives in `apps/frontend/src/workspaces/editor/input/tools/`.
+browser clock) lives in `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/`.
 
 ## Contents
 
@@ -19,7 +19,7 @@ crates/mission_editing/map_editing_tools/
 ## How it works
 
 ```text
-Mission Creator (apps/frontend/src/workspaces/editor/), which links map_editing_tools directly
+Mission Creator (crates/frontend/workspaces/mission_creator_workspace/src/), which links map_editing_tools directly
   │ installs the session cells (ruler chain, line-of-sight capture, viewshed state, DEM sampler)
   │ and the scheduler host (clock, refusal sink, frame pump, completion signal)
   ▼
@@ -64,7 +64,7 @@ cargo test -p map_editing_tools   # ruler, line-of-sight verdicts and washes, sc
   `interior_line_of_sight` and `world_line_of_sight`, `terrain_elevation` (the elevation manifest),
   `time_source` (the scheduler's default clock); dev `terrain_relief` (the contour colours).
 - Used by: the single-page app, directly: the Mission Creator in
-  `apps/frontend/src/workspaces/editor/`, the mortar map picker and the debug building viewer.
+  `crates/frontend/workspaces/mission_creator_workspace/src/`, the mortar map picker and the debug building viewer.
 - Rules: no `web_sys`, `leptos` or `wasm_bindgen` in this crate; the ruler and line-of-sight trees
   name no document mutator (`the_ruler_never_writes_the_document`,
   `the_line_of_sight_tool_never_writes_the_document`); mission editing tier 7

@@ -1,0 +1,13 @@
+# Stage S10 H2a, a page crate: the administration hub (the operations calendar with its access
+# panel, the mission approvals queue, server control with its fleet commands, deployments,
+# scenarios and machine credentials, the personnel roster, the content manager, the audit trail
+# and the ballistics catalogs) becomes crates/frontend/pages/administration_pages. The area folder
+# becomes the crate's `src`, its module tree `lib.rs`, and its README the source tree README; the
+# pages' feature docs move to the crate's documentation mirror. The prefix is one `crate::` row
+# scoped to the moved folder and one `administration_pages::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/pages/administration	crates/frontend/pages/administration_pages/src
+path	apps/frontend/src/pages/administration/mod.rs	crates/frontend/pages/administration_pages/src/lib.rs
+path	documentation/apps/frontend/pages/administration	documentation/crates/frontend/pages/administration_pages
+rust_path	crate::pages::administration::	crate::	apps/frontend/src/pages/administration
+rust_path	crate::pages::administration::	administration_pages::	apps/frontend/src

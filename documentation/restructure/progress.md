@@ -12,8 +12,8 @@ session reads the header and the Handoff section first.
 | Field | Value |
 |---|---|
 | Branch | `main` (decision D16; S0 was merged from the cloud session branch) |
-| Current stage | S8 and the later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3, S11a, S7, S11b, S9 and S8 landed |
-| Last green commit | the S8 stage commit (S9: bc453ae94, S11b: 2a105fa4f, S7: 17985220a, S11a: ffb5fe74d, M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
+| Current stage | The later stages under the coordinator (decision D22); S3, S4 (S4a, S4b), S5, S6, M3, S11a, S7, S11b, S9, S8 and S10 landed; S12 waits for the operator |
+| Last green commit | the S10 stage commit (S8: 0a0121776, S9: bc453ae94, S11b: 2a105fa4f, S7: 17985220a, S11a: ffb5fe74d, M3: 165f9539e, S5: fb18f93c7, S6: 503f4403b, S3: 90cfa9aba, S4b: 65b7978ea, S4a: dcfeda907) |
 | Next action | Stage orchestrators in their worktrees, managed by the coordinator (see Handoff and the stage logs); the relocation tool fix landed (`640398d6e`) |
 | Blocked on | nothing |
 
@@ -151,15 +151,17 @@ contract crates. Log: [stage_logs/s4.md](/documentation/restructure/stage_logs/s
 - [x] Stage commit — done (see [stage_logs/s9.md](/documentation/restructure/stage_logs/s9.md))
 
 ### S10 Frontend crates
-- [ ] H0 (L) editor untangle — pending
-- [ ] H0b (S) pins, source lines, test support — pending
-- [ ] H1 (L) foundation and feature crates — pending
-- [ ] H2a–g (S/M) page crates — pending
-- [ ] H3 (L) workspace crates — pending
-- [ ] H4 (M) thin app — pending
-- [ ] H5 (M) edition 2024 — pending
-- [ ] Walkthrough — pending
-- [ ] Stage commit — pending
+- [x] H5 (M) edition 2024, first and in place (C1) — done — the rescope sites hand-reviewed; browser gates run 1 green
+- [x] H0 (L) editor untangle — done as H0a, H0c — 79 back-edges to 0; three injected callbacks; the editor ratchet at zero
+- [x] H0b (S) pins, source lines, test support — done as H0b, H0t1, H0t2 — repository-root finder; crate-edge layering, strict tailwind, per-category member globs; CI lanes over every frontend crate
+- [x] Typed ids (C3) — done as H1n, H1nb — 46 DTO newtypes plus equipment, modal and editor ids; goldens byte-equal
+- [x] H1 (L) foundation and feature crates — done as H1a, H1c, H1b1, H1b2, H1b3 — nine crates; one transport `Error`
+- [x] H2a–g (S/M) page crates — done — seven crates
+- [x] H3 (L) workspace crates — done as H3a1, H3a1b, H3a1c, H3a2, H3b, H3c, H3d1, H3d2 — five Mission Creator crates and `debug_benches`
+- [x] H4 (M) thin app — done — `doc_audit` over every frontend crate; `start_app` the only export
+- [x] H6, G10 documentation and closing fixes — done
+- [x] Browser gates (operator decision, two runs) — done — doctor OK, 21 smokes, 26/26 oracle routes, both runs
+- [x] Stage commit — done (see [stage_logs/s10.md](/documentation/restructure/stage_logs/s10.md))
 
 ### S11 Tools
 - [x] J0a (L) xtask cuts, deploy_settings, tool_test_support, shared layout — done — commit: (S11a stage commit) — xtask `core/` dissolved; `deploy_settings` (25 tests) and `tool_test_support` (dev-only) born; xtask layout into `repository_layout`; C2, C3, C4, C7, C9, C10 cut; 7 member globs; xtask 1364 → 1322 (43 moved, counted); ran to about 540k tokens (F-S11-04)
@@ -432,3 +434,15 @@ paper_doll_renderer}`. The map engine's JS exports are stripped (the only export
 engine layer rules are deleted in favour of the crate firewalls (with a `#[wasm_bindgen` placement
 scan), and the S11 legacy-empty check passes. Decisions, findings (F-S8-01..18) and the handoff to
 S10 and S12 are in [stage_logs/s8.md](/documentation/restructure/stage_logs/s8.md).
+
+S10 is on `main`: the frontend is 22 Leptos crates under `crates/frontend/` — foundation
+(`frontend_test_support`, `frontend_ui`, `frontend_api_dtos`, `frontend_transport`,
+`frontend_route_table`, `frontend_map_view`, `frontend_session`, `frontend_offline`), the feature
+`mission_review_record`, seven page crates, and the workspaces `debug_benches` and the Mission
+Creator's `mission_creator_{state, engine_bridge, session, arsenal, workspace}` — and `apps/frontend`
+is the thin app (`main.rs`, `app_routes.rs`, `shell/`, `tests/`, style, Trunk). The frontend is
+edition 2024; every id at a crate surface is a serde-transparent newtype; frontend layering judges
+crate edges; tailwind wants one exact `@source` line per leptos member; the CI lanes and the wave
+gate derive the frontend packages from the members. Both operator browser-gate runs passed.
+Decisions, amendments, findings (F-S10-01..15), the rescope site table and the notes for S12 are in
+[stage_logs/s10.md](/documentation/restructure/stage_logs/s10.md).

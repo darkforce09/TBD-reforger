@@ -1,0 +1,12 @@
+# Stage S10 H2g, page crate: the account pages (sign-in, the sign-in callback and the account
+# settings with the Arma identity link) become crates/frontend/pages/account_pages. The folder
+# becomes the crate's `src`, its module tree `lib.rs`, and its README the source tree README; the
+# feature doc moves to its mirror under documentation/crates/frontend/pages/account_pages. The
+# prefix is one `crate::` row scoped to the moved folder and one `account_pages::` row scoped to the
+# app's source.
+kind	from	to	scope
+path	apps/frontend/src/pages/account	crates/frontend/pages/account_pages/src
+path	apps/frontend/src/pages/account/mod.rs	crates/frontend/pages/account_pages/src/lib.rs
+path	documentation/apps/frontend/pages/account	documentation/crates/frontend/pages/account_pages
+rust_path	crate::pages::account::	crate::	apps/frontend/src/pages/account
+rust_path	crate::pages::account::	account_pages::	apps/frontend/src

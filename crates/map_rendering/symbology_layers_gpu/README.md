@@ -77,5 +77,5 @@ None: no feature and no environment variable. The GPU layers are selected by the
 
 - [Map symbology](/documentation/design_system/map_symbology.md) — the unit, vehicle and marker
   symbols and side tints.
-- [Mission Creator feature inventory: performance at scale](/documentation/apps/frontend/workspaces/editor/feature_inventory/performance_at_scale.md)
+- [Mission Creator feature inventory: performance at scale](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/performance_at_scale.md)
   — the selection patches, drag overlay and clusters at scale.

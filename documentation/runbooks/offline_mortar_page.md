@@ -95,9 +95,9 @@ response header, COOP and COEP included.
 
 ## Related
 
-- [Mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md)
+- [Mortar calculator page](/documentation/crates/frontend/pages/field_tools_pages/mortar/mortar_calculator_page.md)
   — the page, its offline behaviour and its save.
-- [Offline core](/apps/frontend/src/foundation/offline/README.md) — the pack download, the
+- [Offline core](/crates/frontend/foundation/frontend_offline/src/README.md) — the pack download, the
   quota check and the offline state.
 - [Offline service worker](/apps/offline_service_worker/README.md) — the request classes,
   the caches and the Range answers.

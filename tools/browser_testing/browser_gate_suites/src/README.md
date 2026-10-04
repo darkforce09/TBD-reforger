@@ -30,7 +30,7 @@ tools/browser_testing/browser_gate_suites/src/
 ├── server/                the recorded API corpus route of the static server
 ├── server.rs              the static server: isolation headers, SPA fallback, API proxy, API corpus, map assets
 ├── session_tokens.rs      the unsigned access tokens and Bearer token-pair answers of a token refresh
-└── tests/                 unit tests for the fixture router, accept floor, payload pins, smoke assertions, server, API corpus, tokens, gate layout, the ballistics gates
+└── tests/                 unit tests for the fixture router, accept floor, payload pins, smoke assertions, server, API corpus, tokens, gate layout, the ballistics gates, the route table parse
 ```
 
 ## How it works

@@ -43,7 +43,7 @@ surface. A field wider than `MAX_PLAN_DIM` (2048) cells on an axis coarsens its 
 - Depends on: `spatial_indexes` (`BvhSidecar` and the flat box tree), `geometry_primitives` (the
   vector helpers) and `crate::blueprint` (`BuildingBlueprint`, for `building_drawing`).
 - Used by: the debug building viewer, interior bench and world line-of-sight bench in
-  `apps/frontend/src/workspaces/debug/` (`building_viewer.rs`, `building_viewer/`,
+  `crates/frontend/workspaces/debug_benches/src/` (`building_viewer.rs`, `building_viewer/`,
   `building_interior.rs`, `world_los/live.rs`), which draw the cuts, the voids and the height
   ramps; the compound tests in `crates/line_of_sight/interior_line_of_sight/src/tests/compound_walk_tests.rs`
   cut a flattened compound.

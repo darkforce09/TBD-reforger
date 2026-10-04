@@ -1,0 +1,60 @@
+# The single-page app's shared map seam: canvas sizing, render engine creation, the camera fitted
+# to a terrain's world bounds, the damage-driven frame pump, resize tracking, pointer navigation in
+# map metres, and the 2 m ground heights.
+[package]
+name = "frontend_map_view"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The single-page app's shared map seam: canvas sizing, engine creation, camera fit, frame pump, navigation and ground heights."
+
+[package.metadata.layout]
+category = "crates/frontend/foundation"
+tier = 8
+targets = "any"
+
+[dependencies]
+# The orthographic camera's zoom band and the pixel to map metre conversion.
+camera_math = { workspace = true }
+# The terrain boot's scope, preferences and progress types.
+map_streaming_model = { workspace = true }
+# The full-resolution elevation raster the ground heights sample.
+terrain_elevation = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+# The browser half: the manifest fetch, the render engine and its frame pump, the terrain boot, and
+# the DOM listeners and observers.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+browser_platform = { workspace = true }
+gpu_frame = { workspace = true }
+map_renderer = { workspace = true }
+map_streaming_host = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Location",
+    "Element",
+    "HtmlElement",
+    "HtmlCanvasElement",
+    "DomRect",
+    # Keeps the canvas sized to its container.
+    "ResizeObserver",
+    # Drag-pan, wheel-zoom and click-to-pick.
+    "Event",
+    "EventTarget",
+    "AddEventListenerOptions",
+    "MouseEvent",
+    "PointerEvent",
+    "WheelEvent",
+] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

@@ -16,7 +16,7 @@ tools/checks/repository_checks/src/architecture/
 ├── route_tags.rs               the route-tag gate's paths, patterns, sentinels and report text
 ├── tests/                      unit tests for the gates
 ├── wave_gate_sources.rs        the wave gate facade linkage check and the source spellings its audits share
-├── workspace_law_locations.rs  the manifest sweep roots, the Tailwind stylesheet and the frontend layer table the laws read
+├── workspace_law_locations.rs  the manifest sweep roots, the Tailwind stylesheet and the frontend-layering configuration the laws read
 └── workspace_laws.rs           the five workspace-law gates: print each library report
 ```
 
@@ -29,17 +29,27 @@ check that did not run, never as a pass.
 | Verb | Reads | Fails when | Exit codes |
 |---|---|---|---|
 | `route-tags` | `crates/api/<crate>/src/routes.rs` tables, `apps/api/src/router.rs`, every `@route` tag under `apps/api/src` and `crates/api` | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
-| `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; the frontend's sources; `apps/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
+| `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; the app's sources and the frontend crates' manifests; `apps/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
 | `editor-orbat-coherency` | named editor, store and symbology files; `cargo test` runs | a ban matches, a pin is absent, or a test pin fails or runs no test | 0 pass, 1 every failure |
 
 ### Workspace laws
 
 Each of the five verbs prints the report of its law in
 [`tools/foundation/repository_laws/src/workspace_laws/`](/tools/foundation/repository_laws/src/workspace_laws/README.md)
-line for line and exits with its code. The paths that move with the tree (the manifest sweep
-roots, the stylesheet, the frontend layer table) are the constants of
-`tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`. The `verify-workspace-laws` task row runs the five
-in order as a step of `ci-local`.
+line for line and exits with its code. The paths and names that move with the tree are the
+constants of `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`:
+the manifest sweep roots, the stylesheet, and the frontend-layering configuration
+`FRONTEND_LAYERS`. That configuration has two halves:
+
+- the in-crate half, `APP_LAYERS`: the layer table of `apps/frontend`, which holds no module
+  order any more (the foundation, the features, the pages and the workspaces are crates); the
+  agent that births a crate out of a folder drops that folder's row or order in the same change;
+- the crate-edge half, `FRONTEND_CRATE_EDGES`: the layer folders `crates/frontend/<layer>/`, the
+  app as the shell, and the crate orders `FOUNDATION_CRATE_ORDER`,
+  `MISSION_CREATOR_CRATE_ORDER` and `DEBUG_BENCHES_CRATE_ORDER`.
+
+A crate an order names that no member carries is a finding. The `verify-workspace-laws` task row
+runs the five laws in order as a step of `ci-local`.
 
 ### Route tags
 
@@ -51,7 +61,7 @@ that `api_v1_routes` in `apps/api/src/router.rs` merges under `/api/v1`; the `ro
 ### ORBAT coherency
 
 Three bans: `ensure_default_squad` on the placement path (the Mission Creator's arming and
-context files in `apps/frontend/src/workspaces/editor/`, `crates/mission/mission_operations/src/`
+context files in `crates/frontend/workspaces/mission_creator_workspace/src/`, `crates/mission/mission_operations/src/`
 and the map engine's `editing/hosted_commands/`), `loadout: String::new()` in the slot
 template derive, and the strings Standardization, IFAK or Grenade Complement in the ORBAT manager
 modal and the editor chrome. Three pins require the BLUFOR, OPFOR and INDFOR side colours in

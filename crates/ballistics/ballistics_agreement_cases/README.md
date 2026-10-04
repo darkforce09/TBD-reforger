@@ -45,7 +45,7 @@ None: no features and no environment variables.
 - Depends on: `ballistics_model`, `ballistics_solver`, `fire_mission_planning`,
   `deterministic_random` and `newtype_ids`; `serde_json` and `libm`.
 - Used by: the agreement gate in `tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`
-  and the agreement bench in `apps/frontend/src/workspaces/debug/ballistics_agreement/`, which draw,
+  and the agreement bench in `crates/frontend/workspaces/debug_benches/src/ballistics_agreement/`, which draw,
   map and walk the same cases from the same seed and count.
 - Rules: the generator reproduces the published SplitMix64 stream; the same seed draws the same
   cases and covers every fired shell; every drawn case is a valid battery request; the mapping,
@@ -54,5 +54,5 @@ None: no features and no environment variables.
 ## Related documentation
 
 - [Ballistics crates](/crates/ballistics/README.md) — the category and its tiers.
-- [Ballistics agreement bench](/documentation/apps/frontend/workspaces/debug/ballistics_agreement_page.md)
+- [Ballistics agreement bench](/documentation/crates/frontend/workspaces/debug_benches/ballistics_agreement_page.md)
   — the browser half of the agreement.

@@ -145,11 +145,11 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
   - the `mission_deployment_reconciler` worker in `crates/api/api_background_workers/src/`
     and the `import-registry` binary in `apps/api/src/bin/`;
   - `api_command_center` and `api_operations`, through the surface above;
-  - over HTTP, the Mission Creator in `apps/frontend/src/workspaces/editor/`, the mission hub
-    pages in `apps/frontend/src/pages/mission_hub/`, the
+  - over HTTP, the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`, the mission hub
+    pages in `crates/frontend/pages/mission_hub_pages/src/`, the
     [event manager](/documentation/glossary/a_to_f.md#event-manager), approvals and
     [server control](/documentation/glossary/n_to_z.md#server-control) pages in
-    `apps/frontend/src/pages/administration/`, the
+    `crates/frontend/pages/administration_pages/src/`, the
     [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
     `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands through
     `tools/commands/mod_operations/src/website_api_client/`.
@@ -170,7 +170,7 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
   HTTPS rather than from staged files.
 - [Mission artifacts, reviews and deployment](/documentation/apps/api/verification_evidence/mission_artifacts.md)
   — the design of artifacts, their reviews and deployments.
-- [Mission library page](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md),
-  [Mission overview page](/documentation/apps/frontend/pages/mission_hub/overview/mission_overview_page.md)
-  and [Mission approvals page](/documentation/apps/frontend/pages/administration/approvals/mission_approvals_page.md)
+- [Mission library page](/documentation/crates/frontend/pages/mission_hub_pages/library/mission_library_page.md),
+  [Mission overview page](/documentation/crates/frontend/pages/mission_hub_pages/overview/mission_overview_page.md)
+  and [Mission approvals page](/documentation/crates/frontend/pages/administration_pages/approvals/mission_approvals_page.md)
   — the pages over these routes.

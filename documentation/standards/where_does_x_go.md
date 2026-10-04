@@ -10,10 +10,10 @@ is drawn in the directory atlas of `CLAUDE.md`, and every code folder's README s
 
 | X | Home |
 |---|---|
-| a page of the app | `apps/frontend/src/pages/<area>/<page>/`; its route in `apps/frontend/src/app_routes.rs` (the component) and `apps/frontend/src/foundation/route_table/mod.rs` (layout flags and access tier) |
-| a standalone workspace, such as the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) | `apps/frontend/src/workspaces/<workspace>/` |
-| what every page shares: the API client, auth, design-system primitives, utilities | `apps/frontend/src/foundation/` |
-| an app-side mirror of an API model | `apps/frontend/src/foundation/transport/dto/`, with its R-api golden test in that folder's `tests/` |
+| a page of the app | `crates/frontend/pages/<crate>/src/<page>/`, in the page crate of its navigation area; its route in `apps/frontend/src/app_routes.rs` (the component) and `crates/frontend/foundation/frontend_route_table/src/routes.rs` (layout flags and access tier) |
+| a standalone workspace, such as the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) | its own crate under `crates/frontend/workspaces/<crate>/` (the Mission Creator is five crates in a fixed order) |
+| what every page shares: the API client, auth, design-system primitives, utilities | a foundation crate under `crates/frontend/foundation/` (`frontend_transport`, `frontend_session`, `frontend_ui`, …); a capability several pages show, a feature crate under `crates/frontend/features/` |
+| an app-side mirror of an API model | `crates/frontend/foundation/frontend_api_dtos/src/`, with its R-api golden test in that folder's `tests/` |
 | an [API](/documentation/glossary/a_to_f.md#api) endpoint | `apps/api/src/<domain>/handlers/<surface>.rs`, registered in that domain's `routes.rs`, with its `/// @route` tag |
 | API logic that two surfaces share | that domain's `services/` |
 | an API wire or database model | that domain's `models/`, the snake_case contract |

@@ -20,7 +20,7 @@ crates/mission_editing/mission_editing_commands/
 ## How it works
 
 ```text
-Mission Creator (apps/frontend/src/workspaces/editor/), through `hosted_commands` and `document_text`
+Mission Creator (crates/frontend/workspaces/mission_creator_workspace/src/), through `hosted_commands` and `document_text`
   │ a command with newtype ids (`impl Into<SlotUid>`, `impl Into<LayerId>`, ...) and values
   ▼
 hosted_commands ── mission_editing_session::host::with_doc / with_host: one borrow
@@ -72,7 +72,7 @@ cargo test -p mission_editing_commands   # export bytes, report wording, selecti
   marker ids), `mission_validation` (findings, `AssetId`), `formation_geometry` (the arrange
   vocabulary), `map_coordinates` (grid references), `orbat_slot_ids` (`SlotUid`), `serde_json`,
   `thiserror`.
-- Used by: the Mission Creator in `apps/frontend/src/workspaces/editor/`, which imports
+- Used by: the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`, which imports
   `hosted_commands` and `document_text` directly.
 - Rules: no `web_sys`, `leptos` or `wasm_bindgen` in this crate; the place path never calls
   `ensure_default_squad` (`cargo xtask verify editor-orbat-coherency` scans every hosted command);

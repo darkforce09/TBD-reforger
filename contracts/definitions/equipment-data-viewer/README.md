@@ -34,8 +34,8 @@ and the handlers in `crates/api/api_community_content/src/handlers/equipment_dat
 | `resource-cards.schema.json` | `EquipmentResourceCardPage` | `resource-cards` |
 
 `download` answers with the dataset file itself and has no schema here. The frontend mirrors each
-root type in `apps/frontend/src/foundation/transport/dto/equipment_data_viewer/`, and
-`apps/frontend/src/foundation/transport/dto/tests/equipment_data_viewer_parity.rs` decodes every
+root type in `crates/frontend/foundation/frontend_api_dtos/src/equipment_data_viewer/`, and
+`crates/frontend/foundation/frontend_api_dtos/src/tests/equipment_data_viewer_parity.rs` decodes every
 `positive/` fixture of `contracts/fixtures/equipment-data-viewer/` into its DTO, claiming every
 wire field, and refuses every `negative/` one.
 
@@ -62,7 +62,7 @@ wire field, and refuses every `negative/` one.
     export, validates every route's answer against its schema and requires it to equal its
     golden, the `positive/` fixtures among them;
   - the frontend DTO parity tests named above, and the equipment data viewer bench in
-    `apps/frontend/src/workspaces/debug/data_viewer/`, through the DTOs.
+    `crates/frontend/workspaces/debug_benches/src/data_viewer/`, through the DTOs.
 
 ## Boundaries
 

@@ -78,7 +78,7 @@ fn the_project_instructions_and_every_readme_are_judged() {
     );
     assert_eq!(area(README), Some(DocumentArea::Readmes));
     assert_eq!(
-        area("apps/frontend/src/foundation/README.md"),
+        area("crates/frontend/foundation/README.md"),
         Some(DocumentArea::Readmes)
     );
     assert_eq!(area("apps/frontend/NOTES.md"), None);

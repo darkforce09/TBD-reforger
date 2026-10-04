@@ -41,7 +41,7 @@ those nets into the compiled plan and, when no valid plan is authored, derives o
   `AuthoredBlocks::parse` calls `parse`; `mission_compiler`, whose
   `crates/mission/mission_compiler/src/game_document/radio.rs` turns `AuthoredRadioPlan`
   into the compiled plan; the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s
-  radio panel (`apps/frontend/src/workspaces/editor/ui/inspector/radio_panel.rs`), which
+  radio panel (`crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/radio_panel.rs`), which
   bounds its fields by the limits and `RANGES`, picks and compares frequencies with `freq_key`,
   and checks each edit with `validate`.
 - Rules: a frequency another net already uses is refused (`a_duplicate_frequency_is_refused` in

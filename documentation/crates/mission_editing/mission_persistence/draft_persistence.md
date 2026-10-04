@@ -16,14 +16,14 @@ crate makes these decisions; the Mission Creator stores the bytes in IndexedDB a
   document in [`mission_document`](/crates/mission/mission_document/README.md).
 - Entry: the Mission Creator's shell. The boot's server reconciliation calls `is_uuid`,
   `classify_local_draft`, `adopt_payload` and the snapshot capture
-  ([`shell/hydrate/`](/apps/frontend/src/workspaces/editor/session/hydrate/README.md));
+  ([`shell/hydrate/`](/crates/frontend/workspaces/mission_creator_session/src/hydrate/README.md));
   the draft writer calls the key scoping, `restores_to_authored_content`, `merge_before_write`
-  and the read retry ([`shell/persist/`](/apps/frontend/src/workspaces/editor/session/persist/README.md));
+  and the read retry ([`shell/persist/`](/crates/frontend/workspaces/mission_creator_session/src/persist/README.md));
   the review restore adopts a reviewed version
-  (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/review_restore.rs`).
+  (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/review_restore.rs`).
 - Related features: the [editing layer](/documentation/crates/mission_editing/editing_layer.md),
   whose post-change tail schedules each draft save, and the Mission Creator's
-  [feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+  [feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
   for the save, restore and conflict features.
 
 ## Behaviour
@@ -100,10 +100,10 @@ Terrain, environment and row fields never raise the prompt: only the authored ke
 
 - IndexedDB: the Mission Creator's draft records and snapshot records, keyed as above; the stored
   value is the document's `encode_state` blob. The storage code is in
-  [`shell/persist/`](/apps/frontend/src/workspaces/editor/session/persist/README.md).
+  [`shell/persist/`](/crates/frontend/workspaces/mission_creator_session/src/persist/README.md).
 - `GET /api/v1/missions/{id}`: the mission row and its current version, whose `json_payload` is
   the payload `classify_local_draft` and `adopt_payload` read; the call and its fallbacks are in
-  the [hydrate README](/apps/frontend/src/workspaces/editor/session/hydrate/README.md).
+  the [hydrate README](/crates/frontend/workspaces/mission_creator_session/src/hydrate/README.md).
 - `slots_digest`: an order-independent fingerprint that compares a cold and a warm document by
   content rather than by encoded bytes.
 

@@ -307,35 +307,30 @@ pub(crate) fn ballistics_wasm_agreement() -> Vec<Step> {
     v
 }
 
-pub(crate) fn ci_local_leptos() -> Vec<Step> {
-    vec![
-        Step::new(&["cargo", "fmt", "-p", "frontend", "--check"]),
-        Step::new(&[
-            "cargo",
-            "clippy",
-            "-p",
-            "frontend",
-            "--target",
-            "wasm32-unknown-unknown",
-            "--all-targets",
-            "--",
-            "-D",
-            "warnings",
-        ]),
-        Step::new(&[
-            "cargo",
-            "clippy",
-            "-p",
-            "frontend",
-            "--all-targets",
-            "--locked",
-            "--",
-            "-D",
-            "warnings",
-        ]),
-        Step::new(&["cargo", "test", "-p", "frontend"]),
-        Step::new(&["trunk", "build", "--release"]).cd(FE),
-    ]
+/// `ci-local-leptos` — format, wasm32 and native clippy and native tests over the frontend family
+/// (the app and every crate under `crates/frontend`, which
+/// [`crate::frontend_package_lane::frontend_packages`] derives from the workspace under
+/// `repo_root`), then the trunk release build. Kept in lockstep with the `ci-local-leptos` row in
+/// `crate::task_definitions`, which runs the same derived lines;
+/// `ci_local_leptos_recipe_and_ci_task_row_run_the_same_lines` pins them.
+///
+/// # Errors
+/// The frontend family cannot be derived from the workspace.
+pub(crate) fn ci_local_leptos(repo_root: &Path) -> Result<Vec<Step>> {
+    use crate::frontend_package_lane::{FrontendLine, frontend_line_argv};
+    let mut steps = Vec::new();
+    for line in [
+        FrontendLine::Format,
+        FrontendLine::Wasm32Clippy,
+        FrontendLine::NativeClippy,
+        FrontendLine::Test,
+    ] {
+        let argv = frontend_line_argv(repo_root, line)?;
+        let words: Vec<&str> = argv.iter().map(String::as_str).collect();
+        steps.push(Step::new(&words));
+    }
+    steps.push(Step::new(&["trunk", "build", "--release"]).cd(FE));
+    Ok(steps)
 }
 
 /// The command `rust-ci`'s fifth step runs: the database lane's complete integration suite.

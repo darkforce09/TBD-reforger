@@ -11,21 +11,24 @@
 //! the privileged section is the only one gated above the baseline tier. At most one link is
 //! active, by the frame's active-link rule.
 
-use crate::foundation::auth::AuthStore;
-use crate::foundation::transport::dto::role::{has_min_role, Role};
-use crate::foundation::ui::{cn, MaterialIcon};
+use frontend_api_dtos::role::{Role, has_min_role};
+use frontend_session::AuthStore;
+use frontend_ui::{MaterialIcon, cn};
 use leptos::prelude::*;
 use leptos_router::hooks::use_location;
 
 use super::layout::is_active;
-use crate::foundation::route_table::navigation_menu::{NavItem, NAVIGATION};
+use frontend_route_table::navigation_menu::{NAVIGATION, NavItem};
 
 /// The hamburger button that opens the narrow-viewport drawer.
 ///
 /// Fixed to the top-left corner and hidden once the viewport is wide enough for the permanent
 /// sidebar. Takes the drawer's open signal and toggles it.
 #[component]
-pub(crate) fn SidebarMobileToggle(open: RwSignal<bool>) -> impl IntoView {
+pub fn SidebarMobileToggle(
+    /// The drawer's open flag, which the button toggles.
+    open: RwSignal<bool>,
+) -> impl IntoView {
     view! {
         <button
             type="button"
@@ -43,7 +46,7 @@ pub(crate) fn SidebarMobileToggle(open: RwSignal<bool>) -> impl IntoView {
 /// A fixed-width column holding the brand block above the scrolling link list. On a narrow
 /// viewport it renders nothing and the same two pieces appear in the drawer instead.
 #[component]
-pub(crate) fn Sidebar() -> impl IntoView {
+pub fn Sidebar() -> impl IntoView {
     view! {
         <aside class="hidden h-screen w-80 shrink-0 flex-col bg-surface-container-low lg:flex">
             <SidebarBrand />
@@ -54,7 +57,7 @@ pub(crate) fn Sidebar() -> impl IntoView {
 
 /// The product name at the top of the sidebar and of the mobile drawer.
 #[component]
-pub(crate) fn SidebarBrand() -> impl IntoView {
+pub fn SidebarBrand() -> impl IntoView {
     view! {
         <header class="relative flex h-16 shrink-0 items-center px-6">
             <div class="flex items-center gap-2">
@@ -73,7 +76,7 @@ pub(crate) fn SidebarBrand() -> impl IntoView {
 ///
 /// `on_nav` fires on any link click; the mobile drawer passes a callback that closes itself.
 #[component]
-pub(crate) fn SidebarNav(
+pub fn SidebarNav(
     /// Invoked on any nav-link click; the mobile drawer closes itself through this.
     #[prop(optional)]
     on_nav: Option<Callback<()>>,

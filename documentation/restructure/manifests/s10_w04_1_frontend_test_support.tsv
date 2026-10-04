@@ -1,0 +1,10 @@
+# Stage S10 H1a, first of four: the frontend's test support (the repository-root finder, the captured
+# API responses behind `golden!`, the API route tables, the source scrubber, the source shards and the
+# `view!` attribute guard) becomes the dev-only crates/frontend/foundation/frontend_test_support. The
+# folder becomes the crate's `src`, its module tree `lib.rs`. The prefix is one `crate::` row scoped to
+# the moved folder and one `frontend_test_support::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/foundation/test_support	crates/frontend/foundation/frontend_test_support/src
+path	apps/frontend/src/foundation/test_support/mod.rs	crates/frontend/foundation/frontend_test_support/src/lib.rs
+rust_path	crate::foundation::test_support::	crate::	apps/frontend/src/foundation/test_support
+rust_path	crate::foundation::test_support::	frontend_test_support::	apps/frontend/src

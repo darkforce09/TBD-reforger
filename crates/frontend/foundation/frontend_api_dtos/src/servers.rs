@@ -1,0 +1,318 @@
+//! Game-server rows, the bodies that register and change one, their live telemetry, the decoder
+//! for the telemetry stream, and the machine credentials that authenticate a server's programs.
+//!
+//! **Role:** the server list the intel page renders, the registration and change bodies the server
+//! control screen sends, the status frame the live stream pushes, the audit line written when a
+//! frame cannot be read, and the credential list, issue answer and issue request the server control
+//! screen works with.
+//! **Position:** deserialised straight from the backend's JSON and handed to the pages that
+//! render it; re-serialised unchanged by the round-trip tests. A registration or change answers
+//! with a [`ServerRowDto`], the row `GET /servers` lists.
+//! **Signals & state:** none — these are plain data.
+//! **Invariants:** frame decoding lives here rather than beside the stream reader because the reader is
+//! browser-only and therefore never compiled by the native test build, while decoding a frame is
+//! wire-contract work that must be tested. A frame that fails to deserialise becomes a named
+//! rejection, never silence: "the app cannot read this backend's frames" and "no frame has arrived
+//! yet" are different facts, and rendering the second while the first is true is the bug the
+//! distinction exists to prevent. A credential row never carries its secret; the one answer that
+//! does derives no `Debug`, so the secret cannot reach a log line through a formatter. A status
+//! without a telemetry queue reading has no `telemetry_queue` key; the reading is never
+//! synthesised. A change tells an absent `required_modpack_id` (left as stored), `null` (cleared)
+//! and an id apart.
+//! @contract match-telemetry.schema.json#/definitions/TelemetryQueueStatus
+//! @contract server-intel.schema.json#/definitions/ServerIntelList
+//! @contract server-intel.schema.json#/definitions/ServerStatus
+//! @contract server-intel.schema.json#/definitions/ServerRegistration
+//! @contract server-intel.schema.json#/definitions/ServerChange
+
+use serde::{Deserialize, Serialize};
+
+use super::common::absent_null_or_value;
+use super::content::ModpackDto;
+use super::identifiers::{MachineCredentialId, MatchId, ModpackId, ServerId};
+
+/// One live telemetry sample from a game server.
+/// @contract server-intel.schema.json#/definitions/ServerStatus
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerStatusDto {
+    /// The server the status describes.
+    pub server_id: ServerId,
+    /// Whether the last heartbeat reported the server online.
+    pub is_online: bool,
+    /// The players connected at the last heartbeat.
+    pub player_count: i64,
+    /// The player slots the server offers.
+    pub max_players: i64,
+    /// Stored as a one-decimal numeric on the backend, so it crosses the wire as a float.
+    pub server_fps: f64,
+    /// Seconds the game runtime has been up.
+    pub uptime_seconds: i64,
+    /// The match the server is running, when one is live.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_match_id: Option<MatchId>,
+    /// The backend omits this rather than sending an empty string, so absent is the only
+    /// encoding of "no value" and an option round-trips it exactly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ingame_time: Option<String>,
+    /// The in-game weather the last heartbeat reported; empty when none was reported.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ingame_weather: Option<String>,
+    /// When the status row was last written.
+    pub updated_at: String,
+    /// The last outbound telemetry queue reading; the key is absent when the server never
+    /// reported one, so an option round-trips it exactly.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub telemetry_queue: Option<TelemetryQueueDto>,
+}
+
+/// A game runtime's outbound telemetry queue as its last heartbeat reported it: entries waiting
+/// for the API, the queue's capacity, the entries dropped since the runtime's queue was created,
+/// and the age of the oldest waiting entry.
+/// @contract match-telemetry.schema.json#/definitions/TelemetryQueueStatus
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TelemetryQueueDto {
+    /// Telemetry lines waiting to be sent.
+    pub backlog: i64,
+    /// The queue's capacity in lines.
+    pub capacity: i64,
+    /// Lines dropped since the runtime started because the queue was full.
+    pub dropped_total: i64,
+    /// Age in seconds of the oldest line still waiting.
+    pub oldest_age_seconds: i64,
+    /// When the API stored the reading, RFC 3339 UTC.
+    pub reported_at: String,
+}
+
+/// What one frame from the telemetry stream turned out to be.
+#[derive(Debug, PartialEq)]
+pub enum SseFrame {
+    /// A data frame that deserialised into a status. Boxed, or the variant would make the enum
+    /// as large as the whole payload.
+    Status(Box<ServerStatusDto>),
+    /// A data frame that did not deserialise, carrying the parse error and the payload that
+    /// caused it.
+    Rejected {
+        /// The parse error.
+        error: String,
+        /// The frame's payload as received.
+        payload: String,
+    },
+    /// Not a data frame — a keepalive comment, a stream control line, or the empty tail.
+    /// Silence is correct here; auditing these would drown the signal that matters.
+    NotData,
+}
+
+/// Decode one raw frame — the text between blank-line boundaries — into its kind.
+pub fn decode_server_status_frame(frame: &str) -> SseFrame {
+    let Some(data) = frame.trim().strip_prefix("data:") else {
+        return SseFrame::NotData;
+    };
+    let data = data.trim();
+    match serde_json::from_str::<ServerStatusDto>(data) {
+        Ok(dto) => SseFrame::Status(Box::new(dto)),
+        Err(e) => SseFrame::Rejected {
+            error: e.to_string(),
+            payload: data.chars().take(PAYLOAD_AUDIT_CHARS).collect(),
+        },
+    }
+}
+
+/// How many characters of a rejected payload the audit line quotes. Enough to identify
+/// the frame, short enough not to flood the console.
+pub const PAYLOAD_AUDIT_CHARS: usize = 400;
+
+/// Build the console line written when a frame is rejected, quoting a bounded prefix of
+/// the payload.
+pub fn audit_rejected_frame(context: &str, error: &str, payload: &str) -> String {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+    thread_local! {
+        static SEEN: RefCell<HashMap<String, u64>> = RefCell::new(HashMap::new());
+    }
+    let n = SEEN.with(|s| {
+        let mut s = s.borrow_mut();
+        let c = s.entry(error.to_string()).or_insert(0);
+        *c += 1;
+        *c
+    });
+    let msg = format!(
+        "[t306] {context}: telemetry frame REJECTED and dropped — {error}. The stream is connected \
+         and the payload arrived intact, so this is a DTO/wire contract mismatch, not a network \
+         fault: dto.rs ServerStatusDto disagrees with api/src/models/telemetry.rs ServerStatus. \
+         {n} dropped so far with this error. Payload: {payload}"
+    );
+    if n == 1 || is_power_of_ten(n) {
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::warn_1(&wasm_bindgen::JsValue::from_str(&msg));
+        #[cfg(not(target_arch = "wasm32"))]
+        eprintln!("{msg}");
+    }
+    msg
+}
+
+/// Whether `n` is a power of ten, used to thin repeated audit lines to a logarithmic
+/// sample instead of one line per frame.
+pub(crate) fn is_power_of_ten(n: u64) -> bool {
+    let mut p = 10u64;
+    loop {
+        if p == n {
+            return true;
+        }
+        if p > n {
+            return false;
+        }
+        match p.checked_mul(10) {
+            Some(next) => p = next,
+            None => return false,
+        }
+    }
+}
+
+/// One game server as the intel page lists it.
+/// @contract server-intel.schema.json#/definitions/ServerIntel
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct ServerRowDto {
+    /// The server's id.
+    pub id: ServerId,
+    /// The display name administrators gave the server.
+    pub name: String,
+    /// Stored as a network address on the backend and served as text.
+    pub ip: String,
+    /// The game port players connect to.
+    pub port: i64,
+    /// The modpack the server requires, when it requires one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_modpack_id: Option<ModpackId>,
+    /// Whether the server belongs to the configured fleet.
+    pub is_active: bool,
+    /// Lifecycle state of the mission.
+    pub status: Option<ServerStatusDto>,
+    /// The modpack the server requires, absent when it requires none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_modpack: Option<ModpackDto>,
+    /// The theatre the current match runs on, and null when the server is between matches.
+    pub terrain: Option<String>,
+}
+
+/// `POST /servers` body: a game server to register.
+///
+/// `ip` is a literal IPv4 or IPv6 address, never a hostname or an address with a `/mask`, and
+/// `port` is 1 to 65535; the backend refuses anything else and names the field. An absent
+/// `required_modpack_id` requires no modpack, and an absent `is_active` registers the server
+/// active.
+/// @contract server-intel.schema.json#/definitions/ServerRegistration
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServerRegistration {
+    /// Trimmed and not blank.
+    pub name: String,
+    /// The game host address, as text.
+    pub ip: String,
+    /// The game port players connect to.
+    pub port: i64,
+    /// The modpack the server requires, when it requires one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_modpack_id: Option<ModpackId>,
+    /// Whether the server belongs to the configured fleet.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_active: Option<bool>,
+}
+
+/// `PATCH /servers/:id` body: the fields of a server's registration to change.
+///
+/// Each outer `None` is an absent key and leaves its field as stored. `required_modpack_id` also
+/// tells `null` apart: `Some(None)` clears the requirement and `Some(Some(id))` sets it.
+/// `is_active` deactivates or reactivates the server. The backend refuses a change that names no
+/// field, and checks each field it names as a registration's.
+/// @contract server-intel.schema.json#/definitions/ServerChange
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ServerChange {
+    /// The display name administrators gave the server.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// The game host address, as text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ip: Option<String>,
+    /// The game port players connect to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<i64>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "absent_null_or_value"
+    )]
+    /// The modpack the server requires, when it requires one.
+    pub required_modpack_id: Option<Option<ModpackId>>,
+    /// Whether the server belongs to the configured fleet.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_active: Option<bool>,
+}
+
+/// The program a machine credential authenticates on its server.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExecutorKind {
+    /// The host process supervisor: process control, the RCON player list and cross-terrain
+    /// restarts.
+    HostAgent,
+    /// The game runtime itself: runtime sessions, heartbeats, roster reads, broadcasts, kicks and
+    /// deployments.
+    ModRuntime,
+}
+
+/// One issued machine credential: its provenance, its use and its revocation — never its secret.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineCredential {
+    /// The credential's id, also the first part of its secret.
+    pub id: MachineCredentialId,
+    /// The server the credential acts for.
+    pub server_id: ServerId,
+    /// `host_agent` or `mod_runtime`, carried as the string the backend stores so that a program
+    /// kind added later still lists.
+    pub executor_kind: String,
+    /// The label administrators gave it.
+    pub label: String,
+    /// The administrator who issued it.
+    pub created_by: String,
+    /// When it was issued.
+    pub created_at: String,
+    /// Absent until the credential first authenticates a request.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_used_at: Option<String>,
+    /// Absent while the credential is live.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revoked_at: Option<String>,
+    /// The administrator who revoked it, when it was revoked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revoked_by: Option<String>,
+    /// Why it was revoked, when it was revoked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revoke_reason: Option<String>,
+}
+
+/// `GET /servers/:id/credentials`: every credential the server has had, live and revoked.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineCredentialList {
+    /// The server's credentials, revoked ones included.
+    pub items: Vec<MachineCredential>,
+}
+
+/// `POST /servers/:id/credentials` answer: the stored credential and its secret. The secret
+/// authenticates exactly one program of exactly one server and the backend never shows it again.
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct IssuedMachineCredential {
+    /// The stored credential.
+    pub credential: MachineCredential,
+    /// The secret, returned only in this answer.
+    pub secret: String,
+}
+
+/// `POST /servers/:id/credentials` body.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MachineCredentialIssue {
+    /// The executor kind the credential authenticates.
+    pub executor_kind: ExecutorKind,
+    /// One to 128 characters naming where the credential is installed.
+    pub label: String,
+}

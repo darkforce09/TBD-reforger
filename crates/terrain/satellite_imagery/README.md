@@ -71,7 +71,7 @@ cargo test -p satellite_imagery   # both container versions, the refusals and Ev
   (`crates/streaming/map_asset_loading/src/terrain/satellite_quadtree/`),
   which reads the index and picks the levels; and the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s tests in
-  `apps/frontend/src/workspaces/editor/tests/`, which parse Everon's index and check the level
+  `crates/frontend/workspaces/mission_creator_workspace/src/tests/`, which parse Everon's index and check the level
   choice.
 - Rules: both container versions of one pyramid parse to the same tiles at the same bytes
   (`v1_and_v2_of_one_pyramid_read_back_identical` in `src/tests/satellite_container_tests.rs`),

@@ -72,13 +72,13 @@ fn every_static_arm_can_go_red() {
     );
     red_append(
         "ban1-host",
-        "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/map_release.rs",
+        "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/armed_placement/map_release.rs",
         "\nensure_default_squad\n",
         BANS[0].0,
     );
     red_append("ban2", ORBAT_RS, "\nloadout: String::new()\n", BANS[1].0);
     // `-i`, and in the SECOND target file: a ban over two files must read both of them.
-    red_append("ban3", EDEN_CHROME, "\n// ifak pouch\n", BANS[2].0);
+    red_append("ban3", EDITOR_PAGE, "\n// ifak pouch\n", BANS[2].0);
     red_append("ban3b", ORBAT_MGR, "\n// Grenade Complement\n", BANS[2].0);
     // One pin per side, perturbed three different ways: a value drift, a spacing drift (the
     // literal formatting is part of the lock) and a rename.
@@ -95,8 +95,8 @@ fn a_missing_target_never_reads_as_a_pass() {
     let want = format!("{head} — target file missing: {EDITOR_OPS}. {BAN_MISSING}");
     assert_eq!(red_gone("gone-ban", EDITOR_OPS), want);
     // The second file of the two-file ban, so the loop's ORDER is pinned as well.
-    let second = red_gone("gone-ban2", EDEN_CHROME);
-    let want = format!("missing: {EDEN_CHROME}");
+    let second = red_gone("gone-ban2", EDITOR_PAGE);
+    let want = format!("missing: {EDITOR_PAGE}");
     assert!(second.contains(&want), "{second}");
     let tail = "The pin could not be checked.";
     let want = format!("{} — target file missing: {SLOTS_GPU}. {tail}", PINS[0].0);
@@ -216,4 +216,27 @@ fn merged_capture_keeps_order_and_never_invents_an_exit_code() {
         Err(NotRun::Signalled { signal, .. }) => assert_eq!(signal, 9),
         other => panic!("expected Signalled, got {other:?}"),
     }
+}
+
+/// Every pin names a workspace package and runs that crate's unit tests only, with `--lib`: every
+/// pinned crate is a library crate. A pin retargeted at a binary crate (which `--lib` refuses)
+/// goes red here, before cargo.
+#[test]
+fn every_pin_runs_the_unit_tests_of_its_crate_kind() {
+    let members = repository_laws::workspace_members::read_workspace_members(&repo())
+        .expect("the workspace members read");
+    for (package, _, unit_tests, selector, _) in CARGO_PINS {
+        let member = members
+            .iter()
+            .find(|member| member.package_name == *package)
+            .unwrap_or_else(|| panic!("pin `{selector}` names `{package}`, no workspace member"));
+        let source = repo().join(&member.path).join("src");
+        assert!(
+            source.join("lib.rs").is_file(),
+            "pin `{selector}` on `{package}` runs {} but the crate has no library target",
+            unit_tests.flag()
+        );
+        assert_eq!(*unit_tests, UnitTestTarget::Library);
+    }
+    assert_eq!(UnitTestTarget::Library.flag(), "--lib");
 }

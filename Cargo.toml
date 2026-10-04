@@ -10,9 +10,27 @@ members = [
     "apps/api",
     "apps/frontend",
     "apps/offline_service_worker",
-    # The library crates, one folder per category (`crates/<category>/<name>`): every manifest
-    # under `crates/` is a member.
-    "crates/*/*",
+    # The library crates, one glob per category (`crates/<category>/<name>`, and
+    # `crates/frontend/<layer>/<name>` for the single-page app's crates): every manifest under
+    # these folders is a member. A new category adds its own glob here; the crate-tier law fails
+    # on a manifest under `crates/` that no glob reaches.
+    "crates/api/*",
+    "crates/ballistics/*",
+    "crates/contracts/*",
+    "crates/foundation/*",
+    "crates/frontend/*/*",
+    "crates/geometry/*",
+    "crates/graphics/*",
+    "crates/line_of_sight/*",
+    "crates/map_overlay/*",
+    "crates/map_rendering/*",
+    "crates/mission/*",
+    "crates/mission_editing/*",
+    "crates/paper_doll/*",
+    "crates/streaming/*",
+    "crates/terrain/*",
+    "crates/world_formats/*",
+    "crates/world_objects/*",
     # The tooling foundation crates (`tools/foundation/<name>`): every manifest under it is a
     # member.
     "tools/foundation/*",
@@ -29,8 +47,8 @@ members = [
     "tools/developer_tools",
 ]
 
-# Package fields a member inherits with `<field>.workspace = true`. The frontend declares its own
-# edition and no rust-version.
+# Package fields a member inherits with `<field>.workspace = true`. Every member, the frontend
+# included, inherits `edition` and `rust-version` from this table.
 [workspace.package]
 edition = "2024"
 rust-version = "1.95"
@@ -49,6 +67,12 @@ anyhow = "1"
 # The loopback relay that withholds one fleet executor answer on the staging host
 # (`tools/staging/acknowledgement_dropping_relay`).
 acknowledgement_dropping_relay = { path = "tools/staging/acknowledgement_dropping_relay" }
+# The single-page app's account pages: sign-in, the sign-in callback and the account settings
+# (`crates/frontend/pages/account_pages`).
+account_pages = { path = "crates/frontend/pages/account_pages" }
+# The single-page app's administration pages: events, approvals, server control, personnel,
+# content, the audit trail and the ballistics catalogs (`crates/frontend/pages/administration_pages`).
+administration_pages = { path = "crates/frontend/pages/administration_pages" }
 # The API readiness judge: acceptance register, evidence receipts, fingerprints and the staging
 # recorder (`tools/commands/api_readiness_checks`).
 api_readiness_checks = { path = "tools/commands/api_readiness_checks" }
@@ -165,6 +189,9 @@ chunk_scheduler = { path = "crates/streaming/chunk_scheduler" }
 ci_task_catalog = { path = "tools/commands/ci_task_catalog" }
 clap = "4"
 console_error_panic_hook = "0.1"
+# The single-page app's command center pages: the landing dashboard, the server intel panel and the
+# announcement board (`crates/frontend/pages/command_center_pages`).
+command_center_pages = { path = "crates/frontend/pages/command_center_pages" }
 # Lowercase hex SHA-256 and SHA-384 digests (`crates/foundation/content_digest`).
 content_digest = { path = "crates/foundation/content_digest" }
 # The serde types generated with typify from the contract JSON Schemas
@@ -173,6 +200,12 @@ contract_schema_types = { path = "crates/contracts/contract_schema_types" }
 # The local database lane, the verified backup, the guarded restore, the restore drill and the
 # database source checks (`tools/commands/database_operations`).
 database_operations = { path = "tools/commands/database_operations" }
+# The single-page app's URL-only engine benches: the building viewer, the world line of sight, the
+# equipment data viewer and the ballistics agreement (`crates/frontend/workspaces/debug_benches`).
+debug_benches = { path = "crates/frontend/workspaces/debug_benches" }
+# The single-page app's doctrine and info pages: the doctrine wiki, the vehicle database and the
+# modpacks page (`crates/frontend/pages/doctrine_pages`).
+doctrine_pages = { path = "crates/frontend/pages/doctrine_pages" }
 # The `deploy/deploy.env` reader: settings, the deploy host, its remote folders and the ssh
 # transport (`tools/foundation/deploy_settings`).
 deploy_settings = { path = "tools/foundation/deploy_settings" }
@@ -203,10 +236,39 @@ enfusion_script_index = { path = "tools/enfusion/enfusion_script_index" }
 # The fire-mission assembler, fuzes, comparison rule and solution wording
 # (`crates/ballistics/fire_mission_planning`).
 fire_mission_planning = { path = "crates/ballistics/fire_mission_planning" }
+# The single-page app's field tools: the mortar calculator with its map picker, saved fire
+# missions and offline pack status (`crates/frontend/pages/field_tools_pages`).
+field_tools_pages = { path = "crates/frontend/pages/field_tools_pages" }
 flate2 = "1"
 # The fleet-command wire shapes, executor kind and machine credential format the API and the
 # fleet host agent share (`crates/contracts/fleet_wire_contract`).
 fleet_wire_contract = { path = "crates/contracts/fleet_wire_contract" }
+# The single-page app's API wire types and their typed identifiers
+# (`crates/frontend/foundation/frontend_api_dtos`).
+frontend_api_dtos = { path = "crates/frontend/foundation/frontend_api_dtos" }
+# The single-page app's shared map seam: canvas sizing, engine creation, camera fit, frame pump,
+# navigation and ground heights (`crates/frontend/foundation/frontend_map_view`).
+frontend_map_view = { path = "crates/frontend/foundation/frontend_map_view" }
+# The single-page app's offline core: the service worker registration, the offline pack
+# download, its saved copies and the page-wide pack status
+# (`crates/frontend/foundation/frontend_offline`).
+frontend_offline = { path = "crates/frontend/foundation/frontend_offline" }
+# The single-page app's route table, its layout and access readers, and the sidebar's navigation
+# menu (`crates/frontend/foundation/frontend_route_table`).
+frontend_route_table = { path = "crates/frontend/foundation/frontend_route_table" }
+# The single-page app's session: the store and its token provider, the session refresh, the
+# sign-out hooks, the route guard and the content gates
+# (`crates/frontend/foundation/frontend_session`).
+frontend_session = { path = "crates/frontend/foundation/frontend_session" }
+# The test-only helpers every frontend crate's tests read through: the repository-root finder,
+# `golden!`, the source scrubber (`crates/frontend/foundation/frontend_test_support`).
+frontend_test_support = { path = "crates/frontend/foundation/frontend_test_support" }
+# The single-page app's HTTP client, typed endpoint calls and server-sent event streams
+# (`crates/frontend/foundation/frontend_transport`).
+frontend_transport = { path = "crates/frontend/foundation/frontend_transport" }
+# The single-page app's design-system primitives and its formatting, URL policy and clipboard
+# helpers (`crates/frontend/foundation/frontend_ui`).
+frontend_ui = { path = "crates/frontend/foundation/frontend_ui" }
 futures = "0.3"
 futures-util = "0.3"
 # Plain f64 geometry: vector products, 2D segment tests, rigid transforms, 3D boxes
@@ -214,6 +276,7 @@ futures-util = "0.3"
 geometry_primitives = { path = "crates/geometry/geometry_primitives" }
 governor = "0.10.4"
 gloo-net = "0.6"
+gloo-timers = "0.3"
 # The GPU context of a browser canvas, pooled lane buffers, readback guards and the frame timer
 # (`crates/graphics/gpu_device`).
 gpu_device = { path = "crates/graphics/gpu_device" }
@@ -224,6 +287,10 @@ heck = "0.5"
 hex = "0.4.3"
 # The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).
 http_url_guard = { path = "crates/foundation/http_url_guard" }
+# The Mission Creator's draft store in IndexedDB (database `tbd-mission-yrs`, store `doc-state`).
+# A wasm-first wrapper; its default features pull `tokio` with only `sync` (oneshot), which compiles
+# on wasm32-unknown-unknown, and dropping them strips the async API, so default features stay on.
+idb = "0.6"
 # Default features off; members select the codecs they decode and encode.
 image = { version = "0.25", default-features = false }
 # Lossless WebP encoding and decoding in pure Rust.
@@ -245,6 +312,10 @@ jsonschema = { version = "0.46.10", default-features = false }
 # Map label declutter, town importance, world glyph sizing and label glyph packing
 # (`crates/map_overlay/label_layout`).
 label_layout = { path = "crates/map_overlay/label_layout" }
+# The reactive web framework of the single-page app and its crates; each member names `csr`.
+leptos = "0.8"
+# The router of the single-page app: its location and navigation hooks.
+leptos_router = "0.8"
 libc = "0.2"
 # Pure-Rust transcendentals: the same bits on native and wasm32.
 libm = "0.2"
@@ -315,6 +386,33 @@ mission_editing_session = { path = "crates/mission_editing/mission_editing_sessi
 # The decidable half of the Mission Creator's local drafts
 # (`crates/mission_editing/mission_persistence`).
 mission_persistence = { path = "crates/mission_editing/mission_persistence" }
+# A mission's review record, shared by the mission hub, the approvals queue and the review
+# workspace (`crates/frontend/features/mission_review_record`).
+mission_review_record = { path = "crates/frontend/features/mission_review_record" }
+# The Mission Creator's Arsenal: the per-slot loadout editor tab, its loadout core with the export
+# and import gates, its document writes, its panels and the 3D paper doll host
+# (`crates/frontend/workspaces/mission_creator_arsenal`).
+mission_creator_arsenal = { path = "crates/frontend/workspaces/mission_creator_arsenal" }
+# The Mission Creator's engine bridge and input layer: the boot machine, the hosted document and
+# its undo drive, the host state, the map overlays and the canvas gestures, keydown dispatches and
+# map tools (`crates/frontend/workspaces/mission_creator_engine_bridge`).
+mission_creator_engine_bridge = { path = "crates/frontend/workspaces/mission_creator_engine_bridge" }
+# The Mission Creator's browser session: the draft writer and its autosave status, the server
+# hydrate and its conflict prompt, the cross-tab writer role, the warm-session marker and the Save,
+# Export and clipboard transport (`crates/frontend/workspaces/mission_creator_session`).
+mission_creator_session = { path = "crates/frontend/workspaces/mission_creator_session" }
+# The Mission Creator's pure state: chrome insets, review mode, layer preferences, the asset
+# catalog and loadout rules, the outliner model, zones and markers
+# (`crates/frontend/workspaces/mission_creator_state`).
+mission_creator_state = { path = "crates/frontend/workspaces/mission_creator_state" }
+# The Mission Creator's workspace: the editor page and its canvas mount, the docks, outliner,
+# inspectors and dialogs around the map, and the read-only review workspace
+# (`crates/frontend/workspaces/mission_creator_workspace`).
+mission_creator_workspace = { path = "crates/frontend/workspaces/mission_creator_workspace" }
+# The single-page app's mission hub pages: the mission library and its dossier, the mission
+# overview with its armory editor, and the New Mission dialog
+# (`crates/frontend/pages/mission_hub_pages`).
+mission_hub_pages = { path = "crates/frontend/pages/mission_hub_pages" }
 # The Enfusion mod script checks: comment card, identity comments, layouts, spawn runs
 # (`tools/checks/mod_script_checks`).
 mod_script_checks = { path = "tools/checks/mod_script_checks" }
@@ -324,6 +422,9 @@ mod_operations = { path = "tools/commands/mod_operations" }
 # The offline cache policy the service worker and the page share
 # (`crates/contracts/offline_cache_policy`).
 offline_cache_policy = { path = "crates/contracts/offline_cache_policy" }
+# The single-page app's operations pages: the event schedule, the event hub, the ORBAT selection
+# page, the service record and the leaderboards (`crates/frontend/pages/operations_pages`).
+operations_pages = { path = "crates/frontend/pages/operations_pages" }
 # The durable editor id and the derived wire id of an ORBAT slot
 # (`crates/foundation/orbat_slot_ids`).
 orbat_slot_ids = { path = "crates/foundation/orbat_slot_ids" }

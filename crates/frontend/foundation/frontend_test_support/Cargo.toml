@@ -1,0 +1,20 @@
+# The helpers the frontend crates' tests share: the repository-root finder and the repository files
+# it reads, the captured API responses behind `golden!`, the API route tables, the source scrubber
+# the source pins read production code through, the joining of a pinned file's shards and the
+# `view!` attribute guard. Every frontend crate names it under `[dev-dependencies]` only.
+[package]
+name = "frontend_test_support"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Test-only helpers of the frontend crates: repository-root file reads, captured API responses, the source scrubber, source shards and the view! attribute guard."
+
+[package.metadata.layout]
+category = "crates/frontend/foundation"
+tier = 0
+targets = "any"
+
+[lints]
+workspace = true

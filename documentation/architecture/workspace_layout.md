@@ -48,12 +48,12 @@ folder are ignored.
 ## Workspace members
 
 One Cargo workspace (resolver 3) holds every Rust crate. Members inherit edition 2024 and
-rust-version 1.95 from `[workspace.package]`, except the frontend, which declares edition 2021.
+rust-version 1.95 from `[workspace.package]`.
 
 | Folder | Package | What it is |
 |---|---|---|
 | [`apps/api/`](/apps/api/README.md) | `api` | the Axum and sqlx REST API and SSE hub: the thin application (router, composition root, the `api` server and the `import-registry` tool) the 23 crates under `crates/api/` are assembled into, and its 150 integration binaries |
-| [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk; its `src/` holds five layers: `foundation/`, `features/`, `pages/`, `workspaces/` and `shell/` |
+| [`apps/frontend/`](/apps/frontend/README.md) | `frontend` | the Leptos single-page app, compiled to WebAssembly and served by Trunk: the thin app (entry point, route rendering, the platform frame in `shell/`, the stylesheet) the 22 crates under `crates/frontend/` are assembled into |
 | [`apps/offline_service_worker/`](/apps/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs |
 | [`apps/fleet_host_agent/`](/apps/fleet_host_agent/README.md) | `fleet_host_agent` | the agent beside each game-server instance that carries out fleet commands |
 | [`apps/ticketboard/`](/apps/ticketboard/README.md) | `ticketboard` | the egui desktop viewer of the ticket registry; its headless models are `ticketboard_model` in `tools/tickets/` |
@@ -120,6 +120,28 @@ rust-version 1.95 from `[workspace.package]`, except the frontend, which declare
 | [`crates/api/api_operations/`](/crates/api/api_operations/README.md) | `api_operations` | the event calendar and its access control, ORBAT slotting and reservations, service records, leave requests, fire missions, ballistics catalogs |
 | [`crates/api/api_command_center/`](/crates/api/api_command_center/README.md) | `api_command_center` | the members' dashboard with its fleet overview, the community leaderboards, the per-player statistics card |
 | [`crates/api/api_background_workers/`](/crates/api/api_background_workers/README.md) | `api_background_workers` | the interval tasks the API binary arms at boot, each calling a domain service |
+| [`crates/frontend/foundation/frontend_ui/`](/crates/frontend/foundation/frontend_ui/README.md) | `frontend_ui` | the design-system primitives every page and panel is assembled from, and the helpers with no domain of their own (time formatting, clipboard, sanitising) |
+| [`crates/frontend/foundation/frontend_api_dtos/`](/crates/frontend/foundation/frontend_api_dtos/README.md) | `frontend_api_dtos` | the single-page app's wire types, one Rust shape per JSON body of the API, the role ladder and the frontend's typed ids |
+| [`crates/frontend/foundation/frontend_transport/`](/crates/frontend/foundation/frontend_transport/README.md) | `frontend_transport` | the HTTP client, the request functions per endpoint, the SSE subscriber and the token provider seam |
+| [`crates/frontend/foundation/frontend_route_table/`](/crates/frontend/foundation/frontend_route_table/README.md) | `frontend_route_table` | every route's path, layout flags and access tier, and the sidebar's navigation menu |
+| [`crates/frontend/foundation/frontend_map_view/`](/crates/frontend/foundation/frontend_map_view/README.md) | `frontend_map_view` | the shared seam that puts a live terrain map on a canvas (Mission Creator, mortar map picker), and terrain heights |
+| [`crates/frontend/foundation/frontend_session/`](/crates/frontend/foundation/frontend_session/README.md) | `frontend_session` | the browser side of signing in: the session store, token refresh, sign-out hooks, the route guard and content gates |
+| [`crates/frontend/foundation/frontend_offline/`](/crates/frontend/foundation/frontend_offline/README.md) | `frontend_offline` | the page's half of offline use: service worker registration, the offline pack download, storage quota, offline state |
+| [`crates/frontend/foundation/frontend_test_support/`](/crates/frontend/foundation/frontend_test_support/README.md) | `frontend_test_support` | the helpers the tests of every frontend crate share: the repository-root finder, captured API responses, the source scrubber (dev-only) |
+| [`crates/frontend/features/mission_review_record/`](/crates/frontend/features/mission_review_record/README.md) | `mission_review_record` | one rendering of a mission's review, shared by every page that shows it: history, thread, artifact provenance, submit control |
+| [`crates/frontend/pages/account_pages/`](/crates/frontend/pages/account_pages/README.md) | `account_pages` | the viewer's own session pages: sign-in, the OAuth callback, settings |
+| [`crates/frontend/pages/command_center_pages/`](/crates/frontend/pages/command_center_pages/README.md) | `command_center_pages` | the dashboard, announcements and live server intel |
+| [`crates/frontend/pages/operations_pages/`](/crates/frontend/pages/operations_pages/README.md) | `operations_pages` | the event schedule, event detail, ORBAT slotting, "My Deployments" and the leaderboards |
+| [`crates/frontend/pages/mission_hub_pages/`](/crates/frontend/pages/mission_hub_pages/README.md) | `mission_hub_pages` | the mission library, the mission dossier and the "New Mission" dialog |
+| [`crates/frontend/pages/field_tools_pages/`](/crates/frontend/pages/field_tools_pages/README.md) | `field_tools_pages` | the mortar calculator: on-device firing solutions, map picker, offline pack |
+| [`crates/frontend/pages/doctrine_pages/`](/crates/frontend/pages/doctrine_pages/README.md) | `doctrine_pages` | the doctrine wiki, the vehicle identification index and the modpack manifests |
+| [`crates/frontend/pages/administration_pages/`](/crates/frontend/pages/administration_pages/README.md) | `administration_pages` | the administration panels: event manager, server control, personnel, approvals, content manager, audit logs, ballistics catalogs |
+| [`crates/frontend/workspaces/mission_creator_state/`](/crates/frontend/workspaces/mission_creator_state/README.md) | `mission_creator_state` | the Mission Creator's lowest crate: layout tokens, review mode, world-layer preferences, the asset catalog and rules model, the outliner model, zones, transforms |
+| [`crates/frontend/workspaces/mission_creator_engine_bridge/`](/crates/frontend/workspaces/mission_creator_engine_bridge/README.md) | `mission_creator_engine_bridge` | the Mission Creator's engine seam and input: boot, viewport and frame timing, the hosted mission document, overlays, pointer and keyboard tools |
+| [`crates/frontend/workspaces/mission_creator_session/`](/crates/frontend/workspaces/mission_creator_session/README.md) | `mission_creator_session` | the Mission Creator's per-tab session: IndexedDB drafts, hydrate, the cross-tab lock, save status, the conflict dialog |
+| [`crates/frontend/workspaces/mission_creator_arsenal/`](/crates/frontend/workspaces/mission_creator_arsenal/README.md) | `mission_creator_arsenal` | the Mission Creator's Arsenal: the loadout domain, gear catalog trees, the Arsenal tab and the 3D paper doll |
+| [`crates/frontend/workspaces/mission_creator_workspace/`](/crates/frontend/workspaces/mission_creator_workspace/README.md) | `mission_creator_workspace` | the Mission Creator page, the top-down 2D CAD workspace: docks, outliner, inspectors, modals, the canvas mount, the read-only review workspace |
+| [`crates/frontend/workspaces/debug_benches/`](/crates/frontend/workspaces/debug_benches/README.md) | `debug_benches` | the URL-only benches: building viewer, building interior, world line of sight, ballistics agreement, data viewer |
 | [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command line and dispatch onto the tool crates, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` command groups |
 | [`tools/foundation/verification_core/`](/tools/foundation/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, gates and the verification lock |
 | [`tools/foundation/process_runner/`](/tools/foundation/process_runner/README.md) | `process_runner` | process isolation, deadlines, host-bridge execution and the secure shell transport |
@@ -208,8 +230,9 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
   equipment exports and terrain tiles are ignored and rebuilt by the export tools.
 - **Documentation.** Every document lives under `documentation/`. A feature doc sits at the
   documentation root plus its code path without `src/`: `documentation/apps/api/` for `apps/api/`,
-  `documentation/crates/streaming/` for `crates/streaming/`, `documentation/apps/frontend/workspaces/`
-  for `apps/frontend/src/workspaces/`. One mirror keeps a shorter path until a stage reshapes its
+  `documentation/crates/streaming/` for `crates/streaming/`,
+  `documentation/crates/frontend/workspaces/mission_creator_workspace/` for
+  `crates/frontend/workspaces/mission_creator_workspace/src/`. One mirror keeps a shorter path until a stage reshapes its
   code: the mod's documents leave out `apps/` and `Scripts/Game/TBD/` and sit in
   `documentation/mod/` (until M1), as the
   [documentation standards](/documentation/standards/documentation_standards.md) set out.

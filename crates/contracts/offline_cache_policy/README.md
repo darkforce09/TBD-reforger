@@ -57,8 +57,9 @@ committed Everon and Arland manifests under `assets/terrains/`.
 ## Boundaries
 
 - Depends on: `serde`, `serde_json`, `thiserror` and `url`; no workspace crate.
-- Used by: `apps/offline_service_worker` (the worker's handlers) and `apps/frontend`
-  (`src/foundation/offline/`, and the mortar calculator's catalog source tests).
+- Used by: `apps/offline_service_worker` (the worker's handlers), the frontend's offline core
+  (`crates/frontend/foundation/frontend_offline/`) and the mortar calculator's catalog source
+  tests in `apps/frontend`.
 - Rules:
   - no module imports `web_sys`, `js_sys` or `wasm_bindgen`, so the crate compiles and tests on
     the host; contracts tier, so it depends on no workspace crate outside the foundation tier

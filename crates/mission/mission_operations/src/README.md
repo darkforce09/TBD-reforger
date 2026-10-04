@@ -38,7 +38,7 @@ crates/mission/mission_operations/src/
 ## How it works
 
 ```text
-Mission Creator gesture (apps/frontend/src/workspaces/editor/)
+Mission Creator gesture (crates/frontend/workspaces/mission_creator_workspace/src/)
    │
    ▼
 map engine hosted commands: borrow the hosted MissionDocCore, pass host values
@@ -73,14 +73,14 @@ abandoned drag costs no undo step and a finished one costs one.
   context.
 - `cargo` and `cargo_rules`: the slot loadout and ORBAT roster commands, and the
   [arsenal](/documentation/glossary/a_to_f.md#arsenal) in
-  `apps/frontend/src/workspaces/editor/arsenal/`.
+  `crates/frontend/workspaces/mission_creator_arsenal/src/`.
 - `transform` and `rotation`: the selection transform command and the canvas transform; the
   arrange menu reaches `formation_geometry` through the map engine's editing tools.
 - `document_index`, `compositions`, `zones` and `tactical_graphics`: the document search,
   composition library and zone authoring commands, the left dock, the zones panel and the tactical
   graphics bridge.
 - `faction_library::FactionDoc` and `environment::MissionEnv`: re-exported as DTOs by
-  `apps/frontend/src/foundation/transport/dto/`.
+  `crates/frontend/foundation/frontend_api_dtos/src/`.
 - `assets`: `PlacePayload` and the alias helpers, for the arsenal's asset catalog; `slot_ids`, for
   the Mission Creator's save.
 - `apply_faction` and `place_orbat`: the side-level commands, refusing through `Error`; `prelude`.
@@ -95,9 +95,9 @@ abandoned drag costs no undo step and a finished one costs one.
 - Used by:
   - the map engine: `crates/mission_editing/mission_editing_commands/src/hosted_commands/`,
     and `crates/mission_editing/mission_editing_commands/src/document_text/merge_report.rs`;
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/` (`arsenal/`, `bridge/`,
+  - the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/` (`arsenal/`, `bridge/`,
     `input/`, `mission_editor/`, `shell/` and `ui/`) and the DTOs of
-    `apps/frontend/src/foundation/transport/dto/`;
+    `crates/frontend/foundation/frontend_api_dtos/src/`;
   - `crates/mission/mission_operations/tests/operation_boundaries.rs`.
 - Rules:
   - a refused transform leaves the document and its undo depth unchanged, and a paste keeps unknown
@@ -115,5 +115,5 @@ abandoned drag costs no undo step and a finished one costs one.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
   — the placement, arrange, loadout, zone and ORBAT features these operations serve.

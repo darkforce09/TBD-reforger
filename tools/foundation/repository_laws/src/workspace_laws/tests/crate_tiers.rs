@@ -407,6 +407,31 @@ fn crate_tiers_a_stray_manifest_is_rule_1_and_test_trees_are_not_swept() {
 }
 
 #[test]
+fn crate_tiers_a_crate_in_a_category_no_member_glob_lists_is_rule_1() {
+    let workspace = green_workspace("tiers-unlisted-category");
+    workspace.write(
+        "Cargo.toml",
+        "[workspace]\nresolver = \"3\"\nmembers = [\n    \"apps/api\",\n    \
+         \"crates/foundation/*\",\n    \"crates/mission/*\",\n    \"tools/foundation/*\",\n]\n\n\
+         [workspace.package]\nedition = \"2024\"\n",
+    );
+    assert_eq!(findings(&workspace), Vec::<String>::new());
+    workspace.write(
+        "crates/unlisted_category/probe_crate/Cargo.toml",
+        &application_manifest("probe_crate", ""),
+    );
+    workspace.write("crates/unlisted_category/probe_crate/src/lib.rs", "");
+    assert_eq!(
+        findings(&workspace),
+        vec![
+            "rule 1: crates/unlisted_category/probe_crate/Cargo.toml is not a workspace member — \
+             add the folder to the root [workspace] members"
+                .to_string()
+        ]
+    );
+}
+
+#[test]
 fn crate_tiers_a_missing_declaration_wrong_category_or_name_is_rule_2_or_3() {
     let mut workspace = FixtureWorkspace::new("tiers-declaration");
     workspace.member("crates/foundation/bare", "[package]\nname = \"bare\"\n");

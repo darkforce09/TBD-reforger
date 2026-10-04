@@ -65,9 +65,9 @@ guard asking `is_known_dry_land` may refuse a legal spot but never accepts water
   `water_bodies`, `world_chunks::terrain_manifest`; `world_line_of_sight` and
   `label_layout::importance` for the query types; `browser_platform` (fetch, console);
   `futures`, `serde`, `serde_json`, `wasm-bindgen-futures`, `web-sys`, `js-sys`.
-- Used by: the shared map seam in `apps/frontend/src/foundation/map_view/` (handles,
+- Used by: the shared map seam in `crates/frontend/foundation/frontend_map_view/src/` (handles,
   `bootstrap` in the terrain-and-imagery scope, settles); the Mission Creator in
-  `apps/frontend/src/workspaces/editor/`, through its canvas
+  `crates/frontend/workspaces/mission_creator_workspace/src/`, through its canvas
   mount and world-asset bridge (handles, `bootstrap`, `RENDER_CTX`), pointer and wheel gestures
   (gesture flag, settles), settings dialogs (hillshade, grid, basemap, world layers), camera dock
   (`named_locations`, `fly_to`), tools and overlays (`camera_snapshot`, `with_occluder`,
@@ -81,6 +81,6 @@ guard asking `is_known_dry_land` may refuse a legal spot but never accepts water
     the density bins to be declared before the world loads
     (`every_world_batch_declares_its_files_before_it_fetches_them`) and each segment to close on
     every path (`every_segment_is_closed_and_the_overlay_waits_for_a_full_bar`), all in
-    `apps/frontend/src/workspaces/editor/tests/t628_boot_progress.rs`;
+    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t628_boot_progress.rs`;
   - a viewport pass takes the `MapHost` out of its handle, so a query or a second flush during
     the pass finds no host and answers empty instead of waiting or panicking.

@@ -1,0 +1,12 @@
+# Stage S10 H3a, first Mission Creator crate: the editor's pure state vocabulary (chrome insets,
+# review mode, world-layer preferences, asset catalog and loadout rules, outliner node model, zone
+# and marker vocabularies, scale math, transform and armed-place vocabularies, seam registration,
+# recently-placed recorder) becomes crates/frontend/workspaces/mission_creator_state. The folder
+# becomes the crate's `src`, its module tree `lib.rs`, and its README the source tree README. The
+# prefix is one `crate::` row scoped to the moved folder and one `mission_creator_state::` row
+# scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/workspaces/editor/state	crates/frontend/workspaces/mission_creator_state/src
+path	apps/frontend/src/workspaces/editor/state/mod.rs	crates/frontend/workspaces/mission_creator_state/src/lib.rs
+rust_path	crate::workspaces::editor::state::	crate::	apps/frontend/src/workspaces/editor/state
+rust_path	crate::workspaces::editor::state::	mission_creator_state::	apps/frontend/src

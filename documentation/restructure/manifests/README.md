@@ -13,6 +13,29 @@ documentation/restructure/manifests/
 ├── example.tsv               the commented format sample the tests run; never judged as a stage manifest
 ├── m2_objectives_engine.tsv  stage M2: the mod's four objectives engine folders into Objectives/Engine/
 ├── m3_objective_types.tsv    stage M3: the destroy target search beside the destroy objective behaviour
+├── s10_w02a_h0a_editor_lifts.tsv  stage S10 H0a: the Mission Creator's pure state lifts into workspaces/editor/state/; the Arsenal panels join the Arsenal, the conflict dialog the session, the source-pin test support the editor
+├── s10_w04_1_frontend_test_support.tsv  stage S10 H1a, first of four: the frontend's test support becomes the dev-only frontend_test_support crate
+├── s10_w04_2_frontend_ui.tsv  stage S10 H1a, second of four: the frontend's interface primitives and helpers become frontend_ui, every module at the crate root
+├── s10_w04_3_frontend_api_dtos.tsv  stage S10 H1a, third of four: the frontend's wire types and typed identifiers become frontend_api_dtos
+├── s10_w04_4_frontend_transport.tsv  stage S10 H1a, fourth of four: the frontend's HTTP client, endpoint calls and event streams become frontend_transport
+├── s10_w04_5_frontend_route_table.tsv  stage S10 H1b, fifth foundation crate: the frontend's route table and the sidebar's menu become frontend_route_table
+├── s10_w04_6_frontend_map_view.tsv  stage S10 H1b, sixth foundation crate: the frontend's shared map seam becomes frontend_map_view, its native math tested on every target
+├── s10_w04_7_frontend_session.tsv  stage S10 H1b, seventh foundation crate: the frontend's session store, refresh, sign-out hooks, route guard and gates become frontend_session
+├── s10_w04_8_frontend_offline.tsv  stage S10 H1b, eighth foundation crate: the frontend's offline worker registration, pack download, saved copies and pack status become frontend_offline
+├── s10_w04_9_mission_review_record.tsv  stage S10 H1b, the feature crate: the mission review record becomes mission_review_record; the app's foundation and features folders close
+├── s10_w05_1_mission_creator_state.tsv  stage S10 H3a, first Mission Creator crate: the editor's pure state vocabulary becomes mission_creator_state
+├── s10_w05_2_mission_creator_engine_bridge.tsv  stage S10 H3a, second Mission Creator crate: the editor's bridge and input layer become mission_creator_engine_bridge
+├── s10_w05_3_mission_creator_session.tsv  stage S10 H3a, third Mission Creator crate: the editor's browser session becomes mission_creator_session
+├── s10_w05_administration_pages.tsv  stage S10 H2a, a page crate: the event manager, approvals, server control, personnel, content manager, audit logs and ballistics catalogs pages become administration_pages, their feature docs its documentation mirror
+├── s10_w05_debug_benches.tsv  stage S10 H3c, a workspace crate: the building viewer, world line-of-sight, equipment data viewer and ballistics agreement benches become debug_benches, their feature docs its documentation mirror
+├── s10_w05_mission_hub_pages.tsv  stage S10 H2c, a page crate: the mission library, the mission overview and the New Mission dialog become mission_hub_pages, their feature docs its documentation mirror
+├── s10_w05_operations_pages.tsv  stage S10 H2b, a page crate: the event schedule, event hub, ORBAT selection, deployments and leaderboards pages become operations_pages, their feature docs its documentation mirror
+├── s10_w06_1_mission_creator_arsenal.tsv  stage S10 H3b, fourth Mission Creator crate: the editor's Arsenal becomes mission_creator_arsenal, its feature docs its documentation mirror
+├── s10_w06_2_mission_creator_workspace.tsv  stage S10 H3d, fifth Mission Creator crate: the editor page, docks, outliner, inspectors, dialogs, review workspace and tests become mission_creator_workspace, the editor docs its documentation mirror
+├── s10_w06_account_pages.tsv  stage S10 H2g, a page crate: the sign-in, sign-in callback and account settings pages become account_pages, their feature doc its documentation mirror
+├── s10_w06_command_center_pages.tsv  stage S10 H2f, a page crate: the dashboard, server intel and announcements pages become command_center_pages, their feature docs its documentation mirror
+├── s10_w06_doctrine_pages.tsv  stage S10 H2d, a page crate: the doctrine wiki, vehicle database and modpacks pages become doctrine_pages, their feature docs its documentation mirror
+├── s10_w06_field_tools_pages.tsv  stage S10 H2e, a page crate: the mortar calculator with its map picker, saved fire missions and offline line becomes field_tools_pages, its feature docs its documentation mirror
 ├── s11_w1_j0a_xtask_core.tsv  stage S11 J0a: xtask's core folder empties into deploy_settings, tool_test_support, process_runner, repository_layout and the ci group
 ├── s11_w1_j0b_developer_tools_cuts.tsv  stage S11 J0b: developer_tools' layout module keeps the map pipelines' paths; xtask imports the shared ones from repository_layout
 ├── s11_w1_j0b_staging_load_plan.tsv  stage S11 J0b: the staging load's plan and report types into the tokio-free load_plan module

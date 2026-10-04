@@ -65,7 +65,7 @@ forest fill is in effect, and `metrics.rs` keeps the last eight warm crossings, 
   - the Mission Creator's boot-progress tests read these nine files by path and require the chunk
     batch to be declared before its first fetch
     (`every_world_batch_declares_its_files_before_it_fetches_them` in
-    `apps/frontend/src/workspaces/editor/tests/t628_boot_progress.rs`);
+    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t628_boot_progress.rs`);
   - a full `init` reports exactly `WORLD_INIT_FILES` world files; a step that fails early reports
     fewer, and the host's `Finish` closes the segment;
   - chunk ids come only from the residency's pin and are marked in flight before they are

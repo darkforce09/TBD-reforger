@@ -1,0 +1,10 @@
+# Stage S10 H1a, fourth of four: the rest of the frontend's transport (the HTTP client, the typed
+# endpoint calls, the live server status and audit log streams, the server-sent event frame reader
+# and the token provider seam) becomes crates/frontend/foundation/frontend_transport. The folder
+# becomes the crate's `src`, its module tree `lib.rs`. The prefix is one `crate::` row scoped to the
+# moved folder and one `frontend_transport::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/foundation/transport	crates/frontend/foundation/frontend_transport/src
+path	apps/frontend/src/foundation/transport/mod.rs	crates/frontend/foundation/frontend_transport/src/lib.rs
+rust_path	crate::foundation::transport::	crate::	apps/frontend/src/foundation/transport
+rust_path	crate::foundation::transport::	frontend_transport::	apps/frontend/src

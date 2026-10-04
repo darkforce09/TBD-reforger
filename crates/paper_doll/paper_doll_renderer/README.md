@@ -49,7 +49,7 @@ target; `?force=webgl` on the page URL makes the Arsenal host ask for WebGL2.
 
 - Depends on: `paper_doll_scene`, `gpu_device`, `camera_math`, `bytemuck`, `thiserror`; `wgpu`,
   `web-sys`, `js-sys` and `wasm-bindgen-futures` in the WebAssembly build.
-- Used by: the frontend's Arsenal host (`apps/frontend/src/workspaces/editor/arsenal/doll.rs`).
+- Used by: the frontend's Arsenal host (`crates/frontend/workspaces/mission_creator_arsenal/src/doll.rs`).
 - Rules: paper doll category, tier 3 (`cargo xtask verify crate-tiers`); one of the crates
   allowed `wgpu`; a file that names a GPU or browser type gates itself on `wasm32`, so
   `cargo test -p paper_doll_renderer` runs natively.

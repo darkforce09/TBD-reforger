@@ -1,0 +1,352 @@
+//! Audio emitters inspector view.
+
+#[cfg(target_arch = "wasm32")]
+use super::*;
+
+/// Arms marker placement from the audio emitter panel.
+#[cfg(target_arch = "wasm32")]
+pub(super) fn arm_place_on_map() {
+    armed_placement::begin_place_marker(PLACE_MARKER_ICON.to_string());
+}
+
+/// The Audio panel: the positional emitter list and the music cue list, built from the document's
+/// current audio block.
+///
+/// **Signals & state:** the lists are read once per build from the document, and every accepted
+/// edit commits the whole rebuilt block in one environment update, which is one undo step. A
+/// refused edit is written to a local refusal signal and shown beside the controls instead; the
+/// document is not touched. `ctrl` is the shared control class the surrounding settings surface
+/// styles its inputs with.
+#[cfg(target_arch = "wasm32")]
+#[must_use]
+pub fn audio_emitters_panel(ctrl: &'static str) -> AnyView {
+    let sect = "text-label-sm uppercase tracking-wider text-outline";
+    let hint = "text-label-sm normal-case text-outline";
+    let block = read_block();
+    let emitters = emitters_from_block(block.as_ref());
+    let cues = cues_from_block(block.as_ref());
+    let refusal = RwSignal::new(String::new());
+
+    let emitters_for_add = emitters.clone();
+    let cues_for_add_e = cues.clone();
+    let cues_for_add = cues.clone();
+    let emitters_for_add_c = emitters.clone();
+
+    let emitter_list = emitters
+        .iter()
+        .enumerate()
+        .map(|(index, row)| {
+            emitter_row(
+                PanelStyle { ctrl, sect, hint },
+                index,
+                row,
+                AudioBlockEdit {
+                    emitters: emitters.clone(),
+                    cues: cues.clone(),
+                    refusal,
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+    let cue_list = cues
+        .iter()
+        .enumerate()
+        .map(|(index, row)| {
+            cue_row(
+                PanelStyle { ctrl, sect, hint },
+                index,
+                row,
+                AudioBlockEdit {
+                    emitters: emitters.clone(),
+                    cues: cues.clone(),
+                    refusal,
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+
+    view! {
+        <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
+            <span class=sect>"Audio emitters"</span>
+            <span class=hint>
+                "Place on map reuses the marker gesture: arm, click the canvas, then Use last marker. \
+                 radiusM must be above zero. Loop repeats inside the radius. Trigger id is optional."
+            </span>
+            {emitter_list}
+            <button type="button" class=ctrl
+                on:click=move |_| {
+                    refusal.set(String::new());
+                    match add_emitter(&emitters_for_add, &cues_for_add_e) {
+                        Ok(next) => commit(block_from_parts(&next, &cues_for_add_e).as_ref()),
+                        Err(err) => refusal.set(err.to_string()),
+                    }
+                }
+            >"Add emitter"</button>
+            <span class=sect>"Music cues"</span>
+            {cue_list}
+            <button type="button" class=ctrl
+                on:click=move |_| {
+                    refusal.set(String::new());
+                    match add_cue(&cues_for_add, &emitters_for_add_c) {
+                        Ok(next) => commit(block_from_parts(&emitters_for_add_c, &next).as_ref()),
+                        Err(err) => refusal.set(err.to_string()),
+                    }
+                }
+            >"Add cue"</button>
+            <p class="text-label-sm text-error">{move || refusal.get()}</p>
+        </div>
+    }
+    .into_any()
+}
+
+/// The class recipes every row of the panel styles itself with: the input control, the section
+/// label and the hint line.
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Copy)]
+struct PanelStyle {
+    ctrl: &'static str,
+    sect: &'static str,
+    hint: &'static str,
+}
+
+/// The audio block a row edits against: both arrays as authored, and the line a refused write
+/// reports into.
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone)]
+struct AudioBlockEdit {
+    emitters: Vec<Value>,
+    cues: Vec<Value>,
+    refusal: RwSignal<String>,
+}
+
+#[cfg(target_arch = "wasm32")]
+fn emitter_row(style: PanelStyle, index: usize, row: &Value, edit: AudioBlockEdit) -> AnyView {
+    let PanelStyle { ctrl, sect, hint } = style;
+    let AudioBlockEdit {
+        emitters,
+        cues,
+        refusal,
+    } = edit.clone();
+    let id = row
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let x = json_num(row.get("x"));
+    let z = json_num(row.get("z"));
+    let y = json_num(row.get("y"));
+    let sound = row
+        .get("sound")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let radius = json_num(row.get("radiusM"));
+    let loop_on = row.get("loop").and_then(Value::as_bool).unwrap_or(false);
+    let trigger = row
+        .get("triggerId")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+
+    let e_mark = emitters.clone();
+    let c_mark = cues.clone();
+    let e_del = emitters.clone();
+    let c_del = cues.clone();
+    let e_sound = emitters.clone();
+    let c_sound = cues.clone();
+    let e_loop = emitters.clone();
+    let c_loop = cues.clone();
+    let e_trig = emitters.clone();
+    let c_trig = cues.clone();
+
+    view! {
+        <div class="flex flex-col gap-2 border border-outline-variant/30 p-2">
+            <div class="flex items-center gap-2">
+                <span class=hint>{format!("id {id}")}</span>
+                <button type="button" class="text-label-sm"
+                    on:click=move |_| {
+                        refusal.set(String::new());
+                        arm_place_on_map();
+                    }
+                >"Place on map"</button>
+                <button type="button" class="text-label-sm"
+                    on:click=move |_| {
+                        refusal.set(String::new());
+                        let markers: Vec<(f64, f64)> = mission_editing_commands::hosted_commands::marker_rows()
+                            .into_iter()
+                            .map(|m| (m.x, m.z))
+                            .collect();
+                        match xz_from_last_marker(&markers) {
+                            Some((mx, mz)) => match apply_marker_xz(&e_mark, &c_mark, index, mx, mz) {
+                                Ok(next) => commit(block_from_parts(&next, &c_mark).as_ref()),
+                                Err(err) => refusal.set(err.to_string()),
+                            },
+                            None => refusal.set(
+                                "place a marker on the map first (Place on map, then click the canvas)"
+                                    .into(),
+                            ),
+                        }
+                    }
+                >"Use last marker"</button>
+                <button type="button" class="text-label-sm"
+                    on:click=move |_| {
+                        refusal.set(String::new());
+                        let next = remove_at(&e_del, index);
+                        commit(block_from_parts(&next, &c_del).as_ref());
+                    }
+                >"Remove"</button>
+            </div>
+            <div class="flex flex-wrap items-end gap-2">
+                {num_input(style, "X", x, edit.clone(), index, "x")}
+                {num_input(style, "Z", z, edit.clone(), index, "z")}
+                {num_input(style, "Y", y, edit.clone(), index, "y")}
+                {num_input(style, "Radius m", radius, edit.clone(), index, "radiusM")}
+            </div>
+            <label class="flex flex-col gap-1">
+                <span class=sect>"Sound"</span>
+                <input type="text" prop:value=sound class=ctrl
+                    on:change=move |ev| {
+                        refusal.set(String::new());
+                        match with_emitter_field(&e_sound, &c_sound, index, "sound", &event_target_value(&ev)) {
+                            Ok(next) => commit(block_from_parts(&next, &c_sound).as_ref()),
+                            Err(err) => refusal.set(err.to_string()),
+                        }
+                    }
+                />
+            </label>
+            <label class="flex items-center gap-2">
+                <span class=sect>"Loop"</span>
+                <input type="checkbox" prop:checked=loop_on class="accent-primary"
+                    on:change=move |ev| {
+                        refusal.set(String::new());
+                        match with_emitter_loop(&e_loop, &c_loop, index, event_target_checked(&ev)) {
+                            Ok(next) => commit(block_from_parts(&next, &c_loop).as_ref()),
+                            Err(err) => refusal.set(err.to_string()),
+                        }
+                    }
+                />
+            </label>
+            <label class="flex flex-col gap-1">
+                <span class=sect>"Trigger id"</span>
+                <input type="text" prop:value=trigger class=ctrl placeholder="optional"
+                    on:change=move |ev| {
+                        refusal.set(String::new());
+                        match with_emitter_field(&e_trig, &c_trig, index, "triggerId", &event_target_value(&ev)) {
+                            Ok(next) => commit(block_from_parts(&next, &c_trig).as_ref()),
+                            Err(err) => refusal.set(err.to_string()),
+                        }
+                    }
+                />
+            </label>
+        </div>
+    }
+    .into_any()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn cue_row(style: PanelStyle, index: usize, row: &Value, edit: AudioBlockEdit) -> AnyView {
+    let PanelStyle { ctrl, sect, hint } = style;
+    let AudioBlockEdit {
+        emitters,
+        cues,
+        refusal,
+    } = edit.clone();
+    let id = row
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let event = row
+        .get("event")
+        .and_then(Value::as_str)
+        .unwrap_or("mission_start")
+        .to_string();
+    let track = row
+        .get("track")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let e_del = emitters.clone();
+    let c_del = cues.clone();
+    let e_ev = emitters.clone();
+    let c_ev = cues.clone();
+    let e_tr = emitters.clone();
+    let c_tr = cues.clone();
+
+    view! {
+        <div class="flex flex-col gap-2 border border-outline-variant/30 p-2">
+            <div class="flex items-center gap-2">
+                <span class=hint>{format!("id {id}")}</span>
+                <button type="button" class="text-label-sm"
+                    on:click=move |_| {
+                        refusal.set(String::new());
+                        let next = remove_at(&c_del, index);
+                        commit(block_from_parts(&e_del, &next).as_ref());
+                    }
+                >"Remove"</button>
+            </div>
+            <label class="flex flex-col gap-1">
+                <span class=sect>"Event"</span>
+                <select prop:value=event class=ctrl
+                    on:change=move |ev| {
+                        refusal.set(String::new());
+                        match with_cue_field(&c_ev, &e_ev, index, "event", &event_target_value(&ev)) {
+                            Ok(next) => commit(block_from_parts(&e_ev, &next).as_ref()),
+                            Err(err) => refusal.set(err.to_string()),
+                        }
+                    }
+                >
+                    {MUSIC_EVENTS.iter().map(|e| view! {
+                        <option value=*e>{event_label(e)}</option>
+                    }).collect::<Vec<_>>()}
+                </select>
+            </label>
+            <label class="flex flex-col gap-1">
+                <span class=sect>"Track"</span>
+                <input type="text" prop:value=track class=ctrl
+                    on:change=move |ev| {
+                        refusal.set(String::new());
+                        match with_cue_field(&c_tr, &e_tr, index, "track", &event_target_value(&ev)) {
+                            Ok(next) => commit(block_from_parts(&e_tr, &next).as_ref()),
+                            Err(err) => refusal.set(err.to_string()),
+                        }
+                    }
+                />
+            </label>
+        </div>
+    }
+    .into_any()
+}
+
+#[cfg(target_arch = "wasm32")]
+fn num_input(
+    style: PanelStyle,
+    label: &'static str,
+    value: String,
+    edit: AudioBlockEdit,
+    index: usize,
+    key: &'static str,
+) -> AnyView {
+    let PanelStyle { ctrl, sect, .. } = style;
+    let AudioBlockEdit {
+        emitters,
+        cues,
+        refusal,
+    } = edit;
+    view! {
+        <label class="flex flex-col gap-1">
+            <span class=sect>{label}</span>
+            <input type="text" prop:value=value class=ctrl
+                on:change=move |ev| {
+                    refusal.set(String::new());
+                    match with_emitter_field(&emitters, &cues, index, key, &event_target_value(&ev)) {
+                        Ok(next) => commit(block_from_parts(&next, &cues).as_ref()),
+                        Err(err) => refusal.set(err.to_string()),
+                    }
+                }
+            />
+        </label>
+    }
+    .into_any()
+}

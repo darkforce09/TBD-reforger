@@ -62,7 +62,7 @@ All also in `prelude`:
   - `mission_editing_commands::document_text`, which summarises compile findings for the
     compiled export;
   - the Mission Creator's validation panel
-    (`apps/frontend/src/workspaces/editor/ui/inspector/validation_panel/`) and compiled export;
+    (`crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/validation_panel/`) and compiled export;
   - the API, which re-exports `Finding` and `Severity` for its compile and artifact code and runs
     no rule.
 - Rules: mission tier 4, one above `mission_payload` (`cargo xtask verify crate-tiers`); every rule

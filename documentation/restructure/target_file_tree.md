@@ -31,8 +31,9 @@ dependencies in target tables, so native workspace builds stay green.
 
 ```text
 TBD-reforger/
-├── Cargo.toml                 workspace: member globs per category, [workspace.package],
-│                              [workspace.dependencies], [workspace.lints]
+├── Cargo.toml                 workspace: member globs per category (crates/<category>/*, and
+│                              crates/frontend/*/* over the frontend's layer folders),
+│                              [workspace.package], [workspace.dependencies], [workspace.lints]
 ├── Cargo.lock · rust-toolchain.toml (1.95.0 + wasm32) · README.md · CLAUDE.md · AGENTS.md
 ├── .cargo/config.toml         the xtask alias
 ├── .github/workflows/         ci.yml · contracts.yml · editor-gates.yml · mod-gates.yml · schema.yml
@@ -51,9 +52,10 @@ TBD-reforger/
 │   │   └── tests/             154 integration binaries and their support folders
 │   ├── frontend/              Leptos client-side app, the Trunk entry
 │   │   ├── Cargo.toml · README.md · Trunk.toml · index.html · manifest.webmanifest · service_worker.js
-│   │   ├── style/             Tailwind v4; one @source line per frontend crate
+│   │   ├── style/             Tailwind v4; one @source line for the app and one per leptos crate
 │   │   └── src/               main.rs · app_routes.rs · shell/ (layout, sidebar, top_nav,
-│   │                          membership_status, not_found)
+│   │                          membership_status, not_found) · tests/ (doc_audit over every
+│   │                          frontend crate)
 │   ├── offline_service_worker/ the service-worker binary (main.rs and its modules, range slicing)
 │   ├── fleet_host_agent/      agent binary; its wire shapes come from fleet_wire_contract
 │   ├── ticketboard/           egui viewer over ticketboard_model
@@ -101,10 +103,11 @@ TBD-reforger/
 │   │                          api_command_center · api_community_content · api_identity_and_access
 │   │                          api_match_telemetry · api_missions · api_operations
 │   │                          api_server_infrastructure · api_background_workers
-│   └── frontend/
-│       ├── foundation/        frontend_route_table · frontend_ui · frontend_api_dtos · frontend_transport
-│       │                      frontend_session · frontend_offline · frontend_map_view
-│       │                      frontend_test_support
+│   └── frontend/              22 crates, every one targets = "any"; the crate-edge mode of the
+│       │                      frontend-layering law judges the edges between them
+│       ├── foundation/        frontend_ui · frontend_api_dtos · frontend_transport
+│       │                      frontend_route_table · frontend_map_view · frontend_session
+│       │                      frontend_offline · frontend_test_support (dev-only)
 │       ├── features/          mission_review_record
 │       ├── pages/             administration_pages · operations_pages · mission_hub_pages · doctrine_pages
 │       │                      field_tools_pages · command_center_pages · account_pages
@@ -172,9 +175,10 @@ places:
   request classes, network fallback and offline pack list the service worker and the page share).
 - The two engine crates were parked in a `legacy/` folder (decision D12) from S2 until S8
   dissolved them into the crates above and deleted the folder.
-- `apps/` holds the end-state app folders; the frontend's `src/` holds the `foundation/`,
-  `features/`, `pages/`, `workspaces/` and `shell/` layers in one crate until S10 splits them into
-  crates, and `apps/offline_service_worker/` is already the binary-only crate of the end state.
+- `apps/` holds the end-state app folders; the frontend's `src/` held the `foundation/`,
+  `features/`, `pages/`, `workspaces/` and `shell/` layers in one crate until S10 split the first
+  four into the crates under `crates/frontend/`, and `apps/offline_service_worker/` is already the
+  binary-only crate of the end state.
 - `deploy/` is in its end state, `caddy/` included.
 - `tools/` keeps its four single crates (`xtask`, `verification_core`, `ticket_engine`,
   `developer_tools`) until S4 and S11 split them.

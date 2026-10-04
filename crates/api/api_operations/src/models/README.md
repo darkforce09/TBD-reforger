@@ -62,7 +62,7 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
   `apps/api/tests/models_serde.rs`, `apps/api/tests/event_access_contract.rs`,
   `apps/api/tests/game_runtime_contract.rs` and
   `apps/api/tests/reservation_attendance_transactions.rs`, which decode live answers into
-  the generated types. The web app's DTOs in `apps/frontend/src/foundation/transport/dto/`
+  the generated types. The web app's DTOs in `crates/frontend/foundation/frontend_api_dtos/src/`
   (`events.rs`, `event_access_administration.rs`, `event_viewer_access.rs`) mirror these shapes.
 - Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by
   hand (`cargo xtask ci verify-codegen-fresh` checks them); a new event's default policy admits TBD

@@ -18,7 +18,7 @@ tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/
 ## How it works
 
 `gate s-routes` (`tools/browser_testing/browser_gate_suites/src/route_drift.rs`) reads the `ROUTES`
-array of `apps/frontend/src/foundation/route_table/mod.rs`, builds one row per `RouteDef` from its `path`,
+array of `crates/frontend/foundation/frontend_route_table/src/routes.rs`, builds one row per `RouteDef` from its `path`,
 `component`, `full_bleed`, `chromeless` and `auth` fields, sorts the rows by path and compares the
 resulting CSV with `routes.csv` byte for byte. Equal files exit 0; otherwise the gate prints each
 path that is missing on either side or whose row differs, and exits 1.
@@ -43,7 +43,7 @@ The other four files are reference data: no code, test or gate reads them.
 
 ## Boundaries
 
-- Depends on: the `RouteDef` field names of `apps/frontend/src/foundation/route_table/mod.rs`, which the gate
+- Depends on: the `RouteDef` field names of `crates/frontend/foundation/frontend_route_table/src/routes.rs`, which the gate
   parses with regular expressions.
 - Used by: `tools/browser_testing/browser_gate_suites/src/route_drift.rs`.
 - Rules: `routes.csv` equals the router's table exactly, so a route added, removed or re-flagged

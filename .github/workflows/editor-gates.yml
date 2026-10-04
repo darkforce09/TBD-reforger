@@ -23,6 +23,8 @@ on:
       - "crates/map_rendering/**"
       - "crates/paper_doll/**"
       - "crates/graphics/**"
+      - "crates/frontend/**"
+      - "crates/mission_editing/**"
       - ".github/workflows/editor-gates.yml"
 
 concurrency:

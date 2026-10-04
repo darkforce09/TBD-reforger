@@ -45,7 +45,7 @@ check accepts.
   (`crates/mission/mission_operations/src/tactical_graphics.rs`), the Mission Creator's
   draw tool, which arms only a kind `min_points` knows, completes a draft at its floor and stops
   adding vertices at `MAX_POINTS`; the Mission Creator's zones panel
-  (`apps/frontend/src/workspaces/editor/ui/inspector/zones_panel/zone_list_panel.rs`), which
+  (`crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/zones_panel/zone_list_panel.rs`), which
   offers one draw button per entry of `KINDS`.
 - Rules: each kind's vertex floor holds (`a_one_point_phase_line_is_refused` and
   `a_two_point_curved_arrow_is_refused_but_a_two_point_axis_is_not` in `tests/cases_1.rs`);

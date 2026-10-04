@@ -158,5 +158,5 @@ Expected: `200`, `etag` equal to the catalog sha256 the trim printed, and
   and exit codes.
 - [Game ballistics design note](/documentation/apps/api/verification_evidence/game_ballistics.md)
   — the fixture lifecycle, the calibration criterion and the operator decisions.
-- [Ballistics catalogs page](/documentation/apps/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md)
+- [Ballistics catalogs page](/documentation/crates/frontend/pages/administration_pages/ballistics_catalogs/ballistics_catalogs_page.md)
   — the upload screen of step 11.

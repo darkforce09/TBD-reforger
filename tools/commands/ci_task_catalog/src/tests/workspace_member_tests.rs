@@ -101,3 +101,32 @@ fn the_api_family_is_left_to_the_api_lane() {
     );
     let _ = std::fs::remove_dir_all(&root);
 }
+
+/// The frontend crates leave this lane with `frontend`: `ci-local-leptos` tests the frontend
+/// family in one line, so a crate under `crates/frontend` is never tested twice nor dropped from
+/// both.
+#[test]
+fn the_frontend_family_is_left_to_the_frontend_lane() {
+    let root = fixture_root("frontend-family");
+    workspace(
+        &root,
+        &[
+            ("apps/api", "api"),
+            ("apps/frontend", "frontend"),
+            ("apps/offline_service_worker", "offline_service_worker"),
+            ("crates/foundation/guard", "guard"),
+            ("crates/frontend/foundation/frontend_ui", "frontend_ui"),
+            ("crates/frontend/pages/operations_pages", "operations_pages"),
+        ],
+    );
+    write(
+        &root,
+        "Cargo.toml",
+        "[workspace]\nmembers = [\"apps/*\", \"crates/foundation/*\", \"crates/frontend/*/*\"]\n",
+    );
+    assert_eq!(
+        workspace_member_lane_packages(&root).expect("the fixture reads"),
+        vec!["guard".to_string()]
+    );
+    let _ = std::fs::remove_dir_all(&root);
+}

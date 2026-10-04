@@ -90,8 +90,8 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
   - the API's router (`apps/api/src/router.rs`), which merges the route table;
   - `api_command_center`, `api_server_infrastructure` and `api_missions`, through the services and models
     above;
-  - over HTTP, the command center, doctrine and content manager pages in
-    `apps/frontend/src/pages/`.
+  - over HTTP, the command center, doctrine and content manager pages in the page
+    crates under `crates/frontend/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); a handler
   folder with its own `routes()` holds every registration of its routes, and `routes.rs` only
@@ -105,5 +105,5 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
 - [API environment variables](/documentation/apps/api/environment_variables.md)
   — `DISCORD_WEBHOOK_URL` and
   `UPLOAD_DIR`, which the announcement push and the uploads read.
-- [Content manager page](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md)
+- [Content manager page](/documentation/crates/frontend/pages/administration_pages/content_manager/content_manager_page.md)
   — the CMS that writes announcements and uploads.

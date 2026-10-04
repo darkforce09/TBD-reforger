@@ -17,7 +17,7 @@ crates/paper_doll/
 ## How it works
 
 ```text
-Arsenal host (apps/frontend/src/workspaces/editor/arsenal/doll.rs)
+Arsenal host (crates/frontend/workspaces/mission_creator_arsenal/src/doll.rs)
    │ create, resize, rotate, set_states, set_hover, pick_region, anchor_px, render, self_check
    ▼
 paper_doll_renderer   PaperDollRenderer: GPU context from gpu_device, damage-driven frames
@@ -41,7 +41,7 @@ frame the page asks `anchor_px` where the active region's callout belongs.
 ## Boundaries
 
 - Depends on: `camera_math` (both crates) and `gpu_device` (the renderer).
-- Used by: the Arsenal host in `apps/frontend/src/workspaces/editor/arsenal/doll.rs`, the only
+- Used by: the Arsenal host in `crates/frontend/workspaces/mission_creator_arsenal/src/doll.rs`, the only
   caller, through `paper_doll_renderer`.
 - Rules:
   - paper doll category (`cargo xtask verify crate-tiers`): rendering crates that may depend on
@@ -53,7 +53,7 @@ frame the page asks `anchor_px` where the active region's callout belongs.
 
 ## Related documentation
 
-- [Arsenal](/apps/frontend/src/workspaces/editor/arsenal/README.md) — the workspace that
+- [Arsenal](/crates/frontend/workspaces/mission_creator_arsenal/src/README.md) — the workspace that
   mounts the preview and owns the loadout it shows.
 - [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the fixed-orbit camera the
   preview draws and picks with.

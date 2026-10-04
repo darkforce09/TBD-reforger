@@ -61,7 +61,7 @@ None: no features and no environment variables.
 - Used by: `crates/api/api_operations/src/services/fire_mission_resolve.rs`, which re-solves every
   `POST /api/v1/fire-missions` save and checks the client's solution (pinned by
   `apps/api/tests/game_ballistics_fire_missions.rs`); the mortar calculator in
-  `apps/frontend/src/pages/field_tools/mortar/`; `ballistics_agreement_cases`; the developer
+  `crates/frontend/pages/field_tools_pages/src/mortar/`; `ballistics_agreement_cases`; the developer
   tools' agreement and offline mortar gates.
 - Rules: the assembled solution conforms to the fire-mission schema, is deterministic and fires
   the documented charge (`src/tests/fire_mission.rs`); the mismatch rule is pinned in

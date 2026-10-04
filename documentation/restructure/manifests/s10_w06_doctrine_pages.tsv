@@ -1,0 +1,11 @@
+# Stage S10 H2d, page crate: the doctrine and info pages (the doctrine wiki, the vehicle database
+# and the modpacks page) become crates/frontend/pages/doctrine_pages. The folder becomes the crate's
+# `src`, its module tree `lib.rs`, and its README the source tree README; the feature docs move to
+# their mirror under documentation/crates/frontend/pages/doctrine_pages. The prefix is one `crate::`
+# row scoped to the moved folder and one `doctrine_pages::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/pages/doctrine_and_info	crates/frontend/pages/doctrine_pages/src
+path	apps/frontend/src/pages/doctrine_and_info/mod.rs	crates/frontend/pages/doctrine_pages/src/lib.rs
+path	documentation/apps/frontend/pages/doctrine_and_info	documentation/crates/frontend/pages/doctrine_pages
+rust_path	crate::pages::doctrine_and_info::	crate::	apps/frontend/src/pages/doctrine_and_info
+rust_path	crate::pages::doctrine_and_info::	doctrine_pages::	apps/frontend/src

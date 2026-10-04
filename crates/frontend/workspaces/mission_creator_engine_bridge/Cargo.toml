@@ -1,0 +1,94 @@
+# The Mission Creator's engine bridge and input layer: the boot machine, the frame-timing belt, the
+# hosted document and its undo drive, the host state the hosted commands read, the overlays laid
+# over the map, the tactical-graphics belt, the canvas gestures, the window keydown dispatches and
+# the browser half of the map tools; with the editor's source-text test helpers behind
+# `test_fixtures`.
+[package]
+name = "mission_creator_engine_bridge"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's engine bridge and input layer: boot, hosted document and undo, host state, overlays, gestures, keydown and map tools."
+
+[package.metadata.layout]
+category = "crates/frontend/workspaces"
+tier = 9
+targets = "any"
+
+[features]
+# Exposes `test_support` (the production half of a source file and the live entity operation
+# sources) to the tests of the upper Mission Creator crates; enabled only from `[dev-dependencies]`.
+test_fixtures = []
+
+[dependencies]
+# The editor's state vocabulary: the chrome insets, review mode, layer preferences, the catalog,
+# outliner, zone, marker, transform and armed-place models and the seam registration.
+mission_creator_state = { workspace = true }
+# The design-system primitives the overlays draw with and the modal stack the keydown reads.
+frontend_ui = { workspace = true }
+# The registry rows the asset picker and the registry fetch read.
+frontend_api_dtos = { workspace = true }
+# The shared map seam: the frame pump the frame-timing belt hooks.
+frontend_map_view = { workspace = true }
+# The mission model, document, columns, operations and rules the host state and belts read.
+mission_model = { workspace = true }
+mission_document = { workspace = true }
+mission_crdt = { workspace = true }
+mission_operations = { workspace = true }
+mission_validation = { workspace = true }
+formation_geometry = { workspace = true }
+# The editing session (host, undo, grouping, selection, picks, lanes), the hosted commands and
+# the headless map tools the gestures and tools drive.
+mission_editing_session = { workspace = true }
+mission_editing_commands = { workspace = true }
+map_editing_tools = { workspace = true }
+# The streaming model: the boot progress events and the world-layer preferences.
+map_streaming_model = { workspace = true }
+# The overlay lanes, glyphs and instance packers the history feeds and the select tool read.
+map_draw_lanes = { workspace = true }
+unit_symbology = { workspace = true }
+overlay_instances = { workspace = true }
+# The elevation model, the camera and the line-of-sight crates the gestures and tools read.
+terrain_elevation = { workspace = true }
+camera_math = { workspace = true }
+spatial_indexes = { workspace = true }
+terrain_line_of_sight = { workspace = true }
+interior_line_of_sight = { workspace = true }
+world_line_of_sight = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde_json = { workspace = true }
+
+# The browser half: the canvas gestures, the keydown dispatches, the hosted document's smoke
+# bridge, the renderer and streaming host handles, and the frame-timing belt's diagnostics.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+map_renderer = { workspace = true }
+map_streaming_host = { workspace = true }
+map_asset_loading = { workspace = true }
+map_render_diagnostics = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlDivElement",
+    "HtmlCanvasElement",
+    "CssStyleDeclaration",
+    "DomRect",
+    "Event",
+    "EventTarget",
+    "AddEventListenerOptions",
+    "MouseEvent",
+    "PointerEvent",
+    "WheelEvent",
+    "KeyboardEvent",
+] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

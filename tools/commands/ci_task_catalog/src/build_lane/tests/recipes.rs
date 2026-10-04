@@ -42,18 +42,32 @@ fn echo_matches_make() {
         leptos()[0].echo(),
         "cd apps/frontend && trunk serve --release"
     );
-    assert_eq!(
-        ci_local_leptos()[1].echo(),
-        "cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets -- -D warnings"
+    let leptos_lines: Vec<String> = ci_local_leptos(&checkout())
+        .expect("the frontend lane derives its packages")
+        .iter()
+        .map(Step::echo)
+        .collect();
+    assert!(
+        leptos_lines[0].starts_with("cargo fmt -p frontend")
+            && leptos_lines[0].ends_with(" --check"),
+        "{leptos_lines:?}"
     );
-    assert_eq!(
-        ci_local_leptos()[2].echo(),
-        "cargo clippy -p frontend --all-targets --locked -- -D warnings"
+    assert!(
+        leptos_lines[1].starts_with("cargo clippy -p frontend")
+            && leptos_lines[1]
+                .ends_with(" --target wasm32-unknown-unknown --all-targets -- -D warnings"),
+        "{leptos_lines:?}"
     );
-    assert_eq!(
-        ci_local_leptos()[4].echo(),
-        "cd apps/frontend && trunk build --release"
+    assert!(
+        leptos_lines[2].starts_with("cargo clippy -p frontend")
+            && leptos_lines[2].ends_with(" --all-targets --locked -- -D warnings"),
+        "{leptos_lines:?}"
     );
+    assert!(
+        leptos_lines[3].starts_with("cargo test -p frontend"),
+        "{leptos_lines:?}"
+    );
+    assert_eq!(leptos_lines[4], "cd apps/frontend && trunk build --release");
     let wasm32_lint = wasm_ci_steps()[2].echo();
     assert!(
         wasm32_lint.starts_with("cargo clippy -p ")
@@ -160,6 +174,50 @@ fn wasm_ci_recipe_and_ci_task_row_run_the_same_lines() {
         .collect();
     let mk_lines: Vec<String> = wasm_ci_steps().iter().map(|s| s.echo()).collect();
     assert_eq!(ci_lines, mk_lines);
+}
+
+/// `mk ci-local-leptos` and the `ci-local-leptos` row of `cargo xtask ci` are the same lane spelled
+/// twice: the row's four derived frontend lines and its trunk build are the recipe's lines, and
+/// each cargo line names the whole frontend family this checkout derives.
+#[test]
+fn ci_local_leptos_recipe_and_ci_task_row_run_the_same_lines() {
+    use crate::frontend_package_lane::{frontend_line_argv, frontend_line_of, frontend_packages};
+    use crate::task_runner::{Step as CiStep, TASKS};
+    let row = TASKS
+        .iter()
+        .find(|t| t.name == "ci-local-leptos")
+        .expect("the ci task table has a ci-local-leptos row");
+    let ci_lines: Vec<String> = row
+        .steps
+        .iter()
+        .map(|step| match step {
+            CiStep::Cmd { line, .. } => (*line).to_string(),
+            CiStep::Native { run } => {
+                let line = frontend_line_of(*run).expect("the row runs a frontend line");
+                frontend_line_argv(&checkout(), line)
+                    .expect("the frontend family derives")
+                    .join(" ")
+            }
+            _ => panic!("the ci-local-leptos row runs derived frontend lines and the trunk build"),
+        })
+        .collect();
+    let mk_lines: Vec<String> = ci_local_leptos(&checkout())
+        .expect("the frontend lane derives its packages")
+        .iter()
+        .map(Step::echo)
+        .collect();
+    assert_eq!(ci_lines, mk_lines);
+    let family = frontend_packages(&checkout()).expect("the frontend family derives");
+    for line in &mk_lines[..4] {
+        let named: Vec<&str> = line
+            .split(' ')
+            .collect::<Vec<_>>()
+            .windows(2)
+            .filter(|pair| pair[0] == "-p")
+            .map(|pair| pair[1])
+            .collect();
+        assert_eq!(named, family, "{line}");
+    }
 }
 
 /// `mk rust-build`, `mk rust-clippy` and `mk rust-test` and the CI rows of the same name are one

@@ -1,7 +1,7 @@
 id = "T-1248"
 kind = "work"
 title = "Render aria-expanded as true or false in two more toggles"
-summary = "apps/frontend/src/workspaces/debug/data_viewer/resource_data/field_row.rs:58 and apps/frontend/src/workspaces/editor/ui/docks/top_strip/view/tool_row.rs:188 bind aria-expanded to a bool, so the attribute renders bare or absent instead of the strings true and false that assistive technology reads."
+summary = "crates/frontend/workspaces/debug_benches/src/data_viewer/resource_data/field_row.rs:58 and crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/view/tool_row.rs:188 bind aria-expanded to a bool, so the attribute renders bare or absent instead of the strings true and false that assistive technology reads."
 class = "bug"
 status = "idea"
 notes = "data_viewer contents_navigation.rs already renders the string form; apply the same pattern and add a rendering test per toggle. Source: milestone V finding V-F112."

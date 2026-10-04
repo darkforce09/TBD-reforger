@@ -3,7 +3,7 @@
 # Frontend documentation
 
 The documentation hub of the web platform's single-page app: every browser route with the code
-folder that renders it and the feature doc that describes it, the page areas, the full-screen
+folder that renders it and the feature doc that describes it, the page crates, the full-screen
 workspaces such as the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), and the
 shared foundations they are built on. Developers and AI agents start here before changing a page.
 
@@ -11,18 +11,20 @@ shared foundations they are built on. Developers and AI agents start here before
 
 ```text
 documentation/apps/frontend/
-├── pages/       the routed pages, one folder per navigation area, with each page's feature doc
 ├── shell/       the app frame: the layout, the sidebar, the top bar and the not-found page
-└── workspaces/  the full-screen workspaces: the Mission Creator and the debug benches
+└── workspaces/  the planned workspaces with no code yet: the mission planner and the after-action review
 ```
 
 ## How it works
 
-The tree mirrors the code under `apps/frontend/src/`, minus the `src/` prefix and with the
-code's folder spellings: `pages/<area>/<page>/` documents the page folder of the same name,
-`workspaces/<workspace>/` the workspace, and `shell/` the app frame. A page folder holds a
-README index, the page's feature doc, named after its route component (`event_schedule_page.md`
-for `EventSchedulePage`) and written from the
+The app (`apps/frontend`) is the thin shell over the frontend crates, so this tree documents only
+what the app holds and what has no code yet: `shell/` documents `apps/frontend/src/shell/`, and
+`workspaces/` the two planned workspaces. Every page and built workspace is a crate under
+`crates/frontend/`, and its feature docs sit in the crate's documentation mirror,
+[frontend crate documentation](/documentation/crates/frontend/README.md):
+`documentation/crates/frontend/<layer>/<crate>/<folder>/` documents the crate's
+`src/<folder>/`. A page folder there holds a README index, the page's feature doc, named after its
+route component (`event_schedule_page.md` for `EventSchedulePage`) and written from the
 [feature doc template](/documentation/standards/templates/feature_doc.md), and, where a design set
 exists, a `visual_references/` folder. The in-code README of each page
 folder holds what the code declares (routes, calls with their DTOs, states with their exact text);
@@ -38,50 +40,51 @@ commands.
 ### Route table
 
 `apps/frontend/src/app_routes.rs` binds each path to its component, and the `ROUTES` table
-in `apps/frontend/src/foundation/route_table/mod.rs` gives each path its access tier and layout flags; the
-[route table README](/apps/frontend/src/foundation/route_table/README.md#public-surface) lists the
+in `crates/frontend/foundation/frontend_route_table/src/routes.rs` gives each path its access tier and layout flags; the
+[route table README](/crates/frontend/foundation/frontend_route_table/README.md#public-surface) lists the
 flags. A tier
 is enforced in the browser after mount: `none` admits everyone, a `mission_maker` route sends a
 viewer below that [role](/documentation/glossary/n_to_z.md#role) back to the
 [mission](/documentation/glossary/g_to_m.md#mission) overview or the library, and an `admin` page
 renders its own refusal through `AdminGate`. The rows below follow the sidebar's sections, as
-`apps/frontend/src/foundation/route_table/navigation_menu.rs` orders them.
+`crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs` orders them.
 
 | Route | Component | Access | Code folder | Feature doc |
 |---|---|---|---|---|
-| `/login` | `LoginPage` | `none` | [account/login/](/apps/frontend/src/pages/account/login/) | [account_pages.md](/documentation/apps/frontend/pages/account/account_pages.md) |
-| `/auth/callback` | `AuthCallbackPage` | `none` | [account/auth_callback/](/apps/frontend/src/pages/account/auth_callback/) | [account_pages.md](/documentation/apps/frontend/pages/account/account_pages.md) |
-| `/settings` | `SettingsPage` | `none` | [account/settings/](/apps/frontend/src/pages/account/settings/) | [account_pages.md](/documentation/apps/frontend/pages/account/account_pages.md) |
-| `/` | `DashboardPage` | `none` | [command_center/dashboard/](/apps/frontend/src/pages/command_center/dashboard/) | [dashboard_page.md](/documentation/apps/frontend/pages/command_center/dashboard/dashboard_page.md) |
-| `/server-intel` | `ServerIntelPage` | `none` | [command_center/server_intel/](/apps/frontend/src/pages/command_center/server_intel/) | [server_intel_page.md](/documentation/apps/frontend/pages/command_center/server_intel/server_intel_page.md) |
-| `/announcements` and `/announcements/:id` | `AnnouncementsPage` | `none` | [command_center/announcements/](/apps/frontend/src/pages/command_center/announcements/) | [announcements_page.md](/documentation/apps/frontend/pages/command_center/announcements/announcements_page.md) |
-| `/events` | `EventSchedulePage` | `none` | [operations/schedule/](/apps/frontend/src/pages/operations/schedule/) | [event_schedule_page.md](/documentation/apps/frontend/pages/operations/schedule/event_schedule_page.md) |
-| `/events/:id` | `EventHubPage` | `none` | [operations/event_detail/](/apps/frontend/src/pages/operations/event_detail/) | [event_hub_page.md](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md) |
-| `/events/:id/missions/:emid/orbat` | `OrbatSelectionPage` | `none` | [operations/orbat_selection/](/apps/frontend/src/pages/operations/orbat_selection/) | [orbat_selection_page.md](/documentation/apps/frontend/pages/operations/orbat_selection/orbat_selection_page.md) |
-| `/deployments` | `DeploymentsPage` | `none` | [operations/deployments/](/apps/frontend/src/pages/operations/deployments/) | [deployments_page.md](/documentation/apps/frontend/pages/operations/deployments/deployments_page.md) |
-| `/leaderboards` | `LeaderboardsPage` | `none` | [operations/leaderboards/](/apps/frontend/src/pages/operations/leaderboards/) | [leaderboards_page.md](/documentation/apps/frontend/pages/operations/leaderboards/leaderboards_page.md) |
-| `/missions` | `MissionLibraryPage` | `none` | [mission_hub/library/](/apps/frontend/src/pages/mission_hub/library/) | [mission_library_page.md](/documentation/apps/frontend/pages/mission_hub/library/mission_library_page.md) |
-| `/missions/:id` | `MissionOverviewPage` | `none` | [mission_hub/overview/](/apps/frontend/src/pages/mission_hub/overview/) | [mission_overview_page.md](/documentation/apps/frontend/pages/mission_hub/overview/mission_overview_page.md) |
-| `/missions/:id/edit` | `MissionEditorPage` | `mission_maker` | [workspaces/editor/](/apps/frontend/src/workspaces/editor/) | [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md) |
-| `/missions/:id/artifacts/:artifact_id/workspace` | `ReviewWorkspacePage` | `mission_maker` | [workspaces/editor/review_workspace/](/apps/frontend/src/workspaces/editor/review_workspace/) | [review_workspace_page.md](/documentation/apps/frontend/workspaces/editor/review_workspace/review_workspace_page.md) |
-| `/tools/mortar` | `MortarCalculatorPage` | `none` | [field_tools/mortar/](/apps/frontend/src/pages/field_tools/mortar/) | [mortar_calculator_page.md](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md) |
-| `/wiki` and `/wiki/:slug` | `WikiPage` | `none` | [doctrine_and_info/wiki/](/apps/frontend/src/pages/doctrine_and_info/wiki/) | [wiki_page.md](/documentation/apps/frontend/pages/doctrine_and_info/wiki/wiki_page.md) |
-| `/vehicles` | `VehicleDatabasePage` | `none` | [doctrine_and_info/vehicles/](/apps/frontend/src/pages/doctrine_and_info/vehicles/) | [vehicle_database_page.md](/documentation/apps/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md) |
-| `/modpacks` | `ModpacksPage` | `none` | [doctrine_and_info/modpacks/](/apps/frontend/src/pages/doctrine_and_info/modpacks/) | [modpacks_page.md](/documentation/apps/frontend/pages/doctrine_and_info/modpacks/modpacks_page.md) |
-| `/admin/events` | `EventManagerPage` | `admin` | [administration/event_manager/](/apps/frontend/src/pages/administration/event_manager/) | [event_manager_page.md](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md) |
-| `/admin/approvals` | `MissionApprovalsPage` | `admin` | [administration/approvals/](/apps/frontend/src/pages/administration/approvals/) | [mission_approvals_page.md](/documentation/apps/frontend/pages/administration/approvals/mission_approvals_page.md) |
-| `/admin/server` | `ServerControlPage` | `admin` | [administration/server_control/](/apps/frontend/src/pages/administration/server_control/) | [server_control_page.md](/documentation/apps/frontend/pages/administration/server_control/server_control_page.md) |
-| `/admin/personnel` | `PersonnelRosterPage` | `admin` | [administration/personnel/](/apps/frontend/src/pages/administration/personnel/) | [personnel_roster_page.md](/documentation/apps/frontend/pages/administration/personnel/personnel_roster_page.md) |
-| `/admin/content` | `ContentManagerPage` | `admin` | [administration/content_manager/](/apps/frontend/src/pages/administration/content_manager/) | [content_manager_page.md](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md) |
-| `/admin/audit` | `AuditLogsPage` | `admin` | [administration/audit_logs/](/apps/frontend/src/pages/administration/audit_logs/) | [audit_logs_page.md](/documentation/apps/frontend/pages/administration/audit_logs/audit_logs_page.md) |
-| `/admin/ballistics-catalogs` | `BallisticsCatalogsPage` | `admin` | [administration/ballistics_catalogs/](/apps/frontend/src/pages/administration/ballistics_catalogs/) | [ballistics_catalogs_page.md](/documentation/apps/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md) |
-| `/debug/building-viewer` | `BuildingViewerPage` | `none` | [workspaces/debug/building_viewer/](/apps/frontend/src/workspaces/debug/building_viewer/) | [building_viewer_page.md](/documentation/apps/frontend/workspaces/debug/building_viewer_page.md) |
-| `/debug/world-los` | `WorldLosPage` | `none` | [workspaces/debug/world_los/](/apps/frontend/src/workspaces/debug/world_los/) | [world_los_page.md](/documentation/apps/frontend/workspaces/debug/world_los_page.md) |
-| `/debug/ballistics-agreement` | `BallisticsAgreementPage` | `none` | [workspaces/debug/ballistics_agreement/](/apps/frontend/src/workspaces/debug/ballistics_agreement/) | [ballistics_agreement_page.md](/documentation/apps/frontend/workspaces/debug/ballistics_agreement_page.md) |
+| `/login` | `LoginPage` | `none` | [account/login/](/crates/frontend/pages/account_pages/src/login/) | [account_pages.md](/documentation/crates/frontend/pages/account_pages/account_pages.md) |
+| `/auth/callback` | `AuthCallbackPage` | `none` | [account/auth_callback/](/crates/frontend/pages/account_pages/src/auth_callback/) | [account_pages.md](/documentation/crates/frontend/pages/account_pages/account_pages.md) |
+| `/settings` | `SettingsPage` | `none` | [account/settings/](/crates/frontend/pages/account_pages/src/settings/) | [account_pages.md](/documentation/crates/frontend/pages/account_pages/account_pages.md) |
+| `/` | `DashboardPage` | `none` | [command_center/dashboard/](/crates/frontend/pages/command_center_pages/src/dashboard/) | [dashboard_page.md](/documentation/crates/frontend/pages/command_center_pages/dashboard/dashboard_page.md) |
+| `/server-intel` | `ServerIntelPage` | `none` | [command_center/server_intel/](/crates/frontend/pages/command_center_pages/src/server_intel/) | [server_intel_page.md](/documentation/crates/frontend/pages/command_center_pages/server_intel/server_intel_page.md) |
+| `/announcements` and `/announcements/:id` | `AnnouncementsPage` | `none` | [command_center/announcements/](/crates/frontend/pages/command_center_pages/src/announcements/) | [announcements_page.md](/documentation/crates/frontend/pages/command_center_pages/announcements/announcements_page.md) |
+| `/events` | `EventSchedulePage` | `none` | [operations/schedule/](/crates/frontend/pages/operations_pages/src/schedule/) | [event_schedule_page.md](/documentation/crates/frontend/pages/operations_pages/schedule/event_schedule_page.md) |
+| `/events/:id` | `EventHubPage` | `none` | [operations/event_detail/](/crates/frontend/pages/operations_pages/src/event_detail/) | [event_hub_page.md](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md) |
+| `/events/:id/missions/:emid/orbat` | `OrbatSelectionPage` | `none` | [operations/orbat_selection/](/crates/frontend/pages/operations_pages/src/orbat_selection/) | [orbat_selection_page.md](/documentation/crates/frontend/pages/operations_pages/orbat_selection/orbat_selection_page.md) |
+| `/deployments` | `DeploymentsPage` | `none` | [operations/deployments/](/crates/frontend/pages/operations_pages/src/deployments/) | [deployments_page.md](/documentation/crates/frontend/pages/operations_pages/deployments/deployments_page.md) |
+| `/leaderboards` | `LeaderboardsPage` | `none` | [operations/leaderboards/](/crates/frontend/pages/operations_pages/src/leaderboards/) | [leaderboards_page.md](/documentation/crates/frontend/pages/operations_pages/leaderboards/leaderboards_page.md) |
+| `/missions` | `MissionLibraryPage` | `none` | [mission_hub/library/](/crates/frontend/pages/mission_hub_pages/src/library/) | [mission_library_page.md](/documentation/crates/frontend/pages/mission_hub_pages/library/mission_library_page.md) |
+| `/missions/:id` | `MissionOverviewPage` | `none` | [mission_hub/overview/](/crates/frontend/pages/mission_hub_pages/src/overview/) | [mission_overview_page.md](/documentation/crates/frontend/pages/mission_hub_pages/overview/mission_overview_page.md) |
+| `/missions/:id/edit` | `MissionEditorPage` | `mission_maker` | [workspaces/editor/](/crates/frontend/workspaces/mission_creator_workspace/src/) | [Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
+| `/missions/:id/artifacts/:artifact_id/workspace` | `ReviewWorkspacePage` | `mission_maker` | [workspaces/editor/review_workspace/](/crates/frontend/workspaces/mission_creator_workspace/src/review_workspace/) | [review_workspace_page.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/review_workspace/review_workspace_page.md) |
+| `/tools/mortar` | `MortarCalculatorPage` | `none` | [field_tools/mortar/](/crates/frontend/pages/field_tools_pages/src/mortar/) | [mortar_calculator_page.md](/documentation/crates/frontend/pages/field_tools_pages/mortar/mortar_calculator_page.md) |
+| `/wiki` and `/wiki/:slug` | `WikiPage` | `none` | [doctrine_and_info/wiki/](/crates/frontend/pages/doctrine_pages/src/wiki/) | [wiki_page.md](/documentation/crates/frontend/pages/doctrine_pages/wiki/wiki_page.md) |
+| `/vehicles` | `VehicleDatabasePage` | `none` | [doctrine_and_info/vehicles/](/crates/frontend/pages/doctrine_pages/src/vehicles/) | [vehicle_database_page.md](/documentation/crates/frontend/pages/doctrine_pages/vehicles/vehicle_database_page.md) |
+| `/modpacks` | `ModpacksPage` | `none` | [doctrine_and_info/modpacks/](/crates/frontend/pages/doctrine_pages/src/modpacks/) | [modpacks_page.md](/documentation/crates/frontend/pages/doctrine_pages/modpacks/modpacks_page.md) |
+| `/admin/events` | `EventManagerPage` | `admin` | [administration/event_manager/](/crates/frontend/pages/administration_pages/src/event_manager/) | [event_manager_page.md](/documentation/crates/frontend/pages/administration_pages/event_manager/event_manager_page.md) |
+| `/admin/approvals` | `MissionApprovalsPage` | `admin` | [administration/approvals/](/crates/frontend/pages/administration_pages/src/approvals/) | [mission_approvals_page.md](/documentation/crates/frontend/pages/administration_pages/approvals/mission_approvals_page.md) |
+| `/admin/server` | `ServerControlPage` | `admin` | [administration/server_control/](/crates/frontend/pages/administration_pages/src/server_control/) | [server_control_page.md](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md) |
+| `/admin/personnel` | `PersonnelRosterPage` | `admin` | [administration/personnel/](/crates/frontend/pages/administration_pages/src/personnel/) | [personnel_roster_page.md](/documentation/crates/frontend/pages/administration_pages/personnel/personnel_roster_page.md) |
+| `/admin/content` | `ContentManagerPage` | `admin` | [administration/content_manager/](/crates/frontend/pages/administration_pages/src/content_manager/) | [content_manager_page.md](/documentation/crates/frontend/pages/administration_pages/content_manager/content_manager_page.md) |
+| `/admin/audit` | `AuditLogsPage` | `admin` | [administration/audit_logs/](/crates/frontend/pages/administration_pages/src/audit_logs/) | [audit_logs_page.md](/documentation/crates/frontend/pages/administration_pages/audit_logs/audit_logs_page.md) |
+| `/admin/ballistics-catalogs` | `BallisticsCatalogsPage` | `admin` | [administration/ballistics_catalogs/](/crates/frontend/pages/administration_pages/src/ballistics_catalogs/) | [ballistics_catalogs_page.md](/documentation/crates/frontend/pages/administration_pages/ballistics_catalogs/ballistics_catalogs_page.md) |
+| `/debug/building-viewer` | `BuildingViewerPage` | `none` | [workspaces/debug/building_viewer/](/crates/frontend/workspaces/debug_benches/src/building_viewer/) | [building_viewer_page.md](/documentation/crates/frontend/workspaces/debug_benches/building_viewer_page.md) |
+| `/debug/world-los` | `WorldLosPage` | `none` | [workspaces/debug/world_los/](/crates/frontend/workspaces/debug_benches/src/world_los/) | [world_los_page.md](/documentation/crates/frontend/workspaces/debug_benches/world_los_page.md) |
+| `/debug/ballistics-agreement` | `BallisticsAgreementPage` | `none` | [workspaces/debug/ballistics_agreement/](/crates/frontend/workspaces/debug_benches/src/ballistics_agreement/) | [ballistics_agreement_page.md](/documentation/crates/frontend/workspaces/debug_benches/ballistics_agreement_page.md) |
 | any other path | `NotFoundPage` | `none` | [shell/](/apps/frontend/src/shell/) | [app_layout_and_navigation.md](/documentation/apps/frontend/shell/app_layout_and_navigation.md) |
 
-Page folders sit under `apps/frontend/src/pages/`, workspace folders under
-`apps/frontend/src/workspaces/`, the frame under `apps/frontend/src/shell/`. Notes on the table:
+Page folders sit in the page crates under `crates/frontend/pages/`, workspace folders in the
+workspace crates under `crates/frontend/workspaces/`, the frame under `apps/frontend/src/shell/`.
+Notes on the table:
 
 - `/login` and `/auth/callback` render in the bare frame, and `/settings` sits under the top bar's
   account menu rather than the sidebar; the three share one feature doc.
@@ -101,39 +104,60 @@ Page folders sit under `apps/frontend/src/pages/`, workspace folders under
 - `/debug/building-viewer`, `/debug/world-los` and `/debug/ballistics-agreement` are URL-only: no
   navigation entry leads to them.
 
-### Page areas and workspaces
+### Page crates and workspaces
 
-[pages/](/documentation/apps/frontend/pages/README.md) indexes the seven areas: the six
-sidebar sections ([command center](/documentation/glossary/a_to_f.md#command-center),
-[operations](/documentation/glossary/n_to_z.md#operations), mission hub, field tools, doctrine and
-info, [administration](/documentation/glossary/a_to_f.md#administration)) and the account pages.
-[shell/](/documentation/apps/frontend/shell/README.md) documents the app frame. `workspaces/`
-holds the
-[Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md),
-starting from its [roadmap](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md),
-and the [debug benches documentation](/documentation/apps/frontend/workspaces/debug/README.md).
-The code's `aar/` and `planner/` workspace folders hold no code and serve no route, so they have
-no documentation folder.
+The pages are seven crates, one per navigation area: the six sidebar sections, in the order
+`crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs` declares them, and the
+account pages, which sit outside the sidebar. Each crate's documentation mirror indexes its pages
+and holds their feature docs:
+
+| Page crate | Sidebar section | Routes | Start at |
+|---|---|---|---|
+| `command_center_pages` | [Command Center](/documentation/glossary/a_to_f.md#command-center) | `/`, `/server-intel`, `/announcements`, `/announcements/:id` | [Command center pages](/documentation/crates/frontend/pages/command_center_pages/README.md) |
+| `operations_pages` | [Operations](/documentation/glossary/n_to_z.md#operations) | `/events`, `/events/:id`, `/events/:id/missions/:emid/orbat`, `/deployments`, `/leaderboards` | [Operations pages](/documentation/crates/frontend/pages/operations_pages/README.md) |
+| `mission_hub_pages` | Mission Hub | `/missions`, `/missions/:id` | [Mission hub pages](/documentation/crates/frontend/pages/mission_hub_pages/README.md) |
+| `field_tools_pages` | Field Tools | `/tools/mortar` | [Field tools pages](/documentation/crates/frontend/pages/field_tools_pages/README.md) |
+| `doctrine_pages` | Doctrine & Info | `/wiki`, `/wiki/:slug`, `/vehicles`, `/modpacks` | [Doctrine and info pages](/documentation/crates/frontend/pages/doctrine_pages/README.md) |
+| `administration_pages` | [Administration](/documentation/glossary/a_to_f.md#administration), for the `admin` [role](/documentation/glossary/n_to_z.md#role) | the seven `/admin/*` routes | [Administration pages](/documentation/crates/frontend/pages/administration_pages/README.md) |
+| `account_pages` | none; `/settings` is in the top bar's account menu | `/login`, `/auth/callback`, `/settings` | [Account pages](/documentation/crates/frontend/pages/account_pages/README.md) |
+
+One mission hub code folder renders no route of its own, the New Mission dialog
+(`create_dialog/`); the mission hub README says which feature doc describes it. The review record
+the mission hub, the approvals queue and the review workspace share is the `mission_review_record`
+feature crate. The seven administration routes declare the `admin` tier and each of
+their pages also wraps its body in `AdminGate`; the signed-in pages put their data behind
+`AuthGate`, so a signed-out viewer sees a sign-in prompt in its place.
+
+[shell/](/documentation/apps/frontend/shell/README.md) documents the app frame. The built
+workspaces are crates too: the
+[Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md),
+starting from its [roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md),
+and the [debug benches documentation](/documentation/crates/frontend/workspaces/debug_benches/README.md).
+[workspaces/](/documentation/apps/frontend/workspaces/README.md) holds the two planned
+workspaces, the mission planner and the after-action review, which have no code and serve no
+route.
 
 ### Shared foundations
 
-The code under `apps/frontend/src/foundation/` and `apps/frontend/src/features/` carries no
-route and no documentation folder here: its in-code READMEs describe it exactly, and the deeper
-documents are linked from them.
+The foundation crates under `crates/frontend/foundation/` and the feature crates under
+`crates/frontend/features/` carry no route and no documentation folder here: their in-code
+READMEs describe them exactly, and the deeper documents are linked from them.
 
 | Module | What it holds | README |
 |---|---|---|
-| `foundation/` | the foundations every layer shares, and the imports between them | [Shared foundations](/apps/frontend/src/foundation/README.md) |
-| `foundation/transport/` | the HTTP client, the typed endpoint calls, the wire types with the five-tier role ladder (`guest`, `enlisted`, `leader`, `mission_maker`, `admin`), the token provider the session implements, and the live server status stream over [SSE](/documentation/glossary/n_to_z.md#sse) | [API layer](/apps/frontend/src/foundation/transport/README.md) |
-| `foundation/auth/` | the session store, the cross-tab session refresh, the sign-out hooks, the route guard and the two content gates | [Session and access](/apps/frontend/src/foundation/auth/README.md) |
-| `foundation/ui/` | the interface primitives: the icon, page header, status pill, search box, select, slider and their hover and disabled classes, split pane, toasts, dialog and sheet | [Shared interface primitives](/apps/frontend/src/foundation/ui/README.md) |
-| `foundation/utils/` | timestamps, UTC instants, the countdown, the avatar sanitiser and the clipboard write | [Utilities](/apps/frontend/src/foundation/utils/README.md) |
-| `foundation/route_table/` | every route's path, component name, layout flags and access tier, and the sidebar's menu | [Route table](/apps/frontend/src/foundation/route_table/README.md) |
-| `foundation/test_support/` | the source scrubber, the captured API responses and the source pins, for tests only | [Test support](/apps/frontend/src/foundation/test_support/README.md) |
-| `features/mission_review_record/` | a mission's review history, thread, provenance and submit control, shared by the mission hub, the approvals queue and the review workspace | [Mission review record](/apps/frontend/src/features/mission_review_record/README.md) |
+| `crates/frontend/foundation/` | the foundation crates every layer shares, and their crate order | [Frontend foundation crates](/crates/frontend/foundation/README.md) |
+| `frontend_transport` (crate) | the HTTP client, the typed endpoint calls, the token provider the session implements, and the live server status and audit log streams over [SSE](/documentation/glossary/n_to_z.md#sse) | [Frontend transport](/crates/frontend/foundation/frontend_transport/README.md) |
+| `frontend_api_dtos` (crate) | the wire types with the typed identifiers and the five-tier role ladder (`guest`, `enlisted`, `leader`, `mission_maker`, `admin`) | [Frontend API DTOs](/crates/frontend/foundation/frontend_api_dtos/README.md) |
+| `frontend_session` (crate) | the session store, the cross-tab session refresh, the sign-out hooks, the route guard and the two content gates | [Frontend session](/crates/frontend/foundation/frontend_session/README.md) |
+| `frontend_ui` (crate) | the interface primitives (the icon, page header, status pill, search box, select, slider and their hover and disabled classes, split pane, toasts, dialog and sheet) and the timestamps, UTC instants, countdown, avatar sanitiser and clipboard write | [Frontend UI](/crates/frontend/foundation/frontend_ui/README.md) |
+| `frontend_route_table` (crate) | every route's path, component name, layout flags and access tier, and the sidebar's menu | [Route table](/crates/frontend/foundation/frontend_route_table/README.md) |
+| `frontend_map_view` (crate) | the shared map seam: canvas sizing, engine creation, the camera fit, the frame pump, resize tracking, pointer navigation in map metres and the 2 m ground heights | [Frontend map view](/crates/frontend/foundation/frontend_map_view/README.md) |
+| `frontend_offline` (crate) | the offline service worker registration, the offline pack download, its saved copies and the page-wide pack status | [Frontend offline core](/crates/frontend/foundation/frontend_offline/README.md) |
+| `frontend_test_support` (crate) | the repository-root finder, the captured API responses, the source scrubber and the source shards, for tests only | [Frontend test support](/crates/frontend/foundation/frontend_test_support/README.md) |
+| `mission_review_record` (crate) | a mission's review history, thread, provenance and submit control, shared by the mission hub, the approvals queue and the review workspace | [Mission review record](/crates/frontend/features/mission_review_record/README.md) |
 
-The wire types in `foundation/transport/dto/` follow the API's models, and the API wins a disagreement; the
-golden round trips in `apps/frontend/src/foundation/transport/dto/tests/` hold the two together.
+The wire types in `frontend_api_dtos` follow the API's models, and the API wins a disagreement; the
+golden round trips in `crates/frontend/foundation/frontend_api_dtos/src/tests/` hold the two together.
 
 ### Design
 
@@ -145,45 +169,47 @@ each feature doc's Design section lists how the page differs from its set.
 
 ### Adding a page
 
-A new route gets a row in `app_routes.rs` and in `ROUTES` (the route drift gate diffs `ROUTES`
-against `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`), an in-code README
-in its page folder, a folder here under its area named like the code folder, with a README and
+A new route gets a row in `apps/frontend/src/app_routes.rs` and in `ROUTES` (the route drift gate
+diffs `ROUTES` against
+`tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`), an in-code
+README in its page folder inside its page crate, a folder in that crate's documentation mirror
+under `documentation/crates/frontend/pages/<crate>/`, named like the code folder, with a README and
 its feature doc, and a row in the route table above.
 
 ## Code
 
-- [Website frontend](/apps/frontend/) — the crate: build files, the Aegis stylesheet and
-  the captured API responses.
+- [Website frontend](/apps/frontend/) — the app crate: build files and the Aegis stylesheet.
 - [Frontend source root](/apps/frontend/src/) — the entry point, the render form of the route
-  table and the five layers.
-- [Pages](/apps/frontend/src/pages/) — the routed pages that `pages/` documents.
+  table and the app frame.
 - [App shell](/apps/frontend/src/shell/) — the frame that `shell/` documents.
-- [Workspaces](/apps/frontend/src/workspaces/) — the Mission Creator and the debug benches
-  that `workspaces/` documents.
-- [Shared foundations](/apps/frontend/src/foundation/) — the transport, route table, session,
-  primitives and utilities under Shared foundations.
-- [Shared features](/apps/frontend/src/features/) — the mission review record.
+- [Frontend page crates](/crates/frontend/pages/README.md) — the routed pages, one crate per
+  navigation area.
+- [Frontend workspace crates](/crates/frontend/workspaces/README.md) — the Mission Creator and the
+  debug benches.
+- [Frontend foundation crates](/crates/frontend/foundation/README.md) — the transport, route
+  table, session, offline pack, primitives and utilities under Shared foundations.
+- [Frontend feature crates](/crates/frontend/features/README.md) — the mission review record.
 
 ## Boundaries
 
 - Depends on: the [feature doc template](/documentation/standards/templates/feature_doc.md)
   and the [documentation folder README template](/documentation/standards/templates/readme_documentation_folder.md);
   the [glossary](/documentation/glossary/README.md); the route table in
-  `apps/frontend/src/app_routes.rs` and `apps/frontend/src/foundation/route_table/mod.rs`, the sidebar
-  in `apps/frontend/src/foundation/route_table/navigation_menu.rs` and the in-code READMEs, which
+  `apps/frontend/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`, the sidebar
+  in `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs` and the in-code READMEs, which
   this hub is written from.
 - Used by: the documentation root README; the READMEs of `apps/`, the frontend crate and
   its `src/` tree; the API overview; the commit checklist and the ticket identifiers standard
   in `documentation/standards/`; tickets in `.ai/tickets/` that name it.
 - Rules: every route in `ROUTES` has exactly one row in the route table, and a route change
   updates the table in the same commit; a documentation folder mirrors a code folder and keeps its
-  spelling; feature docs, not this hub, hold behaviour, design and open work; the hub and its
+  spelling, a planned workspace's folder under `workspaces/` excepted; feature docs, not this hub, hold behaviour, design and open work; the hub and its
   README indexes name no ticket.
 
 ## Related documentation
 
-- [Page areas](/documentation/apps/frontend/pages/README.md) — the index of the eight page
-  areas.
+- [Frontend crate documentation](/documentation/crates/frontend/README.md) — the feature docs of
+  the page and workspace crates.
 - [API overview](/documentation/apps/api/api_overview.md) — the routes of every API
   domain the pages call.
 - [Documentation standards](/documentation/standards/documentation_standards.md#2-contracts-behind-the-tags)

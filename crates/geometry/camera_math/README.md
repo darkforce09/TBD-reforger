@@ -59,4 +59,4 @@ cargo test -p camera_math   # the deck.gl parity suite and the seeded camera pro
 
 ## Related documentation
 
-- [Mission Creator feature inventory: map viewport and camera](/documentation/apps/frontend/workspaces/editor/feature_inventory/map_viewport_and_camera.md) — pan, zoom and the map view in the Mission Creator.
+- [Mission Creator feature inventory: map viewport and camera](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/map_viewport_and_camera.md) — pan, zoom and the map view in the Mission Creator.

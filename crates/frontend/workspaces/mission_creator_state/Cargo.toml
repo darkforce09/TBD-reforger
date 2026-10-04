@@ -1,0 +1,61 @@
+# The Mission Creator's pure state vocabulary: the chrome insets and class recipes, the review mode,
+# the world-layer preferences, the asset catalog and the Arsenal's loadout rules, the outliner node
+# model, the zone and marker vocabularies, the scale math, the transform and armed-place
+# vocabularies, the seam registration and the recently-placed recorder cell.
+[package]
+name = "mission_creator_state"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's pure state: chrome insets, review mode, layer preferences, asset catalog, loadout rules, outliner model, zones and markers."
+
+[package.metadata.layout]
+category = "crates/frontend/workspaces"
+tier = 8
+targets = "any"
+
+[dependencies]
+# The chrome's shared class tokens.
+frontend_ui = { workspace = true }
+# The registry rows the asset catalog reads and the wire types the review mode names.
+frontend_api_dtos = { workspace = true }
+# The rows, rotation and cargo rules, asset payloads and zone shapes the vocabularies build on.
+mission_operations = { workspace = true }
+# The folder id the folder slot lookups take.
+mission_document = { workspace = true }
+# The mission id the review mode is keyed by.
+mission_model = { workspace = true }
+# The terrain bounds the whole-terrain zone spans.
+mission_payload = { workspace = true }
+# The asset id the recently-placed recorder carries.
+mission_validation = { workspace = true }
+# The server row metadata the review mode pins.
+mission_persistence = { workspace = true }
+# The hosted document the whole-terrain zone reads and writes through.
+mission_editing_session = { workspace = true }
+mission_editing_commands = { workspace = true }
+# The world-layer preference set the persisted preferences carry.
+map_streaming_model = { workspace = true }
+# The marker glyphs the canonical picker rows fold the schema aliases into.
+unit_symbology = { workspace = true }
+# The catalog and outliner node keys.
+newtype_ids = { workspace = true }
+# The export-schema refusal error.
+thiserror = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# The browser half: the preferences' `localStorage`.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-sys = { workspace = true, features = ["Window", "Storage"] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+# The orthographic camera the dock geometry tests unproject through.
+camera_math = { workspace = true }
+
+[lints]
+workspace = true

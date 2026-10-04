@@ -16,7 +16,7 @@ private chat command; the [mod](/documentation/glossary/g_to_m.md#mod) draws no 
 - Entry: `#tbd link <code>` in chat, intercepted on the server by `TBD_AdminCommands` before the
   game forwards the line; unlike the other `#tbd` commands it is open to every player.
 - Website half: the account settings page's "Generate Link Code", reached from the top bar's
-  "Link Arma Identity"; the [account pages](/documentation/apps/frontend/pages/account/account_pages.md)
+  "Link Arma Identity"; the [account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md)
   document it.
 - Layout: none; replies go to the player alone through `SCR_ChatComponent.SendPrivateMessage`.
 

@@ -32,7 +32,7 @@ installed host the drive still undoes and redoes, and tells nobody.
   - every hosted command of the map engine (`crates/mission_editing/mission_editing_commands/src/hosted_commands/`),
     through `after_local_edit`;
   - the Mission Creator's document host
-    (`apps/frontend/src/workspaces/editor/bridge/document_host/history.rs`), which installs
+    (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/document_host/history.rs`), which installs
     the hook and routes the toolbar, keyboard and test-bridge undo and redo here.
 - Rules: the mutable borrow ends before the tail runs, and a no-op step runs no tail; this module
   is the only undo path, so toolbar buttons, shortcuts and bridges all reach the same stack.

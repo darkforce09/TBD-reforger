@@ -1,0 +1,13 @@
+# Stage S10 H3c, workspace crate: the engine diagnostics benches (the building viewer, the world
+# line-of-sight bench, the equipment data viewer and the ballistics agreement bench, with the
+# interior lanes and scene geometry they share) become crates/frontend/workspaces/debug_benches.
+# The folder becomes the crate's `src`, its module tree `lib.rs`, and its README the source tree
+# README; the feature docs move to their mirror under
+# documentation/crates/frontend/workspaces/debug_benches. The prefix is one `crate::` row scoped
+# to the moved folder and one `debug_benches::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/workspaces/debug	crates/frontend/workspaces/debug_benches/src
+path	apps/frontend/src/workspaces/debug/mod.rs	crates/frontend/workspaces/debug_benches/src/lib.rs
+path	documentation/apps/frontend/workspaces/debug	documentation/crates/frontend/workspaces/debug_benches
+rust_path	crate::workspaces::debug::	crate::	apps/frontend/src/workspaces/debug
+rust_path	crate::workspaces::debug::	debug_benches::	apps/frontend/src

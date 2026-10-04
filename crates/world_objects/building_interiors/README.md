@@ -70,7 +70,7 @@ cargo test -p building_interiors   # blueprint attribution, instances JSON, sect
   - `interior_line_of_sight` (the traces and washes) and `world_line_of_sight` (the world
     occluder);
   - the debug building viewer, interior bench and world line-of-sight bench in
-    `apps/frontend/src/workspaces/debug/`;
+    `crates/frontend/workspaces/debug_benches/src/`;
   - the blueprint tooling in `tools/map_assets/blueprint_compiler/src/` and the map checks in
     `tools/map_assets/map_asset_verification/src/`.
 - Rules: the model holds no query of the world and no browser or GPU code; every identifier

@@ -100,7 +100,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-citations",
-        help: "Verify @contract citations in apps/ and tools/ code — NOT documentation/ prose (documentation/standards/documentation_standards.md §10)",
+        help: "Verify @contract citations in code under every workspace member's top-level folder (apps/, crates/, tools/) and apps/mod/ — NOT documentation/ prose (documentation/standards/documentation_standards.md §10)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema citations", false, || Ok(
@@ -284,7 +284,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-workspace-laws",
-        help: "WS-1 to WS-5, the workspace laws — crate tiers, crate anatomy, the strangler rule, frontend layering (ratchet) and Tailwind sources over the workspace members",
+        help: "WS-1 to WS-5, the workspace laws — crate tiers, crate anatomy, the strangler rule, frontend layering (hard at zero: any violation fails) and Tailwind sources over the workspace members",
         group: "verify",
         lane: Lane::Alias,
         steps: WORKSPACE_LAW_STEPS,
@@ -437,16 +437,24 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "ci-local-leptos",
-        help: "CI gate: Leptos SPA fmt + clippy -D warnings (wasm32 and native, --all-targets) + native tests + trunk release build (mirrors the ci.yml frontend job)",
+        help: "CI gate: Leptos SPA and every crates/frontend crate fmt + clippy -D warnings (wasm32 and native, --all-targets) + native tests, then the trunk release build (mirrors the ci.yml frontend job)",
         group: "build",
         lane: Lane::Borrowed,
+        // The four cargo lines name the frontend family, derived from the workspace
+        // (`crate::frontend_package_lane`), so a frontend crate is gated from its first commit.
         steps: &[
-            sh!("cargo fmt -p frontend --check"),
-            sh!(
-                "cargo clippy -p frontend --target wasm32-unknown-unknown --all-targets -- -D warnings"
-            ),
-            sh!("cargo clippy -p frontend --all-targets --locked -- -D warnings"),
-            sh!("cargo test -p frontend"),
+            Step::Native {
+                run: crate::frontend_package_lane::run_frontend_format,
+            },
+            Step::Native {
+                run: crate::frontend_package_lane::run_frontend_wasm32_clippy,
+            },
+            Step::Native {
+                run: crate::frontend_package_lane::run_frontend_native_clippy,
+            },
+            Step::Native {
+                run: crate::frontend_package_lane::run_frontend_tests,
+            },
             sh!("cd apps/frontend && trunk build --release"),
         ],
     },

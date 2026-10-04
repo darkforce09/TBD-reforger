@@ -67,9 +67,9 @@ crates/api/api_identity_and_access/src/handlers/
   `api_caller_identity` (`MachineCaller`, `arma_id_is_linked`) and `fleet_wire_contract`
   (`ExecutorKind`) for the link confirmation's caller and the link flags.
 - Used by: the domain's `routes.rs`; over HTTP, the account pages (login, auth callback, settings)
-  and the navigation frame under `apps/frontend/src/pages/`, the
+  in `crates/frontend/pages/account_pages/` and the navigation frame in `apps/frontend/src/shell/`, the
   [API](/documentation/glossary/a_to_f.md#api) client's token refresh in
-  `apps/frontend/src/foundation/transport/client/refresh.rs`, and the mod's
+  `crates/frontend/foundation/frontend_transport/src/client/refresh.rs`, and the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_IdentityLink.c`, which confirms link codes.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); tokens

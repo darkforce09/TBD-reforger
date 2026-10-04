@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-054)  
 **Git tag on ship:** T-054  
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md) (`SEL-ORBAT-DBL-001 / SEL-MAP-004`) · [feature_inventory.md](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md) SEL-ORBAT-DBL-001 / SEL-MAP-004
+**Authority:** [MC ROADMAP](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) · [eden/gap_analysis.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md) (`SEL-ORBAT-DBL-001 / SEL-MAP-004`) · [feature_inventory.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) SEL-ORBAT-DBL-001 / SEL-MAP-004
 
 ---
 
@@ -128,10 +128,10 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](/documentation/standards/commit_checklist
 |-----|--------|
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-054 bullet + bump `latest feature work` line |
-| [`feature_inventory.md`](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md) | SEL-ORBAT-DBL-001 → **working**; SEL-MAP-004 Procedure/Evidence → native `dblclick` + `pickObject` |
-| [`agent_execution.md`](/documentation/apps/frontend/workspaces/editor/decisions.md) | Decisions log row **Attributes entry points (T-054)** |
-| [`ROADMAP.md`](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) | T-054 → shipped; refresh "Next" |
-| [`eden/gap_analysis.md`](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md) | T-054 → ✅ shipped T-054 |
+| [`feature_inventory.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | SEL-ORBAT-DBL-001 → **working**; SEL-MAP-004 Procedure/Evidence → native `dblclick` + `pickObject` |
+| [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) | Decisions log row **Attributes entry points (T-054)** |
+| [`ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) | T-054 → shipped; refresh "Next" |
+| [`eden/gap_analysis.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md) | T-054 → ✅ shipped T-054 |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 

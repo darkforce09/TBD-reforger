@@ -95,9 +95,9 @@ The CAD editor in which mission makers build a [mission](#mission) on a top-down
 `/missions/:id/edit`, for the `mission_maker` [role](/documentation/glossary/n_to_z.md#role) and above; the Arsenal's paper doll is
 its only 3D view. Prose never calls it the Scenario Creator; code identifiers say editor.
 
-In code: `apps/frontend/src/workspaces/editor/`; `MissionEditorPage` in its `mission_editor.rs`.
+In code: `crates/frontend/workspaces/mission_creator_workspace/src/`; `MissionEditorPage` in its `mission_editor.rs`.
 
-See: [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md).
+See: [Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md).
 
 ### mission deployment
 
@@ -146,6 +146,6 @@ Workshop link and mod rows (Workshop ID, mod GUID, optional version pin, key dep
 modpack is current. The item [registry](/documentation/glossary/n_to_z.md#registry) is kept per
 modpack.
 
-In code: `Modpack` and `ModpackMod` in `crates/api/api_community_content/src/models/modpack.rs`; the `/api/v1/modpacks` routes in `crates/api/api_community_content/src/routes.rs`; `ModpacksPage` at `/modpacks` in `apps/frontend/src/pages/doctrine_and_info/modpacks/`.
+In code: `Modpack` and `ModpackMod` in `crates/api/api_community_content/src/models/modpack.rs`; the `/api/v1/modpacks` routes in `crates/api/api_community_content/src/routes.rs`; `ModpacksPage` at `/modpacks` in `crates/frontend/pages/doctrine_pages/src/modpacks/`.
 
-See: [community content](/documentation/glossary/a_to_f.md#community-content), [Modpacks page](/apps/frontend/src/pages/doctrine_and_info/modpacks/README.md).
+See: [community content](/documentation/glossary/a_to_f.md#community-content), [Modpacks page](/crates/frontend/pages/doctrine_pages/src/modpacks/README.md).

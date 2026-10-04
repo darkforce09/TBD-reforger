@@ -81,7 +81,7 @@ rows and the block registry):
   - `mission_operations`, whose tactical graphics draw tool reads the kinds and point limits;
   - the API's operations domain (`validate_faction_join_key`, the ORBAT templates);
   - the Mission Creator's inspector panels and ORBAT manager
-    (`apps/frontend/src/workspaces/editor/ui/`).
+    (`crates/frontend/workspaces/mission_creator_workspace/src/ui/`).
 - Rules: mission tier 2, so the crate depends on no compiler and no map engine
   (`cargo xtask verify crate-tiers`); no primitive public id field
   (`cargo xtask verify crate-anatomy`); the round trips through the payload compiler live in

@@ -1,0 +1,115 @@
+# The Mission Creator's workspace: the editor page and its canvas mount, the docked chrome around
+# the map, the Editor Layers outliner, the inspectors, the full-screen dialogs and the read-only
+# review workspace, over the four lower Mission Creator crates.
+[package]
+name = "mission_creator_workspace"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The Mission Creator's workspace: the editor page and canvas mount, the docks, outliner, inspectors and dialogs around the map, and the read-only review workspace."
+
+[package.metadata.layout]
+category = "crates/frontend/workspaces"
+tier = 12
+targets = "any"
+
+[dependencies]
+# The pure editor state: chrome insets, review mode, layer preferences, the asset catalog and
+# loadout rules, the outliner model, zones, markers and the validation seam.
+mission_creator_state = { workspace = true }
+# The boot machine, the hosted document and its undo drive, the host state, the overlays, the
+# canvas gestures, keydown and the map tools.
+mission_creator_engine_bridge = { workspace = true }
+# The draft writer, the server hydrate and its conflict prompt, the writer role and the Save and
+# Export transport.
+mission_creator_session = { workspace = true }
+# The Arsenal tab the Attributes dialog mounts.
+mission_creator_arsenal = { workspace = true }
+# The review record's provenance list and digest wording the review workspace banner shows.
+mission_review_record = { workspace = true }
+# The API wire types and their typed identifiers.
+frontend_api_dtos = { workspace = true }
+# The shared map seam: the terrain picker and the ground heights.
+frontend_map_view = { workspace = true }
+# The session store and the content gates.
+frontend_session = { workspace = true }
+# The HTTP client and the typed endpoint calls.
+frontend_transport = { workspace = true }
+# The design-system primitives, the modal stack, the toasts and the formatting helpers.
+frontend_ui = { workspace = true }
+# The scheme guard on the mission's stored links.
+http_url_guard = { workspace = true }
+# The orthographic camera the toolbelt's scale readout reads.
+camera_math = { workspace = true }
+# The grid reference arithmetic of the toolbelt.
+map_coordinates = { workspace = true }
+# The arrange menu's vocabulary.
+formation_geometry = { workspace = true }
+# The headless map tools: selection, ruler, line of sight and viewshed.
+map_editing_tools = { workspace = true }
+# The boot progress events of the canvas mount.
+map_streaming_model = { workspace = true }
+# The mission crates: the compiler, the document, the authored blocks and ids, the authoring
+# commands, the payload and the validation rules.
+mission_compiler = { workspace = true }
+mission_document = { workspace = true }
+mission_model = { workspace = true }
+mission_operations = { workspace = true }
+mission_payload = { workspace = true }
+mission_validation = { workspace = true }
+# The editing crates: the hosted commands, the editing session and the server adoption.
+mission_editing_commands = { workspace = true }
+mission_editing_session = { workspace = true }
+mission_persistence = { workspace = true }
+# The terrain grid the canvas mount samples ground heights from.
+terrain_elevation = { workspace = true }
+# The unit classification and marker glyphs the docks and inspectors name.
+unit_symbology = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+leptos_router = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+# The derive behind the crate's `Error`.
+thiserror = { workspace = true }
+
+# The browser half: the render engine handle, the map host the docks and dialogs drive, and the
+# DOM and event bindings of the page, the docks and the dialogs.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+map_renderer = { workspace = true }
+map_streaming_host = { workspace = true }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Document",
+    "Location",
+    "Storage",
+    "Element",
+    "HtmlElement",
+    "HtmlDivElement",
+    "HtmlCanvasElement",
+    "HtmlInputElement",
+    "Node",
+    "NodeList",
+    "Event",
+    "EventTarget",
+    "MouseEvent",
+    "PointerEvent",
+    "KeyboardEvent",
+    "DomRect",
+    "CssStyleDeclaration",
+] }
+
+[dev-dependencies]
+# The repository-root finder, the captured API responses behind `golden!`, the source scrubber
+# and the source shards the source pins read.
+frontend_test_support = { workspace = true }
+# The production half of a source file and the live entity operation sources.
+mission_creator_engine_bridge = { workspace = true, features = ["test_fixtures"] }
+# The satellite container reader the canvas mount's level choice is tested against.
+satellite_imagery = { workspace = true }
+
+[lints]
+workspace = true

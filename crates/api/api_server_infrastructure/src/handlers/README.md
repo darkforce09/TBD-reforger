@@ -67,8 +67,8 @@ executor kind.
   `api_audit_log` (audit writers); `api_http_layer` for the extractors, `role_rank` and the
   authorized [SSE](/documentation/glossary/n_to_z.md#sse) stream; `api_foundation` for errors.
 - Used by: the domain's `routes.rs`; over HTTP, the server control page and its fleet command,
-  deployment and credential panels in `apps/frontend/src/pages/administration/server_control/`,
-  the server intel page in `apps/frontend/src/pages/command_center/server_intel/`, the
+  deployment and credential panels in `crates/frontend/pages/administration_pages/src/server_control/`,
+  the server intel page in `crates/frontend/pages/command_center_pages/src/server_intel/`, the
   host agent's ledger client in `apps/fleet_host_agent/src/ledger_client/`, and the game runtime's
   [API](/documentation/glossary/a_to_f.md#api) scripts in
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.

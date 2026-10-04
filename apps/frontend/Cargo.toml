@@ -1,206 +1,80 @@
-# The website single-page app: Leptos client-side rendering compiled to WebAssembly (dev:
-# `cargo xtask mk leptos`; production: the built bundle served from `SPA_DIST_DIR`). It links the
-# map rendering and streaming crates directly for the Mission Creator canvas, and the mission
-# compiler.
+# The website single-page app: the Leptos client-side-rendered binary Trunk compiles to
+# WebAssembly (dev: `cargo xtask mk leptos`; production: the built bundle served from
+# `SPA_DIST_DIR`). It holds the start function, the render form of the route table and the app
+# frame; every page, workspace, feature and foundation module is a crate under `crates/frontend/`.
+# The mount compiles for wasm32 only, so the native build is the frame's pure half and its tests.
 [package]
 name = "frontend"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
 publish.workspace = true
+description = "TBD Reforger platform single-page app: the Leptos start function, route table and app frame over the frontend crates."
 
+[lints]
+workspace = true
+
+# The crates the frame's pure half reads on every target: the frame classifier asks the route
+# table for chromeless routes, and the account badge reads the profile DTO and the avatar
+# sanitiser.
 [dependencies]
-leptos = { version = "0.8", features = ["csr"] }
-leptos_router = "0.8"
-console_error_panic_hook = { workspace = true }
-futures = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
-base64 = { workspace = true }
-# The streaming model on every target: the world layer and host preferences, the boot progress
-# events and the memory budget model the editor's session and the map view mount read on the
-# native build as well as wasm32, for the page and editor tests.
-map_streaming_model = { workspace = true }
-# The mission crates on every target. The compiler runs on the native build as well as wasm32:
-# `MissionDetail::compiled_meta` is the row half of the Mission Creator's server-truth Export, and
-# `compiled_meta_is_the_row_the_server_compiles_from` checks it natively against the captured
-# `GET /missions/:id` golden. The authored blocks, the slot line and the ORBAT come from
-# `mission_model`; the payload and export envelope from `mission_payload`; the rule list and its
-# findings from `mission_validation`; the document, its slot columns and its authoring commands
-# from `mission_document`, `mission_crdt` and `mission_operations`; the arrange menu's vocabulary
-# from `formation_geometry`.
-mission_model = { workspace = true }
-mission_payload = { workspace = true }
-mission_compiler = { workspace = true }
-mission_validation = { workspace = true }
-mission_document = { workspace = true }
-mission_crdt = { workspace = true }
-mission_operations = { workspace = true }
-formation_geometry = { workspace = true }
-# The geometry crates the map views and debug benches name directly: the orthographic and orbit
-# cameras, the grid reference and chunk arithmetic, and the rigid transform of the building
-# interior bench.
-camera_math = { workspace = true }
-map_coordinates = { workspace = true }
-# The ballistics crates the mortar calculator solves locally with and the agreement bench draws
-# from: the catalog, the solver's rows and terrain profile, the fire-mission assembler and the
-# seeded agreement cases. They run on the native build too, for the page tests.
-ballistics_model = { workspace = true }
-ballistics_solver = { workspace = true }
-fire_mission_planning = { workspace = true }
-ballistics_agreement_cases = { workspace = true }
-geometry_primitives = { workspace = true }
-# The ear-clipping triangulation the native building viewer fills footprints with.
-render_primitives = { workspace = true }
-# The world crates the Mission Creator, the mortar map picker and the debug benches import
-# directly: the elevation model and its line of sight, the satellite container reader, the road
-# network and vegetation data, the building interiors and their line of sight, the world line of
-# sight, the triangle BVH, and the overlay's lanes, symbology and instance packers.
-terrain_elevation = { workspace = true }
-terrain_line_of_sight = { workspace = true }
-satellite_imagery = { workspace = true }
-road_network = { workspace = true }
-vegetation = { workspace = true }
-building_interiors = { workspace = true }
-interior_line_of_sight = { workspace = true }
-world_line_of_sight = { workspace = true }
-spatial_indexes = { workspace = true }
-map_draw_lanes = { workspace = true }
-unit_symbology = { workspace = true }
-overlay_instances = { workspace = true }
-# The Mission Creator's editing crates on every target, for the editor tests: the editing session
-# (host, undo, grouping, routing, selection, picks, overlay lanes), the hosted commands with the
-# export, report and selection texts, the local draft decisions and the headless map tools. The
-# world line-of-sight bench reads the draw buffers' world residency.
-mission_editing_session = { workspace = true }
-mission_editing_commands = { workspace = true }
-mission_persistence = { workspace = true }
-map_editing_tools = { workspace = true }
-chunk_draw_buffers = { workspace = true }
-gloo-net = { workspace = true }
-js-sys = { workspace = true }
-# Query strings and the offline core's URL parsing. `leptos_router` and
-# `leptos → leptos_server → server_fn` already link `url`, so the bundle pays nothing.
-url = { workspace = true }
-# `is_http_url`, the scheme guard on every link and image source the app renders; the API stores
-# a URL only after the same guard passes.
-http_url_guard = { workspace = true }
-# The offline policy the service worker applies (cache names, request classes, the terrain pack
-# list), linked so the page's offline pack download writes the caches and keys the worker reads.
-offline_cache_policy = { workspace = true }
-wasm-bindgen = { workspace = true }
-web-sys = { workspace = true, features = [
-    "Window",
-    "Location",
-    "Storage",
-    # Mission document persistence: `window.document()` + `document.hidden()` (Page Visibility)
-    # and the `visibilitychange` flush-on-hide listener. sessionStorage/localStorage stay under
-    # `Storage`; set_timeout/clear_timeout_with_handle live under `Window`.
-    "Document",
-    "RequestCredentials",
-    "HtmlCanvasElement",
-    # Mission Creator render loop: container div, its bounding rect, wheel-zoom, and the
-    # capture/passive wheel + window resize listeners.
-    "HtmlDivElement",
-    "Element",
-    "DomRect",
-    "ResizeObserver",
-    "ResizeObserverEntry",
-    "IntersectionObserver",
-    "IntersectionObserverEntry",
-    "IntersectionObserverInit",
-    "WheelEvent",
-    # Mission Creator pan: MMB/RMB drag (PointerEvent) + contextmenu (MouseEvent).
-    # `PointerEvent = ["Event","MouseEvent","UiEvent"]` transitively enables the inherited
-    # button()/client_x()/prevent_default() accessors; MouseEvent is listed for the standalone
-    # contextmenu handler type. set/has/release_pointer_capture live under `Element`.
-    "PointerEvent",
-    "MouseEvent",
-    # Undo and redo shortcuts: the window `keydown` listener (Ctrl/Cmd+Z, Ctrl+Y). Brings the
-    # inherited code()/ctrl_key()/meta_key()/shift_key()/alt_key() accessors via UiEvent/Event.
-    # The focus guard's `active_element` / `is_content_editable` are covered by `Document` /
-    # `Element` / `HtmlElement`.
-    "KeyboardEvent",
-    "EventTarget",
-    "AddEventListenerOptions",
-    # Save and Export: the semver <input> (HtmlInputElement) + the Export download
-    # (Blob/BlobPropertyBag → Url.createObjectURL → <a download> click → revokeObjectURL). `click()`
-    # lives on HtmlElement; the anchor is created via `document.create_element("a")` → HtmlAnchorElement.
-    "HtmlInputElement",
-    "Blob",
-    "BlobPropertyBag",
-    "Url",
-    "HtmlAnchorElement",
-    "HtmlElement",
-    # Content hero upload: `<input type=file>` → FormData field `"file"` →
-    # POST /api/v1/cms/uploads. `File` extends `Blob`; `FileList` is required for
-    # `HtmlInputElement::files()` (HtmlInputElement's feature deps do not pull it).
-    "FormData",
-    "File",
-    "FileList",
-    # SSE consumer (`sse.rs`): Bearer fetch + ReadableStream reader, because EventSource cannot
-    # carry the Authorization header.
-    "Headers",
-    "Request",
-    "RequestInit",
-    "Response",
-    "ReadableStream",
-    "ReadableStreamDefaultReader",
-    # Aborts the SSE fetch when the route is left (AbortController parked in a thread_local;
-    # on_cleanup calls the Send zero-capture abort_server_status_stream).
-    "AbortController",
-    "AbortSignal",
-    # Server Intel copy-address (navigator.clipboard.writeText).
-    "Navigator",
-    "Clipboard",
-    # Building-viewer debug bench — `?prefab=` override parse.
-    "UrlSearchParams",
-    # TBDS/WebP decode → ImageBitmap (WebGPU) or OffscreenCanvas→RGBA (WebGL2 gates).
-    "ImageBitmap",
-    "ImageBitmapOptions",
-    "ColorSpaceConversion",
-    "OffscreenCanvas",
-    "OffscreenCanvasRenderingContext2d",
-    "ImageData",
-    # The offline core: service worker registration, the offline pack's cache writes, the
-    # document's asset links and the storage estimate / persistence request.
-    "Cache",
-    "CacheStorage",
-    "NodeList",
-    "ServiceWorkerContainer",
-    "StorageManager",
-] }
+# The wire types: the signed-in profile the account badge reads, and the role ladder the sidebar
+# filters its links by.
+frontend_api_dtos = { workspace = true }
+# The route table: the chromeless and full-bleed layout flags, the breadcrumbs and the sidebar's
+# navigation menu.
+frontend_route_table = { workspace = true }
+# The design-system primitives: the icon, the class joiner, the toast queue and its viewport, and
+# the avatar sanitiser with its default avatar.
+frontend_ui = { workspace = true }
 
-# Rendering and browser asset I/O share the frontend's WebAssembly module.
+# What only the browser mount uses: the start function, the route table's render form and the
+# frame components exist on wasm32 alone.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-gloo-timers = { version = "0.3", features = ["futures"] }
-# The map renderer (the render engine, its handle and the GPU frame pump of `gpu_frame`) every
-# map view and debug bench mounts, and the browser streaming half: the asset loaders and live
-# memory budget of `map_asset_loading` and the map host of `map_streaming_host` that feeds the
-# renderer.
-map_renderer = { workspace = true }
-gpu_frame = { workspace = true }
-map_asset_loading = { workspace = true }
-map_streaming_host = { workspace = true }
-# The same-origin fetch helpers the map view mount and the world line-of-sight bench load with.
-browser_platform = { workspace = true }
-# The Arsenal's 3D paper doll renderer the doll panel mounts (`arsenal/doll.rs`).
-paper_doll_renderer = { workspace = true }
-# The map renderer's readback self-checks, frame benchmark and stress pool the viewport bridge
-# publishes on `window.__selfChecks` and `window.__editorBench` (`bridge/viewport.rs`).
-map_render_diagnostics = { workspace = true }
-# The mission document's IndexedDB persistence (database `tbd-mission-yrs`, store `doc-state`, the
-# whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default features pull
-# `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on wasm32-unknown-unknown, and
-# dropping them strips the async API, so default features stay on.
-idb = "0.6"
-# Awaits the fetch and stream-reader promises of the SSE consumer (`sse.rs`). Leptos links it for
-# spawn_local; this line names the direct use.
-wasm-bindgen-futures = { workspace = true }
+# The reactive framework in client-side rendering mode, and its router.
+leptos = { workspace = true, features = ["csr"] }
+leptos_router = { workspace = true }
+# The `#[wasm_bindgen(start)]` attribute on `start_app`, the module's one JavaScript export.
+wasm-bindgen = { workspace = true }
+# The panic hook `start_app` installs before anything else runs.
+console_error_panic_hook = { workspace = true }
+# The sign-out's refresh-lock future (`FutureExt`) and the JSON bodies of the sign-out and the
+# membership grace extension posts.
+futures = { workspace = true }
+serde_json = { workspace = true }
+# The session store, the session refresh, the sign-out hooks and the route guard the frame
+# provides and drives.
+frontend_session = { workspace = true }
+# The HTTP client the top bar's sign-out and the membership status strip post and read through.
+frontend_transport = { workspace = true }
+# The offline service worker registration at boot and the offline pack's route watcher.
+frontend_offline = { workspace = true }
+# The page crates whose route components the route table mounts: `/login`, `/auth/callback` and
+# `/settings`; the seven `/admin/*` routes; `/`, `/server-intel` and `/announcements`; `/wiki`,
+# `/vehicles` and `/modpacks`; `/tools/mortar`; `/missions` and `/missions/:id`; `/events`,
+# `/deployments` and `/leaderboards`.
+account_pages = { workspace = true }
+administration_pages = { workspace = true }
+command_center_pages = { workspace = true }
+doctrine_pages = { workspace = true }
+field_tools_pages = { workspace = true }
+mission_hub_pages = { workspace = true }
+operations_pages = { workspace = true }
+# The workspace crates the route table mounts: the URL-only `/debug/*` benches and the Mission
+# Creator's editor and review workspace pages.
+debug_benches = { workspace = true }
+mission_creator_workspace = { workspace = true }
+# The Mission Creator's draft purge `start_app` registers as a sign-out hook, so a sign-out
+# deletes the departing account's local drafts whether or not the editor mounted in the tab.
+mission_creator_session = { workspace = true }
 
 # Member manifests carry no [profile.*]: Cargo reads profiles from the workspace root only. trunk
 # applies wasm-opt via the index.html data-wasm-opt attribute.
 
 [dev-dependencies]
-# The guard's case table (`http_url_guard::cases`), which every page test that renders a stored
-# link or image runs through its render path.
+# The repository-root finder the documentation audit finds the frontend crates' sources with.
+frontend_test_support = { workspace = true }
+# The guard's case table (`http_url_guard::cases`), which the account badge's avatar test runs
+# through the sanitiser.
 http_url_guard = { workspace = true, features = ["test_fixtures"] }

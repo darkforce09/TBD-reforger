@@ -18,7 +18,7 @@ LOG-3. The error type itself is described in the
   `crates/api/api_missions/src/handlers/mission_versions.rs`), or an object carrying a `code`
   or a `reason` elsewhere (the [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) refusals, the modpack body error). The
   single-page app folds `details` into the message it shows only when it is an array of strings
-  (`apps/frontend/src/foundation/transport/client/errors.rs`). A `sqlx::Error` never reaches the
+  (`crates/frontend/foundation/frontend_transport/src/client/errors.rs`). A `sqlx::Error` never reaches the
   client as text: it becomes a logged `500` with the message `internal error`. Status: live, held
   by construction (every handler returns `ApiError`); no gate asserts the shape.
 - **ERR-4 (Usability) — No error body carries a top-level key other than `error` and `details`.**

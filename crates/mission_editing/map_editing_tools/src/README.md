@@ -4,7 +4,7 @@ The headless state machines, geometry and verdicts of the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s interactive map tools: select,
 ruler, and line of sight with its viewshed. A tool here holds phase and geometry, driven by explicit world coordinates; the browser half, with
 the pointer events, overlays and frame pump, lives in
-`apps/frontend/src/workspaces/editor/input/tools/`.
+`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/`.
 
 ## Contents
 
@@ -58,13 +58,13 @@ one set of patterns, edges, axes and thresholds.
   `interior_line_of_sight`), `terrain_elevation::manifest`, `time_source::monotonic_ms` (the
   scheduler's default clock), and `mission_editing_session::picking`.
 - Used by (the single-page app, directly):
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/`: the tool overlays
-    (`apps/frontend/src/workspaces/editor/input/tools/`), the pointer gestures and keyboard
+  - the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`: the tool overlays
+    (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/`), the pointer gestures and keyboard
     handler, the editor page and its canvas mount, the bridge's host state and overlays, the
     toolbelt, the right dock, the arrange strip and the outliner;
-  - the mortar map picker in `apps/frontend/src/pages/field_tools/mortar/map_picker/` (the Everon
+  - the mortar map picker in `crates/frontend/pages/field_tools_pages/src/mortar/map_picker/` (the Everon
     manifest);
-  - the debug building viewer in `apps/frontend/src/workspaces/debug/building_viewer/`;
+  - the debug building viewer in `crates/frontend/workspaces/debug_benches/src/building_viewer/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through the
     selection self-checks.
 - Rules: no tool here holds a pointer event, a reactive signal or an element handle; the ruler and
@@ -73,5 +73,5 @@ one set of patterns, edges, axes and thresholds.
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
   — the toolbelt, selection and arrange features these tools back.

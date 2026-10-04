@@ -134,6 +134,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "account_pages"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_session",
+ "frontend_transport",
+ "frontend_ui",
+ "futures",
+ "http_url_guard",
+ "js-sys",
+ "leptos",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "acknowledgement_dropping_relay"
 version = "0.1.0"
 dependencies = [
@@ -154,6 +171,28 @@ name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
+
+[[package]]
+name = "administration_pages"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_route_table",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "futures",
+ "gloo-timers",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "mission_review_record",
+ "serde_json",
+ "url",
+ "wasm-bindgen",
+ "web-sys",
+]
 
 [[package]]
 name = "ahash"
@@ -1928,6 +1967,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "command_center_pages"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "http_url_guard",
+ "leptos",
+ "leptos_router",
+ "serde_json",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2312,6 +2366,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "debug_benches"
+version = "0.1.0"
+dependencies = [
+ "ballistics_agreement_cases",
+ "ballistics_model",
+ "browser_platform",
+ "building_interiors",
+ "camera_math",
+ "chunk_draw_buffers",
+ "fire_mission_planning",
+ "frontend_api_dtos",
+ "frontend_route_table",
+ "frontend_test_support",
+ "frontend_transport",
+ "futures",
+ "geometry_primitives",
+ "gloo-net",
+ "gloo-timers",
+ "gpu_frame",
+ "interior_line_of_sight",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "map_asset_loading",
+ "map_coordinates",
+ "map_draw_lanes",
+ "map_editing_tools",
+ "map_renderer",
+ "render_primitives",
+ "road_network",
+ "serde",
+ "serde_json",
+ "spatial_indexes",
+ "terrain_line_of_sight",
+ "thiserror 2.0.18",
+ "url",
+ "wasm-bindgen",
+ "web-sys",
+ "world_line_of_sight",
+]
+
+[[package]]
 name = "deploy_settings"
 version = "0.1.0"
 dependencies = [
@@ -2443,6 +2539,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab8ecd87370524b461f8557c119c405552c396ed91fc0a8eec68679eab26f94a"
 dependencies = [
  "libloading",
+]
+
+[[package]]
+name = "doctrine_pages"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "leptos",
+ "leptos_router",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3056,6 +3167,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28dea519a9695b9977216879a3ebfddf92f1c08c05d984f8996aecd6ecdc811d"
 
 [[package]]
+name = "field_tools_pages"
+version = "0.1.0"
+dependencies = [
+ "ballistics_model",
+ "ballistics_solver",
+ "fire_mission_planning",
+ "frontend_api_dtos",
+ "frontend_map_view",
+ "frontend_offline",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "leptos",
+ "map_coordinates",
+ "map_draw_lanes",
+ "map_editing_tools",
+ "offline_cache_policy",
+ "overlay_instances",
+ "serde",
+ "serde_json",
+ "terrain_elevation",
+ "terrain_line_of_sight",
+ "unit_symbology",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "filetime"
 version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3233,64 +3373,155 @@ dependencies = [
 name = "frontend"
 version = "0.1.0"
 dependencies = [
- "ballistics_agreement_cases",
- "ballistics_model",
- "ballistics_solver",
- "base64",
- "browser_platform",
- "building_interiors",
- "camera_math",
- "chunk_draw_buffers",
+ "account_pages",
+ "administration_pages",
+ "command_center_pages",
  "console_error_panic_hook",
- "fire_mission_planning",
- "formation_geometry",
+ "debug_benches",
+ "doctrine_pages",
+ "field_tools_pages",
+ "frontend_api_dtos",
+ "frontend_offline",
+ "frontend_route_table",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
  "futures",
- "geometry_primitives",
- "gloo-net",
- "gloo-timers",
- "gpu_frame",
  "http_url_guard",
- "idb",
- "interior_line_of_sight",
- "js-sys",
  "leptos",
  "leptos_router",
- "map_asset_loading",
- "map_coordinates",
- "map_draw_lanes",
- "map_editing_tools",
- "map_render_diagnostics",
+ "mission_creator_session",
+ "mission_creator_workspace",
+ "mission_hub_pages",
+ "operations_pages",
+ "serde_json",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "frontend_api_dtos"
+version = "0.1.0"
+dependencies = [
+ "ballistics_model",
+ "ballistics_solver",
+ "fire_mission_planning",
+ "frontend_test_support",
+ "mission_compiler",
+ "mission_operations",
+ "newtype_ids",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "frontend_map_view"
+version = "0.1.0"
+dependencies = [
+ "browser_platform",
+ "camera_math",
+ "frontend_test_support",
+ "gpu_frame",
+ "js-sys",
  "map_renderer",
  "map_streaming_host",
  "map_streaming_model",
- "mission_compiler",
- "mission_crdt",
- "mission_document",
- "mission_editing_commands",
- "mission_editing_session",
- "mission_model",
- "mission_operations",
- "mission_payload",
- "mission_persistence",
- "mission_validation",
- "offline_cache_policy",
- "overlay_instances",
- "paper_doll_renderer",
- "render_primitives",
- "road_network",
- "satellite_imagery",
  "serde",
  "serde_json",
- "spatial_indexes",
  "terrain_elevation",
- "terrain_line_of_sight",
- "unit_symbology",
+ "thiserror 2.0.18",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "frontend_offline"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_test_support",
+ "frontend_transport",
+ "futures",
+ "gloo-timers",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "offline_cache_policy",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
  "url",
- "vegetation",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "world_line_of_sight",
+]
+
+[[package]]
+name = "frontend_route_table"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+]
+
+[[package]]
+name = "frontend_session"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "frontend_api_dtos",
+ "frontend_route_table",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "futures",
+ "gloo-net",
+ "gloo-timers",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "frontend_test_support"
+version = "0.1.0"
+
+[[package]]
+name = "frontend_transport"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_test_support",
+ "futures",
+ "gloo-net",
+ "gloo-timers",
+ "js-sys",
+ "leptos",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "frontend_ui"
+version = "0.1.0"
+dependencies = [
+ "frontend_test_support",
+ "http_url_guard",
+ "js-sys",
+ "leptos",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -5137,6 +5368,172 @@ dependencies = [
 ]
 
 [[package]]
+name = "mission_creator_arsenal"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_test_support",
+ "js-sys",
+ "leptos",
+ "mission_creator_engine_bridge",
+ "mission_creator_session",
+ "mission_creator_state",
+ "mission_editing_commands",
+ "mission_editing_session",
+ "mission_operations",
+ "orbat_slot_ids",
+ "paper_doll_renderer",
+ "serde_json",
+ "thiserror 2.0.18",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "mission_creator_engine_bridge"
+version = "0.1.0"
+dependencies = [
+ "camera_math",
+ "formation_geometry",
+ "frontend_api_dtos",
+ "frontend_map_view",
+ "frontend_test_support",
+ "frontend_ui",
+ "interior_line_of_sight",
+ "js-sys",
+ "leptos",
+ "map_asset_loading",
+ "map_draw_lanes",
+ "map_editing_tools",
+ "map_render_diagnostics",
+ "map_renderer",
+ "map_streaming_host",
+ "map_streaming_model",
+ "mission_crdt",
+ "mission_creator_state",
+ "mission_document",
+ "mission_editing_commands",
+ "mission_editing_session",
+ "mission_model",
+ "mission_operations",
+ "mission_validation",
+ "overlay_instances",
+ "serde_json",
+ "spatial_indexes",
+ "terrain_elevation",
+ "terrain_line_of_sight",
+ "unit_symbology",
+ "wasm-bindgen",
+ "web-sys",
+ "world_line_of_sight",
+]
+
+[[package]]
+name = "mission_creator_session"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "futures",
+ "gloo-net",
+ "idb",
+ "js-sys",
+ "leptos",
+ "map_streaming_model",
+ "mission_compiler",
+ "mission_creator_engine_bridge",
+ "mission_creator_state",
+ "mission_document",
+ "mission_editing_commands",
+ "mission_model",
+ "mission_operations",
+ "mission_payload",
+ "mission_persistence",
+ "mission_validation",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
+name = "mission_creator_state"
+version = "0.1.0"
+dependencies = [
+ "camera_math",
+ "frontend_api_dtos",
+ "frontend_test_support",
+ "frontend_ui",
+ "leptos",
+ "map_streaming_model",
+ "mission_document",
+ "mission_editing_commands",
+ "mission_editing_session",
+ "mission_model",
+ "mission_operations",
+ "mission_payload",
+ "mission_persistence",
+ "mission_validation",
+ "newtype_ids",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "unit_symbology",
+ "web-sys",
+]
+
+[[package]]
+name = "mission_creator_workspace"
+version = "0.1.0"
+dependencies = [
+ "camera_math",
+ "formation_geometry",
+ "frontend_api_dtos",
+ "frontend_map_view",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "http_url_guard",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "map_coordinates",
+ "map_editing_tools",
+ "map_renderer",
+ "map_streaming_host",
+ "map_streaming_model",
+ "mission_compiler",
+ "mission_creator_arsenal",
+ "mission_creator_engine_bridge",
+ "mission_creator_session",
+ "mission_creator_state",
+ "mission_document",
+ "mission_editing_commands",
+ "mission_editing_session",
+ "mission_model",
+ "mission_operations",
+ "mission_payload",
+ "mission_persistence",
+ "mission_review_record",
+ "mission_validation",
+ "satellite_imagery",
+ "serde",
+ "serde_json",
+ "terrain_elevation",
+ "thiserror 2.0.18",
+ "unit_symbology",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "mission_document"
 version = "0.1.0"
 dependencies = [
@@ -5181,6 +5578,27 @@ dependencies = [
  "serde_json",
  "spatial_indexes",
  "unit_symbology",
+]
+
+[[package]]
+name = "mission_hub_pages"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "http_url_guard",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "mission_payload",
+ "mission_review_record",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -5231,6 +5649,20 @@ dependencies = [
  "mission_model",
  "mission_payload",
  "serde_json",
+]
+
+[[package]]
+name = "mission_review_record"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "leptos",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -5988,6 +6420,22 @@ name = "openssl-probe"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
+
+[[package]]
+name = "operations_pages"
+version = "0.1.0"
+dependencies = [
+ "frontend_api_dtos",
+ "frontend_session",
+ "frontend_test_support",
+ "frontend_transport",
+ "frontend_ui",
+ "http_url_guard",
+ "js-sys",
+ "leptos",
+ "leptos_router",
+ "serde_json",
+]
 
 [[package]]
 name = "or_poisoned"

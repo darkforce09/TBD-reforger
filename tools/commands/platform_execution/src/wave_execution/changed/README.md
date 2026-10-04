@@ -9,7 +9,7 @@ frontend tests) and behind fingerprint invalidation.
 ```text
 tools/commands/platform_execution/src/wave_execution/changed/
 ├── changed_rs.rs                     changed `.rs` files, per-file rustfmt, the wasm scope and its steps
-└── include_consumer_package_dirs.rs  workspace members, `include!` consumers and `include_str!` inputs
+└── include_consumer_package_dirs.rs  workspace members, `include!` consumers, `include_str!` inputs and test-support repository reads
 ```
 
 ## How it works
@@ -22,12 +22,16 @@ tools/commands/platform_execution/src/wave_execution/changed/
 - `fmt_changed` runs `rustfmt --check` on each changed file that exists, with the edition of the
   crate that owns it (read up to the root manifest when the crate inherits it); a range of
   deletions only is a named skip.
-- `wasm_scope_prefixes` walks the frontend crate's dependency edges, `path` ones and
-  `workspace = true` ones that name a workspace member (today the map engine, the graphics engine
-  and the `crates/` members the frontend depends on), instead of a fixed list. `wasm_changed` runs `cargo check` for
-  `wasm32-unknown-unknown` when the range touches that scope, and prints a skip otherwise.
-  `frontend_tests_changed` also counts the scope's `include_str!` inputs, and runs the frontend
-  tests into a per-slice private target folder.
+- `wasm_scope_prefixes` starts at the app and at every crate of the frontend family (the members
+  under crates/frontend) and walks their dependency edges, `path` ones and `workspace = true`
+  ones that name a workspace member (the `crates/` members the frontend depends on), instead of a
+  fixed list. `wasm_changed` runs `cargo check` for `wasm32-unknown-unknown` over the frontend
+  family (`-p` per package, from `ci_task_catalog::frontend_package_lane`) when the range touches
+  that scope, and prints a skip otherwise. `frontend_tests_changed` also counts the scope's
+  `include_str!` inputs and the repository files its tests read through the frontend test support
+  (`repository_reads_under`: `golden!("<file>")` as `contracts/fixtures/api_goldens/<file>`, a
+  forwarding `golden!` as the whole folder, the path argument of `repository_text` and
+  `repository_path`), and runs the family's tests into a per-slice private target folder.
 - `workspace_members` reads the root manifest's members through `verification_core`, globs such as
   `crates/*/*` expanded and `exclude` entries removed; an unreadable workspace is an error.
 - `include_consumer_package_dirs` finds the workspace crates that `include!` a changed fragment

@@ -69,27 +69,26 @@ use verification_core::{NotRun, Pattern, Verdict, gate};
 // read and stripped back for the message, rather than mutating this process's cwd — tests run in
 // parallel threads.
 #[cfg(test)]
-const EDITOR_OPS: &str =
-    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/mod.rs";
+const EDITOR_OPS: &str = "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/editor_context/mod.rs";
 // The place path spans three crates: the document mutations in `mission_operations`, the map
 // engine's hosted commands that drive them, and the host half in the frontend that arms a
 // placement and commits it. Both sides are scanned together, and the scratch
 // fixtures perturb one of each, so moving a mutation across the crate boundary cannot bypass the
 // ban.
 const EDITOR_OPS_SPLIT: &[&str] = &[
-    "apps/frontend/src/workspaces/editor/arsenal/loadout_commands.rs",
-    "apps/frontend/src/workspaces/editor/bridge/tactical_graphics_authoring.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/map_release.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/mod.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/palette_arming.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/armed_placement/zone_draw.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/attributes_modal.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/dock_mirrors.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/document_fields.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/installation.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/editor_context/mod.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/entity_selection.rs",
-    "apps/frontend/src/workspaces/editor/bridge/host_state/undo_grouped_gestures.rs",
+    "crates/frontend/workspaces/mission_creator_arsenal/src/loadout_commands.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/tactical_graphics_authoring.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/armed_placement/map_release.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/armed_placement/mod.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/armed_placement/palette_arming.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/armed_placement/zone_draw.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/editor_context/attributes_modal.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/editor_context/dock_mirrors.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/editor_context/document_fields.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/editor_context/installation.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/editor_context/mod.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/entity_selection.rs",
+    "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/undo_grouped_gestures.rs",
     "crates/mission/mission_operations/src/apply_faction/apply.rs",
     "crates/mission/mission_operations/src/apply_faction/authorship.rs",
     "crates/mission/mission_operations/src/apply_faction/library.rs",
@@ -150,22 +149,24 @@ const EDITOR_OPS_SPLIT: &[&str] = &[
     "crates/mission_editing/mission_editing_commands/src/hosted_commands/zone_authoring.rs",
 ];
 const ORBAT_RS: &str = "crates/mission/mission_model/src/orbat/orbat_slot_template.rs";
-const ORBAT_MGR: &str = "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager.rs";
-const EDEN_CHROME: &str = "apps/frontend/src/workspaces/editor/session/eden_chrome.rs";
+const ORBAT_MGR: &str =
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager.rs";
+const EDITOR_PAGE: &str =
+    "crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs";
 const SLOTS_GPU: &str = "crates/map_overlay/unit_symbology/src/classification.rs";
 
-/// Every UI source that can render the banned ORBAT copy, plus the editor shell.
+/// Every UI source that can render the banned ORBAT copy, plus the editor page that mounts the chrome.
 const ORBAT_UI_BAN_TARGETS: &[&str] = &[
     ORBAT_MGR,
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/dialog.rs",
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/dialog_lifecycle.rs",
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/faction_templates.rs",
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/slot_inspector.rs",
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/snapshot.rs",
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/stats.rs",
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/tree_panel.rs",
-    "apps/frontend/src/workspaces/editor/ui/modals/orbat_manager/tree_rows.rs",
-    EDEN_CHROME,
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/dialog.rs",
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/dialog_lifecycle.rs",
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/faction_templates.rs",
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/slot_inspector.rs",
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/snapshot.rs",
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/stats.rs",
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/tree_panel.rs",
+    "crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/tree_rows.rs",
+    EDITOR_PAGE,
 ];
 
 /// One `ban`: message, ERE pattern, `-i`?, targets, and the `ok` line printed when it holds.
@@ -196,7 +197,26 @@ const PINS: &[(&str, &str)] = &[
     ("SIDE_INDFOR_RGBA pin missing", r"SIDE_INDFOR_RGBA: \[u8; 4\] = \[34, 197, 94, 255\]"),
 ];
 
-const FE: &str = "frontend";
+/// The unit-test target a pin's `cargo test` runs: the crate's own unit tests only, never its
+/// integration tests or doctests. Every pinned crate is a library crate; a pin on a binary crate
+/// (which `--lib` refuses with "no library targets found") fails the crate-kind test first.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum UnitTestTarget {
+    /// A library crate's unit tests: `--lib`.
+    Library,
+}
+
+impl UnitTestTarget {
+    /// The `cargo test` flag that selects this target.
+    fn flag(self) -> &'static str {
+        match self {
+            UnitTestTarget::Library => "--lib",
+        }
+    }
+}
+
+/// A pin on a library crate's unit tests.
+const LIB: UnitTestTarget = UnitTestTarget::Library;
 /// The mission model crate: the ORBAT derive and the slot line, no features.
 const MM: &str = "mission_model";
 /// The mission payload crate: the export payload's ORBAT, no features.
@@ -210,6 +230,9 @@ const MD: &str = "mission_document";
 /// The mission operations crate: character placement under a side and the faction library apply,
 /// no features.
 const MO: &str = "mission_operations";
+/// The Mission Creator's workspace crate: the docks, the dialogs, the outliner and the editor's
+/// top-level tests, no features.
+const MCW: &str = "mission_creator_workspace";
 /// The map overlay crates that draw the ORBAT: the lane order (`map_draw_lanes`), the side tints
 /// and squad links (`unit_symbology`) and the slot and vehicle instances (`overlay_instances`).
 /// They have no features, so their pins pass `NOF`.
@@ -218,33 +241,33 @@ const SYMBOLOGY: &str = "unit_symbology";
 const INSTANCES: &str = "overlay_instances";
 const NOF: Option<&str> = None;
 
-/// One `cargo_test_pin`: package, `--features` value, `--lib`?, selector, and the `ok` line to
-/// print after it — `Some` only on the row that closes a section.
+/// One `cargo_test_pin`: package, `--features` value, unit-test target, selector, and the `ok`
+/// line to print after it — `Some` only on the row that closes a section.
 #[rustfmt::skip]
-type PinRow = (&'static str, Option<&'static str>, bool, &'static str, Option<&'static str>);
+type PinRow = (&'static str, Option<&'static str>, UnitTestTarget, &'static str, Option<&'static str>);
 
 #[rustfmt::skip]
 const CARGO_PINS: &[PinRow] = &[
     // A / B / H — the mission-authoring rows; module docs §2.
-    (MO, NOF, true, "place_", None),
-    (MD, NOF, true, "place_", None),
-    (MD, NOF, true, "set_leader_exclusive", None),
-    (MD, NOF, true, "empty_squad_garbage_collected", None),
-    (MD, NOF, true, "move_slot_bidirectional", None),
-    (MD, NOF, true, "leader_invariant_holds", None),
-    (MD, NOF, true, "attach_vehicle_roundtrip", None),
-    (MO, NOF, true, "apply_faction_", Some("mission authoring place/mutator/apply gates")),
+    (MO, NOF, LIB, "place_", None),
+    (MD, NOF, LIB, "place_", None),
+    (MD, NOF, LIB, "set_leader_exclusive", None),
+    (MD, NOF, LIB, "empty_squad_garbage_collected", None),
+    (MD, NOF, LIB, "move_slot_bidirectional", None),
+    (MD, NOF, LIB, "leader_invariant_holds", None),
+    (MD, NOF, LIB, "attach_vehicle_roundtrip", None),
+    (MO, NOF, LIB, "apply_faction_", Some("mission authoring place/mutator/apply gates")),
     // C / D / G / vehicle pack.
-    (INSTANCES, NOF, true, "side_tint_three_distinct", None),
-    (SYMBOLOGY, NOF, true, "squad_link_", None),
-    (MM, NOF, true, "format_slot_line", None),
-    (INSTANCES, NOF, true, "pack_vehicle_instances", None),
-    (LANES, NOF, true, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
+    (INSTANCES, NOF, LIB, "side_tint_three_distinct", None),
+    (SYMBOLOGY, NOF, LIB, "squad_link_", None),
+    (MM, NOF, LIB, "format_slot_line", None),
+    (INSTANCES, NOF, LIB, "pack_vehicle_instances", None),
+    (LANES, NOF, LIB, "mission_vehicles", Some("tint / links / slot_line / vehicles lane")),
     // I — the mission model's ORBAT derive and the payload compiler's export.
-    (MM, NOF, true, "derive_fills_loadout", None),
-    (MM, NOF, true, "derive_empty_loadout", None),
-    (MM, NOF, true, "derives_from_editor_sorted", None),
-    (MP, NOF, true, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
+    (MM, NOF, LIB, "derive_fills_loadout", None),
+    (MM, NOF, LIB, "derive_empty_loadout", None),
+    (MM, NOF, LIB, "derives_from_editor_sorted", None),
+    (MP, NOF, LIB, "compile_export_orbat_loadout", Some("derive/compile loadout gates")),
     // ── THE COMPILE BOUNDARY. Read this before trimming the list above. ─────────────────────
     // Every selector up to here proves the editor can AUTHOR an ORBAT value
     // (mission_operations::place_orbat, mission_document), that the map can DRAW it
@@ -258,20 +281,27 @@ const CARGO_PINS: &[PinRow] = &[
     // mission.schema.json, so a widened contract turns the newly-legal key's row red and the dead
     // feature becomes visible work; the second pins the compiled slot's key set, so nothing is
     // added to or removed from the website<->mod interface in silence.
-    (MCP, NOF, true, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
-    (MCP, NOF, true, "a_compiled_slot_carries_exactly_these_keys", None),
+    (MCP, NOF, LIB, "the_compile_boundary_ledger_is_checked_against_the_contract", None),
+    (MCP, NOF, LIB, "a_compiled_slot_carries_exactly_these_keys", None),
     // The vehicle-floor test is a mission document test (the MissionDocCore writer round trip in
     // crates/mission/mission_document/src/tests/vehicle_row_round_trips.rs). Aligned with the
     // place_/attach_vehicle pins above.
-    (MD, NOF, true, "the_vehicle_row_still_has_the_shape_this_module_reads",
+    (MD, NOF, LIB, "the_vehicle_row_still_has_the_shape_this_module_reads",
         Some("compile-boundary ledger + compiled-slot key set + vehicle contract floor")),
-    // E / F / G / H / I — FE. A bin crate, so no `--lib`: its tests live in src/main.rs.
-    (FE, NOF, false, "eden_side", None),
-    (FE, NOF, false, "apply_eden", None),
-    (FE, NOF, false, "objects_chip", None),
-    (FE, NOF, false, "open_arsenal", None),
-    (FE, NOF, false, "g1_dialog", None),
-    (FE, NOF, false, "orbat_", Some("frontend Eden/ORBAT gates")),
+    // E / F / G / H / I — the Mission Creator's Eden and ORBAT tests, in the workspace crate
+    // that holds the docks, the dialogs, the outliner and the editor's top-level tests.
+    // Code: ui/docks palette chips (+ the state crate's asset_catalog matchers).
+    (MCW, NOF, LIB, "eden_side", None),
+    // Code: ui/docks dock_right Eden chips.
+    (MCW, NOF, LIB, "apply_eden", None),
+    // Code: ui/docks palette chips.
+    (MCW, NOF, LIB, "objects_chip", None),
+    // Code: ui/modals ORBAT manager and the editor's tests/.
+    (MCW, NOF, LIB, "open_arsenal", None),
+    // Code: ui/modals ORBAT manager.
+    (MCW, NOF, LIB, "g1_dialog", None),
+    // Code: ui/modals and ui/outliner ORBAT.
+    (MCW, NOF, LIB, "orbat_", Some("Mission Creator Eden/ORBAT gates")),
 ];
 
 // ── Static bans and pins ─────────────────────────────────────────────────────────────────────

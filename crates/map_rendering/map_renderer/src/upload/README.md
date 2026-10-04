@@ -60,9 +60,9 @@ and the adapter's largest 2D texture.
     the three label lanes and the texture limits), the symbology layers' door (the text atlas slot
     lent to the marker captions) and the diagnostic views (`TextAtlasGpu`);
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s input handlers, canvas
-    mount and document host under `apps/frontend/src/workspaces/editor/` (the marquee, the
+    mount and document host under `crates/frontend/workspaces/mission_creator_workspace/src/` (the marquee, the
     connection and squad lines), and the debug benches under
-    `apps/frontend/src/workspaces/debug/` (building interiors).
+    `crates/frontend/workspaces/debug_benches/src/` (building interiors).
 - Rules: every lane change goes through `upsert_lane` or `remove_lane`, which mark the frame damaged
   (`every_lane_mutation_marks_the_frame_damaged` in
   `crates/map_rendering/map_renderer/src/tests/damage_discipline.rs`); `connections_bind` uploads

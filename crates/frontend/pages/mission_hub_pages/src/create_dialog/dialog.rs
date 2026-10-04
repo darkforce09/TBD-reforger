@@ -1,0 +1,281 @@
+//! The new-mission dialog: define the environment, create the draft, open the editor.
+//!
+//! **Role:** the transient form the library's New Mission button opens — title, terrain, game
+//! mode, weather, time of day, player cap and an optional library blurb — which creates the
+//! mission and then hands the author to the editor.
+//! **Position:** a dialog over the `/missions` route; it has no route of its own.
+//! **Signals & state:** one signal per field plus a busy latch, all local to the dialog and all
+//! reset whenever it closes, so reopening is a clean slate. Reads the session store and the toast
+//! queue from context.
+//! **Invariants:** the create request carries only fields the endpoint accepts. There is
+//! deliberately no thumbnail control: that column has a different writer, so a field here would
+//! post a key the handler drops — a control that looks saved and saves nothing. The submit is
+//! browser-only.
+
+#[cfg(target_arch = "wasm32")]
+use frontend_ui::{Dialog, cn};
+#[cfg(target_arch = "wasm32")]
+use leptos::prelude::*;
+
+/// The pill control shared by every field on this form.
+#[cfg(target_arch = "wasm32")]
+const PILL: &str = "w-full rounded-full bg-white/5 px-5 py-3 text-label-md text-on-surface placeholder:text-on-surface-variant/60 outline-none transition focus:ring-1 focus:ring-primary/50";
+
+/// What the briefing is for, said where it is typed: the library blurb shown before anyone joins,
+/// not the per-faction in-game briefing screen, which is authored on a faction.
+///
+/// Optional on purpose — the field takes an empty value, and requiring an operation summary
+/// before the map has even been opened would make the new-mission button harder to press. The
+/// editor can fill it in later.
+#[cfg(target_arch = "wasm32")]
+const BRIEFING_HINT: &str = "Optional — the library blurb shown before anyone joins. You can write it later in the editor \
+     (Mission Settings ▸ Presentation).";
+
+#[cfg(target_arch = "wasm32")]
+const DEFAULT_TERRAIN: &str = "everon";
+#[cfg(target_arch = "wasm32")]
+const DEFAULT_MODE: &str = "pve_coop";
+#[cfg(target_arch = "wasm32")]
+const DEFAULT_WEATHER: &str = "clear";
+#[cfg(target_arch = "wasm32")]
+const DEFAULT_TIME: &str = "14:00";
+#[cfg(target_arch = "wasm32")]
+const DEFAULT_MAX: i64 = 64;
+
+/// A terrain name with its first character capitalised.
+#[cfg(target_arch = "wasm32")]
+fn terrain_label(t: &str) -> String {
+    let mut c = t.chars();
+    match c.next() {
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+        None => String::new(),
+    }
+}
+
+/// The new-mission dialog, bound to the `open` flag the library holds.
+#[cfg(target_arch = "wasm32")]
+#[component]
+pub fn CreateMissionDialog(
+    /// The dialog's open flag, which the library sets and a created mission clears.
+    open: RwSignal<bool>,
+) -> impl IntoView {
+    let store = expect_context::<frontend_session::AuthStore>();
+    let title = RwSignal::new(String::new());
+    let terrain = RwSignal::new(DEFAULT_TERRAIN.to_string());
+    let game_mode = RwSignal::new(DEFAULT_MODE.to_string());
+    let weather = RwSignal::new(DEFAULT_WEATHER.to_string());
+    let time_of_day = RwSignal::new(DEFAULT_TIME.to_string());
+    let max_players = RwSignal::new(DEFAULT_MAX);
+    // The library blurb. Empty is a valid mission.
+    let briefing = RwSignal::new(String::new());
+    let busy = RwSignal::new(false);
+
+    let reset = move || {
+        title.set(String::new());
+        terrain.set(DEFAULT_TERRAIN.to_string());
+        game_mode.set(DEFAULT_MODE.to_string());
+        weather.set(DEFAULT_WEATHER.to_string());
+        time_of_day.set(DEFAULT_TIME.to_string());
+        max_players.set(DEFAULT_MAX);
+        briefing.set(String::new());
+    };
+    // Reset to a clean slate whenever the dialog closes.
+    Effect::new(move |_| {
+        if !open.get() {
+            reset();
+        }
+    });
+
+    // Validate the title, create the mission, toast, close, then open the editor.
+    let on_submit = move |ev: leptos::ev::SubmitEvent| {
+        ev.prevent_default();
+        {
+            let toasts = frontend_ui::toast::use_toasts();
+            let t = title.get_untracked().trim().to_string();
+            if t.is_empty() {
+                toasts.error("Title is required");
+                return;
+            }
+            if busy.get_untracked() {
+                return;
+            }
+            busy.set(true);
+            let body = serde_json::json!({
+                "title": t,
+                "terrain": terrain.get_untracked(),
+                "game_mode": game_mode.get_untracked(),
+                "weather": weather.get_untracked(),
+                "time_of_day": time_of_day.get_untracked(),
+                "max_players": max_players.get_untracked(),
+                // Trimmed, so a box the author only tabbed through stores an empty value rather
+                // than a whitespace blurb that renders as a blank caption but is not empty to any
+                // emptiness check downstream.
+                "briefing": briefing.get_untracked().trim(),
+            });
+            leptos::task::spawn_local(async move {
+                match frontend_transport::client::api_post::<serde_json::Value>(
+                    store,
+                    "/missions",
+                    body,
+                )
+                .await
+                {
+                    Ok(data) => {
+                        toasts.success("Mission created");
+                        open.set(false);
+                        if let Some(id) = data.get("id").and_then(|v| v.as_str()) {
+                            // A full-page load matches the editor route's own boundary well
+                            // enough here.
+                            if let Some(win) = web_sys::window() {
+                                let _ = win.location().set_href(&format!("/missions/{id}/edit"));
+                            }
+                        }
+                    }
+                    Err(e) => toasts.error(e.message_or("Failed to create mission")),
+                }
+                busy.set(false);
+            });
+        }
+    };
+
+    view! {
+        <Dialog
+            open=open
+            title="New Mission"
+            description="Define terrain and environment before opening the 2D editor."
+            class="max-w-lg"
+        >
+            <form on:submit=on_submit class="space-y-5">
+                <div>
+                    <label class="mb-2 block text-label-md text-on-surface-variant">
+                        "Operation Designation"
+                    </label>
+                    <input
+                        type="text"
+                        placeholder="Enter operation designation..."
+                        prop:value=move || title.get()
+                        on:input=move |ev| title.set(event_target_value(&ev))
+                        autofocus
+                        class=PILL
+                    />
+                </div>
+
+                <div>
+                    <p class="mb-2 text-label-md text-on-surface-variant">"Terrain"</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        {["everon", "arland"]
+                            .into_iter()
+                            .map(|t| {
+                                view! {
+                                    <button
+                                        type="button"
+                                        on:click=move |_| terrain.set(t.to_string())
+                                        class=move || {
+                                            cn(
+                                                &[
+                                                    "rounded-xl border p-4 text-left text-label-md font-semibold transition",
+                                                    if terrain.get() == t {
+                                                        "border-primary bg-primary/10 text-on-surface"
+                                                    } else {
+                                                        "border-white/10 bg-white/5 text-on-surface-variant hover:bg-white/10"
+                                                    },
+                                                ],
+                                            )
+                                        }
+                                    >
+                                        {terrain_label(t)}
+                                    </button>
+                                }
+                            })
+                            .collect_view()}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-label-md text-on-surface-variant">
+                        "Game Mode"
+                    </label>
+                    <select
+                        prop:value=move || game_mode.get()
+                        on:change=move |ev| game_mode.set(event_target_value(&ev))
+                        class=PILL
+                    >
+                        <option value="pve_coop">"Co-op PvE"</option>
+                        <option value="pvp">"PvP"</option>
+                        <option value="zeus">"Zeus"</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-label-md text-on-surface-variant">
+                        "Insertion Time"
+                    </label>
+                    <input
+                        type="time"
+                        prop:value=move || time_of_day.get()
+                        on:input=move |ev| time_of_day.set(event_target_value(&ev))
+                        class=PILL
+                    />
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-label-md text-on-surface-variant">"Weather"</label>
+                    <select
+                        prop:value=move || weather.get()
+                        on:change=move |ev| weather.set(event_target_value(&ev))
+                        class=PILL
+                    >
+                        <option value="clear">"Clear (Default)"</option>
+                        <option value="overcast">"Overcast"</option>
+                        <option value="heavy_rain">"Heavy Rain"</option>
+                        <option value="dense_fog">"Dense Fog"</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-2 block text-label-md text-on-surface-variant">
+                        "Max Players"
+                    </label>
+                    <select
+                        prop:value=move || max_players.get().to_string()
+                        on:change=move |ev| {
+                            max_players.set(event_target_value(&ev).parse().unwrap_or(DEFAULT_MAX))
+                        }
+                        class=PILL
+                    >
+                        {[16i64, 32, 48, 64, 96, 128]
+                            .into_iter()
+                            .map(|n| {
+                                view! {
+                                    <option value=n.to_string()>{n} " Operators"</option>
+                                }
+                            })
+                            .collect_view()}
+                    </select>
+                </div>
+
+                // The library blurb comes last, and labelled optional, because it is the only
+                // field here that can be filled in later without reopening this dialog.
+                <div>
+                    <label class="mb-2 block text-label-md text-on-surface-variant">"Briefing"</label>
+                    <textarea
+                        rows="4"
+                        placeholder="What is this operation, who is involved, and what does winning look like?"
+                        prop:value=move || briefing.get()
+                        on:input=move |ev| briefing.set(event_target_value(&ev))
+                        class=cn(&[PILL, "rounded-2xl resize-y leading-relaxed"])
+                    ></textarea>
+                    <p class="mt-2 text-label-sm text-on-surface-variant/70">{BRIEFING_HINT}</p>
+                </div>
+
+                <button
+                    type="submit"
+                    prop:disabled=move || busy.get()
+                    class="w-full rounded-full bg-primary py-3 text-label-md font-semibold text-on-primary transition hover:bg-primary/90 disabled:opacity-50"
+                >
+                    {move || if busy.get() { "Creating…" } else { "Create Mission Draft" }}
+                </button>
+            </form>
+        </Dialog>
+    }
+}

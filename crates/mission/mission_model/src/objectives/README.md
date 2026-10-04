@@ -46,7 +46,7 @@ and `TBD_WinConditionEvaluator` evaluates the rule.
   `AuthoredBlocks::parse` parses the win rule; `mission_compiler` and
   `crate::compiled`, which build and hold the compiled rule; the Mission Creator's
   `tasks_panel.rs` and `win_conditions_card.rs` in
-  `apps/frontend/src/workspaces/editor/ui/inspector/`.
+  `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/`.
 - Rules: `winConditions` is document-owned and `tasks` is carried
   (`win_conditions_is_the_registered_block_and_the_document_models_it` in
   `crates/mission/mission_model/src/authored_blocks/tests/cases_1.rs`,

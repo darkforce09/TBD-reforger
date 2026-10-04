@@ -1,0 +1,14 @@
+# Stage S10 H3d, fifth and last Mission Creator crate: the workspace (the editor page and its
+# canvas mount, the docked chrome around the map, the Editor Layers outliner, the inspectors, the
+# full-screen dialogs, the read-only review workspace and the editor's top-level tests) becomes
+# crates/frontend/workspaces/mission_creator_workspace. The editor folder becomes the crate's
+# `src`, its module tree `lib.rs`, and its README the source tree README; the editor's remaining
+# documentation moves to its mirror under documentation/crates/frontend/workspaces/
+# mission_creator_workspace. The prefix is one `crate::` row scoped to the moved folder and one
+# `mission_creator_workspace::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/workspaces/editor	crates/frontend/workspaces/mission_creator_workspace/src
+path	apps/frontend/src/workspaces/editor/mod.rs	crates/frontend/workspaces/mission_creator_workspace/src/lib.rs
+path	documentation/apps/frontend/workspaces/editor	documentation/crates/frontend/workspaces/mission_creator_workspace
+rust_path	crate::workspaces::editor::	crate::	apps/frontend/src/workspaces/editor
+rust_path	crate::workspaces::editor::	mission_creator_workspace::	apps/frontend/src

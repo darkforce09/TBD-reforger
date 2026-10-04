@@ -23,16 +23,16 @@ work; the code READMEs it links hold the exact detail.
   reads the engine through `map_renderer::diagnostic_accessors`.
 - Entry:
   - the Mission Creator creates the engine (`RenderEngine::create` through `create_engine` in
-    `apps/frontend/src/foundation/map_view/engine_mount.rs`), starts the frame pump on its
-    `EngineHandle` (`apps/frontend/src/foundation/map_view/frame_pump.rs`) and starts streaming
-    through `apps/frontend/src/workspaces/editor/bridge/world_assets.rs`;
-  - the debug benches under `apps/frontend/src/workspaces/debug/` (the building viewer and the
+    `crates/frontend/foundation/frontend_map_view/src/engine_mount.rs`), starts the frame pump on its
+    `EngineHandle` (`crates/frontend/foundation/frontend_map_view/src/frame_pump.rs`) and starts streaming
+    through `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/world_assets.rs`;
+  - the debug benches under `crates/frontend/workspaces/debug_benches/src/` (the building viewer and the
     world line of sight bench) create their own engine the same way.
 - Related features: [map streaming](/documentation/crates/streaming/map_streaming.md), whose host
   and loaders write through the engine's asset sink; the
   [GPU rendering overview](/documentation/crates/graphics/gpu_rendering_overview.md) for the GPU
   device and frame crates it draws with; the
-  [Mission Creator documentation](/documentation/apps/frontend/workspaces/editor/README.md) for
+  [Mission Creator documentation](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) for
   the app around it.
 
 ## Behaviour

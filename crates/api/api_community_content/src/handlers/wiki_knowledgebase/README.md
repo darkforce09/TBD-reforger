@@ -64,7 +64,7 @@ null and left off the wire.
   `ApiError`; the `wiki_pages` and
   `wiki_page_revisions` tables of migration 0059.
 - Used by: the domain's `routes.rs`; over HTTP, the wiki page under
-  `apps/frontend/src/pages/doctrine_and_info/wiki/`.
+  `crates/frontend/pages/doctrine_pages/src/wiki/`.
 - Rules: reads take `AuthUser` and the save `AdminUser`; every handler carries its `/// @route` tag
   (`cargo xtask verify route-tags`); the save locks the page row, then inserts the revision, then
   appends the audit row, all in one transaction; every nullable column is read through `COALESCE`
@@ -74,7 +74,7 @@ null and left off the wire.
 
 ## Related documentation
 
-- [Wiki page](/documentation/apps/frontend/pages/doctrine_and_info/wiki/wiki_page.md) — the
+- [Wiki page](/documentation/crates/frontend/pages/doctrine_pages/wiki/wiki_page.md) — the
   page that reads and writes these routes.
 - [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md)
   — the wiki markup, revision and save design.

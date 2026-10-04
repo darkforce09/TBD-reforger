@@ -1,0 +1,82 @@
+# The field tools: the mortar calculator, which solves a battery's firing solution on the device
+# from a ballistics catalog, picks its positions on the map, saves and restores fire missions
+# against an event, and keeps working offline from the offline pack.
+[package]
+name = "field_tools_pages"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The mortar calculator: on-device firing solutions, the map picker, saved fire missions and the offline pack status."
+
+[package.metadata.layout]
+category = "crates/frontend/pages"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The ballistics catalog list, the saved fire mission wire types and their typed identifiers.
+frontend_api_dtos = { workspace = true }
+# The offline pack's status words the calculator's offline panel reads and the saved copies the
+# catalog falls back to.
+frontend_offline = { workspace = true }
+# The ballistics catalog the calculator decodes, its weapons, shells, charges and fuzes.
+ballistics_model = { workspace = true }
+# The charge rows, the refusals and the crest clearance over a terrain profile.
+ballistics_solver = { workspace = true }
+# The fire-mission assembler and solver, its time fuzes and the solution's wording.
+fire_mission_planning = { workspace = true }
+# The grid references a position is typed and shown in.
+map_coordinates = { workspace = true }
+# The fire mission marks the map picker draws: guns, target, observer and the laid rings.
+overlay_instances = { workspace = true }
+# The terrain profile along the line of fire, sampled from the elevation model.
+terrain_line_of_sight = { workspace = true }
+terrain_elevation = { workspace = true }
+# The Everon elevation manifest the line-of-fire profile samples.
+map_editing_tools = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# The browser halves: the route component, the catalog fetch and its offline fallback, the map
+# picker's engine mount and pointer handling, the saved fire missions' requests and the
+# remembered event.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# The page header and the short date the event picker shows.
+frontend_ui = { workspace = true }
+# The signed-in store the saved fire missions' requests read and the gate around them.
+frontend_session = { workspace = true }
+# The API client the catalog, the events and the saved fire missions are fetched with.
+frontend_transport = { workspace = true }
+# The shared map seam the picker mounts: engine creation, camera, navigation, ground heights.
+frontend_map_view = { workspace = true }
+# The mission zones lane the picker's marks are drawn on, and the marker glyph atlas they use.
+map_draw_lanes = { workspace = true }
+unit_symbology = { workspace = true }
+wasm-bindgen = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Location",
+    # The event the saved fire missions were last filed against, kept in `localStorage`.
+    "Storage",
+    # The map picker: its container's bounding rect, pointer capture and the pointer and wheel
+    # listeners on it.
+    "Element",
+    "HtmlElement",
+    "DomRect",
+    "EventTarget",
+    "Event",
+    "MouseEvent",
+    "PointerEvent",
+    "WheelEvent",
+] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+# The request classes the catalog fetch is checked against.
+offline_cache_policy = { workspace = true }
+
+[lints]
+workspace = true

@@ -24,5 +24,5 @@ per-value finding counts and the garment lookup that lets `armoredVest` stand in
 - Depends on: `serde_json`.
 - Used by: the API and the map engine, through the crate root.
 - Rules: `CARGO_CONTAINERS` in `scan.rs` is a hand copy of the single-page app's list in
-  `apps/frontend/src/workspaces/editor/arsenal/rules/cargo_capacity_and_delivery.rs`; no test holds
+  `crates/frontend/workspaces/mission_creator_state/src/arsenal_rules/cargo_capacity_and_delivery.rs`; no test holds
   the two equal.

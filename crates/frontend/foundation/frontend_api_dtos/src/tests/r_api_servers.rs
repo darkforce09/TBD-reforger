@@ -1,0 +1,332 @@
+//! Captured-response round trips for server rows and the registry's writes, and the telemetry
+//! frame decoder.
+
+use super::*;
+use crate::servers::is_power_of_ten;
+
+// ── `{data}` envelopes ──
+/// Typed as the page reads it. An untyped envelope round-trips any payload, so the test passes
+/// while the real type cannot deserialise the very golden it is pinned against — which is how a
+/// float-versus-integer mismatch shipped and survived for a month. Typed, this fails loudly on the
+/// fractional sample.
+#[test]
+fn servers_envelope() {
+    assert_golden::<DataEnvelope<ServerRowDto>>(golden!("GET__servers.json"), &[]);
+}
+
+/// The queue reading is present on the server that reported one and absent — no key, no
+/// placeholder — on the server that never did.
+#[test]
+fn server_rows_carry_the_queue_reading_only_where_one_was_reported() {
+    let rows: DataEnvelope<ServerRowDto> =
+        serde_json::from_str(golden!("GET__servers.json")).unwrap();
+    let queue_of = |id: &str| {
+        rows.data
+            .iter()
+            .find(|row| row.id == id)
+            .and_then(|row| row.status.as_ref())
+            .map(|status| status.telemetry_queue.clone())
+    };
+    let reported = queue_of("00000000-0000-4000-d000-000000000001")
+        .flatten()
+        .expect("the primary reported a queue");
+    assert_eq!((reported.backlog, reported.oldest_age_seconds), (3, 12));
+    assert_eq!(
+        queue_of("00000000-0000-4000-d000-000000000002"),
+        Some(None),
+        "a status without a reading has no telemetry_queue"
+    );
+}
+
+// ── server registry writes ──
+// A registration's id is server-generated; its golden holds the normalisation table's placeholder.
+
+/// The registration answer is a row of the list: active, with no status and no terrain yet, and
+/// the modpack it requires.
+#[test]
+fn server_registered() {
+    let golden = golden!("POST__servers.json");
+    assert_golden::<ServerRowDto>(golden, &[]);
+    let row: ServerRowDto = serde_json::from_str(golden).unwrap();
+    assert!(row.is_active && row.status.is_none() && row.terrain.is_none());
+    assert_eq!(
+        row.required_modpack
+            .as_ref()
+            .map(|pack| pack.modpack.id.as_str()),
+        row.required_modpack_id.as_ref().map(|id| id.as_str())
+    );
+}
+
+/// The change answer is the changed row: the new port, and no modpack keys once the requirement
+/// is cleared.
+#[test]
+fn server_changed() {
+    let golden = golden!("PATCH__servers__00000000-0000-4000-d000-000000000002.json");
+    assert_golden::<ServerRowDto>(golden, &[]);
+    let row: ServerRowDto = serde_json::from_str(golden).unwrap();
+    assert_eq!(row.port, 2012);
+    assert!(row.required_modpack_id.is_none() && row.required_modpack.is_none());
+}
+
+/// The captured request bodies round-trip through their DTOs: the registration names its fields
+/// and its modpack; the change names only what it changes and clears the modpack with `null`.
+#[test]
+fn server_registration_and_change_bodies() {
+    assert_golden::<ServerRegistration>(golden!("POST__servers.request.json"), &[]);
+    let change = golden!("PATCH__servers__00000000-0000-4000-d000-000000000002.request.json");
+    assert_golden::<ServerChange>(change, &[]);
+    let change: ServerChange = serde_json::from_str(change).unwrap();
+    assert_eq!(
+        change,
+        ServerChange {
+            port: Some(2012),
+            required_modpack_id: Some(None),
+            ..ServerChange::default()
+        }
+    );
+    assert_eq!(
+        serde_json::to_value(ServerChange::default()).unwrap(),
+        serde_json::json!({}),
+        "an absent key is never written"
+    );
+    assert_eq!(
+        serde_json::to_value(ServerChange {
+            required_modpack_id: Some(Some("00000000-0000-4000-a000-000000000001".into())),
+            is_active: Some(true),
+            ..ServerChange::default()
+        })
+        .unwrap(),
+        serde_json::json!({
+            "is_active": true,
+            "required_modpack_id": "00000000-0000-4000-a000-000000000001"
+        })
+    );
+    assert!(
+        serde_json::from_str::<ServerChange>(r#"{"hostname": "tbd.example.com"}"#).is_err(),
+        "a key the contract does not define is refused"
+    );
+}
+
+/// The credential list as the backend served it: one live credential that has been used, and one
+/// revoked with its reason.
+#[test]
+fn machine_credential_list() {
+    let golden = golden!("GET__servers__00000000-0000-4000-d000-000000000001__credentials.json");
+    assert_golden::<MachineCredentialList>(golden, &[]);
+    let list: MachineCredentialList = serde_json::from_str(golden).unwrap();
+    let live = list
+        .items
+        .iter()
+        .find(|c| c.revoked_at.is_none())
+        .expect("a live credential");
+    assert!(live.last_used_at.is_some() && live.revoke_reason.is_none());
+    let revoked = list
+        .items
+        .iter()
+        .find(|c| c.revoked_at.is_some())
+        .expect("a revoked credential");
+    assert!(revoked.revoked_by.is_some() && revoked.revoke_reason.is_some());
+    assert!(
+        revoked.last_used_at.is_none(),
+        "never used, so the key is absent"
+    );
+}
+
+/// The issue answer has no captured golden — its secret is shown once and never recorded — so its
+/// shape is held against the contract's own example: the stored row and the `tbdm_` secret.
+#[test]
+fn issued_machine_credential_shape() {
+    let wire = serde_json::json!({
+        "credential": {
+            "created_at": "2026-07-15T14:10:00Z",
+            "created_by": "000000000000000001",
+            "executor_kind": "host_agent",
+            "id": "00000000-0000-4000-e000-000000000003",
+            "label": "Rack 2 host agent",
+            "server_id": "00000000-0000-4000-d000-000000000001"
+        },
+        "secret": format!("tbdm_{}_{}", "0".repeat(32), "f".repeat(64))
+    });
+    let text = wire.to_string();
+    assert_golden::<IssuedMachineCredential>(&text, &[]);
+    let issued: IssuedMachineCredential = serde_json::from_str(&text).unwrap();
+    assert!(issued.secret.starts_with("tbdm_"));
+    assert_eq!(issued.credential.executor_kind, "host_agent");
+}
+
+/// The issue body names the program kind in the backend's snake_case spelling.
+#[test]
+fn machine_credential_issue_body() {
+    for (kind, wire) in [
+        (ExecutorKind::HostAgent, "host_agent"),
+        (ExecutorKind::ModRuntime, "mod_runtime"),
+    ] {
+        assert_eq!(
+            serde_json::to_value(MachineCredentialIssue {
+                executor_kind: kind,
+                label: "Primary".into(),
+            })
+            .unwrap(),
+            serde_json::json!({"executor_kind": wire, "label": "Primary"})
+        );
+    }
+}
+
+/// One **live** `GET /servers/:id/status/stream` frame, captured byte-exact off a running Axum
+/// stack (`curl -sN .../status/stream`) whose `server_statuses` row reproduces the
+/// `GET__servers.json` golden. Includes the `data: ` prefix and the `\n\n` terminator the
+/// `sse.rs` splitter keys on, so the fixture is the wire and not a paraphrase of it.
+///
+/// The rest of the fixture corpus is request bodies, so without this one nothing pinned the type a
+/// live consumer deserialises on every single frame.
+///
+/// It is embedded from the corpus rather than written out here because the DOM oracle serves the
+/// same file to the browser as `text/event-stream`: one file means the bytes this test pins and the
+/// bytes a rendered page receives cannot drift apart.
+pub(crate) fn live_sse_frame() -> &'static str {
+    golden!("GET__servers__00000000-0000-4000-d000-000000000001__status__stream.sse.txt")
+}
+
+/// The captured live frame must deserialize, and must carry the tenth the `numeric(5,1)`
+/// column really holds — rounding it away would be a second, quieter version of this bug.
+#[test]
+fn live_sse_frame_deserializes_with_its_fractional_fps() {
+    let payload = live_sse_frame()
+        .trim()
+        .strip_prefix("data:")
+        .expect("captured frame is a data: frame")
+        .trim();
+    let dto: ServerStatusDto = serde_json::from_str(payload)
+        .unwrap_or_else(|e| panic!("R-api: live SSE frame does not deserialize: {e}"));
+    assert_eq!(dto.server_fps, 58.7, "the wire tenth must survive the DTO");
+    assert_eq!(dto.player_count, 47);
+    assert_eq!(dto.max_players, 64);
+    assert_eq!(dto.uptime_seconds, 19842);
+    assert_eq!(dto.ingame_time.as_deref(), Some("06:42"));
+    assert_eq!(dto.ingame_weather.as_deref(), Some("overcast"));
+    assert_eq!(
+        dto.telemetry_queue,
+        Some(TelemetryQueueDto {
+            backlog: 3,
+            capacity: 512,
+            dropped_total: 0,
+            oldest_age_seconds: 12,
+            reported_at: "2026-07-26T05:00:00Z".into(),
+        }),
+        "the live frame carries the stored queue reading"
+    );
+    // The frame is also a golden: it must re-serialize canonically byte-equal.
+    assert_eq!(canon(payload), canon(&serde_json::to_string(&dto).unwrap()));
+}
+
+// ── frame decoding ──
+//
+// These live beside the round-trip harness because the module that uses them is browser-only and
+// therefore never compiled by the native test run, which is why the decoder itself lives here.
+
+/// The captured live frame, through the real decoder. This once returned a rejection — every live
+/// frame did — and the read loop dropped it without a word.
+#[test]
+fn a_live_frame_decodes_into_a_status() {
+    match decode_server_status_frame(live_sse_frame()) {
+        SseFrame::Status(dto) => {
+            assert_eq!(dto.server_fps, 58.7);
+            assert_eq!(dto.player_count, 47);
+            assert_eq!(dto.max_players, 64);
+            assert!(dto.is_online);
+        }
+        other => panic!("live frame must decode into a status, got {other:?}"),
+    }
+}
+
+/// The `i64` regression, pinned: a fractional `server_fps` must never be why a frame is dropped.
+#[test]
+fn a_fractional_fps_is_not_a_reason_to_reject_a_frame() {
+    for fps in ["58.7", "0.0", "29.4", "60", "100.0", "19.9"] {
+        let frame = format!(
+            "data: {{\"server_id\":\"s\",\"is_online\":true,\"player_count\":1,\
+             \"max_players\":2,\"server_fps\":{fps},\"uptime_seconds\":3,\
+             \"updated_at\":\"t\"}}\n\n"
+        );
+        assert!(
+            matches!(decode_server_status_frame(&frame), SseFrame::Status(_)),
+            "server_fps={fps} must decode"
+        );
+    }
+}
+
+/// A malformed payload must come back carrying its reason. A bare `None` here is exactly what
+/// made this class of defect invisible.
+#[test]
+fn a_bad_payload_is_rejected_with_its_reason_not_silently_dropped() {
+    match decode_server_status_frame("data: {\"server_id\":\"s\",\"is_online\":\"yes\"}\n\n") {
+        SseFrame::Rejected { error, payload } => {
+            assert!(error.contains("invalid type"), "unexpected error: {error}");
+            assert!(payload.contains("server_id"), "payload must be reported");
+        }
+        other => panic!("expected Rejected, got {other:?}"),
+    }
+}
+
+/// Keepalives and non-`data:` lines are NOT rejections — auditing them would drown the real
+/// signal, which is the failure mode the audit exists to avoid.
+#[test]
+fn non_data_frames_are_not_audited_as_rejections() {
+    for f in [": keepalive\n\n", "event: ping\n\n", "\n\n", "id: 7\n\n"] {
+        assert_eq!(
+            decode_server_status_frame(f),
+            SseFrame::NotData,
+            "frame {f:?}"
+        );
+    }
+}
+
+#[test]
+fn the_warn_ladder_is_first_then_powers_of_ten() {
+    for n in [10u64, 100, 1000, 10_000] {
+        assert!(is_power_of_ten(n), "{n} should be on the ladder");
+    }
+    for n in [0u64, 1, 2, 9, 11, 99, 101, 1001] {
+        assert!(!is_power_of_ten(n), "{n} should not be on the ladder");
+    }
+}
+
+/// The audit message names the field and the two types to reconcile. A line that said only "parse
+/// failed" would have cost exactly as much time as no line at all.
+#[test]
+fn the_audit_message_names_the_offending_field_and_both_structs() {
+    let SseFrame::Rejected { error, payload } = decode_server_status_frame(
+        "data: {\"server_id\":\"s\",\"is_online\":true,\"player_count\":1,\
+         \"max_players\":2,\"server_fps\":\"nope\",\"uptime_seconds\":3,\"updated_at\":\"t\"}\n\n",
+    ) else {
+        panic!("expected Rejected");
+    };
+    let msg = audit_rejected_frame("test", &error, &payload);
+    assert!(msg.contains("server_fps"), "must name the field: {msg}");
+    assert!(msg.contains("ServerStatusDto") && msg.contains("ServerStatus"));
+    assert!(msg.contains("REJECTED and dropped"));
+}
+
+// ── machine credential writes ──
+// The issued secret and id, and the revocation time, are server-generated; the goldens hold the
+// fixed placeholders of the API's golden normalisation table there, never a live secret.
+
+#[test]
+fn machine_credential_issued() {
+    let golden = golden!("POST__servers__00000000-0000-4000-d000-000000000001__credentials.json");
+    assert_golden::<IssuedMachineCredential>(golden, &[]);
+    let issued: IssuedMachineCredential = serde_json::from_str(golden).unwrap();
+    assert!(issued.secret.starts_with("tbdm_"));
+    assert!(issued.credential.revoked_at.is_none());
+}
+
+#[test]
+fn machine_credential_revoked() {
+    let golden = golden!(
+        "DELETE__servers__00000000-0000-4000-d000-000000000002__credentials__00000000-0000-4000-e000-000000000004.json"
+    );
+    assert_golden::<MachineCredential>(golden, &[]);
+    let revoked: MachineCredential = serde_json::from_str(golden).unwrap();
+    assert_eq!(revoked.revoke_reason.as_deref(), Some("Host retired"));
+    assert!(revoked.revoked_at.is_some() && revoked.revoked_by.is_some());
+}

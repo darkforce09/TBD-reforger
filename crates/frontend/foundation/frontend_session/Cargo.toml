@@ -1,0 +1,57 @@
+# The single-page app's session: the session data and its persisted slice, the reactive store that
+# implements the transport's token provider, the cross-tab session refresh, the sign-out hooks, the
+# route guard and the two content gates.
+[package]
+name = "frontend_session"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The single-page app's session store, session refresh, sign-out hooks, route guard and content gates."
+
+[package.metadata.layout]
+category = "crates/frontend/foundation"
+tier = 9
+targets = "any"
+
+[dependencies]
+# The profile, the role ladder, the rotated token pair and the session identifier.
+frontend_api_dtos = { workspace = true }
+# The access tiers and the redirect the route guard enforces.
+frontend_route_table = { workspace = true }
+# The token provider seam the store implements, the single flight and the refresh request path.
+frontend_transport = { workspace = true }
+# The toast the route guard raises for a refused route.
+frontend_ui = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+base64 = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# The browser halves: the router hooks of the route guard, browser storage, the Web Locks and
+# BroadcastChannel calls of the session refresh, its request and its deadline.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+leptos_router = { workspace = true }
+gloo-net = { workspace = true }
+gloo-timers = { workspace = true, features = ["futures"] }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Navigator",
+    "Storage",
+    "EventTarget",
+    # The refresh request: sent with the cookie, aborted at its deadline.
+    "RequestCredentials",
+    "AbortController",
+    "AbortSignal",
+] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

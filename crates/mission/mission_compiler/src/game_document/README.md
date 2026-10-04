@@ -88,9 +88,9 @@ authored editor triggers), and the [API](/documentation/glossary/a_to_f.md#api) 
     `unsupported_authored_data`, and `crates/api/api_missions/src/handlers/mission_versions.rs`
     runs `scan_editor_payload_types` on every save;
   - the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator): its compiled export
-    (`apps/frontend/src/workspaces/editor/session/document_commands/imp/compilation.rs`), the
-    flow defaults of `apps/frontend/src/workspaces/editor/ui/inspector/env.rs`, and the
-    `compiled_meta` builders in `apps/frontend/src/foundation/transport/dto/`.
+    (`crates/frontend/workspaces/mission_creator_session/src/document_commands/imp/compilation.rs`), the
+    flow defaults of `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/env.rs`, and the
+    `compiled_meta` builders in `crates/frontend/foundation/frontend_api_dtos/src/`.
 - Rules: `contracts/fixtures/missions/valid/compiler-shaped-two-faction.json` is regenerated
   from this module, never hand-edited (`compiler_shaped_golden_is_a_fresh_emitter_output` in
   `tests/cases_3.rs`); `SLOT_RANKS`, `SLOT_STANCES` and `VEHICLE_SEAT_ROLES` equal the schema's

@@ -34,8 +34,8 @@ each lookup is best-effort, so a missing piece is `null` rather than a failed da
   `services::fleet_overview`; `api_http_layer` for the extractor, `api_foundation` for the errors
   and `api_state` for the application state.
 - Used by: the domain's `routes.rs`; the leaderboard paging suite in `apps/api/tests/`; over HTTP, the dashboard in
-  `apps/frontend/src/pages/command_center/dashboard/` and the leaderboards and operator
-  dossier in `apps/frontend/src/pages/operations/leaderboards/`.
+  `crates/frontend/pages/command_center_pages/src/dashboard/` and the leaderboards and operator
+  dossier in `crates/frontend/pages/operations_pages/src/leaderboards/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); a
   leaderboard category maps to its ordering only through the fixed list, never through request

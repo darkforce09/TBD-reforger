@@ -143,8 +143,8 @@ table, with a skeleton and a worked sample written from a real folder; the
 | crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `apps/api/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
 | domain or subsystem | Public surface | `readme_domain.md` | `crates/api/api_missions/src/`, `crates/streaming/map_asset_loading/src/terrain/` |
 | leaf | none | `readme_leaf.md` | `crates/line_of_sight/interior_line_of_sight/src/` |
-| page | Routes, Data, States | `readme_page.md` | `apps/frontend/src/pages/operations/schedule/` |
-| app | Routes, Public surface | `readme_app.md` | `apps/frontend/src/workspaces/editor/` |
+| page | Routes, Data, States | `readme_page.md` | `crates/frontend/pages/operations_pages/src/schedule/` |
+| app | Routes, Public surface | `readme_app.md` | `crates/frontend/workspaces/mission_creator_workspace/src/` |
 | command-line | Commands | `readme_command_line.md` | `tools/developer_tools/src/bin/`, `tools/commands/database_operations/src/` |
 | data (contracts, assets, fixtures, migrations, seeds) | Format, Producers and consumers | `readme_data.md` | `contracts/fixtures/missions/`, `crates/api/api_database/migrations/` |
 | mod scripts | Authority | `readme_mod_scripts.md` | `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` |
@@ -166,7 +166,7 @@ table, with a skeleton and a worked sample written from a real folder; the
   other folders import, the binaries, the HTTP routes the folder owns. Only what crosses the folder's
   boundary, never an inventory of everything marked `pub`.
 - **`## Routes`**: each browser route the folder renders: path, component, access tier and layout
-  flags, as `apps/frontend/src/app_routes.rs` and `apps/frontend/src/foundation/route_table/mod.rs`
+  flags, as `apps/frontend/src/app_routes.rs` and `crates/frontend/foundation/frontend_route_table/src/routes.rs`
   declare them.
 - **`## Data`**: each API call the page makes (method, path, the DTO it reads or sends), the context
   and storage it reads, and what it writes.
@@ -211,8 +211,9 @@ Go down this list and take the first kind that fits.
    `apps/api/src/bin/`, `tools/commands/database_operations/src/`). Any other folder that
    parses or runs commands, such as a folder inside a command group, is a domain or a leaf and
    links the command-line README it belongs to.
-9. **app**: a workspace directly under `apps/frontend/src/workspaces/`.
-10. **page**: a folder under `apps/frontend/src/pages/` that holds a route component.
+9. **app**: a workspace crate directly under `crates/frontend/workspaces/`.
+10. **page**: a folder in the `src/` of a page crate under `crates/frontend/pages/` that holds a
+    route component.
 11. **domain or subsystem**: any other folder that has child folders besides exempt ones.
 12. **leaf**: any other folder.
 

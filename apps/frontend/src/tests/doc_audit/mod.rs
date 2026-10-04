@@ -1,20 +1,97 @@
-//! Structural and documentation audit of every production file of the frontend crate.
+//! Structural and documentation audit of every production file of the frontend: the app and
+//! every frontend crate.
 //!
-//! **Role:** walks `src/` (the crate root files and the `foundation`, `features`, `pages`,
-//! `workspaces` and `shell` layers) and enforces five rules on each production file — it opens
-//! with a `//!` header, it is at most [`MAX_LINES`] lines, every visible item carries a doc comment,
-//! it holds no inline test module, and no comment names a ticket or a wave.
+//! **Role:** walks the app's `src/` (the crate root files and the `shell` layer) and the `src/` of
+//! every crate the workspace's `crates/frontend/*/*` member glob reaches, and enforces five rules on
+//! each production file — it opens with a `//!` header, it is at most [`MAX_LINES`] lines, every
+//! visible item carries a doc comment, it holds no inline test module, and no comment names a
+//! ticket or a wave.
 //! **Position:** compiled only under `cfg(test)`, declared from `main.rs`. It lives inside the
-//! `tests` subtree the walk skips, so it never audits itself.
+//! `tests` subtree the walk skips, so it never audits itself. The repository root comes from the
+//! test support's root finder, so the walk reads the same tree from any checkout.
 //! **Signals & state:** none. Every rule is a pure function over one file's text.
 //! **Invariants:** all five rules apply to every production file, with no exemption path: a file
-//! that breaks a rule is fixed, never listed.
+//! that breaks a rule is fixed, never listed. The walk fails closed: a missing member glob, a
+//! frontend crate folder without its manifest or its `src/`, or an unreadable folder fails the
+//! audit instead of shrinking it.
 
+use frontend_test_support::repository_root::repository_root;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Longest a frontend production file is allowed to be.
 const MAX_LINES: usize = 500;
+
+/// The workspace member glob that reaches every frontend crate, as the root `Cargo.toml` spells
+/// it: one folder per layer, one crate folder per layer entry.
+const FRONTEND_CRATE_MEMBER_GLOB: &str = "crates/frontend/*/*";
+
+/// The folder the member glob expands under, relative to the repository root.
+const FRONTEND_CRATES_FOLDER: &str = "crates/frontend";
+
+/// The `src/` folders the audit walks: the app's own, then every frontend crate's, sorted.
+///
+/// # Panics
+///
+/// When the root `Cargo.toml` declares no [`FRONTEND_CRATE_MEMBER_GLOB`] member, when the glob
+/// reaches no crate, when a folder it reaches holds no `Cargo.toml` or no `src/`, or when a folder
+/// cannot be read.
+fn audited_source_roots(repository: &Path) -> Vec<PathBuf> {
+    let workspace_manifest = fs::read_to_string(repository.join("Cargo.toml"))
+        .expect("read the workspace's root Cargo.toml");
+    let member_line = format!("\"{FRONTEND_CRATE_MEMBER_GLOB}\",");
+    assert!(
+        workspace_manifest
+            .lines()
+            .any(|line| line.trim() == member_line),
+        "the root Cargo.toml declares no `{FRONTEND_CRATE_MEMBER_GLOB}` member: the frontend \
+         crates the audit walks are found through that glob"
+    );
+    let mut roots = vec![Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
+    let mut crate_roots = Vec::new();
+    for layer in subfolders(&repository.join(FRONTEND_CRATES_FOLDER)) {
+        for crate_folder in subfolders(&layer) {
+            assert!(
+                crate_folder.join("Cargo.toml").is_file(),
+                "{} matches `{FRONTEND_CRATE_MEMBER_GLOB}` but holds no Cargo.toml",
+                crate_folder.display()
+            );
+            let source = crate_folder.join("src");
+            assert!(
+                source.is_dir(),
+                "frontend crate {} has no src/ folder to audit",
+                crate_folder.display()
+            );
+            crate_roots.push(source);
+        }
+    }
+    assert!(
+        !crate_roots.is_empty(),
+        "`{FRONTEND_CRATE_MEMBER_GLOB}` reaches no crate under {}",
+        repository.join(FRONTEND_CRATES_FOLDER).display()
+    );
+    roots.extend(crate_roots);
+    roots
+}
+
+/// The folders directly inside `dir`, sorted by path.
+///
+/// # Panics
+///
+/// When `dir` or one of its entries cannot be read.
+fn subfolders(dir: &Path) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = fs::read_dir(dir)
+        .unwrap_or_else(|error| panic!("read folder {}: {error}", dir.display()))
+        .map(|entry| {
+            entry
+                .unwrap_or_else(|error| panic!("read an entry of {}: {error}", dir.display()))
+                .path()
+        })
+        .filter(|path| path.is_dir())
+        .collect();
+    out.sort();
+    out
+}
 
 /// Every `.rs` file under `dir` that is not inside a `tests/` subtree, sorted by path.
 fn production_files(dir: &Path) -> Vec<PathBuf> {
@@ -25,12 +102,18 @@ fn production_files(dir: &Path) -> Vec<PathBuf> {
 }
 
 /// Depth-first collector behind [`production_files`].
+///
+/// # Panics
+///
+/// When a folder or one of its entries cannot be read, so an unreadable folder fails the audit
+/// instead of dropping out of it.
 fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
+    let entries =
+        fs::read_dir(dir).unwrap_or_else(|error| panic!("read folder {}: {error}", dir.display()));
+    for entry in entries {
+        let path = entry
+            .unwrap_or_else(|error| panic!("read an entry of {}: {error}", dir.display()))
+            .path();
         if path.is_dir() {
             if path.file_name().is_some_and(|n| n == "tests") {
                 continue;
@@ -65,10 +148,10 @@ fn needs_doc(line: &str) -> bool {
         return false;
     };
     for kw in ["fn", "struct", "enum", "type", "const", "static", "trait"] {
-        if let Some(tail) = rest.strip_prefix(kw) {
-            if tail.starts_with(|c: char| !c.is_alphanumeric() && c != '_') {
-                return true;
-            }
+        if let Some(tail) = rest.strip_prefix(kw)
+            && tail.starts_with(|c: char| !c.is_alphanumeric() && c != '_')
+        {
+            return true;
         }
     }
     false
@@ -171,11 +254,7 @@ enum Blanked {
 fn masked(text: &str, blanked: Blanked) -> String {
     /// A space for every character but a newline, which is kept so line numbers survive.
     fn blank(c: char) -> char {
-        if c == '\n' {
-            c
-        } else {
-            ' '
-        }
+        if c == '\n' { c } else { ' ' }
     }
     let keep_comments = matches!(blanked, Blanked::LiteralsOnly);
     let chars: Vec<char> = text.chars().collect();
@@ -328,12 +407,11 @@ fn findings(rel: &str, text: &str) -> Vec<String> {
                 bad.push(format!("{rel}:{}: item is undocumented", i + 1));
             }
         }
-        if line.trim_start().starts_with("#[cfg(test)]") {
-            if let Some(next) = code[i + 1..].iter().find(|l| !l.trim().is_empty()) {
-                if is_inline_mod(next) {
-                    bad.push(format!("{rel}:{}: inline test module", i + 1));
-                }
-            }
+        if line.trim_start().starts_with("#[cfg(test)]")
+            && let Some(next) = code[i + 1..].iter().find(|l| !l.trim().is_empty())
+            && is_inline_mod(next)
+        {
+            bad.push(format!("{rel}:{}: inline test module", i + 1));
         }
         if names_ticket_or_wave(unquoted[i]) {
             bad.push(format!("{rel}:{}: comment names a ticket or wave", i + 1));
@@ -344,20 +422,25 @@ fn findings(rel: &str, text: &str) -> Vec<String> {
 
 #[test]
 fn frontend_production_files_meet_the_documentation_standard() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let repository = repository_root(env!("CARGO_MANIFEST_DIR"));
     let mut bad: Vec<String> = Vec::new();
-    for path in production_files(&root) {
-        let text = fs::read_to_string(&path).expect("read frontend source");
-        let rel = path
-            .strip_prefix(&root)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .replace('\\', "/");
-        bad.extend(findings(&rel, &text));
+    let mut audited = 0_usize;
+    for root in audited_source_roots(&repository) {
+        for path in production_files(&root) {
+            let text = fs::read_to_string(&path).expect("read frontend source");
+            let rel = path
+                .strip_prefix(&repository)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .replace('\\', "/");
+            bad.extend(findings(&rel, &text));
+            audited += 1;
+        }
     }
+    eprintln!("frontend documentation audit: {audited} production files");
     assert!(
         bad.is_empty(),
-        "frontend documentation audit failed:\n{}",
+        "frontend documentation audit failed over {audited} production files:\n{}",
         bad.join("\n")
     );
 }

@@ -1,0 +1,48 @@
+# The operations pages of the single-page app: the event schedule, the event hub with its inline
+# ORBAT slotting, one mission's slotting on a page of its own, the viewer's service record with
+# the leave panels, and the global leaderboards with the operator dossier.
+[package]
+name = "operations_pages"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The event schedule, event hub, ORBAT selection, service record and leaderboard pages."
+
+[package.metadata.layout]
+category = "crates/frontend/pages"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The event, mission, ORBAT, member, deployment, leave and leaderboard wire types and their typed
+# identifiers.
+frontend_api_dtos = { workspace = true }
+# The HTTP client, the typed endpoint calls and the event registration helpers.
+frontend_transport = { workspace = true }
+# The session store, the role checks and the sign-in gate every page renders inside.
+frontend_session = { workspace = true }
+# The design-system primitives and the date, countdown and avatar helpers.
+frontend_ui = { workspace = true }
+# `is_http_url`, the scheme guard on the replay links and avatar sources the pages render.
+http_url_guard = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde_json = { workspace = true }
+
+# The browser halves: the route parameter hooks of the event hub and the ORBAT selection page, and
+# the URL encoding of the member and leaderboard searches.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+leptos_router = { workspace = true }
+js-sys = { workspace = true }
+
+[dev-dependencies]
+# The repository-root finder, the captured API responses behind `golden!`, the source scrubber and
+# the source shards the guard tests read through.
+frontend_test_support = { workspace = true }
+# The guard's case table (`http_url_guard::cases`), which every page test that renders a stored
+# link or image runs through its render path.
+http_url_guard = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

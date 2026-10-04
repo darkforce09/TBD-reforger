@@ -95,8 +95,8 @@ jobs:
   # so any warning fails the job: host target with `--all-targets --all-features` over the offline
   # service worker, then `--target wasm32-unknown-unknown` (default features, without
   # `--all-targets`) over every package the wasm32 lint derives from the workspace: each member
-  # declaring `targets = "wasm32"` and the offline service worker (the frontend's own wasm32 lint
-  # is the frontend job's). tests: `cargo test --all-features -p offline_service_worker`, host
+  # declaring `targets = "wasm32"` and the offline service worker (the frontend family's wasm32
+  # lint is the frontend job's). tests: `cargo test --all-features -p offline_service_worker`, host
   # target. No separate build step, no trunk.
   wasm-ci:
     name: wasm-ci (offline service worker, wasm32 lint)
@@ -112,13 +112,15 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask mk wasm-ci
 
-  # --- frontend: the Rust/Leptos SPA crate (`cargo xtask mk ci-local-leptos`) ---
-  # fmt: `cargo fmt -p frontend --check`. clippy, twice with `-D warnings`: `cargo clippy -p
-  # frontend --target wasm32-unknown-unknown --all-targets -- -D warnings` (the browser build) and
-  # `cargo clippy -p frontend --all-targets --locked -- -D warnings` (the native test build). tests:
-  # `cargo test -p frontend`, host target. build: `trunk build --release` in
-  # apps/frontend. The editor S/V/R/T smokes + the
-  # frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS;
+  # --- frontend: the Rust/Leptos SPA and its crates (`cargo xtask mk ci-local-leptos`) ---
+  # Every cargo line names the frontend family, derived from the workspace: `-p frontend` plus one
+  # `-p` per member under crates/frontend (`ci_task_catalog::frontend_package_lane`), so a frontend
+  # crate is gated from its first commit. fmt: `cargo fmt -p frontend -p … --check`. clippy, twice
+  # with `-D warnings`: `cargo clippy -p frontend -p … --target wasm32-unknown-unknown
+  # --all-targets -- -D warnings` (the browser build) and `cargo clippy -p frontend -p …
+  # --all-targets --locked -- -D warnings` (the native test build). tests: `cargo test -p frontend
+  # -p …`, host target. build: `trunk build --release` in apps/frontend. The editor S/V/R/T
+  # smokes + the frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS;
   # they run in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path
   # PRs). `gate doctor` fails those fast if the env drifts.
   frontend:
@@ -136,13 +138,13 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: trunk
-      - name: fmt + clippy -D warnings (wasm32, native) + test + trunk (ci-local-leptos)
+      - name: fmt + clippy -D warnings (wasm32, native) + test over the frontend family + trunk (ci-local-leptos)
         run: cargo xtask mk ci-local-leptos
 
   # --- workspace-members: every member the jobs above do not test ---
   # `cargo xtask ci workspace-member-tests` derives its package list from the root Cargo.toml
   # workspace minus the members a dedicated job tests (api with every crates/api package,
-  # frontend and the offline service worker of wasm-ci), and runs `cargo test -p <package>` once per package, so features never
+  # frontend with every crates/frontend package, and the offline service worker of wasm-ci), and runs `cargo test -p <package>` once per package, so features never
   # unify across packages. A member the workspace gains is tested here from the moment the
   # manifest names it; `ci_local_tests_every_workspace_member` and
   # `the_ci_workflow_tests_every_workspace_member` (ci_task_catalog) keep every member in a job.

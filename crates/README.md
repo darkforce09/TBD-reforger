@@ -12,6 +12,7 @@ crates/
 ├── ballistics/  the mortar ballistics: the catalog and flight model, the solver, the fire-mission planner
 ├── contracts/   shapes and policies two programs share, such as the offline cache policy
 ├── foundation/  dependency-free building blocks, such as the HTTP URL guard
+├── frontend/  the single-page app's library crates, one folder per layer, such as the session and the mission review record
 ├── geometry/  plain geometry, map coordinates, camera arithmetic and spatial indexes, such as the BVH
 ├── graphics/  map-agnostic renderer building blocks, such as the render primitives
 ├── line_of_sight/  visibility over the bare ground, inside one building and through the placed world

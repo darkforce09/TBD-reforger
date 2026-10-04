@@ -61,7 +61,7 @@ republishes `window.__t9386`.
   - `crate::terrain::satellite_quadtree`, which claims the floor at boot and names the budget's
     share of a downscale in its warning;
   - the Mission Creator's frame pump, which shows the HUD tail
-    (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`).
+    (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs`).
 - Rules:
   - the wasm32 and native builds define `configured_budget_bytes`, `heap_bytes` and `publish` side
     by side, so the model's tests and this folder's test run natively

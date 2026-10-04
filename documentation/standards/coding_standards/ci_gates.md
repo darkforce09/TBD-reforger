@@ -65,13 +65,13 @@ the first failure; `ci-local` runs it right after `verify-ci-shell`, and the
 in every path that moves with the tree. Each law prints `<LAW>: PASS`, or `FAIL` with exit 1 on a
 finding and exit 2 when an input could not be read. The judged set is every workspace member that
 declares `[package.metadata.layout]` plus every member under `crates/<category…>/<name>` or
-`tools/<category>/<name>`; today no member is judged, and the members outside the set are listed
-in a note.
+`tools/<category>/<name>`; the members outside the set (the apps and the two tool binaries) are
+listed in a note.
 
 ### WS-1 crate tiers
 
 `cargo xtask verify crate-tiers` judges rules 1 to 8 of the crate-tier law: every `Cargo.toml`
-under `apps`, `crates`, `tools`, `tools` and `legacy` (outside test trees, fixtures and build
+under `apps`, `crates`, `tools` and `legacy` (outside test trees, fixtures and build
 output) is a workspace member; each judged member declares `category`, `tier` and `targets`, sits
 at its category plus its name, and declares the tier its dependencies give it (0 with no judged
 dependency, otherwise 1 plus the highest); edges point strictly down and follow the category
@@ -101,20 +101,38 @@ several lines, `pub extern crate`): a shim, which never survives a commit.
 
 ### WS-4 frontend layering
 
-`cargo xtask verify frontend-layering` maps the frontend's sources onto foundation, features,
-pages, workspaces and the shell through the layer table in `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`
-and reports the import edges where a lower layer names a higher one, pages and workspaces name
-each other, or one page area names another. Inside the foundation, `FOUNDATION_SUB_AREA_ORDER` in
-the same file orders the sub-areas ui < utils < transport < route_table < auth < {offline,
-map_view}: a sub-area imports only the sub-areas before it, the two peers never import each other,
-and only test files import `foundation/test_support`. The law is hard at zero: every edge,
-production or test, fails it, as does a foundation folder missing from the order.
+`cargo xtask verify frontend-layering` judges the frontend in two modes, configured in
+`tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`.
+
+- **Crate-edge mode** (`FRONTEND_CRATE_EDGES`): every normal, dev and build dependency edge
+  between frontend crates. A crate's layer is its folder `crates/frontend/<layer>/` (foundation <
+  features < pages, workspaces) and the app `apps/frontend` is the shell. An edge fails when a
+  lower layer depends on a higher one, when pages and workspaces depend on each other, or when one
+  page crate depends on another. The crate orders hold inside a layer folder:
+  `FOUNDATION_CRATE_ORDER` (`frontend_ui` < `frontend_api_dtos` < {`frontend_transport`,
+  `frontend_route_table`} < `frontend_session` < {`frontend_offline`, `frontend_map_view`}, the
+  braced crates peers that never depend on each other, `frontend_test_support` reached only
+  through dev-dependencies), `MISSION_CREATOR_CRATE_ORDER` (`mission_creator_state` <
+  `mission_creator_engine_bridge` < `mission_creator_session` < `mission_creator_arsenal` <
+  `mission_creator_workspace`) and `DEBUG_BENCHES_CRATE_ORDER`, an order of its own whose crate
+  and the Mission Creator's never depend on each other. A frontend crate in no layer folder, a
+  crate in a layer folder with orders but in none of them, a crate an order names that sits in
+  another layer folder, and a crate an order names that no member carries are findings.
+- **In-crate mode** (`APP_LAYERS`): the module-level rules inside one crate, through a layer
+  table; the app's table maps `main.rs`, `app_routes.rs`, `shell/` and `tests/` onto the shell,
+  and every app source must sit under a row.
+
+The law is hard at zero: every edge, production or test, normal or dev, fails it.
 
 ### WS-5 Tailwind sources
 
-`cargo xtask verify tailwind-sources` fails when a workspace member that depends on `leptos` has no
-`@source` line in `apps/frontend/style/aegis.css` whose glob, resolved from the
-stylesheet's folder, covers its `src/**/*.rs`.
+`cargo xtask verify tailwind-sources` holds the `@source` lines of `apps/frontend/style/aegis.css`
+exact: every workspace member that depends on `leptos` (outside dev-dependencies), the app
+included, is named by exactly one line `@source "<path>/src/**/*.rs";` whose path, resolved from
+the stylesheet's folder, is that member's folder. A member no line names, a member several lines
+name, and a stale line that names no leptos member (an ancestor or wildcard glob included) are
+findings. Trunk's `[watch]` list in `apps/frontend/Trunk.toml` covers `crates/frontend`, so a
+change in any frontend crate rebuilds the bundle.
 
 ## verify-documentation
 

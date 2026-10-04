@@ -82,8 +82,8 @@ All also in `prelude`, the rule ids and flow defaults excepted:
 - Used by:
   - the API's compile, save and artifact code in `crates/api/api_missions/src/`, which stores
     `COMPILER_PACKAGE_VERSION` with every artifact;
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/` and the mission DTOs of
-    `apps/frontend/src/foundation/transport/dto/`;
+  - the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/` and the mission DTOs of
+    `crates/frontend/foundation/frontend_api_dtos/src/`;
   - `mission_document`'s payload round-trip tests.
 - Rules:
   - mission tier 5, one above `mission_validation` (`cargo xtask verify crate-tiers`);
@@ -104,4 +104,4 @@ All also in `prelude`, the rule ids and flow defaults excepted:
   the saved payload.
 - [Mission artifacts](/documentation/apps/api/verification_evidence/mission_artifacts.md)
   — what the API does with a compiled document.
-- [Mission Creator feature inventory: data persistence and compile](/documentation/apps/frontend/workspaces/editor/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/data_persistence_and_compile.md) — when the editor compiles and what Save Version sends.

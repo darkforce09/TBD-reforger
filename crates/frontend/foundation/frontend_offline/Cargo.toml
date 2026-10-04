@@ -1,0 +1,63 @@
+# The single-page app's offline core: the service worker registration, the offline pack download
+# into the caches the offline worker answers from, the saved copies it leaves behind, and the
+# page-wide pack status mirrored onto the document element.
+[package]
+name = "frontend_offline"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The single-page app's offline service worker registration, offline pack download, saved copies and pack status."
+
+[package.metadata.layout]
+category = "crates/frontend/foundation"
+tier = 9
+targets = "any"
+
+[dependencies]
+# The catalog identifiers of the ballistics catalog list the pack reads.
+frontend_api_dtos = { workspace = true }
+# The rate-limit retry every saved-copy read sends through.
+frontend_transport = { workspace = true }
+# The offline policy the service worker applies (cache names, request classes, the terrain pack
+# list), linked so the pack writes the caches and keys the worker reads.
+offline_cache_policy = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+# The route watcher that starts the pack download.
+leptos_router = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+url = { workspace = true }
+
+# The browser halves: the service worker registration, the Cache Storage reads and writes, the
+# storage estimate and persistence request, the document's asset links and attributes, and the
+# download's parallel fetches and retry waits.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+futures = { workspace = true }
+gloo-timers = { workspace = true, features = ["futures"] }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "Document",
+    "Element",
+    "Navigator",
+    "NodeList",
+    "Cache",
+    "CacheStorage",
+    "ServiceWorkerContainer",
+    "StorageManager",
+    "Headers",
+    "RequestInit",
+    "RequestCredentials",
+    "Response",
+] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

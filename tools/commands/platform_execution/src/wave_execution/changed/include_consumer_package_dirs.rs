@@ -1,8 +1,9 @@
 //! The workspace member folders and the include-input resolution.
 //!
 //! **Role:** reads the workspace member folders from the root manifest, finds the packages that
-//! pull an orphan `.rs` fragment in through `include!`, `include_str!` or `#[path]`, and lists the
-//! include inputs each package compiles.
+//! pull an orphan `.rs` fragment in through `include!`, `include_str!` or `#[path]`, lists the
+//! include inputs each package compiles, and lists the repository files a package's tests read at
+//! run time through the frontend test support (`golden!`, `repository_text`, `repository_path`).
 //!
 //! **Position:** called through the parent `changed` module by `changed_rs.rs`, `touch` and the
 //! frontend test scope; built on [`repository_laws::workspace_members`].
@@ -165,6 +166,77 @@ pub(crate) fn include_inputs_under(dirs: &[String]) -> Vec<PathBuf> {
                     }
                 }
             }
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// The folder `golden!("<file>")` reads `<file>` from, relative to the repository root.
+pub(crate) const API_GOLDENS_FOLDER: &str = "contracts/fixtures/api_goldens";
+
+/// The repository files the crates under `dirs` read at run time through the frontend test
+/// support's repository-root finder, as absolute paths under `root`.
+///
+/// Two spellings name them, and neither is an `include_str!` [`include_inputs_under`] can see:
+/// - `golden!("<file>")` reads `<file>` from [`API_GOLDENS_FOLDER`]; a `golden!` whose argument is
+///   no plain string literal (a macro forwarding its own argument) puts the whole folder in;
+/// - `repository_text(<manifest folder>, "<path>")` and `repository_path(…)` take a
+///   repository-root path: a file is that file, a folder every file under it.
+///
+/// A path that names nothing under `root` is not an input. Scanned per package folder of `dirs`,
+/// so every frontend crate's own reads count, wherever the crate sits.
+pub(crate) fn repository_reads_under(root: &Path, dirs: &[String]) -> Vec<PathBuf> {
+    let re_golden = regex::Regex::new(r#"golden!\(\s*([^)]*?)\s*\)"#).expect("static regex");
+    let re_repository = regex::Regex::new(
+        r#"repository_(?:text|path)\(\s*(?:env!\(\s*"CARGO_MANIFEST_DIR"\s*\)|[A-Za-z_][A-Za-z0-9_]*)\s*,\s*"([^"]+)""#,
+    )
+    .expect("static regex");
+    let mut named: Vec<String> = Vec::new();
+    for d in dirs {
+        if !Path::new(&d).is_dir() {
+            continue;
+        }
+        for consumer in rs_files_under(&[d.as_str()]) {
+            let Ok(body) = std::fs::read_to_string(&consumer) else {
+                continue;
+            };
+            // Flattened, as `include_inputs_under` reads: rustfmt wraps a long call across lines.
+            let flat = body.replace('\n', " ");
+            for c in re_golden.captures_iter(&flat) {
+                let argument = c[1].trim();
+                match argument
+                    .strip_prefix('"')
+                    .and_then(|rest| rest.strip_suffix('"'))
+                {
+                    Some(file) if !file.contains('"') => {
+                        named.push(format!("{API_GOLDENS_FOLDER}/{file}"))
+                    }
+                    _ => named.push(API_GOLDENS_FOLDER.to_string()),
+                }
+            }
+            for c in re_repository.captures_iter(&flat) {
+                named.push(c[1].to_string());
+            }
+        }
+    }
+    let mut out: Vec<PathBuf> = Vec::new();
+    for path in named {
+        if path.starts_with('/') || path.split('/').any(|segment| segment == "..") {
+            continue;
+        }
+        let cand = realpath_m(&root.join(&path));
+        if cand.is_file() {
+            out.push(cand);
+        } else if cand.is_dir() {
+            out.extend(
+                walkdir::WalkDir::new(&cand)
+                    .into_iter()
+                    .flatten()
+                    .filter(|e| e.file_type().is_file())
+                    .map(|e| e.path().to_path_buf()),
+            );
         }
     }
     out.sort();

@@ -99,14 +99,12 @@ pub(super) fn cargo_checks(root: &Path) -> Result<(), String> {
         Ok(home) => format!("{home}/.cargo/bin:{inherited}"),
         Err(_) => inherited,
     };
-    for (pkg, feats, lib, sel, ok_line) in CARGO_PINS {
+    for (pkg, feats, unit_tests, sel, ok_line) in CARGO_PINS {
         let mut args = vec!["test", "-p", pkg];
         if let Some(f) = feats {
             args.extend_from_slice(&["--features", f]);
         }
-        if *lib {
-            args.push("--lib");
-        }
+        args.push(unit_tests.flag());
         args.extend_from_slice(&[sel, "--", "--quiet"]);
         cargo_test_pin(root, &path, &args)?;
         if let Some(m) = ok_line {

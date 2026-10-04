@@ -12,7 +12,7 @@ extend cached access during a Discord outage.
 - Code: [`apps/frontend/src/shell/`](/apps/frontend/src/shell/):
   `layout.rs` holds `AppLayout`, the frame classifier and the active-link rule; `sidebar.rs` the
   sidebar, the drawer toggle and the link list, which reads the `NAVIGATION` table of
-  `apps/frontend/src/foundation/route_table/navigation_menu.rs`;
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`;
   `top_nav.rs` the top bar and sign-out; `membership_status.rs` the membership panel;
   `not_found.rs` the fallback page. The folder's
   [README](/apps/frontend/src/shell/README.md) describes each file.
@@ -23,11 +23,11 @@ extend cached access during a Discord outage.
   keeps the frame classifier, the active-link rule and the account badge, which the unit tests
   exercise. The one route of its own, the fallback, is in the README's
   [Routes](/apps/frontend/src/shell/README.md#routes).
-- Related: the [account pages](/documentation/apps/frontend/pages/account/account_pages.md),
+- Related: the [account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md),
   which the frame renders bare or links from its account menu; the
-  [session and access](/apps/frontend/src/foundation/auth/README.md) code, whose store the
+  [session and access](/crates/frontend/foundation/frontend_session/src/README.md) code, whose store the
   frame creates and whose [role](/documentation/glossary/n_to_z.md#role) ladder the sidebar applies;
-  the route table in `apps/frontend/src/foundation/route_table/mod.rs`, which declares each route's layout
+  the route table in `crates/frontend/foundation/frontend_route_table/src/routes.rs`, which declares each route's layout
   flags and breadcrumb.
 
 ## Behaviour
@@ -131,7 +131,7 @@ application, so the fallback is resolved in the browser and the response is neve
 
 - The frame's module header says the chromeless routes are "today the mission editor"
   (`apps/frontend/src/shell/layout.rs`); the route table flags four
-  (`apps/frontend/src/foundation/route_table/mod.rs`).
+  (`crates/frontend/foundation/frontend_route_table/src/routes.rs`).
 
 ## Data
 

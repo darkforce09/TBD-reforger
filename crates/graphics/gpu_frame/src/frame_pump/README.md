@@ -44,10 +44,10 @@ returns false, and then drops itself; a missing `window` ends the loop.
 - Depends on: `std`; `wasm-bindgen` and `web-sys` in the WebAssembly build.
 - Used by: `map_renderer`, which implements `FrameTarget` for `RenderEngine` in
   `crates/map_rendering/map_renderer/src/pump.rs`; and the single-page app, which starts a
-  `RafPump` (`apps/frontend/src/foundation/map_view/frame_pump.rs`) for the
+  `RafPump` (`crates/frontend/foundation/frontend_map_view/src/frame_pump.rs`) for the
   [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)'s viewport
-  (`apps/frontend/src/workspaces/editor/bridge/viewport.rs`) and for the debug building
-  viewer and world line-of-sight views (`apps/frontend/src/workspaces/debug/`).
+  (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs`) and for the debug building
+  viewer and world line-of-sight views (`crates/frontend/workspaces/debug_benches/src/`).
 - Rules: a frame renders, then polls, then counts, then calls the hook
   (`a_frame_renders_then_polls`, `the_hook_runs_after_the_frame_and_sees_the_running_count`); a
   contended or unbooted target skips the frame and keeps the loop alive

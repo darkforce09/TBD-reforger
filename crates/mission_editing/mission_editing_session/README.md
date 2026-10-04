@@ -20,7 +20,7 @@ crates/mission_editing/mission_editing_session/
 ## How it works
 
 ```text
-Mission Creator (apps/frontend/src/workspaces/editor/), which links mission_editing_session directly
+Mission Creator (crates/frontend/workspaces/mission_creator_workspace/src/), which links mission_editing_session directly
   │ creates the MissionDocCore handle and the selection, then host::install(doc, selection)
   ▼
 host ── with_doc / with_doc_mut: one borrow per call, dropped before returning
@@ -75,7 +75,7 @@ cargo test -p mission_editing_session   # picks, marquees, the tie policy and sq
   inputs, side tints), `serde_json`; dev `mission_operations` (the ORBAT placement of a pick test).
 - Used by: `mission_persistence` (`host::DocHandle`), `mission_editing_commands` (the host and
   the post-change tail), `map_editing_tools` (the picks) and the Mission Creator in
-  `apps/frontend/src/workspaces/editor/`.
+  `crates/frontend/workspaces/mission_creator_workspace/src/`.
 - Rules: no `web_sys`, `leptos` or `wasm_bindgen` in this crate; picks are square for slots and
   circular for vehicles, ties go to the slot and marquees list slots before vehicles
   (`square_slots_circular_vehicles_and_equal_distance_policy`); mission editing tier 6

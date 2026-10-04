@@ -83,7 +83,7 @@ owns = [
     "apps/frontend/src/editor/canvas/gestures.rs",
     "apps/frontend/src/editor/canvas/overlays.rs",
     "apps/frontend/src/editor/panels/outliner_tree.rs",
-    "apps/frontend/src/pages/operations/orbat_manager.rs",
+    "crates/frontend/pages/operations_pages/src/orbat_manager.rs",
     "apps/frontend/src/editor/panels/outliner_drag.rs",
     "apps/frontend/src/editor/panels/zones_panel.rs",
     "apps/frontend/src/editor/state/commands_hotkeys.rs",

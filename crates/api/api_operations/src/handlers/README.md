@@ -82,11 +82,11 @@ server.
   `fleet_wire_contract` for `ExecutorKind`; `mission_model::orbat` for the faction join-key check;
   `fire_mission_planning` for the ballistics.
 - Used by: the domain's `routes.rs`; over HTTP, the operations pages in
-  `apps/frontend/src/pages/operations/`, the
+  `crates/frontend/pages/operations_pages/src/`, the
   [event manager](/documentation/glossary/a_to_f.md#event-manager) in
-  `apps/frontend/src/pages/administration/event_manager/`, the mortar calculator in
-  `apps/frontend/src/pages/field_tools/mortar/`, the endpoint helpers in
-  `apps/frontend/src/foundation/transport/endpoints/`, and the game runtime's roster loader in
+  `crates/frontend/pages/administration_pages/src/event_manager/`, the mortar calculator in
+  `crates/frontend/pages/field_tools_pages/src/mortar/`, the endpoint helpers in
+  `crates/frontend/foundation/frontend_transport/src/endpoints/`, and the game runtime's roster loader in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` and deployment queues in
   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
@@ -105,6 +105,6 @@ server.
 
 - [Event eligibility and allocation](/documentation/apps/api/verification_evidence/event_eligibility_allocation.md)
   — access, visibility, pools, promotion and re-evaluation.
-- [Event hub page](/documentation/apps/frontend/pages/operations/event_detail/event_hub_page.md)
-  and [Event manager page](/documentation/apps/frontend/pages/administration/event_manager/event_manager_page.md)
+- [Event hub page](/documentation/crates/frontend/pages/operations_pages/event_detail/event_hub_page.md)
+  and [Event manager page](/documentation/crates/frontend/pages/administration_pages/event_manager/event_manager_page.md)
   — the pages over the event routes.

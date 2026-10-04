@@ -17,13 +17,14 @@ tools/commands/ci_task_catalog/src/
 ├── chromium_install.rs  the `ci-chrome` task: installs the pinned Chrome for Testing build
 ├── editor_api.rs        the `editor-api-boot`, `verify-codegen-fresh` and `verify-editorconfig` tasks
 ├── error.rs             `Error`, `Result` and `cause_chain`, the text an in-process step's error prints
+├── frontend_package_lane.rs  the frontend family (`frontend` and every crates/frontend package) and its format, lint and test lines, derived from the workspace
 ├── lib.rs               the crate root: module header, `mod` lines and the re-exports
 ├── prelude.rs           `Error`, `Result`, `cause_chain`, `Task`, `Step`, `Lane` and `TASKS` for glob import
 ├── task_definitions/    the step macros, the map-lane step lists and the in-process verification adapters
 ├── task_definitions.rs  `TASKS`: every task with its help line, group, lane and steps
 ├── task_runner/         the runner, the child environment, `help`, the gate list
 ├── task_runner.rs       the `Task`, `Step` and `Lane` types, re-exports
-├── tests/               unit tests for the frozen `ci-local` set, composite failure, `help`, parity, member coverage, the API lines, the wasm32 lint and the target pin
+├── tests/               unit tests for the frozen `ci-local` set, composite failure, `help`, parity, member coverage, the API lines, the frontend lines, the wasm32 lint and the target pin
 ├── wasm32_lint_lane.rs  the packages the wasm32 lint covers, derived from the workspace, and the `wasm-ci` row's lint step
 ├── workflow_checks/     the `verify ci-shell` and `verify ci-schema-parity` gates
 └── workspace_member_tests.rs  the `workspace-member-tests` task: `cargo test -p` for every member no dedicated task tests
@@ -66,7 +67,12 @@ moved. The browser gates of `cargo xtask mk leptos-gates` are not part of it.
 
 Every workspace member is tested. `DEDICATED_TEST_TASKS` in `workspace_member_tests.rs` names the
 members a dedicated task tests (`api` by `api-test`, `frontend` by `ci-local-leptos`, and
-`offline_service_worker` by `wasm-ci`). The API crates go with
+`offline_service_worker` by `wasm-ci`). The frontend crates go with `frontend`:
+`frontend_package_lane.rs` derives the frontend family, the app followed by every member under
+crates/frontend in path order, and the four cargo lines of `ci-local-leptos` (format, wasm32
+clippy, native clippy, native tests) name each of them with `-p`, the row through native steps and
+the `mk` recipe through the same derivation; `ci_local_leptos_recipe_and_ci_task_row_run_the_same_lines`
+pins the two spellings together. The API crates go with
 `api`: `api_package_lane.rs` derives `api`, every member under `crates/api` and every member that uses an
 API crate, such as `staging_fixtures` (through
 `database_operations`' `api_test_packages`, the list `cargo xtask db test-it` runs over), and
@@ -83,9 +89,10 @@ leaves a member untested.
 Every crate that ships to the browser is linted for `wasm32-unknown-unknown`.
 `wasm32_lint_lane.rs` derives the set from the workspace: each member whose
 `[package.metadata.layout]` declares `targets = "wasm32"`, the `frontend` and
-`offline_service_worker` applications. `ci-local-leptos` lints the frontend with every target; the `wasm-ci` recipe and row
+`offline_service_worker` applications, and every crate of the frontend family (a `targets = "any"`
+one included). `ci-local-leptos` lints the frontend family with every target; the `wasm-ci` recipe and row
 lint the rest in one `cargo clippy --target wasm32-unknown-unknown`, the row through a native step
-that derives the same line. `wasm_ci_and_the_own_lanes_partition_the_lint` fails when the two lanes
+that derives the same line. `wasm_ci_and_the_frontend_lane_partition_the_lint` fails when the two lanes
 stop covering the set, and `wasm_ci_lints_every_derived_wasm32_package` when the recipe line drifts
 from it.
 
@@ -117,10 +124,10 @@ from it.
   | `map-cartographic-verify` | map, ci | `map verify-pyramid --terrain everon --view-map` |
   | `lfs-dem`, `lfs-sat` | map, ci | `git lfs pull` of the Everon elevation raster or satellite container |
   | `api-test` | build, ci | `cargo test -p api -p <every crates/api package>`, honouring `TEST_DATABASE_URL` |
-  | `workspace-member-tests` | build, ci | `cargo test -p <package>`, one run per workspace member outside `DEDICATED_TEST_TASKS` and the API package family, derived from the root `Cargo.toml`; every package runs, and the exit is the first red package's code |
+  | `workspace-member-tests` | build, ci | `cargo test -p <package>`, one run per workspace member outside `DEDICATED_TEST_TASKS`, the API package family and the frontend family, derived from the root `Cargo.toml`; every package runs, and the exit is the first red package's code |
   | `test` | build, ci | `rust-test` |
   | `build` | build, ci | `cargo build --release --bin api` in `apps/api`, then `leptos-build` |
-  | `rust-ci`, `rust-fmt`, `rust-clippy`, `rust-build`, `rust-test`, `wasm-ci`, `ci-local-leptos`, `leptos-build` | build, borrowed | the `cargo xtask mk` recipe of the same name, spelled as lines (`rust-clippy`, `rust-build` and `rust-test` as the derived API line over `api` and every `crates/api` package) |
+  | `rust-ci`, `rust-fmt`, `rust-clippy`, `rust-build`, `rust-test`, `wasm-ci`, `ci-local-leptos`, `leptos-build` | build, borrowed | the `cargo xtask mk` recipe of the same name, spelled as lines (`rust-clippy`, `rust-build` and `rust-test` as the derived API line over `api` and every `crates/api` package; the cargo lines of `ci-local-leptos` as the derived frontend lines over `frontend` and every crates/frontend package) |
   | `rust-test-it` | db, borrowed | `cargo xtask db test-it` in process: the API's tests against a fresh database on port 5434, then that run's databases dropped |
 
 - Exit codes: 0 the task passed, or the listing printed; the first failing step's code otherwise

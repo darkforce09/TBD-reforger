@@ -85,7 +85,7 @@ paint without the depth test), the rifle receiver and the boot front. It resolve
   `camera_math::orbit::projection` (`view_proj_wgpu` for the frame, `view_proj_gl` for the probe
   pixels) and `camera_math::matrix4::transform_vector`; the crates `wgpu`, `web-sys`, `js-sys`,
   `wasm-bindgen-futures`, `bytemuck` and `thiserror`.
-- Used by: the Arsenal host in `apps/frontend/src/workspaces/editor/arsenal/doll.rs`, which
+- Used by: the Arsenal host in `crates/frontend/workspaces/mission_creator_arsenal/src/doll.rs`, which
   creates the renderer, forwards pointer moves, drags and clicks, pushes the states, runs the
   `requestAnimationFrame` loop and registers `window.__arsenalDoll` (`backend`, `anchor`, `pick`,
   `doll_self_check`).
@@ -102,7 +102,7 @@ paint without the depth test), the rifle receiver and the boot front. It resolve
 
 ## Related documentation
 
-- [Arsenal](/apps/frontend/src/workspaces/editor/arsenal/README.md) — the workspace that
+- [Arsenal](/crates/frontend/workspaces/mission_creator_arsenal/src/README.md) — the workspace that
   mounts the paper doll.
 - [Orbit camera](/crates/geometry/camera_math/src/orbit/README.md) — the camera behind the
   render uniform.

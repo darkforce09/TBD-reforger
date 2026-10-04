@@ -1,7 +1,7 @@
 id = "T-1235"
 kind = "work"
 title = "Type the mission detail armory rows in the frontend DTO"
-summary = "apps/frontend/src/foundation/transport/dto/missions.rs:144 declares MissionDetail.armory as Vec<Value>, so the dossier (overview/dossier_body.rs:100) and the armory editor (overview/armory_editor.rs:256) read untyped rows instead of a DTO mirroring the api_v2 armory model."
+summary = "crates/frontend/foundation/frontend_api_dtos/src/missions.rs:144 declares MissionDetail.armory as Vec<Value>, so the dossier (overview/dossier_body.rs:100) and the armory editor (overview/armory_editor.rs:256) read untyped rows instead of a DTO mirroring the api_v2 armory model."
 class = "chore"
 status = "idea"
 notes = "Source: milestone V finding V-F20 (frontend DTO pass)."

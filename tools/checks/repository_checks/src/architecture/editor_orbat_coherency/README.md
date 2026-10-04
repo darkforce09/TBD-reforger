@@ -28,4 +28,7 @@ tools/checks/repository_checks/src/architecture/editor_orbat_coherency/
   - a cargo pin fails on a non-zero exit, on output with no `test result:` line, and on zero
     passed tests, so a selector that matches nothing cannot pass
     (`every_cargo_pin_arm_can_go_red`);
+  - each cargo pin names its package and runs that crate's unit tests only, `--lib` for a library
+    crate and `--bins` for the binary app `frontend`
+    (`every_pin_runs_the_unit_tests_of_its_crate_kind`);
   - `FAIL` lines go to stderr with stdout flushed first, and every failure exits 1.

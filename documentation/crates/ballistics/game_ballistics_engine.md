@@ -22,11 +22,11 @@ API's fire-mission save run the same code, natively and in the browser, with the
   `ballistics_calibration` for a catalog upload. Both compile with no feature on every target:
   the API links them natively and the frontend builds them for wasm32.
 - Related:
-  - the [mortar calculator page](/documentation/apps/frontend/pages/field_tools/mortar/mortar_calculator_page.md),
+  - the [mortar calculator page](/documentation/crates/frontend/pages/field_tools_pages/mortar/mortar_calculator_page.md),
     which solves on the device;
-  - the [ballistics catalogs page](/documentation/apps/frontend/pages/administration/ballistics_catalogs/ballistics_catalogs_page.md),
+  - the [ballistics catalogs page](/documentation/crates/frontend/pages/administration_pages/ballistics_catalogs/ballistics_catalogs_page.md),
     where catalogs are uploaded and judged;
-  - the [ballistics agreement bench](/documentation/apps/frontend/workspaces/debug/ballistics_agreement_page.md),
+  - the [ballistics agreement bench](/documentation/crates/frontend/workspaces/debug_benches/ballistics_agreement_page.md),
     which proves the browser build solves bit for bit like the native one;
   - the [ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md),
     the engine measurements behind the calibration.

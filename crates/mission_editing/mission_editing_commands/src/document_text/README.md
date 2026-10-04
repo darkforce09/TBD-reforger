@@ -46,10 +46,10 @@ crates/mission_editing/mission_editing_commands/src/document_text/
   `mission_validation` (`Finding`, `Severity`) for the compile summary, `mission_document`
   (`EntityId`), the crate's `Error`, and `serde_json`.
 - Used by: the Mission Creator's document commands
-  (`apps/frontend/src/workspaces/editor/session/document_commands.rs`, which re-exports all
+  (`crates/frontend/workspaces/mission_creator_session/src/document_commands.rs`, which re-exports all
   three modules from `mission_editing_commands::document_text`) and its
   exporter test
-  (`apps/frontend/src/workspaces/editor/session/tests/exporter_grid_reference.rs`, which checks
+  (`crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/toolbelt/exporter_grid_reference.rs`, which checks
   `format_grid_ref` against the map-edge labels).
 - Rules: the compiled export is byte-identical to its input
   (`class_r_compiled_export_is_byte_identical_to_wire` in `tests/export_text.rs`); a clean compile
@@ -60,5 +60,5 @@ crates/mission_editing/mission_editing_commands/src/document_text/
 
 ## Related documentation
 
-- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
   — the export, merge and clipboard features these decisions back.

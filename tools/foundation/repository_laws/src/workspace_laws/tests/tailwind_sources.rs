@@ -1,10 +1,12 @@
-//! Tests for [`super`] — `@source` coverage of the leptos crates.
+//! Tests for [`super`] — one exact `@source` line per leptos crate, and no stale line.
 
 use super::*;
 use crate::temporary_checkout::this_repository;
 use crate::workspace_laws::fixture_workspace::{FixtureWorkspace, application_manifest, normal};
 
 const STYLESHEET: &str = "apps/frontend/style/app.css";
+const APP_LINE: &str = "@source \"../src/**/*.rs\";\n";
+const PAGES_LINE: &str = "@source '../../../crates/frontend/pages/account_pages/src/**/*.rs';\n";
 
 fn workspace(name: &str, stylesheet: &str) -> FixtureWorkspace {
     let mut workspace = FixtureWorkspace::new(name);
@@ -23,11 +25,31 @@ fn workspace(name: &str, stylesheet: &str) -> FixtureWorkspace {
     workspace
 }
 
+fn findings(workspace: &FixtureWorkspace) -> Vec<String> {
+    tailwind_sources_outcome(workspace.root(), STYLESHEET)
+        .unwrap()
+        .findings
+}
+
+/// The finding of the account pages crate that no line names.
+fn unnamed_account_pages() -> String {
+    format!(
+        "crates/frontend/pages/account_pages depends on leptos but no @source line of \
+         {STYLESHEET} names crates/frontend/pages/account_pages/src/**/*.rs (one line per crate, \
+         its own src folder)"
+    )
+}
+
+/// The finding of the stale line `glob`.
+fn stale(glob: &str) -> String {
+    format!("@source \"{glob}\" in {STYLESHEET} names no leptos member's src/**/*.rs: a stale line")
+}
+
 #[test]
-fn tailwind_sources_every_leptos_crate_covered_passes() {
+fn tailwind_sources_one_exact_line_per_leptos_crate_passes() {
     let workspace = workspace(
         "tailwind-green",
-        "@import 'tailwindcss';\n@source \"../src/**/*.rs\";\n@source '../../../crates/frontend/*/*/src/**/*.rs';\n",
+        &format!("@import 'tailwindcss';\n{APP_LINE}{PAGES_LINE}@source not \"../dist\";\n"),
     );
     let report = check_tailwind_sources(workspace.root(), STYLESHEET);
     assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
@@ -35,30 +57,73 @@ fn tailwind_sources_every_leptos_crate_covered_passes() {
 }
 
 #[test]
-fn tailwind_sources_a_leptos_crate_without_a_source_line_is_a_finding() {
+fn tailwind_sources_a_leptos_crate_without_its_line_is_a_finding() {
     let workspace = workspace(
-        "tailwind-red",
-        "@source \"../src/**/*.rs\";\n@source not \"../../../crates/frontend/**/*.rs\";\n",
+        "tailwind-missing-line",
+        &format!(
+            "{APP_LINE}@source not \"../../../crates/frontend/pages/account_pages/src/**/*.rs\";\n"
+        ),
     );
-    let found = tailwind_sources_outcome(workspace.root(), STYLESHEET)
-        .unwrap()
-        .findings;
-    assert_eq!(
-        found,
-        vec![format!(
-            "crates/frontend/pages/account_pages depends on leptos but no @source line of {STYLESHEET} \
-         covers crates/frontend/pages/account_pages/src/**/*.rs"
-        )]
-    );
-    workspace.write(
-        STYLESHEET,
-        "@source \"../src/**/*.rs\";\n@source \"../../../crates/frontend/**/*.rs\";\n",
-    );
+    assert_eq!(findings(&workspace), vec![unnamed_account_pages()]);
     assert_eq!(
         check_tailwind_sources(workspace.root(), STYLESHEET).exit_code,
-        0,
-        "an ancestor folder covers"
+        1
     );
+    workspace.write(STYLESHEET, &format!("{APP_LINE}{PAGES_LINE}"));
+    assert_eq!(findings(&workspace), Vec::<String>::new());
+}
+
+#[test]
+fn tailwind_sources_an_ancestor_or_wildcard_folder_no_longer_covers_and_is_stale() {
+    for (index, glob) in [
+        "../../../crates/frontend/**/*.rs",
+        "../../../crates/frontend/*/*/src/**/*.rs",
+        "../../../crates/frontend/pages/account_pages/src/*.rs",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let workspace = workspace(
+            &format!("tailwind-ancestor-{index}"),
+            &format!("{APP_LINE}@source \"{glob}\";\n"),
+        );
+        assert_eq!(
+            findings(&workspace),
+            vec![unnamed_account_pages(), stale(glob)],
+            "{glob}"
+        );
+    }
+}
+
+#[test]
+fn tailwind_sources_a_stale_or_duplicate_line_is_a_finding() {
+    let workspace = workspace(
+        "tailwind-stale",
+        &format!(
+            "{APP_LINE}{PAGES_LINE}@source \"../../../crates/mission/mission_model/src/**/*.rs\";\n\
+             @source \"../../../crates/frontend/pages/retired_pages/src/**/*.rs\";\n\
+             @source \"../../../../../outside/src/**/*.rs\";\n@source \"./../src/**/*.rs\";\n"
+        ),
+    );
+    assert_eq!(
+        findings(&workspace),
+        vec![
+            format!("2 @source lines of {STYLESHEET} name apps/frontend/src/**/*.rs; keep one"),
+            stale("../../../crates/mission/mission_model/src/**/*.rs"),
+            stale("../../../crates/frontend/pages/retired_pages/src/**/*.rs"),
+            stale("../../../../../outside/src/**/*.rs"),
+        ]
+    );
+}
+
+#[test]
+fn tailwind_sources_a_dev_only_leptos_dependency_needs_no_line() {
+    let mut workspace = workspace("tailwind-dev-only", &format!("{APP_LINE}{PAGES_LINE}"));
+    workspace.member(
+        "tools/checks/view_probe",
+        "[package]\nname = \"view_probe\"\n\n[dev-dependencies]\nleptos = \"0.8\"\n",
+    );
+    assert_eq!(findings(&workspace), Vec::<String>::new());
 }
 
 #[test]

@@ -1,0 +1,29 @@
+# Stage S10 H1a, second of four: the frontend's interface primitives (`foundation/ui`) and its small
+# helpers (`foundation/utils`) become crates/frontend/foundation/frontend_ui, with every module at the
+# crate root (`frontend_ui::toast`, `frontend_ui::modal_stack`, `frontend_ui::clipboard`). The ui
+# folder becomes the crate's `src`, its module tree `lib.rs` (the utils module lines join it by hand)
+# and its README the crate README; the utils files move one by one beside it, its README becoming the
+# source tree README. Each prefix is one `crate::` row scoped to the ui folder (the crate's `src`,
+# which also receives the utils files) and one `frontend_ui::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/foundation/ui	crates/frontend/foundation/frontend_ui/src
+path	apps/frontend/src/foundation/ui/mod.rs	crates/frontend/foundation/frontend_ui/src/lib.rs
+path	apps/frontend/src/foundation/ui/README.md	crates/frontend/foundation/frontend_ui/README.md
+path	apps/frontend/src/foundation/utils/README.md	crates/frontend/foundation/frontend_ui/src/README.md
+path	apps/frontend/src/foundation/utils/byte_formatting.rs	crates/frontend/foundation/frontend_ui/src/byte_formatting.rs
+path	apps/frontend/src/foundation/utils/clipboard.rs	crates/frontend/foundation/frontend_ui/src/clipboard.rs
+path	apps/frontend/src/foundation/utils/countdown.rs	crates/frontend/foundation/frontend_ui/src/countdown.rs
+path	apps/frontend/src/foundation/utils/datefmt.rs	crates/frontend/foundation/frontend_ui/src/datefmt.rs
+path	apps/frontend/src/foundation/utils/safe_url.rs	crates/frontend/foundation/frontend_ui/src/safe_url.rs
+path	apps/frontend/src/foundation/utils/sanitize.rs	crates/frontend/foundation/frontend_ui/src/sanitize.rs
+path	apps/frontend/src/foundation/utils/utc_timestamp.rs	crates/frontend/foundation/frontend_ui/src/utc_timestamp.rs
+path	apps/frontend/src/foundation/utils/tests/byte_formatting.rs	crates/frontend/foundation/frontend_ui/src/tests/byte_formatting.rs
+path	apps/frontend/src/foundation/utils/tests/clipboard.rs	crates/frontend/foundation/frontend_ui/src/tests/clipboard.rs
+path	apps/frontend/src/foundation/utils/tests/safe_url.rs	crates/frontend/foundation/frontend_ui/src/tests/safe_url.rs
+path	apps/frontend/src/foundation/utils/tests/utc_timestamp.rs	crates/frontend/foundation/frontend_ui/src/tests/utc_timestamp.rs
+rust_path	crate::foundation::ui::	crate::	apps/frontend/src/foundation/ui
+rust_path	crate::foundation::utils::	crate::	apps/frontend/src/foundation/ui
+# The utilities moved file by file into the same `src` as the ui folder, so the two rows above,
+# scoped to the ui folder that becomes frontend_ui/src, also judge every moved utility file.
+rust_path	crate::foundation::ui::	frontend_ui::	apps/frontend/src
+rust_path	crate::foundation::utils::	frontend_ui::	apps/frontend/src

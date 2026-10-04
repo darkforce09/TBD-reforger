@@ -41,10 +41,10 @@ them. A document about code sits here at the code's path without `src/`: the doc
 `tools/developer_tools/` are in `documentation/tools/developer_tools/`, and the
 [fleet host agent](/documentation/glossary/a_to_f.md#fleet-host-agent) in `apps/fleet_host_agent/` is
 documented in `apps/fleet_host_agent/`; the [event](/documentation/glossary/a_to_f.md#event)
-schedule page in `apps/frontend/src/pages/operations/schedule/` is documented in
-`documentation/apps/frontend/pages/operations/schedule/` and all
+schedule page in `crates/frontend/pages/operations_pages/src/schedule/` is documented in
+`documentation/crates/frontend/pages/operations_pages/schedule/` and all
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) material sits in
-`documentation/apps/frontend/workspaces/editor/`. One code tree keeps a shorter document path until
+`documentation/crates/frontend/workspaces/mission_creator_workspace/`. One code tree keeps a shorter document path until
 the [restructure](/documentation/restructure/README.md) reshapes it: a document about the mod leaves
 out `apps/` and `Scripts/Game/TBD/` and sits in `mod/`. What spans the code has a top-level folder of its
 own: `architecture/`, `runbooks/`, `standards/`, `design_system/`, `known_bugs/`, `tickets/` and
@@ -87,7 +87,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 | what a code folder holds and how to use it | the README.md in that folder |
 | the top-level folders, the workspace members and where code, contracts, assets and documents live | the [workspace layout](/documentation/architecture/workspace_layout.md) |
 | a web page's behaviour, design, open work and decisions | `apps/frontend/pages/<area>/<page>/`, indexed by the [frontend README](/documentation/apps/frontend/README.md) |
-| the Mission Creator: features, roadmap, UX decisions, Eden reference | [apps/frontend/apps/editor/](/documentation/apps/frontend/workspaces/editor/README.md) |
+| the Mission Creator: features, roadmap, UX decisions, Eden reference | [apps/frontend/apps/editor/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
 | the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [apps/api/](/documentation/apps/api/README.md), starting at the [API overview](/documentation/apps/api/api_overview.md) |
 | the map's streaming, rendering and GPU crates, the paper doll and the editing layer | [crates/](/documentation/crates/README.md) |
 | the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [mod/](/documentation/mod/README.md) |

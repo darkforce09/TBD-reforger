@@ -4,7 +4,7 @@
 
 **Status:** shipped (T-058)
 **Git tag on ship:** T-058
-**Authority:** [MC ROADMAP](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/apps/frontend/workspaces/editor/decisions.md) §ACTIVE SLICE · [feature_inventory.md](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+**Authority:** [MC ROADMAP](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) §Map performance · [agent_execution.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) §ACTIVE SLICE · [feature_inventory.md](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
 
 **Prerequisite:** **T-057 shipped** (`7adc345`) — pan/zoom perf hotfix; toolbelt cursor already store-backed so OBJ/SEL updates must **not** reintroduce page-level re-renders.
 
@@ -117,13 +117,13 @@ Re-export: `selectSlotCount` alongside `selectSlotIcons`.
 | Doc | Update |
 |-----|--------|
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-058 bullet; bump `latest feature work`; Next → T-059 bulk paste |
-| [`ROADMAP.md`](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md) | DONE — T-058 section; scale table T-058 row → ✅; Next → T-059 |
-| [`feature_inventory.md`](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md) | New **BOTTOM-OBJCOUNT-001** row → working |
-| [`agent_execution.md`](/documentation/apps/frontend/workspaces/editor/decisions.md) | Decisions log row; ACTIVE SLICE → T-059 bulk paste |
-| [`ux_spec.md`](/documentation/apps/frontend/workspaces/editor/ux_spec.md) | Interaction table row for OBJ/SEL readout |
+| [`ROADMAP.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md) | DONE — T-058 section; scale table T-058 row → ✅; Next → T-059 |
+| [`feature_inventory.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md) | New **BOTTOM-OBJCOUNT-001** row → working |
+| [`agent_execution.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md) | Decisions log row; ACTIVE SLICE → T-059 bulk paste |
+| [`ux_spec.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md) | Interaction table row for OBJ/SEL readout |
 | [`docs/TAGS.md`](/documentation/standards/ticket_identifiers.md) | T-058 row → shipped |
 | [`docs/website/frontend/ROADMAP.md`](/documentation/apps/frontend/README.md) | Recently shipped row + recommended next → **T-060.1** acceptance |
-| [`docs/website/frontend/pages/mission-editor.md`](/documentation/apps/frontend/workspaces/editor/ux_spec.md) | Element inventory row 5 + M3.13 milestone |
+| [`docs/website/frontend/pages/mission-editor.md`](/documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md) | Element inventory row 5 + M3.13 milestone |
 
 **One T-058 commit** on `main`: code + doc finalize + CLAUDE §Status. Co-Authored-By when applicable.
 

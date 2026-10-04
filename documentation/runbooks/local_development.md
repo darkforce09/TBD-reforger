@@ -207,7 +207,7 @@ in the [terrains README](/assets/terrains/README.md).
 The dev login needs none of this. This procedure proves the real Discord sign-in: the
 `oauth_state` cookie, the token exchange and the guild role mapping. It needs a browser and a
 person at Discord's consent screen. The request and response of each call are in
-[account pages](/documentation/apps/frontend/pages/account/account_pages.md).
+[account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md).
 
 1. Register the redirect. In the Discord Developer Portal, under the application's OAuth2
    Redirects, add exactly the value of `DISCORD_REDIRECT_URL` in `apps/api/.env`:

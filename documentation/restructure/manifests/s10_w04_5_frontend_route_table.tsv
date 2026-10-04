@@ -1,0 +1,12 @@
+# Stage S10 H1b, fifth foundation crate: the frontend's route table (every route's path, component
+# name, layout flags and access tier, their readers, and the sidebar's navigation menu) becomes
+# crates/frontend/foundation/frontend_route_table. The folder becomes the crate's `src`; its module
+# file holds the `ROUTES` table and becomes `routes.rs` (a thin `lib.rs` declares the modules), and
+# its README, which describes the whole crate, becomes the crate README. The prefix is one `crate::`
+# row scoped to the moved folder and one `frontend_route_table::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/foundation/route_table	crates/frontend/foundation/frontend_route_table/src
+path	apps/frontend/src/foundation/route_table/mod.rs	crates/frontend/foundation/frontend_route_table/src/routes.rs
+path	apps/frontend/src/foundation/route_table/README.md	crates/frontend/foundation/frontend_route_table/README.md
+rust_path	crate::foundation::route_table::	crate::	apps/frontend/src/foundation/route_table
+rust_path	crate::foundation::route_table::	frontend_route_table::	apps/frontend/src

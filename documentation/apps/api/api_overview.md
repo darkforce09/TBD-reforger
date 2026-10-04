@@ -319,7 +319,7 @@ Contract parity follows Law 9 of `CLAUDE.md`: the domain models are the snake_ca
 truth, the contract types are generated from `contracts/definitions/` into the
 [contract_schema_types](/crates/contracts/contract_schema_types/README.md) crate by
 `cargo xtask ci schema-codegen`, and the frontend DTOs in
-`apps/frontend/src/foundation/transport/dto/` mirror the models under golden tests. The missions
+`crates/frontend/foundation/frontend_api_dtos/src/` mirror the models under golden tests. The missions
 domain's [contract layer](/crates/api/api_missions/src/contract/README.md) validates every
 mission document it accepts or serves against those schemas.
 
@@ -334,7 +334,7 @@ cargo xtask verify route-tags
 ```
 
 Then call the changed endpoint and compare its JSON with the domain's `models/` and the matching
-DTO in `apps/frontend/src/foundation/transport/dto/`. Acceptance of the API as a whole is
+DTO in `crates/frontend/foundation/frontend_api_dtos/src/`. Acceptance of the API as a whole is
 `cargo xtask verify api-readiness`, which judges the receipts described in the
 [verification evidence](/documentation/apps/api/verification_evidence/README.md).
 

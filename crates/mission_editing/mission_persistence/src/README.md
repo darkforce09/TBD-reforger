@@ -75,11 +75,11 @@ save a draft (host)
   `materialize`, `apply_row_meta`, the init origin); `mission_payload::compile_payload` for the
   authored comparison; `serde_json`.
 - Used by: directly, the Mission Creator's shell
-  (`apps/frontend/src/workspaces/editor/session/hydrate.rs`,
-  `apps/frontend/src/workspaces/editor/session/persist.rs` and
-  `apps/frontend/src/workspaces/editor/session/review_mode.rs`), its review restore
-  (`apps/frontend/src/workspaces/editor/mission_editor/canvas_mount/review_restore.rs`) and
-  the shell's title test (`apps/frontend/src/workspaces/editor/session/tests/title_prefer/`).
+  (`crates/frontend/workspaces/mission_creator_session/src/hydrate.rs`,
+  `crates/frontend/workspaces/mission_creator_session/src/persist.rs` and
+  `crates/frontend/workspaces/mission_creator_state/src/review_mode.rs`), its review restore
+  (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/review_restore.rs`) and
+  the shell's title test (`crates/frontend/workspaces/mission_creator_session/src/tests/title_prefer/`).
 - Rules:
   - two accounts never share a key (`a_separator_in_the_owner_cannot_collide_two_accounts` in
     `tests/record_key.rs`);
@@ -98,4 +98,4 @@ save a draft (host)
 
 - [Mission document](/crates/mission/mission_document/README.md) — the document, its
   origins, hydrate and undo scope.
-- [Mission Creator feature inventory: data persistence and compile](/documentation/apps/frontend/workspaces/editor/feature_inventory/data_persistence_and_compile.md) — the local draft, the reconciliation and the conflict scope.
+- [Mission Creator feature inventory: data persistence and compile](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/data_persistence_and_compile.md) — the local draft, the reconciliation and the conflict scope.

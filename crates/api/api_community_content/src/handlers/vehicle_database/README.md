@@ -56,7 +56,7 @@ crates/api/api_community_content/src/handlers/vehicle_database/
   the application state, `api_http_layer` for the `AuthUser` and `AdminUser` extractors,
   `api_foundation` for `ApiError` and the content URL policy; the `vehicle_databases` table (lifecycle columns from migration 0058).
 - Used by: the domain's `routes.rs`, which registers the re-exported handlers; over HTTP, the
-  vehicle database page under `apps/frontend/src/pages/doctrine_and_info/vehicles/`.
+  vehicle database page under `crates/frontend/pages/doctrine_pages/src/vehicles/`.
 - Rules: reads take `AuthUser` and writes `AdminUser`; every handler carries its `/// @route` tag
   (`cargo xtask verify route-tags`); every statement on `vehicle_databases` lives in
   `vehicle_rows.rs`, and every select list `COALESCE`s the optional columns
@@ -67,6 +67,6 @@ crates/api/api_community_content/src/handlers/vehicle_database/
 
 - [Administration and community content design](/documentation/apps/api/verification_evidence/administration_and_content.md)
   — the vehicle semantics these handlers implement.
-- [Vehicle database page](/documentation/apps/frontend/pages/doctrine_and_info/vehicles/vehicle_database_page.md)
+- [Vehicle database page](/documentation/crates/frontend/pages/doctrine_pages/vehicles/vehicle_database_page.md)
   — the page that reads and writes these routes.
 - [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.

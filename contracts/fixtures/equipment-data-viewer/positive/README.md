@@ -36,7 +36,7 @@ requires each live answer to equal its page as a JSON value, with nothing normal
 
 - Producers: captures of the API's answers for the committed export.
 - Consumers: the API's `contract_parity_equipment_viewer` test binary and the frontend's
-  `apps/frontend/src/foundation/transport/dto/tests/equipment_data_viewer_parity.rs`.
+  `crates/frontend/foundation/frontend_api_dtos/src/tests/equipment_data_viewer_parity.rs`.
 
 ## Boundaries
 

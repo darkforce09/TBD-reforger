@@ -44,6 +44,7 @@ mod include_consumer_package_dirs;
 pub(crate) use include_consumer_package_dirs::compiled_include_input_paths;
 pub(crate) use include_consumer_package_dirs::include_consumer_package_dirs;
 pub(crate) use include_consumer_package_dirs::include_inputs_under;
+pub(crate) use include_consumer_package_dirs::repository_reads_under;
 pub(crate) use include_consumer_package_dirs::workspace_members;
 
 #[cfg(test)]

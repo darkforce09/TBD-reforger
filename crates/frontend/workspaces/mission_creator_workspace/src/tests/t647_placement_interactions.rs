@@ -1,0 +1,470 @@
+use frontend_test_support::class_r_scrub::{live_code, only_body};
+
+/// The editor page region (comments stripped, string literals blanked). The `#[cfg(wasm32)]`
+/// blocks the pointer/dblclick handlers live in are KEPT by the scrubber (it decides only
+/// provably-false cfgs, and `target_arch` reads as undecided under the default eval) — the same
+/// reason t662 can pin `chrome_hidden.set(` inside that block. T-934.13 moved those closures to
+/// `input/pointer_gestures.rs`, so that file is appended (scrubbed separately) — the closure-body
+/// anchors (`make_pointer_up_handler`, `make_double_click_handler`, `make_context_menu_handler`)
+/// resolve there.
+fn editor_live() -> String {
+    let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+    let raw = super::source::raw_editor();
+    assert_eq!(
+        raw.matches(anchor.as_str()).count(),
+        1,
+        "scrub anchor must be unambiguous"
+    );
+    let mut src = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+    src.push_str(&super::source::live_pointer_gesture_handlers());
+    src.push_str(&live_code(
+        frontend_test_support::repository_root::repository_text(
+            env!("CARGO_MANIFEST_DIR"),
+            "crates/frontend/workspaces/mission_creator_engine_bridge/src/input/window_keydown.rs",
+        ),
+    ));
+    src
+}
+
+/// `editor_ops.rs`, scrubbed to live code. It is wasm-only, so nothing in it runs — but its
+/// wiring is pinnable as source (multiple modules already `include_str!` it for this).
+fn ops_live() -> String {
+    live_code(mission_creator_engine_bridge::test_support::editor_operations::entity())
+}
+
+/// The engine's release machine, scrubbed to live code — the crew rule and the per-kind commits
+/// live there, so the pins that claim what a release does read it rather than the host adapter.
+fn release_machine_live() -> String {
+    live_code(frontend_test_support::repository_root::repository_text(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/mission/mission_operations/src/entity/armed_placement.rs",
+    ))
+}
+
+// ───────────────────────── ATTR-OPEN-001 — dblclick opens Attributes for vehicles too ────────
+
+/// The dblclick handler must pick with `pick_slot_or_vehicle` (slot OR vehicle), not the
+/// slot-only `pick` it used pre-T-647 — that swap is the whole of ATTR-OPEN-001 ("not just
+/// slots"). A hit opens Attributes; the pick must be handed the live `vehicle_points()`.
+#[test]
+fn dblclick_opens_attributes_for_vehicles_via_slot_or_vehicle_pick() {
+    let ed = editor_live();
+    let body = super::source::gesture_closure_body(&ed, "make_double_click_handler");
+    assert!(
+        body.contains("selection::pick_slot_or_vehicle(")
+            && body.contains("engine_ops::vehicle_points()"),
+        "ATTR-OPEN-001: dblclick must pick slot OR vehicle (with vehicle_points), so Attributes \
+         opens for a vehicle — not the slot-only pick"
+    );
+    assert!(
+        body.contains("editor_context::open_attributes(id)"),
+        "a dblclick HIT must open Attributes on the picked id"
+    );
+    // The slot-only `pick(` must be GONE from this handler — a leftover would keep the bug for
+    // vehicles. (`pick_slot_or_vehicle` contains the token `pick`, so match the bare call form.)
+    assert!(
+        !body.contains("selection::pick(&cam"),
+        "ATTR-OPEN-001: the slot-only pick(&cam, …) must be gone from the dblclick handler"
+    );
+}
+
+// ───────────────────────── PLACE-003 — dblclick empty ground opens the asset picker ──────────
+
+/// A dblclick MISS (empty ground) opens the asset picker at the unprojected world point; a
+/// non-finite unproject opens nothing (off-map).
+#[test]
+fn dblclick_empty_ground_opens_the_asset_picker() {
+    let ed = editor_live();
+    let body = super::source::gesture_closure_body(&ed, "make_double_click_handler");
+    // The match on the pick result: Some(id) → Attributes; None → picker.
+    assert!(
+        body.contains("editor_context::open_asset_picker("),
+        "PLACE-003: a dblclick miss must open the asset picker"
+    );
+    assert!(
+        body.contains("cam.unproject_xy(px, py)") && body.contains("is_finite()"),
+        "PLACE-003: the picker must open at the unprojected world point, guarded finite (off-map \
+         opens nothing)"
+    );
+}
+
+/// The picker is a real, ungated overlay component mounted beside the other ungated dialogs
+/// (so it survives Backspace hide-chrome — a hidden dock can't be focused, which is why this
+/// floating form was chosen), and a picked leaf ARMS `begin_place` (click-then-click, PLACE-001).
+#[test]
+fn asset_picker_is_an_ungated_overlay_that_arms_a_place() {
+    let ed = editor_live();
+    // Signal declared on the page + the picker signal handed to editor_ops (the open path).
+    assert!(
+        ed.contains("let asset_picker = RwSignal::new(None")
+            && ed.contains("editor_context::set_asset_picker_signal(asset_picker)"),
+        "PLACE-003: the page must own the picker signal and register it with editor_ops"
+    );
+    // The overlay mount must exist and be OUTSIDE every chrome_hidden gate (ungated, like the
+    // Attributes modal / context menu). Prove it by locating the mount and checking no
+    // chrome_hidden gate opens between the last ungated-dialog landmark and it.
+    assert!(
+        ed.contains("AssetPickerOverlay"),
+        "PLACE-003: the picker overlay component must be mounted"
+    );
+    let mount = ed.find("AssetPickerOverlay picker=").expect("picker mount");
+    let ctx_menu = ed
+        .find("ContextMenuOverlay menu=")
+        .expect("context menu mount is the ungated-dialog landmark");
+    assert!(
+        mount > ctx_menu && !ed[ctx_menu..mount].contains("(!chrome_hidden.get()).then("),
+        "PLACE-003: the picker must mount beside the ungated dialogs (no chrome_hidden gate \
+         between the context menu and it)"
+    );
+    // The picker component arms the same place a DockRight leaf does. Its definition lives in
+    // `editor/bridge/overlays/asset_picker.rs` (the page mounts it through the
+    // `mission_editor` re-export, which is what the mount pins above ride). That file carries no
+    // `#[cfg(test)]`, so `live_code` scrubs it whole — no anchor gymnastics needed.
+    let region = live_code(frontend_test_support::repository_root::repository_text(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/overlays/asset_picker.rs",
+    ));
+    let comp = only_body(&region, "fn AssetPickerOverlay(");
+    assert!(
+        comp.contains("armed_placement::begin_place(payload")
+            && comp.contains("editor_context::close_asset_picker()"),
+        "PLACE-001/PLACE-003: choosing a picker row must arm begin_place then close (the next \
+         canvas click lands it)"
+    );
+    // …reusing the SAME catalog builder the dock uses (no second catalog to drift).
+    assert!(
+        comp.contains("asset_catalog::build_catalog_tree("),
+        "PLACE-003: the picker must reuse build_catalog_tree (the dock's own catalog)"
+    );
+}
+
+// ───────────────────── T-651 — PLACE-COMMENT-001: the place point + the template seed ───────
+
+/// The right-click handler captures the WORLD point of the click and hands it to the menu, which
+/// is what makes `Place Comment` land where the operator clicked. Also pins the negative that
+/// matters: this ticket added NO state to the `LeftGesture` machine — no new arm, no new
+/// `Pending`, nothing that could strand (T-723's territory, deliberately untouched).
+#[test]
+fn the_contextmenu_handler_captures_the_world_point_and_arms_no_gesture() {
+    let ed = editor_live();
+    let body = super::source::gesture_closure_body(&ed, "make_context_menu_handler");
+    assert!(
+        body.contains("cam.unproject_xy(px, py)") && body.contains("world: (world[0], world[1])"),
+        "PLACE-COMMENT-001: the right-click must unproject its own pixel and hand the world \
+         point to the context-menu opener"
+    );
+    // The registered opener is the context menu's, and it attaches that world point to the
+    // MenuTarget it opens on.
+    let dispatch = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/ui/docks/context_menu/menu_dispatch.rs"
+    )));
+    assert!(
+        only_body(&dispatch, "fn open_for_canvas_request(")
+            .contains(".at_world(request.world.0, request.world.1)"),
+        "PLACE-COMMENT-001: the canvas opener must attach the click's world point to the MenuTarget"
+    );
+    assert!(
+        only_body(&dispatch, "pub fn register_canvas_context_menu(")
+            .contains("Rc::new(open_for_canvas_request)"),
+        "PLACE-COMMENT-001: the context menu registers the canvas opener the right-click calls"
+    );
+    assert!(
+        !body.contains("LeftGesture")
+            && !body.contains("editor_ops::arm(")
+            && !body.contains("Pending::"),
+        "T-651 must add no state to the gesture machine — the place is committed by the menu \
+         row, not by an armed pointerup (T-723)"
+    );
+}
+
+/// THE NEW-MISSION TEMPLATE SEEDS COMMENTS, at the fresh-doc site and BEFORE both boot steps
+/// that replace the document. Order is the whole property: seeding after the IDB restore or the
+/// server hydrate would stamp a template onto a mission that already has its own comments.
+#[test]
+fn the_new_mission_template_seeds_comments_before_restore_and_hydrate() {
+    let mount = include_str!("../mission_editor/canvas_mount.rs");
+    let setup = include_str!("../mission_editor/canvas_mount/document_setup.rs");
+    let boot = include_str!("../mission_editor/canvas_mount/boot_tasks.rs");
+    let mint = setup
+        .find("mission_doc::new_seeded_doc()")
+        .expect("the fresh-doc mint");
+    let seed = setup
+        .find("editor_context::seed_new_mission_template(&doc)")
+        .expect("the template seed");
+    assert!(
+        seed > mint,
+        "the template seeds into the freshly minted document"
+    );
+    let setup_call = mount
+        .find("document_setup::initialize(")
+        .expect("document setup call");
+    let boot_call = mount.find("boot_tasks::start(").expect("boot task call");
+    assert!(
+        setup_call < boot_call,
+        "document setup must complete before the boot tasks start"
+    );
+    assert!(
+        boot.contains("yrs_persist::load_state(&id)"),
+        "the boot task restores IDB state"
+    );
+    assert!(
+        boot.contains("mission_hydrate::hydrate_from_server("),
+        "the boot task hydrates from the server"
+    );
+}
+
+/// The comment editor is a real, ungated overlay (it survives Backspace hide-chrome, the
+/// wave-101 mount rule) and it authors all three ATTR-FIELD-CMT-* fields plus copy and delete —
+/// so every store mutator this ticket shipped is reachable from the UI.
+#[test]
+fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
+    let ed = editor_live();
+    assert!(
+        ed.contains("let comment_editor = RwSignal::new(None")
+            && ed.contains("editor_context::set_comment_editor_signal(comment_editor)"),
+        "T-651: the page must own the comment-editor signal and register it with editor_ops"
+    );
+    let mount = ed
+        .find("CommentEditorOverlay open=")
+        .expect("the comment editor mount");
+    let ctx_menu = ed
+        .find("ContextMenuOverlay menu=")
+        .expect("context menu mount is the ungated-dialog landmark");
+    assert!(
+        mount > ctx_menu && !ed[ctx_menu..mount].contains("(!chrome_hidden.get()).then("),
+        "T-651: the comment editor must mount beside the ungated dialogs"
+    );
+    // The component definition lives in the comment editor overlay module; scrub that file
+    // whole, as the picker pin above does.
+    let region = live_code(frontend_test_support::repository_root::repository_text(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/overlays/comment_editor.rs",
+    ));
+    let comp = only_body(&region, "fn CommentEditorOverlay(");
+    for op in [
+        "engine_ops::rename_comment(",      // ATTR-FIELD-CMT-TITLE
+        "engine_ops::set_comment_tooltip(", // ATTR-FIELD-CMT-TOOLTIP
+        "engine_ops::move_comment(",        // ATTR-FIELD-CMT-POSITION (the drag commit)
+        "engine_ops::duplicate_comment(",   // COPY
+        "engine_ops::delete_comment(",
+    ] {
+        assert!(
+            comp.contains(op),
+            "T-651: the comment editor must reach `{op}` — an unreachable mutator is a \
+             half-shipped field"
+        );
+    }
+    // A comment must never be routed into the SLOT surfaces (the T-716 live-but-inert trap).
+    assert!(
+        !comp.contains("editor_context::open_attributes(")
+            && !comp.contains("entity_selection::select_slot("),
+        "T-651: a comment id must not enter the slot selection / Attributes lanes"
+    );
+}
+
+// ───────────────────────── The Ctrl state machine (PLACE-004 ↔ CONN-GROUP-001) ───────────────
+
+/// The overload resolution, pinned as ONE machine. In the pointerup PLACE branch (armed):
+/// Ctrl → `place_at_keep` (multi-place, keeps the arm), else `place_at_alt` (one-shot). In the
+/// pointerup DRAG-commit branch (unarmed — `has_pending()` short-circuited the place branch):
+/// Ctrl + single character onto another character → `regroup_slot_onto`. The two can never both
+/// fire: the place branch `return`s under `has_pending()`.
+#[test]
+fn ctrl_state_machine_multi_place_when_armed_regroup_when_not() {
+    let ed = editor_live();
+    let up = super::source::gesture_closure_body(&ed, "make_pointer_up_handler");
+
+    // (1) The place branch is armed-gated and returns, so the drag branch below only ever runs
+    // with NO pending — that mutual exclusion is the resolution.
+    assert!(
+        up.contains("armed_placement::has_pending()"),
+        "the place branch must gate on has_pending() (armed)"
+    );
+
+    // (2) Armed + Ctrl = multi-place (place_at_keep); armed + no Ctrl = one-shot (place_at_alt).
+    assert!(
+        up.contains("let ctrl_multi = ev.ctrl_key() || ev.meta_key()"),
+        "PLACE-004: the armed branch must read Ctrl/Cmd as the multi-place modifier"
+    );
+    assert!(
+        up.contains("armed_placement::place_at_keep(")
+            && up.contains("armed_placement::place_at_alt("),
+        "PLACE-004: Ctrl must route to place_at_keep (keep the arm), else place_at_alt"
+    );
+
+    // (3) Unarmed + Ctrl + single character dropped onto another → regroup, and the positional
+    // move is skipped.
+    assert!(
+        up.contains("engine_ops::regroup_slot_onto(")
+            && up.contains("ids.len() == 1")
+            && up.contains("!engine_ops::is_vehicle_id(ids[0].as_str())"),
+        "CONN-GROUP-001: an unarmed Ctrl-drag of a SINGLE character onto another must regroup"
+    );
+
+    // The state machine is documented beside the pointer-up place branch. Read raw source
+    // because the scrubber strips comments. Reassemble the needle so this line is not a decoy.
+    let raw = frontend_test_support::repository_root::repository_text(
+        env!("CARGO_MANIFEST_DIR"),
+        "crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/pointer_up.rs",
+    );
+    let phrase = format!("Ctrl is {}", "OVERLOADED");
+    assert!(
+        raw.contains(phrase.as_str()),
+        "T-647: the Ctrl state machine must be documented beside the pointer-up place branch"
+    );
+}
+
+/// `place_at_keep` re-arms the pending after a successful place (multi-place keeps going), and a
+/// FAILED place does not re-arm (a place that can't commit must not spin). The Alt override is
+/// carried through each stamp.
+#[test]
+fn place_at_keep_rearms_on_success_only() {
+    let ops = ops_live();
+    let body = only_body(&ops, "pub fn place_at_keep(");
+    assert!(
+        body.contains("place_at_impl(x, y, alt_empty, true)"),
+        "PLACE-004: place_at_keep must place with keep=true and carry the Alt override"
+    );
+    // Snapshot before, restore after — and only when `placed`.
+    assert!(
+        body.contains("if placed") && body.contains("pending.borrow_mut() = Some(p)"),
+        "PLACE-004: place_at_keep must re-arm the snapshotted pending, and only on success"
+    );
+}
+
+// ───────────────────────── PLACE-CREW-001 — Alt = empty vehicle ──────────────────────────────
+
+/// Alt on release is threaded from the pointerup into the placement as `alt_empty`, and the
+/// vehicle commit stamps `crewed:false` when Alt is held (`crew_toggle && !alt_empty`) —
+/// the per-gesture override of the dock's crew default. Alt can force empty; it can never force
+/// crewed a switched-off toggle withheld.
+#[test]
+fn alt_places_an_empty_vehicle() {
+    let ed = editor_live();
+    let up = super::source::gesture_closure_body(&ed, "make_pointer_up_handler");
+    assert!(
+        up.contains("let alt_empty = ev.alt_key()"),
+        "PLACE-CREW-001: the armed branch must read Alt as the empty-vehicle modifier"
+    );
+    // Both place routes carry the alt flag through.
+    assert!(
+        up.contains("place_at_keep(c[0], c[1], alt_empty)")
+            && up.contains("place_at_alt(c[0], c[1], alt_empty)"),
+        "PLACE-CREW-001: the Alt override must reach place_at_* on both the multi and single paths"
+    );
+    // The host carries the dock toggle and the Alt modifier into the release machine …
+    let ops = ops_live();
+    let impl_body = only_body(&ops, "fn place_at_impl(");
+    assert!(
+        impl_body.contains("place_with_crew()") && impl_body.contains("alt_empty"),
+        "PLACE-CREW-001: the release must carry both the crew toggle and the Alt modifier into \
+         the placement"
+    );
+    // … and the rule that combines them is the engine's: toggle AND-NOT alt.
+    let release = release_machine_live();
+    let rule = only_body(&release, "pub fn vehicle_places_its_crew(");
+    assert!(
+        rule.contains("crew_toggle && !alt_empty"),
+        "PLACE-CREW-001: a Vehicle arm must stamp crewed:false under Alt (toggle && !alt_empty)"
+    );
+}
+
+// ───────────────────────── CONN-GROUP-001 — regroup shares the ORBAT refile seam ─────────────
+
+/// The map regroup reads the target character's squad off the SoA (`read_attrs`) and refiles
+/// through the SAME T-180.6 core move the ORBAT dock uses (`refile_slot` → `move_slot_to_squad`),
+/// so a map regroup and a dock refile are one undo step / one membership write. It no-ops when
+/// the target has no squad or already shares the dragged slot's squad.
+#[test]
+fn regroup_reuses_the_refile_seam_and_noops_off_squad() {
+    let ops = ops_live();
+    let body = only_body(&ops, "pub fn regroup_slot_onto(");
+    assert!(
+        body.contains("read_attrs(target_id)") && body.contains("read_attrs(slot_id.clone())"),
+        "CONN-GROUP-001: regroup must read the target's (and source's) squad off the SoA"
+    );
+    assert!(
+        body.contains("refile_slot("),
+        "CONN-GROUP-001: regroup must go through the T-180.6 refile seam (move_slot_to_squad)"
+    );
+    assert!(
+        body.contains("dest_squad.is_empty() || dest_squad == src_squad"),
+        "CONN-GROUP-001: regroup must no-op when the target has no squad or already shares one"
+    );
+}
+
+// ───────────────────────── Alt census (re-run at filing time) ────────────────────────────────
+
+/// Re-run of the Alt census the ticket demanded, as source pins across the whole frontend. Alt
+/// is a placement modifier ONLY on the canvas (this ticket's `alt_empty`); every pre-existing
+/// `alt_key()` reader is either a NEGATIVE guard on a Ctrl shortcut or a DOCK-tree gesture — no
+/// canvas collision. The `eden_tree` Alt-click (wave 104, descendants selection) is the one
+/// noted since filing: a dock surface, not the map.
+#[test]
+fn alt_census_confirms_no_canvas_collision() {
+    // The undo/redo keydown: Alt is a NEGATIVE guard on the Ctrl/Cmd chord, never a place.
+    let undo_redo = only_body(
+        &live_code(frontend_test_support::repository_root::repository_text(
+            env!("CARGO_MANIFEST_DIR"),
+            "crates/frontend/workspaces/mission_creator_engine_bridge/src/input/window_keydown.rs",
+        )),
+        "pub fn register_key_handler",
+    )
+    .to_string();
+    assert!(
+        undo_redo.contains("|| ev.alt_key()"),
+        "census: the undo/redo keydown uses alt_key only as a guard (|| ev.alt_key())"
+    );
+    // mission_editor keydown: Alt only as !alt_empty on copy/paste and the Ctrl+Alt+D HUD
+    // toggle — none a canvas placement modifier. (The keydown lives in the same file.)
+    let ed = editor_live();
+    assert!(
+        ed.contains("if modk && ev.alt_key() && !ev.shift_key() =>"),
+        "census: mission_editor's only positive alt_key keydown is the Ctrl+Alt+D HUD toggle"
+    );
+    // eden_tree: Alt-click is a DOCK-tree gesture (descendants selection), NOT the canvas.
+    let tree = live_code(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/ui/outliner/tree/single_row.rs"
+    )));
+    assert!(
+        tree.contains("ev.alt_key() || ev.shift_key()"),
+        "census: eden_tree's Alt-click is a dock-tree gesture (no canvas collision)"
+    );
+    // And the canvas's own new reader is the T-647 placement modifier — exactly one, in the
+    // pointerup armed branch.
+    let up = super::source::gesture_closure_body(&ed, "make_pointer_up_handler");
+    assert_eq!(
+        up.matches("ev.alt_key()").count(),
+        1,
+        "census: the canvas pointerup reads alt_key exactly once — the T-647 empty-vehicle \
+         modifier"
+    );
+}
+
+// ───────────────────────── The fired rule: perturb / fail / restore ──────────────────────────
+
+/// Fires the PLACE-CREW-001 pin (`crew_toggle && !alt_empty`). Proof it is
+/// load-bearing: the pin passes on the real body, and a perturbation that drops the `!alt_empty`
+/// clause (the exact regression — Alt no longer forces empty) makes the same assertion FAIL.
+/// Restore is implicit: the real `include_str!` body is untouched; only an in-memory copy is
+/// perturbed here.
+#[test]
+fn fired_rule_alt_empty_clause_is_load_bearing() {
+    let release = release_machine_live();
+    let real = only_body(&release, "pub fn vehicle_places_its_crew(");
+    let needle = "crew_toggle && !alt_empty";
+    // PASS on the real body.
+    assert!(
+        real.contains(needle),
+        "canary: the real body must carry the clause"
+    );
+    // Perturb: strip the Alt clause (the regression). The pin must no longer find its needle.
+    let perturbed = real.replace(needle, "crew_toggle");
+    assert!(
+        !perturbed.contains(needle),
+        "fired rule: dropping `!alt_empty` (Alt stops forcing empty) must break the PLACE-CREW-001 \
+         pin — proving the pin discriminates the regression"
+    );
+}

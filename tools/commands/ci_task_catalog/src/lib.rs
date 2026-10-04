@@ -7,7 +7,8 @@
 //! pin with its glibc stamp guard, policed by the `mk` targets of `cargo_target_verification`;
 //! [`workflow_checks`] holds the `verify ci-shell` and `verify ci-schema-parity` gates;
 //! [`workspace_member_tests`] tests every member no dedicated task tests; [`wasm32_lint_lane`]
-//! derives the packages the wasm32 lint covers.
+//! derives the packages the wasm32 lint covers; [`frontend_package_lane`] derives the frontend
+//! family (the app and every crate under `crates/frontend`) its lines format, lint and test.
 //! **Position:** tier 8 of `tools/commands`, over the check crates (`repository_checks`,
 //! `mod_script_checks`, `documentation_checks`), `schema_tooling`, `database_operations`,
 //! `deployment`, `process_runner`, `repository_layout` and `verification_core`, and over
@@ -26,6 +27,7 @@ mod cargo_target_verification;
 mod chromium_install;
 mod editor_api;
 mod error;
+pub mod frontend_package_lane;
 pub mod prelude;
 pub mod task_runner;
 pub mod wasm32_lint_lane;

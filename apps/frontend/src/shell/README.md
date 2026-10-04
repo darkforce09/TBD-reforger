@@ -12,10 +12,10 @@ frames a route gets.
 apps/frontend/src/shell/
 ├── layout.rs             `AppLayout`: the root frame, its three shapes and the active-link rule
 ├── membership_status.rs  `MembershipStatus`: membership banner, profile poll and access extension
-├── mod.rs                the module tree; re-exports the frame and the fallback
+├── mod.rs                the module tree: one `pub mod` per frame file, the wasm-only ones gated
 ├── not_found.rs          `NotFoundPage`: the router's fallback for a path no route matches
 ├── sidebar.rs            the permanent sidebar, brand block, link list and drawer toggle
-├── tests/                unit tests for the active-link rule, the frame kinds and the account badge
+├── tests/                unit tests: the active-link rule, frame kinds, account badge, route mounts
 └── top_nav.rs            `TopNav`: the breadcrumb, the identity pill, the account menu and sign-out
 ```
 
@@ -29,7 +29,7 @@ nothing and keeps the pure half of the frame, `classify_frame`, `FrameKind`, `is
 account badge of `top_nav.rs`, which the unit tests in `tests/` exercise. `AppLayout` creates
 the one `AuthStore` every page reads, whose constructor installs the route guard in the browser
 build, and the toast queue. It starts the stored-session restore, `bootstrap` in
-`apps/frontend/src/foundation/transport/client/requests.rs`, on every path but `/auth/callback`,
+`crates/frontend/foundation/frontend_transport/src/client/requests.rs`, on every path but `/auth/callback`,
 whose page installs the session it was handed. `classify_frame` picks the frame from the pathname,
 and a memo over it remounts the frame only when the kind changes:
 
@@ -40,7 +40,7 @@ any other path              ──▶ chrome: sidebar + top bar + <main>
                                 <main> overflow-hidden if route_table::full_bleed, else padded
 ```
 
-The chromeless paths are the four rows `apps/frontend/src/foundation/route_table/mod.rs` flags: the
+The chromeless paths are the four rows `crates/frontend/foundation/frontend_route_table/src/routes.rs` flags: the
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator), the review workspace and the two
 debug benches. Moving between two chromed routes swaps only the page inside `<main>`. The
 membership banner and the toast viewport sit beside the frame, so a frame swap never unmounts them.
@@ -52,7 +52,7 @@ clears, so "Administration" shows only for `admin`, and `guest` sees no link, si
 asks for `enlisted`. `is_active` marks one link: `/` only on `/`, any other link on its own path and
 every path below it. On a narrow viewport the sidebar gives way to a toggle that opens the same
 brand and links in a drawer, which a backdrop click, a link click or Escape closes. The sections and
-their links, as `navigation_menu.rs` in `apps/frontend/src/foundation/route_table/` labels
+their links, as `navigation_menu.rs` in `crates/frontend/foundation/frontend_route_table/src/` labels
 them:
 
 | Section | Links |
@@ -107,25 +107,27 @@ shows its banner while the membership is stale or the profile says the viewer ma
 ## Boundaries
 
 - Depends on:
-  - `crate::app_routes::AppRoutes`, the routes the frame renders, and `crate::foundation::route_table`
+  - `crate::app_routes::AppRoutes`, the routes the frame renders, and `frontend_route_table`
     (`chromeless`, `full_bleed`, `breadcrumb`, and `navigation_menu::NAVIGATION` for the sidebar);
-  - `crate::foundation::auth` (`AuthStore`, session persistence, `session_refresh::bootstrap` and
-    `session_refresh::with_refresh_lock`), `crate::foundation::transport` (`api_get`,
-    `api_post_ok`, `MeResponse`, `User`, and `dto::role` for `Role` and `has_min_role`),
-    `crate::foundation::ui` (the toast queue and viewport, `MaterialIcon`, `cn`) and
-    `crate::foundation::utils::safe_avatar_url`.
+  - `frontend_session` (`AuthStore`, session persistence, `session_refresh::bootstrap` and
+    `session_refresh::with_refresh_lock`), `frontend_transport` (`api_get`,
+    `api_post_ok`, `MeResponse`, `User`, and `frontend_api_dtos::role` for `Role` and `has_min_role`),
+    `frontend_ui` (the toast queue and viewport, `MaterialIcon`, `cn`) and
+    `frontend_ui::safe_avatar_url`.
 - Used by: `apps/frontend/src/main.rs`, which mounts `AppLayout`; the fallback of
   `apps/frontend/src/app_routes.rs` and the `*` row of
-  `apps/frontend/src/foundation/route_table/mod.rs`, which name `NotFoundPage`; the DOM oracle's `notfound`
+  `crates/frontend/foundation/frontend_route_table/src/routes.rs`, which name `NotFoundPage`; the DOM oracle's `notfound`
   capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`, whose captures of
   the chromed pages hold the frame too.
 - Rules: `classify_frame` is the one place a frame is chosen, naming only `/login` and
   `/auth/callback` and reading every other layout from the route table (`classify_frame_kinds` in
   `tests/layout.rs`); `is_active` matches `/` exactly and every other link by path prefix
   (`is_active_dashboard_exact`, `is_active_prefix_and_exact`); each `NAVIGATION` path names a route
-  in `apps/frontend/src/foundation/route_table/mod.rs`; the account badge holds only the fields it displays
+  in `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the account badge holds only the fields it displays
   (`a_profile_change_the_badge_does_not_display_yields_an_equal_badge` in `tests/top_nav.rs`);
-  avatars pass through `safe_avatar_url` (`topnav_avatar_src_only_keeps_http_urls`).
+  avatars pass through `safe_avatar_url` (`topnav_avatar_src_only_keeps_http_urls`); a frame
+  component used outside its file is a documented `pub` item in a `pub mod`, since a leptos
+  component's generated props builder is otherwise an unreachable `pub` item.
 
 ## Related documentation
 
@@ -133,5 +135,5 @@ shows its banner while the membership is stale or the profile says the viewer ma
   — the behaviour and design of the layout, the sidebar, the top bar and the not-found page.
 - [Top bar blueprint](/documentation/apps/frontend/shell/visual_references/topbar_blueprint/README.md)
   — the design-phase reference of the top bar and how the built bar differs.
-- [Account pages](/documentation/apps/frontend/pages/account/account_pages.md) — the
+- [Account pages](/documentation/crates/frontend/pages/account_pages/account_pages.md) — the
   sign-in pages the frame renders bare and the settings page the account menu opens.

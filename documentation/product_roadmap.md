@@ -32,7 +32,7 @@ The Source column names where the item comes from:
 - **backlog**: the [north-star backlog](/documentation/tickets/specs/t131_north_star_backlog.md),
   the frozen spec of T-131 to T-142.
 - **feature docs**: the Open work of a live feature document, such as the
-  [Mission Creator roadmap](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md),
+  [Mission Creator roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md),
   which also lists the editor's usability and defect tickets that this roadmap leaves out.
 
 ## Mission Creator
@@ -138,13 +138,12 @@ or a strike.
    `crates/api/api_missions/src/handlers/`) is a separate list that a write replaces whole;
    nothing derives it from the slots' loadouts. Does an Arsenal edit update the armory, or do the
    two stay apart? No ticket.
-2. **Mission planner.** No ticket covers the reserved workspace
-   `apps/frontend/src/workspaces/planner/`
+2. **Mission planner.** No ticket covers the planned workspace, which has no code yet
    ([design notes](/documentation/apps/frontend/workspaces/planner/mission_planner.md)). File one,
    or strike the planner row above.
 3. **Where the replay lives.** T-136's plan puts the replay among the routed pages and names code
-   paths that no longer exist, while `apps/frontend/src/workspaces/aar/` is the reserved
-   workspace ([after-action review notes](/documentation/apps/frontend/workspaces/aar/after_action_review.md)).
+   paths that no longer exist, while the after-action review is planned as a workspace crate
+   under `crates/frontend/workspaces/` ([after-action review notes](/documentation/apps/frontend/workspaces/aar/after_action_review.md)).
    The [mod design](/documentation/mod/tbd-framework/mod_design.md) also records full after-action
    recording as deferred by the operator while T-136 is ready: which one stands?
 4. **Team kills.** The debrief scoreboard counts team kills
@@ -155,7 +154,7 @@ or a strike.
 6. **AI skill.** Seats with waypoints run AI (`TBD_WaypointRuntime.ShouldEnableAIAtSpawn`, in
    `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`), but neither the mission schema nor the
    mod has a skill value; the Eden gap row is ATTR-FIELD-OBJ-SKILL in the
-   [Eden gap analysis](/documentation/apps/frontend/workspaces/editor/eden_editor_reference/eden_gap_analysis.md).
+   [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md).
    Is AI skill authorable? No ticket.
 7. **Steam app id.** xtask reads the dedicated server's build from app id 1874900
    (`tools/commands/remote_debugging/src/debug/direct_join.rs:98`) and tells the operator to install app
@@ -183,7 +182,7 @@ ticket file keeps its own. From the plans above:
 
 ## Related documentation
 
-- [Mission Creator roadmap](/documentation/apps/frontend/workspaces/editor/mission_creator_roadmap.md)
+- [Mission Creator roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md)
   — the editor's tracks, defects and deferred work in full.
 - [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the mod's spine, deferrals and
   open work.

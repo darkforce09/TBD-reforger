@@ -36,11 +36,25 @@ fn both_gates_run_the_same_ten_class_r_verifies() {
 #[test]
 fn the_wave_gate_tests_every_workspace_member() {
     let root = tool_test_support::test_repo_root();
+    let dedicated = gate_dispatch::wave_gate_dedicated_test_packages(&root)
+        .expect("the frontend family derives");
+    let family = ci_task_catalog::frontend_package_lane::frontend_packages(&root)
+        .expect("the frontend family derives");
+    assert_eq!(dedicated[0], gate_dispatch::WAVE_GATE_API_TEST_PACKAGE);
+    assert_eq!(
+        dedicated[1..],
+        family[..],
+        "`test frontend` tests the whole family"
+    );
+    let dedicated: Vec<&str> = dedicated.iter().map(String::as_str).collect();
     let derived = ci_task_catalog::workspace_member_tests::member_packages_outside_api_family(
-        &root,
-        &gate_dispatch::WAVE_GATE_DEDICATED_TEST_PACKAGES,
+        &root, &dedicated,
     )
     .expect("every dedicated package is a workspace member");
+    assert!(
+        !derived.iter().any(|package| family.contains(package)),
+        "the frontend family runs in `test frontend`, not again per member: {derived:?}"
+    );
     let api_crates: Vec<String> = repository_laws::workspace_members::read_workspace_members(&root)
         .expect("the workspace members read")
         .into_iter()
@@ -59,7 +73,7 @@ fn the_wave_gate_tests_every_workspace_member() {
         .join(" ");
     for wired in [
         r#"r.run("test api", || db::gate_test_api(ctx));"#,
-        r#""cargo", "test", "-p", "frontend","#,
+        r#"r.run("test frontend", || { frontend_family_step( ctx, hostrun, &["env", &frontend_dir, "cargo", "test"],"#,
         r#"r.run("test workspace members", ||"#,
     ] {
         assert!(

@@ -1,0 +1,12 @@
+# Stage S10 H2e, a page crate: the field tools (the mortar calculator with its inputs, solution
+# cards, map picker, saved fire missions and offline status) become
+# crates/frontend/pages/field_tools_pages. The area folder becomes the crate's `src`, its module
+# tree `lib.rs`, and its README the source tree README; the calculator's feature docs move to the
+# crate's documentation mirror. The prefix is one `crate::` row scoped to the moved folder and one
+# `field_tools_pages::` row scoped to the app's source.
+kind	from	to	scope
+path	apps/frontend/src/pages/field_tools	crates/frontend/pages/field_tools_pages/src
+path	apps/frontend/src/pages/field_tools/mod.rs	crates/frontend/pages/field_tools_pages/src/lib.rs
+path	documentation/apps/frontend/pages/field_tools	documentation/crates/frontend/pages/field_tools_pages
+rust_path	crate::pages::field_tools::	crate::	apps/frontend/src/pages/field_tools
+rust_path	crate::pages::field_tools::	field_tools_pages::	apps/frontend/src

@@ -58,7 +58,7 @@ players and capacity, and sum every reported telemetry queue's backlog and drops
 - Used by:
   - the API's router (`apps/api/src/router.rs`), which merges the route table;
   - the API's integration suites in `apps/api/tests/`;
-  - over HTTP, the dashboard and the leaderboard pages in `apps/frontend/src/pages/`.
+  - over HTTP, the dashboard and the leaderboard pages in the page crates under `crates/frontend/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); the view refresh and the counter

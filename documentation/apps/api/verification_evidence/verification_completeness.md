@@ -267,7 +267,7 @@ storage columns but never drops or changes a copied constraint
 ### Frontend chain
 
 Every route the frontend calls whose response decodes into a typed DTO in
-`apps/frontend/src/foundation/transport/dto/` has a golden that the seeded API reproduces (the
+`crates/frontend/foundation/frontend_api_dtos/src/` has a golden that the seeded API reproduces (the
 golden reproduction above) and that the DTO round-trips, with every wire key either claimed by a
 field or listed as deliberately unclaimed; the frontend `r_api` tests hold the round trip. The
 modpacks, announcements, CMS announcements and leaderboards responses decode into typed DTOs, not

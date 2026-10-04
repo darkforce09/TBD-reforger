@@ -1,0 +1,58 @@
+# The single-page app's door to the API: the HTTP client with its refresh policy and its one
+# error type, the typed endpoint calls, the live server status stream and the audit log stream over
+# server-sent events, and the token provider the session implements.
+[package]
+name = "frontend_transport"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The single-page app's HTTP client, typed endpoint calls, server-sent event streams and token provider seam."
+
+[package.metadata.layout]
+category = "crates/frontend/foundation"
+tier = 8
+targets = "any"
+
+[dependencies]
+# The wire types every request and stream carries.
+frontend_api_dtos = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+futures = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+# The browser halves: the requests, the multipart upload, the stream readers and their abort
+# handles, and the retry timer.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+gloo-net = { workspace = true }
+gloo-timers = { workspace = true, features = ["futures"] }
+js-sys = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true, features = [
+    "Window",
+    "RequestCredentials",
+    # The multipart upload: `<input type=file>` → FormData field `"file"`.
+    "FormData",
+    "File",
+    # The stream consumers: a Bearer fetch and a ReadableStream reader, because EventSource
+    # cannot carry the Authorization header.
+    "Headers",
+    "Request",
+    "RequestInit",
+    "Response",
+    "ReadableStream",
+    "ReadableStreamDefaultReader",
+    # Aborts a stream's fetch when its route is left.
+    "AbortController",
+    "AbortSignal",
+] }
+
+[dev-dependencies]
+frontend_test_support = { workspace = true }
+
+[lints]
+workspace = true

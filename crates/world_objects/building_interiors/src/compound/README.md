@@ -76,7 +76,7 @@ transformed box.
     residency
     builds instances with `instances_from_records`, its prefab descriptors carry
     `InstanceRecord`s, and its coverage reads `Instance` and `InstanceKind`;
-  - the debug building viewer and interior bench in `apps/frontend/src/workspaces/debug/`,
+  - the debug building viewer and interior bench in `crates/frontend/workspaces/debug_benches/src/`,
     which assemble a compound from `<slug>.instances.json` and open and close its doors;
   - the blueprint tooling in `tools/map_assets/blueprint_compiler/src/`, where
     `cargo xtask map bvh-batch` writes `<slug>.instances.json`, and the world line-of-sight checks

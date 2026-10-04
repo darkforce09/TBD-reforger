@@ -92,7 +92,7 @@ and the known-empty chunks. The world loader merges it into the page's asset sta
 - Used by: the map engine's world loader (uploads, toggles, loads, ingest, statistics) and
   occluder loader
   (`take_residency_events`, `chunk`, `prefab_rows`), the debug world line-of-sight bench in
-  `apps/frontend/src/workspaces/debug/world_los/`, and the tests in `tests/`. Inside the folder,
+  `crates/frontend/workspaces/debug_benches/src/world_los/`, and the tests in `tests/`. Inside the folder,
   `footprint.rs` asks `early_landmark_glyph_active` for the fill de-emphasis and calls the strip
   and glyph rebuilds after the building fill, and `strips.rs` reads its `fill_color`.
 - Rules:

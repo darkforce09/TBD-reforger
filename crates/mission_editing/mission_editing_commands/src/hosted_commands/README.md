@@ -72,7 +72,7 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
   compositions, document index, entities, faction library, projections, reassignment, transforms
   and zones.
 - Used by:
-  - the Mission Creator in `apps/frontend/src/workspaces/editor/`, directly: the bridge's host
+  - the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`, directly: the bridge's host
     state,
     armed placement, overlays and document history, the pointer input, the arsenal, the docks
     (context menu, left and right docks, markers, toolbelt, top strip), the inspector (Attributes
@@ -88,7 +88,7 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
 
 - [Mission document](/crates/mission/mission_document/README.md) — the document and
   the operations these commands drive.
-- [Mission Creator feature inventory](/documentation/apps/frontend/workspaces/editor/feature_inventory/README.md)
+- [Mission Creator feature inventory](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/README.md)
   — the [ORBAT](/documentation/glossary/n_to_z.md#orbat), layers, markers, zones, triggers,
   connections and clipboard features.
-- [Mission Creator feature inventory: transform and delete](/documentation/apps/frontend/workspaces/editor/feature_inventory/transform_and_delete.md) — the arrange, rotate, formation and delete commands.
+- [Mission Creator feature inventory: transform and delete](/documentation/crates/frontend/workspaces/mission_creator_workspace/feature_inventory/transform_and_delete.md) — the arrange, rotate, formation and delete commands.

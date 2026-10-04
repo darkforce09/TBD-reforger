@@ -1,0 +1,22 @@
+# The single-page app's route table: every route's path, component name, layout flags and access
+# tier with the readers the frame and the route guard use, and the sidebar's navigation menu.
+[package]
+name = "frontend_route_table"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The single-page app's route table, its layout and access readers, and the sidebar's navigation menu."
+
+[package.metadata.layout]
+category = "crates/frontend/foundation"
+tier = 8
+targets = "any"
+
+[dependencies]
+# The role ladder every access tier and sidebar link is judged on.
+frontend_api_dtos = { workspace = true }
+
+[lints]
+workspace = true

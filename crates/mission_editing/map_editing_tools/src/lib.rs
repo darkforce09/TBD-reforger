@@ -8,7 +8,7 @@
 //! **Position:** mission editing category, tier 7, over `mission_editing_session` (the picks joined
 //! to document ids), `mission_document`, `mission_crdt`, `camera_math`, `spatial_indexes`, the
 //! three line-of-sight crates, `terrain_elevation` and `time_source`. The Mission Creator in
-//! `apps/frontend/src/workspaces/editor/input/tools/` installs the session cells and the scheduler
+//! `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/` installs the session cells and the scheduler
 //! host, feeds the tools world coordinates and draws what they hold.
 //! **Signals & state:** thread-local host cells per tool (the ruler chain, the line-of-sight
 //! capture, the DEM sampler, the viewshed state), the scheduler's service table, its two job slots

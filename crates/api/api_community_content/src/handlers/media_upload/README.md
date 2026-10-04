@@ -42,7 +42,7 @@ contract type `UploadResponseUrl` before it is sent.
   (`UPLOAD_DIR`), `api_http_layer` for the `AdminUser` extractor, `api_foundation` for `ApiError`; tokio for the file writes.
 - Used by: the domain's `routes.rs`, which registers `upload_image` behind the multipart body
   limit; over HTTP, the hero upload of the content manager under
-  `apps/frontend/src/pages/administration/content_manager/`.
+  `crates/frontend/pages/administration_pages/src/content_manager/`.
 - Rules: this folder is the only writer of the upload directory, which the API's router serves
   at `/uploads`; the wire shapes are `contracts/definitions/content-upload.schema.json`.
 
@@ -52,5 +52,5 @@ contract type `UploadResponseUrl` before it is sent.
   — the upload semantics this handler implements.
 - [API environment variables](/documentation/apps/api/environment_variables.md) —
   `UPLOAD_DIR`.
-- [Content manager page](/documentation/apps/frontend/pages/administration/content_manager/content_manager_page.md)
+- [Content manager page](/documentation/crates/frontend/pages/administration_pages/content_manager/content_manager_page.md)
   — the page that uploads through this route.

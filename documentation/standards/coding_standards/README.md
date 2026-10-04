@@ -106,8 +106,8 @@ predictable contract for the consumer; Debuggability (De), a failure that says w
 | WS-1 | Sc | every manifest is a member; judged crates declare their layout, tier and category edges; the firewalls hold | CI-SCRIPT, `cargo xtask verify crate-tiers` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-1-crate-tiers) |
 | WS-2 | Sc | a judged library crate keeps the crate anatomy | CI-SCRIPT, `cargo xtask verify crate-anatomy` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-2-crate-anatomy) |
 | WS-3 | Sc | nothing new depends on legacy, and legacy holds no shim | CI-SCRIPT, `cargo xtask verify strangler` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-3-strangler) |
-| WS-4 | Sc | a lower frontend layer never imports a higher one, and the foundation's sub-areas keep their declared order | CI-SCRIPT, `cargo xtask verify frontend-layering` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-4-frontend-layering) |
-| WS-5 | Sc | every leptos crate has an `@source` line in the app stylesheet | CI-SCRIPT, `cargo xtask verify tailwind-sources` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-5-tailwind-sources) |
+| WS-4 | Sc | no frontend crate depends on a higher layer or a peer page crate, and the foundation and Mission Creator crates keep their crate orders | CI-SCRIPT, `cargo xtask verify frontend-layering` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-4-frontend-layering) |
+| WS-5 | Sc | every leptos crate has exactly one `@source` line in the app stylesheet, and no line is stale | CI-SCRIPT, `cargo xtask verify tailwind-sources` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-5-tailwind-sources) |
 
 46 codes: 23 gated (10 CI-BLOCK, 13 CI-SCRIPT, TS-2 counted for its engine wall), 2 MANUAL, 12
 live with no gate (ERR-1 and LOG-3 held by construction), 9 retired. The code ERR-3 is not used.

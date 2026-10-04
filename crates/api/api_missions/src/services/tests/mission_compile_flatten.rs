@@ -601,7 +601,7 @@ fn weather_preset_list_matches_the_row_enum() {
 ///     exactly what `compile_artifact` stores as an artifact's document bytes;
 ///   * client: `mission_compiler::flatten_mod_document_json` over the camelCase [`MissionMeta`]
 ///     the editor builds from `GET /missions/:id`
-///     (`apps/frontend/src/workspaces/editor/session/document_commands/imp/compilation.rs`).
+///     (`crates/frontend/workspaces/mission_creator_session/src/document_commands/imp/compilation.rs`).
 ///
 /// The fixture deliberately carries an **authored environment that disagrees with the row**
 /// (row 05:30/clear, payload 21:45/dense_fog). That is not decoration — it is the one field where

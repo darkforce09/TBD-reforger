@@ -11,7 +11,12 @@ fn uncapped_grep_is_denied() {
 
 #[test]
 fn bare_file_read_is_denied() {
-    assert!(guard_bash("cat apps/frontend/src/workspaces/editor/mission_editor.rs").is_some());
+    assert!(
+        guard_bash(
+            "cat crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs"
+        )
+        .is_some()
+    );
     assert!(guard_bash("sed -n '1,200p' tools/xtask/src/main.rs").is_some());
 }
 

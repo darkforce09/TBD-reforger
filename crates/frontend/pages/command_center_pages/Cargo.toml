@@ -1,0 +1,44 @@
+# The command center pages of the single-page app: the landing dashboard, the live server intel
+# panel and the announcement board, the read-only screens a member lands on after signing in.
+[package]
+name = "command_center_pages"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The dashboard, server intel and announcement board pages."
+
+[package.metadata.layout]
+category = "crates/frontend/pages"
+tier = 10
+targets = "any"
+
+[dependencies]
+# The announcement, dashboard and server wire types.
+frontend_api_dtos = { workspace = true }
+# The HTTP client and the server status stream the server intel panel subscribes to.
+frontend_transport = { workspace = true }
+# The session store and the sign-in gate every page renders inside.
+frontend_session = { workspace = true }
+# The design-system primitives and the date, clipboard and byte formatting helpers.
+frontend_ui = { workspace = true }
+# `is_http_url`, the scheme guard on the announcement thumbnails the board renders.
+http_url_guard = { workspace = true }
+leptos = { workspace = true, features = ["csr"] }
+serde_json = { workspace = true }
+
+# The browser half: the route parameter and navigation hooks of the announcement board.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+leptos_router = { workspace = true }
+
+[dev-dependencies]
+# The captured API responses behind `golden!`, the source scrubber and the source shards the guard
+# tests read through.
+frontend_test_support = { workspace = true }
+# The guard's case table (`http_url_guard::cases`), which the announcement thumbnail test runs
+# through its render path.
+http_url_guard = { workspace = true, features = ["test_fixtures"] }
+
+[lints]
+workspace = true

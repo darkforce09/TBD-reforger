@@ -60,7 +60,7 @@ Discord is unreachable and their own snapshot is stale.
   `api_http_layer` for the state, the extractors and the authorized SSE stream, and
   `api_foundation` for pagination.
 - Used by: the domain's `routes.rs`; over HTTP, the personnel and audit log pages in
-  `apps/frontend/src/pages/administration/` and the membership status control in
+  `crates/frontend/pages/administration_pages/src/` and the membership status control in
   `apps/frontend/src/shell/membership_status.rs`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`apps/api/src/tests/architecture_rules.rs`); a ban

@@ -82,7 +82,7 @@ cargo test -p road_network   # network, styling, strip and airfield tests
     gate airfield structures, and the toggles recompute the box;
   - `place_names`, whose road labels follow `RoadSegment`s and code their gate class with
     `road_class_code`;
-  - the debug benches in `apps/frontend/src/workspaces/debug/`, which stroke lines with
+  - the debug benches in `crates/frontend/workspaces/debug_benches/src/`, which stroke lines with
     `expand_polyline_strip`;
   - `tools/developer_tools/src/`, whose world export writes the archive from the JSON (its class
     bytes through `road_class_code`) and whose label pipeline and checks read the network.

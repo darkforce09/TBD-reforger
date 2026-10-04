@@ -45,7 +45,7 @@ owns = [
     "apps/website/api/src/models/event.rs",
     "apps/frontend/src/core/dto.rs",
     "apps/website/api/migrations/0027_reservation_tiers.sql",
-    "apps/frontend/src/pages/operations/event_hub.rs",
+    "crates/frontend/pages/operations_pages/src/event_hub.rs",
 ]
 
 [scope]

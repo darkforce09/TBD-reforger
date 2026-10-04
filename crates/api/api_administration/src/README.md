@@ -75,7 +75,7 @@ audit id, and reloads the history on `reset`.
   - the API's audit integration suites in `apps/api/tests/`, which drive the services directly;
   - over HTTP, the [personnel](/documentation/glossary/n_to_z.md#personnel) and
     [audit logs](/documentation/glossary/a_to_f.md#audit-logs) pages in
-    `apps/frontend/src/pages/administration/`.
+    `crates/frontend/pages/administration_pages/src/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`apps/api/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); no Rust code outside `api_audit_log`
@@ -88,7 +88,7 @@ audit id, and reloads the history on `reset`.
 - [API overview](/documentation/apps/api/api_overview.md) — every domain's routes.
 - [Administration and community content](/documentation/apps/api/verification_evidence/administration_and_content.md)
   — the roster paging, the audit stream's replay, reset and recovery semantics.
-- [Personnel roster page](/documentation/apps/frontend/pages/administration/personnel/personnel_roster_page.md)
+- [Personnel roster page](/documentation/crates/frontend/pages/administration_pages/personnel/personnel_roster_page.md)
   — the roster, discipline and resync as administrators use them.
-- [Audit logs page](/documentation/apps/frontend/pages/administration/audit_logs/audit_logs_page.md)
+- [Audit logs page](/documentation/crates/frontend/pages/administration_pages/audit_logs/audit_logs_page.md)
   — the audit console that reads these routes.

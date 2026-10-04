@@ -2,8 +2,9 @@
 //!
 //! **Role:** derives, from the root `Cargo.toml` workspace, the packages no dedicated test task
 //! covers and runs `cargo test -p <package>` for each, so a member the workspace gains is tested
-//! from the moment the root manifest names it. The API crates (`crates/api/*`) are not in this
-//! lane: `api-test` and `cargo xtask db test-it` test them with `api`, in the database lane. Their
+//! from the moment the root manifest names it. The frontend crates (`crates/frontend/*/*`) are
+//! not in this lane: `ci-local-leptos` tests them with `frontend`, in one line
+//! ([`crate::frontend_package_lane`]). The API crates (`crates/api/*`) are not in it either: `api-test` and `cargo xtask db test-it` test them with `api`, in the database lane. Their
 //! unit tests need no database (none reads `TEST_DATABASE_URL`), so the lane they share with `api`
 //! is the one that owns the API family, not a database requirement.
 //!
@@ -24,6 +25,7 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::error::{Error, Result};
+use crate::frontend_package_lane::frontend_packages;
 use database_operations::local_database::api_test_packages::api_test_packages;
 use process_runner::Run;
 use repository_laws::workspace_members::read_workspace_members;
@@ -32,8 +34,9 @@ use repository_layout::find_repository_root;
 use verification_core::NotRun;
 
 /// The members a dedicated task of [`super::task_runner::TASKS`] tests, with that task, as
-/// `(package, task)`: the API against its database, the frontend and the offline service worker
-/// the `wasm-ci` lane tests with every feature on.
+/// `(package, task)`: the API against its database, the frontend (with every crate of its family,
+/// which the lane derives) and the offline service worker the `wasm-ci` lane tests with every
+/// feature on.
 pub const DEDICATED_TEST_TASKS: [(&str, &str); 3] = [
     ("api", "api-test"),
     ("frontend", "ci-local-leptos"),
@@ -85,15 +88,18 @@ pub fn member_packages_outside_api_family(
     member_packages_except(repo_root, &excluded)
 }
 
-/// The packages this lane tests under `repo_root`: every member outside [`DEDICATED_TEST_TASKS`]
-/// and outside the API family that `api-test` tests with `api`, in member-path order.
+/// The packages this lane tests under `repo_root`: every member outside [`DEDICATED_TEST_TASKS`],
+/// outside the API family that `api-test` tests with `api` and outside the frontend family that
+/// `ci-local-leptos` tests with `frontend`, in member-path order.
 ///
 /// # Errors
-/// As [`member_packages_outside_api_family`].
+/// As [`member_packages_outside_api_family`], or the frontend family cannot be derived.
 pub fn workspace_member_lane_packages(repo_root: &Path) -> Result<Vec<String>> {
+    let frontend_family = frontend_packages(repo_root)?;
     let dedicated: Vec<&str> = DEDICATED_TEST_TASKS
         .iter()
         .map(|(package, _)| *package)
+        .chain(frontend_family.iter().map(String::as_str))
         .collect();
     member_packages_outside_api_family(repo_root, &dedicated)
 }
