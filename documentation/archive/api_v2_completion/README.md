@@ -26,7 +26,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 ## Code
 
 - [API crate](/crates/api/api_server/) — the crate the milestones completed.
-- [API readiness check](/tools/commands/api_readiness_checks/src/) — the verifier that
+- API readiness check (`api_readiness_checks`, retired 2026-10-09; in git history) — the verifier that
   judges the register the milestones fill.
 
 ## Boundaries
@@ -38,7 +38,7 @@ now. Paths, counts and log names in the records are as they stood when each row 
 
 ## Related documentation
 
-- [Verification checkpoint](/documentation/crates/api/api_server/verification_evidence/progress_checkpoint.md)
+- Verification checkpoint (retired 2026-10-09; in git history)
   — the live state of the program and the records of the milestones still in it.
 - [API verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md) —
   the register, the design notes and the program records.

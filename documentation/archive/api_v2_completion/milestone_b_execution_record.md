@@ -1,4 +1,4 @@
-**Status:** archived — see [the API v2 verification checkpoint](/documentation/crates/api/api_server/verification_evidence/progress_checkpoint.md)
+**Status:** archived — see the API v2 verification checkpoint (retired 2026-10-09; in git history)
 
 # API v2 completion — milestone B execution record
 

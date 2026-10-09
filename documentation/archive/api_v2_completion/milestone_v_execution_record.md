@@ -1,4 +1,4 @@
-**Status:** archived — see [the API v2 verification checkpoint](/documentation/crates/api/api_server/verification_evidence/progress_checkpoint.md)
+**Status:** archived — see the API v2 verification checkpoint (retired 2026-10-09; in git history)
 
 # API v2 completion — milestone V execution record
 
@@ -101,4 +101,4 @@ snapshot is re-taken at each wave boundary.
 
 ### Milestone V findings
 
-Every V finding, its class and its outcome are in [verification_findings.md](/documentation/crates/api/api_server/verification_evidence/verification_findings.md).
+Every V finding, its class and its outcome are in verification_findings.md (retired 2026-10-09; in git history).
