@@ -19,8 +19,3 @@ pub mod leaderboards;
 pub mod orbat_selection;
 pub mod prelude;
 pub mod schedule;
-
-/// The production text of this area's source files, for the guard tests that pin it.
-#[cfg(test)]
-#[path = "tests/source_pins.rs"]
-mod source_pins;

@@ -18,7 +18,7 @@ use frontend_ui::MaterialIcon;
 use leptos::prelude::*;
 
 /// The report heading and the names of the participants a promotion seated.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn promotion_report(
     mission_title: &str,
     seated: Vec<String>,
@@ -35,7 +35,7 @@ pub(super) fn promotion_report(
 }
 
 /// The sentence a refused promotion of `mission_title` is reported with.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn promotion_refusal(
     mission_title: &str,
     code: Option<&str>,

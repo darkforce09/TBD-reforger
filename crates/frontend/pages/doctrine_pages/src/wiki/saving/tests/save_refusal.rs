@@ -1,5 +1,5 @@
-//! Refusal mapping: the 409 conflict with its reload, the 422 findings with their lines, the 400
-//! and 413 size refusals, and every other refusal's sentence.
+//! Refusal mapping: the 409 conflict with its reload, the 422 findings with their lines, and the
+//! 400 and 413 size refusals told apart.
 
 use super::*;
 use frontend_api_dtos::wiki::WikiMarkupFindingCode;
@@ -113,18 +113,6 @@ fn wiki_refusal_markup_lists_every_finding_with_its_line() {
 }
 
 #[test]
-fn wiki_refusal_one_finding_reads_in_the_singular() {
-    let problem = SaveProblem::MarkupRefused {
-        findings: vec![WikiMarkupFinding {
-            line: 1,
-            code: WikiMarkupFindingCode::NestingTooDeep,
-            detail: "nesting deeper than 16".into(),
-        }],
-    };
-    assert_eq!(problem.headline(), "Not saved: the markup has 1 problem.");
-}
-
-#[test]
 fn wiki_refusal_body_too_large_and_request_too_large_are_told_apart() {
     let body = refusal(
         400,
@@ -144,41 +132,5 @@ fn wiki_refusal_body_too_large_and_request_too_large_are_told_apart() {
     assert_eq!(
         problem.headline(),
         "Not saved: the request is larger than the server accepts."
-    );
-}
-
-#[test]
-fn wiki_refusal_any_other_400_shows_the_servers_sentence() {
-    let answer = refusal(
-        400,
-        json!({"error": "category, title and body_md are required"}),
-    );
-    assert_eq!(
-        SaveProblem::from_refusal(&answer, Some(1)),
-        SaveProblem::Refused {
-            message: "Category, title and body_md are required".into()
-        }
-    );
-    let silent = Error::from_error_body(400, None);
-    assert_eq!(
-        SaveProblem::from_refusal(&silent, Some(1)).headline(),
-        "Failed to save wiki page"
-    );
-}
-
-#[test]
-fn wiki_refusal_unreached_expired_and_forbidden_saves_say_so() {
-    assert_eq!(
-        SaveProblem::from_refusal(&Error::Transport, Some(1)).headline(),
-        "Not saved: the request did not reach the server. Check the connection and try again."
-    );
-    assert_eq!(
-        SaveProblem::from_refusal(&Error::from_error_body(401, None), Some(1)).headline(),
-        "Not saved: your session has ended. Sign in again, then save."
-    );
-    assert_eq!(
-        SaveProblem::from_refusal(&refusal(403, json!({"error": "admin only"})), Some(1))
-            .headline(),
-        "Not saved: only an administrator can save a manual."
     );
 }

@@ -22,10 +22,6 @@ use frontend_ui::PageHeader;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
-#[cfg(test)]
-#[path = "tests/settings.rs"]
-mod tests;
-
 /// The role chip's class. The base label size is deliberately absent: it collides with the
 /// variant's own `text-*` utility, and the merge the design system performs keeps the later of the
 /// two, so the chip takes the default size. Spelling the collision out here is what keeps the

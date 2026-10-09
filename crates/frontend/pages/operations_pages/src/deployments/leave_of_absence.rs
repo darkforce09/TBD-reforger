@@ -64,7 +64,7 @@ fn is_ymd(s: &str) -> bool {
 }
 
 /// The badge variant a leave request's status is shown in.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn leave_status_variant(status: &str) -> &'static str {
     match status {
         "approved" => "success",

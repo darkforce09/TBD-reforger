@@ -27,13 +27,13 @@ use frontend_ui::utc_timestamp::utc_label;
 use serde_json::Value;
 
 /// The catalog collection route, below the API base: `GET` lists, `POST` uploads.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const BALLISTICS_CATALOGS_PATH: &str = "/ballistics-catalogs";
 /// The multipart part carrying the catalog document.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const CATALOG_PART: &str = "catalog";
 /// The multipart part carrying the calibration bundle the catalog is flown against.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const CALIBRATION_PART: &str = "calibration";
 /// The characters of a SHA-256 the version list shows.
 #[cfg(any(target_arch = "wasm32", test))]
@@ -84,7 +84,7 @@ pub(super) fn is_json_name(name: &str) -> bool {
 }
 
 /// A byte count in the unit that keeps it readable: bytes, KB or MB (powers of 1024).
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn file_size_label(size_bytes: f64) -> String {
     const KIB: f64 = 1024.0;
     const MIB: f64 = 1024.0 * 1024.0;
@@ -300,7 +300,7 @@ pub(super) fn version_rows(list: &BallisticsCatalogList) -> Vec<CatalogVersionRo
 }
 
 /// The list header's count: versions across how many catalogs.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn version_count_label(rows: &[CatalogVersionRow]) -> String {
     let catalogs = rows.iter().filter(|row| row.latest).count();
     let versions = rows.len();

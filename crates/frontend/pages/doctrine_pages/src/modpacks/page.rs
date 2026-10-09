@@ -29,10 +29,6 @@ use frontend_ui::split_pane::GlassSplit;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
-#[cfg(test)]
-#[path = "tests/modpacks.rs"]
-mod tests;
-
 /// The modpacks page, behind the authentication gate.
 #[cfg(target_arch = "wasm32")]
 #[component]

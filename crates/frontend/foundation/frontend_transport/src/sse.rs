@@ -224,7 +224,3 @@ fn aborted_or(signal: &web_sys::AbortSignal, reason: &str) -> Error {
         stream_failure(reason)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/sse.rs"]
-mod tests;

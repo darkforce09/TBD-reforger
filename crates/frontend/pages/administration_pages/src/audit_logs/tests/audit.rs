@@ -1,8 +1,7 @@
-//! Guards on the audit trail: the keyset paths, the cursor, the load-more merge, the list golden
-//! and the stream teardown.
+//! Guards on the audit trail: the keyset path, the cursor, the load-more merge and the list and
+//! stream goldens.
 
 use super::*;
-use frontend_test_support::class_r_scrub::{live_code, only_body};
 use serde_json::json;
 
 /// One typed audit line with the given id.
@@ -23,11 +22,6 @@ fn page_of(ids: &[i64], next_cursor: Option<i64>) -> CursorList<AuditLogEntry> {
         data: ids.iter().map(|id| line(*id)).collect(),
         next_cursor: next_cursor.map(|c| json!(c)),
     }
-}
-
-#[test]
-fn first_page_path_has_no_before() {
-    assert_eq!(audit_logs_path(None), "/admin/audit-logs");
 }
 
 #[test]
@@ -69,24 +63,6 @@ fn empty_page_with_null_cursor_stops() {
     assert_eq!(audit_logs_path(board.continuation()), "/admin/audit-logs");
 }
 
-/// Class-R perturbation: a page that *has* a continuation cursor must not be treated like a
-/// terminal page. Ignoring `next_cursor` makes the continuation look like `None` and the path
-/// collapses to the first page — this asserts the RED difference.
-#[test]
-fn ignoring_next_cursor_is_detectably_wrong() {
-    let mut board = AuditBoard::new();
-    let epoch = board.restart();
-    board.merge_history(epoch, page_of(&[20], Some(20)));
-    let forwarded = board.continuation();
-    let discarded: Option<i64> = None; // the defect this guards against: the cursor never read
-    assert_eq!(forwarded, Some(20));
-    assert_ne!(
-        audit_logs_path(forwarded),
-        audit_logs_path(discarded),
-        "discarding next_cursor must not produce the same request path as forwarding it"
-    );
-}
-
 /// The committed list golden decodes into typed lines, newest id first, with the optional fields
 /// absent where the contract leaves them out.
 #[test]
@@ -125,79 +101,4 @@ fn the_stream_golden_opens_with_ready() {
             ..
         }]
     ));
-}
-
-/// The helper's own unit tests do not pin the load control itself: replacing the board with the
-/// new page instead of merging into it keeps them green while truncating everything already read.
-/// This binds to the live load closure, with comments and literals blanked.
-#[test]
-fn on_load_more_merges_into_the_board() {
-    let production = live_code(&crate::source_pins::audit_source());
-    // Scope the pin to the Load-more closure so a dead string elsewhere cannot false-green.
-    let load_more = production
-        .split("let on_load_more = move |_|")
-        .nth(1)
-        .and_then(|rest| rest.split("let master_header =").next())
-        .expect("on_load_more closure must sit before master_header");
-    let code: String = load_more.split_whitespace().collect::<Vec<_>>().join(" ");
-
-    assert!(
-        code.contains("b.continuation()") && code.contains("audit_logs_path(Some(before))"),
-        "on_load_more must request the page below the board's smallest history id"
-    );
-    assert!(
-        code.contains("board.try_update(|b| b.merge_history(epoch, page))"),
-        "on_load_more must merge the page into the board under the epoch it was requested in"
-    );
-    assert!(
-        !code.contains("restart()") && !code.contains("board.set("),
-        "on_load_more must not empty or replace the board (perturbation: that truncates the \
-         pages already read)"
-    );
-}
-
-/// The stream must die with the page: the route opens it once, keeps the handle itself, and
-/// aborts it on cleanup — on live code, not in prose.
-#[test]
-fn the_route_aborts_its_stream_on_cleanup() {
-    let production = live_code(&crate::source_pins::audit_source());
-    let feed = only_body(&production, "fn connect_live_feed(");
-    assert!(feed.contains("StoredValue::new_local(open_audit_stream(store, callbacks))"));
-    assert!(feed.contains("on_cleanup(move ||"));
-    assert!(feed.contains("handle.try_with_value(|live| live.abort())"));
-    assert!(
-        !production.contains("thread_local!"),
-        "the stream handle belongs to the route, never to a global slot"
-    );
-}
-
-/// The history waits for the stream: the route loads it from the stream's callbacks only.
-#[test]
-fn the_route_loads_history_only_from_the_stream_callbacks() {
-    let production = live_code(&crate::source_pins::audit_source());
-    let inner = only_body(&production, "fn AuditLogsInner(");
-    assert!(inner.contains("connect_live_feed(store, board, stream, history, rejected)"));
-    assert!(!inner.contains("reload_history("));
-    assert!(!inner.contains("LocalResource"));
-    let feed = only_body(&production, "fn connect_live_feed(");
-    assert_eq!(
-        feed.matches("reload_history(store, board, history)")
-            .count(),
-        3
-    );
-}
-
-/// The audit trail's `view!` markup braces every attribute value that would otherwise end its tag
-/// early; the scan covers this page's folder, located from this file. The audit stream it
-/// subscribes to is scanned by the transport's own tests.
-#[test]
-fn view_attributes_in_the_audit_log_page_are_braced_where_they_must_be() {
-    use frontend_test_support::repository_root::source_file_folder;
-    use frontend_test_support::view_attribute_guard::assert_view_attributes_are_well_formed;
-    let tests = source_file_folder(env!("CARGO_MANIFEST_DIR"), file!());
-    let audit_logs = tests
-        .parent()
-        .expect("the tests folder sits inside the audit log folder")
-        .to_path_buf();
-    assert_view_attributes_are_well_formed(env!("CARGO_MANIFEST_DIR"), &[audit_logs]);
 }

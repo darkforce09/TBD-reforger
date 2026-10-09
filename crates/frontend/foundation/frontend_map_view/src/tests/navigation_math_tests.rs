@@ -1,7 +1,8 @@
-//! Wheel zoom rate, click-versus-drag, and pixel-to-metre conversion.
+//! Wheel zoom rate, click-versus-drag, pixel-to-metre conversion and the canvas backing-store size.
 
 use super::super::camera_fit::ViewState;
 use super::{CLICK_SLOP_PX, WHEEL_ZOOM_PER_PX, is_click, map_metres_at, wheel_zoom_delta};
+use crate::device_size::device_size;
 
 #[test]
 fn wheel_down_zooms_out_one_level_per_five_hundred_pixels() {
@@ -58,4 +59,22 @@ fn an_empty_container_has_no_map_position() {
         zoom: 0.0,
     };
     assert_eq!(map_metres_at(0.0, 100.0, view, 0.0, 0.0), None);
+}
+
+/// The backing store rounds half up at the device pixel ratio, exactly as the engine's resize
+/// does, and never answers a zero dimension.
+#[test]
+fn device_size_rounds_half_up_with_a_one_pixel_floor() {
+    assert_eq!(device_size(800.0, 600.0, 2.0), (1600, 1200));
+    assert_eq!(device_size(100.25, 100.75, 2.0), (201, 202));
+    assert_eq!(device_size(0.0, 0.0, 1.0), (1, 1));
+    assert_eq!(device_size(-20.0, 0.2, 1.0), (1, 1));
+    for (css, dpr) in [(640.4, 1.25), (1023.5, 1.0), (97.0, 3.0), (512.1, 1.75)] {
+        let engine_rounding = ((css * dpr + 0.5_f64).floor().max(1.0)) as u32;
+        assert_eq!(
+            device_size(css, css, dpr).0,
+            engine_rounding,
+            "{css} @ {dpr}"
+        );
+    }
 }

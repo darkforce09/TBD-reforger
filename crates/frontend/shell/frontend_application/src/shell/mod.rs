@@ -24,7 +24,3 @@ pub mod not_found;
 #[cfg(target_arch = "wasm32")]
 pub mod sidebar;
 pub mod top_nav;
-
-#[cfg(test)]
-#[path = "tests/route_mounts.rs"]
-mod route_mounts;

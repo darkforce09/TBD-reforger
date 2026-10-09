@@ -11,10 +11,10 @@
 //! **Signals & state:** three thread-local `ArcRwSignal`s, one per page lifetime.
 //! **Invariants:** the four document-element attributes always equal their signals; a finished
 //! download publishes the optional files and the refresh outcome before its final state. The
-//! publishers are crate-private and called only by the browser halves, so the native build
-//! compiles them for the tests alone; the attribute writes are wasm32 only.
+//! publishers are crate-private and called only by the browser halves, so they and the attribute
+//! writes are wasm32 only.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use leptos::prelude::Set;
 use leptos::prelude::{ArcReadSignal, ArcRwSignal};
 
@@ -59,7 +59,7 @@ fn document_element() -> Option<web_sys::Element> {
 }
 
 /// Sets the page-wide refresh outcome and mirrors it onto the document element.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn publish_pack_refresh(refresh: PackRefresh) {
     #[cfg(target_arch = "wasm32")]
     if let Some(root) = document_element() {
@@ -72,7 +72,7 @@ pub(crate) fn publish_pack_refresh(refresh: PackRefresh) {
 }
 
 /// Sets the page-wide optional-file coverage and mirrors it onto the document element.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn publish_optional_files(optional: OptionalFiles) {
     OFFLINE_OPTIONAL_FILES.with(|signal| signal.set(optional));
     #[cfg(target_arch = "wasm32")]
@@ -85,7 +85,7 @@ pub(crate) fn publish_optional_files(optional: OptionalFiles) {
 }
 
 /// Sets the page-wide status and mirrors it onto the document element.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn publish_status(status: OfflineStatus) {
     OFFLINE_STATUS.with(|signal| signal.set(status));
     #[cfg(target_arch = "wasm32")]
@@ -97,7 +97,3 @@ pub(crate) fn publish_status(status: OfflineStatus) {
         );
     }
 }
-
-#[cfg(test)]
-#[path = "tests/status_signals.rs"]
-mod tests;

@@ -34,10 +34,5 @@ serde_json = { workspace = true }
 wasm-bindgen = { workspace = true }
 web-sys = { workspace = true, features = ["Window", "Location", "History"] }
 
-[dev-dependencies]
-# The guard's case table (`http_url_guard::cases`), which the settings page's avatar test runs
-# through its render path.
-http_url_guard = { workspace = true, features = ["test_fixtures"] }
-
 [lints]
 workspace = true

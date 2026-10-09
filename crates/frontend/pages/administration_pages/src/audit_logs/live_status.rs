@@ -75,7 +75,7 @@ pub(crate) fn status_badge(
 }
 
 /// Why the stream is offline, in words, or nothing while it is not.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn offline_note(stream: AuditStreamState) -> Option<&'static str> {
     match stream {
         AuditStreamState::Offline(OfflineReason::SignedOut) => {
@@ -89,7 +89,7 @@ pub(crate) fn offline_note(stream: AuditStreamState) -> Option<&'static str> {
 }
 
 /// How many live lines the board holds, in words.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn live_count_label(count: usize) -> String {
     match count {
         1 => "1 live row".into(),

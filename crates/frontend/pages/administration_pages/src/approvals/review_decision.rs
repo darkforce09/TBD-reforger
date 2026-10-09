@@ -13,21 +13,21 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::page::ApprovalsDesk;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::identifiers::MissionArtifactId;
 #[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::identifiers::MissionId;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::{ApprovalDecision, RejectionDecision};
 #[cfg(target_arch = "wasm32")]
 use frontend_ui::cn;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use mission_review_record::review_wording::validated_review_text;
 
 /// The decisions a reviewer can make on the artifact under review.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum DecisionKind {
     Approve,
@@ -35,7 +35,7 @@ pub(super) enum DecisionKind {
     Reject,
 }
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 impl DecisionKind {
     /// Every decision, in the order the form offers them.
     #[cfg(target_arch = "wasm32")]
@@ -52,7 +52,7 @@ impl DecisionKind {
     }
 
     /// What the text box asks for under this decision, when it asks for anything.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn text_label(self) -> Option<&'static str> {
         match self {
             Self::Approve => None,
@@ -77,7 +77,7 @@ impl DecisionKind {
 }
 
 /// A decision ready to send.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, PartialEq)]
 pub(super) enum DecisionBody {
     Approve(ApprovalDecision),
@@ -85,7 +85,7 @@ pub(super) enum DecisionBody {
 }
 
 /// The body a decision sends about `artifact_id`, or what is wrong with its text.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn decision_body(
     kind: DecisionKind,
     artifact_id: &MissionArtifactId,

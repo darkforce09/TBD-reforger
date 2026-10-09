@@ -16,7 +16,7 @@ use frontend_session::AuthStore;
 use leptos::prelude::*;
 
 /// The multipart upload route; the file is sent under the field name `file`.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn cms_uploads_path() -> &'static str {
     "/cms/uploads"
 }

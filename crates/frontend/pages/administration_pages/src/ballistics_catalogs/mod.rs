@@ -19,13 +19,9 @@ mod view_model;
 pub use page::BallisticsCatalogsPage;
 
 #[cfg(test)]
-use validation_report::tone_classes;
-#[cfg(test)]
 use view_model::{
-    BALLISTICS_CATALOGS_PATH, CALIBRATION_PART, CATALOG_PART, OutcomeTone, PickedFile,
-    SHORT_SHA_LENGTH, UploadOutcome, file_size_label, is_json_name, outcome_failures,
-    outcome_headline, outcome_key, report_from_details, upload_blocker, upload_outcome,
-    version_count_label, version_rows,
+    OutcomeTone, PickedFile, UploadOutcome, is_json_name, outcome_failures, outcome_headline,
+    outcome_key, report_from_details, upload_blocker, upload_outcome, version_rows,
 };
 
 #[cfg(test)]

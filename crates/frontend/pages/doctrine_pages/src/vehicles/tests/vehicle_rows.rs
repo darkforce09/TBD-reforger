@@ -1,5 +1,5 @@
 //! The row list after a write: placement of a saved row, removal of a deleted one, and the row the
-//! dossier shows.
+//! dossier shows, and the faction grouping of the index.
 
 use super::{place_saved_vehicle, remove_vehicle, selection_after_removal, shown_vehicle};
 use frontend_api_dtos::vehicles::Vehicle;
@@ -81,4 +81,30 @@ fn the_dossier_shows_the_selected_row_or_the_first() {
         Some("1")
     );
     assert_eq!(shown_vehicle(&[], "1"), None);
+}
+
+/// The index groups the recorded list by faction in first-seen order, and a row without a faction
+/// forms no group.
+#[test]
+fn the_index_groups_factions_in_first_seen_order() {
+    use crate::vehicles::vehicle_grid::faction_order;
+    use frontend_api_dtos::DataEnvelope;
+    let list: DataEnvelope<Vehicle> = serde_json::from_str(
+        frontend_test_support::fixtures::golden!("GET__vehicle-database.json"),
+    )
+    .expect("the recorded list decodes into Vehicle rows");
+    assert_eq!(
+        faction_order(&list.data),
+        vec![
+            "USSR".to_string(),
+            "US Army".to_string(),
+            "Civilian".to_string()
+        ]
+    );
+    let mut unassigned = row("unknown", "Unknown");
+    unassigned.faction = String::new();
+    assert_eq!(
+        faction_order(&[unassigned, row("b", "BTR-70")]),
+        vec!["USSR".to_string()]
+    );
 }

@@ -14,8 +14,10 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::state::AccessPanel;
+#[cfg(target_arch = "wasm32")]
+use frontend_api_dtos::QuotaUsageView;
 #[cfg(any(target_arch = "wasm32", test))]
-use frontend_api_dtos::{QuotaUsageView, ReservationQuotaPool, ReservationQuotas};
+use frontend_api_dtos::{ReservationQuotaPool, ReservationQuotas};
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_ui::utc_timestamp::UtcTimestamp;
 #[cfg(target_arch = "wasm32")]
@@ -135,7 +137,7 @@ enum Pool {
 }
 
 /// The places held, by pool, against the operation-wide limit.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn usage_line(usage: &QuotaUsageView, max_slots: i64) -> String {
     let limit = if max_slots > 0 {
         format!("{} of {max_slots} operation places held", usage.total)

@@ -10,7 +10,7 @@
 //! source text. The failure wording always keeps the server's findings list: a verdict with no
 //! cause is not something an author can act on.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use super::mission_diff::{CollectionDelta, MissionDiff};
 #[cfg(any(target_arch = "wasm32", test))]
 use serde_json::Value;
@@ -230,7 +230,7 @@ pub(super) fn upload_failure(
 ///
 /// Bounded by construction: the per-collection counts are exact, and the named samples stop at
 /// the comparison's own cap, so this stays O(1) in the size of the mission.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn diff_summary_lines(diff: &MissionDiff) -> Vec<String> {
     let mut out: Vec<String> = diff
         .fields

@@ -66,7 +66,7 @@ pub(super) const DELETE_EVENT_CONFIRM_TITLE: &str = "Delete this operation?";
 /// The endpoint marks the operation deleted and touches nothing else: the attached missions, their
 /// ORBATs and every registration survive, and an administrator can put the row back. The copy says
 /// exactly that, and a guard test refuses any wording that promises destruction or irreversibility.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const DELETE_EVENT_CONFIRM_DESC: &str = "It leaves the schedule, the dashboard and everyone's deployments, and no one can register on it. Nothing is erased — the attached missions, their ORBATs and every registration are kept, so an administrator can still restore it from the database.";
 
 /// Badge variant for a lifecycle status, so the day list shows where an operation *is* and not

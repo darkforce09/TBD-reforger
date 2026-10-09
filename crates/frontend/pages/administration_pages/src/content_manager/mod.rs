@@ -17,14 +17,9 @@ pub mod page;
 pub use page::ContentManagerPage;
 
 #[cfg(test)]
-use doc::{
-    announcement_create_path, announcement_id_path, announcement_list_path, announcement_push_path,
-    category_tag, date_ymd, doc_from_announcement, is_server_id, tag_category,
-};
+use doc::{category_tag, date_ymd, doc_from_announcement, is_server_id, tag_category};
 #[cfg(test)]
 use editor_form::apply_md_tool;
-#[cfg(test)]
-use hero_upload::cms_uploads_path;
 
 #[cfg(test)]
 #[path = "tests/content.rs"]

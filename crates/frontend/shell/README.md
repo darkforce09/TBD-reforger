@@ -52,8 +52,7 @@ empty `main`.
   order of `cargo xtask verify frontend-layering`); the worker links no graphics, map rendering,
   paper doll or streaming crate and not `wgpu` (the crate firewalls of
   `cargo xtask verify crate-tiers`); only these two crates and `browser_platform` carry a
-  `#[wasm_bindgen]` export (the crate firewalls); every production file of both passes the
-  frontend documentation audit, which reads each package once.
+  `#[wasm_bindgen]` export (the crate firewalls).
 
 ## Related documentation
 

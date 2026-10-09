@@ -18,7 +18,7 @@
 
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_api_dtos::{ConsoleCommandOutcome, FleetCommandReceipt, FleetCommandRequest};
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_transport::Error;
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_ui::utc_timestamp::utc_label;
@@ -390,7 +390,7 @@ pub(crate) fn validated_console_line(typed: &str) -> Result<String, String> {
 }
 
 /// What a refused request or cancellation is told; `fallback` when the backend sent no sentence.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn command_refusal_sentence(refusal: &Error, fallback: &str) -> String {
     match refusal.code() {
         Some("COMMAND_NOT_CANCELLABLE") => {

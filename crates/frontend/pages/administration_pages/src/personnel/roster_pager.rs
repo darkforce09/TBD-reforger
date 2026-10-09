@@ -81,7 +81,7 @@ impl PagerPosition {
     }
 
     /// The position caption: `Page 2 of 5`.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn caption(self) -> String {
         format!("Page {} of {}", self.page, self.page_count())
     }
@@ -97,7 +97,7 @@ impl PagerPosition {
 }
 
 /// The member count caption: `1 member`, `6 members`.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn member_count_caption(total: i64) -> String {
     if total == 1 {
         "1 member".to_string()
@@ -171,7 +171,3 @@ pub(super) fn roster_pager(
         </nav>
     }
 }
-
-#[cfg(test)]
-#[path = "tests/roster_pager.rs"]
-mod tests;

@@ -1,7 +1,11 @@
-//! Guards on the roster address: URL parsing with its fallbacks, the canonical URL query, the
-//! request path, and the moves that start again at the first page.
+//! Guards on the roster address and the pager over it: URL parsing with its fallbacks, the
+//! canonical URL query, the request path, the moves that start again at the first page, the page
+//! count, the neighbours and the past-the-end fallback, including the served golden page.
 
 use super::{DEFAULT_PER_PAGE, FIRST_PAGE, PER_PAGE_OPTIONS, RosterQuery};
+use crate::personnel::roster_pager::PagerPosition;
+use frontend_api_dtos::administration::PersonnelPage;
+use frontend_test_support::fixtures::golden;
 
 /// Parse a raw URL query string the way the browser hands it to the router.
 fn parse(query: &str) -> RosterQuery {
@@ -169,23 +173,104 @@ fn personnel_pagination_page_moves_keep_search_and_size() {
     assert_eq!(current.with_page(-4), address(1, 10, "tbd"));
 }
 
-#[test]
-fn personnel_pagination_page_keeps_the_address_in_the_url() {
-    // The route component must read the address from the URL and write it back in place,
-    // replacing the history entry, and fetch the roster at the address's own request path.
-    let production = crate::source_pins::personnel_source();
-    for needle in [
-        "use_query_map()",
-        "use_navigate()",
-        "replace: true",
-        "RosterQuery::from_url_values(",
-        ".to_url_query()",
-        ".api_path()",
-        "api_get::<PersonnelPage>",
-    ] {
-        assert!(
-            production.contains(needle),
-            "the personnel route must keep its address in the URL: missing {needle}"
-        );
+/// A pager position: the page shown, the page size and the matching total.
+fn at(page: i64, per_page: i64, total: i64) -> PagerPosition {
+    PagerPosition {
+        page,
+        per_page,
+        total,
     }
+}
+
+#[test]
+fn personnel_pagination_page_count_rounds_up_and_never_drops_below_one() {
+    assert_eq!(
+        at(1, 20, 0).page_count(),
+        1,
+        "nobody matching is still one page"
+    );
+    assert_eq!(at(1, 20, 1).page_count(), 1);
+    assert_eq!(at(1, 20, 20).page_count(), 1);
+    assert_eq!(at(1, 20, 21).page_count(), 2);
+    assert_eq!(at(1, 10, 57).page_count(), 6);
+    assert_eq!(at(1, 100, 100).page_count(), 1);
+    assert_eq!(at(1, 100, 101).page_count(), 2);
+    assert_eq!(
+        at(1, 0, 50).page_count(),
+        1,
+        "a size below one cannot divide"
+    );
+    assert_eq!(at(1, 20, -3).page_count(), 1);
+}
+
+#[test]
+fn personnel_pagination_previous_is_absent_on_the_first_page() {
+    assert_eq!(at(1, 20, 57).previous_page(), None);
+    assert_eq!(at(2, 20, 57).previous_page(), Some(1));
+    assert_eq!(at(3, 20, 57).previous_page(), Some(2));
+}
+
+#[test]
+fn personnel_pagination_next_is_absent_on_the_last_page() {
+    assert_eq!(at(1, 20, 57).next_page(), Some(2));
+    assert_eq!(at(2, 20, 57).next_page(), Some(3));
+    assert_eq!(at(3, 20, 57).next_page(), None);
+    assert_eq!(
+        at(1, 20, 0).next_page(),
+        None,
+        "an empty roster has no next page"
+    );
+    assert_eq!(
+        at(1, 20, 20).next_page(),
+        None,
+        "an exactly full page is the last"
+    );
+}
+
+#[test]
+fn personnel_pagination_past_the_end_is_beyond_the_last_filled_page() {
+    assert!(
+        !at(1, 20, 0).is_past_the_end(),
+        "page 1 of an empty roster is in range"
+    );
+    assert!(!at(3, 20, 57).is_past_the_end());
+    assert!(at(4, 20, 57).is_past_the_end());
+    assert!(at(2, 20, 0).is_past_the_end());
+}
+
+#[test]
+fn personnel_pagination_past_the_end_page_falls_back_to_the_first_of_the_same_search() {
+    let current = address(9, 50, "vance");
+    assert_eq!(
+        at(9, 50, 6).fallback_for(&current),
+        Some(address(1, 50, "vance"))
+    );
+    assert_eq!(
+        at(1, 50, 6).fallback_for(&address(1, 50, "vance")),
+        None,
+        "a page in range stays"
+    );
+    assert_eq!(
+        at(9, 20, 6).fallback_for(&current),
+        None,
+        "an answer served for another page size is stale and acts on nothing"
+    );
+    assert_eq!(
+        at(8, 50, 6).fallback_for(&current),
+        None,
+        "an answer served for another page is stale and acts on nothing"
+    );
+}
+
+#[test]
+fn personnel_pagination_golden_page_is_one_page_with_both_moves_disabled() {
+    // The DOM oracle answers every roster address with this golden: one page, no moves.
+    let served: PersonnelPage = serde_json::from_str(golden!("GET__admin__users.json"))
+        .expect("the roster golden decodes as a personnel page");
+    let position = PagerPosition::served(&served);
+    assert_eq!(position, at(1, 20, 6));
+    assert_eq!(served.items.len(), 6);
+    assert_eq!(position.previous_page(), None);
+    assert_eq!(position.next_page(), None);
+    assert!(!position.is_past_the_end());
 }

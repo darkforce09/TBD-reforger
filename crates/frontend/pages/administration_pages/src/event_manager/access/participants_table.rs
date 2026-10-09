@@ -14,21 +14,21 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::groups::group_form::authorship_line;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use super::state::MissionSeats;
 #[cfg(target_arch = "wasm32")]
 use super::state::{AccessPanel, Loadable};
 #[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::EventGroupView;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::{GuildEvidenceView, ParticipantAccessExplanation, RegistrationDecision};
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_ui::utc_timestamp::utc_label;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
 /// Which grants admit a reservation, one-based: `Admitted by grants 1 and 3`.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn grants_line(admitting: &[i64]) -> String {
     let numbers: Vec<String> = admitting.iter().map(|i| (i + 1).to_string()).collect();
     match numbers.as_slice() {
@@ -39,7 +39,7 @@ pub(super) fn grants_line(admitting: &[i64]) -> String {
 }
 
 /// Whether current and last-verified facts admit a reservation, in words.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn authority_line(current: bool, last_verified: bool) -> &'static str {
     match (current, last_verified) {
         (true, true) => "Current and last-verified facts admit it",
@@ -53,7 +53,7 @@ pub(super) fn authority_line(current: bool, last_verified: bool) -> &'static str
 }
 
 /// One guild observation, in words.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn guild_line(guild: &GuildEvidenceView) -> String {
     let verified = match guild.verified_at.as_deref() {
         Some(at) => format!("verified {}", utc_label(at)),
@@ -76,7 +76,7 @@ pub(super) fn guild_line(guild: &GuildEvidenceView) -> String {
 }
 
 /// The seat a reservation holds, as `Mission — Faction / Squad, 3. Rifleman`, or its seatless state.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn reservation_line(
     decision: &RegistrationDecision,
     missions: &[MissionSeats],
@@ -112,7 +112,7 @@ pub(super) fn reservation_line(
 }
 
 /// A participant's place, in words.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn place_line(participant: &ParticipantAccessExplanation) -> String {
     match &participant.allocation {
         Some(place) => format!(

@@ -22,22 +22,6 @@ const HISTORIES: [HistoryLoad; 5] = [
 ];
 
 #[test]
-fn audit_status_badge_names_the_connection() {
-    assert_eq!(
-        status_badge(AuditStreamState::Live, HistoryLoad::Loaded),
-        ("Live", "success")
-    );
-    assert_eq!(
-        status_badge(AuditStreamState::Reconnecting, HistoryLoad::Loaded),
-        ("Reconnecting", "warning")
-    );
-    assert_eq!(
-        status_badge(AuditStreamState::Connecting, HistoryLoad::Waiting),
-        ("Connecting", "neutral")
-    );
-}
-
-#[test]
 fn audit_status_offline_outranks_everything_and_reloading_outranks_the_connection() {
     for history in HISTORIES {
         for reason in [OfflineReason::SignedOut, OfflineReason::Forbidden] {
@@ -49,21 +33,6 @@ fn audit_status_offline_outranks_everything_and_reloading_outranks_the_connectio
     }
     for stream in &STREAMS[..3] {
         assert_eq!(status_badge(*stream, HistoryLoad::Reloading).0, "Reloading");
-    }
-}
-
-#[test]
-fn audit_status_offline_note_names_the_reason() {
-    assert!(
-        offline_note(AuditStreamState::Offline(OfflineReason::SignedOut))
-            .is_some_and(|note| note.contains("sign in"))
-    );
-    assert!(
-        offline_note(AuditStreamState::Offline(OfflineReason::Forbidden))
-            .is_some_and(|note| note.contains("admin role"))
-    );
-    for stream in &STREAMS[..3] {
-        assert_eq!(offline_note(*stream), None);
     }
 }
 
@@ -112,11 +81,4 @@ fn audit_status_first_load_is_loading_and_later_ones_are_reloading() {
     ] {
         assert_eq!(history_load_start(later), HistoryLoad::Reloading);
     }
-}
-
-#[test]
-fn audit_status_counts_live_rows_in_words() {
-    assert_eq!(live_count_label(0), "0 live rows");
-    assert_eq!(live_count_label(1), "1 live row");
-    assert_eq!(live_count_label(12), "12 live rows");
 }

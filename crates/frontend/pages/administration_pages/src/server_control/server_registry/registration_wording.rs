@@ -19,10 +19,12 @@
 #[cfg(any(target_arch = "wasm32", test))]
 use std::net::{IpAddr, SocketAddr};
 
+#[cfg(target_arch = "wasm32")]
+use frontend_api_dtos::ModpackDto;
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_api_dtos::identifiers::ModpackId;
 #[cfg(any(target_arch = "wasm32", test))]
-use frontend_api_dtos::{ModpackDto, ServerChange, ServerRegistration, ServerRowDto};
+use frontend_api_dtos::{ServerChange, ServerRegistration, ServerRowDto};
 
 /// The one sentence for an address that is not a literal IP address, as the backend words it.
 #[cfg(any(target_arch = "wasm32", test))]
@@ -145,7 +147,7 @@ pub(crate) fn reactivation() -> ServerChange {
 
 /// A modpack as the required-modpack choice names it: `name vversion`, marked when it is the
 /// current modpack.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn modpack_choice_label(pack: &ModpackDto) -> String {
     let current = if pack.modpack.is_current {
         " (current)"

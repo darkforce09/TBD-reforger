@@ -55,7 +55,6 @@ web-sys = { workspace = true, features = [
 ] }
 
 [dev-dependencies]
-frontend_test_support = { workspace = true }
 # The guard's case table (`http_url_guard::cases`), which the card art test runs through its
 # render path.
 http_url_guard = { workspace = true, features = ["test_fixtures"] }

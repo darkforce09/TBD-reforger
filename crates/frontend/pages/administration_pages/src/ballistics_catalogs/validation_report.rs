@@ -8,7 +8,7 @@
 //! **Invariants:** nothing renders before a send, and every failure the answer carried is listed —
 //! the table is never truncated, because each row names a case the catalog has to be fixed for.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use super::view_model::OutcomeTone;
 #[cfg(target_arch = "wasm32")]
 use super::view_model::{UploadOutcome, outcome_failures, outcome_headline, outcome_key};
@@ -20,7 +20,7 @@ use frontend_ui::cn;
 use leptos::prelude::*;
 
 /// The border, background and text classes of a tone.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn tone_classes(tone: OutcomeTone) -> &'static str {
     match tone {
         OutcomeTone::Success => "border-success/30 bg-success/10 text-success",

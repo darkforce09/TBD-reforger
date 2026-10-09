@@ -80,8 +80,6 @@ mission_creator_session = { workspace = true }
 # applies wasm-opt via the index.html data-wasm-opt attribute.
 
 [dev-dependencies]
-# The repository-root finder the documentation audit finds the frontend crates' sources with.
-frontend_test_support = { workspace = true }
-# The guard's case table (`http_url_guard::cases`), which the account badge's avatar test runs
-# through the sanitiser.
+# The guard's case table (`http_url_guard::cases`), which the frame's avatar test runs through
+# the sanitiser.
 http_url_guard = { workspace = true, features = ["test_fixtures"] }

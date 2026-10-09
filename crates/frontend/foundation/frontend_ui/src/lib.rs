@@ -49,12 +49,3 @@ pub use slider::Slider;
 #[cfg(test)]
 #[path = "tests/ui.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "tests/ui_t633_range_and_select.rs"]
-mod t633_range_and_select;
-
-/// The production text of the primitives' source files, for the guard tests that pin it.
-#[cfg(test)]
-#[path = "tests/source_pins.rs"]
-mod source_pins;

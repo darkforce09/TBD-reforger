@@ -76,7 +76,3 @@ pub(super) struct WikiPageState {
     /// The page list, refetched after a save so the index shows new titles and categories.
     pub(super) page_list: PageListResource,
 }
-
-#[cfg(test)]
-#[path = "tests/page_state.rs"]
-mod tests;

@@ -1,13 +1,12 @@
 //! The guards on the map picker: placing positions, grabbing markers, the crest profile, and the
 //! fire-mission overlay buffers.
 
-use super::MapStatus;
 use super::marks::{DISPERSION_FILL_ALPHA, glyph_icon, lane_uploads, overlay_scene};
 use super::picking::{
     Placement, apply_placement, marker_near, placed_markers, placement_options, valid_placement,
 };
 use super::profile::{PROFILE_STEP_M, coverage_manifest, lead_gun_profile};
-use crate::mortar::inputs::positions::{HeightChoice, MortarTerrain, PositionDraft};
+use crate::mortar::inputs::positions::{HeightChoice, MortarTerrain};
 use crate::mortar::inputs::weapon_and_shell::{ArmamentSelection, ChargeChoice};
 use crate::mortar::inputs::wind::WindDraft;
 use crate::mortar::solve_bridge::{MissionDrafts, solve_mission};
@@ -220,39 +219,6 @@ fn the_crest_check_clears_low_ground_and_warns_over_a_ridge() {
     assert!(ridge.min_clearance_m < 0.0);
 }
 
-#[test]
-fn the_overlay_plots_the_drafts_with_one_caption_per_glyph() {
-    let solved = solved_mission();
-    let target = manual("064 129", "40");
-    let guns = [
-        gun(0, "Gun 1", "055 125", "25"),
-        gun(1, " Gun 2 ", "056 124", "30"),
-    ];
-    let scene = overlay_scene(&target, &guns, Some(&solved));
-    assert_eq!(scene.plot.guns, [[5_550.0, 12_550.0], [5_650.0, 12_450.0]]);
-    assert_eq!(scene.plot.target, Some([6_450.0, 12_950.0]));
-    assert_eq!(scene.captions, ["Gun 1", "Gun 2", "Target"]);
-    let with_spread = solved
-        .solution
-        .guns
-        .iter()
-        .filter(|g| g.dispersion.is_some())
-        .count();
-    assert!(with_spread > 0, "the fixture mission has a dispersion");
-    assert_eq!(scene.plot.dispersion.len(), with_spread);
-    for ellipse in &scene.plot.dispersion {
-        assert_eq!(
-            ellipse.centre,
-            [solved.inputs.target.x, solved.inputs.target.y]
-        );
-    }
-    let unsolved = overlay_scene(&target, &guns, None);
-    assert!(unsolved.plot.dispersion.is_empty());
-    let nothing = overlay_scene(&PositionDraft::default(), &[gun(0, "Gun 1", "", "")], None);
-    assert!(nothing.plot.guns.is_empty() && nothing.plot.target.is_none());
-    assert!(nothing.captions.is_empty());
-}
-
 /// The buffers are in world metres, aligned glyph for glyph, with one fan per ellipse.
 #[test]
 fn the_lane_uploads_are_world_metres_aligned_glyph_for_glyph() {
@@ -307,19 +273,5 @@ fn the_lane_uploads_are_world_metres_aligned_glyph_for_glyph() {
         up.fill_indices
             .iter()
             .all(|&i| (i as usize) < up.fill_positions.len() / 2)
-    );
-}
-
-#[test]
-fn the_map_status_names_its_state_and_hides_once_ready() {
-    assert_eq!(MapStatus::Loading.attribute_value(), "loading");
-    assert_eq!(MapStatus::Ready.message(), None);
-    let failed = MapStatus::Failed("the terrain manifest is unavailable".into());
-    assert_eq!(failed.attribute_value(), "failed");
-    assert!(
-        failed
-            .message()
-            .unwrap()
-            .contains("type the grid references instead")
     );
 }

@@ -16,8 +16,3 @@ pub mod prelude;
 pub mod vehicles;
 #[cfg(any(target_arch = "wasm32", test))]
 pub mod wiki;
-
-/// The production text of this area's source files, for the guard tests that pin it.
-#[cfg(test)]
-#[path = "tests/source_pins.rs"]
-mod source_pins;

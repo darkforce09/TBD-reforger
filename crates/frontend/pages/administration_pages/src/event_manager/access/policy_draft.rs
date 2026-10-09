@@ -41,7 +41,7 @@ pub(super) enum ConditionKind {
 #[cfg(any(target_arch = "wasm32", test))]
 impl ConditionKind {
     /// Every kind, in offer order.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) const ALL: [ConditionKind; 5] = [
         ConditionKind::TbdMember,
         ConditionKind::EventGroup,
@@ -51,7 +51,7 @@ impl ConditionKind {
     ];
 
     /// The wire spelling, which is also the editor's select value.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn wire(self) -> &'static str {
         match self {
             ConditionKind::Authenticated => "authenticated",
@@ -63,7 +63,7 @@ impl ConditionKind {
     }
 
     /// The kind a select value names.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn from_wire(value: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|kind| kind.wire() == value)
     }

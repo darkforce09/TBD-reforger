@@ -14,7 +14,7 @@
 use frontend_api_dtos::{ExecutorKind, MachineCredential};
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_ui::utc_timestamp::UtcTimestamp;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_ui::utc_timestamp::utc_label;
 
 /// The two program kinds, as the issue form's select offers them.
@@ -62,7 +62,7 @@ pub(super) fn account_label(account: &str, me: Option<&str>) -> String {
 }
 
 /// Who issued the credential, and when.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn issued_line(credential: &MachineCredential, me: Option<&str>) -> String {
     format!(
         "Issued by {}, {}",
@@ -72,7 +72,7 @@ pub(super) fn issued_line(credential: &MachineCredential, me: Option<&str>) -> S
 }
 
 /// Where the credential stands: live and its last use, or its revocation.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn standing_line(credential: &MachineCredential, me: Option<&str>) -> String {
     match &credential.revoked_at {
         Some(revoked_at) => {

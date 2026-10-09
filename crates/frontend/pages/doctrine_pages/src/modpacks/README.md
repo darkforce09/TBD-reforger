@@ -14,8 +14,7 @@ crates/frontend/pages/doctrine_pages/src/modpacks/
 ├── pack_edit.rs    `PackEdit`: the edit draft, its reader and request body
 ├── pack_editor.rs  the administrator's edit form: pack fields, addon rows, save and cancel
 ├── page.rs         `ModpacksPage`: the list fetch, the selection, the mode and the split view
-├── preset_list.rs  the master pane: title, create button, search box and one row per pack
-└── tests/          unit tests for the administrator gate's signed-in role check
+└── preset_list.rs  the master pane: title, create button, search box and one row per pack
 ```
 
 ## How it works

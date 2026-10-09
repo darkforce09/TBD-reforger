@@ -8,7 +8,7 @@
 //! backend evaluates in. An own policy with no grants admits nobody, and is worded as such: it is a
 //! decision, where the absence of an own policy is inheritance.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use super::policy_draft::policy_summary;
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_api_dtos::{EventAccessAdministration, EventAccessPolicy};
@@ -28,7 +28,7 @@ pub(super) enum PolicyOrigin<'a> {
 #[cfg(any(target_arch = "wasm32", test))]
 impl<'a> PolicyOrigin<'a> {
     /// The policy that decides.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn policy(self) -> &'a EventAccessPolicy {
         match self {
             PolicyOrigin::Own(p) | PolicyOrigin::Squad(p) | PolicyOrigin::Operation(p) => p,
@@ -42,7 +42,7 @@ impl<'a> PolicyOrigin<'a> {
     }
 
     /// The resolution in words, with the deciding policy summarised.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn describe(self, access: &EventAccessAdministration) -> String {
         let summary = policy_summary(self.policy(), &access.groups);
         match self {

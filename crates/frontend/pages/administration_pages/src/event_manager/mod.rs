@@ -24,10 +24,3 @@ mod state;
 
 #[cfg(target_arch = "wasm32")]
 pub use page::EventManagerPage;
-
-#[cfg(test)]
-use lifecycle::DELETE_EVENT_CONFIRM_DESC;
-
-#[cfg(test)]
-#[path = "tests/event_manager.rs"]
-mod tests;

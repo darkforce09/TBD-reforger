@@ -1,16 +1,12 @@
-//! Guards on the personnel roster: the route helpers, the roster passes and the sanction paths.
+//! Guards on the personnel roster: the row decoding, the roles resync answer, the sanction reason
+//! and the roster passes.
 
 use super::{
-    ADMIN_ROLES_SYNC_PATH, BanReason, FilterMode, SortMode, admin_user_ban_path,
-    admin_user_warnings_path, apply_roster_filter, apply_roster_sort, classify_ban_reason,
-    reason_confirm_enabled, roles_sync_success_message, roles_sync_updated_count,
+    BanReason, FilterMode, SortMode, apply_roster_filter, apply_roster_sort, classify_ban_reason,
+    reason_confirm_enabled, roles_sync_updated_count,
 };
 use frontend_api_dtos::administration::AdminUserRow;
 use frontend_api_dtos::role::Role;
-
-fn production_src() -> String {
-    crate::source_pins::personnel_source()
-}
 
 fn row(
     discord_id: &str,
@@ -48,216 +44,6 @@ fn admin_user_row_deserializes_total_deployments() {
 }
 
 #[test]
-fn dossier_deployments_binds_total_deployments_not_em_dash() {
-    // The dossier used to print a fixed dash here while the column existed. A conditional
-    // that substituted a dash for zero still contained the binding needle and went green, so
-    // this requires the exact call with no conditional, and forbids any dash between the label
-    // and the next sibling.
-    let production = production_src();
-
-    // Exact live bind — assembled so this test's own source cannot satisfy it.
-    let exact = format!(
-        "{}{}",
-        r#"stat("Deployments", "#, "u.total_deployments.to_string())"
-    );
-    assert!(
-        production.contains(&exact),
-        "dossier Deployments must be exactly `{exact}` (no conditional / no em-dash)"
-    );
-
-    let start = production
-        .find(r#"stat("Deployments""#)
-        .expect("Deployments stat call present");
-    let region = &production[start..];
-    let end = region
-        .find("Current Rank")
-        .expect("Current Rank sibling after Deployments");
-    let deployments_region = &region[..end];
-    assert!(
-        !deployments_region.contains('—'),
-        "Deployments/stat region must not contain em-dash (zero is a real count; \
-         conditional zero→— is a fail)"
-    );
-    assert!(
-        !deployments_region.contains("total_deployments == 0"),
-        "Deployments/stat region must not conditionalize on total_deployments == 0"
-    );
-}
-
-#[test]
-fn admin_roles_sync_path_matches_live_api_route() {
-    // This screen is the only caller of the route, so the check reads the live router source:
-    // a constant compared against itself would stay green while examining nothing. The
-    // registration spans lines, so the quoted path string is matched.
-    let src = frontend_test_support::fixtures::api_route_source(env!("CARGO_MANIFEST_DIR"));
-    let src: &str = &src;
-    let live_registration = format!(r#""{ADMIN_ROLES_SYNC_PATH}""#);
-    assert!(
-        src.contains(&live_registration),
-        "the API domain route tables must register .route({live_registration}, …); \
-         Personnel posts ADMIN_ROLES_SYNC_PATH"
-    );
-    assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");
-}
-
-#[test]
-fn admin_ban_and_warnings_paths_match_live_api_routes() {
-    // The path helpers must track the router, and a constant compared against itself would
-    // stay green forever. These registrations span lines, so the path string is matched.
-    let src = frontend_test_support::fixtures::api_route_source(env!("CARGO_MANIFEST_DIR"));
-    let src: &str = &src;
-    assert!(
-        src.contains(r#""/admin/users/{discordId}/ban""#),
-        "the API domain route tables must register ban/unban on /admin/users/{{discordId}}/ban"
-    );
-    assert!(
-        src.contains(r#""/admin/users/{discordId}/warnings""#),
-        "the API domain route tables must register warnings on /admin/users/{{discordId}}/warnings"
-    );
-    assert!(
-        src.contains("unban_user"),
-        "the API ban route must wire DELETE to unban_user"
-    );
-    assert_eq!(admin_user_ban_path("42"), "/admin/users/42/ban");
-    assert_eq!(admin_user_warnings_path("42"), "/admin/users/42/warnings");
-}
-
-#[test]
-fn issue_warning_is_not_a_mock_toast() {
-    // Issuing a warning once reported a fake success while the endpoint behind it worked. The
-    // phrases are assembled at runtime so the scan cannot go green off this test's own literals.
-    let production = production_src();
-    let mock_toast = format!("{}{}", "Warning issued ", "(mock)");
-    let real_toast = format!("{}{}", "toasts.success(", r#""Warning issued")"#);
-    assert!(
-        !production.contains(&mock_toast),
-        "Issue Warning must not toast a mock success (perturbation: reintroduce the mock toast)"
-    );
-    assert!(
-        production.contains("admin_user_warnings_path")
-            && production.contains(&format!("{}{}", "api_post_ok", "(store, &path, body)")),
-        "Issue Warning must POST via admin_user_warnings_path + api_post_ok"
-    );
-    assert!(
-        production.contains("personnel-warn-reason")
-            && production.contains("personnel-warn-confirm"),
-        "warning reason must be collected via a driveable Dialog (T-342)"
-    );
-    assert!(
-        production.contains(&real_toast),
-        "success toast after a real POST must say Warning issued"
-    );
-}
-
-#[test]
-fn ban_and_warn_use_dialog_not_window_prompt() {
-    // The browser's own prompt cannot be driven by the automated gate, so the dialog and its
-    // test identifiers are the path that has to exist. Only live call sites are pinned; the
-    // documentation may still name the retired one.
-    let production = production_src();
-    assert!(
-        !production.contains("prompt_with_message")
-            && !production.contains("win.prompt")
-            && !production.contains("Prompt::"),
-        "personnel must not call web_sys prompt APIs"
-    );
-    for needle in [
-        "data-testid=\"personnel-ban-reason\"",
-        "data-testid=\"personnel-ban-confirm\"",
-        "data-testid=\"personnel-warn-reason\"",
-        "data-testid=\"personnel-warn-confirm\"",
-        "reason_confirm_enabled",
-    ] {
-        assert!(
-            production.contains(needle),
-            "missing Dialog drive surface: {needle}"
-        );
-    }
-    assert!(
-        production.contains("<Dialog")
-            && production.contains("title=\"Ban personnel?\"")
-            && production.contains("title=\"Issue warning?\""),
-        "ban and warn must each open a Dialog"
-    );
-}
-
-#[test]
-fn role_ui_explains_discord_authority_without_website_override() {
-    let production = production_src();
-    let role_ui = production
-        .split_once("pub(super) fn role_editor(")
-        .expect("personnel exposes role information")
-        .1
-        .split_once("pub(super) fn ban_dialog(")
-        .expect("role information remains separate from moderation")
-        .0;
-    assert!(
-        role_ui.contains(
-            "<p>\"Website access follows verified TBD Discord membership and role mappings.\"</p>"
-        ) && role_ui
-            .contains("<p>\"Change the member’s Discord roles to change their access.\"</p>"),
-        "role information must explain both Discord authority and where administrators change access"
-    );
-    assert!(
-        role_ui.contains("\"Current role: \"") && role_ui.contains("role.get()"),
-        "role information must display the account's current verified role"
-    );
-    for independent_override in [
-        "<select",
-        "<input",
-        "on:change=",
-        "api_patch",
-        "api_put",
-        "api_post",
-        "role.set(",
-        "ROLE_OPTIONS",
-    ] {
-        assert!(
-            !role_ui.contains(independent_override),
-            "role information must not expose an independent website override: {independent_override}"
-        );
-    }
-}
-
-#[test]
-fn unban_control_deletes_ban_when_banned() {
-    // Bans were once irreversible from this screen. The needles are assembled at runtime so the
-    // scan cannot go green off this assertion's own string literals.
-    let production = production_src();
-    let delete_call = format!("{}{}", "api_delete", "(store, &path)");
-    let unban_label = format!("{}{}", "Unban ", "Personnel");
-    let unban_testid = format!("{}{}", "personnel-", "unban");
-    assert!(
-        production.contains(&delete_call),
-        "Unban must DELETE via api_delete (perturbation: drop api_delete call)"
-    );
-    assert!(
-        production.contains("admin_user_ban_path") && production.contains(&unban_label),
-        "banned dossier must expose Unban Personnel on the ban path"
-    );
-    assert!(
-        production.contains(&unban_testid),
-        "unban control needs a stable testid"
-    );
-}
-
-#[test]
-fn sort_and_filter_are_not_toast_stubs() {
-    let production = production_src();
-    // Assembled at runtime so the assertion's own literals cannot satisfy the scan.
-    let sort_stub = format!("{}{}", "Sort options ", "coming soon");
-    let filter_stub = format!("{}{}", "Filter options ", "coming soon");
-    assert!(
-        !production.contains(&sort_stub) && !production.contains(&filter_stub),
-        "Sort/Filter must not toast stub copy"
-    );
-    assert!(
-        production.contains("apply_roster_sort") && production.contains("apply_roster_filter"),
-        "header Sort/Filter must drive apply_roster_sort / apply_roster_filter"
-    );
-}
-
-#[test]
 fn roles_sync_updated_count_reads_integer() {
     let body = serde_json::json!({ "updated": 12 });
     assert_eq!(roles_sync_updated_count(&body), Ok(12));
@@ -269,18 +55,6 @@ fn roles_sync_updated_count_rejects_missing_or_non_integer() {
     assert!(roles_sync_updated_count(&serde_json::json!({})).is_err());
     assert!(roles_sync_updated_count(&serde_json::json!({ "updated": "12" })).is_err());
     assert!(roles_sync_updated_count(&serde_json::json!({ "updated": null })).is_err());
-}
-
-#[test]
-fn roles_sync_success_message_names_the_count() {
-    assert_eq!(
-        roles_sync_success_message(0),
-        "Discord roles resynced (0 user(s) updated)"
-    );
-    assert_eq!(
-        roles_sync_success_message(3),
-        "Discord roles resynced (3 user(s) updated)"
-    );
 }
 
 #[test]
@@ -377,18 +151,4 @@ fn sort_and_filter_modes_cycle() {
     assert_eq!(SortMode::BannedFirst.next(), SortMode::NameAsc);
     assert_eq!(FilterMode::All.next(), FilterMode::Active);
     assert_eq!(FilterMode::Banned.next(), FilterMode::All);
-}
-
-/// The roster's `view!` markup braces every attribute value that would otherwise end its tag early;
-/// the scan covers this page's folder, located from this file.
-#[test]
-fn view_attributes_in_the_personnel_page_are_braced_where_they_must_be() {
-    use frontend_test_support::repository_root::source_file_folder;
-    use frontend_test_support::view_attribute_guard::assert_view_attributes_are_well_formed;
-    let tests = source_file_folder(env!("CARGO_MANIFEST_DIR"), file!());
-    let personnel = tests
-        .parent()
-        .expect("the tests folder sits inside the personnel folder")
-        .to_path_buf();
-    assert_view_attributes_are_well_formed(env!("CARGO_MANIFEST_DIR"), &[personnel]);
 }

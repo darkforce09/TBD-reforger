@@ -38,9 +38,7 @@ pub(crate) use slotting_selector::OrbatSelector;
 #[cfg(test)]
 use frontend_api_dtos::{EventHub, EventMissionDossier};
 #[cfg(test)]
-use frontend_ui::DEFAULT_AVATAR;
-#[cfg(test)]
-use mission_dossier::{HubModpackFetch, briefing_text, hub_modpack_fetch, meta_badges};
+use mission_dossier::{briefing_text, meta_badges};
 
 #[cfg(test)]
 #[path = "tests/event_hub.rs"]

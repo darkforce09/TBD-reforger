@@ -12,17 +12,17 @@
 //! invalid input); the burst lay names the charge it is fired on (which may be stronger than
 //! the ground-impact charge) and is in the weapon's mils and in degrees.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use crate::mortar::solve_bridge::mils_and_degrees;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use fire_mission_planning::fire_mission::FireMissionFuze;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use fire_mission_planning::fuze::FuzeRefusal;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
 /// The fuze lines, in the order the card shows them.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn fuze_lines(fuze: &FireMissionFuze) -> Vec<String> {
     let setting = match (fuze.time_s, fuze.refusal) {
         (Some(time), _) => format!(
@@ -57,7 +57,7 @@ pub(crate) fn fuze_lines(fuze: &FireMissionFuze) -> Vec<String> {
 }
 
 /// Why no charge reaches the burst point, as the fuze line words it.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 fn unreached_burst_point_cause(refusal: FuzeRefusal) -> &'static str {
     match refusal {
         FuzeRefusal::AboveApex => "above the apex",

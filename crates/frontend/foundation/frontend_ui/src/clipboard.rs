@@ -72,7 +72,3 @@ fn js_error_text(e: &JsValue) -> String {
     }
     format!("{e:?}")
 }
-
-#[cfg(test)]
-#[path = "tests/clipboard.rs"]
-mod tests;

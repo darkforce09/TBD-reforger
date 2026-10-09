@@ -60,9 +60,8 @@ the map renderer and the streaming host, and the dependency runs one way,
 
 The binary's `main` is empty and `start_app` exists only on `wasm32`, so the crate also compiles
 for the host, where `cargo test -p frontend_application` runs the tests of the frame's native half
-(the frame classifier, the active-link rule, the account badge and the route mounts) and the
-documentation audit over every frontend crate, this one and the offline service worker included,
-each read once. Each frontend crate runs its own tests with
+(the frame classifier, the active-link rule and the account badge). Each frontend crate runs its
+own tests with
 `cargo test -p <crate>`; `cargo xtask mk ci-local-leptos` runs them all.
 
 ## Getting started
@@ -165,9 +164,6 @@ The token refresh needs the Web Locks API, which only a secure context offers: `
     `index.html`;
   - page, workspace, feature and foundation code lives in its crate under `crates/frontend/`,
     never in this crate's `src/`;
-  - every production file under the `src/` of every frontend crate, this one and the offline
-    service worker included, passes the documentation audit of `src/tests/doc_audit/mod.rs`, which
-    reads each package once;
   - `style/aegis.css` holds one `@source` line per leptos crate (`cargo xtask verify
     tailwind-sources`), and `Trunk.toml` watches `crates/frontend`, the folder above this crate's
     layer folder.

@@ -13,8 +13,7 @@ crates/frontend/pages/command_center_pages/src/
 ├── dashboard/      the landing screen: next event, server uplink, assignment, modpack, latest news
 ├── lib.rs          the crate root: the module tree
 ├── prelude.rs      the three route components the app's route table mounts
-├── server_intel/   one game server's live panel, kept current by its status stream
-└── tests/          the source pins: the live server panel's production text for its guard tests
+└── server_intel/   one game server's live panel, kept current by its status stream
 ```
 
 ## How it works

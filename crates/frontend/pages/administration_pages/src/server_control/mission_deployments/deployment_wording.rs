@@ -14,9 +14,9 @@
 //! Instants are shown as UTC lines, so every sentence is testable natively.
 
 #[cfg(any(target_arch = "wasm32", test))]
-use super::super::fleet_commands::command_wording::{
-    OutcomeAnnouncer, state_label as command_state,
-};
+use super::super::fleet_commands::command_wording::OutcomeAnnouncer;
+#[cfg(target_arch = "wasm32")]
+use super::super::fleet_commands::command_wording::state_label as command_state;
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_api_dtos::identifiers::{EventMissionId, MissionArtifactId, MissionId};
 #[cfg(any(target_arch = "wasm32", test))]
@@ -56,7 +56,7 @@ pub(crate) fn in_flight(state: &str) -> bool {
 }
 
 /// How a deployment reaches the running server.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn transition_label(transition: &str) -> String {
     match transition {
         "scenario_restart" => {
@@ -72,7 +72,7 @@ pub(crate) fn transition_label(transition: &str) -> String {
 }
 
 /// Where a deployment was requested from.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn via_label(via: &str) -> &str {
     match via {
         "web" => "the website",
@@ -82,7 +82,7 @@ pub(crate) fn via_label(via: &str) -> &str {
 }
 
 /// An account as shown: "you" for the viewer's own.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 fn account(account: &str, me: Option<&str>) -> String {
     if me == Some(account) {
         "you".to_string()
@@ -92,7 +92,7 @@ fn account(account: &str, me: Option<&str>) -> String {
 }
 
 /// A deployment's detail, as `(label, value)` rows in reading order.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn detail_rows(d: &MissionDeployment, me: Option<&str>) -> Vec<(&'static str, String)> {
     let mut rows = vec![
         ("Mission", d.mission_title.clone()),
@@ -138,7 +138,7 @@ pub(crate) fn detail_rows(d: &MissionDeployment, me: Option<&str>) -> Vec<(&'sta
 }
 
 /// A deployment's one-line summary in the list.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn summary_line(d: &MissionDeployment) -> String {
     format!(
         "{} · artifact {} · requested {}",

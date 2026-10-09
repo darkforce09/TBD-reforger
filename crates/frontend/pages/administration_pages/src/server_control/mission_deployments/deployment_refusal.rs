@@ -7,17 +7,17 @@
 //! **Invariants:** a refused request persists nothing, so every sentence says what to change before
 //! asking again. A reason this build does not know falls back to the backend's own sentence.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use super::super::fleet_commands::command_wording::state_label as command_state;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use super::deployment_wording::state_label as deployment_state;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_transport::Error;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use serde_json::Value;
 
 /// Why a deployment request or cancellation was refused.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum DeploymentRefusal {
     /// The artifact is not the one a live mission's latest approval decided.
@@ -53,7 +53,7 @@ pub(crate) enum DeploymentRefusal {
 }
 
 /// The text list at `key` of a refusal's details.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 fn detail_list(refusal: &Error, key: &str) -> Vec<String> {
     refusal
         .details()
@@ -68,11 +68,11 @@ fn detail_list(refusal: &Error, key: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 impl DeploymentRefusal {
     /// Read a refused request or cancellation; `fallback` is shown when the backend sent no
     /// sentence.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn from_refusal(refusal: &Error, fallback: &str) -> Self {
         let text = |key: &str| refusal.detail(key).map(str::to_string);
         match refusal.code() {

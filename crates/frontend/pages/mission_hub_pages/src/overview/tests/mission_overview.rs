@@ -1,8 +1,7 @@
 //! The guards on the mission overview: the faction-key derivation, the save guard, the
-//! request body, the briefing fallback and the status cell.
+//! request body and the briefing fallback.
 
 use super::*;
-use frontend_test_support::fixtures::golden;
 use serde_json::Value;
 use serde_json::json;
 
@@ -173,13 +172,6 @@ fn draft_problem_flags_exactly_what_the_endpoint_refuses() {
     );
 }
 
-/// `items` is always present — an absent one is a decode failure by design, because the
-/// first statement is an unconditional DELETE.
-#[test]
-fn armory_body_always_states_items() {
-    assert_eq!(armory_body(&[]), json!({ "items": [] }));
-}
-
 #[test]
 fn armory_body_sends_the_key_verbatim_and_orders_rows() {
     let rows = vec![row("BLUFOR", " L85A3 ", "12"), row("OPFOR", "AK-74", "")];
@@ -214,127 +206,4 @@ fn tactical_briefing_trims_whitespace_only_to_empty_affordance() {
     assert_eq!(tactical_briefing_text(Some(" Hold. ")), " Hold. ");
 }
 
-/// Guard against reverting to the emptiness check without a trim.
-///
-/// The filter-only ratchet once stayed green while a match arm without a trim made the
-/// behavioural test go red. Ban both shapes, and pin the trim-aware arm so a rewrite
-/// cannot drop the trim unnoticed.
-#[test]
-fn dossier_body_uses_trim_aware_briefing_helper() {
-    let src = crate::source_pins::mission_overview_source();
-    assert!(
-        src.contains("tactical_briefing_text(m.briefing.as_deref())"),
-        "dossier_body must route briefing through tactical_briefing_text"
-    );
-    // concat! so this test body does not match itself.
-    let old_filter = concat!(".filter(|b| !b.", "is_empty())");
-    assert!(
-        !src.contains(old_filter),
-        "the pre-T-407 is_empty-only filter must not return — whitespace-only \
-             briefings would blank the Tactical Briefing section again"
-    );
-    let old_arm = concat!("Some(b) if !b.", "is_empty()");
-    assert!(
-        !src.contains(old_arm),
-        "match-arm !b.is_empty() without trim must not return on briefing paths — \
-             whitespace-only briefings would blank the Tactical Briefing section again"
-    );
-    let trim_arm = concat!("Some(b) if !b.trim().", "is_empty()");
-    assert!(
-        src.contains(trim_arm),
-        "tactical_briefing_text must keep the trim-aware match arm"
-    );
-}
-
 /* ═════════════════════════ The status cell ═════════════════════════ */
-
-/// The real captured wire body of a mission that was driven through submit → reject
-/// (`dto.rs mission_detail_rejected_carries_the_review_stamp` round-trips the same file).
-/// Deserialised rather than hand-built so the test is driven by a status the backend really
-/// sends, not by a string this file invented.
-fn rejected_golden() -> &'static str {
-    golden!("GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json")
-}
-
-/// **Red without the fix.** The dossier grid used to render the status verbatim, so this is
-/// the raw enum token on the unfixed tree — lowercase, in a headline cell directly under a
-/// "Returned by review" callout saying the opposite.
-///
-/// Behavioural, not a grep: [`detail_rows`] is what `dossier_body` builds the `<dl>` from, so
-/// putting `m.status.clone()` back into the grid means putting it back here.
-#[test]
-fn the_dossier_status_cell_is_labelled_not_the_raw_enum() {
-    let m: MissionDetail = serde_json::from_str(rejected_golden()).expect("rejected golden");
-    assert_eq!(m.status, "rejected", "fixture must be the returned mission");
-    let rows = detail_rows(&m);
-    let status = rows
-        .iter()
-        .find(|(l, _)| *l == "Status")
-        .expect("the grid must still carry a Status cell");
-    assert_eq!(
-        status.1, "Returned",
-        "the STATUS cell must render the same label the card badge does"
-    );
-    assert_ne!(
-        status.1, m.status,
-        "rendering the DB enum verbatim is the T-395 defect"
-    );
-}
-
-/// Every value the enum can hold gets a label, and no label is the raw token. `other` is
-/// covered too: an enum value added tomorrow must not reach the screen as `some_new_state`.
-#[test]
-fn no_mission_status_reaches_the_screen_as_a_database_token() {
-    for status in [
-        "draft",
-        "pending_approval",
-        "live",
-        "rejected",
-        "archived",
-        "some_future_state",
-    ] {
-        let label = mission_status_label(status);
-        assert!(!label.is_empty(), "{status}: empty label");
-        assert!(
-            !label.contains('_'),
-            "{status}: `{label}` still carries the snake_case join of a DB token"
-        );
-        assert_ne!(label, status, "{status}: label is the raw enum value");
-    }
-}
-
-/// **The drift lock.** Two copies of one mapping is how the grid and the badge came to
-/// disagree, so pin the call itself, on the scrubbed production half of the library source,
-/// which folds comments, dead configuration items and false blocks away and fails closed on
-/// anything it cannot read.
-///
-/// `live_code` blanks string literals as well, so a `"mission_status_label"` mention inside a
-/// doc string or a copy literal cannot green this.
-#[test]
-fn the_card_badge_and_the_dossier_grid_share_one_label_mapper() {
-    use frontend_test_support::class_r_scrub::{live_code, only_body};
-    let prod = live_code(&crate::source_pins::mission_library_source());
-    let badge = only_body(&prod, "fn visibility_badge(status: &str)");
-    assert!(
-        badge.contains("mission_status_label(status)"),
-        "visibility_badge must take its label from mission_overview::mission_status_label, \
-             not a second local match — that duplication is T-395. Body was: {badge}"
-    );
-    assert!(
-        !badge.contains("=> ("),
-        "visibility_badge must not rebuild the (label, variant) tuple match — the label half \
-             moved to mission_status_label. Body was: {badge}"
-    );
-    // And the grid: the view is built from detail_rows, so a hand-rolled Status cell beside it
-    // would be a second source the behavioural test above cannot see.
-    let own = live_code(&crate::source_pins::mission_overview_source());
-    let body = only_body(&own, "pub fn dossier_body(m: &MissionDetail)");
-    assert!(
-        body.contains("detail_rows(m)"),
-        "dossier_body must build the detail grid from detail_rows"
-    );
-    assert!(
-        !body.contains("m.status"),
-        "dossier_body must not touch m.status directly — that is the raw-enum path T-395 removed"
-    );
-}

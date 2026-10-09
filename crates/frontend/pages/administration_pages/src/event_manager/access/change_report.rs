@@ -9,9 +9,9 @@
 //! reservations were current then. An id the list does not know is shown as the id itself rather
 //! than dropped, so the count the operator sees is always the count the backend reported.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use super::state::MissionSeats;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::ParticipantAccessExplanation;
 #[cfg(any(target_arch = "wasm32", test))]
 use frontend_transport::Error;
@@ -26,7 +26,7 @@ pub(super) enum PanelNotice {
 }
 
 /// What the last change did.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, PartialEq)]
 pub(super) struct ChangeReport {
     /// What was changed, for the banner's heading.
@@ -44,7 +44,7 @@ pub(super) fn is_revision_conflict(refusal: &Error) -> bool {
 }
 
 /// The sentence a refused change is reported with.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn change_refusal_sentence(refusal: &Error) -> String {
     if is_revision_conflict(refusal) {
         "Another administrator changed this operation's access settings after you loaded them, so \
@@ -57,7 +57,7 @@ pub(super) fn change_refusal_sentence(refusal: &Error) -> String {
 }
 
 /// Each registration id as `participant — mission`, from the participants read before the change.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn describe_registrations(
     ids: &[String],
     participants: &[ParticipantAccessExplanation],

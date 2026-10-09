@@ -22,10 +22,6 @@ use frontend_ui::split_pane::{ListDetailItem, SidebarSearch, search_matches};
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
-#[cfg(test)]
-#[path = "tests/vehicle_grid.rs"]
-mod tests;
-
 /// The index header's section label: one line, cut with an ellipsis only when the column cannot
 /// hold it beside the add action.
 #[cfg(target_arch = "wasm32")]

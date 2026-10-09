@@ -10,7 +10,3 @@ pub mod dialog;
 
 #[cfg(target_arch = "wasm32")]
 pub use dialog::CreateMissionDialog;
-
-#[cfg(test)]
-#[path = "tests/dialog_t671_create_carries_the_briefing.rs"]
-mod t671_create_carries_the_briefing;

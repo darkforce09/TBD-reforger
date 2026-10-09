@@ -16,8 +16,7 @@ crates/frontend/pages/operations_pages/src/
 ├── lib.rs            the crate root: the module tree
 ├── orbat_selection/  one mission's slotting on a page of its own, for direct links
 ├── prelude.rs        the route components the app's route table mounts
-├── schedule/         the upcoming events beside the selected event's hub
-└── tests/            the source pins: the schedule's, the event hub's and the service record's text
+└── schedule/         the upcoming events beside the selected event's hub
 ```
 
 ## How it works

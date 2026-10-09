@@ -19,7 +19,3 @@ mod lexer;
 mod scrub;
 
 pub use scrub::{live_code, live_source, only_body, only_item};
-
-#[cfg(test)]
-#[path = "../tests/class_r_scrub.rs"]
-mod tests;

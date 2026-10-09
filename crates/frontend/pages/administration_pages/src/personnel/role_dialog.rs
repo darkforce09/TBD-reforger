@@ -13,13 +13,13 @@ use leptos::prelude::*;
 pub(super) const INPUT_CLASS: &str = "w-full rounded-lg border border-outline-variant/40 bg-surface px-3 py-2 text-label-md outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 disabled:opacity-50";
 
 /// Path of the ban route for one member; the unban is a delete on the same path.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn admin_user_ban_path(discord_id: &str) -> String {
     format!("/admin/users/{discord_id}/ban")
 }
 
 /// Path of the warnings route for one member.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn admin_user_warnings_path(discord_id: &str) -> String {
     format!("/admin/users/{discord_id}/warnings")
 }

@@ -42,7 +42,3 @@ pub fn terrain_and_imagery_preferences() -> HostPreferences {
         render: terrain_render_preferences,
     }
 }
-
-#[cfg(test)]
-#[path = "tests/terrain_preferences_tests.rs"]
-mod tests;

@@ -9,7 +9,6 @@ with the full hub of the selected event beside it.
 crates/frontend/pages/operations_pages/src/schedule/
 ├── mod.rs           the module tree; re-exports `EventSchedulePage`
 ├── page.rs          the route component: list fetch, selection, hub fetch and the split pane
-├── tests/           unit tests for keeping briefings on the shared hub body
 └── upcoming_ops.rs  one event card, and the readers for the untyped event row
 ```
 

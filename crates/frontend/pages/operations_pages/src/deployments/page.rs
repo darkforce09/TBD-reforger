@@ -44,7 +44,7 @@ pub(super) fn vstr(v: &Value, k: &str) -> String {
 ///
 /// A named constant rather than a literal inside the view, so the empty copy can be pinned
 /// without rendering: the crate is browser-only and a view cannot be exercised natively.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const NO_TELEMETRY_RECORDED: &str = "No telemetry recorded";
 
 /// The banner artwork behind the active-orders section: a grid and a reticle, inline so the

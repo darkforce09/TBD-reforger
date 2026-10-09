@@ -91,3 +91,21 @@ fn wiki_restore_request_sends_the_old_revision_over_the_current_one() {
         "an icon-less revision sends the empty icon"
     );
 }
+
+/// A draft starts from the revision it was begun on and keeps it while the article moves on, so
+/// its save names the revision the author actually edited.
+#[test]
+fn a_draft_keeps_the_revision_it_was_begun_on() {
+    use crate::wiki::page_state::{WikiDraft, updated_draft};
+    let begun = updated_draft(None, 4, "# Field".into());
+    assert_eq!(
+        begun,
+        WikiDraft {
+            body_md: "# Field".into(),
+            base_revision: 4,
+        }
+    );
+    let continued = updated_draft(Some(&begun), 6, "# Field Manual".into());
+    assert_eq!(continued.base_revision, 4);
+    assert_eq!(continued.body_md, "# Field Manual");
+}

@@ -28,7 +28,7 @@ use frontend_api_dtos::{EventAccessAdministration, EventAccessPolicy};
 use leptos::prelude::*;
 
 /// Whose policy an editor edits.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum PolicyTarget {
     Operation,
@@ -48,7 +48,7 @@ pub(super) enum PolicyTarget {
 }
 
 /// The success line a saved or removed policy is reported with.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn policy_change_label(target: &PolicyTarget, inherit: bool) -> String {
     match (target, inherit) {
         (PolicyTarget::Operation, _) => "Operation policy saved".to_string(),

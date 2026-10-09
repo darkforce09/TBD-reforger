@@ -44,25 +44,25 @@ pub(super) const CATEGORY_OPTIONS: &[(&str, &str)] = &[
 ];
 
 /// The admin listing route: drafts and published posts together.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn announcement_list_path() -> &'static str {
     "/cms/announcements?limit=100"
 }
 
 /// The create route.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn announcement_create_path() -> &'static str {
     "/cms/announcements"
 }
 
 /// The edit and archive route for one post.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn announcement_id_path(id: &str) -> String {
     format!("/cms/announcements/{id}")
 }
 
 /// The route that pushes one post to the chat server again.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn announcement_push_path(id: &str) -> String {
     format!("/cms/announcements/{id}/push-discord")
 }

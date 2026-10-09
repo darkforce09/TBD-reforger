@@ -18,7 +18,6 @@ crates/frontend/foundation/frontend_test_support/src/
 ├── prelude.rs                the helpers most tests import
 ├── repository_root.rs        the calling crate's checkout root and the cached reads of repository files
 ├── source_shards.rs          joins the shards of one logical source file for a source pin
-├── tests/                    unit tests for the scrubber, the repository file reads, the source roots and the attribute guard
 └── view_attribute_guard.rs   the source guard over `view!` attribute values
 ```
 

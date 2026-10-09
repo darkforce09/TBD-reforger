@@ -156,7 +156,7 @@ pub(in super::super) fn parse_role_ids(text: &str) -> Vec<String> {
 }
 
 /// A group's source in words.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(in super::super) fn source_line(source: &EventGroupSource) -> String {
     match source {
         EventGroupSource::ManagedRoster {} => {

@@ -61,7 +61,7 @@ fn terrain_label(t: &str) -> String {
 /// An operation may bind a specific pack; when it does not, the chip falls back to whatever the
 /// platform currently calls current. There is no public route that fetches one pack by id, so the
 /// bound case is resolved by selecting out of the list.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum HubModpackFetch {
     /// The pack the operation binds, named by id.
@@ -72,7 +72,7 @@ pub(super) enum HubModpackFetch {
 
 /// Resolve an operation's `modpack_id` into the fetch the chip should make. A blank or
 /// whitespace-only id is not a binding.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn hub_modpack_fetch(modpack_id: Option<&str>) -> HubModpackFetch {
     match modpack_id.map(str::trim).filter(|s| !s.is_empty()) {
         Some(id) => HubModpackFetch::ById(id.to_string()),

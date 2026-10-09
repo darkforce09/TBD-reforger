@@ -8,8 +8,7 @@ the link between their Discord account and their Arma identity, and their attend
 ```text
 crates/frontend/pages/account_pages/src/settings/
 ├── mod.rs   the module tree; re-exports `SettingsPage`
-├── page.rs  `SettingsPage`: both fetches, the link and unlink actions, and the three cards
-└── tests/   unit tests for the profile avatar sink
+└── page.rs  `SettingsPage`: both fetches, the link and unlink actions, and the three cards
 ```
 
 ## How it works
@@ -68,7 +67,8 @@ puts the shipped placeholder in place of anything else. The Arma Identity card c
   `/settings#arma-link`; the DOM oracle's `settings` capture in
   `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
 - Rules: the cards wait for both fetches; the avatar source passes through `safe_avatar_url`
-  (`profile_avatar_src_only_keeps_http_urls` in `tests/settings.rs`, over the cases in
+  (`topnav_avatar_src_only_keeps_http_urls` in
+  `crates/frontend/shell/frontend_application/src/shell/tests/layout.rs`, over the cases in
   `crates/foundation/http_url_guard/src/cases.rs`); the Arma Identity card keeps the id `arma-link`
   that the top bar links to.
 

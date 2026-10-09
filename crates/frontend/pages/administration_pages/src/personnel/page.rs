@@ -38,7 +38,7 @@ use leptos::prelude::*;
 use leptos_router::NavigateOptions;
 
 /// The admin route that re-applies the Discord role mappings across the roster.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const ADMIN_ROLES_SYNC_PATH: &str = "/admin/roles/sync";
 
 /// Read the number of updated members out of a role-sync response.
@@ -53,7 +53,7 @@ pub(super) fn roles_sync_updated_count(body: &serde_json::Value) -> Result<i64, 
 }
 
 /// The notification shown after a successful role sync.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn roles_sync_success_message(updated: i64) -> String {
     format!("Discord roles resynced ({updated} user(s) updated)")
 }

@@ -10,11 +10,11 @@
 //! is no longer awaiting approval) all mean the queue on screen is stale, so each asks for it to be
 //! read again. Any other refusal falls back to the backend's own sentence.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_transport::Error;
 
 /// Why a decision was refused.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum DecisionRefusal {
     /// Nothing of the mission is under review: it was decided, or a submission is replacing it.
@@ -27,10 +27,10 @@ pub(super) enum DecisionRefusal {
     Other(String),
 }
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 impl DecisionRefusal {
     /// Read a refused decision; `fallback` is shown when the backend sent no sentence.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn from_refusal(refusal: &Error, fallback: &str) -> Self {
         match refusal.code() {
             Some("NO_PENDING_REVIEW") => Self::NoPendingReview,

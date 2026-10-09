@@ -427,7 +427,3 @@ pub fn assert_view_attributes_are_well_formed(manifest_dir: &str, scanned: &[Pat
         failures.join("\n")
     );
 }
-
-#[cfg(test)]
-#[path = "tests/view_attribute_guard.rs"]
-mod tests;

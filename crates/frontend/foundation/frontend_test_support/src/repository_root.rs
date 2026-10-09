@@ -87,7 +87,3 @@ pub fn cached_text(path: &Path) -> &'static str {
     texts.insert(path.to_path_buf(), text);
     text
 }
-
-#[cfg(test)]
-#[path = "tests/repository_root.rs"]
-mod tests;

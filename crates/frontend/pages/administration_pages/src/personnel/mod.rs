@@ -20,12 +20,9 @@ pub use page::PersonnelRosterPage;
 #[cfg(test)]
 use member_roster::{FilterMode, SortMode, apply_roster_filter, apply_roster_sort};
 #[cfg(test)]
-use page::{ADMIN_ROLES_SYNC_PATH, roles_sync_success_message, roles_sync_updated_count};
+use page::roles_sync_updated_count;
 #[cfg(test)]
-use role_dialog::{
-    BanReason, admin_user_ban_path, admin_user_warnings_path, classify_ban_reason,
-    reason_confirm_enabled,
-};
+use role_dialog::{BanReason, classify_ban_reason, reason_confirm_enabled};
 
 #[cfg(test)]
 #[path = "tests/personnel.rs"]

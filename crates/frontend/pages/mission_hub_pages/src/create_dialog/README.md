@@ -9,8 +9,7 @@ opens: it creates a draft mission from a title and its environment, then hands t
 ```text
 crates/frontend/pages/mission_hub_pages/src/create_dialog/
 ├── dialog.rs  `CreateMissionDialog`: the form, the create request, the hand-off to the editor
-├── mod.rs     the module tree; re-exports `CreateMissionDialog`
-└── tests/     unit tests for the request's briefing and the thumbnail field the form omits
+└── mod.rs     the module tree; re-exports `CreateMissionDialog`
 ```
 
 ## How it works

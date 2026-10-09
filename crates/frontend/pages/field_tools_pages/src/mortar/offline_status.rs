@@ -15,9 +15,9 @@
 //! the progress shows only while downloading; the line carries the state's attribute value, so
 //! tests and gates read the same state the document element does.
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_offline::{OfflineState, OptionalFiles};
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_offline::{OfflineStatus, PackRefresh};
 #[cfg(target_arch = "wasm32")]
 use frontend_offline::{offline_optional_files, offline_pack_refresh};
@@ -25,13 +25,13 @@ use frontend_offline::{offline_optional_files, offline_pack_refresh};
 use leptos::prelude::*;
 
 /// The notice added when the optional icon font is not cached.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const ICON_FONT_MISSING_NOTICE: &str =
     "The icon font is not cached, so icons may show as text offline.";
 
 /// The sentence for `status`, with the [`refresh_notice`] when a usable pack kept its saved copy
 /// and [`ICON_FONT_MISSING_NOTICE`] when `optional` is [`OptionalFiles::Missing`].
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn offline_pack_text(
     status: OfflineStatus,
     optional: OptionalFiles,
@@ -51,7 +51,7 @@ pub(crate) fn offline_pack_text(
 }
 
 /// The notice for a pack whose refresh the server could not answer; `None` otherwise.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn refresh_notice(refresh: &PackRefresh) -> Option<String> {
     match refresh {
         PackRefresh::KeptSavedCopy {
@@ -64,7 +64,7 @@ pub(crate) fn refresh_notice(refresh: &PackRefresh) -> Option<String> {
     }
 }
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 fn state_sentence(status: OfflineStatus) -> String {
     match status.state {
         OfflineState::Idle => "Offline copy: not started.".to_string(),
@@ -115,7 +115,3 @@ pub(crate) fn offline_pack_line(status: Signal<OfflineStatus>) -> impl IntoView 
         </div>
     }
 }
-
-#[cfg(test)]
-#[path = "tests/offline_status.rs"]
-mod tests;

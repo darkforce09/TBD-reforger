@@ -25,7 +25,7 @@ use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
 pub(super) const DELETE_VEHICLE_TITLE: &str = "Delete this vehicle?";
 /// What the delete does, as the confirmation states it.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const DELETE_VEHICLE_DESCRIPTION: &str = "The vehicle leaves the vehicle database for \
      every member. No page can bring it back.";
 /// The sentence shown when a refused delete carries no sentence of its own.

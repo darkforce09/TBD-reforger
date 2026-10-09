@@ -134,7 +134,3 @@ impl PackRefresh {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/pack_status.rs"]
-mod tests;

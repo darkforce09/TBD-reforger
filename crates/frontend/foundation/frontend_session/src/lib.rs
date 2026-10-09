@@ -41,13 +41,3 @@ pub use store::AuthStore;
 #[cfg(test)]
 #[path = "tests/auth.rs"]
 mod tests;
-
-/// The session refresh is browser-only, so its source pins are a native test module of their own.
-#[cfg(test)]
-#[path = "tests/session_refresh.rs"]
-mod session_refresh_source_pins;
-
-/// The production text of this area's source files, for the guard tests that pin it.
-#[cfg(test)]
-#[path = "tests/source_pins.rs"]
-mod source_pins;

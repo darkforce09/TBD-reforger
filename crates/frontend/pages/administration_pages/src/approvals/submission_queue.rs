@@ -15,7 +15,7 @@
 use super::page::ApprovalsDesk;
 #[cfg(target_arch = "wasm32")]
 use super::review_drawer::ReviewInspector;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::ApprovalRow;
 #[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::identifiers::MissionId;
@@ -23,17 +23,17 @@ use frontend_api_dtos::identifiers::MissionId;
 use frontend_ui::datefmt::format_short_date;
 #[cfg(target_arch = "wasm32")]
 use frontend_ui::split_pane::{SplitPane, SplitPaneEmpty};
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_ui::utc_timestamp::utc_label;
 #[cfg(target_arch = "wasm32")]
 use frontend_ui::{MaterialIcon, cn};
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use mission_review_record::review_wording::reviewed_artifact_line;
 
 /// A terrain's wire name with its first letter capitalised, or a dash when there is none.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn terrain_label(t: &str) -> String {
     if t.is_empty() {
         return "—".into();
@@ -47,7 +47,7 @@ pub(super) fn terrain_label(t: &str) -> String {
 
 /// What is under review for a queue row: the version and artifact, and when the review opened.
 /// `None` for a mission that predates reviews, which has nothing under review.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn review_line(row: &ApprovalRow) -> Option<String> {
     let semver = row.version_semver.as_deref()?;
     let digest = row.artifact_digest.as_deref()?;
@@ -59,7 +59,7 @@ pub(super) fn review_line(row: &ApprovalRow) -> Option<String> {
 }
 
 /// The queue's note for a mission that predates reviews.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) const PREDATES_REVIEWS: &str =
     "Predates reviews — nothing to decide until its author resubmits it";
 

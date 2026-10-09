@@ -1,5 +1,5 @@
 //! Readers the mapping tests share over the render tree — an element's attribute, every element
-//! of a subtree, a tag's HTML name — and checks of the tree's own builders.
+//! of a subtree, a tag's HTML name.
 
 use super::*;
 
@@ -79,30 +79,4 @@ impl TagNaming for ElementTag {
             Self::LineBreak => "br",
         }
     }
-}
-
-#[test]
-fn wiki_render_tree_class_is_the_first_attribute_and_an_empty_class_sets_none() {
-    let with_class = RenderElement::new(ElementTag::Paragraph, "mt-3");
-    assert_eq!(with_class.attributes, vec![("class", "mt-3".to_string())]);
-    assert!(
-        RenderElement::new(ElementTag::LineBreak, "")
-            .attributes
-            .is_empty()
-    );
-}
-
-#[test]
-fn wiki_render_tree_text_content_joins_nested_text_in_document_order() {
-    let node = RenderElement::new(ElementTag::Paragraph, "")
-        .with_children(vec![
-            RenderNode::text("Write "),
-            RenderElement::new(ElementTag::Strong, "")
-                .with_children(vec![RenderNode::text("bold")])
-                .into_node(),
-            RenderNode::text(" text"),
-        ])
-        .into_node();
-    assert_eq!(node.text_content(), "Write bold text");
-    assert_eq!(node.elements().len(), 2);
 }

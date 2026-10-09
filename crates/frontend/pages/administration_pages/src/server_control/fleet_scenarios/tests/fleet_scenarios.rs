@@ -1,9 +1,8 @@
 //! The fleet scenario registry's checks, held against the backend's rules and the captured
-//! registry, and the wiring of its two changes.
+//! registry.
 
 use super::scenario_wording::*;
 use frontend_api_dtos::{FleetScenarioList, FleetScenarioUpdate};
-use frontend_test_support::class_r_scrub::{live_code, only_body};
 use frontend_test_support::fixtures::golden;
 
 /// Every captured mapping passes the checks a registration of it would meet.
@@ -89,24 +88,4 @@ fn display_names_are_trimmed_and_bounded() {
         validated_display_name(&"é".repeat(65)).is_err(),
         "130 bytes"
     );
-}
-
-/// The two changes go through the typed endpoints, and the registry is read again after each.
-#[test]
-fn changes_go_through_the_typed_endpoints() {
-    let src = live_code(include_str!("../mod.rs"));
-    let compact = |text: &str| {
-        text.chars()
-            .filter(|c| !c.is_whitespace())
-            .collect::<String>()
-            .replace(",)", ")")
-    };
-    let put = compact(only_body(&src, "pub(super) fn put("));
-    assert!(put.contains("put_fleet_scenario(self.store,&terrain_key,&update)"));
-    assert!(put.contains("self.reload()"));
-    let remove = compact(only_body(&src, "pub(super) fn remove("));
-    assert!(remove.contains("delete_fleet_scenario(self.store,&terrain_key)"));
-    assert!(remove.contains("self.reload()"));
-    let sheet = compact(&live_code(include_str!("../scenario_sheet.rs")));
-    assert!(sheet.contains("scenario_registration("));
 }

@@ -14,7 +14,7 @@
 //!
 //! [`Manager`]: super::state::Manager
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::ServerRowDto;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
@@ -31,7 +31,7 @@ pub(super) enum ServerChoices {
 }
 
 /// A server as the choice names it: its name, marked when it is deactivated.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn server_choice_label(server: &ServerRowDto) -> String {
     if server.is_active {
         server.name.clone()

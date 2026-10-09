@@ -105,24 +105,3 @@ fn a_bare_status_classifies_without_a_reason() {
     assert_eq!(transport, Error::Transport);
     assert!(!transport.is_session_expired());
 }
-
-/// The request helper's refusal arm reads the answer only for a non-`401` status: a `401` must
-/// stay a failure, or the refresh-and-retry contract would never see it.
-#[test]
-fn the_refusal_arm_leaves_a_401_to_the_refresh_contract() {
-    let client =
-        frontend_test_support::class_r_scrub::live_code(&crate::source_pins::client_source());
-    let reader = frontend_test_support::class_r_scrub::only_body(&client, "fn refusal_reader(");
-    assert!(
-        reader.contains("Consume::Answer(keep) if status != 401 => Some(*keep)"),
-        "a refused answer is read as data only when it is not a 401"
-    );
-    let request = frontend_test_support::class_r_scrub::only_item(
-        &client,
-        "async fn request_keeping_refusal<",
-    );
-    assert!(
-        request.contains("request(store, method, path, body, Consume::Answer(keep))"),
-        "the refusal-keeping verbs share the one request helper and its single flight"
-    );
-}

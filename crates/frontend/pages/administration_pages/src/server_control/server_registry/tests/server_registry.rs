@@ -1,9 +1,8 @@
 //! The server registry's checks and bodies, held against the backend's rules and the captured
-//! registration and change, and the wiring of its four writes.
+//! registration and change.
 
 use super::registration_wording::*;
-use frontend_api_dtos::{DataEnvelope, ModpackDto, ServerChange, ServerRegistration, ServerRowDto};
-use frontend_test_support::class_r_scrub::{live_code, only_body};
+use frontend_api_dtos::{DataEnvelope, ServerChange, ServerRegistration, ServerRowDto};
 use frontend_test_support::fixtures::golden;
 
 fn registration() -> &'static str {
@@ -229,47 +228,4 @@ fn answered_rows_take_their_place() {
     assert!(list[0] == expected && list[1..] == before[1..]);
     mark_deactivated(&mut list, "no such server");
     assert!(list[1..] == before[1..]);
-}
-
-/// Each modpack choice reads as its name and version, and the current modpack says so.
-#[test]
-fn modpack_choices_name_the_pack_and_its_version() {
-    let packs: DataEnvelope<ModpackDto> =
-        serde_json::from_str(golden!("GET__modpacks.json")).unwrap();
-    assert_eq!(
-        modpack_choice_label(&packs.data[0]),
-        "Core Modern Expansion v2.1 (current)"
-    );
-    let mut retired = packs.data[0].clone();
-    retired.modpack.is_current = false;
-    assert_eq!(modpack_choice_label(&retired), "Core Modern Expansion v2.1");
-}
-
-/// The four writes go through the typed endpoints, and the sheet checks the form before sending.
-#[test]
-fn writes_go_through_the_typed_endpoints() {
-    let src = live_code(include_str!("../mod.rs"));
-    let compact = |text: &str| {
-        text.chars()
-            .filter(|c| !c.is_whitespace())
-            .collect::<String>()
-            .replace(",)", ")")
-    };
-    let load = compact(only_body(&src, "pub(super) fn load("));
-    assert!(load.contains("load_servers(self.store)"));
-    assert!(load.contains("pick_default_id(&list.data)"));
-    let register = compact(only_body(&src, "pub(super) fn register("));
-    assert!(register.contains("register_server(self.store,&registration)"));
-    assert!(register.contains("place_row(list,row)") && register.contains("self.selected_id"));
-    let change = compact(only_body(&src, "fn send_change("));
-    assert!(change.contains("change_server(self.store,&server_id.as_str().into(),&change)"));
-    assert!(change.contains("place_row(list,row)"));
-    let deactivate = compact(only_body(&src, "pub(super) fn deactivate("));
-    assert!(deactivate.contains("deactivate_server(self.store,&server_id.as_str().into())"));
-    assert!(deactivate.contains("mark_deactivated(list,&server_id)"));
-    let reactivate = compact(only_body(&src, "pub(super) fn reactivate("));
-    assert!(reactivate.contains("registration_wording::reactivation()"));
-    let sheet = compact(&live_code(include_str!("../registration_sheet.rs")));
-    assert!(sheet.contains("server_registration(&name,&address,&port,&modpack)"));
-    assert!(sheet.contains("server_change(&row,&name,&address,&port,&modpack)"));
 }

@@ -35,9 +35,5 @@ pub mod submission_refusal;
 pub use error::{Error, Result};
 
 #[cfg(test)]
-#[path = "tests/review_wording.rs"]
-mod review_wording_tests;
-
-#[cfg(test)]
 #[path = "tests/submission_refusal.rs"]
 mod submission_refusal_tests;

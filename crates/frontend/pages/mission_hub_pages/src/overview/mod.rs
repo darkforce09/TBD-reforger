@@ -17,7 +17,7 @@ pub mod page;
 
 #[cfg(target_arch = "wasm32")]
 pub use dossier_body::dossier_body;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) use dossier_body::mission_status_label;
 #[cfg(target_arch = "wasm32")]
 pub use page::MissionOverviewPage;
@@ -29,9 +29,7 @@ use armory_editor::{
     DraftRow, armory_body, draft_problem, key_storable, orbat_faction_keys, parse_qty,
 };
 #[cfg(test)]
-use dossier_body::{detail_rows, tactical_briefing_text};
-#[cfg(test)]
-use frontend_api_dtos::MissionDetail;
+use dossier_body::tactical_briefing_text;
 
 #[cfg(test)]
 #[path = "tests/mission_overview.rs"]

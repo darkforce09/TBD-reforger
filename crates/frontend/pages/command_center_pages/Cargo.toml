@@ -33,9 +33,6 @@ serde_json = { workspace = true }
 leptos_router = { workspace = true }
 
 [dev-dependencies]
-# The captured API responses behind `golden!`, the source scrubber and the source shards the guard
-# tests read through.
-frontend_test_support = { workspace = true }
 # The guard's case table (`http_url_guard::cases`), which the announcement thumbnail test runs
 # through its render path.
 http_url_guard = { workspace = true, features = ["test_fixtures"] }

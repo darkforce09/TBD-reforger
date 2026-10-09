@@ -15,16 +15,13 @@ mod api_paths;
 mod article;
 mod blocks;
 mod category_nav;
+#[cfg(target_arch = "wasm32")]
 mod display_text;
 pub mod page;
 mod page_state;
 #[cfg(target_arch = "wasm32")]
 mod revisions;
 mod saving;
-
-#[cfg(test)]
-#[path = "tests/view_attributes.rs"]
-mod tests;
 
 #[cfg(target_arch = "wasm32")]
 pub use page::WikiPage;

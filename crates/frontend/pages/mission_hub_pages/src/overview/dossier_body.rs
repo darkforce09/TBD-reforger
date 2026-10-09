@@ -14,7 +14,7 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::intel_briefing::briefing_section;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::MissionDetail;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
@@ -63,7 +63,7 @@ pub(super) fn terrain_label(t: &str) -> String {
 /// The fallback arm is unreachable defence over those five values, and deliberately not a
 /// passthrough: an unknown status is uppercased and de-underscored, so the worst case reads as a
 /// name rather than leaking a raw database token.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn mission_status_label(status: &str) -> String {
     match status {
         "draft" => "Draft".to_string(),
@@ -80,7 +80,7 @@ pub(crate) fn mission_status_label(status: &str) -> String {
 /// The grid is built from this, so the status cell has a surface a test can drive: a view macro
 /// cannot be asserted on from a native test, and as long as the mapping lived inline in the markup
 /// the only instrument available was a source scan.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn detail_rows(m: &MissionDetail) -> Vec<(&'static str, String)> {
     vec![
         ("Weather", m.weather.clone()),

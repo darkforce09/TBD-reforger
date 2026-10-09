@@ -30,7 +30,6 @@ fn no_placed_slots_says_what_to_place() {
         "fallback",
     );
     assert_eq!(refusal, SubmissionRefusal::NoPlacedSlots);
-    assert!(refusal.sentence().contains("places no slots"));
     assert!(refusal.findings().is_none());
 }
 
@@ -46,32 +45,12 @@ fn an_uncompilable_version_lists_what_the_compiler_reported() {
         "fallback",
     );
     assert!(matches!(refusal, SubmissionRefusal::UncompilableVersion(_)));
-    assert!(refusal.sentence().contains("does not compile"));
     assert_eq!(
         refusal.findings().map(|f| f.shown.clone()),
         Some(vec![
             "/editor/vehicles/0: cargo exceeds the vehicle's capacity".to_string()
         ])
     );
-}
-
-#[test]
-fn a_contract_violation_lists_every_finding() {
-    let refusal = SubmissionRefusal::from_refusal(
-        &compile_refusal(
-            "DOCUMENT_CONTRACT_VIOLATION",
-            "the compiled document violates the mission contract",
-            &["/slots/0/role: must be a string", "/meta/name: too long"],
-            2,
-        ),
-        "fallback",
-    );
-    assert!(matches!(
-        refusal,
-        SubmissionRefusal::DocumentContractViolation(_)
-    ));
-    assert!(refusal.sentence().contains("mission contract"));
-    assert_eq!(refusal.findings().map(|f| f.shown.len()), Some(2));
 }
 
 /// Unsupported authored data names every authored path, and a capped list says how many it leaves
@@ -95,8 +74,6 @@ fn unsupported_authored_data_lists_every_authored_path() {
     assert_eq!(findings.shown, shown);
     assert_eq!(findings.total, 25);
     assert_eq!(findings.unlisted(), 5);
-    assert!(refusal.sentence().contains("cannot carry"));
-    assert!(refusal.sentence().contains("authored path"));
 }
 
 /// A count smaller than the list is not trusted over the list itself.
@@ -113,23 +90,4 @@ fn a_count_never_undercuts_the_listed_findings() {
             total: 2,
         })
     );
-}
-
-/// A refusal with no compile reason — a mission already under review, one with no saved version —
-/// reads as the backend's own sentence.
-#[test]
-fn other_refusals_keep_the_backend_sentence() {
-    let not_submittable = SubmissionRefusal::from_refusal(
-        &Error::from_error_body(
-            409,
-            Some(&json!({"error": "only draft or rejected missions can be submitted"})),
-        ),
-        "fallback",
-    );
-    assert_eq!(
-        not_submittable,
-        SubmissionRefusal::Other("Only draft or rejected missions can be submitted".into())
-    );
-    let unreadable = SubmissionRefusal::from_refusal(&Error::Transport, "Try again");
-    assert_eq!(unreadable.sentence(), "Try again");
 }

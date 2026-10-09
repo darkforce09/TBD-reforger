@@ -47,7 +47,7 @@ pub(super) fn mission_art_url(stored: Option<&str>) -> String {
 
 /// The author avatar `src` for a card, or `None` when there is no usable URL and the card should
 /// fall back to initials.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn author_avatar_img_src(url: &str) -> Option<&str> {
     is_http_url(url).then_some(url)
 }
@@ -89,7 +89,7 @@ pub(super) fn card_is_bookmarked(m: &MissionCard) -> bool {
 }
 
 /// The bookmark route for one mission, which answers both a post and a delete.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn bookmark_api_path(id: &str) -> String {
     format!("/missions/{id}/bookmark")
 }

@@ -297,7 +297,7 @@ impl MissionDiff {
     }
 
     /// The changed collections only, in payload order.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(super) fn changed_collections(&self) -> impl Iterator<Item = &CollectionDelta> {
         self.collections.iter().filter(|c| !c.is_unchanged())
     }

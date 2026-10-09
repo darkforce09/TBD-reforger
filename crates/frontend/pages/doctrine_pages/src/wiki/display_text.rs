@@ -13,8 +13,8 @@ use frontend_transport::Error;
 
 /// The `YYYY-MM-DD` prefix of an ISO timestamp, or an em dash when there is none.
 ///
-/// String slicing rather than a date library: this runs in the native unit tests as well as in
-/// the browser.
+/// String slicing rather than a date library: the browser bundle carries no date dependency for
+/// it.
 pub(super) fn calendar_day(iso: &str) -> String {
     let day = iso.get(..10).unwrap_or("");
     if day.len() == 10 && day.as_bytes().get(4) == Some(&b'-') {
@@ -43,7 +43,3 @@ pub(super) fn load_failure_text(failure: &Error, what: &str) -> String {
         _ => format!("Failed to load {what}."),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/display_text.rs"]
-mod tests;

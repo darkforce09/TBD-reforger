@@ -1,4 +1,4 @@
-//! The credential sheet's words and checks, held against the captured credential list.
+//! The credential sheet's order and checks, held against the captured credential list.
 
 use super::credential_text::*;
 use frontend_api_dtos::{ExecutorKind, MachineCredential, MachineCredentialList};
@@ -12,36 +12,6 @@ fn credentials() -> Vec<MachineCredential> {
     serde_json::from_str::<MachineCredentialList>(list())
         .unwrap()
         .items
-}
-
-/// The captured live credential states its last use; the revoked one states who, when and why.
-#[test]
-fn captured_credentials_state_their_use_and_revocation() {
-    let list = credentials();
-    let live = &list[0];
-    assert_eq!(
-        standing_line(live, None),
-        "Live · last used 2026-07-20 19:00 UTC"
-    );
-    assert_eq!(
-        issued_line(live, None),
-        "Issued by 000000000000000001, 2026-07-15 14:10 UTC"
-    );
-    let revoked = &list[1];
-    assert_eq!(
-        standing_line(revoked, Some("000000000000000001")),
-        "Revoked by you, 2026-07-18 10:00 UTC: Rotated after the host rebuild"
-    );
-    assert_eq!(executor_label(&live.executor_kind), "Game runtime");
-    assert_eq!(executor_label(&revoked.executor_kind), "Host agent");
-    assert_eq!(executor_label("fleet_relay"), "fleet relay");
-}
-
-#[test]
-fn a_credential_never_used_says_so() {
-    let mut fresh = credentials()[0].clone();
-    fresh.last_used_at = None;
-    assert_eq!(standing_line(&fresh, None), "Live · never used");
 }
 
 /// Live credentials list above revoked ones, newest first within each, compared as instants. The

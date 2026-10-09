@@ -25,8 +25,3 @@ pub mod sse_frames;
 pub mod token_provider;
 
 pub use error::{Error, Result};
-
-/// The production text of this area's source files, for the guard tests that pin it.
-#[cfg(test)]
-#[path = "tests/source_pins.rs"]
-pub(crate) mod source_pins;

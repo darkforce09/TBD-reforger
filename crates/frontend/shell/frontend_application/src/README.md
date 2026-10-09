@@ -11,8 +11,7 @@ every route. Every page, workspace, feature and shared foundation is a crate und
 crates/frontend/shell/frontend_application/src/
 ├── app_routes.rs  `AppRoutes`: each path bound to the component that renders it, and the fallback
 ├── main.rs        the binary: the `app_routes` and `shell` modules and `start_app`, which mounts the app
-├── shell/         the app frame around every route: layout, sidebar, top bar, membership status, not-found page
-└── tests/         the documentation audit of every production file of the app and the frontend crates
+└── shell/         the app frame around every route: layout, sidebar, top bar, membership status, not-found page
 ```
 
 ## How it works
@@ -50,11 +49,7 @@ exception.
 The mount chain compiles for `wasm32` only: `app_routes.rs` and the frame's components
 (`AppLayout`, the sidebar, the top bar, the membership status strip and `NotFoundPage`) carry
 `cfg(target_arch = "wasm32")`, so `cargo test -p frontend_application` builds the frame's native,
-pure half (the frame classifier, the active-link rule and the account badge) with its tests. Test builds
-also get the documentation audit, which `main.rs` declares from `tests/doc_audit/` under
-`cfg(test)`; it walks the `src/` of every crate the workspace's `crates/frontend/*/*` member glob
-reaches, this folder and the offline service worker's among them, each package once
-(`frontend_test_support::frontend_source_roots`).
+pure half (the frame classifier, the active-link rule and the account badge) with its tests.
 
 ## Public surface
 
@@ -74,12 +69,6 @@ reaches, this folder and the offline service worker's among them, each package o
   build this binary; the headless browser gates of `tools/browser_testing/browser_gate_suites/`,
   which drive the built app by its routes.
 - Rules:
-  - every production file of every frontend crate, this app and the offline service worker
-    included, opens with a `//!` header, stays within 500 lines, documents every visible item,
-    holds no inline test module and names no ticket or wave in a comment
-    (`frontend_production_files_meet_the_documentation_standard` in `tests/doc_audit/mod.rs`); the
-    audit reads each package once (`the_audit_reads_every_frontend_package_once`), and it fails,
-    rather than shrinks, when a frontend crate folder lacks its manifest or its `src/`;
   - page, workspace, feature and foundation code lives in its crate under `crates/frontend/`,
     never here;
   - the layer order above, checked by `cargo xtask verify frontend-layering`.

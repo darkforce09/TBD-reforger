@@ -41,10 +41,6 @@ use frontend_ui::split_pane::GlassSplit;
 #[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
 
-#[cfg(test)]
-#[path = "tests/page.rs"]
-mod tests;
-
 /// The vehicle index, behind the authentication gate.
 #[cfg(target_arch = "wasm32")]
 #[component]

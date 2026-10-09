@@ -14,7 +14,7 @@ use frontend_api_dtos::MissionDetail;
 use leptos::prelude::*;
 
 /// A game mode's wire value as the label the review surface shows.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn game_mode_label(mode: &str) -> &str {
     match mode {
         "pve_coop" => "COOP",
@@ -25,7 +25,7 @@ pub(super) fn game_mode_label(mode: &str) -> &str {
 }
 
 /// A snake_case wire enum as a readable label, or a dash when it is empty.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(super) fn enum_label(v: &str) -> String {
     if v.is_empty() {
         return "—".into();

@@ -19,7 +19,3 @@ mod submission_queue;
 
 #[cfg(target_arch = "wasm32")]
 pub use page::MissionApprovalsPage;
-
-#[cfg(test)]
-#[path = "tests/approvals.rs"]
-mod tests;

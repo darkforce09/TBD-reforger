@@ -31,12 +31,10 @@ pub use page::MissionLibraryPage;
 // The two test batteries span every shard of this page, so the names they reach for through
 // `use super::{…}` are gathered here.
 #[cfg(test)]
-use card_grid::{
-    PLACEHOLDER_ART, author_avatar_img_src, bookmark_api_path, card_is_bookmarked, mission_art_url,
-};
+use card_grid::{PLACEHOLDER_ART, card_is_bookmarked, mission_art_url};
 #[cfg(test)]
 use dossier_upload::{
-    UPLOAD_MAX_BYTES, diff_summary_lines, next_semver, oversize_refusal, parse_uploaded_document,
+    UPLOAD_MAX_BYTES, next_semver, oversize_refusal, parse_uploaded_document,
     unwrap_export_envelope, upload_failure,
 };
 #[cfg(test)]

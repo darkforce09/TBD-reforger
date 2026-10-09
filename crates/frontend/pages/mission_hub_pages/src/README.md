@@ -17,8 +17,7 @@ crates/frontend/pages/mission_hub_pages/src/
 ├── lib.rs          the crate root: the module tree
 ├── library/        the mission catalogue with its slide-over dossier
 ├── overview/       one mission's dossier and its Edit Armory dialog
-├── prelude.rs      the two route components the app's route table mounts
-└── tests/          the source pins: the library's, the overview's and the dialog's production text
+└── prelude.rs      the two route components the app's route table mounts
 ```
 
 ## How it works

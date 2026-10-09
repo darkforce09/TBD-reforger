@@ -13,8 +13,7 @@ crates/frontend/pages/command_center_pages/src/server_intel/
 ├── mod.rs             the module tree; re-exports `ServerIntelPage`
 ├── page.rs            the route component: the server list fetch and the one stream subscription
 ├── player_census.rs   the telemetry grid: population and performance, theatre, environment and mods
-├── server_list.rs     the server pick, the frosted panel shell and the intelligence strip
-└── tests/             unit tests for the terrain read, the copy button's clipboard path and the stream teardown
+└── server_list.rs     the server pick, the frosted panel shell and the intelligence strip
 ```
 
 ## How it works

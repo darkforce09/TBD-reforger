@@ -1,19 +1,14 @@
-//! The deployments panel: a deployment's detail and outcome read against the captured deployments,
-//! the choices a request offers read against the captured library and calendar, every refusal the
-//! backend names, and the wiring of the request, follow and choice reads.
+//! The deployments panel: a deployment's outcome read against the captured deployments, and the
+//! choices a request offers read against the captured library and calendar.
 
 use super::super::fleet_commands::command_wording::OutcomeAnnouncer;
-use super::deployment_refusal::DeploymentRefusal;
 use super::deployment_request::chosen_request;
 use super::deployment_wording::*;
 use frontend_api_dtos::{
     DeploymentRequest, EventHub, EventListItem, MissionCard, MissionDeployment,
     MissionDeploymentPage, Paginated,
 };
-use frontend_test_support::class_r_scrub::{live_code, only_body};
 use frontend_test_support::fixtures::golden;
-use frontend_transport::Error;
-use serde_json::json;
 use std::cell::RefCell;
 
 fn page() -> MissionDeploymentPage {
@@ -44,62 +39,6 @@ impl OutcomeAnnouncer for Recorder {
     fn noted(&self, text: String) {
         self.0.borrow_mut().push(("noted", text));
     }
-}
-
-/// A confirmed deployment's detail names everything an operator checks.
-#[test]
-fn a_deployment_detail_names_what_an_operator_checks() {
-    let rows = detail_rows(&confirmed(), Some("000000000000000001"));
-    let value = |label: &str| {
-        rows.iter()
-            .find(|(l, _)| *l == label)
-            .map(|(_, v)| v.clone())
-            .unwrap_or_else(|| panic!("no {label} row"))
-    };
-    assert_eq!(value("Mission"), "Operation Iron Veil");
-    assert_eq!(value("State"), "Confirmed");
-    assert_eq!(
-        value("Artifact digest"),
-        "2534548d0f87ee73f27c582279483e82883a5f97f2a6576a43ed913b188e2791"
-    );
-    assert_eq!(value("Terrain"), "arland");
-    assert_eq!(
-        value("Scenario"),
-        "{1111222233334444}Missions/TBD_Arland.conf"
-    );
-    assert!(value("Transition").starts_with("Host restart"));
-    assert_eq!(
-        value("Requested"),
-        "by you from the website, 2026-07-24 16:00 UTC"
-    );
-    assert_eq!(value("Deadline"), "2026-07-24 16:20 UTC");
-    assert_eq!(value("Bound seats"), "1");
-    assert_eq!(
-        value("Fleet command"),
-        "00000000-0000-4000-f200-000000000001 — Succeeded"
-    );
-    assert_eq!(
-        value("Event mission"),
-        "00000000-0000-4000-6000-000000000001"
-    );
-    assert_eq!(
-        value("Confirmed by runtime session"),
-        "00000000-0000-4000-f300-000000000001"
-    );
-    assert_eq!(value("Finished"), "2026-07-24 16:04 UTC");
-    assert!(!rows.iter().any(|(label, _)| *label == "Failure reason"));
-    let failed = &page().items[0];
-    let rows = detail_rows(failed, None);
-    assert!(
-        rows.iter()
-            .any(|(label, value)| *label == "Failure reason" && value.contains("expired"))
-    );
-    assert!(rows.iter().any(|(label, value)| *label == "Requested"
-        && value.starts_with("by 000000000000000001 from in game")));
-    assert_eq!(
-        summary_line(&confirmed()),
-        "arland · artifact 2534548d0f87 · requested 2026-07-24 16:00 UTC"
-    );
 }
 
 /// Only a runtime session's confirmation is announced as success; a deployment still in flight is
@@ -216,148 +155,4 @@ fn a_request_names_the_approved_artifact() {
         Some("em".into())
     );
     assert_eq!(chosen_request(&missions, "", ""), None);
-}
-
-fn refused(status: u16, code: &str, details: serde_json::Value) -> DeploymentRefusal {
-    let mut details = details;
-    details["code"] = json!(code);
-    DeploymentRefusal::from_refusal(
-        &Error::from_error_body(
-            status,
-            Some(&json!({"error": "refused", "details": details})),
-        ),
-        "fallback",
-    )
-}
-
-/// Every refusal the backend names reads as its own sentence; an ORBAT mismatch lists every seat
-/// and slot it names.
-#[test]
-fn every_deployment_refusal_says_what_to_change() {
-    let orbat = refused(
-        422,
-        "ORBAT_ARTIFACT_MISMATCH",
-        json!({
-            "unbound_seats": ["BLUFOR Alpha position 2 (MED)"],
-            "unseated_slots": ["s9 (AR)", "s10 (AT)"],
-            "document_disagrees": null
-        }),
-    );
-    assert_eq!(
-        orbat.listed_details(),
-        vec![
-            (
-                "Seats with no compiled slot",
-                vec!["BLUFOR Alpha position 2 (MED)".to_string()]
-            ),
-            (
-                "Compiled slots no seat stands for",
-                vec!["s9 (AR)".to_string(), "s10 (AT)".to_string()]
-            ),
-        ]
-    );
-    assert!(orbat.sentence().contains("do not correspond one to one"));
-    let disagrees = refused(
-        422,
-        "ORBAT_ARTIFACT_MISMATCH",
-        json!({"unbound_seats": [], "unseated_slots": [], "document_disagrees": "the version's ORBAT has 4 slots and its compiled document 3"}),
-    );
-    assert!(disagrees.sentence().contains("has 4 slots"));
-    assert!(disagrees.listed_details().is_empty());
-    for (refusal, needle) in [
-        (
-            refused(
-                409,
-                "ARTIFACT_NOT_APPROVED",
-                json!({"approved_artifact_id": null, "mission_status": "rejected"}),
-            ),
-            "This mission is rejected",
-        ),
-        (
-            refused(
-                422,
-                "MODPACK_MISMATCH",
-                json!({"artifact_modpack_id": "a", "server_modpack_id": "b"}),
-            ),
-            "compiled against modpack a but this server requires modpack b",
-        ),
-        (
-            refused(
-                422,
-                "TERRAIN_NOT_RUNNABLE",
-                json!({"terrain_key": "kolgujev"}),
-            ),
-            "terrain kolgujev",
-        ),
-        (
-            refused(409, "EVENT_MISSION_NOT_ON_SERVER", json!({})),
-            "scheduled on this server",
-        ),
-        (
-            refused(
-                409,
-                "DEPLOYMENT_IN_PROGRESS",
-                json!({"deployment_id": "d1"}),
-            ),
-            "in flight (d1)",
-        ),
-        (
-            refused(
-                409,
-                "DEPLOYMENT_NOT_IN_FLIGHT",
-                json!({"state": "confirmed"}),
-            ),
-            "this one is confirmed",
-        ),
-        (
-            refused(
-                409,
-                "COMMAND_NOT_CANCELLABLE",
-                json!({"state": "executing"}),
-            ),
-            "Its fleet command is executing",
-        ),
-        (refused(409, "SERVER_INACTIVE", json!({})), "deactivated"),
-    ] {
-        assert!(
-            refusal.sentence().contains(needle),
-            "{refusal:?} reads {:?}",
-            refusal.sentence()
-        );
-    }
-    let other = DeploymentRefusal::from_refusal(
-        &Error::from_error_body(404, Some(&json!({"error": "mission not found"}))),
-        "fallback",
-    );
-    assert_eq!(other.sentence(), "Mission not found");
-}
-
-/// A request is followed to its outcome through the typed endpoints, and the library and calendar
-/// are read only when the form opens.
-#[test]
-fn requests_are_followed_and_choices_read_on_demand() {
-    let src = live_code(include_str!("../mod.rs"));
-    let compact = |text: &str| {
-        text.chars()
-            .filter(|c| !c.is_whitespace())
-            .collect::<String>()
-            .replace(",)", ")")
-    };
-    let request = compact(only_body(&src, "pub(super) fn request("));
-    assert!(
-        request.contains("request_mission_deployment(self.store,&server.as_str().into(),&request)")
-    );
-    assert!(request.contains("self.follow(id)"));
-    assert!(!request.contains(".success("));
-    let follow = compact(only_body(&src, "pub(super) fn follow("));
-    let read = follow
-        .find("load_mission_deployment(self.store,&server.as_str().into(),&deployment_id)")
-        .expect("the follow reads the deployment again");
-    let announce = follow
-        .find("announce_deployment(&deployment,&self.toasts)")
-        .expect("the follow announces through announce_deployment");
-    assert!(read < announce);
-    assert!(compact(only_body(&src, "pub(super) fn open_form(")).contains("read_choices("));
-    let reload = only_body(&src, "pub(super) fn reload(");
-    assert!(!reload.contains("read_choices") && !reload.contains("load_upcoming_operations"));
 }

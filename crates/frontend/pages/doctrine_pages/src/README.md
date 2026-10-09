@@ -14,7 +14,6 @@ crates/frontend/pages/doctrine_pages/src/
 ├── lib.rs      the crate root: the module tree
 ├── modpacks/   the `/modpacks` page: pack list, manifest, and the administrator's edit form
 ├── prelude.rs  the three route components the app's route table mounts
-├── tests/      the source pins: the wiki's and the modpacks page's production text for their guards
 ├── vehicles/   the `/vehicles` page: faction-grouped vehicle list, dossier and administrator's form
 └── wiki/       the `/wiki` and `/wiki/:slug` page: manual index, reader, editor and revisions
 ```

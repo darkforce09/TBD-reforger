@@ -28,18 +28,6 @@ use serde_json::Value;
 #[cfg(target_arch = "wasm32")]
 use super::server_list::v_str;
 
-#[cfg(test)]
-#[path = "tests/server_intel_t385.rs"]
-mod t385;
-
-#[cfg(test)]
-#[path = "tests/server_intel_t773.rs"]
-mod t773;
-
-#[cfg(test)]
-#[path = "tests/stream_teardown.rs"]
-mod stream_teardown;
-
 /// The `/server-intel` route: the panel behind the sign-in gate.
 #[cfg(target_arch = "wasm32")]
 #[component]

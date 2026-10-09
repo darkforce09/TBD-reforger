@@ -16,8 +16,7 @@ crates/frontend/pages/administration_pages/src/approvals/
 ├── review_briefing.rs   the mission's briefing and its four settings tiles
 ├── review_decision.rs   the decision form and the body each decision sends
 ├── review_drawer.rs     `ReviewInspector`: header, briefing, artifact, review record, decision
-├── submission_queue.rs  the queue heading and rows, and the split beside the drawer
-└── tests/               unit tests for the queue's words, the decision bodies and the stale refusals
+└── submission_queue.rs  the queue heading and rows, and the split beside the drawer
 ```
 
 ## How it works

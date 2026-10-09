@@ -52,8 +52,7 @@ None: no feature, no environment variable.
 - Depends on: `frontend_session` (the `AuthStore` session, its persistence, the refresh lock and
   the sign-in gate), `frontend_transport` (the API client), `frontend_api_dtos` (the profile, link
   and session token wire types), `frontend_ui` (the interface primitives and the avatar URL
-  guard), `leptos`; on `wasm32`, `web-sys`, `js-sys`, `wasm-bindgen`, `futures` and `serde_json`;
-  `http_url_guard` for its tests only.
+  guard), `leptos`; on `wasm32`, `web-sys`, `js-sys`, `wasm-bindgen`, `futures` and `serde_json`.
 - Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the three pages and
   whose frame renders `/login` and `/auth/callback` bare.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,

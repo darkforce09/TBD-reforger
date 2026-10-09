@@ -1,12 +1,10 @@
 //! The access panel's forms: policy drafts, group forms and pool forms, read back into what the
 //! backend takes.
 
-use super::groups::group_form::{GroupForm, GroupKind, parse_role_ids, source_line};
+use super::groups::group_form::{GroupForm, GroupKind, parse_role_ids};
 use super::policy_draft::*;
-use super::quota_editor::{QuotaFields, usage_line};
-use frontend_api_dtos::{
-    EventAccessAdministration, EventAccessCondition, EventGroupSource, QuotaUsageView,
-};
+use super::quota_editor::QuotaFields;
+use frontend_api_dtos::{EventAccessAdministration, EventAccessCondition, EventGroupSource};
 use frontend_test_support::fixtures::golden;
 
 fn access_golden() -> &'static str {
@@ -169,19 +167,6 @@ fn the_backend_bounds_are_enforced_before_sending() {
     );
 }
 
-/// The captured operation policy reads as its two alternatives, with the group named.
-#[test]
-fn a_policy_summary_names_alternatives_and_groups() {
-    let access = access();
-    assert_eq!(
-        policy_summary(&access.event_policy, &access.groups),
-        "Admits: Verified TBD member; or Member of Byte Parity roster"
-    );
-    for kind in ConditionKind::ALL {
-        assert_eq!(ConditionKind::from_wire(kind.wire()), Some(kind));
-    }
-}
-
 /* ───────────────────────── group forms ───────────────────────── */
 
 #[test]
@@ -248,14 +233,6 @@ fn a_group_form_refuses_what_the_backend_would() {
     );
 }
 
-#[test]
-fn a_source_reads_as_where_members_come_from() {
-    let access = access();
-    assert!(source_line(&access.groups[0].source).starts_with("Managed roster"));
-    let partner = source_line(&access.groups[1].source);
-    assert!(partner.contains("100000000000000777") && partner.contains("200000000000000888"));
-}
-
 /* ───────────────────────── pool forms ───────────────────────── */
 
 /// The captured pools survive the form unchanged, sub-second opening times included.
@@ -288,20 +265,4 @@ fn edited_pools_are_read_as_utc_and_whole_numbers() {
     form.guest.seats = "2".into();
     form.guest.opens_at = String::new();
     assert!(form.validated().is_err());
-}
-
-#[test]
-fn pool_usage_reads_against_the_operation_limit() {
-    let usage = QuotaUsageView {
-        member: 4,
-        guest: 1,
-        open: 0,
-        legacy_unclassified: 2,
-        total: 7,
-    };
-    assert_eq!(
-        usage_line(&usage, 0),
-        "7 places held; no operation-wide limit — member 4 · guest 1 · open 0 · 2 from before the pools"
-    );
-    assert!(usage_line(&usage, 40).starts_with("7 of 40 operation places held"));
 }

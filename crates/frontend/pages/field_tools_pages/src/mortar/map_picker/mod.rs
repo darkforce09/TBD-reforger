@@ -156,7 +156,7 @@ fn map_canvas(
 }
 
 /// Where the map mount stands.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum MapStatus {
     /// The engine or the terrain is still loading.
@@ -167,10 +167,10 @@ pub(crate) enum MapStatus {
     Failed(String),
 }
 
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 impl MapStatus {
     /// The value of the map's `data-mortar-map-state` attribute.
-    #[cfg(any(target_arch = "wasm32", test))]
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn attribute_value(&self) -> &'static str {
         match self {
             Self::Loading => "loading",

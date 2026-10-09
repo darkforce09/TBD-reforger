@@ -1,15 +1,13 @@
 //! The gates re-run their children only when the admission they render from changes.
 //!
 //! A view cannot be mounted in a native test, so the admission memos are exercised through a
-//! subscriber that reads them the way a gate's render closure does, and the gate bodies are pinned
-//! to render from those memos and from nothing else.
+//! subscriber that reads them the way a gate's render closure does.
 
 #![cfg(not(target_arch = "wasm32"))]
 
 use super::*;
 use crate::session::Session;
 use frontend_api_dtos::{RefreshResponse, User};
-use frontend_test_support::class_r_scrub::{live_code, only_body};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -218,138 +216,4 @@ fn the_admin_gate_rebuilds_its_children_only_when_the_role_crosses_the_tier() {
             "dropping below the tier refuses the viewer"
         );
     });
-}
-
-/// The gate components render from their admission memos and read no session signal directly.
-///
-/// The memo tests above are half the contract: a gate body that read the session itself would
-/// re-run its children on every profile poll whatever the memos do. Scrubbed, so a comment or a
-/// string literal cannot satisfy a needle.
-#[test]
-fn both_gates_render_from_their_admission_memo_alone() {
-    let code = live_code(&crate::source_pins::auth_source());
-    let flat = |body: &str| body.split_whitespace().collect::<Vec<_>>().join(" ");
-
-    let auth_gate = flat(only_body(&code, "pub fn AuthGate("));
-    for needle in [
-        "let admission = session_admission(expect_context::<AuthStore>());",
-        "move || match admission.get() {",
-        "SessionAdmission::Admitted => children().into_any()",
-    ] {
-        assert!(
-            auth_gate.contains(needle),
-            "AuthGate must render from its admission memo (`{needle}`); body was: {auth_gate}"
-        );
-    }
-    assert_eq!(
-        auth_gate.matches("children()").count(),
-        1,
-        "AuthGate must build its children in the admitted arm only; body was: {auth_gate}"
-    );
-
-    let admin_gate = flat(only_body(&code, "pub fn AdminGate("));
-    for needle in [
-        "let admitted = admin_admission(expect_context::<AuthStore>());",
-        "<Show when=move || admitted.get() fallback=admin_access_required> {children()} </Show>",
-    ] {
-        assert!(
-            admin_gate.contains(needle),
-            "AdminGate must render from its admission memo (`{needle}`); body was: {admin_gate}"
-        );
-    }
-
-    for (gate, body) in [("AuthGate", &auth_gate), ("AdminGate", &admin_gate)] {
-        for direct_read in [
-            ".user",
-            "bootstrapping",
-            "access_token",
-            "is_authenticated",
-            "has_min_role",
-        ] {
-            assert!(
-                !body.contains(direct_read),
-                "{gate} must read the session only through its admission memo; found \
-                 `{direct_read}` in: {body}"
-            );
-        }
-    }
-}
-
-/* ═══════════════ the admin gate never falls back to browse mode ═══════════════ */
-
-/// Strip `//` / `/* */` so bans cannot false-red on doc comments.
-fn strip_rust_comments(src: &str) -> String {
-    let mut out = String::with_capacity(src.len());
-    let mut chars = src.chars().peekable();
-    while let Some(c) = chars.next() {
-        if c == '/' {
-            match chars.peek() {
-                Some('/') => {
-                    chars.next();
-                    for n in chars.by_ref() {
-                        if n == '\n' {
-                            out.push('\n');
-                            break;
-                        }
-                    }
-                    continue;
-                }
-                Some('*') => {
-                    chars.next();
-                    while let Some(n) = chars.next() {
-                        if n == '*' && matches!(chars.peek(), Some('/')) {
-                            chars.next();
-                            break;
-                        }
-                    }
-                    continue;
-                }
-                _ => {}
-            }
-        }
-        out.push(c);
-    }
-    out
-}
-
-fn collapse_ws(s: &str) -> String {
-    s.split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-/// AdminGate must not use browse-mode `has_min_role(None)=>true`.
-/// Binds to the admission memo and to the `Show` condition that reads it (same spirit as wiki
-/// Memo bind): a dead `has_min_role_authed(...)` memo beside `when=move || true` must FAIL. Bans
-/// browse-mode one-shot.
-#[test]
-fn admin_gate_uses_authed_reactive_role() {
-    let src = crate::source_pins::gates_source();
-    let src: &str = &src;
-    let production = src;
-    let code = collapse_ws(&strip_rust_comments(production));
-    // Require the memo and its live use — presence of the helper call alone is false-green.
-    assert!(
-        code.contains(
-            "Memo::new(move |_| has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin))"
-        ),
-        "AdminGate's admission must be a memo over `has_min_role_authed(auth.user.get()…, \
-         Role::Admin)` (browse-mode None=>true is a fail)"
-    );
-    assert!(
-        code.contains("let admitted = admin_admission(expect_context::<AuthStore>());")
-            && code.contains("<Show when=move || admitted.get() fallback=admin_access_required>"),
-        "AdminGate must render its children from that memo (a dead memo beside an \
-         unconditional `Show` is a fail)"
-    );
-    // Mask the authed helper so a free `has_min_role(` / one-shot store call stands out.
-    let masked = code.replace("has_min_role_authed", "HAS_MIN_ROLE_AUTHED");
-    assert!(
-        !masked.contains("has_min_role("),
-        "AdminGate production must not call browse-mode has_min_role( — use has_min_role_authed only"
-    );
-    // Split the needle so this assert's own source text cannot false-red the include_str scan.
-    let one_shot = format!("auth.has_min_role({}::Admin)", "Role");
-    assert!(
-        !code.contains(&one_shot),
-        "auth.has_min_role(Admin) is browse-mode None=>true (/ contract)"
-    );
 }

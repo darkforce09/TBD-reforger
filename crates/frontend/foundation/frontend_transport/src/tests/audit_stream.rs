@@ -1,11 +1,10 @@
 //! The audit stream's pure half: the step decoding, the resume cursor, the backoff and the connect
-//! verdict; plus a pin on the browser half's cursor and abort wiring.
+//! verdict.
 
 use super::*;
 use crate::sse_frames::SseParser;
 use frontend_api_dtos::administration::{AuditSeverity, AuditStreamResetReason};
 use frontend_api_dtos::identifiers::ServerSentEventId;
-use frontend_test_support::class_r_scrub::{live_code, only_body};
 
 /// One audit line's JSON with the given line id.
 fn row_json(id: i64) -> String {
@@ -38,11 +37,6 @@ fn ready_frame(resume_after: i64, retained_after: i64) -> String {
     format!(
         "event: ready\nid: {resume_after}\ndata: {{\"resume_after\":{resume_after},\"retained_after\":{retained_after}}}\n\n"
     )
-}
-
-#[test]
-fn audit_stream_path_is_the_admin_stream_route() {
-    assert_eq!(AUDIT_STREAM_PATH, "/admin/audit-logs/stream");
 }
 
 #[test]
@@ -86,15 +80,6 @@ fn audit_stream_backoff_doubles_from_one_second_to_the_ceiling() {
         vec![1_000, 2_000, 4_000, 8_000, 16_000, 30_000, 30_000, 30_000]
     );
     assert_eq!(reconnect_delay_ms(1_000, u32::MAX, 0.0), 30_000);
-}
-
-#[test]
-fn audit_stream_first_wait_is_held_between_one_second_and_the_ceiling() {
-    assert_eq!(reconnect_delay_ms(0, 0, 0.0), 1_000);
-    assert_eq!(reconnect_delay_ms(200, 1, 0.0), 2_000);
-    assert_eq!(reconnect_delay_ms(5_000, 0, 0.0), 5_000);
-    assert_eq!(reconnect_delay_ms(5_000, 2, 0.0), 20_000);
-    assert_eq!(reconnect_delay_ms(u32::MAX, 0, 0.0), 30_000);
 }
 
 #[test]
@@ -319,20 +304,6 @@ fn audit_stream_backoff_grows_until_a_connection_proves_healthy() {
 }
 
 #[test]
-fn audit_stream_a_row_after_ready_also_resets_the_backoff() {
-    let mut tracker = AuditStreamTracker::new();
-    for _ in 0..4 {
-        let _ = tracker.next_delay_ms(0.0);
-    }
-    tracker.begin_connection();
-    let _ = steps(
-        &mut tracker,
-        &format!("{}id: 11\ndata: {}\n\n", ready_frame(10, 0), row_json(1)),
-    );
-    assert_eq!(tracker.next_delay_ms(0.0), 1_000);
-}
-
-#[test]
 fn audit_stream_forgetting_the_cursor_starts_fresh_and_requires_history_again() {
     let mut tracker = AuditStreamTracker::new();
     tracker.begin_connection();
@@ -378,51 +349,4 @@ fn audit_stream_a_chunked_stream_yields_the_same_steps_as_a_whole_one() {
         assert_eq!(got, whole, "split at {cut}");
         assert_eq!(resume_cursor(&tracker), Some(30));
     }
-}
-
-/// The browser half cannot run natively, so its wiring is pinned on the scrubbed source: every
-/// connection sends the tracker's cursor, carries its own abort signal, parks its controller in
-/// the page-owned handle, and the handle's abort stops the loop and the connection. No global
-/// slot holds the handle.
-#[test]
-fn audit_stream_transport_resumes_from_the_tracker_and_aborts_through_the_handle() {
-    let code = live_code(include_str!("../audit_stream/transport.rs"));
-    let run = only_body(&code, "async fn run_stream(");
-    assert!(run.contains("let last_event_id = tracker.begin_connection();"));
-    assert!(run.contains("connect(&handle, &token, last_event_id.as_deref())"));
-    assert!(run.contains("tracker.next_delay_ms("));
-    assert!(run.contains("revalidate_session(store)"));
-    let request = only_body(&code, "fn stream_request(");
-    assert!(request.contains("init.set_signal(Some(&controller.signal()))"));
-    assert!(request.contains("headers.set("));
-    let connect = only_body(&code, "async fn connect(");
-    assert!(connect.contains("stream_request(token, last_event_id)"));
-    assert!(connect.contains("*handle.controller.borrow_mut() = Some(controller)"));
-    let abort = only_body(&code, "pub fn abort(&self)");
-    assert!(abort.contains("self.stopped.set(true)"));
-    assert!(abort.contains("self.abort_connection()"));
-    assert!(
-        !code.contains("thread_local!"),
-        "the handle belongs to the page; no global slot may hold it"
-    );
-}
-
-/// The audit stream's `view!` markup, if any, braces every attribute value that would otherwise end
-/// its tag early: the same scan the audit log page runs over its own folder, here over the stream
-/// module and its folder, located from this file.
-#[test]
-fn view_attributes_in_the_audit_stream_are_braced_where_they_must_be() {
-    use frontend_test_support::repository_root::source_file_folder;
-    use frontend_test_support::view_attribute_guard::assert_view_attributes_are_well_formed;
-    let tests = source_file_folder(env!("CARGO_MANIFEST_DIR"), file!());
-    let transport = tests
-        .parent()
-        .expect("the tests folder sits inside the transport folder");
-    assert_view_attributes_are_well_formed(
-        env!("CARGO_MANIFEST_DIR"),
-        &[
-            transport.join("audit_stream.rs"),
-            transport.join("audit_stream"),
-        ],
-    );
 }

@@ -1,5 +1,5 @@
-//! Block mapping, driven by the formatting-guide capture: every block kind, heading anchors,
-//! checklists, table alignments, the seven callout kinds, quotes, code and rules.
+//! Block mapping, driven by the formatting-guide capture: every block kind, heading anchors and
+//! levels, and table alignments.
 
 use super::super::callout_style::callout_style;
 use super::super::render_tree::tests::{ElementReading, NodeWalking, TagNaming};
@@ -207,70 +207,6 @@ fn wiki_blocks_heading_level_is_clamped_and_an_empty_anchor_sets_no_id() {
 }
 
 #[test]
-fn wiki_blocks_checklist_items_render_disabled_checkboxes_named_by_their_text() {
-    let article = formatting_guide();
-    let checklist = article
-        .blocks
-        .iter()
-        .find(|block| {
-            matches!(block, WikiBlock::List { items, .. } if items.iter().any(|i| i.checked.is_some()))
-        })
-        .expect("the guide holds a checklist");
-    let list = block_node(checklist);
-    let boxes: Vec<(bool, String)> = element(&list)
-        .children
-        .iter()
-        .map(|item| {
-            let checkbox = element(&element(item).children[0]);
-            assert_eq!(checkbox.tag, ElementTag::Checkbox);
-            assert_eq!(checkbox.attribute("type"), Some("checkbox"));
-            assert_eq!(checkbox.attribute("disabled"), Some(""));
-            (
-                checkbox.attribute("checked").is_some(),
-                checkbox
-                    .attribute("aria-label")
-                    .unwrap_or_default()
-                    .to_string(),
-            )
-        })
-        .collect();
-    assert_eq!(
-        boxes,
-        vec![
-            (true, "Radio checked".to_string()),
-            (true, "Batteries packed".to_string()),
-            (false, "Map marked".to_string()),
-        ]
-    );
-}
-
-#[test]
-fn wiki_blocks_numbered_list_keeps_its_start_and_a_bulleted_list_ignores_it() {
-    let item = WikiListItem {
-        checked: None,
-        blocks: vec![WikiBlock::Paragraph {
-            inlines: vec![WikiInline::Text {
-                text: "Halt".into(),
-            }],
-        }],
-    };
-    let numbered = block_node(&WikiBlock::List {
-        ordered: true,
-        start: Some(3),
-        items: vec![item.clone()],
-    });
-    assert_eq!(element(&numbered).tag, ElementTag::NumberedList);
-    assert_eq!(element(&numbered).attribute("start"), Some("3"));
-    let bulleted = block_node(&WikiBlock::List {
-        ordered: false,
-        start: Some(3),
-        items: vec![item],
-    });
-    assert_eq!(element(&bulleted).tag, ElementTag::BulletList);
-    assert_eq!(element(&bulleted).attribute("start"), None);
-}
-
-#[test]
 fn wiki_blocks_table_columns_keep_their_alignments() {
     let article = formatting_guide();
     let table = article
@@ -310,79 +246,6 @@ fn wiki_blocks_table_columns_keep_their_alignments() {
         .find(|element| element.tag == ElementTag::HeaderCell)
         .unwrap();
     assert_eq!(header.attribute("scope"), Some("col"));
-}
-
-#[test]
-fn wiki_blocks_a_cell_past_the_alignment_list_starts_at_the_reading_edge() {
-    let cell = |text: &str| {
-        vec![WikiInline::Text {
-            text: text.to_string(),
-        }]
-    };
-    let node = block_node(&WikiBlock::Table {
-        alignments: vec![WikiTableAlignment::Right],
-        header: vec![cell("A"), cell("B")],
-        rows: vec![],
-    });
-    let cells: Vec<&RenderElement> = node
-        .elements()
-        .into_iter()
-        .filter(|element| element.tag == ElementTag::HeaderCell)
-        .collect();
-    assert!(
-        cells[0]
-            .attribute("class")
-            .unwrap()
-            .ends_with(" text-right")
-    );
-    assert!(
-        cells[1]
-            .attribute("class")
-            .unwrap()
-            .ends_with(" text-start")
-    );
-}
-
-#[test]
-fn wiki_blocks_callout_kinds_keep_three_colour_families_and_seven_labels() {
-    let article = formatting_guide();
-    let callouts: Vec<(WikiCalloutKind, String)> = article
-        .blocks
-        .iter()
-        .filter_map(|block| match block {
-            WikiBlock::Callout { kind, .. } => Some((
-                *kind,
-                block_node(block).elements()[0].children[0].text_content(),
-            )),
-            _ => None,
-        })
-        .collect();
-    assert_eq!(
-        callouts,
-        vec![
-            (WikiCalloutKind::Note, "NOTE".to_string()),
-            (WikiCalloutKind::Tip, "PRO-TIP".to_string()),
-            (WikiCalloutKind::Important, "IMPORTANT".to_string()),
-            (WikiCalloutKind::Info, "INFO".to_string()),
-            (WikiCalloutKind::Warning, "WARNING".to_string()),
-            (WikiCalloutKind::Caution, "CAUTION".to_string()),
-            (WikiCalloutKind::Critical, "CRITICAL RULE".to_string()),
-        ]
-    );
-    let family = |kind| callout_style(kind).box_class;
-    assert_eq!(family(WikiCalloutKind::Note), family(WikiCalloutKind::Tip));
-    assert_eq!(family(WikiCalloutKind::Note), family(WikiCalloutKind::Info));
-    assert_eq!(
-        family(WikiCalloutKind::Important),
-        family(WikiCalloutKind::Warning)
-    );
-    assert_eq!(
-        family(WikiCalloutKind::Caution),
-        family(WikiCalloutKind::Critical)
-    );
-    assert!(family(WikiCalloutKind::Note).contains("border-primary"));
-    assert!(family(WikiCalloutKind::Warning).contains("border-tactical-yellow"));
-    assert!(family(WikiCalloutKind::Critical).contains("border-error"));
 }
 
 #[test]

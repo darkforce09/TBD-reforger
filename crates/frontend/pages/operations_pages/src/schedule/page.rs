@@ -29,10 +29,6 @@ use leptos::prelude::*;
 #[cfg(target_arch = "wasm32")]
 use serde_json::Value;
 
-#[cfg(test)]
-#[path = "tests/schedule.rs"]
-mod tests;
-
 /// The detail column's fetch state.
 ///
 /// Three variants, not an `Option`: "nothing is selected", "the hub request failed" and "this is

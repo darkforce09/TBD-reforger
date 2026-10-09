@@ -50,8 +50,5 @@ web-sys = { workspace = true, features = [
     "AbortSignal",
 ] }
 
-[dev-dependencies]
-frontend_test_support = { workspace = true }
-
 [lints]
 workspace = true

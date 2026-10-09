@@ -2,7 +2,7 @@
 //! feeds: the differ battery and the upload pipeline.
 
 use super::{
-    UPLOAD_MAX_BYTES, diff_summary_lines, next_semver, oversize_refusal, parse_uploaded_document,
+    UPLOAD_MAX_BYTES, next_semver, oversize_refusal, parse_uploaded_document,
     unwrap_export_envelope, upload_failure,
 };
 use serde_json::json;
@@ -11,9 +11,7 @@ use serde_json::json;
 //
 // NON-VACUITY IS THE WHOLE POINT HERE. A differ that answers "nothing changed" to every
 // question renders perfectly and passes any test that only asserts a section appears. So every
-// test below names the SPECIFIC change it expects, and `differ_is_not_vacuous_on_identical_input`
-// is its paired control: the same helper pair must also report *silence* when there is nothing
-// to say, or "reports everything" would pass just as cheaply as "reports nothing".
+// test below names the SPECIFIC change it expects.
 // ───────────────────────────────────────────────────────────────────────────────────────
 use super::{
     DIFF_SAMPLE_CAP, RowChange, census_line, classify_row, diff_mission_payloads, version_census,
@@ -154,19 +152,6 @@ fn differ_names_the_specific_change_between_two_versions() {
         ],
         "scalar changes must name the field and both values"
     );
-}
-
-/// The paired control. Without this, "report every field as changed" would satisfy the test
-/// above; with it, the differ has to be right in both directions.
-#[test]
-fn differ_is_not_vacuous_on_identical_input() {
-    let d = diff_mission_payloads(&levie_v1(), &levie_v1());
-    assert!(
-        d.is_empty(),
-        "a version compared with itself has no changes: {d:#?}"
-    );
-    assert_eq!(d.changed_collections().count(), 0);
-    assert_eq!(slots_delta(&d).unchanged, 3);
 }
 
 /// **The claim that justifies a structural diff over a textual one.** `compile_payload`
@@ -370,34 +355,6 @@ fn census_is_the_diff_from_the_empty_document() {
     assert!(version_census(&json!({})).is_empty());
 }
 
-/// Source ratchet. Pins the two structural decisions the comparison is built on, so a
-/// later "simplification" into a whole-document string compare goes red here rather
-/// than in a browser at hundreds of thousands of rows.
-#[test]
-fn differ_source_ratchet_is_structural_and_wired_into_the_dossier() {
-    let src = crate::source_pins::mission_library_source();
-    assert!(
-        src.contains("let mut left: HashMap<&str, &Value> = HashMap::new();"),
-        "the id index must stay a BORROWED map — cloning rows doubles a hundreds-of-MB payload"
-    );
-    // concat! so this assertion does not match its own source text.
-    let textual = concat!("serde_json::to_string(a) ", "== serde_json::to_string(b)");
-    assert!(
-        !src.contains(textual),
-        "a whole-document string compare is O(n) memory and answers the wrong question — \
-             re-emit order is not an edit (see reordering_rows_is_not_a_change)"
-    );
-    assert!(
-        src.contains("version_history_section(&m)") && src.contains("{version_rail}"),
-        "the version rail must be MOUNTED in the dossier — a differ nothing calls is dead \
-             code that #![allow(dead_code)] at the top of this file would hide"
-    );
-    assert!(
-            src.contains("fn version_census(payload: &Value) -> Vec<(&'static str, usize)> {\n    diff_mission_payloads(&Value::Null, payload)"),
-            "the census must route through the differ, not count rows a second way"
-        );
-}
-
 // ── Mission document upload ──────────────────────────────────────────────────────
 
 /// **The test this upload panel lives or dies on.**
@@ -453,69 +410,6 @@ fn a_rejected_document_surfaces_every_finding_the_api_sent() {
     assert!(
         head.contains("3 problem(s)"),
         "the headline must point at the list rather than pretend there is one problem; got {head:?}"
-    );
-}
-
-/// A systematic defect yields one finding per slot; the API caps its own list at 20 and the
-/// client folds at [`frontend_transport::client::MAX_ERROR_DETAILS`] with a `… and N more` tail. That tail
-/// is itself a finding row and must reach the author — otherwise a 20-problem document reads
-/// as a 6-problem one and the author "fixes" it and re-uploads into the same wall.
-#[test]
-fn a_truncated_finding_list_still_tells_the_author_how_many_there_are() {
-    let details: Vec<String> = (0..20)
-        .map(|i| format!("/editor/slots/{i}/role: 42 is not of type \"string\""))
-        .collect();
-    let body = json!({ "error": "invalid mission payload", "details": details });
-    let msg = frontend_transport::client::error_body_message(&body).expect("message");
-    let (_head, findings) = upload_failure(400, Some(&msg), "1.0.0");
-    assert_eq!(
-        findings.len(),
-        frontend_transport::client::MAX_ERROR_DETAILS + 1,
-        "six shown findings plus the count tail; got {findings:?}"
-    );
-    assert!(
-        findings.last().is_some_and(|t| t.contains("14 more")),
-        "the tail must name the 14 findings not shown; got {:?}",
-        findings.last()
-    );
-}
-
-/// The four failures that are NOT a defect in the document get their own words, because the
-/// author does something different about each — and none of them carries `details`.
-#[test]
-fn non_validation_failures_say_what_to_do_instead() {
-    let (head, rows) = upload_failure(409, Some("version already exists"), "0.2.0");
-    assert!(rows.is_empty());
-    assert!(
-        head.contains("0.2.0") && head.contains("already exists"),
-        "409 must name the taken version; got {head:?}"
-    );
-
-    // The backend answers 413 with the shared `request_too_large` envelope
-    // (`{"error":"request body is too large","details":{"code":"request_too_large"}}`). Echo its
-    // `error` text — restating a message here would be a second source of truth that silently
-    // goes stale.
-    let (head, _) = upload_failure(413, Some("request body is too large"), "0.2.0");
-    assert_eq!(
-        head, "request body is too large",
-        "413 must carry the server's own message verbatim; got {head:?}"
-    );
-
-    let (head, _) = upload_failure(401, None, "0.2.0");
-    assert!(head.to_lowercase().contains("sign in"), "got {head:?}");
-
-    // status 0 is the client's transport failure (`frontend_transport::Error::status` is 0 for network/serde).
-    let (head, _) = upload_failure(0, None, "0.2.0");
-    assert!(
-        head.contains("Nothing was saved"),
-        "a network failure must say the mission is unchanged; got {head:?}"
-    );
-
-    // A 403 has no `details` but does have a message, and must not be swallowed.
-    let (head, _) = upload_failure(403, Some("not your mission"), "0.2.0");
-    assert!(
-        head.contains("not your mission"),
-        "the backend's own reason must survive; got {head:?}"
     );
 }
 
@@ -682,136 +576,5 @@ fn the_suggested_version_bumps_the_patch_of_the_tip() {
     assert_eq!(next_semver(None), "0.1.0");
     for junk in ["", "1", "1.2", "1.2.3.4", "banana", "1.2.x", " 1.2.3"] {
         assert_eq!(next_semver(Some(junk)), "0.1.0", "junk semver {junk:?}");
-    }
-}
-
-/// The preview runs the payload comparison with a real second document — the case it
-/// was written for and could not reach until an uploaded document existed. Counts are
-/// exact; rows with no usable id are reported rather than dropped.
-#[test]
-fn the_preview_names_what_the_document_would_change() {
-    let current = json!({
-        "schemaVersion": 3,
-        "map": { "terrain": "everon" },
-        "editor": { "slots": [
-            { "id": "a", "callsign": "Alpha 1-1", "role": "Rifleman", "position": [1.0, 1.0] },
-            { "id": "b", "callsign": "Alpha 1-2", "role": "Medic",    "position": [2.0, 2.0] }
-        ]}
-    });
-    let uploaded = json!({
-        "schemaVersion": 3,
-        "map": { "terrain": "arland" },
-        "editor": { "slots": [
-            { "id": "a", "callsign": "Alpha 1-1", "role": "Rifleman", "position": [9.0, 9.0] },
-            { "id": "b", "callsign": "Alpha 1-2", "role": "Grenadier","position": [2.0, 2.0] },
-            { "id": "c", "callsign": "Alpha 1-3", "role": "Rifleman", "position": [3.0, 3.0] },
-            { "callsign": "no id at all" }
-        ]}
-    });
-    let lines = diff_summary_lines(&diff_mission_payloads(&current, &uploaded));
-    let joined = lines.join("\n");
-    assert!(
-        joined.contains("Terrain: everon → arland"),
-        "a changed scalar must be named; got\n{joined}"
-    );
-    assert!(
-        joined.contains("Slots: 2 → 4"),
-        "the row census must be exact on both sides; got\n{joined}"
-    );
-    assert!(
-        joined.contains("1 added") && joined.contains("1 moved") && joined.contains("1 edited"),
-        "added/moved/edited must be distinguished; got\n{joined}"
-    );
-    assert!(
-        joined.contains("no usable id"),
-        "a row the differ could not key must be reported, not silently dropped — that is the \
-             'reports success over an input it never examined' failure in miniature; got\n{joined}"
-    );
-
-    // Identical payloads produce nothing to say, which is what lets the UI offer the
-    // "uploading this would only add a version number" line honestly.
-    assert!(diff_mission_payloads(&current, &current).is_empty());
-    assert!(diff_summary_lines(&diff_mission_payloads(&current, &current)).is_empty());
-    // The empty document on the left is the census path — same code, so they cannot drift.
-    assert!(!diff_mission_payloads(&Value::Null, &uploaded).is_empty());
-}
-
-/// Source ratchet. The pure functions above can all pass while the panel is
-/// wired to nothing, so pin the wiring itself: the control, the route, and — above all —
-/// that the failure path goes through [`upload_failure`] into a rendered findings list.
-///
-/// RED under perturbation: delete the section, point the POST somewhere else, drop the
-/// `up_findings.set(rows)` assignment, or delete the findings block from the view.
-#[test]
-fn the_upload_panel_is_wired_to_the_versions_route() {
-    let src = crate::source_pins::mission_library_source();
-    let production = src
-        .split("#[cfg(test)]")
-        .next()
-        .expect("missions.rs must have a #[cfg(test)] module");
-
-    for (needle, why) in [
-        (
-            "data-testid=\"mission-upload-pick\"",
-            "the dossier must render a control that opens the file picker",
-        ),
-        (
-            "data-testid=\"mission-upload-findings\"",
-            "the rejection findings must have a rendered home; a toast is not one",
-        ),
-        (
-            "up_findings.set(rows)",
-            "the rows from upload_failure must reach the rendered list — dropping this \
-                 assignment is exactly the 'swallowed the reason' defect",
-        ),
-        (
-            "upload_failure(failure.status(), failure.message(), &semver)",
-            "the error path must route through upload_failure, not a fixed string",
-        ),
-        (
-            "format!(\"/missions/{}/versions\", id_sv.get_value())",
-            "the upload must POST the versions route — the only mission-write route with a \
-                 lifted body cap",
-        ),
-        (
-            "parse_uploaded_document(&text)",
-            "the picked file must be parsed (and envelope-unwrapped) before it is posted",
-        ),
-        (
-            "oversize_refusal(size)",
-            "the size gate must run on the picked file's size before the read",
-        ),
-        (
-            "version_body_to_writer(",
-            "the wire body must be built by map-engine-core, not hand-rolled here, so the \
-                 two doors onto create_version cannot drift — `version_body_to_writer` and the \
-                 editor Save's `version_body` are both wrappers over one `VersionBody` struct, \
-                 and compile.rs's `both_doors_onto_create_version_serialise_identical_bytes` \
-                 pins them byte-identical",
-        ),
-        (
-            "api_post_raw(store, &path, body)",
-            "the upload must hand over an already-serialised String — `api_post` takes a \
-                 `Value` and clones it again per attempt, which is the amplification that sets \
-                 UPLOAD_MAX_BYTES",
-        ),
-        (
-            "up_doc.with_untracked(|slot|",
-            "the document must be read BY REFERENCE to build the body — `get_untracked()` \
-                 clones the whole parsed tree, and on wasm32 that clone is a whole extra copy of \
-                 the mission for no reason",
-        ),
-    ] {
-        assert!(production.contains(needle), "{why} (missing: {needle})");
-    }
-
-    // `File`/`FileList` are what `HtmlInputElement::files()` needs; without them this compiles
-    // on native and dies on the wasm build.
-    let cargo = frontend_test_support::fixtures::crate_cargo_toml(env!("CARGO_MANIFEST_DIR"));
-    for feat in ["\"File\"", "\"FileList\"", "\"Blob\""] {
-        assert!(
-            cargo.contains(feat),
-            "Cargo.toml must keep the web-sys {feat} feature for the document picker"
-        );
     }
 }

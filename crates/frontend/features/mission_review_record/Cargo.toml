@@ -28,8 +28,5 @@ leptos = { workspace = true, features = ["csr"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
-[dev-dependencies]
-frontend_test_support = { workspace = true }
-
 [lints]
 workspace = true

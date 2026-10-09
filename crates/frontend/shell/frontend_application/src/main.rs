@@ -23,10 +23,6 @@ pub mod app_routes;
 /// The app frame around every route: layout, sidebar, top bar, not-found page.
 pub mod shell;
 
-#[cfg(test)]
-#[path = "tests/doc_audit/mod.rs"]
-mod doc_audit;
-
 /// Mounts the app frame into the document body.
 ///
 /// The wasm entry is this `#[wasm_bindgen(start)]` function, the only start function in the

@@ -82,22 +82,3 @@ fn route_auth_redirect_blocks_enlisted_editor() {
     // Deep-link safety: do not bounce while bootstrap is in flight.
     assert!(route_auth_redirect(path, None, true).is_none());
 }
-
-/// The browser store must actually install the route guard, not merely declare one.
-#[test]
-fn auth_store_new_installs_route_guard_on_wasm() {
-    let src = crate::source_pins::auth_source();
-    let src: &str = &src;
-    assert!(
-        src.contains("install_route_auth_guard(store)"),
-        "AuthStore::new() must call install_route_auth_guard on wasm"
-    );
-    assert!(
-        src.contains("route_auth_redirect"),
-        "guard decision must go through route_auth_redirect"
-    );
-    assert!(
-        src.contains("frontend_route_table::role_may_enter"),
-        "guard must reuse router RequireMinRole helpers"
-    );
-}

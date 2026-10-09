@@ -18,8 +18,7 @@ crates/frontend/pages/administration_pages/src/
 ├── lib.rs               the crate root: the module tree
 ├── personnel/           the paged member roster and one member's dossier: bans, warnings, role resync
 ├── prelude.rs           the route components the app's route table mounts
-├── server_control/      the game servers: fleet commands, deployments, fleet scenarios and credentials
-└── tests/               the source pins: the production text of five pages for their guard tests
+└── server_control/      the game servers: fleet commands, deployments, fleet scenarios and credentials
 ```
 
 ## How it works

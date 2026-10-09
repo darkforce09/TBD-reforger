@@ -153,7 +153,3 @@ fn subfolders(dir: &Path) -> Vec<PathBuf> {
     out.sort();
     out
 }
-
-#[cfg(test)]
-#[path = "tests/frontend_source_roots.rs"]
-mod tests;

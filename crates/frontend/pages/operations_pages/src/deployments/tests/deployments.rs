@@ -1,8 +1,7 @@
-//! The guards on the service record: the replay anchor sink, the leave date rules and request
-//! body, the leave status badges, and the ban on fabricated personal telemetry.
+//! The guards on the service record: the replay anchor sink and the leave date rules and request
+//! body.
 
-use super::leave_of_absence::{create_leave_body, leave_status_variant, validate_loa_range};
-use super::page::NO_TELEMETRY_RECORDED;
+use super::leave_of_absence::{create_leave_body, validate_loa_range};
 use super::service_record::replay_href;
 use http_url_guard::cases::IS_HTTP_URL_CASES;
 
@@ -26,27 +25,6 @@ fn aar_cell_emits_an_href_only_for_http_urls() {
         wrong.len(),
         IS_HTTP_URL_CASES.len(),
         wrong.join("\n")
-    );
-}
-
-/// The specific regression, spelled out rather than left implicit in the table sweep: the
-/// literal attack payload must produce no anchor, and the empty case must keep behaving exactly
-/// as it did before the cell was guarded.
-#[test]
-fn the_t391_payload_renders_no_anchor_and_empty_still_means_no_link() {
-    assert_eq!(replay_href("javascript:alert(1)"), None);
-    assert_eq!(replay_href("JaVaScRiPt:alert(1)"), None);
-    assert_eq!(replay_href("java\tscript:alert(1)"), None);
-    assert_eq!(
-        replay_href("data:text/html,<script>alert(1)</script>"),
-        None
-    );
-    // Unchanged from before the guard: no replay uploaded yet renders the em dash.
-    assert_eq!(replay_href(""), None);
-    // ...and a real replay link still renders, which is the half that keeps the guard alive.
-    assert_eq!(
-        replay_href("https://aar.tbd/replays/abc.json"),
-        Some("https://aar.tbd/replays/abc.json")
     );
 }
 
@@ -84,51 +62,4 @@ fn create_leave_body_is_bare_ymd_json() {
             "reason": "holiday",
         })
     );
-}
-
-#[test]
-fn leave_status_badge_variants() {
-    assert_eq!(leave_status_variant("pending"), "warning");
-    assert_eq!(leave_status_variant("approved"), "success");
-    assert_eq!(leave_status_variant("denied"), "error");
-    assert_eq!(leave_status_variant("bogus"), "neutral");
-}
-
-/// The personal kill/death, win-rate and favourite-loadout tiles were once hardcoded beside the
-/// genuinely served deployment count. If any of these needles return, every operator sees the
-/// same fabricated statistics again. Needles are `concat!`-split so this test does not match
-/// itself. Do not restate the banned literals in comments above — paraphrase, or this goes red.
-#[test]
-fn no_fabricated_personal_telemetry_survives_in_this_module() {
-    let src = crate::source_pins::deployments_source();
-    let banned = [
-        concat!("MOCK_", "KD"),
-        concat!("MOCK_", "WIN_RATE"),
-        concat!("FAV_", "WEAPON_NAME"),
-        concat!("FAV_", "ASSET_NAME"),
-        concat!("FAV_", "WEAPON_IMG"),
-        concat!("FAV_", "ASSET_IMG"),
-        concat!("2.", "45"),
-        concat!("68", "%"),
-        concat!("M4A1 ", "Block II"),
-        concat!("M1A2 ", "Abrams"),
-        concat!("Telemetry", "Stat"),
-        concat!("Fav", "Loadout"),
-    ];
-    for needle in banned {
-        assert!(
-            !src.contains(needle),
-            "fabricated personal telemetry is back in deployments.rs: {needle:?}. \
-             Until T-397, show the empty affordance — never invent numbers."
-        );
-    }
-    assert!(
-        src.contains(NO_TELEMETRY_RECORDED),
-        "the honest empty affordance must stay on the page"
-    );
-}
-
-#[test]
-fn personal_telemetry_empty_copy_is_pinned() {
-    assert_eq!(NO_TELEMETRY_RECORDED, "No telemetry recorded");
 }

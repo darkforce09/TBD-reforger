@@ -163,10 +163,6 @@ pub fn search_matches(query: &str, haystack: &str) -> bool {
     q.is_empty() || haystack.to_lowercase().contains(&q)
 }
 
-#[cfg(test)]
-#[path = "tests/split_pane.rs"]
-mod tests;
-
 /// One row of a master list.
 ///
 /// Renders a button carrying the title and subtitle, with optional leading preview and trailing

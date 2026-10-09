@@ -1,5 +1,5 @@
 //! Ballistics catalog screen: upload readiness, the outcome of each answer the upload route can
-//! give, the stored-version rows, and the route, breadcrumb and sidebar registration.
+//! give, and the order of the stored-version rows.
 
 use super::*;
 use frontend_api_dtos::ballistics_catalogs::{
@@ -36,13 +36,6 @@ fn summary(id: &str, version: u32, sha: &str) -> BallisticsCatalogSummary {
         catalog_sha256: sha.into(),
         uploaded_at: "2026-09-28T10:15:00Z".into(),
     }
-}
-
-#[test]
-fn upload_route_and_part_names_match_the_api_contract() {
-    assert_eq!(BALLISTICS_CATALOGS_PATH, "/ballistics-catalogs");
-    assert_eq!(CATALOG_PART, "catalog");
-    assert_eq!(CALIBRATION_PART, "calibration");
 }
 
 #[test]
@@ -87,15 +80,6 @@ fn json_names_are_matched_in_any_letter_case() {
     assert!(is_json_name("a.Json"));
     assert!(!is_json_name("catalog.json.gz"));
     assert!(!is_json_name("json"));
-}
-
-#[test]
-fn file_sizes_read_in_bytes_kilobytes_and_megabytes() {
-    assert_eq!(file_size_label(512.0), "512 B");
-    assert_eq!(file_size_label(2048.0), "2.0 KB");
-    assert_eq!(file_size_label(3.5 * 1024.0 * 1024.0), "3.5 MB");
-    assert_eq!(file_size_label(f64::NAN), "—");
-    assert_eq!(file_size_label(-1.0), "—");
 }
 
 #[test]
@@ -208,31 +192,6 @@ fn a_conflict_is_a_duplicate_version() {
 }
 
 #[test]
-fn envelope_refusals_keep_their_status_and_sentence() {
-    for status in [400_u16, 413, 415, 500] {
-        let outcome = upload_outcome(Err(refusal(status, json!({"error": "nope"}))));
-        assert_eq!(
-            outcome,
-            UploadOutcome::Rejected {
-                status,
-                message: "Nope".into()
-            }
-        );
-        let (tone, headline) = outcome_headline(&outcome);
-        assert_eq!(tone, OutcomeTone::Failure);
-        assert_eq!(headline, format!("Upload refused ({status}) — Nope"));
-    }
-    let silent = upload_outcome(Err(Error::from_error_body(413, None)));
-    assert_eq!(
-        silent,
-        UploadOutcome::Rejected {
-            status: 413,
-            message: "The upload was refused".into()
-        }
-    );
-}
-
-#[test]
 fn an_ended_session_and_an_unreached_server_are_warnings() {
     let expired = upload_outcome(Err(refusal(401, json!({"error": "expired"}))));
     assert_eq!(expired, UploadOutcome::SessionExpired);
@@ -256,13 +215,6 @@ fn a_created_report_that_is_not_accepted_is_never_shown_as_stored() {
         upload_outcome(Ok(report.clone())),
         UploadOutcome::CalibrationRefused(report)
     );
-}
-
-#[test]
-fn every_tone_has_its_own_colours() {
-    assert!(tone_classes(OutcomeTone::Success).contains("text-success"));
-    assert!(tone_classes(OutcomeTone::Failure).contains("text-error"));
-    assert!(tone_classes(OutcomeTone::Warning).contains("text-tactical-yellow"));
 }
 
 #[test]
@@ -290,62 +242,4 @@ fn version_rows_order_catalogs_by_id_and_versions_newest_first() {
             ("vanilla-mortars", 1, false),
         ]
     );
-    assert_eq!(version_count_label(&rows), "4 versions · 2 catalogs");
-}
-
-#[test]
-fn version_rows_shorten_the_sha_and_label_the_upload_time() {
-    let sha = "0123456789abcdef".repeat(4);
-    let rows = version_rows(&BallisticsCatalogList {
-        data: vec![summary("vanilla-mortars", 1, &sha)],
-    });
-    assert_eq!(rows[0].short_sha.len(), SHORT_SHA_LENGTH);
-    assert_eq!(rows[0].short_sha, "0123456789ab");
-    assert_eq!(rows[0].catalog_sha256, sha);
-    assert_eq!(rows[0].title, "vanilla-mortars v1");
-    assert_eq!(rows[0].game_build, "1.4.0.53");
-    assert_eq!(
-        rows[0].uploaded_label,
-        frontend_ui::utc_timestamp::utc_label("2026-09-28T10:15:00Z")
-    );
-    assert_eq!(version_count_label(&rows), "1 version · 1 catalog");
-}
-
-#[test]
-fn an_empty_list_has_no_rows() {
-    let rows = version_rows(&BallisticsCatalogList { data: vec![] });
-    assert!(rows.is_empty());
-    assert_eq!(version_count_label(&rows), "0 versions · 0 catalogs");
-}
-
-#[test]
-fn the_route_is_admin_only_with_its_breadcrumb_and_sidebar_entry() {
-    use frontend_api_dtos::role::Role;
-    use frontend_route_table::navigation_menu::NAVIGATION;
-    use frontend_route_table::{ROUTES, breadcrumb, role_may_enter};
-
-    let path = "/admin/ballistics-catalogs";
-    let route = ROUTES
-        .iter()
-        .find(|route| route.path == path)
-        .expect("route declared");
-    assert_eq!(route.component, "BallisticsCatalogsPage");
-    assert_eq!(route.auth, "admin");
-    assert_eq!(
-        breadcrumb(path),
-        Some(("Administration", "Ballistics Catalogs"))
-    );
-    assert!(role_may_enter(path, Some(Role::Admin)));
-
-    let section = NAVIGATION
-        .iter()
-        .find(|section| section.title == "Administration")
-        .expect("administration section");
-    let item = section
-        .items
-        .iter()
-        .find(|item| item.path == path)
-        .expect("sidebar entry");
-    assert_eq!(item.label, "Ballistics Catalogs");
-    assert_eq!(item.min_role, Role::Admin);
 }

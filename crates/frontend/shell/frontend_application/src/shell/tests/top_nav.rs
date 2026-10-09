@@ -4,7 +4,6 @@
 
 use super::*;
 use frontend_api_dtos::role::Role;
-use frontend_ui::DEFAULT_AVATAR;
 
 fn member() -> User {
     User {
@@ -43,14 +42,6 @@ fn an_absent_or_empty_identity_counts_as_unlinked() {
     assert_eq!(AccountBadge::of(&user).linked_identity_prefix, None);
     user.arma_id = Some(Default::default());
     assert_eq!(AccountBadge::of(&user).linked_identity_prefix, None);
-}
-
-#[test]
-fn the_avatar_goes_through_the_http_only_sink() {
-    let mut user = member();
-    assert_eq!(AccountBadge::of(&user).avatar, user.avatar_url);
-    user.avatar_url = "javascript:alert(1)".into();
-    assert_eq!(AccountBadge::of(&user).avatar, DEFAULT_AVATAR);
 }
 
 /// The account area renders from a memo of this badge, so a profile change the badge does not

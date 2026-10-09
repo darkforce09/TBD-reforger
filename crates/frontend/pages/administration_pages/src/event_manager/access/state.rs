@@ -18,7 +18,7 @@
 
 #[cfg(target_arch = "wasm32")]
 use super::change_report::PanelNotice;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::OrbatSquad;
 #[cfg(target_arch = "wasm32")]
 use frontend_api_dtos::{EventAccessAdministration, ParticipantAccessExplanation};
@@ -58,7 +58,7 @@ impl<T> Loadable<T> {
 }
 
 /// One mission of the operation with its order of battle, for the squad and slot policy lists.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 #[derive(Clone, PartialEq)]
 pub(super) struct MissionSeats {
     pub(super) event_mission_id: String,

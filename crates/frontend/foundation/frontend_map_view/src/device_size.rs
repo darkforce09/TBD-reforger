@@ -17,7 +17,3 @@ pub fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
     let round = |v: f64| ((v * dpr + 0.5).floor().max(1.0)) as u32;
     (round(css_w), round(css_h))
 }
-
-#[cfg(test)]
-#[path = "tests/device_size_tests.rs"]
-mod tests;

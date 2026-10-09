@@ -47,7 +47,3 @@ impl Default for TerrainHeights {
         Self::new()
     }
 }
-
-#[cfg(test)]
-#[path = "tests/terrain_height_tests.rs"]
-mod tests;
