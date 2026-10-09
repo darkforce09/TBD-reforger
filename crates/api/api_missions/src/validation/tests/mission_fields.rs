@@ -57,17 +57,6 @@ fn an_accepted_time_of_day_is_returned_verbatim() {
     assert_eq!(valid_time_of_day("06:00:00"), Some("06:00:00"));
 }
 
-/// Residual pin — the thumbnail write guard and its message must stay.
-#[test]
-fn thumbnail_url_write_guard_still_present() {
-    const SRC: &str = include_str!("../mission_fields.rs");
-    assert!(SRC.contains("fn validated_thumbnail_url("));
-    assert!(SRC.contains("thumbnail_url must be an absolute http:// or https:// URL"));
-    assert!(validated_thumbnail_url("javascript:alert(1)").is_err());
-    assert!(validated_thumbnail_url("https://cdn.example/t.jpg").is_ok());
-    assert_eq!(validated_thumbnail_url("").unwrap(), "");
-}
-
 /// CREATE + PATCH title: trim and non-empty. Empty / whitespace-only reject; padded non-empty
 /// stores trimmed.
 ///

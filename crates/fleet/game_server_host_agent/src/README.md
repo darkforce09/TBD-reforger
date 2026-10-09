@@ -79,5 +79,5 @@ their own protocol.
 - Used by: the integration tests in `crates/fleet/game_server_host_agent/tests/`; no other crate depends on the
   library.
 - Rules: nothing prints a secret (`tests/secret_text.rs`); a failure reason never exceeds 512
-  bytes (`tests/action_verdict.rs`); the typed ids keep their wire form (`tests/identifiers.rs`); `cargo xtask verify file-length` holds this folder and
+  bytes; `cargo xtask verify file-length` holds this folder and
   `crates/fleet/game_server_host_agent/tests/` to the file-size limits.

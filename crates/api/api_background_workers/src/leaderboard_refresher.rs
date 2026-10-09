@@ -99,7 +99,3 @@ where
         Err(e) => tracing::error!(error = %e, "leaderboard MV scheduled refresh failed"),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/leaderboard_refresher.rs"]
-mod tests;

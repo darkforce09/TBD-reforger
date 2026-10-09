@@ -69,7 +69,3 @@ pub async fn publish_all_server_statuses(pool: &PgPool, hub: &Hub) -> Result<usi
     }
     Ok(n)
 }
-
-#[cfg(test)]
-#[path = "tests/status_broadcast.rs"]
-mod tests;

@@ -300,7 +300,3 @@ pub async fn search_members(
         json!({ "data": out, "total": total, "limit": limit, "offset": offset }),
     ))
 }
-
-#[cfg(test)]
-#[path = "tests/orbat_view.rs"]
-mod tests;

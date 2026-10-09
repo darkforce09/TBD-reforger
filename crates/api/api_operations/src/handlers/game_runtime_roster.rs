@@ -115,7 +115,3 @@ pub async fn event_roster(
             .collect(),
     }))
 }
-
-#[cfg(test)]
-#[path = "tests/game_runtime_roster.rs"]
-mod tests;

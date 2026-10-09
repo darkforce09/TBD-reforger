@@ -24,7 +24,3 @@ pub fn required_trimmed_text(raw: &str, field: &str) -> Result<String, ApiError>
     }
     Ok(value.to_string())
 }
-
-#[cfg(test)]
-#[path = "tests/required_text_field.rs"]
-mod tests;

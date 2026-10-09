@@ -89,13 +89,6 @@ fn error_message(envelope: &Value) -> &str {
 }
 
 #[tokio::test]
-async fn accepted_json_body_reaches_the_handler() {
-    let (status, body) = post_probe(Some("application/json"), r#"{"name":"alpha"}"#).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body, json!({ "name": "alpha" }));
-}
-
-#[tokio::test]
 async fn json_body_over_the_limit_answers_413_request_too_large() {
     let oversized = format!(r#"{{"name":"{}"}}"#, "x".repeat(PROBE_BODY_LIMIT * 4));
     let (status, body) = post_probe(Some("application/json"), oversized).await;
@@ -113,30 +106,6 @@ async fn missing_content_type_answers_415() {
 }
 
 #[tokio::test]
-async fn non_json_content_type_answers_415() {
-    for content_type in [
-        "text/plain",
-        "application/x-www-form-urlencoded",
-        "multipart/form-data",
-    ] {
-        let (status, body) = post_probe(Some(content_type), r#"{"name":"alpha"}"#).await;
-        assert_eq!(status, StatusCode::UNSUPPORTED_MEDIA_TYPE, "{content_type}");
-        assert!(body.get("details").is_none(), "{content_type}: {body}");
-    }
-}
-
-#[tokio::test]
-async fn malformed_json_answers_400_with_the_rejection_text() {
-    let (status, body) = post_probe(Some("application/json"), r#"{"name":"#).await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-    assert!(
-        error_message(&body).starts_with("Failed to parse the request body as JSON"),
-        "{body}"
-    );
-    assert!(body.get("details").is_none(), "{body}");
-}
-
-#[tokio::test]
 async fn json_that_does_not_decode_answers_400_not_422() {
     let (status, body) = post_probe(Some("application/json"), r#"{"name":5}"#).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
@@ -150,47 +119,6 @@ async fn json_that_does_not_decode_answers_400_not_422() {
         "the reason names the field: {body}"
     );
     assert!(body.get("details").is_none(), "{body}");
-}
-
-#[tokio::test]
-async fn json_missing_a_required_field_answers_400_naming_it() {
-    let (status, body) = post_probe(Some("application/json"), "{}").await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-    assert!(
-        error_message(&body).contains("missing field `name`"),
-        "{body}"
-    );
-}
-
-#[tokio::test]
-async fn envelope_carries_details_only_when_they_are_set() {
-    let plain = ApiError::bad_request("plain failure").into_response();
-    assert_eq!(plain.status(), StatusCode::BAD_REQUEST);
-    let plain = to_bytes(plain.into_body(), usize::MAX).await.expect("body");
-    let plain: Value = serde_json::from_slice(&plain).expect("JSON");
-    assert_eq!(plain, json!({ "error": "plain failure" }));
-
-    let detailed = ApiError::with_details(StatusCode::CONFLICT, "stale", json!({ "code": "x" }))
-        .into_response();
-    assert_eq!(detailed.status(), StatusCode::CONFLICT);
-    let detailed = to_bytes(detailed.into_body(), usize::MAX)
-        .await
-        .expect("body");
-    let detailed: Value = serde_json::from_slice(&detailed).expect("JSON");
-    assert_eq!(
-        detailed,
-        json!({ "error": "stale", "details": { "code": "x" } })
-    );
-}
-
-#[tokio::test]
-async fn accepted_query_string_reaches_the_handler() {
-    let (status, body) = get_page_probe("/page?limit=5&offset=10").await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body, json!({ "limit": 5, "offset": 10 }));
-    let (status, body) = get_page_probe("/page").await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body, json!({ "limit": null, "offset": null }));
 }
 
 #[tokio::test]

@@ -130,4 +130,4 @@ pub(crate) fn coalesce_str(s: &Option<String>) -> Option<&str> {
 
 #[cfg(test)]
 #[path = "tests/ingest_parsing.rs"]
-pub(crate) mod tests;
+mod tests;

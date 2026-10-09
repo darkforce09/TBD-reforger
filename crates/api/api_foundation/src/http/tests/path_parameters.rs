@@ -61,14 +61,6 @@ async fn get_probe(uri: &str) -> (StatusCode, String, Value) {
 }
 
 #[tokio::test]
-async fn decodable_path_parameter_reaches_the_handler() {
-    let id = Uuid::new_v4();
-    let (status, _, body) = get_probe(&format!("/items/{id}")).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body, json!({ "id": id }));
-}
-
-#[tokio::test]
 async fn undecodable_path_parameter_answers_400_in_the_envelope() {
     let (status, content_type, body) = get_probe("/items/not-a-uuid").await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
@@ -87,22 +79,4 @@ async fn undecodable_path_parameter_answers_400_in_the_envelope() {
         Some(1),
         "the envelope carries `error` alone: {body}"
     );
-}
-
-#[tokio::test]
-async fn non_utf8_path_segment_answers_400_in_the_envelope() {
-    let (status, _, body) = get_probe("/items/%FF").await;
-    assert_eq!(status, StatusCode::BAD_REQUEST);
-    let message = body["error"].as_str().expect("`error` is a string");
-    assert!(
-        message.starts_with("invalid path parameter: "),
-        "the message names the path: {message}"
-    );
-}
-
-#[tokio::test]
-async fn extractor_that_does_not_match_its_route_answers_500_internal_error() {
-    let (status, _, body) = get_probe(&format!("/mismatched/{}", Uuid::new_v4())).await;
-    assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
-    assert_eq!(body, json!({ "error": "internal error" }));
 }

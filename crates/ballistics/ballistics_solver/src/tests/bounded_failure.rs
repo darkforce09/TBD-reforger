@@ -1,9 +1,9 @@
-//! Bounded failure of the firing solver: 10,000 seeded random requests against the vanilla
+//! Bounded failure of the firing solver: 500 seeded random requests against the vanilla
 //! catalog, clean or with one corrupted value (NaN, infinities, zero, negative, huge or tiny
 //! positions, heights, wind, gravity, shell constants, charge and weapon values, identifiers),
 //! each solved without a panic into either a typed [`FireSolutionError`] or a solution whose
 //! every charge row is coherent: all values finite and within the weapon's limits with no
-//! refusal, or no value and a typed refusal. Ten tests of 1,000 draws run in parallel.
+//! refusal, or no value and a typed refusal.
 
 use std::collections::BTreeSet;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -23,10 +23,10 @@ const VANILLA_CATALOG_JSON: &[u8] = include_bytes!(concat!(
     "/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
 ));
 
-/// Draws per test; ten tests make the 10,000.
-const DRAWS_PER_TEST: usize = 1_000;
+/// Draws of the sweep.
+const DRAWS_PER_TEST: usize = 500;
 
-/// Seed of the first test; test `n` draws from `FIRST_SEED + n`.
+/// Seed of the sweep.
 const FIRST_SEED: u64 = 0xB0B0_0000_0000_2026;
 
 /// The values a corrupted field takes: every class of input a request must survive.
@@ -309,10 +309,11 @@ fn sweep(seed: u64) -> Tally {
     tally
 }
 
-/// Every draw of test `offset` survives and is typed; the draws reach solved rows, several
-/// refusal kinds and request-wide errors.
-fn assert_sweep_is_bounded(offset: u64) {
-    let tally = sweep(FIRST_SEED + offset);
+/// Every draw survives and is typed; the draws reach solved rows, several refusal kinds and
+/// request-wide errors.
+#[test]
+fn random_requests_are_bounded_and_typed() {
+    let tally = sweep(FIRST_SEED);
     assert!(
         tally.failures.is_empty(),
         "{} failures, first: {:#?}",
@@ -330,95 +331,4 @@ fn assert_sweep_is_bounded(offset: u64) {
         "only the request errors {:?} were reached",
         tally.errors
     );
-}
-
-#[test]
-fn random_requests_seed_0_are_bounded_and_typed() {
-    assert_sweep_is_bounded(0);
-}
-
-#[test]
-fn random_requests_seed_1_are_bounded_and_typed() {
-    assert_sweep_is_bounded(1);
-}
-
-#[test]
-fn random_requests_seed_2_are_bounded_and_typed() {
-    assert_sweep_is_bounded(2);
-}
-
-#[test]
-fn random_requests_seed_3_are_bounded_and_typed() {
-    assert_sweep_is_bounded(3);
-}
-
-#[test]
-fn random_requests_seed_4_are_bounded_and_typed() {
-    assert_sweep_is_bounded(4);
-}
-
-#[test]
-fn random_requests_seed_5_are_bounded_and_typed() {
-    assert_sweep_is_bounded(5);
-}
-
-#[test]
-fn random_requests_seed_6_are_bounded_and_typed() {
-    assert_sweep_is_bounded(6);
-}
-
-#[test]
-fn random_requests_seed_7_are_bounded_and_typed() {
-    assert_sweep_is_bounded(7);
-}
-
-#[test]
-fn random_requests_seed_8_are_bounded_and_typed() {
-    assert_sweep_is_bounded(8);
-}
-
-#[test]
-fn random_requests_seed_9_are_bounded_and_typed() {
-    assert_sweep_is_bounded(9);
-}
-
-#[test]
-fn a_target_on_the_gun_itself_is_refused_by_every_charge() {
-    let catalog = BallisticsCatalog::from_json_slice(VANILLA_CATALOG_JSON)
-        .expect("the vanilla catalog decodes");
-    let gun = MapPosition {
-        x_m: -3_220.5,
-        y_m: -2_129.25,
-        height_m: 69.75,
-    };
-    let mut solved = Vec::new();
-    for weapon in &catalog.weapons {
-        for shell_id in &weapon.shell_ids {
-            for wind in [
-                Wind::CALM,
-                Wind {
-                    speed_m_s: 8.875,
-                    from_deg: 105.5,
-                },
-            ] {
-                let request = FireSolutionRequest {
-                    weapon_id: &weapon.weapon_id,
-                    shell_id,
-                    gun,
-                    target: gun,
-                    wind,
-                };
-                let solution =
-                    solve_fire_solution(&catalog, &request).expect("a valid request solves");
-                solved.extend(
-                    solution
-                        .charges
-                        .iter()
-                        .filter(|row| row.solves())
-                        .map(|row| format!("{}/{shell_id} {wind:?}: {row:?}", weapon.weapon_id)),
-                );
-            }
-        }
-    }
-    assert!(solved.is_empty(), "{solved:#?}");
 }

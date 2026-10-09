@@ -50,7 +50,3 @@ pub async fn update_me(
         serde_json::from_value(json!(user.role)).map_err(|_| ApiError::internal("invalid role"))?;
     Ok(Json(UpdatedProfileResponse { user: u }))
 }
-
-#[cfg(test)]
-#[path = "tests/member_profile.rs"]
-mod tests;

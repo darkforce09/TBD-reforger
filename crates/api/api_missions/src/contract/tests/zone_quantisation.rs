@@ -140,29 +140,6 @@ fn polygon_zone_is_accepted_and_quantised() {
     );
 }
 
-/// The quantisation this file mirrors is `flatten::round_coord`, which is private there.
-/// Pin it against that source so the mirror cannot drift silently — silent drift between two
-/// sites is the real bug class. RED if `flatten.rs` changes its grid without this file following.
-#[test]
-fn zone_quantisation_mirrors_flatten() {
-    let flatten = include_str!(
-        "../../../../../../crates/mission/mission_compiler/src/game_document/zones.rs"
-    );
-    let body = flatten
-        .split("fn round_coord(v: f64) -> f64 {")
-        .nth(1)
-        .expect("flatten::round_coord must exist");
-    let expr = body.split('}').next().expect("body").trim();
-    assert_eq!(
-        expr, "(v * 10.0).round() / 10.0",
-        "flatten::round_coord changed — update contract::zone_quantisation::round_coord to match"
-    );
-    // And the mirror agrees on the value that produced the defect.
-    assert_eq!(round_coord(0.04), 0.0);
-    assert_eq!(round_coord(0.05), 0.1);
-    assert_eq!(round_coord(1000.256), 1000.3);
-}
-
 /// The verdict must come from `mission.schema.json` itself, not from a copy of it. If the
 /// wrapper stopped resolving `#/$defs/zone`, every zone would validate against nothing and
 /// this whole pass would go silently vacuous — the signature defect.

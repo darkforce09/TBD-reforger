@@ -73,7 +73,3 @@ pub(crate) fn resolve(
         .map_err(|walk| ConfigError::CheckoutRootNotFound(directory.variable, walk))?;
     Ok(root.join(directory.checkout_relative).display().to_string())
 }
-
-#[cfg(test)]
-#[path = "tests/development_directories.rs"]
-mod tests;

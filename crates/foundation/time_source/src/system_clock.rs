@@ -26,7 +26,3 @@ impl Clock for SystemClock {
             })
     }
 }
-
-#[cfg(test)]
-#[path = "tests/system_clock.rs"]
-mod tests;

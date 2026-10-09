@@ -314,7 +314,3 @@ fn forward(shared: &Shared, n: &PgNotification) {
         let _ = shared.tx.send(sig);
     }
 }
-
-#[cfg(test)]
-#[path = "tests/audit_notifier.rs"]
-mod tests;

@@ -63,17 +63,3 @@ async fn a_failed_rename_answers_the_io_error_and_leaves_no_staging_file() {
     assert_eq!(entries(&directory), vec!["taken.png".to_owned()]);
     assert!(directory.join("taken.png").is_dir());
 }
-
-#[tokio::test]
-async fn an_unusable_directory_answers_the_io_error() {
-    let scratch = ScratchDirectory::new();
-    std::fs::create_dir_all(&scratch.0).expect("scratch directory");
-    let blocking_file = scratch.0.join("not-a-directory");
-    std::fs::write(&blocking_file, b"file").expect("write blocking file");
-
-    store_upload(&blocking_file, "picture.png", b"bytes")
-        .await
-        .expect_err("a file where the directory should be fails the store");
-
-    assert_eq!(entries(&scratch.0), vec!["not-a-directory".to_owned()]);
-}

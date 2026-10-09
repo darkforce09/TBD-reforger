@@ -53,7 +53,3 @@ pub async fn ingest_link_confirm(
         "arma_id": confirmed.arma_id, "arma_character": confirmed.arma_character}),
     ))
 }
-
-#[cfg(test)]
-#[path = "tests/arma_link_confirmation.rs"]
-mod tests;

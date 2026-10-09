@@ -20,8 +20,7 @@ crates/api/api_match_telemetry/src/
 ├── models/     the stored match, the ingest wire shapes and their validation, the refusals
 ├── prelude.rs  the match models and the registration and results ingest services
 ├── routes.rs   the domain's `/api/v1` route table
-├── services/   the registration, results-revision and event-batch transactions, the match row lock
-└── tests/      the unit tests of `error.rs`
+└── services/   the registration, results-revision and event-batch transactions, the match row lock
 ```
 
 ## How it works

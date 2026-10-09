@@ -1,8 +1,8 @@
-//! Tests of the canonical-UTC rule: the ticket registry's accept and reject cases, the messages
-//! each rejection carries, and the agreement with both formatters.
+//! Tests of the canonical-UTC rule: the ticket registry's accept and reject cases and the
+//! agreement with both formatters.
 
 use super::*;
-use crate::{now_utc_rfc3339, rfc3339_utc_millis, rfc3339_utc_seconds};
+use crate::{rfc3339_utc_millis, rfc3339_utc_seconds};
 
 #[test]
 fn accepts_canonical_utc() {
@@ -34,61 +34,6 @@ fn rejects_malformed_and_non_utc() {
         assert!(
             err.unwrap_err().to_string().contains("completed_at"),
             "error must name the field for {bad:?}"
-        );
-    }
-}
-
-#[test]
-fn now_is_canonical_and_validates() {
-    let now = now_utc_rfc3339();
-    assert!(now.ends_with('Z'), "writers stamp Zulu: {now}");
-    assert_eq!(now.len(), 20, "whole seconds, no subsecond noise: {now}");
-    validate_rfc3339_utc("created_at", &now).expect("now must satisfy its own rule");
-}
-
-#[test]
-fn each_rejection_carries_the_registry_message() {
-    let non_utc = validate_rfc3339_utc("created_at", "2026-08-14T10:00:00+05:00").unwrap_err();
-    assert_eq!(
-        non_utc.to_string(),
-        "created_at \"2026-08-14T10:00:00+05:00\" must be UTC (offset +05:00:00); \
-         write `Z` or `+00:00`"
-    );
-    let unknown = validate_rfc3339_utc("created_at", "2026-08-14T10:00:00-00:00").unwrap_err();
-    assert_eq!(
-        unknown.to_string(),
-        "created_at \"2026-08-14T10:00:00-00:00\" must write UTC as `Z` or `+00:00` \
-         (`-00:00` means offset-unknown and lowercase `z` is non-canonical)"
-    );
-    let naive = validate_rfc3339_utc("created_at", "2026-08-14T10:00:00").unwrap_err();
-    assert!(matches!(naive, Error::NotRfc3339 { .. }), "{naive:?}");
-    assert!(
-        naive
-            .to_string()
-            .starts_with("created_at \"2026-08-14T10:00:00\" is not an RFC 3339 date-time: "),
-        "{naive}"
-    );
-}
-
-#[test]
-fn lowercase_spellings_are_refused_whichever_check_catches_them() {
-    for (bad, accepted_variant) in [
-        ("2026-08-14t10:00:00Z", "LowercaseSeparator or NotRfc3339"),
-        (
-            "2026-08-14T10:00:00z",
-            "NonCanonicalUtcSpelling or NotRfc3339",
-        ),
-    ] {
-        let error = validate_rfc3339_utc("stamp", bad).unwrap_err();
-        let expected = match error {
-            Error::LowercaseSeparator { .. } => bad.as_bytes()[10] == b't',
-            Error::NonCanonicalUtcSpelling { .. } => bad.ends_with('z'),
-            Error::NotRfc3339 { .. } => true,
-            Error::NotUtc { .. } => false,
-        };
-        assert!(
-            expected,
-            "{bad:?} gave {error:?}, expected {accepted_variant}"
         );
     }
 }

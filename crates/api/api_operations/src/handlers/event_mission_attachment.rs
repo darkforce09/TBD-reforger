@@ -136,7 +136,3 @@ pub async fn remove_event_mission(
     tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }
-
-#[cfg(test)]
-#[path = "tests/event_mission_attachment.rs"]
-mod tests;

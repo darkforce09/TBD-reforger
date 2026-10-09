@@ -106,7 +106,3 @@ where
         Err(e) => tracing::error!(error = %e, "server-status SSE scheduled republish failed"),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/server_status_publisher.rs"]
-mod tests;

@@ -20,7 +20,3 @@ newtype_ids::string_id! {
     /// VIP win rule reference.
     pub struct SlotUid;
 }
-
-#[cfg(test)]
-#[path = "tests/slot_ids_tests.rs"]
-mod tests;

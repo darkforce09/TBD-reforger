@@ -20,8 +20,7 @@ crates/api/api_server_infrastructure/src/handlers/
 ├── server_administration_lock.rs  locks a server row and rechecks the administrator before a credential or command write
 ├── server_intel.rs                the server intel reads: each server with its status, modpack and terrain
 ├── server_registry.rs             create, partially update and deactivate a `servers` row
-├── server_status_stream.rs        the SSE feed of one server's live status
-└── tests/                         unit tests for the scenario validation and the intel card
+└── server_status_stream.rs        the SSE feed of one server's live status
 ```
 
 ## How it works

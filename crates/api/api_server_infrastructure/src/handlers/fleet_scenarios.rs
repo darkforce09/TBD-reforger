@@ -164,7 +164,3 @@ pub async fn delete_fleet_scenario(
     transaction.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }
-
-#[cfg(test)]
-#[path = "tests/fleet_scenarios.rs"]
-mod tests;

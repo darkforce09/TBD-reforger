@@ -15,8 +15,7 @@ crates/api/api_match_telemetry/src/handlers/
 ├── match_results.rs              `POST /ingest/match-results`: one results revision
 ├── mod.rs                        the module tree
 ├── server_heartbeat.rs           the session-fenced live-status heartbeat and its partial update
-├── server_heartbeat_contract.rs  the heartbeat body, its telemetry queue block and their checks
-└── tests/                        unit tests for the heartbeat
+└── server_heartbeat_contract.rs  the heartbeat body, its telemetry queue block and their checks
 ```
 
 ## How it works

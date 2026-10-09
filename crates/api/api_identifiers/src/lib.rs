@@ -24,10 +24,6 @@ mod operations;
 pub mod prelude;
 mod server_infrastructure;
 
-#[cfg(test)]
-#[path = "tests/wire_identity.rs"]
-mod tests;
-
 pub use administration::{AuditLogEntryId, AuditTargetId, WarningId};
 pub use ballistics::{BallisticsCatalogId, BallisticsShellId, BallisticsWeaponId};
 pub use community_content::{

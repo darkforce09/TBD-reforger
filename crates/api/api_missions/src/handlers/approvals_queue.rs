@@ -250,7 +250,3 @@ pub async fn reject_mission(
     transaction.commit().await?;
     Ok(Json(decided))
 }
-
-#[cfg(test)]
-#[path = "tests/approvals_queue.rs"]
-mod tests;

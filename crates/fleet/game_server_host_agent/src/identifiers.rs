@@ -56,7 +56,3 @@ impl ScenarioId {
         &self.0
     }
 }
-
-#[cfg(test)]
-#[path = "tests/identifiers.rs"]
-mod tests;

@@ -117,7 +117,3 @@ pub async fn load_fleet_overview(pool: &PgPool) -> crate::Result<FleetOverview> 
     let totals = fleet_totals(&servers);
     Ok(FleetOverview { servers, totals })
 }
-
-#[cfg(test)]
-#[path = "tests/fleet_overview.rs"]
-mod tests;

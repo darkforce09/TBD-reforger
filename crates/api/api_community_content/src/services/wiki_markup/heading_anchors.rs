@@ -59,7 +59,3 @@ impl HeadingAnchors {
         candidate
     }
 }
-
-#[cfg(test)]
-#[path = "tests/heading_anchors.rs"]
-mod tests;

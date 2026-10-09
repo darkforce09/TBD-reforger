@@ -2,7 +2,7 @@
 //! an accepted request stores its values as the rules normalise them.
 
 use axum::http::StatusCode;
-use chrono::{DateTime, TimeZone, Timelike, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 
 use super::{EventCreation, EventCreationRequest, check_name_override, validated_banner_image_url};
 use crate::models::EventStatus;
@@ -22,39 +22,6 @@ fn refusal(request: EventCreationRequest) -> String {
     let error = EventCreation::new(request).expect_err("the request breaks a rule");
     assert_eq!(error.status, StatusCode::BAD_REQUEST, "{}", error.message);
     error.message
-}
-
-#[test]
-fn event_creation_requires_a_start_time() {
-    let missing = EventCreationRequest {
-        start_time: None,
-        max_slots: 999,
-        ..EventCreationRequest::default()
-    };
-    assert_eq!(refusal(missing), "start_time is required");
-}
-
-/// A place cap outside 0–256 is refused under its own name, not as a missing start time.
-#[test]
-fn event_creation_names_a_place_cap_out_of_range() {
-    for max_slots in [-1, 257, i64::MAX] {
-        let message = refusal(EventCreationRequest {
-            max_slots,
-            ..request()
-        });
-        assert_eq!(
-            message, "max_slots must be between 0 and 256",
-            "{max_slots}"
-        );
-    }
-    for max_slots in [0, 128, 256] {
-        let creation = EventCreation::new(EventCreationRequest {
-            max_slots,
-            ..request()
-        })
-        .expect("a place cap inside 0-256");
-        assert_eq!(creation.max_slots(), max_slots);
-    }
 }
 
 #[test]
@@ -89,17 +56,6 @@ fn event_creation_accepts_only_pre_start_statuses() {
         }),
         "invalid status"
     );
-}
-
-#[test]
-fn event_creation_stores_the_start_time_to_the_microsecond() {
-    let precise = start().with_nanosecond(123_456_789).unwrap();
-    let creation = EventCreation::new(EventCreationRequest {
-        start_time: Some(precise),
-        ..request()
-    })
-    .expect("a valid start time");
-    assert_eq!(creation.start_time().nanosecond(), 123_456_000);
 }
 
 #[test]

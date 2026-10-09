@@ -8,8 +8,7 @@ honouring its `Retry-After` within a bound.
 ```text
 crates/api/api_http_layer/src/http_client/
 ├── mod.rs           the module tree
-├── retry_on_429.rs  `send_with_retry_on_429`: resends a request while the answer is 429
-└── tests/           unit tests for the `Retry-After` parse and its clamp
+└── retry_on_429.rs  `send_with_retry_on_429`: resends a request while the answer is 429
 ```
 
 ## How it works

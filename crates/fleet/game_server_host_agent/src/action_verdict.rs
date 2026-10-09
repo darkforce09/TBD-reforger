@@ -73,7 +73,3 @@ fn bounded_failure_reason(reason: &str) -> String {
     }
     format!("{}{TRUNCATION_MARK}", reason[..end].trim_end())
 }
-
-#[cfg(test)]
-#[path = "tests/action_verdict.rs"]
-mod tests;

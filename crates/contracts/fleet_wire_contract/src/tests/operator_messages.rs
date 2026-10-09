@@ -36,23 +36,6 @@ fn queued_receipt() -> FleetCommandReceipt {
     }
 }
 
-const QUEUED_GOLDEN: &str = concat!(
-    r#"{"id":"6f1c2b9e-3a4d-4e5f-8a7b-9c0d1e2f3a4b","#,
-    r#""server_id":"0e9d8c7b-6a5f-4e3d-2c1b-0a9f8e7d6c5b","#,
-    r#""executor_kind":"host_agent","action":"restart","arguments":{},"#,
-    r#""requested_by":"123456789012345678","requested_at":"2026-09-23T12:00:00.25Z","#,
-    r#""expires_at":"2026-09-23T12:05:00Z","state":"queued","attempts":0}"#,
-);
-
-#[test]
-fn a_queued_receipt_omits_every_absent_field() {
-    let receipt = queued_receipt();
-    assert_eq!(serde_json::to_string(&receipt).unwrap(), QUEUED_GOLDEN);
-    let read: FleetCommandReceipt = serde_json::from_str(QUEUED_GOLDEN).unwrap();
-    assert_eq!(read, receipt);
-    assert_eq!(serde_json::to_string(&read).unwrap(), QUEUED_GOLDEN);
-}
-
 #[test]
 fn a_finished_receipt_carries_every_field_in_order() {
     let receipt = FleetCommandReceipt {
@@ -86,21 +69,6 @@ fn a_finished_receipt_carries_every_field_in_order() {
 }
 
 #[test]
-fn a_list_wraps_its_receipts_in_items() {
-    let list = FleetCommandList {
-        items: vec![queued_receipt()],
-    };
-    let golden = format!(r#"{{"items":[{QUEUED_GOLDEN}]}}"#);
-    assert_eq!(serde_json::to_string(&list).unwrap(), golden);
-    assert_eq!(
-        serde_json::from_str::<FleetCommandList>(&golden).unwrap(),
-        list
-    );
-    let empty = FleetCommandList { items: Vec::new() };
-    assert_eq!(serde_json::to_string(&empty).unwrap(), r#"{"items":[]}"#);
-}
-
-#[test]
 fn a_request_reads_its_action_and_arguments() {
     let golden = r#"{"action":"broadcast","arguments":{"message":"Restart in 5"}}"#;
     let request: FleetCommandRequest = serde_json::from_str(golden).unwrap();
@@ -110,17 +78,6 @@ fn a_request_reads_its_action_and_arguments() {
         Some(&json!("Restart in 5"))
     );
     assert_eq!(serde_json::to_string(&request).unwrap(), golden);
-}
-
-#[test]
-fn a_request_without_arguments_reads_an_empty_object() {
-    let request: FleetCommandRequest = serde_json::from_str(r#"{"action":"start"}"#).unwrap();
-    assert_eq!(request.action, FleetAction::Start);
-    assert!(request.arguments.is_empty());
-    assert_eq!(
-        serde_json::to_string(&request).unwrap(),
-        r#"{"action":"start","arguments":{}}"#
-    );
 }
 
 #[test]

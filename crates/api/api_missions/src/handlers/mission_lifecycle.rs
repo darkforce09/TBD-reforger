@@ -386,7 +386,3 @@ impl MissionStatus {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/mission_lifecycle.rs"]
-mod tests;

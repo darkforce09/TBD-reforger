@@ -199,7 +199,3 @@ pub async fn metrics_scrape(reg: &Registry, pool: &PgPool) -> Response {
     });
     (StatusCode::OK, [(header::CONTENT_TYPE, CONTENT_TYPE)], body).into_response()
 }
-
-#[cfg(test)]
-#[path = "tests/metrics_exposition.rs"]
-mod tests;

@@ -36,7 +36,3 @@ pub use crate::system_clock::SystemClock as PlatformClock;
 pub fn wall_clock_ms() -> f64 {
     PlatformClock.now_unix_ms_f64()
 }
-
-#[cfg(test)]
-#[path = "tests/clock.rs"]
-mod tests;

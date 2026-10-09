@@ -204,7 +204,3 @@ pub async fn ingest_server_status(
 
     Ok(Json(json!({ "ok": true })))
 }
-
-#[cfg(test)]
-#[path = "tests/server_heartbeat.rs"]
-mod tests;

@@ -10,8 +10,7 @@ of it.
 crates/api/api_state/src/
 ├── application_state.rs  `AppState`: the pool, config, token manager, hub, limiters, injected services, metrics registry
 ├── lib.rs                the crate root: module header, `mod` lines and the re-export of `AppState`
-├── prelude.rs            `AppState` for glob import
-└── tests/                the pin that the durable strict tier matches the in-memory strict limiter
+└── prelude.rs            `AppState` for glob import
 ```
 
 ## How it works
@@ -37,4 +36,4 @@ never name `AppState`.
 - Used by: the API application (`crates/api/api_server`): its composition root, which builds the state, the
   router, every domain handler, the background workers and the integration suites.
 - Rules: the state names no domain and no concrete session authority; the strict limiter's
-  numbers equal the durable strict tier's (`tests/application_state.rs`).
+  numbers equal the durable strict tier's.

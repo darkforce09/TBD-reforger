@@ -123,7 +123,3 @@ pub fn pool_options(cfg: &DbPoolConfig) -> PgPoolOptions {
         .max_lifetime(Duration::from_secs(cfg.max_lifetime_secs))
         .acquire_timeout(Duration::from_secs(cfg.acquire_timeout_secs))
 }
-
-#[cfg(test)]
-#[path = "tests/connection_pool.rs"]
-mod tests;

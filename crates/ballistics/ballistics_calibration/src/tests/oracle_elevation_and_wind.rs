@@ -10,8 +10,7 @@
 //! limit, so the inversion searches the limits widened by the 1-mil tolerance. A sample on the
 //! low-angle branch (a target 100 m up, fired at 45° or 55°) has no low-angle answer from a
 //! high-angle solver: it must solve to the steeper twin that lands on the same point, never to a
-//! flatter elevation or a shorter flight. One test per shell keeps each sweep a few hundred
-//! solves.
+//! flatter elevation or a shorter flight.
 
 use std::sync::OnceLock;
 
@@ -225,82 +224,23 @@ fn invert_shell_samples(shell_id: &str) -> Inversion {
     inversion
 }
 
-/// Every selected sample of `shell_id` inverts within tolerance, and the shell has samples on
-/// the high-angle branch.
-fn assert_shell_inverts(shell_id: &str) {
-    let inversion = invert_shell_samples(shell_id);
-    assert!(
-        inversion.failures.is_empty(),
-        "{} of {} samples fail, first: {:#?}",
-        inversion.failures.len(),
-        inversion.high_branch + inversion.low_branch,
-        &inversion.failures[..inversion.failures.len().min(20)]
-    );
-    assert!(
-        inversion.high_branch > 0,
-        "shell {shell_id} has no high-angle sample with a height or a wind"
-    );
-}
-
+/// Every selected sample of every catalog shell inverts within tolerance, and each shell has
+/// samples on the high-angle branch.
 #[test]
-fn oracle_samples_of_m821_invert_to_the_launch_elevation() {
-    assert_shell_inverts("m821");
-}
-
-#[test]
-fn oracle_samples_of_m819_invert_to_the_launch_elevation() {
-    assert_shell_inverts("m819");
-}
-
-#[test]
-fn oracle_samples_of_m853a1_invert_to_the_launch_elevation() {
-    assert_shell_inverts("m853a1");
-}
-
-#[test]
-fn oracle_samples_of_m879_invert_to_the_launch_elevation() {
-    assert_shell_inverts("m879");
-}
-
-#[test]
-fn oracle_samples_of_o832du_invert_to_the_launch_elevation() {
-    assert_shell_inverts("o832du");
-}
-
-#[test]
-fn oracle_samples_of_d832du_invert_to_the_launch_elevation() {
-    assert_shell_inverts("d832du");
-}
-
-#[test]
-fn oracle_samples_of_s832s_invert_to_the_launch_elevation() {
-    assert_shell_inverts("s832s");
-}
-
-#[test]
-fn the_inverted_shells_are_every_catalog_shell_and_every_selected_sample() {
-    let tested = [
-        "m821", "m819", "m853a1", "m879", "o832du", "d832du", "s832s",
-    ];
-    let mut catalog_shells: Vec<&str> = catalog()
-        .shells
-        .iter()
-        .map(|shell| shell.shell_id.as_str())
-        .collect();
-    catalog_shells.sort_unstable();
-    let mut tested_sorted = tested.to_vec();
-    tested_sorted.sort_unstable();
-    assert_eq!(catalog_shells, tested_sorted);
-    let selected = bundle()
-        .oracle_samples
-        .iter()
-        .filter(|sample| sample.kind == OracleSampleKind::Simulation)
-        .filter(|sample| {
-            let inputs = SimulationInputs::deserialize(&sample.inputs)
-                .expect("a simulation sample carries its launch");
-            inputs.target_height_m != 0.0 || inputs.wind_speed_m_s != 0.0
-        })
-        .filter(|sample| !tested.contains(&sample.shell_id.as_str()))
-        .count();
-    assert_eq!(selected, 0, "samples of a shell no test inverts");
+fn oracle_samples_of_every_shell_invert_to_the_launch_elevation() {
+    for shell in &catalog().shells {
+        let shell_id = shell.shell_id.as_str();
+        let inversion = invert_shell_samples(shell_id);
+        assert!(
+            inversion.failures.is_empty(),
+            "{shell_id}: {} of {} samples fail, first: {:#?}",
+            inversion.failures.len(),
+            inversion.high_branch + inversion.low_branch,
+            &inversion.failures[..inversion.failures.len().min(20)]
+        );
+        assert!(
+            inversion.high_branch > 0,
+            "shell {shell_id} has no high-angle sample with a height or a wind"
+        );
+    }
 }

@@ -2,33 +2,23 @@ use super::*;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+/// Positive seconds parse (whitespace trimmed); unset, zero, negative and garbage fall back
+/// to the default interval.
 #[test]
-fn resync_interval_default_when_unset() {
-    assert_eq!(
-        role_resync_interval_from(None),
-        Duration::from_secs(DEFAULT_ROLE_RESYNC_SECS)
-    );
-}
-
-#[test]
-fn resync_interval_parses_positive_secs() {
-    assert_eq!(
-        role_resync_interval_from(Some("30")),
-        Duration::from_secs(30)
-    );
-    assert_eq!(
-        role_resync_interval_from(Some(" 120 ")),
-        Duration::from_secs(120)
-    );
-}
-
-#[test]
-fn resync_interval_rejects_zero_negative_garbage() {
-    let def = Duration::from_secs(DEFAULT_ROLE_RESYNC_SECS);
-    assert_eq!(role_resync_interval_from(Some("0")), def);
-    assert_eq!(role_resync_interval_from(Some("-1")), def);
-    assert_eq!(role_resync_interval_from(Some("nope")), def);
-    assert_eq!(role_resync_interval_from(Some("")), def);
+fn resync_interval_parses_positive_seconds_and_falls_back_otherwise() {
+    let default = Duration::from_secs(DEFAULT_ROLE_RESYNC_SECS);
+    let cases = [
+        (None, default),
+        (Some("30"), Duration::from_secs(30)),
+        (Some(" 120 "), Duration::from_secs(120)),
+        (Some("0"), default),
+        (Some("-1"), default),
+        (Some("nope"), default),
+        (Some(""), default),
+    ];
+    for (raw, expected) in cases {
+        assert_eq!(role_resync_interval_from(raw), expected, "{raw:?}");
+    }
 }
 
 /// Perturbation: a stub resync is invoked on boot and again after each interval

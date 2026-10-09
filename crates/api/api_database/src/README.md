@@ -13,8 +13,7 @@ crates/api/api_database/src/
 ├── error.rs            `Error`: a pool, migration or pool-setting failure, and `Result`
 ├── lib.rs              the crate root: module header, `mod` lines and the re-exports
 ├── postgres_errors.rs  SQLSTATE predicates: unique and foreign-key violations, the violated constraint
-├── prelude.rs          the three lifecycle functions and the two violation predicates
-└── tests/              unit tests for the pool settings and the connect guard
+└── prelude.rs          the three lifecycle functions and the two violation predicates
 ```
 
 ## How it works
@@ -52,5 +51,4 @@ any other `sqlx::Error` becomes the 500 of `api_foundation::error_handling`.
   - the integration suites under `crates/api/api_server/tests/`, which `connect`, `migrate` and
     `connect_lazy`.
 - Rules: the pool settings are read here alone and never through `Config`; a malformed pool
-  setting stops startup instead of falling back (`connect_refuses_a_non_numeric_pool_var_naming_it`
-  in `tests/connection.rs`); a binary applies exactly the migrations it was compiled with.
+  setting stops startup instead of falling back; a binary applies exactly the migrations it was compiled with.

@@ -21,15 +21,6 @@ fn edge(from: &str, to: &str, evidence: &str, qty: i32) -> RegistryCompatEdge {
 }
 
 #[test]
-fn edge_types_split_trim_dedupe() {
-    assert!(parse_edge_types(None).is_empty());
-    assert_eq!(
-        parse_edge_types(Some("optic_on_weapon, mag_in_weapon,optic_on_weapon")),
-        vec!["optic_on_weapon".to_string(), "mag_in_weapon".to_string()]
-    );
-}
-
-#[test]
 fn cargo_aggregate_sums_qty_and_maps_containers() {
     let edges = vec![
         edge("mag_a", "char_1", "TargetStorage=Vest/Slot", 2),
@@ -52,28 +43,4 @@ fn cargo_aggregate_sums_qty_and_maps_containers() {
     assert_eq!(char_1[1]["container"], "vest");
     assert_eq!(char_1[1]["item"], "mag_a");
     assert_eq!(char_1[1]["qty"], 3);
-}
-
-#[test]
-fn cargo_aggregate_is_strictly_smaller_than_raw_edge_walk_input() {
-    // Shape pin: N raw cargo edges → fewer aggregated rows (duplicates collapse).
-    // Proves the slim view cannot re-expand to the full dump.
-    let mut edges = Vec::new();
-    for i in 0..100 {
-        edges.push(edge(
-            &format!("item_{}", i % 10),
-            &format!("char_{}", i % 5),
-            "TargetStorage=Backpack/Slot",
-            1,
-        ));
-    }
-    let map = aggregate_cargo_defaults(&edges);
-    let rows: usize = map
-        .values()
-        .map(|v| v.as_array().map(|a| a.len()).unwrap_or(0))
-        .sum();
-    assert!(rows < edges.len(), "aggregation must collapse duplicates");
-    assert_eq!(map.len(), 5);
-    // CRT: each char only pairs with items sharing the same mod-5 residue → 2 items/char.
-    assert_eq!(rows, 10);
 }

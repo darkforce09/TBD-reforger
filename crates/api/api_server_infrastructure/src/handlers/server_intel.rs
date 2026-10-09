@@ -260,7 +260,3 @@ pub async fn get_server_status(
     };
     Ok(Json(server_intel(&state.pool, server).await?))
 }
-
-#[cfg(test)]
-#[path = "tests/server_intel.rs"]
-mod tests;

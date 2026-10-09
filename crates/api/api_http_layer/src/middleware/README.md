@@ -103,9 +103,7 @@ reconnects with `Last-Event-ID` as after any end of stream.
     router mounts them, below the layer (`the_exempt_mount_is_registered_below_the_rate_limit_layer`
     in `crates/api/api_server/src/tests/router.rs`, and
     `crates/api/api_server/tests/map_assets_rate_limit_exemption.rs`);
-  - the durable tier fails closed, and its numbers equal the in-memory strict tier's
-    (`durable_strict_policy_matches_the_in_memory_strict_policy` in
-    `crates/api/api_state/src/tests/application_state.rs`);
+  - the durable tier fails closed, and its numbers equal the in-memory strict tier's;
   - `RATE_LIMIT_BUCKETS_DDL` is migration `0021` verbatim
     (`migration_0021_is_the_ddl_constant_verbatim` in
     `crates/api/api_server/tests/durable_rate_limit.rs`);

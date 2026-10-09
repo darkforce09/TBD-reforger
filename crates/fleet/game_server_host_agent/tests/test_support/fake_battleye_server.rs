@@ -101,13 +101,6 @@ impl FakeBattlEyeServer {
         self.state().faults = faults;
     }
 
-    /// Answers every later `command` with `reply`.
-    pub(crate) fn set_reply(&self, command: &str, reply: &str) {
-        self.state()
-            .scripted_replies
-            .insert(command.to_owned(), reply.to_owned());
-    }
-
     /// Forgets every login, as a restarted game server does.
     pub(crate) fn restart(&self) {
         self.state().sessions.clear();
@@ -115,10 +108,6 @@ impl FakeBattlEyeServer {
 
     pub(crate) fn login_attempts(&self) -> usize {
         self.state().login_attempts
-    }
-
-    pub(crate) fn received_commands(&self) -> Vec<ReceivedCommand> {
-        self.state().received_commands.clone()
     }
 
     /// The sequence numbers of every transmission of `text`.
@@ -133,24 +122,6 @@ impl FakeBattlEyeServer {
 
     pub(crate) fn executed_commands(&self) -> Vec<String> {
         self.state().executed_commands.clone()
-    }
-
-    pub(crate) fn acknowledgements(&self) -> Vec<u8> {
-        self.state().acknowledgements.clone()
-    }
-
-    /// Sends a server message to every logged-in client.
-    pub(crate) async fn send_server_message(&self, sequence: u8, text: &str) {
-        let clients: Vec<SocketAddr> = self.state().sessions.keys().copied().collect();
-        let mut payload = vec![sequence];
-        payload.extend_from_slice(text.as_bytes());
-        let datagram = server_datagram(SERVER_MESSAGE, &payload);
-        for client in clients {
-            self.socket
-                .send_to(&datagram, client)
-                .await
-                .expect("a loopback send");
-        }
     }
 
     fn state(&self) -> MutexGuard<'_, ServerState> {

@@ -76,7 +76,3 @@ pub fn connect_lazy(database_url: &str) -> Result<PgPool, sqlx::Error> {
 pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
     sqlx::migrate!("./migrations").run(pool).await
 }
-
-#[cfg(test)]
-#[path = "tests/connection.rs"]
-mod tests;

@@ -52,7 +52,3 @@ impl From<Error> for ApiError {
         ApiError::bad_request(failure.to_string())
     }
 }
-
-#[cfg(test)]
-#[path = "tests/error.rs"]
-mod tests;

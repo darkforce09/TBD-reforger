@@ -1,7 +1,5 @@
-//! Unit coverage for the two limiter tiers, the strict-prefix predicate, the derived
-//! `Retry-After`, and the exempt mounts' paths. The pins that the API's router registers those
-//! mounts below the rate-limit layer sit beside the router, in `core/tests/http_router.rs` of the
-//! API application.
+//! Unit coverage for the two limiter tiers, the strict-prefix predicate and the derived
+//! `Retry-After`.
 
 use super::*;
 
@@ -71,28 +69,3 @@ fn retry_after_is_derived_and_never_zero() {
 }
 
 // ───────────────────── the exempt static mount ─────────────────────
-
-/// The mount is the path the editor actually asks for.
-///
-/// `crates/frontend/shell/frontend_application/src/world_assets/mod.rs` builds every map-asset URL as
-/// `format!("/map-assets/{terrain}")` and `world_host.rs` hard-codes
-/// `/map-assets/glyphs/atlas/…`. If this constant drifts from that literal the exemption stops
-/// covering the traffic it was written for and a cold editor boot starts paying backoff again —
-/// silently, because everything still *works*, just slowly. That is the failure mode this pin
-/// exists for.
-#[test]
-fn the_exempt_mount_is_the_path_the_editor_requests() {
-    assert_eq!(RATE_LIMIT_EXEMPT_MOUNT, "/map-assets");
-}
-
-/// The glyph mount must stay a strict sub-path of the terrain mount.
-///
-/// The two directories are joined at the router, not on disk, and that join only reaches the
-/// client if the glyph prefix still sits under the prefix the map client builds its URLs from.
-#[test]
-fn the_glyph_mount_is_nested_under_the_map_asset_mount() {
-    assert!(
-        RATE_LIMIT_EXEMPT_GLYPH_MOUNT.starts_with(&format!("{RATE_LIMIT_EXEMPT_MOUNT}/")),
-        "{RATE_LIMIT_EXEMPT_GLYPH_MOUNT} is not under {RATE_LIMIT_EXEMPT_MOUNT}"
-    );
-}

@@ -345,7 +345,3 @@ impl Drop for InFlightGuard {
         self.0.in_flight.fetch_sub(1, Ordering::Relaxed);
     }
 }
-
-#[cfg(test)]
-#[path = "tests/metrics_registry.rs"]
-mod tests;

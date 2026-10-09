@@ -267,7 +267,3 @@ pub async fn delete_event(
     tx.commit().await?;
     Ok(StatusCode::NO_CONTENT)
 }
-
-#[cfg(test)]
-#[path = "tests/event_create_update.rs"]
-mod tests;

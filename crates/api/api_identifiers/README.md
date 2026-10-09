@@ -10,7 +10,7 @@ their JSON, their text and their SQL binds stay those of the bare `Uuid`, `Strin
 ```text
 crates/api/api_identifiers/
 ├── Cargo.toml  the package: `newtype_ids` and sqlx (`postgres`, `uuid`, `macros`), layout tier 1
-└── src/        the ids grouped by owning domain, the prelude and the identity tests
+└── src/        the ids grouped by owning domain and the prelude
 ```
 
 ## How it works
@@ -61,12 +61,11 @@ Three kinds of text id carry more than a key:
 Run from the repository root:
 
 ```bash
-cargo test -p api_identifiers   # the JSON, text and Postgres type identity of every id
+cargo check -p api_identifiers   # the id declarations compile
 ```
 
 To add an id, declare it with its `///` doc naming the table it keys in the module of the domain
-that owns the table, export it from `lib.rs` and `prelude.rs`, and add its line to the identity
-tests in `src/tests/wire_identity.rs`.
+that owns the table, export it from `lib.rs` and `prelude.rs`.
 
 ## Configuration
 
@@ -91,9 +90,7 @@ No features and no environment variables.
 - Used by: `api_configuration` (the Discord client and guild ids); the API (`crates/api/api_server`): every
   domain crate, the kernel crates (sessions included), `api_background_workers`, the API's
   binaries, and the integration tests under `crates/api/api_server/tests`.
-- Rules: every id is serde-transparent and every SQL-bound id sqlx-transparent
-  (`src/tests/wire_identity.rs` compares each with its bare value: JSON, text, and for the SQL-bound
-  ids the Postgres type and array type); an API crate's public `id` / `*_id`
+- Rules: every id is serde-transparent and every SQL-bound id sqlx-transparent; an API crate's public `id` / `*_id`
   field or function parameter takes an id from this crate, never a bare primitive
   (`cargo xtask verify crate-anatomy`); API category, so it depends on foundation crates only
   (`cargo xtask verify crate-tiers`).

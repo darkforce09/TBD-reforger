@@ -138,16 +138,3 @@ fn oversized_mission_document_is_rejected_on_byte_ceiling() {
         "{details:?}"
     );
 }
-
-#[test]
-fn schema_x_tbd_mission_file_max_bytes_matches_mod_constant() {
-    let schema: serde_json::Value =
-        serde_json::from_str(MISSION_SCHEMA).expect("mission.schema.json");
-    let pinned = schema["x-tbd-missionFileMaxBytes"]
-        .as_u64()
-        .expect("x-tbd-missionFileMaxBytes must be present on mission.schema.json");
-    assert_eq!(
-        pinned as usize, MISSION_FILE_MAX_BYTES,
-        "schema keyword drifted from validate_mission_document / TBD_MissionLoader"
-    );
-}

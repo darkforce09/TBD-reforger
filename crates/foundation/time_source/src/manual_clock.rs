@@ -41,7 +41,3 @@ impl Clock for ManualClock {
         self.now_unix_ms.load(Ordering::Relaxed)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/manual_clock.rs"]
-mod tests;

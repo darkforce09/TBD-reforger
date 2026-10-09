@@ -16,7 +16,7 @@ crates/api/api_match_telemetry/src/services/
 ├── mod.rs                   the module tree
 ├── registered_match.rs      the server-scoped lookup that locks the registered match's row
 ├── results_revision.rs      the pure decision a revision meets against the stored match
-└── tests/                   unit tests for the parsers, the results ingest and the decision
+└── tests/                   unit tests for the parsers and the decision
 ```
 
 ## How it works

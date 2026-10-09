@@ -28,7 +28,6 @@ crates/api/api_operations/src/handlers/
 ├── orbat_view.rs                   an event mission's ORBAT, and the member directory for seating
 ├── slot_assignment.rs              leaders seat and clear members and hold or release whole squads
 ├── slot_registration.rs            a member reserves a seat or a place, or withdraws
-├── tests/                          unit tests for event writes, attachment, the roster and paging
 └── waitlist_promotion.rs           a leader asks for the deterministic promotion of waiting members
 ```
 
@@ -89,9 +88,7 @@ server.
   `mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
-  roster never compiles or pairs at read time
-  (`roster_reads_the_deployed_artifact_bindings_and_never_compiles` in
-  `tests/game_runtime_roster.rs`).
+  roster never compiles or pairs at read time.
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
   `details.code = request_too_large` over the body limit, 415 without a JSON content type, and 400
   with the decoder's message (which names the failing field) otherwise.

@@ -18,8 +18,5 @@ targets = "any"
 [dependencies]
 newtype_ids = { workspace = true }
 
-[dev-dependencies]
-serde_json = { workspace = true }
-
 [lints]
 workspace = true

@@ -21,7 +21,3 @@ pub fn message_with_causes(error: &dyn Error) -> String {
     }
     rendered
 }
-
-#[cfg(test)]
-#[path = "tests/error_causes.rs"]
-mod tests;

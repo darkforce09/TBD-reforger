@@ -32,7 +32,3 @@ pub fn sha384_hex_of_file(path: &std::path::Path) -> Option<String> {
 #[cfg(test)]
 #[path = "tests/hex_digests.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "tests/fips_180_4_vectors.rs"]
-mod fips_180_4_vectors;

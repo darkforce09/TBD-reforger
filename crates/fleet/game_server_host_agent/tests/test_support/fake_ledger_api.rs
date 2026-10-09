@@ -151,21 +151,12 @@ impl FakeLedgerApi {
         command_id
     }
 
-    pub(crate) fn fail_claims(&self, failures: &[Failure]) {
-        self.log.lock().claim_failures.extend(failures);
-    }
-
     pub(crate) fn fail_executing_reports(&self, failures: &[Failure]) {
         self.log.lock().executing_failures.extend(failures);
     }
 
     pub(crate) fn fail_result_reports(&self, failures: &[Failure]) {
         self.log.lock().result_failures.extend(failures);
-    }
-
-    /// Runs `observer` as each `executing` report arrives and logs what it returns.
-    pub(crate) fn observe_on_executing(&self, observer: impl Fn() -> String + Send + 'static) {
-        self.log.lock().executing_observer = Some(Box::new(observer));
     }
 
     pub(crate) fn events(&self) -> Vec<LedgerEvent> {

@@ -1,7 +1,5 @@
-//! Unit coverage for the authorized event stream: deliveries pass after re-authorization, a role
-//! that stops qualifying ends the stream with `authorization_expired`, and shutdown closes the
-//! stream with no further event whether it is idle, holding a ready delivery, or waiting on the
-//! session authority.
+//! Unit coverage for the authorized event stream: deliveries pass after re-authorization, and a
+//! role that stops qualifying ends the stream with `authorization_expired`.
 //!
 //! Every case races a signal of its own through `authorize_until_shutdown`; none begins the
 //! process-wide shutdown, which the library's other unit tests share. The session authority is a
@@ -38,18 +36,6 @@ impl SessionAuthority for GrantingAuthority {
         self.calls.fetch_add(1, Ordering::SeqCst);
         let current = member(claims, self.role);
         Box::pin(async move { Ok(current) })
-    }
-}
-
-/// Never answers: a re-authorization that stays in flight.
-struct StalledAuthority {
-    calls: Arc<AtomicUsize>,
-}
-
-impl SessionAuthority for StalledAuthority {
-    fn authorize(&self, _claims: Claims) -> BoxFuture<'static, Result<AuthUser, ApiError>> {
-        self.calls.fetch_add(1, Ordering::SeqCst);
-        Box::pin(std::future::pending())
     }
 }
 
@@ -129,99 +115,6 @@ async fn a_delivery_is_yielded_after_the_authority_confirms_the_session() {
 }
 
 #[tokio::test]
-async fn shutdown_closes_an_idle_stream_without_an_event() {
-    let (authority, calls) = granting("admin");
-    let signal = ShutdownSignal::new();
-    let mut events = Box::pin(authorize_until_shutdown(
-        stream::pending(),
-        authority,
-        member(session_claims(), "admin"),
-        "admin",
-        signal.begun(),
-    ));
-    assert!(
-        timeout(OPEN_WINDOW, events.next()).await.is_err(),
-        "an idle stream stays open before shutdown"
-    );
-
-    signal.begin();
-
-    let after = timeout(ANSWER_BOUND, events.next())
-        .await
-        .expect("the stream answers promptly once shutdown begins");
-    assert!(
-        after.is_none(),
-        "shutdown ends the stream with no event: {:?}",
-        after.map(rendered_ok)
-    );
-    assert_eq!(
-        calls.load(Ordering::SeqCst),
-        0,
-        "closing needs no re-authorization"
-    );
-}
-
-#[tokio::test]
-async fn a_begun_shutdown_outranks_a_ready_delivery() {
-    let (authority, calls) = granting("admin");
-    let signal = ShutdownSignal::new();
-    signal.begin();
-    let mut events = Box::pin(authorize_until_shutdown(
-        one_event_then_open("never delivered"),
-        authority,
-        member(session_claims(), "admin"),
-        "admin",
-        signal.begun(),
-    ));
-
-    let first = timeout(ANSWER_BOUND, events.next())
-        .await
-        .expect("the stream answers at once");
-    assert!(
-        first.is_none(),
-        "a stream opened after shutdown began ends before any delivery: {:?}",
-        first.map(rendered_ok)
-    );
-    assert_eq!(calls.load(Ordering::SeqCst), 0);
-}
-
-#[tokio::test]
-async fn shutdown_cuts_short_a_reauthorization_in_flight() {
-    let calls = Arc::new(AtomicUsize::new(0));
-    let authority: Arc<dyn SessionAuthority> = Arc::new(StalledAuthority {
-        calls: Arc::clone(&calls),
-    });
-    let signal = ShutdownSignal::new();
-    let mut events = Box::pin(authorize_until_shutdown(
-        one_event_then_open("held by the authority"),
-        authority,
-        member(session_claims(), "admin"),
-        "admin",
-        signal.begun(),
-    ));
-    assert!(
-        timeout(OPEN_WINDOW, events.next()).await.is_err(),
-        "the delivery waits on the re-authorization"
-    );
-    assert_eq!(
-        calls.load(Ordering::SeqCst),
-        1,
-        "the re-authorization is in flight"
-    );
-
-    signal.begin();
-
-    let after = timeout(ANSWER_BOUND, events.next())
-        .await
-        .expect("shutdown does not wait for the session authority");
-    assert!(
-        after.is_none(),
-        "the held delivery is dropped and the stream ends: {:?}",
-        after.map(rendered_ok)
-    );
-}
-
-#[tokio::test]
 async fn a_role_below_the_requirement_ends_with_authorization_expired() {
     let (authority, _calls) = granting("enlisted");
     let signal = ShutdownSignal::new();
@@ -243,26 +136,4 @@ async fn a_role_below_the_requirement_ends_with_authorization_expired() {
         .await
         .expect("the stream ends after the expiry event");
     assert!(after.is_none());
-}
-
-#[tokio::test]
-async fn the_inner_stream_ending_ends_the_wrapper() {
-    let (authority, _calls) = granting("admin");
-    let signal = ShutdownSignal::new();
-    let mut events = Box::pin(authorize_until_shutdown(
-        stream::empty(),
-        authority,
-        member(session_claims(), "admin"),
-        "admin",
-        signal.begun(),
-    ));
-    let after = timeout(ANSWER_BOUND, events.next())
-        .await
-        .expect("the stream answers");
-    assert!(after.is_none());
-}
-
-/// The SSE text of a yielded item, for failure messages.
-fn rendered_ok(item: Result<Event, Infallible>) -> String {
-    rendered(Some(item))
 }

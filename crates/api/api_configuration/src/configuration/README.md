@@ -71,9 +71,7 @@ resolution in `api_http_layer::middleware` is the only reader.
 - Rules: a variable is added together with the code that reads it, so `Config` holds no setting
   that nothing uses; a value that is set but unusable fails boot instead of falling back to a
   default, except the two numeric settings named above; a development default is never relative
-  to the working directory (`tests/development_directories.rs`); no test configuration writes into
-  the checkout (`test_configs_keep_runtime_storage_out_of_the_checkout` in
-  `tests/configuration.rs`).
+  to the working directory; no test configuration writes into the checkout.
 
 ## Related documentation
 

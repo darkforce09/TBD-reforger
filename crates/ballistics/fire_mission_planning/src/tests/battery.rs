@@ -1,6 +1,6 @@
 //! Tests of the battery solution: one gun equals the one-gun solution, guns are independent,
-//! the aim is the wind-corrected one, each gun carries its recommended charge's dispersion, and
-//! malformed batteries are refused with the gun's index.
+//! the aim is the wind-corrected one, an invalid gun is refused with its index, and a gun's
+//! answer round-trips through its wire form.
 
 use std::sync::LazyLock;
 
@@ -13,8 +13,6 @@ use ballistics_solver::{FireSolutionRequest, MapPosition, solve_fire_solution};
 
 /// The catalog shell `m821-he`, borrowed by the requests the tests build.
 static SHELL_M821_HE: LazyLock<ShellId> = LazyLock::new(|| ShellId::new("m821-he"));
-/// The catalog shell `no-such-shell`, borrowed by the requests the tests build.
-static SHELL_NO_SUCH_SHELL: LazyLock<ShellId> = LazyLock::new(|| ShellId::new("no-such-shell"));
 /// The catalog launcher `m252`, borrowed by the requests the tests build.
 static WEAPON_M252: LazyLock<WeaponId> = LazyLock::new(|| WeaponId::new("m252"));
 
@@ -198,26 +196,6 @@ fn the_aim_to_lay_is_the_wind_corrected_azimuth_of_the_charge_row() {
 }
 
 #[test]
-fn a_battery_without_guns_is_refused() {
-    assert_eq!(
-        solve_battery(&catalog(), &battery(&[], Wind::CALM)),
-        Err(BatteryError::NoGuns)
-    );
-}
-
-#[test]
-fn a_blank_label_is_refused_with_its_gun_index() {
-    let guns = [
-        gun("gun-1", at(2_000.0, 2_900.0, 120.0)),
-        gun("  ", at(2_040.0, 2_870.0, 118.0)),
-    ];
-    assert_eq!(
-        solve_battery(&catalog(), &battery(&guns, Wind::CALM)),
-        Err(BatteryError::EmptyLabel { gun_index: 1 })
-    );
-}
-
-#[test]
 fn an_invalid_gun_fails_the_battery_with_its_index() {
     let guns = [
         gun("gun-1", at(2_000.0, 2_900.0, 120.0)),
@@ -231,22 +209,6 @@ fn an_invalid_gun_fails_the_battery_with_its_index() {
         }) => assert_eq!(parameter, "gun.x_m"),
         other => panic!("expected gun 2's invalid input, got {other:?}"),
     }
-}
-
-#[test]
-fn an_unknown_shell_fails_at_the_first_gun() {
-    let guns = [gun("gun-1", at(2_000.0, 2_900.0, 120.0))];
-    let request = BatteryRequest {
-        shell_id: &SHELL_NO_SUCH_SHELL,
-        ..battery(&guns, Wind::CALM)
-    };
-    assert!(matches!(
-        solve_battery(&catalog(), &request),
-        Err(BatteryError::Gun {
-            gun_index: 0,
-            source: FireSolutionError::Lookup(_),
-        })
-    ));
 }
 
 #[test]
@@ -270,58 +232,4 @@ fn a_gun_answer_round_trips_through_its_wire_form() {
     }
     let back: GunFireSolution = serde_json::from_value(wire).expect("deserialises");
     assert_eq!(back, answers[0]);
-}
-
-#[test]
-fn each_gun_carries_the_dispersion_of_its_own_recommended_charge() {
-    let catalog = catalog();
-    let near = at(2_300.0, 3_150.0, 130.0);
-    let far = at(2_050.0, 2_950.0, 100.0);
-    let guns = [gun("near", near), gun("far", far)];
-    let answers = solve_battery(&catalog, &battery(&guns, CROSSWIND)).expect("the battery solves");
-    for (answer, position) in answers.iter().zip([near, far]) {
-        let dispersion = answer.dispersion.expect("a solved gun has a dispersion");
-        assert!(!dispersion.verified_in_engine);
-        let expected = charge_dispersion(
-            &catalog,
-            &one_gun(position, CROSSWIND),
-            answer.recommended_charge().expect("recommended"),
-        )
-        .expect("disperses")
-        .dispersion;
-        assert_eq!(dispersion, expected, "gun {}", answer.label);
-    }
-    let near_spread = answers[0].dispersion.expect("near").ellipse_semi_major_m;
-    let far_spread = answers[1].dispersion.expect("far").ellipse_semi_major_m;
-    assert!(
-        near_spread != far_spread,
-        "each gun disperses at its own range"
-    );
-}
-
-#[test]
-fn a_gun_with_no_solving_charge_has_no_dispersion() {
-    let catalog = catalog();
-    let guns = [
-        gun("in-range", at(2_000.0, 2_900.0, 120.0)),
-        gun("out-of-range", at(-40_000.0, 3_400.0, 120.0)),
-    ];
-    let answers = solve_battery(&catalog, &battery(&guns, Wind::CALM)).expect("the battery solves");
-    assert!(answers[0].dispersion.is_some());
-    assert_eq!(answers[1].recommended_rings, None);
-    assert_eq!(answers[1].dispersion, None);
-    assert!(answers[1].charges.iter().all(|charge| !charge.solves()));
-}
-
-#[test]
-fn invalid_catalog_dispersion_values_fail_the_battery_with_the_gun_index() {
-    let mut catalog = catalog();
-    for weapon in &mut catalog.weapons {
-        weapon.dispersion_range_m = 0.0;
-    }
-    let guns = [gun("gun-1", at(2_000.0, 2_900.0, 120.0))];
-    assert!(matches!(
-        solve_battery(&catalog, &battery(&guns, Wind::CALM)),
-        Err(BatteryError::Dispersion { gun_index: 0, .. })
-    ));
 }

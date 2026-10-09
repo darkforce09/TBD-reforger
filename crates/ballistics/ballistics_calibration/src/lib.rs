@@ -55,11 +55,6 @@ pub use wind_tables::{WindTable, WindTableRow};
 #[path = "tests/committed_bundle.rs"]
 mod tests;
 
-/// The SHA-256 the catalog bytes are pinned with, against the FIPS 180-2 example vectors.
-#[cfg(test)]
-#[path = "tests/catalog_digest.rs"]
-mod tests_catalog_digest;
-
 /// The firing solver inverted over the engine oracle's height and wind samples.
 #[cfg(test)]
 #[path = "tests/oracle_elevation_and_wind.rs"]

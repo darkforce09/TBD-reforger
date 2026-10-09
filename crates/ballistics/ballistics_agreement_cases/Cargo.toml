@@ -25,8 +25,5 @@ newtype_ids = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order"] }
 libm = { workspace = true }
 
-[dev-dependencies]
-serde_json = { workspace = true, features = ["float_roundtrip", "preserve_order"] }
-
 [lints]
 workspace = true

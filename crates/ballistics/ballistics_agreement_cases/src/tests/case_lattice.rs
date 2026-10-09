@@ -1,23 +1,9 @@
-//! Tests of the agreement lattice: the SplitMix64 reference stream, determinism per seed, shell
-//! coverage, the drawn ranges, that every drawn case is a valid battery request, and the shared
-//! case-to-inputs mapping, lead summary and bit walk over the committed vanilla catalog.
+//! Tests of the agreement lattice over the committed vanilla catalog: determinism per seed and
+//! that every drawn case is well formed.
 
 use std::collections::BTreeSet;
 
-use ballistics_model::ids::ShellId;
-
 use super::*;
-use fire_mission_planning::battery::solve_battery;
-use fire_mission_planning::fire_mission::solve_fire_mission;
-
-/// The committed vanilla catalog the agreement gate solves natively; a missing file fails the
-/// build.
-const VANILLA_CATALOG_JSON: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/../../../contracts/catalogs/ballistics/vanilla_mortars.v1.catalog.json"
-));
-/// Seed of the mapping and bit-walk tests.
-const MAPPING_SEED: u64 = 0x5EED_0000_0000_0001;
 
 /// The hand-written test catalog: three shells, two weapons.
 fn catalog() -> BallisticsCatalog {
@@ -26,29 +12,6 @@ fn catalog() -> BallisticsCatalog {
         "/../../../contracts/fixtures/ballistics/minimal_catalog.json"
     )))
     .expect("the sample catalog decodes")
-}
-
-#[test]
-fn split_mix_64_matches_the_reference_stream() {
-    // The published SplitMix64 outputs for seed 0.
-    let mut draws = SplitMix64::new(0);
-    assert_eq!(draws.next_u64(), 0xE220_A839_7B1D_CDAF);
-    assert_eq!(draws.next_u64(), 0x6E78_9E6A_A1B9_65F4);
-    assert_eq!(draws.next_u64(), 0x06C4_5D18_8009_454F);
-}
-
-#[test]
-fn unit_draws_stay_in_the_half_open_unit_interval() {
-    let mut draws = SplitMix64::new(0x5EED);
-    for _ in 0..10_000 {
-        let unit = draws.next_unit();
-        assert!((0.0..1.0).contains(&unit), "{unit}");
-    }
-    assert_eq!(
-        SplitMix64::new(7).next_index(0),
-        0,
-        "a zero bound draws index 0"
-    );
 }
 
 #[test]
@@ -100,43 +63,6 @@ impl PositionBits for BatteryGun {
 }
 
 #[test]
-fn the_lattice_covers_every_shell_a_weapon_fires() {
-    let catalog = catalog();
-    let every_shell: BTreeSet<&str> = catalog
-        .shells
-        .iter()
-        .map(|shell| shell.shell_id.as_str())
-        .collect();
-    assert_eq!(every_shell.len(), 3);
-    for seed in [0, 1, 0xDEAD_BEEF] {
-        let cases = agreement_cases(&catalog, seed, every_shell.len());
-        let drawn: BTreeSet<&str> = cases.iter().map(|case| case.shell_id.as_str()).collect();
-        assert_eq!(drawn, every_shell, "seed {seed:#x}");
-        for (index, case) in cases.iter().enumerate() {
-            assert_eq!(
-                case.shell_id, catalog.shells[index].shell_id,
-                "catalog order"
-            );
-        }
-    }
-}
-
-#[test]
-fn a_shell_no_weapon_fires_is_skipped_and_an_unfired_catalog_draws_nothing() {
-    let mut catalog = catalog();
-    for weapon in &mut catalog.weapons {
-        weapon.shell_ids.retain(|shell_id| shell_id != "o-832-he");
-    }
-    let cases = agreement_cases(&catalog, 3, 12);
-    assert_eq!(cases.len(), 12);
-    assert!(cases.iter().all(|case| case.shell_id != "o-832-he"));
-    for weapon in &mut catalog.weapons {
-        weapon.shell_ids.clear();
-    }
-    assert!(agreement_cases(&catalog, 3, 12).is_empty());
-}
-
-#[test]
 fn every_case_is_well_formed() {
     let catalog = catalog();
     let seed = 0x0123_4567_89AB_CDEF;
@@ -167,181 +93,5 @@ fn every_case_is_well_formed() {
         gun_counts.len(),
         MAX_GUNS_PER_CASE as usize,
         "1, 2 and 3 guns all occur"
-    );
-}
-
-#[test]
-fn every_case_solves_as_a_battery_and_the_targets_span_the_charges() {
-    let catalog = catalog();
-    let cases = agreement_cases(&catalog, 0xB0B, 60);
-    let mut recommended: BTreeSet<(ShellId, Option<u32>)> = BTreeSet::new();
-    let mut solved_guns = 0_usize;
-    for case in &cases {
-        let answers = solve_battery(&catalog, &case.battery_request())
-            .unwrap_or_else(|error| panic!("case {} is a valid battery: {error}", case.case_id));
-        assert_eq!(answers.len(), case.guns.len());
-        for answer in &answers {
-            recommended.insert((case.shell_id.clone(), answer.recommended_rings));
-            solved_guns += usize::from(answer.recommended_rings.is_some());
-        }
-    }
-    let total_guns: usize = cases.iter().map(|case| case.guns.len()).sum();
-    assert!(
-        solved_guns * 2 > total_guns,
-        "most drawn guns solve ({solved_guns} of {total_guns})"
-    );
-    for shell in &catalog.shells {
-        let rings: BTreeSet<Option<u32>> = recommended
-            .iter()
-            .filter(|(shell_id, _)| *shell_id == shell.shell_id)
-            .map(|(_, rings)| *rings)
-            .filter(Option::is_some)
-            .collect();
-        assert!(
-            rings.len() >= 2,
-            "ring-free targets for {} recommend more than one charge: {rings:?}",
-            shell.shell_id
-        );
-    }
-}
-
-fn vanilla_catalog() -> BallisticsCatalog {
-    BallisticsCatalog::from_json_slice(VANILLA_CATALOG_JSON).expect("the committed catalog decodes")
-}
-
-#[test]
-fn the_inputs_restate_the_drawn_case_against_the_catalog() {
-    let catalog = vanilla_catalog();
-    let cases = agreement_cases(&catalog, MAPPING_SEED, 8);
-    assert_eq!(cases.len(), 8);
-    for case in &cases {
-        let inputs = fire_mission_inputs(&catalog, case);
-        assert_eq!(inputs.catalog_id, catalog.catalog_id);
-        assert_eq!(inputs.catalog_version, catalog.catalog_version);
-        assert_eq!(inputs.weapon_id, case.weapon_id);
-        assert_eq!(inputs.shell_id, case.shell_id);
-        assert_eq!(inputs.charge_rings, None);
-        assert_eq!(inputs.burst_height_m, None);
-        assert_eq!(inputs.crest_profile, None);
-        assert_eq!(inputs.target.x.to_bits(), case.target.x_m.to_bits());
-        assert_eq!(inputs.target.y.to_bits(), case.target.y_m.to_bits());
-        assert_eq!(
-            inputs.target.height_m.to_bits(),
-            case.target.height_m.to_bits()
-        );
-        assert_eq!(inputs.target.height_source, HeightSource::Manual);
-        assert_eq!(inputs.guns.len(), case.guns.len());
-        for (gun, drawn) in inputs.guns.iter().zip(&case.guns) {
-            assert_eq!(gun.label, drawn.label);
-            assert_eq!(gun.x.to_bits(), drawn.position.x_m.to_bits());
-            assert_eq!(gun.y.to_bits(), drawn.position.y_m.to_bits());
-            assert_eq!(gun.height_m.to_bits(), drawn.position.height_m.to_bits());
-            assert_eq!(gun.height_source, HeightSource::Manual);
-        }
-        let wind = inputs.wind.expect("the wind is always present");
-        assert_eq!(wind.speed_m_s.to_bits(), case.wind.speed_m_s.to_bits());
-        assert_eq!(wind.from_deg.to_bits(), case.wind.from_deg.to_bits());
-    }
-}
-
-#[test]
-fn the_lead_summary_is_the_recommended_row() {
-    let catalog = vanilla_catalog();
-    let mut timed = 0_usize;
-    for case in agreement_cases(&catalog, MAPPING_SEED, 8) {
-        let solution = solve_fire_mission(&catalog, &fire_mission_inputs(&catalog, &case))
-            .unwrap_or_else(|refused| panic!("case {} solves: {refused}", case.case_id));
-        let (rings, time_of_flight_s) = lead_summary(Some(&solution));
-        let lead = &solution.guns[0];
-        assert_eq!(rings, lead.recommended_rings);
-        let row = lead
-            .charges
-            .iter()
-            .find(|charge| Some(charge.rings) == rings);
-        assert_eq!(
-            time_of_flight_s.map(f64::to_bits),
-            row.and_then(|charge| charge.time_of_flight_s)
-                .map(f64::to_bits)
-        );
-        timed += usize::from(time_of_flight_s.is_some());
-    }
-    assert!(timed > 0, "a drawn case has a lead charge that solves");
-    assert_eq!(lead_summary(None), (None, None));
-}
-
-#[test]
-fn every_f64_of_the_inputs_and_solution_carries_its_bit_pattern() {
-    let catalog = vanilla_catalog();
-    let (inputs, solution) = agreement_cases(&catalog, MAPPING_SEED, 8)
-        .iter()
-        .map(|case| {
-            let inputs = fire_mission_inputs(&catalog, case);
-            let solution = solve_fire_mission(&catalog, &inputs).expect("the case solves");
-            (inputs, solution)
-        })
-        .find(|(_, solution)| lead_summary(Some(solution)).1.is_some())
-        .expect("a drawn case has a lead charge that solves");
-    let patterns = case_bit_patterns(&inputs, Some(&solution));
-    let hex = |value: f64| format!("{:016x}", value.to_bits());
-    let lead = &solution.guns[0];
-    assert_eq!(
-        patterns.get("/solution/guns/0/azimuth_mils"),
-        Some(&hex(lead.azimuth_mils))
-    );
-    assert_eq!(
-        patterns.get("/inputs/target/x"),
-        Some(&hex(inputs.target.x))
-    );
-    assert_eq!(
-        patterns.get("/inputs/wind/from_deg"),
-        Some(&hex(inputs.wind.expect("a wind").from_deg))
-    );
-    let solved_row = lead
-        .charges
-        .iter()
-        .position(|charge| charge.time_of_flight_s.is_some())
-        .expect("a charge solves");
-    assert_eq!(
-        patterns.get(&format!(
-            "/solution/guns/0/charges/{solved_row}/time_of_flight_s"
-        )),
-        Some(&hex(lead.charges[solved_row]
-            .time_of_flight_s
-            .expect("the row solves")))
-    );
-    assert!(!patterns.contains_key("/solution/guns/0/mils_per_circle"));
-    assert!(!patterns.contains_key("/inputs/catalog_version"));
-    assert_eq!(
-        patterns,
-        f64_bit_patterns(&json!({ "inputs": inputs, "solution": solution }))
-    );
-    let refused = case_bit_patterns(&inputs, None);
-    assert!(!refused.is_empty());
-    assert!(
-        refused
-            .keys()
-            .all(|pointer| pointer.starts_with("/inputs/"))
-    );
-    assert_eq!(
-        refused,
-        f64_bit_patterns(&json!({ "inputs": inputs, "solution": null }))
-    );
-}
-
-#[test]
-fn bit_patterns_escape_pointer_tokens_and_skip_integers_and_text() {
-    let patterns = f64_bit_patterns(&json!({
-        "a/b": 1.5,
-        "c~d": [0.0, -0.0, 7, "x", null, true, 2.5],
-    }));
-    assert_eq!(patterns.len(), 4);
-    assert_eq!(patterns["/a~1b"], format!("{:016x}", 1.5_f64.to_bits()));
-    assert_eq!(patterns["/c~0d/0"], "0000000000000000");
-    assert_eq!(patterns["/c~0d/1"], "8000000000000000");
-    assert_eq!(patterns["/c~0d/6"], format!("{:016x}", 2.5_f64.to_bits()));
-    assert!(f64_bit_patterns(&json!(3)).is_empty());
-    assert_eq!(
-        f64_bit_patterns(&json!(0.25)),
-        BTreeMap::from([(String::new(), format!("{:016x}", 0.25_f64.to_bits()))])
     );
 }

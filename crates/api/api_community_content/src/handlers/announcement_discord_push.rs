@@ -116,7 +116,3 @@ pub async fn push_announcement_discord(
     }
     Ok(Json(json!({ "pushed": true })))
 }
-
-#[cfg(test)]
-#[path = "tests/announcement_discord_push.rs"]
-mod tests;

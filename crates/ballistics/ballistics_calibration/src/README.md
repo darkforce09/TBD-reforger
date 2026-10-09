@@ -102,9 +102,9 @@ Measured on the committed bundle of game build 1.8.0.13 (generation 6A6F008DC539
   (`POST /api/v1/ballistics-catalogs`).
 - Rules: the committed catalog, bundle and the four `negative/` variants of
   `contracts/fixtures/ballistics/vanilla_mortars.v1/` are read through `include_str!`; one
-  test per shell requires every case of that shell to pass; each negative variant fails with its
+  shell loop requires every case of each shell to pass; each negative variant fails with its
   own failure (the provenance variants with nothing else); a SHA-256 mismatch, a game-build mismatch, missing coverage, a
-  resource with two digests and an unknown shell are red; the catalog digest matches the FIPS 180-2 vectors (`tests/catalog_digest.rs`);
+  resource with two digests and an unknown shell are red;
   a forward sample between native rows is counted and not judged while one at a row is judged; a
   crosswind value 1.01 mil off the model's angle is red and 0.99 mil off is not; every rounded
   wind-row elevation is pinned back to its lattice degree; the single-precision flight meets

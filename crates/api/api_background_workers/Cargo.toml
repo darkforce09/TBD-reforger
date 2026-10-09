@@ -47,10 +47,7 @@ tracing = { workspace = true }
 [dev-dependencies]
 # `connect_lazy`, the pool the schedule tests hand a worker without reaching a server.
 api_database = { workspace = true }
-chrono = { workspace = true }
-serde_json = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }
-uuid = { workspace = true, features = ["v4", "serde"] }
 
 [lints]
 workspace = true

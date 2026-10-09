@@ -20,7 +20,3 @@ pub const SECRET_FILE_MODE: u32 = 0o600;
 /// The group and other permission bits; a secret file or secrets directory carrying any of them
 /// is refused.
 pub const SHARED_PERMISSION_BITS: u32 = 0o077;
-
-#[cfg(test)]
-#[path = "tests/secret_file_limits.rs"]
-mod tests;

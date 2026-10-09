@@ -146,7 +146,3 @@ impl FromRef<AppState> for RateLimitState {
         state.rate_limits.clone()
     }
 }
-
-#[cfg(test)]
-#[path = "tests/application_state.rs"]
-mod tests;

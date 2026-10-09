@@ -46,7 +46,3 @@ pub(crate) fn parse_retry_after(v: Option<&str>) -> Duration {
         _ => DEFAULT_429_BACKOFF,
     }
 }
-
-#[cfg(test)]
-#[path = "tests/retry_on_429.rs"]
-mod tests;

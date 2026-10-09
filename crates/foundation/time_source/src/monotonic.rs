@@ -28,7 +28,3 @@ pub fn monotonic_ms() -> f64 {
         .and_then(|window| window.performance())
         .map_or_else(js_sys::Date::now, |performance| performance.now())
 }
-
-#[cfg(test)]
-#[path = "tests/monotonic.rs"]
-mod tests;

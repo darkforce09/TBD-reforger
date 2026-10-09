@@ -133,76 +133,30 @@ fn expected_case_count(bundle: &CalibrationBundle, shell_id: &ShellId) -> u32 {
     u32::try_from(native + wind + simulation + forward_at_rows).expect("case count fits u32")
 }
 
-fn assert_shell_passes(shell_id: &str) {
-    let shell_id = &ShellId::new(shell_id);
+/// Every shell of the committed catalog has cases in the bundle, every case is judged, every
+/// forward sample between native rows is counted rather than judged, and the shell passes.
+#[test]
+fn every_committed_shell_passes_every_case() {
     let bundle = bundle();
-    let report = evaluate_shell(pinned(), bundle, shell_id);
-    let expected_cases = expected_case_count(bundle, shell_id);
-    let (forward_at_rows, forward_between_rows) = forward_sample_counts(bundle, shell_id);
-    assert!(
-        expected_cases > 0 && forward_at_rows > 0,
-        "the bundle carries no case or no forward sample at a native row for shell {shell_id}"
-    );
-    assert_eq!(
-        report.cases, expected_cases,
-        "every case of {shell_id} is judged"
-    );
-    assert_eq!(
-        report.interpolated_forward_samples as usize, forward_between_rows,
-        "every forward sample of {shell_id} between native rows is counted, not judged"
-    );
-    assert!(report.accepted(), "shell {shell_id}: {}", summary(&report));
-}
-
-#[test]
-fn committed_shell_m821_passes_every_case() {
-    assert_shell_passes("m821");
-}
-
-#[test]
-fn committed_shell_m819_passes_every_case() {
-    assert_shell_passes("m819");
-}
-
-#[test]
-fn committed_shell_m853a1_passes_every_case() {
-    assert_shell_passes("m853a1");
-}
-
-#[test]
-fn committed_shell_m879_passes_every_case() {
-    assert_shell_passes("m879");
-}
-
-#[test]
-fn committed_shell_o832du_passes_every_case() {
-    assert_shell_passes("o832du");
-}
-
-#[test]
-fn committed_shell_d832du_passes_every_case() {
-    assert_shell_passes("d832du");
-}
-
-#[test]
-fn committed_shell_s832s_passes_every_case() {
-    assert_shell_passes("s832s");
-}
-
-#[test]
-fn committed_shells_are_exactly_the_per_shell_tests() {
-    let shell_ids: Vec<&str> = pinned()
-        .catalog
-        .shells
-        .iter()
-        .map(|shell| shell.shell_id.as_str())
-        .collect();
-    assert_eq!(
-        shell_ids,
-        [
-            "m821", "m819", "m853a1", "m879", "o832du", "d832du", "s832s"
-        ]
-    );
+    for shell in &pinned().catalog.shells {
+        let shell_id = &shell.shell_id;
+        let report = evaluate_shell(pinned(), bundle, shell_id);
+        let expected_cases = expected_case_count(bundle, shell_id);
+        let (forward_at_rows, forward_between_rows) = forward_sample_counts(bundle, shell_id);
+        assert!(
+            expected_cases > 0 && forward_at_rows > 0,
+            "the bundle carries no case or no forward sample at a native row for shell {shell_id}"
+        );
+        assert_eq!(
+            report.cases, expected_cases,
+            "every case of {shell_id} is judged"
+        );
+        assert_eq!(
+            report.interpolated_forward_samples as usize, forward_between_rows,
+            "every forward sample of {shell_id} between native rows is counted, not judged"
+        );
+        assert!(report.accepted(), "shell {shell_id}: {}", summary(&report));
+    }
 }
 
 #[test]

@@ -52,8 +52,7 @@ caller.
   (`crates/api/api_operations/src/services/ballistics_catalogs/upload_validation.rs`).
 - Rules: the committed catalog and bundle of `contracts/fixtures/ballistics/vanilla_mortars.v1/`
   pass shell by shell and each negative variant fails with its own failure
-  (`src/tests/committed_bundle.rs`); the catalog digest matches the FIPS 180-2 vectors
-  (`src/tests/catalog_digest.rs`); every oracle simulation sample with a target height or a wind
+  (`src/tests/committed_bundle.rs`); every oracle simulation sample with a target height or a wind
   inverts to the oracle's launch within 1 mil and 0.1 s (`src/tests/oracle_elevation_and_wind.rs`).
 
 ## Related documentation

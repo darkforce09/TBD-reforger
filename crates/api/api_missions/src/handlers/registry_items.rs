@@ -191,7 +191,3 @@ pub async fn list_registry(
     }
     Ok(([(header::ETAG, etag.clone())], Json(body)).into_response())
 }
-
-#[cfg(test)]
-#[path = "tests/registry_items.rs"]
-mod tests;

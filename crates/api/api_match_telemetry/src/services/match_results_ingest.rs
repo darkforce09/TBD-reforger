@@ -224,7 +224,3 @@ pub async fn ingest_results_revision(
     tx.commit().await?;
     Ok(result)
 }
-
-#[cfg(test)]
-#[path = "tests/match_results_ingest.rs"]
-mod tests;

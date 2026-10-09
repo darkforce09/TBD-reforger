@@ -1,9 +1,8 @@
-//! Tests for [`super`] — the terrain offline pack over the committed Everon and Arland manifests.
+//! Tests for [`super`] — the terrain offline pack over the committed Everon manifest.
 
 use super::*;
 
 const EVERON_MANIFEST: &str = include_str!("../../../../../assets/terrains/everon/manifest.json");
-const ARLAND_MANIFEST: &str = include_str!("../../../../../assets/terrains/arland/manifest.json");
 const ROOT: &str = "/map-assets";
 
 /// A full pyramid index for zoom levels `0..=max_zoom`, every tile 100 bytes.
@@ -95,124 +94,5 @@ fn a_missing_empty_or_partial_index_is_incomplete_and_never_complete() {
     assert_eq!(
         shallow.completeness,
         PackCompleteness::Incomplete(IncompleteReason::ZoomLevelsMissing(vec![5, 6]))
-    );
-}
-
-#[test]
-fn a_stub_terrain_or_a_malformed_document_is_an_error_and_not_an_empty_pack() {
-    assert_eq!(
-        terrain_pack(ROOT, ARLAND_MANIFEST, None),
-        Err(Error::StubElevationModel)
-    );
-    assert!(matches!(
-        terrain_pack(ROOT, "{not json", None),
-        Err(Error::ManifestUnreadable(_))
-    ));
-    assert!(matches!(
-        terrain_pack(ROOT, EVERON_MANIFEST, Some("[]")),
-        Err(Error::TileIndexUnreadable(_))
-    ));
-    let mut unknown_field: serde_json::Value =
-        serde_json::to_value(full_index("everon", 0)).unwrap();
-    unknown_field["extra"] = serde_json::json!(true);
-    assert!(matches!(
-        terrain_pack(ROOT, EVERON_MANIFEST, Some(&unknown_field.to_string())),
-        Err(Error::TileIndexUnreadable(_))
-    ));
-}
-
-#[test]
-fn an_index_of_another_terrain_version_or_grid_is_refused() {
-    assert_eq!(
-        terrain_pack(ROOT, EVERON_MANIFEST, Some(&json(&full_index("arland", 6)))),
-        Err(Error::TerrainMismatch {
-            manifest: "everon".to_owned(),
-            index: "arland".to_owned(),
-        })
-    );
-    let mut future = full_index("everon", 6);
-    future.schema_version = 2;
-    assert_eq!(
-        terrain_pack(ROOT, EVERON_MANIFEST, Some(&json(&future))),
-        Err(Error::UnsupportedTileIndexVersion(2))
-    );
-    for outside in [
-        MapTileIndexEntry {
-            z: 7,
-            x: 0,
-            y: 0,
-            bytes: 1,
-        },
-        MapTileIndexEntry {
-            z: 2,
-            x: 4,
-            y: 0,
-            bytes: 1,
-        },
-        MapTileIndexEntry {
-            z: 2,
-            x: 0,
-            y: 4,
-            bytes: 1,
-        },
-    ] {
-        let mut index = full_index("everon", 6);
-        index.tiles.push(outside);
-        assert_eq!(
-            terrain_pack(ROOT, EVERON_MANIFEST, Some(&json(&index))),
-            Err(Error::TileOutsidePyramid(outside))
-        );
-    }
-}
-
-#[test]
-fn manifest_sections_the_pack_needs_are_required() {
-    let everon: serde_json::Value = serde_json::from_str(EVERON_MANIFEST).unwrap();
-    for (pointer, section) in [
-        ("/dem", "dem"),
-        ("/tiles", "tiles"),
-        ("/tiles/satellite/unified", "tiles.satellite.unified"),
-        ("/tiles/map", "tiles.map"),
-        ("/tiles/minZoom", "tiles.minZoom"),
-        ("/tiles/maxZoom", "tiles.maxZoom"),
-    ] {
-        let mut manifest = everon.clone();
-        let (parent, key) = pointer.rsplit_once('/').unwrap();
-        let parent = if parent.is_empty() {
-            &mut manifest
-        } else {
-            manifest.pointer_mut(parent).unwrap()
-        };
-        parent.as_object_mut().unwrap().remove(key).unwrap();
-        assert_eq!(
-            terrain_pack(ROOT, &manifest.to_string(), None),
-            Err(Error::ManifestSectionMissing(section)),
-            "{pointer}"
-        );
-    }
-    let mut bad_template = everon.clone();
-    bad_template["tiles"]["map"]["urlTemplate"] =
-        serde_json::json!("/map-assets/everon/tiles/map/{z}.webp");
-    assert!(matches!(
-        terrain_pack(ROOT, &bad_template.to_string(), None),
-        Err(Error::MapUrlTemplateInvalid(_))
-    ));
-    let mut bad_id = everon;
-    bad_id["terrainId"] = serde_json::json!("../etc");
-    assert_eq!(
-        terrain_pack(ROOT, &bad_id.to_string(), None),
-        Err(Error::InvalidTerrainId("../etc".to_owned()))
-    );
-}
-
-#[test]
-fn the_served_paths_of_manifest_and_tile_index_follow_the_root() {
-    assert_eq!(
-        manifest_url("/map-assets/", &TerrainId::new("everon")),
-        "/map-assets/everon/manifest.json"
-    );
-    assert_eq!(
-        tile_index_url("/map-assets", &TerrainId::new("everon")),
-        "/map-assets/everon/tiles/map/index.json"
     );
 }

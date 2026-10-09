@@ -47,7 +47,3 @@ impl PartialEq<&str> for TerrainId {
         self.0 == *other
     }
 }
-
-#[cfg(test)]
-#[path = "tests/terrain_id.rs"]
-mod tests;
