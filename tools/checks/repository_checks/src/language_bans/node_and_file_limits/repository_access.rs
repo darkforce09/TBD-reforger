@@ -14,7 +14,7 @@ use repository_laws::file_length::scan_file_lengths;
 /// The body of `cargo xtask verify file-length` over the current checkout.
 pub fn verify_file_length() -> Result<u8> {
     Ok(verify_file_length_in(
-        &repository_layout::find_repository_root()?,
+        &repository_root::find_repository_root()?,
     ))
 }
 

@@ -41,33 +41,42 @@ fn projectile_presets_follow_the_collision_layer_table() {
 #[test]
 fn gamemat_stems_classify() {
     assert_eq!(
-        kind_for_gamemat("{EA270CE454C419FD}Common/Materials/Game/wood.gamemat"),
+        kind_for_game_material("{EA270CE454C419FD}Common/Materials/Game/wood.gamemat"),
         SurfaceKind::Opaque
     );
     assert_eq!(
-        kind_for_gamemat("Common/Materials/Game/glass.gamemat"),
+        kind_for_game_material("Common/Materials/Game/glass.gamemat"),
         SurfaceKind::Glass
     );
     assert_eq!(
-        kind_for_gamemat("Common/Materials/Game/Glass_Armored.gamemat"),
+        kind_for_game_material("Common/Materials/Game/Glass_Armored.gamemat"),
         SurfaceKind::Glass
     );
-    assert_eq!(kind_for_gamemat("plexiglass.gamemat"), SurfaceKind::Glass);
     assert_eq!(
-        kind_for_gamemat("Common/Materials/Game/foliage_conifer.gamemat"),
+        kind_for_game_material("plexiglass.gamemat"),
+        SurfaceKind::Glass
+    );
+    assert_eq!(
+        kind_for_game_material("Common/Materials/Game/foliage_conifer.gamemat"),
         SurfaceKind::Foliage
     );
     assert_eq!(
-        kind_for_gamemat("grass_lush_tall.gamemat"),
+        kind_for_game_material("grass_lush_tall.gamemat"),
         SurfaceKind::Foliage
     );
-    assert_eq!(kind_for_gamemat("moss.gamemat"), SurfaceKind::Foliage);
-    assert_eq!(kind_for_gamemat("tiles_roof.gamemat"), SurfaceKind::Opaque);
+    assert_eq!(kind_for_game_material("moss.gamemat"), SurfaceKind::Foliage);
     assert_eq!(
-        kind_for_gamemat("Common/Materials/Game/Tree/bark.gamemat"),
+        kind_for_game_material("tiles_roof.gamemat"),
         SurfaceKind::Opaque
     );
-    assert_eq!(gamemat_stem("{X}A/B/wood_floor.gamemat"), "wood_floor");
+    assert_eq!(
+        kind_for_game_material("Common/Materials/Game/Tree/bark.gamemat"),
+        SurfaceKind::Opaque
+    );
+    assert_eq!(
+        game_material_stem("{X}A/B/wood_floor.gamemat"),
+        "wood_floor"
+    );
     assert_eq!(kind_for_layer("GlassFire"), Some(SurfaceKind::Glass));
     assert_eq!(kind_for_layer("Foliage"), Some(SurfaceKind::Foliage));
     assert_eq!(kind_for_layer("Bush"), Some(SurfaceKind::Foliage));

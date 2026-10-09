@@ -7,7 +7,7 @@ the move to LIVE, one terminal death, the admin respawn, a reconnect, the end of
 the evidence capture before anything restarts. It takes about 20 minutes and follows
 [Session: join to deploy](/documentation/runbooks/two_client_playtest/session_join_to_deploy.md);
 the one-life rule it tests is set out in
-[mod design](/documentation/mod/tbd-framework/mod_design.md#2-non-negotiables).
+[mod design](/documentation/apps/mod/tbd-framework/mod_design.md#2-non-negotiables).
 
 ## Prerequisites
 

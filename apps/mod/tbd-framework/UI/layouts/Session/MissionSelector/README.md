@@ -103,8 +103,8 @@ between them. The textures live in `apps/mod/tbd-framework/UI/Textures/TBD/`.
 
 ## Related documentation
 
-- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mission selection specification](/documentation/apps/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the screen as built, its
   data, design target, open work and decisions
-- [Mission selection design references](/documentation/mod/tbd-framework/UI/mission_selection/visual_references/README.md)
+- [Mission selection design references](/documentation/apps/mod/tbd-framework/UI/mission_selection/visual_references/README.md)
   — the Stitch mockup sets and the Arma 3 captures the screen started from

@@ -121,10 +121,11 @@ pub(crate) const SEEDS: &[&str] = &[
 ];
 
 /// The folder of the [`SEEDS`]: the development seeds of the API's database crate.
-pub(crate) const SEEDS_FOLDER: &str = "crates/api/api_database/seeds";
+pub(crate) const SEEDS_FOLDER: &str = repository_layout::workspace_folders::API_DATABASE_SEEDS_DIR;
 
 /// The folder of the migrations `sqlx::migrate!` embeds into the API's database crate.
-pub(crate) const MIGRATIONS_FOLDER: &str = "crates/api/api_database/migrations";
+pub(crate) const MIGRATIONS_FOLDER: &str =
+    repository_layout::workspace_folders::API_DATABASE_MIGRATIONS_DIR;
 
 /// The repository-relative path of one of the [`SEEDS`], in [`SEEDS_FOLDER`].
 pub(crate) fn seed_file(file: &str) -> String {

@@ -1,5 +1,5 @@
 use super::*;
-use crate::find_repository_root;
+use repository_root::find_repository_root;
 
 /// The npm package folder is committed, so it exists in a real checkout.
 #[test]

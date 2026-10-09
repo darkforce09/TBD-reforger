@@ -26,7 +26,7 @@ use crate::{Error, Result};
 use process_runner::{Output, Run};
 
 use repository_layout::WORKTREES_DIR;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// How the operator re-runs this tool, as printed in every refusal message.
 ///

@@ -80,7 +80,14 @@ async fn run_self_check(
     calibration_buf: &wgpu::Buffer,
     backend: &str,
 ) -> Result<String, String> {
-    let camera = OrthoCamera::new(f64::from(PROBE_W), f64::from(PROBE_H), 6400.0, 6400.0, 0.0);
+    // The probe camera looks at the scene anchor, which the calibration quads sit around.
+    let camera = OrthoCamera::new(
+        f64::from(PROBE_W),
+        f64::from(PROBE_H),
+        ANCHOR[0],
+        ANCHOR[1],
+        0.0,
+    );
     let mvp = camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
 
     let uniform_buf = device.create_buffer(&wgpu::BufferDescriptor {

@@ -8,6 +8,7 @@ order = 7799
 spec = "documentation/tickets/specs/t938_engine_perf.md"
 plan = "documentation/tickets/plans/t-938_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-render/src/engine.rs: removed in commit 1660b03f8, no successor; world_assets/mod.rs: removed in the restructure (commit 8ef0f0f97), no successor."
 priority = 2
 children = [
     "T-938.1",

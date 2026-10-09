@@ -28,18 +28,18 @@ use super::golden_index::GoldenRow;
 use super::normalised_fields::{NORMALISED_FIELDS, NormalisedField};
 
 /// The placeholder of a server-generated id: a well-formed version 4 UUID no seed uses.
-pub const UUID_PLACEHOLDER: &str = "99999999-9999-4999-9999-999999999999";
+pub(crate) const UUID_PLACEHOLDER: &str = "99999999-9999-4999-9999-999999999999";
 /// The placeholder of a request-time instant and of an instant derived from one.
-pub const INSTANT_PLACEHOLDER: &str = "2000-01-01T00:00:00Z";
+pub(crate) const INSTANT_PLACEHOLDER: &str = "2000-01-01T00:00:00Z";
 /// The placeholder of a signed access token: three base64url segments, like a JWT.
-pub const ACCESS_TOKEN_PLACEHOLDER: &str = "normalised.access.token";
+pub(crate) const ACCESS_TOKEN_PLACEHOLDER: &str = "normalised.access.token";
 /// The placeholder of an opaque refresh token: 64 hexadecimal zeros.
-pub const OPAQUE_TOKEN_PLACEHOLDER: &str =
+pub(crate) const OPAQUE_TOKEN_PLACEHOLDER: &str =
     "0000000000000000000000000000000000000000000000000000000000000000";
 /// The placeholder of an Arma link code.
-pub const LINK_CODE_PLACEHOLDER: &str = "000000";
+pub(crate) const LINK_CODE_PLACEHOLDER: &str = "000000";
 /// The placeholder of a machine credential secret: the UUID placeholder's digits, then zeros.
-pub const MACHINE_SECRET_PLACEHOLDER: &str = "tbdm_99999999999949999999999999999999_\
+pub(crate) const MACHINE_SECRET_PLACEHOLDER: &str = "tbdm_99999999999949999999999999999999_\
     0000000000000000000000000000000000000000000000000000000000000000";
 
 /// How far outside the capture window an instant may fall. The router stamps instants with the
@@ -49,7 +49,7 @@ const WINDOW_SLACK: Duration = Duration::seconds(1);
 
 /// The span in which the capture sent its requests.
 #[derive(Clone, Copy, Debug)]
-pub struct CaptureWindow {
+pub(crate) struct CaptureWindow {
     /// Read just before the first request.
     pub opened_at: DateTime<Utc>,
     /// Read just after the last answer.
@@ -64,7 +64,7 @@ impl CaptureWindow {
 
 /// What a normalised field holds, which fixes its format check and its placeholder.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NormalisedKind {
+pub(crate) enum NormalisedKind {
     /// An id the server generates: a lowercase, hyphenated version 4 UUID.
     ServerUuid,
     /// An RFC 3339 instant stamped while the request ran.
@@ -83,7 +83,7 @@ pub enum NormalisedKind {
 
 impl NormalisedKind {
     /// The value a golden stores at a field of this kind.
-    pub fn placeholder(self) -> &'static str {
+    pub(crate) fn placeholder(self) -> &'static str {
         match self {
             Self::ServerUuid => UUID_PLACEHOLDER,
             Self::RequestTime | Self::RequestTimePlusSeconds(_) => INSTANT_PLACEHOLDER,
@@ -151,7 +151,7 @@ impl NormalisedKind {
     }
 
     /// The kind as the design note's table and every failure message spell it.
-    pub fn describe(self) -> String {
+    pub(crate) fn describe(self) -> String {
         match self {
             Self::ServerUuid => "server_uuid".to_string(),
             Self::RequestTime => "request_time".to_string(),
@@ -218,7 +218,7 @@ fn fields_of<'a>(
 
 /// The live answer with every field the table names for `row` checked and replaced by its
 /// placeholder, and one problem line per field that is missing or fails its kind's check.
-pub fn normalise_live(
+pub(crate) fn normalise_live(
     row: &GoldenRow,
     mut live: Value,
     window: &CaptureWindow,
@@ -253,7 +253,7 @@ pub fn normalise_live(
 /// Every disagreement between the table, the index and the goldens: a duplicate row, a row that
 /// names no indexed JSON golden, a pointer its golden lacks, a golden value that is not the
 /// kind's placeholder, and a placeholder a golden holds where no row names it.
-pub fn table_problems(rows: &[GoldenRow]) -> Vec<String> {
+pub(crate) fn table_problems(rows: &[GoldenRow]) -> Vec<String> {
     let mut problems = Vec::new();
     let mut seen = BTreeSet::new();
     for field in NORMALISED_FIELDS {

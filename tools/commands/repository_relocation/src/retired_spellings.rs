@@ -6,9 +6,10 @@
 //! the letter of a control escape, behind a deployment prefix (a `file:` URL's path included) or
 //! through `..` segments that name nothing any more. For each `rust_path` row: no `.rs` file in
 //! its scope, read after the moves, still holds the retired prefix in a path, a `use` tree, a
-//! comment or a string literal. Each row is one [`Verdict`]. A committed manifest's folder or glob
-//! scope is first followed through the moves of the manifests after it ([`LaterMoves`]): judged
-//! where they put it, and, when they emptied it, judged as holding nothing, with a note.
+//! comment or a string literal. Each row is one [`Verdict`]. A folder or glob scope is first
+//! followed through the manifest's own moves and then those of the manifests after it
+//! ([`LaterMoves`], [`judged_scope`]): judged where they put it, and, when they emptied it,
+//! judged as holding nothing, with a note.
 //!
 //! The run is one pass: the tree's text files are read once ([`tree_text`]), every manifest's
 //! `path` spellings and `rust_path` prefix segments go into one Aho-Corasick automaton
@@ -25,16 +26,20 @@
 //! **Invariants:** the files judged and the parts of them judged are the ones the rewrite passes
 //! may edit (same [`crate::file_treatment::TreatmentAreas::treatment_of`] and
 //! [`crate::path_references::allowed_spans`], the areas moved where the manifest's own moves put
-//! them), so a clean apply verifies clean; the frozen records and the manifests are never judged;
-//! a spelling that, with the segments before it or the escape letter glued to it, names a path that
+//! them), so a clean apply verifies clean; the frozen records and the manifests are never judged,
+//! a frozen area's README index only in its link destinations and its Contents tree lines, this
+//! tool's test sources only in their code; a spelling that, with the segments before it or the escape letter glued to it, names a path that
 //! exists now is another path and no finding; a listing that cannot be read is a did-not-run,
-//! never a pass; a folder scope that is missing after every move is a did-not-run unless a later
-//! manifest's row took files out of it; judging several manifests in one run gives each the
+//! never a pass; a folder scope that is missing after every move is a did-not-run unless a row of
+//! its own or a later manifest took files out of it; judging several manifests in one run gives each the
 //! verdicts, notes and offence order it gets when judged alone (files in path order, offsets in
 //! source order).
 
 mod spelling_matcher;
 mod tree_text;
+
+use std::cell::OnceCell;
+use std::ops::Range;
 
 use aho_corasick::BuildError;
 use verification_core::{Finding, Kind, NotRun, Verdict};
@@ -44,9 +49,10 @@ use super::manifest::{ManifestRow, RowKind, RowScope};
 use super::path_mapping::{PathMapping, normalize, parent_folder};
 use super::path_references::path_tokens::{PathOccurrence, classify_occurrence};
 use super::repository_files::{PathSet, TrackedTree};
-use super::rust_lexer::line_of;
+use super::rust_lexer::{code_spans, line_of};
 use super::rust_paths::rust_path_edits;
-use super::scope_history::LaterMoves;
+use super::scope_history::{JudgedScope, LaterMoves, judged_scope};
+use super::text_edits::AllowedSpans;
 use spelling_matcher::{FileHits, SpellingIndex, SpellingMatcher};
 use tree_text::{TextFile, TreeText, UnreadFile, is_judged};
 
@@ -230,7 +236,8 @@ impl JudgedFile<'_> {
     }
 
     /// The Rust path pass over the file for each prefix it spells every segment of, added to
-    /// every row of that prefix whose manifest treats the file as live and whose scope holds it.
+    /// every row of that prefix whose manifest treats the file as live, or as this tool's test
+    /// sources outside their string literals and comments, and whose scope holds it.
     fn rust_path_offences(
         &self,
         hits: &FileHits,
@@ -238,6 +245,7 @@ impl JudgedFile<'_> {
         plans: &[ManifestPlan],
         offences: &mut Offences,
     ) {
+        let code_only = OnceCell::new();
         for (prefix, retired) in index.prefixes.iter().enumerate() {
             if !retired.segments.iter().all(|s| hits.segments.contains(s)) {
                 continue;
@@ -247,8 +255,10 @@ impl JudgedFile<'_> {
                 .copied()
                 .filter(|&(manifest, row)| {
                     let plan = &plans[manifest];
-                    self.treatment(plan) == FileTreatment::Live
-                        && matches!(&plan.rows[row], RowPlan::RustPath(scope)
+                    matches!(
+                        self.treatment(plan),
+                        FileTreatment::Live | FileTreatment::FixtureSource
+                    ) && matches!(&plan.rows[row], RowPlan::RustPath(scope)
                             if scope.contains(&self.file.path))
                 })
                 .collect();
@@ -256,15 +266,30 @@ impl JudgedFile<'_> {
                 continue;
             }
             let outcome = rust_path_edits(&self.file.text, &retired.rules, None);
-            let found: Vec<String> = outcome
+            let found: Vec<Range<usize>> = outcome
                 .edits
                 .iter()
-                .map(|edit| edit.span.start)
-                .chain(outcome.unresolved.iter().map(|(offset, _)| *offset))
-                .map(|offset| offence(&self.file.path, &self.file.text, offset))
+                .map(|edit| edit.span.clone())
+                .chain(
+                    outcome
+                        .unresolved
+                        .iter()
+                        .map(|(offset, _)| *offset..offset + 1),
+                )
                 .collect();
             for (manifest, row) in judging {
-                offences[manifest][row].extend(found.iter().cloned());
+                let fixture = self.treatment(&plans[manifest]) == FileTreatment::FixtureSource;
+                let allowed = if fixture {
+                    code_only.get_or_init(|| AllowedSpans::Only(code_spans(&self.file.text)))
+                } else {
+                    &AllowedSpans::Everything
+                };
+                offences[manifest][row].extend(
+                    found
+                        .iter()
+                        .filter(|span| allowed.allows(span))
+                        .map(|span| offence(&self.file.path, &self.file.text, span.start)),
+                );
             }
         }
     }
@@ -379,52 +404,6 @@ fn is_retired_spelling(paths: &PathSet, file: &TextFile, start: usize, end: usiz
                     .is_some_and(|target| !target.is_empty() && paths.contains(&target))
             })
         }
-    }
-}
-
-/// Where a `rust_path` row's scope is judged.
-enum JudgedScope {
-    /// The files at or below this scope, after the manifest's own moves and every later one.
-    Files(RowScope),
-    /// The folder is gone because a later manifest took its files out: the note says so.
-    Emptied(String),
-    /// The folder is gone and no later manifest explains it: a did-not-run.
-    Missing(Verdict),
-}
-
-/// The scope of `row` relocated by the manifest's own `mapping`, then followed through `later`.
-fn judged_scope(
-    tree: &impl TrackedTree,
-    mapping: &PathMapping,
-    later: &LaterMoves,
-    label: &str,
-    row: &ManifestRow,
-) -> JudgedScope {
-    let folder = match &row.scope {
-        RowScope::Everywhere => return JudgedScope::Files(RowScope::Everywhere),
-        RowScope::Glob(pattern) => {
-            return JudgedScope::Files(RowScope::Glob(
-                later.follow_pattern(&mapping.relocate(pattern)),
-            ));
-        }
-        RowScope::Folder(folder) => later.follow_folder(&mapping.relocate(folder)),
-    };
-    if tree.paths().contains(&folder.folder) {
-        return JudgedScope::Files(RowScope::Folder(folder.folder));
-    }
-    match folder.emptied_by {
-        Some(emptied_by) => JudgedScope::Emptied(format!(
-            "{label} line {}: the scope `{}` of `{}` holds nothing after {emptied_by} moved its \
-             files; nothing left to judge there",
-            row.line,
-            row.scope.spelling(),
-            row.from
-        )),
-        None => JudgedScope::Missing(Verdict::did_not_run(
-            format!("{label} line {}: the scope of `{}`", row.line, row.from),
-            Kind::Ban,
-            NotRun::TargetMissing(tree.root().join(&folder.folder)),
-        )),
     }
 }
 

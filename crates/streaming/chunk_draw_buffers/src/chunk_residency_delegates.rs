@@ -35,7 +35,7 @@ impl WorldResidency {
 
     /// Ordered eviction victims since construction — parity surface (Class S eviction-order log).
     #[must_use]
-    pub fn eviction_log(&self) -> Vec<String> {
+    pub fn eviction_log(&self) -> Vec<ChunkId> {
         self.chunk_residency.eviction_log()
     }
 
@@ -170,7 +170,7 @@ impl WorldResidency {
 
     /// Resident chunk ids (sorted) — parity/debug surface.
     #[must_use]
-    pub fn resident_chunk_ids(&self) -> Vec<String> {
+    pub fn resident_chunk_ids(&self) -> Vec<ChunkId> {
         self.chunk_residency.resident_chunk_ids()
     }
 
@@ -194,7 +194,7 @@ impl WorldResidency {
 
     /// Draw chunk ids: the strict draw set under `strict_bbox` (no cull margin) inside the chunk index and the pin, sorted.
     #[must_use]
-    pub fn draw_chunk_ids(&self, strict_bbox: Bbox) -> Vec<String> {
+    pub fn draw_chunk_ids(&self, strict_bbox: Bbox) -> Vec<ChunkId> {
         self.chunk_residency.draw_chunk_ids(strict_bbox)
     }
 }

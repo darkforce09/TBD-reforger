@@ -22,6 +22,7 @@ clap = { workspace = true, features = ["derive"] }
 libc = { workspace = true }
 process_runner = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }

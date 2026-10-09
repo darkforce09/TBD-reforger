@@ -1,14 +1,20 @@
-//! The repository-root finder: it walks up to the folder holding the workspace's lock file and
-//! root manifest, and refuses a folder with no such ancestor.
+//! The repository file reads: their root is the workspace root above the calling crate, the
+//! calling source file resolves to its folder, and a folder with no root above it is refused.
 
 use super::{repository_root, repository_text, source_file_folder};
 use std::path::Path;
 
-/// From this crate's manifest folder the walk ends at the folder holding the root `Cargo.lock`,
-/// the root manifest with its `[workspace]` table, and the `contracts/` tree the goldens live in.
+/// From this crate's manifest folder the walk ends at the folder holding the root marker, the root
+/// `Cargo.lock`, the root manifest with its `[workspace]` table, and the `contracts/` tree the
+/// goldens live in.
 #[test]
 fn the_root_is_the_workspace_folder_above_the_crate() {
     let root = repository_root(env!("CARGO_MANIFEST_DIR"));
+    assert!(
+        root.join(::repository_root::ROOT_MARKER).is_file(),
+        "{}",
+        root.display()
+    );
     assert!(root.join("Cargo.lock").is_file(), "{}", root.display());
     assert!(
         root.join("contracts/fixtures/api_goldens").is_dir(),

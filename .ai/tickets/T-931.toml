@@ -9,8 +9,7 @@ executor = "claude-code"
 notes = """
 WAVE-210 OPERATOR EYE-PASS — EXPLICIT DEFER. Operator: seat zoom visualization (zoom-in seat glyphs / numbers / crewed occupancy) is future work — "not now". Do not implement in wave 211.
 
-When revived: zoom-in should show seat glyphs, seat numbers, and crewed occupancy state on placed vehicles.
-"""
+When revived: zoom-in should show seat glyphs, seat numbers, and crewed occupancy state on placed vehicles. Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/src/slots_gpu.rs: removed in commit 1660b03f8, no successor."""
 main_goal = "Deferred: zoom-in seat glyphs numbers and crewed occupancy viz."
 context = [
     "W210 eye-pass future ask: seat zoom viz.",

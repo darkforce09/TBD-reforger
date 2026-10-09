@@ -1,8 +1,8 @@
 use world_chunks::terrain_manifest::parse_manifest_binary;
 
 use super::*;
-use ::repository_layout::find_repository_root;
 use ::repository_layout::terrain_dir;
+use ::repository_root::find_repository_root;
 
 /// The committed everon export: 1623 prefabs, 36 land-cover regions, 1,216,066 instances.
 /// (`map_engine`'s census pin says the same three numbers.) Re-pin

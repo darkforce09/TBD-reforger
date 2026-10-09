@@ -107,22 +107,22 @@ async fn dev_login_identity(app: &Router, role: &str) -> (String, String, String
             Request::builder()
                 .uri(format!("/api/v1/auth/dev-login?role={role}"))
                 .body(Body::empty())
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::FOUND, "dev-login {role}");
     let loc = resp.headers()[header::LOCATION]
         .to_str()
-        .unwrap()
+        .expect("the Location header is ASCII")
         .to_string();
     let tok = loc
         .split_once('#')
-        .unwrap()
+        .expect("the Location carries a fragment")
         .1
         .split('&')
         .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
+        .expect("the fragment carries an access token")
         .to_string();
     let me = app
         .clone()
@@ -131,14 +131,22 @@ async fn dev_login_identity(app: &Router, role: &str) -> (String, String, String
                 .uri("/api/v1/me")
                 .header(header::AUTHORIZATION, format!("Bearer {tok}"))
                 .body(Body::empty())
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
-    let body = to_bytes(me.into_body(), usize::MAX).await.unwrap();
-    let v: Value = serde_json::from_slice(&body).unwrap();
-    let discord_id = v["user"]["discord_id"].as_str().unwrap().to_string();
-    let reported_role = v["user"]["role"].as_str().unwrap().to_string();
+    let body = to_bytes(me.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
+    let v: Value = serde_json::from_slice(&body).expect("the body decodes as JSON");
+    let discord_id = v["user"]["discord_id"]
+        .as_str()
+        .expect("the `discord_id` field is a string")
+        .to_string();
+    let reported_role = v["user"]["role"]
+        .as_str()
+        .expect("the `role` field is a string")
+        .to_string();
     (tok, discord_id, reported_role)
 }
 

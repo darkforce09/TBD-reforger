@@ -18,6 +18,8 @@ tier = 1
 targets = "any"
 
 [dependencies]
+# The wall clock the countdown measures against.
+time_source = { workspace = true }
 leptos = { workspace = true, features = ["csr"] }
 # `is_http_url`, the scheme guard the avatar sanitiser applies to a stored address.
 http_url_guard = { workspace = true }

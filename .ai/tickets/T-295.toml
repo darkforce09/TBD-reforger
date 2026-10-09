@@ -8,12 +8,12 @@ order = 8220
 spec = "documentation/tickets/specs/t295_realtime_collab.md"
 plan = "documentation/tickets/plans/t-295_plan.md"
 executor = "claude-code"
-notes = "2026-09-05: T-222 is shipped (dropped in favour of T-190, which this builds on). realtime/ is a new directory registered in api/src/lib.rs; persist.rs and state/mod.rs are shared with T-937.4 and T-190 → packs after both."
+notes = "2026-09-05: T-222 is shipped (dropped in favour of T-190, which this builds on). realtime/ is a new directory registered in apps/api/src/lib.rs; persist.rs and state/mod.rs are shared with T-937.4 and T-190 → packs after both. Paths with no successor (checked 2026-10-04, restructure S12): apps/website/api/src/app.rs: removed in commit 8fc8dca30, no successor."
 priority = 2
 depends_on = ["T-190"]
 main_goal = "Two browsers editing one mission converge live, and a stale save is refused instead of overwriting."
 context = [
-    "Anchor 2026-09-05: yrs is wired to IndexedDB only; api/Cargo.toml:27 axum 0.8.9 without the ws feature; no realtime module; app.rs:751/:757 versions routes.",
+    "Anchor 2026-09-05: yrs is wired to IndexedDB only; apps/api/Cargo.toml:27 axum 0.8.9 without the ws feature; no realtime module; app.rs:751/:757 versions routes.",
     "POST /versions is a bare INSERT whose only 409 is a reused semver; T-190 (packs earlier) adds the read-merge-write path in persist.rs this reuses.",
 ]
 requirement = [
@@ -42,8 +42,8 @@ owns = [
     "apps/frontend/src/editor/state/collab_sync.rs",
     "apps/frontend/src/editor/state/mod.rs",
     "apps/website/api/src/app.rs",
-    "apps/website/api/Cargo.toml",
-    "apps/website/api/src/lib.rs",
+    "apps/api/Cargo.toml",
+    "apps/api/src/lib.rs",
     "apps/website/api/src/realtime/mod.rs",
     "apps/website/api/src/realtime/yrs_sync.rs",
 ]

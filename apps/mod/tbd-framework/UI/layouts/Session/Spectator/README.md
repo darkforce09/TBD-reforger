@@ -34,5 +34,5 @@ None: no resource refers to this folder. The `TBD_Spectator` preset in
 
 ## Related documentation
 
-- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/apps/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator as built, its policies and controls, and the design target

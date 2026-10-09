@@ -58,7 +58,7 @@ None: no feature and no environment variable. The checks are selected by the `wa
 - Depends on: `map_renderer` (the engine and its diagnostic views), `gpu_frame` (pipelines,
   packet, encoder, compute cull), `renderer_core` (binding ids), `symbology_layers_gpu`,
   `map_draw_lanes`, `camera_math`, `map_coordinates`, `render_primitives`, `time_source`,
-  `bytemuck`; `wgpu`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures` and `web-sys` in the
+  `deterministic_random` (the stress scene and compute cull streams), `bytemuck`; `wgpu`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures` and `web-sys` in the
   WebAssembly build.
 - Used by: the Mission Creator's viewport bridge
   (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs`).

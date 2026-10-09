@@ -25,8 +25,7 @@ The tactical draw button lands in panels/zones_panel.rs. T-939.4 runs this wave 
 top_strip.rs and help_modal.rs; it has been told not to add a tactical-draw entry.
 
 REPORT-T-939.1.md claimed a Phase Line button was added in the outliner header. Commit d164435caa5a shows
-no such button. Treat every "already wired" claim in this area as unproven until grepped.
-"""
+no such button. Treat every "already wired" claim in this area as unproven until grepped. Paths with no successor (checked 2026-10-04, restructure S12): tools/tbd-tools/src/smokes.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/smokes/t946_86.rs: removed in commit b4d8b7ca0, no successor."""
 priority = 1
 parent = "T-946"
 main_goal = "Four features wave 255 shipped are reachable from the running editor instead of having zero callers."

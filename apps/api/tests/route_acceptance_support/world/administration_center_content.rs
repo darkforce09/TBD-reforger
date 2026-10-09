@@ -50,7 +50,7 @@ fn equipment_fixtures() -> PathBuf {
 }
 
 /// The administration, command center and community content world.
-pub struct AdministrationCenterContentWorld {
+pub(crate) struct AdministrationCenterContentWorld {
     webhook: tokio::task::JoinHandle<()>,
     equipment_dir: PathBuf,
     published_announcement: Uuid,

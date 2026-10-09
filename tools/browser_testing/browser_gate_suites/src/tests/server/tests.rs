@@ -277,7 +277,7 @@ async fn finite_responses_are_unchanged_by_streaming_body() {
     let up = start_fake_upstream().await;
     let proxy = start_proxy(up).await;
 
-    let res = reqwest::Client::new()
+    let res = crate::http_client::new_http_client()
         .get(format!("http://127.0.0.1:{}/api/finite", proxy.port))
         .send()
         .await

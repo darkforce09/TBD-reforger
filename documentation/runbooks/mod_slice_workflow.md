@@ -7,7 +7,7 @@ How work on the TBD [mod](/documentation/glossary/g_to_m.md#mod) runs: an orches
 slice in its own git worktree, and `cargo xtask mod wave` merges, gates, reaps and pushes them.
 The rules below are operator-defined and binding; read them before dispatching any slice agent.
 The program is the [mod program spec](/documentation/tickets/specs/t181_event_mod_program.md),
-and the [mod design](/documentation/mod/tbd-framework/mod_design.md) is the standard every slice
+and the [mod design](/documentation/apps/mod/tbd-framework/mod_design.md) is the standard every slice
 meets.
 
 ```text
@@ -41,7 +41,7 @@ reason in.
   the program.
 - [Workbench](/documentation/glossary/n_to_z.md#workbench) only for world, prefab and play-in-editor
   work: `cargo xtask mod dev-bootstrap` brings it and the MCP bridge up, as the
-  [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md#bringing-the-bridge-up)
+  [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md#bringing-the-bridge-up)
   describes.
 
 ### The environment every prompt carries
@@ -283,7 +283,7 @@ is generated and `enf citations` gates prose citations.
 | Where does a subsystem live? | `enf dirs`, and `.ai/artifacts/enf-index/capability_matrix.tsv` |
 | Does my change compile? | `cargo xtask mod compile`: about 1.3 s on the native server, no Workbench |
 | Does an API exist, definitively? | `cargo xtask mod compile --probe=<dir>`: call it in a throwaway `.c` file in that dir; a clean compile means it exists |
-| Workbench, prefabs, resource names | the [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md): look names up with its tools, never type a GUID by hand |
+| Workbench, prefabs, resource names | the [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md): look names up with its tools, never type a GUID by hand |
 
 **Two kinds of Enfusion class, two oracles.** A scripted class (`SCR_BaseGameMode`,
 `SCR_PlayerController`) ships as `.c` source: check it with `enf lookup` or `rg` over the
@@ -384,7 +384,7 @@ START HERE
   cargo xtask mod wave gate            # every step must pass; a failure IS a finding
   git log --oneline -15 main
   git diff --stat <pre-land commit>..main
-Read documentation/mod/tbd-framework/mod_design.md and
+Read documentation/apps/mod/tbd-framework/mod_design.md and
 documentation/runbooks/mod_slice_workflow.md first.
 
 WHAT TO ATTACK, in priority order
@@ -444,7 +444,7 @@ UI slice as done when it only compiles.
 
 ## Related
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the non-negotiables and the
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the non-negotiables and the
   Enfusion facts every slice meets.
 - [Mod program spec](/documentation/tickets/specs/t181_event_mod_program.md) — the program the
   waves carry out.
@@ -456,7 +456,7 @@ UI slice as done when it only compiles.
   gate and its verdict receipt.
 - [Factory waves](/documentation/runbooks/factory_waves/README.md) — the same worktree cycle for
   the platform program.
-- [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — bringing
+- [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — bringing
   Workbench and the MCP tools up with `mod dev-bootstrap`.
 - [Loadouts](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/README.md) — the dev harness
   that equips `$profile:TBD_LoadoutTest.json` on a test body.
@@ -464,5 +464,5 @@ UI slice as done when it only compiles.
   `citations` and `capability`.
 - [Upstream code leak gate](/tools/checks/repository_checks/src/licensing/README.md) —
   `verify no-crf-leak` in full.
-- [Vanilla source coverage](/documentation/mod/tbd-framework/vanilla_source_coverage.md) — which
+- [Vanilla source coverage](/documentation/apps/mod/tbd-framework/vanilla_source_coverage.md) — which
   lane answers which vanilla question.

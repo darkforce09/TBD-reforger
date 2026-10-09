@@ -19,21 +19,21 @@ use crate::error::{Result, bail};
 use serde_json::{Value, json};
 
 use super::image_operations::{self, Rgb8};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use enfusion_pak::PakVfs;
 use time_source::iso_from_system_time;
 use world_export_pipeline::enfusion_texture_decoder;
 
-pub(crate) const HW: usize = 4;
-pub(crate) const ANCHOR: usize = HW + 1;
-pub(crate) const FILL_FLOOR: f64 = 0.25;
-pub(crate) const REL_FLOOR: f64 = 0.05;
-pub(crate) const STEP_CAP: f64 = 6.0;
-pub(crate) const DETAIL_MIN: f64 = 1.0;
-pub(crate) const FLAT_EPS: f64 = 0.15;
-pub(crate) const CELL_PX: usize = 256;
-pub(crate) const GRID: usize = 50;
-pub(crate) const ORTHO_PX: usize = GRID * CELL_PX;
+pub(crate) const SEAM_HALF_WIDTH_PIXELS: usize = 4;
+pub(crate) const SEAM_ANCHOR_OFFSET_PIXELS: usize = SEAM_HALF_WIDTH_PIXELS + 1;
+pub(crate) const FILL_GRADIENT_FLOOR: f64 = 0.25;
+pub(crate) const RELATIVE_GRADIENT_FLOOR: f64 = 0.05;
+pub(crate) const STEP_DELTA_CAP: f64 = 6.0;
+pub(crate) const MINIMUM_INTERIOR_DETAIL: f64 = 1.0;
+pub(crate) const FLAT_GRADIENT_EPSILON: f64 = 0.15;
+pub(crate) const CELL_PIXELS: usize = 256;
+pub(crate) const GRID_CELLS_PER_SIDE: usize = 50;
+pub(crate) const ORTHOPHOTO_PIXELS: usize = GRID_CELLS_PER_SIDE * CELL_PIXELS;
 const MIN_STDDEV: f64 = 0.02;
 const ORIENT_MAX: f64 = 0.2;
 
@@ -86,19 +86,19 @@ pub(crate) struct SeamSummary<'a> {
 
 /* ─────────────────────────── seam bridge + stitch ─────────────────────────── */
 
-mod sap_dir;
-pub(crate) use sap_dir::analyze_seams;
-use sap_dir::fmt2;
-use sap_dir::metric_json;
-use sap_dir::sap_dir;
-pub(crate) use sap_dir::summarize;
-pub(crate) use sap_dir::verify_sap_seams;
+mod supertexture_seam_metrics;
+pub(crate) use supertexture_seam_metrics::analyze_seams;
+use supertexture_seam_metrics::format_two_decimals;
+use supertexture_seam_metrics::metric_json;
+pub(crate) use supertexture_seam_metrics::summarize;
+use supertexture_seam_metrics::supertexture_scratch_dir;
+pub(crate) use supertexture_seam_metrics::verify_supertexture_seams;
 
-mod analyze_sap_seams;
-pub(crate) use analyze_sap_seams::analyze_sap_seams;
-pub(crate) use analyze_sap_seams::bridge_seams;
-pub(crate) use analyze_sap_seams::verify_sap_ortho;
+mod supertexture_seam_analysis;
+pub(crate) use supertexture_seam_analysis::analyze_supertexture_seams;
+pub(crate) use supertexture_seam_analysis::bridge_seams;
+pub(crate) use supertexture_seam_analysis::verify_supertexture_orthophoto;
 
-mod stitch_sap_ortho;
-pub(crate) use stitch_sap_ortho::blend_sap_seams_cli;
-pub(crate) use stitch_sap_ortho::stitch_sap_ortho;
+mod supertexture_orthophoto_stitch;
+pub(crate) use supertexture_orthophoto_stitch::blend_supertexture_seams_command_line;
+pub(crate) use supertexture_orthophoto_stitch::stitch_supertexture_orthophoto;

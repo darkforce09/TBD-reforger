@@ -1,14 +1,15 @@
 //! The Mission Creator's window-level `keydown` dispatch.
 //!
 //! **Role:** installs the two window-level keydown listeners the editor runs.
-//! [`attach_editor_hotkeys`] carries the editor's own chords — the shared Escape dismissal stack,
-//! the split Backspace / Delete arms, Ctrl/Cmd+C/X/V/Shift+V/A, Ctrl+Alt+D, Space fly-to, the E/R
-//! dock latches, the G and `[`/`]` snap grid and the 1/2/3 widget variants.
-//! [`register_key_handler`] carries the undo/redo shortcuts: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and
-//! Ctrl+Y.
-//! **Position:** the keyboard half of [`super`], beside the pointer closures in
-//! [`super::pointer_gestures`]. The chord listener rides the same
-//! [`EditorGestureContext`](super::pointer_gestures::EditorGestureContext) the pointer closures
+//! [`attach_editor_hotkeys`](crate::input::window_keydown::attach_editor_hotkeys) carries the
+//! editor's own chords — the shared Escape dismissal stack, the split Backspace / Delete arms,
+//! Ctrl/Cmd+C/X/V/Shift+V/A, Ctrl+Alt+D, Space fly-to, the E/R dock latches, the G and `[`/`]`
+//! snap grid and the 1/2/3 widget variants.
+//! [`register_key_handler`](crate::input::window_keydown::register_key_handler) carries the
+//! undo/redo shortcuts: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl+Y.
+//! **Position:** the keyboard half of [`crate::input`], beside the pointer closures in
+//! [`crate::input::pointer_gestures`]. The chord listener rides the same
+//! [`EditorGestureContext`](crate::input::pointer_gestures::EditorGestureContext) the pointer closures
 //! do, so the page builds that context once and attaches both from it.
 //! **Signals & state:** every handle and `Copy` signal the chord closure captures comes from the
 //! gesture context; the undo/redo closure captures nothing at all and reads the live editor

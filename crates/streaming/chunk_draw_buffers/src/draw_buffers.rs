@@ -13,6 +13,7 @@
 
 use map_coordinates::chunk_math::Bbox;
 use std::collections::HashMap;
+use world_chunks::ChunkId;
 
 /// One prefab's glyph: atlas index, size in metres, tint and compose group.
 #[derive(Clone, Debug)]
@@ -108,7 +109,7 @@ pub(crate) struct DrawBuffers {
     pub(super) badge_want: bool,
 
     /// Draw ids.
-    pub(super) draw_ids: Vec<String>,
+    pub(super) draw_ids: Vec<ChunkId>,
 
     /// Heatmap trees.
     pub(super) heatmap_trees: bool,

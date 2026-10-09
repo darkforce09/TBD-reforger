@@ -3,7 +3,7 @@
 The `repository_relocation` crate: moves tracked files and folders and rewrites every reference to
 them from a relocation manifest, so no path is ever rewritten by hand, and proves afterwards that
 no live file still spells a path or Rust prefix a manifest retired. It is the work behind
-`cargo xtask refactor relocate`, which the restructure program's stages run for every move.
+`cargo xtask refactor relocate`, which every move of a tracked path runs through.
 
 ## Contents
 
@@ -26,17 +26,21 @@ xtask refactor relocate ──▶ dry_run / apply / verify (root, manifest) ─�
 The xtask binary parses the flags, finds the checkout root and calls one of the three modes.
 `dry_run` prints the plan of a manifest and verifies, in memory, the tree it would leave; `apply`
 refuses unless that dry run is clean, then makes the moves and writes and verifies the checkout;
-`verify` judges one manifest, or every committed manifest in
-`documentation/restructure/manifests/` except the format sample `example.tsv`, against the
-checkout as it stands; each committed manifest's scopes follow the moves of the manifests that
-entered the history after it, since a committed manifest is never edited. A climbing token
+`verify` judges one manifest, or every manifest in `documentation/relocation_manifests/` except
+the format sample `example.tsv`, against the checkout as it stands; each manifest's scopes follow
+its own moves and then the moves of the manifests that entered the history after it, since a
+committed manifest is never edited. The order follows each manifest back through its exact renames
+to the commit that first added it, so moving the manifests folder keeps it. A climbing token
 `<seg>/../…` counts as a path reference only under an anchor (the file's folder, the owning
 crate's folder, the repository root) where its named lead (the segments before its first `..`) is a tracked folder, so a test
 datum such as `"7/../.."` is never read as a path and never stops an apply. A literal read from
 the owning crate's folder (a `CARGO_MANIFEST_DIR` join) follows a moved file to the crate the planned
 tree gives it: the nearest folder holding a crate manifest after the moves, counting one a row
 moves there and an untracked one on disk; where no folder below the repository root holds one, the
-literal is unresolved and the apply refuses, never re-anchoring it at the root.
+literal is unresolved and the apply refuses, never re-anchoring it at the root. A bare `../` or
+`./` in prose, a comment or a plain string literal is never rewritten; the README index of a frozen
+area takes live rewrites in its Contents tree; this crate's own test sources take them in their
+code only, their literals and comments being fixture text.
 
 The verification is a single pass over the tree, however many manifests it judges: every text file
 is read once, and one Aho-Corasick automaton over every manifest's retired `path` spellings and
@@ -51,7 +55,7 @@ Run from the repository root:
 
 ```bash
 cargo test -p repository_relocation   # unit tests and whole runs on throwaway git checkouts
-cargo xtask refactor relocate --verify   # judge every committed stage manifest
+cargo xtask refactor relocate --verify   # judge every stage manifest
 ```
 
 ## Configuration
@@ -79,12 +83,12 @@ No feature and no environment variable; `git` must be on the path.
   at an anchor is not read from that anchor
   (`relocate_climb_whose_lead_names_no_folder_stays_as_written`); a crate-folder literal of a file
   moved where no crate manifest lies below the root is unresolved
-  (`relocate_manifest_dir_joins_into_a_folder_with_no_crate_manifest_are_unresolved`); tests run on throwaway checkouts
-  and read only the committed format sample from this one.
+  (`relocate_manifest_dir_joins_into_a_folder_with_no_crate_manifest_are_unresolved`); the
+  manifest order survives a move of the manifests folder
+  (`relocate_manifest_order_survives_a_move_of_the_manifests_folder`); tests run on throwaway
+  checkouts and read only the committed format sample from this one.
 
 ## Related documentation
 
-- [Relocation manifests](/documentation/restructure/manifests/README.md) — the manifest format
-  and the stage manifests.
-- [Laws and gates](/documentation/restructure/laws_and_gates.md) — the relocation law the
-  verification enforces between stages.
+- [Relocation manifests](/documentation/relocation_manifests/README.md) — the manifest format,
+  the stage manifests and the retired-spelling registry the verification enforces.

@@ -14,7 +14,7 @@ pub(crate) const DUMP_VERSION: &str = "tbd-voxel-dump/1";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct DumpMeta {
+pub(crate) struct DumpMetadata {
     pub v: String,
     pub slug: String,
     pub resource: String,
@@ -41,7 +41,7 @@ pub(crate) struct ExcludedCounts {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct FurnRec {
+pub(crate) struct FurnitureRecord {
     pub name: String,
     pub res: String,
     /// Local-frame position (NOT normalized — the dumper writes WorldToLocal directly).
@@ -60,20 +60,20 @@ pub(crate) type ScanMap = HashMap<(usize, usize), Vec<f64>>;
 
 #[derive(Debug, Default)]
 pub(crate) struct VoxelDump {
-    pub meta: Option<DumpMeta>,
+    pub meta: Option<DumpMetadata>,
     pub x_pos: ScanMap,
     pub x_neg: ScanMap,
     pub y_down: ScanMap,
     pub y_up: ScanMap,
     pub z_pos: ScanMap,
     pub z_neg: ScanMap,
-    pub furniture: Vec<FurnRec>,
+    pub furniture: Vec<FurnitureRecord>,
     /// Scanlines that hit the dumper's MAX_MARCH_HITS cap (logged, treated as-is).
     pub truncated: usize,
 }
 
 impl VoxelDump {
-    pub(crate) fn meta(&self) -> &DumpMeta {
+    pub(crate) fn metadata(&self) -> &DumpMetadata {
         self.meta.as_ref().expect("parse_dump guarantees meta")
     }
 }
@@ -90,7 +90,7 @@ impl SolidInterval {
     pub(crate) fn len(&self) -> f64 {
         self.b - self.a
     }
-    pub(crate) fn mid(&self) -> f64 {
+    pub(crate) fn midpoint(&self) -> f64 {
         (self.a + self.b) * 0.5
     }
 }
@@ -156,7 +156,7 @@ impl VerticalScan {
 
 /// One extracted wall run in normalized plan coordinates.
 #[derive(Debug, Clone)]
-pub(crate) struct WallSeg {
+pub(crate) struct WallSegment {
     pub start: [f64; 2],
     pub end: [f64; 2],
     pub thickness: f64,
@@ -164,7 +164,7 @@ pub(crate) struct WallSeg {
 
 /// An interior mass rect (stair block, chimney shaft) — full-cover furniture in the blueprint.
 #[derive(Debug, Clone)]
-pub(crate) struct MassRect {
+pub(crate) struct MassRectangle {
     /// [min_x, min_z, max_x, max_z], normalized.
     pub rect: [f64; 4],
 }

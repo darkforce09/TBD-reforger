@@ -56,7 +56,10 @@ async fn requested(f: &Fixture, server: Uuid, body: Value) -> String {
     let (status, receipt) = request(f, server, body).await;
     assert_eq!(status, StatusCode::ACCEPTED, "{receipt}");
     assert_eq!(receipt["state"], "queued");
-    receipt["id"].as_str().unwrap().to_owned()
+    receipt["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_owned()
 }
 
 /// The same request with no `Authorization` header at all.
@@ -66,10 +69,12 @@ async fn anonymous(f: &Fixture, uri: &str, body: &Value) -> (StatusCode, Value) 
         .uri(uri)
         .header(header::CONTENT_TYPE, "application/json")
         .body(Body::from(body.to_string()))
-        .unwrap();
+        .expect("the request builds");
     let response = f.app.clone().oneshot(request).await.unwrap();
     let status = response.status();
-    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -114,7 +119,9 @@ async fn executing(f: &Fixture, agent: &str, command: &str) -> i64 {
         (StatusCode::OK, Some(command)),
         "{claimed}"
     );
-    let token = claimed["fencing_token"].as_i64().unwrap();
+    let token = claimed["fencing_token"]
+        .as_i64()
+        .expect("the `fencing_token` field is an integer");
     let (status, answer) = report(
         f,
         agent,
@@ -148,7 +155,7 @@ async fn lapse(f: &Fixture, command: &str) {
     .bind(command)
     .execute(f.pool())
     .await
-    .unwrap();
+    .expect("the update of fleet_commands succeeds");
 }
 
 fn console_result(token: i64, response: impl Into<Value>, truncated: bool) -> Value {

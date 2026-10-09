@@ -42,7 +42,7 @@ const VANILLA_CALIBRATION_SHA256: &str =
 const WIRE_EPSILON: f64 = 1e-9;
 
 fn vanilla_catalog_bytes() -> Vec<u8> {
-    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let path = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("the repository root above the API package")
@@ -58,8 +58,8 @@ fn vanilla_catalog() -> BallisticsCatalog {
 /// A case's router with the vanilla catalog version stored (once per database).
 async fn fixture() -> ContentSuite {
     let suite = ContentSuite::new(SUITE).await;
-    let text = String::from_utf8(vanilla_catalog_bytes()).unwrap();
-    let document: Value = serde_json::from_str(&text).unwrap();
+    let text = String::from_utf8(vanilla_catalog_bytes()).expect("the bytes are UTF-8");
+    let document: Value = serde_json::from_str(&text).expect("the text decodes as JSON");
     sqlx::query(
         "INSERT INTO ballistics_catalogs (catalog_id, catalog_version, title, game_build, \
          export_generation_id, catalog_sha256, calibration_sha256, catalog_document, \
@@ -67,9 +67,9 @@ async fn fixture() -> ContentSuite {
          VALUES ('vanilla_mortars', 1, $1, $2, $3, $4, $5, $6::jsonb, '{}'::jsonb, '{}'::jsonb, $7) \
          ON CONFLICT DO NOTHING",
     )
-    .bind(document["title"].as_str().unwrap())
-    .bind(document["game_build"].as_str().unwrap())
-    .bind(document["export_generation_id"].as_str().unwrap())
+    .bind(document["title"].as_str().expect("the `title` field is a string"))
+    .bind(document["game_build"].as_str().expect("the `game_build` field is a string"))
+    .bind(document["export_generation_id"].as_str().expect("the `export_generation_id` field is a string"))
     .bind(VANILLA_CATALOG_SHA256)
     .bind(VANILLA_CALIBRATION_SHA256)
     .bind(&text)
@@ -133,9 +133,9 @@ fn save_body(
     event: Option<Uuid>,
     client: &FireMissionSolution,
 ) -> Value {
-    let mut body = serde_json::to_value(inputs).unwrap();
+    let mut body = serde_json::to_value(inputs).expect("the value serialises to JSON");
     body["target_grid"] = json!("0220 0180");
-    body["client_solution"] = serde_json::to_value(client).unwrap();
+    body["client_solution"] = serde_json::to_value(client).expect("the value serialises to JSON");
     if let Some(event) = event {
         body["event_id"] = json!(event.to_string());
     }
@@ -217,7 +217,7 @@ async fn missions_by(pool: &PgPool, actor: &Actor) -> i64 {
         .bind(&actor.id)
         .fetch_one(pool)
         .await
-        .unwrap()
+        .expect("the read of fire_missions returns a row")
 }
 
 fn close(a: f64, b: f64) -> bool {
@@ -229,14 +229,23 @@ fn assert_guns_match(rows: &[GunRow], solution: &FireMissionSolution, inputs: &F
     assert_eq!(rows.len(), solution.guns.len(), "one stored row per gun");
     for (row, (gun, input)) in rows.iter().zip(solution.guns.iter().zip(&inputs.guns)) {
         let rings = gun.recommended_rings.expect("the fixture guns solve");
-        let fired = gun.charges.iter().find(|c| c.rings == rings).unwrap();
+        let fired = gun
+            .charges
+            .iter()
+            .find(|c| c.rings == rings)
+            .expect("the gun has a charge with the requested ring count");
         assert_eq!(i64::from(row.0), i64::from(gun.gun_index));
         assert_eq!(
             (row.1.as_str(), row.2, row.3, row.4),
             (input.label.as_str(), input.x, input.y, input.height_m)
         );
         assert_eq!(row.5, "manual");
-        assert_eq!(row.6, fired.aim_azimuth_mils.unwrap());
+        assert_eq!(
+            row.6,
+            fired
+                .aim_azimuth_mils
+                .expect("the fired solution carries an aim azimuth")
+        );
         assert_eq!(row.7, fired.elevation_mils);
         assert_eq!(row.8.map(u32::try_from).map(Result::unwrap), Some(rings));
         assert_eq!(row.9, fired.time_of_flight_s);

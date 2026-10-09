@@ -119,7 +119,7 @@ pub(crate) fn mount(s: Signals) {
             if !engine_ready.get() || !loaded.get() {
                 return;
             }
-            let t0 = js_sys::Date::now();
+            let t0 = time_source::wall_clock_ms();
             let guard = bench.borrow();
             let Some(b0) = guard.as_ref() else {
                 return;
@@ -141,7 +141,7 @@ pub(crate) fn mount(s: Signals) {
                 cut_buildings,
                 eye_y,
                 cuts.len(),
-                js_sys::Date::now() - t0,
+                time_source::wall_clock_ms() - t0,
                 b0.host.occluder().chunk_count(),
                 b0.host.occluder().expanded_count(),
                 b0.host.occluder().blas_count(),

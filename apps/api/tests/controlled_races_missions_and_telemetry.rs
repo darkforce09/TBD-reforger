@@ -201,7 +201,7 @@ async fn check_decided_by(
 
     check_review_decided_once(fixture.pool(), mission)
         .await
-        .unwrap();
+        .expect("the review-decided-once invariant check runs");
     let states: Vec<String> =
         sqlx::query_scalar("SELECT state FROM mission_reviews WHERE mission_id = $1")
             .bind(mission)

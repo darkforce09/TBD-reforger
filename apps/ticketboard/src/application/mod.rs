@@ -43,7 +43,7 @@ use ticketboard_model::application_state::window_layout::*;
 use ticketboard_model::application_state::workspace_state::*;
 use ticketboard_model::core::process::external_open::open_path;
 use ticketboard_model::core::time::utc_hms_now;
-pub struct TicketboardApp {
+pub(crate) struct TicketboardApp {
     repo_root: Option<PathBuf>,
     state: State,
     tab: Tab,

@@ -19,12 +19,14 @@
 // `clippy::module_inception`, because a schema module holds a definition of the schema's own name
 // (`event_hub::event_hub`) and a domain a schema of the domain's name;
 // `clippy::derivable_impls`, because typify writes `Default` by hand for a struct whose every
-// field takes its type's default.
+// field takes its type's default; `rustdoc::invalid_html_tags`, because a schema `description`
+// is prose copied verbatim into the doc comment and may name a placeholder such as `<id>`.
 #[allow(
     missing_docs,
     clippy::unwrap_used,
     clippy::module_inception,
-    clippy::derivable_impls
+    clippy::derivable_impls,
+    rustdoc::invalid_html_tags
 )]
 mod generated;
 pub mod prelude;

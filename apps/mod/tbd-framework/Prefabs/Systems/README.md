@@ -85,5 +85,5 @@ controller because its class is `SCR_PlayerController`.
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the one-life rule the spawn
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the one-life rule the spawn
   settings serve.

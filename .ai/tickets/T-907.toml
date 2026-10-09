@@ -8,6 +8,7 @@ order = 8300
 spec = "documentation/tickets/specs/t853_shell_to_xtask_waves.md"
 plan = "documentation/tickets/plans/t-907_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/src/dem/sample.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/doc/apply_faction.rs: removed in commit 3f7adae99, no successor; crates/map-engine-core/src/doc/store.rs: removed in commit 3f7adae99, no successor; crates/map-engine-core/src/mission/compile.rs: removed in commit ea3672340, no successor; crates/map-engine-core/src/mission/flatten.rs: removed in commit ea3672340, no successor; crates/map-engine-core/src/mission/validate.rs: removed in commit ea3672340, no successor; crates/map-engine-core/src/slots_gpu.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/world/residency.rs: removed in commit 1660b03f8, no successor; crates/map-engine-render/src/draw_order.rs: removed in commit 1660b03f8, no successor; crates/map-engine-render/src/engine.rs: removed in commit 1660b03f8, no successor; crates/map-engine-render/src/scene.rs: removed in commit 1660b03f8, no successor."
 main_goal = "Split 11 T-899-allowlisted map-engine SIZE-3 files; drop allowlist rows."
 context = [
     "T-899 allowlisted 11 map-engine-core and map-engine-render files over 1000 lines.",

@@ -246,7 +246,7 @@ fn markdown_in_a_top_level_folder_no_list_names_is_placed() {
         .tracked("CLAUDE.md", "# Instructions\n")
         .tracked("deploy/README.md", "# Deploy\n")
         .tracked("deploy/NOTES.md", "# Notes\n")
-        .tracked("legacy/old_tool/guide.md", "# Guide\n")
+        .tracked("engines/map_tool/guide.md", "# Guide\n")
         .tracked(".github/pull_request_template.md", "# Template\n");
     let run = run(&fixture, &[]);
     assert_eq!(
@@ -254,7 +254,7 @@ fn markdown_in_a_top_level_folder_no_list_names_is_placed() {
         [
             "FAIL: deploy/NOTES.md: Markdown in a code tree; a code tree holds only README.md, \
              and documents live under documentation/",
-            "FAIL: legacy/old_tool/guide.md: Markdown in a code tree; a code tree holds only \
+            "FAIL: engines/map_tool/guide.md: Markdown in a code tree; a code tree holds only \
              README.md, and documents live under documentation/",
         ]
     );

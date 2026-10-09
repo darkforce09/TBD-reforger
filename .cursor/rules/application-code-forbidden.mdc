@@ -1,6 +1,6 @@
 ---
 description: HARD GATE — no application source edits in a Cursor chat without the operator's explicit word to write code
-globs: apps/api/src/**/*.rs,apps/frontend/src/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
+globs: apps/api/src/**/*.rs,apps/frontend/src/**/*.rs,crates/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
 alwaysApply: false
 ---
 
@@ -8,7 +8,7 @@ alwaysApply: false
 
 > **EXCEPTION — PLATFORM FACTORY MODE.** When the operator has started the platform factory, this
 > rule is **suspended for factory work**: the slice agents the orchestrator dispatches DO edit
-> `apps/**` and `contracts/**`, each inside its own slice worktree and scoped to its ticket's
+> `apps/**`, `crates/**` and `contracts/**`, each inside its own slice worktree and scoped to its ticket's
 > `owns` paths. See [`platform-factory-mode.mdc`](/.cursor/rules/platform-factory-mode.mdc).
 > Outside factory mode this rule applies unchanged. The orchestrator itself still never edits
 > these files: it dispatches a slice agent instead.
@@ -27,7 +27,7 @@ agent that writes the code updates the documentation it changes in the same comm
 
 ## Forbidden unless the operator clearly says to write the code (for example "Cursor, you write the code")
 
-- Any patch under `apps/api/src/`, `apps/frontend/src/` or `apps/mod/`.
+- Any patch under `apps/api/src/`, `apps/frontend/src/`, `crates/` or `apps/mod/`.
 - "Fixing" audit findings yourself.
 - Completing plan steps that belong to the coding agent.
 

@@ -17,7 +17,7 @@ tools/xtask/src/commands/verify/
 ## How it works
 
 `tools/xtask/src/cli/mod.rs` mounts `VerifyCmd` as the `verify` group. `dispatch::run` matches
-the verb, resolves the checkout root with `repository_layout::find_repository_root` where the
+the verb, resolves the checkout root with `repository_layout::prelude::find_repository_root` where the
 check takes one, and returns the check's exit code unchanged. The folder holds no check logic:
 `DocumentationGateArgs` (`--path`, `--with-untracked`) becomes the `GateRequest` of the
 documentation gates, and `--report` of `link-check` picks every break over the first ones.
@@ -52,14 +52,14 @@ Run each as `cargo xtask verify <verb>` from the repository root.
 
 ### Workspace laws
 
-- Synopsis: `verify crate-tiers`; `verify crate-anatomy`; `verify strangler`;
+- Synopsis: `verify crate-tiers`; `verify crate-anatomy`; `verify test-file-reachability`;
   `verify frontend-layering`; `verify tailwind-sources`
 - Does: the five workspace laws of the
-  [laws and gates](/documentation/restructure/laws_and_gates.md#new-laws) over the members of
-  the root manifest: membership, layout, tiers, category edges and firewalls; the library crate
-  anatomy; no new dependency on a member under `legacy/` and no shim; the frontend layer order (a
-  ratchet); an `@source` line per leptos crate. Body:
-  `tools/checks/repository_checks/src/architecture/workspace_laws.rs`.
+  [crate boundary rules](/documentation/standards/crate_boundary_rules.md) over the members of
+  the root manifest: membership (every member judged, an app or a tool binary), layout, tiers,
+  category edges and firewalls; the library crate anatomy; every file in a member's test folders
+  compiled by one of its targets; the frontend layer order (hard at zero); an `@source` line per
+  leptos crate. Body: `tools/checks/repository_checks/src/architecture/workspace_laws.rs`.
 - Example: `cargo xtask verify crate-tiers`
 
 ### CI gates

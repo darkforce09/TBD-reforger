@@ -8,13 +8,13 @@ order = 7540
 spec = "documentation/tickets/specs/t290_dead_flatten_fields.md"
 plan = "documentation/tickets/plans/t-290_plan.md"
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope engine/core written into the body; note kept verbatim for the operator. flatten.rs is shared with T-674.1/T-675.1/T-936.1 and T-291/T-242/T-299/T-310 → packs after them (pack_last kept). Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist."
+notes = "needs-operator: frozen unmappable Scope.  | 2026-09-05: proposed scope engine/core written into the body; note kept verbatim for the operator. flatten.rs is shared with T-674.1/T-675.1/T-936.1 and T-291/T-242/T-299/T-310 → packs after them (pack_last kept). Operator authorization 2026-09-04: agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game behaviour goes on a human checklist. Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/src/mission/flatten.rs: removed in commit ea3672340, no successor."
 priority = 3
 main_goal = "Every emitted flatten field is read by a named mod file or marked non-consumed with a reason."
 context = [
     "Idea audit owning the flatten emit ledger; pack_last sole occupant of factory wave 15.",
     "Operator-frozen unmappable scope; notes flag needs-operator triage.",
-    "Anchor 2026-09-05: flatten.rs:1728-1858 briefingSeconds (advisory), :2249 synthesized meta fields; readers live in Backend/TBD_MissionLoader.c and TBD_MissionValidator.c.",
+    "Anchor 2026-09-05: flatten.rs:1728-1858 briefingSeconds (advisory), :2249 synthesized meta fields; readers live in apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c and TBD_MissionValidator.c.",
 ]
 requirement = [
     "flatten.rs gains an EMIT_LEDGER table (field, consumer or non-consumed, ticket) with a test that every emitted top-level key appears in it.",
@@ -38,8 +38,8 @@ acceptance = [
 created_at = "2026-09-05T03:30:00Z"
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation/TBD_MissionValidator.c",
 ]
 pack_last = true
 

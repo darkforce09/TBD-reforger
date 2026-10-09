@@ -39,7 +39,7 @@ use verification_core::verdict::{Kind, NotRun, Verdict};
 use crate::workflow_checks::workflow_shell_rules::{
     line_reason, logical_lines, shell_reason, uses_reason,
 };
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 const WORKFLOWS: &str = ".github/workflows";
 const MAX_LOGICAL: usize = 3;

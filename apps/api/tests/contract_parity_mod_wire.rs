@@ -635,7 +635,7 @@ fn mod_schema_version_window(scripts: &[ScriptFile]) -> BTreeSet<String> {
 
 /// Every `schemaVersion` literal the mission compiler chooses between.
 fn compiler_schema_versions() -> BTreeSet<String> {
-    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let path = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("the repository root above the API package")

@@ -60,5 +60,5 @@ The Workbench plugins write a generation under
 
 ## Related documentation
 
-- [Equipment and vehicle export evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Equipment and vehicle export evidence](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — recorded validation and publication runs.

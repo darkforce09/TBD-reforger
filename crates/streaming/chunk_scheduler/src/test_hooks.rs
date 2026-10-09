@@ -26,7 +26,7 @@ impl ChunkResidency {
 
     /// The resident chunk `id`, writable, when it is resident.
     pub fn resident_chunk_mut_for_test(&mut self, id: &ChunkId) -> Option<&mut WorldChunk> {
-        self.chunks.get_mut(id.as_str())
+        self.chunks.get_mut(id)
     }
 
     /// Bumps the content epoch, as an insert does, after a test rewrote a resident chunk.

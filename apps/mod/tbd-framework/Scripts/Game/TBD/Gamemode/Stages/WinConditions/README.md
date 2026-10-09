@@ -58,5 +58,5 @@ is set before `SetStage(END)`, so a condition that stays true ends the round onc
 
 ## Related documentation
 
-- [End screen specification](/documentation/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+- [End screen specification](/documentation/apps/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner that names the win rule's endings

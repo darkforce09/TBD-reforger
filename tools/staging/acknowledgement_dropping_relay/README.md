@@ -11,7 +11,7 @@ that the agent never hears about.
 
 ```text
 tools/staging/acknowledgement_dropping_relay/
-├── Cargo.toml  the `acknowledgement_dropping_relay` library package: axum, reqwest, tokio, clap, `thiserror`, layout tier 1
+├── Cargo.toml  the `acknowledgement_dropping_relay` library package: axum, reqwest, rustls (ring), tokio, clap, `thiserror`, layout tier 1
 └── src/        the relay, the drop policy, the control socket, the settings and the command line
 ```
 
@@ -57,7 +57,7 @@ No feature and no environment variable: the `serve` flags `--listen`, `--upstrea
 
 ## Boundaries
 
-- Depends on: `axum`, `reqwest`, `tokio`, `clap`, `serde`, `serde_json`, `newtype_ids`,
+- Depends on: `axum`, `reqwest`, `rustls` (the ring provider), `tokio`, `clap`, `serde`, `serde_json`, `newtype_ids`,
   `time_source` (the drop record's stamp) and `thiserror`.
 - Used by: `developer_tools`' `acknowledgement-dropping-relay` binary, which the unit
   `acknowledgement-dropping-relay@N` runs on the staging host and the staging fleet procedure runs

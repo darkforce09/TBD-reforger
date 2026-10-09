@@ -1,4 +1,5 @@
 //! Reads and writes owner-scoped IndexedDB mission records.
+use super::indexed_db_completion::{request_result, transaction_committed};
 use super::*;
 /* ───────────────────────  per-account record scoping ─────────────────────── */
 
@@ -150,7 +151,7 @@ pub(super) async fn open_db() -> Result<idb::Database, idb::Error> {
             let _ = db.create_object_store(STORE, idb::ObjectStoreParams::new());
         }
     });
-    req.await
+    idb::Database::try_from(request_result(&mut req).await?)
 }
 
 /* ── raw access, by PHYSICAL key. Everything above these four applies the account scoping. ── */
@@ -163,11 +164,9 @@ pub(super) async fn put_raw(key: &str, bytes: &[u8]) -> Result<(), idb::Error> {
     let tx = db.transaction(&[STORE], idb::TransactionMode::ReadWrite)?;
     let store = tx.object_store(STORE)?;
     let value = js_sys::Uint8Array::from(bytes);
-    store
-        .put(value.as_ref(), Some(&JsValue::from_str(key)))?
-        .await?;
-    tx.commit()?.await?;
-    Ok(())
+    let mut put = store.put(value.as_ref(), Some(&JsValue::from_str(key)))?;
+    request_result(&mut put).await?;
+    transaction_committed(tx).await
 }
 
 /// the outcome of reading one physical key, with **`Miss` and `Failed` kept apart**.
@@ -201,15 +200,15 @@ pub(super) async fn read_raw(key: &str) -> RecordRead {
     let Ok(store) = tx.object_store(STORE) else {
         return RecordRead::Failed;
     };
-    let Ok(req) = store.get(JsValue::from_str(key)) else {
+    let Ok(mut req) = store.get(JsValue::from_str(key)) else {
         return RecordRead::Failed;
     };
-    match req.await {
-        Ok(Some(value)) => match value.dyn_into::<js_sys::Uint8Array>() {
+    match request_result(&mut req).await {
+        Ok(value) if value.is_null() || value.is_undefined() => RecordRead::Miss,
+        Ok(value) => match value.dyn_into::<js_sys::Uint8Array>() {
             Ok(arr) => RecordRead::Hit(arr.to_vec()),
             Err(_) => RecordRead::Failed,
         },
-        Ok(None) => RecordRead::Miss,
         Err(_) => RecordRead::Failed,
     }
 }
@@ -238,7 +237,9 @@ pub(super) async fn has_raw(key: &str) -> bool {
         return false;
     };
     match store.get_key(JsValue::from_str(key)) {
-        Ok(req) => matches!(req.await, Ok(Some(_))),
+        Ok(mut req) => request_result(&mut req)
+            .await
+            .is_ok_and(|found| !(found.is_null() || found.is_undefined())),
         Err(_) => false,
     }
 }
@@ -248,9 +249,9 @@ pub(super) async fn delete_raw(key: &str) -> Result<(), idb::Error> {
     let db = open_db().await?;
     let tx = db.transaction(&[STORE], idb::TransactionMode::ReadWrite)?;
     let store = tx.object_store(STORE)?;
-    store.delete(JsValue::from_str(key))?.await?;
-    tx.commit()?.await?;
-    Ok(())
+    let mut delete = store.delete(JsValue::from_str(key))?;
+    request_result(&mut delete).await?;
+    transaction_committed(tx).await
 }
 
 /// Every physical key in the store. The store holds a handful of records per account, so a full
@@ -266,14 +267,15 @@ pub(super) async fn all_keys() -> Vec<String> {
     let Ok(store) = tx.object_store(STORE) else {
         return Vec::new();
     };
-    let Ok(req) = store.get_all_keys(None, None) else {
+    let Ok(mut req) = store.get_all_keys(None, None) else {
         return Vec::new();
     };
-    req.await
+    request_result(&mut req)
+        .await
+        .ok()
+        .and_then(|keys| keys.dyn_into::<js_sys::Array>().ok())
+        .map(|keys| keys.iter().filter_map(|key| key.as_string()).collect())
         .unwrap_or_default()
-        .iter()
-        .filter_map(JsValue::as_string)
-        .collect()
 }
 
 /* ── the account-scoped API. `id` is always a LOGICAL key; the owner is applied here. ── */

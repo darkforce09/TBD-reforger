@@ -34,7 +34,7 @@ const MAX_BODY: usize = 256 << 20;
 static PEER: AtomicU32 = AtomicU32::new(1);
 
 /// A synthetic client address no other request of this process uses.
-pub fn next_peer() -> SocketAddr {
+pub(crate) fn next_peer() -> SocketAddr {
     let n = PEER.fetch_add(1, Ordering::Relaxed);
     let [_, b, c, d] = n.to_be_bytes();
     SocketAddr::from((IpAddr::from([10, b, c, d]), 40000))
@@ -42,7 +42,7 @@ pub fn next_peer() -> SocketAddr {
 
 /// A request to send: method, URI, optional bearer, headers and body.
 #[derive(Debug, Clone, Default)]
-pub struct Outgoing {
+pub(crate) struct Outgoing {
     pub method: String,
     pub uri: String,
     pub bearer: Option<String>,
@@ -53,7 +53,7 @@ pub struct Outgoing {
 
 impl Outgoing {
     /// A request with no bearer, headers or body.
-    pub fn new(method: &str, uri: impl Into<String>) -> Outgoing {
+    pub(crate) fn new(method: &str, uri: impl Into<String>) -> Outgoing {
         Outgoing {
             method: method.to_string(),
             uri: uri.into(),
@@ -62,13 +62,13 @@ impl Outgoing {
     }
 
     /// Add `Authorization: Bearer <token>`.
-    pub fn bearer(mut self, token: impl Into<String>) -> Outgoing {
+    pub(crate) fn bearer(mut self, token: impl Into<String>) -> Outgoing {
         self.bearer = Some(token.into());
         self
     }
 
     /// A JSON body with `Content-Type: application/json`.
-    pub fn json(mut self, body: &Value) -> Outgoing {
+    pub(crate) fn json(mut self, body: &Value) -> Outgoing {
         let bytes = serde_json::to_vec(body).expect("serialise request body");
         self.body = Some((bytes, Some("application/json".into())));
         self
@@ -77,7 +77,7 @@ impl Outgoing {
 
 /// A read response.
 #[derive(Debug, Clone)]
-pub struct Received {
+pub(crate) struct Received {
     pub status: StatusCode,
     pub headers: HeaderMap,
     /// The whole body, or for an event stream the bytes up to its first complete event.
@@ -86,22 +86,22 @@ pub struct Received {
 
 impl Received {
     /// The body as JSON, when it is JSON.
-    pub fn json(&self) -> Option<Value> {
+    pub(crate) fn json(&self) -> Option<Value> {
         serde_json::from_slice(&self.body).ok()
     }
 
     /// The `Content-Type` header, or `""`.
-    pub fn content_type(&self) -> &str {
+    pub(crate) fn content_type(&self) -> &str {
         self.header(header::CONTENT_TYPE.as_str()).unwrap_or("")
     }
 
     /// A header's value as text.
-    pub fn header(&self, name: &str) -> Option<&str> {
+    pub(crate) fn header(&self, name: &str) -> Option<&str> {
         self.headers.get(name).and_then(|value| value.to_str().ok())
     }
 
     /// Up to 600 characters of the body, for failure messages.
-    pub fn excerpt(&self) -> String {
+    pub(crate) fn excerpt(&self) -> String {
         let text = String::from_utf8_lossy(&self.body);
         let mut excerpt: String = text.chars().take(600).collect();
         if text.chars().count() > 600 {
@@ -111,7 +111,7 @@ impl Received {
     }
 
     /// The `data` of the first event, parsed as JSON.
-    pub fn first_event_data(&self) -> Option<Value> {
+    pub(crate) fn first_event_data(&self) -> Option<Value> {
         let text = String::from_utf8_lossy(&self.body);
         let frame = text.split("\n\n").next()?;
         let data: Vec<&str> = frame
@@ -124,7 +124,7 @@ impl Received {
 }
 
 /// Send `outgoing` through `app` from a fresh peer and read the response.
-pub async fn send(app: &Router, outgoing: &Outgoing) -> Received {
+pub(crate) async fn send(app: &Router, outgoing: &Outgoing) -> Received {
     let method = Method::from_bytes(outgoing.method.as_bytes()).expect("a valid method");
     let mut builder = Request::builder().method(method).uri(&outgoing.uri);
     if let Some(token) = &outgoing.bearer {
@@ -179,7 +179,7 @@ pub async fn send(app: &Router, outgoing: &Outgoing) -> Received {
 
 /// The stream's bytes up to and including its first `\n\n`, or what arrived before the
 /// timeout or the end of the stream.
-pub async fn read_first_event(body: Body) -> Vec<u8> {
+pub(crate) async fn read_first_event(body: Body) -> Vec<u8> {
     let mut stream = body.into_data_stream();
     let mut buffer = Vec::new();
     let read = async {
@@ -197,7 +197,7 @@ pub async fn read_first_event(body: Body) -> Vec<u8> {
 
 /// `None` when the body is the refusal envelope `{"error": string, "details"?: any}` and
 /// nothing else, else what is wrong with it.
-pub fn envelope_problem(received: &Received) -> Option<String> {
+pub(crate) fn envelope_problem(received: &Received) -> Option<String> {
     let Some(Value::Object(fields)) = received.json() else {
         return Some(format!(
             "the refusal is not a JSON object (Content-Type `{}`): {}",

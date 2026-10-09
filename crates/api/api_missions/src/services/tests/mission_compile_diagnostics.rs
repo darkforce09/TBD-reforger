@@ -92,7 +92,7 @@ fn compile_with_catalog_refuses_over_capacity_like_save() {
         );
     }
 
-    // Compile channel — same helper, same strings, Parse so `/compiled` cannot ship it.
+    // Compile channel — same helper, same strings, Parse so no artifact can carry it.
     let err = flatten_to_mod_document_with_catalog(&m, bad.as_bytes(), &catalog)
         .expect_err("over-capacity must refuse at compile");
     let CompileError::Parse(detail) = err else {
@@ -142,9 +142,9 @@ fn flatten_routes_through_catalogued_compile_gate() {
     );
 }
 
-/// Compile-as-trust-saved for the empty-catalog default: Save and live `/compiled` own
-/// the refuse via `load_cargo_phys_catalog`. RED: Save drops the catalog load, or this adapter
-/// stops documenting that dependency.
+/// Compile-as-trust-saved for the empty-catalog default: Save (via `load_cargo_phys_catalog`)
+/// and the submit-time artifact compile (via `load_catalog_snapshot`) own the refuse. RED: Save
+/// drops the catalog load, or this adapter stops documenting that dependency.
 #[test]
 fn compile_documents_save_cargo_refuse() {
     const COMPILE: &str = include_str!("../mission_compile.rs");
@@ -161,8 +161,9 @@ fn compile_documents_save_cargo_refuse() {
         "compile adapter must name Save's catalogued validator"
     );
     assert!(
-        production.contains("GET /missions/:id/compiled"),
-        "compile adapter must name the live /compiled catalogued path"
+        production.contains("POST /api/v1/missions/:id/submit")
+            && production.contains("artifact_store::compile_artifact"),
+        "compile adapter must name the live submit-time artifact compile, its catalogued path"
     );
 
     const VERSIONS: &str = include_str!("../../handlers/mission_versions.rs");
@@ -224,7 +225,7 @@ fn the_fixture_mission_compiles_with_no_diagnostics() {
     let doc = flatten_to_mod_document(&fixture_mission(), FIXTURE.as_bytes()).expect("compiles");
     assert!(
         doc.diagnostics.is_empty(),
-        "a clean mission must produce no findings at the /compiled boundary; got {:?}",
+        "a clean mission must produce no findings at the artifact compile boundary; got {:?}",
         doc.diagnostics
     );
     assert_eq!(compile_diagnostics_rules_header(&doc.diagnostics), None);
@@ -232,7 +233,7 @@ fn the_fixture_mission_compiles_with_no_diagnostics() {
 
 /// A payload that authors a dropped value still serves a VALID document — findings ride
 /// alongside the bytes, never inside them. Without this, the obvious "just add a `diagnostics` key"
-/// implementation would 500 `/compiled` for every mission (`additionalProperties: false` on the
+/// implementation would refuse every artifact compile (`additionalProperties: false` on the
 /// document root).
 #[test]
 fn a_mission_with_findings_still_serves_a_schema_valid_document() {

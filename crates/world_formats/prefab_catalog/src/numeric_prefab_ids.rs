@@ -1,7 +1,7 @@
 //! The prefab a JSON number names.
 //!
 //! **Role:** turns the numbers the served JSON carries into [`PrefabId`]s: a catalogue row's
-//! `prefabId` ([`catalogue_prefab_id`]) and a chunk instance's `pid`
+//! `prefabId` (`catalogue_prefab_id`, crate-internal) and a chunk instance's `pid`
 //! ([`prefab_id_from_f64`]), the join key of every chunk row against the prefab map.
 //! **Position:** under `prefab_catalog`; read by [`crate::prefab_rows`] and
 //! [`crate::footprint_lookups`] for the catalogue, and by `world_chunks`' chunk decoder and the

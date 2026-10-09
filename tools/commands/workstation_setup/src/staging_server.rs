@@ -30,7 +30,7 @@ use process_runner::Run;
 use verification_core::verdict::NotRun;
 
 use deploy_settings::{DeployEnvironment, DeployHostFolder, SettingError, deploy_environment_path};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Optional absolute ssh path for unit tests (avoids PATH mutation).
 const ENV_SSH: &str = "TBD_BOOTSTRAP_STAGING_SSH";

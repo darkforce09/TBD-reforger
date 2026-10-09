@@ -55,12 +55,9 @@ cargo xtask verify crate-anatomy                       # lib.rs, prelude, error,
 - Rules: every manifest here is a workspace member with a layout declaration whose category equals
   its parent folder and whose package name equals its folder name, and every dependency edge
   points to a lower tier along the category matrix (`cargo xtask verify crate-tiers`); every
-  library crate keeps the anatomy above (`cargo xtask verify crate-anatomy`); nothing here depends
-  on `legacy/` (`cargo xtask verify strangler`).
+  library crate keeps the anatomy above (`cargo xtask verify crate-anatomy`).
 
 ## Related documentation
 
-- [Laws and gates](/documentation/restructure/laws_and_gates.md) — the crate-tier and
-  crate-anatomy laws in full.
-- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the dependency
-  directions between the workspace crates.
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the crate-tier and
+  crate-anatomy laws in full, and the dependency directions between the workspace crates.

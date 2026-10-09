@@ -1,7 +1,7 @@
 id = "T-1103"
 kind = "work"
 title = "Fix wave gate migration 0016 default naming a missing file"
-summary = "platform/wave_execution/migrate/gate_db_migrate_claim_body.rs:23 defaults TBD_GATE_MIGRATION_0016 to migrations/0016_backfill_pre_t326_linked_match_stats.sql; the tracked file is 0016_backfill_linked_match_stats.sql, so the claim-body gate fails when the variable is unset."
+summary = "tools/commands/platform_execution/src/wave_execution/migrate/gate_db_migrate_claim_body.rs:23 defaults TBD_GATE_MIGRATION_0016 to migrations/0016_backfill_pre_t326_linked_match_stats.sql; the tracked file is 0016_backfill_linked_match_stats.sql, so the claim-body gate fails when the variable is unset."
 class = "bug"
 status = "idea"
 notes = "Paths under tools/commands/platform_execution/src/wave_execution. migrate/gate_db_migrate_claim_body.rs:17-27 reads TBD_GATE_MIGRATION_0016 and otherwise joins crates/api/api_database/migrations/0016_backfill_pre_t326_linked_match_stats.sql (:23); git ls-files shows only crates/api/api_database/migrations/0016_backfill_linked_match_stats.sql. With the variable unset, :28-33 prints 'missing migration file' and returns 1, and the message tells the operator to 'restore the file', which never existed under that name. Callers: gate/checkrun.rs:113 and gate/gate_dispatch.rs:205. The default path also carries a ticket id (T-1004 covers comment ids, not this literal). Fix the default to the tracked file name (or resolve the 0016_* file by prefix) and add a test that the default exists. Source: README writer R16."

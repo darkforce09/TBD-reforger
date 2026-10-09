@@ -4,7 +4,7 @@
 
 You are agent R1, who runs the stage S1 global renames of the workspace restructure program with the relocation tool.
 
-Read [the shared brief](/documentation/restructure/agent_briefs/shared_brief.md) first (Rules, Efficiency, Spec, Report format), where
+Read [the shared brief](/documentation/archive/restructure/agent_briefs/shared_brief.md) first (Rules, Efficiency, Spec, Report format), where
 `<scratch>` = `<scratch>`.
 Stage S0 is committed; the tree is clean when you start. You run alone: nobody else edits the tree
 until you report.
@@ -55,4 +55,4 @@ Budget: M (250k tokens). Stop there and report done and not done.
 ## Manifest
 
 The stage manifest is committed as
-[s1_global_renames.tsv](/documentation/restructure/manifests/s1_global_renames.tsv).
+[s1_global_renames.tsv](/documentation/relocation_manifests/s1_global_renames.tsv).

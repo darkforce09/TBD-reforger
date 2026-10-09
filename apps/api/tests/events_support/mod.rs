@@ -47,17 +47,17 @@ use crate::common;
 
 /// Serialise the DB-touching tests of one binary — they share [`OTHER`] / [`THIRD`] and the
 /// event rows hung off them. Same pattern as `identity_link.rs` / `null_tolerance_reads.rs`.
-pub static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
+pub(crate) static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
 /// The second actor: the one already holding a seat when the caller claims.
 ///
 /// Namespaced to a range these suites own outright — verified unused across the whole
 /// repository (the sibling suites, `src/` and `seeds/`) before it was picked.
-pub const OTHER: &str = "000000000000334002";
+pub(crate) const OTHER: &str = "000000000000334002";
 /// A third seeded identity — the one that must stay on the waitlist while someone else moves
 /// between seats. Same private range as [`OTHER`].
-pub const THIRD: &str = "000000000000334003";
+pub(crate) const THIRD: &str = "000000000000334003";
 /// The identity `dev-login` mints for every role
 /// (`api_identity_and_access::handlers::developer_login::DEV_USER_ID`).
 ///
@@ -65,7 +65,7 @@ pub const THIRD: &str = "000000000000334003";
 /// these suites can namespace away. Nothing here asserts on that row's columns; it is only
 /// ever the *subject* of a request whose effects are checked in these suites' own `events` /
 /// `orbat_slots` rows.
-pub const DEV_USER: &str = common::DEV_LOGIN_USER;
+pub(crate) const DEV_USER: &str = common::DEV_LOGIN_USER;
 
 /// A durable, unique `arma_id` for a seeded actor.
 ///
@@ -73,12 +73,12 @@ pub const DEV_USER: &str = common::DEV_LOGIN_USER;
 /// `events-arma-{discord_id}` is one slot and races under parallel integration runs — mint a
 /// unique string instead (AtomicU64 + UUID via [`common::unique_arma`]), keeping the
 /// `events-arma-{discord_id}-` prefix so a row in the database still names its owner.
-pub fn arma(discord_id: &str) -> String {
+pub(crate) fn arma(discord_id: &str) -> String {
     common::unique_arma(&format!("events-arma-{discord_id}"))
 }
 
 /// The TBD guild of the test configuration; event access defaults to its verified members.
-pub fn tbd_guild() -> String {
+pub(crate) fn tbd_guild() -> String {
     Config::for_tests("postgres://unused", "events-secret")
         .discord_guild_id
         .into_inner()
@@ -86,7 +86,7 @@ pub fn tbd_guild() -> String {
 
 /// Router + pool over this binary's private database, or `None` when the suite must skip.
 /// Dev-login identities are verified TBD members, as the default event policy requires.
-pub async fn boot() -> Option<(Router, PgPool)> {
+pub(crate) async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");
@@ -99,7 +99,7 @@ pub async fn boot() -> Option<(Router, PgPool)> {
 }
 
 /// Seed an actor who is a verified TBD member, like every real signup under the default policy.
-pub async fn seed_member(
+pub(crate) async fn seed_member(
     pool: &PgPool,
     discord_id: &str,
     username: &str,
@@ -111,12 +111,12 @@ pub async fn seed_member(
 }
 
 /// A bearer for `role`, minted through the real dev-login route.
-pub async fn token(app: &Router, role: &str) -> String {
+pub(crate) async fn token(app: &Router, role: &str) -> String {
     common::dev_login_token(app, "events", role).await
 }
 
 /// One bearer-authenticated request against the router.
-pub async fn call(
+pub(crate) async fn call(
     app: &Router,
     method: &str,
     uri: &str,
@@ -132,10 +132,12 @@ pub async fn call(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),

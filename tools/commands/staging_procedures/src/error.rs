@@ -43,7 +43,7 @@ pub enum Error {
     Number(#[from] std::num::ParseIntError),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// A `deploy.env` setting is missing or invalid.
     #[error(transparent)]
     Settings(#[from] deploy_settings::Error),

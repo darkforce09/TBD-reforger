@@ -10,7 +10,7 @@ accepted.
 
 ```text
 tools/commands/ballistics_oracle_tooling/
-├── Cargo.toml  the `ballistics_oracle_tooling` library package: `repository_layout`, `content_digest`, serde, layout tier 1
+├── Cargo.toml  the `ballistics_oracle_tooling` library package: `repository_layout`, `repository_root`, `content_digest`, serde, layout tier 2
 └── src/        the export and oracle readers, the catalog and calibration assembly, the writers and the errors
 ```
 
@@ -52,11 +52,12 @@ under `assets/scratch/ballistics_oracle/`.
 
 ## Boundaries
 
-- Depends on: `repository_layout` (the checkout root and the contract folders), `content_digest`
+- Depends on: `repository_root` (the checkout root), `repository_layout` (the contract folders),
+  `content_digest`
   (SHA-256), `serde`, `serde_json`, `clap` and `thiserror`; `tool_test_support`, `jsonschema` and
   `walkdir` in tests.
 - Used by: `tools/xtask/src/cli/dispatch.rs`, for `cargo xtask ballistics`.
-- Rules: tier 1 of `tools/commands` (`cargo xtask verify crate-tiers`); the trim never reads an
+- Rules: tier 2 of `tools/commands` (`cargo xtask verify crate-tiers`); the trim never reads an
   unverified byte and never writes over a refusal; the written documents validate against
   `ballistics-catalog.schema.json` and `ballistics-calibration.schema.json` and pin each other by
   hash (`src/tests/trim_export/mod.rs`, and `cargo xtask schema validate` over the committed pair).

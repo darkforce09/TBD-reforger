@@ -13,7 +13,7 @@ use std::path::Path;
 
 use crate::Result;
 
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// What a bare `cargo xtask mod dev-server` prints before exiting 2.
 fn usage() -> String {

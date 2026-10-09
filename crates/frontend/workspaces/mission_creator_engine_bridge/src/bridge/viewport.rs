@@ -35,7 +35,7 @@ pub fn start_raf(
             }
         }
         {
-            let now = js_sys::Date::now();
+            let now = time_source::wall_clock_ms();
             if last_sample == 0.0 {
                 last_sample = now;
             } else if now - last_sample >= 1000.0 {

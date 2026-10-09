@@ -18,6 +18,8 @@ tier = 7
 targets = "wasm32"
 
 [dependencies]
+# The wall clock of the viewport settle deadline.
+time_source = { workspace = true }
 # The loaders the host owns and drives, the asset sink handle and the live memory budget.
 map_asset_loading = { workspace = true }
 # The asset sink, the boot progress, the host preferences and the memory budget rows.

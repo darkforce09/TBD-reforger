@@ -3,7 +3,7 @@
 The `repository_laws` crate: the structural engineering laws of the repository as pure checks over
 a checkout — file length, sibling test placement, no exemption mechanism, the dependency
 direction between the website crates, and the workspace laws (crate tiers, crate
-anatomy, the strangler rule, frontend layering, Tailwind sources). The `cargo xtask verify` gates
+anatomy, test-file reachability, frontend layering, Tailwind sources). The `cargo xtask verify` gates
 print these results and the `api` engineering-law tests assert on them, so the two never disagree
 about the tree.
 
@@ -59,7 +59,5 @@ No feature and no environment variable.
 ## Related documentation
 
 - [Tooling foundation crates](/tools/foundation/README.md) — the three crates and their tiers.
-- [Laws and gates](/documentation/restructure/laws_and_gates.md) — the crate-tier and crate-anatomy
-  laws this crate implements.
 - [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the crate-level
-  boundary laws.
+  boundary laws, the crate-tier and crate-anatomy laws among them, this crate implements.

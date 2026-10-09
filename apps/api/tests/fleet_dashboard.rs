@@ -40,7 +40,7 @@ async fn silent_server(pool: &PgPool, name: &str) -> Uuid {
     .bind(name)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the insert into servers returns its row")
 }
 
 /// An online server with a status row, deactivated when `active` is false.
@@ -69,7 +69,7 @@ async fn reporting_server(
             .bind(server.server_id)
             .execute(pool)
             .await
-            .unwrap();
+            .expect("the update of servers succeeds");
     }
     server.server_id
 }
@@ -87,8 +87,15 @@ fn listed(fleet: &Value) -> Vec<(Uuid, String)> {
         .iter()
         .map(|entry| {
             (
-                entry["server_id"].as_str().unwrap().parse().unwrap(),
-                entry["name"].as_str().unwrap().to_owned(),
+                entry["server_id"]
+                    .as_str()
+                    .expect("the `server_id` field is a string")
+                    .parse()
+                    .expect("the `server_id` field parses as an id"),
+                entry["name"]
+                    .as_str()
+                    .expect("the `name` field is a string")
+                    .to_owned(),
             )
         })
         .collect()
@@ -98,7 +105,7 @@ async fn active_servers(pool: &PgPool) -> Vec<(Uuid, String)> {
     sqlx::query_as("SELECT id, name FROM servers WHERE is_active ORDER BY name, id")
         .fetch_all(pool)
         .await
-        .unwrap()
+        .expect("the read of servers runs")
 }
 
 /// The fleet totals recomputed from the rows: a server without a status row counts offline.
@@ -115,7 +122,7 @@ async fn stored_totals(pool: &PgPool) -> Value {
     )
     .fetch_one(pool)
     .await
-    .unwrap();
+    .expect("the read of servers returns a row");
     json!({
         "configured": row.0, "online": row.1, "players": row.2, "max_players": row.3,
         "telemetry_backlog": row.4, "telemetry_dropped_total": row.5,

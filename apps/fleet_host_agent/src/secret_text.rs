@@ -10,10 +10,12 @@ use std::fmt;
 pub struct SecretText(String);
 
 impl SecretText {
+    /// Holds `secret`.
     pub fn new(secret: impl Into<String>) -> Self {
         Self(secret.into())
     }
 
+    /// The secret itself, for the protocol it authenticates.
     pub fn expose(&self) -> &str {
         &self.0
     }

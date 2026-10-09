@@ -94,9 +94,9 @@ each folder clears its static state when a new world starts.
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — what the framework is for, its
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — what the framework is for, its
   non-negotiables and the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) facts it relies on
-- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — the specification of
+- [Mod UI documentation](/documentation/apps/mod/tbd-framework/UI/README.md) — the specification of
   each in-game screen
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs through
   Workbench and the gates

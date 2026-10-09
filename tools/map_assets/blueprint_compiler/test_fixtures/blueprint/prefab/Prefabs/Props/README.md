@@ -15,8 +15,8 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/Props
 
 - Encoding: ASCII Enfusion prefab text with invented GUIDs and resource paths; nothing here is game
   content.
-- Schema: the `.et` grammar that `parse_et` in
-  `tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/tokenize.rs` reads; both files
+- Schema: the `.et` grammar that `parse_entity_template` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads; both files
   inherit `Prefabs/Core/Prop_Base.et` and set only a mesh, plus a rigid body on the table.
 - Adding a file: inherit `Prefabs/Core/Prop_Base.et`, keep IDs and GUIDs unique, and place it from
   `Prefabs/Furniture/Furniture_01.et`.
@@ -25,10 +25,10 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/Props
 
 - Producers: people; the files are written by hand.
 - Consumers: `walker_places_door_set_window_and_furniture_from_fixtures` in
-  `tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs`, which writes a synthetic model at
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/batch_processing_tests.rs`, which writes a synthetic model at
   each mesh path and expects the table as BLAS `blas/Table.bvh` with low cover and both chairs
   sharing `blas/Chair.bvh`; `resolver_walks_inheritance_sockets_and_children` in
-  `tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs` reads their placements through the
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/prefab_templates_tests.rs` reads their placements through the
   furniture composition.
 
 ## Boundaries

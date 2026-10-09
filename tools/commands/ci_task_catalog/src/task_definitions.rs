@@ -15,7 +15,7 @@ use map_asset_steps::{MAP_CARTOGRAPHIC_EVERON_STEPS, MAP_WATER_EVERON_STEPS};
 use repository_checks::language_bans::node_and_file_limits::{verify_file_length, verify_no_node};
 use repository_checks::language_bans::python_scripts::verify_no_python;
 use repository_checks::language_bans::shell_scripts::verify_no_shell;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 use schema_tooling::codegen;
 use schema_tooling::{citations, map_glyphs, map_object_enums, type_inventory, validate_all};
 use verification_dispatch::{
@@ -284,7 +284,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-workspace-laws",
-        help: "WS-1 to WS-5, the workspace laws — crate tiers, crate anatomy, the strangler rule, frontend layering (hard at zero: any violation fails) and Tailwind sources over the workspace members",
+        help: "WS-1 to WS-5, the workspace laws — crate tiers, crate anatomy, test-file reachability, frontend layering (hard at zero: any violation fails) and Tailwind sources over the workspace members",
         group: "verify",
         lane: Lane::Alias,
         steps: WORKSPACE_LAW_STEPS,

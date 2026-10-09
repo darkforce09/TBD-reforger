@@ -24,7 +24,7 @@ pub async fn smoke_mutations(dist: &str) -> Result<u8> {
         eprintln!("smoke_mutations: set TOKEN + REFRESH (dev-login tokens)");
         return Ok(2);
     };
-    let http = reqwest::Client::new();
+    let http = crate::http_client::new_http_client();
     if !cdp::wait_http(&http, &format!("{BACKEND}/healthz"), 60).await {
         eprintln!("smoke_mutations: backend not reachable on :8080");
         return Ok(2);

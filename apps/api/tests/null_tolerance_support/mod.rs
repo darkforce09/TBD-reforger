@@ -13,7 +13,7 @@
 //! URIs misses the bug class it exists to catch. Three structural reasons, each answered here:
 //!
 //!   1. **A listed endpoint set can only ever catch bugs someone remembered.**
-//!      → [`database_fixtures::route_sweep`] sweeps every GET route, and
+//!      → [`route_sweep::route_sweep`] sweeps every GET route, and
 //!      `every_get_route_is_swept_or_skipped_with_a_reason` parses the route tables and fails
 //!      when a route is added without being covered.
 //!   2. **Rows have to be reachable.** Authenticating as the shared dev-login user while
@@ -44,22 +44,23 @@
 // item unused by one binary is not dead code — but rustc judges each binary on its own.
 #![allow(dead_code)]
 
-pub mod database_fixtures;
-pub mod fire_mission_fixtures;
-pub mod source_scan;
+pub(crate) mod database_fixtures;
+pub(crate) mod fire_mission_fixtures;
+pub(crate) mod route_sweep;
+pub(crate) mod source_scan;
 
 /// This suite's own Discord id. Every seeded row is owned by / assigned to it and the session
 /// is minted for it, so caller-scoped predicates (`WHERE assigned_to = $me`) resolve to rows
 /// this file controls — and nothing here can collide with another test file's fixtures on the
 /// shared integration database.
-pub const NULL_UID: &str = "000000000000000099";
+pub(crate) const NULL_UID: &str = "000000000000000099";
 
 /// The observability token `Config::for_tests` installs, the bearer `/metrics` requires.
-pub const OBSERVABILITY_TOKEN: &str = "test-observability-token";
+pub(crate) const OBSERVABILITY_TOKEN: &str = "test-observability-token";
 
 /// How a swept route authenticates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SweepCaller {
+pub(crate) enum SweepCaller {
     /// The suite's administrator bearer session.
     Member,
     /// The operator's observability bearer (`/metrics`).
@@ -70,11 +71,11 @@ pub enum SweepCaller {
 
 /// The id [`database_fixtures::seed`] gives its vehicle row, so the single-row vehicle route can
 /// name that row without a field on the seed.
-pub const NULL_VEHICLE_ID: &str = "00000000-0000-4000-8000-000000000099";
+pub(crate) const NULL_VEHICLE_ID: &str = "00000000-0000-4000-8000-000000000099";
 
-/// The [`database_fixtures::route_sweep`] entry of `GET /vehicle-database/{id}`: the seeded
+/// The [`route_sweep::route_sweep`] entry of `GET /vehicle-database/{id}`: the seeded
 /// vehicle, read by the member session.
-pub fn vehicle_row_sweep() -> (&'static str, String, SweepCaller) {
+pub(crate) fn vehicle_row_sweep() -> (&'static str, String, SweepCaller) {
     (
         "/vehicle-database/{id}",
         format!("/api/v1/vehicle-database/{NULL_VEHICLE_ID}"),
@@ -82,9 +83,9 @@ pub fn vehicle_row_sweep() -> (&'static str, String, SweepCaller) {
     )
 }
 
-/// The [`database_fixtures::route_sweep`] entry of `GET /wiki/{slug}`: the seeded page, read by
+/// The [`route_sweep::route_sweep`] entry of `GET /wiki/{slug}`: the seeded page, read by
 /// the member session.
-pub fn wiki_page_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
+pub(crate) fn wiki_page_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
     (
         "/wiki/{slug}",
         format!("/api/v1/wiki/{slug}"),
@@ -92,9 +93,9 @@ pub fn wiki_page_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
     )
 }
 
-/// The [`database_fixtures::route_sweep`] entry of `GET /wiki/{slug}/revisions`: the seeded
+/// The [`route_sweep::route_sweep`] entry of `GET /wiki/{slug}/revisions`: the seeded
 /// page's revision history, read by the member session.
-pub fn wiki_revisions_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
+pub(crate) fn wiki_revisions_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
     (
         "/wiki/{slug}/revisions",
         format!("/api/v1/wiki/{slug}/revisions"),
@@ -102,9 +103,9 @@ pub fn wiki_revisions_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
     )
 }
 
-/// The [`database_fixtures::route_sweep`] entry of `GET /wiki/{slug}/revisions/{revision}`: the
+/// The [`route_sweep::route_sweep`] entry of `GET /wiki/{slug}/revisions/{revision}`: the
 /// seeded page's revision 1, read by the member session.
-pub fn wiki_revision_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
+pub(crate) fn wiki_revision_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
     (
         "/wiki/{slug}/revisions/{revision}",
         format!("/api/v1/wiki/{slug}/revisions/1"),
@@ -114,7 +115,7 @@ pub fn wiki_revision_sweep(slug: &str) -> (&'static str, String, SweepCaller) {
 
 /// Records the seeded wiki page under `slug` as its revision 1, and answers the
 /// [`database_fixtures::blast_nulls`] row that names the revision by its non-null `slug`.
-pub async fn seed_wiki_revision(pool: &sqlx::PgPool, slug: &str) -> (&'static str, String) {
+pub(crate) async fn seed_wiki_revision(pool: &sqlx::PgPool, slug: &str) -> (&'static str, String) {
     sqlx::query(
         "INSERT INTO wiki_page_revisions \
          (page_id, revision, slug, category, title, icon, nav_order, body_md, author_id, \
@@ -133,7 +134,7 @@ pub async fn seed_wiki_revision(pool: &sqlx::PgPool, slug: &str) -> (&'static st
 /// the seeded rows through them — NULL them and the sweep silently stops reaching the code it
 /// is meant to exercise, which is failure mode 2 above. Deliberately as small as possible;
 /// every other nullable column in the schema gets NULLed.
-pub const REACHABILITY_KEEP: &[&str] = &[
+pub(crate) const REACHABILITY_KEEP: &[&str] = &[
     // `dashboard.rs` / `api_operations/src/handlers/member_service_record.rs`: `WHERE orbat_slots.assigned_to = $me`.
     "orbat_slots.assigned_to",
     // `api_operations/src/handlers/member_service_record.rs` service history: `WHERE match_player_stats.discord_id = $me`.
@@ -149,7 +150,7 @@ pub const REACHABILITY_KEEP: &[&str] = &[
 /// Columns NULL only in other row states: a CHECK constraint requires them for the state the
 /// seed stores (an active reservation always names its event allocation), so the blast keeps
 /// them rather than asserting a row the schema itself rejects.
-pub const STATE_BOUND_KEEP: &[&str] = &["event_registrations.allocation_id"];
+pub(crate) const STATE_BOUND_KEEP: &[&str] = &["event_registrations.allocation_id"];
 
 /// `(table, column)` pairs that are nullable in the schema *and* `Option<..>` on the model, so
 /// a read site is allowed to select them without `COALESCE`. This is the allowlist for
@@ -157,7 +158,7 @@ pub const STATE_BOUND_KEEP: &[&str] = &["event_registrations.allocation_id"];
 /// that makes it sound. Adding an entry is a claim that the field is `Option` — check it.
 ///
 /// A nullable column that is NOT here and NOT `COALESCE`d is the bug these suites exist for.
-pub const OPTION_FIELDS: &[(&str, &str)] = &[
+pub(crate) const OPTION_FIELDS: &[(&str, &str)] = &[
     // api_operations::services::access_administration::persistence::{GroupRow, RosterRow, SlotPolicyRow}
     // and event_access::subject_loading::RosterRow: exactly one of the author and the system
     // origin is present; a slot without an explicit policy inherits.
@@ -333,7 +334,7 @@ pub const OPTION_FIELDS: &[(&str, &str)] = &[
 ///
 /// Keyed by file, not `file:line`, so an unrelated edit above the defect does not break it.
 /// Do not add entries for files you own. Fix those.
-pub const KNOWN_OPEN: &[(&str, &str, &str)] = &[
+pub(crate) const KNOWN_OPEN: &[(&str, &str, &str)] = &[
     // EMPTY, and that is the point. Every entry this list has ever held was fixed rather than
     // tolerated. BASELINE_CAP is 0, so the next entry cannot be added without raising it in a
     // diff a reviewer sees.
@@ -348,21 +349,22 @@ pub const KNOWN_OPEN: &[(&str, &str, &str)] = &[
 /// Leaving the cap above 0 would re-open silent slack in the one suite whose whole purpose is to
 /// stop this bug class hiding — the failure mode where a suite passes vacuously and nobody
 /// notices.
-pub const BASELINE_CAP: usize = 0;
+pub(crate) const BASELINE_CAP: usize = 0;
 
 /// Routes that 5xx under the NULL blast because of a defect being fixed elsewhere — the
 /// behavioural mirror of [`KNOWN_OPEN`], with the same shrinking-baseline semantics: each entry
 /// must still fail, so a fix elsewhere shows up here as "delete this line" rather than as silent
 /// slack. The precise cause of each is pinned by [`KNOWN_OPEN`]; this list only records that the
 /// route is user-visibly broken while that defect stands.
-pub const KNOWN_OPEN_ROUTES: &[(&str, &str, &str)] = &[
+pub(crate) const KNOWN_OPEN_ROUTES: &[(&str, &str, &str)] = &[
     // EMPTY. Every route the NULL blast reaches survives it.
 ];
 
-/// GET routes deliberately outside [`route_sweep`], each with the reason it cannot be swept.
+/// GET routes deliberately outside [`route_sweep::route_sweep`], each with the reason it cannot
+/// be swept.
 /// Everything else the API route tables register must appear in the sweep — see
 /// [`every_get_route_is_swept_or_skipped_with_a_reason`].
-pub const ROUTE_SWEEP_SKIP: &[(&str, &str)] = &[
+pub(crate) const ROUTE_SWEEP_SKIP: &[(&str, &str)] = &[
     (
         "/auth/dev-login",
         "mints a session and 302s; reads no model",

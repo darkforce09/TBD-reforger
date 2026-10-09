@@ -78,5 +78,5 @@ server runs the mission deployed to it on the platform.
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the mission-as-data contract
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the mission-as-data contract
   the registry serves.

@@ -10,7 +10,7 @@ shows it.
 
 ```text
 .ai/tickets/
-├── ROOT                      the marker file that makes a folder a checkout root for every ticket command
+├── ROOT                      the marker file that makes a folder a checkout root for every tool and test (`repository_root`)
 ├── T-*.toml                  one ticket per file, parents and dotted children alike
 ├── agent_playbook.md         the recipes an agent follows for each ticket task
 ├── corpus-pins.toml          corpus facts no ticket states: ids never minted, the mod program, gap rows

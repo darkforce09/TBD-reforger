@@ -90,7 +90,7 @@ pub fn schedule_camera_settle(host: HostHandle, engine: BrowserAssetSinkHandle) 
         };
         (h.settle_timer.clone(), h.settle_deadline.clone())
     };
-    let now = js_sys::Date::now();
+    let now = time_source::wall_clock_ms();
 
     if deadline_slot.get() <= 0.0 {
         deadline_slot.set(now + SETTLE_MAX_LATENCY_MS);

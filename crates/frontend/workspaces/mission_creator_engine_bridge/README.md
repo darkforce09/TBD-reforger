@@ -58,7 +58,7 @@ cargo test -p mission_creator_engine_bridge   # the boot progress, hover, gizmo,
 
 - Depends on: `mission_creator_state`, `frontend_ui`, `frontend_api_dtos`, `frontend_map_view`, the
   mission crates, `mission_editing_session`, `mission_editing_commands`, `map_editing_tools`, the
-  overlay, terrain and line-of-sight crates, `leptos`, `serde_json`; on `wasm32` `map_renderer`,
+  overlay, terrain and line-of-sight crates, `time_source`, `leptos`, `serde_json`; on `wasm32` `map_renderer`,
   `map_streaming_host`, `map_asset_loading`, `map_render_diagnostics`, `web-sys`, `js-sys`,
   `wasm-bindgen`; `frontend_test_support` for its tests.
 - Used by: the single-page app (`apps/frontend`): the Mission Creator's session, Arsenal, docks,

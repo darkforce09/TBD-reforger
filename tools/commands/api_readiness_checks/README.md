@@ -59,7 +59,7 @@ for a staging recording, the environment the harness hands it, never `std::env`.
 - Depends on: `verification_core` (`Report`, `Verdict`), `process_runner` (`git`, the tool
   versions, the check commands), `content_digest` (SHA-256), `deploy_settings`
   (`DEPLOY_ENV_OVERRIDE_VARIABLE`), `repository_layout` (the register, the evidence prefix,
-  `deploy.env`), `libc` (the directory-pinned writes), `regex`, `serde`, `serde_json` and
+  `deploy.env`, the workspace folders), `time_source` (the receipts' wall clock), `libc` (the directory-pinned writes), `regex`, `serde`, `serde_json` and
   `thiserror`; `tool_test_support` in tests.
 - Used by: the `verify api-readiness` command of `xtask`, the `staging` procedures (the recorder
   and `staging fingerprints`), and `xtask db test-it` (the seed).

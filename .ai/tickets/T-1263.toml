@@ -1,0 +1,13 @@
+id = "T-1263"
+kind = "work"
+title = "Make objective_complete triggers fire when capture objectives exist"
+summary = "An objective_complete trigger without zoneId needs every usable objective complete (Systems/Zones/Triggers/TBD_TriggerConditions.c:68-95), but a capture objective changes owner and never sets m_bComplete, so the trigger never fires in a mission that has one."
+class = "audit"
+status = "idea"
+notes = "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/Triggers/TBD_TriggerConditions.c:68 ObjectiveComplete: with a zoneId it returns that objective's m_bComplete; without one it requires every usable objective to be complete. A capture objective changes owner and never sets m_bComplete, so an objective_complete trigger without zoneId never fires while any capture objective exists. Decide whether a held capture counts as complete for this trigger, or whether the validator refuses the combination. Check it in the operator's capture, destroy and hold-until playtest. Source: restructure finding F-M3-02 (M3 stage log)."
+created_at = "2026-10-04T02:35:20Z"
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "zones"

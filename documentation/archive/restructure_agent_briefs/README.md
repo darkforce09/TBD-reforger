@@ -20,7 +20,7 @@ documentation/archive/restructure_agent_briefs/
 ## How it works
 
 A stage's briefs move here at the stage's commit, named `s<stage>_<agent ids>_<topic>.md`; the
-live folder keeps only the shared brief every agent reads first. A brief whose relocation manifest
+program's own `agent_briefs/` folder holds only the shared brief every agent read first. A brief whose relocation manifest
 was drafted inside it carries a pointer to the committed manifest in place of the draft. The
 operator steps a stage leaves behind stay in its brief: the runbooks link the
 [S2 operator steps](/documentation/archive/restructure_agent_briefs/s2_a2_to_a6.md#oc-deploy-operator-steps),
@@ -34,18 +34,18 @@ the one-time host moves of the deploy folder and the snake_case names.
 
 ## Boundaries
 
-- Depends on: the [shared agent brief](/documentation/restructure/agent_briefs/shared_brief.md),
+- Depends on: the [shared agent brief](/documentation/archive/restructure/agent_briefs/shared_brief.md),
   which every brief here names as its first read.
-- Used by: the [restructure program](/documentation/restructure/README.md), whose progress log
+- Used by: the [restructure program](/documentation/archive/restructure/README.md), whose progress log
   cites the briefs; the website, staging and CI runbooks, which link the S2 operator steps.
 - Rules: never reworded, only links change; each brief carries `**Status:** archived`; a stage's
   briefs land here at its commit.
 
 ## Related documentation
 
-- [Restructure program](/documentation/restructure/README.md) — the plan, target tree and progress
+- [Restructure program](/documentation/archive/restructure/README.md) — the plan, target tree and progress
   the briefs executed.
-- [Relocation manifests](/documentation/restructure/manifests/README.md) — the committed manifests
+- [Relocation manifests](/documentation/relocation_manifests/README.md) — the committed manifests
   the briefs ran.
 - [Restructure research](/documentation/archive/restructure_research/README.md) — the reports the
   plan rests on.

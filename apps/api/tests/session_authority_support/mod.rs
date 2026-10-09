@@ -15,10 +15,10 @@
 //! used, so the per-peer rate limiter never answers in place of the handler, and a 429 fails
 //! the case by name; every seeded account id is unique in the binary database.
 
-pub mod authority_cases;
-pub mod authority_oracle;
-pub mod persisted_families;
-pub mod refresh_families;
+pub(crate) mod authority_cases;
+pub(crate) mod authority_oracle;
+pub(crate) mod persisted_families;
+pub(crate) mod refresh_families;
 
 use api::router::router;
 use api_configuration::configuration::Config;
@@ -38,13 +38,13 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 /// The signing secret both configurations share, so either router accepts either's credentials.
-pub const JWT_SECRET: &str = "session-authority-properties";
+pub(crate) const JWT_SECRET: &str = "session-authority-properties";
 
 /// The next synthetic peer; starts at 1 so no request presents the unspecified address.
 static NEXT_PEER: AtomicU32 = AtomicU32::new(1);
 
 /// One database served by both deployment configurations.
-pub struct PropertyWorld {
+pub(crate) struct PropertyWorld {
     /// The development-configured state: it issues every session, including development ones.
     pub development: AppState,
     development_router: Router,
@@ -53,7 +53,7 @@ pub struct PropertyWorld {
 
 impl PropertyWorld {
     /// Provision and migrate the binary database, then build both routers over one pool.
-    pub async fn open() -> Self {
+    pub(crate) async fn open() -> Self {
         let url = crate::common::require_test_database_url()
             .expect("the session authority properties need TEST_DATABASE_URL");
         let pool = api_database::connect(&url)
@@ -77,7 +77,7 @@ impl PropertyWorld {
     }
 
     /// The router serving requests under `environment`'s configuration.
-    pub fn router(&self, environment: ServingEnvironment) -> &Router {
+    pub(crate) fn router(&self, environment: ServingEnvironment) -> &Router {
         match environment {
             ServingEnvironment::Development => &self.development_router,
             ServingEnvironment::Production => &self.production_router,
@@ -89,7 +89,7 @@ impl PropertyWorld {
 ///
 /// Site authority comes from guild membership rows alone, so a rank read from that column
 /// instead shows up as an over-grant in the protected-action property.
-pub async fn seed_account(pool: &PgPool, prefix: &str) -> String {
+pub(crate) async fn seed_account(pool: &PgPool, prefix: &str) -> String {
     let discord_id = format!("{prefix}-{}", Uuid::new_v4());
     crate::common::seed_user(
         pool,
@@ -109,7 +109,11 @@ fn next_peer() -> SocketAddr {
 
 /// Send `GET uri` bearing `access_credential` from a fresh peer; the status and the JSON body
 /// (`Null` when the body is not JSON).
-pub async fn send_get(router: &Router, uri: &str, access_credential: &str) -> (StatusCode, Value) {
+pub(crate) async fn send_get(
+    router: &Router,
+    uri: &str,
+    access_credential: &str,
+) -> (StatusCode, Value) {
     let mut request = Request::builder()
         .uri(uri)
         .header(header::AUTHORIZATION, format!("Bearer {access_credential}"))

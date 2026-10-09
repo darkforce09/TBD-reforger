@@ -19,19 +19,19 @@
 
 #![allow(dead_code)]
 
-pub mod contract_tag;
+pub(crate) mod contract_tag;
 
 use std::path::{Path, PathBuf};
 
 /// The pinned tbd-framework Scripts root.
-pub fn scripts_root() -> PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+pub(crate) fn scripts_root() -> PathBuf {
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("apps/mod/tbd-framework/Scripts")
 }
 
 /// One script file's outline.
-pub struct ScriptFile {
+pub(crate) struct ScriptFile {
     /// Path relative to [`scripts_root`], `/`-separated.
     pub path: String,
     /// The file's full text.
@@ -45,7 +45,7 @@ pub struct ScriptFile {
 }
 
 /// One class declaration.
-pub struct ScriptClass {
+pub(crate) struct ScriptClass {
     pub line: usize,
     pub name: String,
     pub modded: bool,
@@ -57,7 +57,7 @@ pub struct ScriptClass {
 }
 
 /// One instance field.
-pub struct ScriptField {
+pub(crate) struct ScriptField {
     pub line: usize,
     pub name: String,
     /// The declared type as written, for example `ref array<ref TBD_RosterSlotStruct>`.
@@ -68,7 +68,7 @@ pub struct ScriptField {
 }
 
 /// One method with its body.
-pub struct ScriptMethod {
+pub(crate) struct ScriptMethod {
     pub line: usize,
     pub name: String,
     pub banner: Vec<String>,
@@ -77,14 +77,14 @@ pub struct ScriptMethod {
 }
 
 /// A run of constants whose first member carries a banner.
-pub struct ConstantGroup {
+pub(crate) struct ConstantGroup {
     pub line: usize,
     pub banner: Vec<String>,
     pub constants: Vec<ScriptConstant>,
 }
 
 /// One `const` member.
-pub struct ScriptConstant {
+pub(crate) struct ScriptConstant {
     pub line: usize,
     pub name: String,
     /// The literal of a string constant.
@@ -92,7 +92,7 @@ pub struct ScriptConstant {
 }
 
 /// A `ReadValue`/`WriteValue` call and the class of the value it reads or writes.
-pub struct JsonContextCall {
+pub(crate) struct JsonContextCall {
     pub path: String,
     pub line: usize,
     /// The declared type of the value argument.
@@ -100,7 +100,7 @@ pub struct JsonContextCall {
 }
 
 /// Every `.c` file under [`scripts_root`], outlined, in path order.
-pub fn read_scripts() -> Vec<ScriptFile> {
+pub(crate) fn read_scripts() -> Vec<ScriptFile> {
     let root = scripts_root();
     assert!(
         root.is_dir(),
@@ -341,7 +341,7 @@ enum TopLevel {
 }
 
 /// The outline of one file; `path` is only used in messages.
-pub fn outline(path: &str, text: &str) -> ScriptFile {
+pub(crate) fn outline(path: &str, text: &str) -> ScriptFile {
     let lines = split_lines(text);
     let mut classes: Vec<ScriptClass> = Vec::new();
     let mut contract_tag_lines = Vec::new();
@@ -466,7 +466,7 @@ pub fn outline(path: &str, text: &str) -> ScriptFile {
 /// type of `value`: the nearest declaration above the call, else the first one in the file.
 ///
 /// Panics when a value argument has no declaration in the file, so no call escapes judgement.
-pub fn json_context_calls(file: &ScriptFile) -> Vec<JsonContextCall> {
+pub(crate) fn json_context_calls(file: &ScriptFile) -> Vec<JsonContextCall> {
     let mut calls = Vec::new();
     for pattern in ["ReadValue(", "WriteValue("] {
         for (offset, _) in file.code.match_indices(pattern) {
@@ -531,7 +531,7 @@ fn declared_type(code: &str, name: &str, before: usize) -> Option<String> {
 }
 
 /// The JSON object keys a method writes by hand: every `\"key\":` inside its string literals.
-pub fn hand_built_json_keys(method: &ScriptMethod) -> Vec<String> {
+pub(crate) fn hand_built_json_keys(method: &ScriptMethod) -> Vec<String> {
     let mut keys = Vec::new();
     for (offset, _) in method.body.match_indices("\\\"") {
         let rest = &method.body[offset + 2..];
@@ -547,7 +547,7 @@ pub fn hand_built_json_keys(method: &ScriptMethod) -> Vec<String> {
 }
 
 /// The script classes named in a field's declared type.
-pub fn type_class_names(type_text: &str) -> Vec<String> {
+pub(crate) fn type_class_names(type_text: &str) -> Vec<String> {
     type_text
         .split(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
         .filter(|word| is_identifier(word))

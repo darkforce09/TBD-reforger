@@ -28,6 +28,7 @@ pub mod equipment_data_viewer;
 mod error;
 pub mod fixture_injection;
 pub mod gate_layout;
+mod http_client;
 pub mod mortar_offline;
 pub mod prelude;
 pub mod route_drift;

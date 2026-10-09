@@ -76,7 +76,7 @@ pub async fn create_version(
     }
     let payload_str = payload.get();
     validate_payload(&state.pool, payload_str).await?;
-    // The schema accepts `{}`, and promoting it to `current_version_id` breaks `/compiled`, so
+    // The schema accepts `{}`, and promoting it to `current_version_id` breaks submit, so
     // vacuous payloads are refused here rather than via a schema `minItems` the editor layer must
     // not carry. [`set_current_version`] is the recovery path for tips that are already broken.
     reject_vacuous_version_payload(payload_str)?;
@@ -269,10 +269,10 @@ pub async fn set_current_version(
 ///   plus the `mission_wire_safety` name walk and the cargo-capacity walk (catalog from
 ///   [`load_cargo_phys_catalog`]).
 /// * **`scan_editor_payload_types`** — the mission compiler's OWN deserialiser, run here so a
-///   shape it cannot read is a **400 at save**, in front of the author, instead of a **500 at
-///   `GET /missions/:id/compiled`** in front of a game server that supplied nothing but an id. That
-///   pass is not expressible in the payload schema without restating the compiler's structs in a
-///   second language, and two languages for one rule is exactly the drift this avoids — see
+///   shape it cannot read is a **400 at save**, in front of the author, instead of a **422 at
+///   `POST /api/v1/missions/:id/submit`** for a version that can never compile into an artifact.
+///   That pass is not expressible in the payload schema without restating the compiler's structs
+///   in a second language, and two languages for one rule is exactly the drift this avoids — see
 ///   [`scan_editor_payload_types`] for the argument.
 ///
 /// The type pass reports nothing when the bytes are not JSON at all; the schema pass owns that

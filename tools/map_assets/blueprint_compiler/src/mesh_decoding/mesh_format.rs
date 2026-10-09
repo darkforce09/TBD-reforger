@@ -46,14 +46,14 @@ pub(crate) struct XobMesh {
     /// subrange table (box colliders) or the mesh is a visual LOD.
     pub tri_material: Vec<u32>,
     /// COLL collider records in file order (empty for a visual-LOD mesh).
-    pub records: Vec<CollRecord>,
+    pub records: Vec<CollisionRecord>,
 }
 
 /// One COLL collider record's header facts. `layer_idx` names the layer
 /// preset (`Building`, `FireView`, `Glass`, `Foliage`, …) and `mesh_idx` the collider mesh
 /// (`UTM_BD_*`), both in the HEAD name space.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct CollRecord {
+pub(crate) struct CollisionRecord {
     pub shape: u8,
     pub layer_idx: u16,
     pub mesh_idx: u16,
@@ -118,21 +118,21 @@ struct Submesh {
 #[path = "tests/mesh_format_tests.rs"]
 pub(crate) mod tests;
 
-#[path = "mesh_format/u16le.rs"]
-mod u16le;
-pub(crate) use u16le::aabb;
-use u16le::f32le;
-use u16le::find_chunk;
-pub(crate) use u16le::has_coll;
-use u16le::mat_apply;
-pub(crate) use u16le::parse_xob;
-use u16le::u16le;
-use u16le::u32le;
-use u16le::vec3le;
+#[path = "mesh_format/visual_mesh_reader.rs"]
+mod visual_mesh_reader;
+use visual_mesh_reader::apply_rigid_transform;
+pub(crate) use visual_mesh_reader::bounding_box;
+use visual_mesh_reader::find_chunk;
+pub(crate) use visual_mesh_reader::has_collision_chunk;
+pub(crate) use visual_mesh_reader::parse_xob;
+use visual_mesh_reader::read_f32_little_endian;
+use visual_mesh_reader::read_u16_little_endian;
+use visual_mesh_reader::read_u32_little_endian;
+use visual_mesh_reader::read_vec3_little_endian;
 
-#[path = "mesh_format/parse_coll.rs"]
-mod parse_coll;
-pub(crate) use parse_coll::parse_coll;
+#[path = "mesh_format/collision_chunk_reader.rs"]
+mod collision_chunk_reader;
+pub(crate) use collision_chunk_reader::parse_collision_chunk;
 
 #[cfg(test)]
-pub(crate) use u16le::lz4_decompress_chained;
+pub(crate) use visual_mesh_reader::lz4_decompress_chained;

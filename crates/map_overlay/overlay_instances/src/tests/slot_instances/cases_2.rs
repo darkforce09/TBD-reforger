@@ -64,9 +64,8 @@ fn symbology_tolerates_short_parallel_columns() {
 #[test]
 fn symbology_ids_fit_the_shader_glyph_clamp() {
     const ATLAS_GLYPH_COUNT: u16 = 32;
-    const MARKER_GLYPH_COUNT: u16 = 11;
     #[allow(clippy::cast_possible_truncation)]
-    let last = MARKER_GLYPH_COUNT + SYMBOLOGY_CELL_COUNT as u16 - 1;
+    let last = unit_symbology::markers::MARKER_GLYPH_COUNT as u16 + SYMBOLOGY_CELL_COUNT as u16 - 1;
     assert_eq!(last, 25);
     assert!(
         last < ATLAS_GLYPH_COUNT,

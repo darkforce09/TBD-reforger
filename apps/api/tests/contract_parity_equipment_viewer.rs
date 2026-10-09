@@ -210,7 +210,7 @@ fn fixture_root() -> PathBuf {
 
 /// The contract samples the frontend's DTO parity tests also read.
 fn contract_samples() -> PathBuf {
-    repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("contracts/fixtures/equipment-data-viewer/positive")
 }
@@ -443,7 +443,7 @@ fn contract_parity_equipment_viewer_every_positive_fixture_and_route_is_covered(
         "every committed route answer is the golden of exactly one request"
     );
     let handlers =
-        repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
             .expect("the repository root above the API package")
             .join(HANDLER_FOLDER);
     let mut tagged = BTreeSet::new();

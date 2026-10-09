@@ -53,7 +53,7 @@ rely on.>
 
 ## Related documentation
 
-- [<document title>](/documentation/mod/<path to the document>) — <what it covers>
+- [<document title>](/documentation/apps/mod/<path to the document>) — <what it covers>
 ````
 
 ## Worked sample

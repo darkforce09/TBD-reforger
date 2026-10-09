@@ -39,7 +39,7 @@ async fn no_query_as_reads_a_nullable_column_without_coalesce() {
 
     // This package's `src/` and every API crate under `crates/api/`, where the domains' reads live.
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let repository_root = repository_layout::find_repository_root_from(manifest)
+    let repository_root = repository_root::find_repository_root_from(manifest)
         .expect("the repository root above the API package");
     let mut files = Vec::new();
     collect_rs(&manifest.join("src"), &mut files);

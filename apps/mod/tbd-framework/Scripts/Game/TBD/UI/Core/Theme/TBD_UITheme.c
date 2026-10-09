@@ -31,7 +31,7 @@
 //!
 //! Layouts carry absolute font sizes against a 1920x1080 reference surface, so the CSS px scale
 //! maps across unchanged; the TEXT_* ladder is copied by hand into the `.layout` files and is kept
-//! in step with them. Design law (documentation/mod/tbd-framework/mod_design.md section 2):
+//! in step with them. Design law (documentation/apps/mod/tbd-framework/mod_design.md section 2):
 //! one accent colour (ACTION is the single high-priority trigger blue, PRIMARY the everyday
 //! active and selected blue), and generous whitespace (the spacing ladder starts at 8 and the
 //! screen gutter is 24).

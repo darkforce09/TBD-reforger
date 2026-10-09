@@ -116,7 +116,7 @@ its panels with `Mount` or `MountHandler`, and fills `GetScreenTitle`, `GetSessi
 
 ## Related documentation
 
-- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — where each screen's
+- [Mod UI documentation](/documentation/apps/mod/tbd-framework/UI/README.md) — where each screen's
   scripts and layouts go, the dock shell, and the layout rules
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the design methodology the
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the design methodology the
   interaction and colour rules encode

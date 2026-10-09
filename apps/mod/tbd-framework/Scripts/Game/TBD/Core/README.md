@@ -85,5 +85,5 @@ announcements go through it. `Hashing/` holds the SHA-256 that gates every missi
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's thesis, its
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the framework's thesis, its
   non-negotiables and the event loop it serves

@@ -13,17 +13,17 @@
 
 use super::spec::RouteSpec;
 
-pub mod administration_center_content;
-pub mod fleet_and_telemetry;
-pub mod identity_and_core;
-pub mod missions_library;
-pub mod missions_reviews;
-pub mod operations_ballistics;
-pub mod operations_events;
-pub mod operations_reservations;
+pub(crate) mod administration_center_content;
+pub(crate) mod fleet_and_telemetry;
+pub(crate) mod identity_and_core;
+pub(crate) mod missions_library;
+pub(crate) mod missions_reviews;
+pub(crate) mod operations_ballistics;
+pub(crate) mod operations_events;
+pub(crate) mod operations_reservations;
 
 /// Every spec of every part.
-pub fn all_specs() -> Vec<RouteSpec> {
+pub(crate) fn all_specs() -> Vec<RouteSpec> {
     [
         identity_and_core::specs(),
         operations_events::specs(),

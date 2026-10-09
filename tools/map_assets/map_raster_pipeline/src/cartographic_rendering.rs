@@ -15,19 +15,19 @@ use crate::error::{Result, bail};
 use serde_json::{Value, json};
 
 use super::image_operations::{self, Rgb8};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use enfusion_pak::PakVfs;
 use time_source::iso_from_system_time;
 use world_export_pipeline::json_number_formatting::js_num;
 use world_export_pipeline::topo::decode_topo;
 
-pub(crate) const CLASS_PX: usize = 3200;
+pub(crate) const CLASS_RASTER_PIXELS: usize = 3200;
 const FOREST_LUM_MAX: f64 = 52.0;
 const FOREST_GREEN_OVER_BLUE: u16 = 8;
 const BRIGHT_RED_OVER_GREEN: u16 = 4;
 const BRIGHT_LUM_MIN: f64 = 58.0;
 
-pub(crate) struct LandcoverOut {
+pub(crate) struct LandcoverOutputs {
     pub(crate) forest_mask: PathBuf,
     pub(crate) bright_mask: PathBuf,
     pub(crate) meta: Value,
@@ -46,7 +46,7 @@ const FOREST_TINT: ([f64; 3], f64) = ([0x37 as f64, 0x50 as f64, 0x2d as f64], 0
 /* ─────────────────────────── verify-cartographic ─────────────────────────── */
 
 mod build_landcover_masks;
-pub(crate) use build_landcover_masks::build_landcover_cli;
+pub(crate) use build_landcover_masks::build_landcover_command_line;
 pub(crate) use build_landcover_masks::build_map_cartographic;
 
 mod build_tile_pyramid;

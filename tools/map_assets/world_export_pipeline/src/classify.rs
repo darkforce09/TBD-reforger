@@ -18,8 +18,8 @@ use std::path::Path;
 use crate::error::{Result, ResultExt as _, refuse};
 use serde_json::Value;
 
-use ::repository_layout::find_repository_root;
 use ::repository_layout::prefab_classify_path;
+use ::repository_root::find_repository_root;
 
 /// The prefab classification rules, `contracts/rules/prefab-classify.json`.
 pub struct Rules {

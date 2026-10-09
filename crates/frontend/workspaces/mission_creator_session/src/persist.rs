@@ -32,6 +32,7 @@ const DB_VERSION: u32 = 1;
 /// into one write; hiding the tab flushes immediately instead of waiting out this window.
 const DEBOUNCE_MS: i32 = IDLE_DEBOUNCE_MS;
 
+mod indexed_db_completion;
 mod record_store;
 use record_store::*;
 pub(crate) use record_store::{clear_state, draft_written_at, load_record, save_state};
@@ -190,11 +191,6 @@ fn lock_for(id: &str) -> Rc<futures::lock::Mutex<()>> {
 }
 
 /* ───────────────────────  the read-merge-write ─────────────────────── */
-
-/// Wall-clock epoch ms. Split by target for the same reason [`note_flush_completed`] is.
-fn now_ms() -> f64 {
-    js_sys::Date::now()
-}
 
 /// Apply a stored blob into the live document for `mission_id`, and report whether it landed.
 ///

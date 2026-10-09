@@ -1,8 +1,9 @@
 //! Browser console logging and same-origin HTTP GETs for wasm32 code.
 //!
-//! **Role:** the console macros ([`console_log!`], [`console_warn!`], [`console_error!`]) and the
-//! fetch helpers ([`fetch::fetch_bytes`], [`fetch::fetch_text`], the streamed GET with its
-//! [`fetch::ByteProgress`] callback, and the Range GET) that browser code shares.
+//! **Role:** the console macros (`console_log!`, `console_warn!`, `console_error!`) and the
+//! fetch helpers (`fetch::fetch_bytes`, `fetch::fetch_text`, the streamed GET with its
+//! `fetch::ByteProgress` callback, and the Range GET) that browser code shares. The names are code
+//! spans rather than links because a native documentation build compiles the crate empty.
 //! **Position:** foundation tier, wasm32 only, over `web-sys`, `js-sys`, `wasm-bindgen`,
 //! `wasm-bindgen-futures` and `gloo-net`. The map engine's loaders and hosts call it; it knows no
 //! map, mission or progress-bar vocabulary.

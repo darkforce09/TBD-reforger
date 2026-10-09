@@ -6,11 +6,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::error::{Result, bail};
 
-use crate::procedure_runner::clock::Clock;
 use crate::procedure_runner::fake_clock::FakeClock;
 use crate::remote_observers::remote_command::{CommandOutput, HostCommandRunner, RemoteCommand};
 use crate::staging_settings::StagingSettings;
 use deploy_settings::DeployEnvironment;
+use time_source::Clock as _;
 
 /// The deploy settings of a fictional staging host with a five-instance fleet and its relay.
 pub(crate) const TEST_DEPLOY_ENV: &str = "TBD_SSH_HOST=deploy@192.0.2.10\n\

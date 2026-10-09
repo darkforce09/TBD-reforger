@@ -23,6 +23,7 @@ path,component,fullBleed,chromeless,router_auth
 /login,LoginPage,false,false,none
 /missions,MissionLibraryPage,true,false,none
 /missions/:id,MissionOverviewPage,false,false,none
+/missions/:id/artifacts/:artifact_id/workspace,ReviewWorkspacePage,true,true,mission_maker
 /missions/:id/edit,MissionEditorPage,true,true,mission_maker
 /modpacks,ModpacksPage,true,false,none
 /server-intel,ServerIntelPage,true,false,none

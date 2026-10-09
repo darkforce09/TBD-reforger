@@ -40,20 +40,20 @@ pub(crate) fn hull_triangles(points: &[[f64; 3]]) -> Vec<[u32; 3]> {
         for j in i + 1..n {
             for k in j + 1..n {
                 let (a, b, c) = (points[i], points[j], points[k]);
-                let mut nrm = cross(sub(b, a), sub(c, a));
+                let mut nrm = cross_product(subtract(b, a), subtract(c, a));
                 let len = norm(nrm);
                 if len < eps * eps {
                     continue;
                 }
                 nrm = [nrm[0] / len, nrm[1] / len, nrm[2] / len];
-                let mut d = dot(nrm, a);
+                let mut d = dot_product(nrm, a);
                 let mut pos = false;
                 let mut neg = false;
                 for (m, p) in points.iter().enumerate() {
                     if m == i || m == j || m == k {
                         continue;
                     }
-                    let s = dot(nrm, *p) - d;
+                    let s = dot_product(nrm, *p) - d;
                     if s > eps {
                         pos = true;
                     } else if s < -eps {
@@ -91,8 +91,8 @@ pub(crate) fn hull_triangles(points: &[[f64; 3]]) -> Vec<[u32; 3]> {
         let mut on: Vec<(usize, [f64; 2])> = points
             .iter()
             .enumerate()
-            .filter(|(_, p)| (dot(nrm, **p) - d).abs() <= eps)
-            .map(|(idx, p)| (idx, [dot(*p, u), dot(*p, v)]))
+            .filter(|(_, p)| (dot_product(nrm, **p) - d).abs() <= eps)
+            .map(|(idx, p)| (idx, [dot_product(*p, u), dot_product(*p, v)]))
             .collect();
         if on.len() < 3 {
             continue;
@@ -149,13 +149,13 @@ pub(crate) fn hull_triangles(points: &[[f64; 3]]) -> Vec<[u32; 3]> {
     tris
 }
 
-fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+fn subtract(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
-fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
+fn dot_product(a: [f64; 3], b: [f64; 3]) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
-fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
+fn cross_product(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     [
         a[1] * b[2] - a[2] * b[1],
         a[2] * b[0] - a[0] * b[2],
@@ -163,7 +163,7 @@ fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
     ]
 }
 fn norm(a: [f64; 3]) -> f64 {
-    dot(a, a).sqrt()
+    dot_product(a, a).sqrt()
 }
 
 /// Two unit vectors spanning the plane orthogonal to `n`, with `(u, v, n)` right-handed.
@@ -173,10 +173,10 @@ fn basis(n: [f64; 3]) -> ([f64; 3], [f64; 3]) {
     } else {
         [0.0, 1.0, 0.0]
     };
-    let mut u = cross(helper, n);
+    let mut u = cross_product(helper, n);
     let l = norm(u);
     u = [u[0] / l, u[1] / l, u[2] / l];
-    let v = cross(n, u);
+    let v = cross_product(n, u);
     (u, v)
 }
 

@@ -42,7 +42,7 @@ first.
   `map_coordinates`, `terrain_elevation`, `place_names`, `label_layout`, `road_network`,
   `spatial_indexes`, `world_line_of_sight` (the readers and geometry the map runs),
   `world_export_pipeline` (the emitters the golden gate checks), `repository_layout` (the contract
-  and terrain paths); no async runtime, HTTP client or image codec. Its tests also read
+  and terrain paths), `deterministic_random` (the line-of-sight bench's segment stream); no async runtime, HTTP client or image codec. Its tests also read
   `blueprint_compiler`'s fixtures through its `test_fixtures` feature (from `[dev-dependencies]`
   only).
 - Used by: `tools/xtask/src/commands/schema/dispatch.rs`, `tools/xtask/src/commands/verify/dispatch.rs`,

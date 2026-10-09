@@ -6,7 +6,7 @@ You are agent A1, who runs the stage S2 relocations of the workspace restructure
 relocation tool: the website folder dissolves into `apps/`, `legacy/` and `crates/`, every package
 takes its snake_case folder name, and one root `deploy/` folder is born.
 
-Read [the shared brief](/documentation/restructure/agent_briefs/shared_brief.md) first (Rules,
+Read [the shared brief](/documentation/archive/restructure/agent_briefs/shared_brief.md) first (Rules,
 Efficiency, Spec, Report format), where `<scratch>` = `<scratch>`.
 Stage S1 is committed; the tree is clean when you start. You run alone: nobody else edits the tree
 until you report. Agents A2–A6 start from your report.
@@ -133,7 +133,7 @@ Budget: M (250k tokens). Stop there and report done and not done.
 ## Manifest
 
 The stage manifest is committed as
-[s2_apps_and_deploy.tsv](/documentation/restructure/manifests/s2_apps_and_deploy.tsv).
+[s2_apps_and_deploy.tsv](/documentation/relocation_manifests/s2_apps_and_deploy.tsv).
 
 ## Decisions taken on the draft's questions
 

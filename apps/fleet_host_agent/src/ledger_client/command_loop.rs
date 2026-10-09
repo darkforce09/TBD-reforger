@@ -28,6 +28,7 @@ use super::retry_backoff::{BackoffPolicy, JitteredBackoff};
 use crate::action_verdict::ActionVerdict;
 use crate::command_execution::{FleetActionExecutor, HostCommand};
 
+/// The waits of the command loop between claims and between report attempts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LedgerTimings {
     /// The wait before the next claim after the ledger had nothing for this server.
@@ -55,6 +56,8 @@ impl LedgerTimings {
     }
 }
 
+/// The agent's main loop: claims this server's commands from the ledger one at a time, performs
+/// each through its executor and reports the outcome.
 pub struct CommandLoop<E> {
     api: LedgerApi,
     executor: E,
@@ -62,6 +65,7 @@ pub struct CommandLoop<E> {
 }
 
 impl<E: FleetActionExecutor> CommandLoop<E> {
+    /// A loop over `api` that performs commands through `executor` with `timings`.
     pub fn new(api: LedgerApi, executor: E, timings: LedgerTimings) -> Self {
         Self {
             api,

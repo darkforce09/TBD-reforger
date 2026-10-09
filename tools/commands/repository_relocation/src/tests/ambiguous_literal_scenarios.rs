@@ -3,7 +3,9 @@
 //! path relative to a temporary checkout (`../../engine/map`) and a comment's example path whose
 //! tail names nothing stay as written in a file that moves out of its crate, and the dry run lists
 //! each as ambiguous with its `path:line`, while a literal only its own crate can mean, and a path
-//! its syntax anchors, still follow the moves.
+//! its syntax anchors, still follow the moves. A token of `.` and `..` segments alone (`../`) in
+//! prose, a comment or a plain string literal speaks of a parent folder in general and is never
+//! rewritten, while a link to `../` follows the moves.
 
 use std::path::Path;
 
@@ -84,4 +86,44 @@ fn relocate_crate_generic_literals_in_a_file_leaving_its_crate_stay_as_written()
         plan.ambiguous
     );
     assert!(plan.unresolved.is_empty(), "{:?}", plan.unresolved);
+}
+
+#[test]
+fn relocate_bare_parent_tokens_in_prose_and_comments_stay_as_written() {
+    let repo = FixtureRepository::new("bare-parent-tokens");
+    let support = "//! Fixtures for the folder above (`../`) and its parent, `../..`.\n\
+                   pub const UP: &str = \"../\";\n";
+    let readme = "The folder above, `../`, holds the app; ../ and ./ name no folder here.\n\
+                  See [the app](../) and [its library](../lib.rs).\n";
+    repo.write("apps/web/Cargo.toml", "[package]\nname = \"web\"\n")
+        .write("apps/web/src/lib.rs", "pub mod support;\n")
+        .write("apps/web/src/support/mod.rs", support)
+        .write("apps/web/src/support/README.md", readme)
+        .track();
+    repo.write(
+        "crates/web_support/Cargo.toml",
+        "[package]\nname = \"web_support\"\n",
+    );
+    let manifest = repo.manifest(
+        "path\tapps/web/src/support/mod.rs\tcrates/web_support/src/lib.rs\t\n\
+         path\tapps/web/src/support/README.md\tcrates/web_support/src/README.md\t\n",
+    );
+
+    let text = std::fs::read_to_string(&manifest).expect("read the manifest");
+    let rows = parse_manifest(&text).expect("a valid manifest");
+    let snapshot = RepositorySnapshot::load(repo.root()).expect("list the checkout");
+    let plan = build_plan(&snapshot, &rows, None).expect("the plan builds");
+    assert!(plan.ambiguous.is_empty(), "{:?}", plan.ambiguous);
+    assert!(plan.unresolved.is_empty(), "{:?}", plan.unresolved);
+    assert_eq!(dry_run(repo.root(), &manifest), 0);
+    assert_eq!(apply(repo.root(), &manifest), 0);
+    assert_eq!(repo.read("crates/web_support/src/lib.rs"), support);
+    assert_eq!(
+        repo.read("crates/web_support/src/README.md"),
+        readme
+            .replace("[the app](../)", "[the app](../../../apps/web/src/)")
+            .replace("(../lib.rs)", "(../../../apps/web/src/lib.rs)"),
+        "only the link destinations follow the moves"
+    );
+    assert_eq!(verify(repo.root(), Some(Path::new(&manifest))), 0);
 }

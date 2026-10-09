@@ -8,10 +8,11 @@ takes.
 
 ```text
 crates/api/api_foundation/src/http/
-├── mod.rs              the module tree
-├── pagination.rs       `PageParams`: the `limit` and `offset` query parameters and their clamping rule
-├── path_parameters.rs  `PathParams`: axum's `Path` with its rejection answered in the error envelope
-└── tests/              unit tests for the path-parameter extractor and its rejection mapping
+├── mod.rs                  the module tree
+├── pagination.rs           `PageParams`: the `limit` and `offset` query parameters and their clamping rule
+├── path_parameters.rs      `PathParams`: axum's `Path` with its rejection answered in the error envelope
+├── required_text_field.rs  `required_trimmed_text`: a required text field, trimmed, refused with `400` when blank
+└── tests/                  unit tests for the path-parameter extractor, its rejection mapping and the required text field
 ```
 
 ## How it works
@@ -30,6 +31,10 @@ names the parameter, and an extractor that does not match its route's parameters
 `500 internal error`. One extractor serves the whole API because axum's rejection already names
 the refused parameter, so no handler needs a name of its own the way a query rejection does.
 
+A write body's required text field (a modpack's name and version, a server's name) goes through
+`required_trimmed_text`, which trims it and answers `400` with `<field> is required` when nothing
+is left; the trimmed value is the one stored, so reads and writes agree.
+
 ## Boundaries
 
 - Depends on: `serde`; `axum` and `api_foundation::error_handling` for the path extractor; the tests
@@ -40,6 +45,8 @@ the refused parameter, so no handler needs a name of its own the way a query rej
   ([event](/documentation/glossary/a_to_f.md#event) listing, leave requests,
   [ORBAT](/documentation/glossary/n_to_z.md#orbat) view).
 - Used by (`PathParams`): every handler of the eight domains that reads a path segment.
+- Used by (`required_trimmed_text`): the modpack writes of `api_community_content` and the server
+  registry writes of `api_server_infrastructure`.
 - Rules: a list endpoint that pages takes `PageParams` instead of parsing its own `limit` and
   `offset`, so every list clamps the same way; a handler reads its path through `PathParams`, never
   through axum's `Path`, so no route answers axum's plain-text rejection

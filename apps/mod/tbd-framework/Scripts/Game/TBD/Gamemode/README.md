@@ -80,7 +80,7 @@ one process.
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the event loop, one life and the
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the event loop, one life and the
   [Enfusion](/documentation/glossary/a_to_f.md#enfusion) facts the stage machine relies on
-- [Mod UI screens](/documentation/mod/tbd-framework/UI/README.md) — the screens each stage opens, the safe start,
+- [Mod UI screens](/documentation/apps/mod/tbd-framework/UI/README.md) — the screens each stage opens, the safe start,
   objective, end and debrief screens among them

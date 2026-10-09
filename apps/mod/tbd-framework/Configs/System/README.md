@@ -70,5 +70,5 @@ the contexts in `ActionContext/`; scripts activate a context and listen for its 
 
 ## Related documentation
 
-- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — the specification of
+- [Mod UI documentation](/documentation/apps/mod/tbd-framework/UI/README.md) — the specification of
   each framework screen these presets open.

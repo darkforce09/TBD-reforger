@@ -7,7 +7,7 @@
  * `TBD_RadioService`.  Position: `TBD_FrameworkManager` calls `OnStageChanged` on every stage
  * transition; nothing calls the other hooks.
  * State: none.  Invariants: `tbd-framework` takes no workshop dependencies
- * (`documentation/mod/tbd-framework/mod_design.md` sections 2 and 6), so there is no partner
+ * (`documentation/apps/mod/tbd-framework/mod_design.md` sections 2 and 6), so there is no partner
  * bridge and `OnPlayerSpawned`, `OnPlayerKilled`, `OnRadioRetune` and `OnPTT` are empty; the nets
  * are read, served, displayed and tuned natively by `TBD_RadioPlan`, `TBD_RadioService`,
  * `TBD_RadioClient` and `TBD_RadioTuner`.

@@ -3,13 +3,13 @@
 //! server row, reauthorizes the administrator on that connection and audits in the same
 //! transaction.
 
-use api_identifiers::{DiscordUserId, MachineCredentialId, ServerId};
+use api_identifiers::{MachineCredentialId, ServerId};
 use axum::extract::rejection::{JsonRejection, QueryRejection};
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
-use sqlx::PgConnection;
 
+use super::server_administration_lock::lock_server_as_admin;
 use crate::models::machine_credential::{
     IssuedMachineCredential, MachineCredential, MachineCredentialIssue, MachineCredentialList,
     MachineCredentialRevocation,
@@ -17,36 +17,14 @@ use crate::models::machine_credential::{
 use crate::services::machine_credentials::{
     issue_machine_credential, list_machine_credentials, revoke_machine_credential,
 };
-use api_caller_identity::session_authorization::authorize_on_connection;
 use api_foundation::error_handling::api_error::ApiError;
 use api_foundation::http::path_parameters::PathParams;
-use api_http_layer::middleware::{AdminUser, role_rank};
+use api_http_layer::middleware::AdminUser;
 use api_state::AppState;
 
 fn server_id(raw: &str) -> Result<ServerId, ApiError> {
     raw.parse()
         .map_err(|_| ApiError::bad_request("invalid server id"))
-}
-
-/// Lock the server, then confirm the caller is still an administrator after the lock wait.
-/// Returns whether the server is active.
-async fn lock_server_as_admin(
-    connection: &mut PgConnection,
-    state: &AppState,
-    admin: &AdminUser,
-    server: ServerId,
-) -> Result<(DiscordUserId, bool), ApiError> {
-    let active: bool =
-        sqlx::query_scalar("SELECT is_active FROM servers WHERE id = $1 FOR NO KEY UPDATE")
-            .bind(server)
-            .fetch_optional(&mut *connection)
-            .await?
-            .ok_or_else(|| ApiError::not_found("server not found"))?;
-    let actor = authorize_on_connection(connection, &state.cfg, &admin.0.session_claims).await?;
-    if role_rank(&actor.role) < role_rank("admin") {
-        return Err(ApiError::forbidden("insufficient role"));
-    }
-    Ok((actor.discord_id, active))
 }
 
 /// @route POST /api/v1/servers/:id/credentials

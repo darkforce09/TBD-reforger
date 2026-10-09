@@ -21,6 +21,7 @@ newtype_ids = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 time = { workspace = true, features = ["parsing"] }

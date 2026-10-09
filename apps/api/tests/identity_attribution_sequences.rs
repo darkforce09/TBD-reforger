@@ -19,9 +19,13 @@ mod telemetry_support;
 /// State, the acting user, their Arma identity, a source match id, and the game server that
 /// reports that match.
 async fn fixture() -> (AppState, AuthUser, String, String, Arc<ReportingServer>) {
-    let url = common::require_test_database_url().unwrap();
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let url = common::require_test_database_url().expect("the test database URL is configured");
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state = api::composition::application_state(
         pool,
         Config::for_tests(url, "identity-attribution-sequences"),
@@ -35,9 +39,16 @@ async fn fixture() -> (AppState, AuthUser, String, String, Arc<ReportingServer>)
         false,
     )
     .await;
-    let user = authorize_session(&state.pool, &state.cfg, &state.jwt.parse(&access).unwrap())
-        .await
-        .unwrap();
+    let user = authorize_session(
+        &state.pool,
+        &state.cfg,
+        &state
+            .jwt
+            .parse(&access)
+            .expect("the issued access token parses"),
+    )
+    .await
+    .expect("the issued session authorizes");
     let reporter = ReportingServer::open(
         &router(state.clone()),
         &state.pool,
@@ -69,24 +80,24 @@ async fn assert_consistent(state: &AppState, user: &AuthUser, arma: &str) {
     .bind(arma)
     .fetch_optional(&state.pool)
     .await
-    .unwrap();
+    .expect("the read of users runs");
     let mismatches: i64 = sqlx::query_scalar("SELECT count(*) FROM match_player_stats WHERE arma_id = $1 AND discord_id IS DISTINCT FROM $2")
-        .bind(arma).bind(&owner).fetch_one(&state.pool).await.unwrap();
+        .bind(arma).bind(&owner).fetch_one(&state.pool).await.expect("the read of match_player_stats returns a row");
     assert_eq!(
         mismatches, 0,
         "gameplay rows follow the currently verified identity owner"
     );
     let counts: (i64, i64) = sqlx::query_as("SELECT total_deployments, (SELECT count(DISTINCT match_id) FROM match_player_stats WHERE discord_id = $1)
-        FROM users WHERE discord_id = $1").bind(&user.discord_id).fetch_one(&state.pool).await.unwrap();
+        FROM users WHERE discord_id = $1").bind(&user.discord_id).fetch_one(&state.pool).await.expect("the read of match_player_stats returns a row");
     assert_eq!(
         counts.0, counts.1,
         "acknowledged operations include aggregate recomputation"
     );
     let pending: i64 = sqlx::query_scalar("SELECT count(*) FROM identity_link_codes WHERE discord_id=$1 AND consumed_at IS NULL AND cancelled_at IS NULL")
-        .bind(&user.discord_id).fetch_one(&state.pool).await.unwrap();
+        .bind(&user.discord_id).fetch_one(&state.pool).await.expect("the read of identity_link_codes returns a row");
     assert!(pending <= 1);
     let leaderboard: i64 = sqlx::query_scalar("SELECT COALESCE((SELECT missions_played FROM leaderboard_totals WHERE discord_id = $1),0)::bigint")
-        .bind(&user.discord_id).fetch_one(&state.pool).await.unwrap();
+        .bind(&user.discord_id).fetch_one(&state.pool).await.expect("the read of leaderboard_totals returns a row");
     assert_eq!(leaderboard, counts.1);
 }
 

@@ -99,7 +99,7 @@ pub struct Paths {
 impl Paths {
     /// The checkout root and the deploy file it reads.
     pub fn resolve() -> Result<Paths> {
-        let mono_root = repository_layout::find_repository_root()?;
+        let mono_root = repository_root::find_repository_root()?;
         Ok(Paths {
             deploy_env: deploy_settings::deploy_environment_path(&mono_root),
             mono_root,

@@ -139,7 +139,7 @@ pub(super) async fn run_save(id: &str, pending: PendingSave) {
     // there. Both AFTER the write settled, for the / ack reason stated below: the stamp
     // is what lets the next save skip a pointless O(document) merge and what dates the conflict
     // modal's local option, and a stamp for bytes that never landed would be a lie in both roles.
-    let at = now_ms();
+    let at = time_source::wall_clock_ms();
     tab_lock::write_stamp(&key, at);
     tab_lock::announce_saved(at);
     // a flush COMPLETED. Recorded here, in the one branch where the bytes actually reached

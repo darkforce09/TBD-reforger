@@ -31,7 +31,10 @@ async fn requested(f: &Fixture, server: Uuid, body: Value) -> String {
     let (status, receipt) = request(f, server, body).await;
     assert_eq!(status, StatusCode::ACCEPTED, "{receipt}");
     assert_eq!(receipt["state"], "queued");
-    receipt["id"].as_str().unwrap().to_owned()
+    receipt["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_owned()
 }
 
 async fn claim(f: &Fixture, secret: &str, session: Option<Uuid>) -> (StatusCode, Value) {
@@ -82,7 +85,7 @@ async fn lapse(f: &Fixture, command: &str) {
         .bind(command)
         .execute(f.pool())
         .await
-        .unwrap();
+        .expect("the update of fleet_commands succeeds");
 }
 
 fn code(body: &Value) -> &str {

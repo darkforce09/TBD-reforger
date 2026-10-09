@@ -17,8 +17,8 @@ fn invalid_json_reports_detail_not_error() {
 }
 
 /// The save-time catch for control characters, on the channel `create_version` already answers
-/// 400 with. Without it the same payload validates CLEAN here and fails later at `/compiled`,
-/// as a 500 the author never sees.
+/// 400 with. Without it the same payload validates CLEAN here and fails later at the artifact
+/// compile on submit, for a version that can then never compile.
 #[test]
 fn control_character_in_an_authored_slot_string_is_a_save_time_finding() {
     let bad = br#"{"schemaVersion":1,"editor":{"factions":[],

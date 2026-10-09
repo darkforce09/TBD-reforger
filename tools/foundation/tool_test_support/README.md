@@ -8,7 +8,7 @@ takes them from here, so every crate's tests serialise on the same two locks.
 
 ```text
 tools/foundation/tool_test_support/
-├── Cargo.toml  the `tool_test_support` library package: `repository_layout` only, layout tier 1, a dev-dependency only
+├── Cargo.toml  the `tool_test_support` library package: `repository_root` only, layout tier 1, a dev-dependency only
 └── src/        the environment lock, the working-directory lock and its guard, the test checkout root
 ```
 
@@ -19,7 +19,7 @@ lock_env()                    ── ENV_LOCK: tests that write PATH or another 
 CwdGuard::enter(dir)          ──┐
 CwdGuard::enter_resolved(f)   ──┼── one working-directory lock; the guard changes back on drop
 resolve_under_lock(f)         ──┤
-test_repo_root()              ──┘── repository_layout::find_repository_root(), under that lock
+test_repo_root()              ──┘── repository_root::find_repository_root(), under that lock
 ```
 
 `cargo test` runs tests on several threads, and the working directory and the environment are
@@ -49,7 +49,7 @@ No feature and no environment variable.
 
 ## Boundaries
 
-- Depends on: `repository_layout` (the root walk).
+- Depends on: `repository_root` (the root walk).
 - Used by: the tests of `xtask`, from its `[dev-dependencies]`; the `PATH` guard those tests hold
   the environment lock for is `process_runner::PathGuard`.
 - Rules: tier 1 of `tools/foundation` (`cargo xtask verify crate-tiers`); no `[dependencies]`

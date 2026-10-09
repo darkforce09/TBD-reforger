@@ -59,7 +59,7 @@ struct CatalogPair {
 }
 
 /// The operations ballistics world.
-pub struct OperationsBallisticsWorld {
+pub(crate) struct OperationsBallisticsWorld {
     /// The committed catalog text.
     committed_catalog: String,
     /// The committed calibration bundle text.
@@ -75,7 +75,7 @@ pub struct OperationsBallisticsWorld {
 }
 
 fn repository_text(relative: &str) -> String {
-    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let path = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("the repository root above the API package")

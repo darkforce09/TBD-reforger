@@ -65,51 +65,49 @@ README; the folder's own README.md is written from the same code and may differ.
 ````markdown
 # Website API
 
-The `api` crate: the Axum REST API and Server-Sent Events hub behind the web platform. It
-serves `/api/v1` to the single-page app, the game servers and the fleet host agent, owns the
-Postgres schema through its migrations, and serves uploads and terrain assets.
+The `api` crate: the Axum REST API and Server-Sent Events streams behind the web platform,
+assembled from the API crates under `crates/api/`. It serves `/api/v1` to the single-page app, the
+game servers and the fleet host agent, applies the Postgres schema migrations of
+`crates/api/api_database/` at boot, and serves uploads and terrain assets.
 
 ## Contents
 
 ```text
 apps/api/
-├── .env.example         the template the gitignored `.env` is copied from, with development values
-├── .gitignore           keeps `.env` and editor folders out of git
-├── Cargo.toml           the `api` package: its library and `api` and `import-registry` bins
-├── docker-compose.yml   the local Postgres 18 service `db`, container `tbd_reforger_db`, port 5434
-├── migrations/          the SQL schema migrations, embedded at compile time and applied at boot
-├── rust-toolchain.toml  pins Rust 1.95.0 with rustfmt and clippy
-├── rustfmt.toml         the formatting settings: edition 2024, 100-column lines
-├── seeds/               the development seeds `cargo xtask db seed` applies, and hand-applied sets
-├── src/                 the library: `core`, the workers, the eight domains, the binaries
-└── tests/               integration suites against a real Postgres, with their shared support
+├── .env.example  the template the gitignored `.env` is copied from, with development values
+├── Cargo.toml    the `api` package: the library and its two binaries
+├── src/          the thin application: the router, the composition root, the binaries, the layout rules
+└── tests/        integration suites against real Postgres, with their shared support
 ```
 
 ## How it works
 
-`src/bin/api.rs` loads the configuration, opens the Postgres pool, applies `migrations/` unless
+`src/bin/api.rs` loads the configuration, opens the Postgres pool, applies the migrations unless
 `SKIP_MIGRATE` is set, arms the background workers and serves the router on `0.0.0.0:$PORT`. The
-router nests the eight domains' route tables under `/api/v1` and wraps everything in one middleware
-chain, outermost first: request id, access log, Prometheus metrics, panic recovery, CORS, body
-limit, rate limit. The terrain and glyph mounts under `/map-assets` sit below the rate limit. Each
-domain under `src/` owns its handlers, services, models and route table, and `core` imports no
-domain except where the router and the application state compose them.
+router (`src/router.rs`) nests the eight domains' route tables under `/api/v1` and wraps
+everything in one middleware chain, outermost first: request id, access log, Prometheus metrics,
+panic recovery, CORS, body limit, rate limit. The terrain and glyph mounts under `/map-assets` sit
+below the rate limit. The application holds no domain logic: each domain is an API crate
+(`crates/api/api_<domain>/`) that owns its handlers, services, models and route table, the kernel
+crates below them depend on no domain, and the background workers are their own crate
+(`crates/api/api_background_workers/`), which only the `api` binary arms.
 
 ## Getting started
 
-Copy `.env.example` to `.env`, then run these from the repository root, in this order:
+Copy `apps/api/.env.example` to `apps/api/.env`, then run these from the repository root, in this
+order:
 
 ```bash
 cargo xtask db up        # Postgres 18 in the tbd_reforger_db container, host port 5434
 cargo xtask mk rust-api  # cargo run --bin api in this folder; migrates, stays in the foreground
 cargo xtask db seed      # a second terminal, once the API logs `migrations applied`
-cargo xtask db test-it   # the integration suites against a scratch rust_it database
+cargo xtask db test-it   # the integration suites, each against its own scratch database
 ```
 
 `db seed` applies the five development seeds in dependency order to tables that only the API's
 migrations create. Each psql run stops at the first failed statement, so seeding before the API's
 first boot stops at the first seed with psql's exit code 3. `db test-it` needs only `db up`: it
-creates the scratch database, and each suite applies the migrations itself.
+creates the scratch databases, and each suite applies the migrations itself.
 
 With `APP_ENV=development`, `GET /api/v1/auth/dev-login?role=<role>` signs in without Discord
 (`guest`, `enlisted`, `leader`, `mission_maker` or `admin`; any other value signs in as `admin`) and
@@ -117,26 +115,25 @@ redirects to the app's `/auth/callback` with the session in the URL fragment.
 
 ## Configuration
 
-`Config::load` in `src/core/configuration/mod.rs` reads the process environment, then `.env`; an
-exported variable wins. `DATABASE_URL` and `JWT_SECRET` are always required. Outside development,
-`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR` are
-required too.
+`Config::load` in `crates/api/api_configuration/src/configuration/mod.rs` reads the process
+environment, then the first `.env` found from the working directory upward; an exported variable
+wins. `DATABASE_URL` and `JWT_SECRET` are always required. Outside development,
+`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL` and an absolute `UPLOAD_DIR`
+are required too.
 
 | Group | Variables |
 |---|---|
 | Server | `PORT` (8080), `APP_ENV` (`production` unless set; `development` enables dev-login), `FRONTEND_URL`, `ALLOWED_ORIGINS`, `TRUSTED_PROXIES` |
 | Database | `DATABASE_URL`, and the four `TBD_DB_POOL_*` pool settings |
 | Files | `SPA_DIST_DIR` (serve the built app when set), `MAP_ASSETS_DIR`, `GLYPH_ASSETS_DIR`, `UPLOAD_DIR` |
-| Request limits | `MISSION_VERSION_MAX_BODY_BYTES` (256 MiB), the body limit of the mission version save route alone |
 | Sessions and Discord | `JWT_SECRET`, `JWT_ACCESS_TTL_MIN` (15), `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URL`, `DISCORD_GUILD_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_WEBHOOK_URL` |
-| Observability | `OBSERVABILITY_TOKEN`, the operator's bearer that `/metrics` and the detailed `/healthz` check |
-| Workers | `SERVER_STATUS_PUBLISH_INTERVAL_SECS`, `LEADERBOARD_REFRESH_INTERVAL_SECS`, `ROLE_RESYNC_INTERVAL_SECS` |
 | Boot | `SKIP_MIGRATE` (skip the migrations), `RUST_LOG` (the log filter, `info` when unset) |
 
 ## Public surface
 
-- The library `api` (`src/lib.rs`): `core`, `background_workers` and the eight domain
-  modules. Its users are this crate's binaries and integration suites.
+- The library `api` (`src/lib.rs`): `router::router`, the whole application with its middleware
+  chain, and `composition::application_state`, the application state with its concrete services.
+  Its users are this crate's binaries and integration suites.
 - The `api` binary: the server described above.
 - The `import-registry` binary: ingests registry envelopes (`--items`, `--compat`) into Postgres for
   the envelope's modpack, which `--modpack` overrides; `--prune` deletes that modpack's rows the
@@ -146,9 +143,10 @@ required too.
 
 ## Boundaries
 
-- Depends on: the mission crates `mission_payload` and `mission_validation`, which compile and
-  validate missions; the schemas in `contracts/definitions/`, embedded at compile time; Postgres 18;
-  Discord's OAuth2 and REST APIs; and, at run time, the asset trees in `assets/terrains/` and
+- Depends on: the API crates of `crates/api/` (the eight domain crates, whose route tables the
+  router merges; `api_background_workers`, which the `api` binary arms; the kernel crates the
+  composition root assembles); through them, Postgres 18, Discord's OAuth2 and REST APIs, the
+  schemas in `contracts/definitions/` and, at run time, the asset trees in `assets/terrains/` and
   `assets/glyphs/`.
 - Used by: the single-page app in `apps/frontend/`; the game servers, through the mod's
   `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the fleet host agent in `apps/fleet_host_agent/`;

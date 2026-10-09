@@ -6,7 +6,8 @@
 //!
 //! **Position:** read by the relative-reference pass ([`super::path_references`]) for string
 //! literals and comments in `.rs` files, and by the Rust path pass ([`super::rust_paths`]) for
-//! module declarations, `use` trees and path expressions.
+//! module declarations, `use` trees and path expressions; the plan builder and the verification
+//! read [`code_spans`] to keep this tool's own test fixtures out of every rewrite.
 //!
 //! **Signals & state:** none; pure functions over one source string.
 //!
@@ -96,6 +97,25 @@ pub(crate) fn tokenize(source: &str) -> Vec<Token> {
 /// The tokens that are not comments, in order.
 pub(crate) fn code_tokens(tokens: &[Token]) -> Vec<Token> {
     tokens.iter().copied().filter(|t| !t.is_comment()).collect()
+}
+
+/// The spans of `source` outside every string literal and comment, in source order: the code a
+/// file's fixture text never reaches.
+pub(crate) fn code_spans(source: &str) -> Vec<Range<usize>> {
+    let mut spans = Vec::new();
+    let mut cursor = 0;
+    for token in tokenize(source) {
+        if token.kind == TokenKind::StringLiteral || token.is_comment() {
+            if cursor < token.start {
+                spans.push(cursor..token.start);
+            }
+            cursor = token.end;
+        }
+    }
+    if cursor < source.len() {
+        spans.push(cursor..source.len());
+    }
+    spans
 }
 
 /// The span of a string literal's content: the bytes between its opening and closing quote.

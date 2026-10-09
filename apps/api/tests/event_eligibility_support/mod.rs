@@ -21,22 +21,22 @@ use crate::common;
 
 mod game_server_reports;
 
-pub use game_server_reports::ReportingGameServer;
+pub(crate) use game_server_reports::ReportingGameServer;
 
-pub const PARTNER_ROLE: &str = "partner-role-rifleman";
+pub(crate) const PARTNER_ROLE: &str = "partner-role-rifleman";
 
 /// Serializes the tests of one suite that request or drain event reservation re-evaluations. The
 /// queue is global to the database, so one test's drain would otherwise lease and re-evaluate
 /// another test's event while that test observes it.
-pub static REEVALUATION_QUEUE: std::sync::LazyLock<tokio::sync::Mutex<()>> =
+pub(crate) static REEVALUATION_QUEUE: std::sync::LazyLock<tokio::sync::Mutex<()>> =
     std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
-pub struct Actor {
+pub(crate) struct Actor {
     pub id: String,
     pub token: String,
 }
 
-pub struct Fixture {
+pub(crate) struct Fixture {
     pub state: AppState,
     pub app: Router,
     pub admin: Actor,
@@ -54,18 +54,22 @@ pub struct Fixture {
     result_revisions: std::sync::Mutex<std::collections::HashMap<String, i64>>,
 }
 
-pub struct EventShape<'a> {
+pub(crate) struct EventShape<'a> {
     pub max_slots: i64,
     /// One entry per mission; each entry lists the squad of every seat, in order.
     pub missions: &'a [&'a [&'a str]],
 }
 
 impl Fixture {
-    pub async fn new(suite: &str, shape: EventShape<'_>) -> Self {
+    pub(crate) async fn new(suite: &str, shape: EventShape<'_>) -> Self {
         let url =
             common::require_test_database_url().expect("event eligibility requires PostgreSQL");
-        let pool = api_database::connect(&url).await.unwrap();
-        api_database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url)
+            .await
+            .expect("the test database accepts a connection");
+        api_database::migrate(&pool)
+            .await
+            .expect("the migrations apply to the test database");
         let config = Config::for_tests(url, "event-eligibility");
         let main_guild = config.discord_guild_id.to_string();
         let state = api::composition::application_state(pool, config);
@@ -101,7 +105,7 @@ impl Fixture {
         .bind(&fixture.admin.id)
         .fetch_one(&fixture.state.pool)
         .await
-        .unwrap();
+        .expect("the insert into events returns its row");
         for squads in shape.missions {
             let mission: Uuid = sqlx::query_scalar(
                 "INSERT INTO missions(title, author_id, terrain, game_mode, max_players, status)
@@ -110,7 +114,7 @@ impl Fixture {
             .bind(&fixture.admin.id)
             .fetch_one(&fixture.state.pool)
             .await
-            .unwrap();
+            .expect("the insert into missions returns its row");
             let attachment: Uuid = sqlx::query_scalar(
                 "INSERT INTO event_missions(event_id, mission_id, start_time)
                  VALUES ($1, $2, clock_timestamp() + interval '3 days') RETURNING id",
@@ -119,7 +123,7 @@ impl Fixture {
             .bind(mission)
             .fetch_one(&fixture.state.pool)
             .await
-            .unwrap();
+            .expect("the insert into event_missions returns its row");
             let mut seats = Vec::new();
             for (index, squad) in squads.iter().enumerate() {
                 seats.push(
@@ -132,7 +136,7 @@ impl Fixture {
                     .bind(index as i64)
                     .fetch_one(&fixture.state.pool)
                     .await
-                    .unwrap(),
+                    .expect("the insert into orbat_slots returns its row"),
                 );
             }
             fixture.missions.push(attachment);
@@ -146,29 +150,29 @@ impl Fixture {
     }
 
     /// An account with a verified main-guild snapshot for `role` (guest is a confirmed nonmember).
-    pub async fn account(&self, label: &str, role: &str) -> Actor {
+    pub(crate) async fn account(&self, label: &str, role: &str) -> Actor {
         let id = self.fresh_id(label);
         let token = common::access_token(&self.state, &self.suite, &id, role, true).await;
         Actor { id, token }
     }
 
-    pub async fn member(&self, label: &str) -> Actor {
+    pub(crate) async fn member(&self, label: &str) -> Actor {
         self.account(label, "enlisted").await
     }
 
     /// A verified member whose Arma identity is not linked yet.
-    pub async fn unlinked_member(&self, label: &str) -> Actor {
+    pub(crate) async fn unlinked_member(&self, label: &str) -> Actor {
         let id = self.fresh_id(label);
         let token = common::access_token(&self.state, &self.suite, &id, "enlisted", false).await;
         Actor { id, token }
     }
 
-    pub async fn guest(&self, label: &str) -> Actor {
+    pub(crate) async fn guest(&self, label: &str) -> Actor {
         self.account(label, "guest").await
     }
 
     /// An authenticated account no Discord observation has verified yet.
-    pub async fn unverified(&self, label: &str) -> Actor {
+    pub(crate) async fn unverified(&self, label: &str) -> Actor {
         let id = self.fresh_id(label);
         sqlx::query(
             "INSERT INTO users (discord_id, username, role, arma_id, created_at, updated_at)
@@ -178,18 +182,18 @@ impl Fixture {
         .bind(common::unique_arma("eligibility-unverified"))
         .execute(&self.state.pool)
         .await
-        .unwrap();
+        .expect("the insert into users succeeds");
         let (token, _, _) = issue_session(
             &self.state,
             &api_identifiers::DiscordUserId::new(id.as_str()),
         )
         .await
-        .unwrap();
+        .expect("issuing a session succeeds");
         Actor { id, token }
     }
 
     /// A confirmed TBD nonmember whose partner guild membership is verified with `roles`.
-    pub async fn partner(&self, label: &str, roles: &[&str]) -> Actor {
+    pub(crate) async fn partner(&self, label: &str, roles: &[&str]) -> Actor {
         let actor = self.guest(label).await;
         self.observe(&actor, &self.partner_guild.clone(), "member", roles, 0)
             .await;
@@ -197,7 +201,7 @@ impl Fixture {
     }
 
     /// Record a bot-authenticated observation `hours_ago`, replacing roles in that guild.
-    pub async fn observe(
+    pub(crate) async fn observe(
         &self,
         actor: &Actor,
         guild: &str,
@@ -205,7 +209,7 @@ impl Fixture {
         roles: &[&str],
         hours_ago: i64,
     ) {
-        let mut tx = self.state.pool.begin().await.unwrap();
+        let mut tx = self.state.pool.begin().await.expect("a transaction begins");
         sqlx::query(
             "INSERT INTO discord_membership_snapshots (discord_id, guild_id, membership_status, verified_at, revision)
              VALUES ($1, $2, $3, CASE WHEN $3 = 'unknown' THEN NULL ELSE clock_timestamp() - make_interval(hours => $4::int) END, 1)
@@ -218,13 +222,13 @@ impl Fixture {
         .bind(hours_ago as i32)
         .execute(&mut *tx)
         .await
-        .unwrap();
+        .expect("the insert into discord_membership_snapshots succeeds");
         sqlx::query("DELETE FROM user_discord_roles WHERE discord_id = $1 AND guild_id = $2")
             .bind(&actor.id)
             .bind(guild)
             .execute(&mut *tx)
             .await
-            .unwrap();
+            .expect("the delete from user_discord_roles succeeds");
         for role in roles {
             sqlx::query(
                 "INSERT INTO user_discord_roles (discord_id, discord_role_id, guild_id, synced_at)
@@ -235,12 +239,12 @@ impl Fixture {
             .bind(guild)
             .execute(&mut *tx)
             .await
-            .unwrap();
+            .expect("the insert into user_discord_roles succeeds");
         }
-        tx.commit().await.unwrap();
+        tx.commit().await.expect("the transaction commits");
     }
 
-    pub async fn call(
+    pub(crate) async fn call(
         &self,
         actor: &Actor,
         method: &str,
@@ -256,10 +260,12 @@ impl Fixture {
         }
         let request = request
             .body(body.map_or(Body::empty(), |value| Body::from(value.to_string())))
-            .unwrap();
+            .expect("the request builds");
         let response = self.app.clone().oneshot(request).await.unwrap();
         let status = response.status();
-        let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let bytes = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("the response body reads to the end");
         (
             status,
             serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -267,23 +273,23 @@ impl Fixture {
     }
 
     /// The catalog mission played by attachment `mission`.
-    pub async fn catalog_mission(&self, mission: usize) -> Uuid {
+    pub(crate) async fn catalog_mission(&self, mission: usize) -> Uuid {
         sqlx::query_scalar("SELECT mission_id FROM event_missions WHERE id = $1")
             .bind(self.missions[mission])
             .fetch_one(&self.state.pool)
             .await
-            .unwrap()
+            .expect("the read of event_missions returns a row")
     }
 
     /// Move the event and every attachment start `hours` into the past.
-    pub async fn move_schedule_into_past(&self, hours: i32) {
-        let mut tx = self.state.pool.begin().await.unwrap();
+    pub(crate) async fn move_schedule_into_past(&self, hours: i32) {
+        let mut tx = self.state.pool.begin().await.expect("a transaction begins");
         sqlx::query("UPDATE events SET start_time = clock_timestamp() - make_interval(hours => $2) WHERE id = $1")
             .bind(self.event)
             .bind(hours)
             .execute(&mut *tx)
             .await
-            .unwrap();
+            .expect("the update of events succeeds");
         sqlx::query(
             "UPDATE event_missions SET start_time = clock_timestamp() - make_interval(hours => $2) WHERE event_id = $1",
         )
@@ -291,11 +297,11 @@ impl Fixture {
         .bind(hours)
         .execute(&mut *tx)
         .await
-        .unwrap();
-        tx.commit().await.unwrap();
+        .expect("the update of event_missions succeeds");
+        tx.commit().await.expect("the transaction commits");
     }
 
-    pub async fn register(
+    pub(crate) async fn register(
         &self,
         actor: &Actor,
         mission: usize,
@@ -313,7 +319,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn withdraw(&self, actor: &Actor, mission: usize) -> (StatusCode, Value) {
+    pub(crate) async fn withdraw(&self, actor: &Actor, mission: usize) -> (StatusCode, Value) {
         self.call(
             actor,
             "DELETE",
@@ -323,7 +329,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn assign(
+    pub(crate) async fn assign(
         &self,
         actor: &Actor,
         mission: usize,
@@ -342,15 +348,15 @@ impl Fixture {
         .await
     }
 
-    pub async fn access_revision(&self) -> i64 {
+    pub(crate) async fn access_revision(&self) -> i64 {
         sqlx::query_scalar("SELECT access_revision FROM events WHERE id = $1")
             .bind(self.event)
             .fetch_one(&self.state.pool)
             .await
-            .unwrap()
+            .expect("the read of events returns a row")
     }
 
-    pub async fn put_event_policy(&self, policy: Value) -> (StatusCode, Value) {
+    pub(crate) async fn put_event_policy(&self, policy: Value) -> (StatusCode, Value) {
         let revision = self.access_revision().await;
         self.call(
             &self.admin,
@@ -361,7 +367,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn put_squad_policy(
+    pub(crate) async fn put_squad_policy(
         &self,
         mission: usize,
         squad: &str,
@@ -380,7 +386,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn put_slot_policy(
+    pub(crate) async fn put_slot_policy(
         &self,
         mission: usize,
         slot: usize,
@@ -399,7 +405,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn put_quotas(&self, quotas: Value) -> (StatusCode, Value) {
+    pub(crate) async fn put_quotas(&self, quotas: Value) -> (StatusCode, Value) {
         let revision = self.access_revision().await;
         self.call(
             &self.admin,
@@ -412,7 +418,7 @@ impl Fixture {
 
     /// Members and guests draw from uncapped pools that are already open; the open pool stays
     /// closed. New events otherwise grant guests no places.
-    pub async fn open_member_and_guest_pools(&self) {
+    pub(crate) async fn open_member_and_guest_pools(&self) {
         let opened = self
             .put_quotas(json!({
                 "member": {"seats": null, "opens_at": "2020-01-01T00:00:00Z"},
@@ -423,7 +429,7 @@ impl Fixture {
         assert_eq!(opened.0, StatusCode::OK, "{opened:?}");
     }
 
-    pub async fn create_group(&self, name: &str, source: Value) -> Uuid {
+    pub(crate) async fn create_group(&self, name: &str, source: Value) -> Uuid {
         let revision = self.access_revision().await;
         let (status, body) = self
             .call(
@@ -438,16 +444,16 @@ impl Fixture {
         assert_eq!(status, StatusCode::CREATED, "{body}");
         body["access"]["groups"]
             .as_array()
-            .unwrap()
+            .expect("the `groups` field is an array")
             .iter()
             .find(|group| group["name"] == name)
             .and_then(|group| group["id"].as_str())
-            .unwrap()
+            .expect("the created group appears with a string id")
             .parse()
-            .unwrap()
+            .expect("the created group id parses")
     }
 
-    pub async fn add_roster(&self, group: Uuid, member: &Actor) -> (StatusCode, Value) {
+    pub(crate) async fn add_roster(&self, group: Uuid, member: &Actor) -> (StatusCode, Value) {
         let revision = self.access_revision().await;
         self.call(
             &self.admin,
@@ -462,7 +468,7 @@ impl Fixture {
     }
 
     /// `(registration, reservation_state, slot, release_reason)` of the actor in `mission`.
-    pub async fn registration(
+    pub(crate) async fn registration(
         &self,
         actor: &Actor,
         mission: usize,
@@ -475,11 +481,11 @@ impl Fixture {
         .bind(&actor.id)
         .fetch_optional(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the read of event_registrations runs")
     }
 
     /// The actor's active allocation kind in this event.
-    pub async fn allocation(&self, actor: &Actor) -> Option<String> {
+    pub(crate) async fn allocation(&self, actor: &Actor) -> Option<String> {
         sqlx::query_scalar(
             "SELECT quota_kind FROM event_participant_allocations
              WHERE event_id = $1 AND discord_id = $2 AND released_at IS NULL",
@@ -488,49 +494,49 @@ impl Fixture {
         .bind(&actor.id)
         .fetch_optional(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the read of event_participant_allocations runs")
     }
 
-    pub async fn occupant(&self, mission: usize, slot: usize) -> Option<String> {
+    pub(crate) async fn occupant(&self, mission: usize, slot: usize) -> Option<String> {
         sqlx::query_scalar("SELECT assigned_to FROM orbat_slots WHERE id = $1")
             .bind(self.slots[mission][slot])
             .fetch_one(&self.state.pool)
             .await
-            .unwrap()
+            .expect("the read of orbat_slots returns a row")
     }
 
-    pub async fn audit_count(&self, action: &str, target: &str) -> i64 {
+    pub(crate) async fn audit_count(&self, action: &str, target: &str) -> i64 {
         sqlx::query_scalar("SELECT count(*) FROM audit_logs WHERE action = $1 AND target_id = $2")
             .bind(action)
             .bind(target)
             .fetch_one(&self.state.pool)
             .await
-            .unwrap()
+            .expect("the read of audit_logs returns a row")
     }
 
-    pub fn pool(&self) -> &PgPool {
+    pub(crate) fn pool(&self) -> &PgPool {
         &self.state.pool
     }
 }
 
 impl Fixture {
     /// Hold the event parent lock in an open transaction until the caller commits it.
-    pub async fn event_barrier(&self) -> (sqlx::Transaction<'static, sqlx::Postgres>, i32) {
-        let mut transaction = self.state.pool.begin().await.unwrap();
+    pub(crate) async fn event_barrier(&self) -> (sqlx::Transaction<'static, sqlx::Postgres>, i32) {
+        let mut transaction = self.state.pool.begin().await.expect("a transaction begins");
         sqlx::query("SELECT id FROM events WHERE id = $1 FOR NO KEY UPDATE")
             .bind(self.event)
             .fetch_one(&mut *transaction)
             .await
-            .unwrap();
+            .expect("the read of events returns a row");
         let pid = sqlx::query_scalar("SELECT pg_backend_pid()")
             .fetch_one(&mut *transaction)
             .await
-            .unwrap();
+            .expect("the call of pg_backend_pid() returns a row");
         (transaction, pid)
     }
 
     /// Wait until at least `minimum` sessions queue behind the barrier owner.
-    pub async fn wait_for_blocked(&self, owner: i32, minimum: i64) {
+    pub(crate) async fn wait_for_blocked(&self, owner: i32, minimum: i64) {
         tokio::time::timeout(std::time::Duration::from_secs(10), async {
             loop {
                 let count: i64 = sqlx::query_scalar(
@@ -542,7 +548,7 @@ impl Fixture {
                 .bind(owner)
                 .fetch_one(&self.state.pool)
                 .await
-                .unwrap();
+                .expect("the query returns a row");
                 if count >= minimum {
                     return;
                 }
@@ -554,7 +560,7 @@ impl Fixture {
     }
 
     /// Seed a waiting registration directly, as if queued at `hours_ago`.
-    pub async fn seed_waiting(&self, actor: &Actor, mission: usize, hours_ago: i32) -> Uuid {
+    pub(crate) async fn seed_waiting(&self, actor: &Actor, mission: usize, hours_ago: i32) -> Uuid {
         sqlx::query_scalar(
             "INSERT INTO event_registrations (event_mission_id, discord_id, reservation_state, queue_entered_at)
              VALUES ($1, $2, 'waitlisted', clock_timestamp() - make_interval(hours => $3)) RETURNING id",
@@ -564,19 +570,19 @@ impl Fixture {
         .bind(hours_ago)
         .fetch_one(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the insert into event_registrations returns its row")
     }
 }
 
 /// A policy with one grant of the given conditions.
-pub fn single_grant(conditions: Value) -> Value {
+pub(crate) fn single_grant(conditions: Value) -> Value {
     json!({ "grants": [{ "conditions": conditions }] })
 }
 
-pub fn tbd_members() -> Value {
+pub(crate) fn tbd_members() -> Value {
     single_grant(json!([{ "kind": "tbd_member" }]))
 }
 
-pub fn named(account: &Actor) -> Value {
+pub(crate) fn named(account: &Actor) -> Value {
     single_grant(json!([{ "kind": "named_account", "discord_id": account.id }]))
 }

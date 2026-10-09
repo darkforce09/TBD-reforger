@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 use crate::error::{Result, ResultExt};
 
 use repository_layout::DEVELOPMENT_COMPOSE_FILE;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Names another folder holding a compose file under the development file's name. The self-test
 /// points it at a throwaway project so a `db down` in a comparison never stops the shared

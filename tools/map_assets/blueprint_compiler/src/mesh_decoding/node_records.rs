@@ -64,16 +64,16 @@ pub(crate) struct Socket {
     pub local: Rigid,
 }
 
-fn u16le(p: &[u8]) -> u16 {
+fn read_u16_little_endian(p: &[u8]) -> u16 {
     u16::from_le_bytes([p[0], p[1]])
 }
-fn u32le(p: &[u8]) -> u32 {
+fn read_u32_little_endian(p: &[u8]) -> u32 {
     u32::from_le_bytes([p[0], p[1], p[2], p[3]])
 }
-fn u32be(p: &[u8]) -> u32 {
+fn read_u32_big_endian(p: &[u8]) -> u32 {
     u32::from_be_bytes([p[0], p[1], p[2], p[3]])
 }
-fn f32le(p: &[u8]) -> f32 {
+fn read_f32_little_endian(p: &[u8]) -> f32 {
     f32::from_le_bytes([p[0], p[1], p[2], p[3]])
 }
 
@@ -83,7 +83,7 @@ fn find_chunk_at(data: &[u8], id: &[u8; 4]) -> Option<(usize, usize)> {
     let mut pos = 12usize;
     while pos + 8 <= data.len() {
         if &data[pos..pos + 4] == id {
-            let size = u32be(&data[pos + 4..pos + 8]) as usize;
+            let size = read_u32_big_endian(&data[pos + 4..pos + 8]) as usize;
             if size > 0 && size < 100_000_000 && pos + 8 + size <= data.len() {
                 return Some((pos + 8, size));
             }
@@ -95,16 +95,20 @@ fn find_chunk_at(data: &[u8], id: &[u8; 4]) -> Option<(usize, usize)> {
 
 fn read_record(b: &[u8]) -> XobNode {
     XobNode {
-        name_idx: u32le(&b[0..4]),
-        pos: [f32le(&b[4..8]), f32le(&b[8..12]), f32le(&b[12..16])],
-        quat: [
-            f32le(&b[16..20]),
-            f32le(&b[20..24]),
-            f32le(&b[24..28]),
-            f32le(&b[28..32]),
+        name_idx: read_u32_little_endian(&b[0..4]),
+        pos: [
+            read_f32_little_endian(&b[4..8]),
+            read_f32_little_endian(&b[8..12]),
+            read_f32_little_endian(&b[12..16]),
         ],
-        next_sibling: u16le(&b[32..34]),
-        first_child: u16le(&b[34..36]),
+        quat: [
+            read_f32_little_endian(&b[16..20]),
+            read_f32_little_endian(&b[20..24]),
+            read_f32_little_endian(&b[24..28]),
+            read_f32_little_endian(&b[28..32]),
+        ],
+        next_sibling: read_u16_little_endian(&b[32..34]),
+        first_child: read_u16_little_endian(&b[34..36]),
     }
 }
 
@@ -270,7 +274,7 @@ impl XobNodes {
 
     /// Parent-relative transform of one record.
     #[must_use]
-    pub(crate) fn local_of(&self, node: usize) -> Rigid {
+    pub(crate) fn local_transform_of(&self, node: usize) -> Rigid {
         let n = &self.nodes[node];
         Rigid::from_quat_pos(
             [
@@ -289,7 +293,7 @@ impl XobNodes {
 
     /// Model-root → node transform (the parent chain composed).
     #[must_use]
-    pub(crate) fn world_of(&self, node: usize) -> Rigid {
+    pub(crate) fn world_transform_of(&self, node: usize) -> Rigid {
         let mut chain = vec![node];
         let mut cur = node;
         while let Some(p) = self.parent[cur] {
@@ -298,7 +302,7 @@ impl XobNodes {
         }
         let mut acc = Rigid::identity();
         for &n in chain.iter().rev() {
-            acc = acc.compose(&self.local_of(n));
+            acc = acc.compose(&self.local_transform_of(n));
         }
         acc
     }
@@ -315,7 +319,7 @@ impl XobNodes {
                     .then(|| Socket {
                         name: name.to_string(),
                         node: i,
-                        local: self.world_of(i),
+                        local: self.world_transform_of(i),
                     })
             })
             .collect()

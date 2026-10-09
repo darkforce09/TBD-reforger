@@ -29,7 +29,7 @@ const TEST_MP2: &str = "00000000-0000-4000-a000-00000000c0d2";
 
 /// A committed Workbench registry envelope under `contracts/catalogs/`.
 fn catalog_path(file: &str) -> std::path::PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("contracts/catalogs")
         .join(file)
@@ -41,7 +41,7 @@ async fn setup() -> Option<(Router, PgPool, String, String)> {
     api_database::migrate(&pool).await.expect("migrate");
     // Own rows only — other suites share this DB.
     for mp in [TEST_MP, TEST_MP2] {
-        let id = Uuid::parse_str(mp).unwrap();
+        let id = Uuid::parse_str(mp).expect("the modpack id literal is a UUID");
         for q in [
             "DELETE FROM registry_compat WHERE modpack_id = $1",
             "DELETE FROM registry_items WHERE modpack_id = $1",
@@ -66,17 +66,19 @@ async fn dev_login(app: &Router, role: &str) -> String {
             Request::builder()
                 .uri(format!("/api/v1/auth/dev-login?role={role}"))
                 .body(Body::empty())
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
+    let loc = resp.headers()[header::LOCATION]
+        .to_str()
+        .expect("the Location header is ASCII");
     loc.split_once('#')
-        .unwrap()
+        .expect("the Location carries a fragment")
         .1
         .split('&')
         .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
+        .expect("the fragment carries an access token")
         .to_string()
 }
 
@@ -89,11 +91,13 @@ async fn get(app: &Router, uri: &str, bearer: &str, etag: Option<&str>) -> (Stat
     }
     let resp = app
         .clone()
-        .oneshot(b.body(Body::empty()).unwrap())
+        .oneshot(b.body(Body::empty()).expect("the request builds"))
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -115,13 +119,19 @@ fn edge_key(from: &str, to: &str, ty: &str, ev: Option<&str>) -> EdgeKey {
 fn envelope_edges(env: &Value) -> BTreeSet<EdgeKey> {
     env["edges"]
         .as_array()
-        .unwrap()
+        .expect("the `edges` field is an array")
         .iter()
         .map(|e| {
             edge_key(
-                e["from_node"].as_str().unwrap(),
-                e["to_node"].as_str().unwrap(),
-                e["edge_type"].as_str().unwrap(),
+                e["from_node"]
+                    .as_str()
+                    .expect("the `from_node` field is a string"),
+                e["to_node"]
+                    .as_str()
+                    .expect("the `to_node` field is a string"),
+                e["edge_type"]
+                    .as_str()
+                    .expect("the `edge_type` field is a string"),
                 e["evidence"].as_str(),
             )
         })
@@ -131,14 +141,26 @@ fn envelope_edges(env: &Value) -> BTreeSet<EdgeKey> {
 fn envelope_items(env: &Value) -> BTreeSet<(String, String, String, String)> {
     env["items"]
         .as_array()
-        .unwrap()
+        .expect("the `items` field is an array")
         .iter()
         .map(|it| {
             (
-                it["resource_name"].as_str().unwrap().to_string(),
-                it["display_name"].as_str().unwrap().to_string(),
-                it["category"].as_str().unwrap().to_string(),
-                it["kind"].as_str().unwrap().to_string(),
+                it["resource_name"]
+                    .as_str()
+                    .expect("the `resource_name` field is a string")
+                    .to_string(),
+                it["display_name"]
+                    .as_str()
+                    .expect("the `display_name` field is a string")
+                    .to_string(),
+                it["category"]
+                    .as_str()
+                    .expect("the `category` field is a string")
+                    .to_string(),
+                it["kind"]
+                    .as_str()
+                    .expect("the `kind` field is a string")
+                    .to_string(),
             )
         })
         .collect()
@@ -146,9 +168,14 @@ fn envelope_items(env: &Value) -> BTreeSet<(String, String, String, String)> {
 
 fn histogram(env: &Value, list: &str, field: &str) -> BTreeMap<String, u64> {
     let mut h = BTreeMap::new();
-    for row in env[list].as_array().unwrap() {
-        *h.entry(row[field].as_str().unwrap().to_string())
-            .or_insert(0) += 1;
+    for row in env[list].as_array().expect("the envelope list is an array") {
+        *h.entry(
+            row[field]
+                .as_str()
+                .expect("the histogram field is a string")
+                .to_string(),
+        )
+        .or_insert(0) += 1;
     }
     h
 }
@@ -160,7 +187,7 @@ async fn db_edges(pool: &PgPool, mp: Uuid) -> BTreeSet<EdgeKey> {
     .bind(mp)
     .fetch_all(pool)
     .await
-    .unwrap();
+    .expect("the read of registry_compat runs");
     rows.iter()
         .map(|(f, t, ty, ev)| edge_key(f, t, ty, ev.as_deref()))
         .collect()
@@ -173,7 +200,7 @@ async fn db_items(pool: &PgPool, mp: Uuid) -> BTreeSet<(String, String, String, 
     .bind(mp)
     .fetch_all(pool)
     .await
-    .unwrap();
+    .expect("the read of registry_items runs");
     rows.into_iter().collect()
 }
 
@@ -202,19 +229,25 @@ async fn db_edge_snapshot(
     .bind(mp)
     .fetch_all(pool)
     .await
-    .unwrap()
+    .expect("the read of registry_compat runs")
 }
 
 fn api_edge_set(body: &Value) -> BTreeSet<EdgeKey> {
     body["data"]
         .as_array()
-        .unwrap()
+        .expect("the `data` field is an array")
         .iter()
         .map(|e| {
             edge_key(
-                e["from_node"].as_str().unwrap(),
-                e["to_node"].as_str().unwrap(),
-                e["edge_type"].as_str().unwrap(),
+                e["from_node"]
+                    .as_str()
+                    .expect("the `from_node` field is a string"),
+                e["to_node"]
+                    .as_str()
+                    .expect("the `to_node` field is a string"),
+                e["edge_type"]
+                    .as_str()
+                    .expect("the `edge_type` field is a string"),
                 e["evidence"].as_str(), // absent when '' (skip_serializing_if)
             )
         })

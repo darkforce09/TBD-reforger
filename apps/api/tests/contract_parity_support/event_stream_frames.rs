@@ -15,7 +15,7 @@
 use serde_json::Value;
 
 /// The complete frames at the start of `bytes`, each without its terminating blank line.
-pub fn complete_frames(bytes: &[u8]) -> Vec<String> {
+pub(crate) fn complete_frames(bytes: &[u8]) -> Vec<String> {
     let text = String::from_utf8_lossy(bytes);
     let mut frames: Vec<String> = text.split("\n\n").map(str::to_string).collect();
     // The piece after the last separator is either empty (the stream ended on a frame boundary)
@@ -25,7 +25,7 @@ pub fn complete_frames(bytes: &[u8]) -> Vec<String> {
 }
 
 /// The frame's `event:` name, or `""` for an unnamed frame.
-pub fn frame_event(frame: &str) -> &str {
+pub(crate) fn frame_event(frame: &str) -> &str {
     frame
         .lines()
         .find_map(|line| line.strip_prefix("event:"))
@@ -37,7 +37,7 @@ pub fn frame_event(frame: &str) -> &str {
 ///
 /// # Errors
 /// Says so when the frame has no data line or the data is not JSON.
-pub fn frame_json(frame: &str) -> Result<Value, String> {
+pub(crate) fn frame_json(frame: &str) -> Result<Value, String> {
     let lines: Vec<&str> = frame
         .lines()
         .filter_map(|line| line.strip_prefix("data:"))

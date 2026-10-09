@@ -80,7 +80,7 @@ transformed box.
     which assemble a compound from `<slug>.instances.json` and open and close its doors;
   - the blueprint tooling in `tools/map_assets/blueprint_compiler/src/`, where
     `cargo xtask map bvh-batch` writes `<slug>.instances.json`, and the world line-of-sight checks
-    in `tools/map_assets/map_asset_verification/src/tests/world_line_of_sight.rs`.
+    in `tools/map_assets/map_asset_verification/src/tests/world_line_of_sight_tests.rs`.
 - Rules: assembly is all or nothing and `append` keeps the instances already placed
   (`assemble_is_atomic_and_append_adds_scene_trees` in
   `crates/line_of_sight/interior_line_of_sight/src/tests/compound_walk_tests.rs`); a door fraction clamps to

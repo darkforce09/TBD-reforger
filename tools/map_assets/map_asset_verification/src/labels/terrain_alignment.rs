@@ -7,7 +7,7 @@
 //! **Position:** a child of [`super`], which re-exports [`terrain_alignment`]; reads
 //! `anchors/verification.json` (or, outside `--strict`, the example file).
 //! **Signals & state:** none.
-//! **Invariants:** heights print with JavaScript `toFixed(3)` rounding ([`js_fixed3`]); a stub
+//! **Invariants:** heights print with JavaScript `toFixed(3)` rounding ([`format_javascript_fixed_three`]); a stub
 //! raster (zero size) checks the schemas only, and fails under `--strict`.
 
 use super::*;
@@ -20,10 +20,10 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
     use terrain_elevation::sampling::world_to_pixel;
     const MIN_ANCHORS_STRICT: usize = 10;
     let base = terrain_dir(root, terrain);
-    let manifest = read_json(&base.join("manifest.json"))?;
+    let manifest = read_json_file(&base.join("manifest.json"))?;
 
     // Manifest schema.
-    let schema = read_json(&definition_path(root, "terrain-manifest.schema.json"))?;
+    let schema = read_json_file(&definition_path(root, "terrain-manifest.schema.json"))?;
     let v = jsonschema::validator_for(&schema).map_err(|e| refusal!("compile: {e}"))?;
     if v.iter_errors(&manifest).next().is_some() {
         eprintln!("FAIL  Manifest schema");
@@ -59,8 +59,8 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
         return Ok(0);
     };
 
-    let anchors_doc = read_json(&anchors_file)?;
-    let aschema = read_json(&definition_path(root, "terrain-anchors.schema.json"))?;
+    let anchors_doc = read_json_file(&anchors_file)?;
+    let aschema = read_json_file(&definition_path(root, "terrain-anchors.schema.json"))?;
     let av = jsonschema::validator_for(&aschema).map_err(|e| refusal!("compile: {e}"))?;
     if av.iter_errors(&anchors_doc).next().is_some() {
         eprintln!("FAIL  Anchors schema");
@@ -135,9 +135,9 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
         let ok = delta <= threshold;
         println!(
             "{id}\t{x}\t{z}\t{}\t{}\t{}\t{}",
-            js_fixed3(surface),
-            js_fixed3(dem_ym),
-            js_fixed3(delta),
+            format_javascript_fixed_three(surface),
+            format_javascript_fixed_three(dem_ym),
+            format_javascript_fixed_three(delta),
             if ok { "PASS" } else { "FAIL" }
         );
         if !ok {
@@ -165,7 +165,7 @@ pub fn terrain_alignment(root: &Path, terrain: &str, strict: bool) -> Result<u8>
 
     println!(
         "\nmaxDeltaM={} thresholdM={threshold}",
-        js_fixed3(max_delta)
+        format_javascript_fixed_three(max_delta)
     );
     if failures > 0 {
         eprintln!("\n{failures} failure(s) — slice FAIL");

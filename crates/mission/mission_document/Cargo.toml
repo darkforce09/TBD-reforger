@@ -21,6 +21,8 @@ targets = "any"
 test_fixtures = []
 
 [dependencies]
+# The linear congruential stream behind the seeded slot positions.
+deterministic_random = { workspace = true }
 mission_crdt = { workspace = true }
 mission_model = { workspace = true }
 mission_validation = { workspace = true }

@@ -30,7 +30,7 @@ use crate::common;
 
 /// An account with a live session token.
 #[derive(Debug, Clone)]
-pub struct UserActor {
+pub(crate) struct UserActor {
     pub discord_id: String,
     pub role: Role,
     pub token: String,
@@ -38,7 +38,7 @@ pub struct UserActor {
 
 /// The machine side of a world: its server, another server, and their credentials.
 #[derive(Debug, Clone)]
-pub struct MachineActors {
+pub(crate) struct MachineActors {
     /// The server every live and revoked credential of [`Actor::Machine`] belongs to.
     pub server: Uuid,
     /// The server of [`Actor::MachineOtherServer`]'s credentials.
@@ -48,7 +48,7 @@ pub struct MachineActors {
 
 /// Every caller of one world.
 #[derive(Debug, Clone)]
-pub struct Actors {
+pub(crate) struct Actors {
     /// The world's namespace (0–99), the middle digits of every account id.
     pub namespace: u8,
     suite: &'static str,
@@ -129,7 +129,7 @@ async fn credential(
 
 impl Actors {
     /// Create every caller of the world `namespace` in the binary's database.
-    pub async fn create(state: &AppState, suite: &'static str, namespace: u8) -> Actors {
+    pub(crate) async fn create(state: &AppState, suite: &'static str, namespace: u8) -> Actors {
         let mut users = Vec::new();
         let mut peers = Vec::new();
         for (slot, role) in (10u32..).zip(Role::ALL) {
@@ -172,7 +172,7 @@ impl Actors {
     }
 
     /// The world's account of `role`.
-    pub fn user(&self, role: Role) -> &UserActor {
+    pub(crate) fn user(&self, role: Role) -> &UserActor {
         &self.users[Role::ALL
             .iter()
             .position(|r| *r == role)
@@ -180,7 +180,7 @@ impl Actors {
     }
 
     /// The world's second account of `role`.
-    pub fn peer(&self, role: Role) -> &UserActor {
+    pub(crate) fn peer(&self, role: Role) -> &UserActor {
         &self.peers[Role::ALL
             .iter()
             .position(|r| *r == role)
@@ -188,7 +188,7 @@ impl Actors {
     }
 
     /// The account behind `actor`, when it is one.
-    pub fn account(&self, actor: Actor) -> Option<&UserActor> {
+    pub(crate) fn account(&self, actor: Actor) -> Option<&UserActor> {
         match actor {
             Actor::User(role) => Some(self.user(role)),
             Actor::Peer(role) => Some(self.peer(role)),
@@ -198,7 +198,7 @@ impl Actors {
     }
 
     /// The `Authorization` bearer `actor` presents, or `None` for no header.
-    pub fn bearer(&self, actor: Actor) -> Option<String> {
+    pub(crate) fn bearer(&self, actor: Actor) -> Option<String> {
         match actor {
             Actor::Anonymous => None,
             Actor::InvalidBearer => Some("not-a-token".into()),
@@ -219,7 +219,12 @@ impl Actors {
 
     /// A new account of `role` in this world's namespace with a live session; `arma_linked`
     /// gives it an initial Arma identity.
-    pub async fn fresh_user(&self, state: &AppState, role: Role, arma_linked: bool) -> UserActor {
+    pub(crate) async fn fresh_user(
+        &self,
+        state: &AppState,
+        role: Role,
+        arma_linked: bool,
+    ) -> UserActor {
         let slot = self.fresh.fetch_add(1, Ordering::Relaxed);
         let id = account_id(self.namespace, slot);
         let token = common::access_token(state, self.suite, &id, role.as_str(), arma_linked).await;

@@ -53,7 +53,7 @@ impl IsolatedRepository {
         assert!(status.success(), "git init failed");
         let real_register: Value = serde_json::from_slice(
             &std::fs::read(
-                repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+                repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
                     .expect("repository root")
                     .join(API_READINESS_REGISTER),
             )

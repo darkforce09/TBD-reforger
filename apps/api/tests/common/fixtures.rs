@@ -17,7 +17,7 @@ static ARMA_SEQ: AtomicU64 = AtomicU64::new(1);
 ///
 /// Format: `{prefix}-{seq}-{uuid}` — seq is monotonic in-process; uuid covers cross-binary
 /// overlap on a shared gate DB (each test binary gets its own `ARMA_SEQ`).
-pub fn unique_arma(prefix: &str) -> String {
+pub(crate) fn unique_arma(prefix: &str) -> String {
     let n = ARMA_SEQ.fetch_add(1, Ordering::Relaxed);
     format!("{prefix}-{n}-{}", Uuid::new_v4())
 }
@@ -43,7 +43,13 @@ pub fn unique_arma(prefix: &str) -> String {
 ///
 /// `ON CONFLICT DO UPDATE`, not `DO NOTHING`: a suite that owns its ids wants the fixture it
 /// asked for on every run, not whatever the previous run happened to leave behind.
-pub async fn seed_user(pool: &PgPool, discord_id: &str, username: &str, arma_id: &str, role: &str) {
+pub(crate) async fn seed_user(
+    pool: &PgPool,
+    discord_id: &str,
+    username: &str,
+    arma_id: &str,
+    role: &str,
+) {
     let mut tx = pool.begin().await.unwrap_or_else(|e| {
         panic!("seed_user({discord_id}, arma_id={arma_id}, role={role}): begin: {e}")
     });
@@ -87,7 +93,7 @@ pub async fn seed_user(pool: &PgPool, discord_id: &str, username: &str, arma_id:
 /// Guest represents verified nonmembership. Member fixtures receive an actor-specific Discord
 /// role mapping so changing one actor's permissions does not change another actor's role mapping.
 /// Other guilds, existing Arma identity, and account ban state remain untouched.
-pub async fn seed_membership(pool: &PgPool, discord_id: &str, guild_id: &str, role: &str) {
+pub(crate) async fn seed_membership(pool: &PgPool, discord_id: &str, guild_id: &str, role: &str) {
     assert!(!guild_id.is_empty(), "membership fixture requires a guild");
     assert!(
         matches!(
@@ -166,7 +172,7 @@ pub async fn seed_membership(pool: &PgPool, discord_id: &str, guild_id: &str, ro
 /// The participant's active event allocation, created as a member place when none exists.
 /// Fixtures inserting an active registration directly pass this as `allocation_id`, as every
 /// production reservation writer does.
-pub async fn participant_allocation(
+pub(crate) async fn participant_allocation(
     connection: &mut sqlx::PgConnection,
     event_mission: Uuid,
     discord_id: &str,
@@ -191,7 +197,7 @@ pub async fn participant_allocation(
 
 /// The fixed account dev-login mints for each role other than guest
 /// (`api_identity_and_access::handlers::developer_login::discord_id_for_role`).
-pub const DEV_LOGIN_MEMBER_IDENTITIES: [(&str, &str); 4] = [
+pub(crate) const DEV_LOGIN_MEMBER_IDENTITIES: [(&str, &str); 4] = [
     ("000000000000000001", "admin"),
     ("000000000000000002", "enlisted"),
     ("000000000000000003", "leader"),
@@ -200,7 +206,7 @@ pub const DEV_LOGIN_MEMBER_IDENTITIES: [(&str, &str); 4] = [
 
 /// Make every non-guest dev-login identity a verified TBD member of `guild`, as the default
 /// event access policy requires. The guest identity stays an unverified account.
-pub async fn verify_dev_login_members(pool: &PgPool, guild: &str) {
+pub(crate) async fn verify_dev_login_members(pool: &PgPool, guild: &str) {
     for (discord_id, role) in DEV_LOGIN_MEMBER_IDENTITIES {
         sqlx::query(
             "INSERT INTO users (discord_id, username, role, created_at, updated_at)
@@ -219,7 +225,7 @@ pub async fn verify_dev_login_members(pool: &PgPool, guild: &str) {
 /// Register a server, bind `event` to it and return a `mod_runtime` machine credential secret
 /// for it, authored by `author`. The credential is stored hashed exactly as the issue route
 /// stores it.
-pub async fn event_runtime_credential(pool: &PgPool, event: Uuid, author: &str) -> String {
+pub(crate) async fn event_runtime_credential(pool: &PgPool, event: Uuid, author: &str) -> String {
     let mut transaction = pool
         .begin()
         .await
@@ -262,7 +268,7 @@ pub async fn event_runtime_credential(pool: &PgPool, event: Uuid, author: &str) 
 
 /// An editor payload the compiler turns into a schema-valid mod document: one faction, one squad
 /// and one placed slot.
-pub const COMPILABLE_EDITOR_PAYLOAD: &str = r#"{"editor":{
+pub(crate) const COMPILABLE_EDITOR_PAYLOAD: &str = r#"{"editor":{
     "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
     "squads":[{"id":"sq1","factionId":"f1","callsign":"Alpha","name":"A 1-1","slotIds":["s1"]}],
     "slots":[{"id":"s1","squadId":"sq1","index":0,"role":"SL",

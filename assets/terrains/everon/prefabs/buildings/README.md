@@ -54,7 +54,7 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
 ## Producers and consumers
 
 - Producers: the blueprint compiler in `tools/map_assets/blueprint_compiler/src/`: voxel
-  interpretation and `ingest.rs` for the blueprints, which write here by default; `bvh/` for the
+  interpretation and `blueprint_ingestion.rs` for the blueprints, which write here by default; `occlusion_sidecars/` for the
   sidecar, the instances file and the scene file. `ingest-blueprints` copies the blueprints the
   `tbd-export` building plugins write in the [Workbench](/documentation/glossary/n_to_z.md#workbench)
   profile (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/`).

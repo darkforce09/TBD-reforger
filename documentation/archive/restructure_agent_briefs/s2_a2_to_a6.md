@@ -364,7 +364,7 @@ GitHub:
 
 ## Gate extras for S2 (checkpoint stage)
 
-The full gate set GS of [laws and gates](/documentation/restructure/laws_and_gates.md#standard-gate-set)
+The full gate set GS of [laws and gates](/documentation/archive/restructure/laws_and_gates.md#standard-gate-set)
 (items 1–15), one command per shell call, plus:
 - `podman build -f deploy/Dockerfile .` (D18) and `podman compose -f deploy/compose.staging.yml config`;
 - `cargo xtask deploy website --dry-run` and `cargo xtask deploy staging --dry-run` (the host agent

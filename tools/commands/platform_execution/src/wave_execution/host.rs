@@ -137,15 +137,12 @@ impl Host {
     /// because the whole point is that NO analysis step is left on the shared dir, and one name is
     /// auditable: `grep -n 'hostrun cargo'` should find nothing in the gate steps.
     ///
-    /// `CARGO_INCREMENTAL=0`, and NOT for the reason it first looks like. An earlier draft of this
-    /// comment justified it as "another mtime-keyed cache layered on top of the one that lied".
-    /// That was wrong, and getting a justification wrong in this file is the same class of error as
-    /// the bug — so it is corrected here rather than quietly dropped. Incremental state is
-    /// CONTENT-keyed, not mtime-keyed, so it is emphatically not the mtime mechanism:
-    /// MEASURED 2026-07-26, repro A goes red with incremental left ON exactly as it does with it
-    /// off. It is disabled because it is one more cache standing between this tree's bytes and the
-    /// verdict, and the whole subject here is a verdict that came from a cache instead of from the
-    /// source.
+    /// `CARGO_INCREMENTAL=0`, and NOT because incremental state is another mtime-keyed cache:
+    /// incremental state is CONTENT-keyed, so it is not the mtime mechanism, and the set-back-mtime
+    /// case [`super::touch::touch_workspace`] describes goes red with incremental left ON exactly
+    /// as it does with it off. It is disabled because it is one more cache standing between this
+    /// tree's bytes and the verdict, and the whole subject here is a verdict that came from a cache
+    /// instead of from the source.
     ///
     /// THE PRICE IS RECORDED so the trade can be re-made knowingly rather than re-derived. With
     /// `touch_workspace` in front of it, `cargo check --workspace` costs 0.17 s untouched, 1.09 s

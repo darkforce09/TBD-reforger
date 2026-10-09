@@ -3,7 +3,7 @@
 
 use super::*;
 use crate::ballistics_agreement::COMMITTED_CATALOG;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 const SEED: u64 = 0x5EED_0000_0000_0002;
 

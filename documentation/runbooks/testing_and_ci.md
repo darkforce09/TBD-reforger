@@ -180,7 +180,7 @@ the wave gate and the slice gate. Rule ids (FMT-2, LANG-1, TEST-1 and the rest) 
 | no Node scripts | `cargo xtask verify no-node` | yes | `language-gates` | wave |
 | no shell or Make (LANG-1) | `cargo xtask verify no-shell` | yes | `language-gates` | wave |
 | workflow `run:` lines | `cargo xtask verify ci-shell` | yes | `language-gates` | wave |
-| workspace laws (WS-1 to WS-5: crate tiers with the firewalls, crate anatomy, strangler and the rest) | `cargo xtask ci verify-workspace-laws` | yes | `language-gates`, one step per law | no |
+| workspace laws (WS-1 to WS-5: crate tiers with the firewalls, crate anatomy, test-file reachability, frontend layering, Tailwind sources) | `cargo xtask ci verify-workspace-laws` | yes | `language-gates`, one step per law | no |
 | file length (SIZE-3) | `cargo xtask verify file-length` | in `verify-coding-standards` | `language-gates` | no |
 | Enfusion comment card (ECM-1 to ECM-9) | `cargo xtask verify enfusion-comments` | in `verify-coding-standards` | `language-gates` | no |
 | no `SELECT *` | `cargo xtask verify no-select-star` | in `verify-coding-standards` | no | no |

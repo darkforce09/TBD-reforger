@@ -26,8 +26,8 @@ and `tile-index` go straight to `world_export_pipeline::export_terrain_driver::r
 `mod.rs` that finds the checkout root and hands the raw arguments to a `blueprint_compiler` or
 `map_asset_verification` entry, which parses them, does the
 work and returns the exit code: the `blueprint_compiler` entries `run` (`blueprint-from-voxels`),
-`ingest::run`, `parity_report::run`, `run_voxels_from_mesh`, `run_bvh_parity`, `run_bvh_emit`,
-`run_bvh_batch`, `run_xob_inspect`, `run_pak_cat`, `run_instances_verify` and `run_rotation_pin`,
+`ingest::run`, `parity_report::run`, `run_mesh_voxelization`, `run_occlusion_sidecar_parity`, `run_occlusion_sidecar_emission`,
+`run_occlusion_sidecar_batch`, `run_xob_inspection`, `run_pak_file_print`, `run_instance_verification` and `run_rotation_validation`,
 and `map_asset_verification`'s `world_line_of_sight::run` (`world-los`). The adapters
 import no map-engine types.
 
@@ -141,7 +141,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   never writes an index over a missing or empty pyramid, and what it writes validates against
   `map-tile-index.schema.json`
   (`tools/map_assets/world_export_pipeline/src/tests/map_tile_index/tests.rs`); this folder holds
-  no command logic, and xtask depends only on tool crates
+  no command logic, and xtask depends only on tool crates and the checkout-root finder
   (`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`), so the raster
   work stays in the `map` binary, outside xtask's dependency closure.
 

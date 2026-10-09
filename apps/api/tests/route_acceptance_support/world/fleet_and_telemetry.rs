@@ -38,7 +38,7 @@ use crate::telemetry_support::match_reports::REGISTERED_STARTED_AT;
 use crate::telemetry_support::report_fixtures::{event, line, report};
 
 /// The fleet and telemetry world.
-pub struct FleetAndTelemetryWorld {
+pub(crate) struct FleetAndTelemetryWorld {
     /// The server the administrator command routes read and write.
     command_server: Uuid,
     /// A queued command of [`Self::command_server`].

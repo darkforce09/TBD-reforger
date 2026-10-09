@@ -13,7 +13,7 @@ fn payload_with_zones(zones: &str) -> Vec<u8> {
 /// **DEFECT 1** — the executed repro, as a save-time finding.
 ///
 /// RED without `scan_authored_zones`: `details` is empty, `create_version` answers 201, and
-/// `GET /compiled` answers 500 forever because a `mission_versions` row is immutable.
+/// submit answers 422 for that version forever because a `mission_versions` row is immutable.
 #[test]
 fn undeclared_zone_rule_key_is_a_save_time_finding() {
     let bad = payload_with_zones(

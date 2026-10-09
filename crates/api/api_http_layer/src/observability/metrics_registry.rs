@@ -41,7 +41,8 @@
 use std::collections::BTreeMap;
 use std::sync::RwLock;
 use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
+use time_source::{Clock, PlatformClock};
 
 /// Number of latency histogram buckets (see [`LATENCY_BUCKETS_S`]).
 pub const N_BUCKETS: usize = 12;
@@ -207,10 +208,7 @@ impl Registry {
     pub fn new() -> Self {
         Self {
             start: Instant::now(),
-            start_unix_s: SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map(|d| d.as_secs())
-                .unwrap_or_default(),
+            start_unix_s: PlatformClock.now_unix_ms() / 1000,
             tables: RwLock::new(Tables::default()),
             in_flight: AtomicI64::new(0),
             dropped: AtomicU64::new(0),

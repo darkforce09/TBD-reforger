@@ -1,5 +1,6 @@
 use super::*;
-use repository_layout::{ARTIFACTS_DIR, find_repository_root};
+use repository_layout::ARTIFACTS_DIR;
+use repository_root::find_repository_root;
 
 /// The committed density fixtures exist in a real checkout, inside the map fixture folder.
 ///

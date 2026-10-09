@@ -15,10 +15,10 @@
 mod architectural_analysis;
 mod archive_emission;
 mod blueprint_from_voxels;
-mod bvh;
+pub mod blueprint_ingestion;
 mod error;
-pub mod ingest;
 mod mesh_decoding;
+mod occlusion_sidecars;
 pub mod parity_report;
 pub mod prelude;
 #[cfg(any(test, feature = "test_fixtures"))]
@@ -26,10 +26,12 @@ pub mod test_fixtures;
 mod voxel_processing;
 
 pub use blueprint_from_voxels::run;
-pub use bvh::batch_processing::run_bvh_batch;
-pub use bvh::construction::{run_bvh_emit, run_bvh_parity};
-pub use bvh::instance_verification::run_instances_verify;
-pub use bvh::rotation_validation::run_rotation_pin;
 pub use error::{Error, Result};
-pub use mesh_decoding::archive_inspection::{run_pak_cat, run_xob_inspect};
-pub use voxel_processing::mesh_voxelization::run_voxels_from_mesh;
+pub use mesh_decoding::archive_inspection::{run_pak_file_print, run_xob_inspection};
+pub use occlusion_sidecars::batch_processing::run_occlusion_sidecar_batch;
+pub use occlusion_sidecars::construction::{
+    run_occlusion_sidecar_emission, run_occlusion_sidecar_parity,
+};
+pub use occlusion_sidecars::instance_verification::run_instance_verification;
+pub use occlusion_sidecars::rotation_validation::run_rotation_validation;
+pub use voxel_processing::mesh_voxelization::run_mesh_voxelization;

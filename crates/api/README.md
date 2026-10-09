@@ -39,8 +39,8 @@ Every crate here declares `category = "crates/api"` in its `[package.metadata.la
 category carries its own rules on top of those every library crate keeps:
 
 - An API crate depends on foundation, contracts, mission, ballistics and API crates only; never on
-  `legacy/`, an application or a tool, and its dev-dependencies never on an application or
-  `legacy/` (`cargo xtask verify crate-tiers`).
+  an application or a tool, and its dev-dependencies never on an application
+  (`cargo xtask verify crate-tiers`).
 - sqlx and axum appear only in API crates (`cargo xtask verify crate-tiers`, the firewall rules).
 - No public `id` / `*_id` field and no public function parameter is a bare `Uuid`, `String`,
   `&str` or integer; ids come from `api_identifiers` (`cargo xtask verify crate-anatomy`).

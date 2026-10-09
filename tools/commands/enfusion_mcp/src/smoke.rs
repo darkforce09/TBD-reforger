@@ -20,7 +20,7 @@ use std::path::Path;
 use process_runner::Run;
 use verification_core::NotRun;
 
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 const TOOLS: &[&str] = &["wb_connect", "wb_state"];
 

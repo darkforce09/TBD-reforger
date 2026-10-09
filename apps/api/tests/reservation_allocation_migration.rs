@@ -25,8 +25,10 @@ where
     Fut: Future<Output = Result<()>>,
 {
     let base = common::require_test_database_url().expect("allocation upgrade requires PostgreSQL");
-    let maintenance = api_database::connect(&base).await.unwrap();
-    let mut url = url::Url::parse(&base).unwrap();
+    let maintenance = api_database::connect(&base)
+        .await
+        .expect("the test database accepts a connection");
+    let mut url = url::Url::parse(&base).expect("the base database URL parses");
     let prefix: String = url
         .path()
         .trim_start_matches('/')
@@ -41,7 +43,7 @@ where
     sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
         .execute(&maintenance)
         .await
-        .unwrap();
+        .expect("the `CREATE DATABASE` statement succeeds");
     let outcome = match api_database::connect(url.as_str()).await {
         Ok(pool) => {
             let result = AssertUnwindSafe(body(pool.clone())).catch_unwind().await;
@@ -55,7 +57,7 @@ where
         .await;
     cleanup.expect("drop only this invocation's owned upgrade database");
     match outcome {
-        Ok(result) => result.unwrap(),
+        Ok(result) => result.expect("the test body against the owned database succeeds"),
         Err(panic) => std::panic::resume_unwind(panic),
     }
 }

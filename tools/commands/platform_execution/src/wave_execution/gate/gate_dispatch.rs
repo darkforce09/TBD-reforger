@@ -2,9 +2,10 @@
 //!
 //! **Role:** `cmd_gate` resolves and verifies the wave's base, takes the gate lock, invalidates
 //! fingerprints and runs the wave gate's steps in order: cargo check, wasm32, format, the clippy
-//! steps (API, map engine, the frontend family twice, every tool crate), the migration and test
-//! steps, the trunk build when the SPA's scope changed, the schema, catalogue, ticket and wave-lock steps, the
-//! shared verify steps and the language gates.
+//! steps (the applications and library crates, the wasm32 members, the frontend family twice,
+//! every tool crate), the migration and test steps, the trunk build when the SPA's scope changed,
+//! the schema, catalogue, ticket and wave-lock steps, the shared verify steps and the language
+//! gates.
 //!
 //! **Position:** re-exported by the parent `gate` module and reached through `wave gate [<base>]`;
 //! `wave --close` runs it before writing a marker.
@@ -14,12 +15,15 @@
 //! **Invariants:** a base git cannot resolve, a base that does not cover the wave and an empty
 //! range each refuse with exit 2 before any step runs; the lock is held across every step, so the
 //! verdict describes one tree; each clippy step lints with the flags of its CI job and `-D
-//! warnings`; the API, map engine and frontend family tests run in private target folders, and every other
+//! warnings`, and the clippy steps together name every workspace member, derived from the root
+//! manifest; the API and frontend family tests run in private target folders, and every other
 //! workspace member is tested by `test workspace members`, one `cargo test -p` per package.
 
+use super::clippy_package_sets::{native_clippy_packages, wasm32_clippy_packages};
 use super::*;
 use crate::wave_execution::gate_folder;
 use ci_task_catalog::frontend_package_lane::{frontend_family_argv, frontend_packages};
+use ci_task_catalog::wasm32_lint_lane::wasm32_clippy_argv;
 use repository_layout::build_output;
 
 /// Full gate — runs once per wave on merged main.
@@ -147,24 +151,32 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     });
     r.run("wasm32 (frontend)", || changed::wasm_changed(ctx, &range));
     r.run("fmt (changed)", || changed::fmt_changed(ctx, &range));
-    // Clippy is scoped per-crate, NOT --workspace: each crate is linted with the flags its ci.yml
-    // job uses (the api job, the frontend job on wasm32 and natively), every one with `-D warnings`. The `clippy xtask+developer_tools` step below
-    // covers what ci.yml has no job for at all.
-    r.run("clippy api", || {
-        checkrun(
-            ctx,
-            &[
-                "cargo",
-                "clippy",
-                "-p",
-                "api",
-                "--all-targets",
-                "--quiet",
-                "--",
-                "-D",
-                "warnings",
-            ],
-        )
+    // Clippy is scoped per lane, NOT --workspace: each lane is linted with the flags its ci.yml
+    // job uses (host target with every target, wasm32, the frontend job on wasm32 and natively),
+    // every one with `-D warnings`. The lanes partition the workspace members, derived from the
+    // root manifest (`gate/clippy_package_sets.rs`), so every member a wave can change — the
+    // applications, the API crates and every `crates/**` library — is linted by one of them.
+    r.run("clippy apps and crates", || {
+        match native_clippy_packages(&ctx.root) {
+            Ok(packages) => checkrun(ctx, &native_clippy_argv(&packages)),
+            Err(error) => {
+                wprintln!("    {error}");
+                1
+            }
+        }
+    });
+    r.run("clippy wasm32 members", || {
+        match wasm32_clippy_packages(&ctx.root) {
+            Ok(packages) => {
+                let argv = wasm32_clippy_argv(&packages);
+                let words: Vec<&str> = argv.iter().map(String::as_str).collect();
+                checkrun(ctx, &words)
+            }
+            Err(error) => {
+                wprintln!("    {error}");
+                1
+            }
+        }
     });
     // The frontend family (the app and every crate under `crates/frontend`, derived from the
     // workspace) is linted twice, both with `-D warnings`, as `ci-local-leptos` and clippy_changed
@@ -260,7 +272,7 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 return 1;
             }
         };
-        checkrun(ctx, &tool_clippy_argv(&packages))
+        checkrun(ctx, &native_clippy_argv(&packages))
     });
     // The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
     // when the wave actually touched the frontend — measured across the WHOLE wave, not the last

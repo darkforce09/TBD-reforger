@@ -86,11 +86,8 @@ fn drive(r: &mut WorldResidency, bbox: [f64; 4]) {
     }
 }
 
-fn inject_trees(r: &mut WorldResidency, id: &str, n: usize) {
-    let c = r
-        .chunk_residency
-        .resident_chunk_mut_for_test(&ChunkId::from(id))
-        .unwrap();
+fn inject_trees(r: &mut WorldResidency, id: &ChunkId, n: usize) {
+    let c = r.chunk_residency.resident_chunk_mut_for_test(id).unwrap();
     c.count = n as u32;
     c.positions = vec![0.0; n * 2];
     c.prefab_idx = vec![0; n];

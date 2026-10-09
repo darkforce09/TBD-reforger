@@ -22,7 +22,7 @@ use serde_json::{Value, json};
 
 /// The fixture corpus — shared with the frontend's R-api round-trip tests and the editor smokes.
 pub(super) fn fixtures_dir() -> crate::Result<PathBuf> {
-    Ok(::repository_layout::find_repository_root()?.join("contracts/fixtures/api_goldens"))
+    Ok(::repository_root::find_repository_root()?.join("contracts/fixtures/api_goldens"))
 }
 
 /// An API request the fixture corpus does not answer.

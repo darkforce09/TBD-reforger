@@ -50,7 +50,7 @@ entry or a Net API call. Both modules write to the Workbench profile, mostly und
 
 ## Related documentation
 
-- [Export addon script documentation](/documentation/mod/tbd-export/Scripts/README.md) — the
+- [Export addon script documentation](/documentation/apps/mod/tbd-export/Scripts/README.md) — the
   deeper documents of these scripts.
-- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every map layer and the runtime road export.

@@ -25,7 +25,7 @@ use std::path::Path;
 use crate::error::{Result, ResultExt};
 use serde_json::{Value, json};
 
-use super::clock::Clock;
+use super::clock::WaitingClock;
 use super::procedure::{ProcedurePlan, ProcedureRun, StagingProcedure};
 use super::runner::RunContext;
 use crate::environment_identity;
@@ -44,7 +44,7 @@ pub(crate) struct RecordingInputs<'a> {
     pub root: &'a Path,
     pub settings: &'a StagingSettings,
     pub host: &'a mut dyn HostCommandRunner,
-    pub clock: &'a dyn Clock,
+    pub clock: &'a dyn WaitingClock,
     /// The command line the receipt records.
     pub command: Vec<String>,
     /// The variables of the process the recording runs in, which the run discipline reads.
@@ -98,7 +98,7 @@ fn run_recorded(
     identity: &RunIdentity,
     settings: &StagingSettings,
     host: &mut dyn HostCommandRunner,
-    clock: &dyn Clock,
+    clock: &dyn WaitingClock,
     output: &mut dyn Write,
 ) -> Result<RecordedOutcome> {
     let mut journal = ObservationJournal::create(&identity.directory)?;

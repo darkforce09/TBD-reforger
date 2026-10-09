@@ -33,7 +33,7 @@ use repository_layout::build_output::{DEV_API_SUBFOLDER, build_output_subfolder}
 /// The checkout this process runs in. **Inside a worktree this is the worktree.** Used only for
 /// the development API's private directory ([`dev_api_target_dir`]); never for the shared cache.
 pub(crate) fn cwd_root() -> PathBuf {
-    repository_layout::find_repository_root().unwrap_or_else(|_| PathBuf::from("."))
+    repository_root::find_repository_root().unwrap_or_else(|_| PathBuf::from("."))
 }
 
 /// The **primary** checkout: `git rev-parse --path-format=absolute --git-common-dir` with its

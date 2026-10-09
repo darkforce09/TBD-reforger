@@ -265,7 +265,7 @@ async fn reservation_quotas_limit_edits_below_allocation_conflict() {
 
 /// Invariants that must hold after every committed reservation operation.
 async fn assert_scope_invariants(f: &Fixture) -> Result<(), String> {
-    let mut tx = f.pool().begin().await.unwrap();
+    let mut tx = f.pool().begin().await.expect("a transaction begins");
     let scope = ReservationScope::lock(&mut tx, f.event.into(), AttachmentScope::Active, None, &[])
         .await
         .map_err(|error| error.message)?;
@@ -297,7 +297,7 @@ async fn assert_scope_invariants(f: &Fixture) -> Result<(), String> {
         .bind(mission)
         .fetch_one(&mut *tx)
         .await
-        .unwrap();
+        .expect("the read of event_registrations returns a row");
         if participants > seats {
             return Err(format!(
                 "mission {index} has {participants} participants for {seats} seats"
@@ -313,7 +313,7 @@ async fn assert_scope_invariants(f: &Fixture) -> Result<(), String> {
     .bind(f.event)
     .fetch_one(&mut *tx)
     .await
-    .unwrap();
+    .expect("the read of event_participant_allocations returns a row");
     if allocations != participants {
         return Err(format!(
             "{allocations} allocations for {participants} participants"
@@ -325,7 +325,7 @@ async fn assert_scope_invariants(f: &Fixture) -> Result<(), String> {
     if allocations > 3 {
         return Err(format!("event limit 3 exceeded: {allocations}"));
     }
-    tx.rollback().await.unwrap();
+    tx.rollback().await.expect("the transaction rolls back");
     Ok(())
 }
 

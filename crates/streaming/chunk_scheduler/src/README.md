@@ -52,9 +52,10 @@ applies each request before the call that returned it returns, so the buffers it
 what an inline rebuild at the same point produces. The draw buffers read the residency only
 through the accessors of `draw_inputs.rs` and `queries.rs`; the residency's fields stay private to
 this crate. A chunk crosses the public surface as a `world_chunks::ChunkId` (`set_viewport`'s
-missing chunks, `ResidencyEvent`, every method that takes a chunk); the internal maps and the
-views the draw buffers and `vegetation` read (`pinned_ids`, `resident_chunks`, `draw_chunk_ids`)
-keep the chunk's string. The prefab tables are keyed by `PrefabId`, and a chunk row's numeric
+missing chunks, `ResidencyEvent`, every method that takes a chunk, and the views the draw buffers
+and `vegetation` read: `pinned_ids`, `cell_ids`, `resident_chunks`, `resident_chunk_ids`,
+`draw_chunk_ids` and `eviction_log`), and the internal maps key on it too; the chunk math's
+`cx_cy` strings become `ChunkId`s where the pin and the draw set are computed. The prefab tables are keyed by `PrefabId`, and a chunk row's numeric
 `pid` joins them through `prefab_catalog::prefab_rows::prefab_id_from_f64`.
 
 `chunk_ids_for_viewport` grows the viewport by its preload margin (5 % of its longer side, at

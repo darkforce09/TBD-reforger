@@ -1,7 +1,7 @@
 use super::cli::TicketCmd;
 use super::execution::{cmd_clean, cmd_done, cmd_run};
 use anyhow::Result;
-use repository_layout::find_repository_root;
+use repository_layout::prelude::find_repository_root;
 use ticket_metrics::cmd_metrics;
 use ticket_registry::load_registry;
 use ticket_registry::sync::cmd_sync;

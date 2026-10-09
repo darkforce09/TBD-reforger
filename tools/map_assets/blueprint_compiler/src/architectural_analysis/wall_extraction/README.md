@@ -9,24 +9,24 @@ that stand in for furniture.
 
 ```text
 tools/map_assets/blueprint_compiler/src/architectural_analysis/wall_extraction/
-├── classify_exterior_flood.rs  the exterior flood fill, and the `grid` algorithm and its rectangles
-└── extract_band.rs             `extract_band`, the per-band dispatch, and the `segments` algorithm
+├── grid_wall_extractor.rs     the exterior flood fill, and the `grid` algorithm and its rectangles
+└── segment_wall_extractor.rs  `extract_band_walls`, the per-band dispatch, and the `segments` algorithm
 ```
 
 ## How it works
 
-`extract_band` runs the algorithm `--algo` picks over the dump rows whose centres fall in the
+`extract_band_walls` runs the algorithm `--algo` picks over the dump rows whose centres fall in the
 band:
 
 - `segments` (the default) pairs the `x±` and `z±` entry faces of every slice row into solid
   intervals, clusters them into wall columns that must persist over enough rows without drifting,
   vetoes observations that graze a sloped top surface, and merges the accepted columns into runs.
-  `classify_exterior_flood` then floods from the grid border through non-wall cells, and a wall
+  `classify_exterior_by_flood_fill` then floods from the grid border through non-wall cells, and a wall
   that touches the reached outside is exterior.
 - `grid` marks occupancy at a low and a high row the way the in-engine extractor
   (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingTraceExtract.c`)
-  does, keeps the cells set in both, splits them into maximal rectangles (`rects_from_grid`) and
-  merges collinear neighbours (`merge_wall_rects`). A rectangle within 0.3 m of the occupancy
+  does, keeps the cells set in both, splits them into maximal rectangles (`rectangles_from_grid`) and
+  merges collinear neighbours (`merge_wall_rectangles`). A rectangle within 0.3 m of the occupancy
   extremes is exterior.
 
 Persistence in `segments` is judged against the rows a column can occupy under its own roof
@@ -37,12 +37,12 @@ cluster's verdict (accepted, persistence or drift) in the band's `BandDebug`.
 
 ## Boundaries
 
-- Depends on: the parent's `Algo`, `BandWalls`, `BandDebug` and `ClusterDebug`; face pairing
-  (`pair_consuming`, `ascending` in
-  `tools/map_assets/blueprint_compiler/src/bvh/instance_pairs.rs`); `Params`, `VoxelDump`,
-  `VerticalScan`, `PlanGrid`, `WallSeg` and `MassRect` from
+- Depends on: the parent's `WallAlgorithm`, `BandWalls`, `BandDebug` and `ClusterDebug`; face pairing
+  (`pair_faces_consuming`, `ascending_closing_faces` in
+  `tools/map_assets/blueprint_compiler/src/architectural_analysis/collision_face_pairing.rs`); `AnalysisParameters`, `VoxelDump`,
+  `VerticalScan`, `PlanGrid`, `WallSegment` and `MassRectangle` from
   `tools/map_assets/blueprint_compiler/src/voxel_processing/`.
-- Used by: `wall_extraction.rs`, which re-exports `extract_band` and `rects_from_grid`; through it
+- Used by: `wall_extraction.rs`, which re-exports `extract_band_walls` and `rectangles_from_grid`; through it
   the blueprint root's `build_bands`, for every floor band and the attic band.
 - Rules: both algorithms return one exterior flag per wall; a box room yields four walls under
   both (`box_room_yields_four_walls_both_algos`), a doorway splits its wall

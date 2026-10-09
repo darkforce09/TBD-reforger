@@ -1,0 +1,11 @@
+# Stage S12 G7, wave 2: the tool tests' checkout-root module of tool_test_support takes a name of
+# its own, so it no longer spells the name of the workspace crate `repository_root` it delegates
+# to. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the test checkout root under the working-directory lock, and its tests
+path	tools/foundation/tool_test_support/src/repository_root.rs	tools/foundation/tool_test_support/src/test_checkout_root.rs
+path	tools/foundation/tool_test_support/src/tests/repository_root_tests.rs	tools/foundation/tool_test_support/src/tests/test_checkout_root_tests.rs
+#
+# the module path inside the crate
+rust_path	crate::repository_root::	crate::test_checkout_root::	tools/foundation/tool_test_support

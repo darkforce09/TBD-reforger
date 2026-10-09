@@ -77,7 +77,7 @@ fn an_empty_table_is_refused() {
 /// component, the `/` root among them.
 #[test]
 fn the_live_route_source_parses() {
-    let root = ::repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let root = ::repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("repository root");

@@ -20,6 +20,9 @@ targets = "any"
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
 reqwest = { workspace = true, features = ["json", "charset"] }
+# The ring crypto provider installed before every client, so a build that unifies `reqwest`
+# with a TLS backend still builds clients.
+rustls = { workspace = true, features = ["ring", "std"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 staging_load_plan = { workspace = true }

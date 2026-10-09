@@ -73,7 +73,7 @@ use crate::staging_command::PlanOnly;
 use crate::staging_settings::StagingSettings;
 use crate::support_commands::preflight::PreflightCheck;
 use api_readiness_checks::operational_recording::{FixtureManifest, Observations, StagingCheck};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// The load procedure: the token file, the settings and root of a recorded run, and the
 /// workstation that sends its requests.

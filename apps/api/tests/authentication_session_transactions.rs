@@ -23,8 +23,12 @@ mod common;
 
 async fn fixture() -> (AppState, DiscordUserId, String, String) {
     let url = common::require_test_database_url().expect("database required");
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state =
         api::composition::application_state(pool, Config::for_tests(url, "session-transactions"));
     let actor = DiscordUserId::new(format!("session-{}", Uuid::new_v4()));
@@ -43,7 +47,9 @@ async fn fixture() -> (AppState, DiscordUserId, String, String) {
         "admin",
     )
     .await;
-    let (access, _, refresh) = issue_session(&state, &actor).await.unwrap();
+    let (access, _, refresh) = issue_session(&state, &actor)
+        .await
+        .expect("issuing a session succeeds");
     (state, actor, access, refresh)
 }
 
@@ -53,7 +59,7 @@ async fn me(app: Router, access: &str) -> StatusCode {
             .uri("/api/v1/me")
             .header("Authorization", format!("Bearer {access}"))
             .body(Body::empty())
-            .unwrap(),
+            .expect("the request builds"),
     )
     .await
     .unwrap()
@@ -67,7 +73,7 @@ async fn active_tokens(pool: &PgPool, actor: &DiscordUserId) -> i64 {
     .bind(actor)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of refresh_tokens returns a row")
 }
 
 #[tokio::test]
@@ -197,7 +203,7 @@ async fn inject_failure(
     sqlx::raw_sql(sqlx::AssertSqlSafe(sql.as_str()))
         .execute(pool)
         .await
-        .unwrap();
+        .expect("the failure-injection SQL installs");
     name
 }
 
@@ -207,7 +213,7 @@ async fn clear_failure(pool: &PgPool, name: &str, table: &str) {
     )))
     .execute(pool)
     .await
-    .unwrap();
+    .expect("the `DROP TRIGGER` statement succeeds");
 }
 
 #[tokio::test]

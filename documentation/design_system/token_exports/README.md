@@ -61,7 +61,7 @@ several screens share it; one screen's tokens go into its set's `design_tokens.m
 
 - [Mission Creator visual references](/documentation/crates/frontend/workspaces/mission_creator_workspace/visual_references/README.md)
   — the mockups the Aegis export belongs to.
-- [Spectator visual references](/documentation/mod/tbd-framework/UI/spectator/visual_references/README.md),
-  [end screen visual references](/documentation/mod/tbd-framework/UI/end_screen/visual_references/README.md)
-  and [debrief visual references](/documentation/mod/tbd-framework/UI/debrief_after_action_review/visual_references/README.md)
+- [Spectator visual references](/documentation/apps/mod/tbd-framework/UI/spectator/visual_references/README.md),
+  [end screen visual references](/documentation/apps/mod/tbd-framework/UI/end_screen/visual_references/README.md)
+  and [debrief visual references](/documentation/apps/mod/tbd-framework/UI/debrief_after_action_review/visual_references/README.md)
   — the mod mockups the other two exports come from.

@@ -63,7 +63,7 @@ async fn mortar_offline_corpus_route_serves_recorded_reads_and_refuses_the_rest(
     .await
     .unwrap();
     let origin = format!("http://127.0.0.1:{}", server.port);
-    let client = reqwest::Client::new();
+    let client = crate::http_client::new_http_client();
 
     let hit = client
         .get(format!("{origin}/api/v1/ballistics-catalogs?fresh=1"))
@@ -145,7 +145,7 @@ async fn corpus_server(tag: &str) -> (crate::server::RunningServer, PathBuf, Pat
 async fn mortar_offline_corpus_route_answers_502_while_its_api_is_down_and_only_its_own() {
     let (down_server, down_corpus, down_dist) = corpus_server("down").await;
     let (up_server, up_corpus, up_dist) = corpus_server("up").await;
-    let client = reqwest::Client::new();
+    let client = crate::http_client::new_http_client();
     let list = |port: u16| format!("http://127.0.0.1:{port}/api/v1/ballistics-catalogs");
 
     let before = client.get(list(down_server.port)).send().await.unwrap();

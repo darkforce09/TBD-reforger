@@ -22,7 +22,7 @@ use repository_laws::workspace_laws::frontend_layering::{
 
 /// Folders whose every `Cargo.toml` (outside test trees, fixtures and build output) must be a
 /// workspace member. A folder that does not exist yet holds no manifest.
-pub(crate) const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "tools", "legacy"];
+pub(crate) const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "tools"];
 
 /// The app stylesheet whose `@source` lines must name every leptos crate.
 pub(crate) const TAILWIND_STYLESHEET: &str = "apps/frontend/style/aegis.css";

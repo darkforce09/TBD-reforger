@@ -22,10 +22,10 @@ pub(crate) fn payload_title_for_row_mirror(payload_str: &str) -> Option<String> 
 /// `mission-editor-payload.schema.json` has no top-level `required` / `minProperties`, so `{}`
 /// passes the schema pass in `api_missions::contract`. `create_mission` deliberately stores that stub
 /// as `0.1.0`. Promoting the same shape (or any object with no editor graph and no placed content)
-/// through `create_version` would move `current_version_id` with no recovery path — `/compiled`
-/// 409s (`CompileError::NoSlots`), orbat attach materialises zero slots, and the ingest roster
-/// omits the mission. Prior version rows survive in the DB, and `set_current_version` lets an
-/// author or admin re-point the tip at one of them.
+/// through `create_version` would move `current_version_id` with no recovery path — submit
+/// answers 422 `NO_PLACED_SLOTS` (`CompileError::NoSlots`), orbat attach materialises zero slots,
+/// and the ingest roster omits the mission. Prior version rows survive in the DB, and
+/// `set_current_version` lets an author or admin re-point the tip at one of them.
 ///
 /// "Empty" here is measured against the same surfaces that break:
 /// - `editor.slots` array (flatten / `ingest_list_missions` `jsonb_array_length` census)

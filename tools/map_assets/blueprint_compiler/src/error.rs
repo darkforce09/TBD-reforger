@@ -38,7 +38,7 @@ pub enum Error {
     Pak(#[from] enfusion_pak::Error),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// An integer field of a dump, a model or an argument does not parse.
     #[error(transparent)]
     ParseInteger(#[from] std::num::ParseIntError),
@@ -61,7 +61,7 @@ pub enum Error {
 
 impl Error {
     /// A refusal carrying `text` as its whole message.
-    pub(crate) fn msg(text: impl Into<String>) -> Self {
+    pub(crate) fn message(text: impl Into<String>) -> Self {
         Error::Message(text.into())
     }
 
@@ -86,7 +86,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// A refusal ([`Error::Message`]) whose text is built like `format!`.
 macro_rules! refusal {
     ($($argument:tt)*) => {
-        $crate::error::Error::msg(format!($($argument)*))
+        $crate::error::Error::message(format!($($argument)*))
     };
 }
 pub(crate) use refusal;

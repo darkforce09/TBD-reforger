@@ -40,6 +40,7 @@ pub struct ListedPlayer {
     pub player_id: u32,
     /// The player's Bohemia identity UID.
     pub arma_id: String,
+    /// The player's display name.
     pub name: String,
 }
 
@@ -47,7 +48,9 @@ pub struct ListedPlayer {
 /// response when some line was neither a player row nor the listing's header.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PlayerListing {
+    /// The player rows, in response order.
     pub players: Vec<ListedPlayer>,
+    /// Every non-empty line of the response, kept only when some line was not understood.
     pub raw_lines: Option<Vec<String>>,
 }
 
@@ -75,6 +78,8 @@ impl PlayerListing {
     }
 }
 
+/// Reads a `#players` response into player rows; header lines are skipped, and any other line
+/// that is not a player row keeps the whole response in [`PlayerListing::raw_lines`].
 pub fn parse_player_listing(response: &str) -> PlayerListing {
     let lines: Vec<&str> = response
         .lines()

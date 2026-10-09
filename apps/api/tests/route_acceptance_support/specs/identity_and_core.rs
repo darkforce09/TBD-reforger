@@ -56,7 +56,7 @@ fn callback_refusal(name: &str, fixture: &'static str, reason: &'static str) -> 
 }
 
 /// Every spec of the `identity_and_core` part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     vec![
         RouteSpec::public("GET /healthz")
             .ok(

@@ -1,6 +1,7 @@
 use super::*;
 use crate::export_locations::density_fixtures_dir;
 use ::repository_layout::terrain_dir;
+use deterministic_random::SplitMix64;
 use world_file_formats::density::tbdd::decode_tbdd;
 use world_file_formats::density::tbdd::encode_tbdd;
 
@@ -9,7 +10,7 @@ use world_file_formats::density::tbdd::encode_tbdd;
 /// A missing or short corpus is a FAILURE, never a skip: the acceptance is *all 625*
 /// tiles, and "the directory was not there" is the shape of a green run that examined nothing.
 fn everon_density_tiles() -> Vec<std::path::PathBuf> {
-    let root = ::repository_layout::find_repository_root().expect("repository root");
+    let root = ::repository_root::find_repository_root().expect("repository root");
     let dir = terrain_dir(&root, "everon").join("objects/density");
     let rd = std::fs::read_dir(&dir)
         .unwrap_or_else(|e| panic!("T-935.5: {} could not be read ({e})", dir.display()));
@@ -152,7 +153,7 @@ fn encode_decode_round_trip_and_fixture() {
     let g = decode_tbdd(&buf).expect("decode");
     assert_eq!((g.cols, g.rows), (DENSITY_COLS, DENSITY_ROWS));
 
-    let root = ::repository_layout::find_repository_root().expect("repository root");
+    let root = ::repository_root::find_repository_root().expect("repository root");
     let fixture = density_fixtures_dir(&root).join("density-fixture.bin");
     if fixture.exists() {
         let bytes = std::fs::read(&fixture).unwrap();
@@ -240,27 +241,18 @@ fn sample_corners_reads_the_corner_of_a_world_position() {
     assert_eq!(sample_corners(&[], 0, 0.0, 0.0), 0);
 }
 
-/// SplitMix64, the reference constant set, inlined.
+/// The workspace's [`SplitMix64`] with the draws this sweep needs.
 ///
-/// `developer_tools` carries no `rand` dependency and a partition pin is not a reason to grow the
-/// dependency graph. Seeded once below, so the 64 grids are the *same* 64 grids on every
-/// machine and in CI: a randomized test that cannot be reproduced from its own source is a
-/// test whose red nobody can act on.
-struct Rng(u64);
+/// Seeded once below, so the 64 grids are the *same* 64 grids on every machine and in CI: a
+/// randomized test that cannot be reproduced from its own source is a test whose red nobody can
+/// act on.
+struct Rng(SplitMix64);
 
 impl Rng {
-    fn next_u64(&mut self) -> u64 {
-        self.0 = self.0.wrapping_add(0x9E37_79B9_7F4A_7C15);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-        z ^ (z >> 31)
-    }
-
     /// `0..n`. The modulo bias is irrelevant here — nothing in this test is a statistical
     /// claim, the draws only have to be varied and reproducible.
     fn below(&mut self, n: u64) -> u64 {
-        self.next_u64() % n
+        self.0.next_u64() % n
     }
 
     /// One instance coordinate. Deliberately NOT uniform over the world: a sixth of the draws
@@ -307,7 +299,7 @@ fn seeded_random_corner_partition_identity() {
     );
     assert_eq!(cols, rows, "the chunk corner window is square");
 
-    let mut rng = Rng(0x0000_0298_5EED_1601);
+    let mut rng = Rng(SplitMix64::new(0x0000_0298_5EED_1601));
     for grid in 0..64u32 {
         let chunks = 1 + rng.below(6) as usize;
         let world = (chunks * CHUNK_M) as f64;

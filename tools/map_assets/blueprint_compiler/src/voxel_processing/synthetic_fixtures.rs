@@ -4,9 +4,9 @@
 //!
 //! **Position:** compiled for tests only; read by the unit tests of every interpretation stage.
 //! **Signals & state:** none; pure functions.
-//! **Invariants:** every solid is marched through [`crate::architectural_analysis::contour_tracing`], like a real dump.
+//! **Invariants:** every solid is marched through [`crate::voxel_processing::voxel_dump_lattice`], like a real dump.
 
-use crate::architectural_analysis::contour_tracing::{self, CELL, DumpIdent};
+use crate::voxel_processing::voxel_dump_lattice::{self, DumpIdentity, LATTICE_CELL_SIZE_METERS};
 use crate::voxel_processing::voxel_types::VoxelDump;
 
 /// Analytic solid in LOCAL coordinates (pre-pad).
@@ -168,11 +168,11 @@ fn merged_intervals(solids: &[Solid], axis: usize, a: f64, b: f64) -> Vec<(f64, 
 }
 
 /// March all six directions over the solids via the shared [`march`] skeleton (which owns the
-/// pad/origin/dims math and r2 normalization): forward entries are interval starts ascending,
+/// pad/origin/dims math and round_to_two_decimals normalization): forward entries are interval starts ascending,
 /// backward entries are interval ends in reverse — exactly the closing faces a −axis march sees.
 fn generate(solids: Vec<Solid>, bbox_min: [f64; 3], bbox_max: [f64; 3]) -> VoxelDump {
-    contour_tracing::generate_dump(
-        DumpIdent {
+    voxel_dump_lattice::generate_dump(
+        DumpIdentity {
             slug: "synth".into(),
             resource: "synth://".into(),
         },
@@ -363,9 +363,9 @@ pub(crate) fn steep_graze() -> VoxelDump {
     }); // 2nd slab
     let mut dump = generate(solids, [0.0, -0.12, 0.0], [w, h + 0.12, d]);
 
-    let m = dump.meta().clone();
-    let iy0 = ((2.6 + 0.3 - m.origin[1]) / CELL - 0.5).ceil() as usize;
-    let iy1 = ((2.6 + 2.2 - m.origin[1]) / CELL - 0.5).floor() as usize;
+    let m = dump.metadata().clone();
+    let iy0 = ((2.6 + 0.3 - m.origin[1]) / LATTICE_CELL_SIZE_METERS - 0.5).ceil() as usize;
+    let iy1 = ((2.6 + 2.2 - m.origin[1]) / LATTICE_CELL_SIZE_METERS - 0.5).floor() as usize;
     let (iz0, iz1) = (12usize, 30usize);
     for iy in iy0..=iy1 {
         let center = 3.03 + (iy - iy0) as f64 * 0.015;

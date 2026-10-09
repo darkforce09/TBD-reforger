@@ -18,9 +18,9 @@ pub fn tickets_dir(root: &Path) -> PathBuf {
     root.join(repository_layout::TICKETS_DIR)
 }
 
-/// The registry root marker of the checkout at `root` ([`repository_layout::ROOT_MARKER`]).
+/// The registry root marker of the checkout at `root` ([`repository_root::ROOT_MARKER`]).
 pub fn root_marker_path(root: &Path) -> PathBuf {
-    root.join(repository_layout::ROOT_MARKER)
+    root.join(repository_root::ROOT_MARKER)
 }
 
 /// The file of ticket `id` in the checkout at `root`: `<tickets dir>/<id>.toml`.

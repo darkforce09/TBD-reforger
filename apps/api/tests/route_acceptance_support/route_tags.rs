@@ -21,7 +21,7 @@ use super::rust_source_scanning::{module_directory, rust_files_under};
 
 /// One `@route` tag and the handler it documents.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RouteTag {
+pub(crate) struct RouteTag {
     /// The upper-case method.
     pub method: String,
     /// The path with every `:param` rewritten to `{param}`.
@@ -36,13 +36,13 @@ pub struct RouteTag {
 
 impl RouteTag {
     /// `METHOD /path`.
-    pub fn key(&self) -> String {
+    pub(crate) fn key(&self) -> String {
         format!("{} {}", self.method, self.path)
     }
 }
 
 /// Every tag under `src_root`, or the malformed and orphaned tag lines as errors.
-pub fn collect_route_tags(src_root: &Path) -> Result<Vec<RouteTag>, Vec<String>> {
+pub(crate) fn collect_route_tags(src_root: &Path) -> Result<Vec<RouteTag>, Vec<String>> {
     let mut tags = Vec::new();
     let mut errors = Vec::new();
     scan_tree(
@@ -58,7 +58,7 @@ pub fn collect_route_tags(src_root: &Path) -> Result<Vec<RouteTag>, Vec<String>>
 /// files relative to it, and the tags under every API crate's `src/`, with absolute files — the
 /// spelling the route table gives a handler module in each. The handlers live in the API crates,
 /// so `src/` alone may hold no tag; the collection fails only when the whole set is empty.
-pub fn collect_api_route_tags() -> Result<Vec<RouteTag>, Vec<String>> {
+pub(crate) fn collect_api_route_tags() -> Result<Vec<RouteTag>, Vec<String>> {
     let mut tags = Vec::new();
     let mut errors = Vec::new();
     let package_root = crate_source_root();
@@ -189,7 +189,7 @@ fn documented_fn_name(line: &str) -> Option<&str> {
 
 /// `:param` segments rewritten to the router's `{param}` spelling; the name is kept, so a tag
 /// naming another parameter still differs.
-pub fn normalize_tag_path(path: &str) -> String {
+pub(crate) fn normalize_tag_path(path: &str) -> String {
     path.split('/')
         .map(|segment| match segment.strip_prefix(':') {
             Some(name) => format!("{{{name}}}"),
@@ -205,7 +205,7 @@ fn tag_in_module(tag: &RouteTag, module: &Path) -> bool {
 
 /// Every disagreement between rows and tags: a named handler row with no tag, a tag with no
 /// row, and a tag whose route exists but whose file is outside the handler's module.
-pub fn cross_check(rows: &[RouteRow], tags: &[RouteTag]) -> Vec<String> {
+pub(crate) fn cross_check(rows: &[RouteRow], tags: &[RouteTag]) -> Vec<String> {
     let mut problems = Vec::new();
     for row in rows {
         let Handler::Function { name, module } = &row.handler else {

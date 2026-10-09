@@ -22,7 +22,7 @@ pub enum Error {
     Pak(#[from] enfusion_pak::Error),
     /// No checkout root was found from the working directory.
     #[error(transparent)]
-    RepositoryRoot(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// A filesystem read or write failed.
     #[error(transparent)]
     Io(#[from] io::Error),

@@ -4,7 +4,7 @@ use crate::commands;
 use crate::commands::ticket::load_registry;
 use anyhow::{Result, bail};
 use clap::Parser;
-use repository_layout::find_repository_root;
+use repository_layout::prelude::find_repository_root;
 
 pub(crate) fn run() -> Result<u8> {
     let args = enfusion_mcp::preprocess_cli_args(std::env::args_os().collect());

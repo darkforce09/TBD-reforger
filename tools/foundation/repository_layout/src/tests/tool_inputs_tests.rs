@@ -1,5 +1,5 @@
 use super::*;
-use crate::find_repository_root;
+use repository_root::find_repository_root;
 
 /// The data folder and both files are committed, so they exist in a real checkout.
 #[test]

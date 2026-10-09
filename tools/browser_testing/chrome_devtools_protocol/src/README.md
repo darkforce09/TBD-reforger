@@ -8,15 +8,16 @@ page, the gate's own font cache, and the small polling helpers every gate uses.
 
 ```text
 tools/browser_testing/chrome_devtools_protocol/src/
-├── browser_launch.rs      `sleep_ms`, `launch`, `launch_with_gpu`, `new_page`, `wait_http`, the pipe drain and the event-field merge; a child module of `browser_session.rs`
-├── browser_session.rs     `Browser`, `Page`, `GpuBackend` and `VIEWPORT`: the process group, the page socket and every protocol call
-├── chromium_discovery.rs  `find_chromium` and `is_headless_shell`: which Chromium executable the gates launch
-├── error.rs               `Error` and `Result`: why a launch, a page setup or a protocol call failed
-├── gate_font_cache.rs     `gate_font_cache_dir`, `resolved_font_cache` and `TBD_GATE_FONT_CACHE`: the fontconfig cache folder every launch reads
+├── browser_launch.rs       `sleep_ms`, `launch`, `launch_with_gpu`, `new_page`, `wait_http`, the pipe drain and the event-field merge; a child module of `browser_session.rs`
+├── browser_session.rs      `Browser`, `Page`, `GpuBackend` and `VIEWPORT`: the process group, the page socket and every protocol call
+├── chromium_discovery.rs   `find_chromium` and `is_headless_shell`: which Chromium executable the gates launch
+├── error.rs                `Error` and `Result`: why a launch, a page setup or a protocol call failed
+├── gate_font_cache.rs      `gate_font_cache_dir`, `resolved_font_cache` and `TBD_GATE_FONT_CACHE`: the fontconfig cache folder every launch reads
+├── http_client.rs          `new_http_client`: the DevTools endpoint poll's client, built after the rustls ring provider is installed
 ├── intercepted_request.rs  `InterceptedRequestId`: the typed `requestId` of a paused request a fulfil or continue call answers
-├── lib.rs                 the crate root: module header, `mod` lines and the re-exports
-├── prelude.rs             the common handles for glob import
-└── tests/                 unit tests for Chromium discovery over scratch Playwright folders
+├── lib.rs                  the crate root: module header, `mod` lines and the re-exports
+├── prelude.rs              the common handles for glob import
+└── tests/                  unit tests for Chromium discovery over scratch Playwright folders
 ```
 
 ## How it works

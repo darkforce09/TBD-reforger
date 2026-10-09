@@ -20,31 +20,31 @@ use std::path::PathBuf;
 use serde_json::Value;
 
 /// The index file inside the corpus directory.
-pub const INDEX_FILE: &str = "_index.tsv";
+pub(crate) const INDEX_FILE: &str = "_index.tsv";
 /// The folder's README, the prose index document every repository folder carries; it is no
 /// golden.
-pub const FOLDER_README: &str = "README.md";
+pub(crate) const FOLDER_README: &str = "README.md";
 /// The corpus directory's index documents: the machine index and the folder's README.
-pub const INDEX_DOCUMENTS: [&str; 2] = [INDEX_FILE, FOLDER_README];
+pub(crate) const INDEX_DOCUMENTS: [&str; 2] = [INDEX_FILE, FOLDER_README];
 /// Suffix of a stored request body; such files are inputs, not goldens.
-pub const REQUEST_BODY_SUFFIX: &str = ".request.json";
+pub(crate) const REQUEST_BODY_SUFFIX: &str = ".request.json";
 /// Suffix of an event-stream golden (the stream's leading frames as received).
-pub const EVENT_STREAM_SUFFIX: &str = ".sse.txt";
+pub(crate) const EVENT_STREAM_SUFFIX: &str = ".sse.txt";
 /// Suffix of a JSON golden.
-pub const JSON_SUFFIX: &str = ".json";
+pub(crate) const JSON_SUFFIX: &str = ".json";
 /// Methods a golden file name may start with.
-pub const METHODS: [&str; 5] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
+pub(crate) const METHODS: [&str; 5] = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 /// The committed corpus directory.
-pub fn corpus_dir() -> PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+pub(crate) fn corpus_dir() -> PathBuf {
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("contracts/fixtures/api_goldens")
 }
 
 /// One `_index.tsv` row: `status<TAB>path<TAB>file<TAB>size`.
 #[derive(Clone, Debug)]
-pub struct GoldenRow {
+pub(crate) struct GoldenRow {
     /// 1-based line number in the index.
     pub line: usize,
     /// The status the route answered with at capture.
@@ -59,17 +59,17 @@ pub struct GoldenRow {
 
 impl GoldenRow {
     /// The request method: the file name's prefix before `__`.
-    pub fn method(&self) -> &str {
+    pub(crate) fn method(&self) -> &str {
         self.file.split_once("__").map_or("", |(method, _)| method)
     }
 
     /// Whether the golden holds an event stream's leading frames.
-    pub fn is_event_stream(&self) -> bool {
+    pub(crate) fn is_event_stream(&self) -> bool {
         self.file.ends_with(EVENT_STREAM_SUFFIX)
     }
 
     /// The file name without its golden suffix.
-    pub fn stem(&self) -> &str {
+    pub(crate) fn stem(&self) -> &str {
         self.file
             .strip_suffix(EVENT_STREAM_SUFFIX)
             .or_else(|| self.file.strip_suffix(JSON_SUFFIX))
@@ -77,7 +77,7 @@ impl GoldenRow {
     }
 
     /// The name of the request body a write sends, when one is stored.
-    pub fn request_body_file(&self) -> String {
+    pub(crate) fn request_body_file(&self) -> String {
         format!("{}{REQUEST_BODY_SUFFIX}", self.stem())
     }
 
@@ -85,7 +85,7 @@ impl GoldenRow {
     ///
     /// # Errors
     /// Names the file when it cannot be read.
-    pub fn read_bytes(&self) -> Result<Vec<u8>, String> {
+    pub(crate) fn read_bytes(&self) -> Result<Vec<u8>, String> {
         let path = corpus_dir().join(&self.file);
         std::fs::read(&path).map_err(|error| format!("read {}: {error}", path.display()))
     }
@@ -94,7 +94,7 @@ impl GoldenRow {
     ///
     /// # Errors
     /// Names the file when it cannot be read or is not JSON.
-    pub fn read_json(&self) -> Result<Value, String> {
+    pub(crate) fn read_json(&self) -> Result<Value, String> {
         serde_json::from_slice(&self.read_bytes()?)
             .map_err(|error| format!("{} is not JSON: {error}", self.file))
     }
@@ -103,7 +103,7 @@ impl GoldenRow {
     ///
     /// # Errors
     /// Names the file when it exists but cannot be read.
-    pub fn read_request_body(&self) -> Result<Option<Vec<u8>>, String> {
+    pub(crate) fn read_request_body(&self) -> Result<Option<Vec<u8>>, String> {
         let path = corpus_dir().join(self.request_body_file());
         if !path.exists() {
             return Ok(None);
@@ -115,7 +115,7 @@ impl GoldenRow {
 }
 
 /// Every `_index.tsv` row in index order; a malformed row panics naming its line.
-pub fn read_index() -> Vec<GoldenRow> {
+pub(crate) fn read_index() -> Vec<GoldenRow> {
     let path = corpus_dir().join(INDEX_FILE);
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
@@ -149,7 +149,7 @@ pub fn read_index() -> Vec<GoldenRow> {
 
 /// Every file in the corpus directory except its [`INDEX_DOCUMENTS`] and the stored request
 /// bodies.
-pub fn corpus_goldens() -> BTreeSet<String> {
+pub(crate) fn corpus_goldens() -> BTreeSet<String> {
     corpus_files()
         .into_iter()
         .filter(|name| {
@@ -159,7 +159,7 @@ pub fn corpus_goldens() -> BTreeSet<String> {
 }
 
 /// The [`INDEX_DOCUMENTS`] the corpus directory lacks.
-pub fn missing_index_documents() -> Vec<&'static str> {
+pub(crate) fn missing_index_documents() -> Vec<&'static str> {
     let files = corpus_files();
     INDEX_DOCUMENTS
         .into_iter()
@@ -168,7 +168,7 @@ pub fn missing_index_documents() -> Vec<&'static str> {
 }
 
 /// Every stored request body in the corpus directory.
-pub fn stored_request_bodies() -> BTreeSet<String> {
+pub(crate) fn stored_request_bodies() -> BTreeSet<String> {
     corpus_files()
         .into_iter()
         .filter(|name| name.ends_with(REQUEST_BODY_SUFFIX))

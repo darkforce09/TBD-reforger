@@ -8,6 +8,7 @@ use orbat_slot_ids::SlotUid;
 
 use super::cargo_rules::{CargoRow, seed_cargo};
 use super::entity::selected_slot_ids;
+use deterministic_random::SplitMix64;
 use mission_document::MissionDocCore;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -130,11 +131,6 @@ pub fn seed_slot_cargo(
         .then_some(json)
 }
 
-/// The odd increment a Weyl sequence advances [`APPLY_SEED`] by — the splitmix64 gamma. Advancing
-/// before every Apply is what makes a second Apply of one buffer re-roll its randomised picks
-/// instead of repeating the first Apply's.
-const APPLY_SEED_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
-
 thread_local! {
     /// Character asset id → the cargo rows a freshly placed one starts with, as the registry's
     /// compatibility feed authors them. Empty until the feed is installed, which is why seeding
@@ -147,7 +143,9 @@ thread_local! {
     /// has been edited or deleted since it was copied.
     static LOADOUT_BUFFER: RefCell<Vec<BufferedLoadout>> = const { RefCell::new(Vec::new()) };
 
-    /// The splitmix64 state every Apply draws its randomised picks from.
+    /// The Weyl-sequence state every Apply draws its randomised picks from; it advances by
+    /// [`SplitMix64::INCREMENT`] before every Apply, which is what makes a second Apply of one
+    /// buffer re-roll its randomised picks instead of repeating the first Apply's.
     static APPLY_SEED: Cell<u64> = const { Cell::new(0x2545_F491_4F6C_DD1D) };
 }
 
@@ -220,7 +218,7 @@ pub fn loadout_buffer_len() -> usize {
 pub fn next_apply_seed() -> u64 {
     APPLY_SEED.with(|s| {
         let now = s.get();
-        s.set(now.wrapping_add(APPLY_SEED_GAMMA));
+        s.set(now.wrapping_add(SplitMix64::INCREMENT));
         now
     })
 }

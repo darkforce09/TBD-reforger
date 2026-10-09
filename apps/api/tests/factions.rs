@@ -92,9 +92,15 @@ async fn req(
         }
         None => Body::empty(),
     };
-    let resp = app.clone().oneshot(b.body(body).unwrap()).await.unwrap();
+    let resp = app
+        .clone()
+        .oneshot(b.body(body).expect("the request builds"))
+        .await
+        .unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -104,14 +110,14 @@ async fn req(
 /// The committed golden doc — real GUIDs from the census-gated envelope.
 fn golden_doc() -> Value {
     let raw = std::fs::read(
-        repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        repository_root::find_repository_root_from(std::path::Path::new(env!(
             "CARGO_MANIFEST_DIR"
         )))
         .expect("the repository root above the API package")
         .join("contracts/fixtures/registry/faction-library.sample.json"),
     )
     .expect("read faction golden");
-    serde_json::from_slice(&raw).unwrap()
+    serde_json::from_slice(&raw).expect("the body decodes as JSON")
 }
 
 /// The unscoped wipe must not return; deletes stay owner-scoped.

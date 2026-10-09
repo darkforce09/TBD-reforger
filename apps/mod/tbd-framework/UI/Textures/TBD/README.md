@@ -82,6 +82,6 @@ pixels from y 1600, scaled to 1024 x 140.
 
 ## Related documentation
 
-- [Mod UI structure](/documentation/mod/tbd-framework/UI/README.md) — where each UI file goes
-- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mod UI structure](/documentation/apps/mod/tbd-framework/UI/README.md) — where each UI file goes
+- [Mission selection specification](/documentation/apps/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the mission inspector and its hero band

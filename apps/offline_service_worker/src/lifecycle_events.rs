@@ -22,6 +22,10 @@ use crate::worker_scope::{cache_names, cache_storage, open_cache, scope, settle}
 const PRECACHED_SHELL_PATHS: [&str; 2] = ["/", "/manifest.webmanifest"];
 
 /// Handles `install`; the loader passes the returned promise to `event.waitUntil`.
+#[expect(
+    unreachable_pub,
+    reason = "#[wasm_bindgen] exports only public functions; the JavaScript loader calls this one"
+)]
 #[wasm_bindgen]
 pub fn on_install(_event: ExtendableEvent) -> Promise {
     future_to_promise(async {
@@ -38,6 +42,10 @@ pub fn on_install(_event: ExtendableEvent) -> Promise {
 }
 
 /// Handles `activate`; the loader passes the returned promise to `event.waitUntil`.
+#[expect(
+    unreachable_pub,
+    reason = "#[wasm_bindgen] exports only public functions; the JavaScript loader calls this one"
+)]
 #[wasm_bindgen]
 pub fn on_activate(_event: ExtendableEvent) -> Promise {
     future_to_promise(async {

@@ -16,8 +16,8 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/House
 
 - Encoding: ASCII Enfusion prefab text with invented GUIDs and resource paths; nothing here is game
   content.
-- Schema: the `.et` grammar that `parse_et` in
-  `tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/tokenize.rs` reads. `House_Base.et`
+- Schema: the `.et` grammar that `parse_entity_template` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads. `House_Base.et`
   inherits `Prefabs/Core/Building_Base.et`, sets the mesh `Assets/Houses/House.xob`, maps the bone
   prefixes `socket_door_left` and `socket_win` to the door set and the window in
   `SlotBoneMappings`, and places a door set on `socket_door_left_01`, a `$grp` of two windows on
@@ -30,12 +30,12 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/House
 - Producers: people; the files are written by hand.
 - Consumers:
   - `resolver_walks_inheritance_sockets_and_children` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs` resolves `House_Wood.et` and
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/prefab_templates_tests.rs` resolves `House_Wood.et` and
     asserts the class `SCR_DestructibleBuildingEntity`, the chain `House_Base.et` →
     `Prefabs/Core/Building_Base.et`, the mesh from `House_Base.et`, both socket mappings, and the
     children in order: door set, two windows, probe, then the furniture composition;
   - `walker_places_door_set_window_and_furniture_from_fixtures` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs` walks `House_Wood.et` over
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/batch_processing_tests.rs` walks `House_Wood.et` over
     synthetic models into eleven instances, records the mesh-less probe as a note rather than an
     instance, and validates the result against
     `contracts/definitions/building-instances.schema.json`;

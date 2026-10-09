@@ -79,7 +79,7 @@ crates/line_of_sight/interior_line_of_sight/src/
   `WashJob` in budgeted steps; the debug building viewer
   (`crates/frontend/workspaces/debug_benches/src/building_viewer.rs`); the Mission Creator's
   line-of-sight tool (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/los_world_wasm.rs`);
-  and the blueprint tooling (`tools/map_assets/blueprint_compiler/src/bvh/construction.rs`).
+  and the blueprint tooling (`tools/map_assets/blueprint_compiler/src/occlusion_sidecars/construction.rs`).
 - Rules: `wash_cap_check` refuses a wash radius above `MAX_WASH_RADIUS_M` (400 m)
   (`over_cap_wash_radius_is_refused_with_a_message` in `tests/floor_wash_tests.rs`); a `WashJob`
   may pause at any cell, because each cell's verdict depends only on its index, the observer, the

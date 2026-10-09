@@ -10,7 +10,10 @@
 //! `concat!` argument, read without its `/`), or holds a `..` segment after a named one
 //! (`apps/../from`); such a token names a path under an anchor only where its first named segment
 //! is a tracked folder ([`super::anchor_resolution`] judges that), so a datum like `7/../..` is
-//! found here and read as no reference.
+//! found here and read as no reference. A token of `.` and `..` segments alone (`../`, `./`,
+//! `../..`) is a candidate only where its syntax fixes the anchor: a link destination, an
+//! `include!` or `#[path]` argument, a Cargo `path` value; in prose, a comment or a plain string
+//! literal it is no candidate.
 //!
 //! **Position:** called by [`super`] for each file the path rows rewrite; each candidate goes to
 //! [`super::anchor_resolution`].
@@ -266,7 +269,8 @@ fn climbing_tokens(
             continue;
         }
         let end = token_end(bytes, index).min(range.end);
-        let candidate = match Climb::of(&source[index..end]) {
+        let token = &source[index..end];
+        let candidate = match Climb::of(token).filter(|_| !names_no_segment(token)) {
             Some(Climb::SlashLed) => Some(RelativeCandidate {
                 span: index + 1..end,
                 leading_slash: true,
@@ -280,6 +284,16 @@ fn climbing_tokens(
         index = end.max(index + 1);
     }
     found
+}
+
+/// Whether `token` holds `.` and `..` segments and separators alone: a folder without a name. Such
+/// a token is a relative reference only where its syntax fixes the anchor (a link destination, an
+/// `include!` or `#[path]` argument, a Cargo `path` value); in prose, a comment or a plain string
+/// literal, `../` speaks of a parent folder in general and is never rewritten.
+fn names_no_segment(token: &str) -> bool {
+    token
+        .split('/')
+        .all(|segment| matches!(segment, "" | "." | ".."))
 }
 
 fn rust_candidates(source: &str) -> Vec<RelativeCandidate> {
@@ -403,7 +417,9 @@ fn literal_tokens(
         let token = &source[index..end];
         let slash_led = token.starts_with('/') && token.len() > 1;
         let climb = Climb::of(token);
-        let candidate = if slash_led && manifest_folder {
+        let candidate = if names_no_segment(token) {
+            None
+        } else if slash_led && manifest_folder {
             Some(RelativeCandidate {
                 span: index + 1..end,
                 leading_slash: true,

@@ -32,5 +32,5 @@ None: no resource refers to this folder.
 
 ## Related documentation
 
-- [In-game menu specification](/documentation/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
+- [In-game menu specification](/documentation/apps/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
   — the pause menu and admin screen as built, and the design target

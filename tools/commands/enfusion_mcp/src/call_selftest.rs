@@ -25,7 +25,7 @@ use std::path::Path;
 use process_runner::Run;
 use verification_core::NotRun;
 
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 /// Where an arm's captured stderr is parked so a failing run can be read after the fact.
 const CAPTURED_STDERR_PATH: &str = "/tmp/xtask-mcp-selftest-stderr";

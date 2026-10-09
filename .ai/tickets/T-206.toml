@@ -41,7 +41,7 @@ citations = [
     "ItemPhysAttributes",
 ]
 estimated = ["scope"]
-owns = ["packages/tbd-schema/registry/registry-items.workbench.json"]
+owns = ["contracts/catalogs/registry-items.workbench.json"]
 
 [scope]
 domain = "repo"

@@ -33,15 +33,16 @@ const GIT_SYMLINK_MODE: &str = "120000";
 
 /// The tracked folders whose source files are fingerprint inputs: the applications, the library
 /// crates the API is built from (`crates/api` among them), the tools, the contracts, the evidence
-/// register and the build and CI configuration.
+/// register and the build and CI configuration. A path is an input when it lies under one of
+/// them ([`under_input_root`]), whether or not the folder is spelled with a trailing `/`.
 const INPUT_ROOTS: &[&str] = &[
-    "apps/",
-    "crates/",
-    "tools/",
-    "contracts/",
+    repository_layout::workspace_folders::APPLICATIONS_DIR,
+    repository_layout::workspace_folders::LIBRARY_CRATES_DIR,
+    repository_layout::workspace_folders::TOOLS_DIR,
+    repository_layout::CONTRACTS_DIR,
     repository_layout::API_READINESS_EVIDENCE_PREFIX,
-    ".cargo/",
-    ".github/",
+    ".cargo",
+    ".github",
 ];
 const SOURCE_EXTENSIONS: &[&str] = &[
     "rs", "c", "h", "cpp", "wgsl", "glsl", "toml", "lock", "json", "jsonc", "jsonl", "yaml", "yml",
@@ -117,12 +118,20 @@ const CONFIGURATION_ENVIRONMENT: &[&str] = &[
     "TZ",
 ];
 
+/// Whether the repository-relative `path` lies inside one of the [`INPUT_ROOTS`] folders.
+fn under_input_root(path: &str) -> bool {
+    INPUT_ROOTS.iter().any(|root| {
+        path.strip_prefix(root.trim_end_matches('/'))
+            .is_some_and(|rest| rest.starts_with('/'))
+    })
+}
+
 /// Binary terrain, texture, model and media assets require separate fixture identities.
 pub(super) fn source_input(path: &str) -> bool {
     if ROOT_INPUTS.contains(&path) {
         return true;
     }
-    if !INPUT_ROOTS.iter().any(|prefix| path.starts_with(prefix)) {
+    if !under_input_root(path) {
         return false;
     }
     let path = Path::new(path);

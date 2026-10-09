@@ -1,5 +1,5 @@
 use super::*;
-use crate::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Every committed map-asset location this module declares exists in a real checkout.
 #[test]

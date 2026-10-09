@@ -5,7 +5,7 @@
 //! `satellite_archive_container`), renders the cartographic Map view and its land cover
 //! (`cartographic_rendering`), classifies and tints the inland water (`inland_water`), writes the
 //! water and label archives (`inland_water_archive`, `map_label_archives`), exports the label
-//! sets (`map_labels`) and builds the world-glyph atlas (`glyphs`). [`entrypoint`] is the `map`
+//! sets (`map_labels`) and builds the world-glyph atlas (`glyph_atlas`). [`entrypoint`] is the `map`
 //! binary.
 //! **Position:** tier 7 of `tools/map_assets`, over `world_export_pipeline` (number spelling, the
 //! `.topo` and texture decoders), the world format, terrain and place-name crates, `enfusion_pak`,
@@ -24,7 +24,7 @@ mod command_line;
 mod decision_record_locations;
 mod empty_write_refusal;
 mod error;
-mod glyphs;
+mod glyph_atlas;
 mod image_operations;
 mod inland_water;
 /// `water/water_vectors.rkyv` + `water/bathymetry.tbd-bath` from the Workbench inland-

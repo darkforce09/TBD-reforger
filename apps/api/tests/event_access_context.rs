@@ -40,11 +40,15 @@ impl Fixture {
 
     async fn new() -> Self {
         let url = common::require_test_database_url().expect("event access requires PostgreSQL");
-        let pool = api_database::connect(&url).await.unwrap();
-        api_database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url)
+            .await
+            .expect("the test database accepts a connection");
+        api_database::migrate(&pool)
+            .await
+            .expect("the migrations apply to the test database");
         let actor = format!("event-access-{}", Uuid::new_v4());
         sqlx::query("INSERT INTO users(discord_id, username, created_at, updated_at) VALUES ($1, $1, now(), now())")
-            .bind(&actor).execute(&pool).await.unwrap();
+            .bind(&actor).execute(&pool).await.expect("the insert into users succeeds");
         let event = Self::insert_event(&pool, &actor).await;
         Self {
             pool,
@@ -57,17 +61,29 @@ impl Fixture {
 
     async fn insert_event(pool: &PgPool, author: &str) -> EventId {
         sqlx::query_scalar("INSERT INTO events(name_override, start_time, created_by, created_at) VALUES ('Eligibility fixture', now(), $1, now()) RETURNING id")
-            .bind(author).fetch_one(pool).await.unwrap()
+            .bind(author).fetch_one(pool).await.expect("the insert into events returns its row")
     }
 
     async fn load(&self) -> Result<EventAccessContext, ApiError> {
-        EventAccessContext::load(&mut self.pool.acquire().await.unwrap(), self.event).await
+        EventAccessContext::load(
+            &mut self
+                .pool
+                .acquire()
+                .await
+                .expect("the pool hands out a connection"),
+            self.event,
+        )
+        .await
     }
 
     async fn subject(&self, context: &EventAccessContext) -> Result<EventAccessSubject, ApiError> {
         context
             .subject(
-                &mut self.pool.acquire().await.unwrap(),
+                &mut self
+                    .pool
+                    .acquire()
+                    .await
+                    .expect("the pool hands out a connection"),
                 &DiscordUserId::new(self.actor.as_str()),
                 &self.main_guild_id(),
             )
@@ -76,8 +92,8 @@ impl Fixture {
 
     async fn group(&self, event: EventId, source: EventGroupSource) -> EventGroupId {
         sqlx::query_scalar("INSERT INTO event_groups(event_id, name, source, created_by) VALUES ($1, 'Eligibility group', $2, $3) RETURNING id")
-            .bind(event).bind(serde_json::to_value(source).unwrap()).bind(&self.actor)
-            .fetch_one(&self.pool).await.unwrap()
+            .bind(event).bind(serde_json::to_value(source).expect("the value serialises to JSON")).bind(&self.actor)
+            .fetch_one(&self.pool).await.expect("the insert into event_groups returns its row")
     }
 
     async fn partner_group(&self, roles: &[&str]) -> EventGroupId {
@@ -99,42 +115,42 @@ impl Fixture {
         .bind(&self.actor)
         .execute(&self.pool)
         .await
-        .unwrap();
+        .expect("the insert into event_group_roster succeeds");
     }
 
     async fn snapshot(&self, guild: &str, status: &str, age_hours: Option<i32>, roles: &[&str]) {
-        let mut transaction = self.pool.begin().await.unwrap();
+        let mut transaction = self.pool.begin().await.expect("a transaction begins");
         sqlx::query("INSERT INTO discord_membership_snapshots(discord_id, guild_id, membership_status, verified_at, last_error)
             VALUES ($1, $2, $3, CASE WHEN $4::integer IS NULL THEN NULL ELSE clock_timestamp() - make_interval(hours => $4) END, 'fixture transport unavailable')
             ON CONFLICT (discord_id, guild_id) DO UPDATE SET membership_status = EXCLUDED.membership_status,
                 verified_at = EXCLUDED.verified_at, last_error = EXCLUDED.last_error")
-            .bind(&self.actor).bind(guild).bind(status).bind(age_hours).execute(&mut *transaction).await.unwrap();
+            .bind(&self.actor).bind(guild).bind(status).bind(age_hours).execute(&mut *transaction).await.expect("the insert into discord_membership_snapshots succeeds");
         sqlx::query("DELETE FROM user_discord_roles WHERE discord_id = $1 AND guild_id = $2")
             .bind(&self.actor)
             .bind(guild)
             .execute(&mut *transaction)
             .await
-            .unwrap();
+            .expect("the delete from user_discord_roles succeeds");
         for role in roles {
             sqlx::query("INSERT INTO user_discord_roles(discord_id, guild_id, discord_role_id) VALUES ($1, $2, $3)")
-                .bind(&self.actor).bind(guild).bind(role).execute(&mut *transaction).await.unwrap();
+                .bind(&self.actor).bind(guild).bind(role).execute(&mut *transaction).await.expect("the insert into user_discord_roles succeeds");
         }
-        transaction.commit().await.unwrap();
+        transaction.commit().await.expect("the transaction commits");
     }
 
     async fn grace_override(&self, guild: &str) {
         sqlx::query("INSERT INTO discord_membership_grace_overrides(discord_id, guild_id, authorized_by, reason, created_at, expires_at)
             VALUES ($1, $2, $1, 'Explicit fixture outage extension', clock_timestamp(), clock_timestamp() + interval '24 hours')
             ON CONFLICT (discord_id, guild_id) DO UPDATE SET created_at = EXCLUDED.created_at, expires_at = EXCLUDED.expires_at")
-            .bind(&self.actor).bind(guild).execute(&self.pool).await.unwrap();
+            .bind(&self.actor).bind(guild).execute(&self.pool).await.expect("the insert into discord_membership_grace_overrides succeeds");
     }
 
     async fn mission(&self, event: EventId) -> (MissionId, EventMissionId) {
         let mission: MissionId = sqlx::query_scalar("INSERT INTO missions(title, author_id, terrain, game_mode, max_players, status, created_at)
             VALUES ('Eligibility mission', $1, 'everon', 'pve_coop', 32, 'live', now()) RETURNING id")
-            .bind(&self.actor).fetch_one(&self.pool).await.unwrap();
+            .bind(&self.actor).fetch_one(&self.pool).await.expect("the insert into missions returns its row");
         let event_mission = sqlx::query_scalar("INSERT INTO event_missions(event_id, mission_id, start_time, created_at) VALUES ($1, $2, now(), now()) RETURNING id")
-            .bind(event).bind(mission).fetch_one(&self.pool).await.unwrap();
+            .bind(event).bind(mission).fetch_one(&self.pool).await.expect("the insert into event_missions returns its row");
         (mission, event_mission)
     }
 
@@ -146,8 +162,8 @@ impl Fixture {
         policy: &EventAccessPolicy,
     ) {
         sqlx::query("INSERT INTO event_squad_access_policies(event_mission_id, faction, squad, access_policy) VALUES ($1, $2, $3, $4)")
-            .bind(mission).bind(faction).bind(squad).bind(serde_json::to_value(policy).unwrap())
-            .execute(&self.pool).await.unwrap();
+            .bind(mission).bind(faction).bind(squad).bind(serde_json::to_value(policy).expect("the value serialises to JSON"))
+            .execute(&self.pool).await.expect("the insert into event_squad_access_policies succeeds");
     }
 
     async fn slot(
@@ -159,8 +175,8 @@ impl Fixture {
     ) -> OrbatSlotId {
         sqlx::query_scalar("INSERT INTO orbat_slots(event_mission_id, faction, squad, role, slot_index, access_policy)
             VALUES ($1, $2, 'Alpha', 'Rifleman', $3, $4) RETURNING id")
-            .bind(mission).bind(faction).bind(index).bind(policy.map(|policy| serde_json::to_value(policy).unwrap()))
-            .fetch_one(&self.pool).await.unwrap()
+            .bind(mission).bind(faction).bind(index).bind(policy.map(|policy| serde_json::to_value(policy).expect("the value serialises to JSON")))
+            .fetch_one(&self.pool).await.expect("the insert into orbat_slots returns its row")
     }
 }
 
@@ -189,7 +205,7 @@ fn constraints() -> MandatoryAccessConstraints {
 
 fn permitted(policy: &EventAccessPolicy, subject: &EventAccessSubject) -> bool {
     evaluate_access(policy, None, None, subject, constraints())
-        .unwrap()
+        .expect("the access evaluation succeeds")
         .denial
         .is_none()
 }

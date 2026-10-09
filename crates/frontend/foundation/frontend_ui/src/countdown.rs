@@ -22,7 +22,7 @@ pub fn countdown_label(iso: &str) -> String {
     if t.is_nan() {
         return "—".into();
     }
-    let now = js_sys::Date::now();
+    let now = time_source::wall_clock_ms();
     if t <= now {
         return "LIVE NOW".into();
     }

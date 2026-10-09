@@ -17,6 +17,8 @@ tier = 6
 targets = "any"
 
 [dependencies]
+# The SplitMix64 increment the Apply seed advances by.
+deterministic_random = { workspace = true }
 formation_geometry = { workspace = true }
 map_coordinates = { workspace = true }
 mission_crdt = { workspace = true }

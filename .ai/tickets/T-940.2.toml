@@ -8,13 +8,14 @@ order = 8090
 spec = "documentation/tickets/specs/t940_website_platform.md"
 plan = "documentation/tickets/plans/t-940_2_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): apps/website/api/src/handlers/events/events.rs: removed in commit cb444b9bd, no successor; core/dto.rs: removed in commit 4f67010bd, no successor; pages/public/deployments.rs: removed in commit a582f9ded, no successor."
 priority = 1
 depends_on = ["T-940.1"]
 parent = "T-940"
 main_goal = "Attendance history survives withdrawals and unlinked players."
 context = [
-    "Anchor 2026-09-04: events.rs:2037-2041 DELETE FROM event_registrations on withdraw; models/event.rs:56 defines no_show with no writer; pages/public/deployments.rs:55 renders it.",
-    "Depends on T-940.1 (events.rs). apps/frontend/src/core/dto.rs is the frontend R-api golden mirror of models/event.rs.",
+    "Anchor 2026-09-04: events.rs:2037-2041 DELETE FROM event_registrations on withdraw; crates/api/api_operations/src/models/event.rs:56 defines no_show with no writer; pages/public/deployments.rs:55 renders it.",
+    "Depends on T-940.1 (events.rs). apps/frontend/src/core/dto.rs is the frontend R-api golden mirror of crates/api/api_operations/src/models/event.rs.",
     "Related, not re-minted: T-393 (shipped) identity link, T-311 leaderboard tie-breaker.",
 ]
 requirement = [
@@ -22,7 +23,7 @@ requirement = [
     "Withdraw sets state = 'withdrawn' and withdrawn_at, freeing the seat; the seat index ignores withdrawn rows.",
     "A no_show writer runs when match results arrive: registered players absent from the results become no_show.",
     "Result players without a linked user are stored in unlinked_attendance and reconciled when they later link.",
-    "models/event.rs and core/dto.rs expose withdrawn_at and the attendance states identically.",
+    "crates/api/api_operations/src/models/event.rs and core/dto.rs expose withdrawn_at and the attendance states identically.",
 ]
 current_state = ["Withdraw hard-deletes; no_show is an enum value nobody writes; unlinked players vanish from attendance."]
 approach = [
@@ -43,7 +44,7 @@ acceptance = [
 created_at = "2026-09-05T02:33:18Z"
 owns = [
     "apps/website/api/src/handlers/events/events.rs",
-    "apps/website/api/src/models/event.rs",
+    "crates/api/api_operations/src/models/event.rs",
     "apps/frontend/src/core/dto.rs",
     "apps/website/api/migrations/0023_registration_tombstones.sql",
 ]

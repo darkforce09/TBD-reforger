@@ -21,6 +21,7 @@ content_digest = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
 

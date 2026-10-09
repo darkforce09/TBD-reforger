@@ -118,8 +118,8 @@ Other mod commands:
 
 ## Related documentation
 
-- [Mod documentation](/documentation/mod/README.md) — the index of the mod's deeper documents.
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — what the framework is for and
+- [Mod documentation](/documentation/apps/mod/README.md) — the index of the mod's deeper documents.
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — what the framework is for and
   its non-negotiables.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — how mod work runs
   through Workbench and the gates.
@@ -133,7 +133,7 @@ Other mod commands:
   — getting a script change to the staging server and to players.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a local
   playtest.
-- [Export addon documentation](/documentation/mod/tbd-export/README.md) — the map export,
+- [Export addon documentation](/documentation/apps/mod/tbd-export/README.md) — the map export,
   the terrain export runbook and the equipment exporter's acceptance evidence.
-- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the two ways to reach
+- [Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — the two ways to reach
   Workbench, the bootstrap and the handler loading rules.

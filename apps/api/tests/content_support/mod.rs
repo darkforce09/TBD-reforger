@@ -28,18 +28,18 @@ use uuid::Uuid;
 use crate::{common, contract_support};
 
 /// The JSON request body limit of every content route except the upload (1 MiB).
-pub const JSON_BODY_LIMIT: usize = 1 << 20;
+pub(crate) const JSON_BODY_LIMIT: usize = 1 << 20;
 /// The contract every content refusal is checked against.
 const CONTENT_CONTRACT: &str = "content-upload.schema.json";
 
 /// A signed-in caller: the Discord id the API stamps and the bearer token it presents.
-pub struct Actor {
+pub(crate) struct Actor {
     pub id: String,
     pub token: String,
 }
 
 /// One case's router, its administrator and enlisted member, and its private upload directory.
-pub struct ContentSuite {
+pub(crate) struct ContentSuite {
     pub state: AppState,
     pub app: Router,
     pub admin: Actor,
@@ -53,24 +53,28 @@ pub struct ContentSuite {
 
 impl ContentSuite {
     /// A router whose upload directory is `<scratch>/uploads`, which the router creates at boot.
-    pub async fn new(suite: &str) -> Self {
+    pub(crate) async fn new(suite: &str) -> Self {
         let scratch = fresh_scratch_dir(suite);
         let upload_dir = scratch.join("uploads");
         Self::boot(suite, scratch, upload_dir).await
     }
 
     /// A router whose upload directory names a regular file, so every upload write fails.
-    pub async fn with_upload_dir_as_regular_file(suite: &str) -> Self {
+    pub(crate) async fn with_upload_dir_as_regular_file(suite: &str) -> Self {
         let scratch = fresh_scratch_dir(suite);
         let upload_dir = scratch.join("uploads-is-a-regular-file");
-        std::fs::write(&upload_dir, b"not a directory").unwrap();
+        std::fs::write(&upload_dir, b"not a directory").expect("the scratch file writes");
         Self::boot(suite, scratch, upload_dir).await
     }
 
     async fn boot(suite: &str, scratch: PathBuf, upload_dir: PathBuf) -> Self {
         let url = common::require_test_database_url().expect("content suites require PostgreSQL");
-        let pool = api_database::connect(&url).await.unwrap();
-        api_database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url)
+            .await
+            .expect("the test database accepts a connection");
+        api_database::migrate(&pool)
+            .await
+            .expect("the migrations apply to the test database");
         let mut config = Config::for_tests(url, "content-suites");
         config.upload_dir = upload_dir.display().to_string();
         let state = api::composition::application_state(pool, config);
@@ -95,24 +99,24 @@ impl ContentSuite {
         fixture
     }
 
-    pub fn pool(&self) -> &PgPool {
+    pub(crate) fn pool(&self) -> &PgPool {
         &self.state.pool
     }
 
     /// The case's scratch directory, which holds the upload directory.
-    pub fn scratch(&self) -> &Path {
+    pub(crate) fn scratch(&self) -> &Path {
         &self.scratch
     }
 
     /// A suite-owned account with a verified membership snapshot for `role`.
-    pub async fn account(&self, label: &str, role: &str) -> Actor {
+    pub(crate) async fn account(&self, label: &str, role: &str) -> Actor {
         let id = format!("{}-{label}-{}", self.suite, Uuid::new_v4());
         let token = common::access_token(&self.state, &self.suite, &id, role, true).await;
         Actor { id, token }
     }
 
     /// One JSON request; a body is sent as `application/json`.
-    pub async fn call(
+    pub(crate) async fn call(
         &self,
         actor: Option<&Actor>,
         method: &str,
@@ -136,7 +140,7 @@ impl ContentSuite {
 
     /// One request with raw body bytes and an optional content type; answers the status and the
     /// body as JSON (`null` when it is not JSON).
-    pub async fn send(
+    pub(crate) async fn send(
         &self,
         actor: Option<&Actor>,
         method: &str,
@@ -159,7 +163,7 @@ impl ContentSuite {
     /// bucket of `0.0.0.0` and a case with many requests would end at 429. The limiter is not
     /// under test here, so each request gets its own peer, and a 429 fails loudly instead of
     /// reading as a handler answer.
-    pub async fn send_bytes(
+    pub(crate) async fn send_bytes(
         &self,
         actor: Option<&Actor>,
         method: &str,
@@ -174,7 +178,7 @@ impl ContentSuite {
         if let Some(content_type) = content_type {
             request = request.header(header::CONTENT_TYPE, content_type);
         }
-        let mut request = request.body(Body::from(body)).unwrap();
+        let mut request = request.body(Body::from(body)).expect("the request builds");
         request.extensions_mut().insert(ConnectInfo(next_peer()));
         let response = self.app.clone().oneshot(request).await.unwrap();
         let status = response.status();
@@ -185,13 +189,13 @@ impl ContentSuite {
         );
         let bytes = to_bytes(response.into_body(), usize::MAX)
             .await
-            .unwrap()
+            .expect("the response body reads to the end")
             .to_vec();
         (status, bytes)
     }
 
     /// `POST /api/v1/cms/uploads` with a multipart body made of `parts`.
-    pub async fn upload(
+    pub(crate) async fn upload(
         &self,
         actor: Option<&Actor>,
         parts: &[MultipartPart<'_>],
@@ -208,7 +212,7 @@ impl ContentSuite {
     }
 
     /// `POST /api/v1/cms/uploads` with one `file` field named `file_name`.
-    pub async fn upload_file(
+    pub(crate) async fn upload_file(
         &self,
         actor: Option<&Actor>,
         file_name: &str,
@@ -227,23 +231,23 @@ impl ContentSuite {
 
     /// The number of audit rows `actor` wrote, leaving out the `auth.*` lines of the sign-in that
     /// minted the actor's token.
-    pub async fn content_audits_by(&self, actor: &Actor) -> i64 {
+    pub(crate) async fn content_audits_by(&self, actor: &Actor) -> i64 {
         sqlx::query_scalar(
             "SELECT count(*) FROM audit_logs WHERE actor_id = $1 AND action NOT LIKE 'auth.%'",
         )
         .bind(&actor.id)
         .fetch_one(self.pool())
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
     }
 
     /// The number of vehicle rows `actor` created, deleted ones included.
-    pub async fn vehicles_created_by(&self, actor: &Actor) -> i64 {
+    pub(crate) async fn vehicles_created_by(&self, actor: &Actor) -> i64 {
         sqlx::query_scalar("SELECT count(*) FROM vehicle_databases WHERE created_by = $1")
             .bind(&actor.id)
             .fetch_one(self.pool())
             .await
-            .unwrap()
+            .expect("the read of vehicle_databases returns a row")
     }
 }
 
@@ -256,7 +260,7 @@ impl Drop for ContentSuite {
 /// A new empty directory under the system temporary directory, unique to one case.
 fn fresh_scratch_dir(suite: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!("{suite}-{}", Uuid::new_v4().simple()));
-    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::create_dir_all(&dir).expect("the scratch directory is created");
     dir
 }
 
@@ -270,7 +274,7 @@ fn next_peer() -> SocketAddr {
 }
 
 /// One field of a multipart body; `file_name` makes it a file field.
-pub struct MultipartPart<'a> {
+pub(crate) struct MultipartPart<'a> {
     pub name: &'a str,
     pub file_name: Option<&'a str>,
     pub bytes: &'a [u8],
@@ -278,7 +282,7 @@ pub struct MultipartPart<'a> {
 
 /// A `multipart/form-data` body of `parts`; answers its content type (with the boundary) and
 /// bytes.
-pub fn multipart_body(parts: &[MultipartPart<'_>]) -> (String, Vec<u8>) {
+pub(crate) fn multipart_body(parts: &[MultipartPart<'_>]) -> (String, Vec<u8>) {
     let boundary = format!("content-suite-{}", Uuid::new_v4().simple());
     let mut body = Vec::new();
     for part in parts {
@@ -311,27 +315,33 @@ fn signed_bytes(signature: &[u8], len: usize) -> Vec<u8> {
 }
 
 /// `len` bytes a PNG signature opens.
-pub fn png_bytes(len: usize) -> Vec<u8> {
+pub(crate) fn png_bytes(len: usize) -> Vec<u8> {
     signed_bytes(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A], len)
 }
 
 /// `len` bytes a JPEG start-of-image marker opens.
-pub fn jpeg_bytes(len: usize) -> Vec<u8> {
+pub(crate) fn jpeg_bytes(len: usize) -> Vec<u8> {
     signed_bytes(&[0xFF, 0xD8, 0xFF, 0xE0], len)
 }
 
 /// `len` bytes a WebP RIFF header opens.
-pub fn webp_bytes(len: usize) -> Vec<u8> {
+pub(crate) fn webp_bytes(len: usize) -> Vec<u8> {
     signed_bytes(b"RIFF\x24\x00\x00\x00WEBPVP8 ", len)
 }
 
 /// The sorted file names in `dir`; empty when it does not exist.
-pub fn directory_entries(dir: &Path) -> Vec<String> {
+pub(crate) fn directory_entries(dir: &Path) -> Vec<String> {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return Vec::new();
     };
     let mut names: Vec<String> = entries
-        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .map(|entry| {
+            entry
+                .expect("the upload directory entry reads")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
         .collect();
     names.sort();
     names
@@ -339,7 +349,7 @@ pub fn directory_entries(dir: &Path) -> Vec<String> {
 
 /// Assert `body` is the error envelope `{error, details?}` of the content contract, and that a
 /// content refusal code in `details` is one the contract names.
-pub fn assert_envelope(body: &Value) {
+pub(crate) fn assert_envelope(body: &Value) {
     contract_support::assert_valid(CONTENT_CONTRACT, Some("ContentError"), body);
     if let Some(code) = body["details"]["code"].as_str()
         && matches!(code, "request_too_large" | "storage_unavailable")
@@ -349,14 +359,19 @@ pub fn assert_envelope(body: &Value) {
 }
 
 /// Assert a refusal: its status, the envelope, and no `details.code` other than `code`.
-pub fn assert_refusal(status: StatusCode, body: &Value, expected: StatusCode, code: Option<&str>) {
+pub(crate) fn assert_refusal(
+    status: StatusCode,
+    body: &Value,
+    expected: StatusCode,
+    code: Option<&str>,
+) {
     assert_eq!(status, expected, "{body}");
     assert_envelope(body);
     assert_eq!(body["details"]["code"].as_str(), code, "{body}");
 }
 
 /// A complete vehicle write body whose values carry `tag`.
-pub fn vehicle_body(tag: &str) -> Value {
+pub(crate) fn vehicle_body(tag: &str) -> Value {
     json!({
         "name": format!("{tag} Leopard"),
         "faction": "BLUFOR",
@@ -368,14 +383,14 @@ pub fn vehicle_body(tag: &str) -> Value {
 }
 
 /// A JSON body of `len` bytes or more: `value` with a `padding` string that fills it.
-pub fn oversized_json(mut value: Value, len: usize) -> Vec<u8> {
+pub(crate) fn oversized_json(mut value: Value, len: usize) -> Vec<u8> {
     value["padding"] = json!("a".repeat(len));
     value.to_string().into_bytes()
 }
 
 /// A uniquely named trigger that raises on `operation` of `table` for rows whose `column` equals
 /// `value`, injecting a real storage failure into one actor's or one row's transaction only.
-pub async fn inject_failure(
+pub(crate) async fn inject_failure(
     pool: &PgPool,
     table: &str,
     operation: &str,
@@ -408,16 +423,16 @@ pub async fn inject_failure(
     sqlx::raw_sql(sqlx::AssertSqlSafe(sql.as_str()))
         .execute(pool)
         .await
-        .unwrap();
+        .expect("the failure-injection SQL installs");
     name
 }
 
 /// Drops a trigger [`inject_failure`] installed on `table`.
-pub async fn clear_failure(pool: &PgPool, name: &str, table: &str) {
+pub(crate) async fn clear_failure(pool: &PgPool, name: &str, table: &str) {
     sqlx::raw_sql(sqlx::AssertSqlSafe(format!(
         "DROP TRIGGER {name} ON {table}; DROP FUNCTION {name}();"
     )))
     .execute(pool)
     .await
-    .unwrap();
+    .expect("the `DROP TRIGGER` statement succeeds");
 }

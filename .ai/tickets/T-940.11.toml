@@ -8,6 +8,7 @@ order = 8150
 spec = "documentation/tickets/specs/t940_website_platform.md"
 plan = "documentation/tickets/plans/t-940_11_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): apps/website/api/src/handlers/admin/admin.rs: removed in commit 1fb7d759d, no successor; apps/website/api/src/services/game_agent.rs: removed in commit 1fb7d759d, no successor; handlers/admin/admin.rs: removed in commit 1fb7d759d, no successor; services/game_agent.rs: removed in commit 1fb7d759d, no successor."
 priority = 1
 depends_on = ["T-940.7"]
 parent = "T-940"

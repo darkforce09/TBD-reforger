@@ -1,18 +1,15 @@
-//! The repository locations the tools share, and the one walk that finds a checkout root.
+//! The repository locations the tools share.
 //!
-//! **Role:** [`find_repository_root`] and [`find_repository_root_from`] walk up to the folder
-//! holding [`ROOT_MARKER`]; the constants name the ticket registry, the agent artifact tree, the
-//! documents, reference lanes, contract and map-asset trees, npm package, browser gate pins,
-//! deployment files, tool inputs and build output folders the tools read, each once, as relative
-//! paths joined onto a found root (the contract, map-asset and package functions join them).
-//! **Position:** tier 0 of `tools/foundation`, with no workspace dependency. The ticket crates,
-//! `developer_tools`, `xtask` and `ticketboard` find their checkout and spell these shared
-//! locations through it; a location only one tool names stays in that tool's own layout module.
-//! **Signals & state:** none; constants, pure path joins and a read-only walk of the filesystem.
-//! **Invariants:** a root is a folder holding the marker file, so a worktree nested under another
-//! checkout resolves to itself; a walk that reaches the filesystem root is an [`Error`], never a
-//! guessed folder; every location is relative and uses `/` separators.
-
+//! **Role:** the location modules name each location more than one tool reads, once, as a relative
+//! path a caller joins onto the checkout root `repository_root` finds (the folder's README lists
+//! every module's locations).
+//! **Position:** tier 1 of `tools/foundation`, over the checkout-root finder `repository_root`,
+//! whose names the [`prelude`] re-exports so the tool binaries reach the root through this crate.
+//! The ticket crates, the command crates, `xtask` and `ticketboard` spell these shared locations
+//! through it; a location only one tool names stays in that tool's own layout module.
+//! **Signals & state:** none; constants and pure path joins.
+//! **Invariants:** every location is relative and uses `/` separators; the crate itself reads no
+//! file and walks no folder (the root walk is `repository_root`'s alone).
 mod agent_artifacts;
 mod browser_gate_environment;
 pub mod build_output;
@@ -21,14 +18,17 @@ mod deployment;
 pub mod documentation;
 mod documentation_locations;
 mod enfusion_mcp_node_package;
-mod error;
 mod map_assets;
 pub mod prelude;
-mod repository_root;
 mod ticket_registry;
 pub mod tool_inputs;
 mod upstream_references;
 mod vanilla_reference_lanes;
+pub mod workspace_folders;
+
+#[cfg(test)]
+#[path = "tests/shared_locations_tests.rs"]
+mod shared_locations_tests;
 
 pub use self::deployment::{
     CADDYFILE, DEPLOY_DIR, DEPLOY_ENV, DEPLOY_ENV_EXAMPLE, DEVELOPMENT_COMPOSE_FILE,
@@ -59,13 +59,9 @@ pub use enfusion_mcp_node_package::{
     ENFUSION_MCP_ENTRYPOINT, ENFUSION_MCP_NODE_PACKAGE_DIR, enfusion_mcp_entrypoint,
     enfusion_mcp_node_package_dir,
 };
-pub use error::{Error, Result};
 pub use map_assets::{
     GLYPH_ASSETS_DIR, MAP_SCRATCH_DIR, TERRAIN_ASSETS_DIR, glyph_assets_dir, glyph_manifest_path,
     map_scratch_dir, terrain_assets_dir, terrain_dir, terrain_manifest_path, terrain_registry_path,
-};
-pub use repository_root::{
-    ROOT_MARKER, find_repository_root, find_repository_root_from, is_repository_root,
 };
 pub use tool_inputs::{
     DEDICATED_SERVER_PROFILES_DIR, DEV_SERVER_PROFILE, MCP_TRANSCRIPT_FIXTURES_DIR,

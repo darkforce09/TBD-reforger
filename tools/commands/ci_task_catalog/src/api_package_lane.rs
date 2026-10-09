@@ -20,7 +20,7 @@ use std::path::Path;
 use database_operations::local_database::api_test_packages::{
     api_test_packages, package_arguments,
 };
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 use crate::error::{Error, Result};
 

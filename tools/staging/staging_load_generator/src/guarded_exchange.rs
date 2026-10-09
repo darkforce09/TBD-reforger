@@ -169,7 +169,7 @@ impl ClientConnection {
 /// One client's HTTP client: bound to its source address, one idle connection, no proxy, no
 /// redirects, and the total request timeout.
 fn http_client(source: IpAddr, timeout: Duration) -> Result<reqwest::Client> {
-    reqwest::Client::builder()
+    crate::http_client::http_client_builder()
         .local_address(source)
         .pool_max_idle_per_host(1)
         .timeout(timeout)

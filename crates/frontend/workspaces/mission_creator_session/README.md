@@ -59,7 +59,7 @@ cargo test -p mission_creator_session   # the save policy, writer election, size
 - Depends on: `mission_creator_state`, `mission_creator_engine_bridge`, `frontend_ui`,
   `frontend_api_dtos`, `frontend_transport`, `frontend_session`, the mission crates,
   `mission_persistence`, `mission_editing_commands`,
-  `map_streaming_model`, `leptos`, `serde`, `serde_json`, `thiserror`; on `wasm32` `idb`, `futures`, `gloo-net`,
+  `map_streaming_model`, `time_source`, `leptos`, `serde`, `serde_json`, `thiserror`; on `wasm32` `idb`, `futures`, `gloo-net`,
   `web-sys`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures`; `frontend_test_support` and the
   engine bridge's `test_fixtures` for its tests.
 - Used by: the single-page app (`apps/frontend`): the Mission Creator's page, canvas mount, docks,

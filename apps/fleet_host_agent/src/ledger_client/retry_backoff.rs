@@ -5,6 +5,7 @@ use std::time::Duration;
 /// Doublings after which the step stops growing; the maximum caps it long before.
 const MAX_DOUBLINGS: u32 = 20;
 
+/// The bounds of a [`JitteredBackoff`]: its first step and its largest step.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BackoffPolicy {
     /// The step after the first failure.
@@ -23,6 +24,7 @@ pub struct JitteredBackoff {
 }
 
 impl JitteredBackoff {
+    /// A backoff with no failure counted yet, whose first delay is drawn from `policy.initial`.
     pub fn new(policy: BackoffPolicy) -> Self {
         Self {
             policy,

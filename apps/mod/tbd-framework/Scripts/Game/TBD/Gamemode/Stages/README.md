@@ -50,9 +50,9 @@ admin `#tbd stage next` order. `TBD_FrameworkManager` in
 
 ## Related documentation
 
-- [Safe start HUD specification](/documentation/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
+- [Safe start HUD specification](/documentation/apps/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
   — the safe start notices as built and their design target
-- [End screen specification](/documentation/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
+- [End screen specification](/documentation/apps/mod/tbd-framework/UI/end_screen/end_screen_specification.md)
   — the END banner that names the win rule's endings
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — one life and the
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — one life and the
   [event](/documentation/glossary/a_to_f.md#event) loop the stages follow

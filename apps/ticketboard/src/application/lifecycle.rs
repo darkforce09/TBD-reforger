@@ -1,6 +1,6 @@
 use super::*;
 impl TicketboardApp {
-    pub fn new(
+    pub(crate) fn new(
         cc: &eframe::CreationContext<'_>,
         arg: Option<PathBuf>,
         cwd: Option<PathBuf>,

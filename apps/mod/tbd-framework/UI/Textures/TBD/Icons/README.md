@@ -74,5 +74,5 @@ path.
 
 ## Related documentation
 
-- [Mod UI structure](/documentation/mod/tbd-framework/UI/README.md)
+- [Mod UI structure](/documentation/apps/mod/tbd-framework/UI/README.md)
   — where each UI file goes and the icon and colour rules

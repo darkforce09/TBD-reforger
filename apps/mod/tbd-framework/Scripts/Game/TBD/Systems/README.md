@@ -89,6 +89,6 @@ Three patterns hold across the folders:
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — what the framework is for, its
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — what the framework is for, its
   non-negotiables and the Enfusion facts it relies on
-- [Mod documentation](/documentation/mod/README.md) — the index of the mod's deeper documents
+- [Mod documentation](/documentation/apps/mod/README.md) — the index of the mod's deeper documents

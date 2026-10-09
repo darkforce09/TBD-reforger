@@ -138,6 +138,6 @@ skipped.
 
 ## Related documentation
 
-- [Mod UI structure](/documentation/mod/tbd-framework/UI/README.md) — where each UI file goes
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md)
+- [Mod UI structure](/documentation/apps/mod/tbd-framework/UI/README.md) — where each UI file goes
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md)
   — the design rules the theme and shapes encode

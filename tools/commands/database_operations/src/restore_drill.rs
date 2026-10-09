@@ -26,7 +26,7 @@ use crate::container_database::{
 };
 use crate::error::{Result, stop};
 use crate::restore::RestoreArgs;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 struct ScratchGuard {
     scratch: String,

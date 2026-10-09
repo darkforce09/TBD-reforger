@@ -23,8 +23,12 @@ struct Fixture {
 }
 async fn fixture() -> Fixture {
     let url = common::require_test_database_url().expect("isolated PostgreSQL required");
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state =
         api::composition::application_state(pool, Config::for_tests(url, "event-administration"));
     let actor = format!("event-admin-{}", Uuid::new_v4());
@@ -48,7 +52,7 @@ async fn fixture() -> Fixture {
     let (event, initial): (Uuid, DateTime<Utc>) = sqlx::query_as(
         "INSERT INTO events(name_override, start_time, status, max_slots, created_by)
         VALUES ('Transactional event', statement_timestamp() + interval '2 hours', 'open', 4, $1) RETURNING id, start_time")
-        .bind(&actor).fetch_one(&state.pool).await.unwrap();
+        .bind(&actor).fetch_one(&state.pool).await.expect("the insert into events returns its row");
     let mut attachments = Vec::new();
     for index in 0..3 {
         let mission: Uuid = sqlx::query_scalar(
@@ -58,7 +62,7 @@ async fn fixture() -> Fixture {
         .bind(&actor)
         .fetch_one(&state.pool)
         .await
-        .unwrap();
+        .expect("the insert into missions returns its row");
         let attachment: Uuid = sqlx::query_scalar(
             "INSERT INTO event_missions(event_id, mission_id, start_time, deleted_at)
             VALUES ($1, $2, $3, CASE WHEN $4 THEN clock_timestamp() END) RETURNING id",
@@ -69,16 +73,16 @@ async fn fixture() -> Fixture {
         .bind(index == 2)
         .fetch_one(&state.pool)
         .await
-        .unwrap();
+        .expect("the insert into event_missions returns its row");
         let slot: Uuid = sqlx::query_scalar("INSERT INTO orbat_slots(event_mission_id, faction, squad, role, slot_index, assigned_to)
             VALUES ($1, 'USA', 'Alpha', 'Rifleman', 0, $2) RETURNING id")
-            .bind(attachment).bind(&actor).fetch_one(&state.pool).await.unwrap();
-        let mut fixture = state.pool.begin().await.unwrap();
+            .bind(attachment).bind(&actor).fetch_one(&state.pool).await.expect("the insert into orbat_slots returns its row");
+        let mut fixture = state.pool.begin().await.expect("a transaction begins");
         let allocation = common::participant_allocation(&mut fixture, attachment, &actor).await;
         sqlx::query("INSERT INTO event_registrations(event_mission_id, discord_id, slot_id, attendance_state, legacy_attendance_state, allocation_id)
             VALUES ($1, $2, $3, 'attended', 'attended', $4)")
-            .bind(attachment).bind(&actor).bind(slot).bind(allocation).execute(&mut *fixture).await.unwrap();
-        fixture.commit().await.unwrap();
+            .bind(attachment).bind(&actor).bind(slot).bind(allocation).execute(&mut *fixture).await.expect("the insert into event_registrations succeeds");
+        fixture.commit().await.expect("the transaction commits");
         attachments.push(attachment);
     }
     let app = router(state.clone());
@@ -109,10 +113,10 @@ async fn schedule(f: &Fixture) -> Vec<(Uuid, DateTime<Utc>)> {
         .bind(f.event)
         .fetch_all(&f.state.pool)
         .await
-        .unwrap()
+        .expect("the read of event_missions runs")
 }
 async fn register_other(f: &Fixture) {
-    let mut fixture = f.state.pool.begin().await.unwrap();
+    let mut fixture = f.state.pool.begin().await.expect("a transaction begins");
     let allocation = common::participant_allocation(&mut fixture, f.attachments[0], &f.other).await;
     sqlx::query(
         "INSERT INTO event_registrations(event_mission_id, discord_id, allocation_id) VALUES ($1, $2, $3)
@@ -124,8 +128,8 @@ async fn register_other(f: &Fixture) {
     .bind(allocation)
     .execute(&mut *fixture)
     .await
-    .unwrap();
-    fixture.commit().await.unwrap();
+    .expect("the insert into event_registrations succeeds");
+    fixture.commit().await.expect("the transaction commits");
 }
 async fn await_blocked(f: &Fixture, blocker: i32) {
     tokio::time::timeout(Timeout::from_secs(10), async {
@@ -137,7 +141,7 @@ async fn await_blocked(f: &Fixture, blocker: i32) {
             .bind(blocker)
             .fetch_one(&f.state.pool)
             .await
-            .unwrap();
+            .expect("the read of pg_stat_activity returns a row");
             if blocked {
                 break;
             }

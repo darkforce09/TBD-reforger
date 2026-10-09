@@ -25,7 +25,7 @@ use std::time::Duration;
 use crate::Result;
 use process_runner::Run;
 
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// What to run again once the operator has done the manual step this command cannot do.
 const RERUN_COMMAND: &str = "cargo xtask mod dev-bootstrap";

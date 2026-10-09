@@ -1,7 +1,7 @@
 use super::*;
 
 fn worktree_root() -> PathBuf {
-    repository_layout::find_repository_root().expect("repository root")
+    repository_root::find_repository_root().expect("repository root")
 }
 
 /// Scratch tree carrying only the vocab file — the rule under test reads nothing else.

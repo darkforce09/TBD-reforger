@@ -10,7 +10,7 @@ processes, and the test locks).
 
 ```text
 tools/xtask/src/commands/
-├── agent_context/  `ai`: the agent tool-call guard hook and the filtered command runner
+├── agent_context/  `ai`: the command line of the agent tool-call guard and the filtered command runner in `agent_context_guards`
 ├── fetch/          `fetch`: the command line of the vanilla source and Script API mirrors in `enfusion_script_index`
 ├── map/            `map`: terrain export classification, building blueprints, BVH and LOS parity
 ├── mod.rs          the module tree
@@ -40,7 +40,7 @@ for blueprint compilation, the line-of-sight probe, the terrain export driver (w
 modes; `ballistics` and `gen` dispatch straight to `ballistics_oracle_tooling` and
 `schema_tooling` in `tools/commands/`, and `schema` calls `schema_tooling` for the codegen, the
 contract gates and the flattening; the `setup` command line dispatches straight to the `workstation_setup` crate in
-`tools/commands/`, the `debug` and `repro` command lines to the `remote_debugging` crate there,
+`tools/commands/`, the `ai` command line to the `agent_context_guards` crate there, the `debug` and `repro` command lines to the `remote_debugging` crate there,
 the `mod` command line to the `mod_operations` crate there, and `verify api-readiness` calls `api_readiness_checks` there; `verify` calls
 the check crates under `tools/checks/` and the checks the command crates carry. Each group's own
 README gives its commands, flags and exit codes.

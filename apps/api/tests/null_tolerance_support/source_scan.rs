@@ -6,7 +6,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-pub fn collect_rs(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+pub(crate) fn collect_rs(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
     let Ok(rd) = std::fs::read_dir(dir) else {
         return;
     };
@@ -25,7 +25,7 @@ pub fn collect_rs(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
 ///
 /// Concatenated rather than parsed one file at a time because [`registered_get_routes`] keys on
 /// the path alone and a `.route(` call never spans two files.
-pub fn router_source() -> String {
+pub(crate) fn router_source() -> String {
     const PARTS: [&str; 9] = [
         include_str!("../../src/router.rs"),
         include_str!("../../../../crates/api/api_identity_and_access/src/routes.rs"),
@@ -44,7 +44,7 @@ pub fn router_source() -> String {
 ///
 /// Matches `.route("<path>", ... get( ... )` including the rustfmt-wrapped multi-line form, by
 /// taking the literal and then checking for `get(` inside that `.route(` call's balanced parens.
-pub fn registered_get_routes(src: &str) -> BTreeSet<String> {
+pub(crate) fn registered_get_routes(src: &str) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
     for (idx, _) in src.match_indices(".route(") {
         let open = idx + ".route(".len() - 1;
@@ -63,7 +63,7 @@ pub fn registered_get_routes(src: &str) -> BTreeSet<String> {
 }
 
 /// Index just past the `)` matching the `(` at `open`.
-pub fn balanced_end(src: &str, open: usize) -> Option<usize> {
+pub(crate) fn balanced_end(src: &str, open: usize) -> Option<usize> {
     let mut depth = 0i32;
     for (i, c) in src[open..].char_indices() {
         match c {
@@ -83,7 +83,7 @@ pub fn balanced_end(src: &str, open: usize) -> Option<usize> {
 /// Read the first Rust string literal at/after `from`, resolving the escapes that appear in
 /// these SQL literals: `\`+newline (rustfmt line continuation) collapses away, `\n`/`\t` become
 /// spaces, `\"` and `\'` are literal. Returns `(index past the closing quote, contents)`.
-pub fn string_literal(src: &str, from: usize) -> Option<(usize, String)> {
+pub(crate) fn string_literal(src: &str, from: usize) -> Option<(usize, String)> {
     let bytes: Vec<char> = src.chars().collect();
     let idx: Vec<usize> = src.char_indices().map(|(i, _)| i).collect();
     let mut i = idx.iter().position(|&b| b >= from)?;
@@ -127,7 +127,7 @@ pub fn string_literal(src: &str, from: usize) -> Option<(usize, String)> {
 /// `macro_source` (the whole scanned tree, since a column-list macro is shared across files). A
 /// part that is neither panics, so a statement the scan cannot read fails the suite instead of
 /// passing as an unreadable prefix.
-pub fn select_literals(src: &str, macro_source: &str) -> Vec<(usize, String)> {
+pub(crate) fn select_literals(src: &str, macro_source: &str) -> Vec<(usize, String)> {
     let mut out = Vec::new();
     for marker in ["query_as", "QueryBuilder::new"] {
         for (idx, _) in src.match_indices(marker) {
@@ -211,7 +211,7 @@ fn macro_literal(src: &str, name: &str) -> String {
 
 /// `alias -> table` for every `FROM`/`JOIN` in the statement. A table with no alias maps to
 /// itself, so both `missions.updated_at` and `m.updated_at` resolve.
-pub fn table_aliases(sql: &str) -> BTreeMap<String, String> {
+pub(crate) fn table_aliases(sql: &str) -> BTreeMap<String, String> {
     const NOISE: &[&str] = &[
         "on", "where", "order", "group", "limit", "left", "right", "inner", "outer", "join",
         "using", "set", "as", "and", "or", "having", "offset", "union",
@@ -244,7 +244,7 @@ pub fn table_aliases(sql: &str) -> BTreeMap<String, String> {
 
 /// Top-level, comma-separated items of the select list (everything between `SELECT` and the
 /// statement's top-level `FROM`). Depth-aware, so `count(*)` and scalar subqueries are one item.
-pub fn select_items(sql: &str) -> Vec<String> {
+pub(crate) fn select_items(sql: &str) -> Vec<String> {
     let upper = sql.to_uppercase();
     let mut depth = 0i32;
     let mut from_at = None;
@@ -299,7 +299,7 @@ pub fn select_items(sql: &str) -> Vec<String> {
 /// The column name a select item produces, its defining expression, and its table qualifier if
 /// it is a plain qualified reference. `COALESCE(m.tag,'') AS tag` → `("tag", "COALESCE(..)", None)`;
 /// `m.updated_at` → `("updated_at", "m.updated_at", Some("m"))`.
-pub fn produced_column(item: &str) -> Option<(String, String, Option<&str>)> {
+pub(crate) fn produced_column(item: &str) -> Option<(String, String, Option<&str>)> {
     let ident = |s: &str| {
         !s.is_empty()
             && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')

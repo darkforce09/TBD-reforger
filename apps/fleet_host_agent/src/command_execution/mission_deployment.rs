@@ -30,9 +30,13 @@ const SCENARIO_EXPECTATION: &str = "a scenario header resource: {16 uppercase he
 /// game runtime loads and verifies the artifact itself.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MissionDeployment {
+    /// The platform's deployment record.
     pub deployment_id: Uuid,
+    /// The mission artifact the game runtime loads.
     pub artifact_id: Uuid,
+    /// The artifact's SHA-256 digest, 64 lowercase hex digits.
     pub artifact_sha256: String,
+    /// The mission header the server config is switched to.
     pub scenario_id: ScenarioId,
 }
 
@@ -42,6 +46,7 @@ pub struct MissionDeployment {
 pub struct ScenarioId(String);
 
 impl ScenarioId {
+    /// The header resource in `raw`, or `None` when `raw` does not match the pattern.
     pub fn parse(raw: &str) -> Option<Self> {
         let (guid, path) = raw.strip_prefix('{')?.split_once('}')?;
         let valid = guid.len() == SCENARIO_GUID_HEX_DIGITS
@@ -56,6 +61,7 @@ impl ScenarioId {
         valid.then(|| Self(raw.to_owned()))
     }
 
+    /// The header resource as the server config stores it.
     pub fn as_str(&self) -> &str {
         &self.0
     }

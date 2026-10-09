@@ -82,7 +82,7 @@ pub(super) fn resolve_root() -> Result<PathBuf> {
     // Prefer $PWD (logical path) so dual-homed hosts (/home vs /var/home) match bash `cd … && pwd`.
     if let Some(pwd) = env::var_os("PWD") {
         let p = PathBuf::from(pwd);
-        if repository_layout::is_repository_root(&p) {
+        if repository_root::is_repository_root(&p) {
             return Ok(p);
         }
     }

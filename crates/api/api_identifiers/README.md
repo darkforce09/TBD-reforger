@@ -102,5 +102,5 @@ No features and no environment variables.
 
 - [Newtype identifiers](/crates/foundation/newtype_ids/README.md) — the macros the ids are
   declared with.
-- [Laws and gates](/documentation/restructure/laws_and_gates.md) — the crate-anatomy law on
-  public id fields.
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md#55-crate-anatomy-cargo-xtask-verify-crate-anatomy)
+  — the crate-anatomy law on public id fields.

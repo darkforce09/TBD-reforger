@@ -64,5 +64,5 @@ panels live under `apps/mod/tbd-framework/Scripts/Game/TBD/Session/` and use thi
 
 ## Related documentation
 
-- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — where each screen's
+- [Mod UI documentation](/documentation/apps/mod/tbd-framework/UI/README.md) — where each screen's
   scripts and layouts go, the dock shell, and the specification of each in-game screen

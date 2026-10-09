@@ -67,7 +67,7 @@ read: `JWT_SECRET` and `JWT_ACCESS_TTL_MIN` (the token `Manager`), `ALLOWED_ORIG
 
 - Depends on: `api_foundation` (`ApiError`), `api_configuration` (`Config`, the proxy networks,
   the shutdown signal), `api_identifiers` (the Discord user and session ids), `content_digest`,
-  and `axum`, `jsonwebtoken`, `governor`, `sqlx`, `reqwest`, `tokio`; the `rate_limit_buckets`
+  `time_source` (the metrics registry's start stamp), and `axum`, `jsonwebtoken`, `governor`, `sqlx`, `reqwest`, `tokio`; the `rate_limit_buckets`
   table of migration `0021`.
 - Used by: the API application (`apps/api`): its router and composition, and through it
   `api_state`, the kernel and domain crates, `api_background_workers` and the integration suites.

@@ -3,6 +3,7 @@
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
+use deterministic_random::LinearCongruential64;
 use mission_validation::AssetId;
 use orbat_slot_ids::SlotUid;
 
@@ -27,19 +28,13 @@ impl MissionDocCore {
 }
 
 impl MissionDocCore {
-    /// Bulk-seed `n` random slots in ONE transaction — the browser-harness generator for the criterion-6 fps/zero-copy test. Deterministic LCG positions in `[0,w)×[0,h)`; not undo-granular (the whole seed is one step).
+    /// Bulk-seed `n` random slots in ONE transaction — the browser-harness generator for the criterion-6 fps/zero-copy test. Deterministic positions in `[0,w)×[0,h)` from the top 31 bits of a [`LinearCongruential64`] stream started at `seed | 1`, x then y per slot; not undo-granular (the whole seed is one step).
     pub fn seed_random(&self, n: u32, w: f64, h: f64, seed: u64) {
-        let mut s = seed | 1;
+        let mut draws = LinearCongruential64::new(seed | 1);
         let mut txn = self.begin();
         for i in 0..n {
-            s = s
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1442695040888963407);
-            let x = (s >> 33) as f64 / f64::from(1u32 << 31) * w;
-            s = s
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1442695040888963407);
-            let y = (s >> 33) as f64 / f64::from(1u32 << 31) * h;
+            let x = (draws.next_u64() >> 33) as f64 / f64::from(1u32 << 31) * w;
+            let y = (draws.next_u64() >> 33) as f64 / f64::from(1u32 << 31) * h;
             let id = format!("s{i}");
             let slot = self.slots.insert(
                 &mut txn,

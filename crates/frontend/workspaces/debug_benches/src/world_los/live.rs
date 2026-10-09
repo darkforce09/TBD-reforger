@@ -197,9 +197,9 @@ fn upload_lanes(e: &mut RenderEngine, l: &InteriorLanes) {
 /// Probe A → B through the occluder: HUD lines + the probe lane.
 fn probe(engine: &EngineHandle, bench: &Bench, a: [f64; 3], b: [f64; 3], s: &Signals) {
     let occ = bench.host.occluder();
-    let t0 = js_sys::Date::now();
+    let t0 = time_source::wall_clock_ms();
     let los = occ.evaluate_los(a, b);
-    let ms = js_sys::Date::now() - t0;
+    let ms = time_source::wall_clock_ms() - t0;
     let total = ((b[0] - a[0]).powi(2) + (b[1] - a[1]).powi(2) + (b[2] - a[2]).powi(2)).sqrt();
     let blocker = los.blocker.as_ref().map(|bl| {
         format!(

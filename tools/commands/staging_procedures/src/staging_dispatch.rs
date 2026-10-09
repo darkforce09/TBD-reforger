@@ -21,7 +21,6 @@ use crate::discord_procedure::DiscordProcedure;
 use crate::fleet_procedure::FleetProcedure;
 use crate::load_procedure::{self, LoadProcedure};
 use crate::operator_coordination::action_list::{render, render_cases};
-use crate::procedure_runner::clock::SystemClock;
 use crate::procedure_runner::procedure::StagingProcedure;
 use crate::procedure_runner::recording::{RecordingInputs, record};
 use crate::remote_actions::database_backup;
@@ -33,7 +32,7 @@ use crate::run_identity::recorded_command;
 use crate::staging_command::{PlanOnly, ProcedureName, StagingCmd};
 use crate::staging_settings::StagingSettings;
 use crate::support_commands::{fingerprints, host_capacity, preflight, status};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Runs one `cargo xtask staging` subcommand and returns its exit code: 0 when every check is
 /// met, every resting item holds, the action succeeded or the recording passed, 1 otherwise.
@@ -98,7 +97,7 @@ fn with_host(
                 root,
                 settings,
                 host,
-                clock: &SystemClock,
+                clock: &time_source::SystemClock,
                 command: recorded_command(std::env::args()),
                 process_environment: std::env::vars_os().collect(),
                 output,

@@ -1,0 +1,7 @@
+# Stage S12 G1, wave 1: the relocation manifests leave the restructure program's folder for their
+# own live folder, so they outlive the archived program as the permanent retired-spelling registry
+# that `cargo xtask refactor relocate --verify` reads. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the whole manifests folder: every stage manifest, the format sample and the README
+path	documentation/restructure/manifests	documentation/relocation_manifests

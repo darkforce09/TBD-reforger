@@ -119,8 +119,8 @@ None: Workbench runs these scripts in the editor.
 
 - [Export validation and publication](/tools/commands/mod_operations/src/equipment_vehicle_export/README.md)
   — every check the validator runs and the publication steps.
-- [Equipment and vehicle export documentation](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
+- [Equipment and vehicle export documentation](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
   — the exporter's documentation index.
-- [Acceptance evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Acceptance evidence](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — the frozen acceptance record, the field mapping and the before-and-after examples.
 - [MCP commands](/tools/commands/enfusion_mcp/README.md) — `cargo xtask mcp wbcall`.

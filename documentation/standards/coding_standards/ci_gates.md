@@ -24,7 +24,7 @@ repeat it.
   | `frontend` | `cargo xtask mk ci-local-leptos`: format, clippy with `-D warnings` for `wasm32` and natively, tests, release Trunk build | TEST-2, TS-6 |
   | `schema` | `cargo xtask ci ci-local-schema`: generated types current, schema validation, `@contract` citations | TEST-3, ENF-3, ENF-4 |
   | `editorconfig` | `cargo xtask ci verify-editorconfig` | FMT-2 |
-  | `language-gates` | `verify no-python`, `no-node`, `file-length`, `enfusion-comments`, `no-shell`, `ci-shell`, `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources`, `ticket check --strict`, then `verify readme-coverage`, `link-check`, `markdown-placement` | LANG-1, LANG-2, LANG-3, SIZE-3, WS-1 to WS-5 |
+  | `language-gates` | `verify no-python`, `no-node`, `file-length`, `enfusion-comments`, `no-shell`, `ci-shell`, `crate-tiers`, `crate-anatomy`, `test-file-reachability`, `frontend-layering`, `tailwind-sources`, `ticket check --strict`, then `verify readme-coverage`, `link-check`, `markdown-placement` | LANG-1, LANG-2, LANG-3, SIZE-3, WS-1 to WS-5 |
   | `mod-gates-hosted` | `mod world-boot --selftest`, `verify staging-compose-paths`, `mission-rest-size-limits`, `ci-schema-parity` | none |
 
   `cargo xtask ci ci-local` replays the same gates locally, with the integration tests run by
@@ -57,8 +57,8 @@ the wave and slice gates, but in no workflow.
 ## verify-workspace-laws
 
 `cargo xtask ci verify-workspace-laws` runs the five workspace laws of the
-[laws and gates](/documentation/restructure/laws_and_gates.md#new-laws) in order and stops at
-the first failure; `ci-local` runs it right after `verify-ci-shell`, and the
+[crate boundary rules](/documentation/standards/crate_boundary_rules.md#5-the-workspace-laws) in
+order and stops at the first failure; `ci-local` runs it right after `verify-ci-shell`, and the
 `language-gates` job of `ci.yml` runs the five commands as separate steps. The laws live in
 `tools/foundation/repository_laws/src/workspace_laws/`
 ([README](/tools/foundation/repository_laws/src/workspace_laws/README.md)); xtask passes
@@ -70,15 +70,18 @@ listed in a note.
 
 ### WS-1 crate tiers
 
-`cargo xtask verify crate-tiers` judges rules 1 to 8 of the crate-tier law: every `Cargo.toml`
-under `apps`, `crates`, `tools` and `legacy` (outside test trees, fixtures and build
-output) is a workspace member; each judged member declares `category`, `tier` and `targets`, sits
-at its category plus its name, and declares the tier its dependencies give it (0 with no judged
-dependency, otherwise 1 plus the highest); edges point strictly down and follow the category
-matrix; a wasm-only crate is reached from a crate for every platform only through a
-`cfg(target_arch = "wasm32")` table; the external-crate firewalls hold (wgpu, the browser crates,
-sqlx and axum, leptos, the dependency closure of xtask, map nouns in graphics); nothing new depends
-on legacy; and dev-dependencies never point at apps or legacy.
+`cargo xtask verify crate-tiers` judges rules 1 to 7 of the crate-tier law: every `Cargo.toml`
+under `apps`, `crates` and `tools` (outside test trees, fixtures and build output) is a workspace
+member; each judged member declares `category`, `tier` and `targets`, and every member outside the
+judged set is an app or one of the two tool binaries; a judged member sits at its category plus
+its name and declares the tier its dependencies give it (0 with no judged dependency, otherwise 1
+plus the highest); edges point strictly down and follow the category matrix; a wasm-only crate is
+reached from a crate for every platform only through a `cfg(target_arch = "wasm32")` table; the
+external-crate firewalls hold (wgpu, the browser crates, sqlx and axum, leptos, the dependency
+closure of xtask, map nouns in graphics, browser words in mission editing, `#[wasm_bindgen]`
+exports); and dev-dependencies never point at apps. The
+[crate boundary rules](/documentation/standards/crate_boundary_rules.md#52-crate-tiers-cargo-xtask-verify-crate-tiers)
+state each rule, the matrix and the firewalls in full.
 
 ### WS-2 crate anatomy
 
@@ -91,13 +94,14 @@ each enabled only by a dev-dependency; no primitive-typed public `id` or `*_id` 
 outside `generated/` folders and `#[wasm_bindgen]` items; and no `pub use` of another workspace
 crate outside `prelude.rs`. Binary crates are exempt.
 
-### WS-3 strangler
+### WS-3 test-file reachability
 
-`cargo xtask verify strangler` fails when a member outside `legacy/` depends on a legacy member
-(apps and the `tools/xtask` and `tools/developer_tools` binaries excepted while legacy exists), and
-when a legacy member's sources re-export a non-legacy workspace crate in any form (a path, an alias
-`pub use <crate> as x;`, a leading `::`, a group such as `pub use {<crate> as x};`, a statement over
-several lines, `pub extern crate`): a shim, which never survives a commit.
+`cargo xtask verify test-file-reachability` fails on every `.rs` file of a workspace member that
+sits in a `tests` folder (under `src/` or the member's own `tests/` folder) and that no target of
+the member loads: the walk starts at the target roots (`[lib]` and `[[bin]]` paths, `src/lib.rs`,
+`src/main.rs`, `src/bin/`, `tests/*.rs`, `tests/*/main.rs`, `benches/`, `examples/`) and follows
+every `mod` declaration with its `#[path]` and every trybuild case a loaded file names. Such a file
+never compiles, so its tests never run while the tree looks covered.
 
 ### WS-4 frontend layering
 

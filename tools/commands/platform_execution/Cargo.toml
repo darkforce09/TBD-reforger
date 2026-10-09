@@ -24,6 +24,7 @@ regex = { workspace = true }
 # The workspace member list and the manifests the wave gate reads.
 repository_laws = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

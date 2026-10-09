@@ -80,8 +80,8 @@ folder).
 
 - Depends on: `verification_core` (`Pattern`, `Verdict`, `NotRun`, `gate`, `scan`);
   `process_runner` (`Run`, `Merged`); `content_digest` (the run digests); `regex`;
-  `repository_layout` (the checkout root, the mission schema path and the spawn-determinism
-  runbook); `thiserror`; `tool_test_support` in tests; `cargo xtask mcp` subprocesses and `ss` for
+  `repository_root` (the checkout root); `repository_layout` (the mission schema path and the
+  spawn-determinism runbook); `thiserror`; `tool_test_support` in tests; `cargo xtask mcp` subprocesses and `ss` for
   the spawn checks. `spawn_verification` runs its `cargo xtask` children through
   `process_runner` too: the selftest replaces this process (`Run::replace_process`), and the
   live arm's children share the terminal (`Run::terminal`) so their report streams live.

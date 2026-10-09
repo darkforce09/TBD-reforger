@@ -8,6 +8,7 @@ order = 8170
 spec = "documentation/tickets/specs/t940_website_platform.md"
 plan = "documentation/tickets/plans/t-940_13_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): apps/website/api/src/handlers/telemetry/telemetry.rs: removed in commit bec09956e, no successor."
 priority = 2
 depends_on = ["T-940.4"]
 parent = "T-940"

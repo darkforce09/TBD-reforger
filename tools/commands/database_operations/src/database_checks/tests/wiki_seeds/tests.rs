@@ -152,7 +152,7 @@ fn failure_text_is_pinned() {
 #[test]
 fn the_live_repo_contract_holds() {
     let repo_root =
-        repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
             .expect("repository root");
     let v = first_failure(&repo_root, SEEDS).unwrap();
     assert!(matches!(v, Verdict::Held), "{}", text(&v));

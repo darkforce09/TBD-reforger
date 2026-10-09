@@ -120,8 +120,8 @@ is never a threshold.
 
 ## Related
 
-- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) and
-  [briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md) and
+  [briefing specification](/documentation/apps/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the mock catalogs, screen by screen.
 - [Client join and mod updates](/documentation/runbooks/game_server_staging/client_join_and_mod_updates.md)
   — the Workshop copy, the client addon link and the publish.

@@ -33,7 +33,7 @@ use crate::error::Result;
 use process_runner::Run;
 use verification_core::verdict::NotRun;
 
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use deploy_settings::{DeployEnvironment, DeployHostFolder, deploy_environment_path};
 
 pub(crate) mod asset_preflight;

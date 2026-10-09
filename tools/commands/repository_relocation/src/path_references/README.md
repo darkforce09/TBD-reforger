@@ -9,6 +9,7 @@ after the moves.
 ```text
 tools/commands/repository_relocation/src/path_references/
 ├── anchor_resolution.rs    reads a relative literal from its anchors and re-relativises it
+├── contents_block.rs       the tree part of a README's Contents block lines, live in a frozen index
 ├── markdown_links.rs       the link and image destinations of a Markdown document
 ├── mod.rs                  the pass: both edit kinds, unresolved literals, allowed spans
 ├── path_tokens.rs          segment boundaries, escapes, token ends, what one occurrence is
@@ -28,7 +29,10 @@ by `/../` (a piece joined to a base, such as a `format!` or `concat!` argument; 
 (`folder/../from`; read from the repository root too, since the root spelling pass leaves it
 alone). A token that climbs back out of a folder it named counts under an anchor only where that
 named lead (the segments before its first `..`) is a tracked folder: `7/../..`, a path-traversal test datum, names nothing from any
-anchor without a folder `7`, however far its `..` segments reach.
+anchor without a folder `7`, however far its `..` segments reach. A token of `.` and `..` segments
+alone (`../`, `./`, `../..`) is a candidate only where its syntax fixes the anchor (a link
+destination, an `include!` or `#[path]` argument, a Cargo `path` value): in prose, a comment or a
+plain string literal it speaks of a parent folder in general and is never rewritten.
 `anchor_resolution.rs` reads each candidate from its anchors in order — the file's folder, the
 owning crate's manifest folder, the repository root, and any crate folder only when none of those
 names a tracked path. A reading that names a whole tracked path outranks one that names only a
@@ -57,7 +61,7 @@ example path whose tail names nothing, such as a comment's `../../tests/cases_1.
 reading comes from the owning crate's folder and another crate folder reads the same literal as a
 tracked path the moves leave differently: a literal every crate spells for its own files
 (`src/lib.rs`, `src/`) or a fixture path relative to a temporary checkout
-(`../../legacy/map_engine` in a test's synthetic `Cargo.toml`) names no crate in particular. An
+(`../../engine/map` in a test's synthetic `Cargo.toml`) names no crate in particular. An
 `include!`, `#[path]`, Markdown link, Cargo `path` value or `CARGO_MANIFEST_DIR` join fixes its
 anchor and follows the moves as before.
 
@@ -73,7 +77,10 @@ way for this pass and for the verification, whether an occurrence is a path at a
 boundaries on both sides, escape letters as boundaries, URLs other than `file:` URLs left alone.
 `mod.rs` merges both edit lists, a relative edit outranking a root edit over the same bytes, and
 keeps only the edits and unresolved items inside the spans the file's treatment opens (link
-destinations in a frozen record, the `spec`, `plan` and `owns` values of a closed ticket).
+destinations in a frozen record; those and the tree part of the Contents block's lines, found by
+`contents_block.rs`, in a frozen area's README index; the `spec`, `plan` and `owns` values of a
+closed ticket; nothing in this crate's own test sources, whose literals and comments are fixture
+text).
 
 ## Boundaries
 
@@ -81,7 +88,8 @@ destinations in a frozen record, the `spec`, `plan` and `owns` values of a close
   `super::text_edits` and `super::file_treatment`.
 - Used by: `super::relocation_plan` (the pass) and `super::retired_spellings` (`allowed_spans`,
   `path_tokens::classify_occurrence`).
-- Rules: Rust code outside literals and comments is never edited; a URL, a fragment-only link and an
+- Rules: Rust code outside literals and comments is never edited; a bare `../` in prose or a
+  comment is no candidate (`relocate_bare_parent_tokens_in_prose_and_comments_stay_as_written`); a URL, a fragment-only link and an
   absolute path are never relative candidates; a literal of separators alone and a plain Rust
   token whose whole path is untracked name nothing, and so does a climbing token whose lead
   segment is no tracked folder at the anchor

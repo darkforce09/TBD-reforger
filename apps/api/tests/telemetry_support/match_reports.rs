@@ -20,10 +20,10 @@ use uuid::Uuid;
 use super::{RuntimeSession, call, runtime_session};
 
 /// The registration start instant every helper registration uses, so repeats are identical.
-pub const REGISTERED_STARTED_AT: &str = "2026-01-01T00:00:00Z";
+pub(crate) const REGISTERED_STARTED_AT: &str = "2026-01-01T00:00:00Z";
 
 /// One registered server with an open runtime session and its per-match revision counters.
-pub struct ReportingServer {
+pub(crate) struct ReportingServer {
     pub server_id: Uuid,
     pub session: RuntimeSession,
     revisions: Mutex<HashMap<String, i64>>,
@@ -31,7 +31,7 @@ pub struct ReportingServer {
 
 impl ReportingServer {
     /// Register an active server named `name` and start its runtime session.
-    pub async fn open(app: &Router, pool: &PgPool, name: &str) -> Self {
+    pub(crate) async fn open(app: &Router, pool: &PgPool, name: &str) -> Self {
         let server_id: Uuid = sqlx::query_scalar(
             "INSERT INTO servers (name, ip, port, is_active) VALUES ($1, '127.0.0.1', 2001, true)
              RETURNING id",
@@ -49,7 +49,7 @@ impl ReportingServer {
     }
 
     /// A machine-authenticated POST of `body` to `uri`.
-    pub async fn post(&self, app: &Router, uri: &str, body: &Value) -> (StatusCode, Value) {
+    pub(crate) async fn post(&self, app: &Router, uri: &str, body: &Value) -> (StatusCode, Value) {
         call(
             app,
             "POST",
@@ -62,17 +62,21 @@ impl ReportingServer {
     }
 
     /// Register `source` with the fixed helper registration; answers the match id.
-    pub async fn register_match(&self, app: &Router, source: &str) -> Uuid {
+    pub(crate) async fn register_match(&self, app: &Router, source: &str) -> Uuid {
         let (status, answer) = self.register_match_with(app, source, json!({})).await;
         assert!(
             status == StatusCode::CREATED || status == StatusCode::OK,
             "register {source}: {status} {answer}"
         );
-        answer["match_id"].as_str().unwrap().parse().unwrap()
+        answer["match_id"]
+            .as_str()
+            .expect("the `match_id` field is a string")
+            .parse()
+            .expect("the `match_id` field parses as an id")
     }
 
     /// Register `source` with `extra` registration fields merged over the fixed ones.
-    pub async fn register_match_with(
+    pub(crate) async fn register_match_with(
         &self,
         app: &Router,
         source: &str,
@@ -90,7 +94,7 @@ impl ReportingServer {
     }
 
     /// Post `body` (`{match, players, removed_lines?}`) as revision `revision`.
-    pub async fn post_results(
+    pub(crate) async fn post_results(
         &self,
         app: &Router,
         revision: i64,
@@ -102,14 +106,14 @@ impl ReportingServer {
     }
 
     /// Register the body's source match if needed and post the body as its next revision.
-    pub async fn report_results(&self, app: &Router, body: &Value) -> (StatusCode, Value) {
+    pub(crate) async fn report_results(&self, app: &Router, body: &Value) -> (StatusCode, Value) {
         let source = body["match"]["source_match_id"]
             .as_str()
             .expect("a reported match names its source_match_id")
             .trim()
             .to_owned();
         let revision = {
-            let mut revisions = self.revisions.lock().unwrap();
+            let mut revisions = self.revisions.lock().expect("the mutex is not poisoned");
             let next = revisions.get(&source).copied().unwrap_or(0) + 1;
             revisions.insert(source.clone(), next);
             next
@@ -121,7 +125,7 @@ impl ReportingServer {
     }
 
     /// Post one event batch of `source`.
-    pub async fn post_events(
+    pub(crate) async fn post_events(
         &self,
         app: &Router,
         source: &str,

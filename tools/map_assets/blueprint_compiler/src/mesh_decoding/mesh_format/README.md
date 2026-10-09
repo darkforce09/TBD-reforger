@@ -8,8 +8,8 @@ the reader of its fire-collision (COLL) chunk, both returning the parent's `XobM
 
 ```text
 tools/map_assets/blueprint_compiler/src/mesh_decoding/mesh_format/
-├── parse_coll.rs  `parse_coll`: every COLL collider record as one triangle soup in the model frame
-└── u16le.rs       byte readers, chunk lookup, LZ4 blocks, `parse_xob`, `aabb` and `has_coll`
+├── collision_chunk_reader.rs  `parse_collision_chunk`: every COLL collider record as one triangle soup in the model frame
+└── visual_mesh_reader.rs      byte readers, chunk lookup, LZ4 blocks, `parse_xob`, `bounding_box` and `has_collision_chunk`
 ```
 
 ## How it works
@@ -22,7 +22,7 @@ order, into indices, positions and packed normals. It loads every submesh of one
 the one `--lod` names, or else the tier with the most triangles, which is the full-detail LOD on
 the game's models. It returns no UVs, tangents or skinning.
 
-`parse_coll` walks the collider records of the `COLL` chunk. Each carries a shape type, its layer
+`parse_collision_chunk` walks the collider records of the `COLL` chunk. Each carries a shape type, its layer
 preset and collider mesh names (as indices into the `HEAD` name table), a rotation and a centre.
 A box (type 3) becomes twelve triangles; a convex collider (type 4) keeps only its vertices and
 gets its faces from `hull_triangles`; a trimesh (types 5 and 6) keeps its vertices and indices, and
@@ -34,11 +34,11 @@ truncated record fails the parse.
 
 ## Boundaries
 
-- Depends on: the parent's `XobMesh`, `CollRecord` and `LodDescriptor`; the convex hull builder in
+- Depends on: the parent's `XobMesh`, `CollisionRecord` and `LodDescriptor`; the convex hull builder in
   `tools/map_assets/blueprint_compiler/src/architectural_analysis/convex_hulls.rs`.
-- Used by: `mesh_format.rs`, which re-exports `parse_xob`, `parse_coll`, `aabb` and `has_coll`;
+- Used by: `mesh_format.rs`, which re-exports `parse_xob`, `parse_collision_chunk`, `bounding_box` and `has_collision_chunk`;
   through it the sidecar commands and the prefab library in
-  `tools/map_assets/blueprint_compiler/src/bvh/` and
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/` and
   `tools/map_assets/blueprint_compiler/src/archive_emission/`, `xob-inspect`, and
   `voxels-from-mesh`.
 - Rules: extracted game files are never committed, so the tests build synthetic models

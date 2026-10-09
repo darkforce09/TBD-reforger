@@ -38,6 +38,6 @@ held into its plan and target tree. A record here is never edited after it lands
 
 ## Related documentation
 
-- [Restructure program](/documentation/restructure/README.md) — the live plan and target tree that
-  replace these proposals.
+- [Restructure program](/documentation/archive/restructure/README.md) — the program's plan and
+  target tree that replaced these proposals.
 - [Workspace layout](/documentation/architecture/workspace_layout.md) — the workspace as it stands.

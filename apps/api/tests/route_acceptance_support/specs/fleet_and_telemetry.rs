@@ -801,7 +801,7 @@ fn telemetry_specs() -> Vec<RouteSpec> {
 }
 
 /// Every spec of the `fleet_and_telemetry` part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     [
         server_specs(),
         command_specs(),

@@ -34,9 +34,16 @@ async fn actor(state: &AppState) -> AuthUser {
     let id = format!("identity-link-{}", Uuid::new_v4());
     let token =
         common::access_token(state, "identity_link_transactions", &id, "enlisted", false).await;
-    authorize_session(&state.pool, &state.cfg, &state.jwt.parse(&token).unwrap())
-        .await
-        .expect("authorize persisted actor session")
+    authorize_session(
+        &state.pool,
+        &state.cfg,
+        &state
+            .jwt
+            .parse(&token)
+            .expect("the issued access token parses"),
+    )
+    .await
+    .expect("authorize persisted actor session")
 }
 
 async fn race<A: Future, B: Future>(left: A, right: B) -> (A::Output, B::Output) {
@@ -65,7 +72,7 @@ async fn pending_codes(pool: &PgPool, actor: &str) -> i64 {
     .bind(actor)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of identity_link_codes returns a row")
 }
 
 async fn current_identity(pool: &PgPool, actor: &str) -> Option<String> {
@@ -73,7 +80,7 @@ async fn current_identity(pool: &PgPool, actor: &str) -> Option<String> {
         .bind(actor)
         .fetch_one(pool)
         .await
-        .unwrap()
+        .expect("the read of users returns a row")
 }
 
 async fn audit_count(pool: &PgPool, actor: &str, action: &str) -> i64 {
@@ -82,7 +89,7 @@ async fn audit_count(pool: &PgPool, actor: &str, action: &str) -> i64 {
         .bind(action)
         .fetch_one(pool)
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
 }
 
 async fn code_state(pool: &PgPool, code: &str) -> (bool, bool, Option<String>, Option<String>) {
@@ -93,7 +100,7 @@ async fn code_state(pool: &PgPool, code: &str) -> (bool, bool, Option<String>, O
     .bind(code)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of identity_link_codes returns a row")
 }
 
 fn one_winner<T: std::fmt::Debug>(
@@ -123,7 +130,7 @@ async fn confirming_server(pool: &PgPool) -> ServerId {
     )
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the insert into servers returns its row")
 }
 
 async fn historical_fact(pool: &PgPool, arma_id: &str) -> Uuid {
@@ -134,11 +141,11 @@ async fn historical_fact(pool: &PgPool, arma_id: &str) -> Uuid {
     .bind(format!("identity-match-{}", Uuid::new_v4()))
     .fetch_one(pool)
     .await
-    .unwrap();
+    .expect("the insert into matches returns its row");
     sqlx::query("INSERT INTO match_player_stats(match_id, discord_id, arma_id, source_event_id, kills, created_at)
         VALUES ($1, NULL, $2, $3, 7, now())")
         .bind(id).bind(arma_id).bind(format!("identity-result-{}", Uuid::new_v4()))
-        .execute(pool).await.unwrap();
+        .execute(pool).await.expect("the insert into match_player_stats succeeds");
     id
 }
 
@@ -150,7 +157,7 @@ async fn historical_owner(pool: &PgPool, match_id: Uuid, arma_id: &str) -> Optio
     .bind(arma_id)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of match_player_stats returns a row")
 }
 
 #[tokio::test]
@@ -474,7 +481,7 @@ async fn install_stats_failure(pool: &PgPool, actor: &str) -> String {
     sqlx::raw_sql(sqlx::AssertSqlSafe(sql.as_str()))
         .execute(pool)
         .await
-        .unwrap();
+        .expect("the failure-injection SQL installs");
     name
 }
 
@@ -488,14 +495,14 @@ async fn remove_stats_failure(pool: &PgPool, name: &str) {
     )))
     .execute(pool)
     .await
-    .unwrap();
+    .expect("the `DROP TRIGGER` statement succeeds");
 }
 
 async fn audit_snapshot(pool: &PgPool, actor: &str) -> (i64, i64) {
     sqlx::query_as("SELECT
         (SELECT count(*) FROM audit_logs WHERE actor_id = $1),
         (SELECT count(*) FROM audit_publication_pending p JOIN audit_logs a ON a.id = p.audit_id WHERE a.actor_id = $1)")
-        .bind(actor).fetch_one(pool).await.unwrap()
+        .bind(actor).fetch_one(pool).await.expect("the read of audit_logs returns a row")
 }
 
 #[tokio::test]

@@ -80,7 +80,8 @@ read from the physics world.
 
 ## Boundaries
 
-- Depends on: `repository_layout` for the checkout root and the contract folders,
+- Depends on: `repository_root` for the checkout root, `repository_layout` for the contract
+  folders,
   `content_digest` for the SHA-256 checks, `serde`, `serde_json`, `clap` and `thiserror`;
   `tool_test_support`, `jsonschema` and `walkdir` in tests; the gameplay export and the oracle
   output of the generation.

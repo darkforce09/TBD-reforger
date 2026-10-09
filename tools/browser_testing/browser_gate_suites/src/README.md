@@ -8,29 +8,30 @@ and `capture` command lines.
 
 ```text
 tools/browser_testing/browser_gate_suites/src/
-├── ballistics_agreement/  `gate ballistics-agreement`: the browser bench's solves against the native solves
-├── command_lines/         the `gate` and `capture` command lines and their exit codes
-├── command_lines.rs       the command lines' module tree
-├── diagnostics/           the gate font cache and the `gate doctor` checks
-├── diagnostics.rs         `gate doctor`'s types and constants; re-exports its entry points
-├── dom_oracle/            the `gate v-suite` routes, request router and verify and accept modes
-├── dom_oracle.rs          the DOM oracle's types and the accept size floor; re-exports its entries
-├── editor_smoke_tests/    the Mission Creator smokes and the render-check, session and perf gates
-├── editor_smoke_tests.rs  the shared smoke `Harness`, `EDITOR_SUITE` and the perf probe scripts
+├── ballistics_agreement/   `gate ballistics-agreement`: the browser bench's solves against the native solves
+├── command_lines/          the `gate` and `capture` command lines and their exit codes
+├── command_lines.rs        the command lines' module tree
+├── diagnostics/            the gate font cache and the `gate doctor` checks
+├── diagnostics.rs          `gate doctor`'s types and constants; re-exports its entry points
+├── dom_oracle/             the `gate v-suite` routes, request router and verify and accept modes
+├── dom_oracle.rs           the DOM oracle's types and the accept size floor; re-exports its entries
+├── editor_smoke_tests/     the Mission Creator smokes and the render-check, session and perf gates
+├── editor_smoke_tests.rs   the shared smoke `Harness`, `EDITOR_SUITE` and the perf probe scripts
 ├── equipment_data_viewer/  `gate equipment-data-viewer`: the live equipment data viewer check
-├── error.rs               `Error` and `Result`: why a gate, the server or the capture harness could not run
-├── fixture_injection.rs   `FREEZE_SRC` and `DOM_SERIALIZER_SRC`, the scripts injected into each page
-├── gate_layout.rs         `MapAssetMounts` and the editor gate runbook: the locations only the gates name
-├── lib.rs                 the crate root: module header, `mod` lines and the re-exports
-├── mortar_offline/        `gate mortar-offline`: the mortar calculator's offline pack and a reload with the server gone
-├── prelude.rs             the static server and the map-asset mounts for glob import
-├── route_drift.rs         `gate s-routes`: the router's route table against the committed CSV
-├── screen_capture/        the `shot`, `zoomsweep` and `crop` drivers
-├── screen_capture.rs      the capture viewport, debug port, overlay selector and blank-canvas floor
-├── server/                the recorded API corpus route of the static server
-├── server.rs              the static server: isolation headers, SPA fallback, API proxy, API corpus, map assets
-├── session_tokens.rs      the unsigned access tokens and Bearer token-pair answers of a token refresh
-└── tests/                 unit tests for the fixture router, accept floor, payload pins, smoke assertions, server, API corpus, tokens, gate layout, the ballistics gates, the route table parse
+├── error.rs                `Error` and `Result`: why a gate, the server or the capture harness could not run
+├── fixture_injection.rs    `FREEZE_SRC` and `DOM_SERIALIZER_SRC`, the scripts injected into each page
+├── gate_layout.rs          `MapAssetMounts` and the editor gate runbook: the locations only the gates name
+├── http_client.rs          `new_http_client` and `http_client_builder`: every HTTP client, built after the rustls ring provider is installed
+├── lib.rs                  the crate root: module header, `mod` lines and the re-exports
+├── mortar_offline/         `gate mortar-offline`: the mortar calculator's offline pack and a reload with the server gone
+├── prelude.rs              the static server and the map-asset mounts for glob import
+├── route_drift.rs          `gate s-routes`: the router's route table against the committed CSV
+├── screen_capture/         the `shot`, `zoomsweep` and `crop` drivers
+├── screen_capture.rs       the capture viewport, debug port, overlay selector and blank-canvas floor
+├── server/                 the recorded API corpus route of the static server
+├── server.rs               the static server: isolation headers, SPA fallback, API proxy, API corpus, map assets
+├── session_tokens.rs       the unsigned access tokens and Bearer token-pair answers of a token refresh
+└── tests/                  unit tests for the fixture router, accept floor, payload pins, smoke assertions, server, API corpus, tokens, gate layout, the ballistics gates, the route table parse
 ```
 
 ## How it works

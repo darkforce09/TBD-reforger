@@ -4,8 +4,8 @@
 //! holding anything but doc comments, attributes, `mod` lines and `pub use` lines; a missing
 //! `pub mod prelude`; a fallible public API (`pub fn … -> Result`) without an `error.rs` holding a
 //! `thiserror` `pub enum Error` and a `pub type Result`; a primitive-typed public `id` / `*_id`
-//! field or `pub fn` parameter; and a `pub use` of another workspace crate outside the crate's
-//! prelude module.
+//! field or `pub fn` parameter; and a public re-export of another workspace crate, in any form
+//! [`super::public_reexports`] reads, outside the crate's prelude module.
 //! **Position:** private to [`super`], called by [`super::crate_anatomy`] per library crate.
 //! **Signals & state:** none; reads files.
 //! **Invariants:** test files ([`crate::source_roots::is_test_file`]) are never
@@ -16,7 +16,7 @@ use std::path::Path;
 
 use regex::Regex;
 
-use super::strangler::reexported_crate;
+use super::public_reexports::reexported_crates;
 use crate::source_roots::{is_test_file, repository_relative};
 use crate::workspace_members::WorkspaceMember;
 use verification_core::scan;
@@ -74,14 +74,11 @@ pub(super) fn source_findings(
             findings.extend(primitive_id_findings(&rel, &text, &public_fn));
         }
         if !is_prelude_module(&rel) {
-            for (index, line) in text.lines().enumerate() {
-                if let Some(name) = reexported_crate(line)
-                    && other_crates.iter().any(|other| other == name)
-                {
+            for (line_no, name) in reexported_crates(&text) {
+                if other_crates.contains(&name) {
                     findings.push(format!(
-                        "{rel}:{}: `pub use {name}::…` outside the prelude module re-exports \
-                         another workspace crate",
-                        index + 1
+                        "{rel}:{line_no}: `pub use {name}::…` outside the prelude module \
+                         re-exports another workspace crate"
                     ));
                 }
             }

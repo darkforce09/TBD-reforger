@@ -11,8 +11,8 @@ staging and output file names and the in-memory pyramid level, and re-exports th
 
 ```text
 tools/map_assets/map_raster_pipeline/src/inland_water_archive/
-├── emit_water.rs    `emit_water`, the `map water` command: both binaries from one staging folder
-└── reduce_depth.rs  the mip reductions, staging parsers, both writers and the `--terrain` resolution
+├── water_archive_codec.rs     the mip reductions, staging parsers, both writers and the `--terrain` resolution
+└── water_archive_emission.rs  `emit_water_archive`, the `map water` command: both binaries from one staging folder
 ```
 
 ## How it works
@@ -37,17 +37,18 @@ are the ones this module reads; the Workbench water exporter in
   reader, before it writes them.
 - `write_bathymetry` streams each ASCII raster one row at a time: level 0 goes straight to the file
   while level 1 is folded in memory, and every later level is folded from the one before. A coarse
-  texel keeps the deepest depth (`reduce_depth`) and is water when any texel below it is
-  (`reduce_mask`); the exporter's class byte (land, ocean, pond or lake, river) becomes a boolean.
+  texel keeps the deepest depth (`reduce_depth_keeping_deepest`) and is water when any texel below it is
+  (`reduce_mask_keeping_any_water`); the exporter's class byte (land, ocean, pond or lake, river) becomes a boolean.
   Each level is the depths as little-endian `u16`, then the mask, padded to four bytes.
-- `emit_water` refuses an export with no lakes, rivers or ponds, and prints what it wrote.
+- `emit_water_archive` refuses an export with no lakes, rivers or ponds, and prints what it wrote.
 
 ## Boundaries
 
 - Depends on: `world_file_formats::archives` (`water`, `codec`, `version`),
   `world_file_formats::containers` (`header`, `tbdb`) and
   `water_bodies::vectors::downsample_index`, which fix both formats;
-  the `repository_layout` crate (with `find_repository_root` for the checkout root) for the folders.
+  the `repository_root` crate for the checkout root and the `repository_layout` crate for the
+  folders.
 - Used by: `tools/map_assets/map_raster_pipeline/src/command_line.rs` (`map water`); no xtask recipe
   runs it, and no terrain commits its output.
 - Rules: the same staging files give the same bytes on any host
@@ -55,4 +56,4 @@ are the ones this module reads; the Workbench water exporter in
   (`every_emitted_mip_level_agrees_with_level_zero`); a raster that disagrees with the metadata, a
   depth that does not fit a `u16` and an export the archive cannot represent are refused rather than
   truncated (the refusal tests in
-  `tools/map_assets/map_raster_pipeline/src/tests/inland_water_archive/tests.rs`).
+  `tools/map_assets/map_raster_pipeline/src/tests/inland_water_archive_tests.rs`).

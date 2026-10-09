@@ -10,7 +10,7 @@ load cases are judged on.
 
 ```text
 tools/staging/staging_load_generator/
-├── Cargo.toml  the `staging_load_generator` library package: `staging_load_plan`, tokio, reqwest, clap, `thiserror`, layout tier 2
+├── Cargo.toml  the `staging_load_generator` library package: `staging_load_plan`, tokio, reqwest, rustls (ring), clap, `thiserror`, layout tier 2
 └── src/        the run, the virtual clients and their lanes, the address guard, the account rotation and the command line
 ```
 
@@ -57,7 +57,7 @@ target origin, the source addresses, the account file and the fixture events.
 ## Boundaries
 
 - Depends on: `staging_load_plan` (the plan, the catalog, the pacing, the records, the report and
-  the process-boundary codec), `tokio`, `reqwest`, `clap`, `serde`, `serde_json` and `thiserror`.
+  the process-boundary codec), `tokio`, `reqwest`, `rustls` (the ring provider), `clap`, `serde`, `serde_json` and `thiserror`.
 - Used by: `developer_tools`' `staging-load` binary; the `staging_procedures` load procedure runs that
   binary for the recorded run and the local rehearsal.
 - Rules: tier 2 of `tools/staging` (`cargo xtask verify crate-tiers`); never a dependency of

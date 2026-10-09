@@ -20,7 +20,7 @@ async fn player_count(f: &Fixture, server: uuid::Uuid) -> (bool, i64) {
         .bind(server)
         .fetch_one(f.pool())
         .await
-        .unwrap()
+        .expect("the read of server_statuses returns a row")
 }
 
 async fn end_reason(f: &Fixture, session: uuid::Uuid) -> Option<String> {
@@ -28,7 +28,7 @@ async fn end_reason(f: &Fixture, session: uuid::Uuid) -> Option<String> {
         .bind(session)
         .fetch_one(f.pool())
         .await
-        .unwrap()
+        .expect("the read of server_runtime_sessions returns a row")
 }
 
 #[tokio::test]

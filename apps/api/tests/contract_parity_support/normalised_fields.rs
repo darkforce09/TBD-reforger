@@ -22,7 +22,7 @@ use super::golden_normalisation::NormalisedKind::{
 
 /// One normalised field of one indexed golden.
 #[derive(Debug)]
-pub struct NormalisedField {
+pub(crate) struct NormalisedField {
     /// The request method, as the golden file name's prefix spells it.
     pub method: &'static str,
     /// The request path, as the golden's `_index.tsv` row spells it.
@@ -85,7 +85,7 @@ const FLEET_SCENARIO: &str = "/api/v1/fleet/scenarios/everon";
 const SERVERS: &str = "/api/v1/servers";
 
 /// Every normalised field, grouped by golden in index order.
-pub const NORMALISED_FIELDS: &[NormalisedField] = &[
+pub(crate) const NORMALISED_FIELDS: &[NormalisedField] = &[
     field(
         "GET",
         BALLISTICS_CATALOGS,

@@ -183,7 +183,7 @@ async fn last_seat_race(suite: &FailpointSuiteLock, order: Interleaving) -> usiz
     // The persisted event: one holder, capacity kept, the loser left nothing behind.
     check_event_seats_and_places(&pool, fixture.event)
         .await
-        .unwrap();
+        .expect("the seats-and-places invariant check runs");
     let winner = &fixture.players[leader];
     let loser = &fixture.players[follower];
     assert_eq!(
@@ -283,7 +283,7 @@ async fn assignment_withdrawal_race(order: Interleaving) -> String {
     // the state of the writer that committed last.
     check_event_seats_and_places(&pool, fixture.event)
         .await
-        .unwrap();
+        .expect("the seats-and-places invariant check runs");
     let (stored, state, seat) = fixture
         .registration(participant, 0)
         .await

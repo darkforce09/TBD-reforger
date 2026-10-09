@@ -60,14 +60,12 @@ pub(super) fn apply_md_tool(body: &str, tool: &str) -> String {
     }
 }
 
-/// Today's date, as the day part of an instant.
+/// Today's UTC date, `YYYY-MM-DD`: the day part of the platform clock's RFC 3339 instant.
 #[cfg(target_arch = "wasm32")]
 pub(super) fn today_iso() -> String {
-    js_sys::Date::new_0()
-        .to_iso_string()
-        .as_string()
-        .map(|s| s[..10.min(s.len())].to_string())
-        .unwrap_or_default()
+    use time_source::{Clock, PlatformClock};
+    let instant = time_source::rfc3339_utc_millis(PlatformClock.now_unix_ms());
+    instant[..10.min(instant.len())].to_string()
 }
 
 /// The form for one post, with its four actions.

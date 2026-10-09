@@ -69,7 +69,7 @@ reaches the server.
 
 ## Related documentation
 
-- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) — the screen as built, its
+- [Lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md) — the screen as built, its
   data, design target, open work and decisions
-- [Lobby design references](/documentation/mod/tbd-framework/UI/lobby/visual_references/README.md)
+- [Lobby design references](/documentation/apps/mod/tbd-framework/UI/lobby/visual_references/README.md)
   — the Stitch mockup sets and the Arma 3 captures the screen started from

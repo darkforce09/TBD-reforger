@@ -33,10 +33,6 @@ use crate::error::Result;
 use crate::run_settings::RunSettings;
 use crate::workload_plan::WorkloadPlan;
 
-/// SplitMix64's increment, the golden-ratio constant; stepping back by it before a draw turns
-/// [`SplitMix64::next_u64`] into the bare finaliser of a word.
-const GOLDEN_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
-
 /// What a random stream is drawn for; each purpose gets a stream of its own per client.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RandomStream {
@@ -52,12 +48,6 @@ pub struct SeededRandom {
     generator: SplitMix64,
 }
 
-/// SplitMix64's finaliser of `word`, a bijection on 64-bit words: the first draw of a generator
-/// whose counter sits one increment below `word`.
-fn finalise(word: u64) -> u64 {
-    SplitMix64::new(word.wrapping_sub(GOLDEN_GAMMA)).next_u64()
-}
-
 impl SeededRandom {
     /// The stream of `client` for `stream`, under the run's `seed`: its counter starts at the
     /// finaliser of `seed` XOR the first draw of the key's own generator.
@@ -65,7 +55,7 @@ impl SeededRandom {
         let key = (u64::from(client) << 8) | stream as u64;
         let key_draw = SplitMix64::new(key).next_u64();
         Self {
-            generator: SplitMix64::new(finalise(seed ^ key_draw)),
+            generator: SplitMix64::new(SplitMix64::finalise(seed ^ key_draw)),
         }
     }
 

@@ -25,7 +25,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// A language ban, workspace law, route-tag or engine-layer check could not run.
     #[error(transparent)]
     RepositoryChecks(#[from] repository_checks::Error),

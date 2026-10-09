@@ -70,5 +70,5 @@ None: Workbench runs these scripts in the editor.
   export feeds, and its consumers.
 - [Elevation model](/crates/terrain/terrain_elevation/README.md) — how the platform decodes
   and samples it.
-- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   the elevation row order and the missing staging step.

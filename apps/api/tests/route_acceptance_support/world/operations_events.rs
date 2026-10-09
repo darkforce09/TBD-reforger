@@ -28,9 +28,9 @@ use crate::route_acceptance_support::spec::{Actor, Role};
 use crate::route_acceptance_support::world::{Fixture, PartWorld, WorldCore};
 
 /// The faction of every seeded ORBAT seat.
-pub const FACTION: &str = "BLUFOR";
+pub(crate) const FACTION: &str = "BLUFOR";
 /// The squad of every seeded ORBAT seat.
-pub const SQUAD: &str = "Alpha";
+pub(crate) const SQUAD: &str = "Alpha";
 /// A start time far enough ahead that every scheduling rule treats it as pre-start.
 const FUTURE_START: &str = "2030-06-01T19:00:00Z";
 /// The start of every seeded event and attachment: pre-start for every scheduling rule.
@@ -50,7 +50,7 @@ struct FreshEvent {
 }
 
 /// The operations events world.
-pub struct OperationsEventsWorld {
+pub(crate) struct OperationsEventsWorld {
     event: Uuid,
     attachment: Uuid,
     restricted_event: Uuid,

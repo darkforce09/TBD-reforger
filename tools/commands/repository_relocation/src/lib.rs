@@ -8,8 +8,8 @@
 //! **Position:** tier 3 of `tools/commands`, over `verification_core` (verdicts and the run
 //! report), `process_runner` (git), `repository_layout` (the frozen areas and the manifests
 //! folder) and `ticket_model` (the closed ticket statuses). The xtask binary parses the command
-//! line, finds the checkout root and calls the modes; the restructure program's stages run every
-//! move through it.
+//! line, finds the checkout root and calls the modes; every move of a tracked file runs through
+//! it, and its manifests stay in `documentation/relocation_manifests/` as the registry it verifies.
 //!
 //! **Signals & state:** none held; each mode reads one checkout, and only [`apply`] changes it.
 //!

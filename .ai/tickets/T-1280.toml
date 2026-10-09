@@ -1,0 +1,13 @@
+id = "T-1280"
+kind = "work"
+title = "Resolve the ticket paths no rename trace maps"
+summary = "84 retired path citations in open tickets have no traced successor: folders split over several crates, files split in two, paths never on main. The plan lists each with its evidence."
+class = "chore"
+status = "idea"
+plan = "documentation/tickets/plans/t-1280_plan.md"
+notes = "The open citations are listed in documentation/tickets/plans/t-1280_plan.md (84 rows in 65 tickets, each with its historical path and why no rename trace settles it). Source: restructure S12 (checked 2026-10-04): the scripted ticket-path rewrite left 362 citations unmapped; 60 were resolved and 218 recorded as removed with no successor in their tickets' notes (git rename tracing over main's history; the method is the plan's Context)."
+created_at = "2026-10-04T03:12:29Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

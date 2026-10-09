@@ -21,7 +21,7 @@ outside this repository; the framework's side of the contract is its hook points
   (`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c`).
 - Related features: the framework's own radio tuning, which reads the same `radioPlan.nets[]`
   and needs no bridge (the [Radio README](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md));
-  the [mod design](/documentation/mod/tbd-framework/mod_design.md), which rules out workshop
+  the [mod design](/documentation/apps/mod/tbd-framework/mod_design.md), which rules out workshop
   dependencies.
 
 ## Behaviour

@@ -8,6 +8,7 @@ order = 8020
 spec = "documentation/tickets/specs/t090_6_geometry_placement_audit.md"
 plan = "documentation/tickets/plans/t-090_6_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): tools/tbd-tools/src/world/mod.rs: removed in the restructure (commit 2a105fa4f), no successor."
 parent = "T-090"
 main_goal = "For every exported map object (Eden-scale 1M+), use center + rotation + simplified 3D bounds (not full meshes) to compute which parts are above terrain, buried, or inside another object — fully automated, no manual eyeballing."
 context = ["The T-090.4 point audit (pivot Z vs DEM) misses tilted, large and spanning props by design; Phase B classifies with simplified 3D bounds."]
@@ -31,7 +32,7 @@ acceptance = [
 owns = [
     "tools/tbd-tools/src/world/placement_audit.rs",
     "tools/tbd-tools/src/world/mod.rs",
-    "tools/tbd-tools/src/bin/world.rs",
+    "tools/developer_tools/src/bin/world.rs",
     "packages/map-assets/everon/objects/z-audit.json",
     "packages/map-assets/everon/objects/z-audit-workbench.json",
 ]

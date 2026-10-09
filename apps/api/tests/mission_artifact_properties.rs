@@ -259,11 +259,13 @@ async fn call(
     }
     let mut request = request
         .body(body.map_or(Body::empty(), |body| Body::from(body.to_string())))
-        .unwrap();
+        .expect("the request builds");
     request.extensions_mut().insert(ConnectInfo(next_peer()));
     let response = f.app.clone().oneshot(request).await.unwrap();
     let status = response.status();
-    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -403,7 +405,10 @@ impl<'a> Case<'a> {
             f,
             mission: uuid_of(&created["id"]),
             server,
-            runtime_secret: credential["secret"].as_str().unwrap().to_owned(),
+            runtime_secret: credential["secret"]
+                .as_str()
+                .expect("the `secret` field is a string")
+                .to_owned(),
             oracle: Oracle {
                 status: Status::Draft,
                 current_version: None,
@@ -450,7 +455,8 @@ impl Case<'_> {
     async fn save_version(&mut self, step: &str) {
         self.oracle.saved_versions += 1;
         let n = self.oracle.saved_versions;
-        let payload: Value = serde_json::from_str(&payload_with_role(&format!("R{n}"))).unwrap();
+        let payload: Value = serde_json::from_str(&payload_with_role(&format!("R{n}")))
+            .expect("the text decodes as JSON");
         let (status, body) = call(
             self.f,
             &self.f.author.token,
@@ -487,8 +493,11 @@ impl Case<'_> {
         .bind(self.mission)
         .fetch_one(self.f.pool())
         .await
-        .unwrap();
-        let current = self.oracle.current_version.unwrap();
+        .expect("the read of mission_reviews returns a row");
+        let current = self
+            .oracle
+            .current_version
+            .expect("the oracle holds a current version");
         assert_eq!(
             version, current,
             "{step}: the review decides the current version's artifact"
@@ -705,7 +714,7 @@ impl Case<'_> {
         .bind(self.mission)
         .fetch_all(pool)
         .await
-        .unwrap();
+        .expect("the read of mission_artifacts runs");
         assert_eq!(
             rows.len(),
             self.oracle.artifacts.len(),
@@ -726,7 +735,7 @@ impl Case<'_> {
         .bind(self.mission)
         .fetch_one(pool)
         .await
-        .unwrap();
+        .expect("the read of missions returns a row");
         let expected = &self.oracle;
         assert_eq!(
             mission,
@@ -743,13 +752,13 @@ impl Case<'_> {
         .bind(self.mission)
         .fetch_all(pool)
         .await
-        .unwrap();
+        .expect("the read of mission_reviews runs");
         assert_eq!(pending, Vec::from_iter(expected.under_review), "{step}");
         let deployments: Vec<DeploymentRow> = sqlx::query_as(DEPLOYMENT_ROWS)
             .bind(self.server)
             .fetch_all(pool)
             .await
-            .unwrap();
+            .expect("the deployment rows read");
         assert_eq!(deployments.len(), expected.deployments.len(), "{step}");
         for row in deployments {
             let id = row.id;
@@ -797,7 +806,9 @@ impl Case<'_> {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{listing}");
-        let items = listing["items"].as_array().unwrap();
+        let items = listing["items"]
+            .as_array()
+            .expect("the `items` field is an array");
         assert_eq!(items.len(), self.oracle.deployments.len(), "{listing}");
         for item in items {
             let (artifact, state) = self.oracle.deployments[&uuid_of(&item["id"])];

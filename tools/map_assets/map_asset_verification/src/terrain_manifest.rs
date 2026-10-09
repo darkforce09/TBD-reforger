@@ -20,7 +20,7 @@ use world_chunks::terrain_manifest::parse_manifest_binary;
 use world_file_formats::containers::header::CONTAINER_VERSION;
 use world_file_formats::pod::instance::POD_BYTES;
 use world_file_formats::pod::instance::POD_NAME;
-fn read_json(path: &Path) -> Result<Value> {
+fn read_json_file(path: &Path) -> Result<Value> {
     let raw = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
     serde_json::from_str(&raw).with_context(|| format!("parse {}", path.display()))
 }
@@ -255,7 +255,7 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
         }
     };
     let manifest_path = terrain_manifest_path(root, terrain);
-    let manifest = match read_json(&manifest_path) {
+    let manifest = match read_json_file(&manifest_path) {
         Ok(m) => m,
         Err(e) => {
             eprintln!("FAIL  Cannot read manifest: {}", manifest_path.display());
@@ -264,7 +264,7 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
         }
     };
 
-    let schema = read_json(&definition_path(root, "terrain-manifest.schema.json"))?;
+    let schema = read_json_file(&definition_path(root, "terrain-manifest.schema.json"))?;
     let validator =
         jsonschema::validator_for(&schema).map_err(|e| refusal!("schema compile: {e}"))?;
     let schema_errs: Vec<String> = validator
@@ -352,7 +352,8 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
     // none is the shipped state and says so out loud, because "PASS" over zero examined blocks is
     // this program's signature defect. The POD row doc is checked unconditionally: it describes the
     // format whether or not this terrain has migrated yet.
-    let instance_schema = read_json(&definition_path(root, "map-object-instance.schema.json"))?;
+    let instance_schema =
+        read_json_file(&definition_path(root, "map-object-instance.schema.json"))?;
     let mut bin_errors = pod_row_doc_failures(&instance_schema);
     let (declared, path_errors) = manifest_binary_failures(&manifest, &terrain_dir(root, terrain));
     bin_errors.extend(path_errors);
@@ -378,5 +379,5 @@ pub fn terrain_manifest(root: &Path, terrain: &str) -> Result<u8> {
 }
 
 #[cfg(test)]
-#[path = "tests/terrain_manifest.rs"]
+#[path = "tests/terrain_manifest_tests.rs"]
 mod tests;

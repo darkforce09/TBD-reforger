@@ -16,7 +16,7 @@
 
 use building_interiors::blueprint::structure::FloorPolygon;
 
-use crate::architectural_analysis::contour_tracing::r2;
+use crate::voxel_processing::voxel_dump_lattice::round_to_two_decimals;
 use crate::voxel_processing::voxel_types::PlanGrid;
 
 /// One traced connected piece in NORMALIZED meters (outer CCW, holes CW), plus its outer area.
@@ -264,7 +264,12 @@ fn point_in_ring(p: (f64, f64), ring: &[V]) -> bool {
 
 fn scale_ring(ring: &[V], cell: f64) -> Vec<[f64; 2]> {
     ring.iter()
-        .map(|&(x, z)| [r2(x as f64 * cell), r2(z as f64 * cell)])
+        .map(|&(x, z)| {
+            [
+                round_to_two_decimals(x as f64 * cell),
+                round_to_two_decimals(z as f64 * cell),
+            ]
+        })
         .collect()
 }
 

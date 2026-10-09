@@ -7,7 +7,7 @@ pinned `enfusion-mcp` server: brings the bridge up, calls MCP tools and raw Net 
 back a Workbench Play log, and cleans up the broker. [Mod](/documentation/glossary/g_to_m.md#mod) developers and agents run it whenever a
 task needs Workbench. The first call pays a one-time index load of about 35 seconds; later calls go
 to the warm broker. How the bridge is built, and the `mcp call` against `mcp wbcall` choice, is in
-[Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md); every command's
+[Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md); every command's
 synopsis and exit codes are in the [MCP commands README](/tools/commands/enfusion_mcp/README.md).
 
 ## Prerequisites
@@ -134,7 +134,7 @@ stderr of a failed attempt.
 
 Never point the MCP's `wb_cleanup` at `apps/mod/tbd-emcp`: it deletes the committed handlers. The
 loading rules behind both warnings are in
-[Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md).
+[Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md).
 
 ### Environment
 
@@ -170,7 +170,7 @@ The server command comes from the first tier that resolves
 
 - [MCP commands](/tools/commands/enfusion_mcp/README.md) — every `cargo xtask mcp` command, its
   flow and its exit codes.
-- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the bootstrap
+- [Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — the bootstrap
   order, the loading rules and the known gaps.
 - [TBD EMCP addon](/apps/mod/tbd-emcp/README.md) — the nineteen Net API handlers and the
   `enfusion-mcp` upgrade procedure.

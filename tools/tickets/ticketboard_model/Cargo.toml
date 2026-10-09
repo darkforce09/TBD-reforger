@@ -25,6 +25,7 @@ targets = "any"
 notify = { workspace = true }
 process_runner = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

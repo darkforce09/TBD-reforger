@@ -40,6 +40,6 @@ The addon's other exports live in `Scripts/WorkbenchGame/`, compiled into Workbe
 
 ## Related documentation
 
-- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   the runtime road export among the addon's exporters, and the files it shares with the
   Workbench road layer.

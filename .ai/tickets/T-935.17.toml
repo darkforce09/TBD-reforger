@@ -15,8 +15,7 @@ PROGRAM: T-935.18/.19/.20 cannot be judged until it lands.
 EXECUTOR IS human FOR ONE HALF ONLY. The smokes.rs probe change is ordinary agent work; deciding how a
 slice worktree reaches the 358 MB gitignored everon staging tree is an operator decision (bind mount,
 read-only symlink, a --staging path override on build-world-objects, or an explicit per-wave operator
-step). Split this row if the operator wants the probe half dispatched to an agent first.
-"""
+step). Split this row if the operator wants the probe half dispatched to an agent first. Paths with no successor (checked 2026-10-04, restructure S12): tools/tbd-tools/src/smokes.rs: removed in commit b4d8b7ca0, no successor; world_assets/mod.rs: removed in the restructure (commit 8ef0f0f97), no successor; world_assets/world_host.rs: removed in commit 1660b03f8, no successor."""
 priority = 1
 parent = "T-935"
 main_goal = "A chunking slice can be judged, because both of its acceptance instruments actually read something."

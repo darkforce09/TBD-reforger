@@ -98,13 +98,12 @@ pub fn save_now(
     });
 }
 
-/// Current wall-clock ISO-8601 (`new Date().toISOString()`)  the one clock read, kept out of the
-/// pure core (which takes `exported_at` as a param, so the smoke can pin it).
+/// Current wall-clock RFC 3339 UTC instant with milliseconds (`2026-07-04T23:43:38.437Z`, the
+/// shape `new Date().toISOString()` writes)  the one clock read, kept out of the pure core (which
+/// takes `exported_at` as a param, so the smoke can pin it).
 pub(super) fn js_date_iso() -> String {
-    js_sys::Date::new_0()
-        .to_iso_string()
-        .as_string()
-        .unwrap_or_default()
+    use time_source::{Clock, PlatformClock};
+    time_source::rfc3339_utc_millis(PlatformClock.now_unix_ms())
 }
 
 /// Save `contents` as a JSON file named `filename` through the browser's download path:

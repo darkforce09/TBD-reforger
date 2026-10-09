@@ -140,8 +140,14 @@ fn the_tooling_tree_holds_its_executables_manifests_and_layout_modules() {
 /// The folder of the tooling foundation crates.
 const TOOL_FOUNDATION: &str = "tools/foundation";
 
+/// The workspace's one checkout-root finder, a `crates/foundation` crate of tier 0 with no
+/// workspace dependency: the tooling foundation and ticket crates find their checkout through it,
+/// so it sits below every tool tier. The tool binaries reach it only through `repository_layout`'s
+/// prelude, so it is no exception to [`tooling_dependency_direction_is_enforced`].
+const CHECKOUT_ROOT_FINDER: &str = "repository_root";
+
 /// Each `tools/foundation` crate depends, among the workspace crates, only on `tools/foundation`
-/// crates of a lower declared tier — in every dependency table.
+/// crates of a lower declared tier and on [`CHECKOUT_ROOT_FINDER`] — in every dependency table.
 #[test]
 fn foundation_crates_depend_only_on_lower_foundation_crates() {
     let root = tool_test_support::test_repo_root();
@@ -176,12 +182,14 @@ fn foundation_crates_depend_only_on_lower_foundation_crates() {
             if !workspace_packages.contains(&edge.package.as_str()) {
                 continue;
             }
-            let allowed = foundation
-                .get(edge.package.as_str())
-                .is_some_and(|tier| *tier < ceiling);
+            let allowed = edge.package == CHECKOUT_ROOT_FINDER
+                || foundation
+                    .get(edge.package.as_str())
+                    .is_some_and(|tier| *tier < ceiling);
             assert!(
                 allowed,
-                "{}/Cargo.toml:{}: {} depends on {}, which is not a lower {TOOL_FOUNDATION} crate",
+                "{}/Cargo.toml:{}: {} depends on {}, which is neither a lower {TOOL_FOUNDATION} \
+                 crate nor {CHECKOUT_ROOT_FINDER}",
                 member.path, edge.line_no, member.package_name, edge.package
             );
         }
@@ -192,7 +200,12 @@ fn foundation_crates_depend_only_on_lower_foundation_crates() {
 const TOOL_TICKETS: &str = "tools/tickets";
 
 /// The `crates/foundation` crates a ticket crate may depend on.
-const TICKET_CRATE_FOUNDATIONS: [&str; 3] = ["time_source", "content_digest", "newtype_ids"];
+const TICKET_CRATE_FOUNDATIONS: [&str; 4] = [
+    "time_source",
+    "content_digest",
+    "newtype_ids",
+    CHECKOUT_ROOT_FINDER,
+];
 
 /// Each `tools/tickets` crate depends, among the workspace crates, only on `tools/foundation`
 /// crates, on [`TICKET_CRATE_FOUNDATIONS`], and on `tools/tickets` crates of a lower declared

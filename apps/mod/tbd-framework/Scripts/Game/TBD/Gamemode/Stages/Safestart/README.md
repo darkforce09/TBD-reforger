@@ -69,5 +69,5 @@ impacts to the damage switch alone.
 
 ## Related documentation
 
-- [Safe start HUD specification](/documentation/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
+- [Safe start HUD specification](/documentation/apps/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md)
   — the safe start notices as built and their design target

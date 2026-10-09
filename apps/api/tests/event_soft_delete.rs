@@ -85,10 +85,12 @@ async fn call(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -100,7 +102,7 @@ async fn count(pool: &PgPool, sql: &'static str, id: Uuid) -> i64 {
         .bind(id)
         .fetch_one(pool)
         .await
-        .unwrap()
+        .expect("the count query returns a row")
 }
 
 /// Whether `GET /events` (default `upcoming` scope) shows this operation.
@@ -132,7 +134,10 @@ async fn seed_operation(app: &Router, admin: &str) -> (String, String, String) {
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "mission: {m}");
-    let mission_id = m["id"].as_str().unwrap().to_string();
+    let mission_id = m["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string();
 
     let (st, e) = call(
         app,
@@ -143,7 +148,10 @@ async fn seed_operation(app: &Router, admin: &str) -> (String, String, String) {
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "event: {e}");
-    let event_id = e["id"].as_str().unwrap().to_string();
+    let event_id = e["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string();
 
     let attach = format!(
         r#"{{"mission_id":"{mission_id}","start_time":"2027-03-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"Alpha","slots":[{{"role":"SL"}},{{"role":"RTO"}}]}}]}}"#
@@ -157,7 +165,10 @@ async fn seed_operation(app: &Router, admin: &str) -> (String, String, String) {
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "attach: {em}");
-    let emid = em["id"].as_str().unwrap().to_string();
+    let emid = em["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string();
 
     // A real registration on a real seat, through the real endpoint.
     let (st, orbat) = call(
@@ -169,7 +180,9 @@ async fn seed_operation(app: &Router, admin: &str) -> (String, String, String) {
     )
     .await;
     assert_eq!(st, StatusCode::OK, "orbat: {orbat}");
-    let slot = orbat["data"][0]["slots"][0]["id"].as_str().unwrap();
+    let slot = orbat["data"][0]["slots"][0]["id"]
+        .as_str()
+        .expect("the `id` field is a string");
     let (st, r) = call(
         app,
         "POST",

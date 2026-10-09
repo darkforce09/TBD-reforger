@@ -8,7 +8,7 @@ fn plate_keeps_topmost_in_window_entry_and_marks_occupancy() {
     y_down.insert((1, 1), vec![8.0, 3.15, 3.05]);
     // Column (2, 1): only a roof entry — stays void.
     y_down.insert((2, 1), vec![8.0]);
-    let p = Params::default();
+    let p = AnalysisParameters::default();
     let (grid, heights) = floor_plate(&y_down, 4, 4, 3.1, &p);
     assert!(grid.get(1, 1));
     assert_eq!(heights[4 + 1], Some(3.15), "topmost in-window entry wins");

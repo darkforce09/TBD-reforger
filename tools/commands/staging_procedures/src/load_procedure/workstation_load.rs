@@ -22,7 +22,8 @@ use std::time::Duration;
 
 use crate::error::{Result, ResultExt, ensure, refusal};
 use process_runner::Run;
-use repository_layout::{BUILD_OUTPUT_FOLDER, find_repository_root};
+use repository_layout::BUILD_OUTPUT_FOLDER;
+use repository_root::find_repository_root;
 use staging_load_plan::{LoadReport, LoadRunPlan, decode_report, encode_plan};
 
 /// The body of a keying refresh: a refresh token no session was ever issued.

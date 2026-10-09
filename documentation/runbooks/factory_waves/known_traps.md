@@ -84,9 +84,11 @@ ends `SLICE GATE: PASS`. A report without the red output is asserted, not verifi
   <sha> <checkout>` stamp and refuses to run from a worktree; preflight blocks an unstamped or
   mismatched binary there.
 - **A slice's own server.** A slice agent that runs its own API instance builds it into
-  `target-<ticket id>-api` in the main checkout and greps the binary for a string unique to its
-  change before trusting any HTTP result; `platform wave reclaim` sweeps the folder once the
-  worktree is gone.
+  `target/slice-<ticket id>-api`, a purpose subfolder of the main checkout's build output folder
+  with its own cargo lock, and greps the binary for a string unique to its change before trusting
+  any HTTP result. `platform wave reclaim` sweeps only the root-level `target-<ticket id>` folders
+  of finished slices, never a subfolder of `target/`, so the agent deletes its
+  `target/slice-<ticket id>-api` folder when the slice ends.
 - **The shared cache replays verdicts.** Under lock contention the sign is `Blocking waiting for
   file lock`, then `Finished` with no `Compiling` or `Checking` line. `--quiet` hides that line,
   so a hand-run `cargo check --quiet` has no tell at all.

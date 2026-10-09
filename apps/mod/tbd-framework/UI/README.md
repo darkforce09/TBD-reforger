@@ -74,9 +74,9 @@ is a committed PNG imported here.
 
 ## Related documentation
 
-- [Mod UI structure](/documentation/mod/tbd-framework/UI/README.md)
+- [Mod UI structure](/documentation/apps/mod/tbd-framework/UI/README.md)
   — where each UI file goes and which mockup panel lands in which folder
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md)
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md)
   — the design rules the theme and layouts encode
 - [Design tokens](/documentation/design_system/design_tokens.md) — the website tokens
   `TBD_UITheme` mirrors, the mod's fonts, radii and spacing, and where the two differ

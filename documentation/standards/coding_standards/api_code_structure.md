@@ -23,12 +23,15 @@ snake_case database and wire contract. The eight domains are `administration`, `
   the domain's `services/`. Status: live, unenforced: no gate measures how much logic a handler
   holds.
 - **GO-9 (Scalability) — Handlers reach other code through services and models only.** Rust form:
-  `core` imports no domain except its composition root, a domain's handlers never import another
-  domain's handlers, `background_workers` is imported only by the binary, every domain exports one
-  route table that the router merges, and there is no top-level `handlers/`, `services/` or
-  `models/`. Gate: CI-BLOCK, the tests `core_imports_no_domain_except_composition_root`,
-  `domain_handlers_import_no_foreign_handlers`, `background_workers_used_only_by_the_binary`,
-  `every_domain_exports_a_route_table` and `no_legacy_top_level_modules` in
+  a kernel crate depends on no domain crate, a domain crate depends only along the domain graph, no
+  crate imports another domain's handlers, `api_background_workers` is linked only by the binary,
+  every domain crate exports one route table that the router merges, and `apps/api/src` holds only
+  the thin app (library root, router, composition root, binaries, tests). Gate: CI-BLOCK, the tests
+  `kernel_crates_depend_on_no_domain`, `domain_crates_depend_only_along_the_domain_graph`,
+  `no_crate_imports_a_foreign_domains_handlers`, `background_workers_used_only_by_the_binary`,
+  `every_domain_crate_exports_one_route_table_the_router_merges`,
+  `the_application_source_holds_only_the_thin_app` and
+  `the_crate_graph_refuses_upward_off_graph_and_kernel_to_domain_edges` in
   [architecture_rules.rs](/apps/api/src/tests/architecture_rules.rs), run by the API's
   `cargo test`.
 

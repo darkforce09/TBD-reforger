@@ -59,7 +59,7 @@ impl WorldHost {
 impl WorldHost {
     /// Drain.
     pub(super) fn drain(&mut self, engine: &BrowserAssetSinkHandle, bridge: &BridgeHandle) -> bool {
-        let now = js_sys::Date::now();
+        let now = time_source::wall_clock_ms();
         self.residency.begin_ingest_frame_at(now);
         let mut applied = 0u32;
 
@@ -92,7 +92,8 @@ impl WorldHost {
             applied += 1;
         }
         if applied > 0 {
-            self.residency.end_ingest_frame_at(js_sys::Date::now());
+            self.residency
+                .end_ingest_frame_at(time_source::wall_clock_ms());
             self.push_to_engine(engine, bridge);
         }
         applied > 0

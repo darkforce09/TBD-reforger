@@ -41,18 +41,20 @@ async fn setup() -> Option<(Router, String, PgPool)> {
             Request::builder()
                 .uri("/api/v1/auth/dev-login?role=admin")
                 .body(Body::empty())
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
+    let loc = resp.headers()[header::LOCATION]
+        .to_str()
+        .expect("the Location header is ASCII");
     let access = loc
         .split_once('#')
-        .unwrap()
+        .expect("the Location carries a fragment")
         .1
         .split('&')
         .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
+        .expect("the fragment carries an access token")
         .to_string();
     Some((app, access, pool))
 }
@@ -63,11 +65,13 @@ async fn deployments(app: &Router, tok: &str) -> Value {
         .uri("/api/v1/me/deployments")
         .header(header::AUTHORIZATION, format!("Bearer {tok}"))
         .body(Body::empty())
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::OK, "GET /me/deployments");
-    let bytes = to_bytes(resp.into_body(), 4 * 1024 * 1024).await.unwrap();
-    serde_json::from_slice(&bytes).unwrap()
+    let bytes = to_bytes(resp.into_body(), 4 * 1024 * 1024)
+        .await
+        .expect("the response body reads to the end");
+    serde_json::from_slice(&bytes).expect("the body decodes as JSON")
 }
 
 /// Drop every row this file seeds and rebuild the view, so each phase below starts from a known

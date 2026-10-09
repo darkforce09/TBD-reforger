@@ -33,6 +33,8 @@ mission_editing_commands = { workspace = true }
 mission_editing_session = { workspace = true }
 # The slot identity the tab edits and a loadout write names.
 orbat_slot_ids = { workspace = true }
+# The SplitMix64 finaliser behind the buffered Apply's per-target draw.
+deterministic_random = { workspace = true }
 leptos = { workspace = true, features = ["csr"] }
 serde_json = { workspace = true }
 # The crate's error type.

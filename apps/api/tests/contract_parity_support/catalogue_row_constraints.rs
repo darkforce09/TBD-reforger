@@ -27,7 +27,7 @@ use serde_json::Value;
 use super::json_difference::excerpt;
 
 /// The schema file holding the row definitions.
-pub const ROW_SCHEMA_FILE: &str = "arsenal-envelopes.schema.json";
+pub(crate) const ROW_SCHEMA_FILE: &str = "arsenal-envelopes.schema.json";
 
 /// Keywords that document a property without constraining it.
 const ANNOTATIONS: &[&str] = &["description", "title", "examples", "$comment"];
@@ -36,7 +36,7 @@ const ANNOTATIONS: &[&str] = &["description", "title", "examples", "$comment"];
 const REFERENCE_HOPS: usize = 8;
 
 /// One row definition and the catalogue definition whose fields it copies.
-pub struct RowCopy {
+pub(crate) struct RowCopy {
     /// The row definition, a JSON pointer into [`ROW_SCHEMA_FILE`].
     pub row: &'static str,
     /// The catalogue schema file under `contracts/definitions`.
@@ -46,7 +46,7 @@ pub struct RowCopy {
 }
 
 /// Every row definition that copies a catalogue definition.
-pub const ROW_COPIES: &[RowCopy] = &[
+pub(crate) const ROW_COPIES: &[RowCopy] = &[
     RowCopy {
         row: "/definitions/RegistryItemRow",
         catalogue_file: "registry-items.schema.json",
@@ -64,8 +64,8 @@ pub const ROW_COPIES: &[RowCopy] = &[
 /// # Panics
 ///
 /// When the file is missing or is not JSON.
-pub fn read_schema(file: &str) -> Value {
-    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+pub(crate) fn read_schema(file: &str) -> Value {
+    let path = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("the repository root above the API package")
@@ -77,7 +77,7 @@ pub fn read_schema(file: &str) -> Value {
 }
 
 /// Every catalogue constraint the row copy does not carry verbatim, one report line each.
-pub fn constraint_differences(
+pub(crate) fn constraint_differences(
     copy: &RowCopy,
     row_document: &Value,
     catalogue_document: &Value,

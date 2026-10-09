@@ -25,6 +25,7 @@ mod connection_abort;
 mod control_socket;
 mod drop_policy;
 mod error;
+mod http_client;
 pub mod prelude;
 mod relay;
 mod relay_settings;

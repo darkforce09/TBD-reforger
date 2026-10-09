@@ -37,7 +37,7 @@ pub enum Error {
     Integer(#[from] std::num::ParseIntError),
     /// No checkout root above the working directory.
     #[error(transparent)]
-    RepositoryRoot(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
 }
 
 /// The result of a fallible call of this crate.

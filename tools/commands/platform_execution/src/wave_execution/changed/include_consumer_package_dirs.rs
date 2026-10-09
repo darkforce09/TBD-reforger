@@ -22,7 +22,7 @@ use verification_core::NotRun;
 /// `Cargo.toml` dirs of every workspace crate that `include!`s an orphan `.rs` fragment.
 ///
 /// The consumers are searched for in every workspace member's folder, so a crate under `apps/`,
-/// `crates/`, `legacy/` or `tools/` is found alike. A workspace whose members cannot be read
+/// `crates/` or `tools/` is found alike. A workspace whose members cannot be read
 /// yields no consumer, which every caller treats as "nothing resolved" and refuses on.
 pub(crate) fn include_consumer_package_dirs(orphan: &str) -> Vec<String> {
     include_consumers_under(orphan, &workspace_members().unwrap_or_default())
@@ -90,10 +90,10 @@ pub(crate) fn workspace_members() -> Result<Vec<String>, NotRun> {
 /// Non-`.rs` files rustc embeds via `include_str!`/`include_bytes!`.
 ///
 /// [`super::super::touch::touch_workspace`] invalidates every workspace `.rs` mtime but not the
-/// JSON/WGSL/SQL paths those macros pull in — same mtime-freshness hole, narrower blast radius.
-/// MEASURED 2026-07-27: repro on `contracts/definitions/mission.schema.json` with `touch -r`
-/// back to original mtime after a byte change: `cargo check -p map_engine --features
-/// doc,mission,world` in `target/gate-check` stayed rc 0 until the schema file itself was touched.
+/// JSON/WGSL/SQL paths those macros pull in — the same mtime-freshness hole, narrower blast
+/// radius: an embedded file (a schema under `contracts/definitions/`, say) whose bytes change while
+/// its mtime is set back to the original leaves the embedding crate fresh, so a check over it
+/// answers 0 until the embedded file itself is touched.
 ///
 /// Static paths are resolved from the including `.rs` file; `concat!(env!("CARGO_MANIFEST_DIR"),
 /// "…")` is resolved from the owning package dir. Macro-expanded fixture trees (the DTO golden

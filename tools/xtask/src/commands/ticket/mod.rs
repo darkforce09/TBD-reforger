@@ -3,7 +3,7 @@
 mod execution;
 
 /// The registry projection loader, for the bin's `registry-get` verb.
-pub use ticket_registry::load_registry;
+pub(crate) use ticket_registry::load_registry;
 
 pub(crate) mod cli;
 pub(crate) mod dispatch;

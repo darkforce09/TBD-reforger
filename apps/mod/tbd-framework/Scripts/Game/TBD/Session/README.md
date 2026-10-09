@@ -57,5 +57,5 @@ data from `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`.
 
 ## Related documentation
 
-- [Mod UI documents](/documentation/mod/tbd-framework/UI/README.md) — the specifications of every
+- [Mod UI documents](/documentation/apps/mod/tbd-framework/UI/README.md) — the specifications of every
   screen these folders render

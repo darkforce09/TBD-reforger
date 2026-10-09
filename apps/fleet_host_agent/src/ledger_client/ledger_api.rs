@@ -33,23 +33,47 @@ const API_MESSAGE_MAX_CHARS: usize = 200;
 /// The answer to a claim.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClaimOutcome {
+    /// 200: the ledger handed this agent the carried command.
     Claimed(ClaimedFleetCommand),
     /// 204: nothing is claimable for this server now.
     NothingClaimable,
 }
 
+/// Why a ledger request failed; [`LedgerError::is_transient`] tells whether a retry can pass.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum LedgerError {
+    /// The request did not reach the API or got no answer; carries the transport's description.
     #[error("the API could not be reached: {0}")]
     Unreachable(String),
+    /// The API answered 408, 429 or a 5xx status.
     #[error("the API answered {status}: {message}")]
-    Unavailable { status: u16, message: String },
+    Unavailable {
+        /// The HTTP status code.
+        status: u16,
+        /// The API's error message (or the status reason), cut to 200 characters.
+        message: String,
+    },
+    /// 409 `STALE_FENCING_TOKEN`: the claim has passed to another agent or expired.
     #[error("the claim is no longer this agent's (409 STALE_FENCING_TOKEN)")]
     StaleFencingToken,
+    /// Any other 409 answer.
     #[error("the API answered 409 {code}: {message}")]
-    Conflict { code: String, message: String },
+    Conflict {
+        /// The API's error code.
+        code: String,
+        /// The API's error message (or the status reason), cut to 200 characters.
+        message: String,
+    },
+    /// Any other answer that is not a success, such as a rejected credential.
     #[error("the API refused the request with {status}: {message}")]
-    Refused { status: u16, message: String },
+    Refused {
+        /// The HTTP status code.
+        status: u16,
+        /// The API's error message (or the status reason), cut to 200 characters.
+        message: String,
+    },
+    /// A success answer whose body is not the contract shape, or a report URL that cannot be
+    /// built; carries the description.
     #[error("the API's answer could not be read: {0}")]
     UnreadableAnswer(String),
 }
@@ -62,6 +86,8 @@ impl LedgerError {
     }
 }
 
+/// The HTTP client cannot be built: the credential is no valid header value, the client builder
+/// fails, or an executor route does not join onto the base URL.
 #[derive(Debug, Error)]
 #[error("the API client could not be set up: {0}")]
 pub struct LedgerApiSetupError(String);

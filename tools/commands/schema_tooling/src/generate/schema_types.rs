@@ -21,7 +21,7 @@ use process_runner::Run;
 
 use repository_layout::contract_definitions_dir;
 
-use repository_layout::find_repository_root as repo_root;
+use repository_root::find_repository_root as repo_root;
 
 mod module_files;
 mod module_plan;

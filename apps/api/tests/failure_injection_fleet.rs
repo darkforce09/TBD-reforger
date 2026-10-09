@@ -76,7 +76,11 @@ impl FleetHost {
             .await;
         assert_eq!(status, StatusCode::ACCEPTED, "{receipt}");
         assert_eq!(receipt["state"], "queued");
-        receipt["id"].as_str().unwrap().parse().unwrap()
+        receipt["id"]
+            .as_str()
+            .expect("the `id` field is a string")
+            .parse()
+            .expect("the `id` field parses as an id")
     }
 
     async fn claim(&self) -> (StatusCode, Value) {
@@ -95,7 +99,9 @@ impl FleetHost {
         let (status, claimed) = self.claim().await;
         assert_eq!(status, StatusCode::OK, "{claimed}");
         assert_eq!(claimed["command_id"], command.to_string());
-        let token = claimed["fencing_token"].as_i64().unwrap();
+        let token = claimed["fencing_token"]
+            .as_i64()
+            .expect("the `fencing_token` field is an integer");
         let (status, started) = self
             .report(command, "executing", json!({"fencing_token": token}))
             .await;
@@ -147,7 +153,7 @@ impl FleetHost {
         .bind(command)
         .execute(self.fixture.pool())
         .await
-        .unwrap();
+        .expect("the update of fleet_commands succeeds");
     }
 
     async fn audits(&self, action: &str, command: Uuid) -> i64 {
@@ -159,7 +165,7 @@ impl FleetHost {
     async fn check_outcome_once(&self, command: Uuid) {
         check_fleet_outcome_recorded_once(self.fixture.pool(), command)
             .await
-            .unwrap();
+            .expect("the fleet-outcome-recorded-once invariant check runs");
     }
 }
 

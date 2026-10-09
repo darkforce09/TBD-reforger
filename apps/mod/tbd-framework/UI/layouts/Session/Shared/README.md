@@ -83,7 +83,7 @@ anchored so they resize with the dock. Each dock takes a `TBD_PlayerLane`, whose
 
 ## Related documentation
 
-- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/apps/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the briefing's design target, the players panel included
-- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md)
+- [Lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md)
   — the lobby's design target, its bottom bar included

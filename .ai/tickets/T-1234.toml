@@ -1,10 +1,10 @@
 id = "T-1234"
 kind = "work"
 title = "Decode MemberSearchPage in the assign picker and member search"
-summary = "Frontend src/v2 pages/operations/event_detail/assign_picker.rs:48 and pages/administration/event_manager/access/member_search.rs:41 decode GET /api/v1/members as DataEnvelope<Member>, dropping total, limit and offset, although core/api/dto/auth.rs:72 defines MemberSearchPage."
+summary = "Frontend src/v2 crates/frontend/pages/operations_pages/src/event_detail/assign_picker.rs:48 and crates/frontend/pages/administration_pages/src/event_manager/access/member_search.rs:41 decode GET /api/v1/members as DataEnvelope<Member>, dropping total, limit and offset, although crates/frontend/foundation/frontend_api_dtos/src/auth.rs:72 defines MemberSearchPage."
 class = "bug"
 status = "idea"
-notes = "Paths under apps/frontend/src/v2. Both folder READMEs (pages/operations/event_detail/README.md:86, pages/administration/event_manager/README.md:94) describe the DataEnvelope read and change with it. Source: milestone V finding V-F19 (frontend DTO pass)."
+notes = "Both folder READMEs (crates/frontend/pages/operations_pages/src/event_detail/README.md:86, crates/frontend/pages/administration_pages/src/event_manager/README.md:94) describe the DataEnvelope read and change with it. Source: milestone V finding V-F19 (frontend DTO pass)."
 created_at = "2026-09-28T01:13:30Z"
 
 [scope]

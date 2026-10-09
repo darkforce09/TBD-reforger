@@ -13,7 +13,6 @@ use super::membership_queries::{
 };
 use super::outage_steps::STAGED_SNAPSHOT_AGE_HOURS;
 use super::rate_limit_steps::bucket_spend;
-use crate::procedure_runner::clock::Clock;
 use crate::procedure_runner::fake_clock::FakeClock;
 use crate::procedure_runner::runner_support::TEST_DEPLOY_ENV;
 use crate::remote_actions::host_fixture_commands::age_membership_snapshot;
@@ -23,6 +22,7 @@ use crate::remote_observers::discord_member_reader::{self, GuildScope};
 use crate::remote_observers::remote_command::{CommandOutput, HostCommandRunner, RemoteCommand};
 use crate::staging_settings::StagingSettings;
 use deploy_settings::DeployEnvironment;
+use time_source::Clock as _;
 
 /// The fake clock's start.
 pub(crate) const T0: u64 = 1_800_000_000_000;

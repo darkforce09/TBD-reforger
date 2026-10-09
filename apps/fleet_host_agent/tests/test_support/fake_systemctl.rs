@@ -50,7 +50,7 @@ exit 64
 "#;
 
 /// How the stand-in unit behaves.
-pub struct UnitScenario {
+pub(crate) struct UnitScenario {
     pub load_state: &'static str,
     /// The ActiveState before any verb runs.
     pub active_state: &'static str,
@@ -62,13 +62,13 @@ pub struct UnitScenario {
     pub show_exit: u8,
 }
 
-pub struct FakeSystemctl {
+pub(crate) struct FakeSystemctl {
     directory: TempDir,
     _one_at_a_time: MutexGuard<'static, ()>,
 }
 
 impl FakeSystemctl {
-    pub async fn install(scenario: &UnitScenario) -> Self {
+    pub(crate) async fn install(scenario: &UnitScenario) -> Self {
         let one_at_a_time = ONE_SCRIPT_AT_A_TIME.lock().await;
         let directory = tempfile::tempdir().expect("a temporary directory");
         let state = directory.path().to_str().expect("a UTF-8 path").to_owned();
@@ -88,12 +88,12 @@ impl FakeSystemctl {
         fake
     }
 
-    pub fn program(&self) -> PathBuf {
+    pub(crate) fn program(&self) -> PathBuf {
         self.directory.path().join("systemctl")
     }
 
     /// Every argument vector the program was run with, one line each.
-    pub fn invocations(&self) -> Vec<String> {
+    pub(crate) fn invocations(&self) -> Vec<String> {
         fs::read_to_string(self.directory.path().join("invocations"))
             .unwrap_or_default()
             .lines()
@@ -106,7 +106,7 @@ impl FakeSystemctl {
         dead_code,
         reason = "the ledger tests share this stand-in but never change the unit from outside"
     )]
-    pub fn set_active_state(&self, state: &str) {
+    pub(crate) fn set_active_state(&self, state: &str) {
         self.write("active_state", state);
     }
 

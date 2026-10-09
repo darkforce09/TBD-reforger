@@ -11,30 +11,30 @@ prefab occluder library, folds them into one archive, and checks every step agai
 
 ```text
 tools/map_assets/blueprint_compiler/src/
-├── architectural_analysis/   slabs, walls, floor plates, outlines, roof grid, surface kinds, march skeleton
+├── architectural_analysis/   slabs, walls, floor plates, outlines, roof grid, surface kinds, face pairing
 ├── architectural_analysis.rs  the module of the geometry stages
 ├── archive_emission/         blueprint assembly, the prefab occluder library and the rkyv archive
 ├── archive_emission.rs       the module of the writers
 ├── blueprint_from_voxels.rs  `run` (`blueprint-from-voxels`): the dump interpretation and per-band assembly
-├── bvh/                      occlusion sidecars, the prefab walk, parity and placement checks
-├── bvh.rs                    the module of the sidecar and placement commands
+├── blueprint_ingestion.rs    `ingest-blueprints`: Workbench-exported blueprints validated and copied in
 ├── error.rs                  `Error`, `Result`, the context and refusal helpers
-├── ingest.rs                 `ingest-blueprints`: Workbench-exported blueprints validated and copied in
 ├── lib.rs                    the crate root: the modules and the command entries
 ├── mesh_decoding/            `.xob` model, collider and node table readers; `xob-inspect` and `pak-cat`
 ├── mesh_decoding.rs          the module of the model readers
+├── occlusion_sidecars/       occlusion sidecars, the prefab walk, parity and placement checks
+├── occlusion_sidecars.rs     the module of the sidecar and placement commands
 ├── parity_report.rs          `parity-report`: the Workbench oracle replayed through a blueprint
 ├── prelude.rs                the error type and the command entries in one import
 ├── test_fixtures.rs          `fixture(name)`: the committed test inputs (tests and the `test_fixtures` feature)
 ├── tests/                    the `blueprint-from-voxels` tests: synthetic bands and the farmhouse golden
-├── voxel_processing/         the voxel dump model, its reader, the tunables and `voxels-from-mesh`
+├── voxel_processing/         the voxel dump model, its reader, the tunables, the march lattice and `voxels-from-mesh`
 └── voxel_processing.rs       the module of the voxel dump side
 ```
 
 ## How it works
 
 `lib.rs` declares one module per responsibility folder (`architectural_analysis`,
-`archive_emission`, `bvh`, `mesh_decoding`, `voxel_processing`), each a file beside its folder
+`archive_emission`, `mesh_decoding`, `occlusion_sidecars`, `voxel_processing`), each a file beside its folder
 that names the folder's modules, and re-exports the command entries. Each folder keeps its unit
 tests in its own `tests/` folder, one file per module. Every entry takes the checkout root and
 the raw arguments from its `cargo xtask map` adapter, parses them itself and returns the exit
@@ -64,7 +64,7 @@ and writes it to `--out` or `assets/terrains/everon/prefabs/buildings/`. `--algo
 extractor, `--params` overrides tunables, and `--debug-dir` writes a `<slug>_stages.json` with the
 slabs and every wall cluster's verdict. A first argument `archive` runs the archive fold instead.
 
-`ingest.rs` copies the blueprints the `tbd-export` building plugins wrote into the Workbench
+`blueprint_ingestion.rs` copies the blueprints the `tbd-export` building plugins wrote into the Workbench
 profile (`prefabs/buildings/*.json`, searched two levels under `TBD_Export`) into
 `assets/terrains/everon/prefabs/buildings/`, each only after it parses as `BuildingBlueprint`.
 `parity_report.rs` replays a Workbench parity file (engine verdicts for observer and target pairs
@@ -78,16 +78,16 @@ Each entry backs one `cargo xtask map` command (`tools/xtask/src/commands/map/mo
 | Entry | Command | Exit 0 | Exit 1 |
 |---|---|---|---|
 | `run` | `blueprint-from-voxels [archive]` | every matched dump written; archive built | no match, a failure |
-| `ingest::run` | `ingest-blueprints` | every matched file copied | nothing matched, a file failed |
+| `blueprint_ingestion::run` | `ingest-blueprints` | every matched file copied | nothing matched, a file failed |
 | `parity_report::run` | `parity-report` | report printed | an argument missing |
-| `run_voxels_from_mesh` | `voxels-from-mesh` | dump written, or `--stats` printed | none: errors |
-| `run_bvh_parity`, `run_bvh_emit` | `bvh-parity`, `bvh-emit` | report printed; sidecar written | an unknown argument |
-| `run_bvh_batch` | `bvh-batch` | files written, or a dry run | an unknown argument |
-| `run_xob_inspect`, `run_pak_cat` | `xob-inspect`, `pak-cat` | printed or saved | an unknown argument |
-| `run_instances_verify` | `instances-verify` | all within 2 cm and 1° | a mismatch |
-| `run_rotation_pin` | `rotation-pin` | `Rigid::from_enfusion` first | another hypothesis first |
+| `run_mesh_voxelization` | `voxels-from-mesh` | dump written, or `--stats` printed | none: errors |
+| `run_occlusion_sidecar_parity`, `run_occlusion_sidecar_emission` | `bvh-parity`, `bvh-emit` | report printed; sidecar written | an unknown argument |
+| `run_occlusion_sidecar_batch` | `bvh-batch` | files written, or a dry run | an unknown argument |
+| `run_xob_inspection`, `run_pak_file_print` | `xob-inspect`, `pak-cat` | printed or saved | an unknown argument |
+| `run_instance_verification` | `instances-verify` | all within 2 cm and 1° | a mismatch |
+| `run_rotation_validation` | `rotation-pin` | `Rigid::from_enfusion` first | another hypothesis first |
 
-Every entry but `run_voxels_from_mesh` also exits 1 on an unknown argument; that one returns an
+Every entry but `run_mesh_voxelization` also exits 1 on an unknown argument; that one returns an
 error instead, and an error any entry returns reaches xtask as a failure.
 `parity_report::ParityFile` and, behind the `test_fixtures` feature, `test_fixtures::fixture` are
 also read by the world line-of-sight tests in `tools/map_assets/map_asset_verification/src/`.
@@ -100,7 +100,7 @@ also read by the world line-of-sight tests in `tools/map_assets/map_asset_verifi
     (`spatial_indexes::bounding_volume_hierarchy`), the descriptors and manifest
     (`world_line_of_sight::occluder_library`) and the archive (`world_file_formats::archives`);
   - the pak reader `enfusion_pak` (`tools/enfusion/enfusion_pak/`), and
-    the `repository_layout` crate for the checkout root and its paths;
+    the `repository_root` crate for the checkout root and `repository_layout` for its paths;
   - the schemas in `contracts/definitions/`; the game paks and loose extract, and the
     Workbench exports, dumps, parity files and recon dumps the commands read.
 - Used by: the `cargo xtask map` adapters in `tools/xtask/src/commands/map/mod.rs`; the world

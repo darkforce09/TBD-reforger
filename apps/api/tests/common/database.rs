@@ -19,7 +19,7 @@ use super::http::{DEV_LOGIN_ARMA_ID, DEV_LOGIN_USER};
 ///
 /// `postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable` → `Some("rust_it")`.
 /// Empty path, unparseable URL, or a multi-segment path → `None`.
-pub fn database_name_from_url(database_url: &str) -> Option<String> {
+pub(crate) fn database_name_from_url(database_url: &str) -> Option<String> {
     let parsed = Url::parse(database_url).ok()?;
     let name = parsed.path().trim_start_matches('/');
     if name.is_empty() || name.contains('/') {
@@ -44,7 +44,7 @@ pub fn database_name_from_url(database_url: &str) -> Option<String> {
 ///
 /// Anything else (notably `tbd_reforger`) is refused so an exported
 /// `TEST_DATABASE_URL=…/tbd_reforger` cannot wipe the live database.
-pub fn is_safe_test_database_name(name: &str) -> bool {
+pub(crate) fn is_safe_test_database_name(name: &str) -> bool {
     if name.is_empty() || name == "tbd_reforger" {
         return false;
     }
@@ -59,7 +59,7 @@ pub fn is_safe_test_database_name(name: &str) -> bool {
 ///
 /// Call this immediately after reading `TEST_DATABASE_URL` (and before connect /
 /// migrate / any DELETE). The resolver rejects an absent URL before this guard is reached.
-pub fn assert_test_database_url(database_url: &str) {
+pub(crate) fn assert_test_database_url(database_url: &str) {
     let name = database_name_from_url(database_url).unwrap_or_else(|| {
         panic!(
             "\n\
@@ -118,7 +118,7 @@ static PER_BINARY_URL: OnceLock<Option<String>> = OnceLock::new();
 /// Postgres truncates identifiers at 63 bytes, and a truncated name is a name two binaries
 /// can share — which is exactly the defect. Over-long names therefore fold their tail into a
 /// hash rather than losing it.
-pub fn per_binary_database_name(base: &str, suite: &str) -> String {
+pub(crate) fn per_binary_database_name(base: &str, suite: &str) -> String {
     let sanitised: String = suite
         .chars()
         .map(|c| {
@@ -146,7 +146,7 @@ pub fn per_binary_database_name(base: &str, suite: &str) -> String {
 }
 
 /// Swap the database name in a Postgres URL, preserving user/host/port/query.
-pub fn with_database_name(url: &str, database: &str) -> Option<String> {
+pub(crate) fn with_database_name(url: &str, database: &str) -> Option<String> {
     let mut parsed = Url::parse(url).ok()?;
     parsed.set_path(database);
     Some(parsed.into())
@@ -180,7 +180,7 @@ pub fn with_database_name(url: &str, database: &str) -> Option<String> {
 /// `CREATE DATABASE` for the same derived name. `cargo xtask db test-it` runs the binaries one
 /// after another, so that path is covered; cross-process overlap outside it would need
 /// PID-suffixed names or a cross-process provision lock.
-pub fn require_test_database_url() -> Option<String> {
+pub(crate) fn require_test_database_url() -> Option<String> {
     PER_BINARY_URL.get_or_init(resolve_and_provision).clone()
 }
 
@@ -315,7 +315,7 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
 /// the operator base raw and stay invisible to a tests-only scan. A raw
 /// `env::var("TEST_DATABASE_URL")` outside this module is a regression — parallel integration
 /// runs against live `tbd_reforger` must panic, not mutate.
-pub fn assert_no_raw_test_database_url_reads_outside_common() {
+pub(crate) fn assert_no_raw_test_database_url_reads_outside_common() {
     let needle = concat!("env::var(", "\"TEST_DATABASE_URL\")");
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut offenders = Vec::new();
@@ -335,7 +335,9 @@ pub fn assert_no_raw_test_database_url_reads_outside_common() {
         if src.contains(needle) {
             offenders.push(format!(
                 "tests/{}",
-                path.file_name().unwrap().to_string_lossy()
+                path.file_name()
+                    .expect("the scanned path has a file name")
+                    .to_string_lossy()
             ));
         }
     }
@@ -374,7 +376,7 @@ pub fn assert_no_raw_test_database_url_reads_outside_common() {
     }
     walk_rs(&src_dir, needle, &mut offenders, manifest);
     // The API crates under `crates/api/` hold the domains' in-crate database tests too.
-    let repository_root = repository_layout::find_repository_root_from(manifest)
+    let repository_root = repository_root::find_repository_root_from(manifest)
         .expect("the repository root above the API package");
     walk_rs(
         &repository_root.join("crates/api"),

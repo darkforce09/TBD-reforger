@@ -65,12 +65,16 @@ async fn send(app: &Router, secret: &str, uri: &str, body: &Value) -> (StatusCod
         .uri(uri)
         .header(header::AUTHORIZATION, format!("Bearer {secret}"))
         .header(header::CONTENT_TYPE, "application/json")
-        .body(Body::from(serde_json::to_vec(body).unwrap()))
-        .unwrap();
+        .body(Body::from(
+            serde_json::to_vec(body).expect("the value serialises to JSON bytes"),
+        ))
+        .expect("the request builds");
     req.extensions_mut().insert(ConnectInfo(next_peer()));
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     // A 429 here means the limiter answered, not the handler — every assertion downstream would
     // be vacuous, so fail loudly and name the cause instead of letting it read as a guard result.
     assert_ne!(
@@ -103,10 +107,10 @@ impl Reporter {
         let secret = &self.server.session.secret;
         let source = body["match"]["source_match_id"]
             .as_str()
-            .unwrap()
+            .expect("the `source_match_id` field is a string")
             .to_owned();
         let revision = {
-            let mut revisions = self.revisions.lock().unwrap();
+            let mut revisions = self.revisions.lock().expect("the mutex is not poisoned");
             let next = revisions.get(&source).copied().unwrap_or(0) + 1;
             revisions.insert(source.clone(), next);
             next
@@ -132,7 +136,7 @@ async fn stored_revision(pool: &PgPool, src: &str) -> Option<i64> {
         .bind(src)
         .fetch_optional(pool)
         .await
-        .unwrap()
+        .expect("the read of matches runs")
 }
 
 /// Per-test row namespace.
@@ -192,12 +196,12 @@ impl Ns {
             .bind(self.arma())
             .execute(pool)
             .await
-            .unwrap();
+            .expect("the delete from match_player_stats succeeds");
         sqlx::query("DELETE FROM matches WHERE source_match_id LIKE $1")
             .bind(format!("{SRC}-{}-%", self.0))
             .execute(pool)
             .await
-            .unwrap();
+            .expect("the delete from matches succeeds");
     }
 }
 
@@ -208,7 +212,7 @@ async fn stored_replay(pool: &PgPool, src: &str) -> Option<String> {
     .bind(src)
     .fetch_optional(pool)
     .await
-    .unwrap()
+    .expect("the read of matches runs")
     .flatten()
 }
 

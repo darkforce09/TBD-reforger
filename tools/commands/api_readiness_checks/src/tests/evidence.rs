@@ -1,5 +1,6 @@
 use super::*;
 use crate::operational;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 fn fixture() -> (Check, Receipt, String) {
     let output =
@@ -45,7 +46,7 @@ fn current_successful_cases_are_accepted() {
 
 #[test]
 fn actual_register_patterns_recognize_cargo_success_cases_only() {
-    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    let root = repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root");
     let acceptance = register::read(&root).expect("read and validate actual acceptance register");
 

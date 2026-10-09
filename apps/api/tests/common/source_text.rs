@@ -28,7 +28,7 @@ pub(crate) const DEVELOPER_LOGIN_HANDLER: &str =
 /// The development login handler's source file, found under the checkout root above this package.
 pub(crate) fn developer_login_handler_path() -> std::path::PathBuf {
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    repository_layout::find_repository_root_from(manifest)
+    repository_root::find_repository_root_from(manifest)
         .unwrap_or_else(|e| panic!("no repository root above {}: {e}", manifest.display()))
         .join(DEVELOPER_LOGIN_HANDLER)
 }

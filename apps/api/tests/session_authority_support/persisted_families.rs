@@ -17,7 +17,7 @@ use uuid::Uuid;
 
 /// The live sessions and refresh tokens of one account.
 #[derive(Debug)]
-pub struct PersistedFamilies {
+pub(crate) struct PersistedFamilies {
     pub live_sessions: BTreeSet<Uuid>,
     pub live_token_hashes: BTreeSet<String>,
     pub sessions_breaking_single_successor: Vec<Uuid>,
@@ -25,7 +25,7 @@ pub struct PersistedFamilies {
 
 impl PersistedFamilies {
     /// Read `discord_id`'s sessions and refresh tokens.
-    pub async fn load(pool: &PgPool, discord_id: &str) -> Self {
+    pub(crate) async fn load(pool: &PgPool, discord_id: &str) -> Self {
         let live_sessions: Vec<Uuid> = sqlx::query_scalar(
             "SELECT id FROM authentication_sessions WHERE discord_id = $1 AND revoked_at IS NULL",
         )

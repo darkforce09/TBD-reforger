@@ -1,5 +1,5 @@
 use super::*;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use tool_test_support::lock_env;
 
 /// The pattern `pkill -f` receives must match a real command line and must not match a neighbour.

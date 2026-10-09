@@ -124,7 +124,7 @@ fn application_root() -> PathBuf {
 
 /// The repository root, found above the application's manifest folder.
 fn repository_root() -> PathBuf {
-    repository_layout::find_repository_root_from(&application_root())
+    repository_root::find_repository_root_from(&application_root())
         .expect("the repository root above the API package")
 }
 

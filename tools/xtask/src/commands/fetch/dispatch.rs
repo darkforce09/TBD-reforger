@@ -1,6 +1,6 @@
 use super::cli::FetchCmd;
 use anyhow::Result;
-use repository_layout::find_repository_root;
+use repository_layout::prelude::find_repository_root;
 use std::path::PathBuf;
 
 pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
@@ -22,7 +22,7 @@ pub(crate) fn run(cmd: FetchCmd) -> Result<u8> {
                 None => match std::env::var_os("PWD") {
                     Some(pwd) => {
                         let p = PathBuf::from(pwd);
-                        if repository_layout::is_repository_root(&p) {
+                        if repository_layout::prelude::is_repository_root(&p) {
                             p
                         } else {
                             find_repository_root()?

@@ -10,8 +10,8 @@
 //!
 //! **Position:** tier 2 of `tools/checks`, over `verification_core` (verdicts, scans, patterns),
 //! `process_runner` (`git` and `cargo` children), `repository_laws` (the rules the gates print)
-//! and `repository_layout` (the checkout root and the shared paths). The xtask binary's
-//! `cargo xtask verify` verbs and its `ci` task table call these checks.
+//! `repository_root` (the checkout root) and `repository_layout` (the shared paths). The xtask
+//! binary's `cargo xtask verify` verbs and its `ci` task table call these checks.
 //!
 //! **Signals & state:** none; every check reads the checkout and writes its report to stdout.
 //!

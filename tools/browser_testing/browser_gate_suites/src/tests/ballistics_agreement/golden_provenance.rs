@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 
 use super::*;
 use crate::ballistics_agreement::COMMITTED_CATALOG;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use ballistics_model::CatalogId;
 
 fn committed() -> (Vec<u8>, BallisticsCatalog) {

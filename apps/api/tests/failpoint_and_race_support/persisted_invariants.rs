@@ -26,7 +26,7 @@ use uuid::Uuid;
 /// before.check_unchanged(&pool).await.unwrap();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RowCounts {
+pub(crate) struct RowCounts {
     counts: Vec<(&'static str, i64)>,
 }
 
@@ -36,7 +36,7 @@ impl RowCounts {
     /// # Panics
     ///
     /// When a name is not a plain lowercase table identifier or the count fails.
-    pub async fn capture(pool: &PgPool, tables: &[&'static str]) -> Self {
+    pub(crate) async fn capture(pool: &PgPool, tables: &[&'static str]) -> Self {
         let mut counts = Vec::with_capacity(tables.len());
         for &table in tables {
             assert!(
@@ -59,7 +59,7 @@ impl RowCounts {
     /// # Panics
     ///
     /// When `table` was not captured.
-    pub fn count(&self, table: &str) -> i64 {
+    pub(crate) fn count(&self, table: &str) -> i64 {
         self.counts
             .iter()
             .find(|(name, _)| *name == table)
@@ -68,7 +68,7 @@ impl RowCounts {
     }
 
     /// `Err` naming every table whose count differs from the capture.
-    pub async fn check_unchanged(&self, pool: &PgPool) -> Result<(), String> {
+    pub(crate) async fn check_unchanged(&self, pool: &PgPool) -> Result<(), String> {
         let tables: Vec<&'static str> = self.counts.iter().map(|(table, _)| *table).collect();
         let now = Self::capture(pool, &tables).await;
         let changed: Vec<String> = self
@@ -88,7 +88,7 @@ impl RowCounts {
 
 /// The audit rows of one action on one target and where they stand in publication.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, sqlx::FromRow)]
-pub struct AuditEvidence {
+pub(crate) struct AuditEvidence {
     /// Committed `audit_logs` rows.
     pub rows: i64,
     /// Of those, rows still waiting in `audit_publication_pending`.
@@ -103,7 +103,7 @@ pub struct AuditEvidence {
 /// let evidence = audit_evidence(&pool, "auth.logout", &account).await;
 /// assert_eq!(evidence, AuditEvidence { rows: 0, pending: 0, published: 0 });
 /// ```
-pub async fn audit_evidence(pool: &PgPool, action: &str, target_id: &str) -> AuditEvidence {
+pub(crate) async fn audit_evidence(pool: &PgPool, action: &str, target_id: &str) -> AuditEvidence {
     sqlx::query_as(
         "SELECT count(*) AS rows, count(p.audit_id) AS pending, count(a.audit_id) AS published
          FROM audit_logs l
@@ -121,7 +121,7 @@ pub async fn audit_evidence(pool: &PgPool, action: &str, target_id: &str) -> Aud
 /// The publication sequence has no gap: every sequence above the retained floor up to
 /// `last_sequence` is present once, none lies beyond it, and no audit row is both pending and
 /// published.
-pub async fn check_publication_sequence(pool: &PgPool) -> Result<(), String> {
+pub(crate) async fn check_publication_sequence(pool: &PgPool) -> Result<(), String> {
     let (floor, last, retained, beyond, doubled): (i64, i64, i64, i64, i64) = sqlx::query_as(
         "SELECT s.retained_after_sequence, s.last_sequence,
              (SELECT count(*) FROM audit_publications
@@ -146,7 +146,7 @@ pub async fn check_publication_sequence(pool: &PgPool) -> Result<(), String> {
 /// Within `event`: no participant holds two seats of one attachment or two active allocations,
 /// and the places in use (active allocations plus seat occupants of active attachments without
 /// one) stay within `max_slots` when it is not zero.
-pub async fn check_event_seats_and_places(pool: &PgPool, event: Uuid) -> Result<(), String> {
+pub(crate) async fn check_event_seats_and_places(pool: &PgPool, event: Uuid) -> Result<(), String> {
     let doubled_seats: Vec<(Uuid, String, i64)> = sqlx::query_as(
         "SELECT s.event_mission_id, s.assigned_to, count(*) FROM orbat_slots s
          JOIN event_missions em ON em.id = s.event_mission_id
@@ -199,7 +199,7 @@ pub async fn check_event_seats_and_places(pool: &PgPool, event: Uuid) -> Result<
 
 /// Every session of `account` holds at most one unrevoked refresh token, and a revoked session
 /// holds none.
-pub async fn check_refresh_families(pool: &PgPool, account: &str) -> Result<(), String> {
+pub(crate) async fn check_refresh_families(pool: &PgPool, account: &str) -> Result<(), String> {
     let broken: Vec<(Uuid, bool, i64)> = sqlx::query_as(
         "SELECT s.id, s.revoked_at IS NOT NULL,
              count(t.id) FILTER (WHERE t.revoked_at IS NULL)
@@ -222,7 +222,7 @@ pub async fn check_refresh_families(pool: &PgPool, account: &str) -> Result<(), 
 }
 
 /// At most one account holds `arma_id`; answers that holder.
-pub async fn check_arma_identity_held_once(
+pub(crate) async fn check_arma_identity_held_once(
     pool: &PgPool,
     arma_id: &str,
 ) -> Result<Option<String>, String> {
@@ -242,7 +242,7 @@ pub async fn check_arma_identity_held_once(
 /// `mission` has at most one pending review, one `mission.approve` or `mission.reject` audit per
 /// decided review, and, while no review is pending, the status and approved artifact of its
 /// latest decision.
-pub async fn check_review_decided_once(pool: &PgPool, mission: Uuid) -> Result<(), String> {
+pub(crate) async fn check_review_decided_once(pool: &PgPool, mission: Uuid) -> Result<(), String> {
     let (pending, decided, audits): (i64, i64, i64) = sqlx::query_as(
         "SELECT count(*) FILTER (WHERE state = 'pending'),
              count(*) FILTER (WHERE state IN ('approved', 'approved_with_conditions', 'rejected')),
@@ -289,7 +289,10 @@ pub async fn check_review_decided_once(pool: &PgPool, mission: Uuid) -> Result<(
 
 /// The outcome of `command` is audited at most once and, when audited, equals the command's
 /// terminal state.
-pub async fn check_fleet_outcome_recorded_once(pool: &PgPool, command: Uuid) -> Result<(), String> {
+pub(crate) async fn check_fleet_outcome_recorded_once(
+    pool: &PgPool,
+    command: Uuid,
+) -> Result<(), String> {
     let audited: Vec<String> = sqlx::query_scalar(
         "SELECT action FROM audit_logs WHERE target_type = 'fleet_command' AND target_id = $1::text
          AND action IN ('server.command_succeeded', 'server.command_failed')",

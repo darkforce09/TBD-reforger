@@ -22,13 +22,13 @@
 //! normalisation table names, each after its format check; every failure names the golden file
 //! and the field or frame it concerns.
 
-pub mod catalogue_row_constraints;
-pub mod event_stream_frames;
-pub mod generated_type_decoders;
-pub mod golden_index;
-pub mod golden_normalisation;
-pub mod json_difference;
-pub mod normalised_fields;
-pub mod route_contract_table;
-pub mod route_contracts;
-pub mod seeded_capture;
+pub(crate) mod catalogue_row_constraints;
+pub(crate) mod event_stream_frames;
+pub(crate) mod generated_type_decoders;
+pub(crate) mod golden_index;
+pub(crate) mod golden_normalisation;
+pub(crate) mod json_difference;
+pub(crate) mod normalised_fields;
+pub(crate) mod route_contract_table;
+pub(crate) mod route_contracts;
+pub(crate) mod seeded_capture;

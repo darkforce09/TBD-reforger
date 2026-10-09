@@ -191,6 +191,36 @@ fn a_change_under_an_api_crate_changes_the_fingerprint() {
     assert!(source_input("crates/api/api_state/Cargo.toml"));
 }
 
+/// A path is an input only inside one of the input folders: every folder the repository layout
+/// names counts, and a sibling whose name merely starts with an input folder's name does not.
+#[test]
+fn only_paths_inside_an_input_folder_are_source_inputs() {
+    for inside in [
+        "apps/api/src/lib.rs",
+        "crates/geometry/geometry_primitives/src/lib.rs",
+        "tools/xtask/src/main.rs",
+        "contracts/definitions/mission.schema.json",
+        "documentation/apps/api/verification_evidence/register.md",
+        ".cargo/config.toml",
+        ".github/workflows/ci.yml",
+    ] {
+        assert!(source_input(inside), "{inside} is inside an input folder");
+    }
+    for outside in [
+        "appsx/main.rs",
+        "crates.rs",
+        "toolset/lib.rs",
+        "contracts_old/schema.json",
+        "documentation/apps/api/README.md",
+        ".github-old/ci.yml",
+    ] {
+        assert!(
+            !source_input(outside),
+            "{outside} lies outside every input folder"
+        );
+    }
+}
+
 #[test]
 fn disappearance_or_restoration_after_inventory_is_rejected() {
     let repository = Repository::new();

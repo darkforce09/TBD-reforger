@@ -8,6 +8,7 @@ order = 8910
 spec = "documentation/tickets/specs/t945_active_slice_encoding.md"
 plan = "documentation/tickets/plans/t-945_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): xtask/src/schema_gates.rs: removed in commit b4d8b7ca0, no successor; xtask/src/tickets_store.rs: removed in commit e9b28fbf5, no successor."
 priority = 2
 main_goal = "A program ticket can name its active slice on disk and schema gate 10 reads it."
 context = [

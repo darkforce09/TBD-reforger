@@ -36,7 +36,7 @@ citations = [
     "depends_on T-114 T-115 T-117",
 ]
 owns = [
-    "packages/tbd-schema/golden-missions",
+    "contracts/fixtures/missions/valid",
     "documentation/runbooks/game_server_staging/README.md",
 ]
 

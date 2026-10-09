@@ -158,37 +158,38 @@ fn sharpen_quantised_radius(zone: &Value, loc: &str) -> Option<String> {
     ))
 }
 
-/// Refuse a zone at SAVE that `GET /missions/:id/compiled` would refuse at SERVE.
+/// Refuse a zone at SAVE that the artifact compile at `POST /api/v1/missions/:id/submit` would
+/// refuse.
 ///
-/// ## The defect this closes
+/// ## The failure this prevents
 ///
-/// Without this pass, zone vocabulary is enforced at serve time only. `doc/store.rs`
+/// Without this pass, zone vocabulary is enforced at compile time only. `doc/store.rs`
 /// `set_zone_rules` stores `rules` OPAQUE (deliberately — a typed Rust mirror of the rule names
 /// would be the SECOND vocabulary the schema exists to prevent), `flatten.rs` carries it verbatim,
-/// and the first thing to look at it is `validated_compiled_body`. MEASURED on the real HTTP path,
-/// on a scratch instance:
+/// and the first thing to look at it is [`super::schema_validators::validate_mission_document`]
+/// inside `compile_artifact`. On the HTTP path that reads:
 ///
 /// ```text
 /// POST /missions/:id/versions  zones[0].rules = {"notInVocabulary": 1}  -> 201 Created
-/// GET  /missions/:id/compiled                                           -> 500
+/// POST /missions/:id/submit                                             -> 422
 ///      "/zones/0/rules: Additional properties are not allowed ('notInVocabulary' was unexpected)"
 /// POST /missions/:id/versions  zones[0].type  = "capture"               -> 201 Created
-/// GET  /missions/:id/compiled                                           -> 500
+/// POST /missions/:id/submit                                             -> 422
 ///      "/zones/0/type: \"capture\" is not one of \"spawn\", \"objective_capture\" or 4 other candidates"
 /// ```
 ///
-/// …and forever, because a `mission_versions` row is immutable. The author sees success; the
-/// failure surfaces in front of a game server that supplied nothing but a mission id and can do
-/// nothing about it. Every one of those payloads deserialises cleanly, because `ZoneIn.rules` is
+/// …for that version forever, because a `mission_versions` row is immutable. The author sees the
+/// save succeed and the version then never compiles into an artifact a game server can run. Every
+/// one of those payloads deserialises cleanly, because `ZoneIn.rules` is
 /// `Option<serde_json::Value>` — the serde precheck cannot see any of it.
 ///
-/// ## Why the verdict is the SERVE schema and not a new rule
+/// ## Why the verdict is the compiled document's schema and not a new rule
 ///
 /// The accept/reject decision below is `mission.schema.json#/$defs/zone` — lifted out of the same
 /// embedded bytes [`super::schema_validators::validate_mission_document`] validates the compiled
-/// document against. "Save accepted it" and "`/compiled` will validate" are therefore one sentence
-/// by construction, the same property `flatten::scan_editor_payload_types` gets by running the
-/// compiler's own deserialiser. A per-zone subschema written into
+/// document against. "Save accepted it" and "the artifact compile will validate" are therefore
+/// one sentence by construction, the same property `flatten::scan_editor_payload_types` gets by
+/// running the compiler's own deserialiser. A per-zone subschema written into
 /// `mission-editor-payload.schema.json` would be a SECOND declaration of a vocabulary whose entire
 /// design premise (see `$defs/zoneRules`) is that there is exactly one place a misspelled rule key
 /// can be caught.
@@ -197,7 +198,7 @@ fn sharpen_quantised_radius(zone: &Value, loc: &str) -> Option<String> {
 ///
 /// The compile rounds every zone coordinate to 0.1 m, and `round_coord(0.04) = 0.0` violates
 /// `$defs/circle.r`'s `exclusiveMinimum: 0` — while `0.04` itself is perfectly schema-valid.
-/// MEASURED: `circle r: 0.04` → save **201** → `/compiled` **500**
+/// Without the projection: `circle r: 0.04` → save **201** → submit **422**
 /// `"/zones/0/shape: {\"circle\":{...,\"r\":0.0}} is not valid under any of the schemas listed in
 /// the 'oneOf' keyword"`. A click without a drag in the draw tool produces exactly that radius, so
 /// a check that validated only the authored document would pass it straight through.
@@ -206,9 +207,9 @@ fn sharpen_quantised_radius(zone: &Value, loc: &str) -> Option<String> {
 /// ## Why it cannot reject a payload that compiles today
 ///
 /// [`projected_zone`] returns `None` for every zone `flatten_authored_zone` drops (no usable
-/// shape, empty `id`, empty `type`). A dropped zone never reaches the document, so it cannot 500,
-/// so refusing it here would break the invariant this boundary holds: the accept set at save must
-/// not be narrower than the compile set.
+/// shape, empty `id`, empty `type`). A dropped zone never reaches the document, so it cannot fail
+/// the compile, so refusing it here would break the invariant this boundary holds: the accept set
+/// at save must not be narrower than the compile set.
 ///
 /// ## Cost
 ///

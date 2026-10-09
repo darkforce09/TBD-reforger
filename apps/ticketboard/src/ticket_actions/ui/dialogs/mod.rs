@@ -18,7 +18,7 @@ use ticket_creation::*;
 
 /// Render the open dialog as a modal. Returns `true` when it should close
 /// (Cancel, Esc, backdrop, or a dispatch).
-pub fn dialog_ui(
+pub(crate) fn dialog_ui(
     ctx: &egui::Context,
     b: &TicketActionContext<'_>,
     mctx: MutationContext<'_>,

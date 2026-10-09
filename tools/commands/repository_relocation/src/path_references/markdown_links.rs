@@ -6,7 +6,7 @@
 //!
 //! **Position:** read by [`super::relative_references`], which resolves relative destinations
 //! against the document's folder, and by [`super`], which opens only these spans in frozen
-//! records.
+//! records; [`super::contents_block`] shares its fence reading.
 //!
 //! **Signals & state:** none; pure functions over the document text.
 //!
@@ -50,7 +50,7 @@ pub(crate) fn link_destinations(source: &str) -> Vec<Range<usize>> {
 }
 
 /// The fence character and run length when `trimmed` opens or closes a fenced block.
-fn fence_marker(trimmed: &str) -> Option<(u8, usize)> {
+pub(super) fn fence_marker(trimmed: &str) -> Option<(u8, usize)> {
     let first = *trimmed.as_bytes().first()?;
     if first != b'`' && first != b'~' {
         return None;

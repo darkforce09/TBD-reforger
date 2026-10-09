@@ -30,5 +30,5 @@ highest workspace crate it depends on.
 - Depends on: external crates, and the foundation, mission and geometry crates.
 - Used by: the API and the map engine.
 - Rules: a mission crate declares `category = "crates/mission"`, depends on no crate outside the
-  foundation, mission and geometry categories and never on `legacy/`, an application or a tool
+  foundation, mission and geometry categories and never on an application or a tool
   (`cargo xtask verify crate-tiers`).

@@ -20,8 +20,8 @@ pub(super) const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
     "apps/ticketboard",
     "apps/api",
     "apps/frontend",
-    "legacy/map_engine",
-    "legacy/graphics_engine",
+    "crates/geometry/camera_math",
+    "crates/graphics/render_primitives",
     "apps/offline_service_worker",
     "tools/foundation/verification_core",
     "tools/foundation/process_runner",
@@ -96,16 +96,9 @@ impl Drop for TemporaryCheckout {
     }
 }
 
-/// The repository this crate is built from: the nearest folder above the crate whose
-/// `Cargo.toml` declares the `[workspace]`.
+/// The repository this crate is built from: the checkout root `repository_root` finds above the
+/// crate's manifest folder.
 pub(super) fn this_repository() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .skip(1)
-        .find(|folder| {
-            std::fs::read_to_string(folder.join("Cargo.toml"))
-                .is_ok_and(|manifest| manifest.lines().any(|line| line.trim() == "[workspace]"))
-        })
-        .expect("the crate sits inside the workspace whose root manifest declares [workspace]")
-        .to_path_buf()
+    repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+        .expect("the crate sits inside a checkout holding the root marker")
 }

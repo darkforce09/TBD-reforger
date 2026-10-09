@@ -27,16 +27,27 @@ const SERVER_CONFIG_MAX_BYTES: u64 = 1 << 20;
 /// Why the scenario could not be switched. The file is unchanged in every case.
 #[derive(Debug, Error)]
 pub enum ServerConfigError {
+    /// The file or its metadata cannot be read; carries the failure.
     #[error("cannot be read: {0}")]
     Unreadable(io::Error),
+    /// The file is larger than a server config can be.
     #[error("is larger than {limit} bytes")]
-    TooLarge { limit: u64 },
+    TooLarge {
+        /// The largest size accepted, in bytes.
+        limit: u64,
+    },
+    /// The file is not JSON; carries the parser's description.
     #[error("is not valid JSON: {0}")]
     NotJson(String),
+    /// The document has no single `game.scenarioId` string member (a member is missing or
+    /// repeated, or the value is not a string); carries which.
     #[error("has no single game.scenarioId string to replace: {0}")]
     NoScenarioId(&'static str),
+    /// Replacing the value's text yields a document that differs from the original beyond
+    /// `game.scenarioId`.
     #[error("cannot be rewritten without changing more than game.scenarioId")]
     RewriteNotSurgical,
+    /// The rewritten file cannot take the original's place; carries the failure.
     #[error("cannot be replaced: {0}")]
     NotReplaced(io::Error),
 }
@@ -48,10 +59,12 @@ pub struct DedicatedServerConfig {
 }
 
 impl DedicatedServerConfig {
+    /// The config file at `path`; nothing is read until a switch.
     pub fn new(path: PathBuf) -> Self {
         Self { path }
     }
 
+    /// The config file's path.
     pub fn path(&self) -> &Path {
         &self.path
     }

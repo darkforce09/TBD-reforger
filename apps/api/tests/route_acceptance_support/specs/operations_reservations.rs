@@ -317,7 +317,7 @@ fn game_runtime_specs() -> Vec<RouteSpec> {
 }
 
 /// Every spec of the `operations_reservations` part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     [reservation_specs(), game_runtime_specs()]
         .into_iter()
         .flatten()

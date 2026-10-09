@@ -4,7 +4,7 @@
 //! manual, builds the state the panes share, and arranges the index and the open manual in a
 //! split view.
 //! **Position:** the `/wiki` and `/wiki/:slug` routes, behind the authentication gate.
-//! **Signals & state:** a `LocalResource` for the page list; the shared [`WikiPageState`] (the
+//! **Signals & state:** a `LocalResource` for the page list; the shared `WikiPageState` (the
 //! `search`, `mode` and `drafts` signals and an `is_admin` memo over the `AuthStore` from
 //! context); the route's `:slug` parameter via the router.
 //! **Invariants:** the admin memo re-reads the store, so the editing affordances appear only for

@@ -30,7 +30,7 @@ scratch/everon/spike/TBD_SatExport_everon.tga (4096²)
   ─▶ scratch/everon/map/everon-map-ortho.png + map-ortho-meta.json
 ```
 
-- `build_landcover_masks` samples the orthophoto at `CLASS_PX` (3,200 px), classes each pixel as
+- `build_landcover_masks` samples the orthophoto at `CLASS_RASTER_PIXELS` (3,200 px), classes each pixel as
   water (blue at least green), forest, bright ground or grass by the thresholds in the parent file,
   cleans each mask with box-blur thresholds, and writes soft-edged masks and their fractions. Only
   `everon` has a source; any other terrain is an error.
@@ -55,7 +55,7 @@ scratch/everon/spike/TBD_SatExport_everon.tga (4096²)
   `world_export_pipeline::topo` for the road geometry; `resvg` for the strokes;
   the `repository_layout` crate for the scratch and terrain folders and
   `crate::decision_record_locations` for the artifact folders;
-  `repository_layout::find_repository_root` for the checkout root.
+  `repository_root::find_repository_root` for the checkout root.
 - Used by: `tools/map_assets/map_raster_pipeline/src/command_line.rs` (the `build-landcover`,
   `build-cartographic`, `build-pyramid`, `reset-water-meta`, `patch-unified-bytes`,
   `patch-map-tiles-meta` and `verify-cartographic` subcommands); the `map-water-everon` and

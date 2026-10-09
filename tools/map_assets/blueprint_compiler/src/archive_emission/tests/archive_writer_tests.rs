@@ -5,14 +5,14 @@ use world_line_of_sight::occluder_library::BuildingArchiveBytes;
 
 fn prefabs_dir() -> PathBuf {
     terrain_dir(
-        &::repository_layout::find_repository_root().expect("repository root"),
+        &::repository_root::find_repository_root().expect("repository root"),
         "everon",
     )
     .join("prefabs")
 }
 
 /// The archive read back through the loader's own entry point, plus the JSON it came from.
-fn built_and_read() -> (Built, BuildingArchiveBytes) {
+fn built_and_read() -> (BuiltArchive, BuildingArchiveBytes) {
     let built = build(&prefabs_dir()).expect("build the archive");
     let bytes = to_bytes(&built.archive).expect("serialise");
     let held = BuildingArchiveBytes::new(&bytes);
@@ -49,7 +49,7 @@ fn archive_round_trips_every_committed_descriptor() {
         .collect();
     let mut blocking = 0usize;
     for path in &files {
-        let json: PrefabDescriptor = read_json(path).expect("parse descriptor");
+        let json: PrefabDescriptor = read_json_file(path).expect("parse descriptor");
         let row = by_pid
             .get(&json.prefab_id.get())
             .unwrap_or_else(|| panic!("pid {} missing from the archive", json.prefab_id));
@@ -102,7 +102,7 @@ fn archive_carries_every_committed_blueprint_level() {
     assert_eq!(built.blueprint_slugs.len(), jsons.len());
 
     for path in &jsons {
-        let json: JsonBlueprint = read_json(path).expect("parse blueprint");
+        let json: JsonBlueprint = read_json_file(path).expect("parse blueprint");
         let row = a
             .blueprints
             .iter()
@@ -225,7 +225,7 @@ fn archive_boot_splits_the_whole_corpus_and_never_censuses_a_blocking_prefab() {
     assert_eq!(by_pid.len(), boot.blas_by_pid.len(), "one row per pid");
     let mut with_blas = 0usize;
     for path in sorted_json_files(&prefabs_dir().join("descriptors")).expect("descriptors") {
-        let json: PrefabDescriptor = read_json(&path).expect("parse descriptor");
+        let json: PrefabDescriptor = read_json_file(&path).expect("parse descriptor");
         let pid = u16::try_from(json.prefab_id.get()).expect("everon pids fit u16");
         let want: Vec<String> = json.blas_paths().iter().map(|s| (*s).to_string()).collect();
         assert_eq!(

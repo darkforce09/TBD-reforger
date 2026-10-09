@@ -62,7 +62,7 @@ struct RunningEvent {
 }
 
 /// The operations reservations world.
-pub struct OperationsReservationsWorld {
+pub(crate) struct OperationsReservationsWorld {
     running: RunningEvent,
     /// An event bound to the world's server with no deployment in effect.
     idle_event: Uuid,

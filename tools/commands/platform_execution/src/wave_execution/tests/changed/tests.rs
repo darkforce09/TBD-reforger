@@ -180,7 +180,7 @@ fn workspace_members_parse_is_not_empty_on_the_real_manifest() {
     // process-wide lock in [`tool_test_support`], or a concurrent scratch-repo test
     // (whose tree carries `.ai/tickets/ROOT`) becomes the "repo root" this test reads.
     let Some(cwd) = tool_test_support::CwdGuard::enter_resolved(|| {
-        repository_layout::find_repository_root().ok()
+        repository_root::find_repository_root().ok()
     }) else {
         return;
     };
@@ -231,8 +231,8 @@ fn the_wasm_scope_follows_workspace_inherited_edges_into_crates_members() {
         &[
             (
                 "Cargo.toml",
-                "[workspace]\nmembers = [\"apps/frontend\", \"apps/api\", \"legacy/engine\", \
-                 \"legacy/renderer\", \"crates/*/*\"]\n\n[workspace.dependencies]\n\
+                "[workspace]\nmembers = [\"apps/frontend\", \"apps/api\", \"engines/engine\", \
+                 \"engines/renderer\", \"crates/*/*\"]\n\n[workspace.dependencies]\n\
                  policy = { path = \"crates/contracts/policy\" }\n\
                  guard = { path = \"crates/foundation/guard\" }\n\
                  unrelated = { path = \"crates/foundation/unrelated\" }\nserde = \"1\"\n",
@@ -242,21 +242,21 @@ fn the_wasm_scope_follows_workspace_inherited_edges_into_crates_members() {
                 "[package]\nname = \"frontend\"\n\n[dependencies]\npolicy = { workspace = true }\n\
                  serde = { workspace = true }\n\n\
                  [target.'cfg(target_arch = \"wasm32\")'.dependencies]\n\
-                 engine = { path = \"../../legacy/engine\" }\n\n\
+                 engine = { path = \"../../engines/engine\" }\n\n\
                  [dev-dependencies]\nguard.workspace = true\n",
             ),
             (
                 "apps/api/Cargo.toml",
                 "[package]\nname = \"api\"\n\n[dependencies]\nunrelated = { workspace = true }\n\
-                 engine = { path = \"../../legacy/engine\" }\n",
+                 engine = { path = \"../../engines/engine\" }\n",
             ),
             (
-                "legacy/engine/Cargo.toml",
+                "engines/engine/Cargo.toml",
                 "[package]\nname = \"engine\"\n\n[dependencies]\n\
                  renderer = { path = \"../renderer\" }\n",
             ),
             (
-                "legacy/renderer/Cargo.toml",
+                "engines/renderer/Cargo.toml",
                 "[package]\nname = \"renderer\"\n",
             ),
             (
@@ -292,8 +292,8 @@ fn the_wasm_scope_follows_workspace_inherited_edges_into_crates_members() {
             "apps/frontend",
             "crates/contracts/policy",
             "crates/foundation/guard",
-            "legacy/engine",
-            "legacy/renderer",
+            "engines/engine",
+            "engines/renderer",
         ]
     );
     assert_eq!(verdicts, (true, true, false, false), "{scope:?}");

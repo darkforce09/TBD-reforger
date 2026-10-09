@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use serde_json::{Value, json};
 
 fn definitions_dir() -> PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("contracts/definitions")
 }
@@ -23,7 +23,7 @@ fn is_hyphenated_uuid(value: &str) -> bool {
 }
 
 /// The schema file, or one of its definitions, as a format-checking validator.
-pub fn validator(schema_file: &str, definition: Option<&str>) -> jsonschema::Validator {
+pub(crate) fn validator(schema_file: &str, definition: Option<&str>) -> jsonschema::Validator {
     let path = definitions_dir().join(schema_file);
     let raw = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
@@ -50,7 +50,7 @@ pub fn validator(schema_file: &str, definition: Option<&str>) -> jsonschema::Val
 }
 
 /// Assert `value` satisfies the contract, naming every violation.
-pub fn assert_valid(schema_file: &str, definition: Option<&str>, value: &Value) {
+pub(crate) fn assert_valid(schema_file: &str, definition: Option<&str>, value: &Value) {
     let validator = validator(schema_file, definition);
     let errors: Vec<String> = validator
         .iter_errors(value)
@@ -67,7 +67,7 @@ pub fn assert_valid(schema_file: &str, definition: Option<&str>, value: &Value) 
 }
 
 /// Assert `value` violates the contract: the schema is strict enough to see the difference.
-pub fn assert_invalid(schema_file: &str, definition: Option<&str>, value: &Value) {
+pub(crate) fn assert_invalid(schema_file: &str, definition: Option<&str>, value: &Value) {
     assert!(
         !validator(schema_file, definition).is_valid(value),
         "{schema_file} accepts a value it must reject: {value}"
@@ -75,7 +75,7 @@ pub fn assert_invalid(schema_file: &str, definition: Option<&str>, value: &Value
 }
 
 /// Assert the type generated from the same contract decodes `value`.
-pub fn assert_decodes<T: serde::de::DeserializeOwned>(what: &str, value: &Value) {
+pub(crate) fn assert_decodes<T: serde::de::DeserializeOwned>(what: &str, value: &Value) {
     if let Err(error) = serde_json::from_value::<T>(value.clone()) {
         panic!("{what}: the generated contract type rejects the value: {error}\n{value:#}");
     }

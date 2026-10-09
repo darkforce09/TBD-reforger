@@ -20,6 +20,7 @@ mod account_switch_lane;
 mod command_line;
 mod error;
 mod guarded_exchange;
+mod http_client;
 mod load_run;
 mod member_request_lane;
 pub mod prelude;

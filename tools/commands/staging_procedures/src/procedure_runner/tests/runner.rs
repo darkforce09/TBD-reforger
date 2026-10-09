@@ -206,7 +206,7 @@ fn staging_runner_fails_a_case_whose_effect_misses_its_deadline() {
 }
 
 fn clock_reached(clock: &FakeClock, second: u64) -> bool {
-    use super::clock::Clock;
+    use time_source::Clock as _;
     clock.now_unix_ms() >= seconds(second)
 }
 

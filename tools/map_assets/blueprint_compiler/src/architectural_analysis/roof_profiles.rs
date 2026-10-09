@@ -14,13 +14,17 @@
 
 use building_interiors::blueprint::footprint::RoofGrid;
 
-use crate::architectural_analysis::contour_tracing::r2;
-use crate::voxel_processing::analysis_parameters::Params;
-use crate::voxel_processing::voxel_types::{DumpMeta, VerticalScan};
+use crate::voxel_processing::analysis_parameters::AnalysisParameters;
+use crate::voxel_processing::voxel_dump_lattice::round_to_two_decimals;
+use crate::voxel_processing::voxel_types::{DumpMetadata, VerticalScan};
 
 /// Downsample the top-surface field into a local-frame [`RoofGrid`]; `None` when nothing
 /// roof-like survives (the blueprint then simply omits `roof`).
-pub(crate) fn build(vert: &VerticalScan, meta: &DumpMeta, p: &Params) -> Option<RoofGrid> {
+pub(crate) fn build(
+    vert: &VerticalScan,
+    meta: &DumpMetadata,
+    p: &AnalysisParameters,
+) -> Option<RoofGrid> {
     let k = ((p.roof_cell_m / meta.cell).round() as usize).max(1);
     let (cnx, cnz) = (vert.nx.div_ceil(k), vert.nz.div_ceil(k));
     let oy = meta.origin[1];
@@ -43,7 +47,7 @@ pub(crate) fn build(vert: &VerticalScan, meta: &DumpMeta, p: &Params) -> Option<
             if (covered as f64) < p.roof_min_coverage * (k * k) as f64 || covered == 0 {
                 continue;
             }
-            let h = r2(lo + oy);
+            let h = round_to_two_decimals(lo + oy);
             if h < floor_local + p.roof_min_above_floor_m {
                 continue;
             }
@@ -57,8 +61,8 @@ pub(crate) fn build(vert: &VerticalScan, meta: &DumpMeta, p: &Params) -> Option<
 
     heights.iter().any(Option::is_some).then(|| RoofGrid {
         origin: [meta.origin[0], meta.origin[2]],
-        // r2: 3 × 0.1 must land in the contract as 0.3, not 0.30000000000000004.
-        cell_size_m: r2(k as f64 * meta.cell),
+        // round_to_two_decimals: 3 × 0.1 must land in the contract as 0.3, not 0.30000000000000004.
+        cell_size_m: round_to_two_decimals(k as f64 * meta.cell),
         nx: cnx,
         nz: cnz,
         heights_m: heights,

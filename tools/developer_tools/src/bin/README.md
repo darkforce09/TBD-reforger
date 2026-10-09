@@ -23,10 +23,10 @@ tools/developer_tools/src/bin/
 
 ## How it works
 
-Each file is a three-line `main` that calls one entry function of a tool crate (the
-`enfusion_script_index`, `browser_gate_suites`, `enfusion_mcp_broker`, `world_export_pipeline`,
-`map_raster_pipeline`, `acknowledgement_dropping_relay` and `staging_load_generator` crates) and
-returns its `ExitCode`; the `[[bin]]` tables of `tools/developer_tools/Cargo.toml` name the
+Each file is a `//!` crate doc naming the binary and a three-line `main` that calls one entry
+function of a tool crate (the `enfusion_script_index`, `browser_gate_suites`,
+`enfusion_mcp_broker`, `world_export_pipeline`, `map_raster_pipeline`,
+`acknowledgement_dropping_relay` and `staging_load_generator` crates) and returns its `ExitCode`; the `[[bin]]` tables of `tools/developer_tools/Cargo.toml` name the
 binaries. Argument parsing, help text and error reporting live in the owning module: seven binaries
 parse with clap's derive API, and `mcpd` reads its few flags itself.
 

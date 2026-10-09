@@ -20,9 +20,9 @@ use building_interiors::blueprint::structure::BuildingLevel;
 use building_interiors::blueprint::structure::BuildingWall;
 use building_interiors::blueprint::structure::FloorPolygon;
 
-use crate::architectural_analysis::contour_tracing::r2;
 use crate::architectural_analysis::wall_extraction::BandWalls;
-use crate::voxel_processing::analysis_parameters::Params;
+use crate::voxel_processing::analysis_parameters::AnalysisParameters;
+use crate::voxel_processing::voxel_dump_lattice::round_to_two_decimals;
 use crate::voxel_processing::voxel_types::{VerticalScan, VoxelDump};
 
 pub(crate) struct BandProducts {
@@ -44,9 +44,9 @@ pub(crate) fn assemble(
     dump: &VoxelDump,
     vert: &VerticalScan,
     bands: Vec<BandProducts>,
-    p: &Params,
+    p: &AnalysisParameters,
 ) -> BuildingBlueprint {
-    let m = dump.meta();
+    let m = dump.metadata();
     let (ox, oy, oz) = (m.origin[0], m.origin[1], m.origin[2]);
     let local_pt = |pt: [f64; 2]| [pt[0] + ox, pt[1] + oz];
     let (dims_nx, dims_nz) = (vert.nx, vert.nz);
@@ -92,7 +92,7 @@ pub(crate) fn assemble(
             heights_m: band
                 .plate_heights
                 .iter()
-                .map(|h| h.map(|y| r2(y + oy)))
+                .map(|h| h.map(|y| round_to_two_decimals(y + oy)))
                 .collect(),
         });
         levels.push(BuildingLevel {
@@ -186,8 +186,8 @@ pub(crate) fn assemble(
 /// Furniture records from the dump's excluded-prop lines: local-frame positions pass through;
 /// yaw becomes ROOT-relative (the dumper records world yaw; the live extractor wrote world yaw
 /// into the local-frame record — wrong for rotated instances).
-fn place_furniture(dump: &VoxelDump, levels: &mut [BuildingLevel], p: &Params) {
-    let root_yaw = dump.meta().root_yaw_deg;
+fn place_furniture(dump: &VoxelDump, levels: &mut [BuildingLevel], p: &AnalysisParameters) {
+    let root_yaw = dump.metadata().root_yaw_deg;
     for (seq, f) in dump.furniture.iter().enumerate() {
         let (fw, fh, fd) = (f.size[0], f.size[1], f.size[2]);
         if fw.max(fd) > p.furn_max_plan_m || fh > p.furn_max_height_m {

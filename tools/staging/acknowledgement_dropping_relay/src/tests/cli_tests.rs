@@ -13,7 +13,7 @@ use super::super::drop_policy::DropTarget;
 use super::super::relay_settings::RelaySettings;
 use super::super::stub_upstream::TemporaryFolder;
 use super::{ControlRequest, RelayCommand, RelayCommandLine, run};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 /// The unit the staging deploy installs, relative to the checkout root.
 const RELAY_UNIT: &str = "deploy/systemd/acknowledgement-dropping-relay@.service";

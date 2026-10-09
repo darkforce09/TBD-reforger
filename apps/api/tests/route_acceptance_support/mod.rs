@@ -18,16 +18,16 @@
 // not dead code; the gate runs clippy over every target with `-D warnings`.
 #![allow(dead_code)]
 
-pub mod actors;
-pub mod contracts;
-pub mod derived_probes;
-pub mod dimension_runner;
-pub mod probe;
-pub mod requests;
-pub mod round_trip_comparison;
-pub mod route_table;
-pub mod route_tags;
-pub mod rust_source_scanning;
-pub mod spec;
-pub mod specs;
-pub mod world;
+pub(crate) mod actors;
+pub(crate) mod contracts;
+pub(crate) mod derived_probes;
+pub(crate) mod dimension_runner;
+pub(crate) mod probe;
+pub(crate) mod requests;
+pub(crate) mod round_trip_comparison;
+pub(crate) mod route_table;
+pub(crate) mod route_tags;
+pub(crate) mod rust_source_scanning;
+pub(crate) mod spec;
+pub(crate) mod specs;
+pub(crate) mod world;

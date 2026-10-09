@@ -17,6 +17,7 @@ mod browser_session;
 mod chromium_discovery;
 mod error;
 mod gate_font_cache;
+mod http_client;
 mod intercepted_request;
 pub mod prelude;
 

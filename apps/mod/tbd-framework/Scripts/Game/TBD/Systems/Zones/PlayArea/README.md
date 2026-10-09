@@ -72,5 +72,5 @@ empty list confines every class; a zone that leaves a class out does not confine
 
 ## Related documentation
 
-- [Play area warning specification](/documentation/mod/tbd-framework/UI/play_area_warning/play_area_warning_specification.md)
+- [Play area warning specification](/documentation/apps/mod/tbd-framework/UI/play_area_warning/play_area_warning_specification.md)
   — the design of the out-of-bounds warning the player sees

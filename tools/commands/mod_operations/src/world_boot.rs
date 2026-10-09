@@ -30,7 +30,7 @@ use crate::website_api_client::{
 };
 use crate::world_boot_verdict::MissionCtx;
 use process_runner::{Run, StreamingChild};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 const FIXTURE_TITLE: &str = "compiled-boot fixture";
 const SERVER_REL: &str = ".local/share/Steam/steamapps/common/Arma Reforger Server";

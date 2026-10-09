@@ -96,24 +96,31 @@ impl DiscordRefresh {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("bind the fake Discord");
-        let base = format!("http://{}", listener.local_addr().unwrap());
+        let base = format!(
+            "http://{}",
+            listener
+                .local_addr()
+                .expect("the listener reports its local address")
+        );
         let fake_discord = tokio::spawn(async move {
-            axum::serve(listener, fake).await.unwrap();
+            axum::serve(listener, fake)
+                .await
+                .expect("the stand-in HTTP server keeps serving");
         });
         Arc::make_mut(&mut state.discord).set_api_base(&base);
 
         sqlx::query("DELETE FROM discord_membership_snapshots")
             .execute(&state.pool)
             .await
-            .unwrap();
+            .expect("the delete from discord_membership_snapshots succeeds");
         enroll_accounts(&state.pool, &state.cfg.discord_guild_id)
             .await
-            .unwrap();
+            .expect("the account enrollment succeeds");
         sqlx::query("DELETE FROM discord_membership_snapshots WHERE discord_id <> $1")
             .bind(&discord_id)
             .execute(&state.pool)
             .await
-            .unwrap();
+            .expect("the delete from discord_membership_snapshots succeeds");
         let refresh = Self {
             state,
             discord_id,
@@ -137,7 +144,7 @@ impl DiscordRefresh {
         .bind(&self.discord_id)
         .execute(&self.state.pool)
         .await
-        .unwrap();
+        .expect("the update of discord_membership_snapshots succeeds");
         self.free_request_budget().await;
     }
 
@@ -147,7 +154,7 @@ impl DiscordRefresh {
         )
         .execute(&self.state.pool)
         .await
-        .unwrap();
+        .expect("the update of discord_rest_schedule succeeds");
     }
 
     /// The held lease expires and the request budget the failed attempt reserved is spent.
@@ -160,7 +167,7 @@ impl DiscordRefresh {
         .bind(&self.discord_id)
         .execute(&self.state.pool)
         .await
-        .unwrap();
+        .expect("the update of discord_membership_snapshots succeeds");
         self.free_request_budget().await;
     }
 
@@ -185,7 +192,7 @@ impl DiscordRefresh {
         .bind(&self.discord_id)
         .fetch_all(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the read of user_discord_roles runs")
     }
 
     /// The refresh fails at `point`; answers the lease the failed attempt left held.
@@ -224,7 +231,11 @@ impl DiscordRefresh {
         // Until the lease expires no refresh claims the account, so Discord is not asked again.
         let reads = self.reads();
         self.free_request_budget().await;
-        assert!(!reconcile_one(&self.state).await.unwrap());
+        assert!(
+            !reconcile_one(&self.state)
+                .await
+                .expect("the reconcile pass succeeds")
+        );
         assert_eq!(self.reads(), reads);
         assert_eq!(self.snapshot().await, (status, token, true, revision));
         lease
@@ -233,7 +244,11 @@ impl DiscordRefresh {
     /// The refresh after the lease expired applies the observation.
     async fn refresh_after_expiry(&self) {
         self.expire_lease().await;
-        assert!(reconcile_one(&self.state).await.unwrap());
+        assert!(
+            reconcile_one(&self.state)
+                .await
+                .expect("the reconcile pass succeeds")
+        );
         let (status, token, held, _) = self.snapshot().await;
         assert_eq!(status, "member");
         assert_eq!(
@@ -257,7 +272,7 @@ impl DiscordRefresh {
             &self.state.cfg.discord_guild_id,
         )
         .await
-        .unwrap();
+        .expect("accepting the stale membership observation succeeds");
         assert!(!applied, "the failed attempt's lease is fenced");
         assert_eq!(self.recorded_roles().await, [OBSERVED_ROLE]);
     }

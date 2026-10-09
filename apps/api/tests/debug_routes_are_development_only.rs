@@ -103,7 +103,7 @@ fn rust_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
 #[test]
 fn route_acceptance_debug_equipment_routes_list_every_tagged_debug_route() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let api_crates = repository_layout::find_repository_root_from(manifest)
+    let api_crates = repository_root::find_repository_root_from(manifest)
         .expect("the repository root above the API package")
         .join("crates/api");
     let mut files = Vec::new();

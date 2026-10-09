@@ -33,7 +33,7 @@ pub(super) const SOURCES: [&str; 5] = [
 
 /// The repository root of this checkout.
 pub(super) fn repository_root() -> PathBuf {
-    repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root")
 }
 

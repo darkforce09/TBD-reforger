@@ -4,6 +4,7 @@ title = "Auth callback persists a token with no user"
 summary = "auth.rs:454-455 persists refresh_token before GET /me returns, so persist_state writes user:null. Interrupt that window and the tab holds a valid token with no user: the header says Sign in while token-scoped state resolves."
 class = "bug"
 status = "idea"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): core/auth.rs: removed in commit 4f67010bd, no successor."
 priority = 2
 parent = "T-946"
 main_goal = "A tab never holds a usable refresh token without the user it belongs to."

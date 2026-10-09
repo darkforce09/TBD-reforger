@@ -26,7 +26,7 @@ documentation/archive/handoffs_and_kickoffs/
 ## Boundaries
 
 - Depends on: nothing live; the documents quote the code, queues and tickets of their time.
-- Used by: the [mod documentation](/documentation/mod/README.md), which links the mod
+- Used by: the [mod documentation](/documentation/apps/mod/README.md), which links the mod
   continuation pointer; the documentation program's own records.
 - Rules: never reworded, only links change; the execution contract's decisions live in the Mission
   Creator decisions log, not here.

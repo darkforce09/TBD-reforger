@@ -1,7 +1,7 @@
 use super::cli::SchemaCmd;
 use anyhow::Result;
 use map_asset_verification::{labels, object_goldens, terrain_manifest};
-use repository_layout::find_repository_root;
+use repository_layout::prelude::find_repository_root;
 
 pub(crate) fn run(cmd: SchemaCmd) -> Result<u8> {
     {

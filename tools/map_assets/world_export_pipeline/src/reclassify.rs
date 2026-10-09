@@ -50,7 +50,7 @@ use serde_json::{Map, Value, json};
 use super::chunk_partitioner::{gunzip, gz9};
 use super::classify::{Classifier, Rules, load_rules};
 use super::json_number_formatting::js_normalize;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 /// One prefab whose classification the current rules disagree with the committed catalogue on.
 #[derive(Debug, Clone, PartialEq, Eq)]

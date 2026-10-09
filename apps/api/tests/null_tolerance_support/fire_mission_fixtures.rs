@@ -5,7 +5,7 @@
 //! catalog routes.
 //!
 //! **Position:** called by [`super::database_fixtures::seed`] and
-//! [`super::database_fixtures::route_sweep`]; the rows it names are NULLed by
+//! [`super::route_sweep::route_sweep`]; the rows it names are NULLed by
 //! [`super::database_fixtures::blast_nulls`] like every other seeded table.
 //!
 //! **Signals & state:** writes to the shared integration database. The catalog version is
@@ -24,10 +24,10 @@ use uuid::Uuid;
 use super::{NULL_UID, SweepCaller};
 
 /// Slug of the catalog version the catalog-model fire mission pins.
-pub const NULL_CATALOG_ID: &str = "null-tolerance";
+pub(crate) const NULL_CATALOG_ID: &str = "null-tolerance";
 
 /// Version of [`NULL_CATALOG_ID`] the seed stores.
-pub const NULL_CATALOG_VERSION: i32 = 1;
+pub(crate) const NULL_CATALOG_VERSION: i32 = 1;
 
 /// Stores the pinned catalog version (once), both fire missions and the gun, attached to
 /// `event`; returns their `(table, WHERE clause)` blast rows.
@@ -35,7 +35,7 @@ pub const NULL_CATALOG_VERSION: i32 = 1;
 /// # Panics
 ///
 /// On any database error, naming the statement.
-pub async fn seed_fire_missions(pool: &PgPool, event: Uuid) -> Vec<(&'static str, String)> {
+pub(crate) async fn seed_fire_missions(pool: &PgPool, event: Uuid) -> Vec<(&'static str, String)> {
     let catalog_sha256 = "99".repeat(32);
     sqlx::query(
         "INSERT INTO ballistics_catalogs (catalog_id, catalog_version, title, game_build, \
@@ -113,9 +113,9 @@ pub async fn seed_fire_missions(pool: &PgPool, event: Uuid) -> Vec<(&'static str
     ]
 }
 
-/// The [`super::database_fixtures::route_sweep`] entries of the two public catalog reads: the
+/// The [`super::route_sweep::route_sweep`] entries of the two public catalog reads: the
 /// summary list and the pinned version's document.
-pub fn ballistics_catalog_sweep() -> Vec<(&'static str, String, SweepCaller)> {
+pub(crate) fn ballistics_catalog_sweep() -> Vec<(&'static str, String, SweepCaller)> {
     vec![
         (
             "/ballistics-catalogs",

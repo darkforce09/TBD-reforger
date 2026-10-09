@@ -15,7 +15,8 @@ crates/api/api_discord/src/
 ├── lib.rs                        the crate root: module header, `mod` lines and the re-export of `Error`
 ├── membership_lookup_failure.rs  `MembershipLookupFailure`: a bot member read with no usable answer
 ├── prelude.rs                    both clients, their answers and `Error` for glob import
-└── tests/                        unit tests for the client, the profile checks and the webhook payload
+├── tests/                        unit tests for the client, the profile checks and the webhook payload
+└── tls_crypto_provider.rs        `ensure_tls_provider`: installs the rustls ring provider once, before either client is built
 ```
 
 ## How it works

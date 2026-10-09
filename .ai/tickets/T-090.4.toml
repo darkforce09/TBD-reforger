@@ -8,6 +8,7 @@ order = 8010
 spec = "documentation/tickets/specs/t090_4_z_placement_audit.md"
 plan = "documentation/tickets/plans/t-090_4_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): tools/tbd-tools/src/world/mod.rs: removed in the restructure (commit 2a105fa4f), no successor."
 parent = "T-090"
 main_goal = "Phase A: offline tool compares each exported map object's pivot Z against the T-091 DEM at (x,y) — fast pass over 1M+ Eden objects. This slice is Phase A only — detect, no auto-fix."
 context = [
@@ -20,7 +21,7 @@ requirement = [
     "Missing z is a warn, never a fabricated value; no auto-fix writes anywhere.",
 ]
 current_state = [
-    "Blocked on the T-090.3 export and the T-091 DEM being present; the object catalog lives under packages/map-assets/everon/objects.",
+    "Blocked on the T-090.3 export and the T-091 DEM being present; the object catalog lives under assets/terrains/everon/objects.",
     "16-bit DEM quantization on slopes yields false positives; tilted and large props yield false negatives by design — deferred to T-090.6.",
 ]
 approach = [
@@ -39,7 +40,7 @@ estimated = ["scope"]
 owns = [
     "tools/tbd-tools/src/world/z_audit.rs",
     "tools/tbd-tools/src/world/mod.rs",
-    "tools/tbd-tools/src/bin/world.rs",
+    "tools/developer_tools/src/bin/world.rs",
     "packages/map-assets/everon/objects/z-audit.json",
     "packages/map-assets/everon/objects/z-audit-failures.json",
 ]

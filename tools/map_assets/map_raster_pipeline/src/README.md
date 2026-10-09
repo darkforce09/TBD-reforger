@@ -18,7 +18,7 @@ tools/map_assets/map_raster_pipeline/src/
 ├── decision_record_locations.rs    the lanes' decision-record folders under `.ai/artifacts/`
 ├── empty_write_refusal.rs          `refuse_empty_write`, the guard against empty overwrites
 ├── error.rs                        `Error` and `Result`, the context and refusal helpers
-├── glyphs.rs                       `build-glyph-atlas`: SVG glyphs to one WebP atlas and its mapping
+├── glyph_atlas.rs                  `build-glyph-atlas`: SVG glyphs to one WebP atlas and its mapping
 ├── image_operations.rs             PNG and WebP codecs, Lanczos resize, crop, blur, HSL and contrast
 ├── inland_water/                   the inland-water classifier and the orthophoto's water tint
 ├── inland_water.rs                 water tint colours and classifier thresholds; declares the water modules
@@ -70,7 +70,7 @@ read back through the `world_file_formats` validating reader before they are wri
 - Depends on:
   - `enfusion_pak::PakVfs` for the game's paks, and the `world_export_pipeline` crate for the
     texture decoder, the `.topo` road decoder and the JSON number spelling;
-  - the `repository_layout` crate (with `find_repository_root` for the checkout root),
+  - the `repository_root` crate for the checkout root, the `repository_layout` crate,
     `decision_record_locations.rs` for the decision records, `time_source` for the stamps and
     `content_digest` for the source digest;
   - `world_file_formats` (`archives`, `containers`, `ids`), `terrain_elevation`, `water_bodies`,
@@ -84,7 +84,7 @@ read back through the `world_file_formats` validating reader before they are wri
   `tools/commands/schema_tooling/src/schema_checks/map_glyphs.rs` that names `build-glyph-atlas`;
   and people, for the other subcommands.
 - Rules: no empty write over a committed asset (`refuse_empty_write_reds_on_empty` in
-  `tests/empty_write_refusal/tests.rs`); the archive emitters give the same bytes for the same
+  `tests/empty_write_refusal_tests.rs`); the archive emitters give the same bytes for the same
   inputs (`bytes_are_deterministic_across_runs`); an image lane (`inland_water`, `map_labels`) and
   its binary archive lane (`inland_water_archive`, `map_label_archives`) stay separate modules that
   share only names.

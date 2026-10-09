@@ -54,7 +54,7 @@ each asset inherits from, and what it overrides. An ASCII diagram in a text bloc
 
 ## Related documentation
 
-- [<document title>](/documentation/mod/<path to the document>) — <what it covers>
+- [<document title>](/documentation/apps/mod/<path to the document>) — <what it covers>
 ````
 
 ## Worked sample

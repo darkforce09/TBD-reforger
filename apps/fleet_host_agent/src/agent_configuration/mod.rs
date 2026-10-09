@@ -35,15 +35,20 @@ const START_DWELL_SECONDS: RangeInclusive<u64> = 0..=30;
 pub struct AgentConfiguration {
     /// The API origin, ending in `/`.
     pub api_base_url: Url,
+    /// The machine credential every ledger request carries, read from `credential_file`.
     pub machine_credential: SecretText,
+    /// The wait before the next claim after the ledger had nothing for this server.
     pub poll_interval: Duration,
+    /// The systemctl program, the game server's unit and the process-control timings.
     pub process_control: ProcessControlSettings,
     /// The dedicated server's JSON config, which restart_with_mission rewrites.
     pub server_config: DedicatedServerConfig,
+    /// The game server's RCON address and password.
     pub rcon: RconSettings,
 }
 
 impl AgentConfiguration {
+    /// Reads the configuration file at `path` and validates it as [`Self::parse`] does.
     pub fn load(path: &Path) -> Result<Self, ConfigurationError> {
         let text =
             fs::read_to_string(path).map_err(|source| ConfigurationError::FileUnreadable {

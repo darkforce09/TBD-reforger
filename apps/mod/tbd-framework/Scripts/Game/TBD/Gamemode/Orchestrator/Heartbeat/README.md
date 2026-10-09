@@ -73,4 +73,4 @@ timer from a replaced world runs once more and stops. The armed flag keeps a sec
 ## Related documentation
 
 - [Round orchestrator](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/README.md) — the framework manager and `IsFrameworkWorld()`
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the event loop
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the event loop

@@ -45,7 +45,7 @@ pub enum Error {
     Protocol(#[from] chrome_devtools_protocol::Error),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// A pattern scanning page text or route sources does not compile.
     #[error(transparent)]
     Pattern(#[from] regex::Error),

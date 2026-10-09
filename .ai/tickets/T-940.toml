@@ -8,6 +8,7 @@ order = 6999
 spec = "documentation/tickets/specs/t940_website_platform.md"
 plan = "documentation/tickets/plans/t-940_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): handlers/events/events.rs: removed in commit cb444b9bd, no successor; services/mod.rs: removed in commit 1e98eb1fe, no successor."
 priority = 0
 children = [
     "T-940.1",

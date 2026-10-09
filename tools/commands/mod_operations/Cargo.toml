@@ -38,6 +38,7 @@ regex = { workspace = true }
 # The `mod remote-logs` verdict.
 remote_debugging = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["preserve_order", "raw_value"] }
 tar = { workspace = true }

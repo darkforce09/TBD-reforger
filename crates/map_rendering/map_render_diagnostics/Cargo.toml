@@ -39,6 +39,8 @@ map_coordinates = { workspace = true }
 render_primitives = { workspace = true }
 # The monotonic and wall clocks of the benchmark and the stress pool.
 time_source = { workspace = true }
+# The seeded streams of the stress scene and the compute cull self-check's icon field.
+deterministic_random = { workspace = true }
 # Byte views of the camera matrices, instances and uniform blocks.
 bytemuck = { workspace = true }
 

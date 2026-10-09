@@ -48,7 +48,7 @@ use super::development_compose::{ComposeProject, compose_argv};
 use super::{IT_MAINT_DB, SEEDS, WEB, seed_file};
 use crate::container_database as dbc;
 use crate::error::{Result, ResultExt};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 // ── THE API FOLDER AND THE CONTAINER RUNTIME ────────────────────────────────────────────────────
 

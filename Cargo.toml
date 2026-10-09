@@ -55,11 +55,10 @@ rust-version = "1.95"
 license = "UNLICENSED"
 publish = false
 
-# The library crates under `crates/`, by path, and the external dependencies that two or more
-# members declare with the same version requirement. An external entry carries the version and,
-# where they are off, the default features; each member names its own features and `optional`
-# beside `workspace = true`, so a feature stays the choice of the member that needs it. A member
-# whose version requirement differs keeps its own specification.
+# The library crates under `crates/`, by path, and every external dependency a member declares;
+# no member carries its own version requirement. An external entry carries the version and, where
+# they are off, the default features; each member names its own features and `optional` beside
+# `workspace = true`, so a feature stays the choice of the member that needs it.
 [workspace.dependencies]
 aho-corasick = "1"
 ammonia = "4.1.3"
@@ -67,6 +66,9 @@ anyhow = "1"
 # The loopback relay that withholds one fleet executor answer on the staging host
 # (`tools/staging/acknowledgement_dropping_relay`).
 acknowledgement_dropping_relay = { path = "tools/staging/acknowledgement_dropping_relay" }
+# The AI agent tool-call guard and the failure-preserving command output filter behind
+# `cargo xtask ai` (`tools/commands/agent_context_guards`).
+agent_context_guards = { path = "tools/commands/agent_context_guards" }
 # The single-page app's account pages: sign-in, the sign-in callback and the account settings
 # (`crates/frontend/pages/account_pages`).
 account_pages = { path = "crates/frontend/pages/account_pages" }
@@ -140,7 +142,6 @@ api_command_center = { path = "crates/api/api_command_center" }
 api_background_workers = { path = "crates/api/api_background_workers" }
 async-stream = "0.3.6"
 axum = "0.8.9"
-axum-extra = "0.12.6"
 base64 = "0.22"
 # The seeded lattice of battery fire problems for native/wasm32 agreement
 # (`crates/ballistics/ballistics_agreement_cases`).
@@ -218,9 +219,19 @@ deterministic_random = { path = "crates/foundation/deterministic_random" }
 # (`tools/checks/documentation_checks`).
 documentation_checks = { path = "tools/checks/documentation_checks" }
 csv = "1.4.0"
+# The RCon packet checksum of the fleet host agent.
+crc32fast = "1.5.0"
 dotenvy = "0.15.7"
 # Ear-clipping polygon triangulation behind `render_primitives`.
 earcutr = "0.5.0"
+# The native window, its wgpu painter and the preference store of the ticketboard; default features
+# keep the wgpu backend, the member adds `persistence` (and `glow` through its own feature).
+eframe = "0.36.1"
+# In-app Markdown rendering on the same egui as `eframe`; default features off drop the image
+# loaders, the member selects the parser backend.
+egui_commonmark = { version = "0.25.0", default-features = false }
+# Table layouts on the same egui as `eframe`; default features off drop the image-loader support.
+egui_extras = { version = "0.36.1", default-features = false }
 # The Enfusion MCP client: daemon control, tool calls, the selftest and the server command
 # (`tools/commands/enfusion_mcp`).
 enfusion_mcp = { path = "tools/commands/enfusion_mcp" }
@@ -288,9 +299,9 @@ hex = "0.4.3"
 # The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).
 http_url_guard = { path = "crates/foundation/http_url_guard" }
 # The Mission Creator's draft store in IndexedDB (database `tbd-mission-yrs`, store `doc-state`).
-# A wasm-first wrapper; its default features pull `tokio` with only `sync` (oneshot), which compiles
-# on wasm32-unknown-unknown, and dropping them strips the async API, so default features stay on.
-idb = "0.6"
+# A wasm-first IndexedDB wrapper. Default features off: its `futures` feature links `tokio` into the
+# browser build, so `mission_creator_session` awaits the callback API through its own oneshot futures.
+idb = { version = "0.6", default-features = false }
 # Default features off; members select the codecs they decode and encode.
 image = { version = "0.25", default-features = false }
 # Lossless WebP encoding and decoding in pure Rust.
@@ -471,24 +482,27 @@ repository_checks = { path = "tools/checks/repository_checks" }
 # The structural engineering laws as pure checks over a checkout
 # (`tools/foundation/repository_laws`).
 repository_laws = { path = "tools/foundation/repository_laws" }
-# The checkout-root walk and the repository locations the tools share
-# (`tools/foundation/repository_layout`).
+# The repository locations the tools share (`tools/foundation/repository_layout`).
 repository_layout = { path = "tools/foundation/repository_layout" }
 # Manifest-driven relocation of tracked paths and the retired-spelling verification
 # (`tools/commands/repository_relocation`).
 repository_relocation = { path = "tools/commands/repository_relocation" }
+# The one checkout-root finder: the walk up to the `.ai/tickets/ROOT` marker
+# (`crates/foundation/repository_root`).
+repository_root = { path = "crates/foundation/repository_root" }
 # Default features off keep the default TLS backend (the aws-lc-rs C build) out; a member that
 # speaks HTTPS enables `rustls-no-provider` and installs the ring provider.
 reqwest = { version = "0.13.4", default-features = false }
 # SVG rasterisation; default features off drop the text and raster-image support no glyph uses.
 resvg = { version = "0.45", default-features = false }
+# The native folder picker of the ticketboard.
+rfd = "0.17.2"
 # A terrain's road network: segments, styling, road meshes, cartographic strips and the airfield
 # (`crates/terrain/road_network`).
 road_network = { path = "crates/terrain/road_network" }
 # Default features off; members select `std`, `bytecheck` and `little_endian`, which fix the
 # on-disk archive format.
 rkyv = { version = "0.8.18", default-features = false }
-rust_decimal = "1.42.1"
 # Default features off drop the aws-lc-rs provider; members enable `ring`.
 rustls = { version = "0.23.41", default-features = false }
 # The satellite container reader: header, both tile index versions, checks, level picks
@@ -523,6 +537,8 @@ syn = "2"
 symbology_layers_gpu = { path = "crates/map_rendering/symbology_layers_gpu" }
 # The tar archive writer of the equipment export upload bundle.
 tar = "0.4"
+# Scratch folders of the tests that write files.
+tempfile = "3.27.0"
 subtle = "2.6.1"
 # A terrain's elevation model: raster placement, PNG and raw grid decoding, sampling, the vector
 # grid (`crates/terrain/terrain_elevation`).
@@ -557,7 +573,6 @@ tokio-tungstenite = "0.30"
 # dev-dependency only (`tools/foundation/tool_test_support`).
 tool_test_support = { path = "tools/foundation/tool_test_support" }
 toml = "1.1.3"
-tokio-stream = "0.1.18"
 tower = "0.5.3"
 tower-http = "0.7.0"
 tracing = "0.1.44"

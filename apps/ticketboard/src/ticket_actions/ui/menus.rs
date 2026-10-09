@@ -16,7 +16,7 @@ use ticketboard_model::ticket_registry::models::projection as board;
 /// RENDER-of-menu time — recomputed each frame the menu is open (ticket files
 /// are 1-2 KB; the read is trivial) so the clicked action carries the freshest
 /// pre-image.
-pub fn card_menu_ui(
+pub(crate) fn card_menu_ui(
     ui: &mut Ui,
     b: &TicketActionContext<'_>,
     mctx: MutationContext<'_>,
@@ -72,7 +72,7 @@ pub fn card_menu_ui(
 /// plus the collapsed Advanced section (raw set-status, advance-slice for
 /// programs, remove behind type-to-confirm, and the running-only Cancel).
 /// Fingerprints here are captured at CLICK time.
-pub fn action_strip_ui(
+pub(crate) fn action_strip_ui(
     ui: &mut Ui,
     b: &TicketActionContext<'_>,
     mctx: MutationContext<'_>,

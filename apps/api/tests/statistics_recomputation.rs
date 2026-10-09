@@ -68,7 +68,7 @@ async fn stored_arma(pool: &PgPool, discord_id: &str) -> Option<String> {
         .bind(discord_id)
         .fetch_one(pool)
         .await
-        .unwrap()
+        .expect("the read of users returns a row")
 }
 
 async fn unlink(app: &Router, bearer: &str) {

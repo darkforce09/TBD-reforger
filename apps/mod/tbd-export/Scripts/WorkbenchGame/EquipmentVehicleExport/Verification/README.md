@@ -76,7 +76,7 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Acceptance evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Acceptance evidence](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — the recorded verification, Workbench acceptance and repeatability runs.
-- [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API
+- [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API
   and the calls that reach this handler.

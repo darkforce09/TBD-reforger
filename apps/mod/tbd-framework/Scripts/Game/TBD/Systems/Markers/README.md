@@ -80,7 +80,7 @@ TBD_MarkerClient: every 5 s until served, and on each map open (at most every 3 
 
 ## Related documentation
 
-- [Tactical marker palette specification](/documentation/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
+- [Tactical marker palette specification](/documentation/apps/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
   — the design for player-placed tactical markers on the same map
 - [Map symbology](/documentation/design_system/map_symbology.md) — the marker symbols and colours
   in game beside the Mission Creator's, and where the two disagree.

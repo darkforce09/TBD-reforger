@@ -34,7 +34,7 @@ children = [
 main_goal = "Every map asset the editor boots from is a binary the loader casts or accesses zero-copy; gz-JSON and PNG-DEM decode paths are deleted after cutover."
 context = [
     "Operator spec 2026-09-04 (map-storage-spec): hybrid rkyv for complex metadata + raw #[repr(C)] POD for bulk GPU data; flatbuffers considered and rejected.",
-    "audit.md Finding 1.4 (apps/website/audit.md:117-124): main-thread gzip-JSON chunk ingest in residency.rs:716-737 and chunk.rs:46-97; fix = flat binary ingest.",
+    "audit.md Finding 1.4 (documentation/archive/audits/website_architecture_audit.md:117-124): main-thread gzip-JSON chunk ingest in residency.rs:716-737 and chunk.rs:46-97; fix = flat binary ingest.",
     "Anchors 2026-09-04: rkyv nowhere; bytemuck only in map-engine-render; flate2 + serde_json are `world` feature deps of map-engine-core (Cargo.toml:33,45,48).",
     "Assets today: 315 chunk .json.gz (22 MB), dem PNG 71.9 MB LFS, sat .tbd-sat 152 MB LFS, 1623 descriptor JSON (19 MB), 1690 .bvh LFS.",
 ]

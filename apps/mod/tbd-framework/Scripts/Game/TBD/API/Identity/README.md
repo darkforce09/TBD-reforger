@@ -72,5 +72,5 @@ a name hash there binds the account to whoever holds that seat or name next.
 - [Platform bridge](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) — the machine-credential tier
 - [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the link
   code handshake the `#tbd link` command completes
-- [Discord identity link specification](/documentation/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
+- [Discord identity link specification](/documentation/apps/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
   — the in-game linking flow

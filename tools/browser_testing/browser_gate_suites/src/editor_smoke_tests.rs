@@ -26,7 +26,7 @@ use serde_json::{Map, Value, json};
 
 use crate::gate_layout::MapAssetMounts;
 use crate::server::{RunningServer, ServeConfig, start_server};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use chrome_devtools_protocol::{self as cdp, Browser, Page};
 
 mod outliner_drag;

@@ -11,13 +11,13 @@ alwaysApply: true
   whole ask; only the operator's explicit "defer X" defers a piece.
 - **HARD GATE:** [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc) — which
   mode a message asks for, and when to stop and ask.
-- Layout: `apps/api/` (Axum, package `api`) · `apps/frontend/` (Leptos
-  and Trunk, package `frontend`) · `apps/offline_service_worker/` · `apps/fleet_host_agent/` ·
+- Layout: `apps/api/` (Axum, package `api`, the thin app over the `crates/api/` crates) ·
+  `apps/frontend/` (Leptos and Trunk, package `frontend`, the thin app over the `crates/frontend/`
+  crates) · `apps/offline_service_worker/` · `apps/fleet_host_agent/` · `apps/ticketboard/` ·
   `crates/` (library crates by category and tier, the map's streaming, rendering and GPU crates
-  among them) · `deploy/` (Dockerfile, compose,
-  Caddy, systemd units) · `apps/mod/` (the Enfusion addons) · `tools/` (packages `xtask`,
-  `verification_core`, `ticket_model`, `ticket_metrics`, `ticket_wave_lock`, `ticket_registry`,
-  `developer_tools`) · `contracts/` · `assets/`; the
+  among them) · `deploy/` (Dockerfile, compose, Caddy, systemd units) · `apps/mod/` (the Enfusion
+  addons) · `tools/` (tool crates by category under `tools/<category>/`, the binaries `xtask` and
+  `developer_tools`, the pinned enfusion-mcp npm package) · `contracts/` · `assets/`; the
   [workspace layout](/documentation/architecture/workspace_layout.md) describes the whole tree.
   Where a new file goes: [Where does X go?](/documentation/standards/where_does_x_go.md).
 - **Documentation ships with its code.** A change updates, in the same commit, the comments of the

@@ -14,8 +14,8 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/Furni
 
 - Encoding: ASCII Enfusion prefab text with invented GUIDs and resource paths; nothing here is game
   content.
-- Schema: the `.et` grammar that `parse_et` in
-  `tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/tokenize.rs` reads. The file inherits
+- Schema: the `.et` grammar that `parse_entity_template` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads. The file inherits
   `Prefabs/Core/Furniture_base.et` and holds one anonymous child list: a `Prefabs/Props/Table.et`
   entry and a `$grp` block of two `Prefabs/Props/Chair.et` entries, each with an `ID`, `coords`,
   `angles` and, on `C2`, `scale 1.152`.
@@ -26,11 +26,11 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/Furni
 - Producers: people; the file is written by hand.
 - Consumers:
   - `resolver_walks_inheritance_sockets_and_children` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs` resolves the file and asserts
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/prefab_templates_tests.rs` resolves the file and asserts
     three children, the table first at coords (1.035, 0.28, -7.666) with yaw 91.667°, and the
     third child's angles (88.816, -180, 96.7) and scale 1.152;
   - `walker_places_door_set_window_and_furniture_from_fixtures` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs` walks it as the house's child
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/batch_processing_tests.rs` walks it as the house's child
     `F1` and expects the instances `F1/T1`, `F1/C1` and `F1/C2`, of kind `Furniture`, placed from
     prefab coordinates, the two chairs sharing one BLAS.
 

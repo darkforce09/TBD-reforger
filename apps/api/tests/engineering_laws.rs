@@ -30,7 +30,7 @@ use verification_core::{Pattern, scan};
 
 /// The repository root, found above the API package's manifest folder.
 fn repository_root() -> PathBuf {
-    repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
 }
 

@@ -6,7 +6,7 @@ use std::{
 
 /// This checkout's root; no test of this crate changes the working directory.
 fn test_repo_root() -> PathBuf {
-    find_repository_root().expect("repository root")
+    repository_root::find_repository_root().expect("repository root")
 }
 
 /// Every [`crate::documentation_locations`] item that names locations a checkout must hold, by name, with every

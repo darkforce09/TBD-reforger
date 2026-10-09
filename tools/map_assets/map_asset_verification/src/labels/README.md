@@ -8,9 +8,9 @@ elevation model against the surface heights sampled in the game engine.
 
 ```text
 tools/map_assets/map_asset_verification/src/labels/
-├── read_json.rs          the height-label and location gates, and the JSON reader both share
-├── terrain_alignment.rs  the elevation model against the surface-height anchors, per anchor
-└── town_labels.rs        the town-label and road-name gates, with PNG and rounding helpers
+├── height_and_location_labels.rs  the height-label and location gates, and the JSON reader both share
+├── terrain_alignment.rs           the elevation model against the surface-height anchors, per anchor
+└── town_labels.rs                 the town-label and road-name gates, with PNG and rounding helpers
 ```
 
 ## How it works
@@ -23,8 +23,8 @@ check and returns the exit code: 0 when every check held, 1 otherwise.
 
 | Function | File | Reads | Checks |
 |---|---|---|---|
-| `height_labels` | `read_json.rs` | `height-labels.json`, `locations.json`, the DEM the manifest names | G2 to G6 floor, dedupe, named merge, declutter and completeness; each label within 0.5 m of the DEM (skipped when the DEM is absent) |
-| `locations` | `read_json.rs` | `locations.json`, `locations.schema.json` | G2 the schema, then G3 to G7: count, required towns, row quality, placeholder names, kind hygiene |
+| `height_labels` | `height_and_location_labels.rs` | `height-labels.json`, `locations.json`, the DEM the manifest names | G2 to G6 floor, dedupe, named merge, declutter and completeness; each label within 0.5 m of the DEM (skipped when the DEM is absent) |
+| `locations` | `height_and_location_labels.rs` | `locations.json`, `locations.schema.json` | G2 the schema, then G3 to G7: count, required towns, row quality, placeholder names, kind hygiene |
 | `town_labels` | `town_labels.rs` | `locations.json` | G1 to G5 at a zoom: kinds drawn, required towns drawn, the declutter invariant, name provenance, fade and zoom band |
 | `road_names` | `town_labels.rs` | `road-names.json`, `objects/roads.json.gz` | G3 to G7 at a zoom: major roads drawn, name length, placement within tolerance of the segment, declutter distance, on-screen cap |
 | `terrain_alignment` | `terrain_alignment.rs` | `manifest.json`, `anchors/verification.json`, the DEM | the manifest and anchors schemas, the DEM size, and every anchor within the anchors file's `thresholdM` of the DEM |

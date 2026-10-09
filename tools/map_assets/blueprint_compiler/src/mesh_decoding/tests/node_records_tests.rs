@@ -90,7 +90,7 @@ fn node_table_decodes_sockets_and_the_name_space_starts_at_the_first_material() 
     assert!((px[0]).abs() < 1e-6 && (px[2] + 1.0).abs() < 1e-6, "{px:?}");
     // Case-insensitive lookup; the nested mesh group composes through its parent.
     assert_eq!(nodes.socket("SOCKET_WIN_01").unwrap().node, 2);
-    let grp = nodes.world_of(3);
+    let grp = nodes.world_transform_of(3);
     assert!((grp.t[1] - 2.0).abs() < 1e-6 && (grp.t[2] - 3.0).abs() < 1e-6);
 }
 
@@ -120,7 +120,7 @@ fn real_farmhouse_nodes_sockets_and_materials() {
             .iter()
             .all(|s| s.local.t.iter().all(|c| c.abs() < 20.0))
     );
-    let mesh = crate::mesh_decoding::mesh_format::parse_coll(&data).expect("coll");
+    let mesh = crate::mesh_decoding::mesh_format::parse_collision_chunk(&data).expect("coll");
     assert_eq!(mesh.records.len(), 2);
     assert_eq!(
         nodes.name(u32::from(mesh.records[0].layer_idx)),
@@ -148,7 +148,7 @@ fn real_farmhouse_nodes_sockets_and_materials() {
     }
     let stems: Vec<String> = order
         .iter()
-        .map(|p| crate::architectural_analysis::surface_classification::gamemat_stem(p))
+        .map(|p| crate::architectural_analysis::surface_classification::game_material_stem(p))
         .collect();
     assert_eq!(
         stems,

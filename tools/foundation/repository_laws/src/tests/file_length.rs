@@ -65,10 +65,13 @@ fn generated_code_and_website_test_trees_have_no_exemption() {
         "crates/contracts/contract_schema_types/src/generated/missions/mission_review/approval_queue_row.rs",
         PRODUCTION_MAX_LINES + 1,
     );
-    checkout.write_lines("legacy/map_engine/tests/cases.rs", TEST_MAX_LINES + 1);
+    checkout.write_lines(
+        "crates/geometry/camera_math/tests/cases.rs",
+        TEST_MAX_LINES + 1,
+    );
     checkout.write(
         ".coding-standards-allowlist.yaml",
-        "- path: legacy/map_engine/tests/cases.rs\n",
+        "- path: crates/geometry/camera_math/tests/cases.rs\n",
     );
     assert_eq!(violations(&checkout).len(), 2);
 }

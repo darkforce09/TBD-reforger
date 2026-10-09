@@ -28,6 +28,16 @@ In code: `Verdict` in `tools/foundation/verification_core/src/verdict.rs`; `carg
 
 See: [slice](/documentation/glossary/n_to_z.md#slice), [Testing and CI](/documentation/runbooks/testing_and_ci.md), [Editor gates](/documentation/runbooks/editor_gates.md).
 
+### graphics engine
+
+The informal collective name for the map-agnostic rendering crates of the `crates/graphics`
+category: byte layouts and the WGSL shader, the GPU context of a canvas, the frame vocabulary and
+its encoder, and the renderer contracts. It is no package of its own and knows no map concept.
+
+In code: `render_primitives`, `gpu_device`, `gpu_frame` and `renderer_core` under `crates/graphics/`.
+
+See: [map engine](#map-engine), [Crate boundary rules](/documentation/standards/crate_boundary_rules.md), [GPU rendering documentation](/documentation/crates/graphics/README.md).
+
 ### identity and access
 
 The API domain of sign-in and the caller's own account: Discord OAuth2 login, token refresh, logout,
@@ -67,6 +77,17 @@ administrator issues one (its secret shows once), lists them without secrets and
 In code: `MachineCredential` in `crates/api/api_server_infrastructure/src/models/machine_credential.rs`; `ExecutorKind` in `crates/contracts/fleet_wire_contract/src/executor_kind.rs`.
 
 See: [Machine credentials evidence](/documentation/apps/api/verification_evidence/machine_credentials.md).
+
+### map engine
+
+The informal collective name for the crates that read, stream and draw the map: the engine
+categories (geometry, world formats, terrain, world objects, line of sight, map overlay,
+streaming), the [graphics engine](#graphics-engine) and the map rendering crates. It is no package
+of its own; the crate-tier law judges each crate by its category.
+
+In code: the crates under `crates/geometry/`, `crates/world_formats/`, `crates/terrain/`, `crates/world_objects/`, `crates/line_of_sight/`, `crates/map_overlay/`, `crates/streaming/`, `crates/graphics/` and `crates/map_rendering/`; `ENGINE_CATEGORIES` in `tools/foundation/repository_laws/src/workspace_laws/crate_layout.rs`.
+
+See: [lane](#lane), [Crate boundary rules](/documentation/standards/crate_boundary_rules.md), [Map rendering documentation](/documentation/crates/map_rendering/README.md).
 
 ### match telemetry
 

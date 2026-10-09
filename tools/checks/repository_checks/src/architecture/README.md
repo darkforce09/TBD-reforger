@@ -29,7 +29,7 @@ check that did not run, never as a pass.
 | Verb | Reads | Fails when | Exit codes |
 |---|---|---|---|
 | `route-tags` | `crates/api/<crate>/src/routes.rs` tables, `apps/api/src/router.rs`, every `@route` tag under `apps/api/src` and `crates/api` | a tag names no registered route, a route has no tag, or the parse, mount or sentinel guards fail | 0 pass, 1 mismatch, 2 source unreadable |
-| `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; the app's sources and the frontend crates' manifests; `apps/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
+| `crate-tiers`, `crate-anatomy`, `test-file-reachability`, `frontend-layering`, `tailwind-sources` | the root `Cargo.toml` and every member manifest; the judged crates' sources; every member's module tree and test folders; the app's sources and the frontend crates' manifests; `apps/frontend/style/aegis.css` | a law below is broken | 0 pass, 1 finding, 2 an input missing or unreadable |
 | `editor-orbat-coherency` | named editor, store and symbology files; `cargo test` runs | a ban matches, a pin is absent, or a test pin fails or runs no test | 0 pass, 1 every failure |
 
 ### Workspace laws
@@ -76,7 +76,7 @@ pass at least one test. The gate stops at the first failure.
 - `route_tags::verify_route_tags` and
   `editor_orbat_coherency::verify_editor_orbat_coherency`: the two gates, each taking the
   repository root and returning the exit status.
-- `workspace_laws::verify_crate_tiers`, `verify_crate_anatomy`, `verify_strangler`,
+- `workspace_laws::verify_crate_tiers`, `verify_crate_anatomy`, `verify_test_file_reachability`,
   `verify_frontend_layering` and `verify_tailwind_sources`: the five workspace-law gates over the
   checkout the command runs in; `workspace_law_report` and `verify_workspace_law` take a root.
 - `wave_gate_sources::WAVE_CHILDREN` and `wave_children_are_linked`: the two implementation

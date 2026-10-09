@@ -7,7 +7,8 @@
 //! **Position:** part of the bridge. The canvas gesture closures in `input::pointer_gestures` call
 //! it on pointer moves; it reads the hosted document handle and the hosted commands' vehicle
 //! points, and it writes only the canvas element's `cursor` style.
-//! **Signals & state:** none of its own; the caller owns the [`HoverPoints`] cache.
+//! **Signals & state:** none of its own; the caller owns the
+//! [`HoverPoints`](crate::bridge::hover_hit_testing::HoverPoints) cache.
 //! **Invariants:** the cache is rebuilt whenever the document generation changes, so a hover never
 //! answers from a stale point set; the pick tolerance is the click's.
 

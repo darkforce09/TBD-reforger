@@ -159,13 +159,13 @@ minute apart, so a credential pasted in later takes effect without a restart.
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — what the framework is for,
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — what the framework is for,
   its non-negotiables and the Enfusion facts it relies on.
-- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — the specification of
+- [Mod UI documentation](/documentation/apps/mod/tbd-framework/UI/README.md) — the specification of
   each in-game screen.
-- [Capability verdicts](/documentation/mod/tbd-framework/capability_verdicts.md) — the TBD
+- [Capability verdicts](/documentation/apps/mod/tbd-framework/capability_verdicts.md) — the TBD
   verdict for every CRF capability and the check that enforces it.
-- [TBD Framework documentation](/documentation/mod/tbd-framework/README.md) — the index of the
+- [TBD Framework documentation](/documentation/apps/mod/tbd-framework/README.md) — the index of the
   framework's design documents.
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — booting the
   framework on the staging server, and the log lines of a healthy boot.

@@ -140,7 +140,7 @@ from the briefing. Steps S7 to S10 say which checks this leaves open.
    Expected: the top bar with the "Lobby" tab, the "Factions" column with per-faction counts and
    a Spectators row, the "Roles" column of squad cards, the "KIT INSPECTOR" with a 3D kit preview,
    and "Lock Lobby" and "Ready & Continue" in the bottom bar
-   ([lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md)).
+   ([lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md)).
    The rows come from the mock catalog, not the mission; record that the screen rendered readable
    rows. No screen at all: look for `GUI (E): Menu preset 'TBD_UILobby' not found!` in the log
    (`MenuConfigs` in `apps/mod/tbd-framework/addon.gproj` must list both `chimeraMenus.conf`
@@ -246,8 +246,8 @@ seated player it reports PARTIAL (exit 2).
   S11 to S16.
 - [Pass criteria and evidence](/documentation/runbooks/two_client_playtest/pass_criteria_and_evidence.md)
   — which step proves which item, and what to capture.
-- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) and
-  [briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md) and
+  [briefing specification](/documentation/apps/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the two screens as built.
 - [Spawning](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — seating,
   deploy and one life in the mod.

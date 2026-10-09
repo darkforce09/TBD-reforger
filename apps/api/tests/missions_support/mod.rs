@@ -24,7 +24,7 @@ use tower::ServiceExt;
 
 use crate::common;
 
-pub async fn app_and_token(role: &str) -> Option<(Router, String)> {
+pub(crate) async fn app_and_token(role: &str) -> Option<(Router, String)> {
     let url = common::require_test_database_url()?;
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");
@@ -38,25 +38,27 @@ pub async fn app_and_token(role: &str) -> Option<(Router, String)> {
             Request::builder()
                 .uri(format!("/api/v1/auth/dev-login?role={role}"))
                 .body(Body::empty())
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
+    let loc = resp.headers()[header::LOCATION]
+        .to_str()
+        .expect("the Location header is ASCII");
     let tok = loc
         .split_once('#')
-        .unwrap()
+        .expect("the Location carries a fragment")
         .1
         .split('&')
         .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
+        .expect("the fragment carries an access token")
         .to_string();
     Some((app, tok))
 }
 
 /// One request with an optional bearer, one optional extra `(name, value)` header and an
 /// optional JSON body; answers the status and the raw body bytes.
-pub async fn call(
+pub(crate) async fn call(
     app: &Router,
     method: &str,
     uri: &str,
@@ -76,17 +78,17 @@ pub async fn call(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
     let bytes = to_bytes(resp.into_body(), usize::MAX)
         .await
-        .unwrap()
+        .expect("the response body reads to the end")
         .to_vec();
     (status, bytes)
 }
 
-pub fn json(bytes: &[u8]) -> Value {
+pub(crate) fn json(bytes: &[u8]) -> Value {
     serde_json::from_slice(bytes).unwrap_or(Value::Null)
 }
 
@@ -99,7 +101,7 @@ pub fn json(bytes: &[u8]) -> Value {
 /// does not pin the helper. The overflow suite plants >20 newer-`updated_at` fillers so
 /// default page 1 misses while this walk still finds.
 /// Same shape as the approvals ratchet (`admin_approvals_cms_field_tools::find_in_approvals`).
-pub async fn find_id_in_missions_list(
+pub(crate) async fn find_id_in_missions_list(
     app: &Router,
     bearer: &str,
     uri_base: &str,
@@ -140,7 +142,11 @@ pub async fn find_id_in_missions_list(
 /// `admin_approvals_cms_field_tools::find_in_approvals`. A page-1-only lookup fails on a shared
 /// database the moment
 /// queue residue passes 20 rows.
-pub async fn find_in_approvals(app: &Router, admin: &str, mission_id: &str) -> Option<Value> {
+pub(crate) async fn find_in_approvals(
+    app: &Router,
+    admin: &str,
+    mission_id: &str,
+) -> Option<Value> {
     const PAGE: usize = 100;
     const MAX_OFFSET: usize = 1_000;
     let mut offset = 0usize;
@@ -173,7 +179,7 @@ pub async fn find_in_approvals(app: &Router, admin: &str, mission_id: &str) -> O
 
 /// Save [`common::COMPILABLE_EDITOR_PAYLOAD`] as version `semver` of the mission, which makes it the
 /// current version a submission compiles. Returns the version id.
-pub async fn save_compilable_version(
+pub(crate) async fn save_compilable_version(
     app: &Router,
     bearer: &str,
     mission_id: &str,
@@ -198,14 +204,17 @@ pub async fn save_compilable_version(
         "save version: {}",
         String::from_utf8_lossy(&b)
     );
-    json(&b)["id"].as_str().unwrap().to_string()
+    json(&b)["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string()
 }
 
 /// `call` with the `Content-Type` under the caller's control, and a body that can be sent
 /// without one at all (`ct: None`). `call` always pairs a body with `application/json`, which
 /// is exactly the header a fat-fingered client gets wrong, so the malformed-body cases in the
 /// armory suite cannot be expressed through it.
-pub async fn call_ct(
+pub(crate) async fn call_ct(
     app: &Router,
     method: &str,
     uri: &str,
@@ -222,30 +231,33 @@ pub async fn call_ct(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
     let bytes = to_bytes(resp.into_body(), usize::MAX)
         .await
-        .unwrap()
+        .expect("the response body reads to the end")
         .to_vec();
     (status, bytes)
 }
 
 /// The four-item armory every armory case starts from.
-pub const ARMORY_SEED: &str = r#"{"items":[
+pub(crate) const ARMORY_SEED: &str = r#"{"items":[
     {"faction":"USA","category":"rifle","item_name":"M4A1","quantity":24,"icon":"m4.png","sort_order":0},
     {"faction":"USA","category":"launcher","item_name":"AT4","quantity":6,"icon":"at4.png","sort_order":1},
     {"faction":"USSR","category":"rifle","item_name":"AK-74","quantity":30,"icon":"ak74.png","sort_order":2},
     {"faction":"USSR","category":"mg","item_name":"PKM","quantity":4,"icon":"pkm.png","sort_order":3}]}"#;
 
 /// Create a mission with the seeded armory and return `(id, armory_url)`.
-pub async fn mission_with_armory(app: &Router, t: &str) -> (String, String) {
+pub(crate) async fn mission_with_armory(app: &Router, t: &str) -> (String, String) {
     let create =
         r#"{"title":"Armory Op","terrain":"everon","game_mode":"pve_coop","max_players":16}"#;
     let (st, b) = call(app, "POST", "/api/v1/missions", Some(t), None, Some(create)).await;
     assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
-    let id = json(&b)["id"].as_str().unwrap().to_string();
+    let id = json(&b)["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string();
     let url = format!("/api/v1/missions/{id}/armory");
     let (st, b) = call(app, "PUT", &url, Some(t), None, Some(ARMORY_SEED)).await;
     assert_eq!(st, StatusCode::OK, "seed: {}", String::from_utf8_lossy(&b));
@@ -253,18 +265,21 @@ pub async fn mission_with_armory(app: &Router, t: &str) -> (String, String) {
 }
 
 /// How many armory rows the mission actually has, read back through the real GET.
-pub async fn armory_len(app: &Router, url: &str, t: &str) -> usize {
+pub(crate) async fn armory_len(app: &Router, url: &str, t: &str) -> usize {
     let (st, b) = call(app, "GET", url, Some(t), None, None).await;
     assert_eq!(st, StatusCode::OK);
     json(&b)["data"].as_array().expect("data array").len()
 }
 
-pub fn b_id(bytes: &[u8]) -> String {
-    json(bytes)["id"].as_str().unwrap().to_string()
+pub(crate) fn b_id(bytes: &[u8]) -> String {
+    json(bytes)["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string()
 }
 
 /// The single mission dossier of a one-mission event.
-pub async fn dossier(app: &Router, eid: &str, t: &str) -> Value {
+pub(crate) async fn dossier(app: &Router, eid: &str, t: &str) -> Value {
     let (st, b) = call(
         app,
         "GET",
@@ -285,7 +300,7 @@ pub async fn dossier(app: &Router, eid: &str, t: &str) -> Value {
 /// factions, falling back to the armory's own keys only when that list is empty — and `:412-418`
 /// then fills each card by `find`ing the armory group whose `faction` is **byte-equal** to it.
 /// Returns `(faction, items_that_card_renders)` per card.
-pub fn event_hub_cards(dossier: &Value) -> Vec<(String, usize)> {
+pub(crate) fn event_hub_cards(dossier: &Value) -> Vec<(String, usize)> {
     let armory = dossier["armory_by_faction"]
         .as_array()
         .cloned()
@@ -322,7 +337,7 @@ pub fn event_hub_cards(dossier: &Value) -> Vec<(String, usize)> {
 /// The seeded mission attached to a fresh event under an ORBAT that declares `faction`. That ORBAT
 /// is what puts `faction` into the dossier's `factions` list (`events.rs:894` reads `orbat_slots`),
 /// which is what makes it the join key. Returns `(armory_url, event_id)`.
-pub async fn mission_in_event_with_orbat_faction(
+pub(crate) async fn mission_in_event_with_orbat_faction(
     app: &Router,
     t: &str,
     faction: &str,
@@ -365,7 +380,7 @@ pub async fn mission_in_event_with_orbat_faction(
 /// not rewrite the first row's role. Both JWTs therefore address **distinct** users. A third
 /// author still needs a direct INSERT when the case needs a mission_maker who is neither the
 /// maker nor the admin under test.
-pub async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, String)> {
+pub(crate) async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, String)> {
     let url = common::require_test_database_url()?;
     let (app, maker) = app_and_token("mission_maker").await?;
     let (_, admin) = app_and_token("admin").await?;
@@ -375,7 +390,7 @@ pub async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, Stri
 
 /// Default library page (`limit` omitted → 20, `offset` omitted → 0). The overflow suite uses
 /// it to prove page-1 membership is insufficient without shared-DB residue.
-pub async fn id_on_default_missions_page1(
+pub(crate) async fn id_on_default_missions_page1(
     app: &Router,
     bearer: &str,
     uri_base: &str,
@@ -404,10 +419,10 @@ pub async fn id_on_default_missions_page1(
 /// return its id. Inserts the version directly and points `current_version_id` at it — the same
 /// bypass the over-capacity test uses, because the editor has no zone-rules draw tool, so the
 /// only way a `zones[].rules` payload reaches the DB in a test is a direct insert.
-pub async fn seed_zone_rules_mission(pool: &sqlx::PgPool, rules_json: &str) -> String {
+pub(crate) async fn seed_zone_rules_mission(pool: &sqlx::PgPool, rules_json: &str) -> String {
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .expect("the system clock is after the Unix epoch")
         .as_nanos();
     // Insert the mission row directly (the seed helper takes `&pool`, not the router). `author_id`
     // mirrors dev-login's admin/maker seed id; status draft so it never leaks into a live-only list.
@@ -450,7 +465,7 @@ pub async fn seed_zone_rules_mission(pool: &sqlx::PgPool, rules_json: &str) -> S
 }
 
 /// Find one `data[]` row by its `key` in the overrides response.
-pub fn find_override<'a>(body: &'a Value, key: &str) -> Option<&'a Value> {
+pub(crate) fn find_override<'a>(body: &'a Value, key: &str) -> Option<&'a Value> {
     body["data"]
         .as_array()?
         .iter()

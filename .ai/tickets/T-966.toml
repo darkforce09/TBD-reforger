@@ -4,6 +4,7 @@ title = "world binary feature cannot be taken alone"
 summary = "world/mod.rs and Cargo.toml claim binary can be taken without the parser stack, but lib.rs gates pub mod world on the world feature, so a binary-only consumer fails to compile."
 class = "chore"
 status = "idea"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): world/mod.rs: removed in the restructure (commit 0a0121776), no successor."
 created_at = "2026-09-06T02:36:26Z"
 
 [scope]

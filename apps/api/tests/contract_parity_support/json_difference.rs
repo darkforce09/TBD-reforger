@@ -20,7 +20,7 @@ use serde_json::Value;
 const EXCERPT_CHARS: usize = 160;
 
 /// Every pointer at which `live` differs from `golden`, one report line each.
-pub fn differences(golden: &Value, live: &Value) -> Vec<String> {
+pub(crate) fn differences(golden: &Value, live: &Value) -> Vec<String> {
     let mut lines = Vec::new();
     walk("", golden, live, &mut lines);
     lines
@@ -88,7 +88,7 @@ fn shown(pointer: &str) -> &str {
 }
 
 /// Compact JSON, cut to [`EXCERPT_CHARS`] characters.
-pub fn excerpt(value: &Value) -> String {
+pub(crate) fn excerpt(value: &Value) -> String {
     let text = value.to_string();
     if text.chars().count() > EXCERPT_CHARS {
         let cut: String = text.chars().take(EXCERPT_CHARS).collect();

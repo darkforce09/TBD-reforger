@@ -52,8 +52,9 @@ file falls through to the next source but a read error in the chosen source does
 
 - Depends on: `flate2` for zlib and raw deflate, and `thiserror` for `Error`; no workspace crate.
 - Used by:
-  - the `blueprint_compiler` crate (`archive_emission::library_reader`,
-    `bvh::batch_processing`, `bvh::prefab_catalog`, `mesh_decoding::archive_inspection`), through
+  - the `blueprint_compiler` crate (`archive_emission::prefab_library`,
+    `occlusion_sidecars::batch_processing`, `occlusion_sidecars::prefab_templates`,
+    `mesh_decoding::archive_inspection`), through
     `PakSet`, `AssetSource` and the loose sources;
   - the `world_export_pipeline` crate (`cli`, `chunk_partitioner`, `topo`, `enfusion_texture_decoder`,
     `export_preparation::aerial_cell_catalog`) and `map_raster_pipeline` (the orthophoto stitch,

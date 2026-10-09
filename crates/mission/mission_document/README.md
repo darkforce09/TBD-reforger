@@ -53,7 +53,8 @@ engine's). No environment variables.
 ## Boundaries
 
 - Depends on: `mission_crdt`, `mission_model`, `mission_validation`, `newtype_ids`,
-  `orbat_slot_ids`, `time_source`, `yrs`, `serde_json`, `thiserror`; dev: `mission_payload`,
+  `orbat_slot_ids`, `time_source`, `deterministic_random` (the seeded slot positions), `yrs`,
+  `serde_json`, `thiserror`; dev: `mission_payload`,
   `mission_compiler`.
 - Used by: `mission_operations`, the map engine's editing layer, its integration tests, and the
   Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`.

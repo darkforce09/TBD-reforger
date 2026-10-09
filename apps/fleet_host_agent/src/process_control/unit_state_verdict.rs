@@ -15,7 +15,9 @@ const ERROR_OUTPUT_MAX_BYTES: usize = 160;
 /// The unit's LoadState and ActiveState as systemd reported them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ObservedUnitState {
+    /// The unit's `LoadState`, such as `loaded` or `not-found`.
     pub load_state: String,
+    /// The unit's `ActiveState`, such as `active`, `inactive` or `failed`.
     pub active_state: String,
 }
 
@@ -25,13 +27,19 @@ pub struct ObservedUnitState {
 pub enum SystemctlObservation {
     /// The program exited; `code` is `None` when a signal ended it.
     Exited {
+        /// The exit status.
         code: Option<i32>,
+        /// The first line of the program's error output, at most 160 bytes.
         error_output: String,
     },
+    /// The program was still running at the time limit and was killed.
     TimedOut {
+        /// The time limit.
         limit: Duration,
     },
+    /// The program could not be started.
     NotStarted {
+        /// Why it could not be started.
         error: String,
     },
 }
@@ -50,7 +58,7 @@ impl SystemctlObservation {
         }
     }
 
-    /// "exited with status 1: <first line of its error output>", "did not finish within 100s",
+    /// `"exited with status 1: <first line of its error output>"`, `"did not finish within 100s"`,
     /// and so on.
     pub fn describe(&self) -> String {
         match self {
@@ -74,8 +82,11 @@ impl SystemctlObservation {
 /// Everything observed while performing one process action.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProcessActionReport {
+    /// The action performed.
     pub action: ProcessAction,
+    /// The unit it targeted.
     pub unit: String,
+    /// How the verb invocation ended.
     pub systemctl: SystemctlObservation,
     /// The wait between the verb and the state read.
     pub dwell: Duration,

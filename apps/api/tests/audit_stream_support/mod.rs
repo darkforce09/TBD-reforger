@@ -40,29 +40,29 @@ use uuid::Uuid;
 use crate::common;
 
 /// The contract every stream event's data is validated against.
-pub const AUDIT_SCHEMA: &str = "audit-log.schema.json";
+pub(crate) const AUDIT_SCHEMA: &str = "audit-log.schema.json";
 
 /// The audit table's own name.
-pub const AUDIT_TABLE: &str = "audit_logs";
+pub(crate) const AUDIT_TABLE: &str = "audit_logs";
 
 /// The name the audit table carries while a case withholds it from the replay read.
-pub const WITHHELD_AUDIT_TABLE: &str = "audit_logs_withheld";
+pub(crate) const WITHHELD_AUDIT_TABLE: &str = "audit_logs_withheld";
 
 /// Serialises the cases of one test binary: they share the publication sequence and the floor.
 static SUITE_LOCK: Mutex<()> = Mutex::const_new(());
 
 /// Hold this for the whole case. A panicking case releases it while unwinding.
-pub async fn serialise_case() -> MutexGuard<'static, ()> {
+pub(crate) async fn serialise_case() -> MutexGuard<'static, ()> {
     SUITE_LOCK.lock().await
 }
 
 /// A unique `action` for the rows one case plants.
-pub fn case_tag(case: &str) -> String {
+pub(crate) fn case_tag(case: &str) -> String {
     format!("audit_stream.{case}.{}", Uuid::new_v4())
 }
 
 /// The router, its pool and listener, and an administrator's access token.
-pub struct AuditHarness {
+pub(crate) struct AuditHarness {
     pub state: AppState,
     pub app: Router,
     pub pool: PgPool,
@@ -72,7 +72,7 @@ pub struct AuditHarness {
 
 impl AuditHarness {
     /// Boots the router over this binary's database and waits until the audit listener is up.
-    pub async fn boot(suite: &str) -> Self {
+    pub(crate) async fn boot(suite: &str) -> Self {
         let url = common::require_test_database_url()
             .expect("the audit stream suites require their PostgreSQL database");
         let pool = api_database::connect(&url)
@@ -100,7 +100,7 @@ impl AuditHarness {
     }
 
     /// `GET /api/v1/admin/audit-logs/stream` as the administrator, with `last_event_id` as sent.
-    pub async fn request_stream(
+    pub(crate) async fn request_stream(
         &self,
         last_event_id: Option<HeaderValue>,
     ) -> axum::response::Response {
@@ -122,7 +122,7 @@ impl AuditHarness {
     }
 
     /// Opens the stream, asserting a 200 event stream; `resume_after` becomes `Last-Event-ID`.
-    pub async fn open_stream(&self, resume_after: Option<i64>) -> SseReader {
+    pub(crate) async fn open_stream(&self, resume_after: Option<i64>) -> SseReader {
         let response = self
             .request_stream(resume_after.map(HeaderValue::from))
             .await;
@@ -141,7 +141,7 @@ impl AuditHarness {
     }
 
     /// A GET answered as JSON: the status and the decoded body.
-    pub async fn get_json(&self, uri: &str) -> (StatusCode, Value) {
+    pub(crate) async fn get_json(&self, uri: &str) -> (StatusCode, Value) {
         let request = Request::builder()
             .uri(uri)
             .header(
@@ -169,7 +169,7 @@ impl AuditHarness {
 
 /// One SSE event: its name (`None` for an audit row), its id and its data.
 #[derive(Debug, Clone)]
-pub struct SseEvent {
+pub(crate) struct SseEvent {
     pub event: Option<String>,
     pub id: Option<String>,
     pub data: String,
@@ -177,7 +177,7 @@ pub struct SseEvent {
 
 impl SseEvent {
     /// The event id as a publication sequence.
-    pub fn sequence(&self) -> i64 {
+    pub(crate) fn sequence(&self) -> i64 {
         self.id
             .as_deref()
             .and_then(|id| id.parse().ok())
@@ -185,25 +185,25 @@ impl SseEvent {
     }
 
     /// The event data as JSON.
-    pub fn json(&self) -> Value {
+    pub(crate) fn json(&self) -> Value {
         serde_json::from_str(&self.data)
             .unwrap_or_else(|error| panic!("event data is not JSON ({error}): {self:?}"))
     }
 
     /// `true` for an audit row: an unnamed event.
-    pub fn is_row(&self) -> bool {
+    pub(crate) fn is_row(&self) -> bool {
         self.event.is_none()
     }
 }
 
 /// Reads SSE events from a response body frame by frame.
-pub struct SseReader {
+pub(crate) struct SseReader {
     body: BodyDataStream,
     pending: String,
 }
 
 impl SseReader {
-    pub fn new(body: Body) -> Self {
+    pub(crate) fn new(body: Body) -> Self {
         Self {
             body: body.into_data_stream(),
             pending: String::new(),
@@ -212,7 +212,7 @@ impl SseReader {
 
     /// The next event within `bound`, or `None` when none completes in time. Comment-only blocks
     /// (keep-alives) are skipped; the end of the body or a body error fails the case.
-    pub async fn next_event(&mut self, bound: Duration) -> Option<SseEvent> {
+    pub(crate) async fn next_event(&mut self, bound: Duration) -> Option<SseEvent> {
         let deadline = Instant::now() + bound;
         loop {
             while let Some(end) = self.pending.find("\n\n") {
@@ -234,7 +234,7 @@ impl SseReader {
     }
 
     /// The next event, failing the case when none arrives within `bound`.
-    pub async fn expect_event(&mut self, bound: Duration, why: &str) -> SseEvent {
+    pub(crate) async fn expect_event(&mut self, bound: Duration, why: &str) -> SseEvent {
         match self.next_event(bound).await {
             Some(event) => event,
             None => panic!("no event within {bound:?}: {why}"),
@@ -242,7 +242,7 @@ impl SseReader {
     }
 
     /// The next event, which must be an audit row.
-    pub async fn expect_row(&mut self, bound: Duration, why: &str) -> SseEvent {
+    pub(crate) async fn expect_row(&mut self, bound: Duration, why: &str) -> SseEvent {
         let event = self.expect_event(bound, why).await;
         assert!(
             event.is_row(),
@@ -252,7 +252,12 @@ impl SseReader {
     }
 
     /// The next `count` events, every one an audit row, all within `bound`.
-    pub async fn expect_rows(&mut self, count: usize, bound: Duration, why: &str) -> Vec<SseEvent> {
+    pub(crate) async fn expect_rows(
+        &mut self,
+        count: usize,
+        bound: Duration,
+        why: &str,
+    ) -> Vec<SseEvent> {
         let deadline = Instant::now() + bound;
         let mut rows = Vec::with_capacity(count);
         while rows.len() < count {
@@ -271,7 +276,7 @@ impl SseReader {
     }
 
     /// Asserts no event arrives within `bound`.
-    pub async fn expect_quiet(&mut self, bound: Duration, why: &str) {
+    pub(crate) async fn expect_quiet(&mut self, bound: Duration, why: &str) {
         if let Some(event) = self.next_event(bound).await {
             panic!("expected no event within {bound:?} ({why}), got {event:?}");
         }
@@ -307,7 +312,7 @@ fn parse_block(block: &str) -> Option<SseEvent> {
 
 /// Drives a delivery stream on its own task, the way a connected client keeps polling, and
 /// forwards every item; the task ends when the receiver is dropped.
-pub fn drive<S>(items: S) -> mpsc::UnboundedReceiver<AuditStreamItem>
+pub(crate) fn drive<S>(items: S) -> mpsc::UnboundedReceiver<AuditStreamItem>
 where
     S: Stream<Item = AuditStreamItem> + Send + 'static,
 {
@@ -324,7 +329,7 @@ where
 }
 
 /// The next forwarded item within `bound`, or `None`; a stream that ended fails the case.
-pub async fn next_item(
+pub(crate) async fn next_item(
     items: &mut mpsc::UnboundedReceiver<AuditStreamItem>,
     bound: Duration,
 ) -> Option<AuditStreamItem> {
@@ -336,7 +341,7 @@ pub async fn next_item(
 }
 
 /// Bounded wait for the listener to be up.
-pub async fn wait_listening(notify: &AuditNotify) {
+pub(crate) async fn wait_listening(notify: &AuditNotify) {
     let bound = Duration::from_secs(10);
     let settle = async {
         while !notify.is_listening() {
@@ -349,7 +354,7 @@ pub async fn wait_listening(notify: &AuditNotify) {
 }
 
 /// Bounded wait for `wanted` on `receiver`, skipping every other signal and any lag.
-pub async fn wait_signal(
+pub(crate) async fn wait_signal(
     receiver: &mut broadcast::Receiver<AuditSignal>,
     wanted: AuditSignal,
     bound: Duration,
@@ -371,7 +376,7 @@ pub async fn wait_signal(
 
 /// Plants one audit row in `relation` (see [`AUDIT_TABLE`], [`WITHHELD_AUDIT_TABLE`]). Even
 /// ordinals carry an actor and odd ones are system rows, so both row shapes reach the stream.
-pub async fn plant_row_in<'e, E>(
+pub(crate) async fn plant_row_in<'e, E>(
     executor: E,
     relation: &'static str,
     tag: &str,
@@ -396,7 +401,7 @@ where
 }
 
 /// Plants one audit row in the audit table.
-pub async fn plant_row<'e, E>(executor: E, tag: &str, ordinal: i64) -> i64
+pub(crate) async fn plant_row<'e, E>(executor: E, tag: &str, ordinal: i64) -> i64
 where
     E: Executor<'e, Database = Postgres>,
 {
@@ -405,7 +410,7 @@ where
 
 /// Plants `count` audit rows in `relation` with one statement, one commit and one notification
 /// per row; answers their ids in ascending order.
-pub async fn plant_rows_in(
+pub(crate) async fn plant_rows_in(
     pool: &PgPool,
     relation: &'static str,
     tag: &str,
@@ -429,12 +434,12 @@ pub async fn plant_rows_in(
 }
 
 /// Plants `count` audit rows in the audit table with one statement.
-pub async fn plant_rows(pool: &PgPool, tag: &str, count: i64) -> Vec<i64> {
+pub(crate) async fn plant_rows(pool: &PgPool, tag: &str, count: i64) -> Vec<i64> {
     plant_rows_in(pool, AUDIT_TABLE, tag, count).await
 }
 
 /// Publishes every pending audit row.
-pub async fn publish_all(pool: &PgPool) {
+pub(crate) async fn publish_all(pool: &PgPool) {
     while publish_audit_batch(pool, 1000)
         .await
         .expect("publish pending audit rows")
@@ -443,7 +448,7 @@ pub async fn publish_all(pool: &PgPool) {
 }
 
 /// The publication sequence of `audit_id`, if it is published.
-pub async fn sequence_of(pool: &PgPool, audit_id: i64) -> Option<i64> {
+pub(crate) async fn sequence_of(pool: &PgPool, audit_id: i64) -> Option<i64> {
     sqlx::query_scalar("SELECT sequence FROM audit_publications WHERE audit_id = $1")
         .bind(audit_id)
         .fetch_optional(pool)
@@ -452,7 +457,7 @@ pub async fn sequence_of(pool: &PgPool, audit_id: i64) -> Option<i64> {
 }
 
 /// Bounded wait until something publishes `audit_id`; answers its sequence.
-pub async fn wait_published(pool: &PgPool, audit_id: i64, bound: Duration) -> i64 {
+pub(crate) async fn wait_published(pool: &PgPool, audit_id: i64, bound: Duration) -> i64 {
     let deadline = Instant::now() + bound;
     loop {
         if let Some(sequence) = sequence_of(pool, audit_id).await {
@@ -467,7 +472,7 @@ pub async fn wait_published(pool: &PgPool, audit_id: i64, bound: Duration) -> i6
 }
 
 /// `(tail, retained floor)`: `last_sequence` and `retained_after_sequence`.
-pub async fn publication_bounds(pool: &PgPool) -> (i64, i64) {
+pub(crate) async fn publication_bounds(pool: &PgPool) -> (i64, i64) {
     sqlx::query_as(
         "SELECT last_sequence, retained_after_sequence FROM audit_publication_state \
          WHERE singleton",
@@ -478,7 +483,7 @@ pub async fn publication_bounds(pool: &PgPool) -> (i64, i64) {
 }
 
 /// Every publication after `cursor` as `(sequence, audit_id)`, in sequence order.
-pub async fn publications_after(pool: &PgPool, cursor: i64) -> Vec<(i64, i64)> {
+pub(crate) async fn publications_after(pool: &PgPool, cursor: i64) -> Vec<(i64, i64)> {
     sqlx::query_as(
         "SELECT sequence, audit_id FROM audit_publications WHERE sequence > $1 \
          ORDER BY sequence",

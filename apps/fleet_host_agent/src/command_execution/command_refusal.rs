@@ -7,20 +7,38 @@ use thiserror::Error;
 /// Characters of a refused action name or argument key quoted back in a refusal.
 const QUOTED_NAME_MAX_CHARS: usize = 64;
 
+/// Why the agent refuses a claimed command without acting; the message becomes the failure reason
+/// of the command's result report.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum CommandRefusal {
+    /// The action (`broadcast`, `kick`, `load_mission`) is the game runtime's; carries its name.
     #[error("{0} runs in the game runtime, not on the host agent")]
     GameRuntimeAction(String),
+    /// The action is unknown to the host agent; carries its name, cut short for quoting.
     #[error("the host agent does not perform the action {0:?}")]
     UnsupportedAction(String),
+    /// The arguments are not a JSON object.
     #[error("the arguments of {action} are not a JSON object")]
-    ArgumentsNotAnObject { action: &'static str },
+    ArgumentsNotAnObject {
+        /// The action as the ledger names it.
+        action: &'static str,
+    },
+    /// The arguments hold a key the action does not accept.
     #[error("{action} does not accept the argument {key:?}")]
-    UnexpectedArgument { action: &'static str, key: String },
+    UnexpectedArgument {
+        /// The action as the ledger names it.
+        action: &'static str,
+        /// The unexpected key, cut short for quoting.
+        key: String,
+    },
+    /// An accepted argument is missing or does not have the expected form.
     #[error("{action} needs {key} to be {expected}")]
     InvalidArgument {
+        /// The action as the ledger names it.
         action: &'static str,
+        /// The argument at fault.
         key: &'static str,
+        /// The form the argument must have.
         expected: &'static str,
     },
 }

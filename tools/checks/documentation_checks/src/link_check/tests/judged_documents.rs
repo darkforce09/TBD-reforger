@@ -121,7 +121,7 @@ fn a_readme_in_a_top_level_folder_no_list_names_is_judged() {
     for readme in [
         "crates/foundation/http_url_guard/README.md",
         "deploy/README.md",
-        "legacy/map_engine/README.md",
+        "engines/map_engine/README.md",
         "a_folder_born_later/README.md",
     ] {
         assert_eq!(area(readme), Some(DocumentArea::Readmes), "{readme}");

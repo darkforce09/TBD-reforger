@@ -1,11 +1,11 @@
 //! **Role:** The CLI arm of `cargo xtask map bvh-batch --all-prefabs`: argument parsing, the
-//! census report and the write. The library itself is [`crate::archive_emission::library_reader`].
+//! census report and the write. The library itself is [`crate::archive_emission::prefab_library`].
 //!
 //! Adds the `archive` subcommand ([`run_archive`]) — the rkyv fold of what this command
 //! wrote. The two are deliberately the same CLI arm: an archive is only ever as good as the
 //! descriptor library it is built from, so they belong next to each other.
 //!
-//! **Position:** called by `bvh-batch --all-prefabs` and by `blueprint-from-voxels archive`; builds through [`crate::archive_emission::library_reader`] and [`crate::archive_emission::archive_writer`].
+//! **Position:** called by `bvh-batch --all-prefabs` and by `blueprint-from-voxels archive`; builds through [`crate::archive_emission::prefab_library`] and [`crate::archive_emission::archive_writer`].
 //! **Signals & state:** none; reads the game paks and writes the library once per run.
 //! **Invariants:** a dry run writes nothing; the census counts every catalogue prefab once.
 
@@ -17,11 +17,11 @@ use crate::error::{Result, ResultExt};
 use ::repository_layout::{contract_definitions_dir, terrain_dir};
 use world_line_of_sight::occluder_library::BlasEntry;
 
-use crate::archive_emission::library_reader::{
-    DEFAULT_HOT, Library, LibraryOptions, build_library, load_prefab_rows, world_census,
-    write_library,
+use crate::archive_emission::prefab_library::{
+    DEFAULT_HOT_PREFETCH_COUNT, Library, LibraryOptions, build_library, load_prefab_rows,
+    world_census, write_library,
 };
-use crate::bvh::batch_processing::open_sources;
+use crate::occlusion_sidecars::batch_processing::open_sources;
 
 pub(crate) fn print_report(lib: &Library, census: &HashMap<u32, u64>, terrain: &str) {
     let t = &lib.manifest.totals;
@@ -116,7 +116,7 @@ pub(crate) fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
     let mut terrain = "everon".to_string();
     let mut only_kinds: Vec<String> = Vec::new();
     let mut limit: Option<usize> = None;
-    let mut hot = DEFAULT_HOT;
+    let mut hot = DEFAULT_HOT_PREFETCH_COUNT;
     let mut dry_run = false;
     let mut all_layers = false;
     let mut paks: Option<PathBuf> = None;
@@ -183,9 +183,9 @@ pub(crate) fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
         limit,
         hot,
         layer_policy: if all_layers {
-            crate::bvh::batch_processing::LayerPolicy::All
+            crate::occlusion_sidecars::batch_processing::LayerPolicy::All
         } else {
-            crate::bvh::batch_processing::LayerPolicy::Projectile
+            crate::occlusion_sidecars::batch_processing::LayerPolicy::Projectile
         },
     };
     let lib = build_library(&source, &rows, &census, &opts)?;

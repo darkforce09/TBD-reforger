@@ -46,6 +46,7 @@ impl ConsoleLine {
         valid.then(|| Self(raw.to_owned()))
     }
 
+    /// The line as the operator wrote it.
     pub fn as_str(&self) -> &str {
         &self.0
     }

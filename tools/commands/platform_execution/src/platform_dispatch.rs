@@ -8,7 +8,7 @@
 //! **Invariants:** a driver's exit code is returned unchanged; `slice-run` exits 0 only when the
 //! run wrote its receipt (or was a dry run).
 
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 use ticket_registry::load_registry;
 
 use crate::Result;

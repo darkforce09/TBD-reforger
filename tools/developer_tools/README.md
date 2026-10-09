@@ -81,9 +81,10 @@ ci-local` nor the CI workflow runs them.
 - Used by: the `cargo xtask` recipes and CI tasks that run a binary by `--bin <name>` (`mk`,
   `ci`, `map`, `mcp`, `mod`, `deploy`, `staging` and `platform`); the CI workflow
   `.github/workflows/ci.yml`, whose `workspace-members` job builds the binaries; and people.
-- Rules: the package is binary-only, depends on tool crates alone, never on `xtask` or a member
-  under `legacy/`, and no workspace member depends on it (`tooling_dependency_direction_is_enforced`;
-  the strangler law); the eight binary names are fixed
+- Rules: the package is binary-only, depends only on tool crates at `tools/<category>/<name>`
+  and never on `xtask`, and no workspace member depends on it
+  (`tooling_dependency_direction_is_enforced`); every target builds under the workspace lints
+  (`[lints] workspace = true`); the eight binary names are fixed
   (`the_tooling_tree_holds_its_executables_manifests_and_layout_modules`); files stay under 500
   lines, test files under 1,000, `src/bin/` files under 250 and editor smoke scenarios under 450,
   and tests live in separate `tests/` files

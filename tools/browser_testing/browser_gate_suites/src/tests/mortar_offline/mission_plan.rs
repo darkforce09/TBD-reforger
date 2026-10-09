@@ -1,5 +1,5 @@
 use super::*;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 fn committed_catalog() -> BallisticsCatalog {
     read_catalog(

@@ -170,7 +170,7 @@ pub async fn launch_with_gpu(
     if let Some(err) = child.stderr.take() {
         drain_pipe(err, Arc::clone(&log_tail));
     }
-    let http = reqwest::Client::new();
+    let http = crate::http_client::new_http_client();
     for _ in 0..80 {
         if let Ok(r) = http
             .get(format!("http://127.0.0.1:{debug_port}/json/version"))

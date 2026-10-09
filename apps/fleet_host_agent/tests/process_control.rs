@@ -49,7 +49,7 @@ const HEALTHY_START: UnitScenario = UnitScenario {
 fn control(program: PathBuf, dwell: Duration) -> ProcessControl {
     ProcessControl::new(ProcessControlSettings {
         systemctl_program: program,
-        unit: SystemdUnitName::parse(UNIT).unwrap(),
+        unit: SystemdUnitName::parse(UNIT).expect("the unit name is valid"),
         start_dwell: dwell,
         verb_timeout: Duration::from_secs(5),
         state_read_timeout: Duration::from_secs(5),
@@ -253,12 +253,14 @@ async fn process_control_missing_program_is_a_failure_that_names_it() {
 /// client points at a port nothing listens on; a mission restart never uses it.
 async fn mission_host(fake: &FakeSystemctl, config: &Path, dwell: Duration) -> HostActionExecutor {
     let rcon = RconClient::start(RconSettings {
-        server: "127.0.0.1:9".parse().unwrap(),
+        server: "127.0.0.1:9"
+            .parse()
+            .expect("the loopback address parses as a socket address"),
         password: SecretText::new("range-master"),
         timings: RconTimings::default(),
     })
     .await
-    .unwrap();
+    .expect("the RCON client binds a local UDP socket");
     HostActionExecutor::new(
         control(fake.program(), dwell),
         rcon,
@@ -276,22 +278,28 @@ fn mission_restart() -> HostCommand {
             "scenario_id": DEV_POC,
         }),
     )
-    .unwrap()
+    .expect("the mission restart claim is valid")
 }
 
 /// A directory holding `server.json` with `contents`.
 fn server_config_file(contents: &str) -> (tempfile::TempDir, PathBuf) {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = tempfile::tempdir().expect("the temporary directory is created");
     let path = directory.path().join("server.json");
-    fs::write(&path, contents).unwrap();
+    fs::write(&path, contents).expect("the server config is written");
     (directory, path)
 }
 
 /// The names in `directory`, sorted.
 fn entries(directory: &Path) -> Vec<String> {
     let mut names: Vec<String> = fs::read_dir(directory)
-        .unwrap()
-        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .expect("the directory is readable")
+        .map(|entry| {
+            entry
+                .expect("the directory entry is readable")
+                .file_name()
+                .to_string_lossy()
+                .into_owned()
+        })
         .collect();
     names.sort();
     names

@@ -222,7 +222,7 @@ under 500 lines, measured on 2026-09-28; `cargo xtask verify file-length` scans 
 | `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c` | 186 |
 | `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminService.c` | 406 |
 
-The [mod script modularisation](/documentation/mod/script_modularisation_progress_checkpoint.md)
+The [mod script modularisation](/documentation/apps/mod/script_modularisation_progress_checkpoint.md)
 program decomposed them by responsibility, verified by `cargo xtask mod compile`; the operator
 waived its in-game playtest for the pre-alpha. `cargo xtask verify file-length` and the API's
 `engineering_laws` suite hold the ceiling from here on.

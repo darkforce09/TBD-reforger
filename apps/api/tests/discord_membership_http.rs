@@ -30,7 +30,12 @@ async fn serve(router: Router) -> MockServer {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind mock Discord server");
-    let base = format!("http://{}", listener.local_addr().unwrap());
+    let base = format!(
+        "http://{}",
+        listener
+            .local_addr()
+            .expect("the listener reports its local address")
+    );
     let task = tokio::spawn(async move {
         axum::serve(listener, router)
             .await
@@ -60,9 +65,12 @@ struct Reply {
 async fn respond(State(reply): State<Reply>) -> Response {
     let mut response = (reply.status, reply.body).into_response();
     if let Some(retry_after) = reply.retry_after {
-        response
-            .headers_mut()
-            .insert("retry-after", retry_after.parse().unwrap());
+        response.headers_mut().insert(
+            "retry-after",
+            retry_after
+                .parse()
+                .expect("the retry-after seconds form a header value"),
+        );
     }
     response
 }

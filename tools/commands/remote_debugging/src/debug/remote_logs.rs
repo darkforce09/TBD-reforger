@@ -29,7 +29,7 @@ use verification_core::NotRun;
 use verification_core::gate::probe_str;
 use verification_core::pattern::Pattern;
 
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 use crate::error::{Result, ResultExt};
 

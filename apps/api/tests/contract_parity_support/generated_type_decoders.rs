@@ -35,7 +35,7 @@ use contract_schema_types::server_infrastructure::{
 };
 
 /// Decodes a value into one generated type; the error is serde's.
-pub type Decoder = fn(&Value) -> Result<(), String>;
+pub(crate) type Decoder = fn(&Value) -> Result<(), String>;
 
 fn decode<T: DeserializeOwned>(value: &Value) -> Result<(), String> {
     serde_json::from_value::<T>(value.clone())
@@ -44,7 +44,7 @@ fn decode<T: DeserializeOwned>(value: &Value) -> Result<(), String> {
 }
 
 /// The decoder for the type generated from `schema`, when the schema is a codegen target.
-pub fn decoder_for(schema: SchemaRef) -> Option<Decoder> {
+pub(crate) fn decoder_for(schema: SchemaRef) -> Option<Decoder> {
     use SchemaLocation::{Definition, Root};
     let decoder: Decoder = match (schema.file, schema.location) {
         ("current-profile.schema.json", Root) => decode::<current_profile::CurrentProfileResponse>,

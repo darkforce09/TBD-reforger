@@ -186,7 +186,7 @@ fn lru_caps_and_never_evicts_pinned() {
     let mut r = setup();
 
     drive(&mut r, [200.0, 200.0, 400.0, 400.0]);
-    let first_ids: Vec<String> = r.chunk_residency.pinned_ids().to_vec();
+    let first_ids: Vec<ChunkId> = r.chunk_residency.pinned_ids().to_vec();
 
     for i in 0..10 {
         let x = 3000.0 + f64::from(i) * 1024.0;
@@ -255,20 +255,24 @@ fn class_s_draw_set_equals_strict_reference() {
 
     let strict: Bbox = [2048.0, 2048.0, 3072.0, 3072.0];
     let draw = r.draw_chunk_ids(strict);
-    let mut reference = chunk_ids_for_rect(chunk_rect_for_bbox(strict, r.terrain(), 512.0));
+    let mut reference: Vec<ChunkId> =
+        chunk_ids_for_rect(chunk_rect_for_bbox(strict, r.terrain(), 512.0))
+            .into_iter()
+            .map(ChunkId::new)
+            .collect();
     if let Some(cells) = r.chunk_residency.cell_ids() {
         reference.retain(|id| cells.contains(id));
     }
-    reference.retain(|id| r.chunk_residency.is_pinned(&ChunkId::from(id.as_str())));
+    reference.retain(|id| r.chunk_residency.is_pinned(id));
     reference.sort();
     assert_eq!(draw, reference);
 
     for id in &draw {
-        assert!(r.chunk_residency.is_pinned(&ChunkId::from(id.as_str())));
+        assert!(r.chunk_residency.is_pinned(id));
     }
 
     let pin_via_viewport = chunk_ids_for_viewport(strict, r.terrain(), 512.0, 0);
-    let mut pin_set: HashSet<String> = pin_via_viewport.into_iter().collect();
+    let mut pin_set: HashSet<ChunkId> = pin_via_viewport.into_iter().map(ChunkId::new).collect();
     if let Some(cells) = r.chunk_residency.cell_ids() {
         pin_set.retain(|id| cells.contains(id));
     }
@@ -330,7 +334,7 @@ fn class_r_heatmap_swap_and_full_pack() {
 fn class_r_partial_coverage_no_swap() {
     let mut r = setup();
     drive(&mut r, [2048.0, 2048.0, 2560.0, 2560.0]);
-    inject_trees(&mut r, "4_4", INSTANCE_BUDGET + 1);
+    inject_trees(&mut r, &ChunkId::from("4_4"), INSTANCE_BUDGET + 1);
     r.chunk_residency.set_deck_zoom_for_test(0.0);
     r.draw_buffers.toggle_trees = true;
 
@@ -360,12 +364,12 @@ fn class_r_heatmap_hysteresis() {
         .set_last_viewport_for_test([2048.0, 2048.0, 2560.0, 2560.0]);
     let reenter = INSTANCE_BUDGET * 85 / 100;
 
-    inject_trees(&mut r, "4_4", INSTANCE_BUDGET + 1);
+    inject_trees(&mut r, &ChunkId::from("4_4"), INSTANCE_BUDGET + 1);
     r.draw_buffers
         .refresh_draw_set_and_glyphs(&r.chunk_residency);
     assert!(r.heatmap_trees_active(), "enter above budget");
 
-    inject_trees(&mut r, "4_4", INSTANCE_BUDGET - 1);
+    inject_trees(&mut r, &ChunkId::from("4_4"), INSTANCE_BUDGET - 1);
     r.draw_buffers
         .refresh_draw_set_and_glyphs(&r.chunk_residency);
     assert!(
@@ -373,7 +377,7 @@ fn class_r_heatmap_hysteresis() {
         "stay in heatmap inside the hysteresis band"
     );
 
-    inject_trees(&mut r, "4_4", reenter - 1);
+    inject_trees(&mut r, &ChunkId::from("4_4"), reenter - 1);
     r.draw_buffers
         .refresh_draw_set_and_glyphs(&r.chunk_residency);
     assert!(!r.heatmap_trees_active(), "exit below 0.85×budget");

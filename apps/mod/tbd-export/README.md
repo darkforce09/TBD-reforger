@@ -128,13 +128,13 @@ Workbench, or a game, loads `tbd-export`.
 
 ## Related documentation
 
-- [Export addon documentation](/documentation/mod/tbd-export/README.md) — every exporter, its
+- [Export addon documentation](/documentation/apps/mod/tbd-export/README.md) — every exporter, its
   entry point and its documents.
-- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every map layer and the pipeline to committed terrain data.
-- [Terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md)
+- [Terrain export runbook](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md)
   — a full world-object export through to rebuilt terrain data.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — bringing Workbench and
   the MCP bridge up, and calling Net API handlers.
-- [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — how the bridge
+- [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — how the bridge
   loads through this addon's dependency.

@@ -1,7 +1,8 @@
 # Frontend test support
 
-The `frontend_test_support` crate: the helpers the tests of every frontend crate share. It finds
-the repository root and reads repository files from it (the captured
+The `frontend_test_support` crate: the helpers the tests of every frontend crate share. It reads
+repository files from the root the workspace's one finder,
+[`repository_root`](/crates/foundation/repository_root/README.md), answers (the captured
 [API](/documentation/glossary/a_to_f.md#api) responses, the contract schemas, the API route
 tables), scrubs a source text down to what a build compiles and runs, joins the shards a source pin
 reads, and guards `view!` attribute values. Every frontend crate names it under
@@ -11,17 +12,17 @@ reads, and guards `view!` attribute values. Every frontend crate names it under
 
 ```text
 crates/frontend/foundation/frontend_test_support/
-├── Cargo.toml  the package: no dependency, layout tier 0, any target
-└── src/        the root finder, `golden!`, the scrubber, the source shards and the attribute guard
+├── Cargo.toml  the package: `repository_root`, layout tier 1, any target
+└── src/        the repository file reads, `golden!`, the scrubber, the source shards and the attribute guard
 ```
 
 ## How it works
 
 A test passes its own `env!("CARGO_MANIFEST_DIR")`, because `env!` expands in the crate that
-spells it; the root finder walks up from there to the folder holding the root `Cargo.lock` and a
-`[workspace]` manifest, so a test reads the same repository file at whatever depth its crate
-sits. `golden!("GET__me.json")` expands that argument in the calling crate and reads the captured
-response through the root finder. The source pins of each area embed their own files with
+spells it; `repository_root` walks up from there to the folder holding the `.ai/tickets/ROOT`
+marker, so a test reads the same repository file at whatever depth its crate sits.
+`golden!("GET__me.json")` expands that argument in the calling crate and reads the captured
+response from that root. The source pins of each area embed their own files with
 `include_str!` and read them through the scrubber, so a mention in a comment, a literal or code no
 build reaches never satisfies a pin. The [source tree README](src/README.md) describes each
 module.
@@ -31,7 +32,7 @@ module.
 Run from the repository root:
 
 ```bash
-cargo test -p frontend_test_support   # the scrubber, the root finder and the attribute guard
+cargo test -p frontend_test_support   # the scrubber, the repository file reads and the attribute guard
 ```
 
 A frontend crate adds `frontend_test_support = { workspace = true }` to its
@@ -47,7 +48,8 @@ None: no feature, no environment variable. The crate reads files at test run tim
   FIXTURE_DIR, api_route_source, crate_cargo_toml, strip_toml_comments}`: the captured responses,
   the API route tables and the calling crate's manifest.
 - `repository_root::{repository_root, repository_path, repository_text, source_file_folder,
-  cached_text}`: the root finder and the cached reads of repository files.
+  cached_text}`: the root of the calling crate's checkout and the cached reads of repository
+  files.
 - `class_r_scrub::{live_source, live_code, only_item, only_body}`: the scrubbed views of a text.
 - `source_shards::{production_source, production_shard}`: the joined text of a pinned file.
 - `view_attribute_guard::{assert_view_attributes_are_well_formed, view_attribute_findings}`: the
@@ -57,8 +59,8 @@ None: no feature, no environment variable. The crate reads files at test run tim
 
 ## Boundaries
 
-- Depends on: the standard library only; at test run time, the repository files a test names and
-  the calling crate's `Cargo.toml`.
+- Depends on: `repository_root` (the checkout-root walk); at test run time, the repository files a
+  test names and the calling crate's `Cargo.toml`.
 - Used by: the tests of the single-page app (`apps/frontend`) and of every crate under
   `crates/frontend/`, through `[dev-dependencies]`.
 - Rules: no dependency on `apps/` and no shipped dependent (`cargo xtask ci

@@ -52,7 +52,7 @@ holds only the server's refusal, so the screen has nothing else to draw.
 
 ## Related documentation
 
-- [In-game menu specification](/documentation/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
+- [In-game menu specification](/documentation/apps/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
   — the pause menu and admin screen as built, and the design target
-- [Admin help ticket specification](/documentation/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
+- [Admin help ticket specification](/documentation/apps/mod/tbd-framework/UI/admin_help_ticket/admin_help_ticket_specification.md)
   — the admin help ticket and tickets module, designed and not built

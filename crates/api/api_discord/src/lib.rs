@@ -17,5 +17,6 @@ pub mod discord_webhook;
 pub mod error;
 pub mod membership_lookup_failure;
 pub mod prelude;
+mod tls_crypto_provider;
 
 pub use error::{Error, Result};

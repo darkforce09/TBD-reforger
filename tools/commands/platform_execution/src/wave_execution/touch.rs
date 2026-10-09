@@ -100,44 +100,34 @@ pub(crate) fn touch_changed(base: &str) -> i32 {
     0
 }
 
-/// The other half of the cure, and the half that actually makes the two repros red.
+/// Invalidate the freshness of every workspace member's sources before the gate's check steps.
 ///
-/// WHAT WAS WRONG WITH THE OLD REASONING. The comment on `gate_test_api` used to say `cargo
-/// check`/`clippy` need no private dir "because they emit no binary to run". The exposure was never
-/// about running a binary. Cargo's freshness test is MTIME-BASED: a unit is fresh when no source
-/// file is newer than its recorded output. So a check step can return a verdict about a file it
-/// never opened, and both of the ticket's repros are that one sentence:
+/// **Why a check step needs it.** Cargo's freshness test is mtime-based: a unit is fresh when no
+/// source file is newer than its recorded output. A `cargo check` or `clippy` emits no binary to
+/// run, yet it still returns a verdict from recorded output, so it can pass a file it never
+/// opened. Two ways that happens:
 ///
-///   A. MEASURED 2026-07-26. Append `THIS IS NOT RUST AND CANNOT COMPILE ###` to
-///      a `map_engine` source file, then `touch -r` it back to its ORIGINAL mtime.
-///      `cargo check --workspace --quiet` -> rc 0. `touch` it (identical bytes) -> rc 101,
-///      "reserved multi-hash token is forbidden". The gate's own clippy line: same, 0 then 101.
-///   B. MEASURED 2026-07-26. A sibling worktree added a const and built into the shared dir. From a
-///      tree that does not contain that symbol, `cargo check -p map_engine --features
-///      doc,mission,world` reported `Finished in 0.06s`, and `--message-format=json` named
-///      `libmap_engine-<hash>.rmeta` as its own artifact — an rmeta that greps 1 for the
-///      foreign symbol while the tree greps 0. The check stood on another tree's work and said
-///      PASS.
+/// * A source file whose bytes change while its mtime is set back (`touch -r`) to the original
+///   keeps its unit fresh: `cargo check` answers 0 over a file that cannot compile, and answers
+///   101 once the file is touched with identical bytes.
+/// * Another worktree building into a shared build folder leaves an `.rmeta` compiled from its
+///   tree; a check from a tree without that tree's symbols finishes at once and reports that
+///   foreign `.rmeta` as its own artifact.
 ///
-/// WHY THE PRIVATE DIR IS NOT ENOUGH, which is the thing to not re-derive wrongly. MEASURED
-/// 2026-07-26 against a freshly built `target/gate-check`: repro A run in the PRIVATE dir still
-/// returned rc 0. Of course it does — the mechanism is mtime, and a private dir changes only whose
-/// artifacts are there, not how freshness is decided. A private dir alone cures neither repro; it
-/// is the touch that does, and the private dir is what keeps the touch sufficient (it bounds the
-/// writers to serialised gates, so nothing can re-freshen a fingerprint against another tree's
-/// source between our touch and our last step).
+/// **Why a private build folder is not enough on its own.** Freshness is decided by mtime, so a
+/// private folder changes only whose artifacts are present, not how freshness is judged: the
+/// first case stays green there. The touch is what cures both cases; the private folder keeps the
+/// touch sufficient, because it bounds the writers to serialised gates, so nothing can re-freshen
+/// a fingerprint against another tree's source between this touch and the last step.
 ///
-/// WHY THE WHOLE WORKSPACE AND NOT JUST THE DIFF. [`touch_changed`] already covers `$base..HEAD`
-/// union `git status --porcelain`, and that defence is real — keep it. What it cannot cover is a
-/// crate this slice did not touch but some OTHER tree did: wave 5's own 12/12 run touched only
-/// map_engine, frontend and xtask, so api and every other member's verdict
-/// rested on artifacts of unidentified provenance. Provenance is not a property of the diff, so the
-/// invalidation cannot be scoped to the diff.
+/// **Why the whole workspace and not the diff.** [`touch_changed`] covers `$base..HEAD` union
+/// `git status --porcelain`, and that defence stays. It cannot cover a member this slice did not
+/// change but another tree built: provenance is not a property of the diff, so the invalidation
+/// cannot be scoped to the diff.
 ///
-/// THE COST, and why it is not the "full recheck every run" it sounds like. MEASURED 2026-07-26:
-/// the touch invalidates 14 of 14 workspace units and 0 of 696 dependency units — the 609-crate dep
-/// graph is what makes a cold build expensive and NONE of it is touched. `cargo check --workspace`
-/// goes 0.19 s warm -> 1.09 s touched. Nine tenths of a second buys a verdict about this tree.
+/// **Cost.** The touch invalidates the workspace units only, never a dependency unit; the
+/// dependency graph is what makes a cold build expensive and none of it is touched, so a touched
+/// `cargo check --workspace` costs about a second over a warm one.
 pub(crate) fn touch_workspace(ctx: &Ctx) -> i32 {
     let dirs = match workspace_members() {
         Ok(dirs) => dirs,

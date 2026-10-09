@@ -20,7 +20,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use repository_layout::{find_repository_root, terrain_dir};
+use repository_layout::terrain_dir;
+use repository_root::find_repository_root;
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Result, ResultExt};

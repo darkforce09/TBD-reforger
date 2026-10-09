@@ -17,8 +17,8 @@ use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
 /// | `foliage*`, `grass*`, `moss*`, `seaweed*` | Foliage |
 /// | anything else (wood, brick, metal, concrete, …) | Opaque |
 #[must_use]
-pub(crate) fn kind_for_gamemat(path: &str) -> SurfaceKind {
-    let stem = gamemat_stem(path);
+pub(crate) fn kind_for_game_material(path: &str) -> SurfaceKind {
+    let stem = game_material_stem(path);
     if stem.starts_with("glass") || stem.starts_with("plexiglass") {
         SurfaceKind::Glass
     } else if stem.starts_with("foliage")
@@ -34,7 +34,7 @@ pub(crate) fn kind_for_gamemat(path: &str) -> SurfaceKind {
 
 /// `{GUID}Common/Materials/Game/glass_armored.gamemat` → `glass_armored` (lower-case).
 #[must_use]
-pub(crate) fn gamemat_stem(path: &str) -> String {
+pub(crate) fn game_material_stem(path: &str) -> String {
     let p = path.replace('\\', "/");
     let p = match p.find('}') {
         Some(i) if p.starts_with('{') => &p[i + 1..],

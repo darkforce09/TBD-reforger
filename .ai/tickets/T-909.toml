@@ -18,7 +18,7 @@ Wave 233 adversarial verifier NIT on f649f50d / 5a974bc6. xtask/src/gate_t468.rs
 
 migration_legacy = ['Wave 233 adversarial verifier NIT on f649f50d / 5a974bc6. xtask/src/gate_t468.rs still matches `^\s+run:` on ci.yml. T-901 production path is serde_norway::from_str in xtask/src/verify_ci_shell.rs. The two can disagree on mapping-form `run:`. Scoped to the schema-job pin; fail-closed. REPRO: rg -n "run_re|^\\s+run:" xtask/src/gate_t468.rs ; contrast verify_ci_shell.rs serde_norway::from_str. Not a T-901 miss — T-468 is a different gate. Filed deferred; do not fix in 233-235.']
 
-missing=0'''
+missing=0 Paths with no successor (checked 2026-10-04, restructure S12): xtask/src/gate_t468.rs: removed in commit b4d8b7ca0, no successor.'''
 main_goal = "gate_t468 regex disagrees with T-901 serde_norway on mapping-form run:."
 context = [
     "Wave 233 adversarial verifier NIT on f649f50d / 5a974bc6.",

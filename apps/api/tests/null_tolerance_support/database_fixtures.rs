@@ -1,6 +1,6 @@
-//! Boot, seed, NULL-blast and route-sweep fixtures: one connected graph of rows owned by
-//! [`super::NULL_UID`], the `information_schema` enumeration that finds every nullable column,
-//! and the table of GET routes the blast is swept across.
+//! Boot, seed and NULL-blast fixtures: one connected graph of rows owned by
+//! [`super::NULL_UID`] and the `information_schema` enumeration that finds every nullable column.
+//! The table of GET routes the blast is swept across is [`super::route_sweep`].
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -15,7 +15,7 @@ use sqlx::{AssertSqlSafe, PgPool, Row};
 use tower::ServiceExt;
 use uuid::Uuid;
 
-use super::fire_mission_fixtures::{ballistics_catalog_sweep, seed_fire_missions};
+use super::fire_mission_fixtures::seed_fire_missions;
 use super::{NULL_UID, OBSERVABILITY_TOKEN, REACHABILITY_KEEP, STATE_BOUND_KEEP, SweepCaller};
 use crate::common;
 
@@ -27,7 +27,7 @@ use crate::common;
 /// and (as the old version of this file proved) tempt the seed into using a different id from
 /// the one it authenticates as. Inserting a `refresh_tokens` row keyed by
 /// `auth::hash_token` — the same hash the handler recomputes — gives this suite its own user.
-pub async fn boot() -> Option<(Router, PgPool, String)> {
+pub(crate) async fn boot() -> Option<(Router, PgPool, String)> {
     let url = common::require_test_database_url()?;
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");
@@ -68,7 +68,7 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
     }
     // Artifacts refuse deletion through their trigger; a previous run's are removed with it
     // disabled inside this transaction only, as the blast does.
-    let mut transaction = pool.begin().await.unwrap();
+    let mut transaction = pool.begin().await.expect("a transaction begins");
     for sql in [
         "ALTER TABLE mission_artifacts DISABLE TRIGGER mission_artifacts_are_immutable",
         "DELETE FROM mission_artifacts WHERE mission_id IN (SELECT id FROM missions WHERE author_id = $1)",
@@ -85,7 +85,7 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
             .await
             .unwrap_or_else(|e| panic!("cleanup `{sql}`: {e}"));
     }
-    transaction.commit().await.unwrap();
+    transaction.commit().await.expect("the transaction commits");
     for sql in [
         "DELETE FROM mission_versions WHERE created_by = $1",
         "DELETE FROM mission_bookmarks WHERE discord_id = $1",
@@ -145,18 +145,25 @@ pub async fn boot() -> Option<(Router, PgPool, String)> {
                 .uri("/api/v1/auth/refresh")
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(format!(r#"{{"refresh_token":"{raw}"}}"#)))
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK, "mint session for {NULL_UID}");
-    let body: Value =
-        serde_json::from_slice(&to_bytes(resp.into_body(), usize::MAX).await.unwrap()).unwrap();
-    let tok = body["access_token"].as_str().unwrap().to_string();
+    let body: Value = serde_json::from_slice(
+        &to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .expect("the response body reads to the end"),
+    )
+    .expect("the body decodes as JSON");
+    let tok = body["access_token"]
+        .as_str()
+        .expect("the `access_token` field is a string")
+        .to_string();
     Some((app, pool, tok))
 }
 
-pub async fn get(
+pub(crate) async fn get(
     app: &Router,
     uri: &str,
     tok: &str,
@@ -177,16 +184,19 @@ pub async fn get(
     };
     let resp = app
         .clone()
-        .oneshot(b.body(Body::empty()).unwrap())
+        .oneshot(b.body(Body::empty()).expect("the request builds"))
         .await
         .unwrap();
     let st = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (st, String::from_utf8_lossy(&bytes).into_owned())
 }
 
-/// Ids of the seeded graph, so [`route_sweep`] can address every parameterised route.
-pub struct Seed {
+/// Ids of the seeded graph, so [`super::route_sweep::route_sweep`] can address every
+/// parameterised route.
+pub(crate) struct Seed {
     pub mission: Uuid,
     pub pending_mission: Uuid,
     pub version: Uuid,
@@ -216,7 +226,7 @@ pub struct Seed {
 /// set, `event_missions.start_time` is in the future and `events.deleted_at` is NULL, so
 /// `/dashboard`'s `my_assignment` branch and `/me/deployments`' history branch both actually
 /// decode a row. The old suite satisfied none of these predicates.
-pub async fn seed(pool: &PgPool) -> Seed {
+pub(crate) async fn seed(pool: &PgPool) -> Seed {
     let (mission, pending_mission, version) = (Uuid::new_v4(), Uuid::new_v4(), Uuid::new_v4());
     let (event, announcement, server, modpack) = (
         Uuid::new_v4(),
@@ -596,7 +606,7 @@ pub async fn seed(pool: &PgPool) -> Seed {
 /// Every nullable column of every base table, straight from `information_schema`.
 ///
 /// This — not a hand-written list — is what makes the suite notice a *new* nullable column.
-pub async fn nullable_columns(pool: &PgPool) -> BTreeMap<String, BTreeSet<String>> {
+pub(crate) async fn nullable_columns(pool: &PgPool) -> BTreeMap<String, BTreeSet<String>> {
     let rows = sqlx::query(
         "SELECT c.table_name, c.column_name \
          FROM information_schema.columns c \
@@ -629,7 +639,7 @@ const IMMUTABILITY_TRIGGERS: &[(&str, &str)] = &[
 /// Explicit `UPDATE`s rather than omitted `INSERT` columns: omission only yields NULL for a
 /// column with no `DEFAULT`, so the old suite's coverage was contingent on a schema property it
 /// never checked and would have degraded to a silent no-op the day a `DEFAULT` was added.
-pub async fn blast_nulls(
+pub(crate) async fn blast_nulls(
     pool: &PgPool,
     table: &str,
     where_sql: &str,
@@ -676,7 +686,7 @@ pub async fn blast_nulls(
     // table became immutable can still hold NULLs. The blast recreates such a row the way a
     // migration would: its refusal trigger is disabled inside the blasting transaction only, and
     // `ALTER TABLE` holds an exclusive lock until commit, so no other session sees it disabled.
-    let mut transaction = pool.begin().await.unwrap();
+    let mut transaction = pool.begin().await.expect("a transaction begins");
     let refusal = IMMUTABILITY_TRIGGERS
         .iter()
         .find(|(immutable, _)| *immutable == table)
@@ -703,7 +713,7 @@ pub async fn blast_nulls(
         .await
         .unwrap_or_else(|e| panic!("enable {trigger}: {e}"));
     }
-    transaction.commit().await.unwrap();
+    transaction.commit().await.expect("the transaction commits");
 
     // Self-check: the NULLs must actually be there, or every assertion below is vacuous.
     let checks = targets
@@ -723,271 +733,4 @@ pub async fn blast_nulls(
          missing, so every assertion about {table} would pass vacuously"
     );
     targets
-}
-
-/// `(route template as registered by the API route tables, concrete URI, how it authenticates)`.
-///
-/// The template is carried alongside the URI so
-/// `every_get_route_is_swept_or_skipped_with_a_reason` can prove this table covers the whole
-/// router instead of trusting that someone remembered to extend it.
-pub fn route_sweep(s: &Seed) -> Vec<(&'static str, String, SweepCaller)> {
-    let (m, pm, v) = (s.mission, s.pending_mission, s.version);
-    let (e, em, a) = (s.event, s.event_mission, s.announcement);
-    let (srv, fac, slug) = (s.server, s.faction, &s.wiki_slug);
-    vec![
-        ("/healthz", "/healthz".into(), SweepCaller::Member),
-        // Swept rather than listed in ROUTE_SWEEP_SKIP: `/metrics` reads no model,
-        // but it does run a live `SELECT 1` and read the pool, so the NULL blast is a free
-        // check that the scrape path cannot 5xx. Gated by the observability bearer.
-        ("/metrics", "/metrics".into(), SweepCaller::Observability),
-        (
-            "/dashboard",
-            "/api/v1/dashboard".into(),
-            SweepCaller::Member,
-        ),
-        ("/me", "/api/v1/me".into(), SweepCaller::Member),
-        (
-            "/matches/{matchId}/events",
-            format!("/api/v1/matches/{}/events", s.match_id),
-            SweepCaller::Member,
-        ),
-        (
-            "/me/deployments",
-            "/api/v1/me/deployments".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/me/leave-requests",
-            "/api/v1/me/leave-requests".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/me/link/status",
-            "/api/v1/me/link/status".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/members",
-            "/api/v1/members?q=Null".into(),
-            SweepCaller::Member,
-        ),
-        ("/missions", "/api/v1/missions".into(), SweepCaller::Member),
-        (
-            "/missions/{id}",
-            format!("/api/v1/missions/{m}"),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}/armory",
-            format!("/api/v1/missions/{m}/armory"),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}/export",
-            format!("/api/v1/missions/{m}/export"),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}/versions/{vid}",
-            format!("/api/v1/missions/{m}/versions/{v}"),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}/reviews",
-            format!("/api/v1/missions/{m}/reviews"),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}/artifacts/{artifact_id}",
-            format!("/api/v1/missions/{m}/artifacts/{}", s.artifact),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}/artifacts/{artifact_id}/document",
-            format!("/api/v1/missions/{m}/artifacts/{}/document", s.artifact),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}/artifacts/{artifact_id}/workspace",
-            format!("/api/v1/missions/{m}/artifacts/{}/workspace", s.artifact),
-            SweepCaller::Member,
-        ),
-        ("/events", "/api/v1/events".into(), SweepCaller::Member),
-        (
-            "/events/{id}",
-            format!("/api/v1/events/{e}"),
-            SweepCaller::Member,
-        ),
-        // Administrator access views read groups, rosters, slot policies and quota pools.
-        (
-            "/events/{id}/access",
-            format!("/api/v1/events/{e}/access"),
-            SweepCaller::Member,
-        ),
-        (
-            "/events/{id}/access/participants",
-            format!("/api/v1/events/{e}/access/participants"),
-            SweepCaller::Member,
-        ),
-        (
-            "/events/{id}/fire-missions",
-            format!("/api/v1/events/{e}/fire-missions"),
-            SweepCaller::Member,
-        ),
-        (
-            "/event-missions/{emid}/orbat",
-            format!("/api/v1/event-missions/{em}/orbat"),
-            SweepCaller::Member,
-        ),
-        (
-            "/announcements",
-            "/api/v1/announcements".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/announcements/{id}",
-            format!("/api/v1/announcements/{a}"),
-            SweepCaller::Member,
-        ),
-        // Admin CMS master list (drafts + published); the public feed is `/announcements` above.
-        (
-            "/cms/announcements",
-            "/api/v1/cms/announcements".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/approvals",
-            "/api/v1/approvals".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/admin/users",
-            "/api/v1/admin/users".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/admin/audit-logs",
-            "/api/v1/admin/audit-logs".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/admin/audit-logs/export.csv",
-            "/api/v1/admin/audit-logs/export.csv".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/admin/leave-requests",
-            "/api/v1/admin/leave-requests".into(),
-            SweepCaller::Member,
-        ),
-        // Swept, not skipped: the endpoint aggregates jsonb over mission_versions'
-        // latest payloads, which is precisely the NULL-blast class this sweep protects.
-        (
-            "/admin/mission-default-overrides",
-            "/api/v1/admin/mission-default-overrides".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/leaderboards",
-            "/api/v1/leaderboards".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/users/{discordId}/stats",
-            format!("/api/v1/users/{NULL_UID}/stats"),
-            SweepCaller::Member,
-        ),
-        ("/servers", "/api/v1/servers".into(), SweepCaller::Member),
-        (
-            "/servers/{id}/status",
-            format!("/api/v1/servers/{srv}/status"),
-            SweepCaller::Member,
-        ),
-        (
-            "/servers/{id}/credentials",
-            format!("/api/v1/servers/{srv}/credentials"),
-            SweepCaller::Member,
-        ),
-        (
-            "/servers/{id}/commands",
-            format!("/api/v1/servers/{srv}/commands"),
-            SweepCaller::Member,
-        ),
-        (
-            "/servers/{id}/commands/{commandId}",
-            format!("/api/v1/servers/{srv}/commands/{}", s.command),
-            SweepCaller::Member,
-        ),
-        ("/modpacks", "/api/v1/modpacks".into(), SweepCaller::Member),
-        (
-            "/modpacks/current",
-            "/api/v1/modpacks/current".into(),
-            SweepCaller::Member,
-        ),
-        ("/wiki", "/api/v1/wiki".into(), SweepCaller::Member),
-        super::wiki_page_sweep(slug),
-        super::wiki_revisions_sweep(slug),
-        super::wiki_revision_sweep(slug),
-        (
-            "/vehicle-database",
-            "/api/v1/vehicle-database".into(),
-            SweepCaller::Member,
-        ),
-        super::vehicle_row_sweep(),
-        ("/factions", "/api/v1/factions".into(), SweepCaller::Member),
-        (
-            "/factions/{id}",
-            format!("/api/v1/factions/{fac}"),
-            SweepCaller::Member,
-        ),
-        ("/registry", "/api/v1/registry".into(), SweepCaller::Member),
-        (
-            "/registry/compat",
-            "/api/v1/registry/compat".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/game-runtime/events/{id}/roster",
-            format!("/api/v1/game-runtime/events/{e}/roster"),
-            SweepCaller::Machine,
-        ),
-        (
-            "/game-runtime/deployment",
-            "/api/v1/game-runtime/deployment".into(),
-            SweepCaller::Machine,
-        ),
-        (
-            "/game-runtime/artifacts/{artifactId}",
-            format!("/api/v1/game-runtime/artifacts/{}", s.artifact),
-            SweepCaller::Machine,
-        ),
-        (
-            "/game-runtime/missions",
-            "/api/v1/game-runtime/missions".into(),
-            SweepCaller::Machine,
-        ),
-        (
-            "/servers/{id}/deployments",
-            format!("/api/v1/servers/{srv}/deployments"),
-            SweepCaller::Member,
-        ),
-        (
-            "/servers/{id}/deployments/{deploymentId}",
-            format!("/api/v1/servers/{srv}/deployments/{}", s.deployment),
-            SweepCaller::Member,
-        ),
-        (
-            "/fleet/scenarios",
-            "/api/v1/fleet/scenarios".into(),
-            SweepCaller::Member,
-        ),
-        (
-            "/missions/{id}",
-            format!("/api/v1/missions/{pm}"),
-            SweepCaller::Member,
-        ),
-    ]
-    .into_iter()
-    .chain(ballistics_catalog_sweep())
-    .collect()
 }

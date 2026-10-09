@@ -10,14 +10,14 @@ use uuid::Uuid;
 
 use crate::{common, telemetry_support};
 
-pub const DEADLINE: Duration = Duration::from_secs(10);
+pub(crate) const DEADLINE: Duration = Duration::from_secs(10);
 
-pub struct Actor {
+pub(crate) struct Actor {
     pub id: String,
     pub token: String,
 }
 
-pub struct Fixture {
+pub(crate) struct Fixture {
     pub state: AppState,
     pub app: Router,
     pub admin: Actor,
@@ -29,11 +29,15 @@ pub struct Fixture {
 }
 
 impl Fixture {
-    pub async fn new(maximum: i64, seats: i32) -> Self {
+    pub(crate) async fn new(maximum: i64, seats: i32) -> Self {
         let url =
             common::require_test_database_url().expect("reservation guards require PostgreSQL");
-        let pool = api_database::connect(&url).await.unwrap();
-        api_database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url)
+            .await
+            .expect("the test database accepts a connection");
+        api_database::migrate(&pool)
+            .await
+            .expect("the migrations apply to the test database");
         let state =
             api::composition::application_state(pool, Config::for_tests(url, "reservation-guards"));
         let admin = actor(&state, "admin").await;
@@ -45,14 +49,14 @@ impl Fixture {
         let event: Uuid = sqlx::query_scalar(
             "INSERT INTO events(name_override, start_time, status, max_slots, created_by)
              VALUES ('Reservation guard fixture', clock_timestamp() + interval '3 days', 'open', $1, $2) RETURNING id")
-            .bind(maximum).bind(&admin.id).fetch_one(&state.pool).await.unwrap();
+            .bind(maximum).bind(&admin.id).fetch_one(&state.pool).await.expect("the insert into events returns its row");
         let mut missions = Vec::new();
         let mut slots = Vec::new();
         for _ in 0..2 {
             let mission: Uuid = sqlx::query_scalar(
                 "INSERT INTO missions(title, author_id, terrain, game_mode, max_players, status)
                  VALUES ('Reservation guard mission', $1, 'everon', 'pve_coop', 32, 'live') RETURNING id")
-                .bind(&admin.id).fetch_one(&state.pool).await.unwrap();
+                .bind(&admin.id).fetch_one(&state.pool).await.expect("the insert into missions returns its row");
             let attachment: Uuid = sqlx::query_scalar(
                 "INSERT INTO event_missions(event_id, mission_id, start_time)
                  VALUES ($1, $2, clock_timestamp() + interval '3 days') RETURNING id",
@@ -61,13 +65,13 @@ impl Fixture {
             .bind(mission)
             .fetch_one(&state.pool)
             .await
-            .unwrap();
+            .expect("the insert into event_missions returns its row");
             let mut attachment_slots = Vec::new();
             for index in 0..seats {
                 attachment_slots.push(sqlx::query_scalar(
                     "INSERT INTO orbat_slots(event_mission_id, faction, squad, role, slot_index)
                      VALUES ($1, 'USA', 'Alpha', 'Rifleman', $2) RETURNING id")
-                    .bind(attachment).bind(index).fetch_one(&state.pool).await.unwrap());
+                    .bind(attachment).bind(index).fetch_one(&state.pool).await.expect("the insert into orbat_slots returns its row"));
             }
             missions.push(attachment);
             slots.push(attachment_slots);
@@ -85,7 +89,7 @@ impl Fixture {
         }
     }
 
-    pub async fn call(
+    pub(crate) async fn call(
         &self,
         actor: &Actor,
         method: &str,
@@ -103,7 +107,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn assign(
+    pub(crate) async fn assign(
         &self,
         actor: &Actor,
         mission: usize,
@@ -122,7 +126,12 @@ impl Fixture {
         .await
     }
 
-    pub async fn clear(&self, actor: &Actor, mission: usize, slot: usize) -> (StatusCode, Value) {
+    pub(crate) async fn clear(
+        &self,
+        actor: &Actor,
+        mission: usize,
+        slot: usize,
+    ) -> (StatusCode, Value) {
         self.call(
             actor,
             "DELETE",
@@ -135,7 +144,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn register(
+    pub(crate) async fn register(
         &self,
         actor: &Actor,
         mission: usize,
@@ -145,7 +154,7 @@ impl Fixture {
             Some(json!({"slot_id":slot.map(|slot| self.slots[mission][slot].to_string()).unwrap_or_default()}))).await
     }
 
-    pub async fn withdraw(&self, actor: &Actor, mission: usize) -> (StatusCode, Value) {
+    pub(crate) async fn withdraw(&self, actor: &Actor, mission: usize) -> (StatusCode, Value) {
         self.call(
             actor,
             "DELETE",
@@ -155,7 +164,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn squad(&self, actor: &Actor, release: bool) -> (StatusCode, Value) {
+    pub(crate) async fn squad(&self, actor: &Actor, release: bool) -> (StatusCode, Value) {
         let action = if release { "release" } else { "reserve" };
         self.call(
             actor,
@@ -169,7 +178,7 @@ impl Fixture {
         .await
     }
 
-    pub async fn operation(&self, name: &str, actor: &Actor) -> (StatusCode, Value) {
+    pub(crate) async fn operation(&self, name: &str, actor: &Actor) -> (StatusCode, Value) {
         match name {
             "assign" => self.assign(actor, 0, 1, &self.players[0]).await,
             "clear" => self.clear(actor, 0, 0).await,
@@ -181,7 +190,7 @@ impl Fixture {
         }
     }
 
-    pub async fn seed_registration(
+    pub(crate) async fn seed_registration(
         &self,
         actor: &Actor,
         mission: usize,
@@ -191,7 +200,7 @@ impl Fixture {
         if let Some(slot) = slot {
             self.seed_occupant(actor, mission, slot).await;
         }
-        let mut fixture = self.state.pool.begin().await.unwrap();
+        let mut fixture = self.state.pool.begin().await.expect("a transaction begins");
         let allocation = if matches!(state, "registered" | "legacy_unknown") {
             Some(
                 common::participant_allocation(&mut fixture, self.missions[mission], &actor.id)
@@ -205,21 +214,21 @@ impl Fixture {
              VALUES ($1, $2, $3::registration_state, $4, $5)")
             .bind(self.missions[mission]).bind(&actor.id).bind(state)
             .bind(slot.map(|slot| self.slots[mission][slot])).bind(allocation)
-            .execute(&mut *fixture).await.unwrap();
-        fixture.commit().await.unwrap();
+            .execute(&mut *fixture).await.expect("the insert into event_registrations succeeds");
+        fixture.commit().await.expect("the transaction commits");
     }
 
-    pub async fn seed_occupant(&self, actor: &Actor, mission: usize, slot: usize) {
+    pub(crate) async fn seed_occupant(&self, actor: &Actor, mission: usize, slot: usize) {
         sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = clock_timestamp() WHERE id = $2")
-            .bind(&actor.id).bind(self.slots[mission][slot]).execute(&self.state.pool).await.unwrap();
+            .bind(&actor.id).bind(self.slots[mission][slot]).execute(&self.state.pool).await.expect("the update of orbat_slots succeeds");
     }
 
-    pub async fn seed_hold(&self) {
+    pub(crate) async fn seed_hold(&self) {
         sqlx::query("INSERT INTO orbat_reservations(event_mission_id, squad, reserved_by) VALUES ($1, 'Alpha', $2)")
-            .bind(self.missions[0]).bind(&self.leader.id).execute(&self.state.pool).await.unwrap();
+            .bind(self.missions[0]).bind(&self.leader.id).execute(&self.state.pool).await.expect("the insert into orbat_reservations succeeds");
     }
 
-    pub async fn snapshot(&self) -> Value {
+    pub(crate) async fn snapshot(&self) -> Value {
         sqlx::query_scalar(
             "SELECT jsonb_build_object(
              'slots', (SELECT jsonb_agg(to_jsonb(s) ORDER BY s.id) FROM orbat_slots s WHERE event_mission_id = ANY($1)),
@@ -230,24 +239,24 @@ impl Fixture {
              'assignment_audits', (SELECT jsonb_agg(to_jsonb(a) ORDER BY a.id) FROM audit_logs a
                  WHERE action = 'event.slot_assigned' AND actor_id = ANY($2)))")
             .bind(&self.missions).bind(vec![self.admin.id.clone(), self.leader.id.clone()])
-            .fetch_one(&self.state.pool).await.unwrap()
+            .fetch_one(&self.state.pool).await.expect("the read of orbat_slots returns a row")
     }
 
-    pub async fn registration(
+    pub(crate) async fn registration(
         &self,
         actor: &Actor,
         mission: usize,
     ) -> Option<(Uuid, String, Option<Uuid>)> {
         sqlx::query_as("SELECT id, reservation_state::text, slot_id FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2")
-            .bind(self.missions[mission]).bind(&actor.id).fetch_optional(&self.state.pool).await.unwrap()
+            .bind(self.missions[mission]).bind(&actor.id).fetch_optional(&self.state.pool).await.expect("the read of event_registrations runs")
     }
 
-    pub async fn occupants(&self, actor: &Actor, mission: usize) -> Vec<Uuid> {
+    pub(crate) async fn occupants(&self, actor: &Actor, mission: usize) -> Vec<Uuid> {
         sqlx::query_scalar("SELECT id FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2 ORDER BY id")
-            .bind(self.missions[mission]).bind(&actor.id).fetch_all(&self.state.pool).await.unwrap()
+            .bind(self.missions[mission]).bind(&actor.id).fetch_all(&self.state.pool).await.expect("the read of orbat_slots runs")
     }
 
-    pub async fn assignment_evidence(&self) -> (i64, i64) {
+    pub(crate) async fn assignment_evidence(&self) -> (i64, i64) {
         sqlx::query_as(
             "SELECT count(*), count(p.audit_id) FROM audit_logs a
             LEFT JOIN audit_publication_pending p ON p.audit_id = a.id
@@ -256,10 +265,10 @@ impl Fixture {
         .bind(&self.admin.id)
         .fetch_one(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
     }
 
-    pub async fn audit_evidence(&self, action: &str, target: Uuid) -> (i64, i64) {
+    pub(crate) async fn audit_evidence(&self, action: &str, target: Uuid) -> (i64, i64) {
         sqlx::query_as(
             "SELECT count(*), count(p.audit_id) FROM audit_logs a
             LEFT JOIN audit_publication_pending p ON p.audit_id = a.id
@@ -269,10 +278,10 @@ impl Fixture {
         .bind(target.to_string())
         .fetch_one(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
     }
 
-    pub async fn registration_facts(&self, actor: &Actor, mission: usize) -> Value {
+    pub(crate) async fn registration_facts(&self, actor: &Actor, mission: usize) -> Value {
         sqlx::query_scalar(
             "SELECT jsonb_build_object('registration', to_jsonb(r),
             'history', (SELECT jsonb_agg(to_jsonb(h) ORDER BY h.id)
@@ -283,10 +292,10 @@ impl Fixture {
         .bind(&actor.id)
         .fetch_one(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the read of event_registration_history returns a row")
     }
 
-    pub async fn seed_cancelled_registration(&self, actor: &Actor) {
+    pub(crate) async fn seed_cancelled_registration(&self, actor: &Actor) {
         self.seed_registration(actor, 0, "withdrawn", None).await;
         sqlx::query(
             "UPDATE event_registrations SET release_reason = 'event_cancelled',
@@ -298,32 +307,32 @@ impl Fixture {
         .bind(&actor.id)
         .execute(&self.state.pool)
         .await
-        .unwrap();
+        .expect("the update of event_registrations succeeds");
     }
 
-    pub async fn event_barrier(&self) -> (sqlx::Transaction<'static, sqlx::Postgres>, i32) {
-        let mut transaction = self.state.pool.begin().await.unwrap();
+    pub(crate) async fn event_barrier(&self) -> (sqlx::Transaction<'static, sqlx::Postgres>, i32) {
+        let mut transaction = self.state.pool.begin().await.expect("a transaction begins");
         sqlx::query("SELECT id FROM events WHERE id = $1 FOR NO KEY UPDATE")
             .bind(self.event)
             .fetch_one(&mut *transaction)
             .await
-            .unwrap();
+            .expect("the read of events returns a row");
         let pid = sqlx::query_scalar("SELECT pg_backend_pid()")
             .fetch_one(&mut *transaction)
             .await
-            .unwrap();
+            .expect("the call of pg_backend_pid() returns a row");
         (transaction, pid)
     }
 }
 
-pub async fn actor(state: &AppState, role: &str) -> Actor {
+pub(crate) async fn actor(state: &AppState, role: &str) -> Actor {
     let id = format!("reservation-{role}-{}", Uuid::new_v4());
     let token =
         common::access_token(state, "reservation_guard_transactions", &id, role, true).await;
     Actor { id, token }
 }
 
-pub async fn wait_for_blocked(pool: &sqlx::PgPool, owner: i32, minimum: i64) {
+pub(crate) async fn wait_for_blocked(pool: &sqlx::PgPool, owner: i32, minimum: i64) {
     tokio::time::timeout(DEADLINE, async {
         loop {
             // Include waiters queued behind another waiter, not just the original lock owner.
@@ -332,7 +341,7 @@ pub async fn wait_for_blocked(pool: &sqlx::PgPool, owner: i32, minimum: i64) {
                  SELECT pid FROM pg_stat_activity WHERE datname = current_database() AND $1 = ANY(pg_blocking_pids(pid))
                  UNION SELECT a.pid FROM pg_stat_activity a JOIN blocked b ON b.pid = ANY(pg_blocking_pids(a.pid))
                  WHERE a.datname = current_database()) SELECT count(*) FROM blocked")
-                .bind(owner).fetch_one(pool).await.unwrap();
+                .bind(owner).fetch_one(pool).await.expect("the query returns a row");
             if count >= minimum { return; }
             tokio::task::yield_now().await;
         }

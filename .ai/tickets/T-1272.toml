@@ -1,0 +1,12 @@
+id = "T-1272"
+kind = "work"
+title = "Rewrite mod declarations when a relocation path row moves files"
+summary = "A relocation path row moves a Rust file and rewrites references to it, but never the mod declaration that names it (repository_relocation reads declarations in src/rust_paths/module_tree.rs:58-67 and writes none), so every stage edited mod lines by hand."
+class = "feature"
+status = "idea"
+notes = "cargo xtask refactor relocate (tools/commands/repository_relocation) moves a file with git mv and rewrites every path and rust_path reference, but never the mod declaration or #[path] attribute that loads a moved .rs file: src/rust_paths/module_tree.rs:58-67 reads ModuleDeclaration (name, #[path] value, enclosing inline modules) only to resolve module paths, and no pass writes one. Every restructure stage edited the mod lines of its moves by hand (the stage brief's rule 'a path row never rewrites mod declarations'). A path row whose from and to name .rs files in one crate could rename the declaration (and its #[path] value) in the parent module, with a relocation test per layout (mod.rs, <module>.rs, #[path]). Source: restructure finding F-015 (program progress record)."
+created_at = "2026-10-04T02:36:13Z"
+
+[scope]
+domain = "repo"
+layer = "tools"

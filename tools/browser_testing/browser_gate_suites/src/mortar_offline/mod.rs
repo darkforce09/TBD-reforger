@@ -38,7 +38,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::gate_layout::MapAssetMounts;
 use crate::server::{ServeConfig, start_server};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use api_down_visit::api_down_visit;
 use chrome_devtools_protocol::{self as cdp, Browser, Page};
 use mission_entry::{enter_mission, solution_matches_native};

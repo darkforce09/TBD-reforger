@@ -82,8 +82,8 @@ chromeless, with no navigation entry:
   `render_primitives` and `road_network`; the world crates `building_interiors`,
   `interior_line_of_sight`, `spatial_indexes`, `terrain_line_of_sight` and `map_draw_lanes`; the
   viewshed texture of `map_editing_tools`; the ballistics crates `ballistics_model`,
-  `ballistics_agreement_cases` and `fire_mission_planning`; `frontend_api_dtos`, `leptos`, `serde`,
-  `serde_json` and `url`; in the browser build `frontend_transport` (the anonymous reads),
+  `ballistics_agreement_cases` and `fire_mission_planning`; `frontend_api_dtos`, `time_source`, `leptos`,
+  `serde`, `serde_json` and `url`; in the browser build `frontend_transport` (the anonymous reads),
   `map_renderer`, `gpu_frame`, `map_asset_loading`, `world_line_of_sight`, `chunk_draw_buffers`,
   `browser_platform`, `leptos_router`, `futures`, `gloo-net`, `gloo-timers`, `js-sys`,
   `wasm-bindgen` and `web-sys`; `frontend_route_table` and `frontend_test_support` for its tests

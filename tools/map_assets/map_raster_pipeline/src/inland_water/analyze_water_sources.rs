@@ -15,7 +15,7 @@ use ::repository_layout::{terrain_dir, terrain_manifest_path};
 #[allow(clippy::too_many_lines)]
 pub(crate) fn analyze_water_sources() -> Result<u8> {
     let root = find_repository_root()?;
-    let sap = sap_dir()?;
+    let sap = supertexture_scratch_dir()?;
     let ortho_path = sap.join("everon-sap-ortho.png");
     let dem_path = terrain_dir(&root, "everon").join("dem/everon-dem-16bit.png"); // E2c-allow
     let manifest: Value = serde_json::from_str(&std::fs::read_to_string(
@@ -38,7 +38,7 @@ pub(crate) fn analyze_water_sources() -> Result<u8> {
     }
 
     // ── DEM: sea + exact-flat + slope + elev planes (6400² → 3200², north-up) ──
-    let (dem, dw, dh) = read_dem_u16(&dem_path)?;
+    let (dem, dw, dh) = read_elevation_raster_u16(&dem_path)?;
     if dw != 6400 || dh != 6400 {
         bail!("DEM {dw}x{dh}, expected 6400²");
     }
@@ -160,7 +160,7 @@ pub(crate) fn analyze_water_sources() -> Result<u8> {
     let mut sat = vec![0f32; d * d];
     let mut lum = vec![0f32; d * d];
     for i in 0..d * d {
-        let (s, l) = image_operations::hsl_sat_lum(
+        let (s, l) = image_operations::hsl_saturation_and_lightness(
             ortho.data[i * 3],
             ortho.data[i * 3 + 1],
             ortho.data[i * 3 + 2],

@@ -81,6 +81,6 @@ fn flags_accumulate() {
 #[test]
 fn paths_resolve_against_the_running_checkout() {
     let p = Paths::resolve().expect("repo root");
-    assert!(repository_layout::is_repository_root(&p.mono_root));
+    assert!(repository_root::is_repository_root(&p.mono_root));
     assert!(p.deploy_env.ends_with(repository_layout::DEPLOY_ENV));
 }

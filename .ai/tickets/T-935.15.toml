@@ -14,7 +14,7 @@ its children carry the work. It was packed for wave 256 and pulled after a feasi
 no single agent can deliver its acceptance from its eight owns:
   * residency.rs and chunk_bin.rs cannot cease to exist without crates/map-engine-core/src/world/mod.rs
     :24, :44, :73, :129-131, which declares and re-exports them; deleting them breaks compilation in at
-    least occluder_host.rs:39, pages/debug/world_los.rs:76, world/prefab_load.rs:274,
+    least occluder_host.rs:39, crates/frontend/workspaces/debug_benches/src/world_los.rs:76, world/prefab_load.rs:274,
     xtask/src/schema_gates.rs:24 and xtask/src/golden_gate.rs:16,27 - none of them owned.
   * requirement 5 names world/occluder/trace.rs and world/density_ladder.rs as work items and owns neither.
   * the new container cannot be declared at all without world/binary/chunk_container.rs and
@@ -30,8 +30,7 @@ no single agent can deliver its acceptance from its eight owns:
     therefore reads VACUOUSLY ZERO the moment chunk URLs disappear.
 The ticket's own approach line and documentation/tickets/plans/t-935_15_plan.md:34 both already said to split it before
 dispatch. T-935.16 owns tools/tbd-tools/src/world/build.rs and world_assets/world_host.rs too and cannot
-share a wave with the children that own them.
-"""
+share a wave with the children that own them. Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/src/world/chunk_bin.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/world/chunk_math.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/world/index.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/world/manifest.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/world/mod.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/world/residency.rs: removed in commit 1660b03f8, no successor; tools/tbd-tools/src/smokes.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/world/binary_emit.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/world/build.rs: removed in commit b4d8b7ca0, no successor; world_assets/world_host.rs: removed in commit 1660b03f8, no successor; xtask/src/golden_gate.rs: removed in the restructure (commit 2a105fa4f), no successor; xtask/src/schema_gates.rs: removed in commit b4d8b7ca0, no successor."""
 priority = 1
 parent = "T-935"
 main_goal = "Panning never fetches, allocates or evicts because the camera crossed a line on a grid."

@@ -18,9 +18,10 @@ pub use fixture_router::MissingFixture;
 use fixture_router::Reply;
 use fixture_router::fixtures_dir;
 
-/// slug → { path, authed }. 26 of routes.csv's 32 rows: the editor is excluded (its regression
-/// gate is the CDP editor smokes, strictly stronger than a DOM snapshot), as are the URL-only
-/// debug benches and `/announcements/:id`, which renders the `/announcements` page.
+/// slug → { path, authed }. 26 of routes.csv's 33 rows: the editor and the review workspace (the
+/// Mission Creator opened read-only) are excluded (their regression gate is the CDP editor smokes,
+/// strictly stronger than a DOM snapshot), as are the URL-only debug benches and
+/// `/announcements/:id`, which renders the `/announcements` page.
 pub fn routes() -> Vec<Route> {
     let r = |slug: &'static str, path: String, authed: bool| Route { slug, path, authed };
     vec![

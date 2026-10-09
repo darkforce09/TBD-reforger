@@ -108,9 +108,9 @@ Facts every topic relies on:
 
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the same
   server on the staging host, deployed with `cargo xtask deploy staging`.
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the event loop and the one-life
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the event loop and the one-life
   rule the session exercises.
-- [TBD Framework documentation](/documentation/mod/tbd-framework/README.md) — the in-game
+- [TBD Framework documentation](/documentation/apps/mod/tbd-framework/README.md) — the in-game
   screens, with the lobby and briefing specifications.
 - [Arsenal loadout editor](/documentation/crates/frontend/workspaces/mission_creator_arsenal/arsenal_loadout_editor.md)
   — authoring the loadouts the session checks on a player.

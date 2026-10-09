@@ -1,0 +1,25 @@
+# `cargo xtask ai`: the tool-call guard an AI agent harness runs before each Read or Bash call, and
+# the filtered command runner that never hides a failure. `thiserror` carries its errors.
+[package]
+name = "agent_context_guards"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The AI agent tool-call guard and the failure-preserving command output filter behind cargo xtask ai"
+
+[package.metadata.layout]
+category = "tools/commands"
+tier = 1
+targets = "any"
+
+[dependencies]
+# The PreToolUse hook payload on stdin.
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# The wall clock that stamps and ages each session's read set.
+time_source = { workspace = true }
+
+[lints]
+workspace = true

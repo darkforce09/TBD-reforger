@@ -23,7 +23,7 @@ use crate::{Error, Result};
 ///
 /// A relative `out` resolves against the working directory, as the clap defaults do.
 pub fn checked_reference_output(out: &Path) -> Result<PathBuf> {
-    let root = ::repository_layout::find_repository_root()?;
+    let root = ::repository_root::find_repository_root()?;
     let cwd = std::env::current_dir().map_err(|cause| Error::WorkingDirectory { cause })?;
     reference_output_within(&root.join(::repository_layout::REFERENCES_DIR), &cwd, out)
 }

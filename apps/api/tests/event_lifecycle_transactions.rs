@@ -21,8 +21,12 @@ struct Fixture {
 impl Fixture {
     async fn new() -> Self {
         let url = common::require_test_database_url().expect("lifecycle tests require PostgreSQL");
-        let pool = api_database::connect(&url).await.unwrap();
-        api_database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url)
+            .await
+            .expect("the test database accepts a connection");
+        api_database::migrate(&pool)
+            .await
+            .expect("the migrations apply to the test database");
         let author = format!("lifecycle-{}", Uuid::new_v4());
         common::seed_user(
             &pool,
@@ -53,7 +57,7 @@ impl Fixture {
         .bind(&self.author)
         .execute(&self.pool)
         .await
-        .unwrap();
+        .expect("the insert into events succeeds");
     }
 
     async fn attachment(&self, event: Uuid, hours_from_now: i32, deleted: bool) -> Uuid {
@@ -64,7 +68,7 @@ impl Fixture {
         .bind(&self.author)
         .fetch_one(&self.pool)
         .await
-        .unwrap();
+        .expect("the insert into missions returns its row");
         sqlx::query_scalar(
             "INSERT INTO event_missions(event_id, mission_id, start_time, created_at, deleted_at)
              VALUES ($1, $2, now() + make_interval(hours => $3), now(),
@@ -76,7 +80,7 @@ impl Fixture {
         .bind(deleted)
         .fetch_one(&self.pool)
         .await
-        .unwrap()
+        .expect("the insert into event_missions returns its row")
     }
 
     async fn status(&self, event: Uuid) -> String {
@@ -84,7 +88,7 @@ impl Fixture {
             .bind(event)
             .fetch_one(&self.pool)
             .await
-            .unwrap()
+            .expect("the read of events returns a row")
     }
 
     async fn records(&self, event: Uuid) -> Vec<(String, String, String, Option<String>, bool)> {
@@ -97,7 +101,7 @@ impl Fixture {
         .bind(event.to_string())
         .fetch_all(&self.pool)
         .await
-        .unwrap()
+        .expect("the read of audit_publication_pending runs")
     }
 
     async fn snapshot(&self, event: Uuid) -> serde_json::Value {
@@ -105,7 +109,7 @@ impl Fixture {
             .bind(event)
             .fetch_one(&self.pool)
             .await
-            .unwrap()
+            .expect("the read of events returns a row")
     }
 
     async fn total_evidence(&self) -> (i64, i64) {
@@ -115,7 +119,7 @@ impl Fixture {
         )
         .fetch_one(&self.pool)
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
     }
 }
 
@@ -137,7 +141,7 @@ async fn wait_for_event_lock(pool: &PgPool, blocker_pid: i32) {
             .bind(blocker_pid)
             .fetch_one(pool)
             .await
-            .unwrap();
+            .expect("the read of pg_stat_activity returns a row");
             if blocked {
                 return;
             }
@@ -197,7 +201,7 @@ async fn install_failure(f: &Fixture, event: Uuid, publication: bool) -> String 
     )))
     .execute(&f.pool)
     .await
-    .unwrap();
+    .expect("the `CREATE FUNCTION` statement succeeds");
     name
 }
 
@@ -212,7 +216,7 @@ async fn remove_failure(f: &Fixture, name: &str, publication: bool) {
     )))
     .execute(&f.pool)
     .await
-    .unwrap();
+    .expect("the `DROP TRIGGER` statement succeeds");
 }
 
 async fn evidence_failure_rolls_back_and_retry_is_exactly_once(publication: bool) {

@@ -498,10 +498,11 @@ fn shift_rotate_arm_promotes_and_commits_through_the_field_write() {
     );
 }
 
-/// The atomic move-commit pin's invariant is UNDISTURBED by the new arm: exactly one `LG::Move`
-/// arm still calls `move_entities_and_vehicles`, and `LG::Rotate` is a separate arm. (The
-/// authoritative version of this pin lives in map-engine-core/doc/store.rs and runs under
-/// `cargo test -p map-engine-core`; this is the frontend-local echo so a fork shows up here too.)
+/// Across the whole editor source (the page, the canvas mount and its parts, and the pointer
+/// gesture handlers) exactly one `LG::Move` arm calls `move_entities_and_vehicles`, and
+/// `LG::Rotate` is a separate arm. The arm's own content (no lone `core.move_entities(`, no
+/// `editor_ops::move_vehicles`) is pinned next to the handler, by
+/// `pointer_up_move_arm_commits_through_the_atomic_mix_api` in `mission_creator_engine_bridge`.
 #[test]
 fn only_one_move_arm_commits_the_atomic_mix() {
     let ed = editor_live();

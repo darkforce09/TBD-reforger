@@ -7,7 +7,7 @@
 //! **Signals & state:** none; pure functions.
 //! **Invariants:** a column with no downward entry inside the band window is never floor.
 
-use crate::voxel_processing::analysis_parameters::Params;
+use crate::voxel_processing::analysis_parameters::AnalysisParameters;
 use crate::voxel_processing::voxel_types::{PlanGrid, ScanMap};
 
 /// Occupancy + per-cell floor height: `heights[ix * nz + iz]` is the TOPMOST y_down entry
@@ -17,7 +17,7 @@ pub(crate) fn floor_plate(
     nx: usize,
     nz: usize,
     slab_y: f64,
-    p: &Params,
+    p: &AnalysisParameters,
 ) -> (PlanGrid, Vec<Option<f64>>) {
     let mut grid = PlanGrid::new(nx, nz);
     let mut heights: Vec<Option<f64>> = vec![None; nx * nz];

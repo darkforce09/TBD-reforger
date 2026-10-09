@@ -29,14 +29,19 @@ const UNIT_NAME_MAX_BYTES: usize = 255;
 /// systemd state values are short lowercase words such as `active` or `not-found`.
 const STATE_VALUE_MAX_BYTES: usize = 32;
 
+/// A lifecycle action on the game server's systemd user unit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProcessAction {
+    /// `systemctl --user start`.
     Start,
+    /// `systemctl --user stop`.
     Stop,
+    /// `systemctl --user restart`.
     Restart,
 }
 
 impl ProcessAction {
+    /// The systemctl verb that performs the action.
     pub fn systemctl_verb(self) -> &'static str {
         match self {
             Self::Start => "start",
@@ -66,6 +71,7 @@ impl ProcessAction {
 pub struct SystemdUnitName(String);
 
 impl SystemdUnitName {
+    /// The unit name in `raw`, or what is wrong with it, phrased to follow the value.
     pub fn parse(raw: &str) -> Result<Self, &'static str> {
         if raw.is_empty() || raw.len() > UNIT_NAME_MAX_BYTES {
             return Err("must be 1 to 255 bytes long");
@@ -85,11 +91,13 @@ impl SystemdUnitName {
         }
     }
 
+    /// The unit name as systemctl receives it.
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
+/// The systemctl program, the unit it controls and the time limits of process control.
 #[derive(Debug, Clone)]
 pub struct ProcessControlSettings {
     /// Absolute path of the systemctl program.
@@ -109,6 +117,7 @@ impl ProcessControlSettings {
     /// returns. With the dwell (at most 30 s) and two state reads, start and restart stay inside
     /// the ledger's 180 s execution window and stop inside its 120 s window.
     pub const VERB_TIMEOUT: Duration = Duration::from_secs(100);
+    /// The limit on one `systemctl --user show` state read.
     pub const STATE_READ_TIMEOUT: Duration = Duration::from_secs(5);
 }
 
@@ -128,16 +137,20 @@ impl UnitProperty {
     }
 }
 
+/// Performs [`ProcessAction`]s on the game server's unit through `systemctl --user` and reads the
+/// unit's state back.
 #[derive(Debug, Clone)]
 pub struct ProcessControl {
     settings: ProcessControlSettings,
 }
 
 impl ProcessControl {
+    /// Process control with `settings`; nothing runs until an action is performed.
     pub fn new(settings: ProcessControlSettings) -> Self {
         Self { settings }
     }
 
+    /// The unit every action targets.
     pub fn unit(&self) -> &SystemdUnitName {
         &self.settings.unit
     }

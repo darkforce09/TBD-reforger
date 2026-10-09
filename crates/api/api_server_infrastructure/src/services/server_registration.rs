@@ -30,6 +30,7 @@ use sqlx::{PgConnection, PgExecutor};
 use crate::models::server::Server;
 use api_audit_log::required_audit::append_actor_audit;
 use api_foundation::error_handling::api_error::ApiError;
+use api_foundation::http::required_text_field::required_trimmed_text;
 
 /// The columns a [`Server`] decodes from, with `ip` rendered through `host()` as every server read
 /// renders it.
@@ -87,13 +88,10 @@ impl ServerRegistration {
 ///
 /// The name is trimmed once here and the trimmed value is what the row stores, so reads and writes
 /// agree; nothing trims `servers.name` on read, and it is a key in no comparison besides the
-/// `ORDER BY name` display sort. No length cap: the 1 MB JSON body limit is the boundary.
+/// `ORDER BY name` display sort. No length cap: the 1 MB JSON body limit is the boundary. The
+/// rule is the API's one required text field rule, [`required_trimmed_text`].
 pub fn validated_name(raw: &str) -> Result<String, ApiError> {
-    let name = raw.trim();
-    if name.is_empty() {
-        return Err(ApiError::bad_request("name is required"));
-    }
-    Ok(name.to_string())
+    required_trimmed_text(raw, "name")
 }
 
 /// `servers.ip` is Postgres `inet`, and every read renders it with `host(ip)`. Two inputs are

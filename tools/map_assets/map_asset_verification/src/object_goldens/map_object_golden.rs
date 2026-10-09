@@ -23,7 +23,7 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
     };
 
     let enums =
-        read_json(&sroot.join("definitions/map-object-enums.schema.json"))?["$defs"].clone();
+        read_json_file(&sroot.join("definitions/map-object-enums.schema.json"))?["$defs"].clone();
     let enum_vec = |name: &str| -> Vec<String> {
         enums[name]["enum"]
             .as_array()
@@ -70,28 +70,28 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
         ("vehicle", enum_vec("vehicleClass")),
     ]);
 
-    let prefabs_sample = read_json(&mo(&["map-object-prefabs-sample.json"]))?;
-    let instances_sample = read_json(&mo(&["map-object-instances-sample.json"]))?;
-    let regions_sample = read_json(&mo(&["map-object-regions-everon-sample.json"]))?;
-    let roads_sample = read_json(&mo(&["map-object-roads-sample.json"]))?;
-    let resolved_sample = read_json(&mo(&["map-object-resolved-sample.json"]))?;
-    let chunk_sample = read_json(&mo(&["map-object-chunk-sample.json"]))?;
-    let anchor_fixture = read_json(&mo(&["phased", "P1-anchor-fixture.json"]))?;
-    let density_fixture = read_json(&mo(&["density", "density-fixture.json"]))?;
+    let prefabs_sample = read_json_file(&mo(&["map-object-prefabs-sample.json"]))?;
+    let instances_sample = read_json_file(&mo(&["map-object-instances-sample.json"]))?;
+    let regions_sample = read_json_file(&mo(&["map-object-regions-everon-sample.json"]))?;
+    let roads_sample = read_json_file(&mo(&["map-object-roads-sample.json"]))?;
+    let resolved_sample = read_json_file(&mo(&["map-object-resolved-sample.json"]))?;
+    let chunk_sample = read_json_file(&mo(&["map-object-chunk-sample.json"]))?;
+    let anchor_fixture = read_json_file(&mo(&["phased", "P1-anchor-fixture.json"]))?;
+    let density_fixture = read_json_file(&mo(&["density", "density-fixture.json"]))?;
     let density_bin = fs::read(mo(&["density", "density-fixture.bin"]))?;
-    let region_fixture = read_json(&mo(&["regions-derivation-fixture.json"]))?;
+    let region_fixture = read_json_file(&mo(&["regions-derivation-fixture.json"]))?;
     let catalog_bundles = [
         (
             "map-object-catalog-everon-sample.json",
-            read_json(&mo(&["map-object-catalog-everon-sample.json"]))?,
+            read_json_file(&mo(&["map-object-catalog-everon-sample.json"]))?,
         ),
         (
             "phased/P1-buildings.json",
-            read_json(&mo(&["phased", "P1-buildings.json"]))?,
+            read_json_file(&mo(&["phased", "P1-buildings.json"]))?,
         ),
         (
             "phased/P2-trees.json",
-            read_json(&mo(&["phased", "P2-trees.json"]))?,
+            read_json_file(&mo(&["phased", "P2-trees.json"]))?,
         ),
     ];
 
@@ -151,7 +151,7 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
                 }
             }
             for row in &t.instances {
-                if let Some(pid) = inst_prefab_id(row)
+                if let Some(pid) = instance_prefab_id(row)
                     && let Some(p) = by_id.get(&pid.to_bits())
                     && (p["kind"].as_str().unwrap_or("").is_empty()
                         || p["class"].as_str().unwrap_or("").is_empty())
@@ -159,7 +159,7 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
                     errs.push(format!(
                         "{}: instance {} resolves to prefab without kind/class",
                         t.label,
-                        inst_id(row)
+                        instance_id(row)
                     ));
                 }
             }
@@ -269,17 +269,17 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
                 .filter_map(|p| p["prefabId"].as_f64().map(f64::to_bits))
                 .collect();
             for row in &t.instances {
-                match inst_prefab_id(row) {
+                match instance_prefab_id(row) {
                     Some(pid) if ids.contains(&pid.to_bits()) => {}
                     Some(pid) => errs.push(format!(
                         "{}: instance {} prefabId {pid} does not resolve",
                         t.label,
-                        inst_id(row)
+                        instance_id(row)
                     )),
                     None => errs.push(format!(
                         "{}: instance {} prefabId missing",
                         t.label,
-                        inst_id(row)
+                        instance_id(row)
                     )),
                 }
             }
@@ -334,7 +334,7 @@ pub fn map_object_golden(root: &Path) -> Result<u8> {
             "map-object-prefab.schema.json",
             "map-object-resolved.schema.json",
         ] {
-            let doc = read_json(&sroot.join("definitions").join(f))?;
+            let doc = read_json_file(&sroot.join("definitions").join(f))?;
             let id = doc["$id"].as_str().unwrap_or_default().to_string();
             registered.push((id, doc));
         }

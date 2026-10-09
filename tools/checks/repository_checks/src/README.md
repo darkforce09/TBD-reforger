@@ -23,7 +23,7 @@ tools/checks/repository_checks/src/
 
 | Group | Verbs | README |
 |---|---|---|
-| `architecture` | `route-tags`, `editor-orbat-coherency`, `crate-tiers`, `crate-anatomy`, `strangler`, `frontend-layering`, `tailwind-sources` | [architecture](/tools/checks/repository_checks/src/architecture/README.md) |
+| `architecture` | `route-tags`, `editor-orbat-coherency`, `crate-tiers`, `crate-anatomy`, `test-file-reachability`, `frontend-layering`, `tailwind-sources` | [architecture](/tools/checks/repository_checks/src/architecture/README.md) |
 | `language_bans` | `no-shell`, `no-python`, `no-node`, `file-length` | [language bans](/tools/checks/repository_checks/src/language_bans/README.md) |
 | `licensing` | `no-crf-leak` | [licensing](/tools/checks/repository_checks/src/licensing/README.md) |
 | `registry` | `object-registry-aliases` | [registry](/tools/checks/repository_checks/src/registry/README.md) |

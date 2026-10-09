@@ -31,7 +31,7 @@ use crate::forest_contours as forest;
 use crate::forest_contours::{Tree, derive_forest_regions};
 use crate::polygon_geometry::chunk_key;
 use crate::vegetation_density as density;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use enfusion_pak::PakVfs;
 
 mod object_partitioning;

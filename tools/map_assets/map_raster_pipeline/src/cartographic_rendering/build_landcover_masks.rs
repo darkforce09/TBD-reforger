@@ -13,9 +13,9 @@ use super::*;
 use crate::decision_record_locations::CARTOGRAPHIC_RENDERING_ARTIFACTS_DIR;
 use ::repository_layout::map_scratch_dir;
 
-/// Classify the stitched orthophoto into land-cover masks: classification at CLASS_PX (nearest
+/// Classify the stitched orthophoto into land-cover masks: classification at CLASS_RASTER_PIXELS (nearest
 /// sample), close-then-open morphology, soft-edge masks + meta JSON.
-pub(crate) fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
+pub(crate) fn build_landcover_masks(terrain: &str) -> Result<LandcoverOutputs> {
     if terrain != "everon" {
         bail!("build-landcover-mask: no SAP source registered for terrain \"{terrain}\"");
     }
@@ -34,9 +34,9 @@ pub(crate) fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     let started = std::time::Instant::now();
 
     let full = image_operations::load_png_rgb(&sap)?;
-    let smp = image_operations::sample_rgb(&full, CLASS_PX, CLASS_PX);
+    let smp = image_operations::sample_rgb(&full, CLASS_RASTER_PIXELS, CLASS_RASTER_PIXELS);
     drop(full);
-    let n = CLASS_PX * CLASS_PX;
+    let n = CLASS_RASTER_PIXELS * CLASS_RASTER_PIXELS;
     let mut forest = vec![0f32; n];
     let mut bright = vec![0f32; n];
     let (mut c_forest, mut c_bright, mut c_water, mut c_grass) = (0u64, 0u64, 0u64, 0u64);
@@ -60,15 +60,16 @@ pub(crate) fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
         }
     }
     let close_open = |plane: &[f32]| -> Vec<f32> {
-        let mut p = image_operations::box_blur_f32(plane, CLASS_PX, CLASS_PX, 6);
+        let mut p =
+            image_operations::box_blur_f32(plane, CLASS_RASTER_PIXELS, CLASS_RASTER_PIXELS, 6);
         for v in &mut p {
             *v = if *v >= 0.35 { 1.0 } else { 0.0 };
         }
-        let mut p = image_operations::box_blur_f32(&p, CLASS_PX, CLASS_PX, 6);
+        let mut p = image_operations::box_blur_f32(&p, CLASS_RASTER_PIXELS, CLASS_RASTER_PIXELS, 6);
         for v in &mut p {
             *v = if *v >= 0.6 { 1.0 } else { 0.0 };
         }
-        image_operations::box_blur_f32(&p, CLASS_PX, CLASS_PX, 2)
+        image_operations::box_blur_f32(&p, CLASS_RASTER_PIXELS, CLASS_RASTER_PIXELS, 2)
     };
     let forest = close_open(&forest);
     let bright = close_open(&bright);
@@ -81,7 +82,7 @@ pub(crate) fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
                 ) as u8
             })
             .collect();
-        image_operations::save_png_gray(path, CLASS_PX, CLASS_PX, &data)
+        image_operations::save_png_gray(path, CLASS_RASTER_PIXELS, CLASS_RASTER_PIXELS, &data)
     };
     let forest_out = out_dir.join("landcover-forest-mask.png");
     let bright_out = out_dir.join("landcover-bright-mask.png");
@@ -91,7 +92,7 @@ pub(crate) fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     let meta = json!({
         "lane": "cartographic landcover",
         "source": sap_rel,
-        "classPx": CLASS_PX,
+        "classPx": CLASS_RASTER_PIXELS,
         "thresholds": {
             "water": "b >= g (excluded)",
             "forest": format!("g > r && g > b+{FOREST_GREEN_OVER_BLUE} && L <= {FOREST_LUM_MAX}"),
@@ -105,18 +106,18 @@ pub(crate) fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
         out_dir.join("landcover-mask-meta.json"),
         serde_json::to_string_pretty(&meta)? + "\n",
     )?;
-    Ok(LandcoverOut {
+    Ok(LandcoverOutputs {
         forest_mask: forest_out,
         bright_mask: bright_out,
         meta,
     })
 }
 
-pub(crate) fn build_landcover_cli(terrain: &str) -> Result<u8> {
+pub(crate) fn build_landcover_command_line(terrain: &str) -> Result<u8> {
     let out = build_landcover_masks(terrain)?;
     let f = &out.meta["fractions"];
     println!(
-        "build-landcover-mask: OK {terrain} @ {CLASS_PX}² — fractions forest={} bright={} grass={} water={} ({}s)",
+        "build-landcover-mask: OK {terrain} @ {CLASS_RASTER_PIXELS}² — fractions forest={} bright={} grass={} water={} ({}s)",
         f["forest"], f["bright"], f["grass"], f["water"], out.meta["buildSeconds"]
     );
     Ok(0)
@@ -233,7 +234,7 @@ pub(crate) fn build_map_cartographic(terrain: &str) -> Result<u8> {
         (&landcover.forest_mask, FOREST_TINT),
     ] {
         let m = image_operations::load_png_rgb(mask_path)?;
-        // masks are CLASS_PX² grayscale → resize to source, multiply by tint alpha, Over.
+        // masks are CLASS_RASTER_PIXELS² grayscale → resize to source, multiply by tint alpha, Over.
         let m = image_operations::resize_rgb(&m, source_px, source_px)?;
         for i in 0..source_px * source_px {
             let a = f64::from(m.data[i * 3]) / 255.0 * alpha;

@@ -62,13 +62,15 @@ running server through immutable artifacts, reviews, approvals and deployments.
 
 ```text
 crates/api/api_missions/src/
-├── contract/     JSON Schema validation of every mission document, and the generated contract types
-├── handlers/     one HTTP handler module per mission surface
-├── mod.rs        the module tree; re-exports `routes`
-├── models/       the domain's database and wire models, snake_case on the wire
-├── routes.rs     the domain's `/api/v1` route table
-├── services/     logic other surfaces share: lookups, compile, artifacts, reviews, deployments
-└── validation/   write-boundary predicates: access, scalar fields, semver, version payloads
+├── contract/    JSON Schema validation of every mission document, and the hand-written loadout projection
+├── error.rs     the crate's error type and `Result` alias, converting into `ApiError`
+├── handlers/    one HTTP handler module per mission surface
+├── lib.rs       the crate root: the module tree; re-exports `routes`, `Error` and `Result`
+├── models/      the domain's rows and wire shapes, snake_case on the wire
+├── prelude.rs   the deployment, lookup, armory and registry import names other crates import
+├── routes.rs    the domain's `/api/v1` route table
+├── services/    row reads, the write lock, compile, artifacts, reviews, deployments, registry import
+└── validation/  write-boundary predicates: access, scalar fields, semver, version payloads
 ```
 
 ## How it works
@@ -90,46 +92,48 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
 
 ## Public surface
 
-- `routes::routes(version_limit)`: the route table `core::http_router` merges under `/api/v1`:
+- `routes::routes(version_limit)`: the route table the API application's router
+  (`apps/api/src/router.rs`) merges under `/api/v1`:
   `/missions` and `/missions/{id}` with its `armory`, `bookmark`, `export`, `submit`, `reviews`,
   `review-comments`, `artifacts/{artifact_id}` (and its `document` and `workspace`) and `versions`
   children; `/approvals`; `/factions`; `/registry` and `/registry/compat`;
   `/servers/{id}/deployments`; the four `/game-runtime/*` routes; and
   `/admin/mission-default-overrides`.
 - `services::mission_lookup`: `mission_title_terrain` and `historical_mission_title_terrain`, the
-  mission title and terrain `command_center` and `operations` read instead of writing their own
-  queries.
+  mission title and terrain `api_command_center` and `api_operations` read instead of writing
+  their own queries.
 - `services::mission_deployments`: `deployment_reads::deployment_in_effect` and
-  `deployment_settlement::lock_and_settle` for the game-runtime roster in `operations`, and
-  `deployment_settlement::reconcile_mission_deployments` for the deployment reconciler worker.
+  `deployment_settlement::lock_and_settle` for the game-runtime roster in `api_operations`, and
+  `deployment_settlement::reconcile_mission_deployments` for the deployment reconciler of
+  `api_background_workers`.
 - `services::registry_import`: `import_items` and `import_compat`, run by the `import-registry`
   binary.
-- `models::mission`: `TerrainType`, `GameMode` and `MissionArmory`, which `operations`,
-  `match_telemetry` and `server_infrastructure` read.
+- `models::mission`: `TerrainType`, `GameMode` and `MissionArmory`, which `api_operations` and
+  `api_command_center` read.
 
 ## Boundaries
 
 - Depends on:
-  - `core`: error handling, the middleware extractors, the application state, the wire formats,
-    and the HTTP, text, configuration and database helpers;
-  - `administration` services for the audit trail, `identity_and_access` services for session
-    authorization, account authority and account locks, `server_infrastructure` for machine
-    credentials and the fleet command ledger, `operations` services for the ORBAT templates slot
-    bindings read, and `community_content` models for the modpack a registry belongs to;
-  - the mission crates (`mission_compiler`, `mission_validation`), which compile and validate
-    mission documents;
+  - the kernel crates: `api_foundation` (error handling, wire formats, HTTP and text helpers),
+    `api_http_layer` (the middleware extractors), `api_state` (the application state),
+    `api_configuration`, `api_database`, `api_identifiers` and `api_mission_vocabulary`;
+  - `api_audit_log` for the audit trail, `api_caller_identity` for session authorization,
+    `api_server_infrastructure` for machine credentials and the fleet command ledger, and
+    `api_community_content` for the modpack a registry belongs to;
+  - the mission crates (`mission_compiler`, `mission_validation`, `mission_wire_safety`,
+    `mission_model`), which compile and validate mission documents, and `contract_schema_types`;
   - the schemas in `contracts/definitions/`, embedded at compile time.
 - Used by:
-  - `core::http_router`, which merges the route table;
+  - the API application's router (`apps/api/src/router.rs`), which merges the route table;
   - the deployment reconciler in `crates/api/api_background_workers/src/` and the
     `import-registry` binary in `apps/api/src/bin/`;
-  - `command_center`, `operations`, `match_telemetry` and `server_infrastructure`, through the
-    lookups, deployment services and models above;
+  - `api_command_center` and `api_operations`, through the lookups, deployment services and
+    models above;
   - over HTTP, the Mission Creator and the mission hub and approval pages in
     `apps/frontend/`, and the mission loaders of the game server in
     `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
-- Rules: handlers never import another domain's handlers, and `routes.rs` exports the `routes`
-  table that `core::http_router` merges (`apps/api/src/tests/architecture_rules.rs`
+- Rules: no other crate imports this crate's handlers, and `routes.rs` exports the one `routes`
+  table that `apps/api/src/router.rs` merges (`apps/api/src/tests/architecture_rules.rs`
   checks both); the domain's generated contract types in `contract_schema_types` are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
   checks them), with `contract/loadout_projection.rs` as the one hand-maintained contract model.

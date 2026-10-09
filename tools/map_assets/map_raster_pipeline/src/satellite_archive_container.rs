@@ -29,7 +29,7 @@ use super::image_operations;
 
 /// Codec code stored in [`SatTile::format`] — the builder only ever writes VP8L WebP, so anything
 /// else is a container this build must refuse rather than hand to a WebP decoder.
-pub(crate) const SAT_FORMAT_WEBP: u8 = 0;
+pub(crate) const SATELLITE_FORMAT_WEBP: u8 = 0;
 
 /// The container version [`super::satellite_archive::build_unified_satellite`] writes when the caller does
 /// not pick one.
@@ -38,7 +38,7 @@ pub(crate) const DEFAULT_CONTAINER_VERSION: u16 = 2;
 /// The mip chain from a base, by the GL halving rule, ending at 1×1. One function so the builder,
 /// the v2 index and the v2 verifier cannot drift about what level *n* measures — a disagreement
 /// there mislocates every tile on screen without failing any cast.
-pub(crate) fn mip_dims(base_w: usize, base_h: usize) -> Vec<(usize, usize)> {
+pub(crate) fn mip_dimensions(base_w: usize, base_h: usize) -> Vec<(usize, usize)> {
     let (mut w, mut h) = (base_w.max(1), base_h.max(1));
     let mut out = vec![(w, h)];
     while w > 1 || h > 1 {
@@ -53,7 +53,7 @@ pub(crate) fn mip_dims(base_w: usize, base_h: usize) -> Vec<(usize, usize)> {
 /// The v1 builder's crop arithmetic, kept verbatim so v2 reproduces v1's tiling exactly: everon's
 /// level 0 is 12800 px at `tileThreshold` 8192, which is 2×2 tiles of **6400** px each — not
 /// 8192 + 4608. The reader derives the same geometry from `w_tiles`/`h_tiles`.
-pub(crate) fn tile_rect(
+pub(crate) fn tile_rectangle(
     lw: usize,
     lh: usize,
     w_tiles: usize,
@@ -80,7 +80,7 @@ pub(crate) struct BundleSummary {
 /// One encoded VP8L block, in the order the payload writes them: level-major, then row-major
 /// within a level. **Both container writers consume this same vector**, which is why a v1 and a v2
 /// bundle built from one source have byte-identical payloads and differ only in their index.
-pub(crate) struct TileBuf {
+pub(crate) struct TileBuffer {
     pub(crate) level: usize,
     pub(crate) x: usize,
     pub(crate) y: usize,
@@ -92,7 +92,7 @@ pub(crate) struct TileBuf {
 /// The rkyv index for `blocks` — payload-relative offsets accumulated in the order the payload is
 /// written, so `TbdsHeader::tiles_offset() + tile.offset` is the tile's byte range in the file.
 pub(crate) fn tbds_v2_index(
-    blocks: &[TileBuf],
+    blocks: &[TileBuffer],
     level_meta: &[(usize, usize)],
     base: (usize, usize),
     tile_threshold: usize,
@@ -110,7 +110,7 @@ pub(crate) fn tbds_v2_index(
             tiles.push(SatTile {
                 offset,
                 len,
-                format: SAT_FORMAT_WEBP,
+                format: SATELLITE_FORMAT_WEBP,
             });
             offset += u64::from(len);
         }
@@ -137,7 +137,7 @@ pub(crate) fn tbds_v2_index(
 }
 
 /// `TbdsHeader` + rkyv index + the payload, in that order.
-pub(crate) fn tbds_v2_bytes(index: &TbdSatIndexV2, blocks: &[TileBuf]) -> Result<Vec<u8>> {
+pub(crate) fn tbds_v2_bytes(index: &TbdSatIndexV2, blocks: &[TileBuffer]) -> Result<Vec<u8>> {
     let index_bytes = to_bytes(index)?;
     let payload: usize = blocks.iter().map(|b| b.buf.len()).sum();
     let mut file = Vec::with_capacity(HEADER_BYTES + index_bytes.len() + payload);
@@ -186,7 +186,7 @@ fn read_bundle_v2(buf: &[u8]) -> Result<BundleSummary, String> {
             "index base {base_w}x{base_h} / tile_px {tile_px}: all must be >= 1"
         ));
     }
-    let dims = mip_dims(base_w as usize, base_h as usize);
+    let dims = mip_dimensions(base_w as usize, base_h as usize);
     if index.levels.len() != dims.len() {
         return Err(format!(
             "levels[] length {} !== floor(log2(base))+1 = {}",
@@ -218,11 +218,11 @@ fn read_bundle_v2(buf: &[u8]) -> Result<BundleSummary, String> {
             block_count += 1;
             let (off, len) = (t.offset.to_native() as usize, t.len.to_native() as usize);
             payload_bytes += len as u64;
-            let (x, y, tw, th) = tile_rect(lw, lh, w_tiles, h_tiles, i);
+            let (x, y, tw, th) = tile_rectangle(lw, lh, w_tiles, h_tiles, i);
             let at = format!("level {level} tile @({x},{y})");
-            if t.format != SAT_FORMAT_WEBP {
+            if t.format != SATELLITE_FORMAT_WEBP {
                 return Err(format!(
-                    "{at}: format {} is not webp ({SAT_FORMAT_WEBP})",
+                    "{at}: format {} is not webp ({SATELLITE_FORMAT_WEBP})",
                     t.format
                 ));
             }
@@ -235,7 +235,7 @@ fn read_bundle_v2(buf: &[u8]) -> Result<BundleSummary, String> {
                 ));
             }
             let start = tiles_offset + off;
-            let d = image_operations::webp_dims(&buf[start..start + len.min(64)])
+            let d = image_operations::webp_dimensions(&buf[start..start + len.min(64)])
                 .ok_or_else(|| format!("{at}: not a RIFF/WEBP block"))?;
             if &d.fourcc != b"VP8L" {
                 let got = String::from_utf8_lossy(&d.fourcc).into_owned();
@@ -287,5 +287,5 @@ impl AlignedArchive {
 }
 
 #[cfg(test)]
-#[path = "tests/satellite_archive_container/container_tests.rs"]
+#[path = "tests/satellite_archive_container_tests.rs"]
 mod container_tests;

@@ -223,7 +223,7 @@ fn fire_mission_specs() -> Vec<RouteSpec> {
 }
 
 /// Every spec of the part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     [catalog_specs(), fire_mission_specs()]
         .into_iter()
         .flatten()

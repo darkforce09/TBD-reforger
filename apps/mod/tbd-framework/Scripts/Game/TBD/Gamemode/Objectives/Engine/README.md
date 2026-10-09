@@ -130,5 +130,5 @@ it asks for the snapshot each second.
 
 ## Related documentation
 
-- [Objective capture HUD specification](/documentation/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
+- [Objective capture HUD specification](/documentation/apps/mod/tbd-framework/UI/objective_capture_hud/objective_capture_hud_specification.md)
   — the objective board and capture bar as built, their delivery and design target

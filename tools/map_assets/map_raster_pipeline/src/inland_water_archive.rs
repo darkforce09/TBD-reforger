@@ -2,7 +2,7 @@
 //!
 //! **Role:** the staging and output names of `map water` and the in-memory mip level; declares
 //! the reductions and the emitter.
-//! **Position:** a lane of the crate; the command line calls `emit_water`.
+//! **Position:** a lane of the crate; the command line calls `emit_water_archive`.
 //! **Signals & state:** none held; see below for the streaming.
 //! **Invariants:** the same staging inputs give the same bytes.
 //!
@@ -57,7 +57,7 @@ use world_file_formats::archives::water::WaterVectorsArchive;
 use world_file_formats::containers::header::ContainerHeader;
 use world_file_formats::containers::tbdb::TbdbHeader;
 
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 /// Where the Workbench inland-water export lands, relative to the export scratch: under
 /// `assets/scratch/<terrain>/` for a terrain id, under `<dir>/scratch/` for a directory
@@ -86,7 +86,7 @@ const WRITE_BUF: usize = 1 << 20;
 
 /// What the staging meta says about the two rasters.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub(crate) struct RasterMeta {
+pub(crate) struct RasterMetadata {
     pub(crate) width: u32,
     pub(crate) height: u32,
     /// Metres per stored depth unit (`depthScaleToMeters`; everon exports decimetres → 0.1).
@@ -127,8 +127,8 @@ impl Level {
                 #[allow(clippy::cast_possible_truncation)]
                 let dx = downsample_index(x as u32, nw as u32) as usize;
                 let (src, dst) = (z * self.width + x, dz * nw + dx);
-                out.depth[dst] = reduce_depth(out.depth[dst], self.depth[src]);
-                out.mask[dst] = reduce_mask(out.mask[dst], self.mask[src]);
+                out.depth[dst] = reduce_depth_keeping_deepest(out.depth[dst], self.depth[src]);
+                out.mask[dst] = reduce_mask_keeping_any_water(out.mask[dst], self.mask[src]);
             }
         }
         out
@@ -144,27 +144,27 @@ impl Level {
             out.write_all(&row)?;
         }
         out.write_all(&self.mask)?;
-        pad4(out, self.depth.len() * 2 + self.mask.len())
+        pad_to_four_bytes(out, self.depth.len() * 2 + self.mask.len())
     }
 }
 
 /* ─────────────────────────────────────── the CLI ────────────────────────────────────── */
 
 #[cfg(test)]
-#[path = "tests/inland_water_archive/tests.rs"]
+#[path = "tests/inland_water_archive_tests.rs"]
 mod tests;
 
-mod reduce_depth;
-pub(crate) use reduce_depth::build_water_vectors;
-pub(crate) use reduce_depth::mip_count;
-use reduce_depth::pad4;
-pub(crate) use reduce_depth::parse_meta;
-use reduce_depth::reduce_depth;
-use reduce_depth::reduce_mask;
-pub(crate) use reduce_depth::scratch_dir;
-pub(crate) use reduce_depth::terrain_dir;
-pub(crate) use reduce_depth::write_bathymetry;
-pub(crate) use reduce_depth::write_water_vectors;
+mod water_archive_codec;
+pub(crate) use water_archive_codec::build_water_vectors;
+pub(crate) use water_archive_codec::mip_count;
+use water_archive_codec::pad_to_four_bytes;
+pub(crate) use water_archive_codec::parse_meta;
+use water_archive_codec::reduce_depth_keeping_deepest;
+use water_archive_codec::reduce_mask_keeping_any_water;
+pub(crate) use water_archive_codec::scratch_dir;
+pub(crate) use water_archive_codec::terrain_dir;
+pub(crate) use water_archive_codec::write_bathymetry;
+pub(crate) use water_archive_codec::write_water_vectors;
 
-mod emit_water;
-pub(crate) use emit_water::emit_water;
+mod water_archive_emission;
+pub(crate) use water_archive_emission::emit_water_archive;

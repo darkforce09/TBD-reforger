@@ -31,15 +31,15 @@ use proptest::prelude::*;
 use sqlx::PgPool;
 
 /// A membership snapshot younger than this many seconds is fresh.
-pub const FRESHNESS_SECONDS: i64 = 60;
+pub(crate) const FRESHNESS_SECONDS: i64 = 60;
 /// A verified membership grants its mapped rank while younger than this many seconds.
-pub const GRACE_SECONDS: i64 = 48 * 60 * 60;
+pub(crate) const GRACE_SECONDS: i64 = 48 * 60 * 60;
 /// Seconds every generated age and expiry keeps from the freshness and grace boundaries.
-pub const BOUNDARY_MARGIN_SECONDS: i64 = 15;
+pub(crate) const BOUNDARY_MARGIN_SECONDS: i64 = 15;
 
 /// A site rank, declared from least to most privileged.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Rank {
+pub(crate) enum Rank {
     Guest,
     Enlisted,
     Leader,
@@ -49,7 +49,7 @@ pub enum Rank {
 
 impl Rank {
     /// The Postgres enum and JSON wire spelling.
-    pub fn wire(self) -> &'static str {
+    pub(crate) fn wire(self) -> &'static str {
         match self {
             Rank::Guest => "guest",
             Rank::Enlisted => "enlisted",
@@ -72,7 +72,7 @@ impl Rank {
 
 /// The site rank the account's single guild role maps to.
 #[derive(Debug, Clone, Copy)]
-pub enum GuildRoleMapping {
+pub(crate) enum GuildRoleMapping {
     /// The account holds no mapped guild role.
     Unmapped,
     /// The account holds one guild role mapped to this rank.
@@ -81,21 +81,21 @@ pub enum GuildRoleMapping {
 
 /// The membership status the snapshot confirms.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MembershipStatus {
+pub(crate) enum MembershipStatus {
     Member,
     ConfirmedNonmember,
 }
 
 /// When the snapshot was verified, relative to the database clock.
 #[derive(Debug, Clone, Copy)]
-pub enum VerificationTime {
+pub(crate) enum VerificationTime {
     SecondsAgo(i64),
     SecondsAhead(i64),
 }
 
 /// The audited grace override attached to the snapshot.
 #[derive(Debug, Clone, Copy)]
-pub enum GraceOverride {
+pub(crate) enum GraceOverride {
     Absent,
     ExpiresInSeconds(i64),
     ExpiredSecondsAgo(i64),
@@ -103,7 +103,7 @@ pub enum GraceOverride {
 
 /// The account's guild membership snapshot.
 #[derive(Debug, Clone, Copy)]
-pub struct MembershipSnapshot {
+pub(crate) struct MembershipSnapshot {
     pub status: MembershipStatus,
     pub verified: VerificationTime,
     /// The last synchronization attempt recorded an error.
@@ -113,7 +113,7 @@ pub struct MembershipSnapshot {
 
 /// How the session was issued.
 #[derive(Debug, Clone, Copy)]
-pub enum SessionProvenance {
+pub(crate) enum SessionProvenance {
     /// The ordinary sign-in path (`issue_session`).
     Ordinary,
     /// The development login path, holding this rank.
@@ -122,7 +122,7 @@ pub enum SessionProvenance {
 
 /// What happens to the session after issuance.
 #[derive(Debug, Clone, Copy)]
-pub enum SessionFate {
+pub(crate) enum SessionFate {
     Untouched,
     /// Its refresh token is rotated once; the original access credential is presented.
     RefreshRotated,
@@ -135,7 +135,7 @@ pub enum SessionFate {
 
 /// What happens to the account after issuance.
 #[derive(Debug, Clone, Copy)]
-pub enum AccountFate {
+pub(crate) enum AccountFate {
     Active,
     Banned,
     Deleted,
@@ -143,14 +143,14 @@ pub enum AccountFate {
 
 /// The configuration that serves the request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ServingEnvironment {
+pub(crate) enum ServingEnvironment {
     Development,
     Production,
 }
 
 /// One generated account and session state.
 #[derive(Debug, Clone)]
-pub struct AuthorityCase {
+pub(crate) struct AuthorityCase {
     pub guild_role: GuildRoleMapping,
     /// `None` when the account has no snapshot for the configured guild.
     pub snapshot: Option<MembershipSnapshot>,
@@ -207,7 +207,7 @@ fn membership_snapshot() -> impl Strategy<Value = Option<MembershipSnapshot>> {
 }
 
 /// Every generated account and session state.
-pub fn authority_case() -> impl Strategy<Value = AuthorityCase> {
+pub(crate) fn authority_case() -> impl Strategy<Value = AuthorityCase> {
     let guild_role = prop_oneof![
         1 => Just(GuildRoleMapping::Unmapped),
         5 => rank().prop_map(GuildRoleMapping::Mapped),
@@ -255,13 +255,13 @@ pub fn authority_case() -> impl Strategy<Value = AuthorityCase> {
 }
 
 /// A realised state: the fresh account and the access credential its request presents.
-pub struct RealisedSession {
+pub(crate) struct RealisedSession {
     pub discord_id: String,
     pub access_credential: String,
 }
 
 /// Write `case` into the database as a fresh account and return the credential to present.
-pub async fn realise(world: &PropertyWorld, case: &AuthorityCase) -> RealisedSession {
+pub(crate) async fn realise(world: &PropertyWorld, case: &AuthorityCase) -> RealisedSession {
     let state = &world.development;
     let pool = &state.pool;
     let guild = state.cfg.discord_guild_id.as_str();

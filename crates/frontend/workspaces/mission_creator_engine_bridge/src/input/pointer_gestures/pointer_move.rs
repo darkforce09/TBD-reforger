@@ -118,7 +118,7 @@ pub(super) fn make_pointer_move_handler(
             }
 
             {
-                let now_ms = js_sys::Date::now();
+                let now_ms = time_source::wall_clock_ms();
                 let gesture_active = left.borrow().is_some();
                 let prev = hover_state.get();
                 if hover_suppressed(

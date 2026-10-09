@@ -68,7 +68,8 @@ struct RunningAgent {
 
 impl RunningAgent {
     fn start<E: FleetActionExecutor + 'static>(api: &FakeLedgerApi, executor: E) -> Self {
-        let ledger = LedgerApi::new(&api.base_url(), &SecretText::new(CREDENTIAL)).unwrap();
+        let ledger = LedgerApi::new(&api.base_url(), &SecretText::new(CREDENTIAL))
+            .expect("the stand-in API base URL builds a ledger client");
         let quick = BackoffPolicy {
             initial: Duration::from_millis(20),
             maximum: Duration::from_millis(80),
@@ -430,15 +431,17 @@ fn mission_arguments() -> Value {
 /// RCON client points at a port nothing listens on; a mission restart never uses it.
 async fn mission_host(systemctl: &FakeSystemctl, config: &Path) -> HostActionExecutor {
     let rcon = RconClient::start(RconSettings {
-        server: "127.0.0.1:9".parse().unwrap(),
+        server: "127.0.0.1:9"
+            .parse()
+            .expect("the loopback address parses as a socket address"),
         password: SecretText::new("range-master"),
         timings: RconTimings::default(),
     })
     .await
-    .unwrap();
+    .expect("the RCON client binds a local UDP socket");
     let process_control = ProcessControl::new(ProcessControlSettings {
         systemctl_program: systemctl.program(),
-        unit: SystemdUnitName::parse("tbd-reforger.service").unwrap(),
+        unit: SystemdUnitName::parse("tbd-reforger.service").expect("the unit name is valid"),
         start_dwell: Duration::ZERO,
         verb_timeout: Duration::from_secs(5),
         state_read_timeout: Duration::from_secs(5),
@@ -452,9 +455,9 @@ async fn mission_host(systemctl: &FakeSystemctl, config: &Path) -> HostActionExe
 
 /// `server.json` holding [`SERVER_CONFIG`] in a directory of its own.
 fn server_config_file() -> (tempfile::TempDir, PathBuf) {
-    let directory = tempfile::tempdir().unwrap();
+    let directory = tempfile::tempdir().expect("the temporary directory is created");
     let path = directory.path().join("server.json");
-    fs::write(&path, SERVER_CONFIG).unwrap();
+    fs::write(&path, SERVER_CONFIG).expect("the server config is written");
     (directory, path)
 }
 

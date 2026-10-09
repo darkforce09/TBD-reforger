@@ -65,7 +65,7 @@ folder, in its feature doc and its `visual_references/`; this folder holds only 
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the rules the mod's interface
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the rules the mod's interface
   keeps, the Aegis mirror among them.
 - [Frontend documentation](/documentation/apps/frontend/README.md) — the website's pages
   and the design references they follow.

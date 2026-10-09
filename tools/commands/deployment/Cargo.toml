@@ -25,6 +25,7 @@ newtype_ids = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 # Key order of the rendered server config follows the template, as the xtask binary builds it.
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror = { workspace = true }

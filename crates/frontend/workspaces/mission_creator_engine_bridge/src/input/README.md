@@ -13,7 +13,7 @@ crates/frontend/workspaces/mission_creator_engine_bridge/src/input/
 ├── mod.rs                  the module tree
 ├── pointer_gestures/       the six DOM event closures of the canvas and the special drag release
 ├── pointer_gestures.rs     `EditorGestureContext` and `attach_canvas_gestures`; drag cancellation
-├── tests/                  the native unit tests of the context-menu opener
+├── tests/                  native tests: the context-menu opener and the pointer-up drag-move commit
 ├── tools/                  ruler and line-of-sight overlays, object wash, viewshed pump, select tool
 └── window_keydown.rs       the editor's chord listener and the undo and redo shortcut listener
 ```
@@ -101,7 +101,7 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
     registers the right-click opener;
   - the source pins that read these files, in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`,
     `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/` and
-    `crates/mission/mission_document/src/rows/tests/cases_1.rs`;
+    `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tests/pointer_up_move_commit.rs`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     canvas and the keyboard.
 - Rules:

@@ -26,22 +26,24 @@ use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 
-pub use api_process::{ApiProcess, http_client};
-pub use audit_rows::{plant_rows, publications_after, publish_all, retained_floor, wait_published};
-pub use sse_reader::{SseEvent, SseReader};
+pub(crate) use api_process::{ApiProcess, http_client};
+pub(crate) use audit_rows::{
+    plant_rows, publications_after, publish_all, retained_floor, wait_published,
+};
+pub(crate) use sse_reader::{SseEvent, SseReader};
 
 /// The live audit feed.
-pub const AUDIT_STREAM_PATH: &str = "/api/v1/admin/audit-logs/stream";
+pub(crate) const AUDIT_STREAM_PATH: &str = "/api/v1/admin/audit-logs/stream";
 
 /// The live status feed of `server`; a server with no status row opens a stream with no snapshot
 /// that stays open until it is closed, and an unknown server answers 404.
-pub fn server_status_stream_path(server: Uuid) -> String {
+pub(crate) fn server_status_stream_path(server: Uuid) -> String {
     format!("/api/v1/servers/{server}/status/stream")
 }
 
 /// Registers an active server with no status row, so its status stream opens with no snapshot;
 /// the name carries `suite` and a fresh UUID.
-pub async fn register_silent_server(pool: &PgPool, suite: &str) -> Uuid {
+pub(crate) async fn register_silent_server(pool: &PgPool, suite: &str) -> Uuid {
     sqlx::query_scalar(
         "INSERT INTO servers (name, ip, port, is_active) VALUES ($1, '127.0.0.1', 2001, true) \
          RETURNING id",
@@ -63,7 +65,7 @@ fn assert_event_stream(status: StatusCode, content_type: Option<&str>, what: &st
 }
 
 /// Opens `path` on the `api` binary as `token`'s bearer, with `last_event_id` as sent.
-pub async fn open_process_stream(
+pub(crate) async fn open_process_stream(
     api: &ApiProcess,
     client: &reqwest::Client,
     token: &str,
@@ -88,7 +90,7 @@ pub async fn open_process_stream(
 }
 
 /// Opens `path` on the in-process router as `token`'s bearer, with `last_event_id` as sent.
-pub async fn open_router_stream(
+pub(crate) async fn open_router_stream(
     app: &Router,
     token: &str,
     path: &str,

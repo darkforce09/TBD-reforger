@@ -105,7 +105,7 @@ predictable contract for the consumer; Debuggability (De), a failure that says w
 | TS-7 | Us | no failure is swallowed | CI-SCRIPT, the app's clippy `-D warnings` in `cargo xtask mk ci-local-leptos` | [frontend_code.md](/documentation/standards/coding_standards/frontend_code.md) |
 | WS-1 | Sc | every manifest is a member; judged crates declare their layout, tier and category edges; the firewalls hold | CI-SCRIPT, `cargo xtask verify crate-tiers` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-1-crate-tiers) |
 | WS-2 | Sc | a judged library crate keeps the crate anatomy | CI-SCRIPT, `cargo xtask verify crate-anatomy` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-2-crate-anatomy) |
-| WS-3 | Sc | nothing new depends on legacy, and legacy holds no shim | CI-SCRIPT, `cargo xtask verify strangler` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-3-strangler) |
+| WS-3 | Sc | every `.rs` file in a member's test folders is compiled by one of its targets | CI-SCRIPT, `cargo xtask verify test-file-reachability` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-3-test-file-reachability) |
 | WS-4 | Sc | no frontend crate depends on a higher layer or a peer page crate, and the foundation and Mission Creator crates keep their crate orders | CI-SCRIPT, `cargo xtask verify frontend-layering` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-4-frontend-layering) |
 | WS-5 | Sc | every leptos crate has exactly one `@source` line in the app stylesheet, and no line is stale | CI-SCRIPT, `cargo xtask verify tailwind-sources` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#ws-5-tailwind-sources) |
 

@@ -90,7 +90,7 @@ TBD_FrameworkManager stage change ──> TBD_RadioBridgeStub.OnStageChanged ─
 
 ## Related documentation
 
-- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/apps/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the briefing screen design, with its Frequencies section
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — why radio uses the engine's own
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — why radio uses the engine's own
   transceivers and no partner mod

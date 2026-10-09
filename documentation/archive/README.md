@@ -27,6 +27,7 @@ documentation/archive/
 ├── product_plans/              the platform build plan, the mod milestones and a milestone post
 ├── redirect_stubs/             stubs of retired docs/ paths, each pointing at its document
 ├── refactor_v2/                plan, brief, style lock, manifest and checkpoint of the documentation program
+├── restructure/                plan, target tree, crate catalogue, laws, progress, stage logs and shared brief of the workspace restructure
 ├── restructure_agent_briefs/   the executed agent briefs of the workspace restructure's finished stages
 ├── restructure_research/       explorer, planning and verification reports of the workspace restructure
 ├── shipped_history/            the shipped-work log kept out of the agent instruction file
@@ -55,11 +56,11 @@ authority.
 | Assets and contracts moves | [assets](/documentation/assets/README.md), [contracts](/documentation/contracts/README.md) |
 | Documentation move | [documentation entry](/documentation/README.md), [documentation standards](/documentation/standards/documentation_standards.md) |
 | Documentation program records | [documentation entry](/documentation/README.md), [documentation standards](/documentation/standards/documentation_standards.md) |
-| Engine split | [engine boundary rules](/documentation/standards/crate_boundary_rules.md) |
+| Engine split | [crate boundary rules](/documentation/standards/crate_boundary_rules.md) |
 | Factory runs | [factory waves](/documentation/runbooks/factory_waves/README.md) |
 | Frontend move and Go and React era designs | [frontend documentation](/documentation/apps/frontend/README.md), [Mission Creator](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md), [design system](/documentation/design_system/README.md) |
-| Improved layout proposals | [restructure program](/documentation/restructure/README.md), [workspace layout](/documentation/architecture/workspace_layout.md) |
-| Restructure agent briefs | [restructure program](/documentation/restructure/README.md), [shared agent brief](/documentation/restructure/agent_briefs/shared_brief.md) |
+| Improved layout proposals | [workspace layout](/documentation/architecture/workspace_layout.md), [crate boundary rules](/documentation/standards/crate_boundary_rules.md) |
+| Workspace restructure program, its agent briefs and research | [workspace layout](/documentation/architecture/workspace_layout.md), [crate boundary rules](/documentation/standards/crate_boundary_rules.md), [relocation manifests](/documentation/relocation_manifests/README.md) |
 | Tooling restructuring | [tooling documentation](/documentation/tools/README.md) |
 
 Audits, handoffs, the monorepo merge, the product plans and the shipped history have no single
@@ -74,10 +75,10 @@ concern.
 
 - Depends on: the live documents the archived files point at; the documentation standards, which
   set the status line and the frozen-record rule.
-- Used by: `ARCHIVE_DIR` in `tools/xtask/src/core/repository_layout.rs`, through which
+- Used by: `ARCHIVE_DIR` in `tools/foundation/repository_layout/src/documentation_locations.rs`, through which
   `cargo xtask verify link-check` and `cargo xtask verify markdown-placement` judge the tree as
   frozen records; `SCAN_EXEMPT_PREFIXES` and `ARCHIVED_WAVE_PLAN_READERS` in
-  `tools/ticket_engine/src/repository.rs`, which let archived text quote retired identifiers;
+  `tools/tickets/ticket_model/src/repository.rs`, which let archived text quote retired identifiers;
   the ticket files in `.ai/tickets/` that cite archived sources; live documents, the root README
   and a few code comments that link an archived record.
 - Rules: an archived file is never reworded, only its links change; it carries

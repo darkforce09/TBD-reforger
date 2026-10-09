@@ -52,7 +52,7 @@ impl ChunkResidency {
     /// The resident chunk `id`, when it is resident (an empty stub included).
     #[must_use]
     pub fn chunk(&self, id: &ChunkId) -> Option<&WorldChunk> {
-        self.chunks.get(id.as_str())
+        self.chunks.get(id)
     }
 }
 
@@ -93,8 +93,8 @@ impl ChunkResidency {
 impl ChunkResidency {
     /// Resident chunk ids (sorted) — parity/debug surface.
     #[must_use]
-    pub fn resident_chunk_ids(&self) -> Vec<String> {
-        let mut v: Vec<String> = self.chunks.keys().cloned().collect();
+    pub fn resident_chunk_ids(&self) -> Vec<ChunkId> {
+        let mut v: Vec<ChunkId> = self.chunks.keys().cloned().collect();
         v.sort();
         v
     }
@@ -123,21 +123,24 @@ impl ChunkResidency {
     /// Instance count of a resident chunk (`None` if not resident).
     #[must_use]
     pub fn resident_instance_count(&self, id: &ChunkId) -> Option<u32> {
-        self.chunks.get(id.as_str()).map(|c| c.count)
+        self.chunks.get(id).map(|c| c.count)
     }
 }
 
 impl ChunkResidency {
     /// The strict draw set under `strict_bbox`: its chunks (no cull margin) that the chunk index lists and the pin holds, sorted. Empty before the manifest loads.
     #[must_use]
-    pub fn draw_chunk_ids(&self, strict_bbox: Bbox) -> Vec<String> {
+    pub fn draw_chunk_ids(&self, strict_bbox: Bbox) -> Vec<ChunkId> {
         debug_assert_eq!(DRAW_CULL_MARGIN_M, 0.0);
         let chunk_size_m = match &self.manifest {
             Some(m) => m.chunk_size_m,
             None => return Vec::new(),
         };
         let rect = chunk_rect_for_bbox(strict_bbox, self.terrain, chunk_size_m);
-        let mut ids = chunk_ids_for_rect(rect);
+        let mut ids: Vec<ChunkId> = chunk_ids_for_rect(rect)
+            .into_iter()
+            .map(ChunkId::new)
+            .collect();
         if let Some(cells) = &self.cell_ids {
             ids.retain(|id| cells.contains(id));
         }

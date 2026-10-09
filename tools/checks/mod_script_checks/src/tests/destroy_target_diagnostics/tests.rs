@@ -1,7 +1,7 @@
 use super::*;
 
 fn repo() -> PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root")
 }
 

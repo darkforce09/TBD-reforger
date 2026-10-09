@@ -186,7 +186,7 @@ const SERVER_STATUS_LATER_FRAMES: &[(&str, SchemaRef)] = &[(
 )];
 
 /// Every JSON-answering route with its success contract.
-pub fn route_contracts() -> Vec<RouteContract> {
+pub(crate) fn route_contracts() -> Vec<RouteContract> {
     let mut contracts: Vec<RouteContract> =
         WHOLE_BODY_ROUTES.lines().map(whole_body_route).collect();
     contracts.extend([

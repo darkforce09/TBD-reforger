@@ -1,0 +1,13 @@
+id = "T-1279"
+kind = "work"
+title = "Name an existing command in the preflight disk-space hint"
+summary = "platform preflight tells the operator 'make clean-targets first' when disk is tight (tools/commands/platform_execution/src/preflight/execution.rs:69), but no Makefile is tracked and no clean-targets recipe exists; cargo xtask mk reclaim-target-ci is the existing reclaim recipe."
+class = "bug"
+status = "idea"
+notes = "tools/commands/platform_execution/src/preflight/execution.rs:66-70: between 20 and 40 GB free, the preflight's soft finding says 'make clean-targets first', but no Makefile is tracked and no clean-targets recipe exists. The existing reclaim commands are cargo xtask mk reclaim-target-ci (tools/commands/ci_task_catalog/src/build_lane/README.md:45) and cargo xtask platform wave reclaim; name the one that frees the space the check measures. Split from T-1106, whose gate filter is fixed."
+created_at = "2026-10-04T02:36:55Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

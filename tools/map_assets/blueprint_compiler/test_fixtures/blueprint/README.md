@@ -38,7 +38,7 @@ re-export of those assets re-blesses the matching golden here in the same change
 | `.bvh.golden` + `_parity.json` | `farmhouse_bvh_sidecar_parity_is_pinned` | byte-identical to the shipped `.bvh`; 3170 vertices, 2883 triangles, 1125 nodes; 400 of 400 agree |
 | `.instances.golden.json` + both parity files | `farmhouse_compound_door_parity_is_pinned` | byte-identical to the shipped `.instances.json`; 120 kept, 49 dropped, 7 closed doors; 3998 of 4000 and 400 of 400 agree |
 | `_children.json` | `farmhouse_sockets_match_the_workbench_recon` | all 88 children match the shipped instances with no extras or failures; 7 door, 88 pivot and at least 60 local checks |
-| `_children.json` | `farmhouse_chunk_row_places_every_socket_child_within_2cm` | the farmhouse's row in chunk 18_0 is 5 wide at yaw 38.46 and places all 88 children within `POS_TOL_M` |
+| `_children.json` | `farmhouse_chunk_row_places_every_socket_child_within_2cm` | the farmhouse's row in chunk 18_0 is 5 wide at yaw 38.46 and places all 88 children within `POSITION_TOLERANCE_METERS` |
 | `rotation_pin_*.json` | `garbage_container_lid_pins_y_x_z_with_negated_pitch_and_roll` | `RIGID_HYPOTHESIS` wins, under 5 mm and 0.05°, by more than four times the runner-up's error |
 | `rotation_pin_*.json` | `garbage_container_row_carries_pitch_and_roll` | the container's row in chunk 19_0 is 8 wide with yaw 255.87, pitch -3.04, roll -4.75 and scale 1.0 |
 | both farmhouse parity files | `farmhouse_descriptor_placed_at_a_yaw_replays_the_door_parity_fixture` | descriptor 132 placed at a yaw through the world occluder gives the compound's counts |
@@ -46,9 +46,9 @@ re-export of those assets re-blesses the matching golden here in the same change
 | `world_parity_forest.json` | `world_parity_forest_cell_is_pinned`, `foliage_as_a_blocker_disagrees_with_the_projectile_trace` | 3977 agree, 11 phantom, 12 missed; with foliage blocking, under 90 % and over 500 phantoms |
 | both world parity files | `world_parity_world_column_clears_its_floor_when_the_dem_is_present` | the terrain-inclusive column reaches 96 % and 94 %; skipped when the DEM does not decode |
 
-The first eight tests live under `tools/map_assets/blueprint_compiler/src/tests/` (`module/`,
-`bvh/`, `verify/`, `world_row/` and `rotation_pin/`), and the other five in
-`tools/map_assets/map_asset_verification/src/tests/world_line_of_sight.rs`.
+The first eight tests live in `tools/map_assets/blueprint_compiler/src/tests/` and
+`tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/`, and the other five in
+`tools/map_assets/map_asset_verification/src/tests/world_line_of_sight_tests.rs`.
 `GarbageContainer_01_children.json` is the recon the rotation pin's `source` field cites, at the
 same world position; no test reads it. Every number above is a blessed measurement: a change that
 moves one re-blesses the fixture or the assertion on purpose.
@@ -70,8 +70,8 @@ moves one re-blesses the fixture or the assertion on purpose.
     `[ox, oy, oz, tx, ty, tz, engineClear]` in the building's frame;
   - `_voxels.jsonl.gz`: a gzip-compressed `tbd-voxel-dump/1` file, one meta line then one line per
     scanline, as `tools/map_assets/blueprint_compiler/src/voxel_processing/voxel_types.rs` models it;
-  - `rotation_pin_*.json`: `PinFixture` in
-    `tools/map_assets/blueprint_compiler/src/bvh/rotation_validation.rs`: `source`, and `parent`
+  - `rotation_pin_*.json`: `RotationFixture` in
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/rotation_validation.rs`: `source`, and `parent`
     and `child` poses with the child's observed placement;
   - `world_parity_*.json`: `WorldParityFile` in
     `tools/map_assets/map_asset_verification/src/world_line_of_sight.rs`, version
@@ -98,7 +98,7 @@ moves one re-blesses the fixture or the assertion on purpose.
   `compiler_fixtures_resolve_from_root_crate_and_source_directory`
   (`tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs`) and
   `nested_tooling_directories_resolve_repository_and_fixtures`
-  (`tools/foundation/tool_test_support/src/tests/repository_root_tests.rs`), which check that fixtures here resolve
+  (`tools/foundation/tool_test_support/src/tests/test_checkout_root_tests.rs`), which check that fixtures here resolve
   from nested working directories. `cargo xtask map parity-report`, `bvh-parity`,
   `instances-verify`, `rotation-pin` and `world-los` accept files of these shapes by path.
 

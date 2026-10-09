@@ -26,7 +26,7 @@ use std::path::PathBuf;
 use serde_json::{Value, json};
 
 /// One parsed `@contract` tag.
-pub struct ContractTag {
+pub(crate) struct ContractTag {
     /// The schema file name in `contracts/definitions`.
     pub schema_file: String,
     /// The RFC 6901 pointer, with its leading `#`.
@@ -41,7 +41,7 @@ pub struct ContractTag {
 
 /// What a cited schema node admits.
 #[derive(Default)]
-pub struct SchemaView {
+pub(crate) struct SchemaView {
     pub properties: BTreeSet<String>,
     /// `patternProperties` regular expressions.
     pub patterns: Vec<String>,
@@ -57,7 +57,7 @@ pub struct SchemaView {
 impl SchemaView {
     /// True when `key` is a property of the object, matches one of its patterns, or the object is
     /// open.
-    pub fn admits(&self, key: &str) -> bool {
+    pub(crate) fn admits(&self, key: &str) -> bool {
         self.open
             || self.properties.contains(key)
             || self.patterns.iter().any(|pattern| {
@@ -71,7 +71,7 @@ impl SchemaView {
 /// The `@contract` tags of a banner, in order.
 ///
 /// Returns every malformed tag as an error message.
-pub fn contract_tags(banner: &[String]) -> Result<Vec<ContractTag>, String> {
+pub(crate) fn contract_tags(banner: &[String]) -> Result<Vec<ContractTag>, String> {
     banner
         .iter()
         .filter_map(|line| line.strip_prefix("@contract"))
@@ -121,13 +121,13 @@ fn parse_tag(text: &str) -> Result<ContractTag, String> {
 }
 
 fn definitions_dir() -> PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("contracts/definitions")
 }
 
 /// The schema document `file`.
-pub fn schema_document(file: &str) -> Value {
+pub(crate) fn schema_document(file: &str) -> Value {
     let path = definitions_dir().join(file);
     let raw = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
@@ -159,7 +159,7 @@ fn dereference<'a>(document: &'a Value, mut node: &'a Value, context: &str) -> &
 }
 
 /// Resolves `tag` into the view of the node it cites.
-pub fn resolve(tag: &ContractTag) -> SchemaView {
+pub(crate) fn resolve(tag: &ContractTag) -> SchemaView {
     let document = schema_document(&tag.schema_file);
     let context = format!("{}{}", tag.schema_file, tag.pointer);
     let mut node = pointer_target(&document, &tag.pointer, &context);

@@ -41,7 +41,7 @@ const VANILLA_CALIBRATION_SHA256: &str =
 const VANILLA_FORWARD_SAMPLES_NOT_JUDGED: u64 = 15_427;
 
 fn repository_file(relative: &str) -> Vec<u8> {
-    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let path = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("the repository root above the API package")
@@ -159,7 +159,7 @@ async fn anonymous_get(
     if let Some(etag) = if_none_match {
         request = request.header(header::IF_NONE_MATCH, etag);
     }
-    let mut request = request.body(Body::empty()).unwrap();
+    let mut request = request.body(Body::empty()).expect("the request builds");
     let [_, b, c, d] = PEER.fetch_add(1, Ordering::Relaxed).to_be_bytes();
     request
         .extensions_mut()
@@ -172,7 +172,7 @@ async fn anonymous_get(
     let headers = response.headers().clone();
     let body = to_bytes(response.into_body(), usize::MAX)
         .await
-        .unwrap()
+        .expect("the response body reads to the end")
         .to_vec();
     RawResponse {
         status,
@@ -195,7 +195,12 @@ fn failure_ids(report: &Value) -> Vec<String> {
         .as_array()
         .unwrap_or_else(|| panic!("report lists failures: {report}"))
         .iter()
-        .map(|failure| failure["case_id"].as_str().unwrap().to_owned())
+        .map(|failure| {
+            failure["case_id"]
+                .as_str()
+                .expect("the `case_id` field is a string")
+                .to_owned()
+        })
         .collect()
 }
 
@@ -311,9 +316,9 @@ async fn assert_detail_is_immutably_cached(suite: &ContentSuite, catalog: &[u8])
         Some("public, max-age=31536000, immutable")
     );
     assert_eq!(response.header("content-type"), Some("application/json"));
-    let served: Value = serde_json::from_slice(&response.body).unwrap();
+    let served: Value = serde_json::from_slice(&response.body).expect("the body decodes as JSON");
     assert_valid(CATALOG_CONTRACT, None, &served);
-    let committed: Value = serde_json::from_slice(catalog).unwrap();
+    let committed: Value = serde_json::from_slice(catalog).expect("the body decodes as JSON");
     assert_eq!(served, committed, "the served document is the uploaded one");
 
     let revalidated = anonymous_get(suite, VANILLA_DETAIL_URI, Some(&etag)).await;

@@ -3,9 +3,21 @@ kind = "work"
 title = "Fix mod wave gate enf test filter matching no tests"
 summary = "mod wave gate runs cargo test -p developer_tools --lib enf:: (wave_execution/execution.rs:375-385), but no developer_tools module path contains enf:: (the module is enfusion_tooling), so the step passes with zero tests."
 class = "bug"
-status = "idea"
-notes = "Paths under tools. xtask/src/commands/mod_ops/wave_execution/execution.rs:374-385 runs 'cargo test -q -p developer_tools --lib enf::' through distrobox-host-exec as the gate's 'enf unit tests' step. A libtest filter is a substring of the test path, and developer_tools/src/lib.rs:5-15 declares no module whose path contains 'enf::' (the Enfusion modules are enfusion_pak and enfusion_tooling; git grep finds no 'mod ...enf' in developer_tools/src), so the step runs zero tests and always reports green. Point the filter at the intended modules (enfusion_tooling::, enfusion_pak::) and fail the step when it runs zero tests. Same family, platform lane: xtask/src/commands/platform/preflight/execution.rs:42 tells the operator 'make clean-targets first' when disk is tight, but no Makefile is tracked and no clean-targets recipe exists (cargo xtask mk lists reclaim-target-ci); name an existing command. The gate's four make steps are T-1001. Source: README writer R16."
+status = "shipped"
+order = 9833
+notes = "What was wrong: the mod wave gate's 'enf unit tests' step ran cargo test -q -p developer_tools --lib enf:: through distrobox-host-exec; a libtest filter is a substring of the test path and no developer_tools module path contained enf::, so the step ran zero tests and always reported green. Where it was fixed: the restructure's S11a commit ffb5fe74d moved the Enfusion script index into its own crate and the step now runs the whole library suite with no filter: tools/commands/mod_operations/src/wave_execution/execution.rs:378-389 runs cargo test -q -p enfusion_script_index --lib (38 tests), and tools/commands/mod_operations/src/wave_execution/README.md:42 documents it. The platform preflight's stale 'make clean-targets first' hint this ticket also named is split into T-1279. Shipped by restructure S12 (finding F-S11-08)."
+main_goal = "The mod wave gate's Enfusion unit-test step runs the Enfusion tests it names."
+context = ["The wave gate's 'enf unit tests' step filtered developer_tools tests by a module path no test had, so it passed with zero tests and proved nothing about the Enfusion tooling."]
+requirement = ["The step runs the Enfusion script index's own test suite, so a red Enfusion test turns the gate red."]
+current_state = ["tools/commands/mod_operations/src/wave_execution/execution.rs:378-389 runs cargo test -q -p enfusion_script_index --lib with no filter; the library has 38 tests."]
+approach = ["Fixed by the restructure's S11a commit ffb5fe74d, which gave the Enfusion index its own crate and pointed the step at it without a filter; the preflight hint moves to T-1279."]
+verify = ["cargo test -p enfusion_script_index --lib"]
+acceptance = ["The gate step's command runs and passes 38 tests (2026-10-04), not zero."]
+shipped_at = "ffb5fe74d"
 created_at = "2026-09-25T08:15:40Z"
+completed_at = "2026-10-04T02:54:20Z"
+estimated = ["tokens"]
+estimate_note = "token estimate sized from the whole commit ffb5fe74d, a stage commit that carried this fix among other work; the fix itself is a small part of it"
 
 [scope]
 domain = "repo"

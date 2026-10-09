@@ -30,7 +30,7 @@ pub async fn run(website: &str, output: &Path) -> Result<u8> {
 async fn verify(browser: &cdp::Browser, website: &str, output: &Path) -> Result<()> {
     let page = cdp::new_page(browser, None, &[]).await?;
     let api = format!("{website}/api/v1/debug/equipment-data");
-    let client = reqwest::Client::new();
+    let client = crate::http_client::new_http_client();
     let status: Value = client
         .get(format!("{api}/status"))
         .send()

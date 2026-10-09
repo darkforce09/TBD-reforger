@@ -1,5 +1,6 @@
-# The repository locations more than one tool names, spelled once each, and the one walk that
-# finds a checkout root. `thiserror` carries the error of that walk.
+# The repository locations more than one tool names, spelled once each; a caller joins them onto
+# the checkout root `repository_root` finds. Constants and pure path joins, plus the finder's names
+# in the prelude, so a tool binary reaches the checkout root through this crate.
 [package]
 name = "repository_layout"
 version = "0.1.0"
@@ -7,15 +8,17 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "The checkout-root finder and the repository locations the tools share"
+description = "The repository locations the tools share, relative to the checkout root"
 
 [package.metadata.layout]
 category = "tools/foundation"
-tier = 0
+tier = 1
 targets = "any"
 
 [dependencies]
-thiserror = { workspace = true }
+# The checkout-root finder the prelude re-exports; the tests also check the committed locations
+# against the root it finds.
+repository_root = { workspace = true }
 
 [lints]
 workspace = true

@@ -8,6 +8,7 @@ order = 7699
 spec = "documentation/tickets/specs/t937_editor_data_layer.md"
 plan = "documentation/tickets/plans/t-937_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/src/doc/store.rs: removed in commit 3f7adae99, no successor."
 priority = 0
 children = [
     "T-937.1",

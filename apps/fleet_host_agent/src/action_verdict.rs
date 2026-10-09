@@ -19,6 +19,7 @@ pub struct ActionVerdict {
 }
 
 impl ActionVerdict {
+    /// A success carrying the observed `outcome` object.
     pub fn success(outcome: Map<String, Value>) -> Self {
         Self {
             succeeded: true,
@@ -37,14 +38,17 @@ impl ActionVerdict {
         }
     }
 
+    /// Whether the action succeeded.
     pub fn succeeded(&self) -> bool {
         self.succeeded
     }
 
+    /// The observed outcome object, when the action reported one.
     pub fn outcome(&self) -> Option<&Map<String, Value>> {
         self.outcome.as_ref()
     }
 
+    /// The bounded failure reason of a failure; `None` for a success.
     pub fn failure_reason(&self) -> Option<&str> {
         self.failure_reason.as_deref()
     }

@@ -84,7 +84,7 @@ impl ChunkResidency {
     pub fn load_chunk_index_json(&mut self, json: &str) -> Result<usize> {
         let raw: Value = serde_json::from_str(json).map_err(|e| WorldError::Json(e.to_string()))?;
         let cells = narrow_cells(&raw).unwrap_or_default();
-        let set: HashSet<String> = cells.into_iter().map(|c| c.id.into_inner()).collect();
+        let set: HashSet<ChunkId> = cells.into_iter().map(|c| c.id).collect();
         let n = set.len();
         self.cell_ids = Some(set);
         Ok(n)
@@ -121,12 +121,12 @@ impl ChunkResidency {
     fn apply_parsed_chunk(&mut self, id: &ChunkId, chunk: WorldChunk) -> IngestOutcome {
         let count = chunk.count;
         self.insert_chunk(id, chunk);
-        self.fetch_failures.remove(id.as_str());
+        self.fetch_failures.remove(id);
         if count > 0 {
-            self.known_empty.remove(id.as_str());
+            self.known_empty.remove(id);
             IngestOutcome::Applied(count)
         } else {
-            self.known_empty.insert(id.to_string());
+            self.known_empty.insert(id.clone());
             IngestOutcome::ParsedEmpty
         }
     }

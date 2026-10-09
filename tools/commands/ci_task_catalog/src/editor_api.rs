@@ -45,7 +45,7 @@ pub(crate) fn run() -> i32 {
 }
 
 fn run_inner() -> Result<(), String> {
-    let root = repository_layout::find_repository_root().map_err(|e| e.to_string())?;
+    let root = repository_root::find_repository_root().map_err(|e| e.to_string())?;
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|s| s.parse().ok())
@@ -109,7 +109,7 @@ fn healthz(port: u16) -> bool {
 
 /// Regenerate in memory and compare every contract output, including untracked files.
 pub(crate) fn verify_codegen_fresh() -> i32 {
-    let result = repository_layout::find_repository_root()
+    let result = repository_root::find_repository_root()
         .map_err(crate::Error::from)
         .and_then(|root| Ok(schema_tooling::verify_fresh(&root)?));
     match result {
@@ -129,7 +129,7 @@ pub(crate) fn verify_codegen_fresh() -> i32 {
 /// CI no longer uses `actions/setup-go`. GitHub-hosted runners still ship `go`; locally the
 /// binary already lives in `~/go/bin` (mk_ci PATH prepend). A missing tool is DidNotRun, never OK.
 pub(crate) fn verify_editorconfig() -> i32 {
-    let root = match repository_layout::find_repository_root() {
+    let root = match repository_root::find_repository_root() {
         Ok(r) => r,
         Err(e) => {
             eprintln!("xtask: {e:#}");

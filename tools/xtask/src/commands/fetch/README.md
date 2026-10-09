@@ -56,7 +56,7 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
 
 - Depends on: the `enfusion_script_index` crate (`vanilla_page_fetch::vanilla_api` and
   `vanilla_page_fetch::vanilla_source`); `find_repository_root` and `is_repository_root` from
-  `repository_layout`; curl and network access to the two upstream sites, through the crate.
+  `repository_layout::prelude` (the `repository_root` finder); curl and network access to the two upstream sites, through the crate.
 - Used by: people; `tools/xtask/src/cli/dispatch.rs` routes the group. The `enf apidoc` and
   `enf source` commands of `tools/developer_tools/src/bin/enf.rs` read the caches, and
   `apidoc.rs` in `tools/enfusion/enfusion_script_index/src/` names `vanilla-api` when its
@@ -67,7 +67,7 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
 
 ## Related documentation
 
-- [Vanilla source coverage](/documentation/mod/tbd-framework/vanilla_source_coverage.md) —
+- [Vanilla source coverage](/documentation/apps/mod/tbd-framework/vanilla_source_coverage.md) —
   which vanilla classes the mod relies on and how to fetch them.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — where the fetch fits in
   mod work.

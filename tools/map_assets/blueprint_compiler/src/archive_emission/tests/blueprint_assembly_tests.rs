@@ -5,16 +5,23 @@ use crate::voxel_processing::synthetic_fixtures;
 #[test]
 fn box_room_blueprint_passes_the_schema_contract() {
     let d = synthetic_fixtures::box_room(6.0, 4.0, 2.6, 0.15);
-    let m = d.meta().clone();
-    let p = Params {
+    let m = d.metadata().clone();
+    let p = AnalysisParameters {
         min_floor_y: -0.5 - m.origin[1],
         ..Default::default()
     };
     let v = vertical_slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p);
     let lo = v.floors[0];
     let hi = v.eave.max(lo + p.top_band_min_m);
-    let bw =
-        wall_extraction::extract_band(&d, &v, lo, hi, wall_extraction::Algo::Segments, &p, None);
+    let bw = wall_extraction::extract_band_walls(
+        &d,
+        &v,
+        lo,
+        hi,
+        wall_extraction::WallAlgorithm::Segments,
+        &p,
+        None,
+    );
     let (pg, plate_heights) = floor_plates::floor_plate(&d.y_down, v.nx, v.nz, lo, &p);
     let plate_cells = pg.count();
     let traced =
@@ -50,7 +57,7 @@ fn box_room_blueprint_passes_the_schema_contract() {
         "local-frame west centerline, got {west_x}"
     );
 
-    let root = ::repository_layout::find_repository_root().expect("repository root");
+    let root = ::repository_root::find_repository_root().expect("repository root");
     let schema = ::repository_layout::definition_path(&root, "building-blueprint.schema.json");
     let tmp = std::env::temp_dir().join("tbd_bp_synth_schema_test.json");
     validate_and_write(&bp, &schema, &tmp).expect("schema-valid blueprint");

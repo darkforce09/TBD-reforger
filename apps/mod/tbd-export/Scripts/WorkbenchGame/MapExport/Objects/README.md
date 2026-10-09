@@ -107,7 +107,7 @@ None: Workbench runs these scripts in the editor.
   - `TBD_MapExportPlugin` in `apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Plugins/`;
   - `world copy-export-profile --full`, which stages the full export, and through it
     `cargo xtask map export-terrain` and `map export-locations`
-    (`tools/map_assets/map_raster_pipeline/src/map_labels/importance_by_name.rs`);
+    (`tools/map_assets/map_raster_pipeline/src/map_labels/export_locations.rs`);
   - `cargo xtask map world-los`, which replays the world parity file. No committed tool reads the
     classified export.
 - Rules: both world sweeps here keep an entity only in the cell of its origin, with the same clamp
@@ -123,5 +123,5 @@ None: Workbench runs these scripts in the editor.
   catalogue the full export feeds.
 - [Map commands](/tools/xtask/src/commands/map/README.md) — `cargo xtask map export-terrain` and
   the parity commands.
-- [Terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
+- [Terrain export runbook](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) —
   the full export through `copy-export-profile`, `export-terrain` and `verify-phase`.

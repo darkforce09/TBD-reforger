@@ -20,6 +20,7 @@ clap = { workspace = true, features = ["derive"] }
 deploy_settings = { workspace = true }
 process_runner = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 # `preserve_order` keeps the backend config's keys in the order the example file writes them.
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror = { workspace = true }

@@ -4,7 +4,7 @@ use crate::{Domain, ScopeV2, Status, WorkTicket};
 
 /// The repository root, found by walking up from the working directory to its marker.
 fn worktree_root() -> PathBuf {
-    repository_layout::find_repository_root().expect("repository root")
+    repository_root::find_repository_root().expect("repository root")
 }
 
 /// Minimal vocabulary every scratch TREE carries (`Corpus::load` is

@@ -9,10 +9,10 @@ the plan in one pass, and verifies the checkout again afterwards.
 
 ```text
 tools/commands/repository_relocation/src/
-├── file_treatment.rs     what a file may receive: live, frozen record, closed ticket, excluded
+├── file_treatment.rs     what a file may receive: live, frozen record or index, closed ticket, fixture, excluded
 ├── lib.rs                the crate root: module header, `mod` lines and the re-exported modes
 ├── manifest.rs           the manifest parser, refusing the whole manifest on any bad row
-├── manifest_chronology.rs  the stage manifests in the order they entered the history
+├── manifest_chronology.rs  the stage manifests in the order they entered the history, renames followed
 ├── move_placement.rs     where the moves land, the rows that collide, the order the moves run in
 ├── path_mapping.rs       where each path lands after the moves, and the relative-path math
 ├── path_references/      the `path` row pass: repository-root spellings and relative literals
@@ -27,7 +27,7 @@ tools/commands/repository_relocation/src/
 ├── retired_spellings/   the verification's read-once tree text and its combined spelling matcher
 ├── rust_lexer.rs         a lossless Rust tokenizer telling code, literals and comments apart
 ├── rust_paths/           the `rust_path` row pass: `use` trees, code paths, doc links, chains
-├── scope_history.rs      where an earlier manifest's scope lies after the later manifests' moves
+├── scope_history.rs      where a manifest's scope lies after its own and the later manifests' moves
 ├── tests/                unit tests and whole runs on throwaway git checkouts
 ├── text_edits.rs         byte-span edits, their merge and application, and the allowed spans
 └── text_tokens.rs        the `text` row pass: identifier-like tokens on word boundaries
@@ -53,7 +53,13 @@ NUL in its first 8000 bytes, it is UTF-8 and it is not a Git LFS pointer. Binari
 move with their folders unread.
 
 `file_treatment.rs` sorts each file before any pass runs. Live files take every rewrite. Markdown
-under the archive and the ticket documents takes link destination rewrites only; other files there,
+under the archive and the ticket documents takes link destination rewrites only, except that a
+`README.md` there is a live index of its folder: the tree part of its Contents block's lines (the
+root folder and each entry's name, up to the two spaces before the role) takes every rewrite and is
+verified as a live file is, while its prose and roles stay as written. This crate's own test
+sources (`src/tests/`) spell paths of throwaway checkouts, so only their code takes the `rust_path`
+and `text` rewrites and is verified, never a string literal or a comment, and no `path` row reaches
+them. Other files of the frozen areas,
 the `.tsv` manifests of the manifests folder (their `from` columns name retired paths on purpose),
 the manifest being run and every SQL migration (a `.sql` file directly in a `migrations` folder,
 the files `sqlx` reads and pins by checksum once applied) take none; the rest of the manifests
@@ -128,12 +134,17 @@ gets judged alone; the per-row judge this replaces is kept as the oracle of
 `relocate_verify_single_pass_matches_the_per_row_judge_over_composed_manifests`.
 
 `--verify` with no manifest judges every stage manifest in the order `manifest_chronology.rs`
-reads from the history: the first commit that added each one, manifests one commit added by name,
-uncommitted ones last by name; a shallow clone is a did-not-run. A committed manifest is never
-edited, so `scope_history.rs` follows each `rust_path` row's folder or glob scope, relocated by its
-own manifest, through the `path` rows of every manifest after it: a scope a later row moved is
-judged at its new folder, a scope a later row emptied holds with a `note:` line naming that row,
-and a missing scope no later row explains is a did-not-run. `path` rows need no composition (a
+reads from the history: the first commit that added each one under any path it has had (one
+`git log --find-renames=100% --diff-filter=AR` over every `.tsv` path, each exact rename carrying
+the file's place to its new path, and one `git diff --cached` against `HEAD` for a staged move),
+manifests one commit added by name, uncommitted ones last by name; a shallow clone is a did-not-run.
+Moving the manifests folder therefore keeps the order. A committed manifest is never edited, so
+`scope_history.rs` follows each `rust_path` row's folder or glob scope through its own manifest's
+`path` rows and then those of every manifest after it: a scope a row moved is judged at its new
+folder, a scope a row emptied, its own manifest's rows file by file or a later manifest's, holds
+with a `note:` line naming the first such row, and a missing scope no row explains is a
+did-not-run. The files a row took out of a scope are not judged at their destinations: a
+`crate::` prefix means another crate's module once its file has left the crate. `path` rows need no composition (a
 retired path stays retired) and `text` rows are not judged.
 
 ## Public surface
@@ -180,14 +191,22 @@ retired path stays retired) and `text` rows are not judged.
   `relocate_manifest_dir_joins_into_a_folder_with_no_crate_manifest_are_unresolved`); an earlier manifest's
   scope is judged where later manifests moved it, holds when they emptied it and fails closed
   otherwise (`relocate_verify_judges_an_earlier_scope_where_a_later_manifest_moved_it`,
-  `relocate_verify_passes_a_scope_a_later_manifest_emptied_and_fails_an_unexplained_one`); the passes
+  `relocate_verify_passes_a_scope_a_later_manifest_emptied_and_fails_an_unexplained_one`), and a
+  scope its own rows emptied file by file applies and holds
+  (`relocate_manifest_that_empties_its_own_scope_file_by_file_applies_and_verifies`,
+  `relocate_verify_composes_a_scope_emptied_by_its_own_rows_through_later_manifests`); the
+  manifest order survives a move of the manifests folder
+  (`relocate_manifest_order_survives_a_move_of_the_manifests_folder`); a frozen area's README
+  index takes live rewrites in its Contents tree only
+  (`relocate_frozen_readme_index_contents_tree_follows_the_moves`); this crate's test sources keep
+  their literals and comments (`relocate_own_test_fixtures_keep_their_literals_and_comments`); the passes
   and the verification share `file_treatment.rs`, `path_references::allowed_spans` and
   `path_tokens::classify_occurrence`, so they judge the same bytes the same way; tests are named
   `relocate_*` and run on throwaway checkouts, never on this one.
 
 ## Related documentation
 
-- [Relocation manifests](/documentation/restructure/manifests/README.md) — the manifest format
+- [Relocation manifests](/documentation/relocation_manifests/README.md) — the manifest format
   and the stage manifests.
 - [Path coupling research](/documentation/archive/restructure_research/02_path_coupling.md) —
   every kind of path reference a move breaks.

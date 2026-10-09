@@ -11,16 +11,17 @@ the live status stream.
 
 ```text
 crates/api/api_server_infrastructure/src/handlers/
-├── fleet_commands.rs         administrator command requests, receipts and cancellation
-├── fleet_executor.rs         executor claims, start reports and outcome reports, by machine credential
-├── fleet_scenarios.rs        the registry of the mission header the fleet boots for each terrain
-├── game_runtime_sessions.rs  a game runtime starts and ends its session (`mod_runtime` credential)
-├── machine_credentials.rs    administrator issue, list and revocation of machine credentials
-├── mod.rs                    the module tree
-├── server_intel.rs           the server intel reads: each server with its status, modpack and terrain
-├── server_registry.rs        create, partially update and deactivate a `servers` row
-├── server_status_stream.rs   the SSE feed of one server's live status
-└── tests/                    unit tests for the scenario validation and the intel card
+├── fleet_commands.rs              administrator command requests, receipts and cancellation
+├── fleet_executor.rs              executor claims, start reports and outcome reports, by machine credential
+├── fleet_scenarios.rs             the registry of the mission header the fleet boots for each terrain
+├── game_runtime_sessions.rs       a game runtime starts and ends its session (`mod_runtime` credential)
+├── machine_credentials.rs         administrator issue, list and revocation of machine credentials
+├── mod.rs                         the module tree
+├── server_administration_lock.rs  locks a server row and rechecks the administrator before a credential or command write
+├── server_intel.rs                the server intel reads: each server with its status, modpack and terrain
+├── server_registry.rs             create, partially update and deactivate a `servers` row
+├── server_status_stream.rs        the SSE feed of one server's live status
+└── tests/                         unit tests for the scenario validation and the intel card
 ```
 
 ## How it works

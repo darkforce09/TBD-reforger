@@ -27,5 +27,8 @@ time = { workspace = true, features = ["parsing"] }
 time_source = { workspace = true }
 walkdir = { workspace = true }
 
+[dev-dependencies]
+repository_root = { workspace = true }
+
 [lints]
 workspace = true

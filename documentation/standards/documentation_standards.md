@@ -311,16 +311,15 @@ documentation/
 ├── architecture/          the workspace layout as it stands
 ├── glossary/              project terms and abbreviations, one file per letter range
 ├── product_roadmap.md     the operator-curated plan
-├── apps/                  mirrors apps/: api/, frontend/ (pages/<area>/, apps/editor/ for the
-│                          Mission Creator), fleet_host_agent/, ticketboard/
-├── mod/                   mirrors apps/mod/: tbd-framework/, tbd-export/, tbd-emcp/
-├── tools/<crate>/  crates/<tier>/<crate>/  contracts/  assets/
+├── apps/                  mirrors apps/: api/, frontend/ (the app shell), fleet_host_agent/,
+│                          ticketboard/, mod/ (tbd-framework/, tbd-export/, tbd-emcp/)
+├── crates/<category>/<crate>/  tools/<category>/<crate>/  contracts/  assets/
 ├── design_system/         tokens, typography, colour, symbology, token exports
 ├── runbooks/              every operator procedure
 ├── standards/             this document, the README standard, templates/, coding standards,
 │                          placement, the commit checklist, ticket identifiers, crate boundaries
 ├── known_bugs/            the live bug registry
-├── restructure/           the active workspace restructure program, archived when it closes
+├── relocation_manifests/  every relocation manifest run: the registry of retired path spellings
 ├── tickets/               specs/ and plans/, flat and frozen once their ticket closes
 └── archive/<topic>/       frozen history
 ```
@@ -336,13 +335,14 @@ documentation/
   (`crates/frontend/pages/operations_pages/src/schedule/` is documented under
   `documentation/crates/frontend/pages/operations_pages/schedule/`, and
   `crates/frontend/workspaces/mission_creator_workspace/src/` under `documentation/crates/frontend/workspaces/mission_creator_workspace/`).
-  One mirror keeps a shorter path until a stage of the
-  [workspace restructure](/documentation/restructure/README.md) reshapes its code: until M1 a
-  mirror of the mod leaves out `apps/` and `Scripts/Game/TBD/` and sits under
-  `documentation/mod/`. The grain is chosen
+  The mod's scripts have no `src/`: a mirror of the mod keeps `apps/` and leaves out
+  `Scripts/Game/TBD/` instead (the screens of `apps/mod/tbd-framework/Scripts/Game/TBD/UI/` are
+  documented under `documentation/apps/mod/tbd-framework/UI/`), while the Workbench plugins under
+  `Scripts/WorkbenchGame/` keep their path (`documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`).
+  The grain is chosen
   per case: one `pages/account/` folder covers login, the auth callback and settings, while
   administration has a folder per page.
-- **Mirror moves.** A [relocation manifest](/documentation/restructure/manifests/README.md) that
+- **Mirror moves.** A [relocation manifest](/documentation/relocation_manifests/README.md) that
   moves code also moves that code's documentation mirror, in a row of the same manifest, so the
   documents never fall behind the code they mirror.
 - **Feature grouping.** Everything about one feature lives together: behaviour, interface design,

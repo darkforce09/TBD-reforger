@@ -8,6 +8,7 @@ order = 8310
 spec = "documentation/tickets/specs/t853_shell_to_xtask_waves.md"
 plan = "documentation/tickets/plans/t-908_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): tools/tbd-tools/src/map/sap.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/smokes.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/world/aux.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/world/build.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/world/gates.rs: removed in commit b4d8b7ca0, no successor; xtask/src/cmds.rs: removed in commit e9b28fbf5, no successor; xtask/src/schema_gates.rs: removed in commit b4d8b7ca0, no successor."
 main_goal = "Split 8 T-899-allowlisted xtask/tools SIZE-3 files; drop allowlist rows."
 context = [
     "T-899 allowlisted eight xtask and tools/tbd-tools files over 1000 lines.",

@@ -44,12 +44,12 @@ pub(crate) fn build_unified_satellite(
     ));
 
     // Mip chain dims: base → 1×1 with the GL rule.
-    let dims = mip_dims(src_w, src_h);
+    let dims = mip_dimensions(src_w, src_h);
     log(&format!("mip chain: {} levels ({src_w} → 1)", dims.len()));
 
     // Cascade-halve + tile + encode (rayon-free: encode sequentially — image-webp lossless
     // is fast enough for the rebuild-smoke acceptance; parallelism can come later).
-    let mut blocks: Vec<TileBuf> = Vec::new();
+    let mut blocks: Vec<TileBuffer> = Vec::new();
     let mut level_meta = Vec::new();
     let mut current = base;
     for (level, &(lw, lh)) in dims.iter().enumerate() {
@@ -76,7 +76,7 @@ pub(crate) fn build_unified_satellite(
                     h: th,
                     data: tile,
                 })?;
-                blocks.push(TileBuf {
+                blocks.push(TileBuffer {
                     level,
                     x,
                     y,
@@ -178,7 +178,7 @@ pub(crate) fn build_unified_satellite(
 /// the payload. Retained verbatim behind `--container-version 1` because `everon-sat.tbd-sat` is
 /// committed in this shape and stays that way until a Workbench export regenerates it.
 pub(crate) fn build_tbds_v1_bytes(
-    blocks: &[TileBuf],
+    blocks: &[TileBuffer],
     level_meta: &[(usize, usize)],
     base: (usize, usize),
     terrain: &str,

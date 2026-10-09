@@ -46,13 +46,15 @@ groups as modules of its own. It passes each crate the checkout root:
   scans, the run report and the `flock` on the shared verification lock), `process_runner` child
   processes with process-group isolation and deadlines, the container-to-host bridge and the ssh
   transport, `repository_laws` the structural engineering laws as pure checks,
-  `repository_layout` the checkout-root walk and the shared locations, `deploy_settings` the
+  `repository_layout` the shared locations, `deploy_settings` the
   reader of `deploy/deploy.env`, and `tool_test_support` the locks and the checkout root the tool
   tests share (a dev-dependency only).
 - The [command crates](/tools/commands/README.md) hold the work of xtask command groups:
   `api_readiness_checks` the API readiness judge behind `cargo xtask verify api-readiness`;
   `workstation_setup` the `cargo xtask setup` commands; `enfusion_mcp` the Enfusion MCP client
   behind `cargo xtask mcp`;
+  `agent_context_guards` the agent tool-call guard and the filtered command runner behind
+  `cargo xtask ai`;
   `repository_relocation` the manifest-driven moves and the retired-spelling verification behind
   `cargo xtask refactor relocate`; `schema_tooling` the contract codegen, the contract schema
   gates and the ORBAT slot flattening behind `cargo xtask schema` and `cargo xtask gen`;
@@ -101,9 +103,9 @@ groups as modules of its own. It passes each crate the checkout root:
   call, and the map raster
   pipeline is `map_raster_pipeline` (tools/map_assets), which the `map` binary runs. The
   building-blueprint compiler is `blueprint_compiler` (tools/map_assets), which the `cargo xtask
-  map` commands call. No tool crate links a member under `legacy/` (the strangler law).
-- xtask and `developer_tools` are the two binary packages; both depend only on tool crates
-  (`tooling_dependency_direction_is_enforced`), and no tokio, axum, reqwest, resvg or image enters
+  map` commands call.
+- xtask and `developer_tools` are the two binary packages; both depend only on tool crates (the
+  checkout-root finder comes through `repository_layout`'s prelude; `tooling_dependency_direction_is_enforced`), and no tokio, axum, reqwest, resvg or image enters
   xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`): the async servers and
   the raster crates run behind the `developer_tools` binaries, which xtask starts as child
   processes.
@@ -133,8 +135,8 @@ xtask ──runs──▶ developer_tools (binaries only)
   └────▶ process_runner, repository_laws ──▶ verification_core   (tools/foundation)
 ```
 
-The repository paths more than one tool names, and the one walk that finds the checkout root, live
-in `tools/foundation/repository_layout`. Each tool spells the paths only it uses in its own layout
+The repository paths more than one tool names live in `tools/foundation/repository_layout`; the
+one walk that finds the checkout root is the foundation crate `crates/foundation/repository_root`. Each tool spells the paths only it uses in its own layout
 module: `tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs`,
 `tools/map_assets/world_export_pipeline/src/export_locations.rs`,
 `tools/enfusion/enfusion_script_index/src/script_index_layout.rs`,
@@ -172,9 +174,10 @@ Each crate's README lists its own commands and checks.
   - `developer_tools` never depends on `xtask`, and `xtask` never depends on
     `developer_tools`
     (`tooling_dependency_direction_is_enforced` in `tooling_dependency_boundaries.rs`);
-  - a `tools/foundation` crate depends only on lower `tools/foundation` crates
-    (`foundation_crates_depend_only_on_lower_foundation_crates`); a `tools/tickets` crate depends
-    only on `tools/foundation` crates, on `time_source`, `content_digest` and `newtype_ids`, and on
+  - a `tools/foundation` crate depends only on lower `tools/foundation` crates and on
+    `repository_root` (`foundation_crates_depend_only_on_lower_foundation_crates`); a
+    `tools/tickets` crate depends only on `tools/foundation` crates, on `time_source`,
+    `content_digest`, `newtype_ids` and `repository_root`, and on
     ticket crates of a lower tier
     (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates`); and ticket logic has one
     owner, the xtask `ticket` group delegating to `ticket_registry` and the `wave` group to

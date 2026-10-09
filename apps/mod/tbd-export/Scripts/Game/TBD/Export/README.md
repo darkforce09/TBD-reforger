@@ -110,5 +110,5 @@ whichever runs last replaces the other's files.
 
 - [Everon road network archive](/assets/terrains/everon/roads/README.md) — the road data the map
   engine loads, and how it is built.
-- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   how the runtime road export sits beside the Workbench layers.

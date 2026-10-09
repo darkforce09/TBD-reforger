@@ -62,7 +62,7 @@ pub fn mark_ready(
 ) {
     let session = EditorSession {
         mission_id: mission_id.clone(),
-        ready_at: js_sys::Date::now(),
+        ready_at: time_source::wall_clock_ms(),
         slot_count,
         current_semver,
     };
@@ -90,7 +90,7 @@ pub fn read_warm(mission_id: &mission_model::ids::MissionId) -> Option<EditorSes
     if session.mission_id != *mission_id {
         return None;
     }
-    if js_sys::Date::now() - session.ready_at > TTL_MS {
+    if time_source::wall_clock_ms() - session.ready_at > TTL_MS {
         return None;
     }
     Some(session)

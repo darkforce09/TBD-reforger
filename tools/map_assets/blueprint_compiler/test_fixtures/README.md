@@ -16,7 +16,7 @@ tools/map_assets/blueprint_compiler/test_fixtures/
 ## How it works
 
 Nothing here is compiled into the crate. The tests resolve each file from the checkout root at run
-time, through `repository_layout::find_repository_root` and the crate's `test_fixtures::fixture(name)`
+time, through `repository_root::find_repository_root` and the crate's `test_fixtures::fixture(name)`
 helper, and only read it. `cargo test -p blueprint_compiler` and `cargo test -p map_asset_verification`
 run every test that reads this tree, and none needs a game install, a browser or a database. The
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) prefab text here is synthetic; every other file
@@ -39,7 +39,7 @@ is recorded from the engine or emitted by the compiler.
 - Consumers: the unit tests of `tools/map_assets/blueprint_compiler/src/` and
   `tools/map_assets/map_asset_verification/src/tests/`, the path-resolution test in
   `tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs`, and
-  `tools/foundation/tool_test_support/src/tests/repository_root_tests.rs`, which checks that a fixture here resolves
+  `tools/foundation/tool_test_support/src/tests/test_checkout_root_tests.rs`, which checks that a fixture here resolves
   from inside `tools/xtask/`.
 
 ## Boundaries

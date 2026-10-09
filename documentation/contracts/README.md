@@ -52,5 +52,5 @@ follows the [feature doc template](/documentation/standards/templates/feature_do
 
 - [Contract pipeline and evolution policy, archived](/documentation/archive/contracts_v2_relocation/architecture_plan.md)
   — the frozen plan the live policy carries forward.
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the framework's
   no-workshop-dependency rule behind the bridge hooks.

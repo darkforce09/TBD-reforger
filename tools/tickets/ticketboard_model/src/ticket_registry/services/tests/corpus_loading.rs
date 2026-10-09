@@ -137,7 +137,7 @@ fn child_id_classification() {
 #[test]
 #[ignore = "reads the live repo corpus; run explicitly with -- --ignored"]
 fn live_corpus_loads_and_counts_sum() {
-    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    let root = repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the checkout holding this crate");
     let corpus = load_corpus(&root).unwrap_or_else(|e| panic!("live corpus refused: {e}"));
     assert!(corpus.counts.total > 0);

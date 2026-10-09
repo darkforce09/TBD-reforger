@@ -32,8 +32,8 @@ banner reports those.
 ## Boundaries
 
 - Depends on: `crate::ticket_registry::models::corpus`; `ticket_model` (`parse_ticket_toml`);
-  `repository_layout` (`TICKETS_DIR`, and `find_repository_root_from` for the walk up from the
-  cwd); `std::fs`.
+  `repository_layout` (`TICKETS_DIR`); `repository_root` (`find_repository_root_from` for the walk
+  up from the cwd); `std::fs`.
 - Used by: `apps/ticketboard/src/main.rs` (`positional_arg`);
   `apps/ticketboard/src/application/lifecycle.rs` and `background_events.rs` (`resolve_repo_root`,
   `has_tickets_dir`); `tools/tickets/ticketboard_model/src/application_state/background_loading.rs` (`load_corpus`);

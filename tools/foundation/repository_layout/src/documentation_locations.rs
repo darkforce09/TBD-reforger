@@ -30,7 +30,7 @@ pub const SLICE_WORKFLOW_RUNBOOK: &str = "documentation/runbooks/mod_slice_workf
 pub const PLATFORM_FACTORY_RUNBOOK: &str = "documentation/runbooks/factory_waves/README.md";
 
 /// The mod's design authority, including the upstream-code oracle lanes.
-pub const MOD_DESIGN: &str = "documentation/mod/tbd-framework/mod_design.md";
+pub const MOD_DESIGN: &str = "documentation/apps/mod/tbd-framework/mod_design.md";
 
 /// How to run the spawn-determinism gate, which needs a live Workbench.
 pub const SPAWN_DETERMINISM_RUNBOOK: &str = "documentation/runbooks/spawn_determinism.md";

@@ -34,7 +34,7 @@ const JWT_SECRET: &str = "route-acceptance-secret";
 
 /// The request a probe starts from: path parameters, query, JSON body and extra headers.
 #[derive(Debug, Clone, Default)]
-pub struct Fixture {
+pub(crate) struct Fixture {
     pub params: Vec<(String, String)>,
     /// The query string, without `?`.
     pub query: Option<String>,
@@ -46,43 +46,43 @@ pub struct Fixture {
 
 impl Fixture {
     /// An empty request.
-    pub fn new() -> Fixture {
+    pub(crate) fn new() -> Fixture {
         Fixture::default()
     }
 
     /// Set path parameter `name` (as the route spells it, e.g. `id` or `*path`).
-    pub fn param(mut self, name: &str, value: impl Into<String>) -> Fixture {
+    pub(crate) fn param(mut self, name: &str, value: impl Into<String>) -> Fixture {
         self.params.push((name.to_string(), value.into()));
         self
     }
 
     /// Set the query string.
-    pub fn query(mut self, query: impl Into<String>) -> Fixture {
+    pub(crate) fn query(mut self, query: impl Into<String>) -> Fixture {
         self.query = Some(query.into());
         self
     }
 
     /// Set the JSON body.
-    pub fn body(mut self, body: Value) -> Fixture {
+    pub(crate) fn body(mut self, body: Value) -> Fixture {
         self.body = Some(body);
         self
     }
 
     /// Set a non-JSON body with its `Content-Type`.
-    pub fn raw_body(mut self, bytes: Vec<u8>, content_type: impl Into<String>) -> Fixture {
+    pub(crate) fn raw_body(mut self, bytes: Vec<u8>, content_type: impl Into<String>) -> Fixture {
         self.raw_body = Some((bytes, content_type.into()));
         self
     }
 
     /// Add a request header.
-    pub fn header(mut self, name: &str, value: impl Into<String>) -> Fixture {
+    pub(crate) fn header(mut self, name: &str, value: impl Into<String>) -> Fixture {
         self.headers.push((name.to_string(), value.into()));
         self
     }
 }
 
 /// The shared core of every world.
-pub struct WorldCore {
+pub(crate) struct WorldCore {
     /// The router under test, assembled from [`WorldCore::state`].
     pub app: Router,
     pub state: AppState,
@@ -92,7 +92,7 @@ pub struct WorldCore {
 }
 
 /// What a part supplies: its rows and the requests its routes are probed with.
-pub trait PartWorld: Sized {
+pub(crate) trait PartWorld: Sized {
     /// Adjust the configuration before the state is built (e.g. a smaller body limit).
     fn configure(_config: &mut Config) {}
 
@@ -106,7 +106,7 @@ pub trait PartWorld: Sized {
 }
 
 /// A built world: the shared core and the part's own rows.
-pub struct World<W> {
+pub(crate) struct World<W> {
     pub core: WorldCore,
     pub part: W,
 }
@@ -114,7 +114,7 @@ pub struct World<W> {
 impl<W: PartWorld> World<W> {
     /// Build the core and the part world in namespace `namespace` (0–99, one per test function
     /// of a binary).
-    pub async fn build(suite: &'static str, namespace: u8) -> World<W> {
+    pub(crate) async fn build(suite: &'static str, namespace: u8) -> World<W> {
         let url = common::require_test_database_url()
             .expect("TEST_DATABASE_URL is required for the route acceptance binaries");
         let pool = api_database::connect(&url).await.expect("connect");

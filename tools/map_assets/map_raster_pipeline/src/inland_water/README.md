@@ -12,8 +12,8 @@ instead.
 ```text
 tools/map_assets/map_raster_pipeline/src/inland_water/
 ├── analyze_water_sources.rs  `analyze-water`: the classifier run, its mask, preview and decision record
-├── sap_dir.rs                `composite-water`, the scratch folder, the elevation reader and dilation
-└── source_components.rs      the per-pixel classes and the acceptance of connected water components
+├── source_components.rs      the per-pixel classes and the acceptance of connected water components
+└── water_composite.rs        `composite-water`, the scratch folder, the elevation reader and dilation
 ```
 
 ## How it works
@@ -49,7 +49,7 @@ everon-sap-ortho.png + water-inland-mask.png + the elevation model
   `world_export_pipeline::json_number_formatting` for the numbers the record prints;
   the `repository_layout` crate for the scratch and terrain folders and
   `crate::decision_record_locations` for the artifact folders;
-  `repository_layout::find_repository_root` for the checkout root.
+  `repository_root::find_repository_root` for the checkout root.
 - Used by: `tools/map_assets/map_raster_pipeline/src/command_line.rs` (`analyze-water`,
   `composite-water`); the `map-water-everon` task in
   `tools/commands/ci_task_catalog/src/task_definitions.rs`; the cartographic render in

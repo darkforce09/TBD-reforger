@@ -15,8 +15,9 @@ crates/api/api_discord/
 
 ## How it works
 
-Both clients install the ring TLS provider once and build a `reqwest` client with a 10 second
-timeout. A call answered `429` waits the `Retry-After` it names, within a bound, through
+Both clients install the ring TLS provider once (one shared `tls_crypto_provider` module) and build
+a `reqwest` client with a 10 second timeout. A call answered `429` waits the `Retry-After` it
+names, within a bound, through
 `api_http_layer`'s outbound retry. A non-2xx answer becomes `Error::DiscordStatus` or
 `Error::WebhookStatus` with at most 4096 characters of its body; a transport or JSON failure is the
 library's own error, so it renders with its causes. The bot-token member read answers a

@@ -2,7 +2,7 @@ use super::*;
 use std::os::unix::fs::PermissionsExt;
 
 fn this_repo() -> PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root")
 }
 
@@ -13,8 +13,8 @@ const FIXTURE_WORKSPACE_MEMBERS: &[&str] = &[
     "apps/ticketboard",
     "apps/api",
     "apps/frontend",
-    "legacy/map_engine",
-    "legacy/graphics_engine",
+    "crates/geometry/camera_math",
+    "crates/graphics/render_primitives",
     "apps/offline_service_worker",
     "tools/foundation/verification_core",
     "tools/foundation/process_runner",

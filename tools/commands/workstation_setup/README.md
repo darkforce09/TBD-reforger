@@ -95,7 +95,7 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 ## Boundaries
 
-- Depends on: `repository_layout` (the checkout root), `deploy_settings` (the deploy host and the
+- Depends on: `repository_root` (the checkout root), `repository_layout` (the shared locations), `deploy_settings` (the deploy host and the
   remote folders), `process_runner` (`ssh`, `sshpass`, `mkdir`, `ln` and `whoami`),
   `verification_core` (`NotRun`), `clap` (the subcommand), `serde_json` (the backend config) and
   `thiserror`; `tool_test_support` in tests.

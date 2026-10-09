@@ -9,7 +9,7 @@ use serde_json::json;
 use std::path::PathBuf;
 
 fn worktree_root() -> PathBuf {
-    repository_layout::find_repository_root().expect("repository root")
+    repository_root::find_repository_root().expect("repository root")
 }
 
 /// Break a required enum so schema check goes red (in-memory only).
@@ -64,7 +64,7 @@ fn scratch_registry(tag: &str) -> PathBuf {
     fs::create_dir_all(dir.join(repository_layout::TICKETS_DIR)).unwrap();
     fs::create_dir_all(dir.join("docs")).unwrap();
     fs::write(
-        dir.join(repository_layout::ROOT_MARKER),
+        dir.join(repository_root::ROOT_MARKER),
         "# ticket-registry root marker\n",
     )
     .unwrap();

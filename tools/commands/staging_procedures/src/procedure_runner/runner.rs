@@ -7,7 +7,7 @@
 //!
 //! **Position:** called through [`super::procedure::StagingProcedure::run`] by `recording.rs`;
 //! takes each observation through `probe_reading.rs`, reads through a [`HostCommandRunner`] and
-//! the browser inbox, keeps time with a [`Clock`], and writes to the [`ObservationJournal`].
+//! the browser inbox, keeps time with a [`WaitingClock`], and writes to the [`ObservationJournal`].
 //!
 //! **Signals & state:** the run's measurements, its deciding observations and the failures of
 //! each case, owned by the runner until `run` returns them.
@@ -24,7 +24,7 @@ use std::time::Duration;
 
 use crate::error::Result;
 
-use super::clock::Clock;
+use super::clock::WaitingClock;
 use super::probe_reading::{ProbeWindow, observe};
 use super::procedure::{ProcedurePlan, ProcedureRun};
 use super::step::{
@@ -42,7 +42,7 @@ pub(crate) const REQUEST_APPEARANCE_SECONDS: u64 = 900;
 /// What a run reads, waits with, and writes to.
 pub(crate) struct RunContext<'a> {
     pub host: &'a mut dyn HostCommandRunner,
-    pub clock: &'a dyn Clock,
+    pub clock: &'a dyn WaitingClock,
     pub journal: &'a mut ObservationJournal,
     pub inbox: &'a BrowserInbox,
     /// Where the `AWAIT` and outcome lines go: stdout in a live run.

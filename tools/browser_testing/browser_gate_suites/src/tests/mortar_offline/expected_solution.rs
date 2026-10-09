@@ -1,6 +1,6 @@
 use super::*;
 use crate::mortar_offline::mission_plan::{COMMITTED_CATALOG, high_explosive_shell, read_catalog};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 fn committed_catalog() -> BallisticsCatalog {
     read_catalog(

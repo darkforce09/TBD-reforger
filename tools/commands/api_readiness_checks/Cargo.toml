@@ -25,9 +25,12 @@ repository_layout = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+# The wall clock the receipts' timestamps read.
+time_source = { workspace = true }
 verification_core = { workspace = true }
 
 [dev-dependencies]
+repository_root = { workspace = true }
 # The environment lock the recording tests hold while they read the process environment.
 tool_test_support = { workspace = true }
 

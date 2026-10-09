@@ -20,7 +20,10 @@ fn authored(squad: Value, slots: Value, extra: Value) -> String {
         "slots": slots,
         "editorLayers": [],
     }});
-    for (key, value) in extra.as_object().unwrap() {
+    for (key, value) in extra
+        .as_object()
+        .expect("the authored extra is a JSON object")
+    {
         if key == "triggersById" {
             payload["editor"][key] = value.clone();
         } else {
@@ -33,7 +36,7 @@ fn authored(squad: Value, slots: Value, extra: Value) -> String {
 fn seat(id: &str, index: i64, extra: Value) -> Value {
     let mut slot = json!({ "id": id, "squadId": "sq1", "index": index, "role": "SL",
         "position": { "x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270 } });
-    for (key, value) in extra.as_object().unwrap() {
+    for (key, value) in extra.as_object().expect("the seat extra is a JSON object") {
         slot[key] = value.clone();
     }
     slot
@@ -49,7 +52,7 @@ async fn document(f: &MissionFixture, mission: uuid::Uuid, artifact: uuid::Uuid)
         )
         .await;
     assert_eq!(status, StatusCode::OK);
-    serde_json::from_slice(&bytes).unwrap()
+    serde_json::from_slice(&bytes).expect("the body decodes as JSON")
 }
 
 #[tokio::test]

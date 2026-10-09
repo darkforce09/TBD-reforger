@@ -24,19 +24,23 @@ impl Drop for Fixture {
     }
 }
 async fn fixture(status: StatusCode, body: &'static str) -> Fixture {
-    let url = common::require_test_database_url().unwrap();
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let url = common::require_test_database_url().expect("the test database URL is configured");
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     sqlx::query("DELETE FROM discord_membership_snapshots")
         .execute(&pool)
         .await
-        .unwrap();
+        .expect("the delete from discord_membership_snapshots succeeds");
     sqlx::query(
         "UPDATE discord_rest_schedule SET next_request_at = clock_timestamp() WHERE singleton",
     )
     .execute(&pool)
     .await
-    .unwrap();
+    .expect("the update of discord_rest_schedule succeeds");
     common::seed_user(&pool, "rest-member", "Member", "rest-arma", "enlisted").await;
     let mut cfg = Config::for_tests(url, "rest-coordination");
     cfg.discord_bot_token = "bot-token".into();
@@ -53,19 +57,28 @@ async fn fixture(status: StatusCode, body: &'static str) -> Fixture {
             }
         }),
     );
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let base = format!("http://{}", listener.local_addr().unwrap());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("a loopback port binds");
+    let base = format!(
+        "http://{}",
+        listener
+            .local_addr()
+            .expect("the listener reports its local address")
+    );
     let server = tokio::spawn(async move {
-        axum::serve(listener, app).await.unwrap();
+        axum::serve(listener, app)
+            .await
+            .expect("the stand-in HTTP server keeps serving");
     });
     Arc::make_mut(&mut state.discord).set_api_base(&base);
     enroll_accounts(&state.pool, &state.cfg.discord_guild_id)
         .await
-        .unwrap();
+        .expect("the account enrollment succeeds");
     sqlx::query("DELETE FROM discord_membership_snapshots WHERE discord_id <> 'rest-member'")
         .execute(&state.pool)
         .await
-        .unwrap();
+        .expect("the delete from discord_membership_snapshots succeeds");
     Fixture {
         state,
         requests,

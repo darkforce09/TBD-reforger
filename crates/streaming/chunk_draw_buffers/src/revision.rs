@@ -12,6 +12,7 @@
 use map_draw_lanes::zoom_gates::class_visible;
 
 use crate::world_residency::WorldResidency;
+use world_chunks::ChunkId;
 
 impl WorldResidency {
     /// Building fill instances (WORLD coords): 10 f32 each `[x, y, hx, hy, cos, sin, r, g, b, a]`.
@@ -161,7 +162,7 @@ impl WorldResidency {
 impl WorldResidency {
     /// Sorted draw-set chunk ids (strict visible ∩ pinned ∩ cells).
     #[must_use]
-    pub fn draw_ids(&self) -> &[String] {
+    pub fn draw_ids(&self) -> &[ChunkId] {
         &self.draw_buffers.draw_ids
     }
 }

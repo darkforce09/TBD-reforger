@@ -40,8 +40,8 @@ The walker test places the frame on the house socket as a `DoorFrame` instance a
 
 - Encoding: ASCII Enfusion prefab text, one root entity per file, with invented GUIDs and
   resource paths; nothing here is game content.
-- Schema: the `.et` grammar that `parse_et` in
-  `tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/tokenize.rs` reads; the door fields
+- Schema: the `.et` grammar that `parse_entity_template` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads; the door fields
   are those the resolver's door and sliding-door parameters take (`AngleRange`, `ClosedAngle`,
   `InitialAngle`, `Enabled`, `OpenedDistance`).
 - Adding a file: inherit `Door_Base.et` for a rotating leaf, keep IDs and GUIDs unique, and add its
@@ -51,14 +51,14 @@ The walker test places the frame on the house socket as a `DoorFrame` instance a
 
 - Producers: people; the files are written by hand.
 - Consumers: `resolver_walks_inheritance_sockets_and_children` in
-  `tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs`, and
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/prefab_templates_tests.rs`, and
   `walker_places_door_set_window_and_furniture_from_fixtures` in
-  `tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs`, which walks `DoorSet.et` and
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/batch_processing_tests.rs`, which walks `DoorSet.et` and
   `Door_Leaf.et` through the house.
 
 ## Boundaries
 
-- Depends on: the `.et` grammar `parse_et` reads; `Prefabs/Houses/House_Base.et`, which places the
+- Depends on: the `.et` grammar `parse_entity_template` reads; `Prefabs/Houses/House_Base.et`, which places the
   door set.
 - Used by: the two tests above.
 - Rules: the pivot names `socket_door_LEFT` and `socket_door_left_01` match the synthetic model

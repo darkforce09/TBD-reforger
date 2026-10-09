@@ -70,7 +70,7 @@ four admin and mission keys to `TBD_BrowserContext`, the five spectator keys to
 
 ## Related documentation
 
-- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/apps/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator controls.
-- [In-game menu specification](/documentation/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
+- [In-game menu specification](/documentation/apps/mod/tbd-framework/UI/in_game_menu/in_game_menu_specification.md)
   — the admin screen F8 opens.

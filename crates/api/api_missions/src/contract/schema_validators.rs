@@ -129,8 +129,8 @@ pub fn validate_mission_editor_payload_with_catalog(
 /// `LoadFromProfileFile`.
 pub(crate) const MISSION_FILE_MAX_BYTES: usize = 8 * 1024 * 1024;
 
-/// Validate a compiled mod mission document against `mission.schema.json` (the
-/// game-server contract served at `/missions/:id/compiled`).
+/// Validate a compiled mod mission document against `mission.schema.json` (the game-server
+/// contract an artifact carries, served at `GET /api/v1/game-runtime/artifacts/:artifactId`).
 ///
 /// @contract mission.schema.json#/
 pub fn validate_mission_document(raw: &[u8]) -> Result<Vec<String>, ContractError> {

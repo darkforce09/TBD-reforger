@@ -17,6 +17,9 @@ tier = 10
 targets = "any"
 
 [dependencies]
+# The wall clock and the UTC formatter of the save stamps, the tab lock, the warm-session
+# marker and the export's `exported_at`.
+time_source = { workspace = true }
 # The editor's state vocabulary: the review mode the writer obeys and the world-layer preferences
 # the hydrate restores.
 mission_creator_state = { workspace = true }

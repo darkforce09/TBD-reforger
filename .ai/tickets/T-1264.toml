@@ -1,0 +1,13 @@
+id = "T-1264"
+kind = "work"
+title = "Restrict set_objective effect to the fields each kind uses"
+summary = "The set_objective effect writes m_bComplete and the capture owner on any objective kind (Systems/Zones/Triggers/TBD_TriggerFlowEffects.c:15-60), so it can mark a capture objective complete or give a destroy objective an owner."
+class = "audit"
+status = "idea"
+notes = "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/Triggers/TBD_TriggerFlowEffects.c:15-21 SetObjective sets m_bComplete (complete unless state is incomplete) and writes params.owner as the capture owner when authored, on any objective kind, so it can mark a capture objective complete (a flag the capture behaviour never reads) or give a destroy objective an owner. Decide per kind which fields the effect may write and refuse or ignore the rest with a logged reason. Source: restructure finding F-M3-03 (M3 stage log)."
+created_at = "2026-10-04T02:35:25Z"
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "zones"

@@ -19,7 +19,7 @@ use std::time::Duration;
 use sqlx::{PgPool, Postgres, Transaction};
 
 /// How long a case waits for its requests to queue behind a held lock before it fails.
-pub const BLOCKED_WAIT_BOUND: Duration = Duration::from_secs(10);
+pub(crate) const BLOCKED_WAIT_BOUND: Duration = Duration::from_secs(10);
 
 /// How often the wait for the paused transaction reads the backends again.
 const PAUSED_BACKEND_POLL: Duration = Duration::from_millis(10);
@@ -31,7 +31,7 @@ const PAUSED_BACKEND_POLL: Duration = Duration::from_millis(10);
 /// let request = tokio::spawn(claim_seat());
 /// holder.wait_for_blocked(&pool, 1).await; holder.release().await;
 /// ```
-pub struct RowLockHolder {
+pub(crate) struct RowLockHolder {
     transaction: Transaction<'static, Postgres>,
     backend_pid: i32,
 }
@@ -43,7 +43,7 @@ impl RowLockHolder {
     /// # Panics
     ///
     /// When the statement fails or locks no row.
-    pub async fn acquire<K>(pool: &PgPool, lock_statement: &'static str, key: K) -> Self
+    pub(crate) async fn acquire<K>(pool: &PgPool, lock_statement: &'static str, key: K) -> Self
     where
         K: for<'q> sqlx::Encode<'q, Postgres> + sqlx::Type<Postgres> + Send + 'static,
     {
@@ -71,17 +71,17 @@ impl RowLockHolder {
     }
 
     /// The PostgreSQL backend that holds the locks.
-    pub fn backend_pid(&self) -> i32 {
+    pub(crate) fn backend_pid(&self) -> i32 {
         self.backend_pid
     }
 
     /// Waits until at least `minimum` backends queue behind this holder; see [`wait_for_blocked`].
-    pub async fn wait_for_blocked(&self, pool: &PgPool, minimum: i64) {
+    pub(crate) async fn wait_for_blocked(&self, pool: &PgPool, minimum: i64) {
         wait_for_blocked(pool, self.backend_pid, minimum).await;
     }
 
     /// Rolls the holding transaction back, which frees its locks; the queued requests proceed.
-    pub async fn release(self) {
+    pub(crate) async fn release(self) {
         self.transaction
             .rollback()
             .await
@@ -95,7 +95,7 @@ impl RowLockHolder {
 /// # Panics
 ///
 /// When they do not queue within [`BLOCKED_WAIT_BOUND`].
-pub async fn wait_for_blocked(pool: &PgPool, owner: i32, minimum: i64) {
+pub(crate) async fn wait_for_blocked(pool: &PgPool, owner: i32, minimum: i64) {
     tokio::time::timeout(BLOCKED_WAIT_BOUND, async {
         loop {
             // Waiters queued behind another waiter count, not only direct waiters of the owner.
@@ -129,7 +129,7 @@ pub async fn wait_for_blocked(pool: &PgPool, owner: i32, minimum: i64) {
 /// # Panics
 ///
 /// When no such backend appears within [`BLOCKED_WAIT_BOUND`], or when two do.
-pub async fn paused_transaction_backend(pool: &PgPool) -> i32 {
+pub(crate) async fn paused_transaction_backend(pool: &PgPool) -> i32 {
     tokio::time::timeout(BLOCKED_WAIT_BOUND, async {
         loop {
             let backends: Vec<i32> = sqlx::query_scalar(

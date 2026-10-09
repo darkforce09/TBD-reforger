@@ -54,7 +54,8 @@ dropped.
 - Used by: `apps/frontend/service_worker.js`, through the exports `on_install`, `on_activate` and
   `on_fetch`.
 - Rules: every handler module is compiled only on `wasm32`, so workspace builds and host lints
-  compile the binary with no browser; `range_slicing.rs` names no browser type and is unit-tested
-  natively; only `200` responses (and opaque icon-font responses) are stored, the shell document
-  only when it is HTML; stored and returned responses keep every header; the handlers hold no
-  decision the policy crate does not make, apart from the byte-range arithmetic.
+  compile the binary with no browser; `range_slicing.rs` names no browser type, and on the host
+  it is compiled for its native unit tests alone; only `200` responses (and opaque icon-font
+  responses) are stored, the shell document only when it is HTML; stored and returned responses
+  keep every header; the handlers hold no decision the policy crate does not make, apart from
+  the byte-range arithmetic.

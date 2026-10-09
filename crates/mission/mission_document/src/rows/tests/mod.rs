@@ -94,10 +94,6 @@ fn hydrated_with_crew() -> MissionDocCore {
     reloaded
 }
 
-use source_scrub::strip_rust_lexical_noise;
-
-mod source_scrub;
-
 fn orbat_fixture() -> MissionDocCore {
     let doc = MissionDocCore::new();
     doc.add_editor_layer("lyr", "Layer", None);

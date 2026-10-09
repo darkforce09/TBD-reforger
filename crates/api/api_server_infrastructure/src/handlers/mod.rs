@@ -7,6 +7,7 @@ pub mod fleet_executor;
 pub mod fleet_scenarios;
 pub mod game_runtime_sessions;
 pub mod machine_credentials;
+mod server_administration_lock;
 pub mod server_intel;
 pub mod server_registry;
 pub mod server_status_stream;

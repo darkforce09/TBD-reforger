@@ -36,8 +36,7 @@ type_picker (:1583), which edits assetId. with_batch is batch.rs:11, re-exported
 reachable from both owned frontend files. The multi-selection is already materialised as targets at
 attributes_modal.rs:408-412 via attrs_multi_ids (attrs.rs:488-513). Faction and squad lists come from
 orbat_manager_snapshot (entity.rs:1995); FactionRow (panels/outliner.rs:343-350) carries key and ordered
-squad_ids, which is what the picker and the cross-faction refusal need.
-"""
+squad_ids, which is what the picker and the cross-faction refusal need. Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/src/doc/store.rs: removed in commit 3f7adae99, no successor."""
 priority = 2
 depends_on = ["T-937.2"]
 parent = "T-939"

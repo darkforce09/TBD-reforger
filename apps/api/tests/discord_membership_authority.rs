@@ -18,9 +18,13 @@ use uuid::Uuid;
 mod common;
 
 async fn fixture(role: &str) -> (AppState, DiscordUserId, String) {
-    let url = common::require_test_database_url().unwrap();
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let url = common::require_test_database_url().expect("the test database URL is configured");
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state =
         api::composition::application_state(pool, Config::for_tests(url, "membership-authority"));
     let actor = DiscordUserId::new(format!("membership-{}", Uuid::new_v4()));
@@ -36,10 +40,17 @@ async fn fixture(role: &str) -> (AppState, DiscordUserId, String) {
 }
 
 async fn role(state: &AppState, token: &str) -> String {
-    authorize_session(&state.pool, &state.cfg, &state.jwt.parse(token).unwrap())
-        .await
-        .unwrap()
-        .role
+    authorize_session(
+        &state.pool,
+        &state.cfg,
+        &state
+            .jwt
+            .parse(token)
+            .expect("the issued access token parses"),
+    )
+    .await
+    .expect("the issued session authorizes")
+    .role
 }
 
 #[tokio::test]

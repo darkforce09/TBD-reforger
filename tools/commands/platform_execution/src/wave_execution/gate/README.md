@@ -8,8 +8,9 @@ its worktree before reporting done, and the full wave gate that runs once per
 
 ```text
 tools/commands/platform_execution/src/wave_execution/gate/
-├── checkrun.rs       step helpers (`checkrun` into the private check folder, `hostrun`) and `gate_slice`
-└── gate_dispatch.rs  `cmd_gate`: base resolution, the full step list and its verdict
+├── checkrun.rs             step helpers (`checkrun` into the private check folder, `hostrun`) and `gate_slice`
+├── clippy_package_sets.rs  the package sets of the wave gate's clippy lanes, derived from the workspace members
+└── gate_dispatch.rs        `cmd_gate`: base resolution, the full step list and its verdict
 ```
 
 ## How it works
@@ -26,8 +27,8 @@ step.
 | | Slice gate: `gate --slice <id>` | Wave gate: `gate [<base>]` |
 |---|---|---|
 | Range | `main...HEAD`; an empty range (run from `main`) refuses with exit 2 | `<base>..HEAD`; the base is derived from the last `wave N CLOSED` commit when omitted and verified by `super::base` |
-| Build and style | cargo check, wasm32 (the frontend family), fmt (changed), clippy `-D warnings` (changed crates; a crate of the frontend family for wasm32 and natively) | cargo check, wasm32 (the frontend family), fmt (changed), clippy `-D warnings` for the API, map engine, the frontend family (`frontend` and every crates/frontend package, wasm32 and native) and every tool crate (the `clippy xtask+developer_tools` step: each workspace member under `tools/`, derived from the root `Cargo.toml`) |
-| Tests | the frontend family's tests, when changed | API (on the gate database), map engine with all features, the frontend family, then every other workspace member (`test workspace members`, derived from the root `Cargo.toml`, one `cargo test -p` per package) |
+| Build and style | cargo check, wasm32 (the frontend family), fmt (changed), clippy `-D warnings` (changed crates; a crate of the frontend family for wasm32 and natively) | cargo check, wasm32 (the frontend family), fmt (changed), then clippy `-D warnings` in four lanes that together cover every workspace member, derived from the root `Cargo.toml` by `clippy_package_sets.rs`: `clippy apps and crates` (host target: every member outside `tools/`, the frontend family and the wasm32 members, so the API with its crates, the native apps and every other `crates/**` library), `clippy wasm32 members` (the `wasm-ci` lane's members declaring `targets = "wasm32"` and the offline service worker, for wasm32), `clippy frontend` (`frontend` and every `crates/frontend` package, wasm32 and native) and `clippy xtask+developer_tools` (each workspace member under `tools/`) |
+| Tests | the frontend family's tests, when changed | `test api` (the API on the gate database), `test frontend` (the frontend family), then `test workspace members`: every other member, derived from the root `Cargo.toml`, one `cargo test -p` per package |
 | Frontend build | none | trunk build, when the wave touched the frontend's scope |
 | Data and contracts | schema, catalogue drift (`world reclassify --terrain everon`) | the same, plus ticket registry and wave lock |
 | Migrations | claim body; persist database in audit mode | claim body; persist database in advance mode |

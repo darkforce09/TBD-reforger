@@ -134,6 +134,6 @@ is added to that log by hand.
   verdict.
 - [Mod verification gates](/tools/checks/mod_script_checks/src/README.md) — the gate's
   code beside the other mod script checks.
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's spawn rules.
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the framework's spawn rules.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — where the gate sits in
   mod work.

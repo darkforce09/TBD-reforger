@@ -30,7 +30,7 @@ use crate::error::ResultExt;
 use ballistics_model::catalog::BallisticsCatalog;
 use fire_mission_planning::fire_mission::SOLVER_REVISION;
 
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use bench_reading::decode_bench_reading;
 use browser_session::{BenchSession, read_bench};
 use case_verdict::{AgreementVerdict, RequestedRun, judge_reading};

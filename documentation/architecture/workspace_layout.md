@@ -2,10 +2,8 @@
 
 # Workspace layout
 
-How the repository is laid out today: the top-level folders, the members of the Cargo workspace,
-and where code, contracts, assets, documents and agent configuration live. The
-[workspace restructure](/documentation/restructure/README.md) changes this layout stage by
-stage; this document follows each stage's commit, and its last section says what changes next.
+How the repository is laid out: the top-level folders, the members of the Cargo workspace, and
+where code, contracts, assets, documents and agent configuration live.
 
 ## Where it lives
 
@@ -27,7 +25,7 @@ TBD-reforger/
 │                    systemd units
 ├── tools/           the developer tools: xtask, developer_tools, the crates by category
 │                    (foundation/, tickets/, commands/, checks/, enfusion/, browser_testing/,
-│                    staging/), and the pinned Enfusion MCP npm package
+│                    staging/, map_assets/), and the pinned Enfusion MCP npm package
 ├── contracts/       JSON Schemas, rules, catalogs and fixtures of every shape that crosses a boundary
 ├── assets/          terrain datasets (Git LFS), the world-object glyph set, the storage specification
 ├── documentation/   every document: feature docs, runbooks, standards, glossary, tickets, archive
@@ -47,8 +45,11 @@ folder are ignored.
 
 ## Workspace members
 
-One Cargo workspace (resolver 3) holds every Rust crate. Members inherit edition 2024 and
-rust-version 1.95 from `[workspace.package]`.
+One Cargo workspace (resolver 3) holds every Rust crate: 160 members, which are 5 apps under
+`apps/`, 112 library crates under `crates/`, 41 tool crates under `tools/<category>/` and the two
+tool binaries `tools/xtask` and `tools/developer_tools`. The crate-tier law judges the 153 crates
+and leaves out only the apps and the two binaries. Members inherit edition 2024 and rust-version
+1.95 from `[workspace.package]`.
 
 | Folder | Package | What it is |
 |---|---|---|
@@ -64,14 +65,37 @@ rust-version 1.95 from `[workspace.package]`.
 | [`crates/foundation/deterministic_random/`](/crates/foundation/deterministic_random/README.md) | `deterministic_random` | the seeded SplitMix64 generator |
 | [`crates/foundation/content_digest/`](/crates/foundation/content_digest/README.md) | `content_digest` | SHA-256 and SHA-384 hex digests and framed hashing |
 | [`crates/foundation/browser_platform/`](/crates/foundation/browser_platform/README.md) | `browser_platform` | browser console macros and fetch helpers (wasm32 only) |
+| [`crates/foundation/repository_root/`](/crates/foundation/repository_root/README.md) | `repository_root` | the one checkout-root finder: the walk up to the `.ai/tickets/ROOT` marker the tools and the tests share |
+| [`crates/foundation/orbat_slot_ids/`](/crates/foundation/orbat_slot_ids/README.md) | `orbat_slot_ids` | an ORBAT slot's two ids: `SlotUid`, the durable editor id, and `SlotId`, the derived wire id |
 | [`crates/geometry/geometry_primitives/`](/crates/geometry/geometry_primitives/README.md) | `geometry_primitives` | vector ops, segment geometry, rigid transforms, axis-aligned boxes |
 | [`crates/geometry/map_coordinates/`](/crates/geometry/map_coordinates/README.md) | `map_coordinates` | terrain frames, chunk math, rounding, grid references |
 | [`crates/geometry/camera_math/`](/crates/geometry/camera_math/README.md) | `camera_math` | the orthographic map camera, the orbit camera, 4x4 matrices |
+| [`crates/geometry/spatial_indexes/`](/crates/geometry/spatial_indexes/README.md) | `spatial_indexes` | the triangle BVH and its `.bvh` sidecar, the flat-tree build core, the point grid, picks and clusters |
 | [`crates/world_formats/world_file_formats/`](/crates/world_formats/world_file_formats/README.md) | `world_file_formats` | the on-disk world formats and their typed ids |
+| [`crates/world_formats/prefab_catalog/`](/crates/world_formats/prefab_catalog/README.md) | `prefab_catalog` | prefab rows, render classes, footprint lookups, prefab tables and world payload decoding |
+| [`crates/world_formats/world_chunks/`](/crates/world_formats/world_chunks/README.md) | `world_chunks` | chunk JSON and TBDC container decoding, chunk ids and the terrain manifest |
+| [`crates/world_formats/world_store/`](/crates/world_formats/world_store/README.md) | `world_store` | the headless world store: manifest, prefab table, roads, regions, one chunk at a time |
+| [`crates/terrain/terrain_elevation/`](/crates/terrain/terrain_elevation/README.md) | `terrain_elevation` | raster placement, PNG and raw grid decoding, bilinear sampling and the vector grid |
+| [`crates/terrain/terrain_relief/`](/crates/terrain/terrain_relief/README.md) | `terrain_relief` | the hillshade image, contour rings with summit picks and the sea band fills |
+| [`crates/terrain/satellite_imagery/`](/crates/terrain/satellite_imagery/README.md) | `satellite_imagery` | the `.tbd-sat` container reader: header, both index versions, checks and level picks |
+| [`crates/terrain/road_network/`](/crates/terrain/road_network/README.md) | `road_network` | road segments and the class codec, styling and zoom gates, road meshes, cartographic strips, the airfield |
+| [`crates/terrain/water_bodies/`](/crates/terrain/water_bodies/README.md) | `water_bodies` | the bathymetry water mask, the level suffix plan, the inland water archive and the sea fill mesh |
+| [`crates/world_objects/vegetation/`](/crates/world_objects/vegetation/README.md) | `vegetation` | forest regions, the canopy mass outline, tree counts and island density bins |
+| [`crates/world_objects/building_interiors/`](/crates/world_objects/building_interiors/README.md) | `building_interiors` | building blueprints and sight-line attribution, compounds with doors, section cuts |
+| [`crates/world_objects/place_names/`](/crates/world_objects/place_names/README.md) | `place_names` | spot heights, town and road names, their declutter, the labels archive and glyph packing |
+| [`crates/line_of_sight/terrain_line_of_sight/`](/crates/line_of_sight/terrain_line_of_sight/README.md) | `terrain_line_of_sight` | elevation profiles along a sight line and viewsheds, whole or a ray at a time |
+| [`crates/line_of_sight/interior_line_of_sight/`](/crates/line_of_sight/interior_line_of_sight/README.md) | `interior_line_of_sight` | compound traces, the one sight-line evaluation, floor washes whole or in batches |
+| [`crates/line_of_sight/world_line_of_sight/`](/crates/line_of_sight/world_line_of_sight/README.md) | `world_line_of_sight` | the world occluder: chunk box trees, the prefab occluder library, verdicts with coverage |
+| [`crates/map_overlay/map_draw_lanes/`](/crates/map_overlay/map_draw_lanes/README.md) | `map_draw_lanes` | the 48 lane roles, their paint order and wire ids, and the zoom gates |
+| [`crates/map_overlay/label_layout/`](/crates/map_overlay/label_layout/README.md) | `label_layout` | label declutter, town importance, world glyph sizing and label glyph packing |
+| [`crates/map_overlay/unit_symbology/`](/crates/map_overlay/unit_symbology/README.md) | `unit_symbology` | side tints, role and vehicle classes, the symbol atlas, markers and squad links |
+| [`crates/map_overlay/overlay_instances/`](/crates/map_overlay/overlay_instances/README.md) | `overlay_instances` | slot, vehicle, comment and cluster icon instances and fire-mission marks |
 | [`crates/graphics/render_primitives/`](/crates/graphics/render_primitives/README.md) | `render_primitives` | map-agnostic CPU rendering primitives: instances, geometry, triangulation, cull oracle, text, the WGSL shader |
 | [`crates/graphics/gpu_device/`](/crates/graphics/gpu_device/README.md) | `gpu_device` | the GPU context of a canvas (create, resize, acquire), pooled lane buffers, readback guards, the frame timer (wasm32) |
 | [`crates/graphics/gpu_frame/`](/crates/graphics/gpu_frame/README.md) | `gpu_frame` | the frame vocabulary, draw encoding, compute sprite cull, render pipelines and the animation-frame pump (wasm32) |
 | [`crates/graphics/renderer_core/`](/crates/graphics/renderer_core/README.md) | `renderer_core` | the renderer contracts: lane sink, layer context, frame hooks, render statistics and their JSON, packet binding ids (wasm32) |
+| [`crates/streaming/chunk_scheduler/`](/crates/streaming/chunk_scheduler/README.md) | `chunk_scheduler` | the viewport pin, in-flight marks, LRU eviction, chunk and prefab ingest, the object index and rebuild requests |
+| [`crates/streaming/chunk_draw_buffers/`](/crates/streaming/chunk_draw_buffers/README.md) | `chunk_draw_buffers` | the draw set, glyph, strip and footprint buffers, layer toggles and the world residency owner |
 | [`crates/streaming/map_streaming_model/`](/crates/streaming/map_streaming_model/README.md) | `map_streaming_model` | world layer and host preferences, boot progress, the memory budget model and the `MapAssetSink` contract |
 | [`crates/streaming/map_asset_loading/`](/crates/streaming/map_asset_loading/README.md) | `map_asset_loading` | the browser loaders (world, occluder, terrain, satellite, forest, labels), mesh composition, the live memory budget and asset statistics (wasm32) |
 | [`crates/streaming/map_streaming_host/`](/crates/streaming/map_streaming_host/README.md) | `map_streaming_host` | the browser map host: terrain and world boot, camera settle, view preferences, map queries (wasm32) |
@@ -92,6 +116,10 @@ rust-version 1.95 from `[workspace.package]`.
 | [`crates/mission/mission_compiler/`](/crates/mission/mission_compiler/README.md) | `mission_compiler` | the game-document compiler, its compile findings and the compiler identity |
 | [`crates/mission/mission_document/`](/crates/mission/mission_document/README.md) | `mission_document` | the mergeable mission document: rows, hydrate and export, merge, selection and undo |
 | [`crates/mission/mission_operations/`](/crates/mission/mission_operations/README.md) | `mission_operations` | the authoring commands and row projections the Mission Creator applies to the mission document |
+| [`crates/mission_editing/map_editing_tools/`](/crates/mission_editing/map_editing_tools/README.md) | `map_editing_tools` | the headless map tools: the selection gesture and picks, the ruler, line of sight and the viewshed job scheduler |
+| [`crates/mission_editing/mission_editing_commands/`](/crates/mission_editing/mission_editing_commands/README.md) | `mission_editing_commands` | the hosted document commands (ORBAT, layers, markers, zones, triggers and more) and the pure export, report and selection texts |
+| [`crates/mission_editing/mission_editing_session/`](/crates/mission_editing/mission_editing_session/README.md) | `mission_editing_session` | the hosted mission document and its borrow chain, the undo drive, grouping, routing, selection, picks and overlay lanes |
+| [`crates/mission_editing/mission_persistence/`](/crates/mission_editing/mission_persistence/README.md) | `mission_persistence` | the local draft decisions: record keys, blob verdicts, merge, local versus server, adoption and snapshots |
 | [`crates/ballistics/ballistics_model/`](/crates/ballistics/ballistics_model/README.md) | `ballistics_model` | the ballistics catalog, shell flight model, surface wind, angular units and typed catalog ids |
 | [`crates/ballistics/ballistics_solver/`](/crates/ballistics/ballistics_solver/README.md) | `ballistics_solver` | the high-angle firing solver per charge, wind-corrected aim, crest clearance and impact dispersion |
 | [`crates/ballistics/fire_mission_planning/`](/crates/ballistics/fire_mission_planning/README.md) | `fire_mission_planning` | the fire-mission assembler: battery solutions, time fuzes, the comparison rule and the wording |
@@ -127,7 +155,7 @@ rust-version 1.95 from `[workspace.package]`.
 | [`crates/frontend/foundation/frontend_map_view/`](/crates/frontend/foundation/frontend_map_view/README.md) | `frontend_map_view` | the shared seam that puts a live terrain map on a canvas (Mission Creator, mortar map picker), and terrain heights |
 | [`crates/frontend/foundation/frontend_session/`](/crates/frontend/foundation/frontend_session/README.md) | `frontend_session` | the browser side of signing in: the session store, token refresh, sign-out hooks, the route guard and content gates |
 | [`crates/frontend/foundation/frontend_offline/`](/crates/frontend/foundation/frontend_offline/README.md) | `frontend_offline` | the page's half of offline use: service worker registration, the offline pack download, storage quota, offline state |
-| [`crates/frontend/foundation/frontend_test_support/`](/crates/frontend/foundation/frontend_test_support/README.md) | `frontend_test_support` | the helpers the tests of every frontend crate share: the repository-root finder, captured API responses, the source scrubber (dev-only) |
+| [`crates/frontend/foundation/frontend_test_support/`](/crates/frontend/foundation/frontend_test_support/README.md) | `frontend_test_support` | the helpers the tests of every frontend crate share: repository file reads from the checkout root, captured API responses, the source scrubber (dev-only) |
 | [`crates/frontend/features/mission_review_record/`](/crates/frontend/features/mission_review_record/README.md) | `mission_review_record` | one rendering of a mission's review, shared by every page that shows it: history, thread, artifact provenance, submit control |
 | [`crates/frontend/pages/account_pages/`](/crates/frontend/pages/account_pages/README.md) | `account_pages` | the viewer's own session pages: sign-in, the OAuth callback, settings |
 | [`crates/frontend/pages/command_center_pages/`](/crates/frontend/pages/command_center_pages/README.md) | `command_center_pages` | the dashboard, announcements and live server intel |
@@ -145,8 +173,8 @@ rust-version 1.95 from `[workspace.package]`.
 | [`tools/xtask/`](/tools/xtask/README.md) | `xtask` | the `cargo xtask` command line and dispatch onto the tool crates, plus the `ai`, `fetch`, `map`, `refactor`, `schema`, `ticket`, `verify` and `wave` command groups |
 | [`tools/foundation/verification_core/`](/tools/foundation/verification_core/README.md) | `verification_core` | fail-closed verdicts, pattern scans, gates and the verification lock |
 | [`tools/foundation/process_runner/`](/tools/foundation/process_runner/README.md) | `process_runner` | process isolation, deadlines, host-bridge execution and the secure shell transport |
-| [`tools/foundation/repository_laws/`](/tools/foundation/repository_laws/README.md) | `repository_laws` | every repository law: crate tiers, anatomy, strangler, engine layers, file length |
-| [`tools/foundation/repository_layout/`](/tools/foundation/repository_layout/README.md) | `repository_layout` | the repository root finder and the paths every tool shares |
+| [`tools/foundation/repository_laws/`](/tools/foundation/repository_laws/README.md) | `repository_laws` | every repository law: the workspace laws (crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources), file length, test placement, the apps' dependency directions |
+| [`tools/foundation/repository_layout/`](/tools/foundation/repository_layout/README.md) | `repository_layout` | the paths every tool shares, relative to the checkout root; its prelude re-exports `repository_root`'s finder |
 | [`tools/foundation/deploy_settings/`](/tools/foundation/deploy_settings/README.md) | `deploy_settings` | the one reader of `deploy/deploy.env` and its precedence rule over exported variables |
 | [`tools/foundation/tool_test_support/`](/tools/foundation/tool_test_support/README.md) | `tool_test_support` | the test locks (process variables, working directory) and the checkout root the tool crates' tests share (dev-only) |
 | [`tools/tickets/ticket_model/`](/tools/tickets/ticket_model/README.md) | `ticket_model` | the typed ticket, its canonical TOML encoding, the corpus store and the ticket-domain paths |
@@ -155,6 +183,7 @@ rust-version 1.95 from `[workspace.package]`.
 | [`tools/tickets/ticket_registry/`](/tools/tickets/ticket_registry/README.md) | `ticket_registry` | ticket operations, validation, queue and roadmap sync, the `cargo xtask ticket` verbs |
 | [`tools/tickets/ticketboard_model/`](/tools/tickets/ticketboard_model/README.md) | `ticketboard_model` | the ticketboard's headless half: registry, wave lock and metrics models, events and the egui-free application state |
 | [`tools/commands/repository_relocation/`](/tools/commands/repository_relocation/README.md) | `repository_relocation` | manifest-driven moves of tracked paths and the retired-spelling verification behind `cargo xtask refactor relocate` |
+| [`tools/commands/agent_context_guards/`](/tools/commands/agent_context_guards/README.md) | `agent_context_guards` | the AI agent tool-call guard behind `cargo xtask ai` (Bash and Read rules, the session read set) and the filtered command runner that never hides a failure |
 | [`tools/commands/schema_tooling/`](/tools/commands/schema_tooling/README.md) | `schema_tooling` | the contract codegen, the contract schema gates, the ORBAT slot flattening and the font-table generator behind `cargo xtask schema` and `cargo xtask gen` |
 | [`tools/commands/ballistics_oracle_tooling/`](/tools/commands/ballistics_oracle_tooling/README.md) | `ballistics_oracle_tooling` | the ballistics catalog and calibration fixtures behind `cargo xtask ballistics trim-export` |
 | [`tools/commands/enfusion_mcp/`](/tools/commands/enfusion_mcp/README.md) | `enfusion_mcp` | the Enfusion MCP client behind `cargo xtask mcp`: daemon control, tool calls, the offline selftest, Workbench NET API calls, log verdicts |
@@ -167,7 +196,7 @@ rust-version 1.95 from `[workspace.package]`.
 | [`tools/commands/ci_task_catalog/`](/tools/commands/ci_task_catalog/README.md) | `ci_task_catalog` | the CI task table and its runner behind `cargo xtask ci` and `cargo xtask help`, the build lane recipes behind `cargo xtask mk`, the shared cargo target pin and its checks, the `verify ci-shell` and `verify ci-schema-parity` gates, and the map asset checks |
 | [`tools/commands/platform_execution/`](/tools/commands/platform_execution/README.md) | `platform_execution` | the platform factory behind `cargo xtask platform`: the wave driver, slice runs and their receipts, the slice worktree lifecycle and the unattended-run preflight |
 | [`tools/commands/mod_operations/`](/tools/commands/mod_operations/README.md) | `mod_operations` | the game mod's operations behind `cargo xtask mod`: the headless compile gate, the world boot, the playtest server, the equipment and vehicle export publication, the website API client and the mod wave driver |
-| [`tools/checks/repository_checks/`](/tools/checks/repository_checks/README.md) | `repository_checks` | the engine-layer, workspace-law, route-tag, ORBAT coherency, language-ban, file-length, upstream code-leak and registry alias checks behind `cargo xtask verify`, and the tooling rules over every tool crate |
+| [`tools/checks/repository_checks/`](/tools/checks/repository_checks/README.md) | `repository_checks` | the workspace-law, route-tag, ORBAT coherency, language-ban, file-length, upstream code-leak and registry alias checks behind `cargo xtask verify`, and the tooling rules over every tool crate |
 | [`tools/checks/mod_script_checks/`](/tools/checks/mod_script_checks/README.md) | `mod_script_checks` | the Enfusion comment card, the mod script pins, the UI layout gate and the Workbench spawn runs behind `cargo xtask verify` and `cargo xtask mod` |
 | [`tools/checks/documentation_checks/`](/tools/checks/documentation_checks/README.md) | `documentation_checks` | the README coverage, Markdown placement and link-check gates behind `cargo xtask verify` and `cargo xtask ci verify-documentation` |
 | [`tools/enfusion/enfusion_mcp_broker/`](/tools/enfusion/enfusion_mcp_broker/README.md) | `enfusion_mcp_broker` | the `mcpd` broker over one enfusion-mcp server behind a Unix socket, and its offline stub |
@@ -198,8 +227,9 @@ folder of its category and declares its tier in its manifest (`cargo xtask verif
 The map's streaming crates (`crates/streaming/`), its renderer and typed GPU layers
 (`crates/map_rendering/`), the Arsenal's paper doll (`crates/paper_doll/`) and the map-agnostic
 GPU crates (`crates/graphics/`) are crates like any other; the
-[crate catalogue](/documentation/restructure/crate_catalogue.md) lists them. The two tool binaries, `tools/xtask` and
-`tools/developer_tools`, depend only on tool crates, and no tokio, axum, reqwest, resvg or image
+[crates README](/crates/README.md) lists every category. The two tool binaries, `tools/xtask` and
+`tools/developer_tools`, depend only on tool crates (the checkout-root finder
+`crates/foundation/repository_root` comes through `repository_layout`'s prelude), and no tokio, axum, reqwest, resvg or image
 enters xtask's dependency closure. The mod suite under `apps/mod/` is not
 Cargo code: its three Enfusion addons are built by Workbench and checked by `cargo xtask mod compile`.
 
@@ -232,9 +262,8 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
   documentation root plus its code path without `src/`: `documentation/apps/api/` for `apps/api/`,
   `documentation/crates/streaming/` for `crates/streaming/`,
   `documentation/crates/frontend/workspaces/mission_creator_workspace/` for
-  `crates/frontend/workspaces/mission_creator_workspace/src/`. One mirror keeps a shorter path until a stage reshapes its
-  code: the mod's documents leave out `apps/` and `Scripts/Game/TBD/` and sit in
-  `documentation/mod/` (until M1), as the
+  `crates/frontend/workspaces/mission_creator_workspace/src/`. The mod's documents sit in
+  `documentation/apps/mod/` and leave out the framework's `Scripts/Game/TBD/`, as the
   [documentation standards](/documentation/standards/documentation_standards.md) set out.
 - **Deployment.** `deploy/` holds what runs the platform outside a developer machine: the API's
   release `Dockerfile` (its build context narrowed by the root `.dockerignore`), the development
@@ -244,36 +273,9 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
 - **Agent configuration.** `CLAUDE.md` holds the project laws, the atlas and the canonical
   commands; `.cursor/rules/` the Cursor rules; `.claude/settings.json` the Claude Code settings.
 
-## What changes next
-
-The [restructure program](/documentation/restructure/README.md) runs in stages, each one commit
-with its [relocation manifest](/documentation/restructure/manifests/README.md). Stage S1 renamed
-the four top-level folders to `assets/`, `contracts/`, `documentation/` and `tools/`, gave the tool
-crates snake_case names and archived the finished documentation program and the earlier layout
-proposals. Stage S2 moved the API, the frontend and the service worker directly under `apps/`,
-parked the map and graphics engines in `legacy/`, named every package after its folder (the fleet
-host agent's binary, systemd units and configuration folder included), gathered the deployment
-files in `deploy/` with the Caddy site in its own `deploy/caddy/` folder, moved the recorded API
-responses to `contracts/fixtures/api_goldens/` and created the first two crates under `crates/`:
-`http_url_guard`, the one URL check the API and the single-page app link, and
-`offline_cache_policy`, the cache policy the service worker and the page share. Stage S3 split
-the frontend's former domain tree in place into the `foundation/`, `features/`, `pages/`,
-`workspaces/` and `shell/` layers, with the transport, the route table and the Mission Creator's
-session and review workspace named for what they hold. The stages after it:
-
-- S4 to S11 build the tiered crates under `crates/`, from the foundations through the
-  mission, world, streaming, rendering, API, frontend and tool crates, and delete `legacy/` (S8,
-  once the rendering crates hold both engines' code) and the ticket engine.
-- M1 and M2 reshape the mod suite's folders; M1 also brings its documents to the full code path.
-- S12 closes the program; this document then describes its end state.
-
-Each stage that moves code also moves the code's documentation mirror. The end state is the
-[target file tree](/documentation/restructure/target_file_tree.md); the archived
-[architecture blueprint draft](/documentation/archive/restructure_research/00_architecture_blueprint_draft.md)
-is where the design started.
-
 ## Related documentation
 
-- [Restructure program](/documentation/restructure/README.md) — the plan, target tree and progress.
+- [Crate boundary rules](/documentation/standards/crate_boundary_rules.md) — the crate-tier law,
+  its category matrix and firewalls, and the other workspace laws.
 - [Documentation entry](/documentation/README.md) — the map of every document.
 - [Where does X go?](/documentation/standards/where_does_x_go.md) — where a new file belongs.

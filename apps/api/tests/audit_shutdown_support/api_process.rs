@@ -15,7 +15,7 @@ use uuid::Uuid;
 const START_BOUND: Duration = Duration::from_secs(60);
 
 /// One running `api` process.
-pub struct ApiProcess {
+pub(crate) struct ApiProcess {
     child: Child,
     base_url: String,
     scratch: PathBuf,
@@ -25,7 +25,11 @@ impl ApiProcess {
     /// Starts the `api` binary against `database_url`, already migrated by the caller, and waits
     /// until it answers HTTP. Its working directory is a fresh scratch directory, so no `.env`
     /// file reaches it, and its environment holds only what is set here.
-    pub async fn start(database_url: &str, jwt_secret: &str, discord_guild_id: &str) -> Self {
+    pub(crate) async fn start(
+        database_url: &str,
+        jwt_secret: &str,
+        discord_guild_id: &str,
+    ) -> Self {
         let scratch = std::env::temp_dir().join(format!(
             "audit-replay-shutdown-{}-{}",
             std::process::id(),
@@ -63,7 +67,7 @@ impl ApiProcess {
     }
 
     /// The absolute URL of `path` on this process.
-    pub fn url(&self, path: &str) -> String {
+    pub(crate) fn url(&self, path: &str) -> String {
         format!("{}{path}", self.base_url)
     }
 
@@ -92,7 +96,7 @@ impl ApiProcess {
     }
 
     /// Sends SIGTERM, the signal a service manager stops the API with; answers when it was sent.
-    pub fn terminate(&self) -> Instant {
+    pub(crate) fn terminate(&self) -> Instant {
         let pid = self.child.id().expect("the api process is running");
         let status = std::process::Command::new("kill")
             .args(["-TERM", &pid.to_string()])
@@ -105,7 +109,7 @@ impl ApiProcess {
     /// Waits up to `bound` for the process to exit; answers its status. A clean exit removes the
     /// scratch directory; on a timeout the process is killed when dropped and the case fails with
     /// its log.
-    pub async fn wait_exit(&mut self, bound: Duration) -> ExitStatus {
+    pub(crate) async fn wait_exit(&mut self, bound: Duration) -> ExitStatus {
         let status = match timeout(bound, self.child.wait()).await {
             Ok(status) => status.expect("wait for the api process"),
             Err(_) => panic!(
@@ -120,7 +124,7 @@ impl ApiProcess {
     }
 
     /// The process log with the path it is kept at, for failure messages.
-    pub fn log(&self) -> String {
+    pub(crate) fn log(&self) -> String {
         let path = self.scratch.join("api.log");
         let text = std::fs::read_to_string(&path).unwrap_or_default();
         let tail: Vec<&str> = text.lines().rev().take(40).collect();
@@ -136,7 +140,7 @@ impl ApiProcess {
 /// An HTTP client for the process's routes, with an optional per-request timeout. The crate
 /// builds reqwest without a bundled TLS provider, so the process-wide rustls provider is
 /// installed first; a second install is refused and changes nothing.
-pub fn http_client(request_timeout: Option<Duration>) -> reqwest::Client {
+pub(crate) fn http_client(request_timeout: Option<Duration>) -> reqwest::Client {
     let _ = rustls::crypto::ring::default_provider().install_default();
     let builder = reqwest::Client::builder();
     let builder = match request_timeout {

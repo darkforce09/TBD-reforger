@@ -8,13 +8,13 @@ order = 8180
 spec = "documentation/tickets/specs/t131_north_star_backlog.md"
 plan = "documentation/tickets/plans/t-135_plan.md"
 executor = "claude-code"
-notes = "2026-09-05: T-092 is shipped (dependency kept). Executor claude-code; scope website/backend/http_api (was repo/docs). Files: handlers/content/modpacks.rs, pages/public/modpacks.rs."
+notes = "2026-09-05: T-092 is shipped (dependency kept). Executor claude-code; scope website/backend/http_api (was repo/docs). Files: handlers/content/modpacks.rs, pages/public/modpacks.rs. Paths with no successor (checked 2026-10-04, restructure S12): apps/website/api/src/services/mod.rs: removed in commit 1e98eb1fe, no successor; pages/public/modpacks.rs: removed in commit 3e533224a, no successor; services/mod.rs: removed in commit 1e98eb1fe, no successor."
 priority = 3
 depends_on = ["T-092"]
 main_goal = "A mission names its modset and cannot export with mods its preset does not carry."
 context = [
     "Anchor 2026-09-05: handlers/content/modpacks.rs (list :241, current :262, create :275) carries the T-271 workshop fields; pages/public/modpacks.rs renders them.",
-    "No per-mission preset exists and export never checks mod coverage; registry aliases come from services/registry_import.rs.",
+    "No per-mission preset exists and export never checks mod coverage; registry aliases come from crates/api/api_missions/src/services/registry_import.rs.",
 ]
 requirement = [
     "New services/workshop_sync.rs (registered in services/mod.rs): resolve workshop ids to {name, version, dependencies} through the existing http_retry, cached in modpack_mods.",

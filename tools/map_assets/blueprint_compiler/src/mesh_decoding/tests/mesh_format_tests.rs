@@ -155,7 +155,7 @@ fn tiny_xob_parses_to_quad() {
     assert_eq!(mesh.vert_normals[1], [0.0, 0.0, 1.0]);
     assert_eq!(mesh.materials.len(), 1);
     assert!(mesh.materials[0].contains("quad.emat"));
-    let (min, max) = aabb(&mesh.verts);
+    let (min, max) = bounding_box(&mesh.verts);
     assert_eq!(min, [0.0, 0.0, 0.0]);
     assert_eq!(max, [2.0, 3.0, 0.0]);
 }
@@ -204,11 +204,11 @@ fn coll_box_record_becomes_twelve_triangles() {
         tiny_xob(),
         &coll_box_record([1.0, 2.0, 3.0], [0.5, 0.25, 1.5]),
     );
-    assert!(has_coll(&file));
-    let mesh = parse_coll(&file).unwrap();
+    assert!(has_collision_chunk(&file));
+    let mesh = parse_collision_chunk(&file).unwrap();
     assert_eq!(mesh.verts.len(), 8);
     assert_eq!(mesh.tris.len(), 12);
-    let (min, max) = aabb(&mesh.verts);
+    let (min, max) = bounding_box(&mesh.verts);
     assert_eq!(min, [0.5, 1.75, 1.5]);
     assert_eq!(max, [1.5, 2.25, 4.5]);
     assert!(mesh.tri_submesh.iter().all(|&s| s == 0));
@@ -264,7 +264,7 @@ fn coll_trimesh_record_parses_and_transforms() {
         r.extend_from_slice(&idx.to_le_bytes());
     }
     let file = with_coll(tiny_xob(), &r);
-    let mesh = parse_coll(&file).unwrap();
+    let mesh = parse_collision_chunk(&file).unwrap();
     assert_eq!(mesh.tris.len(), 3);
     assert_eq!(mesh.verts[1], [11.0, 0.0, 0.0]); // center applied
     assert_eq!(mesh.tri_material, vec![5, 7, 7]);
@@ -326,7 +326,7 @@ fn coll_convex_and_plain_trimesh_records_parse() {
         r.extend_from_slice(&idx.to_le_bytes());
     }
     let file = with_coll(tiny_xob(), &r);
-    let mesh = parse_coll(&file).unwrap();
+    let mesh = parse_collision_chunk(&file).unwrap();
     assert_eq!(mesh.records.len(), 2);
     assert_eq!(mesh.records[0].shape, 4);
     assert_eq!(mesh.records[0].layer_idx, 9);
@@ -335,7 +335,7 @@ fn coll_convex_and_plain_trimesh_records_parse() {
         (0, 12)
     );
     assert_eq!(mesh.verts.len(), 8 + 3);
-    let (min, max) = aabb(&mesh.verts[..8]);
+    let (min, max) = bounding_box(&mesh.verts[..8]);
     assert_eq!(min, [-0.5, 4.5, -0.5]);
     assert_eq!(max, [0.5, 5.5, 0.5]);
     assert!(mesh.tri_material[..12].iter().all(|&m| m == 11));
@@ -354,6 +354,6 @@ fn coll_grammar_drift_is_rejected() {
     let mut payload = coll_box_record([0.0; 3], [1.0; 3]);
     payload.push(0); // trailing garbage → walked != len
     let file = with_coll(tiny_xob(), &payload);
-    assert!(parse_coll(&file).is_err());
-    assert!(parse_coll(&tiny_xob()).is_err()); // no COLL chunk at all
+    assert!(parse_collision_chunk(&file).is_err());
+    assert!(parse_collision_chunk(&tiny_xob()).is_err()); // no COLL chunk at all
 }

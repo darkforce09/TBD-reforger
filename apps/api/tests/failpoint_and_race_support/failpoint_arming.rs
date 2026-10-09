@@ -14,7 +14,7 @@
 use axum::http::StatusCode;
 use serde_json::Value;
 
-pub use api_failpoints::{
+pub(crate) use api_failpoints::{
     ArmGuard, CATALOGUE, FailAction, Failpoint, FailpointSuiteLock, PauseHandle, lock_suite, reach,
 };
 
@@ -25,7 +25,7 @@ pub use api_failpoints::{
 /// let guard = suite.fail(Failpoint::SessionLogoutBeforeCommit);
 /// assert_eq!(guard.arrivals(), 0);
 /// ```
-pub trait FailpointArming {
+pub(crate) trait FailpointArming {
     /// Every arrival at `point` fails until the guard drops.
     fn fail(&self, point: Failpoint) -> ArmGuard<'_>;
     /// The first arrival at `point` fails; later arrivals pass.
@@ -53,7 +53,7 @@ impl FailpointArming for FailpointSuiteLock {
 
 /// A point armed with a pause: its guard and the handle that observes and releases the held
 /// arrival.
-pub struct PausedFailpoint<'suite> {
+pub(crate) struct PausedFailpoint<'suite> {
     guard: ArmGuard<'suite>,
     handle: PauseHandle,
 }
@@ -61,29 +61,29 @@ pub struct PausedFailpoint<'suite> {
 impl PausedFailpoint<'_> {
     /// Resolves once the first arrival is held at the point; panics after
     /// `api_failpoints::PAUSE_REACH_BOUND`.
-    pub async fn reached(&self) {
+    pub(crate) async fn reached(&self) {
         self.handle.reached().await;
     }
 
     /// Lets the held arrival continue.
-    pub fn release(&self) {
+    pub(crate) fn release(&self) {
         self.handle.release();
     }
 
     /// The pause handle itself, for a task that waits on it elsewhere.
-    pub fn handle(&self) -> &PauseHandle {
+    pub(crate) fn handle(&self) -> &PauseHandle {
         &self.handle
     }
 
     /// How many requests reached the point since it was armed.
-    pub fn arrivals(&self) -> usize {
+    pub(crate) fn arrivals(&self) -> usize {
         self.guard.arrivals()
     }
 }
 
 /// Asserts the answer of a request an armed point failed on an `ApiError` path: `500`, the error
 /// `internal error`, and `details.failpoint` naming `point`.
-pub fn assert_injected_failure(status: StatusCode, body: &Value, point: Failpoint) {
+pub(crate) fn assert_injected_failure(status: StatusCode, body: &Value, point: Failpoint) {
     assert_eq!(
         status,
         StatusCode::INTERNAL_SERVER_ERROR,

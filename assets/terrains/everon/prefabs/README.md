@@ -73,8 +73,8 @@ that places its model.
 ## Producers and consumers
 
 - Producers: the blueprint compiler in `tools/map_assets/blueprint_compiler/src/`, run through
-  `cargo xtask map bvh-batch` (`bvh/batch_processing/`, `bvh/prefab_catalog/`, and
-  `archive_emission/library_reader/` for the manifest) and
+  `cargo xtask map bvh-batch` (`occlusion_sidecars/batch_processing/`, `occlusion_sidecars/prefab_templates/`, and
+  `archive_emission/prefab_library/` for the manifest) and
   `cargo xtask map blueprint-from-voxels archive` (`archive_emission/archive_writer.rs`).
 - Consumers:
   - the map engine's occluder loader and world occluder

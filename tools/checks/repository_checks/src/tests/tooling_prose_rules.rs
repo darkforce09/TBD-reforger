@@ -6,9 +6,6 @@
 //! here. Commit history owns history, and a reader who cannot see the history is the reader these
 //! files are written for.
 //!
-//! One name is exempt from the history vocabulary: the workspace restructure's parking folder,
-//! spelled as its path segment or as the string literal naming it ([`PARKING_FOLDER_NAME`]).
-//!
 //! The walk is `git ls-files tools`, so an untracked build tree — an installed `node_modules`
 //! among them — never enters, and a rule can never be satisfied by deleting a file from the index
 //! while leaving it on disk.
@@ -89,22 +86,6 @@ fn history_word_pattern() -> Regex {
         .case_insensitive(true)
         .build()
         .expect("history words")
-}
-
-/// The name of the workspace restructure's parking folder, which keeps the spelling `legacy/` by
-/// operator decision: the path segment `legacy/` and the string literal `"legacy"` that names the
-/// folder. Upper-case identifiers such as `LEGACY_ROOT` and snake-case ones never meet the
-/// history needle's word boundary. The bare word, in any case, stays history vocabulary.
-const PARKING_FOLDER_NAME: &str = r#"\blegacy/|"legacy""#;
-
-fn parking_folder_name_pattern() -> Regex {
-    Regex::new(PARKING_FOLDER_NAME).expect("parking folder name")
-}
-
-/// Does `line` narrate history once every spelling of the parking folder's name is blanked? Each
-/// spelling becomes a space, so blanking never joins two words into a new match.
-fn narrates_history(line: &str, history: &Regex, parking_folder: &Regex) -> bool {
-    history.is_match(&parking_folder.replace_all(line, " "))
 }
 
 /// A shell, Python or Node source file name. The tooling ships none of them.
@@ -375,7 +356,7 @@ fn layout_modules_are_the_shared_crate_and_the_self_declared_modules() {
     for expected in [
         "tools/foundation/repository_layout/src/agent_artifacts.rs",
         "tools/foundation/repository_layout/src/documentation.rs",
-        "tools/foundation/repository_layout/src/repository_root.rs",
+        "tools/foundation/repository_layout/src/ticket_registry.rs",
         "tools/tickets/ticket_model/src/repository.rs",
     ] {
         assert!(layout.contains(expected), "not a layout module: {expected}");
@@ -401,11 +382,9 @@ fn nothing_narrates_its_own_history() {
     let root = tool_test_support::test_repo_root();
     let files = tracked_tooling_files(&root);
     let pattern = history_word_pattern();
-    let parking_folder = parking_folder_name_pattern();
-    let select = |_path: &str, line: &str| narrates_history(line, &pattern, &parking_folder);
     assert_clean(
         "prose narrates a past state; describe the present one:",
-        &offences(&root, &files, &pattern, &select),
+        &offences(&root, &files, &pattern, &|_, _| true),
     );
 }
 
@@ -574,56 +553,41 @@ fn every_rule_fires_on_a_line_that_breaks_it() {
     ));
 }
 
-/// The parking folder's name, as a path segment or as the string literal that names the folder,
-/// is not history vocabulary.
+/// The history word bites in every spelling: a folder path segment, a string literal naming a
+/// folder, a comment and an identifier standing alone. No folder name is exempt.
 #[test]
-fn prose_rules_legacy_folder_name_is_not_history() {
+fn prose_rules_the_history_word_bites_as_a_path_segment_a_literal_and_prose() {
     let history = history_word_pattern();
-    let parking_folder = parking_folder_name_pattern();
-    for line in [
-        "//! no member outside `legacy/` depends on a member under `legacy/`",
-        "    workspace.member(\"legacy/map_engine\", &manifest);",
-        "map_engine = { path = \"../../legacy/map_engine\" }",
-        r#"pub const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "legacy"];"#,
-        r#"pub const LEGACY_ROOT: &str = "legacy";"#,
-        "    findings.extend(strangler::legacy_dependency_findings(&members));",
-    ] {
-        assert!(!narrates_history(line, &history, &parking_folder), "{line}");
-    }
-}
-
-/// The bare word stays history vocabulary, in any case and on a line that also names the folder.
-#[test]
-fn prose_rules_legacy_folder_word_stays_banned_as_history() {
-    let history = history_word_pattern();
-    let parking_folder = parking_folder_name_pattern();
     // Assembled from halves, so this file carries no live offender.
     let word = format!("{}{}", "lega", "cy");
     for line in [
+        format!("//! no member outside `{word}/` depends on a member under `{word}/`"),
+        format!("    workspace.member(\"{word}/map_engine\", &manifest);"),
+        format!("map_engine = {{ path = \"../../{word}/map_engine\" }}"),
+        format!("pub const ROOTS: &[&str] = &[\"apps\", \"crates\", \"{word}\"];"),
         format!("// the {word} implementation"),
         format!("/// nothing new depends on {word}"),
-        format!("//! a {word} member sits under `legacy/`"),
         format!("{}{} code paths", "Lega", "cy"),
         format!("let path = \"{word}\\\\tools\";"),
         format!("    let {word}: Vec<&Member> = members;"),
         format!("(apps or {word})"),
     ] {
-        assert!(narrates_history(&line, &history, &parking_folder), "{line}");
+        assert!(history.is_match(&line), "{line}");
     }
 }
 
-/// Blanking the folder's name leaves a space, so it never fuses two words into a match.
+/// Identifiers that only contain the word inside a longer snake-case or upper-case name never meet
+/// the needle's word boundary.
 #[test]
-fn prose_rules_legacy_folder_blanking_never_joins_words() {
-    let parking_folder = parking_folder_name_pattern();
-    let fused = format!("{}legacy/{}", "used to ", "be");
-    assert_eq!(parking_folder.replace_all(&fused, " "), "used to  be");
-    assert!(!narrates_history(
-        &fused,
-        &history_word_pattern(),
-        &parking_folder
-    ));
-    assert!(!parking_folder.is_match(&format!("{}{}/", "LEG", "ACY")));
+fn prose_rules_the_history_word_inside_a_longer_identifier_does_not_bite() {
+    let history = history_word_pattern();
+    for line in [
+        format!("    migration_{}{}: Vec<String>,", "lega", "cy"),
+        format!("mod {}{}_single_instance_migration;", "lega", "cy"),
+        format!("pub const {}{}_ROOT: &str = \"crates\";", "LEGA", "CY"),
+    ] {
+        assert!(!history.is_match(&line), "{line}");
+    }
 }
 
 /// The retired crate needle still bites on the hyphenated retired folders and leaves the planned

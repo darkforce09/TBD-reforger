@@ -17,7 +17,7 @@ tier = 1
 targets = "any"
 
 [dependencies]
-repository_layout = { workspace = true }
+repository_root = { workspace = true }
 
 [lints]
 workspace = true

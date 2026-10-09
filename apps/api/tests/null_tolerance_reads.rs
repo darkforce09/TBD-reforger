@@ -13,6 +13,7 @@ mod common;
 mod null_tolerance_support;
 
 use null_tolerance_support::database_fixtures::*;
+use null_tolerance_support::route_sweep::route_sweep;
 use null_tolerance_support::source_scan::*;
 use null_tolerance_support::*;
 

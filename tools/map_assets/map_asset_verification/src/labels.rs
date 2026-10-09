@@ -59,15 +59,15 @@ const N_MIN: usize = 10;
 
 /* ─────────── terrain alignment (DEM vs GetSurfaceY anchors) ─────────── */
 
-mod read_json;
-pub use read_json::height_labels;
-pub use read_json::locations;
-use read_json::norm_name;
-use read_json::read_json;
+mod height_and_location_labels;
+pub use height_and_location_labels::height_labels;
+pub use height_and_location_labels::locations;
+use height_and_location_labels::normalized_name;
+use height_and_location_labels::read_json_file;
 
 mod town_labels;
 use town_labels::decode_u16_gray_png;
-use town_labels::js_fixed3;
+use town_labels::format_javascript_fixed_three;
 pub use town_labels::road_names;
 pub use town_labels::town_labels;
 

@@ -20,7 +20,7 @@ use crate::error::{Error, Result, ResultExt};
 use regex::Regex;
 use serde_json::json;
 
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 /// The repository-relative source file holding the router's `static ROUTES: &[RouteDef] = &[…];`
 /// table. A relocation that moves the route table rewrites this path; the parse depends on the

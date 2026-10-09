@@ -57,7 +57,7 @@ active.
 
 ## Related documentation
 
-- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/apps/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator controls the context serves.
-- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mission selection specification](/documentation/apps/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the screen `TBD_MissionSelector` opens.

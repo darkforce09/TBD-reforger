@@ -30,6 +30,14 @@ pub const LRU_MIN_CHUNKS: usize = 64;
 /// Canonical fetch failure cap value.
 pub const FETCH_FAILURE_CAP: u8 = 3;
 
+/// The pin's identity: the pinned ids joined with commas, in chunk-math order.
+fn pin_key(ids: &[ChunkId]) -> String {
+    ids.iter()
+        .map(ChunkId::as_str)
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 /// Splits interleaved `[x0, y0, x1, y1, …]` positions into their x and y columns.
 fn deinterleave(positions: &[f32], count: u32) -> (Vec<f32>, Vec<f32>) {
     let n = count as usize;
@@ -82,16 +90,19 @@ impl ChunkResidency {
             }
         };
         let extra_ring = i64::from(self.has_oversized);
-        let mut ids = chunk_ids_for_viewport(
+        let mut ids: Vec<ChunkId> = chunk_ids_for_viewport(
             [min_x, min_y, max_x, max_y],
             self.terrain,
             chunk_size_m,
             extra_ring,
-        );
+        )
+        .into_iter()
+        .map(ChunkId::new)
+        .collect();
         if let Some(cells) = &self.cell_ids {
             ids.retain(|id| cells.contains(id));
         }
-        let key = ids.join(",");
+        let key = pin_key(&ids);
         if key == self.pinned_key {
             let rebuild = DrawRebuild::ZoomUnderUnchangedPin {
                 previous_zoom: prev_zoom,
@@ -104,7 +115,7 @@ impl ChunkResidency {
                     rebuild,
                 };
             }
-            let missing: Vec<String> = self
+            let missing: Vec<ChunkId> = self
                 .pinned_ids
                 .iter()
                 .filter(|id| !self.chunks.contains_key(*id))
@@ -113,10 +124,7 @@ impl ChunkResidency {
             for id in &missing {
                 self.inflight.insert(id.clone());
             }
-            return ViewportUpdate {
-                missing: missing.into_iter().map(ChunkId::new).collect(),
-                rebuild,
-            };
+            return ViewportUpdate { missing, rebuild };
         }
         self.pinned_ids = ids.clone();
         self.pinned_set = ids.iter().cloned().collect();
@@ -130,7 +138,7 @@ impl ChunkResidency {
                 self.last_used.insert(id.clone(), self.use_tick);
             }
         }
-        let missing: Vec<String> = ids
+        let missing: Vec<ChunkId> = ids
             .iter()
             .filter(|id| !self.chunks.contains_key(*id) && !self.inflight.contains(*id))
             .cloned()
@@ -140,7 +148,7 @@ impl ChunkResidency {
         }
         self.evict();
         ViewportUpdate {
-            missing: missing.into_iter().map(ChunkId::new).collect(),
+            missing,
             rebuild: DrawRebuild::AllBuffers,
         }
     }
@@ -150,13 +158,13 @@ impl ChunkResidency {
     /// Counts one failed fetch of chunk `id`: its in-flight mark is released so a later viewport
     /// asks again, and at `FETCH_FAILURE_CAP` failures it becomes an empty stub.
     pub fn note_fetch_failure(&mut self, id: &ChunkId) {
-        let n = self.fetch_failures.entry(id.to_string()).or_insert(0);
+        let n = self.fetch_failures.entry(id.clone()).or_insert(0);
         *n += 1;
         if *n >= FETCH_FAILURE_CAP {
-            self.fetch_failures.remove(id.as_str());
+            self.fetch_failures.remove(id);
             self.note_undelivered(id);
         } else {
-            self.inflight.remove(id.as_str());
+            self.inflight.remove(id);
         }
     }
 }
@@ -188,16 +196,15 @@ impl ChunkResidency {
         });
         let (xs, ys) = deinterleave(&chunk.positions, chunk.count);
         self.index.insert_chunk(id, &xs, &ys, &chunk.cls_codes);
-        self.building_counts.insert(id.to_string(), building_count);
+        self.building_counts.insert(id.clone(), building_count);
         self.residency_events
             .push(ResidencyEvent::Inserted(id.clone()));
-        self.chunks.insert(id.to_string(), chunk);
+        self.chunks.insert(id.clone(), chunk);
         self.use_tick += 1;
-        self.last_used.insert(id.to_string(), self.use_tick);
+        self.last_used.insert(id.clone(), self.use_tick);
         self.insert_counter += 1;
-        self.inserted_seq
-            .insert(id.to_string(), self.insert_counter);
-        self.inflight.remove(id.as_str());
+        self.inserted_seq.insert(id.clone(), self.insert_counter);
+        self.inflight.remove(id);
         self.chunks_applied += 1;
         self.content_epoch += 1;
     }
@@ -211,7 +218,7 @@ impl ChunkResidency {
             return;
         }
 
-        let mut candidates: Vec<String> = self
+        let mut candidates: Vec<ChunkId> = self
             .chunks
             .keys()
             .filter(|id| !self.pinned_set.contains(*id) && !self.known_empty.contains(*id))
@@ -234,10 +241,9 @@ impl ChunkResidency {
             self.last_used.remove(&id);
             self.inserted_seq.remove(&id);
             self.building_counts.remove(&id);
-            let chunk_id = ChunkId::new(id.as_str());
-            self.index.remove_chunk(&chunk_id);
+            self.index.remove_chunk(&id);
             self.residency_events
-                .push(ResidencyEvent::Evicted(chunk_id));
+                .push(ResidencyEvent::Evicted(id.clone()));
             self.eviction_log.push(id);
             self.content_epoch += 1;
         }
@@ -247,7 +253,7 @@ impl ChunkResidency {
 impl ChunkResidency {
     /// Ordered eviction victims since construction — parity surface (Class S eviction-order log).
     #[must_use]
-    pub fn eviction_log(&self) -> Vec<String> {
+    pub fn eviction_log(&self) -> Vec<ChunkId> {
         self.eviction_log.clone()
     }
 }
@@ -270,27 +276,26 @@ impl ChunkResidency {
 impl ChunkResidency {
     /// Release one in-flight mark after a soft fetch failure (host may retry next settle).
     pub fn release_inflight(&mut self, id: &ChunkId) {
-        self.inflight.remove(id.as_str());
+        self.inflight.remove(id);
     }
 }
 
 impl ChunkResidency {
     /// Drop a resident (or empty-stub) chunk so the next `set_viewport` re-requests it. Used by the Leptos host to recover from a soft HTTP failure that must not be cached as a permanent empty stub (tree-glyph zoom probes need real instance rows).
     pub fn invalidate_chunk(&mut self, id: &ChunkId) {
-        let key = id.as_str();
-        if self.chunks.remove(key).is_some() {
+        if self.chunks.remove(id).is_some() {
             self.residency_events
                 .push(ResidencyEvent::Evicted(id.clone()));
             self.index.remove_chunk(id);
-            self.building_counts.remove(key);
-            self.last_used.remove(key);
-            self.inserted_seq.remove(key);
+            self.building_counts.remove(id);
+            self.last_used.remove(id);
+            self.inserted_seq.remove(id);
             self.content_epoch += 1;
         }
-        self.inflight.remove(key);
+        self.inflight.remove(id);
 
-        self.known_empty.remove(key);
-        self.fetch_failures.remove(key);
+        self.known_empty.remove(id);
+        self.fetch_failures.remove(id);
     }
 }
 
@@ -298,8 +303,8 @@ impl ChunkResidency {
     /// Mark ids as in-flight (not yet resident). Used after `clear_inflight` when starting a replacement fetch so concurrent same-key `set_viewport` does not re-queue them.
     pub fn mark_inflight(&mut self, ids: &[ChunkId]) {
         for id in ids {
-            if !self.chunks.contains_key(id.as_str()) {
-                self.inflight.insert(id.to_string());
+            if !self.chunks.contains_key(id) {
+                self.inflight.insert(id.clone());
             }
         }
     }

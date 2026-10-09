@@ -62,7 +62,8 @@ with is loaded by `apps/frontend/index.html`.
 
 ## Boundaries
 
-- Depends on: `leptos`; `http_url_guard`, for the avatar sanitiser; `web-sys`, `js-sys`,
+- Depends on: `leptos`; `http_url_guard`, for the avatar sanitiser; `time_source`, for the
+  countdown's clock; `web-sys`, `js-sys`,
   `wasm-bindgen` and `wasm-bindgen-futures` in the wasm32 build only.
 - Used by: the single-page app (`apps/frontend`): its route guard, content gates, app frame,
   features, pages and the Mission Creator, whose dialogs and menus join the overlay stack and

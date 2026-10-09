@@ -1,5 +1,9 @@
 use clap::Subcommand;
 
+#[expect(
+    rustdoc::invalid_html_tags,
+    reason = "the variant docs are the clap help text, whose `<dir>`-style argument placeholders are not HTML"
+)]
 #[derive(Subcommand, Debug)]
 pub(crate) enum MapCmd {
     /// Write `tiles/map/index.json`, the list of every cartographic tile file of a terrain's

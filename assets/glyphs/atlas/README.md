@@ -27,7 +27,7 @@ assets/glyphs/atlas/
 
 ## Producers and consumers
 
-- Producers: `build_glyph_atlas` in `tools/map_assets/map_raster_pipeline/src/glyphs.rs`,
+- Producers: `build_glyph_atlas` in `tools/map_assets/map_raster_pipeline/src/glyph_atlas.rs`,
   run as the `map` binary's `build-glyph-atlas` command. It rasterises each SVG with resvg, checks
   the WebP header before writing, and refuses to overwrite the atlas with an empty image.
 - Consumers:

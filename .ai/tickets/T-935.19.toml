@@ -12,8 +12,7 @@ notes = """
 Step 2 of the T-935.15 program, filed 2026-09-08. Sequenced strictly after T-935.18 — the container has
 to exist first. T-935.16 owns build.rs and world_host.rs too and cannot share a wave with this row.
 Partial access is an HTTP property, not a filesystem layout: range requests give residency without
-splitting the world into files.
-"""
+splitting the world into files. Paths with no successor (checked 2026-10-04, restructure S12): world_assets/fetch.rs: removed in the restructure (commit dcfeda907), no successor."""
 priority = 2
 depends_on = ["T-935.18"]
 parent = "T-935"
@@ -23,7 +22,7 @@ context = [
     "tbd_sat.rs:112-137 index_range_end sizes both versions off a 12-byte prefix; :145-160 parse_header dispatches on version.",
     "world_assets/fetch.rs carries fetch_range_outcome and RangeBody and was not in T-935.15's owns.",
     "occluder_host.rs:39,87,265,272,280 takes WorldResidency and drives occ.insert_chunk / remove_chunk; it has to move off residency here, not in the delete step.",
-    "packages/map-assets/everon/manifest.json still declares chunksPath, chunkSizeM 512 and binary.chunks; it flips in this row.",
+    "assets/terrains/everon/manifest.json still declares chunksPath, chunkSizeM 512 and binary.chunks; it flips in this row.",
 ]
 requirement = [
     "world_host.rs range-fetches objects from the container through the index; no per-chunk file is fetched.",
@@ -57,7 +56,7 @@ owns = [
     "apps/frontend/src/editor/world_assets/mod.rs",
     "apps/frontend/src/editor/world_assets/fetch.rs",
     "apps/frontend/src/editor/world_assets/occluder_host.rs",
-    "packages/map-assets/everon/manifest.json",
+    "assets/terrains/everon/manifest.json",
 ]
 
 [scope]

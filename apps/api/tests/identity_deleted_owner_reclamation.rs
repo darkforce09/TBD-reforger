@@ -49,15 +49,26 @@ async fn actor(state: &AppState) -> AuthUser {
         false,
     )
     .await;
-    authorize_session(&state.pool, &state.cfg, &state.jwt.parse(&token).unwrap())
-        .await
-        .unwrap()
+    authorize_session(
+        &state.pool,
+        &state.cfg,
+        &state
+            .jwt
+            .parse(&token)
+            .expect("the issued access token parses"),
+    )
+    .await
+    .expect("the issued session authorizes")
 }
 
 async fn fixture(history: bool, deleted: bool) -> Fixture {
     let url = common::require_test_database_url().expect("reclamation tests require PostgreSQL");
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state = api::composition::application_state(
         pool,
         Config::for_tests(url, "deleted-owner-reclamation"),
@@ -65,10 +76,15 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
     let game_server =
         ReportingServer::open(&router(state.clone()), &state.pool, "Reclamation server").await;
     let owner = actor(&state).await;
-    issue_session(&state, &owner.discord_id).await.unwrap();
+    issue_session(&state, &owner.discord_id)
+        .await
+        .expect("issuing a session succeeds");
     let claimant = actor(&state).await;
     let arma = common::unique_arma("deleted-owner");
-    let consumed_owner_code = issue_link_code(&state, &owner).await.unwrap().0;
+    let consumed_owner_code = issue_link_code(&state, &owner)
+        .await
+        .expect("issuing a link code succeeds")
+        .0;
     confirm_identity(
         &state,
         game_server.server_id.into(),
@@ -77,9 +93,15 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
         "Original character",
     )
     .await
-    .unwrap();
-    let pending_owner_code = issue_link_code(&state, &owner).await.unwrap().0;
-    let claimant_code = issue_link_code(&state, &claimant).await.unwrap().0;
+    .expect("confirming the claimant identity link succeeds");
+    let pending_owner_code = issue_link_code(&state, &owner)
+        .await
+        .expect("issuing a link code succeeds")
+        .0;
+    let claimant_code = issue_link_code(&state, &claimant)
+        .await
+        .expect("issuing a link code succeeds")
+        .0;
     let history = if history {
         let match_id: Uuid = sqlx::query_scalar(
             "INSERT INTO matches(source_match_id, started_at, outcome, created_at)
@@ -88,7 +110,7 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
         .bind(format!("reclamation-match-{}", Uuid::new_v4()))
         .fetch_one(&state.pool)
         .await
-        .unwrap();
+        .expect("the insert into matches returns its row");
         sqlx::query(
             "INSERT INTO match_player_stats(match_id, discord_id, arma_id, source_event_id,
              role_played, kills, deaths, created_at)
@@ -99,34 +121,36 @@ async fn fixture(history: bool, deleted: bool) -> Fixture {
         .bind(&arma)
         .execute(&state.pool)
         .await
-        .unwrap();
+        .expect("the insert into match_player_stats succeeds");
         Some(match_id)
     } else {
         None
     };
-    let mut tx = state.pool.begin().await.unwrap();
+    let mut tx = state.pool.begin().await.expect("a transaction begins");
     recompute_user_stats_on_connection(&mut tx, &owner.discord_id)
         .await
-        .unwrap();
-    refresh_leaderboard_on_connection(&mut tx).await.unwrap();
-    tx.commit().await.unwrap();
+        .expect("recomputing the owner's statistics succeeds");
+    refresh_leaderboard_on_connection(&mut tx)
+        .await
+        .expect("refreshing the leaderboard succeeds");
+    tx.commit().await.expect("the transaction commits");
     if deleted {
         sqlx::query("UPDATE users SET deleted_at = clock_timestamp() WHERE discord_id = $1")
             .bind(&owner.discord_id)
             .execute(&state.pool)
             .await
-            .unwrap();
+            .expect("the update of users succeeds");
         // Retained credentials model legacy storage requiring reclamation-side revocation.
         sqlx::query("UPDATE authentication_sessions SET revoked_at = NULL WHERE discord_id = $1")
             .bind(&owner.discord_id)
             .execute(&state.pool)
             .await
-            .unwrap();
+            .expect("the update of authentication_sessions succeeds");
         sqlx::query("UPDATE refresh_tokens SET revoked_at = NULL WHERE discord_id = $1")
             .bind(&owner.discord_id)
             .execute(&state.pool)
             .await
-            .unwrap();
+            .expect("the update of refresh_tokens succeeds");
     }
     Fixture {
         state,
@@ -157,12 +181,14 @@ async fn confirm_http(f: &Fixture, code: &str, arma: &str) -> (StatusCode, Value
                     json!({"code": code, "arma_id": arma, "arma_character": "Verified claimant"})
                         .to_string(),
                 ))
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
     let status = response.status();
-    let bytes = to_bytes(response.into_body(), 64 * 1024).await.unwrap();
+    let bytes = to_bytes(response.into_body(), 64 * 1024)
+        .await
+        .expect("the response body reads to the end");
     let body: Value = serde_json::from_slice(&bytes).expect("confirmation returns a JSON contract");
     (status, body)
 }
@@ -175,7 +201,7 @@ async fn code_state(pool: &PgPool, code: &str) -> (bool, bool, Option<String>, O
     .bind(code)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of identity_link_codes returns a row")
 }
 
 async fn business_snapshot(f: &Fixture) -> Value {
@@ -195,7 +221,7 @@ async fn business_snapshot(f: &Fixture) -> Value {
     .bind(&f.arma)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap()
+    .expect("the read of users returns a row")
 }
 
 async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
@@ -206,7 +232,7 @@ async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
     .bind(&f.owner.discord_id)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap();
+    .expect("the read of users returns a row");
     assert_eq!(old, (None, String::new(), true, 0));
     let new: (Option<String>, String, i64) = sqlx::query_as(
         "SELECT arma_id, arma_character, total_deployments FROM users WHERE discord_id = $1",
@@ -214,7 +240,7 @@ async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
     .bind(&claimant.discord_id)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap();
+    .expect("the read of users returns a row");
     let expected_deployments = i64::from(f.history.is_some());
     assert_eq!(
         new,
@@ -252,7 +278,7 @@ async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
     .bind(&f.owner.discord_id)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap();
+    .expect("the read of authentication_sessions returns a row");
     assert!(credentials.0 >= 2 && credentials.2 >= 2);
     assert_eq!((credentials.1, credentials.3), (0, 0));
     let audits: (i64, i64, i64) = sqlx::query_as(
@@ -266,13 +292,13 @@ async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
     .bind(&f.owner.discord_id)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap();
+    .expect("the read of audit_logs returns a row");
     assert_eq!(audits, (1, 1, 2));
     let owners: i64 = sqlx::query_scalar("SELECT count(*) FROM users WHERE arma_id = $1")
         .bind(&f.arma)
         .fetch_one(&f.state.pool)
         .await
-        .unwrap();
+        .expect("the read of users returns a row");
     assert_eq!(owners, 1);
     if let Some(match_id) = f.history {
         let facts: (Option<String>, i64, i64) = sqlx::query_as(
@@ -282,7 +308,7 @@ async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
         .bind(&f.arma)
         .fetch_one(&f.state.pool)
         .await
-        .unwrap();
+        .expect("the read of match_player_stats returns a row");
         assert_eq!(facts, (Some(claimant.discord_id.to_string()), 7, 2));
     }
     for (account, expected) in [
@@ -295,7 +321,7 @@ async fn assert_reclaimed(f: &Fixture, claimant: &AuthUser, code: &str) {
         .bind(account)
         .fetch_one(&f.state.pool)
         .await
-        .unwrap();
+        .expect("the read of leaderboard_totals returns a row");
         assert_eq!(count, expected, "leaderboard follows committed ownership");
     }
 }
@@ -309,7 +335,7 @@ async fn seed_authored_facts(f: &Fixture) {
     .bind(&f.owner.discord_id)
     .fetch_one(pool)
     .await
-    .unwrap();
+    .expect("the insert into missions returns its row");
     let event: Uuid = sqlx::query_scalar(
         "INSERT INTO events(name_override, start_time, created_by, created_at)
          VALUES ('Authored reclamation event', now() - interval '2 days', $1, now()) RETURNING id",
@@ -317,7 +343,7 @@ async fn seed_authored_facts(f: &Fixture) {
     .bind(&f.owner.discord_id)
     .fetch_one(pool)
     .await
-    .unwrap();
+    .expect("the insert into events returns its row");
     let event_mission: Uuid = sqlx::query_scalar(
         "INSERT INTO event_missions(event_id, mission_id, start_time, created_at)
          VALUES ($1, $2, now() - interval '2 days', now()) RETURNING id",
@@ -326,8 +352,8 @@ async fn seed_authored_facts(f: &Fixture) {
     .bind(mission)
     .fetch_one(pool)
     .await
-    .unwrap();
-    let mut fixture = (pool).begin().await.unwrap();
+    .expect("the insert into event_missions returns its row");
+    let mut fixture = (pool).begin().await.expect("a transaction begins");
     let allocation =
         common::participant_allocation(&mut fixture, event_mission, f.owner.discord_id.as_str())
             .await;
@@ -340,8 +366,8 @@ async fn seed_authored_facts(f: &Fixture) {
     .bind(allocation)
     .execute(&mut *fixture)
     .await
-    .unwrap();
-    fixture.commit().await.unwrap();
+    .expect("the insert into event_registrations succeeds");
+    fixture.commit().await.expect("the transaction commits");
     sqlx::query(
         "INSERT INTO warnings(discord_id, issued_by, reason, created_at)
          VALUES ($1, $2, 'Factual moderation reason', now())",
@@ -350,7 +376,7 @@ async fn seed_authored_facts(f: &Fixture) {
     .bind(&f.owner.discord_id)
     .execute(pool)
     .await
-    .unwrap();
+    .expect("the insert into warnings succeeds");
     sqlx::query(
         "INSERT INTO audit_logs(actor_id, actor_name, action, message, target_type, target_id)
          VALUES ($1, 'Original author', 'fixture.authored_fact', 'Factual audit message', 'user', $2)",
@@ -359,14 +385,14 @@ async fn seed_authored_facts(f: &Fixture) {
     .bind(&f.claimant.discord_id)
     .execute(pool)
     .await
-    .unwrap();
+    .expect("the insert into audit_logs succeeds");
     sqlx::query("UPDATE matches SET event_id = $2, mission_id = $3 WHERE id = $1")
-        .bind(f.history.unwrap())
+        .bind(f.history.expect("the fixture holds a match history row"))
         .bind(event)
         .bind(mission)
         .execute(pool)
         .await
-        .unwrap();
+        .expect("the update of matches succeeds");
 }
 
 async fn authored_snapshot(f: &Fixture) -> Value {
@@ -381,7 +407,7 @@ async fn authored_snapshot(f: &Fixture) -> Value {
     .bind(&f.owner.discord_id)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap()
+    .expect("the read of event_registrations returns a row")
 }
 
 #[tokio::test]
@@ -545,7 +571,7 @@ async fn install_failure(pool: &PgPool, actor: &str, audit: bool) -> (String, &'
     sqlx::raw_sql(sqlx::AssertSqlSafe(sql.as_str()))
         .execute(pool)
         .await
-        .unwrap();
+        .expect("the failure-injection SQL installs");
     (name, table)
 }
 
@@ -557,7 +583,7 @@ async fn remove_failure(pool: &PgPool, name: &str, table: &str) {
     )))
     .execute(pool)
     .await
-    .unwrap();
+    .expect("the `DROP TRIGGER` statement succeeds");
 }
 
 #[tokio::test]

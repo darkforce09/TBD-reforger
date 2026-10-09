@@ -45,7 +45,7 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// The game's archives could not be opened or read.
     #[error(transparent)]
     Pak(#[from] enfusion_pak::Error),

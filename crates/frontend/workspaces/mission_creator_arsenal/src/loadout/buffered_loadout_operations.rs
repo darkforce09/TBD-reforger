@@ -1,25 +1,15 @@
 //! Plan buffered loadout writes and report committed results.
 
 use super::*;
+use deterministic_random::SplitMix64;
 
 /* ═════ buffered loadout Copy, Apply, and Remove Everything ═════ */
 
-/// The odd 64-bit constant SplitMix64 advances its state by (the odd-gamma Weyl sequence from
-/// Steele/Lea/Flood 2014). Used both as the per-Apply seed step and to decorrelate the ordinal.
-const APPLY_SEED_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
-
-/// SplitMix64's finalizer — an avalanche mix, not a source of entropy. It exists so that seeds and
-/// ordinals that differ by 1 produce draws that differ everywhere, which is what makes
-/// [`buffer_draw`] behave like a fair die rather than like a counter.
-const fn splitmix64(seed: u64) -> u64 {
-    let mut z = seed;
-    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-    z ^ (z >> 31)
-}
-
 /// Apply draws one buffered loadout per target entity. The draw is:
 ///
+/// * **Mixed, not counted.** The seed and the ordinal pass through
+///   [`SplitMix64::finalise`], an avalanche mix rather than a source of entropy, so seeds and
+///   ordinals that differ by 1 produce draws that differ everywhere: a fair die, not a counter.
 /// * **Uniform** over the buffer. The mix is scaled by a widening multiply
 ///   (`(r × len) >> 64`) rather than `r % len`, so the buckets are equal-sized by construction
 ///   instead of equal-to-within-a-modulo-bias.
@@ -29,8 +19,8 @@ const fn splitmix64(seed: u64) -> u64 {
 /// * **Deterministic given `(seed, ordinal, len)`, and therefore reproducible.** This is the half
 ///   that makes the feature reasonable to reason about: an assignment is a pure function of a
 ///   number, so a test can assert an exact distribution, and a bug report that says "the third
-///   Apply of the session" replays exactly. `editor_ops` advances the session seed by
-///   `APPLY_SEED_GAMMA` once per Apply, so pressing the button twice re-rolls (which is what an
+///   Apply of the session" replays exactly. [`mission_operations::cargo::next_apply_seed`]
+///   advances the session seed by [`SplitMix64::INCREMENT`] once per Apply, so pressing the button twice re-rolls (which is what an
 ///   author means by random) while the *sequence* stays fixed (which is what a reviewer means by
 ///   reproducible). Deliberately NO wall clock and no JS RNG: a clock would make the behaviour
 ///   untestable natively and irreproducible in a bug report, and would buy nothing an author can
@@ -43,7 +33,9 @@ pub fn buffer_draw(seed: u64, ordinal: u64, len: usize) -> usize {
     if len <= 1 {
         return 0;
     }
-    let r = splitmix64(seed ^ splitmix64(ordinal.wrapping_add(APPLY_SEED_GAMMA)));
+    let r = SplitMix64::finalise(
+        seed ^ SplitMix64::finalise(ordinal.wrapping_add(SplitMix64::INCREMENT)),
+    );
     let wide = u128::from(r) * u128::try_from(len).unwrap_or(1);
     usize::try_from(wide >> 64).unwrap_or(0)
 }

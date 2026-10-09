@@ -102,7 +102,7 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
 }
 
 fn verify(label: Label) -> Result<u8> {
-    let root = repository_layout::find_repository_root()?;
+    let root = repository_root::find_repository_root()?;
     run_at(&root, label)
 }
 

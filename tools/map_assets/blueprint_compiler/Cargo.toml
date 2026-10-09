@@ -26,6 +26,7 @@ test_fixtures = []
 # The building blueprint model, the BVH sidecars, the occluder descriptors and interior owners,
 # the on-disk archive layouts and the vector maths the compiler builds them with.
 building_interiors = { workspace = true }
+repository_root = { workspace = true }
 spatial_indexes = { workspace = true }
 world_line_of_sight = { workspace = true }
 interior_line_of_sight = { workspace = true }

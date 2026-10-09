@@ -63,9 +63,9 @@ names the mockup's first nine players per side and generates the rest up to the 
 
 ## Related documentation
 
-- [Mission selection specification](/documentation/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
+- [Mission selection specification](/documentation/apps/mod/tbd-framework/UI/mission_selection/mission_selection_specification.md)
   — the design the selector mock reproduces
-- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) — the
+- [Lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md) — the
   design the lobby mock reproduces
-- [Briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Briefing specification](/documentation/apps/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the design the briefing and players mocks reproduce

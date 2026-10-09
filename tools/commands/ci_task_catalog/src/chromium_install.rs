@@ -67,7 +67,7 @@ pub(crate) fn run() -> i32 {
 }
 
 fn run_inner() -> Result<(), String> {
-    let root = repository_layout::find_repository_root().map_err(|e| e.to_string())?;
+    let root = repository_root::find_repository_root().map_err(|e| e.to_string())?;
     let version = chrome_version(&root)?;
     let home = std::env::var("HOME").map_err(|_| "HOME is unset".to_string())?;
     let dest = PathBuf::from(&home).join("cft");

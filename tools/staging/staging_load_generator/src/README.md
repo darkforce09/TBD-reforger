@@ -14,6 +14,7 @@ tools/staging/staging_load_generator/src/
 ├── command_line.rs         the `staging-load` executable: `--plan` / standard input in, `--report` / standard output out
 ├── error.rs                `Error` and `Result`: plan refusals, the account file, the runtime, the plan and report files
 ├── guarded_exchange.rs     one exchange through the address guard: reserve, send, read to the end, classify
+├── http_client.rs          `http_client_builder`: every virtual client's HTTP client, built after the rustls ring provider is installed
 ├── lib.rs                  the crate root: module header, `mod` lines and the re-exports
 ├── load_run.rs             `run`: checks the plan, builds the runtime and the clients, gathers the report
 ├── member_request_lane.rs  one client's paced slots, each sent as the account it holds

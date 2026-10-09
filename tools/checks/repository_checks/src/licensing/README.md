@@ -86,5 +86,5 @@ Each is a licence decision (re-author from vanilla or record an attribution), ne
 
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the reference lanes a
   slice worktree links.
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the design authority the
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the design authority the
   failure text cites.

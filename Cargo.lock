@@ -157,8 +157,9 @@ dependencies = [
  "axum",
  "clap",
  "newtype_ids",
- "repository_layout",
+ "repository_root",
  "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -189,20 +190,19 @@ dependencies = [
  "leptos_router",
  "mission_review_record",
  "serde_json",
+ "time_source",
  "url",
  "wasm-bindgen",
  "web-sys",
 ]
 
 [[package]]
-name = "ahash"
-version = "0.7.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "891477e0c6a8957309ee5c45a6368af3ae14bb510732d2684ffa19af310920f9"
+name = "agent_context_guards"
+version = "0.1.0"
 dependencies = [
- "getrandom 0.2.17",
- "once_cell",
- "version_check",
+ "serde_json",
+ "thiserror 2.0.18",
+ "time_source",
 ]
 
 [[package]]
@@ -390,7 +390,7 @@ dependencies = [
  "mission_compiler",
  "proptest",
  "repository_laws",
- "repository_layout",
+ "repository_root",
  "reqwest",
  "rustls",
  "serde",
@@ -532,7 +532,7 @@ dependencies = [
  "http_url_guard",
  "jsonschema",
  "pulldown-cmark",
- "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "sqlx",
@@ -651,6 +651,7 @@ dependencies = [
  "sqlx",
  "subtle",
  "thiserror 2.0.18",
+ "time_source",
  "tokio",
  "tracing",
  "uuid",
@@ -843,9 +844,11 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
+ "time_source",
  "tool_test_support",
  "verification_core",
 ]
@@ -1302,6 +1305,7 @@ dependencies = [
  "content_digest",
  "jsonschema",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -1406,18 +1410,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bitvec"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddcec3d12c579d40898fe0a9a358a803c23e9c52ca3c425707f81c9436211837"
-dependencies = [
- "funty",
- "radium",
- "tap",
- "wyz",
-]
-
-[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1477,6 +1469,7 @@ dependencies = [
  "interior_line_of_sight",
  "jsonschema",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "spatial_indexes",
@@ -1490,30 +1483,6 @@ name = "borrow-or-share"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc0b364ead1874514c8c2855ab558056ebfeb775653e7ae45ff72f28f8f3166c"
-
-[[package]]
-name = "borsh"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f3f6da4992df95bbcd9af42a6c7dcb994498fc9048230405f3b36ff7cd3f145"
-dependencies = [
- "borsh-derive",
- "bytes",
- "cfg_aliases",
-]
-
-[[package]]
-name = "borsh-derive"
-version = "1.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ae8fb4fb5740e4b2c4884ff95f5f32f5e8479db1e8fd8eb49ddbe09eb09bb7c"
-dependencies = [
- "once_cell",
- "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn 2.0.118",
-]
 
 [[package]]
 name = "browser_gate_suites"
@@ -1535,7 +1504,9 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -1560,7 +1531,7 @@ version = "0.1.0"
 dependencies = [
  "geometry_primitives",
  "newtype_ids",
- "rkyv 0.8.18",
+ "rkyv",
  "serde",
  "serde_json",
  "spatial_indexes",
@@ -1576,36 +1547,14 @@ checksum = "72f5acc6cb2ba439de613abc23857ec3d78374d8ed5ac84e9d11336e87da8649"
 
 [[package]]
 name = "bytecheck"
-version = "0.6.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23cdc57ce23ac53c931e88a43d06d070a6fd142f2617be5855eb75efc9beb1c2"
-dependencies = [
- "bytecheck_derive 0.6.12",
- "ptr_meta 0.1.4",
- "simdutf8",
-]
-
-[[package]]
-name = "bytecheck"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26333eeac754f0ad8a6bcd0eb0ac012156302e4e16b852b72ee399aea4f12c29"
 dependencies = [
- "bytecheck_derive 0.8.3",
- "ptr_meta 0.3.2",
+ "bytecheck_derive",
+ "ptr_meta",
  "rancor",
  "simdutf8",
-]
-
-[[package]]
-name = "bytecheck_derive"
-version = "0.6.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3db406d29fbcd95542e92559bed4d8ad92636d1ca8b3b72ede10b4bcc010e659"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -1781,6 +1730,7 @@ dependencies = [
  "libc",
  "newtype_ids",
  "reqwest",
+ "rustls",
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
@@ -1849,6 +1799,7 @@ dependencies = [
  "repository_checks",
  "repository_laws",
  "repository_layout",
+ "repository_root",
  "schema_tooling",
  "serde",
  "serde_json",
@@ -2360,6 +2311,7 @@ dependencies = [
  "repository_checks",
  "repository_laws",
  "repository_layout",
+ "repository_root",
  "thiserror 2.0.18",
  "tool_test_support",
  "verification_core",
@@ -2401,6 +2353,7 @@ dependencies = [
  "spatial_indexes",
  "terrain_line_of_sight",
  "thiserror 2.0.18",
+ "time_source",
  "url",
  "wasm-bindgen",
  "web-sys",
@@ -2427,6 +2380,7 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "serde_json",
  "thiserror 2.0.18",
  "toml",
@@ -2687,7 +2641,7 @@ version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2afc0cbcdb6896b7bfb1dbbebaf7b9af9635ff38fd01e89bdd0174c1717b1857"
 dependencies = [
- "ahash 0.8.12",
+ "ahash",
  "bytemuck",
  "document-features",
  "egui",
@@ -2726,7 +2680,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c977ac91dfaa651633fd9722e4ce9ccb32cda4c748b89a5cb57e504036e37c13"
 dependencies = [
  "accesskit",
- "ahash 0.8.12",
+ "ahash",
  "bitflags 2.13.0",
  "emath",
  "epaint",
@@ -2747,7 +2701,7 @@ version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fc362cc6bc8c1d7169c9cb0e7741ff1e03063681373d6e55cc3b25fd21213f3"
 dependencies = [
- "ahash 0.8.12",
+ "ahash",
  "bytemuck",
  "document-features",
  "egui",
@@ -2813,7 +2767,7 @@ version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e651e08ddf6bb8bfd964ad70e33bc721c093f2b77ab59580e7140c008dab68c"
 dependencies = [
- "ahash 0.8.12",
+ "ahash",
  "egui",
  "enum-map",
  "itertools 0.15.0",
@@ -2917,6 +2871,7 @@ dependencies = [
  "libc",
  "process_runner",
  "repository_layout",
+ "repository_root",
  "serde_json",
  "thiserror 2.0.18",
  "tool_test_support",
@@ -2928,7 +2883,7 @@ name = "enfusion_mcp_broker"
 version = "0.1.0"
 dependencies = [
  "enfusion_mcp",
- "repository_layout",
+ "repository_root",
  "serde_json",
  "thiserror 2.0.18",
  "tokio",
@@ -2952,6 +2907,7 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "thiserror 2.0.18",
  "tool_test_support",
  "verification_core",
@@ -3015,7 +2971,7 @@ version = "0.36.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11863a6b2b7823010c1090ddf4706947bdda46766742def0673195cbf7ff4a73"
 dependencies = [
- "ahash 0.8.12",
+ "ahash",
  "bytemuck",
  "ecolor",
  "emath",
@@ -3491,6 +3447,9 @@ dependencies = [
 [[package]]
 name = "frontend_test_support"
 version = "0.1.0"
+dependencies = [
+ "repository_root",
+]
 
 [[package]]
 name = "frontend_transport"
@@ -3519,6 +3478,7 @@ dependencies = [
  "http_url_guard",
  "js-sys",
  "leptos",
+ "time_source",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -3532,12 +3492,6 @@ checksum = "76ee7a02da4d231650c7cea31349b889be2f45ddb3ef3032d2ec8185f6313fd2"
 dependencies = [
  "libc",
 ]
-
-[[package]]
-name = "funty"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
 
 [[package]]
 name = "futures"
@@ -4010,15 +3964,6 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
-dependencies = [
- "ahash 0.7.8",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
@@ -4384,7 +4329,6 @@ dependencies = [
  "js-sys",
  "num-traits",
  "thiserror 2.0.18",
- "tokio",
  "wasm-bindgen",
  "web-sys",
 ]
@@ -4608,7 +4552,7 @@ version = "0.46.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0a699d3e77675e6aa4bfffe3b907c8b5f7ed3241f9965bffb25475ad4b08d05"
 dependencies = [
- "ahash 0.8.12",
+ "ahash",
  "bytecount",
  "data-encoding",
  "email_address",
@@ -5064,6 +5008,7 @@ dependencies = [
  "spatial_indexes",
  "terrain_elevation",
  "terrain_relief",
+ "time_source",
  "vegetation",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -5081,6 +5026,7 @@ version = "0.1.0"
 dependencies = [
  "blueprint_compiler",
  "building_interiors",
+ "deterministic_random",
  "flate2",
  "geometry_primitives",
  "jsonschema",
@@ -5091,6 +5037,7 @@ dependencies = [
  "prefab_catalog",
  "regex",
  "repository_layout",
+ "repository_root",
  "road_network",
  "serde",
  "serde_json",
@@ -5149,6 +5096,7 @@ dependencies = [
  "prefab_catalog",
  "process_runner",
  "repository_layout",
+ "repository_root",
  "resvg",
  "road_network",
  "serde_json",
@@ -5167,6 +5115,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "camera_math",
+ "deterministic_random",
  "gpu_frame",
  "js-sys",
  "map_coordinates",
@@ -5217,6 +5166,7 @@ dependencies = [
  "serde_json",
  "terrain_elevation",
  "terrain_relief",
+ "time_source",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "water_bodies",
@@ -5371,6 +5321,7 @@ dependencies = [
 name = "mission_creator_arsenal"
 version = "0.1.0"
 dependencies = [
+ "deterministic_random",
  "frontend_api_dtos",
  "frontend_test_support",
  "js-sys",
@@ -5423,6 +5374,7 @@ dependencies = [
  "spatial_indexes",
  "terrain_elevation",
  "terrain_line_of_sight",
+ "time_source",
  "unit_symbology",
  "wasm-bindgen",
  "web-sys",
@@ -5457,6 +5409,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.18",
+ "time_source",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -5528,6 +5481,7 @@ dependencies = [
  "serde_json",
  "terrain_elevation",
  "thiserror 2.0.18",
+ "time_source",
  "unit_symbology",
  "wasm-bindgen",
  "web-sys",
@@ -5537,6 +5491,7 @@ dependencies = [
 name = "mission_document"
 version = "0.1.0"
 dependencies = [
+ "deterministic_random",
  "mission_compiler",
  "mission_crdt",
  "mission_model",
@@ -5616,6 +5571,7 @@ dependencies = [
 name = "mission_operations"
 version = "0.1.0"
 dependencies = [
+ "deterministic_random",
  "formation_geometry",
  "map_coordinates",
  "mission_crdt",
@@ -5702,6 +5658,7 @@ dependencies = [
  "regex",
  "remote_debugging",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "tar",
@@ -5723,6 +5680,7 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "thiserror 2.0.18",
  "tool_test_support",
  "verification_core",
@@ -6749,7 +6707,7 @@ dependencies = [
  "label_layout",
  "newtype_ids",
  "render_primitives",
- "rkyv 0.8.18",
+ "rkyv",
  "road_network",
  "serde",
  "serde_json",
@@ -6774,6 +6732,7 @@ dependencies = [
  "regex",
  "repository_laws",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -6898,7 +6857,7 @@ name = "prefab_catalog"
 version = "0.1.0"
 dependencies = [
  "flate2",
- "rkyv 0.8.18",
+ "rkyv",
  "serde_json",
  "thiserror 2.0.18",
  "world_file_formats",
@@ -7029,31 +6988,11 @@ dependencies = [
 
 [[package]]
 name = "ptr_meta"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0738ccf7ea06b608c10564b31debd4f5bc5e197fc8bfe088f68ae5ce81e7a4f1"
-dependencies = [
- "ptr_meta_derive 0.1.4",
-]
-
-[[package]]
-name = "ptr_meta"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "743da816b98c921cdbe8628ef7381b76f25ecf4da599fc80aca90eae7ef70cc0"
 dependencies = [
- "ptr_meta_derive 0.3.2",
-]
-
-[[package]]
-name = "ptr_meta_derive"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16b845dbfca988fa33db069c0e230574d15a3088f147a87b64c7589eb662c9ac"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
+ "ptr_meta_derive",
 ]
 
 [[package]]
@@ -7164,18 +7103,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
-name = "radium"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
-
-[[package]]
 name = "rancor"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b534442d0fcdb55d66f373d9cac6d33b6293a2335bc2136dbd06ce0e87d2572"
 dependencies = [
- "ptr_meta 0.3.2",
+ "ptr_meta",
 ]
 
 [[package]]
@@ -7414,7 +7347,7 @@ version = "0.46.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0fbf332a2f81899f6836f22c03da73dae8a664c32e3016b84692c23cddadc95d"
 dependencies = [
- "ahash 0.8.12",
+ "ahash",
  "fluent-uri",
  "getrandom 0.3.4",
  "hashbrown 0.16.1",
@@ -7485,6 +7418,7 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "serde_json",
  "thiserror 2.0.18",
  "time_source",
@@ -7494,20 +7428,11 @@ dependencies = [
 
 [[package]]
 name = "rend"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71fe3824f5629716b1589be05dacd749f6aa084c87e00e016714a8cdfccc997c"
-dependencies = [
- "bytecheck 0.6.12",
-]
-
-[[package]]
-name = "rend"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "663ba70707f96e871406fe10d68128412e619b06d1d47cb91c3a4c6501176240"
 dependencies = [
- "bytecheck 0.8.3",
+ "bytecheck",
 ]
 
 [[package]]
@@ -7541,6 +7466,7 @@ dependencies = [
  "regex",
  "repository_laws",
  "repository_layout",
+ "repository_root",
  "serde_json",
  "syn 2.0.118",
  "thiserror 2.0.18",
@@ -7555,6 +7481,7 @@ name = "repository_laws"
 version = "0.1.0"
 dependencies = [
  "regex",
+ "repository_root",
  "thiserror 2.0.18",
  "verification_core",
 ]
@@ -7563,7 +7490,7 @@ dependencies = [
 name = "repository_layout"
 version = "0.1.0"
 dependencies = [
- "thiserror 2.0.18",
+ "repository_root",
 ]
 
 [[package]]
@@ -7576,6 +7503,13 @@ dependencies = [
  "ticket_model",
  "tool_test_support",
  "verification_core",
+]
+
+[[package]]
+name = "repository_root"
+version = "0.1.0"
+dependencies = [
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -7694,50 +7628,21 @@ dependencies = [
 
 [[package]]
 name = "rkyv"
-version = "0.7.46"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2297bf9c81a3f0dc96bc9521370b88f054168c29826a75e89c55ff196e7ed6a1"
-dependencies = [
- "bitvec",
- "bytecheck 0.6.12",
- "bytes",
- "hashbrown 0.12.3",
- "ptr_meta 0.1.4",
- "rend 0.4.2",
- "rkyv_derive 0.7.46",
- "seahash",
- "tinyvec",
- "uuid",
-]
-
-[[package]]
-name = "rkyv"
 version = "0.8.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9776093b7ca170454ab1406954f7b7d97a57c51dc6c0642957fb2ef25c2d399"
 dependencies = [
- "bytecheck 0.8.3",
+ "bytecheck",
  "bytes",
  "hashbrown 0.17.1",
  "indexmap",
  "munge",
- "ptr_meta 0.3.2",
+ "ptr_meta",
  "rancor",
- "rend 0.5.4",
- "rkyv_derive 0.8.18",
+ "rend",
+ "rkyv_derive",
  "tinyvec",
  "uuid",
-]
-
-[[package]]
-name = "rkyv_derive"
-version = "0.7.46"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84d7b42d4b8d06048d3ac8db0eb31bcb942cbeb709f0b5f2b2ebde398d3038f5"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
@@ -7758,7 +7663,7 @@ dependencies = [
  "map_coordinates",
  "prefab_catalog",
  "render_primitives",
- "rkyv 0.8.18",
+ "rkyv",
  "serde_json",
  "terrain_elevation",
  "thiserror 2.0.18",
@@ -7818,23 +7723,6 @@ dependencies = [
  "syn 2.0.118",
  "syn_derive",
  "thiserror 2.0.18",
-]
-
-[[package]]
-name = "rust_decimal"
-version = "1.42.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be2a24f50780bc85f09cc6ac299bdf1424302742d77221106859c9d8b102126a"
-dependencies = [
- "arrayvec",
- "borsh",
- "bytes",
- "num-traits",
- "rand 0.8.6",
- "rkyv 0.7.46",
- "serde",
- "serde_json",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -8025,6 +7913,7 @@ dependencies = [
  "regex",
  "repository_laws",
  "repository_layout",
+ "repository_root",
  "schemars",
  "serde_json",
  "syn 2.0.118",
@@ -8083,12 +7972,6 @@ dependencies = [
  "smithay-client-toolkit 0.19.2",
  "tiny-skia",
 ]
-
-[[package]]
-name = "seahash"
-version = "4.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
 
 [[package]]
 name = "sec1"
@@ -8656,7 +8539,6 @@ dependencies = [
  "log",
  "memchr",
  "percent-encoding",
- "rust_decimal",
  "rustls",
  "serde",
  "serde_json",
@@ -8729,7 +8611,6 @@ dependencies = [
  "generic-array",
  "log",
  "percent-encoding",
- "rust_decimal",
  "serde",
  "sha1",
  "sha2 0.11.0",
@@ -8764,7 +8645,6 @@ dependencies = [
  "md-5",
  "memchr",
  "rand 0.10.2",
- "rust_decimal",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -8837,6 +8717,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "time_source",
  "tokio",
  "tower",
  "tower-http 0.7.0",
@@ -8853,6 +8734,7 @@ dependencies = [
  "clap",
  "futures",
  "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "staging_load_plan",
@@ -8884,6 +8766,7 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "staging_load_plan",
@@ -8986,17 +8869,6 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.109"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72b64191b275b66ffe2469e8af2c1cfe3bafa67b529ead792a6d0160888b4237"
-dependencies = [
- "proc-macro2",
- "quote",
- "unicode-ident",
-]
-
-[[package]]
-name = "syn"
 version = "2.0.118"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b9ae57f904213ebb649ce6895b8a66c66f0203b9319718f69a5612a065b1422"
@@ -9080,12 +8952,6 @@ dependencies = [
  "wasm-bindgen",
  "web-sys",
 ]
-
-[[package]]
-name = "tap"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
 
 [[package]]
 name = "tar"
@@ -9228,6 +9094,7 @@ dependencies = [
  "jsonschema",
  "process_runner",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -9246,6 +9113,7 @@ dependencies = [
  "proptest",
  "regex",
  "repository_layout",
+ "repository_root",
  "serde",
  "thiserror 2.0.18",
  "time",
@@ -9263,6 +9131,7 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -9280,6 +9149,7 @@ version = "0.1.0"
 dependencies = [
  "process_runner",
  "repository_layout",
+ "repository_root",
  "serde",
  "thiserror 2.0.18",
  "ticket_model",
@@ -9307,6 +9177,7 @@ dependencies = [
  "notify",
  "process_runner",
  "repository_layout",
+ "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -9553,7 +9424,7 @@ checksum = "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2"
 name = "tool_test_support"
 version = "0.1.0"
 dependencies = [
- "repository_layout",
+ "repository_root",
 ]
 
 [[package]]
@@ -10009,7 +9880,7 @@ dependencies = [
  "map_coordinates",
  "map_draw_lanes",
  "prefab_catalog",
- "rkyv 0.8.18",
+ "rkyv",
  "serde_json",
  "thiserror 2.0.18",
  "world_chunks",
@@ -10202,7 +10073,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "render_primitives",
- "rkyv 0.8.18",
+ "rkyv",
  "terrain_relief",
  "thiserror 2.0.18",
  "world_file_formats",
@@ -11057,7 +10928,7 @@ version = "0.30.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6755fa58a9f8350bd1e472d4c3fcc25f824ec358933bba33306d0b63df5978d"
 dependencies = [
- "ahash 0.8.12",
+ "ahash",
  "android-activity",
  "atomic-waker",
  "bitflags 2.13.0",
@@ -11126,6 +10997,7 @@ dependencies = [
  "deploy_settings",
  "process_runner",
  "repository_layout",
+ "repository_root",
  "serde_json",
  "thiserror 2.0.18",
  "tool_test_support",
@@ -11152,6 +11024,7 @@ version = "0.1.0"
 dependencies = [
  "bcdec_rs",
  "clap",
+ "deterministic_random",
  "enfusion_pak",
  "flate2",
  "jsonschema",
@@ -11159,6 +11032,7 @@ dependencies = [
  "prefab_catalog",
  "process_runner",
  "repository_layout",
+ "repository_root",
  "road_network",
  "serde",
  "serde_json",
@@ -11179,7 +11053,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "newtype_ids",
- "rkyv 0.8.18",
+ "rkyv",
  "serde_json",
  "thiserror 2.0.18",
 ]
@@ -11209,7 +11083,7 @@ dependencies = [
  "interior_line_of_sight",
  "map_coordinates",
  "prefab_catalog",
- "rkyv 0.8.18",
+ "rkyv",
  "serde",
  "serde_json",
  "spatial_indexes",
@@ -11238,15 +11112,6 @@ name = "writeable"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ffae5123b2d3fc086436f8834ae3ab053a283cfac8fe0a0b8eaae044768a4c4"
-
-[[package]]
-name = "wyz"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
-dependencies = [
- "tap",
-]
 
 [[package]]
 name = "x11-dl"
@@ -11331,6 +11196,7 @@ checksum = "ec7a2a501ed189703dba8b08142f057e887dfc4b2cc4db2d343ac6376ba3e0b9"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
+ "agent_context_guards",
  "anyhow",
  "api_readiness_checks",
  "ballistics_oracle_tooling",

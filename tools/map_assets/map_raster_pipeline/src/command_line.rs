@@ -14,7 +14,7 @@ use std::process::ExitCode;
 
 use crate::error::Result;
 use crate::{
-    aerial_orthophoto, cartographic_rendering, glyphs, inland_water, inland_water_archive,
+    aerial_orthophoto, cartographic_rendering, glyph_atlas, inland_water, inland_water_archive,
     map_label_archives, map_labels, satellite_archive, satellite_archive_container,
 };
 use clap::{Parser, Subcommand};
@@ -192,9 +192,9 @@ fn run() -> Result<ExitCode> {
             view_map,
             expect_lossless,
         )?)),
-        Cmd::BuildGlyphAtlas => Ok(ExitCode::from(glyphs::build_glyph_atlas()?)),
+        Cmd::BuildGlyphAtlas => Ok(ExitCode::from(glyph_atlas::build_glyph_atlas()?)),
         Cmd::BuildLandcover { terrain } => Ok(ExitCode::from(
-            cartographic_rendering::build_landcover_cli(&terrain)?,
+            cartographic_rendering::build_landcover_command_line(&terrain)?,
         )),
         Cmd::BuildCartographic { terrain } => Ok(ExitCode::from(
             cartographic_rendering::build_map_cartographic(&terrain)?,
@@ -224,7 +224,9 @@ fn run() -> Result<ExitCode> {
         Cmd::LabelsRkyv { terrain } => Ok(ExitCode::from(map_label_archives::emit_map_labels(
             &terrain,
         )?)),
-        Cmd::Water { terrain } => Ok(ExitCode::from(inland_water_archive::emit_water(&terrain)?)),
+        Cmd::Water { terrain } => Ok(ExitCode::from(inland_water_archive::emit_water_archive(
+            &terrain,
+        )?)),
         Cmd::ResetWaterMeta { terrain } => Ok(ExitCode::from(
             cartographic_rendering::reset_water_meta(&terrain)?,
         )),
@@ -239,20 +241,20 @@ fn run() -> Result<ExitCode> {
         )),
         Cmd::AnalyzeWater => Ok(ExitCode::from(inland_water::analyze_water_sources()?)),
         Cmd::CompositeWater => Ok(ExitCode::from(inland_water::composite_water_ortho()?)),
-        Cmd::VerifySapSeams { terrain } => Ok(ExitCode::from(aerial_orthophoto::verify_sap_seams(
-            &terrain,
-        )?)),
-        Cmd::AnalyzeSapSeams { terrain } => Ok(ExitCode::from(
-            aerial_orthophoto::analyze_sap_seams(&terrain)?,
+        Cmd::VerifySapSeams { terrain } => Ok(ExitCode::from(
+            aerial_orthophoto::verify_supertexture_seams(&terrain)?,
         )),
-        Cmd::VerifySapOrtho { terrain } => Ok(ExitCode::from(aerial_orthophoto::verify_sap_ortho(
-            &terrain,
-        )?)),
-        Cmd::StitchSapOrtho { terrain } => Ok(ExitCode::from(aerial_orthophoto::stitch_sap_ortho(
-            &terrain,
-        )?)),
+        Cmd::AnalyzeSapSeams { terrain } => Ok(ExitCode::from(
+            aerial_orthophoto::analyze_supertexture_seams(&terrain)?,
+        )),
+        Cmd::VerifySapOrtho { terrain } => Ok(ExitCode::from(
+            aerial_orthophoto::verify_supertexture_orthophoto(&terrain)?,
+        )),
+        Cmd::StitchSapOrtho { terrain } => Ok(ExitCode::from(
+            aerial_orthophoto::stitch_supertexture_orthophoto(&terrain)?,
+        )),
         Cmd::BlendSapSeams { terrain } => Ok(ExitCode::from(
-            aerial_orthophoto::blend_sap_seams_cli(&terrain)?,
+            aerial_orthophoto::blend_supertexture_seams_command_line(&terrain)?,
         )),
         Cmd::BuildUnified {
             input,

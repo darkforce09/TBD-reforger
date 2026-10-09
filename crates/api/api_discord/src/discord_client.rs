@@ -13,7 +13,6 @@
 //! [`MembershipLookupFailure`].
 
 use api_identifiers::{DiscordClientId, DiscordGuildId, DiscordUserId};
-use std::sync::Once;
 use std::time::Duration;
 
 use reqwest::{Client, RequestBuilder, Response, StatusCode};
@@ -22,6 +21,7 @@ use serde::Deserialize;
 use crate::discord_user_profile::DiscordUser;
 use crate::error::Error;
 use crate::membership_lookup_failure::MembershipLookupFailure;
+use crate::tls_crypto_provider::ensure_tls_provider;
 
 /// Production Discord API base (overridable for tests).
 pub const DEFAULT_DISCORD_API: &str = "https://discord.com/api/v10";
@@ -29,13 +29,6 @@ const OAUTH_SCOPES: &str = "identify guilds.members.read";
 const MAX_429_ATTEMPTS: u32 = 3;
 const DEFAULT_429_BACKOFF: Duration = Duration::from_secs(1);
 const MAX_429_BACKOFF: Duration = Duration::from_secs(5);
-
-static TLS_INIT: Once = Once::new();
-fn ensure_tls_provider() {
-    TLS_INIT.call_once(|| {
-        let _ = rustls::crypto::ring::default_provider().install_default();
-    });
-}
 
 /// Deserialize a field tolerating JSON `null` (→ the type's default). Discord sends `null`
 /// for e.g. a member with no server nickname or a user with no custom avatar, and serde's

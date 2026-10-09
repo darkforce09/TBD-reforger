@@ -19,7 +19,7 @@ pub enum Error {
     Io(#[from] std::io::Error),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// A regular expression built from a scanned name does not compile.
     #[error(transparent)]
     Pattern(#[from] regex::Error),

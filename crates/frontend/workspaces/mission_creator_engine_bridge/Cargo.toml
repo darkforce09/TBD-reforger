@@ -23,6 +23,8 @@ targets = "any"
 test_fixtures = []
 
 [dependencies]
+# The wall clock of the hover throttle, the viewport sampler and the viewshed budgets.
+time_source = { workspace = true }
 # The editor's state vocabulary: the chrome insets, review mode, layer preferences, the catalog,
 # outliner, zone, marker, transform and armed-place models and the seam registration.
 mission_creator_state = { workspace = true }

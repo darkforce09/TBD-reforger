@@ -7,6 +7,7 @@
 
 pub use crate::error::{Error, Result};
 pub use crate::{
-    run, run_bvh_batch, run_bvh_emit, run_bvh_parity, run_instances_verify, run_pak_cat,
-    run_rotation_pin, run_voxels_from_mesh, run_xob_inspect,
+    run, run_instance_verification, run_mesh_voxelization, run_occlusion_sidecar_batch,
+    run_occlusion_sidecar_emission, run_occlusion_sidecar_parity, run_pak_file_print,
+    run_rotation_validation, run_xob_inspection,
 };

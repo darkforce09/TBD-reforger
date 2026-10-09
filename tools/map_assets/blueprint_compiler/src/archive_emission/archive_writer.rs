@@ -46,13 +46,13 @@ use world_line_of_sight::occluder_library::BlasEntry;
 use world_line_of_sight::occluder_library::BlasManifest;
 use world_line_of_sight::occluder_library::PrefabDescriptor;
 
-use crate::bvh::batch_processing::write_if_changed;
+use crate::occlusion_sidecars::batch_processing::write_if_changed;
 
 /// Where the archive is written, relative to `assets/terrains/<terrain>/`.
-pub(crate) const ARCHIVE_REL: &str = "prefabs/building_blueprints.rkyv";
+pub(crate) const ARCHIVE_RELATIVE_PATH: &str = "prefabs/building_blueprints.rkyv";
 
 /// The built archive plus what the report needs to say about it.
-pub(crate) struct Built {
+pub(crate) struct BuiltArchive {
     pub archive: BuildingBlueprintArchive,
     /// Slugs of `blocks: true` building prefabs the archive has no blueprint levels for, sorted.
     /// The Workbench `dump` pass is what fills these in.
@@ -71,8 +71,8 @@ const NON_BLUEPRINT_SUFFIXES: &[&str] = &[".instances.json", ".scene.json"];
 /// # Errors
 /// Any unreadable/unparseable input, a descriptor set that disagrees with the manifest, a
 /// descriptor that will not project, or a blueprint whose slug is not in the catalogue.
-pub(crate) fn build(prefabs: &Path) -> Result<Built> {
-    let manifest: BlasManifest = read_json(&prefabs.join("blas-manifest.json"))?;
+pub(crate) fn build(prefabs: &Path) -> Result<BuiltArchive> {
+    let manifest: BlasManifest = read_json_file(&prefabs.join("blas-manifest.json"))?;
     let blas_index: Vec<_> = manifest.blas.iter().map(BlasEntry::to_archived).collect();
     // `manifest.blas` is emitted sorted by path (library.rs), so the index is a binary search and
     // the archive's `blas` indices are stable across re-emits.
@@ -89,7 +89,7 @@ pub(crate) fn build(prefabs: &Path) -> Result<Built> {
     let mut pid_of_slug: BTreeMap<String, u32> = BTreeMap::new();
     let mut json_pids: Vec<u32> = Vec::new();
     for path in sorted_json_files(&prefabs.join("descriptors"))? {
-        let d: PrefabDescriptor = read_json(&path)?;
+        let d: PrefabDescriptor = read_json_file(&path)?;
         json_pids.push(d.prefab_id.get());
         slug_of_pid.insert(d.prefab_id.get(), d.slug.clone());
         pid_of_slug.insert(d.slug.clone(), d.prefab_id.get());
@@ -118,7 +118,7 @@ pub(crate) fn build(prefabs: &Path) -> Result<Built> {
         if NON_BLUEPRINT_SUFFIXES.iter().any(|s| name.ends_with(s)) {
             continue;
         }
-        let b: JsonBlueprint = read_json(&path)?;
+        let b: JsonBlueprint = read_json_file(&path)?;
         let pid = *pid_of_slug.get(b.prefab_id.as_str()).with_context(|| {
             format!(
                 "{}: prefabId {:?} is not in the prefab catalogue — a blueprint the occluder can \
@@ -139,7 +139,7 @@ pub(crate) fn build(prefabs: &Path) -> Result<Built> {
         .filter_map(|d| slug_of_pid.get(&d.prefab_id.get()).cloned())
         .collect();
 
-    Ok(Built {
+    Ok(BuiltArchive {
         archive: BuildingBlueprintArchive {
             schema_version: ARCHIVE_SCHEMA_VERSION,
             descriptors,
@@ -270,7 +270,7 @@ fn file_name(p: &Path) -> String {
         .to_string()
 }
 
-fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
+fn read_json_file<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T> {
     let s = fs::read_to_string(path).with_context(|| path.display().to_string())?;
     serde_json::from_str(&s).with_context(|| path.display().to_string())
 }
@@ -380,7 +380,7 @@ pub(crate) fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
         built.without_levels.len(),
         workbench_batch_command(&built.without_levels)
     );
-    let dest = assets.join(ARCHIVE_REL);
+    let dest = assets.join(ARCHIVE_RELATIVE_PATH);
     if dry_run {
         println!("  dry run — nothing written ({})", dest.display());
         return Ok(0);

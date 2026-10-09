@@ -89,7 +89,7 @@ pub fn ContentManagerPage() -> impl IntoView {
     };
 
     let new_post = move |_| {
-        let id = format!("new-{}", js_sys::Date::now() as u64);
+        let id = format!("new-{}", time_source::wall_clock_ms() as u64);
         let doc = Doc {
             id: id.clone(),
             title: "Untitled Post".into(),

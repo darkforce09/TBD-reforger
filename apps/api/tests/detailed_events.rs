@@ -113,13 +113,21 @@ fn sequences(page: &Value) -> Vec<i64> {
         .as_array()
         .expect("items")
         .iter()
-        .map(|item| item["sequence"].as_i64().unwrap())
+        .map(|item| {
+            item["sequence"]
+                .as_i64()
+                .expect("the `sequence` field is an integer")
+        })
         .collect()
 }
 
 fn same_instant(left: &Value, right: &Value) -> bool {
-    let parse =
-        |value: &Value| chrono::DateTime::parse_from_rfc3339(value.as_str().unwrap()).unwrap();
+    let parse = |value: &Value| {
+        chrono::DateTime::parse_from_rfc3339(
+            value.as_str().expect("the timestamp value is a string"),
+        )
+        .expect("the timestamp is RFC 3339")
+    };
     parse(left) == parse(right)
 }
 

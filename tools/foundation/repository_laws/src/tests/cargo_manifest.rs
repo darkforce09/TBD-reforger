@@ -9,7 +9,7 @@ name = "api" # the server
 [dependencies]
 axum = { version = "0.8", features = ["macros", "multipart"] }
 # frontend = { path = "../../apps/frontend" } is a comment, not an edge
-renderer = { package = "graphics_engine", path = "../../legacy/graphics_engine" }
+renderer = { package = "render_primitives", path = "../../crates/graphics/render_primitives" }
 shared.workspace = true
 "quoted-name" = "1"
 
@@ -19,8 +19,8 @@ web-sys = { version = "0.3", features = [
     "Document",
 ] }
 
-[dependencies.map_engine]
-path = "../../legacy/map_engine"
+[dependencies.camera_math]
+path = "../../crates/geometry/camera_math"
 default-features = false
 features = ["streaming"]
 
@@ -61,19 +61,19 @@ fn every_dependency_table_and_spelling_yields_an_edge() {
         packages,
         [
             "axum",
-            "graphics_engine",
+            "render_primitives",
             "shared",
             "quoted-name",
             "web-sys",
-            "map_engine",
+            "camera_math",
             "api",
         ]
     );
-    let renamed = edge(&manifest, "graphics_engine");
+    let renamed = edge(&manifest, "render_primitives");
     assert_eq!(renamed.key, "renderer");
     assert_eq!(
         renamed.path.as_deref(),
-        Some("../../legacy/graphics_engine")
+        Some("../../crates/graphics/render_primitives")
     );
     assert_eq!(
         edge(&manifest, "web-sys").table,
@@ -87,10 +87,13 @@ fn every_dependency_table_and_spelling_yields_an_edge() {
 #[test]
 fn a_dependency_subtable_collects_its_fields() {
     let manifest = parse_manifest(MANIFEST);
-    let map_engine = edge(&manifest, "map_engine");
-    assert_eq!(map_engine.table, "dependencies");
-    assert_eq!(map_engine.path.as_deref(), Some("../../legacy/map_engine"));
-    assert_eq!(map_engine.features, ["streaming"]);
+    let camera_math = edge(&manifest, "camera_math");
+    assert_eq!(camera_math.table, "dependencies");
+    assert_eq!(
+        camera_math.path.as_deref(),
+        Some("../../crates/geometry/camera_math")
+    );
+    assert_eq!(camera_math.features, ["streaming"]);
 }
 
 #[test]

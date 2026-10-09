@@ -70,9 +70,9 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Export addon Workbench exporter documentation](/documentation/mod/tbd-export/Scripts/WorkbenchGame/README.md)
+- [Export addon Workbench exporter documentation](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/README.md)
   — the exporter families and their documents.
-- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+- [Map export](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
   every map layer, its entry point and the pipeline to committed data.
 - [Contract catalogs](/contracts/catalogs/README.md) — the item registry catalogs the registry
   export feeds.

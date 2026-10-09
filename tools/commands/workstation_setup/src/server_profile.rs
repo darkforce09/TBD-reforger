@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 
 use crate::error::{Result, ResultExt};
 
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Where the game runtime's machine credential comes from.
 const MACHINE_CREDENTIAL_VARIABLE: &str = "TBD_MACHINE_CREDENTIAL";

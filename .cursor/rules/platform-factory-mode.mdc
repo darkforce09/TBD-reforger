@@ -29,7 +29,7 @@ application code.
 
 | Rule | Normally | In factory mode |
 |---|---|---|
-| [`application-code-forbidden.mdc`](/.cursor/rules/application-code-forbidden.mdc) | no application source edits in the chat | **slice agents edit** `apps/**` and `contracts/**`, each inside its own slice worktree and scoped to its ticket's `owns` paths |
+| [`application-code-forbidden.mdc`](/.cursor/rules/application-code-forbidden.mdc) | no application source edits in the chat | **slice agents edit** `apps/**`, `crates/**` and `contracts/**`, each inside its own slice worktree and scoped to its ticket's `owns` paths |
 | [`cursor-agent-workflow.mdc`](/.cursor/rules/cursor-agent-workflow.mdc) mode C | code runs through `cargo xtask ticket run` | **the orchestrator dispatches slice agents** and integrates their work |
 
 **Branches.** Factory mode stays inside `CLAUDE.md` law 2: commits land on `main`, and the one

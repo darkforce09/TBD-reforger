@@ -6,7 +6,7 @@
 //! **Position:** the ticket crates' layout module, beside [`repository_layout`], which holds the
 //! locations the tools share (the registry files, the artifact tree, the documentation root, the
 //! two documents `ticket sync` rewrites) and finds the checkout root these paths join onto
-//! ([`repository_layout::find_repository_root`]).
+//! ([`repository_root::find_repository_root`]).
 //! **Signals & state:** none; constants and pure functions.
 //! **Invariants:** each path is spelled once, relative to the checkout root; relocating the
 //! documentation tree rewrites [`documentation`] and nothing else in the crate, while the paths
@@ -82,17 +82,17 @@ pub mod documentation {
     use repository_layout::QUEUE_JSON;
     use repository_layout::documentation::DOCUMENTATION_ROOT;
 
-    /// The applications' documentation, which mirrors `apps/` (the game mod's documentation sits
-    /// at [`MOD_DOCUMENTATION_DIR`]). A `website` slice checks it out beside the code.
+    /// The applications' documentation, which mirrors `apps/`, the game mod's
+    /// [`MOD_DOCUMENTATION_DIR`] inside it. A `website` slice checks it out beside the code.
     pub const APPS_DOCUMENTATION_DIR: &str = "documentation/apps";
 
     /// The library crates' documentation, which mirrors `crates/`. A `website` slice checks it out
     /// beside the code, because the website's applications depend on those crates.
     pub const CRATES_DOCUMENTATION_DIR: &str = "documentation/crates";
 
-    /// The game mod's documentation, which mirrors `apps/mod`. A `mod` slice checks it out beside
-    /// the code.
-    pub const MOD_DOCUMENTATION_DIR: &str = "documentation/mod";
+    /// The game mod's documentation, which mirrors `apps/mod` inside [`APPS_DOCUMENTATION_DIR`]. A
+    /// `mod` slice checks it out beside the code.
+    pub const MOD_DOCUMENTATION_DIR: &str = "documentation/apps/mod";
 
     /// One four-section plan document per ticket, named by [`plan_path`].
     pub const PLANS_DIR: &str = "documentation/tickets/plans";

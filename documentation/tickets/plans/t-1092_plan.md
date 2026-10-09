@@ -4,7 +4,7 @@
 
 ## Context
 
-Execution document for [T-1092](/documentation/tickets/specs/t1092_mod_script_modularisation.md): the sub-agent roster and every launch prompt. Progress, amendments and the shared-helper index live in the [progress checkpoint](/documentation/mod/script_modularisation_progress_checkpoint.md).
+Execution document for [T-1092](/documentation/tickets/specs/t1092_mod_script_modularisation.md): the sub-agent roster and every launch prompt. Progress, amendments and the shared-helper index live in the [progress checkpoint](/documentation/apps/mod/script_modularisation_progress_checkpoint.md).
 
 
 The mod scripts break two project laws.
@@ -103,7 +103,7 @@ It writes no product code.
 |---|---|
 | [Spec](/documentation/tickets/specs/t1092_mod_script_modularisation.md) | Problem, goal, locked decisions, acceptance |
 | This plan | Efficiency design, mechanics, roster and every launch prompt |
-| [Progress checkpoint](/documentation/mod/script_modularisation_progress_checkpoint.md) | Roster status, frozen class names, amendments, shared-helper index, forwarders, tick-order baseline, leftovers, ticket batch |
+| [Progress checkpoint](/documentation/apps/mod/script_modularisation_progress_checkpoint.md) | Roster status, frozen class names, amendments, shared-helper index, forwarders, tick-order baseline, leftovers, ticket batch |
 
 **Tickets.**
 - T-1092 is the program ticket "Modularise, document and gate the mod scripts".

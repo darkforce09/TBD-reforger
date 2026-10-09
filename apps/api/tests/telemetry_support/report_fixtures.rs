@@ -36,7 +36,7 @@ use crate::common;
 /// Router, pool and the state behind the router, over this binary's private database.
 ///
 /// Panics when `TEST_DATABASE_URL` is unset: a telemetry suite without its database fails.
-pub async fn boot_with_state() -> (Router, PgPool, AppState) {
+pub(crate) async fn boot_with_state() -> (Router, PgPool, AppState) {
     let url = common::require_test_database_url()
         .expect("TEST_DATABASE_URL is required for the telemetry suites");
     let pool = api_database::connect(&url).await.expect("connect");
@@ -47,7 +47,7 @@ pub async fn boot_with_state() -> (Router, PgPool, AppState) {
 }
 
 /// Seed an account holding `arma_id` (or none) and issue a persisted session for it.
-pub async fn account_token(
+pub(crate) async fn account_token(
     state: &AppState,
     discord_id: &str,
     username: &str,
@@ -73,7 +73,7 @@ pub async fn account_token(
 }
 
 /// A fresh 18-digit Discord id no other test uses.
-pub fn unique_discord_id() -> String {
+pub(crate) fn unique_discord_id() -> String {
     let digits: String = Uuid::new_v4()
         .as_u128()
         .to_string()
@@ -84,7 +84,7 @@ pub fn unique_discord_id() -> String {
 }
 
 /// An account this test owns outright: `(discord_id, username, arma_id)`, every value unique.
-pub async fn seed_player(pool: &PgPool, prefix: &str) -> (String, String, String) {
+pub(crate) async fn seed_player(pool: &PgPool, prefix: &str) -> (String, String, String) {
     let discord_id = unique_discord_id();
     let username = common::unique_arma(prefix);
     let arma_id = common::unique_arma(&format!("{prefix}-arma"));
@@ -93,7 +93,7 @@ pub async fn seed_player(pool: &PgPool, prefix: &str) -> (String, String, String
 }
 
 /// A complete `counters` object with the given kills and deaths.
-pub fn counters(kills: i64, deaths: i64) -> Value {
+pub(crate) fn counters(kills: i64, deaths: i64) -> Value {
     json!({
         "kills": kills, "deaths": deaths, "team_kills": 0, "longest_kill_m": 0,
         "vehicles_destroyed": 0, "is_command": false,
@@ -101,7 +101,7 @@ pub fn counters(kills: i64, deaths: i64) -> Value {
 }
 
 /// One player line; `counters` absent makes no counter claim.
-pub fn line(arma_id: &str, source_event_id: &str, counters: Option<Value>) -> Value {
+pub(crate) fn line(arma_id: &str, source_event_id: &str, counters: Option<Value>) -> Value {
     let mut line = json!({
         "arma_id": arma_id, "role_played": "Rifleman", "source_event_id": source_event_id,
     });
@@ -112,13 +112,13 @@ pub fn line(arma_id: &str, source_event_id: &str, counters: Option<Value>) -> Va
 }
 
 /// A `match-results` body without its `revision`.
-pub fn report(source: &str, outcome: &str, players: Vec<Value>) -> Value {
+pub(crate) fn report(source: &str, outcome: &str, players: Vec<Value>) -> Value {
     json!({ "match": { "source_match_id": source, "outcome": outcome }, "players": players })
 }
 
 /// Link `arma_id` to the account behind `bearer` through `POST /api/v1/me/link` and the
 /// machine-authenticated `POST /api/v1/ingest/link-confirm` of `server`.
-pub async fn link_identity(
+pub(crate) async fn link_identity(
     app: &Router,
     server: &ReportingServer,
     bearer: &str,
@@ -138,7 +138,7 @@ pub async fn link_identity(
 
 /// Open `uri` as an event stream and answer its status with the first `data:` frame, if one
 /// arrives within five seconds.
-pub async fn first_stream_status(
+pub(crate) async fn first_stream_status(
     app: &Router,
     uri: &str,
     bearer: &str,
@@ -150,7 +150,7 @@ pub async fn first_stream_status(
             format!("Bearer {bearer}"),
         )
         .body(Body::empty())
-        .unwrap();
+        .expect("the request builds");
     let response = app.clone().oneshot(request).await.unwrap();
     let status = response.status();
     if status != StatusCode::OK {
@@ -173,7 +173,7 @@ pub async fn first_stream_status(
 }
 
 /// The stored match row: `(revision, report_sha256, outcome, finalized_at, event_count)`.
-pub type MatchState = (
+pub(crate) type MatchState = (
     i64,
     Option<String>,
     String,
@@ -182,7 +182,7 @@ pub type MatchState = (
 );
 
 /// Read the stored state of one match.
-pub async fn match_state(pool: &PgPool, match_id: Uuid) -> MatchState {
+pub(crate) async fn match_state(pool: &PgPool, match_id: Uuid) -> MatchState {
     sqlx::query_as(
         "SELECT revision, report_sha256, outcome::text, finalized_at, event_count
          FROM matches WHERE id = $1",
@@ -195,7 +195,7 @@ pub async fn match_state(pool: &PgPool, match_id: Uuid) -> MatchState {
 
 /// The stored player lines of one match: `(arma_id, source_event_id, kills, deaths,
 /// discord_id)` ordered by `arma_id` then `source_event_id`.
-pub async fn player_rows(
+pub(crate) async fn player_rows(
     pool: &PgPool,
     match_id: Uuid,
 ) -> Vec<(String, String, Option<i64>, Option<i64>, Option<String>)> {
@@ -211,7 +211,7 @@ pub async fn player_rows(
 
 /// `(leaderboard_totals.kills, users.total_deployments)` of one account; kills is `None` when
 /// the account has no leaderboard row.
-pub async fn leaderboard_kills(pool: &PgPool, discord_id: &str) -> (Option<i64>, i64) {
+pub(crate) async fn leaderboard_kills(pool: &PgPool, discord_id: &str) -> (Option<i64>, i64) {
     let kills: Option<i64> =
         sqlx::query_scalar("SELECT kills::int8 FROM leaderboard_totals WHERE discord_id = $1")
             .bind(discord_id)
@@ -231,7 +231,7 @@ pub async fn leaderboard_kills(pool: &PgPool, discord_id: &str) -> (Option<i64>,
 /// `(stats.kills, total_operations)` from `GET /api/v1/users/{discord_id}/stats` and the kills
 /// of the account's row in `GET /api/v1/leaderboards?category=missions&q=<username>` (`None`
 /// when the board does not list it).
-pub async fn served_statistics(
+pub(crate) async fn served_statistics(
     app: &Router,
     bearer: &str,
     discord_id: &str,
@@ -273,7 +273,7 @@ pub async fn served_statistics(
 }
 
 /// One detailed event; `occurred_at` and `mission_time_ms` follow `sequence`.
-pub fn event(event_id: &str, sequence: i64, kind: &str, payload: Value) -> Value {
+pub(crate) fn event(event_id: &str, sequence: i64, kind: &str, payload: Value) -> Value {
     json!({
         "event_id": event_id, "sequence": sequence, "kind": kind,
         "mission_time_ms": sequence * 1000,
@@ -284,7 +284,10 @@ pub fn event(event_id: &str, sequence: i64, kind: &str, payload: Value) -> Value
 
 /// The stored `match_event_totals` of one match: `(arma_id, kind, participant_role,
 /// event_count)` in key order.
-pub async fn event_totals(pool: &PgPool, match_id: Uuid) -> Vec<(String, String, String, i64)> {
+pub(crate) async fn event_totals(
+    pool: &PgPool,
+    match_id: Uuid,
+) -> Vec<(String, String, String, i64)> {
     sqlx::query_as(
         "SELECT arma_id, kind, participant_role, event_count FROM match_event_totals
          WHERE match_id = $1 ORDER BY arma_id, kind, participant_role",
@@ -296,7 +299,7 @@ pub async fn event_totals(pool: &PgPool, match_id: Uuid) -> Vec<(String, String,
 }
 
 /// The stored events of one match: `(event_id, sequence, kind)` in sequence order.
-pub async fn stored_events(pool: &PgPool, match_id: Uuid) -> Vec<(String, i64, String)> {
+pub(crate) async fn stored_events(pool: &PgPool, match_id: Uuid) -> Vec<(String, i64, String)> {
     sqlx::query_as(
         "SELECT event_id, sequence, kind FROM match_events WHERE match_id = $1 ORDER BY sequence",
     )

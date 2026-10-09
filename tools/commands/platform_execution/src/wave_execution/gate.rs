@@ -1,8 +1,8 @@
 //! The two gate drivers: the cheap per-slice gate and the full wave gate.
 //!
 //! **Role:** holds the step `Runner`, the ten `cargo xtask verify` steps both gates share
-//! (`VERIFY_STEPS`) and the derivation of the tool crates the wave gate lints, and re-exports
-//! `gate_slice` and `cmd_gate`.
+//! (`VERIFY_STEPS`), the derivation of the tool crates the wave gate lints and the native clippy
+//! command line, and re-exports `gate_slice` and `cmd_gate`.
 //!
 //! **Position:** reached through the wave command table (`wave gate [--slice <id>] [<base>]`); the
 //! drivers live in `gate/checkrun.rs` and `gate/gate_dispatch.rs`. Neither runs Chrome or the
@@ -15,8 +15,10 @@
 //!
 //! **Invariants:** the gates are not fail-fast — every step runs and the verdict is red when any
 //! step was; a failing step prints `FAIL` and its last 15 captured lines indented six spaces; the
-//! wave gate's tool lint names every workspace member under `tools/`, derived from the root
-//! manifest, and a workspace without xtask or developer_tools there is red, never a smaller lint.
+//! wave gate's clippy steps together name every workspace member, derived from the root manifest
+//! (the tool lint every member under `tools/`, the frontend steps the frontend family, and
+//! `gate/clippy_package_sets.rs` the wasm32 members and every other application and crate), and a
+//! workspace without xtask, developer_tools or api in its lane is red, never a smaller lint.
 
 use super::{
     Ctx, base, changed, db, git_stdout_lossy, host, lock::GateState, migrate, schema, touch, trunk,
@@ -112,9 +114,9 @@ fn tool_clippy_packages(repo_root: &std::path::Path) -> Result<Vec<String>, Stri
     Ok(packages)
 }
 
-/// The `cargo clippy` command line of the wave gate's tool lint: one `-p` per package, every
-/// target, `-D warnings`.
-fn tool_clippy_argv(packages: &[String]) -> Vec<&str> {
+/// The `cargo clippy` command line of the wave gate's host-target lints (the tool crates, the
+/// applications and the library crates): one `-p` per package, every target, `-D warnings`.
+fn native_clippy_argv(packages: &[String]) -> Vec<&str> {
     let mut argv = vec!["cargo", "clippy"];
     for package in packages {
         argv.extend(["-p", package.as_str()]);
@@ -128,6 +130,7 @@ fn tool_clippy_argv(packages: &[String]) -> Vec<&str> {
 mod tests;
 
 mod checkrun;
+mod clippy_package_sets;
 use checkrun::checkrun;
 pub(crate) use checkrun::gate_slice;
 use checkrun::hostrun;

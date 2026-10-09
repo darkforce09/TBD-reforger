@@ -212,7 +212,7 @@ pub async fn hydrate_from_server(
                 let local_objects = doc.borrow().as_ref().map_or(0, MissionDocCore::slot_count);
                 let local_saved = crate::persist::draft_written_at(id.as_str()).map_or_else(
                     || "not recorded on this browser".to_string(),
-                    |at| tab_lock::ago(js_sys::Date::now(), at),
+                    |at| tab_lock::ago(time_source::wall_clock_ms(), at),
                 );
                 let server_saved = version.map_or_else(
                     || tab_lock::short_utc(&detail.updated_at),

@@ -77,7 +77,13 @@ async fn plant_whitespace(pool: &PgPool) {
             .expect("read arma_id");
     assert_eq!(stored.as_deref(), Some(WS_ARMA));
     assert!(stored.is_some());
-    assert!(stored.as_deref().unwrap().trim().is_empty());
+    assert!(
+        stored
+            .as_deref()
+            .expect("the stored arma_id is present")
+            .trim()
+            .is_empty()
+    );
 }
 
 /// GET /me must report `arma_linked: false` for whitespace-only arma_id.

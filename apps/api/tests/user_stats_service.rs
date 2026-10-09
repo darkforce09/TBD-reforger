@@ -157,7 +157,7 @@ impl Fixture {
         .fetch_one(pool)
         .await
         .expect("seed event_mission");
-        let mut fixture = pool.begin().await.unwrap();
+        let mut fixture = pool.begin().await.expect("a transaction begins");
         let allocation = if matches!(
             state,
             "registered" | "legacy_unknown" | "attended" | "no_show"
@@ -177,7 +177,7 @@ impl Fixture {
         .execute(&mut *fixture)
         .await
         .expect("seed registration");
-        fixture.commit().await.unwrap();
+        fixture.commit().await.expect("the transaction commits");
     }
 
     async fn stored_stats(&self, pool: &PgPool) -> (i64, f64) {

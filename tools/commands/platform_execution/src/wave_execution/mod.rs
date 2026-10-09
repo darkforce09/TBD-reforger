@@ -199,10 +199,10 @@ impl Ctx {
     ///
     /// REFUSE RATHER THAN GUESS A ROOT. A driver that guesses describes a directory that is not
     /// the repository and reports `open: 0 / 0 tickets` about it —
-    /// [`repository_layout::find_repository_root`] walks up for the ticket ledger and errors
+    /// [`repository_root::find_repository_root`] walks up for the ticket ledger and errors
     /// instead.
     pub(crate) fn enter() -> Result<Ctx> {
-        let root = repository_layout::find_repository_root()?;
+        let root = repository_root::find_repository_root()?;
         std::env::set_current_dir(&root)?;
 
         // The committed lock IS the plan: one file, one writer. There is no env override, and

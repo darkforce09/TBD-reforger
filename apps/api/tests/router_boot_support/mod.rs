@@ -22,9 +22,9 @@ use axum::Router;
 use crate::common;
 
 /// The SPA origin `Config::for_tests` allows, and the prefix dev-login redirects to.
-pub const ORIGIN: &str = "http://localhost:5173";
+pub(crate) const ORIGIN: &str = "http://localhost:5173";
 
-pub async fn boot() -> Option<Router> {
+pub(crate) async fn boot() -> Option<Router> {
     let url = common::require_test_database_url()?;
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");

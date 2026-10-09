@@ -3,9 +3,9 @@ use crate::architectural_analysis::vertical_slabs;
 use crate::voxel_processing::synthetic_fixtures;
 use crate::voxel_processing::voxel_types::{DUMP_VERSION, ExcludedCounts, VoxelDump};
 
-fn analyzed(d: &VoxelDump) -> (VerticalScan, DumpMeta, Params) {
-    let m = d.meta().clone();
-    let p = Params {
+fn analyzed(d: &VoxelDump) -> (VerticalScan, DumpMetadata, AnalysisParameters) {
+    let m = d.metadata().clone();
+    let p = AnalysisParameters {
         min_floor_y: -0.5 - m.origin[1],
         ..Default::default()
     };
@@ -113,7 +113,7 @@ fn coverage_ground_filter_and_erosion_guards() {
         nx,
         nz,
     };
-    let meta = DumpMeta {
+    let meta = DumpMetadata {
         v: DUMP_VERSION.to_string(),
         slug: "micro".to_string(),
         resource: "synthetic://micro".to_string(),
@@ -132,7 +132,7 @@ fn coverage_ground_filter_and_erosion_guards() {
         tick: 0,
     };
     // Pin the pitch: this micro-grid is designed around 4-fine-cell blocks.
-    let p = Params {
+    let p = AnalysisParameters {
         roof_cell_m: 0.4,
         ..Default::default()
     };
@@ -143,7 +143,7 @@ fn coverage_ground_filter_and_erosion_guards() {
     assert_eq!(g.heights_m[1], Some(3.0));
     assert_eq!(g.heights_m[3], Some(3.0));
 
-    let pe = Params {
+    let pe = AnalysisParameters {
         roof_erode_cells: 1,
         ..Default::default()
     };

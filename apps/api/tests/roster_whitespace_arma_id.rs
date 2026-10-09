@@ -109,10 +109,12 @@ async fn call(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -138,7 +140,7 @@ async fn seeded_event_with_slot(
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "mission: {m}");
-    let mid = m["id"].as_str().unwrap();
+    let mid = m["id"].as_str().expect("the `id` field is a string");
 
     // create_mission already stores stub 0.1.0 — publish a real editor graph as 0.2.0.
     let ver = format!(r#"{{"semver":"0.2.0","payload":{EDITOR_PAYLOAD}}}"#);
@@ -161,7 +163,10 @@ async fn seeded_event_with_slot(
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "event: {e}");
-    let eid = e["id"].as_str().unwrap().to_string();
+    let eid = e["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string();
 
     // No explicit orbat — derive from the published version so pair_slots stays in lockstep.
     let attach = format!(r#"{{"mission_id":"{mid}","start_time":"2027-11-01T00:00:00Z"}}"#);
@@ -174,7 +179,7 @@ async fn seeded_event_with_slot(
     )
     .await;
     assert_eq!(st, StatusCode::CREATED, "attach: {em}");
-    let emid = em["id"].as_str().unwrap();
+    let emid = em["id"].as_str().expect("the `id` field is a string");
 
     let (st, orbat) = call(
         app,
@@ -211,7 +216,7 @@ async fn seeded_event_with_slot(
     assert_eq!(st, StatusCode::OK, "reviews: {history}");
     let artifact = history["reviews"][0]["artifact_id"]
         .as_str()
-        .unwrap()
+        .expect("the `artifact_id` field is a string")
         .to_string();
     let approval = format!(r#"{{"artifact_id":"{artifact}"}}"#);
     let (st, approved) = call(
@@ -234,14 +239,18 @@ async fn seeded_event_with_slot(
     )
     .await;
     assert_eq!(st, StatusCode::OK, "scenario: {registered}");
-    let secret =
-        common::event_runtime_credential(pool, eid.parse().unwrap(), common::DEV_LOGIN_USER).await;
+    let secret = common::event_runtime_credential(
+        pool,
+        eid.parse().expect("the created event id is a UUID"),
+        common::DEV_LOGIN_USER,
+    )
+    .await;
     let server: String =
         sqlx::query_scalar("SELECT server_id::text FROM events WHERE id = $1::uuid")
             .bind(&eid)
             .fetch_one(pool)
             .await
-            .unwrap();
+            .expect("the read of events returns a row");
     let request = format!(
         r#"{{"mission_id":"{mid}","artifact_id":"{artifact}","event_mission_id":"{emid}"}}"#
     );
@@ -267,8 +276,14 @@ fn seating(body: &Value) -> std::collections::BTreeMap<String, String> {
         .iter()
         .map(|assignment| {
             (
-                assignment["armaId"].as_str().unwrap().to_owned(),
-                assignment["slotUid"].as_str().unwrap().to_owned(),
+                assignment["armaId"]
+                    .as_str()
+                    .expect("the `armaId` field is a string")
+                    .to_owned(),
+                assignment["slotUid"]
+                    .as_str()
+                    .expect("the `slotUid` field is a string")
+                    .to_owned(),
             )
         })
         .collect()

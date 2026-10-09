@@ -11,9 +11,9 @@ not factory-dispatchable; no owns, no wave row
 
 --- HEAD migration_legacy (verbatim) ---
 
-DEFERRED by operator decision — "doesn't matter if they're rocks, that's fine." Recorded because it is cheaper than it sounds and someone will re-derive it otherwise: the data ALREADY SHIPS. `packages/map-assets/everon/manifest.json` lists `P4_rocks` in `importPhaseShipped` and carries a `rockLarge` type-inventory entry, so the chunks contain rocks and nothing draws them. This is a RENDER gap, not an export gap. No framework evidence bears on it. If promoted it would land in `crates/map-engine-render/src/engine.rs` plus the world glyph atlas — INFERRED, not derived; it carries no owns and takes no wave slot.
+DEFERRED by operator decision — "doesn't matter if they're rocks, that's fine." Recorded because it is cheaper than it sounds and someone will re-derive it otherwise: the data ALREADY SHIPS. `assets/terrains/everon/manifest.json` lists `P4_rocks` in `importPhaseShipped` and carries a `rockLarge` type-inventory entry, so the chunks contain rocks and nothing draws them. This is a RENDER gap, not an export gap. No framework evidence bears on it. If promoted it would land in `crates/map-engine-render/src/engine.rs` plus the world glyph atlas — INFERRED, not derived; it carries no owns and takes no wave slot.
 
-missing=0"""
+missing=0 Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-render/src/engine.rs: removed in commit 1660b03f8, no successor."""
 main_goal = "Deferred operator decision; rocks data ships but render draws nothing."
 context = [
     "DEFERRED by operator: doesn't matter if they're rocks.",
@@ -22,7 +22,7 @@ context = [
 ]
 requirement = ["No work while deferred; promotion would target map-engine-render engine.rs."]
 current_state = [
-    "packages/map-assets/everon/manifest.json lists P4_rocks shipped phase.",
+    "assets/terrains/everon/manifest.json lists P4_rocks shipped phase.",
     "Chunks contain rocks; nothing draws them on map.",
     "No owns; takes no wave slot; not factory-dispatchable.",
 ]

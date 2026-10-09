@@ -39,5 +39,5 @@ pub(crate) fn aerial_orthophoto_artifacts_dir(root: &Path) -> PathBuf {
 }
 
 #[cfg(test)]
-#[path = "tests/decision_record_locations/tests.rs"]
+#[path = "tests/decision_record_locations_tests.rs"]
 mod tests;

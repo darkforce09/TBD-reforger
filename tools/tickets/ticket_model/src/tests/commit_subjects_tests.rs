@@ -64,7 +64,7 @@ fn shape_predicates() {
 /// back `Z`-canonical, and the list is oldest-first.
 #[test]
 fn mine_subjects_live_repo_smoke() {
-    let root = repository_layout::find_repository_root().expect("repository root");
+    let root = repository_root::find_repository_root().expect("repository root");
     let map = mine_subjects(&root).expect("mine live history");
     let t9171 = map.get("T-917.1").expect("T-917.1 has subject commits");
     assert!(t9171.len() >= 2, "vocab commit + ship commit");

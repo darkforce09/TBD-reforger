@@ -37,6 +37,8 @@ serde_json = { workspace = true }
 sqlx = { workspace = true, features = ["runtime-tokio", "postgres"] }
 subtle = { workspace = true }
 thiserror = { workspace = true }
+# The wall clock the metrics registry stamps its start with.
+time_source = { workspace = true }
 tokio = { workspace = true, features = ["macros", "sync", "time"] }
 tracing = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }

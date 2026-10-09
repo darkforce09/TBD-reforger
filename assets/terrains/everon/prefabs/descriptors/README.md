@@ -32,7 +32,7 @@ assets/terrains/everon/prefabs/descriptors/
 ## Producers and consumers
 
 - Producers: `cargo xtask map bvh-batch --all-prefabs`, in
-  `tools/map_assets/blueprint_compiler/src/` (`bvh/prefab_catalog/` and `archive_emission/`).
+  `tools/map_assets/blueprint_compiler/src/` (`occlusion_sidecars/prefab_templates/` and `archive_emission/`).
 - Consumers:
   - the map engine's occluder loader
     (`crates/streaming/map_asset_loading/src/occluder_loader.rs`), which fetches

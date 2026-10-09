@@ -23,7 +23,7 @@ use process_runner::Run;
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::Duration,
 };
 use verification_core::{Kind, NotRun, Report, Verdict};
 
@@ -100,12 +100,10 @@ pub fn verify(root: &Path, directory: &Path, execute: bool) -> Result<u8> {
     Ok(report.finish() as u8)
 }
 
-/// The current Unix time in whole seconds.
+/// The current Unix time in whole seconds, read through the workspace's one clock
+/// ([`time_source::SystemClock`]; 0 for a system clock set before 1970).
 pub(crate) fn now() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock before epoch")
-        .as_secs()
+    time_source::Clock::now_unix_ms(&time_source::SystemClock) / 1_000
 }
 
 fn execute_local(

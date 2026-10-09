@@ -43,6 +43,7 @@ pub struct RconSettings {
     pub server: SocketAddr,
     /// The server config's `rcon.password`, exposed only in the login packet.
     pub password: SecretText,
+    /// The keep-alive, retransmission and answer timings.
     pub timings: RconTimings,
 }
 

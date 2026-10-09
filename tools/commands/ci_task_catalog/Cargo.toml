@@ -38,6 +38,7 @@ repository_checks = { workspace = true }
 # The workspace member list the member test lane derives.
 repository_laws = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 # The contract codegen and the schema gates.
 schema_tooling = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

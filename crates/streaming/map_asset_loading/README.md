@@ -66,7 +66,7 @@ No feature. The live budget reads `?memBudgetMb` and `window.__memBudgetMb` on t
   (`terrain_elevation`, `terrain_relief`, `satellite_imagery`, `water_bodies`); the world format
   crates (`world_chunks`, `world_file_formats`, `world_store`); `road_network`, `vegetation`,
   `place_names`, `map_draw_lanes`, `label_layout`, `world_line_of_sight`, `spatial_indexes`,
-  `map_coordinates`, `render_primitives`, `browser_platform`; `serde_json`, `futures` and the
+  `map_coordinates`, `render_primitives`, `browser_platform`, `time_source`; `serde_json`, `futures` and the
   browser bindings; the files under `/map-assets/<terrain>/`.
 - Used by: `map_streaming_host`; the single-page app (`apps/frontend`, WebAssembly build only),
   which imports the loaders and `live_memory_budget` directly.

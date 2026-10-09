@@ -1,5 +1,5 @@
 use super::*;
-use crate::find_repository_root;
+use repository_root::find_repository_root;
 
 /// The pin file is committed, so it exists in a real checkout.
 #[test]

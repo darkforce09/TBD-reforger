@@ -26,13 +26,13 @@ use std::collections::BTreeSet;
 use uuid::Uuid;
 
 /// Refresh-token families (sessions) every generated account holds.
-pub const FAMILY_COUNT: usize = 2;
+pub(crate) const FAMILY_COUNT: usize = 2;
 /// Exclusive upper bound of the steps in one generated sequence.
 const MAX_STEPS: usize = 8;
 
 /// Which token of its family an operation presents.
 #[derive(Debug, Clone, Copy)]
-pub enum Credential {
+pub(crate) enum Credential {
     /// The family's newest token.
     Current,
     /// A token the family already spent, by index modulo the spent count; the current token
@@ -42,14 +42,14 @@ pub enum Credential {
 
 /// The session service an operation calls.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OperationKind {
+pub(crate) enum OperationKind {
     Rotate,
     Logout,
 }
 
 /// One generated operation against one family.
 #[derive(Debug, Clone, Copy)]
-pub struct FamilyOperation {
+pub(crate) struct FamilyOperation {
     pub kind: OperationKind,
     pub family: usize,
     pub credential: Credential,
@@ -57,7 +57,7 @@ pub struct FamilyOperation {
 
 /// One generated step.
 #[derive(Debug, Clone, Copy)]
-pub enum RefreshStep {
+pub(crate) enum RefreshStep {
     Alone(FamilyOperation),
     /// Two operations released together behind a barrier.
     ConcurrentPair(FamilyOperation, FamilyOperation),
@@ -65,7 +65,7 @@ pub enum RefreshStep {
 
 /// An operation bound to the concrete refresh token it presents.
 #[derive(Debug, Clone)]
-pub struct PresentedOperation {
+pub(crate) struct PresentedOperation {
     pub kind: OperationKind,
     pub family: usize,
     pub token: String,
@@ -73,7 +73,7 @@ pub struct PresentedOperation {
 
 /// What a session service answered.
 #[derive(Debug, Clone)]
-pub enum ObservedOutcome {
+pub(crate) enum ObservedOutcome {
     Rotated {
         access_credential: String,
         refresh_token: String,
@@ -84,7 +84,7 @@ pub enum ObservedOutcome {
 
 /// The model of one refresh-token family.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FamilyModel {
+pub(crate) struct FamilyModel {
     pub session_id: Uuid,
     pub current: String,
     pub spent: Vec<String>,
@@ -95,7 +95,11 @@ pub struct FamilyModel {
 
 impl FamilyModel {
     /// A family fresh from sign-in.
-    pub fn issued(session_id: Uuid, access_credential: String, refresh_token: String) -> Self {
+    pub(crate) fn issued(
+        session_id: Uuid,
+        access_credential: String,
+        refresh_token: String,
+    ) -> Self {
         Self {
             session_id,
             current: refresh_token,
@@ -108,13 +112,13 @@ impl FamilyModel {
 
 /// The model of every family of one account.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AccountModel {
+pub(crate) struct AccountModel {
     pub families: Vec<FamilyModel>,
 }
 
 impl AccountModel {
     /// Bind `operation` to the concrete token this state names.
-    pub fn present(&self, operation: FamilyOperation) -> PresentedOperation {
+    pub(crate) fn present(&self, operation: FamilyOperation) -> PresentedOperation {
         let family = &self.families[operation.family];
         let token = match operation.credential {
             Credential::Spent(index) if !family.spent.is_empty() => {
@@ -169,7 +173,7 @@ impl AccountModel {
     }
 
     /// Every state `candidates` lead to when `operation` answered `observed`.
-    pub fn after_alone(
+    pub(crate) fn after_alone(
         candidates: &[Self],
         operation: &PresentedOperation,
         observed: &ObservedOutcome,
@@ -187,7 +191,7 @@ impl AccountModel {
     }
 
     /// Every state `candidates` lead to under either serialisation of a concurrent pair.
-    pub fn after_either_order(
+    pub(crate) fn after_either_order(
         candidates: &[Self],
         first: (&PresentedOperation, &ObservedOutcome),
         second: (&PresentedOperation, &ObservedOutcome),
@@ -208,7 +212,7 @@ impl AccountModel {
     }
 
     /// The sessions of the families this state keeps live.
-    pub fn live_sessions(&self) -> BTreeSet<Uuid> {
+    pub(crate) fn live_sessions(&self) -> BTreeSet<Uuid> {
         self.families
             .iter()
             .filter(|family| !family.revoked)
@@ -217,7 +221,7 @@ impl AccountModel {
     }
 
     /// The stored hashes of the one live token of every live family.
-    pub fn live_token_hashes(&self) -> BTreeSet<String> {
+    pub(crate) fn live_token_hashes(&self) -> BTreeSet<String> {
         self.families
             .iter()
             .filter(|family| !family.revoked)
@@ -243,7 +247,7 @@ fn family_operation() -> impl Strategy<Value = FamilyOperation> {
 }
 
 /// Every generated step sequence.
-pub fn refresh_steps() -> impl Strategy<Value = Vec<RefreshStep>> {
+pub(crate) fn refresh_steps() -> impl Strategy<Value = Vec<RefreshStep>> {
     let step = prop_oneof![
         3 => family_operation().prop_map(RefreshStep::Alone),
         2 => (family_operation(), family_operation())

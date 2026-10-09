@@ -54,7 +54,7 @@ pub(crate) fn validate(input: &Path) -> Result<ValidationReport> {
 }
 
 fn inspect(input: &Path, report: &mut ValidationReport) -> Result<()> {
-    let root = repository_layout::find_repository_root()?;
+    let root = repository_root::find_repository_root()?;
     let policy = Policy::load(&root)?;
     let validators: BTreeMap<_, _> = SCHEMAS
         .iter()

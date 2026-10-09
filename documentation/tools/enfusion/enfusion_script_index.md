@@ -19,7 +19,7 @@ document that cites a symbol the tables do not hold. Mod developers and the AI a
   [executables README](/tools/developer_tools/src/bin/README.md#enf).
 - Related features: the [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md),
   which sets when a slice consults the oracle and which oracle lanes it may read; the
-  [capability verdicts](/documentation/mod/tbd-framework/capability_verdicts.md), the table
+  [capability verdicts](/documentation/apps/mod/tbd-framework/capability_verdicts.md), the table
   `enf capability` checks; the [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md),
   for the live [Workbench](/documentation/glossary/n_to_z.md#workbench) half of the same tooling.
 
@@ -60,7 +60,7 @@ cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf sourc
   lane's table. An unresolved marker exits 1. A document names the symbol and the tool supplies
   the coordinates, so no line number is typed by hand.
 - `enf capability` joins the framework index with the rules in
-  `documentation/mod/tbd-framework/capability_verdicts.tsv`, writes
+  `documentation/apps/mod/tbd-framework/capability_verdicts.tsv`, writes
   `.ai/artifacts/enf-index/capability_matrix.tsv`, and exits 1 when a framework file matches no
   rule, so no upstream subsystem goes untriaged.
 
@@ -77,7 +77,7 @@ the unit tests with every workspace member.
 - `.ai/artifacts/enf-index/`: the committed tables, `crf_*.tsv` and `vanilla_*.tsv` (symbols,
   files, `modded`, `rplprops`), `vanilla_api_classes.tsv` and `vanilla_api_members.tsv`, and the
   generated `capability_matrix.tsv`.
-- `documentation/mod/tbd-framework/capability_verdicts.tsv`: the hand-kept verdict per
+- `documentation/apps/mod/tbd-framework/capability_verdicts.tsv`: the hand-kept verdict per
   framework path prefix; its format is in the capability verdicts document.
 - The `crf_framework` and `vanilla_reference` lanes of
   [`apps/mod/References/`](/apps/mod/References/README.md): the gitignored source lanes, linked

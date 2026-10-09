@@ -167,7 +167,7 @@ pub async fn smoke_virtual_outliner(dist: &str, raw_path: &str) -> Result<u8> {
 /// Server-hydrate data-safety gate (LIVE backend on :8080).
 pub async fn smoke_hydrate(dist: &str) -> Result<u8> {
     const SAVED_SLOTS: i64 = 3; // must differ from SEED_N (8)
-    let http = reqwest::Client::builder()
+    let http = crate::http_client::http_client_builder()
         .redirect(reqwest::redirect::Policy::none())
         .build()?;
     if !cdp::wait_http(&http, &format!("{BACKEND}/healthz"), 60).await {

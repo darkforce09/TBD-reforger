@@ -16,7 +16,7 @@ use super::{Actor, Fixture};
 const REGISTERED_STARTED_AT: &str = "2026-01-01T00:00:00Z";
 
 /// The fixture server's machine credential and the runtime session it started.
-pub struct ReportingGameServer {
+pub(crate) struct ReportingGameServer {
     pub server_id: Uuid,
     pub credential: Actor,
     pub runtime_session_id: Uuid,
@@ -25,7 +25,7 @@ pub struct ReportingGameServer {
 impl Fixture {
     /// The fixture's game server, registered with a `mod_runtime` credential and a started
     /// runtime session on first use.
-    pub async fn game_server(&self) -> &ReportingGameServer {
+    pub(crate) async fn game_server(&self) -> &ReportingGameServer {
         self.game_server
             .get_or_init(|| async {
                 let server_id: Uuid = sqlx::query_scalar(
@@ -35,7 +35,7 @@ impl Fixture {
                 .bind(self.fresh_id("game-server"))
                 .fetch_one(self.pool())
                 .await
-                .unwrap();
+                .expect("the insert into servers returns its row");
                 let (status, issued) = self
                     .call(
                         &self.admin,
@@ -51,7 +51,10 @@ impl Fixture {
                 );
                 let credential = Actor {
                     id: String::new(),
-                    token: issued["secret"].as_str().unwrap().to_owned(),
+                    token: issued["secret"]
+                        .as_str()
+                        .expect("the `secret` field is a string")
+                        .to_owned(),
                 };
                 let (status, started) = self
                     .call(&credential, "POST", "/api/v1/game-runtime/sessions", None)
@@ -66,9 +69,9 @@ impl Fixture {
                     credential,
                     runtime_session_id: started["runtime_session_id"]
                         .as_str()
-                        .unwrap()
+                        .expect("the `runtime_session_id` field is a string")
                         .parse()
-                        .unwrap(),
+                        .expect("the `runtime_session_id` field parses as an id"),
                 }
             })
             .await
@@ -76,7 +79,7 @@ impl Fixture {
 
     /// Post `body` (`{match, players, removed_lines?}`) as the next results revision of its
     /// `source_match_id`, registering the match with the fixture server first when it is new.
-    pub async fn report_match_results(&self, body: Value) -> (StatusCode, Value) {
+    pub(crate) async fn report_match_results(&self, body: Value) -> (StatusCode, Value) {
         let server = self.game_server().await;
         let source = body["match"]["source_match_id"]
             .as_str()
@@ -84,7 +87,10 @@ impl Fixture {
             .trim()
             .to_owned();
         let revision = {
-            let mut revisions = self.result_revisions.lock().unwrap();
+            let mut revisions = self
+                .result_revisions
+                .lock()
+                .expect("the mutex is not poisoned");
             let next = revisions.get(&source).copied().unwrap_or(0) + 1;
             revisions.insert(source.clone(), next);
             next
@@ -119,7 +125,7 @@ impl Fixture {
     }
 
     /// Confirm an identity link code from the fixture server: `{code, arma_id, arma_character}`.
-    pub async fn confirm_link(&self, body: Value) -> (StatusCode, Value) {
+    pub(crate) async fn confirm_link(&self, body: Value) -> (StatusCode, Value) {
         let server = self.game_server().await;
         self.call(
             &server.credential,

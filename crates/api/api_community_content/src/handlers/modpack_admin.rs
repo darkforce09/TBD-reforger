@@ -20,6 +20,7 @@ use api_audit_log::AuditSeverity;
 use api_audit_log::audit_writer::{actor_display_name, write_audit};
 use api_foundation::error_handling::api_error::ApiError;
 use api_foundation::http::path_parameters::PathParams;
+use api_foundation::http::required_text_field::required_trimmed_text;
 use api_http_layer::middleware::AdminUser;
 use api_state::AppState;
 
@@ -68,22 +69,6 @@ pub struct ModpackInput {
     /// The pack's mods; a replace swaps the whole list.
     #[serde(default)]
     pub mods: Vec<ModInput>,
-}
-
-fn validated_name(raw: &str) -> Result<String, ApiError> {
-    let name = raw.trim();
-    if name.is_empty() {
-        return Err(ApiError::bad_request("name is required"));
-    }
-    Ok(name.to_string())
-}
-
-fn validated_version(raw: &str) -> Result<String, ApiError> {
-    let version = raw.trim();
-    if version.is_empty() {
-        return Err(ApiError::bad_request("version is required"));
-    }
-    Ok(version.to_string())
 }
 
 fn validated_mod(
@@ -171,8 +156,8 @@ pub async fn create_modpack(
     body: Result<Json<ModpackInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<ModpackDto>), ApiError> {
     let Json(input) = body.map_err(ApiError::from_json_rejection)?;
-    let name = validated_name(&input.name)?;
-    let version = validated_version(&input.version)?;
+    let name = required_trimmed_text(&input.name, "name")?;
+    let version = required_trimmed_text(&input.version, "version")?;
     if input.total_size_bytes < 0 {
         return Err(ApiError::bad_request("total_size_bytes must be >= 0"));
     }
@@ -238,8 +223,8 @@ pub async fn replace_modpack(
         return Err(ApiError::bad_request("invalid id"));
     };
     let Json(input) = body.map_err(ApiError::from_json_rejection)?;
-    let name = validated_name(&input.name)?;
-    let version = validated_version(&input.version)?;
+    let name = required_trimmed_text(&input.name, "name")?;
+    let version = required_trimmed_text(&input.version, "version")?;
     if input.total_size_bytes < 0 {
         return Err(ApiError::bad_request("total_size_bytes must be >= 0"));
     }

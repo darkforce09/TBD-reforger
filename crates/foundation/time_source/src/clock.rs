@@ -1,8 +1,8 @@
 //! The wall-clock trait and the clock of the compilation target.
 //!
 //! **Role:** [`Clock`], the one question every wall-clock reader asks ("how many milliseconds
-//! since the Unix epoch is it now?"), and [`PlatformClock`], the clock that answers it for real
-//! on the target being compiled.
+//! since the Unix epoch is it now?"), [`PlatformClock`], the clock that answers it for real
+//! on the target being compiled, and [`wall_clock_ms`], that answer as a plain function.
 //! **Position:** implemented by `SystemClock` (native), `BrowserClock`
 //! (`wasm32`) and [`crate::ManualClock`] (tests); read by [`crate::now_utc_rfc3339`] and by
 //! callers that take an injectable `Arc<dyn Clock>`.
@@ -27,3 +27,16 @@ pub trait Clock: Send + Sync {
 pub use crate::browser_clock::BrowserClock as PlatformClock;
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::system_clock::SystemClock as PlatformClock;
+
+/// [`PlatformClock`]'s reading as an `f64`: wall-clock milliseconds since the Unix epoch,
+/// `Date.now()` itself on `wasm32` and whole `SystemTime` milliseconds natively. A plain
+/// `fn() -> f64`, the wall-clock counterpart of [`crate::monotonic_ms`], so it fills
+/// function-pointer clock slots and reads in one call where no clock is injected.
+#[must_use]
+pub fn wall_clock_ms() -> f64 {
+    PlatformClock.now_unix_ms_f64()
+}
+
+#[cfg(test)]
+#[path = "tests/clock.rs"]
+mod tests;

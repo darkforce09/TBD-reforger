@@ -56,3 +56,6 @@ path = "src/bin/acknowledgement_dropping_relay.rs"
 [[bin]]
 name = "staging-load"
 path = "src/bin/staging_load.rs"
+
+[lints]
+workspace = true

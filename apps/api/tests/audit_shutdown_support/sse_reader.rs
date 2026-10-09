@@ -10,7 +10,7 @@ use tokio::time::timeout;
 
 /// One SSE event: its name (`None` for an audit row), its id and its data.
 #[derive(Debug, Clone)]
-pub struct SseEvent {
+pub(crate) struct SseEvent {
     pub event: Option<String>,
     pub id: Option<String>,
     pub data: String,
@@ -18,7 +18,7 @@ pub struct SseEvent {
 
 impl SseEvent {
     /// The event id as a publication sequence.
-    pub fn sequence(&self) -> i64 {
+    pub(crate) fn sequence(&self) -> i64 {
         self.id
             .as_deref()
             .and_then(|id| id.parse().ok())
@@ -26,18 +26,18 @@ impl SseEvent {
     }
 
     /// The event data as JSON.
-    pub fn json(&self) -> Value {
+    pub(crate) fn json(&self) -> Value {
         serde_json::from_str(&self.data)
             .unwrap_or_else(|error| panic!("event data is not JSON ({error}): {self:?}"))
     }
 
     /// `true` for an audit row: an unnamed event.
-    pub fn is_row(&self) -> bool {
+    pub(crate) fn is_row(&self) -> bool {
         self.event.is_none()
     }
 
     /// `(sequence, audit id)` of an audit row.
-    pub fn publication(&self) -> (i64, i64) {
+    pub(crate) fn publication(&self) -> (i64, i64) {
         assert!(self.is_row(), "an audit row is an unnamed event: {self:?}");
         (
             self.sequence(),
@@ -84,7 +84,7 @@ enum SseWait {
 }
 
 /// Reads SSE events from one response body frame by frame.
-pub struct SseReader {
+pub(crate) struct SseReader {
     source: BodySource,
     pending: String,
     ended: bool,
@@ -92,12 +92,12 @@ pub struct SseReader {
 
 impl SseReader {
     /// A reader over a response of the in-process router.
-    pub fn from_router(response: axum::response::Response) -> Self {
+    pub(crate) fn from_router(response: axum::response::Response) -> Self {
         Self::new(BodySource::Router(response.into_body().into_data_stream()))
     }
 
     /// A reader over a response of the `api` binary.
-    pub fn from_http(response: reqwest::Response) -> Self {
+    pub(crate) fn from_http(response: reqwest::Response) -> Self {
         Self::new(BodySource::Http(response))
     }
 
@@ -141,7 +141,7 @@ impl SseReader {
     }
 
     /// The next event, failing the case when none arrives within `bound` or the body ends.
-    pub async fn expect_event(&mut self, bound: Duration, why: &str) -> SseEvent {
+    pub(crate) async fn expect_event(&mut self, bound: Duration, why: &str) -> SseEvent {
         match self.wait(bound).await {
             SseWait::Event(event) => event,
             SseWait::Ended => panic!("the stream ended before an event: {why}"),
@@ -150,7 +150,12 @@ impl SseReader {
     }
 
     /// The next `count` events, every one an audit row, all within `bound`.
-    pub async fn expect_rows(&mut self, count: usize, bound: Duration, why: &str) -> Vec<SseEvent> {
+    pub(crate) async fn expect_rows(
+        &mut self,
+        count: usize,
+        bound: Duration,
+        why: &str,
+    ) -> Vec<SseEvent> {
         let deadline = Instant::now() + bound;
         let mut rows = Vec::with_capacity(count);
         while rows.len() < count {
@@ -167,7 +172,7 @@ impl SseReader {
     }
 
     /// Asserts the stream stays open and silent for `bound`.
-    pub async fn expect_quiet(&mut self, bound: Duration, why: &str) {
+    pub(crate) async fn expect_quiet(&mut self, bound: Duration, why: &str) {
         match self.wait(bound).await {
             SseWait::Quiet => {}
             SseWait::Event(event) => {
@@ -179,7 +184,7 @@ impl SseReader {
 
     /// Every event delivered before the body ends, failing the case when it has not ended within
     /// `bound`.
-    pub async fn read_to_end(&mut self, bound: Duration, why: &str) -> Vec<SseEvent> {
+    pub(crate) async fn read_to_end(&mut self, bound: Duration, why: &str) -> Vec<SseEvent> {
         let deadline = Instant::now() + bound;
         let mut events = Vec::new();
         loop {

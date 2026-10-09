@@ -62,7 +62,7 @@ No feature and no environment variable.
 
 - Depends on: `map_asset_loading` (the loaders, the asset sink handle, the asset statistics, the
   live memory budget); `map_streaming_model`; `terrain_elevation`, `terrain_relief`,
-  `world_chunks`, `world_line_of_sight`, `water_bodies`, `label_layout`; `browser_platform`;
+  `world_chunks`, `world_line_of_sight`, `water_bodies`, `label_layout`; `browser_platform`; `time_source`;
   `serde`, `serde_json`, `futures` and the browser bindings.
 - Used by: the single-page app (`apps/frontend`, WebAssembly build only): its map view and the
   Mission Creator import the host directly.

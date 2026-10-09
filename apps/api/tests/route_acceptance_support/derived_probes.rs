@@ -28,7 +28,7 @@ use super::spec::{
 
 /// What one dimension of one spec runs.
 #[derive(Debug, Clone)]
-pub enum Plan {
+pub(crate) enum Plan {
     /// These probes, derived and declared.
     Probes(Vec<Probe>),
     /// Nothing, for this reason.
@@ -38,7 +38,7 @@ pub enum Plan {
 }
 
 /// The actor the authorized probe uses when the spec names none.
-pub fn least_privileged_actor(access: Access) -> Actor {
+pub(crate) fn least_privileged_actor(access: Access) -> Actor {
     match access {
         Access::Public | Access::DevelopmentOnly => Actor::Anonymous,
         Access::Authenticated => Actor::User(Role::Guest),
@@ -53,7 +53,10 @@ fn refusal(name: impl Into<String>, actor: Actor, status: u16) -> Probe {
 }
 
 /// The probes the framework derives for `dimension`, or the reason it derives none.
-pub fn derived(spec: &RouteSpec, dimension: Dimension) -> Result<Vec<Probe>, Option<&'static str>> {
+pub(crate) fn derived(
+    spec: &RouteSpec,
+    dimension: Dimension,
+) -> Result<Vec<Probe>, Option<&'static str>> {
     let access = spec.access;
     let authorized = spec
         .authorized_actor
@@ -171,7 +174,7 @@ pub fn derived(spec: &RouteSpec, dimension: Dimension) -> Result<Vec<Probe>, Opt
 
 /// The plan of every dimension of `spec`: derived probes (with overrides applied) followed by
 /// the spec's own probes.
-pub fn plan(spec: &RouteSpec) -> BTreeMap<Dimension, Plan> {
+pub(crate) fn plan(spec: &RouteSpec) -> BTreeMap<Dimension, Plan> {
     Dimension::ALL
         .iter()
         .map(|&dimension| (dimension, plan_dimension(spec, dimension)))
@@ -206,7 +209,7 @@ fn plan_dimension(spec: &RouteSpec, dimension: Dimension) -> Plan {
 /// Every way `spec` fails to declare its acceptance: a missing success contract, an undeclared
 /// dimension, an empty reason, a `NotApplicable` that contradicts derived probes, a duplicate
 /// probe name, and an override naming no derived probe or giving no reason.
-pub fn declaration_problems(spec: &RouteSpec) -> Vec<String> {
+pub(crate) fn declaration_problems(spec: &RouteSpec) -> Vec<String> {
     let key = spec.key;
     let mut problems = Vec::new();
     if spec.success.is_none() {
@@ -276,7 +279,7 @@ pub fn declaration_problems(spec: &RouteSpec) -> Vec<String> {
 /// outside 400–499, a success other than the refusal envelope, an empty envelope message, an
 /// empty reason, or a reason naming none of the modules (relative to `src/`) whose `@route` tag
 /// documents the route. A spec that is not refusal-only has none.
-pub fn refusal_problems(spec: &RouteSpec, tags: &[RouteTag]) -> Vec<String> {
+pub(crate) fn refusal_problems(spec: &RouteSpec, tags: &[RouteTag]) -> Vec<String> {
     let key = spec.key;
     let Some(reason) = spec.refusal_reason else {
         return Vec::new();
@@ -333,7 +336,7 @@ fn repository_relative_module(file: &std::path::Path) -> String {
         return spelled;
     }
     let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    repository_layout::find_repository_root_from(manifest)
+    repository_root::find_repository_root_from(manifest)
         .ok()
         .and_then(|root| {
             file.strip_prefix(root)

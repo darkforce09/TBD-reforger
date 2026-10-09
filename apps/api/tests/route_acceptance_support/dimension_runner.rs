@@ -285,7 +285,7 @@ fn spec_row(spec: &RouteSpec) -> Result<&'static RouteRow, String> {
 }
 
 /// Run every probe of `dimension` over `specs` against a fresh world of `W`.
-pub async fn run_dimension<W: PartWorld>(
+pub(crate) async fn run_dimension<W: PartWorld>(
     suite: &'static str,
     specs: Vec<RouteSpec>,
     dimension: Dimension,
@@ -348,7 +348,7 @@ pub async fn run_dimension<W: PartWorld>(
 
 /// Re-check every authorized JSON response against its contract and generated type, and every
 /// authorized request body against its request contract.
-pub async fn run_contract_parity<W: PartWorld>(suite: &'static str, specs: Vec<RouteSpec>) {
+pub(crate) async fn run_contract_parity<W: PartWorld>(suite: &'static str, specs: Vec<RouteSpec>) {
     let world = World::<W>::build(suite, Dimension::ALL.len() as u8).await;
     let mut failures = Vec::new();
     let mut checked = 0;

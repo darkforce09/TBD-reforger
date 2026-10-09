@@ -51,7 +51,7 @@ struct Reviewed {
 }
 
 /// The missions reviews world.
-pub struct MissionsReviewsWorld {
+pub(crate) struct MissionsReviewsWorld {
     /// Authored by the primary mission maker, pending approval.
     under_review: Reviewed,
     /// Pending approval; its author is the primary guest (a demoted mission maker).

@@ -3,10 +3,12 @@
 //! **Role:** owns the six pointer-family closures the map surface answers — wheel zoom,
 //! pointerdown / pointermove / pointerup (pan, the LMB Pending→Move/Marquee/Ruler/Rotate machine
 //! and the armed place), contextmenu and dblclick.
-//! **Position:** the pointer half of [`super`], beside the keyboard dispatch in
-//! [`super::window_keydown`]. Both ride [`EditorGestureContext`], which carries every `!Send`
-//! handle and `Copy` signal the closures capture; the page builds that context once its handles
-//! exist and calls [`attach_canvas_gestures`].
+//! **Position:** the pointer half of [`crate::input`], beside the keyboard dispatch in
+//! [`crate::input::window_keydown`]. Both ride
+//! [`EditorGestureContext`](crate::input::pointer_gestures::EditorGestureContext), which carries
+//! every `!Send` handle and `Copy` signal the closures capture; the page builds that context once
+//! its handles exist and calls
+//! [`attach_canvas_gestures`](crate::input::pointer_gestures::attach_canvas_gestures).
 //! **Signals & state:** the in-flight gesture (the frozen camera, the pending promotion, the drag
 //! preview) is tab-local and lives only for the duration of the gesture. A committed change
 //! reaches the document through the hosted commands of `mission_editing_commands`, so one gesture
@@ -15,7 +17,7 @@
 //! the module is wasm-only and its `pub mod` line carries the same gate. What the canvas draws and
 //! what a pick resolves against come from one read of the document, never from two.
 //!
-//! Not here: `keydown` (the sibling [`super::window_keydown`] rides this same context),
+//! Not here: `keydown` (the sibling [`crate::input::window_keydown`] rides this same context),
 //! `pointercancel` / `pointerleave` / `resize` (page-side, beside the boot tasks), and the view
 //! template.
 

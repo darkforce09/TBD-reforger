@@ -45,7 +45,7 @@ use world_file_formats::archives::codec::to_bytes;
 use world_file_formats::archives::labels::MapLabelsArchive;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 /// Terrain-relative source paths.
 pub(crate) const LOCATIONS_JSON: &str = "locations.json";
@@ -174,5 +174,5 @@ pub(crate) fn emit_map_labels(terrain: &str) -> Result<u8> {
 }
 
 #[cfg(test)]
-#[path = "tests/map_label_archives/tests.rs"]
+#[path = "tests/map_label_archives_tests.rs"]
 mod tests;

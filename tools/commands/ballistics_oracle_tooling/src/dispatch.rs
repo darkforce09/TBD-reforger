@@ -3,7 +3,7 @@ use super::catalog_extraction::VANILLA_MORTARS;
 use super::cli::BallisticsCmd;
 use super::trim_export::{TrimLocations, trim_export};
 use crate::error::Result;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Runs `cmd` and returns the process exit code.
 pub fn run(cmd: BallisticsCmd) -> Result<u8> {

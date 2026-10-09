@@ -52,7 +52,7 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
   crf#`, `@idx vanilla#` and `@idx api#` marker against `crf_symbols.tsv`, `vanilla_symbols.tsv` and
   `vanilla_api_classes.tsv`.
 - `capability::build` joins `crf_files.tsv` and `crf_symbols.tsv` with the rules in
-  `documentation/mod/tbd-framework/capability_verdicts.tsv`, writes `capability_matrix.tsv`, and
+  `documentation/apps/mod/tbd-framework/capability_verdicts.tsv`, writes `capability_matrix.tsv`, and
   fails when any framework file matches no rule.
 - `extract` reads scripts by name from the pak file table through `enfusion_pak::PakVfs`;
   `carve` scans raw pak bytes instead, and `dump-entry` writes one entry's stored bytes for codec
@@ -71,7 +71,8 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
 - Depends on: the `enfusion_pak` crate (`PakVfs`) for `extract` and `dump-entry`;
   `script_index_layout.rs` for the index folder and the verdict table; the `repository_layout`
   crate for the references folder and its vanilla lane paths and the documentation root, and
-  `find_repository_root` and `REFERENCES_DIR` for the output guard; `content_digest` for the file
+  `REFERENCES_DIR` for the output guard; `repository_root` (`find_repository_root`) for the
+  checkout root; `content_digest` for the file
   and blob digests; `process_runner` and `verification_core` for the mirrors' `curl`; `clap`,
   `regex` and `thiserror`.
 - Used by:

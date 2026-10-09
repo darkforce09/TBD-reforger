@@ -21,8 +21,12 @@ const LOCK_DEADLINE: Duration = Duration::from_secs(5);
 
 async fn fixture() -> (AppState, AuthUser, String) {
     let url = common::require_test_database_url().expect("scratch database required");
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state = api::composition::application_state(
         pool,
         Config::for_tests(url, "identity-foreign-key-locks"),
@@ -36,9 +40,16 @@ async fn fixture() -> (AppState, AuthUser, String) {
         false,
     )
     .await;
-    let user = authorize_session(&state.pool, &state.cfg, &state.jwt.parse(&access).unwrap())
-        .await
-        .unwrap();
+    let user = authorize_session(
+        &state.pool,
+        &state.cfg,
+        &state
+            .jwt
+            .parse(&access)
+            .expect("the issued access token parses"),
+    )
+    .await
+    .expect("the issued session authorizes");
     (state, user, common::unique_arma("identity-lock"))
 }
 

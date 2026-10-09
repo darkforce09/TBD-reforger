@@ -55,7 +55,7 @@ const ROLE_CHANGE_REFUSAL_REASON: &str = "Discord owns every website role: `upda
 
 /// The query string each equipment data viewer read is authorized with: the committed
 /// diagnostic export's backpack resource, or the gameplay export where the golden reads it.
-pub fn equipment_query(key: &str) -> Option<&'static str> {
+pub(crate) fn equipment_query(key: &str) -> Option<&'static str> {
     Some(match key.strip_prefix(EQUIPMENT)? {
         "status" | "resources" | "fields" => "dataset=diagnostic",
         "overview" | "selection" => "",
@@ -760,7 +760,7 @@ fn wiki_pages() -> Vec<RouteSpec> {
 }
 
 /// Every spec of the `administration_center_content` part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     [
         administration(),
         command_center(),

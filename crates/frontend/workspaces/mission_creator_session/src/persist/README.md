@@ -11,9 +11,10 @@ merge before a write and the cross-tab sync.
 
 ```text
 crates/frontend/workspaces/mission_creator_session/src/persist/
-├── mount_persistence.rs  the last-flush signal and the `__missionPersist` bridge a mount registers
-├── record_store.rs       the account-scoped IndexedDB records: read, write, delete, purge, orphans
-└── save_scheduler.rs     the debounced write, one at a time per mission, and the flush on hide
+├── indexed_db_completion.rs  the awaits of an IndexedDB request's answer and a transaction's commit
+├── mount_persistence.rs      the last-flush signal and the `__missionPersist` bridge a mount registers
+├── record_store.rs           the account-scoped IndexedDB records: read, write, delete, purge, orphans
+└── save_scheduler.rs         the debounced write, one at a time per mission, and the flush on hide
 ```
 
 ## How it works
@@ -44,7 +45,8 @@ request. `window.__missionPersist` gives the headless harness `ready`, `loaded_f
 
 ## Boundaries
 
-- Depends on: the `idb` crate; `mission_persistence` (`record_key`, `stored_blob`,
+- Depends on: the `idb` crate, built without its `futures` feature (which links tokio), awaited
+  through `indexed_db_completion.rs`, where a commit counts only on `complete`; `mission_persistence` (`record_key`, `stored_blob`,
   `merge_policy`, `record_read_retry`, `slot_fingerprint`) and `mission_document::MissionDocCore`; the
   `DocHandle` and undo driver in `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/document_host/`;
   `save_status`, `tab_lock` and `session` in `crates/frontend/workspaces/mission_creator_session/src/`; the

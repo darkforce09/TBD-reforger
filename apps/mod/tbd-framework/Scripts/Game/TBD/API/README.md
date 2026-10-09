@@ -104,5 +104,5 @@ byte for byte the one match results carry. Each subfolder's README describes its
   identity, results revisions, detailed events and the game-runtime queue
 - [Identity and access domain](/crates/api/api_identity_and_access/src/README.md) — the link
   code handshake the `#tbd link` command completes
-- [Discord identity link specification](/documentation/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
+- [Discord identity link specification](/documentation/apps/mod/tbd-framework/UI/discord_identity_link/discord_identity_link_specification.md)
   — the in-game linking flow

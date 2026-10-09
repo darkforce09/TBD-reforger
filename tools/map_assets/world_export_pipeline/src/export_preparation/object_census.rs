@@ -218,7 +218,7 @@ pub(super) fn spawn_type_inventory_gate() -> Result<bool> {
     // The gate's report is captured and printed whole once it exits, stdout then stderr.
     let gate = process_runner::Run::new("cargo")
         .args(["run", "-q", "-p", "xtask", "--", "schema", "type-inventory"])
-        .cwd(::repository_layout::find_repository_root()?)
+        .cwd(::repository_root::find_repository_root()?)
         .output()?;
     print!("{}", gate.stdout);
     eprint!("{}", gate.stderr);

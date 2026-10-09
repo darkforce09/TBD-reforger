@@ -14,7 +14,7 @@ use verification_core::NotRun;
 pub enum Error {
     /// No checkout root was found from the working directory.
     #[error(transparent)]
-    RepositoryRoot(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// A file or folder the check reads could not be read.
     #[error(transparent)]
     Io(#[from] std::io::Error),

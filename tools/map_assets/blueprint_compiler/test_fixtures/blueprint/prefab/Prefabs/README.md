@@ -42,8 +42,8 @@ resolver test resolves them alone.
 
 - Encoding: ASCII Enfusion prefab text (`.et`), one root entity per file, with invented IDs, GUIDs
   and resource paths; nothing here is game content. Each subfolder groups one kind of prefab.
-- Schema: the `.et` grammar that `parse_et` in
-  `tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/tokenize.rs` reads: class heads with
+- Schema: the `.et` grammar that `parse_entity_template` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads: class heads with
   an optional base, `components`, `SlotBoneMappings`, anonymous child lists, `$grp` groups,
   `Hierarchy` `PivotID`, `coords`, `angles` and `scale`, and door components.
 - Adding a file: put it in the subfolder of its kind, reference it by `"{GUID}Prefabs/<kind>/<name>.et"`
@@ -55,17 +55,17 @@ resolver test resolves them alone.
 - Producers: people; the files are written by hand.
 - Consumers:
   - `resolver_walks_inheritance_sockets_and_children` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs`;
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/prefab_templates_tests.rs`;
   - `walker_places_door_set_window_and_furniture_from_fixtures` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs`;
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/batch_processing_tests.rs`;
   - `compiler_fixtures_resolve_from_root_crate_and_source_directory` in
     `tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs`, which checks that
     `Houses/House_Wood.et` is reachable.
 
 ## Boundaries
 
-- Depends on: the `.et` grammar `parse_et` reads, and the `PrefabResolver` and `Walker` in
-  `tools/map_assets/blueprint_compiler/src/bvh/`.
+- Depends on: the `.et` grammar `parse_entity_template` reads, and the `PrefabResolver` and `ChildEntityWalker` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/`.
 - Used by: the three tests above, through the prefab folder root one level up.
 - Rules: every reference resolves inside the tree except `Prefabs/Core/Probe.et` and the component
   bases (`.ct`), which no test reads; the socket names match the synthetic models the walker test

@@ -1,0 +1,10 @@
+# Stage S12 W2 — self-describing names in the map asset gates: the files named for their JSON
+# helper are named for the gates and loaders they hold, and the test files take the `_tests`
+# suffix. Paths name the tree before the moves; `mod` lines are edited by hand.
+kind	from	to	scope
+#
+path	tools/map_assets/map_asset_verification/src/labels/read_json.rs	tools/map_assets/map_asset_verification/src/labels/height_and_location_labels.rs
+path	tools/map_assets/map_asset_verification/src/object_goldens/read_json.rs	tools/map_assets/map_asset_verification/src/object_goldens/golden_row_readers.rs
+path	tools/map_assets/map_asset_verification/src/world_line_of_sight/gunzip_json.rs	tools/map_assets/map_asset_verification/src/world_line_of_sight/occluder_loading_and_replay.rs
+path	tools/map_assets/map_asset_verification/src/tests/terrain_manifest.rs	tools/map_assets/map_asset_verification/src/tests/terrain_manifest_tests.rs
+path	tools/map_assets/map_asset_verification/src/tests/world_line_of_sight.rs	tools/map_assets/map_asset_verification/src/tests/world_line_of_sight_tests.rs

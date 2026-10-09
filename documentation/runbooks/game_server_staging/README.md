@@ -168,7 +168,7 @@ Facts every topic relies on:
   mod-loaded server on a development machine with `cargo xtask mod playtest`.
 - [Fleet host agent](/documentation/apps/fleet_host_agent/README.md) — the agent every instance runs,
   and how it runs fleet commands.
-- [Mod documentation](/documentation/mod/README.md) — the addons the servers load.
+- [Mod documentation](/documentation/apps/mod/README.md) — the addons the servers load.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) and
   [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the
   [Workbench](/documentation/glossary/n_to_z.md#workbench)-side checks before a deploy.

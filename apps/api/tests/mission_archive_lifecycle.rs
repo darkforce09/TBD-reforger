@@ -34,17 +34,19 @@ async fn tok(app: &Router, role: &str) -> String {
             Request::builder()
                 .uri(format!("/api/v1/auth/dev-login?role={role}"))
                 .body(Body::empty())
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
+    let loc = resp.headers()[header::LOCATION]
+        .to_str()
+        .expect("the Location header is ASCII");
     loc.split_once('#')
-        .unwrap()
+        .expect("the Location carries a fragment")
         .1
         .split('&')
         .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
+        .expect("the fragment carries an access token")
         .to_string()
 }
 
@@ -64,10 +66,12 @@ async fn call(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let st = resp.status();
-    let by = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let by = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (st, serde_json::from_slice(&by).unwrap_or(Value::Null))
 }
 
@@ -80,7 +84,10 @@ async fn mk_mission(app: &Router, t: &str) -> String {
         Some(r#"{"title":"LX","terrain":"everon","game_mode":"pve_coop","max_players":16}"#),
     )
     .await;
-    m["id"].as_str().unwrap().to_string()
+    m["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_string()
 }
 
 #[tokio::test]

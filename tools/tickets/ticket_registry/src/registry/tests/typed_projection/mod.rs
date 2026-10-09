@@ -3,7 +3,7 @@ use super::*;
 use ticket_model::Status;
 
 fn worktree_root() -> std::path::PathBuf {
-    repository_layout::find_repository_root().expect("repository root")
+    repository_root::find_repository_root().expect("repository root")
 }
 
 fn parse_file(root: &Path, id: &str) -> Ticket {

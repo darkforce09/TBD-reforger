@@ -79,7 +79,7 @@ const BURST: usize = 200;
 /// which is correct for the shipped binary and CWD-dependent for a test harness. Setting it
 /// explicitly is the same code path a deployment with `MAP_ASSETS_DIR` set takes.
 fn map_assets_dir() -> std::path::PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("assets/terrains")
 }
@@ -87,7 +87,7 @@ fn map_assets_dir() -> std::path::PathBuf {
 /// The glyph directory, resolved the same way. Glyphs are shared by every terrain, so they sit
 /// beside the terrain tree on disk and are joined to it at the router.
 fn glyph_assets_dir() -> std::path::PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("assets/glyphs")
 }

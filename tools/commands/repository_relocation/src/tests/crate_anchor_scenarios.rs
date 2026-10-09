@@ -22,13 +22,13 @@ const LOADER: &str = "use std::path::Path;\n\
                       include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/../../assets/shapes.json\"));\n";
 
 /// Where the loader lies before the moves.
-const LOADER_BEFORE: &str = "legacy/engine/src/geometry/loader.rs";
+const LOADER_BEFORE: &str = "engines/engine/src/geometry/loader.rs";
 
 /// Where the loader lies after the moves.
 const LOADER_AFTER: &str = "crates/geometry/shapes/src/loader.rs";
 
 /// The row that moves the geometry module out of the engine crate into a new crate folder.
-const GEOMETRY_ROW: &str = "path\tlegacy/engine/src/geometry\tcrates/geometry/shapes/src\t\n";
+const GEOMETRY_ROW: &str = "path\tengines/engine/src/geometry\tcrates/geometry/shapes/src\t\n";
 
 /// An engine crate whose geometry module reads a shared asset from its crate folder, under a root
 /// workspace manifest.
@@ -36,11 +36,14 @@ fn engine_checkout(tag: &str) -> FixtureRepository {
     let repo = FixtureRepository::new(tag);
     repo.write(
         "Cargo.toml",
-        "[workspace]\nmembers = [\"legacy/*\", \"crates/*/*\"]\n",
+        "[workspace]\nmembers = [\"engines/*\", \"crates/*/*\"]\n",
     )
-    .write("legacy/engine/Cargo.toml", "[package]\nname = \"engine\"\n")
-    .write("legacy/engine/src/lib.rs", "\n")
-    .write("legacy/engine/src/geometry/mod.rs", "pub mod loader;\n")
+    .write(
+        "engines/engine/Cargo.toml",
+        "[package]\nname = \"engine\"\n",
+    )
+    .write("engines/engine/src/lib.rs", "\n")
+    .write("engines/engine/src/geometry/mod.rs", "pub mod loader;\n")
     .write(LOADER_BEFORE, LOADER)
     .write("assets/shapes.json", "{}\n");
     repo

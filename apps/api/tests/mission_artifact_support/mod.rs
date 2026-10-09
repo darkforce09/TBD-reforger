@@ -19,12 +19,12 @@ use uuid::Uuid;
 
 use crate::common;
 
-pub struct Actor {
+pub(crate) struct Actor {
     pub id: String,
     pub token: String,
 }
 
-pub struct MissionFixture {
+pub(crate) struct MissionFixture {
     pub state: AppState,
     pub app: Router,
     pub author: Actor,
@@ -34,32 +34,36 @@ pub struct MissionFixture {
 
 /// The compilable payload with one slot's role replaced, so a later version compiles to
 /// different bytes.
-pub fn payload_with_role(role: &str) -> String {
+pub(crate) fn payload_with_role(role: &str) -> String {
     common::COMPILABLE_EDITOR_PAYLOAD.replace(r#""role":"SL""#, &format!(r#""role":"{role}""#))
 }
 
 /// The lowercase hex SHA-256 of `bytes`, the spelling the artifact store records.
-pub fn sha256_hex(bytes: &[u8]) -> String {
+pub(crate) fn sha256_hex(bytes: &[u8]) -> String {
     content_digest::sha256_hex(bytes)
 }
 
-pub fn refusal_code(body: &Value) -> &str {
+pub(crate) fn refusal_code(body: &Value) -> &str {
     body["details"]["code"].as_str().unwrap_or_default()
 }
 
-pub fn uuid_of(value: &Value) -> Uuid {
+pub(crate) fn uuid_of(value: &Value) -> Uuid {
     value
         .as_str()
         .unwrap_or_else(|| panic!("expected a UUID string, got {value}"))
         .parse()
-        .unwrap()
+        .expect("the value parses as a UUID")
 }
 
 impl MissionFixture {
-    pub async fn new(suite: &str) -> Self {
+    pub(crate) async fn new(suite: &str) -> Self {
         let url = common::require_test_database_url().expect("mission suites require PostgreSQL");
-        let pool = api_database::connect(&url).await.unwrap();
-        api_database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url)
+            .await
+            .expect("the test database accepts a connection");
+        api_database::migrate(&pool)
+            .await
+            .expect("the migrations apply to the test database");
         let state =
             api::composition::application_state(pool, Config::for_tests(url, "mission-artifacts"));
         let app = router(state.clone());
@@ -81,18 +85,18 @@ impl MissionFixture {
         fixture
     }
 
-    pub fn pool(&self) -> &PgPool {
+    pub(crate) fn pool(&self) -> &PgPool {
         &self.state.pool
     }
 
     /// A suite-owned account with a verified membership snapshot for `role`.
-    pub async fn account(&self, label: &str, role: &str) -> Actor {
+    pub(crate) async fn account(&self, label: &str, role: &str) -> Actor {
         let id = format!("{}-{label}-{}", self.suite, Uuid::new_v4());
         let token = common::access_token(&self.state, &self.suite, &id, role, true).await;
         Actor { id, token }
     }
 
-    pub async fn call(
+    pub(crate) async fn call(
         &self,
         actor: Option<&Actor>,
         method: &str,
@@ -109,7 +113,7 @@ impl MissionFixture {
     }
 
     /// One request with a raw body; answers the status, headers and body bytes.
-    pub async fn send(
+    pub(crate) async fn send(
         &self,
         actor: Option<&Actor>,
         method: &str,
@@ -125,19 +129,19 @@ impl MissionFixture {
         }
         let request = request
             .body(body.map_or(Body::empty(), Body::from))
-            .unwrap();
+            .expect("the request builds");
         let response = self.app.clone().oneshot(request).await.unwrap();
         let status = response.status();
         let headers = response.headers().clone();
         let bytes = to_bytes(response.into_body(), usize::MAX)
             .await
-            .unwrap()
+            .expect("the response body reads to the end")
             .to_vec();
         (status, headers, bytes)
     }
 
     /// A draft mission authored by [`Self::author`].
-    pub async fn create_mission(&self, title: &str) -> Uuid {
+    pub(crate) async fn create_mission(&self, title: &str) -> Uuid {
         let (status, body) = self
             .call(
                 Some(&self.author),
@@ -152,7 +156,7 @@ impl MissionFixture {
         uuid_of(&body["id"])
     }
 
-    pub async fn save_version(
+    pub(crate) async fn save_version(
         &self,
         actor: &Actor,
         mission: Uuid,
@@ -174,7 +178,7 @@ impl MissionFixture {
     }
 
     /// Save `payload` as the author's version `semver`; answers the version id.
-    pub async fn save(&self, mission: Uuid, semver: &str, payload: &str) -> Uuid {
+    pub(crate) async fn save(&self, mission: Uuid, semver: &str, payload: &str) -> Uuid {
         let (status, body) = self
             .save_version(&self.author, mission, semver, payload)
             .await;
@@ -183,7 +187,7 @@ impl MissionFixture {
     }
 
     /// A draft mission whose current version compiles; answers `(mission, version)`.
-    pub async fn compilable_mission(&self, title: &str) -> (Uuid, Uuid) {
+    pub(crate) async fn compilable_mission(&self, title: &str) -> (Uuid, Uuid) {
         let mission = self.create_mission(title).await;
         let version = self
             .save(mission, "0.2.0", common::COMPILABLE_EDITOR_PAYLOAD)
@@ -191,7 +195,7 @@ impl MissionFixture {
         (mission, version)
     }
 
-    pub async fn submit_as(&self, actor: &Actor, mission: Uuid) -> (StatusCode, Value) {
+    pub(crate) async fn submit_as(&self, actor: &Actor, mission: Uuid) -> (StatusCode, Value) {
         self.call(
             Some(actor),
             "POST",
@@ -202,7 +206,7 @@ impl MissionFixture {
     }
 
     /// Submit as the author and answer the artifact the opened review decides.
-    pub async fn submit(&self, mission: Uuid) -> Uuid {
+    pub(crate) async fn submit(&self, mission: Uuid) -> Uuid {
         let (status, body) = self.submit_as(&self.author, mission).await;
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["status"], "pending_approval");
@@ -212,13 +216,13 @@ impl MissionFixture {
     }
 
     /// The artifact of the mission's pending review, read from the admin approvals queue.
-    pub async fn pending_artifact(&self, mission: Uuid) -> Option<Uuid> {
+    pub(crate) async fn pending_artifact(&self, mission: Uuid) -> Option<Uuid> {
         let row = self.queue_row(mission).await?;
         row.get("artifact_id").map(uuid_of)
     }
 
     /// The mission's row of `GET /approvals`, walking every page.
-    pub async fn queue_row(&self, mission: Uuid) -> Option<Value> {
+    pub(crate) async fn queue_row(&self, mission: Uuid) -> Option<Value> {
         let mut offset = 0;
         loop {
             let (status, body) = self
@@ -230,7 +234,9 @@ impl MissionFixture {
                 )
                 .await;
             assert_eq!(status, StatusCode::OK, "{body}");
-            let rows = body["data"].as_array().unwrap();
+            let rows = body["data"]
+                .as_array()
+                .expect("the `data` field is an array");
             if let Some(row) = rows
                 .iter()
                 .find(|row| row["mission_id"] == mission.to_string())
@@ -244,7 +250,7 @@ impl MissionFixture {
         }
     }
 
-    pub async fn approve(
+    pub(crate) async fn approve(
         &self,
         mission: Uuid,
         artifact: Uuid,
@@ -263,7 +269,12 @@ impl MissionFixture {
         .await
     }
 
-    pub async fn reject(&self, mission: Uuid, artifact: Uuid, reason: &str) -> (StatusCode, Value) {
+    pub(crate) async fn reject(
+        &self,
+        mission: Uuid,
+        artifact: Uuid,
+        reason: &str,
+    ) -> (StatusCode, Value) {
         self.call(
             Some(&self.admin),
             "POST",
@@ -273,7 +284,7 @@ impl MissionFixture {
         .await
     }
 
-    pub async fn reviews(&self, actor: &Actor, mission: Uuid) -> (StatusCode, Value) {
+    pub(crate) async fn reviews(&self, actor: &Actor, mission: Uuid) -> (StatusCode, Value) {
         self.call(
             Some(actor),
             "GET",
@@ -283,7 +294,7 @@ impl MissionFixture {
         .await
     }
 
-    pub async fn artifact(
+    pub(crate) async fn artifact(
         &self,
         actor: &Actor,
         mission: Uuid,
@@ -298,7 +309,7 @@ impl MissionFixture {
         .await
     }
 
-    pub async fn mission(&self, actor: &Actor, mission: Uuid) -> Value {
+    pub(crate) async fn mission(&self, actor: &Actor, mission: Uuid) -> Value {
         let (status, body) = self
             .call(
                 Some(actor),
@@ -311,16 +322,16 @@ impl MissionFixture {
         body
     }
 
-    pub async fn count(&self, sql: &str, mission: Uuid) -> i64 {
+    pub(crate) async fn count(&self, sql: &str, mission: Uuid) -> i64 {
         sqlx::query_scalar(sqlx::AssertSqlSafe(sql))
             .bind(mission)
             .fetch_one(self.pool())
             .await
-            .unwrap()
+            .expect("the count query returns a row")
     }
 
     /// Audit records of `action` for the mission.
-    pub async fn audits(&self, action: &str, mission: Uuid) -> i64 {
+    pub(crate) async fn audits(&self, action: &str, mission: Uuid) -> i64 {
         sqlx::query_scalar(
             "SELECT count(*) FROM audit_logs WHERE action = $1 AND target_type = 'mission' AND target_id = $2",
         )
@@ -328,12 +339,12 @@ impl MissionFixture {
         .bind(mission.to_string())
         .fetch_one(self.pool())
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
     }
 }
 
 /// A machine caller: the credential secret presented as the bearer.
-pub fn machine(secret: &str) -> Actor {
+pub(crate) fn machine(secret: &str) -> Actor {
     Actor {
         id: String::new(),
         token: secret.to_owned(),
@@ -342,7 +353,7 @@ pub fn machine(secret: &str) -> Actor {
 
 impl MissionFixture {
     /// A compilable mission, submitted and approved; answers `(mission, artifact)`.
-    pub async fn approved_mission(&self, title: &str) -> (Uuid, Uuid) {
+    pub(crate) async fn approved_mission(&self, title: &str) -> (Uuid, Uuid) {
         let (mission, _) = self.compilable_mission(title).await;
         let artifact = self.submit(mission).await;
         let (status, body) = self.approve(mission, artifact, None).await;
@@ -351,7 +362,7 @@ impl MissionFixture {
     }
 
     /// A registered, active server requiring `modpack`.
-    pub async fn register_server(&self, name: &str, modpack: Option<Uuid>) -> Uuid {
+    pub(crate) async fn register_server(&self, name: &str, modpack: Option<Uuid>) -> Uuid {
         sqlx::query_scalar(
             "INSERT INTO servers (name, ip, port, is_active, required_modpack_id)
              VALUES ($1, '127.0.0.1'::inet, 2302, true, $2) RETURNING id",
@@ -360,11 +371,11 @@ impl MissionFixture {
         .bind(modpack)
         .fetch_one(self.pool())
         .await
-        .unwrap()
+        .expect("the insert into servers returns its row")
     }
 
     /// Issue a `executor` credential for `server` and answer its secret.
-    pub async fn credential(&self, server: Uuid, executor: &str) -> String {
+    pub(crate) async fn credential(&self, server: Uuid, executor: &str) -> String {
         let (status, body) = self
             .call(
                 Some(&self.admin),
@@ -376,10 +387,13 @@ impl MissionFixture {
             )
             .await;
         assert_eq!(status, StatusCode::CREATED, "{body}");
-        body["secret"].as_str().unwrap().to_owned()
+        body["secret"]
+            .as_str()
+            .expect("the `secret` field is a string")
+            .to_owned()
     }
 
-    pub async fn register_scenario(&self, terrain: &str, scenario: &str) {
+    pub(crate) async fn register_scenario(&self, terrain: &str, scenario: &str) {
         let (status, body) = self
             .call(
                 Some(&self.admin),
@@ -393,7 +407,7 @@ impl MissionFixture {
 
     /// An upcoming event bound to `server` with `mission` attached; its ORBAT is derived from
     /// the mission's current version. Answers `(event, event mission)`.
-    pub async fn event_on(&self, server: Uuid, mission: Uuid) -> (Uuid, Uuid) {
+    pub(crate) async fn event_on(&self, server: Uuid, mission: Uuid) -> (Uuid, Uuid) {
         let (status, event) = self
             .call(
                 Some(&self.admin),
@@ -409,7 +423,7 @@ impl MissionFixture {
             .bind(server)
             .execute(self.pool())
             .await
-            .unwrap();
+            .expect("the update of events succeeds");
         let (status, attached) = self
             .call(
                 Some(&self.admin),
@@ -422,7 +436,7 @@ impl MissionFixture {
         (event, uuid_of(&attached["id"]))
     }
 
-    pub async fn request_deployment(
+    pub(crate) async fn request_deployment(
         &self,
         actor: &Actor,
         server: Uuid,
@@ -444,7 +458,7 @@ impl MissionFixture {
     }
 
     /// Request a deployment as the administrator and answer it.
-    pub async fn deploy(
+    pub(crate) async fn deploy(
         &self,
         server: Uuid,
         mission: Uuid,
@@ -459,14 +473,16 @@ impl MissionFixture {
     }
 
     /// The server's deployment as an administrator reads it, settled first.
-    pub async fn deployment(&self, server: Uuid, deployment: &Value) -> Value {
+    pub(crate) async fn deployment(&self, server: Uuid, deployment: &Value) -> Value {
         let (status, body) = self
             .call(
                 Some(&self.admin),
                 "GET",
                 &format!(
                     "/api/v1/servers/{server}/deployments/{}",
-                    deployment["id"].as_str().unwrap()
+                    deployment["id"]
+                        .as_str()
+                        .expect("the `id` field is a string")
                 ),
                 None,
             )
@@ -476,7 +492,7 @@ impl MissionFixture {
     }
 
     /// Start a runtime session reporting `loaded` (`(artifact, sha256)`), or no artifact.
-    pub async fn start_session(
+    pub(crate) async fn start_session(
         &self,
         secret: &str,
         loaded: Option<(Uuid, &str)>,
@@ -494,18 +510,18 @@ impl MissionFixture {
     }
 
     /// The document SHA-256 of an artifact.
-    pub async fn artifact_sha256(&self, artifact: Uuid) -> String {
+    pub(crate) async fn artifact_sha256(&self, artifact: Uuid) -> String {
         sqlx::query_scalar("SELECT document_sha256 FROM mission_artifacts WHERE id = $1")
             .bind(artifact)
             .fetch_one(self.pool())
             .await
-            .unwrap()
+            .expect("the read of mission_artifacts returns a row")
     }
 }
 
 /// A uniquely named trigger that fails `operation` on `table` for rows whose `column` equals
 /// `value`, injecting a real storage failure into one mission's transaction only.
-pub async fn inject_failure(
+pub(crate) async fn inject_failure(
     pool: &PgPool,
     table: &str,
     operation: &str,
@@ -527,15 +543,15 @@ pub async fn inject_failure(
     sqlx::raw_sql(sqlx::AssertSqlSafe(sql.as_str()))
         .execute(pool)
         .await
-        .unwrap();
+        .expect("the failure-injection SQL installs");
     name
 }
 
-pub async fn clear_failure(pool: &PgPool, name: &str, table: &str) {
+pub(crate) async fn clear_failure(pool: &PgPool, name: &str, table: &str) {
     sqlx::raw_sql(sqlx::AssertSqlSafe(format!(
         "DROP TRIGGER {name} ON {table}; DROP FUNCTION {name}();"
     )))
     .execute(pool)
     .await
-    .unwrap();
+    .expect("the `DROP TRIGGER` statement succeeds");
 }

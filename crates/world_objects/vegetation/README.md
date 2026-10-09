@@ -63,8 +63,8 @@ cargo test -p vegetation   # tree counts, density grid, marching squares and reg
 ## Boundaries
 
 - Depends on: `world_file_formats` (the forest archive and `ForestRegionId`); `world_chunks` (the
-  chunk rows the counts sum); `prefab_catalog` (the tree and vegetation class codes);
-  `map_draw_lanes` (the instance budget and the class zoom gates); `map_coordinates` (the view
+  chunk rows the counts sum, keyed by `ChunkId`); `prefab_catalog` (the tree and vegetation class
+  codes); `map_draw_lanes` (the instance budget and the class zoom gates); `map_coordinates` (the view
   box); `rkyv`, `serde_json` and `thiserror`.
 - Used by:
   - `world_store`, which reads the regions;

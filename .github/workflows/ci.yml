@@ -256,7 +256,7 @@ jobs:
         run: cargo xtask verify no-shell
       - name: "verify-ci-shell (GitHub Actions run: blocks)"
         run: cargo xtask verify ci-shell
-      # The workspace laws of documentation/restructure/laws_and_gates.md, judged by
+      # The workspace laws of documentation/standards/crate_boundary_rules.md, judged by
       # tools/foundation/repository_laws/src/workspace_laws/ over the members the root
       # manifest names; seconds-long reads of the working tree that need no DB, LFS or wasm target,
       # like the language gates.
@@ -264,8 +264,8 @@ jobs:
         run: cargo xtask verify crate-tiers
       - name: verify-crate-anatomy (library crate shape)
         run: cargo xtask verify crate-anatomy
-      - name: verify-strangler (no new crate depends on legacy; no shim)
-        run: cargo xtask verify strangler
+      - name: verify-test-file-reachability (every file in a test folder is compiled)
+        run: cargo xtask verify test-file-reachability
       - name: verify-frontend-layering (layer and foundation sub-area order, hard at zero)
         run: cargo xtask verify frontend-layering
       - name: verify-tailwind-sources (an @source line per leptos crate)

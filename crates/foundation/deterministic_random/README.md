@@ -1,14 +1,15 @@
 # Deterministic random
 
 The `deterministic_random` crate: SplitMix64, the seeded pseudo-random generator behind every
-draw in the workspace that has to come out the same on every run, machine and target.
+draw in the workspace that has to come out the same on every run, machine and target, and the two
+linear congruential generators whose exact streams seeded outputs are pinned to.
 
 ## Contents
 
 ```text
 crates/foundation/deterministic_random/
 ├── Cargo.toml  the package: no dependencies, layout tier 0
-└── src/        the generator, its prelude and its tests
+└── src/        the generators, the prelude and their tests
 ```
 
 ## How it works
@@ -23,7 +24,20 @@ crates/foundation/deterministic_random/
 - `next_in(low, span)`: `low + span * next_unit()`, a value in `[low, low + span)`.
 - `next_index(bound)`: `next_u64() % bound`, with a zero bound drawing `0`.
 
-The generator is small, fast and well distributed, and it is not cryptographic.
+`SplitMix64::INCREMENT` and `SplitMix64::finalise(word)` are public for callers that step a Weyl
+sequence of their own (the loadout Apply seed) or mix a word into a key (the loadout Apply draw,
+the staging load pacing streams); `finalise(word)` is the draw of a generator whose counter sits
+one increment below `word`.
+
+`LinearCongruential64` (Knuth's MMIX multiplier `6364136223846793005` and increment
+`1442695040888963407`) and `LinearCongruential32` (the C library's `rand` multiplier
+`1103515245` and increment `12345`) step `state × multiplier + increment`, wrapping, and draw the
+new state; `LinearCongruential32::next_unit` is the top 24 bits over `2^24`. They exist because
+seeded outputs are pinned to their exact streams: the mission document's seeded slot positions,
+and the render diagnostics' stress scene (whose first instances are pinned bit for bit) and
+compute cull icon field. New code draws from `SplitMix64`.
+
+The generators are small and fast, and none is cryptographic.
 
 ## Getting started
 
@@ -39,18 +53,26 @@ No features and no environment variables.
 
 ## Public surface
 
-- `SplitMix64` (`Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`), also in `prelude`: `new(seed)`,
-  `next_u64`, `next_unit`, `next_in(low, span)`, `next_index(bound)`.
+- `SplitMix64` (`Debug`, `Clone`, `Copy`, `PartialEq`, `Eq`), also in `prelude`: `INCREMENT`,
+  `new(seed)`, `finalise(word)`, `next_u64`, `next_unit`, `next_in(low, span)`,
+  `next_index(bound)`.
+- `LinearCongruential64` and `LinearCongruential32` (same derives), also in `prelude`:
+  `MULTIPLIER`, `INCREMENT`, `new(state)`, `next_u64` / `next_u32`; the 32-bit one also
+  `next_unit`.
 
 ## Boundaries
 
 - Depends on: nothing.
-- Used by: nothing yet. It replaces the two copies of the generator in the map engine: the
-  ballistics agreement lattice and the scatter of the mission editing placement patterns.
-- Rules: the seed-0 reference stream is pinned (`split_mix_64_matches_the_reference_stream`), and
-  so is the bit equality of the multiply and divide spellings of the unit draw
-  (`both_unit_spellings_give_identical_bits`); foundation tier, so the crate depends on no
-  workspace crate (`cargo xtask verify crate-tiers`).
+- Used by: `formation_geometry` (placement scatter), `ballistics_agreement_cases` (case
+  lattice), `ballistics_solver` (tests), `mission_operations` (Apply seed), `mission_document`
+  (seeded slots), `mission_creator_arsenal` (Apply draw), `map_render_diagnostics` (stress scene,
+  compute cull field), `staging_load_plan` (pacing streams), `map_asset_verification`
+  (line-of-sight bench) and `world_export_pipeline` (tests).
+- Rules: the seed-0 reference streams are pinned (`split_mix_64_matches_the_reference_stream`,
+  `linear_congruential_64_matches_the_mmix_reference_stream`,
+  `linear_congruential_32_matches_the_c_library_reference_stream`), and so is the bit equality of
+  the multiply and divide spellings of the unit draw (`both_unit_spellings_give_identical_bits`);
+  foundation tier, so the crate depends on no workspace crate (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 

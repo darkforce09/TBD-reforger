@@ -14,7 +14,7 @@ parent = "T-939"
 main_goal = "Arrange tools are reachable by right-click and by keyboard."
 context = [
     "Anchor 2026-09-04: panels/top_strip.rs:249-252 holds the Arrange menu (T-645), gated on selection >= 1 at :378-380; panels/context_menu.rs lacks these entries.",
-    "The editor keymap is the wasm keydown closure in editor/mission_editor.rs (allowlisted SIZE-3 file); new arms stay thin callers of shared invokers.",
+    "The editor keymap is the wasm keydown closure in crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs (allowlisted SIZE-3 file); new arms stay thin callers of shared invokers.",
     "No file collides with T-939.1; depends_on keeps this slice after it so the context menu builds on the settled multi-select behaviour.",
     "Related, not re-minted: T-704 command palette.",
     "2026-09-08 recovery: editor behavior smokes and independent targeted checks pass; required v-suite fails 21/25 routes. Wave acceptance remains blocked.",
@@ -69,7 +69,7 @@ owns = [
     "contracts/fixtures/api_goldens/GET__missions__00000000-0000-4000-c000-000000000005.json",
     "tools/tbd-tools/src/vsuite.rs",
     "tools/tbd-tools/src/vsuite/",
-    "tools/tbd-tools/fixtures/t159/oracle-freeze/",
+    "tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/oracle-freeze/",
 ]
 
 [scope]

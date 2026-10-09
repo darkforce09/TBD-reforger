@@ -23,7 +23,7 @@ None: the plans describe the product, not a code folder.
 ## Boundaries
 
 - Depends on: nothing live; the plans state the intent of their time.
-- Used by: the [mod documentation](/documentation/mod/README.md), which links the milestones and
+- Used by: the [mod documentation](/documentation/apps/mod/README.md), which links the milestones and
   the announcement; a [ticket](/documentation/glossary/n_to_z.md#ticket) spec in
   `documentation/tickets/specs/` that links the build plan.
 - Rules: never reworded, only links change; the items still planned live in the product roadmap,
@@ -33,4 +33,4 @@ None: the plans describe the product, not a code folder.
 
 - [Product roadmap](/documentation/product_roadmap.md) — the live plan, with the build plan's
   items still to do.
-- [Mod documentation](/documentation/mod/README.md) — the mod as it is.
+- [Mod documentation](/documentation/apps/mod/README.md) — the mod as it is.

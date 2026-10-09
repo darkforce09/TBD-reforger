@@ -158,7 +158,8 @@ default API env file resolves; the staging procedures run it as
 - Depends on: the api crates `api_audit_log`, `api_caller_identity`, `api_database`,
   `api_discord`, `api_foundation`, `api_http_layer`, `api_identifiers`,
   `api_identity_and_access`, `api_operations` and `api_server_infrastructure`; `fleet_wire_contract`
-  and `mission_model`; sqlx, reqwest, rustls, dotenvy, chrono, tokio and `tracing-subscriber`. The
+  and `mission_model`; `time_source` (the member reads' clock); sqlx, reqwest, rustls, dotenvy,
+  chrono, tokio and `tracing-subscriber`. The
   suites add `api_configuration`, `api_state`, `api_missions`, `api_equipment_datasets`, axum,
   tower and `tower-http`.
 - Used by: the operator on the staging host; the staging procedures of `staging_procedures`

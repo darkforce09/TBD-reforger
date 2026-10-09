@@ -8,8 +8,8 @@ use crate::voxel_processing::synthetic_fixtures;
 #[test]
 fn gable_mezzanine_bands_plate_and_knee_wall() {
     let d = synthetic_fixtures::gable_mezzanine();
-    let m = d.meta().clone();
-    let p = Params {
+    let m = d.metadata().clone();
+    let p = AnalysisParameters {
         min_floor_y: -0.5 - m.origin[1],
         ..Default::default()
     };
@@ -22,7 +22,7 @@ fn gable_mezzanine_bands_plate_and_knee_wall() {
     );
 
     let mut dbg: Vec<wall_extraction::BandDebug> = Vec::new();
-    let bands = build_bands(&d, &vert, Algo::Segments, &p, Some(&mut dbg));
+    let bands = build_bands(&d, &vert, WallAlgorithm::Segments, &p, Some(&mut dbg));
     assert_eq!(bands.len(), 3, "two floors + attic");
     assert_eq!(dbg.len(), 3);
 
@@ -82,7 +82,7 @@ fn gable_mezzanine_bands_plate_and_knee_wall() {
     );
 }
 
-fn w_len(w: &voxel_types::WallSeg) -> f64 {
+fn w_len(w: &voxel_types::WallSegment) -> f64 {
     ((w.end[0] - w.start[0]).powi(2) + (w.end[1] - w.start[1]).powi(2)).sqrt()
 }
 
@@ -92,8 +92,8 @@ fn w_len(w: &voxel_types::WallSeg) -> f64 {
 fn farmhouse_dump_matches_golden_blueprint() {
     let bp = interpret_one(
         &fixture("FarmHouse_E_1L01_Wood_voxels.jsonl.gz"),
-        Algo::Segments,
-        &Params::default(),
+        WallAlgorithm::Segments,
+        &AnalysisParameters::default(),
         None,
     )
     .expect("interpret fixture dump");
@@ -166,13 +166,13 @@ fn farmhouse_golden_parity_is_pinned() {
 /// source folder alike: the root walk answers the same checkout from each.
 #[test]
 fn compiler_fixtures_resolve_from_root_crate_and_source_directory() {
-    let root = ::repository_layout::find_repository_root().expect("active checkout");
+    let root = ::repository_root::find_repository_root().expect("active checkout");
     for relative in [
         "",
         "tools/map_assets/blueprint_compiler",
         "tools/map_assets/blueprint_compiler/src",
     ] {
-        let found = ::repository_layout::find_repository_root_from(&root.join(relative))
+        let found = ::repository_root::find_repository_root_from(&root.join(relative))
             .expect("repository root");
         assert_eq!(found, root);
         for fixture in [

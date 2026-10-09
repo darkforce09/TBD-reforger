@@ -97,12 +97,13 @@ pub(crate) enum VerifyCmd {
     /// CI schema parity + hollow recipe tripwire
     #[command(name = "ci-schema-parity")]
     CiSchemaParity,
-    /// Crate-tier law (documentation/restructure/laws_and_gates.md): every manifest under
-    /// apps/, crates/, tools/ and legacy/ is a workspace member; each judged crate
-    /// declares [package.metadata.layout], sits at its category plus its name, and declares the
-    /// tier its dependencies give it; edges point strictly down and follow the category matrix;
-    /// the external-crate firewalls hold (#[wasm_bindgen] only in the frontend, browser_platform
-    /// and the offline service worker); nothing new depends on a member under legacy/
+    /// Crate-tier law: every manifest under apps/, crates/ and tools/ is a workspace member;
+    /// each judged crate declares [package.metadata.layout], sits at its category plus its name,
+    /// and declares the tier its dependencies give it; every member outside the judged set is an
+    /// app under apps/ or a tool binary (tools/xtask, tools/developer_tools); edges point
+    /// strictly down and follow the category matrix; the external-crate firewalls hold (the
+    /// wasm_bindgen attribute only in the frontend, browser_platform and the offline service
+    /// worker); no dev-dependency points at an app
     #[command(name = "crate-tiers")]
     CrateTiers,
     /// Crate-anatomy law: every judged library crate keeps a lib.rs of at most 80 lines of
@@ -111,10 +112,11 @@ pub(crate) enum VerifyCmd {
     /// re-export of another workspace crate outside its prelude
     #[command(name = "crate-anatomy")]
     CrateAnatomy,
-    /// Strangler law: no member outside legacy/ but apps and the tool binaries depends on a
-    /// member under legacy/, and no member under legacy/ re-exports a new crate (a shim)
-    #[command(name = "strangler")]
-    Strangler,
+    /// Test-file reachability law: every .rs file in a test folder of a workspace member (under
+    /// src/ or the member's tests/ folder) is loaded by a mod declaration (with its path
+    /// attribute) from one of the member's targets, or is itself an integration target
+    #[command(name = "test-file-reachability")]
+    TestFileReachability,
     /// Frontend-layering law: a lower frontend layer never imports a higher one, pages and
     /// workspaces never import each other, one page area never imports another, and a foundation
     /// sub-area imports only the sub-areas before it in the declared order; any edge fails

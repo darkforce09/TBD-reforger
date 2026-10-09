@@ -24,10 +24,16 @@ use super::mission_deployment::{MissionDeployment, RESTART_WITH_MISSION};
 /// A command this host performs, with validated arguments.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HostCommand {
+    /// `start`: starts the game server's systemd user unit.
     Start,
+    /// `stop`: stops the game server's unit.
     Stop,
+    /// `restart`: restarts the game server's unit.
     Restart,
+    /// `list_players`: reads the connected players over RCON.
     ListPlayers,
+    /// `restart_with_mission`: writes the deployment's mission header into the server config,
+    /// then restarts the unit.
     RestartWithMission(MissionDeployment),
     /// One operator line for the game server's console, transmitted once over RCON.
     ConsoleCommand(ConsoleLine),

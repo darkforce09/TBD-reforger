@@ -95,5 +95,5 @@ cargo run -p ticketboard          # opens the ticket registry viewer; stays in t
 
 - [Documentation](/documentation/README.md) — the map of every deeper document.
 - [Local development](/documentation/runbooks/local_development.md) — the full local setup.
-- [Mod documentation](/documentation/mod/README.md) — the mod's design, screens and export
+- [Mod documentation](/documentation/apps/mod/README.md) — the mod's design, screens and export
   evidence.

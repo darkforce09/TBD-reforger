@@ -21,7 +21,7 @@ use crate::error::{Result, ResultExt};
 
 use deploy_settings::{DeployEnvironment, deploy_environment_path};
 use process_runner::Run;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 use verification_core::NotRun;
 
 /// The path pins, for an already-resolved monorepo root.

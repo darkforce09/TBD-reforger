@@ -26,8 +26,8 @@ documentation/archive/restructure_research/
 ## How it works
 
 The draft that started the program is 00; the reports are numbered in the order they were
-written. The adopted design is report 09 as corrected by report 10; the live program documents
-carry the result. A report is never edited after it lands.
+written. The adopted design is report 09 as corrected by report 10; the program's records and
+the live documents they name carry the result. A report is never edited after it lands.
 
 ## Code
 
@@ -37,11 +37,11 @@ carry the result. A report is never edited after it lands.
 ## Boundaries
 
 - Depends on: nothing live; the reports quote the code of their date.
-- Used by: the [restructure program](/documentation/restructure/README.md), whose findings cite
+- Used by: the [restructure program](/documentation/archive/restructure/README.md), whose findings cite
   these reports.
 - Rules: never reworded; only links change.
 
 ## Related documentation
 
-- [Restructure program](/documentation/restructure/README.md) — the live plan, target tree and
-  progress built from these reports.
+- [Restructure program](/documentation/archive/restructure/README.md) — the program's plan,
+  target tree and progress built from these reports.

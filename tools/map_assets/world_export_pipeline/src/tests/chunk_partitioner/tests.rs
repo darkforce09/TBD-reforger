@@ -6,7 +6,7 @@
 #[test]
 fn the_road_census_reads_the_committed_roads_file() {
     let objects = ::repository_layout::terrain_dir(
-        &::repository_layout::find_repository_root().expect("repository root"),
+        &::repository_root::find_repository_root().expect("repository root"),
         "everon",
     )
     .join("objects");

@@ -80,19 +80,19 @@ pub struct ChunkResidency {
     pub(super) fence_by_u16: HashMap<u16, FencePrefabInfo>,
 
     /// The chunk index's cell ids, once loaded; every pin is intersected with it.
-    pub(super) cell_ids: Option<HashSet<String>>,
+    pub(super) cell_ids: Option<HashSet<ChunkId>>,
 
     /// Resident chunks by id.
-    pub(super) chunks: HashMap<String, WorldChunk>,
+    pub(super) chunks: HashMap<ChunkId, WorldChunk>,
 
     /// Building rows with a known footprint, per resident chunk.
-    pub(super) building_counts: HashMap<String, u32>,
+    pub(super) building_counts: HashMap<ChunkId, u32>,
 
     /// LRU clock of each resident chunk's last use.
-    pub(super) last_used: HashMap<String, u64>,
+    pub(super) last_used: HashMap<ChunkId, u64>,
 
     /// Insert order of each resident chunk (the LRU tie-break).
-    pub(super) inserted_seq: HashMap<String, u64>,
+    pub(super) inserted_seq: HashMap<ChunkId, u64>,
 
     /// The LRU clock.
     pub(super) use_tick: u64,
@@ -101,22 +101,22 @@ pub struct ChunkResidency {
     pub(super) insert_counter: u64,
 
     /// The pinned chunk ids, in chunk-math order.
-    pub(super) pinned_ids: Vec<String>,
+    pub(super) pinned_ids: Vec<ChunkId>,
 
     /// The pinned chunk ids as a set.
-    pub(super) pinned_set: HashSet<String>,
+    pub(super) pinned_set: HashSet<ChunkId>,
 
     /// The joined pinned ids: tells an unchanged pin from a new one.
     pub(super) pinned_key: String,
 
     /// Chunk ids requested and not yet resident.
-    pub(super) inflight: HashSet<String>,
+    pub(super) inflight: HashSet<ChunkId>,
 
     /// The object index over the resident chunks.
     pub(super) index: WorldSpatialIndex,
 
     /// Every eviction victim since construction, in order.
-    pub(super) eviction_log: Vec<String>,
+    pub(super) eviction_log: Vec<ChunkId>,
 
     /// Inserted and evicted chunk events, queued until taken.
     pub(super) residency_events: Vec<ResidencyEvent>,
@@ -140,10 +140,10 @@ pub struct ChunkResidency {
     pub(super) content_epoch: u64,
 
     /// Chunks parsed with zero instances: never requested again, never evicted.
-    pub(super) known_empty: HashSet<String>,
+    pub(super) known_empty: HashSet<ChunkId>,
 
     /// Failed fetches per chunk id since the current pin.
-    pub(super) fetch_failures: HashMap<String, u8>,
+    pub(super) fetch_failures: HashMap<ChunkId, u8>,
 
     /// Start of the open ingest frame, ms, when one is open.
     pub(super) ingest_frame_start_ms: Option<f64>,

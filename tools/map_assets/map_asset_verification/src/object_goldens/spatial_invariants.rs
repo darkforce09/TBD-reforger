@@ -15,7 +15,7 @@ use std::path::Path;
 use crate::error::{Result, refusal};
 use serde_json::{Value, json};
 
-use super::{Gate, read_json};
+use super::{Gate, read_json_file};
 use world_export_pipeline::forest_contours::{
     DENSITY_THRESHOLD, DOMINANT_SHARE, MIN_COMPONENT_CELLS, REGION_CELL_M, Tree,
     derive_forest_regions,
@@ -55,7 +55,7 @@ pub(super) fn append_spatial_gates(
     // S11
     {
         let mut errs = Vec::new();
-        let v_instance = jsonschema::validator_for(&read_json(
+        let v_instance = jsonschema::validator_for(&read_json_file(
             &sroot.join("definitions/map-object-instance.schema.json"),
         )?)
         .map_err(|e| refusal!("compile: {e}"))?;

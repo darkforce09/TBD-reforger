@@ -94,7 +94,7 @@ impl Harness {
 
 /// A client on fresh connections, so no answer is ever read from a reused one.
 fn client(timeout: Duration) -> reqwest::Client {
-    reqwest::Client::builder()
+    crate::http_client::http_client_builder()
         .no_proxy()
         .pool_max_idle_per_host(0)
         .timeout(timeout)

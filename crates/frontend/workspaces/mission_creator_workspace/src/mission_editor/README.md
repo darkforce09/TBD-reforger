@@ -72,14 +72,13 @@ keys 1, 2 and 3) and the armed-place release decision are the state layer's `tra
 - Used by: the page module `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs`, and the top
   strip through `toolbar_dispatch`; the source pins in
   `crates/frontend/workspaces/mission_creator_workspace/src/tests/`, the keymap census in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/keymap_census/`, and
-  `mission_editor_move_commit_names_the_atomic_mix_api` in
-  `crates/mission/mission_document/src/rows/tests/cases_1.rs`, which reads `canvas_mount.rs`.
+  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/keymap_census/`.
 - Rules:
   - `canvas_mount.rs` sits at the 500-line ceiling that `cargo xtask verify file-length` holds, so a
     new install goes into a part under `canvas_mount/`;
   - across `canvas_mount.rs` and the pointer-up handler exactly one drag-move commit exists
-    (`mission_editor_move_commit_names_the_atomic_mix_api`);
+    (`only_one_move_arm_commits_the_atomic_mix` in
+    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t648_transform.rs`);
   - the Arrange chords claim no chord another keydown listener holds
     (`no_two_listeners_claim_the_same_chord` in
     `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/keymap_census/tests.rs`);

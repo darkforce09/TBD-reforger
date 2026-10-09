@@ -46,7 +46,7 @@ use deploy_settings::{DeployEnvironment, DeployHostFolder, deploy_environment_pa
 use deployment::staging::fleet_instances::{
     FLEET_ROOT_UNDER_HOME, FleetInstance, MAXIMUM_FLEET_INSTANCES,
 };
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// The single server's game port.
 pub const SINGLE_SERVER_GAME_PORT: u16 = 2001;

@@ -21,15 +21,15 @@
 // the gate runs `clippy --all-targets -- -D warnings`.
 #![allow(dead_code)]
 
-pub mod failpoint_arming;
-pub mod interleavings;
-pub mod persisted_invariants;
-pub mod row_lock_barrier;
+pub(crate) mod failpoint_arming;
+pub(crate) mod interleavings;
+pub(crate) mod persisted_invariants;
+pub(crate) mod row_lock_barrier;
 
 // The same reason one level up: a re-export no single suite names is still the surface every
 // other suite reaches through.
 #[allow(unused_imports)]
-pub use self::{
+pub(crate) use self::{
     failpoint_arming::{
         ArmGuard, CATALOGUE, FailAction, Failpoint, FailpointArming, FailpointSuiteLock,
         PauseHandle, PausedFailpoint, assert_injected_failure, lock_suite, reach,

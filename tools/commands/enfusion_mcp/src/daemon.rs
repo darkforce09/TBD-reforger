@@ -31,7 +31,7 @@ use std::time::Duration;
 use process_runner::Run;
 
 use repository_layout::build_output::{MCP_DAEMON_SUBFOLDER, build_output_subfolder};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 use crate::server_entrypoint;
 

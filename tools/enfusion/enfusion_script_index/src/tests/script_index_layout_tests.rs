@@ -7,7 +7,7 @@ use super::*;
 /// untriaged.
 #[test]
 fn the_capability_verdict_table_exists_in_the_checkout() {
-    let root = ::repository_layout::find_repository_root().expect("active checkout");
+    let root = ::repository_root::find_repository_root().expect("active checkout");
     assert!(
         root.join(CAPABILITY_VERDICTS).is_file(),
         "missing: {CAPABILITY_VERDICTS}"

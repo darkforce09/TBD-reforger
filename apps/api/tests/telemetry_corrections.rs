@@ -43,7 +43,7 @@ async fn role_played(pool: &PgPool, match_id: Uuid, arma: &str) -> Option<String
     .bind(arma)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of match_player_stats returns a row")
 }
 
 #[tokio::test]

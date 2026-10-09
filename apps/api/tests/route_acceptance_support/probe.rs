@@ -19,7 +19,7 @@ use super::spec::{Actor, Contract};
 
 /// How a probe's request departs from its fixture.
 #[derive(Debug, Clone)]
-pub enum Change {
+pub(crate) enum Change {
     /// Replace a path parameter.
     Param(&'static str, String),
     /// Replace the query string (without `?`).
@@ -40,7 +40,7 @@ pub enum Change {
 
 /// The expected status of a probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Outcome {
+pub(crate) enum Outcome {
     /// The spec's success status, with its contract checked.
     Success,
     /// This status.
@@ -49,7 +49,7 @@ pub enum Outcome {
 
 /// What a probe's response must show.
 #[derive(Debug, Clone)]
-pub struct Expect {
+pub(crate) struct Expect {
     pub outcome: Outcome,
     /// A contract checked instead of (or, for a status, in addition to) the spec's own.
     pub contract: Option<Contract>,
@@ -69,12 +69,12 @@ pub struct Expect {
 
 impl Expect {
     /// The spec's success status and contract.
-    pub fn success() -> Expect {
+    pub(crate) fn success() -> Expect {
         Expect::with_outcome(Outcome::Success)
     }
 
     /// This status; a status of 400 or more is checked for the envelope.
-    pub fn status(status: u16) -> Expect {
+    pub(crate) fn status(status: u16) -> Expect {
         Expect::with_outcome(Outcome::Status(status))
     }
 
@@ -92,43 +92,43 @@ impl Expect {
     }
 
     /// The body's value at JSON pointer `pointer` (e.g. `/data/0/id`) equals `value`.
-    pub fn json_at(mut self, pointer: &'static str, value: Value) -> Expect {
+    pub(crate) fn json_at(mut self, pointer: &'static str, value: Value) -> Expect {
         self.json_equals.push((pointer, value));
         self
     }
 
     /// The array at JSON pointer `pointer` holds at most `limit` items.
-    pub fn max_items(mut self, pointer: &'static str, limit: usize) -> Expect {
+    pub(crate) fn max_items(mut self, pointer: &'static str, limit: usize) -> Expect {
         self.max_items = Some((pointer, limit));
         self
     }
 
     /// Also check the body against `contract`.
-    pub fn contract(mut self, contract: Contract) -> Expect {
+    pub(crate) fn contract(mut self, contract: Contract) -> Expect {
         self.contract = Some(contract);
         self
     }
 
     /// The envelope's `error` contains `text`.
-    pub fn error_contains(mut self, text: &'static str) -> Expect {
+    pub(crate) fn error_contains(mut self, text: &'static str) -> Expect {
         self.error_contains = Some(text);
         self
     }
 
     /// The envelope's `details.code` equals `code`.
-    pub fn details_code(mut self, code: &'static str) -> Expect {
+    pub(crate) fn details_code(mut self, code: &'static str) -> Expect {
         self.details_code = Some(code);
         self
     }
 
     /// The `Location` header contains `text`.
-    pub fn location_contains(mut self, text: &'static str) -> Expect {
+    pub(crate) fn location_contains(mut self, text: &'static str) -> Expect {
         self.location_contains = Some(text);
         self
     }
 
     /// The refusal carries no envelope, for the stated reason.
-    pub fn without_envelope(mut self, reason: &'static str) -> Expect {
+    pub(crate) fn without_envelope(mut self, reason: &'static str) -> Expect {
         self.without_envelope = Some(reason);
         self
     }
@@ -136,7 +136,7 @@ impl Expect {
 
 /// One request and what its response must show.
 #[derive(Debug, Clone)]
-pub struct Probe {
+pub(crate) struct Probe {
     pub name: String,
     pub actor: Actor,
     /// The world fixture to start from; `None` uses the spec's fixture.
@@ -148,7 +148,7 @@ pub struct Probe {
 impl Probe {
     /// A probe sent by `actor` from the spec's fixture, expecting the success outcome until
     /// [`Probe::expect`] or [`Probe::expect_with`] says otherwise.
-    pub fn new(name: impl Into<String>, actor: Actor) -> Probe {
+    pub(crate) fn new(name: impl Into<String>, actor: Actor) -> Probe {
         Probe {
             name: name.into(),
             actor,
@@ -159,45 +159,45 @@ impl Probe {
     }
 
     /// Start from the world fixture `key` instead of the spec's.
-    pub fn fixture(mut self, key: &'static str) -> Probe {
+    pub(crate) fn fixture(mut self, key: &'static str) -> Probe {
         self.fixture = Some(key);
         self
     }
 
     /// Apply `change` to the fixture's request.
-    pub fn change(mut self, change: Change) -> Probe {
+    pub(crate) fn change(mut self, change: Change) -> Probe {
         self.changes.push(change);
         self
     }
 
     /// Replace path parameter `name` with `value`.
-    pub fn param(self, name: &'static str, value: impl Into<String>) -> Probe {
+    pub(crate) fn param(self, name: &'static str, value: impl Into<String>) -> Probe {
         self.change(Change::Param(name, value.into()))
     }
 
     /// Replace the query string.
-    pub fn query(self, query: impl Into<String>) -> Probe {
+    pub(crate) fn query(self, query: impl Into<String>) -> Probe {
         self.change(Change::Query(query.into()))
     }
 
     /// Replace the JSON body.
-    pub fn body(self, body: Value) -> Probe {
+    pub(crate) fn body(self, body: Value) -> Probe {
         self.change(Change::Body(body))
     }
 
     /// Merge fields into the JSON body.
-    pub fn merge_body(self, fields: Value) -> Probe {
+    pub(crate) fn merge_body(self, fields: Value) -> Probe {
         self.change(Change::MergeBody(fields))
     }
 
     /// Expect `status`.
-    pub fn expect(mut self, status: u16) -> Probe {
+    pub(crate) fn expect(mut self, status: u16) -> Probe {
         self.expect = Expect::status(status);
         self
     }
 
     /// Expect exactly `expect`.
-    pub fn expect_with(mut self, expect: Expect) -> Probe {
+    pub(crate) fn expect_with(mut self, expect: Expect) -> Probe {
         self.expect = expect;
         self
     }

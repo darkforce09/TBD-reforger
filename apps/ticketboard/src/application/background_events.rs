@@ -7,7 +7,7 @@ impl TicketboardApp {
 
     /// Suppress strict-check reruns during a mutation and one trailing debounce window.
     /// Reloads continue so the UI can show command writes without starting a check storm.
-    pub fn set_verb_in_flight(&mut self, in_flight: bool) {
+    pub(crate) fn set_verb_in_flight(&mut self, in_flight: bool) {
         let now = self.now_ms();
         self.debounce.set_suppressed(in_flight, now);
     }

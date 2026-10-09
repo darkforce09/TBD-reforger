@@ -105,7 +105,7 @@ pub(crate) fn sample_rgb(img: &Rgb8, w: usize, h: usize) -> Rgb8 {
 /// Normalized `[0,1]` standard deviation — magick's `%[fx:standard_deviation]` semantics:
 /// per-channel population stddev, channels averaged (pooling all samples would inflate the
 /// value by the between-channel mean spread).
-pub(crate) fn stddev_norm(img: &Rgb8) -> f64 {
+pub(crate) fn normalized_standard_deviation(img: &Rgb8) -> f64 {
     let n = (img.w * img.h) as f64;
     let mut mean = [0f64; 3];
     for px in img.data.chunks_exact(3) {
@@ -131,7 +131,7 @@ pub(crate) fn stddev_norm(img: &Rgb8) -> f64 {
 /// source — including a constant alpha plane (stddev 0), which divides the RGB mean by 4/3
 /// on TrueColorAlpha files. This variant reproduces that by consulting the file's own
 /// channel count.
-pub(crate) fn stddev_norm_magick(path: &std::path::Path) -> Result<f64> {
+pub(crate) fn normalized_standard_deviation_magick(path: &std::path::Path) -> Result<f64> {
     let img = open_unlimited(path)?;
     let has_alpha = img.color().has_alpha();
     let rgb = Rgb8 {
@@ -139,7 +139,7 @@ pub(crate) fn stddev_norm_magick(path: &std::path::Path) -> Result<f64> {
         h: img.height() as usize,
         data: img.to_rgb8().into_raw(),
     };
-    let rgb_mean_sd = stddev_norm(&rgb) * 3.0; // sum of the 3 channel stddevs
+    let rgb_mean_sd = normalized_standard_deviation(&rgb) * 3.0; // sum of the 3 channel stddevs
     Ok(if has_alpha {
         // constant-alpha plane contributes 0; magick still divides by 4
         rgb_mean_sd / 4.0
@@ -183,7 +183,7 @@ pub(crate) fn box_blur_f32(src: &[f32], w: usize, h: usize, radius: usize) -> Ve
 }
 
 /// HSL saturation + lightness from 8-bit RGB (the classifier space).
-pub(crate) fn hsl_sat_lum(r: u8, g: u8, b: u8) -> (f32, f32) {
+pub(crate) fn hsl_saturation_and_lightness(r: u8, g: u8, b: u8) -> (f32, f32) {
     let (r, g, b) = (
         f32::from(r) / 255.0,
         f32::from(g) / 255.0,
@@ -207,7 +207,7 @@ pub(crate) struct WebpInfo {
 
 /// The hand-rolled RIFF/WEBP header reader (same parse as the Node verifiers): VP8L
 /// lossless dims, `VP8 ` lossy keyframe dims, other fourccs magic-only.
-pub(crate) fn webp_dims(buf: &[u8]) -> Option<WebpInfo> {
+pub(crate) fn webp_dimensions(buf: &[u8]) -> Option<WebpInfo> {
     if buf.len() < 30 || &buf[0..4] != b"RIFF" || &buf[8..12] != b"WEBP" {
         return None;
     }

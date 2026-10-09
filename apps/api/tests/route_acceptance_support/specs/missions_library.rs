@@ -554,7 +554,7 @@ fn registry_specs() -> Vec<RouteSpec> {
 }
 
 /// Every spec of the `missions_library` part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     let mut specs = mission_specs();
     specs.extend(version_specs());
     specs.extend(faction_specs());

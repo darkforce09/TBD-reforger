@@ -13,7 +13,8 @@
 //! once.
 //! **Position:** a `db test-it` binary over its own database, built on one
 //! `event_eligibility_support::Fixture` (the requesting administrator) and `fleet_support`'s
-//! server registration and credential issuance.
+//! server registration and credential issuance; the generated interleavings and their strategies
+//! are `fleet_support/executor_interleavings.rs`.
 //! **Signals & state:** one database, one server and two executor credentials serve every case;
 //! each case owns the commands it enqueues. Every passing case ends with its commands terminal, so
 //! the next case's claims and the global reconciliation pass see only that case's commands; a case
@@ -28,6 +29,8 @@
 
 mod common;
 mod event_eligibility_support;
+#[path = "fleet_support/executor_interleavings.rs"]
+mod executor_interleavings;
 mod fleet_support;
 
 use std::cell::Cell;
@@ -41,8 +44,10 @@ use api_server_infrastructure::services::fleet_commands::executor_claims::{
     claim_next_command, mark_executing, record_result,
 };
 use event_eligibility_support::{EventShape, Fixture};
+use executor_interleavings::{
+    EXECUTORS, HostAction, Interleaving, Reporter, Step, Target, TokenSkew, interleaving_strategy,
+};
 use fleet_support::{credential, register_server};
-use fleet_wire_contract::FleetAction;
 use fleet_wire_contract::executor_messages::ExecutionResult;
 use fleet_wire_contract::operator_messages::FleetCommandRequest;
 use proptest::prelude::*;
@@ -53,157 +58,8 @@ use uuid::Uuid;
 /// Cases the property executes.
 const CASES: u32 = 256;
 
-/// Host-agent credentials of the one server; generated steps name them by index.
-const EXECUTORS: usize = 2;
-
 /// The failure reason every failed outcome report carries.
 const FAILURE_REASON: &str = "the property executor observed a failure";
-
-/// The host-agent actions, with the oracle's own statement of which repeat safely and which change
-/// the server process.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum HostAction {
-    Start,
-    Stop,
-    Restart,
-    ListPlayers,
-}
-
-impl HostAction {
-    fn fleet_action(self) -> FleetAction {
-        match self {
-            Self::Start => FleetAction::Start,
-            Self::Stop => FleetAction::Stop,
-            Self::Restart => FleetAction::Restart,
-            Self::ListPlayers => FleetAction::ListPlayers,
-        }
-    }
-
-    fn idempotent(self) -> bool {
-        self != Self::Restart
-    }
-
-    fn process_changing(self) -> bool {
-        self != Self::ListPlayers
-    }
-}
-
-/// The fencing token an executor presents relative to the one it last received for the command
-/// (the command's current token when it never claimed it).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum TokenSkew {
-    Held,
-    Behind,
-    Ahead,
-}
-
-/// The executor that reports: the one holding the target's claim (else the last one that claimed
-/// it, else the first credential), or a named credential.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Reporter {
-    Holder,
-    Executor(usize),
-}
-
-/// The command a step acts on: the one claimed most recently in the case (else the first), or an
-/// index into the case's commands modulo their count.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Target {
-    LatestClaim,
-    Command(usize),
-}
-
-/// One generated step.
-#[derive(Debug, Clone, Copy)]
-enum Step {
-    Claim {
-        executor: usize,
-    },
-    ReportExecuting {
-        reporter: Reporter,
-        target: Target,
-        skew: TokenSkew,
-    },
-    ReportOutcome {
-        reporter: Reporter,
-        target: Target,
-        skew: TokenSkew,
-        succeeded: bool,
-    },
-    LapseLease {
-        target: Target,
-    },
-    ExpireQueue {
-        target: Target,
-    },
-    Reconcile,
-}
-
-/// A generated case: the commands to enqueue, in order, and the steps that follow.
-#[derive(Debug, Clone)]
-struct Interleaving {
-    actions: Vec<HostAction>,
-    steps: Vec<Step>,
-}
-
-fn action_strategy() -> impl Strategy<Value = HostAction> {
-    prop_oneof![
-        1 => Just(HostAction::Start),
-        1 => Just(HostAction::Stop),
-        2 => Just(HostAction::Restart),
-        2 => Just(HostAction::ListPlayers),
-    ]
-}
-
-fn skew_strategy() -> impl Strategy<Value = TokenSkew> {
-    prop_oneof![
-        4 => Just(TokenSkew::Held),
-        1 => Just(TokenSkew::Behind),
-        1 => Just(TokenSkew::Ahead),
-    ]
-}
-
-fn reporter_strategy() -> impl Strategy<Value = Reporter> {
-    prop_oneof![
-        3 => Just(Reporter::Holder),
-        1 => (0..EXECUTORS).prop_map(Reporter::Executor),
-    ]
-}
-
-fn target_strategy() -> impl Strategy<Value = Target> {
-    prop_oneof![
-        3 => Just(Target::LatestClaim),
-        1 => (0_usize..3).prop_map(Target::Command),
-    ]
-}
-
-fn step_strategy() -> impl Strategy<Value = Step> {
-    prop_oneof![
-        4 => (0..EXECUTORS).prop_map(|executor| Step::Claim { executor }),
-        3 => (reporter_strategy(), target_strategy(), skew_strategy()).prop_map(
-            |(reporter, target, skew)| Step::ReportExecuting { reporter, target, skew }
-        ),
-        3 => (reporter_strategy(), target_strategy(), skew_strategy(), any::<bool>()).prop_map(
-            |(reporter, target, skew, succeeded)| Step::ReportOutcome {
-                reporter,
-                target,
-                skew,
-                succeeded,
-            }
-        ),
-        2 => target_strategy().prop_map(|target| Step::LapseLease { target }),
-        1 => target_strategy().prop_map(|target| Step::ExpireQueue { target }),
-        2 => Just(Step::Reconcile),
-    ]
-}
-
-fn interleaving_strategy() -> impl Strategy<Value = Interleaving> {
-    (
-        prop::collection::vec(action_strategy(), 1..=3),
-        prop::collection::vec(step_strategy(), 1..=14),
-    )
-        .prop_map(|(actions, steps)| Interleaving { actions, steps })
-}
 
 /// A command's lifecycle state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -598,7 +454,11 @@ impl LedgerWorld {
         .expect("read the queue order");
         ordered
             .iter()
-            .map(|id| ids.iter().position(|candidate| candidate == id).unwrap())
+            .map(|id| {
+                ids.iter()
+                    .position(|candidate| candidate == id)
+                    .expect("every ordered id is in the queue")
+            })
             .collect()
     }
 

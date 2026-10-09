@@ -51,8 +51,8 @@ use world_file_formats::archives::roads::RoadSegmentArchive;
 use world_file_formats::archives::version::ARCHIVE_SCHEMA_VERSION;
 use world_file_formats::ids::RoadSegmentId;
 
-use ::repository_layout::find_repository_root;
 use ::repository_layout::terrain_dir;
+use ::repository_root::find_repository_root;
 
 /// The gzip-JSON road export, relative to a terrain directory.
 pub const ROADS_GZ: &str = "objects/roads.json.gz";

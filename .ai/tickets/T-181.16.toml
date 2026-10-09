@@ -36,7 +36,7 @@ citations = [
     "T-068.14 satisfied-by note",
 ]
 owns = [
-    "documentation/mod/tbd-framework/capability_verdicts.tsv",
+    "documentation/apps/mod/tbd-framework/capability_verdicts.tsv",
     "documentation/tickets/specs/t181_event_mod_program.md",
 ]
 

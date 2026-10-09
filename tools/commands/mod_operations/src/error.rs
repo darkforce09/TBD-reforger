@@ -58,7 +58,7 @@ pub enum Error {
     ProgramNotRun(#[from] NotRun),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// The remote log verdict could not run.
     #[error(transparent)]
     RemoteDebugging(#[from] remote_debugging::Error),

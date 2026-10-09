@@ -28,7 +28,7 @@ pub mod rfc3339_utc {
         }
     }
 
-    /// Write `instant` as its [`format`] string.
+    /// Write `instant` as its [`format()`] string.
     pub fn serialize<S: Serializer>(
         instant: &DateTime<Utc>,
         serializer: S,

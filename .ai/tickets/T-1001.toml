@@ -3,9 +3,24 @@ kind = "work"
 title = "Mod wave gate calls make targets with no Makefile"
 summary = "cargo xtask mod wave gate runs four make targets through distrobox-host-exec (mod_ops/wave_execution/execution.rs), but no Makefile is tracked, so those steps always fail. Call cargo xtask ci schema-validate, enf citations, enf capability and cargo xtask verify no-crf-leak directly."
 class = "chore"
-status = "idea"
-notes = "Consequence for landing (TF15, doc writer F15b; paths under tools/xtask/src/commands): 'cargo xtask mod wave land' merges every complete slice, then runs this gate before reaping (mod_ops/wave_execution/land.rs:57-65), so with the make steps always red it stops at 'Gate FAILED after merge' and never reaps worktrees or pushes (:67-75). Each merge also needs a green receipt from 'cargo xtask platform wave gate --slice <id>' (platform/slice_worktree/git_plain.rs:414-420, verdict::land_refusal). The make calls are at mod_ops/wave_execution/execution.rs:352, :357, :362 and :367."
+status = "shipped"
+order = 9832
+notes = "Consequence for landing (TF15, doc writer F15b): 'cargo xtask mod wave land' merges every complete slice, then runs this gate before reaping, so with the make steps always red it stopped at 'Gate FAILED after merge' and never reaped worktrees or pushed. What was wrong: the gate ran four make targets (schema-validate, enf citations, enf capability, no-crf-leak) through distrobox-host-exec, and no Makefile is tracked. Where it was fixed: the restructure's M1 commit ac4101cd3 replaced them with the cargo commands; today tools/commands/mod_operations/src/wave_execution/execution.rs:284-390 (GATE_STEPS) runs cargo xtask ci schema-validate (:336), cargo run -p developer_tools --bin enf -- capability (:341) and -- citations (:355), and cargo xtask verify no-crf-leak (:369), and the land path calls the gate at tools/commands/mod_operations/src/wave_execution/land.rs:65. tools/commands/mod_operations/src/tests/wave_execution.rs:139-150 (the_gate_names_no_make_step) pins that no step runs make. An xtask wrapper for the two enf steps is T-1273. Shipped by restructure S12 (finding F-S11-08)."
+main_goal = "The mod wave gate runs only commands that exist, so a green slice can land."
+context = [
+    "cargo xtask mod wave land runs the wave gate after merging and stops before reaping and pushing when it fails.",
+    "Four gate steps called make targets of a Makefile the repository does not track, so the gate could never pass.",
+]
+requirement = ["Every mod wave gate step is a cargo command of the workspace, with no make step, and a test keeps it so."]
+current_state = ["tools/commands/mod_operations/src/wave_execution/execution.rs:284-390 runs cargo xtask ci schema-validate, the enf capability and citations binaries and cargo xtask verify no-crf-leak directly; the_gate_names_no_make_step (tools/commands/mod_operations/src/tests/wave_execution.rs:139-150) fails on any make step."]
+approach = ["Fixed by the restructure's M1 commit ac4101cd3, which replaced the make steps with the cargo commands and added the pin; no further change."]
+verify = ["cargo test -p mod_operations the_gate_names_no_make_step"]
+acceptance = ["the_gate_names_no_make_step passes (1 passed, 2026-10-04) and no gate step names make."]
+shipped_at = "ac4101cd3"
 created_at = "2026-09-23T18:32:58Z"
+completed_at = "2026-10-04T02:53:51Z"
+estimated = ["tokens"]
+estimate_note = "token estimate sized from the whole commit ac4101cd3, a stage commit that carried this fix among other work; the fix itself is a small part of it"
 
 [scope]
 domain = "repo"

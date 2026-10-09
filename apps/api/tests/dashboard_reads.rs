@@ -94,13 +94,17 @@ async fn setup() -> Option<(Router, String, PgPool)> {
                 .uri("/api/v1/auth/refresh")
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(format!(r#"{{"refresh_token":"{raw}"}}"#)))
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
     assert_eq!(resp.status(), StatusCode::OK, "mint session for {DASH_UID}");
-    let body: Value =
-        serde_json::from_slice(&to_bytes(resp.into_body(), usize::MAX).await.unwrap()).unwrap();
+    let body: Value = serde_json::from_slice(
+        &to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .expect("the response body reads to the end"),
+    )
+    .expect("the body decodes as JSON");
     let access = body["access_token"]
         .as_str()
         .expect("access_token")
@@ -124,10 +128,12 @@ async fn call(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -141,7 +147,7 @@ async fn call(
 async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
+        .expect("the system clock is after the Unix epoch")
         .as_nanos();
     let name = format!("{EVENT_TAG}{stamp}");
     let start: chrono::DateTime<Utc> = sqlx::query_scalar(
@@ -209,7 +215,7 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
     .expect("seed orbat_slot");
 
     // Deployments upcoming branch: `WHERE event_registrations.discord_id = $me`.
-    let mut fixture = (pool).begin().await.unwrap();
+    let mut fixture = (pool).begin().await.expect("a transaction begins");
     let allocation = common::participant_allocation(&mut fixture, em_id, DASH_UID).await;
     sqlx::query(
         "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, \
@@ -222,7 +228,7 @@ async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
     .execute(&mut *fixture)
     .await
     .expect("seed event_registration");
-    fixture.commit().await.unwrap();
+    fixture.commit().await.expect("the transaction commits");
 
     (event_id.to_string(), name, em_id)
 }

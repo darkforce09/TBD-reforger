@@ -122,11 +122,13 @@ impl Roster {
         let response = self
             .app
             .clone()
-            .oneshot(request.body(Body::empty()).unwrap())
+            .oneshot(request.body(Body::empty()).expect("the request builds"))
             .await
             .unwrap();
         let status = response.status();
-        let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let bytes = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("the response body reads to the end");
         (
             status,
             serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -169,7 +171,12 @@ fn items(body: &Value) -> &Vec<Value> {
 fn discord_ids(body: &Value) -> Vec<String> {
     items(body)
         .iter()
-        .map(|row| row["discord_id"].as_str().unwrap().to_owned())
+        .map(|row| {
+            row["discord_id"]
+                .as_str()
+                .expect("the `discord_id` field is a string")
+                .to_owned()
+        })
         .collect()
 }
 

@@ -57,7 +57,7 @@ async fn attendance(f: &Fixture, actor: &Actor, mission: usize) -> (String, Opti
     .bind(&actor.id)
     .fetch_one(f.pool())
     .await
-    .unwrap()
+    .expect("the read of event_registrations returns a row")
 }
 
 async fn attendance_rate(f: &Fixture, actor: &Actor) -> f64 {
@@ -65,7 +65,7 @@ async fn attendance_rate(f: &Fixture, actor: &Actor) -> f64 {
         .bind(&actor.id)
         .fetch_one(f.pool())
         .await
-        .unwrap()
+        .expect("the read of users returns a row")
 }
 
 fn state(reservation: &str, attended: Option<&str>) -> (String, Option<String>) {

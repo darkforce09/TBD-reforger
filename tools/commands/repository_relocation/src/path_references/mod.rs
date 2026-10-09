@@ -12,15 +12,17 @@
 //! **Signals & state:** none; pure functions.
 //!
 //! **Invariants:** a relative literal's edit outranks a repository-root edit over the same bytes;
-//! in Rust source only string literals and comments are edited, never code; a frozen record
-//! receives edits inside link destinations only, a closed ticket inside its `spec`, `plan` and
-//! `owns` values only; the verification judges exactly the spans [`allowed_spans`] opens, with the
+//! in Rust source only string literals and comments are edited, never code, and none in this
+//! tool's own test sources, whose literals and comments are fixture text; a frozen record receives
+//! edits inside link destinations only, a frozen area's README index inside its link destinations
+//! and the tree part of its Contents block's lines (never their roles), a closed ticket inside its `spec`, `plan` and `owns` values only; the verification judges exactly the spans [`allowed_spans`] opens, with the
 //! same occurrence classes ([`path_tokens::classify_occurrence`]), so a spelling it can see is one
 //! this pass rewrites or reports unresolved; the dry run's verification of the planned tree proves
 //! that for every run; a relative literal its spelling does not pin to one anchor is never
 //! rewritten, only reported as ambiguous.
 
 pub(crate) mod anchor_resolution;
+pub(crate) mod contents_block;
 pub(crate) mod markdown_links;
 pub(crate) mod path_tokens;
 pub(crate) mod relative_references;
@@ -148,8 +150,13 @@ pub(crate) fn allowed_spans(
         FileTreatment::FrozenDocument => {
             AllowedSpans::Only(markdown_links::link_destinations(source))
         }
+        FileTreatment::FrozenIndex => {
+            let mut spans = markdown_links::link_destinations(source);
+            spans.extend(contents_block::contents_tree_lines(source));
+            AllowedSpans::Only(spans)
+        }
         FileTreatment::ClosedTicket => AllowedSpans::Only(checked_ticket_field_lines(source)),
-        FileTreatment::Excluded => AllowedSpans::Only(Vec::new()),
+        FileTreatment::FixtureSource | FileTreatment::Excluded => AllowedSpans::Only(Vec::new()),
     };
     if kind == ReferenceFileKind::Rust {
         by_treatment.intersect(&AllowedSpans::Only(rust_literal_and_comment_spans(source)))

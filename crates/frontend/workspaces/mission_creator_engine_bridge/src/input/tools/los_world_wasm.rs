@@ -198,7 +198,7 @@ pub fn tick_object_wash(e: &mut RenderEngine) {
                 return;
             }
         }
-        let now = js_sys::Date::now;
+        let now = time_source::wall_clock_ms;
         let ground = |x: f64, y: f64| ground_at(x, y);
         let changed = wash.pass.step(
             &wash.vs,

@@ -23,14 +23,14 @@ use std::path::PathBuf;
 
 use crate::architectural_analysis::{floor_plates, polygon_rings, vertical_slabs, wall_extraction};
 use crate::archive_emission::{archive_command, blueprint_assembly};
+use crate::blueprint_ingestion::find_profile_subdirectories;
 use crate::error::Result;
-use crate::ingest::find_profile_subdirs;
 use crate::voxel_processing::analysis_parameters;
 use crate::voxel_processing::{dump_parser, voxel_types};
 use ::repository_layout::{definition_path, terrain_dir};
-use analysis_parameters::Params;
+use analysis_parameters::AnalysisParameters;
 use blueprint_assembly::BandProducts;
-use wall_extraction::Algo;
+use wall_extraction::WallAlgorithm;
 
 /// Runs `blueprint-from-voxels` over the checkout at `root` with the raw `args`; returns the
 /// exit code (0 every matched dump written, 1 no match, an unknown argument or a failure).
@@ -45,7 +45,7 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
     let mut params_path: Option<PathBuf> = None;
     let mut debug_dir: Option<PathBuf> = None;
     let mut filter = String::new();
-    let mut algo = Algo::Segments;
+    let mut algo = WallAlgorithm::Segments;
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
@@ -71,8 +71,8 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
             }
             "--algo" if i + 1 < args.len() => {
                 algo = match args[i + 1].as_str() {
-                    "segments" => Algo::Segments,
-                    "grid" => Algo::Grid,
+                    "segments" => WallAlgorithm::Segments,
+                    "grid" => WallAlgorithm::Grid,
                     other => {
                         eprintln!("blueprint-from-voxels: unknown --algo {other}");
                         return Ok(1);
@@ -89,9 +89,9 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
             }
         }
     }
-    let params = Params::load(params_path.as_deref())?;
+    let params = AnalysisParameters::load(params_path.as_deref())?;
 
-    let sources = find_profile_subdirs(src_override.as_deref(), "prefabs/dumps");
+    let sources = find_profile_subdirectories(src_override.as_deref(), "prefabs/dumps");
     if sources.is_empty() {
         eprintln!("blueprint-from-voxels: no prefabs/dumps dir found under any profile candidate");
         return Ok(1);
@@ -166,12 +166,12 @@ pub fn run(root: &std::path::Path, args: &[String]) -> Result<u8> {
 
 fn interpret_one(
     path: &std::path::Path,
-    algo: Algo,
-    base_params: &Params,
+    algo: WallAlgorithm,
+    base_params: &AnalysisParameters,
     debug_dir: Option<&std::path::Path>,
 ) -> Result<building_interiors::blueprint::structure::BuildingBlueprint> {
     let dump = dump_parser::parse_dump(path)?;
-    let m = dump.meta().clone();
+    let m = dump.metadata().clone();
     println!(
         "    {}: dims {:?} cell {} · excluded {} doors / {} glass / {} furniture · tick {}",
         m.slug, m.dims, m.cell, m.excluded.doors, m.excluded.glass, m.excluded.furniture, m.tick
@@ -222,11 +222,11 @@ fn interpret_one(
 fn build_bands(
     dump: &voxel_types::VoxelDump,
     vert: &voxel_types::VerticalScan,
-    algo: Algo,
-    p: &Params,
+    algo: WallAlgorithm,
+    p: &AnalysisParameters,
     mut debugs: Option<&mut Vec<wall_extraction::BandDebug>>,
 ) -> Vec<BandProducts> {
-    let m = dump.meta();
+    let m = dump.metadata();
     let cell = m.cell;
     let mut bands = Vec::new();
     for (li, &lo) in vert.floors.iter().enumerate() {
@@ -237,7 +237,7 @@ fn build_bands(
         let mut dbg = debugs
             .as_deref_mut()
             .map(|_| wall_extraction::BandDebug::default());
-        let bw = wall_extraction::extract_band(dump, vert, lo, hi, algo, p, dbg.as_mut());
+        let bw = wall_extraction::extract_band_walls(dump, vert, lo, hi, algo, p, dbg.as_mut());
         if let (Some(sink), Some(d)) = (debugs.as_deref_mut(), dbg) {
             sink.push(d);
         }
@@ -273,8 +273,15 @@ fn build_bands(
         let mut dbg = debugs
             .as_deref_mut()
             .map(|_| wall_extraction::BandDebug::default());
-        let bw =
-            wall_extraction::extract_band(dump, vert, last_hi, vert.ridge, algo, p, dbg.as_mut());
+        let bw = wall_extraction::extract_band_walls(
+            dump,
+            vert,
+            last_hi,
+            vert.ridge,
+            algo,
+            p,
+            dbg.as_mut(),
+        );
         if let (Some(sink), Some(d)) = (debugs, dbg) {
             sink.push(d);
         }

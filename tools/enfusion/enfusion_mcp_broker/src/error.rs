@@ -11,7 +11,7 @@
 pub enum Error {
     /// No checkout to resolve the server command against.
     #[error(transparent)]
-    RepositoryRoot(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// The server could not be spawned, or its stdin refused the initialisation.
     #[error(transparent)]
     Io(#[from] std::io::Error),

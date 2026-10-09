@@ -9,7 +9,7 @@ fn area_and_closed(points: &[[f64; 3]], tris: &[[u32; 3]]) -> (f64, bool) {
             points[t[1] as usize],
             points[t[2] as usize],
         );
-        area += 0.5 * norm(cross(sub(b, a), sub(c, a)));
+        area += 0.5 * norm(cross_product(subtract(b, a), subtract(c, a)));
         for (p, q) in [(t[0], t[1]), (t[1], t[2]), (t[2], t[0])] {
             *edges.entry((p.min(q), p.max(q))).or_default() += if p < q { 1 } else { -1 };
         }
@@ -44,8 +44,11 @@ fn cube_hull_is_twelve_outward_triangles() {
     let centroid = [0.0, 1.0, 0.0];
     for t in &tris {
         let (a, b, c) = (pts[t[0] as usize], pts[t[1] as usize], pts[t[2] as usize]);
-        let n = cross(sub(b, a), sub(c, a));
-        assert!(dot(n, sub(a, centroid)) > 0.0, "inward face {t:?}");
+        let n = cross_product(subtract(b, a), subtract(c, a));
+        assert!(
+            dot_product(n, subtract(a, centroid)) > 0.0,
+            "inward face {t:?}"
+        );
     }
 }
 

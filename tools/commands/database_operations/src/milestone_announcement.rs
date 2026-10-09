@@ -37,7 +37,7 @@ use crate::error::{Result, ResultExt};
 use process_runner::Run;
 use verification_core::verdict::NotRun;
 
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Optional absolute psql path for unit tests (avoids PATH mutation).
 const ENV_PSQL: &str = "TBD_SEED_MILESTONE_PSQL";

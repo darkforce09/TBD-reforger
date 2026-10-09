@@ -45,7 +45,7 @@ estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 com
 owns = [
     "scripts/mod/tbd-spawn-determinism.sh",
     "Makefile",
-    "documentation/mod",
+    "documentation/apps/mod",
 ]
 
 [scope]

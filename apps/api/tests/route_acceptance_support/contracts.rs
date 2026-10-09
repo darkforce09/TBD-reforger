@@ -25,13 +25,13 @@ use super::spec::Contract;
 use crate::contract_support;
 
 fn definitions_dir() -> PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("contracts/definitions")
 }
 
 /// The parsed schema document `file` of `contracts/definitions/`.
-pub fn load_schema_document(file: &str) -> Result<Value, String> {
+pub(crate) fn load_schema_document(file: &str) -> Result<Value, String> {
     let path = definitions_dir().join(file);
     let raw =
         std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
@@ -40,7 +40,7 @@ pub fn load_schema_document(file: &str) -> Result<Value, String> {
 
 /// The schema file and entry a JSON-bearing contract names, or `None` for `NoBody`, `Binary`
 /// and the refusal envelope.
-pub fn schema_of(contract: &Contract) -> Option<(&'static str, Option<&'static str>)> {
+pub(crate) fn schema_of(contract: &Contract) -> Option<(&'static str, Option<&'static str>)> {
     match contract {
         Contract::Schema { file, definition } | Contract::EventStream { file, definition } => {
             Some((file, *definition))
@@ -51,7 +51,7 @@ pub fn schema_of(contract: &Contract) -> Option<(&'static str, Option<&'static s
 }
 
 /// `Ok` when the contract's file exists and names the entry it cites.
-pub fn check_contract_resolves(contract: &Contract) -> Result<(), String> {
+pub(crate) fn check_contract_resolves(contract: &Contract) -> Result<(), String> {
     let Some((file, definition)) = schema_of(contract) else {
         return Ok(());
     };
@@ -92,7 +92,7 @@ fn validator(file: &str, definition: Option<&str>) -> Result<jsonschema::Validat
 }
 
 /// Every violation of `value` against the schema entry `file#definition`.
-pub fn violations(file: &str, definition: Option<&str>, value: &Value) -> Vec<String> {
+pub(crate) fn violations(file: &str, definition: Option<&str>, value: &Value) -> Vec<String> {
     match validator(file, definition) {
         Ok(validator) => validator
             .iter_errors(value)
@@ -130,7 +130,7 @@ fn item_violations(file: &str, definition: &str, value: &Value) -> Vec<String> {
 
 /// Every way the JSON `value` contradicts `contract` (for an event stream, `value` is its
 /// first frame's `data`).
-pub fn json_violations(contract: &Contract, value: &Value) -> Vec<String> {
+pub(crate) fn json_violations(contract: &Contract, value: &Value) -> Vec<String> {
     match contract {
         Contract::Schema { file, definition } | Contract::EventStream { file, definition } => {
             violations(file, *definition, value)
@@ -152,7 +152,7 @@ pub fn json_violations(contract: &Contract, value: &Value) -> Vec<String> {
 
 /// Decode `value` into `T` and serialise it back: the check that the generated type claims every
 /// key the API sends and adds none.
-pub fn round_trip<T: DeserializeOwned + Serialize>(value: &Value) -> Result<Value, String> {
+pub(crate) fn round_trip<T: DeserializeOwned + Serialize>(value: &Value) -> Result<Value, String> {
     let decoded: T = serde_json::from_value(value.clone())
         .map_err(|error| format!("the generated type rejects the body: {error}"))?;
     serde_json::to_value(decoded).map_err(|error| format!("re-serialising failed: {error}"))

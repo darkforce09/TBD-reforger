@@ -94,5 +94,5 @@ live in `Controller/`'s `TBD_SpectatorTargeting`.
 
 ## Related documentation
 
-- [Spectator specification](/documentation/mod/tbd-framework/UI/spectator/spectator_specification.md)
+- [Spectator specification](/documentation/apps/mod/tbd-framework/UI/spectator/spectator_specification.md)
   — the spectator as built, its policies and controls, and the design target

@@ -23,7 +23,7 @@ async fn artifact_modpack(f: &MissionFixture, artifact: Uuid) -> Option<Uuid> {
         .bind(artifact)
         .fetch_one(f.pool())
         .await
-        .unwrap()
+        .expect("the read of mission_artifacts returns a row")
 }
 
 /// A server able to run `artifact`: it requires the modpack the artifact compiled against.
@@ -50,7 +50,10 @@ async fn approved_on_unregistered_terrain(f: &MissionFixture, title: &str) -> (U
 
 async fn approved_on_terrain(f: &MissionFixture, title: &str, terrain: Value) -> (Uuid, Uuid) {
     let mut body = json!({ "title": title, "game_mode": "pve_coop", "max_players": 16 });
-    for (key, value) in terrain.as_object().unwrap() {
+    for (key, value) in terrain
+        .as_object()
+        .expect("the terrain value is a JSON object")
+    {
         body[key] = value.clone();
     }
     let (status, created) = f
@@ -94,7 +97,7 @@ async fn deployments_on(f: &MissionFixture, servers: &[Uuid]) -> (i64, i64) {
     .bind(servers)
     .fetch_one(f.pool())
     .await
-    .unwrap()
+    .expect("the read of mission_deployments returns a row")
 }
 
 #[tokio::test]

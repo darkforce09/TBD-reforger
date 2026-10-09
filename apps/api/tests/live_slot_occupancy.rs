@@ -170,7 +170,7 @@ async fn observe_departure(f: &Fixture, actor: &Actor) {
         true,
     )
     .await
-    .unwrap()
+    .expect("claiming the membership refresh lease succeeds")
     .expect("a forced refresh always leases");
     assert!(
         accept_membership_observation(
@@ -180,7 +180,7 @@ async fn observe_departure(f: &Fixture, actor: &Actor) {
             &api_identifiers::DiscordGuildId::new(f.main_guild.as_str()),
         )
         .await
-        .unwrap()
+        .expect("accepting the departure observation succeeds")
     );
 }
 

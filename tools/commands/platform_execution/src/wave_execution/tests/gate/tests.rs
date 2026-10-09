@@ -122,7 +122,7 @@ fn the_wave_gate_lints_every_tool_crate_of_the_workspace() {
         );
     }
     let packages = ["xtask".to_string(), "platform_execution".to_string()];
-    let argv = tool_clippy_argv(&packages);
+    let argv = native_clippy_argv(&packages);
     assert_eq!(
         argv,
         [
@@ -165,5 +165,122 @@ fn the_tool_lint_refuses_a_workspace_without_its_anchor_packages() {
     assert_eq!(
         refusal,
         Err("`developer_tools` is no workspace member under `tools/`".to_string())
+    );
+}
+
+/// The wave gate's clippy lanes cover every workspace member: the tool lint, the frontend family,
+/// the wasm32 members and the native lint together name each member of the root manifest; the
+/// native lint names the API application, every API crate and the `crates/**` libraries outside
+/// the frontend family, and nothing another lane already lints; and both derived steps are wired
+/// into the gate.
+#[test]
+fn the_wave_gate_clippy_lanes_cover_every_workspace_member() {
+    let root = tool_test_support::test_repo_root();
+    let members = repository_laws::workspace_members::read_workspace_members(&root)
+        .expect("the workspace members read");
+    let tools = tool_clippy_packages(&root).expect("the tool lane derives");
+    let frontend = ci_task_catalog::frontend_package_lane::frontend_packages(&root)
+        .expect("the frontend family derives");
+    let wasm32 =
+        clippy_package_sets::wasm32_clippy_packages(&root).expect("the wasm32 lane derives");
+    let native =
+        clippy_package_sets::native_clippy_packages(&root).expect("the native lane derives");
+    for member in &members {
+        let package = &member.package_name;
+        let lanes = [&tools, &frontend, &wasm32, &native]
+            .iter()
+            .filter(|lane| lane.contains(package))
+            .count();
+        assert_eq!(
+            lanes, 1,
+            "`{package}` ({}) is linted by {lanes} clippy lanes, not exactly one",
+            member.path
+        );
+    }
+    let api_family: Vec<&str> = members
+        .iter()
+        .filter(|member| member.parent_folder() == "crates/api")
+        .map(|member| member.package_name.as_str())
+        .collect();
+    assert!(!api_family.is_empty(), "the workspace names no API crate");
+    for package in api_family.iter().copied().chain([
+        "api",
+        "geometry_primitives",
+        "fleet_host_agent",
+        "ticketboard",
+    ]) {
+        assert!(
+            native.iter().any(|linted| linted == package),
+            "the native lint misses `{package}`"
+        );
+    }
+    assert!(
+        native
+            .iter()
+            .all(|package| members.iter().any(|m| &m.package_name == package
+                && (m.path.starts_with("crates/") || m.path.starts_with("apps/")))),
+        "the native lint names a member outside `apps/` and `crates/`: {native:?}"
+    );
+    assert!(
+        wasm32
+            .iter()
+            .any(|package| package == "offline_service_worker"),
+        "the wasm32 lint misses the offline service worker: {wasm32:?}"
+    );
+    let source = include_str!("../../gate/gate_dispatch.rs")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    for wired in [
+        r#"r.run("clippy apps and crates", || { match native_clippy_packages(&ctx.root) { Ok(packages) => checkrun(ctx, &native_clippy_argv(&packages)),"#,
+        r#"r.run("clippy wasm32 members", || { match wasm32_clippy_packages(&ctx.root) {"#,
+        r#"let argv = wasm32_clippy_argv(&packages);"#,
+    ] {
+        assert!(
+            source.contains(wired),
+            "the wave gate lost the step `{wired}`"
+        );
+    }
+}
+
+/// A workspace whose native lane lacks the API application is an error, never a smaller lint.
+#[test]
+fn the_native_lint_refuses_a_workspace_without_the_api_application() {
+    let folder = std::env::temp_dir().join(format!(
+        "platform-execution-native-lint-{}",
+        std::process::id()
+    ));
+    let members = [
+        ("apps/frontend", "frontend"),
+        ("apps/offline_service_worker", "offline_service_worker"),
+        ("crates/geometry/geometry_primitives", "geometry_primitives"),
+    ];
+    for (path, package) in members {
+        let member = folder.join(path);
+        std::fs::create_dir_all(&member).unwrap();
+        std::fs::write(
+            member.join("Cargo.toml"),
+            format!("[package]\nname = \"{package}\"\nversion = \"0.1.0\"\n"),
+        )
+        .unwrap();
+    }
+    let listed: Vec<String> = members
+        .iter()
+        .map(|(path, _)| format!("\"{path}\""))
+        .collect();
+    std::fs::write(
+        folder.join("Cargo.toml"),
+        format!("[workspace]\nmembers = [{}]\n", listed.join(", ")),
+    )
+    .unwrap();
+    let refusal = clippy_package_sets::native_clippy_packages(&folder);
+    std::fs::remove_dir_all(&folder).unwrap();
+    assert_eq!(
+        refusal,
+        Err(
+            "`api` is no workspace member outside `tools/`, the frontend family and the wasm32 \
+             members"
+                .to_string()
+        )
     );
 }

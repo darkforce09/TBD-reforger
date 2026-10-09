@@ -1,0 +1,12 @@
+id = "T-1269"
+kind = "work"
+title = "Type ticket relation lists as ticket ids"
+summary = "TicketFile in tools/tickets/ticket_model/src/encoding.rs:66-81 keeps depends_on, unblocks, parent, children and active as String and Vec<String>, so a malformed relation id is caught by validation rather than by the type."
+class = "chore"
+status = "idea"
+notes = "tools/tickets/ticket_model/src/encoding.rs:66-81: TicketFile.depends_on, unblocks and children are Vec<String>, parent and active Option<String>, while the ticket's own id is the typed TicketId; validation (tools/tickets/ticket_registry/src/validation/references.rs) is what refuses a malformed relation. Typing them as TicketId moves that refusal into the load and keeps the canonical encoding byte-identical (cargo test -p ticket_model corpus_roundtrip_real_tree_byte_identical). ticketboard's own ids (apps/ticketboard, tools/tickets/ticketboard_model) are the same family. Source: restructure finding F-S11-03 (S11 stage log)."
+created_at = "2026-10-04T02:35:55Z"
+
+[scope]
+domain = "repo"
+layer = "tickets"

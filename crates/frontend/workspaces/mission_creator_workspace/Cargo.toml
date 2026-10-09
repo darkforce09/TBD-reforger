@@ -16,6 +16,8 @@ tier = 12
 targets = "any"
 
 [dependencies]
+# The monotonic clock of the validation debounce and the wall clock of the draft recency.
+time_source = { workspace = true }
 # The pure editor state: chrome insets, review mode, layer preferences, the asset catalog and
 # loadout rules, the outliner model, zones, markers and the validation seam.
 mission_creator_state = { workspace = true }

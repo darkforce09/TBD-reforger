@@ -39,7 +39,7 @@ pub(in crate::bridge::host_state::editor_context) fn open_attrs_modal(
     mission_history::refresh_selection();
 }
 
-/// Open Attributes for `id` (the dbl-click / outliner-activate contract). A multi-selection opens the modal in MULTI-EDIT mode over the whole selection — see [`open_attrs_modal`] for the inversion of the old suppress-on-multi rule. Leaves the Attributes tab index alone (default Identity until the user changes it).
+/// Open Attributes for `id` (the dbl-click / outliner-activate contract). A multi-selection opens the modal in MULTI-EDIT mode over the whole selection — see `open_attrs_modal` for the inversion of the old suppress-on-multi rule. Leaves the Attributes tab index alone (default Identity until the user changes it).
 pub fn open_attributes(id: EntityId) {
     open_attrs_modal(id.into_inner(), false);
 }

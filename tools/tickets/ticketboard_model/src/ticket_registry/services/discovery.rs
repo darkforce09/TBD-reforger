@@ -1,6 +1,6 @@
 //! Repo-root resolution.
 //!
-//! The positional CLI argument wins; otherwise `repository_layout::find_repository_root_from`
+//! The positional CLI argument wins; otherwise `repository_root::find_repository_root_from`
 //! walks up from the cwd to the folder holding `.ai/tickets/ROOT`; otherwise `None` — the UI
 //! then shows the
 //! full-window refusal that states both mechanisms and offers the native folder
@@ -20,7 +20,7 @@ pub fn resolve_repo_root(arg: Option<PathBuf>, cwd: Option<&Path>) -> Option<Pat
     if let Some(arg) = arg {
         return Some(arg);
     }
-    cwd.and_then(|cwd| repository_layout::find_repository_root_from(cwd).ok())
+    cwd.and_then(|cwd| repository_root::find_repository_root_from(cwd).ok())
 }
 
 /// First non-flag argument, as a path.

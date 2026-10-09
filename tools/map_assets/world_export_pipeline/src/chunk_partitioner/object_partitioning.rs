@@ -21,8 +21,8 @@ use crate::json_number_formatting::{
     chunk_row_values, js_normalize, js_num, norm_heading, round2, round3, trailers_trivial,
 };
 use crate::polygon_geometry::{cell_of, chunk_key};
-use ::repository_layout::find_repository_root;
 use ::repository_layout::{map_scratch_dir, terrain_dir};
+use ::repository_root::find_repository_root;
 
 /// Catalog state shared by density generation, inventory emission, and manifest updates.
 pub(super) struct PreparedWorldObjects {

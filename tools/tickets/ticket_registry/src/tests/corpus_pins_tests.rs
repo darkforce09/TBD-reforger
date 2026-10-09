@@ -4,7 +4,7 @@ use super::*;
 /// the rule it feeds, so the shapes are asserted rather than only the parse.
 #[test]
 fn committed_pins_load_with_both_tables_populated() {
-    let root = repository_layout::find_repository_root().expect("repository root");
+    let root = repository_root::find_repository_root().expect("repository root");
     let pins = load(&root).expect("committed corpus pins parse");
     assert!(!pins.never_minted.is_empty(), "never_minted is empty");
     assert!(

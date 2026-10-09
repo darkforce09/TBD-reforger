@@ -21,7 +21,7 @@ use super::path_references::path_tokens::{PathOccurrence, classify_occurrence, m
 use super::path_references::relative_references::ReferenceFileKind;
 use super::repository_files::{FileContent, PathSet, RepositorySnapshot, TrackedTree};
 use super::retired_spellings::{ManifestToJudge, RowJudgement, judge_manifests};
-use super::rust_lexer::line_of;
+use super::rust_lexer::{code_spans, line_of};
 use super::rust_paths::path_rules::RustPathRules;
 use super::rust_paths::rust_path_edits;
 use super::scope_history::LaterMoves;
@@ -325,11 +325,9 @@ fn oracle_scope(
     let folder = match &row.scope {
         RowScope::Everywhere => return Ok(RowScope::Everywhere),
         RowScope::Glob(pattern) => {
-            return Ok(RowScope::Glob(
-                later.follow_pattern(&mapping.relocate(pattern)),
-            ));
+            return Ok(RowScope::Glob(later.follow_pattern(mapping, pattern)));
         }
-        RowScope::Folder(folder) => later.follow_folder(&mapping.relocate(folder)),
+        RowScope::Folder(folder) => later.follow_folder(label, mapping, folder),
     };
     if tree.paths().contains(&folder.folder) {
         return Ok(RowScope::Folder(folder.folder));
@@ -359,18 +357,22 @@ fn oracle_rust_path_row(
     let rules = RustPathRules::from_rows(std::iter::once(row));
     let mut offences = Vec::new();
     for file in files {
-        if file.treatment != FileTreatment::Live
+        let fixture = file.treatment == FileTreatment::FixtureSource;
+        if !(file.treatment == FileTreatment::Live || fixture)
             || !file.path.ends_with(".rs")
             || !scope.contains(&file.path)
         {
             continue;
         }
+        let code = code_spans(&file.text);
+        let in_code = |offset: usize| code.iter().any(|span| span.contains(&offset));
         let outcome = rust_path_edits(&file.text, &rules, None);
         let offsets = outcome
             .edits
             .iter()
             .map(|edit| edit.span.start)
-            .chain(outcome.unresolved.iter().map(|(offset, _)| *offset));
+            .chain(outcome.unresolved.iter().map(|(offset, _)| *offset))
+            .filter(|offset| !fixture || in_code(*offset));
         offences.extend(offsets.map(|offset| oracle_offence(&file.path, &file.text, offset)));
     }
     oracle_verdict(label, row, offences)

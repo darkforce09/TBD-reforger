@@ -24,7 +24,7 @@ run)` expands to `Step::Xtask`, which prints the echoed
 `cargo xtask …` line and calls `run` in process instead of spawning a second xtask. A
 `Step::Xtask` holds a plain `fn() -> Result<u8>`, which cannot capture an argument, so
 `verification_dispatch.rs` wraps each verification that needs one: the checkout root from
-`find_repository_root`; the terrain `everon`, which the CI lane always checks, and the `--strict` flag
+`repository_root::find_repository_root`; the terrain `everon`, which the CI lane always checks, and the `--strict` flag
 for the strict terrain alignment row; no `--path` for `enfusion-comments`, so it judges the
 pinned Enfusion script roots; and, for the three documentation gates of the
 `verify-documentation` row, a default `GateRequest`: the whole repository, committed files only,
@@ -36,7 +36,7 @@ and for `link-check` the first breaks in full, as the bare `cargo xtask verify` 
   `workflow_checks`, the `map_asset_verification`, `database_operations` and `deployment`
   crates, and the check crates `repository_checks`, `mod_script_checks` and
   `documentation_checks`; `find_repository_root` in
-  `tools/foundation/repository_layout/src/repository_root.rs`.
+  `crates/foundation/repository_root/src/root_marker_walk.rs`.
 - Used by: `tools/commands/ci_task_catalog/src/task_definitions.rs` alone.
 - Rules: an adapter calls the same function its `cargo xtask verify` or `cargo xtask schema`
   command calls, so a composite cannot drift from the command it echoes; a subprocess step stays

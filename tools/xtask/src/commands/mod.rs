@@ -1,8 +1,8 @@
 //! Task adapters for the domain tooling libraries.
-pub mod map;
+pub(crate) mod map;
 
-pub mod ticket;
-pub mod wave;
+pub(crate) mod ticket;
+pub(crate) mod wave;
 
 pub(crate) mod fetch;
 

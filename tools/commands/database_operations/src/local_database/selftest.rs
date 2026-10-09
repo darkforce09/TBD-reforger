@@ -63,7 +63,7 @@ use crate::container_database as dbc;
 use repository_layout::build_output::{
     BUILD_OUTPUT_FOLDER, DATABASE_SELFTEST_SUBFOLDER, build_output_subfolder,
 };
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// The pinned text of every line the lane echoes, as run from the repository root: the compose
 /// lines enter the folder of the development compose file and name the file with `-f`, and each

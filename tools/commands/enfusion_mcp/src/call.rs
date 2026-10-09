@@ -128,7 +128,7 @@ fn emit_requests(tool: &str, args: &str) -> String {
 }
 
 /// The argv that starts an `enfusion-mcp` server for the one-shot path.
-fn resolve_runner() -> repository_layout::Result<Vec<String>> {
+fn resolve_runner() -> repository_root::Result<Vec<String>> {
     let command = server_entrypoint::resolve(&repository_root()?);
     dbg(&format!("runner={}", command.source.label()));
     Ok(command.argv())
@@ -139,9 +139,9 @@ fn resolve_runner() -> repository_layout::Result<Vec<String>> {
 /// The cwd walk answers for the worktree the call is being made from. When it cannot (the call
 /// was made from outside a checkout), the walk from the crate's own manifest folder locates the
 /// repository that built this binary; when neither finds a root, the call cannot start a server.
-fn repository_root() -> repository_layout::Result<PathBuf> {
-    repository_layout::find_repository_root().or_else(|_| {
-        repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+fn repository_root() -> repository_root::Result<PathBuf> {
+    repository_root::find_repository_root().or_else(|_| {
+        repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
     })
 }
 

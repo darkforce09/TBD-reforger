@@ -49,18 +49,18 @@ use world_line_of_sight::WorldVerdict;
 use world_line_of_sight::occluder_library::PrefabDescriptor;
 
 /// The side of Everon's square terrain, in metres.
-pub const TERRAIN_M: f64 = 12_800.0;
+pub const TERRAIN_SIZE_METERS: f64 = 12_800.0;
 /// The side of one streamed chunk, in metres.
-pub const CHUNK_M: f64 = 512.0;
+pub const CHUNK_SIZE_METERS: f64 = 512.0;
 
 /// One oracle pair: `[ox, oy, oz, tx, ty, tz, clearEnts, clearWorld, hitPrefabSlug]` (engine frame).
-pub type WorldPair = (f64, f64, f64, f64, f64, f64, bool, bool, String);
+pub type WorldOraclePair = (f64, f64, f64, f64, f64, f64, bool, bool, String);
 
 /// The terrain half of the `clearWorld` column: the committed 16-bit DEM behind the editor's own
 /// `DemManifest` sampler (`dem::sampling`, Class R), so the CLI and the LOS tool read the same
 /// heights. 2 m pixels — fine terrain detail the engine's `WORLD` trace sees is below this
 /// resolution, which is the documented caveat on the world-inclusive number.
-pub struct Dem {
+pub struct ElevationRaster {
     /// The world bounds, raster size, axis flips and height range of the raster.
     pub m: DemManifest,
     /// The 16-bit height samples, row-major.
@@ -71,7 +71,7 @@ pub struct Dem {
     pub h: usize,
 }
 
-impl Dem {
+impl ElevationRaster {
     /// Ground height (m ASL) at engine `(x, z_north)`, `None` off the raster.
     #[must_use]
     pub fn ground(&self, x: f64, z: f64) -> Option<f64> {
@@ -103,7 +103,7 @@ pub struct WorldParityFile {
     #[serde(default)]
     pub seed: i64,
     /// The recorded segments and the engine's verdicts on them.
-    pub pairs: Vec<WorldPair>,
+    pub pairs: Vec<WorldOraclePair>,
 }
 
 /// The tally of one oracle replay: agreement on the objects-only column, and on the
@@ -158,11 +158,11 @@ impl ReplayReport {
 }
 
 #[cfg(test)]
-#[path = "tests/world_line_of_sight.rs"]
+#[path = "tests/world_line_of_sight_tests.rs"]
 mod tests;
 
-mod gunzip_json;
-pub use gunzip_json::load_cell;
-pub use gunzip_json::load_dem;
-pub use gunzip_json::replay;
-pub use gunzip_json::run;
+mod occluder_loading_and_replay;
+pub use occluder_loading_and_replay::load_cell_occluder;
+pub use occluder_loading_and_replay::load_elevation_raster;
+pub use occluder_loading_and_replay::replay;
+pub use occluder_loading_and_replay::run;

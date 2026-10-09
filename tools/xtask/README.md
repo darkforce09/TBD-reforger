@@ -67,7 +67,8 @@ The crate has no features and reads no configuration file of its own. What it re
   (`tools/commands/ci_task_catalog/src/cargo_target_pin.rs`), and `mk rust-api` builds into
   `target/dev-api`.
 - `.ai/tickets/ROOT`: the marker that identifies the checkout root (`find_repository_root` in
-  `tools/foundation/repository_layout/src/repository_root.rs`).
+  `crates/foundation/repository_root/src/root_marker_walk.rs`, which xtask reaches through
+  `repository_layout::prelude`).
 - `deploy/deploy.env`: the deploy host (`TBD_SSH_HOST`, the one place the staging host is named),
   credentials and remote paths, copied from `deploy/deploy.env.example` and never committed. Every
   command that reads it (`src/core/deploy_environment.rs`) lets the file decide every key it
@@ -98,10 +99,11 @@ The crate has no features and reads no configuration file of its own. What it re
   - the PreToolUse hook in `.claude/settings.json`, which runs the built binary's `ai guard`;
   - the ticketboard in `apps/ticketboard/`, which runs `cargo xtask ticket` commands.
 - Rules:
-  - xtask and `developer_tools` are binary-only packages over tool crates, neither depends on
-    the other or on a member under `legacy/`, and no member depends on either; a `tools/foundation` crate depends only on lower `tools/foundation`
-    crates, and a `tools/tickets` crate only on `tools/foundation` crates, three
-    `crates/foundation` crates and lower ticket crates
+  - xtask and `developer_tools` are binary-only packages over tool crates alone (the checkout-root
+    finder comes through `repository_layout`), neither depends on the other, and no member depends on either; a
+    `tools/foundation` crate depends only on lower `tools/foundation` crates and `repository_root`,
+    and a `tools/tickets` crate only on `tools/foundation` crates, four `crates/foundation` crates
+    and lower ticket crates
     (`tooling_dependency_direction_is_enforced`,
     `foundation_crates_depend_only_on_lower_foundation_crates` and
     `ticket_crates_depend_only_on_foundations_and_lower_ticket_crates` in

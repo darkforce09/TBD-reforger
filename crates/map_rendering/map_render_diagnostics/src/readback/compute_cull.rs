@@ -8,6 +8,7 @@
 //! the GPU count equals the CPU oracle's and falls strictly between 0 and 512.
 
 use crate::readback::scene::readback_sleep_ms;
+use deterministic_random::LinearCongruential32;
 use map_renderer::engine::RenderEngine;
 use std::cell::Cell;
 use std::rc::Rc;
@@ -31,11 +32,8 @@ pub fn compute_cull_self_check(engine: &RenderEngine) -> js_sys::Promise {
 
     wasm_bindgen_futures::future_to_promise(async move {
         let mut src20 = Vec::with_capacity(512 * 20);
-        let mut s: u32 = 0xC0FF_EE11;
-        let mut unit = || {
-            s = s.wrapping_mul(1_103_515_245).wrapping_add(12_345);
-            (s >> 8) as f32 / 16_777_216.0
-        };
+        let mut draws = LinearCongruential32::new(0xC0FF_EE11);
+        let mut unit = || draws.next_unit();
         for _ in 0..512 {
             let x = unit() * 12_800.0 - 6_400.0;
             let y = unit() * 12_800.0 - 6_400.0;

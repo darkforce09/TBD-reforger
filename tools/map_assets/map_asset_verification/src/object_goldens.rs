@@ -37,11 +37,11 @@ struct Gate {
     errs: Vec<String>,
 }
 
-mod read_json;
-use read_json::chunk_bin_errors;
-use read_json::inst_id;
-use read_json::inst_prefab_id;
-use read_json::read_json;
+mod golden_row_readers;
+use golden_row_readers::chunk_bin_errors;
+use golden_row_readers::instance_id;
+use golden_row_readers::instance_prefab_id;
+use golden_row_readers::read_json_file;
 
 mod map_object_golden;
 pub use map_object_golden::map_object_golden;

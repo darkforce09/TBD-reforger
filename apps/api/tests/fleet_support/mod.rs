@@ -1,6 +1,7 @@
 //! Registered servers, machine credentials and runtime sessions for the fleet suites, driven
 //! through the real administrator and game-runtime routes of an `event_eligibility_support`
-//! fixture.
+//! fixture. `executor_interleavings.rs` here is mounted with `#[path]` by
+//! `tests/fleet_command_properties.rs` alone and is not part of this module.
 //!
 //! Compiled into each suite that writes `mod fleet_support;` next to
 //! `mod event_eligibility_support;`; it adds no test binary.
@@ -14,24 +15,29 @@ use uuid::Uuid;
 use crate::event_eligibility_support::{Actor, Fixture};
 
 /// A machine caller: the credential secret presented as the bearer.
-pub fn machine(secret: &str) -> Actor {
+pub(crate) fn machine(secret: &str) -> Actor {
     Actor {
         id: String::new(),
         token: secret.to_owned(),
     }
 }
 
-pub async fn register_server(f: &Fixture, name: &str) -> Uuid {
+pub(crate) async fn register_server(f: &Fixture, name: &str) -> Uuid {
     sqlx::query_scalar(
         "INSERT INTO servers (name, ip, port, is_active) VALUES ($1, '127.0.0.1'::inet, 2001, true) RETURNING id",
     )
     .bind(name)
     .fetch_one(f.pool())
     .await
-    .unwrap()
+    .expect("the insert into servers returns its row")
 }
 
-pub async fn issue(f: &Fixture, server: Uuid, executor: &str, label: &str) -> (StatusCode, Value) {
+pub(crate) async fn issue(
+    f: &Fixture,
+    server: Uuid,
+    executor: &str,
+    label: &str,
+) -> (StatusCode, Value) {
     f.call(
         &f.admin,
         "POST",
@@ -42,13 +48,16 @@ pub async fn issue(f: &Fixture, server: Uuid, executor: &str, label: &str) -> (S
 }
 
 /// Issue a credential and return its secret.
-pub async fn credential(f: &Fixture, server: Uuid, executor: &str) -> String {
+pub(crate) async fn credential(f: &Fixture, server: Uuid, executor: &str) -> String {
     let (status, body) = issue(f, server, executor, &format!("{executor} credential")).await;
     assert_eq!(status, StatusCode::CREATED, "{body}");
-    body["secret"].as_str().unwrap().to_owned()
+    body["secret"]
+        .as_str()
+        .expect("the `secret` field is a string")
+        .to_owned()
 }
 
-pub async fn revoke(
+pub(crate) async fn revoke(
     f: &Fixture,
     server: Uuid,
     credential: &str,
@@ -63,7 +72,7 @@ pub async fn revoke(
     .await
 }
 
-pub async fn start_session(f: &Fixture, secret: &str) -> (StatusCode, Value) {
+pub(crate) async fn start_session(f: &Fixture, secret: &str) -> (StatusCode, Value) {
     f.call(
         &machine(secret),
         "POST",
@@ -74,21 +83,23 @@ pub async fn start_session(f: &Fixture, secret: &str) -> (StatusCode, Value) {
 }
 
 /// Start a session and return `(runtime_session_id, generation)`.
-pub async fn session(f: &Fixture, secret: &str) -> (Uuid, i64) {
+pub(crate) async fn session(f: &Fixture, secret: &str) -> (Uuid, i64) {
     let (status, body) = start_session(f, secret).await;
     assert_eq!(status, StatusCode::CREATED, "{body}");
     (
         body["runtime_session_id"]
             .as_str()
-            .unwrap()
+            .expect("the `runtime_session_id` field is a string")
             .parse()
-            .unwrap(),
-        body["generation"].as_i64().unwrap(),
+            .expect("the `runtime_session_id` field parses as an id"),
+        body["generation"]
+            .as_i64()
+            .expect("the `generation` field is an integer"),
     )
 }
 
 /// One heartbeat of `session` carrying `reading` fields.
-pub async fn heartbeat(
+pub(crate) async fn heartbeat(
     f: &Fixture,
     secret: &str,
     session: Uuid,
@@ -97,7 +108,10 @@ pub async fn heartbeat(
     reading: Value,
 ) -> (StatusCode, Value) {
     let mut body = json!({ "generation": generation, "sequence": sequence });
-    for (key, value) in reading.as_object().unwrap() {
+    for (key, value) in reading
+        .as_object()
+        .expect("the heartbeat reading is a JSON object")
+    {
         body[key] = value.clone();
     }
     f.call(
@@ -109,22 +123,22 @@ pub async fn heartbeat(
     .await
 }
 
-pub fn refusal_code(body: &Value) -> &str {
+pub(crate) fn refusal_code(body: &Value) -> &str {
     body["details"]["code"].as_str().unwrap_or_default()
 }
 
 /// Bind the fixture event to `server`, as an administrator scheduling it there would.
-pub async fn bind_event(f: &Fixture, server: Uuid) {
+pub(crate) async fn bind_event(f: &Fixture, server: Uuid) {
     sqlx::query("UPDATE events SET server_id = $2 WHERE id = $1")
         .bind(f.event)
         .bind(server)
         .execute(f.pool())
         .await
-        .unwrap();
+        .expect("the update of events succeeds");
 }
 
 /// Ask the runtime session to deploy `arma_id` as `life` into a fixture slot.
-pub async fn deploy(
+pub(crate) async fn deploy(
     f: &Fixture,
     secret: &str,
     session: Uuid,
@@ -146,7 +160,7 @@ pub async fn deploy(
     .await
 }
 
-pub async fn end_life(
+pub(crate) async fn end_life(
     f: &Fixture,
     secret: &str,
     session: Uuid,
@@ -162,18 +176,18 @@ pub async fn end_life(
 }
 
 /// `(ended, end_reason)` of one occupancy.
-pub async fn occupancy_state(f: &Fixture, occupancy: &str) -> (bool, Option<String>) {
+pub(crate) async fn occupancy_state(f: &Fixture, occupancy: &str) -> (bool, Option<String>) {
     sqlx::query_as(
         "SELECT ended_at IS NOT NULL, end_reason FROM live_slot_occupancies WHERE id = $1::uuid",
     )
     .bind(occupancy)
     .fetch_one(f.pool())
     .await
-    .unwrap()
+    .expect("the read of live_slot_occupancies returns a row")
 }
 
 /// The Arma identity `common::access_token` links for fixture members.
-pub fn linked_arma(actor: &Actor) -> String {
+pub(crate) fn linked_arma(actor: &Actor) -> String {
     format!("test-arma:{}", actor.id)
 }
 
@@ -182,9 +196,9 @@ pub fn linked_arma(actor: &Actor) -> String {
 /// records it, and answer the artifact and its document digest. The artifact's bytes are a
 /// placeholder: the suites using it exercise occupancy, rosters and sessions, not compilation,
 /// which `mission_deployment_transitions.rs` drives through the real routes.
-pub async fn seed_deployment(f: &Fixture, server: Uuid, index: usize) -> (Uuid, String) {
+pub(crate) async fn seed_deployment(f: &Fixture, server: Uuid, index: usize) -> (Uuid, String) {
     let mission = f.catalog_mission(index).await;
-    let mut tx = f.pool().begin().await.unwrap();
+    let mut tx = f.pool().begin().await.expect("a transaction begins");
     let version: Uuid = sqlx::query_scalar(
         "INSERT INTO mission_versions (mission_id, semver, json_payload, created_by, created_at)
          VALUES ($1, '0.0.0-fixture.' || replace(gen_random_uuid()::text, '-', ''), '{}'::jsonb, $2, now())
@@ -194,7 +208,7 @@ pub async fn seed_deployment(f: &Fixture, server: Uuid, index: usize) -> (Uuid, 
     .bind(&f.admin.id)
     .fetch_one(&mut *tx)
     .await
-    .unwrap();
+    .expect("the insert into mission_versions returns its row");
     let (artifact, sha256): (Uuid, String) = sqlx::query_as(
         "INSERT INTO mission_artifacts (mission_id, mission_version_id, version_payload_sha256,
              metadata, metadata_sha256, catalog_sha256, compiler_version, schema_version, terrain,
@@ -210,7 +224,7 @@ pub async fn seed_deployment(f: &Fixture, server: Uuid, index: usize) -> (Uuid, 
     .bind(&f.admin.id)
     .fetch_one(&mut *tx)
     .await
-    .unwrap();
+    .expect("the insert into mission_artifacts returns its row");
     let command: Uuid = sqlx::query_scalar(
         "INSERT INTO fleet_commands (server_id, executor_kind, action, idempotent, process_changing,
              requested_by, expires_at, state, executing_at, finished_at)
@@ -222,7 +236,7 @@ pub async fn seed_deployment(f: &Fixture, server: Uuid, index: usize) -> (Uuid, 
     .bind(&f.admin.id)
     .fetch_one(&mut *tx)
     .await
-    .unwrap();
+    .expect("the insert into fleet_commands returns its row");
     let deployment: Uuid = sqlx::query_scalar(
         "INSERT INTO mission_deployments (server_id, mission_id, artifact_id, event_mission_id,
              terrain_key, scenario_id, transition, fleet_command_id, requested_by, requested_via,
@@ -239,7 +253,7 @@ pub async fn seed_deployment(f: &Fixture, server: Uuid, index: usize) -> (Uuid, 
     .bind(&f.admin.id)
     .fetch_one(&mut *tx)
     .await
-    .unwrap();
+    .expect("the insert into mission_deployments returns its row");
     sqlx::query(
         "INSERT INTO mission_deployment_slots (deployment_id, orbat_slot_id, slot_uid)
          SELECT $1, id, 'uid-' || id FROM orbat_slots WHERE event_mission_id = $2",
@@ -248,13 +262,13 @@ pub async fn seed_deployment(f: &Fixture, server: Uuid, index: usize) -> (Uuid, 
     .bind(f.missions[index])
     .execute(&mut *tx)
     .await
-    .unwrap();
-    tx.commit().await.unwrap();
+    .expect("the insert into mission_deployment_slots succeeds");
+    tx.commit().await.expect("the transaction commits");
     (artifact, sha256)
 }
 
 /// Start a session that reports running `artifact`; answers `(runtime_session_id, generation)`.
-pub async fn running_session(
+pub(crate) async fn running_session(
     f: &Fixture,
     secret: &str,
     (artifact, sha256): &(Uuid, String),
@@ -271,16 +285,18 @@ pub async fn running_session(
     (
         body["runtime_session_id"]
             .as_str()
-            .unwrap()
+            .expect("the `runtime_session_id` field is a string")
             .parse()
-            .unwrap(),
-        body["generation"].as_i64().unwrap(),
+            .expect("the `runtime_session_id` field parses as an id"),
+        body["generation"]
+            .as_i64()
+            .expect("the `generation` field is an integer"),
     )
 }
 
 /// A registered server bound to the fixture event, running fixture mission 0 through a recorded
 /// deployment: its runtime credential and an open session that reports the deployed artifact.
-pub async fn event_runtime(f: &Fixture) -> (Uuid, String, Uuid) {
+pub(crate) async fn event_runtime(f: &Fixture) -> (Uuid, String, Uuid) {
     let server = register_server(f, "Event host").await;
     bind_event(f, server).await;
     let secret = credential(f, server, "mod_runtime").await;
@@ -290,7 +306,7 @@ pub async fn event_runtime(f: &Fixture) -> (Uuid, String, Uuid) {
 }
 
 /// The artifact the server's recorded deployment runs, as [`seed_deployment`] answered it.
-pub async fn deployed_artifact(f: &Fixture, server: Uuid) -> (Uuid, String) {
+pub(crate) async fn deployed_artifact(f: &Fixture, server: Uuid) -> (Uuid, String) {
     sqlx::query_as(
         "SELECT d.artifact_id, a.document_sha256 FROM mission_deployments d
          JOIN mission_artifacts a ON a.id = d.artifact_id
@@ -299,5 +315,5 @@ pub async fn deployed_artifact(f: &Fixture, server: Uuid) -> (Uuid, String) {
     .bind(server)
     .fetch_one(f.pool())
     .await
-    .unwrap()
+    .expect("the read of mission_deployments returns a row")
 }

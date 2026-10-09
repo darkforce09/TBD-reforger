@@ -444,7 +444,7 @@ fn hex(b: u8) -> Option<u8> {
 pub async fn start_server(cfg: ServeConfig, port: u16) -> Result<RunningServer> {
     let state = Arc::new(AppState {
         cfg,
-        client: reqwest::Client::new(),
+        client: crate::http_client::new_http_client(),
     });
     let app = axum::Router::new().fallback(handler).with_state(state);
     let listener = TcpListener::bind(("127.0.0.1", port)).await?;

@@ -26,7 +26,7 @@ use super::website_api_client::{
     ARTIFACT_CACHE_DIRECTORY, StagedArtifact, clear_artifact_cache, stage_artifact_cache,
 };
 use content_digest::sha256_hex;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 const CFG_REL: &str = ".local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile";
 

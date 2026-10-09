@@ -11,8 +11,8 @@
 //! **Signals & state:** no Rust state; everything durable lives in Cache Storage under the names
 //! of `offline_cache_policy::cache_names`.
 //! **Invariants:** the WebAssembly half exists only on `wasm32`; the native build is an empty
-//! `main`, so workspace builds and host lints compile the binary without a browser, and
-//! `cargo test` checks the pure [`range_slicing`] arithmetic natively.
+//! `main`, so workspace builds and host lints compile the binary without a browser; the native
+//! test build compiles the pure [`range_slicing`] arithmetic alone, and `cargo test` checks it.
 
 #[cfg(target_arch = "wasm32")]
 mod cached_range_response;
@@ -20,7 +20,7 @@ mod cached_range_response;
 mod fetch_handling;
 #[cfg(target_arch = "wasm32")]
 mod lifecycle_events;
-#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+#[cfg(any(target_arch = "wasm32", test, doc))]
 mod range_slicing;
 #[cfg(target_arch = "wasm32")]
 mod worker_scope;

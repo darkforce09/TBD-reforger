@@ -84,10 +84,13 @@ pub fn compile_diagnostics_rules_header(findings: &[CompileFinding]) -> Option<S
 ///
 /// * Save — `crate::handlers::mission_versions::validate_payload` → `load_cargo_phys_catalog` →
 ///   `validate_mission_editor_payload_with_catalog`
-/// * `GET /missions/:id/compiled` — `load_cargo_phys_catalog` → this catalogued gate
+/// * Submit — `POST /api/v1/missions/:id/submit` →
+///   [`crate::services::mission_artifacts::artifact_store::compile_artifact`] →
+///   `load_catalog_snapshot` → this catalogued gate, whose artifact the game server then reads at
+///   `GET /api/v1/game-runtime/artifacts/:artifactId`
 ///
 /// so a stored row that predates the capacity walk (and any write that bypassed Save) cannot
-/// compile either.
+/// compile into an artifact either.
 pub fn flatten_to_mod_document(
     m: &Mission,
     payload: &[u8],

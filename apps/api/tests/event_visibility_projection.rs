@@ -14,10 +14,20 @@ const SUITE: &str = "event_visibility_projection";
 fn seat_ids(orbat: &Value) -> Vec<String> {
     orbat["data"]
         .as_array()
-        .unwrap()
+        .expect("the `data` field is an array")
         .iter()
-        .flat_map(|squad| squad["slots"].as_array().unwrap().iter())
-        .map(|slot| slot["id"].as_str().unwrap().to_owned())
+        .flat_map(|squad| {
+            squad["slots"]
+                .as_array()
+                .expect("the `slots` field is an array")
+                .iter()
+        })
+        .map(|slot| {
+            slot["id"]
+                .as_str()
+                .expect("the `id` field is a string")
+                .to_owned()
+        })
         .collect()
 }
 

@@ -15,8 +15,7 @@ apps/frontend/src/editor/world_assets/world_host.rs, and this ticket's own appro
 they cannot share a wave. T-935.15 was pulled from wave 256 and split into children that own those files;
 this row now packs after them. Its requirement 2 (build.rs stops writing chunks/{key}.json.gz and
 chunks/manifest.json) is a strict subset of what the T-935.15 children delete, so re-read its acceptance
-against the tree before dispatching it.
-"""
+against the tree before dispatching it. Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/Cargo.toml: removed in commit 1660b03f8, no successor; tools/tbd-tools/src/world/build.rs: removed in commit b4d8b7ca0, no successor."""
 priority = 2
 parent = "T-935"
 main_goal = "No gz-JSON is emitted or fetched for world data, and flate2 leaves the world feature."
@@ -59,7 +58,7 @@ owns = [
     "tools/tbd-tools/src/world/build.rs",
     "apps/frontend/src/editor/world_assets/world_host.rs",
     "crates/map-engine-core/Cargo.toml",
-    "packages/map-assets/everon/manifest.json",
+    "assets/terrains/everon/manifest.json",
 ]
 
 [scope]

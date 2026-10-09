@@ -1,7 +1,8 @@
-# The helpers the frontend crates' tests share: the repository-root finder and the repository files
-# it reads, the captured API responses behind `golden!`, the API route tables, the source scrubber
-# the source pins read production code through, the joining of a pinned file's shards and the
-# `view!` attribute guard. Every frontend crate names it under `[dev-dependencies]` only.
+# The helpers the frontend crates' tests share: the repository files read from the root that
+# `repository_root` finds, the captured API responses behind `golden!`, the API route tables, the
+# source scrubber the source pins read production code through, the joining of a pinned file's
+# shards and the `view!` attribute guard. Every frontend crate names it under `[dev-dependencies]`
+# only.
 [package]
 name = "frontend_test_support"
 version = "0.1.0"
@@ -13,8 +14,12 @@ description = "Test-only helpers of the frontend crates: repository-root file re
 
 [package.metadata.layout]
 category = "crates/frontend/foundation"
-tier = 0
+tier = 1
 targets = "any"
+
+[dependencies]
+# The workspace's one checkout-root finder the repository file reads walk up with.
+repository_root = { workspace = true }
 
 [lints]
 workspace = true

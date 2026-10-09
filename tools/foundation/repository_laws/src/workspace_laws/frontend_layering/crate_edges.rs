@@ -3,7 +3,7 @@
 //! **Role:** places every frontend crate — each workspace member under the frontend crates root,
 //! by the layer folder it sits in, and the app crate as the shell — and judges every dependency
 //! edge (normal, dev and build) from one frontend crate to another: the layer order of
-//! [`super::breaks_order`] (page crates are areas, so two page crates never depend on each other),
+//! `super::breaks_order` (page crates are areas, so two page crates never depend on each other),
 //! the crate orders ([`SubAreaOrder`] over package names, a test-only crate reached only through
 //! dev-dependencies), and the independence of two orders of one layer folder, whose crates never
 //! depend on each other. A frontend crate outside every layer folder, a crate in a layer folder

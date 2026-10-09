@@ -42,25 +42,25 @@ impl ChunkResidency {
 
     /// The pinned chunk ids, in chunk-math order.
     #[must_use]
-    pub fn pinned_ids(&self) -> &[String] {
+    pub fn pinned_ids(&self) -> &[ChunkId] {
         &self.pinned_ids
     }
 
     /// Whether the pin holds chunk `id`.
     #[must_use]
     pub fn is_pinned(&self, id: &ChunkId) -> bool {
-        self.pinned_set.contains(id.as_str())
+        self.pinned_set.contains(id)
     }
 
     /// The chunk index's cell ids, once loaded.
     #[must_use]
-    pub fn cell_ids(&self) -> Option<&HashSet<String>> {
+    pub fn cell_ids(&self) -> Option<&HashSet<ChunkId>> {
         self.cell_ids.as_ref()
     }
 
     /// The resident chunks by id.
     #[must_use]
-    pub fn resident_chunks(&self) -> &HashMap<String, WorldChunk> {
+    pub fn resident_chunks(&self) -> &HashMap<ChunkId, WorldChunk> {
         &self.chunks
     }
 

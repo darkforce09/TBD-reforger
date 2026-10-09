@@ -47,9 +47,9 @@ use super::golden_normalisation::CaptureWindow;
 use crate::common;
 
 /// The guild the recipe's API runs with; the access-participants golden names it.
-pub const RECIPE_DISCORD_GUILD_ID: &str = "100000000000000001";
+pub(crate) const RECIPE_DISCORD_GUILD_ID: &str = "100000000000000001";
 /// Longest wait for an event stream's leading frames.
-pub const STREAM_READ_LIMIT: Duration = Duration::from_secs(10);
+pub(crate) const STREAM_READ_LIMIT: Duration = Duration::from_secs(10);
 /// The suite name dev-login failures report.
 const SUITE: &str = "contract_parity_goldens";
 /// The largest batch the production publisher accepts.
@@ -75,7 +75,7 @@ const COMMITTED_CATALOG_PAIR: [(&str, &str); 2] = [
 
 /// One live answer: its status and body (for an event stream, the leading bytes read).
 #[derive(Debug)]
-pub struct LiveAnswer {
+pub(crate) struct LiveAnswer {
     /// The status the router answered with.
     pub status: StatusCode,
     /// The body bytes.
@@ -84,7 +84,7 @@ pub struct LiveAnswer {
 
 /// Every indexed request with the seeded API's answer, in index order.
 #[derive(Debug)]
-pub struct SeededCapture {
+pub(crate) struct SeededCapture {
     /// `(row, answer)` pairs in index order.
     pub answers: Vec<(GoldenRow, LiveAnswer)>,
     /// From just before the first request to just after the last answer; a request-time instant
@@ -95,7 +95,7 @@ pub struct SeededCapture {
 static CAPTURE: OnceLock<Result<SeededCapture, String>> = OnceLock::new();
 
 /// The capture, taken on first use; panics with the reason when it could not complete.
-pub fn seeded_capture() -> &'static SeededCapture {
+pub(crate) fn seeded_capture() -> &'static SeededCapture {
     match CAPTURE.get_or_init(run_capture) {
         Ok(capture) => capture,
         Err(why) => panic!("the seeded golden capture did not complete: {why}"),
@@ -195,7 +195,7 @@ async fn upload_committed_catalog(app: &Router, token: &str) -> Result<(), Strin
     let boundary = "contract-parity-goldens-catalog";
     let mut body = Vec::new();
     for (part, relative) in COMMITTED_CATALOG_PAIR {
-        let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+        let path = repository_root::find_repository_root_from(std::path::Path::new(env!(
             "CARGO_MANIFEST_DIR"
         )))
         .map_err(|error| format!("no repository root above the API package: {error}"))?

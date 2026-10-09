@@ -50,7 +50,7 @@ the subcommand with `clap`, runs it and exits with the code it returns; an error
 `world: <message>` with its causes and exits 1, and a stage that stops (`Error::Stop`: staged
 export files missing, a raw line count or density corner sum that disagrees) prints its message
 bare and exits with its own code (2 for missing staging, 1 otherwise). Every path
-resolves against the checkout of the working directory (`repository_layout::find_repository_root`
+resolves against the checkout of the working directory (`repository_root::find_repository_root`
 walks up from it, and a missing root is an error). An export runs in this order:
 
 ```text

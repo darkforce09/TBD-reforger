@@ -59,7 +59,8 @@ No features and no environment variables. The undo-grouping tests enable `missio
 
 - Depends on: `mission_document`, `mission_crdt`, `mission_model`, `mission_payload` (terrain
   bounds), `mission_validation` (`AssetId`), `orbat_slot_ids` (`SlotUid`), `formation_geometry`,
-  `map_coordinates`, `serde`, `serde_json`, `thiserror`.
+  `map_coordinates`, `deterministic_random` (the Apply seed's increment), `serde`, `serde_json`,
+  `thiserror`.
 - Used by: the map engine (`crates/mission_editing/mission_editing_commands/src/hosted_commands/` borrows the hosted
   document and calls these), the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`, the
   editing session's pick tests (`mission_editing_session`) and this crate's integration suites.

@@ -150,7 +150,7 @@ Expected: `200`, `etag` equal to the catalog sha256 the trim printed, and
 
 ## Related
 
-- [Ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
+- [Ballistics oracle](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
   — what the oracle measures and why.
 - [Ballistics oracle plugin](/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/README.md)
   — the edit-mode half, its dialog and its output.

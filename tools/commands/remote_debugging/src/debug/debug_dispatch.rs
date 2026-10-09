@@ -13,7 +13,7 @@ use crate::debug::debug_log_ids::{HypothesisId, RunId};
 use crate::debug::probes::DirectJoinObservations;
 use crate::error::{Error, Result};
 use deploy_settings::{DeployEnvironment, SettingError, deploy_environment_path};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Runs one `cargo xtask debug` command and returns its exit code.
 pub fn run(cmd: DebugCmd) -> Result<u8> {

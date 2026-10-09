@@ -6,7 +6,7 @@ use ticket_model::commit_subjects::mine_subjects;
 use ticket_model::{Domain, ProgramTicket, ScopeV2, Status, WorkTicket};
 
 fn worktree_root() -> PathBuf {
-    repository_layout::find_repository_root().expect("repository root")
+    repository_root::find_repository_root().expect("repository root")
 }
 
 /// Scratch tree with the vocab the fail-closed corpus load needs plus copies of

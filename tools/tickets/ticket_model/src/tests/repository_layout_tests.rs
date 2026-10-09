@@ -108,7 +108,7 @@ fn the_website_sparse_set_carries_the_applications_their_dependencies_and_their_
 /// sources, so a new include is judged without a list to extend.
 #[test]
 fn the_website_sparse_set_carries_every_contracts_file_the_website_crates_compile_in() {
-    let root = repository_layout::find_repository_root().expect("repository root");
+    let root = repository_root::find_repository_root().expect("repository root");
     let (_, website_set) = SPARSE_CHECKOUT_SETS
         .iter()
         .find(|(name, _)| *name == "website")
@@ -164,7 +164,7 @@ fn a_handoff_document_lands_in_the_artifact_tree() {
 /// slice lacks the tree its work needs, and no command says so.
 #[test]
 fn every_sparse_checkout_path_exists_in_the_checkout() {
-    let root = repository_layout::find_repository_root().expect("repository root");
+    let root = repository_root::find_repository_root().expect("repository root");
     let missing: Vec<String> = SPARSE_CHECKOUT_SETS
         .iter()
         .flat_map(|(target, paths)| paths.iter().map(move |path| (*target, *path)))
@@ -185,7 +185,7 @@ fn every_sparse_checkout_path_exists_in_the_checkout() {
 /// reader entry excuses nothing while it stays on the list.
 #[test]
 fn every_required_documentation_location_exists_in_the_checkout() {
-    let root = repository_layout::find_repository_root().expect("repository root");
+    let root = repository_root::find_repository_root().expect("repository root");
     let missing: Vec<String> = required_documentation_locations()
         .into_iter()
         .flat_map(|(name, paths)| paths.into_iter().map(move |path| (name, path)))

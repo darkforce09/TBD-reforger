@@ -36,7 +36,7 @@ fn write_tile(root: &Path, terrain: &str, z: u32, x: u32, y: u32, bytes: usize) 
 }
 
 fn schema_validator() -> jsonschema::Validator {
-    let path = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let path = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("repository root")

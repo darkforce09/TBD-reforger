@@ -26,6 +26,7 @@ deploy_settings = { workspace = true }
 deployment = { workspace = true }
 process_runner = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 # Journal lines, manifests and receipt parts keep the key order they are built in.
 serde_json = { workspace = true, features = ["preserve_order"] }

@@ -43,8 +43,8 @@ pulled; two tests that need a game install or a local extract are ignored.
 
 - Depends on: `building_interiors`, `spatial_indexes`, `world_line_of_sight`,
   `interior_line_of_sight`, `world_file_formats`, `geometry_primitives` (the contract types it
-  builds), `enfusion_pak` (the game paks), `repository_layout` (the checkout root and the contract
-  and terrain paths); no async runtime, HTTP client or image codec.
+  builds), `enfusion_pak` (the game paks), `repository_root` (the checkout root),
+  `repository_layout` (the contract and terrain paths); no async runtime, HTTP client or image codec.
 - Used by: the `cargo xtask map` adapters in `tools/xtask/src/commands/map/mod.rs`; the world
   line-of-sight tests of `map_asset_verification`, through the `test_fixtures` feature
   (from `[dev-dependencies]` only).

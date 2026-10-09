@@ -44,7 +44,7 @@ fn names_tools_create() -> Vec<String> {
 /// Profile folder names the workspace manifest can make cargo write: `dev` and `test` write
 /// `debug`, `bench` writes `release`, and a custom `[profile.<name>]` writes `<name>`.
 fn workspace_profile_folders() -> Vec<String> {
-    let manifest = crate::find_repository_root()
+    let manifest = repository_root::find_repository_root()
         .expect("repository root")
         .join("Cargo.toml");
     let text = std::fs::read_to_string(&manifest)

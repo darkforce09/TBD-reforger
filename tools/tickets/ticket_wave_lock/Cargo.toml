@@ -23,5 +23,8 @@ thiserror = { workspace = true }
 ticket_model = { workspace = true }
 toml = { workspace = true }
 
+[dev-dependencies]
+repository_root = { workspace = true }
+
 [lints]
 workspace = true

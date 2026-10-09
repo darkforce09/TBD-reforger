@@ -14,13 +14,13 @@ use repository_laws::workspace_laws::frontend_layering::layering_edges;
 const WORKSPACE_LAWS: &[WorkspaceLaw] = &[
     WorkspaceLaw::CrateTiers,
     WorkspaceLaw::CrateAnatomy,
-    WorkspaceLaw::Strangler,
+    WorkspaceLaw::TestFileReachability,
     WorkspaceLaw::FrontendLayering,
     WorkspaceLaw::TailwindSources,
 ];
 
 fn this_repo() -> std::path::PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root")
 }
 
@@ -84,7 +84,7 @@ fn frontend_layering_every_frontend_crate_sits_in_its_layer_folder_and_order_wit
 }
 
 #[test]
-fn strangler_and_every_workspace_law_refuse_a_checkout_they_cannot_read() {
+fn every_workspace_law_refuses_a_checkout_it_cannot_read() {
     let missing = Path::new("/nonexistent/tbd-workspace-laws/gate");
     for law in WORKSPACE_LAWS {
         let report = workspace_law_report(*law, missing);

@@ -105,7 +105,7 @@ None: Workbench runs these scripts in the editor.
 - Used by:
   - `cargo xtask mcp wbcall` (`tools/commands/enfusion_mcp/src/netapi.rs`), which calls the
     handler over the Net API;
-  - `cargo xtask map ingest-blueprints` (`tools/map_assets/blueprint_compiler/src/ingest.rs`), which
+  - `cargo xtask map ingest-blueprints` (`tools/map_assets/blueprint_compiler/src/blueprint_ingestion.rs`), which
     copies `prefabs/buildings/*.json` from the profile into
     `assets/terrains/everon/prefabs/buildings/`, validated against the `BuildingBlueprint`
     contract;
@@ -128,5 +128,5 @@ None: Workbench runs these scripts in the editor.
 - [Map commands](/tools/xtask/src/commands/map/README.md) — the `cargo xtask map` blueprint and
   parity commands.
 - [MCP commands](/tools/commands/enfusion_mcp/README.md) — `cargo xtask mcp wbcall`.
-- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API that
+- [Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — the Net API that
   `cargo xtask mcp wbcall` reaches.

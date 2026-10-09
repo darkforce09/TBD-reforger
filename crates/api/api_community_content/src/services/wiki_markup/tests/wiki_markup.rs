@@ -7,7 +7,7 @@ use super::read_markup;
 
 /// The wiki page contract, read from the repository's contract definitions.
 fn wiki_page_schema() -> Value {
-    let root = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let root = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("the repository root above the crate");
@@ -299,7 +299,7 @@ fn wiki_markup_reading_is_deterministic() {
 /// `crates/api/api_database/seeds/wiki_pages.sql`, decoded from its Postgres `E'…'` literal
 /// (`\n`, `\\` and doubled quotes).
 fn formatting_guide_markdown() -> String {
-    let root = repository_layout::find_repository_root_from(std::path::Path::new(env!(
+    let root = repository_root::find_repository_root_from(std::path::Path::new(env!(
         "CARGO_MANIFEST_DIR"
     )))
     .expect("the repository root above the crate");

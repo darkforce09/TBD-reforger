@@ -38,7 +38,7 @@ command's exit code; an `Error` means the command could not run, and xtask print
 
 - Depends on: `deploy_settings` (the settings file, the deploy host and its folders),
   `deployment` (the staging fleet's instances, ports, folders and units), `process_runner`,
-  `repository_layout` (the checkout root), `verification_core` (`NotRun`, patterns and probes),
+  `repository_root` (the checkout root), `verification_core` (`NotRun`, patterns and probes),
   `time_source` (the NDJSON rows' timestamps), `clap`, `serde_json`, `regex` and `thiserror`;
   `tool_test_support` in tests.
 - Used by: the `debug`, `repro` and `mod` groups of `tools/xtask`; `cargo xtask deploy staging`,

@@ -14,7 +14,7 @@ use crate::wave_plan::services::lock_file::{LockState, load_lock};
 use ticket_model::TicketId;
 
 fn checkout_root() -> std::path::PathBuf {
-    repository_layout::find_repository_root().expect("the tests run inside the checkout")
+    repository_root::find_repository_root().expect("the tests run inside the checkout")
 }
 
 #[test]

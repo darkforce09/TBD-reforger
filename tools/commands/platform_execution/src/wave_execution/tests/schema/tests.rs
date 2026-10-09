@@ -58,6 +58,7 @@ const XTASK_BUILD_CLOSURE: &[&str] = &[
     "crates/foundation/content_digest",
     "crates/foundation/deterministic_random",
     "crates/foundation/newtype_ids",
+    "crates/foundation/repository_root",
     "crates/foundation/time_source",
     "crates/geometry/geometry_primitives",
     "crates/geometry/map_coordinates",
@@ -80,6 +81,7 @@ const XTASK_BUILD_CLOSURE: &[&str] = &[
     "tools/checks/documentation_checks",
     "tools/checks/mod_script_checks",
     "tools/checks/repository_checks",
+    "tools/commands/agent_context_guards",
     "tools/commands/api_readiness_checks",
     "tools/commands/ballistics_oracle_tooling",
     "tools/commands/ci_task_catalog",
@@ -138,7 +140,7 @@ fn the_stamp_roots_are_the_whole_build_closure_of_xtask_and_nothing_else() {
     for unwanted in [
         "apps/api",
         "apps/frontend",
-        "legacy/map_engine",
+        "crates/map_rendering/map_renderer",
         "tools/foundation/tool_test_support",
     ] {
         assert!(

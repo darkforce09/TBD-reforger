@@ -12,7 +12,7 @@ through `chrome_devtools_protocol`.
 
 ```text
 tools/browser_testing/browser_gate_suites/
-├── Cargo.toml     the `browser_gate_suites` library package: `chrome_devtools_protocol`, `repository_layout`, `process_runner`, `content_digest`, `newtype_ids`, the ballistics crates, `tokio`, `axum`, `reqwest`, `clap`, `image`, `regex`; layout tier 5
+├── Cargo.toml     the `browser_gate_suites` library package: `chrome_devtools_protocol`, `repository_layout`, `process_runner`, `content_digest`, `newtype_ids`, the ballistics crates, `tokio`, `axum`, `reqwest`, `rustls` (ring), `clap`, `image`, `regex`; layout tier 5
 ├── fixtures/      the DOM oracle goldens and the committed route table the gates compare against
 ├── gate-env.json  the pinned Chromium build, toolchain and resource floors `gate doctor` checks and `cargo xtask ci ci-chrome` installs from
 └── src/           the static server, the DOM oracle, the route drift check, the editor smokes, the data viewer gate, the ballistics gates, the capture harness, the doctor, the command lines
@@ -96,13 +96,14 @@ root; the `prelude` module re-exports the server and the map-asset mounts.
 
 ## Boundaries
 
-- Depends on: `chrome_devtools_protocol` (every browser); `repository_layout` (the checkout root,
-  from the working directory, the map asset and glyph folders and the gate pin); `process_runner`
+- Depends on: `chrome_devtools_protocol` (every browser); `repository_root` (the checkout root,
+  from the working directory); `repository_layout` (the map asset and glyph folders and the gate
+  pin); `process_runner`
   (the toolchain version probes of the doctor); `content_digest` (the DOM digests);
   `newtype_ids` (the captured mission's id); `ballistics_model`, `fire_mission_planning` and
   `ballistics_agreement_cases` (the native solves and the seeded cases of the ballistics gates);
   `map_coordinates` (the grid references the offline mortar gate types); `tokio`, `axum`,
-  `reqwest`, `url`, `clap`, `image`, `regex`, `serde`, `serde_json`, `base64`, `futures-util`,
+  `reqwest`, `rustls` (the ring provider), `url`, `clap`, `image`, `regex`, `serde`, `serde_json`, `base64`, `futures-util`,
   `libc`, `thiserror`; the built app in `apps/frontend/dist`, the fixtures and the committed
   catalog in `contracts/`, and the goldens in `fixtures/dom_oracle/`.
 - Used by: the `gate` and `capture` binaries of `tools/developer_tools/src/bin/`, one call each

@@ -4,7 +4,8 @@ pub use crate::architecture::editor_orbat_coherency::verify_editor_orbat_coheren
 pub use crate::architecture::route_tags::verify_route_tags;
 pub use crate::architecture::workspace_laws::{
     WorkspaceLaw, verify_crate_anatomy, verify_crate_tiers, verify_frontend_layering,
-    verify_strangler, verify_tailwind_sources, verify_workspace_law, workspace_law_report,
+    verify_tailwind_sources, verify_test_file_reachability, verify_workspace_law,
+    workspace_law_report,
 };
 pub use crate::language_bans::node_and_file_limits::{verify_file_length, verify_no_node};
 pub use crate::language_bans::python_scripts::verify_no_python;

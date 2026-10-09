@@ -100,7 +100,7 @@ pub(crate) fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     // `checkrun`, NOT `hostrun`: `hostrun` bakes in the SHARED CARGO_TARGET_DIR, which can hand
     // this step a `world` binary built from a DIFFERENT WORKTREE'S sources while it reports on
     // yours. The binary reads the rules and catalogue of the checkout its working directory is in
-    // (`repository_layout::find_repository_root`), the two inputs the verdict is about.
+    // (`repository_root::find_repository_root`), the two inputs the verdict is about.
     //
     // And NOT folded into `xtask ci schema-validate`: gate_schema's drift tripwire reads that
     // task's `xtask schema <name>` steps, and this is a `developer_tools --bin world` call — it

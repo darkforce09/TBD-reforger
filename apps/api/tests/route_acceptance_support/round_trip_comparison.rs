@@ -28,7 +28,7 @@ use super::contracts::load_schema_document;
 use super::spec::Contract;
 
 /// How many `$ref` and composition steps are followed from one value's schema.
-pub const MAX_SCHEMA_DEPTH: usize = 32;
+pub(crate) const MAX_SCHEMA_DEPTH: usize = 32;
 
 /// The schema document of `contract` and the node that shapes its whole body, or `None` for a
 /// contract that names no schema.
@@ -60,7 +60,11 @@ fn body_schema(contract: &Contract) -> Result<Option<(Value, Value)>, String> {
 
 /// Every difference between the live `body` and `again`, its round trip through the generated
 /// type, read beside the schema `contract` names.
-pub fn round_trip_differences(contract: &Contract, body: &Value, again: &Value) -> Vec<String> {
+pub(crate) fn round_trip_differences(
+    contract: &Contract,
+    body: &Value,
+    again: &Value,
+) -> Vec<String> {
     match body_schema(contract) {
         Ok(Some((document, node))) => differences_beside_schema(&document, &node, body, again),
         Ok(None) => differences_beside_schema(&Value::Null, &Value::Null, body, again),
@@ -70,7 +74,7 @@ pub fn round_trip_differences(contract: &Contract, body: &Value, again: &Value) 
 
 /// Every difference between `live` and `again` read beside `schema`, whose local `$ref`s
 /// resolve inside `document`.
-pub fn differences_beside_schema(
+pub(crate) fn differences_beside_schema(
     document: &Value,
     schema: &Value,
     live: &Value,

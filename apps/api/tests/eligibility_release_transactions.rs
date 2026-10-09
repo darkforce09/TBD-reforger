@@ -34,7 +34,7 @@ async fn observe_main_guild(f: &Fixture, actor: &Actor, member: bool) {
         true,
     )
     .await
-    .unwrap()
+    .expect("claiming the membership refresh lease succeeds")
     .expect("a forced refresh always leases");
     let observed = GuildMember {
         nick: String::new(),
@@ -47,7 +47,7 @@ async fn observe_main_guild(f: &Fixture, actor: &Actor, member: bool) {
         &DiscordGuildId::new(f.main_guild.as_str()),
     )
     .await
-    .unwrap();
+    .expect("accepting the membership observation succeeds");
     assert!(accepted, "the current lease commits its observation");
 }
 

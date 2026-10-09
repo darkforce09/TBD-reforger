@@ -12,7 +12,7 @@ use ticketboard_model::ticket_actions::{
 };
 
 /// Transient top-right toasts (success tails, CAS refusals, queue notes).
-pub fn toasts_ui(ctx: &egui::Context, toasts: &mut Vec<Toast>) {
+pub(crate) fn toasts_ui(ctx: &egui::Context, toasts: &mut Vec<Toast>) {
     let now = Instant::now();
     toasts.retain(|t| t.until > now);
     if toasts.is_empty() {
@@ -42,7 +42,7 @@ pub fn toasts_ui(ctx: &egui::Context, toasts: &mut Vec<Toast>) {
 
 /// Footer chip: the live "verb running" indicator / last-exit summary; click
 /// toggles the drawer.
-pub fn verb_chip_ui(ui: &mut Ui, runner: &CommandExecutionState, actions: &mut Vec<Action>) {
+pub(crate) fn verb_chip_ui(ui: &mut Ui, runner: &CommandExecutionState, actions: &mut Vec<Action>) {
     if runner.queue.busy() {
         let label = format!(
             "verb: {}",
@@ -96,7 +96,7 @@ pub(crate) fn outcome_headline(last: &CommandOutcome) -> (String, Color32) {
 /// The bottom drawer: streamed log while a verb runs; on a nonzero exit it
 /// stays open with the FULL merged stdout+stderr verbatim, the exit code, and
 /// (on the wave-stale signature) the recovery command as TEXT.
-pub fn drawer_ui(ui: &mut Ui, runner: &CommandExecutionState, actions: &mut Vec<Action>) {
+pub(crate) fn drawer_ui(ui: &mut Ui, runner: &CommandExecutionState, actions: &mut Vec<Action>) {
     ui.horizontal(|ui| {
         ui.label(RichText::new(" VERB ").strong().monospace());
         if runner.queue.busy() {

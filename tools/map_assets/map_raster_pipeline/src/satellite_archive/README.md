@@ -11,8 +11,8 @@ three entry points, and the container's version 2 writer and reader live in the 
 
 ```text
 tools/map_assets/map_raster_pipeline/src/satellite_archive/
-├── build_unified_satellite.rs  `build-unified`: mip chain, tiling, VP8L encode, version 1 or 2 container
-└── map_assets_root.rs          `verify-unified` and `verify-pyramid`, and the terrain assets root
+├── build_unified_satellite.rs             `build-unified`: mip chain, tiling, VP8L encode, version 1 or 2 container
+└── satellite_and_pyramid_verification.rs  `verify-unified` and `verify-pyramid`, and the terrain assets root
 ```
 
 ## How it works
@@ -49,13 +49,13 @@ source PNG (+ TBD_SatExport_meta.json beside it)
   `super::satellite_archive_container` for the version 2 index, bytes and checks, and through it
   `world_file_formats::archives::satellite` and `world_file_formats::containers::tbds`;
   `repository_layout::terrain_assets_dir` and
-  `repository_layout::find_repository_root` for
+  `repository_root::find_repository_root` for
   `assets/terrains/`; `time_source`, `content_digest` and
   `world_export_pipeline::json_number_formatting` for the version 1 table.
 - Used by: `tools/map_assets/map_raster_pipeline/src/command_line.rs` (`build-unified`,
   `verify-unified`, `verify-pyramid`); the `map-water-everon`, `map-cartographic-everon` and
   `map-cartographic-verify` tasks of `cargo xtask ci`; the container tests in
-  `tools/map_assets/map_raster_pipeline/src/tests/satellite_archive_container/`.
+  `tools/map_assets/map_raster_pipeline/src/tests/satellite_archive_container_tests.rs`.
 - Rules: a version 1 and a version 2 container built from one source carry the same tiles at the
   same rectangles (`v1_and_v2_carry_the_same_tiles_at_the_same_rects`), and the version 2 tiling
   reproduces the committed Everon container's

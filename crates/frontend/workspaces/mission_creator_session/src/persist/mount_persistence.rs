@@ -27,12 +27,12 @@ thread_local! {
 /// value so the chip re-renders. Two writes of one value: the `Cell` is the truth a late-installed
 /// signal seeds from; the signal is the reactive mirror.
 ///
-/// The instant is `Date.now()`  wall-clock epoch ms. The chip renders a *recency* (now − last
+/// The instant is [`time_source::wall_clock_ms`] (`Date.now()`)  wall-clock epoch ms. The chip renders a *recency* (now − last
 /// flush) with both ends read from that same clock, so a monotonic source buys nothing and the wall
 /// clock is the one the browser hands back cheaply.
 pub(super) fn note_flush_completed() {
     use leptos::prelude::Set;
-    let ts = js_sys::Date::now();
+    let ts = time_source::wall_clock_ms();
     LAST_FLUSH_MS.with(|c| c.set(Some(ts)));
     LAST_FLUSH_SIG.with(|s| {
         if let Some(sig) = *s.borrow() {

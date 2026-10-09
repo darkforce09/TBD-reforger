@@ -1,15 +1,16 @@
 //! The workspace layout model: crate categories, the judged set and the category edge matrix.
 //!
-//! **Role:** answers which members the layout laws judge, which class a category belongs to,
-//! what a crate's declared targets are, and whether a dependency edge between two categories is
-//! allowed (rule 5 of the crate-tier law).
-//! **Position:** shared by [`super::crate_tiers`], `super::crate_firewalls`,
-//! [`super::crate_anatomy`] and [`super::strangler`]; reads parsed members only.
+//! **Role:** answers which members the layout laws judge, which members may stay outside the
+//! judged set, which class a category belongs to, what a crate's declared targets are, and
+//! whether a dependency edge between two categories is allowed (rule 5 of the crate-tier law).
+//! **Position:** shared by [`super::crate_tiers`], `super::crate_firewalls` and
+//! [`super::crate_anatomy`]; reads parsed members only.
 //! **Signals & state:** none; constants and pure functions.
 //! **Invariants:** the judged set is every member that declares `[package.metadata.layout]` plus
-//! every member under `crates/<category…>/<name>` or `tools/<category>/<name>`; the class of a
-//! category is decided by its folder path alone, and an unknown category has no class (a
-//! finding, never a silent default).
+//! every member under `crates/<category…>/<name>` or `tools/<category>/<name>`; a member outside
+//! it is an app under `apps/` or one of [`TOOL_BINARY_PATHS`], and any other is a finding of
+//! rule 2; the class of a category is decided by its folder path alone, and an unknown category
+//! has no class (a finding, never a silent default).
 
 use crate::workspace_members::WorkspaceMember;
 
@@ -17,8 +18,6 @@ use crate::workspace_members::WorkspaceMember;
 pub const CRATES_ROOT: &str = "crates";
 /// The root folder of the tooling crates.
 pub const TOOLS_ROOT: &str = "tools";
-/// The root folder of the crates the strangler rule retires.
-pub const LEGACY_ROOT: &str = "legacy";
 /// The root folder of the application crates.
 pub const APPS_ROOT: &str = "apps";
 
@@ -52,9 +51,10 @@ pub const MISSION_EDITING_ENGINE_CATEGORIES: &[&str] = &[
 /// The one tool crate that may depend on api crates: it seeds a staging database.
 pub const STAGING_FIXTURES_PATH: &str = "tools/staging/staging_fixtures";
 
-/// When true, a member outside the judged set fails the crate-tier law; until the close stage of
-/// the workspace restructure it is listed in an informational line instead.
-pub const UNJUDGED_MEMBERS_FAIL: bool = false;
+/// The tool binaries: the two members that sit directly under `tools/`, carry no layout table
+/// and link the tool crates into executables. With the apps under [`APPS_ROOT`] they are the only
+/// members the layout laws do not judge.
+pub const TOOL_BINARY_PATHS: &[&str] = &["tools/xtask", "tools/developer_tools"];
 
 /// The class of a category, which decides the edges its crates may declare.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -145,6 +145,12 @@ pub fn effective_category(member: &WorkspaceMember) -> String {
 /// True when the layout laws judge `member`.
 pub fn is_judged(member: &WorkspaceMember) -> bool {
     member.manifest.layout.is_some() || sits_in_layout_folder(&member.path)
+}
+
+/// True when `path` is a member allowed outside the judged set: an app under [`APPS_ROOT`] or
+/// one of [`TOOL_BINARY_PATHS`].
+pub fn is_app_or_tool_binary(path: &str) -> bool {
+    is_under(path, APPS_ROOT) || TOOL_BINARY_PATHS.contains(&path)
 }
 
 /// True for `crates/<category…>/<name>` and `tools/<category>/<name>`.

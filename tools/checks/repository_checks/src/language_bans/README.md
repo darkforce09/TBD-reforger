@@ -20,7 +20,7 @@ tools/checks/repository_checks/src/language_bans/
 ## How it works
 
 Each gate is a function the `verify` command group calls with no arguments; each finds the
-checkout with `repository_layout::find_repository_root` and returns its exit code; a working
+checkout with `repository_root::find_repository_root` and returns its exit code; a working
 directory outside a checkout is an error, never an empty root.
 
 `verify no-shell` and `verify no-python` run one walk over `git ls-files -z` and differ only in

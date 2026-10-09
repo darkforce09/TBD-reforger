@@ -18,7 +18,7 @@ async fn registration_state(pool: &PgPool, event_mission: Uuid, actor: &str) -> 
     .bind(actor)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of event_registrations returns a row")
 }
 
 async fn aggregates(pool: &PgPool, actor: &str) -> (i64, f64, i64, i64) {
@@ -32,7 +32,7 @@ async fn aggregates(pool: &PgPool, actor: &str) -> (i64, f64, i64, i64) {
     .bind(actor)
     .fetch_one(pool)
     .await
-    .unwrap()
+    .expect("the read of event_registrations returns a row")
 }
 
 #[tokio::test]

@@ -5,7 +5,7 @@
 //! `cargo xtask schema road-names` (major roads drawn, name length, the perpendicular placement
 //! tolerance, the declutter invariant, the on-screen cap and the empty-names oracle).
 //! **Position:** a child of [`super`], which re-exports [`town_labels`] and [`road_names`] and
-//! shares [`decode_u16_gray_png`] and [`js_fixed3`] with the anchor gate.
+//! shares [`decode_u16_gray_png`] and [`format_javascript_fixed_three`] with the anchor gate.
 //! **Signals & state:** none.
 //! **Invariants:** the placement and declutter are the `label_layout` and `place_names`
 //! functions the map draws with, evaluated at the zoom the command names.
@@ -38,11 +38,11 @@ pub fn town_labels(root: &Path, terrain: &str, deck_zoom: f64) -> Result<u8> {
 
     // G2 — required towns ⊆ drawn (normalized-name membership).
     let drawn_names: std::collections::HashSet<String> =
-        drawn.iter().map(|l| norm_name(&l.name)).collect();
+        drawn.iter().map(|l| normalized_name(&l.name)).collect();
     let missing: Vec<&str> = REQUIRED_EVERON_TOWNS
         .iter()
         .copied()
-        .filter(|t| !drawn_names.contains(&norm_name(t)))
+        .filter(|t| !drawn_names.contains(&normalized_name(t)))
         .collect();
     if missing.is_empty() {
         println!(
@@ -338,7 +338,7 @@ pub(super) fn decode_u16_gray_png(bytes: &[u8]) -> Result<(Vec<u16>, usize, usiz
 /// JS `Number.prototype.toFixed(3)` semantics: ties round away from zero on the
 /// magnitude (ECMA picks the larger n for |x|), unlike Rust's `{:.3}` half-to-even.
 /// Anchor files carry exact dyadic ties (0.0625, -18.3125) where the two differ.
-pub(super) fn js_fixed3(x: f64) -> String {
+pub(super) fn format_javascript_fixed_three(x: f64) -> String {
     let n = (x.abs() * 1000.0).round() as i64;
     let sign = if x.is_sign_negative() && (n != 0 || x < 0.0) {
         "-"

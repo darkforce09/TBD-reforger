@@ -38,6 +38,10 @@ use crate::worker_scope::{
 };
 
 /// Handles `fetch`; the loader passes the returned promise to `event.respondWith`.
+#[expect(
+    unreachable_pub,
+    reason = "#[wasm_bindgen] exports only public functions; the JavaScript loader calls this one"
+)]
 #[wasm_bindgen]
 pub fn on_fetch(event: FetchEvent) -> Promise {
     future_to_promise(async move { respond(&event).await.map(JsValue::from) })

@@ -8,8 +8,8 @@ export's own geometry, density and forest code, and with the chunk binary its em
 
 ```text
 tools/map_assets/map_asset_verification/src/object_goldens/
+├── golden_row_readers.rs  the fixture reader, row helpers and the S15 chunk-binary comparison
 ├── map_object_golden.rs   `map_object_golden`: the fixtures, S2 to S9, S15 and the report
-├── read_json.rs           the fixture reader, row helpers and the S15 chunk-binary comparison
 └── spatial_invariants.rs  S11 to S14: chunk sample, anchor, density and region fixtures
 ```
 

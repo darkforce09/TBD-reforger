@@ -289,7 +289,7 @@ struct Upstream {
 
 impl Upstream {
     fn new(origin: UpstreamOrigin) -> Result<Self> {
-        let mut builder = reqwest::Client::builder()
+        let mut builder = crate::http_client::http_client_builder()
             .no_proxy()
             .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(UPSTREAM_CONNECT_TIMEOUT)

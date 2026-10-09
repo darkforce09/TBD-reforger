@@ -123,7 +123,7 @@ so `wind_vector_world` is `-speed x (sin B, 0, cos B)`.
 
 ## Related documentation
 
-- [Ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
+- [Ballistics oracle](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
   — what the oracle measures, why, and how its outputs become calibration fixtures.
 - [Ballistics oracle plugin](/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/README.md)
   — the edit-mode half and the operator procedure.

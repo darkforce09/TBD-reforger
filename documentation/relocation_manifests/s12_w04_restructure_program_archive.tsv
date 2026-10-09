@@ -1,0 +1,8 @@
+# Stage S12 G10b, wave 4: the closed workspace restructure program's records (README, plan, crate
+# catalogue, laws and gates, target tree, progress, stage logs and the shared agent brief) move into
+# the archive as one topic folder beside restructure_agent_briefs and restructure_research. Paths
+# name the tree before the moves.
+kind	from	to	scope
+#
+# the whole program folder, its inner layout kept
+path	documentation/restructure	documentation/archive/restructure

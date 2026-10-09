@@ -16,13 +16,13 @@ pub(crate) const DEV_LOGIN_ARMA_ID: &str = "dev-arma-76561190000000001";
 
 /// The development administrator identity. Other development roles use distinct accounts.
 /// Suites that mutate account state should use dedicated actor IDs.
-pub const DEV_LOGIN_USER: &str = "000000000000000001";
+pub(crate) const DEV_LOGIN_USER: &str = "000000000000000001";
 
 /// Mint an access token through `GET /api/v1/auth/dev-login?role={role}`.
 ///
 /// Failure reports identify the calling suite, requested role, HTTP status, body, and redirect.
 /// The production session service validates account availability before issuing credentials.
-pub async fn dev_login_token(app: &Router, suite: &str, role: &str) -> String {
+pub(crate) async fn dev_login_token(app: &Router, suite: &str, role: &str) -> String {
     let uri = format!("/api/v1/auth/dev-login?role={role}");
     let resp = app
         .clone()
@@ -137,7 +137,7 @@ impl DevLoginFailure<'_> {
 ///
 /// Existing Arma identity and ban state remain intact. `arma_linked` supplies the initial identity
 /// only when the account does not exist; token claims are derived from the persisted account.
-pub async fn access_token(
+pub(crate) async fn access_token(
     state: &AppState,
     suite: &str,
     discord_id: &str,

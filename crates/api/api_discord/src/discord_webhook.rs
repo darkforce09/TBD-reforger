@@ -13,22 +13,15 @@
 //! pushing; every failure is a typed [`crate::error::Error`].
 
 use std::borrow::Cow;
-use std::sync::Once;
 use std::time::Duration;
 
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
+use crate::tls_crypto_provider::ensure_tls_provider;
 use api_foundation::text::html_sanitizer::{cap_runes, truncate};
 use api_http_layer::http_client::retry_on_429::send_with_retry_on_429;
-
-static TLS_INIT: Once = Once::new();
-fn ensure_tls_provider() {
-    TLS_INIT.call_once(|| {
-        let _ = rustls::crypto::ring::default_provider().install_default();
-    });
-}
 
 /// Neutralise formula / control characters in Discord embed text fields.
 ///

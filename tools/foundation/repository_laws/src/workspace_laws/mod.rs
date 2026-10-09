@@ -1,14 +1,15 @@
-//! The workspace laws: crate tiers, crate anatomy, the strangler rule, frontend layering and
+//! The workspace laws: crate tiers, crate anatomy, test-file reachability, frontend layering and
 //! Tailwind sources.
 //!
 //! **Role:** judges the workspace members of a checkout against the layout laws of
-//! `documentation/restructure/laws_and_gates.md` ("New laws") and renders each law as a
-//! report a gate prints: [`crate_tiers`], [`crate_anatomy`], [`strangler`],
+//! `documentation/standards/crate_boundary_rules.md` and renders each law as a report a gate
+//! prints: [`crate_tiers`], [`crate_anatomy`], [`test_file_reachability`],
 //! [`frontend_layering`] and [`tailwind_sources`].
 //! **Position:** a layer of the `repository_laws` crate over [`super::workspace_members`] and
-//! [`super::cargo_manifest`]. `cargo xtask verify crate-tiers`, `crate-anatomy`, `strangler`,
-//! `frontend-layering` and `tailwind-sources` print these reports; xtask passes in every path that
-//! moves with the tree (the manifest sweep roots, the frontend layer table, the stylesheet).
+//! [`super::cargo_manifest`]. `cargo xtask verify crate-tiers`, `crate-anatomy`,
+//! `test-file-reachability`, `frontend-layering` and `tailwind-sources` print these reports;
+//! xtask passes in every path that moves with the tree (the manifest sweep roots, the frontend
+//! layer table, the stylesheet).
 //! **Signals & state:** none; each law reads the checkout and returns a report.
 //! **Invariants:** a law that could not read an input reports exit 2 and "did not run", never a
 //! pass; a finding is exit 1; a report's last line is `<LAW>: PASS` or `<LAW>: FAIL (…)`.
@@ -19,9 +20,10 @@ mod crate_firewalls;
 pub mod crate_layout;
 pub mod crate_tiers;
 pub mod frontend_layering;
+mod public_reexports;
 mod rust_module_references;
-pub mod strangler;
 pub mod tailwind_sources;
+pub mod test_file_reachability;
 
 use verification_core::verdict::NotRun;
 

@@ -13,7 +13,7 @@
 
 use super::cli::{RefactorCmd, RelocateArgs};
 use anyhow::{Result, bail};
-use repository_layout::find_repository_root;
+use repository_layout::prelude::find_repository_root;
 use repository_relocation::prelude::*;
 
 /// Run `cmd` and return its process exit code.

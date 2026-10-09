@@ -184,7 +184,7 @@ groups live; a `garrison` spawns once and is not restocked. A module names eithe
 
 ## Related documentation
 
-- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — one life, the possess deploy
+- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — one life, the possess deploy
   and the vanilla respawn stand-down among the framework's non-negotiables
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — the Workbench gate that
   checks spawn and equip give the same outcome across fresh Workbench processes

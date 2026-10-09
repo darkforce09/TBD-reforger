@@ -595,7 +595,7 @@ fn sort_rows_by_each_key_with_direction_toggle_and_stable_tiebreak() {
 #[test]
 #[ignore = "reads the live repo estimates; run explicitly with -- --ignored"]
 fn live_estimates_load_without_error_rows() {
-    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    let root = repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the checkout holding this crate");
     let raw = load_raw(&root);
     if !raw.present {

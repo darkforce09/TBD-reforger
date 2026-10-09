@@ -162,7 +162,7 @@ impl Drop for Staging {
 }
 
 fn real_definition(check: StagingCheck) -> serde_json::Value {
-    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    let root = repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root");
     let register: serde_json::Value =
         serde_json::from_slice(&fs::read(root.join(API_READINESS_REGISTER)).unwrap()).unwrap();

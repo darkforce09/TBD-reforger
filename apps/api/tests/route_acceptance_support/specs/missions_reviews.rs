@@ -501,7 +501,7 @@ fn fleet_scenario_specs() -> Vec<RouteSpec> {
 }
 
 /// Every spec of the `missions_reviews` part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     [
         submission_and_review_specs(),
         approval_specs(),

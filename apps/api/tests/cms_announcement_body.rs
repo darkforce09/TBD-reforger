@@ -53,13 +53,21 @@ async fn boot_with_webhook(webhook_url: String) -> Option<(Router, PgPool)> {
 
 /// Local Discord-webhook stand-in (same pattern as `discord_http_clients.rs`).
 async fn spawn_mock_webhook() -> String {
-    let l = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let addr = l.local_addr().unwrap();
+    let l = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("a loopback port binds");
+    let addr = l
+        .local_addr()
+        .expect("the listener reports its local address");
     let router = Router::new().route(
         "/wh",
         post(|| async { AxumJson(json!({ "id": "push-msg" })) }),
     );
-    tokio::spawn(async move { axum::serve(l, router).await.unwrap() });
+    tokio::spawn(async move {
+        axum::serve(l, router)
+            .await
+            .expect("the stand-in HTTP server keeps serving")
+    });
     format!("http://{addr}/wh")
 }
 

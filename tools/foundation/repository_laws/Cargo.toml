@@ -20,5 +20,9 @@ regex = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
 
+[dev-dependencies]
+# The checkout root the tests that judge this repository start from.
+repository_root = { workspace = true }
+
 [lints]
 workspace = true

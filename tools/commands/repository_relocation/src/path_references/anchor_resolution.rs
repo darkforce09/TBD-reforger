@@ -184,7 +184,7 @@ pub(crate) fn resolve_and_rewrite(
 /// untracked tail) names no file the moves move; a reading from the owning crate's folder is
 /// pinned only when no other crate folder reads the same literal as a tracked path the moves leave
 /// differently, since a literal every crate spells for its own files (`src/lib.rs`), or a fixture
-/// path relative to a temporary checkout (`../../legacy/map_engine`), names no crate in
+/// path relative to a temporary checkout (`../../engine/map`), names no crate in
 /// particular.
 fn unpinned_reading(
     literal: &str,

@@ -2,7 +2,7 @@ use super::cli::{DocumentationGateArgs, VerifyCmd};
 use anyhow::Result;
 use documentation_checks::{GateRequest, UntrackedFiles};
 use repository_checks::architecture::workspace_laws;
-use repository_layout::find_repository_root;
+use repository_layout::prelude::find_repository_root;
 
 pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
     {
@@ -96,7 +96,7 @@ pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
             }
             VerifyCmd::CrateTiers => workspace_laws::verify_crate_tiers()?,
             VerifyCmd::CrateAnatomy => workspace_laws::verify_crate_anatomy()?,
-            VerifyCmd::Strangler => workspace_laws::verify_strangler()?,
+            VerifyCmd::TestFileReachability => workspace_laws::verify_test_file_reachability()?,
             VerifyCmd::FrontendLayering => workspace_laws::verify_frontend_layering()?,
             VerifyCmd::TailwindSources => workspace_laws::verify_tailwind_sources()?,
             VerifyCmd::ReadmeCoverage { arguments } => {

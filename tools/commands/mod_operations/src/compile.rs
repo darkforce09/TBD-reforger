@@ -21,7 +21,7 @@ use regex::Regex;
 
 use crate::compile_host::{Session, hostrun, is_executable, kill_run, mktemp_dir, require_host};
 use crate::server_launcher;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// The text `mod compile --help` prints.
 const HELP: &str = include_str!("compile_help.txt");

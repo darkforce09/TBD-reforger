@@ -19,7 +19,7 @@ fn scratch(tag: &str) -> PathBuf {
     let _ = fs::remove_dir_all(&tmp);
     fs::create_dir_all(tmp.join(repository_layout::TICKETS_DIR)).expect("mk scratch");
     // The real committed schema, so scratch trees validate exactly like the repo.
-    let schema = repository_layout::find_repository_root()
+    let schema = repository_root::find_repository_root()
         .expect("repository root")
         .join(METRICS_SCHEMA);
     fs::copy(&schema, tmp.join(METRICS_SCHEMA)).expect("copy schema");

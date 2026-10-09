@@ -10,7 +10,7 @@
 
 use crate::Result;
 use crate::mod_command::ModCmd;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Run one `cargo xtask mod` subcommand and return its exit code.
 pub fn run(cmd: ModCmd) -> Result<u8> {

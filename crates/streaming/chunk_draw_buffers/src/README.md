@@ -77,7 +77,8 @@ and the known-empty chunks. The world loader merges it into the page's asset sta
   mirrors and the debug world line-of-sight bench builds; every public method of the scheduler's
   `ChunkResidency` under the same name, plus the draw getters of `revision.rs`, the toggles and
   visibility of `toggles.rs` and `stats_json`; a chunk is named by `world_chunks::ChunkId` in
-  every method that takes one and in the missing chunks `set_viewport` returns.
+  every method that takes one, in the missing chunks `set_viewport` returns and in the id lists
+  it returns (`draw_ids`, `draw_chunk_ids`, `resident_chunk_ids`, `eviction_log`).
 - `Error` and `Result` at the crate root; the common names in `prelude`.
 
 ## Boundaries

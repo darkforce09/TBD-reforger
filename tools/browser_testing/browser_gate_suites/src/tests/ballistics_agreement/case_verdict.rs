@@ -8,7 +8,7 @@ use super::*;
 use crate::ballistics_agreement::COMMITTED_CATALOG;
 use crate::ballistics_agreement::bench_reading::decode_bench_reading;
 use crate::ballistics_agreement::native_reference::native_cases;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 const SEED: u64 = 0x5EED_0000_0000_0003;
 const COUNT: usize = 3;

@@ -8,7 +8,7 @@ recorded run that binds one run to its receipt.
 
 ```text
 tools/commands/staging_procedures/src/procedure_runner/
-├── clock.rs          the `Clock` seam and the wall clock of live runs
+├── clock.rs          `WaitingClock`: the workspace clock (`time_source`) extended with waiting
 ├── fake_clock.rs     test-only clock whose sleep advances it
 ├── mod.rs            the module tree
 ├── probe_reading.rs  one observation: host read or browser entry, judgement, journal entry

@@ -27,7 +27,7 @@ another.
 
 `slice-collisions` is declared in `tools/xtask/src/cli/mod.rs` with raw trailing arguments,
 and `mod.rs` passes them to `ticket_wave_lock::collisions::run` with the root from
-`repository_layout::find_repository_root`.
+`repository_layout::prelude::find_repository_root`.
 
 ## Commands
 

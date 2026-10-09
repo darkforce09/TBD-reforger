@@ -19,11 +19,11 @@
 
 use serde_json::Value;
 
-pub use super::probe::{Change, Expect, Outcome, Probe};
+pub(crate) use super::probe::{Change, Expect, Outcome, Probe};
 
 /// A member role, ordered by rank.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Role {
+pub(crate) enum Role {
     Guest,
     Enlisted,
     Leader,
@@ -33,7 +33,7 @@ pub enum Role {
 
 impl Role {
     /// Every role, lowest rank first.
-    pub const ALL: [Role; 5] = [
+    pub(crate) const ALL: [Role; 5] = [
         Role::Guest,
         Role::Enlisted,
         Role::Leader,
@@ -42,7 +42,7 @@ impl Role {
     ];
 
     /// The database spelling (`user_role`).
-    pub fn as_str(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
         match self {
             Role::Guest => "guest",
             Role::Enlisted => "enlisted",
@@ -53,21 +53,21 @@ impl Role {
     }
 
     /// The role one rank below, or `None` for a guest.
-    pub fn below(self) -> Option<Role> {
+    pub(crate) fn below(self) -> Option<Role> {
         Role::ALL.iter().rev().copied().find(|role| *role < self)
     }
 }
 
 /// The program a machine credential authenticates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Executor {
+pub(crate) enum Executor {
     ModRuntime,
     HostAgent,
 }
 
 impl Executor {
     /// The other executor kind: the wrong-executor probe's credential.
-    pub fn other(self) -> Executor {
+    pub(crate) fn other(self) -> Executor {
         match self {
             Executor::ModRuntime => Executor::HostAgent,
             Executor::HostAgent => Executor::ModRuntime,
@@ -77,7 +77,7 @@ impl Executor {
 
 /// Who may call a route.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Access {
+pub(crate) enum Access {
     /// Every caller, with or without credentials.
     Public,
     /// Registered only in development; every caller there.
@@ -94,7 +94,7 @@ pub enum Access {
 
 /// The seven acceptance dimensions every spec declares.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Dimension {
+pub(crate) enum Dimension {
     Authorized,
     Unauthorized,
     Ownership,
@@ -106,7 +106,7 @@ pub enum Dimension {
 
 impl Dimension {
     /// Every dimension, in report order.
-    pub const ALL: [Dimension; 7] = [
+    pub(crate) const ALL: [Dimension; 7] = [
         Dimension::Authorized,
         Dimension::Unauthorized,
         Dimension::Ownership,
@@ -117,7 +117,7 @@ impl Dimension {
     ];
 
     /// The lower-case name used in test and report names.
-    pub fn name(self) -> &'static str {
+    pub(crate) fn name(self) -> &'static str {
         match self {
             Dimension::Authorized => "authorized",
             Dimension::Unauthorized => "unauthorized",
@@ -132,7 +132,7 @@ impl Dimension {
 
 /// The shape of a success response.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Contract {
+pub(crate) enum Contract {
     /// A JSON body validated against a schema file of `contracts/definitions/` — its root
     /// when `definition` is `None`, else that entry of `definitions` or `$defs`.
     Schema {
@@ -160,7 +160,7 @@ pub enum Contract {
 
 impl Contract {
     /// A JSON body shaped by `file#/definitions/<definition>`.
-    pub fn schema(file: &'static str, definition: &'static str) -> Contract {
+    pub(crate) fn schema(file: &'static str, definition: &'static str) -> Contract {
         Contract::Schema {
             file,
             definition: Some(definition),
@@ -168,7 +168,7 @@ impl Contract {
     }
 
     /// A JSON body shaped by the root of `file`.
-    pub fn schema_root(file: &'static str) -> Contract {
+    pub(crate) fn schema_root(file: &'static str) -> Contract {
         Contract::Schema {
             file,
             definition: None,
@@ -176,12 +176,12 @@ impl Contract {
     }
 
     /// A JSON array whose every element is shaped by `file#/definitions/<definition>`.
-    pub fn schema_items(file: &'static str, definition: &'static str) -> Contract {
+    pub(crate) fn schema_items(file: &'static str, definition: &'static str) -> Contract {
         Contract::SchemaItems { file, definition }
     }
 
     /// A stream whose first frame is shaped by `file#/definitions/<definition>`.
-    pub fn event_stream(file: &'static str, definition: &'static str) -> Contract {
+    pub(crate) fn event_stream(file: &'static str, definition: &'static str) -> Contract {
         Contract::EventStream {
             file,
             definition: Some(definition),
@@ -191,7 +191,7 @@ impl Contract {
 
 /// Who sends a probe; resolved to credentials by [`super::actors::Actors`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Actor {
+pub(crate) enum Actor {
     /// No `Authorization` header.
     Anonymous,
     /// A bearer that is no token at all.
@@ -217,11 +217,11 @@ pub enum Actor {
 }
 
 /// Decodes a JSON body into a generated contract type and serialises it back.
-pub type RoundTrip = fn(&Value) -> Result<Value, String>;
+pub(crate) type RoundTrip = fn(&Value) -> Result<Value, String>;
 
 /// A derived probe whose documented outcome differs from the derived default.
 #[derive(Debug, Clone)]
-pub struct Override {
+pub(crate) struct Override {
     pub probe: &'static str,
     pub expect: Expect,
     pub reason: &'static str,
@@ -229,7 +229,7 @@ pub struct Override {
 
 /// The kind of request body a route reads.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BodyKind {
+pub(crate) enum BodyKind {
     None,
     Json,
     Multipart,
@@ -237,7 +237,7 @@ pub enum BodyKind {
 
 /// Everything a route's acceptance needs that the framework cannot derive.
 #[derive(Debug, Clone)]
-pub struct RouteSpec {
+pub(crate) struct RouteSpec {
     /// `METHOD /path`, as the route table spells it.
     pub key: &'static str,
     pub access: Access,
@@ -267,7 +267,7 @@ pub struct RouteSpec {
 
 impl RouteSpec {
     /// A spec for `key` with `access` and nothing else declared.
-    pub fn new(key: &'static str, access: Access) -> RouteSpec {
+    pub(crate) fn new(key: &'static str, access: Access) -> RouteSpec {
         RouteSpec {
             key,
             access,
@@ -287,38 +287,38 @@ impl RouteSpec {
     }
 
     /// [`Access::Public`].
-    pub fn public(key: &'static str) -> RouteSpec {
+    pub(crate) fn public(key: &'static str) -> RouteSpec {
         RouteSpec::new(key, Access::Public)
     }
     /// [`Access::DevelopmentOnly`].
-    pub fn development_only(key: &'static str) -> RouteSpec {
+    pub(crate) fn development_only(key: &'static str) -> RouteSpec {
         RouteSpec::new(key, Access::DevelopmentOnly)
     }
     /// [`Access::Authenticated`].
-    pub fn authenticated(key: &'static str) -> RouteSpec {
+    pub(crate) fn authenticated(key: &'static str) -> RouteSpec {
         RouteSpec::new(key, Access::Authenticated)
     }
     /// [`Access::Role`].
-    pub fn role(key: &'static str, minimum: Role) -> RouteSpec {
+    pub(crate) fn role(key: &'static str, minimum: Role) -> RouteSpec {
         RouteSpec::new(key, Access::Role(minimum))
     }
     /// [`Access::Machine`].
-    pub fn machine(key: &'static str, executor: Executor) -> RouteSpec {
+    pub(crate) fn machine(key: &'static str, executor: Executor) -> RouteSpec {
         RouteSpec::new(key, Access::Machine(executor))
     }
     /// [`Access::Observability`].
-    pub fn observability(key: &'static str) -> RouteSpec {
+    pub(crate) fn observability(key: &'static str) -> RouteSpec {
         RouteSpec::new(key, Access::Observability)
     }
 
     /// The documented success status and response contract.
-    pub fn ok(mut self, status: u16, contract: Contract) -> RouteSpec {
+    pub(crate) fn ok(mut self, status: u16, contract: Contract) -> RouteSpec {
         self.success = Some((status, contract));
         self
     }
 
     /// A documented redirect: `status`, no body, and a `Location` containing `location`.
-    pub fn ok_redirect(mut self, status: u16, location: &'static str) -> RouteSpec {
+    pub(crate) fn ok_redirect(mut self, status: u16, location: &'static str) -> RouteSpec {
         self.success = Some((status, Contract::NoBody));
         self.redirect = Some(location);
         self
@@ -328,7 +328,7 @@ impl RouteSpec {
     /// expects `status` with exactly the envelope `{"error": error}`, and `reason` names the
     /// module (relative to `src/`) whose `@route` tag documents the refusal, which the coverage
     /// binary checks.
-    pub fn refusal_only(
+    pub(crate) fn refusal_only(
         mut self,
         status: u16,
         error: &'static str,
@@ -340,62 +340,66 @@ impl RouteSpec {
     }
 
     /// Round-trip every authorized JSON body through the generated type.
-    pub fn decodes(mut self, round_trip: RoundTrip) -> RouteSpec {
+    pub(crate) fn decodes(mut self, round_trip: RoundTrip) -> RouteSpec {
         self.decode = Some(round_trip);
         self
     }
 
     /// The route reads a JSON body (derives the invalid JSON, content type and size probes).
-    pub fn json_body(mut self) -> RouteSpec {
+    pub(crate) fn json_body(mut self) -> RouteSpec {
         self.body = BodyKind::Json;
         self
     }
 
     /// The route reads a multipart body (derives the size probe).
-    pub fn multipart_body(mut self) -> RouteSpec {
+    pub(crate) fn multipart_body(mut self) -> RouteSpec {
         self.body = BodyKind::Multipart;
         self
     }
 
     /// The JSON body's contract; implies [`RouteSpec::json_body`].
-    pub fn request_contract(mut self, contract: Contract) -> RouteSpec {
+    pub(crate) fn request_contract(mut self, contract: Contract) -> RouteSpec {
         self.request_contract = Some(contract);
         self.body = BodyKind::Json;
         self
     }
 
     /// Path parameter `name` is not a UUID: no non-UUID or nonexistent-id probe is derived.
-    pub fn text_param(mut self, name: &'static str) -> RouteSpec {
+    pub(crate) fn text_param(mut self, name: &'static str) -> RouteSpec {
         self.text_params.push(name);
         self
     }
 
     /// Start every probe from the world fixture `key`.
-    pub fn fixture(mut self, key: &'static str) -> RouteSpec {
+    pub(crate) fn fixture(mut self, key: &'static str) -> RouteSpec {
         self.fixture = Some(key);
         self
     }
 
     /// The authorized probe's actor.
-    pub fn authorized_as(mut self, actor: Actor) -> RouteSpec {
+    pub(crate) fn authorized_as(mut self, actor: Actor) -> RouteSpec {
         self.authorized_actor = Some(actor);
         self
     }
 
     /// Add a probe to `dimension`.
-    pub fn probe(mut self, dimension: Dimension, probe: Probe) -> RouteSpec {
+    pub(crate) fn probe(mut self, dimension: Dimension, probe: Probe) -> RouteSpec {
         self.probes.push((dimension, probe));
         self
     }
 
     /// Declare `dimension` not applicable, for `reason`.
-    pub fn not_applicable(mut self, dimension: Dimension, reason: &'static str) -> RouteSpec {
+    pub(crate) fn not_applicable(
+        mut self,
+        dimension: Dimension,
+        reason: &'static str,
+    ) -> RouteSpec {
         self.not_applicable.push((dimension, reason));
         self
     }
 
     /// Replace the expectation of the derived probe named `probe`, for `reason`.
-    pub fn override_derived(
+    pub(crate) fn override_derived(
         mut self,
         probe: &'static str,
         expect: Expect,
@@ -410,48 +414,48 @@ impl RouteSpec {
     }
 
     /// Add an unauthorized probe.
-    pub fn unauthorized(self, probe: Probe) -> RouteSpec {
+    pub(crate) fn unauthorized(self, probe: Probe) -> RouteSpec {
         self.probe(Dimension::Unauthorized, probe)
     }
     /// Add an ownership probe.
-    pub fn ownership(self, probe: Probe) -> RouteSpec {
+    pub(crate) fn ownership(self, probe: Probe) -> RouteSpec {
         self.probe(Dimension::Ownership, probe)
     }
     /// Declare ownership not applicable.
-    pub fn no_ownership(self, reason: &'static str) -> RouteSpec {
+    pub(crate) fn no_ownership(self, reason: &'static str) -> RouteSpec {
         self.not_applicable(Dimension::Ownership, reason)
     }
     /// Add a guest probe.
-    pub fn guest(self, probe: Probe) -> RouteSpec {
+    pub(crate) fn guest(self, probe: Probe) -> RouteSpec {
         self.probe(Dimension::Guest, probe)
     }
     /// Add a ban probe.
-    pub fn ban(self, probe: Probe) -> RouteSpec {
+    pub(crate) fn ban(self, probe: Probe) -> RouteSpec {
         self.probe(Dimension::Ban, probe)
     }
     /// Add a malformed-request probe.
-    pub fn malformed(self, probe: Probe) -> RouteSpec {
+    pub(crate) fn malformed(self, probe: Probe) -> RouteSpec {
         self.probe(Dimension::Malformed, probe)
     }
     /// Add a boundary probe.
-    pub fn boundary(self, probe: Probe) -> RouteSpec {
+    pub(crate) fn boundary(self, probe: Probe) -> RouteSpec {
         self.probe(Dimension::Boundary, probe)
     }
 
     /// The method half of the key.
-    pub fn method(&self) -> &'static str {
+    pub(crate) fn method(&self) -> &'static str {
         self.key
             .split_once(' ')
             .map_or(self.key, |(method, _)| method)
     }
 
     /// The path half of the key.
-    pub fn path(&self) -> &'static str {
+    pub(crate) fn path(&self) -> &'static str {
         self.key.split_once(' ').map_or("", |(_, path)| path)
     }
 
     /// The `{name}` parameters of the path, in order (`*tail` for a wildcard).
-    pub fn path_params(&self) -> Vec<&'static str> {
+    pub(crate) fn path_params(&self) -> Vec<&'static str> {
         self.path()
             .split('/')
             .filter_map(|segment| segment.strip_prefix('{')?.strip_suffix('}'))
@@ -459,7 +463,7 @@ impl RouteSpec {
     }
 
     /// The path parameters derived probes treat as UUIDs.
-    pub fn uuid_params(&self) -> Vec<&'static str> {
+    pub(crate) fn uuid_params(&self) -> Vec<&'static str> {
         self.path_params()
             .into_iter()
             .filter(|name| !name.starts_with('*') && !self.text_params.contains(name))

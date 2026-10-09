@@ -55,7 +55,7 @@ pub fn ValidationPanel(
                 let handle = set_timeout_with_handle(
                     move || {
                         timer2.borrow_mut().take();
-                        let now = now_ms();
+                        let now = time_source::monotonic_ms();
                         let fire = {
                             let mut d = deb2.borrow_mut();
                             if d.should_fire(now) {
@@ -113,7 +113,7 @@ pub fn ValidationPanel(
             let arm = arm.clone();
             Effect::new(move |_| {
                 let _ = doc_tick.get(); // subscribe — re-run on every doc change
-                deb.borrow_mut().bump(now_ms());
+                deb.borrow_mut().bump(time_source::monotonic_ms());
                 rechecking.set(true);
                 arm();
             });
@@ -124,11 +124,4 @@ pub fn ValidationPanel(
             on_cleanup(move || disposed.store(true, Ordering::Relaxed));
         }
     }
-}
-#[cfg(target_arch = "wasm32")]
-#[must_use]
-fn now_ms() -> f64 {
-    web_sys::window()
-        .and_then(|w| w.performance())
-        .map_or(0.0, |p| p.now())
 }

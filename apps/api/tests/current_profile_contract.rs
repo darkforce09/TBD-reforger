@@ -111,20 +111,27 @@ async fn current_profile_handler_schema_generated_types_and_frontend_golden_agre
 }
 
 fn assert_profile_contract(value: &Value) {
-    let schema: Value = serde_json::from_str(SCHEMA).unwrap();
+    let schema: Value = serde_json::from_str(SCHEMA).expect("the text decodes as JSON");
     let validator = jsonschema::options()
         .should_validate_formats(true)
         .build(&schema)
-        .unwrap();
+        .expect("the contract schema compiles into a validator");
     assert!(
         validator.is_valid(value),
         "profile does not satisfy the published schema"
     );
-    let canonical: CurrentProfileResponse = serde_json::from_value(value.clone()).unwrap();
-    assert_eq!(serde_json::to_value(canonical).unwrap(), *value);
-    let generated: generated::CurrentProfileResponse =
-        serde_json::from_value(value.clone()).unwrap();
-    assert_eq!(serde_json::to_value(generated).unwrap(), *value);
+    let canonical: CurrentProfileResponse = serde_json::from_value(value.clone())
+        .expect("the JSON value decodes into the expected type");
+    assert_eq!(
+        serde_json::to_value(canonical).expect("the value serialises to JSON"),
+        *value
+    );
+    let generated: generated::CurrentProfileResponse = serde_json::from_value(value.clone())
+        .expect("the JSON value decodes into the expected type");
+    assert_eq!(
+        serde_json::to_value(generated).expect("the value serialises to JSON"),
+        *value
+    );
 }
 
 #[test]

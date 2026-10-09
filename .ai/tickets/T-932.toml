@@ -34,8 +34,7 @@ gates the COMPILED document, which is untouched. Both halves of the known-key lo
 owns: compile.rs:46-62 and store.rs:6083-6128.
 
 TRAP: store.rs:3595 clears the key at the TOP of hydrate for a documented reason (a second hydrate must
-not leave a ghost). The fix is clear-then-restore-from-payload, never delete-the-clear.
-"""
+not leave a ghost). The fix is clear-then-restore-from-payload, never delete-the-clear. Paths with no successor (checked 2026-10-04, restructure S12): api/tests/missions.rs: removed in commit 948da1cdf, no successor; crates/map-engine-core/src/doc/store.rs: removed in commit 3f7adae99, no successor; crates/map-engine-core/src/mission/compile.rs: removed in commit ea3672340, no successor."""
 main_goal = "Parked briefing markers survive server JSON save and hydrate."
 context = [
     "wave211 verifier F1 MAJOR confirms T-826 found_not_fixed.",

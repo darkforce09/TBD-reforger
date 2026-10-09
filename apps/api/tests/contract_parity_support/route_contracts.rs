@@ -22,7 +22,7 @@ use crate::contract_support;
 
 /// Where a schema lives inside its `contracts/definitions` file.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SchemaLocation {
+pub(crate) enum SchemaLocation {
     /// The file's root schema.
     Root,
     /// A draft-07 `#/definitions/<name>` entry.
@@ -31,7 +31,7 @@ pub enum SchemaLocation {
 
 /// One schema: a `contracts/definitions` file and the location inside it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SchemaRef {
+pub(crate) struct SchemaRef {
     /// Path relative to `contracts/definitions`.
     pub file: &'static str,
     /// The schema inside that file.
@@ -40,7 +40,7 @@ pub struct SchemaRef {
 
 impl SchemaRef {
     /// The root schema of `file`.
-    pub const fn root(file: &'static str) -> Self {
+    pub(crate) const fn root(file: &'static str) -> Self {
         Self {
             file,
             location: SchemaLocation::Root,
@@ -48,7 +48,7 @@ impl SchemaRef {
     }
 
     /// The draft-07 definition `name` of `file`.
-    pub const fn definition(file: &'static str, name: &'static str) -> Self {
+    pub(crate) const fn definition(file: &'static str, name: &'static str) -> Self {
         Self {
             file,
             location: SchemaLocation::Definition(name),
@@ -56,7 +56,7 @@ impl SchemaRef {
     }
 
     /// The schema's `file#pointer` spelling, for reports.
-    pub fn describe(&self) -> String {
+    pub(crate) fn describe(&self) -> String {
         match self.location {
             SchemaLocation::Root => format!("{}#", self.file),
             SchemaLocation::Definition(name) => format!("{}#/definitions/{name}", self.file),
@@ -64,7 +64,7 @@ impl SchemaRef {
     }
 
     /// A format-checking validator for this schema.
-    pub fn validator(&self) -> Validator {
+    pub(crate) fn validator(&self) -> Validator {
         match self.location {
             SchemaLocation::Root => contract_support::validator(self.file, None),
             SchemaLocation::Definition(name) => contract_support::validator(self.file, Some(name)),
@@ -72,7 +72,7 @@ impl SchemaRef {
     }
 
     /// Every violation of this schema by `value`, each prefixed with `at`.
-    pub fn violations(&self, at: &str, value: &Value) -> Vec<String> {
+    pub(crate) fn violations(&self, at: &str, value: &Value) -> Vec<String> {
         self.validator()
             .iter_errors(value)
             .map(|error| {
@@ -88,7 +88,7 @@ impl SchemaRef {
 
 /// The shape a route's success answer takes.
 #[derive(Clone, Copy, Debug)]
-pub enum ResponseContract {
+pub(crate) enum ResponseContract {
     /// A JSON body validated as a whole.
     Body(SchemaRef),
     /// A top-level JSON array whose every element answers to the schema.
@@ -103,7 +103,7 @@ pub enum ResponseContract {
 
 /// The schema each `data` row of an envelope answers to separately.
 #[derive(Clone, Copy, Debug)]
-pub struct RowContract {
+pub(crate) struct RowContract {
     /// The member of each row that carries the document, or `None` for the whole row.
     pub member: Option<&'static str>,
     /// The row schema.
@@ -112,7 +112,7 @@ pub struct RowContract {
 
 /// One route's success contract.
 #[derive(Clone, Debug)]
-pub struct RouteContract {
+pub(crate) struct RouteContract {
     /// HTTP method, upper case.
     pub method: &'static str,
     /// Path in the `@route` spelling.
@@ -127,13 +127,13 @@ pub struct RouteContract {
 
 impl RouteContract {
     /// This row, applying only when the request carries `name=value`.
-    pub fn when_query(mut self, name: &'static str, value: &'static str) -> Self {
+    pub(crate) fn when_query(mut self, name: &'static str, value: &'static str) -> Self {
         self.query = Some((name, value));
         self
     }
 
     /// This row, with each `data` row (or its `member`) validated against `schema`.
-    pub fn with_rows(mut self, member: Option<&'static str>, schema: SchemaRef) -> Self {
+    pub(crate) fn with_rows(mut self, member: Option<&'static str>, schema: SchemaRef) -> Self {
         self.rows = Some(RowContract { member, schema });
         self
     }
@@ -182,7 +182,7 @@ fn contract(method: &'static str, path: &'static str, response: ResponseContract
 }
 
 /// A route answering the draft-07 definition `name` of `file`.
-pub fn definition(
+pub(crate) fn definition(
     method: &'static str,
     path: &'static str,
     file: &'static str,
@@ -196,12 +196,12 @@ pub fn definition(
 }
 
 /// A route answering the root schema of `file`.
-pub fn root(method: &'static str, path: &'static str, file: &'static str) -> RouteContract {
+pub(crate) fn root(method: &'static str, path: &'static str, file: &'static str) -> RouteContract {
     contract(method, path, ResponseContract::Body(SchemaRef::root(file)))
 }
 
 /// A route answering a top-level array of the definition `name` of `file`.
-pub fn array_of(
+pub(crate) fn array_of(
     method: &'static str,
     path: &'static str,
     file: &'static str,
@@ -215,7 +215,7 @@ pub fn array_of(
 }
 
 /// A route answering an event stream.
-pub fn event_stream(
+pub(crate) fn event_stream(
     method: &'static str,
     path: &'static str,
     first: SchemaRef,
@@ -228,7 +228,7 @@ pub fn event_stream(
 ///
 /// # Errors
 /// Names the request when no row matches, or when two equally specific rows disagree.
-pub fn contract_for(method: &str, path_and_query: &str) -> Result<RouteContract, String> {
+pub(crate) fn contract_for(method: &str, path_and_query: &str) -> Result<RouteContract, String> {
     let (path, query) = path_and_query
         .split_once('?')
         .unwrap_or((path_and_query, ""));
@@ -256,7 +256,7 @@ pub fn contract_for(method: &str, path_and_query: &str) -> Result<RouteContract,
 
 /// One part of a golden and the schema it answers to.
 #[derive(Clone, Debug)]
-pub struct ContractPart {
+pub(crate) struct ContractPart {
     /// Where the part sits in the golden (a JSON pointer, or `frame <n> data`).
     pub at: String,
     /// The schema the part answers to.
@@ -268,7 +268,7 @@ pub struct ContractPart {
 /// A golden split into the parts its contract validates, plus every structural break (a missing
 /// row array, a frame that is not JSON, an event the route never sends).
 #[derive(Debug, Default)]
-pub struct ContractParts {
+pub(crate) struct ContractParts {
     /// The parts, in golden order.
     pub parts: Vec<ContractPart>,
     /// Structural breaks found while splitting.
@@ -285,7 +285,7 @@ impl ContractParts {
     }
 
     /// Every structural break and schema violation, as pointer-named lines.
-    pub fn violations(&self) -> Vec<String> {
+    pub(crate) fn violations(&self) -> Vec<String> {
         let mut violations = self.breaks.clone();
         for part in &self.parts {
             violations.extend(part.schema.violations(&part.at, &part.value));
@@ -295,7 +295,7 @@ impl ContractParts {
 }
 
 /// A JSON golden split into the parts `contract` validates.
-pub fn json_parts(contract: &RouteContract, body: &Value) -> ContractParts {
+pub(crate) fn json_parts(contract: &RouteContract, body: &Value) -> ContractParts {
     let mut split = ContractParts::default();
     match contract.response {
         ResponseContract::Body(schema) => split.part(String::new(), schema, body),
@@ -344,7 +344,7 @@ fn split_rows(rows: RowContract, body: &Value, split: &mut ContractParts) {
 }
 
 /// An event-stream golden split into its frames' data, each with the schema its event names.
-pub fn stream_parts(contract: &RouteContract, golden: &[u8]) -> ContractParts {
+pub(crate) fn stream_parts(contract: &RouteContract, golden: &[u8]) -> ContractParts {
     let mut split = ContractParts::default();
     let ResponseContract::EventStream { first, later } = contract.response else {
         split

@@ -26,8 +26,12 @@ struct Fixture {
 
 async fn fixture(role: &str) -> Fixture {
     let url = common::require_test_database_url().expect("scratch database required");
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state = api::composition::application_state(
         pool,
         Config::for_tests(url, "membership-grace-transactions"),
@@ -51,7 +55,7 @@ async fn request(f: &Fixture, method: &str, uri: &str, body: &str) -> (StatusCod
                 .header(header::AUTHORIZATION, format!("Bearer {}", f.token))
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(Body::from(body.to_owned()))
-                .unwrap(),
+                .expect("the request builds"),
         )
         .await
         .unwrap();
@@ -59,11 +63,13 @@ async fn request(f: &Fixture, method: &str, uri: &str, body: &str) -> (StatusCod
     assert!(
         response.headers()[header::CONTENT_TYPE]
             .to_str()
-            .unwrap()
+            .expect("the Content-Type header is ASCII")
             .starts_with("application/json"),
         "{method} {uri} must return the JSON API contract even on rejection"
     );
-    let bytes = to_bytes(response.into_body(), 1024 * 1024).await.unwrap();
+    let bytes = to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .expect("the response body reads to the end");
     let value = serde_json::from_slice(&bytes)
         .unwrap_or_else(|error| panic!("{status}: invalid JSON response: {error}; {bytes:?}"));
     (status, value)
@@ -83,7 +89,7 @@ async fn database_now(f: &Fixture) -> DateTime<Utc> {
     sqlx::query_scalar("SELECT clock_timestamp()")
         .fetch_one(&f.state.pool)
         .await
-        .unwrap()
+        .expect("the call of clock_timestamp() returns a row")
 }
 
 async fn evidence_counts(f: &Fixture, target: &str) -> (i64, i64, i64) {
@@ -97,12 +103,12 @@ async fn evidence_counts(f: &Fixture, target: &str) -> (i64, i64, i64) {
     .bind(target)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap()
+    .expect("the read of discord_membership_grace_overrides returns a row")
 }
 
 fn response_expiry(value: &Value) -> DateTime<Utc> {
     DateTime::parse_from_rfc3339(value["expires_at"].as_str().expect("response expiry"))
-        .unwrap()
+        .expect("the timestamp is RFC 3339")
         .with_timezone(&Utc)
 }
 

@@ -3,46 +3,32 @@
 //! **Role:** finds the repository root and reads the repository files a test needs from outside
 //! its own crate (the captured API responses, the contract schemas, the terrain manifests, the
 //! API route tables), so a test reads the same file at whatever depth its crate sits.
-//! **Position:** test-only support. `golden!`, the fixture helpers and the guard tests call it with
-//! `env!("CARGO_MANIFEST_DIR")` expanded in their own crate, because `env!` expands in the crate
-//! that spells it.
+//! **Position:** test-only support over the workspace's one root finder
+//! ([`::repository_root::find_repository_root_from`]). `golden!`, the fixture helpers and the guard
+//! tests call it with `env!("CARGO_MANIFEST_DIR")` expanded in their own crate, because `env!`
+//! expands in the crate that spells it.
 //! **Signals & state:** one process-wide cache of file texts; each file is read once and its text
 //! lives for the rest of the test process, which is what lets a reader hand out `&'static str`.
-//! **Invariants:** the root is the nearest ancestor of the manifest folder that holds both a
-//! `Cargo.lock` and a `Cargo.toml` declaring `[workspace]`; a missing root or an unreadable file
-//! panics with the path it looked for, so a moved file fails its test instead of passing on empty
-//! text.
+//! **Invariants:** the root is the nearest ancestor of the manifest folder that holds the
+//! [`::repository_root::ROOT_MARKER`] file; a missing root or an unreadable file panics with the
+//! path it looked for, so a moved file fails its test instead of passing on empty text.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock, PoisonError};
 
-/// The repository root: the nearest folder at or above `manifest_dir` that holds the root
-/// `Cargo.lock` and a `Cargo.toml` with a `[workspace]` table.
+/// The repository root: the nearest folder at or above `manifest_dir` that holds the
+/// [`::repository_root::ROOT_MARKER`] file.
 ///
 /// `manifest_dir` is the caller's `env!("CARGO_MANIFEST_DIR")`.
 ///
 /// # Panics
 ///
-/// When no ancestor of `manifest_dir` qualifies.
+/// When no ancestor of `manifest_dir` holds the marker; the message names the folder searched
+/// from and the marker.
 pub fn repository_root(manifest_dir: &str) -> PathBuf {
-    Path::new(manifest_dir)
-        .ancestors()
-        .find(|folder| is_repository_root(folder))
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| {
-            panic!(
-                "no repository root at or above {manifest_dir}: expected a folder holding \
-                 Cargo.lock and a Cargo.toml with a [workspace] table"
-            )
-        })
-}
-
-/// Whether `folder` holds the workspace's lock file and its root manifest.
-fn is_repository_root(folder: &Path) -> bool {
-    folder.join("Cargo.lock").is_file()
-        && std::fs::read_to_string(folder.join("Cargo.toml"))
-            .is_ok_and(|manifest| manifest.lines().any(|line| line.trim() == "[workspace]"))
+    ::repository_root::find_repository_root_from(Path::new(manifest_dir))
+        .unwrap_or_else(|error| panic!("no repository root at or above {manifest_dir}: {error}"))
 }
 
 /// The absolute path of `repository_path`, a `/`-separated path relative to the repository root

@@ -10,9 +10,9 @@
 //!
 //! **Position:** tier 2 of `tools/checks`, over `verification_core` (verdicts, scans, patterns),
 //! `process_runner` (the `cargo xtask mcp`, `ss`, `pkill` and `steam` children), `content_digest`
-//! (the run digests) and `repository_layout` (the checkout root and the shared paths). The xtask
-//! binary's `cargo xtask verify` and `cargo xtask mod` verbs and its `ci` task table call these
-//! checks.
+//! (the run digests), `repository_root` (the checkout root) and `repository_layout` (the shared
+//! paths). The xtask binary's `cargo xtask verify` and `cargo xtask mod` verbs and its `ci` task
+//! table call these checks.
 //!
 //! **Signals & state:** none; every check reads the checkout and writes its report to stdout. The
 //! spawn runs drive a running Workbench and read its console log.

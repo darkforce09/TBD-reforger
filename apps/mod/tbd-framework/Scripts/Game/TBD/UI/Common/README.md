@@ -112,5 +112,5 @@ which screen a tab opens is `TBD_DockScreen`'s decision.
 
 ## Related documentation
 
-- [Mod UI documentation](/documentation/mod/tbd-framework/UI/README.md) — where each screen's
+- [Mod UI documentation](/documentation/apps/mod/tbd-framework/UI/README.md) — where each screen's
   scripts and layouts go, and the dock shell the bars belong to

@@ -128,5 +128,5 @@ fn every_apply_draws_a_seed_the_previous_apply_did_not() {
     let first = next_apply_seed();
     let second = next_apply_seed();
     assert_ne!(first, second);
-    assert_eq!(second, first.wrapping_add(APPLY_SEED_GAMMA));
+    assert_eq!(second, first.wrapping_add(SplitMix64::INCREMENT));
 }

@@ -23,7 +23,7 @@ use super::mathematical_verification::{SchemaSet, gunzip_json};
 use crate::forest_contours as forest;
 use crate::polygon_geometry::cell_of;
 use crate::vegetation_density as density;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 /* ─────────────────────────── verify-spike-k1 ─────────────────────────── */
 

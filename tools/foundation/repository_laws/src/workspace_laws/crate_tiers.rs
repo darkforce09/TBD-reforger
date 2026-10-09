@@ -1,29 +1,29 @@
 //! The crate-tier law: membership, layout declarations, the tier order and the category matrix.
 //!
-//! **Role:** judges rules 1–8 of the crate-tier law over a checkout: every manifest under the
-//! sweep roots is a workspace member (1); each judged member declares its layout (2) and sits at
-//! its category plus its name (3); tiers are recomputed from dependencies and edges point strictly
-//! down (4); the category edge matrix and the wasm-only edge rule hold (5); the firewalls hold (6,
-//! `super::crate_firewalls`); nothing new depends on a member under `legacy/` (7,
-//! [`super::strangler`]); and dev-dependencies never point at `apps/` or `legacy/` (8).
+//! **Role:** judges rules 1–7 of the crate-tier law over a checkout: every manifest under the
+//! sweep roots is a workspace member (1); each judged member declares its layout, and every member
+//! outside the judged set is an app or a tool binary (2); each judged member sits at its category
+//! plus its name (3); tiers are recomputed from dependencies and edges point strictly down (4);
+//! the category edge matrix and the wasm-only edge rule hold (5); the firewalls hold (6,
+//! `super::crate_firewalls`); and dev-dependencies never point at `apps/` (7).
 //! **Position:** `cargo xtask verify crate-tiers` prints [`check_crate_tiers`]; xtask passes the
 //! sweep roots. Reads [`crate::workspace_members`].
 //! **Signals & state:** none; reads the checkout.
 //! **Invariants:** a member's tier is 0 with no judged workspace dependency and otherwise 1 plus
 //! the highest tier among them, over normal and build edges in every target table; the declared
 //! tier must equal it. A sweep root that does not exist holds no manifest and is named in a note.
-//! Members outside the judged set are listed in a note while
-//! [`super::crate_layout::UNJUDGED_MEMBERS_FAIL`] is false.
+//! The apps and the tool binaries ([`super::crate_layout::is_app_or_tool_binary`]) are listed in a
+//! note; any other member outside the judged set is a rule 2 finding.
 
 use std::collections::HashMap;
 use std::path::Path;
 
 use super::crate_layout::{
-    APPS_ROOT, EdgeEnd, LEGACY_ROOT, TargetPlatforms, UNJUDGED_MEMBERS_FAIL, category_class,
-    category_edge_allowed, declared_targets, effective_category, is_judged, is_under,
+    APPS_ROOT, EdgeEnd, TOOL_BINARY_PATHS, TargetPlatforms, category_class, category_edge_allowed,
+    declared_targets, effective_category, is_app_or_tool_binary, is_judged, is_under,
     is_wasm32_only_cfg,
 };
-use super::{LawOutcome, WorkspaceLawReport, crate_firewalls, strangler};
+use super::{LawOutcome, WorkspaceLawReport, crate_firewalls};
 use crate::workspace_members::{WorkspaceMember, child_folder_names, read_workspace_members};
 use verification_core::verdict::NotRun;
 
@@ -78,27 +78,26 @@ pub fn crate_tier_outcome(
     outcome.findings.extend(crate_firewalls::firewall_findings(
         repo_root, &members, &judged,
     )?);
-    outcome.findings.extend(
-        strangler::legacy_dependency_findings(&members)
-            .into_iter()
-            .map(|f| format!("rule 7: {f}")),
-    );
-    let unjudged: Vec<&str> = members
+    let (allowed, unjudged): (Vec<&str>, Vec<&str>) = members
         .iter()
         .filter(|member| !is_judged(member))
         .map(|member| member.path.as_str())
-        .collect();
-    if !unjudged.is_empty() {
-        let line = format!(
-            "{} member(s) outside the judged set: {}",
-            unjudged.len(),
-            unjudged.join(", ")
-        );
-        if UNJUDGED_MEMBERS_FAIL {
-            outcome.findings.push(format!("rule 2: {line}"));
-        } else {
-            outcome.notes.push(line);
-        }
+        .partition(|path| is_app_or_tool_binary(path));
+    if !allowed.is_empty() {
+        outcome.notes.push(format!(
+            "{} member(s) outside the judged set, each an app or a tool binary: {}",
+            allowed.len(),
+            allowed.join(", ")
+        ));
+    }
+    for path in unjudged {
+        outcome.findings.push(format!(
+            "rule 2: {path} is a member outside the judged set — move it to \
+             crates/<category>/<name> or tools/<category>/<name> with a \
+             [package.metadata.layout] table; only the apps under {APPS_ROOT}/ and the tool \
+             binaries ({}) stay outside",
+            TOOL_BINARY_PATHS.join(", ")
+        ));
     }
     Ok(outcome)
 }
@@ -203,7 +202,7 @@ fn declaration_findings(member: &WorkspaceMember) -> Vec<String> {
     findings
 }
 
-/// Rules 4, 5 and 8 over every dependency edge of the judged members.
+/// Rules 4, 5 and 7 over every dependency edge of the judged members.
 fn edge_findings(members: &[WorkspaceMember], judged: &[&WorkspaceMember]) -> Vec<String> {
     let by_package: HashMap<&str, &WorkspaceMember> = members
         .iter()
@@ -240,16 +239,13 @@ fn edge_findings(members: &[WorkspaceMember], judged: &[&WorkspaceMember]) -> Ve
             }
             let at = format!("{}/Cargo.toml:{}", member.path, edge.line_no);
             if edge.is_dev_dependency() {
-                if is_under(&target.path, APPS_ROOT) || is_under(&target.path, LEGACY_ROOT) {
+                if is_under(&target.path, APPS_ROOT) {
                     findings.push(format!(
-                        "rule 8: {at}: dev-dependency on {} — dev-dependencies never point at \
-                         apps/ or legacy/",
+                        "rule 7: {at}: dev-dependency on {} — dev-dependencies never point at \
+                         apps/",
                         target.path
                     ));
                 }
-                continue;
-            }
-            if is_under(&target.path, LEGACY_ROOT) {
                 continue;
             }
             let target_tier = target

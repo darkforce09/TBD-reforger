@@ -3,26 +3,26 @@ use crate::architectural_analysis::vertical_slabs;
 use crate::voxel_processing::synthetic_fixtures;
 
 fn vertical(d: &VoxelDump) -> VerticalScan {
-    let m = d.meta();
-    let p = Params {
+    let m = d.metadata();
+    let p = AnalysisParameters {
         min_floor_y: -0.5 - m.origin[1],
         ..Default::default()
     };
     vertical_slabs::analyze(&d.y_down, m.dims, m.cell, m.span[1], &p)
 }
 
-fn band(d: &VoxelDump, v: &VerticalScan, algo: Algo) -> BandWalls {
-    let p = Params::default();
+fn band(d: &VoxelDump, v: &VerticalScan, algo: WallAlgorithm) -> BandWalls {
+    let p = AnalysisParameters::default();
     let lo = v.floors[0];
     let hi = v.eave.max(lo + p.top_band_min_m);
-    extract_band(d, v, lo, hi, algo, &p, None)
+    extract_band_walls(d, v, lo, hi, algo, &p, None)
 }
 
 #[test]
 fn box_room_yields_four_walls_both_algos() {
     let d = synthetic_fixtures::box_room(6.0, 4.0, 2.6, 0.15);
     let v = vertical(&d);
-    for algo in [Algo::Segments, Algo::Grid] {
+    for algo in [WallAlgorithm::Segments, WallAlgorithm::Grid] {
         let bw = band(&d, &v, algo);
         assert_eq!(bw.walls.len(), 4, "{algo:?}: {:?}", bw.walls);
         assert!(bw.masses.is_empty(), "{algo:?} masses: {:?}", bw.masses);
@@ -39,7 +39,7 @@ fn box_room_yields_four_walls_both_algos() {
 fn segments_box_walls_are_centerline_accurate() {
     let d = synthetic_fixtures::box_room(6.0, 4.0, 2.6, 0.15);
     let v = vertical(&d);
-    let bw = band(&d, &v, Algo::Segments);
+    let bw = band(&d, &v, WallAlgorithm::Segments);
     // West wall local x in [0, 0.15] → normalized center 0.6 + 0.075.
     let west = bw
         .walls
@@ -59,7 +59,7 @@ fn segments_box_walls_are_centerline_accurate() {
 fn doorway_splits_wall_and_does_not_bridge() {
     let d = synthetic_fixtures::box_with_door(6.0, 4.0, 2.6, 0.15, 2.4, 0.9);
     let v = vertical(&d);
-    let bw = band(&d, &v, Algo::Segments);
+    let bw = band(&d, &v, WallAlgorithm::Segments);
     // The south wall (z-const at z≈0.675) must appear as exactly 2 runs with a ~0.9 m gap.
     let south: Vec<_> = bw
         .walls
@@ -80,9 +80,9 @@ fn doorway_splits_wall_and_does_not_bridge() {
 fn gable_second_band_emits_gable_ends_and_zero_roof_phantoms() {
     let d = synthetic_fixtures::gable_box(6.0, 4.0, 2.6, 4.2, 0.15);
     let v = vertical(&d);
-    let p = Params::default();
+    let p = AnalysisParameters::default();
     // Second band: eave slab does not exist — synthesize the attic band [eave, ridge].
-    let bw = extract_band(&d, &v, v.eave, v.ridge, Algo::Segments, &p, None);
+    let bw = extract_band_walls(&d, &v, v.eave, v.ridge, WallAlgorithm::Segments, &p, None);
     let z_running: Vec<_> = bw
         .walls
         .iter()
@@ -109,14 +109,15 @@ fn steep_graze_grid_phantoms_segments_clean() {
     // assertion isolates the phantom region while both algos keep the real geometry.
     let d = synthetic_fixtures::steep_graze();
     let v = vertical(&d);
-    let p = Params::default();
+    let p = AnalysisParameters::default();
     assert_eq!(v.floors.len(), 2, "two-story synth: {:?}", v.floors);
     let lo = v.floors[1];
     let hi = v.eave.max(lo + p.top_band_min_m);
-    let in_phantom_zone =
-        |w: &WallSeg| (w.start[0] - w.end[0]).abs() < 1e-9 && w.start[0] > 2.5 && w.start[0] < 3.7;
-    let grid = extract_band(&d, &v, lo, hi, Algo::Grid, &p, None);
-    let seg = extract_band(&d, &v, lo, hi, Algo::Segments, &p, None);
+    let in_phantom_zone = |w: &WallSegment| {
+        (w.start[0] - w.end[0]).abs() < 1e-9 && w.start[0] > 2.5 && w.start[0] < 3.7
+    };
+    let grid = extract_band_walls(&d, &v, lo, hi, WallAlgorithm::Grid, &p, None);
+    let seg = extract_band_walls(&d, &v, lo, hi, WallAlgorithm::Segments, &p, None);
     assert!(
         grid.walls.iter().any(in_phantom_zone),
         "the graze must fool the live AND (else this regression tests nothing): {:?}",
@@ -134,7 +135,7 @@ fn steep_graze_grid_phantoms_segments_clean() {
 /// `min_persist_rows` (3) floors the requirement.
 #[test]
 fn sparse_noise_fails_min_persist_rows_floor() {
-    let p = Params::default();
+    let p = AnalysisParameters::default();
     let avail = |_c: f64, _k: usize| 3usize; // heavily roof-clipped column
     let mk = |rows: &[usize]| -> Vec<Obs> {
         rows.iter()

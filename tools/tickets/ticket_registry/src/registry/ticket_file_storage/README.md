@@ -36,7 +36,7 @@ into `ALLOWED_NEW`, `TicketFile` and `.ai/tickets/schema.json` in one commit.
 
 ## Boundaries
 
-- Depends on: `repository_layout` (`TICKETS_DIR`, `ROOT_MARKER`); `ticket_model` (`TicketId` and
+- Depends on: `repository_layout` (`TICKETS_DIR`), `repository_root` (`ROOT_MARKER`); `ticket_model` (`TicketId` and
   `store::ticket_id_order_key`); the `toml` and `serde_json` crates.
 - Used by: `crate::registry` (`load_registry` and `save_registry` for untyped trees,
   `typed_projection`, `ticket_titles`, `ticket_status_history`); and the tests of

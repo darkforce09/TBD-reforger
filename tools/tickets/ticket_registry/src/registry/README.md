@@ -57,7 +57,7 @@ and `read_ticket_title` from one file. At revisions older than one file per tick
 
 - Depends on: `ticket_model` (the model, `parse_ticket_toml`, `store::ticket_id_order_key` and
   `repository::handoff_doc`); `ticket_wave_lock::load_views` for `ShippingStatus::load_repo`;
-  `repository_layout` (`TICKETS_DIR`, `ROOT_MARKER`); `process_runner` to run `git` for the
+  `repository_layout` (`TICKETS_DIR`), `repository_root` (`ROOT_MARKER`); `process_runner` to run `git` for the
   past-revision reads.
 - Used by: in this crate, `verbs`, `sync` and `validation`, which read the projection; outside
   it, the xtask callers listed under Public surface.

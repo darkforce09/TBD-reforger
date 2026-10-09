@@ -19,6 +19,8 @@ tier = 6
 targets = "wasm32"
 
 [dependencies]
+# The wall clock of the ingest frame stamps.
+time_source = { workspace = true }
 # The asset sink, the boot progress, the world-layer switches and the memory budget model.
 map_streaming_model = { workspace = true }
 # The chunk residency and the draw buffers the world and occluder loaders feed.

@@ -99,9 +99,9 @@ the terrain instead of a black screen, and steps aside for a body or the spectat
 
 ## Related documentation
 
-- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) — the screen as built, its
+- [Lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md) — the screen as built, its
   data, design target, open work and decisions
-- [Lobby design references](/documentation/mod/tbd-framework/UI/lobby/visual_references/README.md)
+- [Lobby design references](/documentation/apps/mod/tbd-framework/UI/lobby/visual_references/README.md)
   — the Stitch mockup sets and the Arma 3 captures the screen started from
 - [Spawning](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — the slot map,
   one-life bookkeeping and deployment the lobby wire calls into

@@ -5,7 +5,7 @@
 //! `contracts/catalogs/ballistics/` and its calibration bundle, refused bundles and provenance
 //! to `contracts/fixtures/ballistics/`.
 //!
-//! **Position:** tier 1 of `tools/commands`; the xtask binary parses [`BallisticsCmd`] and calls
+//! **Position:** tier 2 of `tools/commands`; the xtask binary parses [`BallisticsCmd`] and calls
 //! [`run`]. Reads the gitignored gameplay export and oracle output under `assets/`; its documents
 //! are checked by `cargo xtask schema validate` and consumed by `ballistics_calibration` and the
 //! API's catalog upload.

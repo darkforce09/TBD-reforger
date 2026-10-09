@@ -39,6 +39,8 @@ world_file_formats = { workspace = true }
 world_export_pipeline = { workspace = true }
 # The contract and terrain locations.
 repository_layout = { workspace = true }
+# The seeded segment stream of the line-of-sight bench.
+deterministic_random = { workspace = true }
 flate2 = { workspace = true }
 jsonschema = { workspace = true }
 png = { workspace = true }
@@ -56,6 +58,7 @@ thiserror = { workspace = true }
 blueprint_compiler = { workspace = true, features = ["test_fixtures"] }
 building_interiors = { workspace = true }
 geometry_primitives = { workspace = true }
+repository_root = { workspace = true }
 
 [lints]
 workspace = true

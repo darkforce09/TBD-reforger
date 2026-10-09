@@ -30,6 +30,7 @@ png = { workspace = true }
 prefab_catalog = { workspace = true }
 process_runner = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 road_network = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 # Every f64 parses back to the same bits (`float_roundtrip`) and objects keep their key order
@@ -45,6 +46,8 @@ world_file_formats = { workspace = true }
 world_store = { workspace = true }
 
 [dev-dependencies]
+# The seeded stream of the randomized corner-partition sweep.
+deterministic_random = { workspace = true }
 # The process-variable lock the export driver's argument tests hold while they set `TERRAIN`.
 tool_test_support = { workspace = true }
 

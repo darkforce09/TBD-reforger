@@ -16,7 +16,7 @@ crates/mission_editing/mission_editing_session/src/
 ├── prelude.rs             the names most readers import
 ├── routing.rs             `route_target`: the surface that owns a subject, and whether a click reaches it
 ├── selection_universe.rs  selectable ids, the crew hide, the map-render slots, the paste anchor
-└── tests/                 unit tests for the picks, the marquees and the document's tie policy
+└── tests/                 tests of the picks, the marquees, the tie policy and the adapter's calls
 ```
 
 ## How it works

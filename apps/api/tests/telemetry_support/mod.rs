@@ -37,11 +37,11 @@ use tower::ServiceExt;
 
 use crate::common;
 
-pub mod match_reports;
-pub mod report_fixtures;
+pub(crate) mod match_reports;
+pub(crate) mod report_fixtures;
 
 /// Router + pool over this binary's private database, or `None` when the suite must skip.
-pub async fn boot() -> Option<(Router, PgPool)> {
+pub(crate) async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");
@@ -53,14 +53,14 @@ pub async fn boot() -> Option<(Router, PgPool)> {
 }
 
 /// An admin bearer for the status / leaderboard / stats read-backs.
-pub async fn admin_token(app: &Router) -> String {
+pub(crate) async fn admin_token(app: &Router) -> String {
     common::dev_login_token(app, "telemetry", "admin").await
 }
 
 /// One request against the router with an optional bearer: a user token for read-backs, a
 /// machine credential for game-server traffic, or none to assert the 401. `header` adds one
 /// extra request header (a retired header a suite asserts grants nothing, for example).
-pub async fn call(
+pub(crate) async fn call(
     app: &Router,
     method: &str,
     uri: &str,
@@ -80,10 +80,12 @@ pub async fn call(
     }
     let req = b
         .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),
@@ -91,14 +93,18 @@ pub async fn call(
 }
 
 /// A started runtime session of one registered server and the credential that started it.
-pub struct RuntimeSession {
+pub(crate) struct RuntimeSession {
     pub secret: String,
     pub id: uuid::Uuid,
     pub generation: i64,
 }
 
 /// Issue a `mod_runtime` credential for `server` and start its next runtime session.
-pub async fn runtime_session(app: &Router, pool: &PgPool, server: uuid::Uuid) -> RuntimeSession {
+pub(crate) async fn runtime_session(
+    app: &Router,
+    pool: &PgPool,
+    server: uuid::Uuid,
+) -> RuntimeSession {
     let credential = uuid::Uuid::new_v4();
     let secret = format!(
         "tbdm_{}_{}",
@@ -133,16 +139,18 @@ pub async fn runtime_session(app: &Router, pool: &PgPool, server: uuid::Uuid) ->
     RuntimeSession {
         id: started["runtime_session_id"]
             .as_str()
-            .unwrap()
+            .expect("the `runtime_session_id` field is a string")
             .parse()
-            .unwrap(),
-        generation: started["generation"].as_i64().unwrap(),
+            .expect("the `runtime_session_id` field parses as an id"),
+        generation: started["generation"]
+            .as_i64()
+            .expect("the `generation` field is an integer"),
         secret,
     }
 }
 
 /// One heartbeat of `session` with `sequence`; `reading` holds the status fields.
-pub async fn heartbeat(
+pub(crate) async fn heartbeat(
     app: &Router,
     session: &RuntimeSession,
     sequence: i64,
@@ -164,7 +172,7 @@ pub async fn heartbeat(
 }
 
 /// Remove a server and everything its runtime left behind.
-pub async fn remove_server(pool: &PgPool, server: uuid::Uuid) {
+pub(crate) async fn remove_server(pool: &PgPool, server: uuid::Uuid) {
     for statement in [
         "DELETE FROM server_status_histories WHERE server_id = $1",
         "DELETE FROM server_statuses WHERE server_id = $1",

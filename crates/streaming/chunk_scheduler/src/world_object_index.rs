@@ -29,7 +29,7 @@ struct StoredEntry {
 /// Chunk-granular, class-filterable point index over world instances.
 #[derive(Default)]
 pub struct WorldSpatialIndex {
-    by_chunk: HashMap<String, Vec<StoredEntry>>,
+    by_chunk: HashMap<ChunkId, Vec<StoredEntry>>,
     dirty: bool,
     grid: Option<PointIndex>,
 
@@ -70,13 +70,13 @@ impl WorldSpatialIndex {
                 id: format!("{chunk_id}:{i}"),
             });
         }
-        self.by_chunk.insert(chunk_id.to_string(), entries);
+        self.by_chunk.insert(chunk_id.clone(), entries);
         self.dirty = true;
     }
 
     /// Remove a chunk's instances (LRU eviction / unload). Unknown chunk = no-op.
     pub fn remove_chunk(&mut self, chunk_id: &ChunkId) {
-        if self.by_chunk.remove(chunk_id.as_str()).is_some() {
+        if self.by_chunk.remove(chunk_id).is_some() {
             self.dirty = true;
         }
     }
@@ -102,7 +102,7 @@ impl WorldSpatialIndex {
         if !self.dirty && self.grid.is_some() {
             return;
         }
-        let mut ids: Vec<&String> = self.by_chunk.keys().collect();
+        let mut ids: Vec<&ChunkId> = self.by_chunk.keys().collect();
         ids.sort();
         self.flat_x.clear();
         self.flat_y.clear();

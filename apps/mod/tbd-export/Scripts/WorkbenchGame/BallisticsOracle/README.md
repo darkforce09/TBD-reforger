@@ -115,7 +115,7 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
+- [Ballistics oracle](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
   — what the oracle measures, why, and how its outputs become calibration fixtures.
 - [Ballistics oracle game scripts](/apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/README.md)
   — the play-mode simulation run, the shared classes and the simulation output.

@@ -22,6 +22,9 @@ futures-util = { workspace = true }
 libc = { workspace = true }
 newtype_ids = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset"] }
+# The ring crypto provider installed before every client, so a build that unifies `reqwest`
+# with a TLS backend still builds clients.
+rustls = { workspace = true, features = ["ring", "std"] }
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["fs", "io-util", "net", "process", "rt", "sync", "time"] }

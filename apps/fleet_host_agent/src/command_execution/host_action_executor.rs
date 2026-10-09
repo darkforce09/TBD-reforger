@@ -44,6 +44,8 @@ pub struct HostActionExecutor {
 }
 
 impl HostActionExecutor {
+    /// An executor that performs process actions through `process_control`, RCON reads and
+    /// console lines through `rcon`, and mission switches on `server_config`.
     pub fn new(
         process_control: ProcessControl,
         rcon: RconClient,

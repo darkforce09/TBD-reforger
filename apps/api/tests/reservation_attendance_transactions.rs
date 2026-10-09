@@ -33,8 +33,12 @@ struct Fixture {
 }
 async fn fixture() -> Fixture {
     let url = common::require_test_database_url().expect("scratch PostgreSQL required");
-    let pool = api_database::connect(&url).await.unwrap();
-    api_database::migrate(&pool).await.unwrap();
+    let pool = api_database::connect(&url)
+        .await
+        .expect("the test database accepts a connection");
+    api_database::migrate(&pool)
+        .await
+        .expect("the migrations apply to the test database");
     let state =
         api::composition::application_state(pool, Config::for_tests(url, "reservation-attendance"));
     let actor = format!("attendance-{}", Uuid::new_v4());
@@ -50,7 +54,7 @@ async fn fixture() -> Fixture {
         .bind(&actor)
         .fetch_one(&state.pool)
         .await
-        .unwrap();
+        .expect("the read of users returns a row");
     let mission: Uuid = sqlx::query_scalar(
         "INSERT INTO missions(title, author_id, terrain, game_mode, max_players, status)
         VALUES ('Attendance mission', $1, 'everon', 'pve_coop', 2, 'live') RETURNING id",
@@ -58,7 +62,7 @@ async fn fixture() -> Fixture {
     .bind(&actor)
     .fetch_one(&state.pool)
     .await
-    .unwrap();
+    .expect("the insert into missions returns its row");
     let event: Uuid = sqlx::query_scalar(
         "INSERT INTO events(name_override, start_time, status, created_by, max_slots)
         VALUES ('Attendance event', now() + interval '1 hour', 'open', $1, 1) RETURNING id",
@@ -66,7 +70,7 @@ async fn fixture() -> Fixture {
     .bind(&actor)
     .fetch_one(&state.pool)
     .await
-    .unwrap();
+    .expect("the insert into events returns its row");
     let attachment: Uuid = sqlx::query_scalar(
         "INSERT INTO event_missions(event_id, mission_id, start_time)
         VALUES ($1, $2, now() + interval '1 hour') RETURNING id",
@@ -75,7 +79,7 @@ async fn fixture() -> Fixture {
     .bind(mission)
     .fetch_one(&state.pool)
     .await
-    .unwrap();
+    .expect("the insert into event_missions returns its row");
     let slot: Uuid = sqlx::query_scalar(
         "INSERT INTO orbat_slots(event_mission_id, faction, squad, role, slot_index, assigned_to)
         VALUES ($1, 'USA', 'Alpha', 'Rifleman', 0, $2) RETURNING id",
@@ -84,8 +88,8 @@ async fn fixture() -> Fixture {
     .bind(&actor)
     .fetch_one(&state.pool)
     .await
-    .unwrap();
-    let mut fixture = state.pool.begin().await.unwrap();
+    .expect("the insert into orbat_slots returns its row");
+    let mut fixture = state.pool.begin().await.expect("a transaction begins");
     let allocation = common::participant_allocation(&mut fixture, attachment, &actor).await;
     let registration: Uuid = sqlx::query_scalar(
         "INSERT INTO event_registrations(event_mission_id, discord_id, slot_id, allocation_id)
@@ -97,8 +101,8 @@ async fn fixture() -> Fixture {
     .bind(allocation)
     .fetch_one(&mut *fixture)
     .await
-    .unwrap();
-    fixture.commit().await.unwrap();
+    .expect("the insert into event_registrations returns its row");
+    fixture.commit().await.expect("the transaction commits");
     let app = router(state.clone());
     let reporter = ReportingServer::open(&app, &state.pool, "Reservation attendance server").await;
     Fixture {
@@ -146,7 +150,7 @@ async fn snapshot(f: &Fixture) -> (String, Option<String>, Option<Uuid>, i64) {
     .bind(f.registration)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap()
+    .expect("the read of event_registration_participation returns a row")
 }
 async fn moved_event(f: &Fixture) -> Uuid {
     sqlx::query_scalar(
@@ -156,7 +160,7 @@ async fn moved_event(f: &Fixture) -> Uuid {
     .bind(&f.actor)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap()
+    .expect("the insert into events returns its row")
 }
 #[tokio::test]
 async fn withdrawal_finalization_correction_and_relink_preserve_reservation_history() {
@@ -415,22 +419,30 @@ fn assert_response_contract(value: &Value) {
     let schema: Value = serde_json::from_str(include_str!(
         "../../../contracts/definitions/reservation-response.schema.json"
     ))
-    .unwrap();
+    .expect("the text decodes as JSON");
     let validator = jsonschema::options()
         .should_validate_formats(true)
         .build(&schema)
-        .unwrap();
+        .expect("the contract schema compiles into a validator");
     assert!(validator.is_valid(value));
     let generated: contract_schema_types::operations::reservation_response::ReservationResponse =
-        serde_json::from_value(value.clone()).unwrap();
-    assert_eq!(serde_json::to_value(generated).unwrap(), *value);
+        serde_json::from_value(value.clone())
+            .expect("the JSON value decodes into the expected type");
+    assert_eq!(
+        serde_json::to_value(generated).expect("the value serialises to JSON"),
+        *value
+    );
     let backend: api_operations::models::reservation_response::ReservationResponse =
-        serde_json::from_value(value.clone()).unwrap();
-    assert_eq!(serde_json::to_value(backend).unwrap(), *value);
+        serde_json::from_value(value.clone())
+            .expect("the JSON value decodes into the expected type");
+    assert_eq!(
+        serde_json::to_value(backend).expect("the value serialises to JSON"),
+        *value
+    );
     let golden: Value = serde_json::from_str(include_str!(
         "../../../contracts/fixtures/api_goldens/POST__event-missions__register.json"
     ))
-    .unwrap();
+    .expect("the text decodes as JSON");
     let mut normalized = value.clone();
     normalized["slot_id"] = golden["slot_id"].clone();
     assert_eq!(
@@ -439,7 +451,10 @@ fn assert_response_contract(value: &Value) {
     );
     for key in ["state", "reservation_state", "attendance_state", "slot_id"] {
         let mut missing = value.clone();
-        missing.as_object_mut().unwrap().remove(key);
+        missing
+            .as_object_mut()
+            .expect("the response contract document is a JSON object")
+            .remove(key);
         assert!(!validator.is_valid(&missing), "missing {key}");
     }
     for invalid in [

@@ -51,9 +51,9 @@ fn wiki_body(title: &str, base_revision: Option<i64>) -> Value {
 fn stored_name(answer: &Value) -> String {
     answer["url"]
         .as_str()
-        .unwrap()
+        .expect("the `url` field is a string")
         .strip_prefix("/uploads/")
-        .unwrap()
+        .expect("the stored upload URL starts with /uploads/")
         .to_owned()
 }
 
@@ -317,7 +317,7 @@ async fn assert_nothing_written(suite: &ContentSuite, slug: &str) {
             .bind(&suite.admin.id)
             .fetch_one(suite.pool())
             .await
-            .unwrap();
+            .expect("the read of announcements returns a row");
     assert_eq!(announcements, 0);
     assert_eq!(suite.content_audits_by(&suite.admin).await, 0);
 }
@@ -387,7 +387,13 @@ async fn tied_announcements(suite: &ContentSuite) -> Vec<String> {
             )
             .await;
         assert_eq!(status, StatusCode::CREATED, "{row}");
-        ids.push(row["id"].as_str().unwrap().parse::<Uuid>().unwrap());
+        ids.push(
+            row["id"]
+                .as_str()
+                .expect("the `id` field is a string")
+                .parse::<Uuid>()
+                .expect("the `id` field is a UUID"),
+        );
     }
     sqlx::query(
         "UPDATE announcements SET published_at = '2999-01-01T00:00:00Z', \
@@ -396,7 +402,7 @@ async fn tied_announcements(suite: &ContentSuite) -> Vec<String> {
     .bind(ids.as_slice())
     .execute(suite.pool())
     .await
-    .unwrap();
+    .expect("the update of announcements succeeds");
     let mut ids: Vec<String> = ids.iter().map(Uuid::to_string).collect();
     ids.sort_unstable_by(|a, b| b.cmp(a));
     ids
@@ -424,13 +430,21 @@ async fn walk_pages(
         assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(body["limit"], limit, "{body}");
         assert_eq!(body["offset"], offset, "{body}");
-        let rows = body["data"].as_array().unwrap();
+        let rows = body["data"]
+            .as_array()
+            .expect("the `data` field is an array");
         assert!(rows.len() <= limit);
-        ids.extend(
-            rows.iter()
-                .map(|row| row["id"].as_str().unwrap().to_owned()),
+        ids.extend(rows.iter().map(|row| {
+            row["id"]
+                .as_str()
+                .expect("the `id` field is a string")
+                .to_owned()
+        }));
+        totals.push(
+            body["total"]
+                .as_i64()
+                .expect("the `total` field is an integer"),
         );
-        totals.push(body["total"].as_i64().unwrap());
     }
     assert!(
         totals.windows(2).all(|pair| pair[0] == pair[1]),

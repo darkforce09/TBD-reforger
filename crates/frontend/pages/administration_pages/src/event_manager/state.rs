@@ -139,7 +139,9 @@ impl Manager {
     /// are disposed with it.
     pub(super) fn new() -> Self {
         let store = expect_context::<AuthStore>();
-        let today = js_sys::Date::new_0();
+        let today = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(
+            time_source::wall_clock_ms(),
+        ));
         let today_key = day_key(
             today.get_full_year() as i32,
             today.get_month() as i32,

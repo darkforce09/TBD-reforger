@@ -209,7 +209,7 @@ pub(crate) fn run(selection: TestSelection) -> Result<u8> {
     let property_configuration =
         api_readiness_checks::PropertyTestConfiguration::from_environment()?;
     println!("{}", property_configuration.marker());
-    let api_packages = api_test_packages(&repository_layout::find_repository_root()?)?;
+    let api_packages = api_test_packages(&repository_root::find_repository_root()?)?;
     let arguments = match cargo_test_arguments(&selection, &api_packages) {
         Ok(arguments) => arguments,
         Err(message) => {

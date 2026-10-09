@@ -13,7 +13,8 @@ use tower::ServiceExt;
 
 fn app() -> Router {
     // for_tests() has a blank Discord client_id → the "oauth_unconfigured" path.
-    let pool = api_database::connect_lazy("postgres://tbd:tbd@localhost:5434/unused").unwrap();
+    let pool = api_database::connect_lazy("postgres://tbd:tbd@localhost:5434/unused")
+        .expect("the test database URL parses");
     router(api::composition::application_state(
         pool,
         Config::for_tests("postgres://x/x", "oauth-secret"),
@@ -23,7 +24,7 @@ fn app() -> Router {
 fn location(resp: &Response) -> String {
     resp.headers()[header::LOCATION]
         .to_str()
-        .unwrap()
+        .expect("the Location header is ASCII")
         .to_string()
 }
 

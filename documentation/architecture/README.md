@@ -10,7 +10,7 @@ repository, and every agent before it moves or adds a folder, starts here.
 
 ```text
 documentation/architecture/
-└── workspace_layout.md  the top-level folders, the workspace members, where things live, what changes next
+└── workspace_layout.md  the top-level folders, the workspace members, where things live
 ```
 
 ## How it works
@@ -18,9 +18,9 @@ documentation/architecture/
 [Workspace layout](/documentation/architecture/workspace_layout.md) describes the tree as it is at
 the latest commit, never as planned: a change that moves a top-level folder, adds or removes a
 workspace member or changes where a kind of file lives updates it in the same commit. The
-planned end state belongs to the [restructure program](/documentation/restructure/README.md),
-and the [directory atlas](/CLAUDE.md#2-monorepo-directory-atlas) in `CLAUDE.md` names the folders
-one level deeper.
+[directory atlas](/CLAUDE.md#2-monorepo-directory-atlas) in `CLAUDE.md` names the folders one
+level deeper, and the [crate boundary rules](/documentation/standards/crate_boundary_rules.md)
+state the laws every member is held to.
 
 ## Code
 
@@ -35,12 +35,10 @@ one level deeper.
 - Used by: the [documentation entry](/documentation/README.md), `CLAUDE.md`, the Cursor platform
   rule and the archive topics whose layout plans it replaces.
 - Rules: describes only what exists; a planned path is written as plain text, never as a
-  backticked path; when the restructure program closes, its end state is described here.
+  backticked path.
 
 ## Related documentation
 
-- [Target file tree](/documentation/restructure/target_file_tree.md) — the end state the
-  restructure program builds.
 - [Architecture blueprint draft](/documentation/archive/restructure_research/00_architecture_blueprint_draft.md)
   — the archived first draft of the crate workspace, which this document succeeds as the living
   description.

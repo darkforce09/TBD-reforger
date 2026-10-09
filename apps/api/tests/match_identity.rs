@@ -37,7 +37,7 @@ async fn registered_rows(
     .bind(source)
     .fetch_all(pool)
     .await
-    .unwrap()
+    .expect("the read of matches runs")
 }
 
 #[tokio::test]

@@ -80,5 +80,5 @@ None: Workbench runs these scripts in the editor.
 
 - [Export contract](/contracts/definitions/equipment-vehicle-export.schema.json) — the
   `source_snapshot` document, facts, nodes and references.
-- [Acceptance evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Acceptance evidence](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — the recorded reader checks and field mapping.

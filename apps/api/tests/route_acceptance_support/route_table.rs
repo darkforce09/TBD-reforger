@@ -35,7 +35,7 @@ const REGISTRATION_TOKENS: [&str; 4] = [".route(", ".merge(", ".nest(", ".nest_s
 
 /// What serves a row.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Handler {
+pub(crate) enum Handler {
     /// A named handler function; `module` is the module's file relative to `src/`, and a tag
     /// binds to it when it sits in that file or under the module's directory.
     Function { name: String, module: PathBuf },
@@ -47,7 +47,7 @@ pub enum Handler {
 
 /// One registered route.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RouteRow {
+pub(crate) struct RouteRow {
     /// The upper-case method, e.g. `GET`.
     pub method: String,
     /// The full path in axum spelling, e.g. `/api/v1/missions/{id}`.
@@ -64,12 +64,12 @@ pub struct RouteRow {
 
 impl RouteRow {
     /// `METHOD /path`, the key a [`super::spec::RouteSpec`] names.
-    pub fn key(&self) -> String {
+    pub(crate) fn key(&self) -> String {
         format!("{} {}", self.method, self.path)
     }
 
     /// The handler function's name, when a named function serves the row.
-    pub fn handler_fn(&self) -> Option<&str> {
+    pub(crate) fn handler_fn(&self) -> Option<&str> {
         match &self.handler {
             Handler::Function { name, .. } => Some(name),
             _ => None,
@@ -78,12 +78,12 @@ impl RouteRow {
 }
 
 /// The crate's `src/` directory.
-pub fn crate_source_root() -> PathBuf {
+pub(crate) fn crate_source_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src")
 }
 
 /// The parsed route table of this crate, parsed once per process.
-pub fn route_table() -> &'static [RouteRow] {
+pub(crate) fn route_table() -> &'static [RouteRow] {
     static TABLE: OnceLock<Vec<RouteRow>> = OnceLock::new();
     TABLE.get_or_init(|| {
         parse_route_table(&crate_source_root())
@@ -92,12 +92,12 @@ pub fn route_table() -> &'static [RouteRow] {
 }
 
 /// The row registered under `key` (`METHOD /path`).
-pub fn row(key: &str) -> Option<&'static RouteRow> {
+pub(crate) fn row(key: &str) -> Option<&'static RouteRow> {
     route_table().iter().find(|row| row.key() == key)
 }
 
 /// Parse the route table rooted at `src_root/router.rs`'s `fn router`.
-pub fn parse_route_table(src_root: &Path) -> Result<Vec<RouteRow>, String> {
+pub(crate) fn parse_route_table(src_root: &Path) -> Result<Vec<RouteRow>, String> {
     let parser = Parser { src_root };
     let file = PathBuf::from("router.rs");
     let source = parser.read(&file)?;
@@ -499,7 +499,7 @@ fn named_api_crate_module(segments: &[&str]) -> Result<Option<PathBuf>, String> 
 
 /// The `src/` folder of every API crate (each folder of `crates/api/` holding `src/lib.rs`),
 /// sorted; an unreadable `crates/api/` is an error, never an empty list.
-pub fn api_crate_source_roots() -> Result<Vec<PathBuf>, String> {
+pub(crate) fn api_crate_source_roots() -> Result<Vec<PathBuf>, String> {
     let root = api_crates_root()?;
     let entries = std::fs::read_dir(&root).map_err(|e| format!("read {}: {e}", root.display()))?;
     let mut roots: Vec<PathBuf> = entries
@@ -516,7 +516,7 @@ pub fn api_crate_source_roots() -> Result<Vec<PathBuf>, String> {
 /// The folder of the API crates (`crates/api`), found above this package's manifest folder.
 fn api_crates_root() -> Result<PathBuf, String> {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    repository_layout::find_repository_root_from(manifest)
+    repository_root::find_repository_root_from(manifest)
         .map(|root| root.join("crates/api"))
         .map_err(|error| format!("no repository root above {}: {error}", manifest.display()))
 }

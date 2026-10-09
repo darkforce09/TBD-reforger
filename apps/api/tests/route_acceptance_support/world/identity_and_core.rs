@@ -37,16 +37,16 @@ use crate::route_acceptance_support::spec::{Actor, Executor, Role};
 use crate::route_acceptance_support::world::{Fixture, PartWorld, WorldCore};
 
 /// The file the world places in the upload directory.
-pub const UPLOADED_FILE: &str = "route-acceptance-probe.png";
+pub(crate) const UPLOADED_FILE: &str = "route-acceptance-probe.png";
 /// The OAuth client id the world configures; the login redirect names it.
-pub const CLIENT_ID: &str = "route-acceptance-client";
+pub(crate) const CLIENT_ID: &str = "route-acceptance-client";
 /// The CSRF state the callback fixtures present in both the cookie and the query.
 const OAUTH_STATE: &str = "route-acceptance-oauth-state";
 /// The eight-byte PNG signature: enough for `ServeDir` to serve a non-empty `image/png`.
 const PNG_SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
 
 /// The identity and core world.
-pub struct IdentityAndCoreWorld {
+pub(crate) struct IdentityAndCoreWorld {
     discord: tokio::task::JoinHandle<()>,
     discord_ids: Arc<AtomicU32>,
 }

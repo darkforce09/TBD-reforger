@@ -1,5 +1,6 @@
 //! Tests of SplitMix64: the published seed-0 reference stream, reproducibility per seed, the
-//! equality of the two unit-draw spellings, and the ranges of the derived draws.
+//! finaliser as the draw one increment above the counter, the equality of the two unit-draw
+//! spellings, and the ranges of the derived draws.
 
 use super::*;
 
@@ -133,4 +134,27 @@ fn a_zero_bound_draws_index_zero() {
     let mut indexed = SplitMix64::new(7);
     let mut raw = SplitMix64::new(7);
     assert_eq!(indexed.next_index(1_000), raw.next_u64() % 1_000);
+}
+
+#[test]
+fn the_finaliser_is_the_draw_of_a_counter_one_increment_below_the_word() {
+    assert_eq!(SplitMix64::INCREMENT, 0x9E37_79B9_7F4A_7C15);
+    assert_eq!(
+        SplitMix64::finalise(SplitMix64::INCREMENT),
+        0xE220_A839_7B1D_CDAF,
+        "the finaliser of the first counter value is the first reference draw"
+    );
+    for word in [0, 1, 0x5EED, 0x2545_F491_4F6C_DD1D, u64::MAX] {
+        assert_eq!(
+            SplitMix64::finalise(word),
+            SplitMix64::new(word.wrapping_sub(SplitMix64::INCREMENT)).next_u64(),
+            "{word:#x}"
+        );
+    }
+    let mut draws = SplitMix64::new(0x00C0_FFEE);
+    let mut counter = 0x00C0_FFEE_u64;
+    for _ in 0..10_000 {
+        counter = counter.wrapping_add(SplitMix64::INCREMENT);
+        assert_eq!(draws.next_u64(), SplitMix64::finalise(counter));
+    }
 }

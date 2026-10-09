@@ -21,9 +21,9 @@ use serde_json::{Value, json};
 
 use super::image_operations;
 use super::satellite_archive_container::{
-    BundleSummary, TileBuf, mip_dims, tbds_v2_bytes, tbds_v2_index, verify_bundle_v2,
+    BundleSummary, TileBuffer, mip_dimensions, tbds_v2_bytes, tbds_v2_index, verify_bundle_v2,
 };
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use time_source::iso_from_system_time;
 use world_export_pipeline::json_number_formatting::js_num;
 
@@ -33,9 +33,9 @@ use world_export_pipeline::json_number_formatting::js_num;
 
 /* ─────────────────────────── build-unified-satellite ─────────────────────────── */
 
-mod map_assets_root;
-pub(crate) use map_assets_root::verify_tile_pyramid;
-pub(crate) use map_assets_root::verify_unified_satellite;
+mod satellite_and_pyramid_verification;
+pub(crate) use satellite_and_pyramid_verification::verify_tile_pyramid;
+pub(crate) use satellite_and_pyramid_verification::verify_unified_satellite;
 
 mod build_unified_satellite;
 pub(crate) use build_unified_satellite::build_unified_satellite;

@@ -10,7 +10,7 @@ tools/foundation/tool_test_support/src/
 ├── environment_lock.rs        `ENV_LOCK` and `lock_env`: tests that write a process variable
 ├── lib.rs                     the crate root: module header, `mod` lines and the re-exports
 ├── prelude.rs                 `lock_env`, `CwdGuard` and `test_repo_root` for glob import
-├── repository_root.rs         `test_repo_root`: the checkout root, resolved under the working-directory lock
+├── test_checkout_root.rs      `test_repo_root`: the checkout root, resolved under the working-directory lock
 ├── tests/                     the test root from nested tooling folders, under the guard
 └── working_directory_lock.rs  `CwdGuard` and `resolve_under_lock`: the one working-directory lock
 ```
@@ -22,12 +22,12 @@ tools/foundation/tool_test_support/src/
 - `working_directory_lock`: `CwdGuard::enter_resolved` takes the lock, then resolves the target, then
   changes into it, so resolution never races the test that owns the working directory;
   `resolve_under_lock` runs a reader under the same lock. The guard changes back on drop.
-- `repository_root`: `test_repo_root` is `repository_layout::find_repository_root()` under that lock,
+- `test_checkout_root`: `test_repo_root` is `repository_root::find_repository_root()` under that lock,
   so a test reads the checkout it runs in, never a sibling worktree a shared build folder compiled.
 
 ## Boundaries
 
-- Depends on: `repository_layout` and `std::sync`.
+- Depends on: `repository_root` and `std::sync`.
 - Used by: the crate root's re-exports, read by the tool crates' tests.
 - Rules: the mutex is not reentrant, so a caller holding a `CwdGuard` never calls `test_repo_root`;
-  `tests/repository_root_tests.rs` resolves the root from nested tooling folders under the guard.
+  `tests/test_checkout_root_tests.rs` resolves the root from nested tooling folders under the guard.

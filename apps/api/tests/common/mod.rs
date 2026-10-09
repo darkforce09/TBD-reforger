@@ -38,7 +38,7 @@ pub(crate) mod source_text;
 // happens to name is still the surface every other suite reaches through, and rustc judges
 // each binary on its own.
 #[allow(unused_imports)]
-pub use self::{
+pub(crate) use self::{
     database::{
         assert_no_raw_test_database_url_reads_outside_common, assert_test_database_url,
         require_test_database_url,

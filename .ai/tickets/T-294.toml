@@ -1,7 +1,7 @@
 id = "T-294"
 kind = "work"
 title = "Arland has a manifest and no object data"
-summary = "terrain-registry.json declares arland queued with P1 only; packages/map-assets/arland holds a 756-byte manifest and zero objects. Run the export-terrain gate for arland: the operator exports from Workbench, the agent stages, builds and records P1."
+summary = "terrain-registry.json declares arland queued with P1 only; assets/terrains/arland holds a 756-byte manifest and zero objects. Run the export-terrain gate for arland: the operator exports from Workbench, the agent stages, builds and records P1."
 class = "feature"
 status = "ready"
 order = 8250
@@ -12,7 +12,7 @@ notes = "2026-09-05: emitted object files (objects/chunks/*.json.gz, prefabs.jso
 priority = 2
 main_goal = "arland ships a P1 object set and a manifest that validates, produced by the same pipeline as everon."
 context = [
-    "Anchor 2026-09-05: packages/map-assets/terrain-registry.json:16-19 arland entry; packages/map-assets/arland/ contains manifest.json only.",
+    "Anchor 2026-09-05: assets/terrains/terrain-registry.json:16-19 arland entry; assets/terrains/arland/ contains manifest.json only.",
     "xtask/src/gate_export_terrain.rs:58-85 prints the operator runbook; the Workbench full-world export is a human step, everything after copy-export-profile is agent work.",
 ]
 requirement = [
@@ -37,7 +37,7 @@ acceptance = [
 ]
 created_at = "2026-09-05T03:30:00Z"
 owns = [
-    "packages/map-assets/arland/manifest.json",
+    "assets/terrains/arland/manifest.json",
     "xtask/src/gate_export_terrain.rs",
 ]
 

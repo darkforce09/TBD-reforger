@@ -36,3 +36,6 @@ web-sys = { workspace = true, features = [
     "WorkerGlobalScope",
     "WorkerLocation",
 ] }
+
+[lints]
+workspace = true

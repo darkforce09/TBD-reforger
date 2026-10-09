@@ -64,5 +64,5 @@ order during one materialize, and `NONE_IDX` marks a slot with no tag or no laye
 - Rules:
   - `SlotSoa` columns stay row-aligned by id and a hidden slot has no row while the document
     keeps it (the materialise tests of the mission document);
-  - mission tier 1: no dependency on graphics, terrain, applications or `legacy/`
+  - mission tier 1: no dependency on graphics, terrain or applications
     (`cargo xtask verify crate-tiers`).

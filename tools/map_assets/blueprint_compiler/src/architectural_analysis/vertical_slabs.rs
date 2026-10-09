@@ -6,7 +6,7 @@
 //! **Signals & state:** none; pure functions.
 //! **Invariants:** floors are reported in ascending height in the dump's normalized frame.
 
-use crate::voxel_processing::analysis_parameters::Params;
+use crate::voxel_processing::analysis_parameters::AnalysisParameters;
 use crate::voxel_processing::voxel_types::{ScanMap, VerticalScan};
 
 pub(crate) fn analyze(
@@ -14,7 +14,7 @@ pub(crate) fn analyze(
     dims: [usize; 3],
     cell: f64,
     span_y: f64,
-    p: &Params,
+    p: &AnalysisParameters,
 ) -> VerticalScan {
     let (nx, nz) = (dims[0], dims[2]);
     let mut top: Vec<Option<f64>> = vec![None; nx * nz];

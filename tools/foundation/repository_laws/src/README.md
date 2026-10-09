@@ -22,7 +22,7 @@ tools/foundation/repository_laws/src/
 ├── sibling_test_placement.rs  inline test-module bodies in production files, found by name or by `cfg`
 ├── source_roots.rs            the roots every structural law walks and the test-file rule
 ├── tests/                     unit tests for each module and the throwaway checkout they plant files in
-├── workspace_laws/            crate tiers, crate anatomy, strangler, frontend layering and Tailwind sources
+├── workspace_laws/            crate tiers, crate anatomy, test-file reachability, frontend layering and Tailwind sources
 └── workspace_members.rs       the root manifest's members: explicit folders and globs, minus excludes
 ```
 
@@ -38,7 +38,7 @@ input it needs is missing or unreadable.
 | No exemption | `exemption_mechanisms::scan_exemption_mechanisms` | every file under the law roots, and the files at the repository root | an exemption-list file name, a comment directive switching a structural rule off, a declared exemption table |
 | Crate directions | `crate_dependencies::crate_dependency_findings` | the frontend, api and offline service worker manifests | an edge against the layer order, in any dependency table |
 | Test-only feature | `crate_dependencies::test_only_feature_findings` | one parsed manifest | a feature that a non-test build could carry |
-| Workspace laws | `workspace_laws::{crate_tiers, crate_anatomy, strangler, frontend_layering, tailwind_sources}` | the root manifest's members, their manifests and sources, the app stylesheet | see the [workspace laws README](/tools/foundation/repository_laws/src/workspace_laws/README.md) |
+| Workspace laws | `workspace_laws::{crate_tiers, crate_anatomy, test_file_reachability, frontend_layering, tailwind_sources}` | the root manifest's members, their manifests and sources, the app stylesheet | see the [workspace laws README](/tools/foundation/repository_laws/src/workspace_laws/README.md) |
 
 The law roots are the folder of every workspace member the root `Cargo.toml` names (read by
 `workspace_members`; a member nested inside another member is walked once, as part of the outer

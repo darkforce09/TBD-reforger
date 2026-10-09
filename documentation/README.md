@@ -8,14 +8,13 @@ mirror of the code. Start here to find the document that covers a subject and to
 wins when two disagree.
 
 The [workspace layout](/documentation/architecture/workspace_layout.md) describes the repository as
-it stands. A workspace restructure program is active: its plan, target file tree and progress
-tracker are in [restructure/](/documentation/restructure/README.md).
+it stands.
 
 ## Contents
 
 ```text
 documentation/
-├── apps/                    documents on the products in apps/: the API, the app, the host agent, ticketboard
+├── apps/                    documents on the products in apps/: the API, the app, the host agent, ticketboard, the mod
 ├── architecture/            the workspace as it stands: top-level folders, members, where everything lives
 ├── archive/                 frozen history, one folder per topic
 ├── assets/                  documents on the terrain export and the map data in assets/
@@ -24,9 +23,8 @@ documentation/
 ├── design_system/           design tokens, symbology and interaction patterns the website and mod share
 ├── glossary/                the project's terms and abbreviations, split by first letter
 ├── known_bugs/              the live registry of known bugs
-├── mod/                     documents on the Enfusion mod suite in apps/mod/
 ├── product_roadmap.md       the planned product items by area and the open product questions
-├── restructure/             the active workspace restructure program: plan, target tree, progress
+├── relocation_manifests/    every relocation manifest run: the registry of retired path spellings
 ├── runbooks/                operator procedures: development, deployment, gates, playtests
 ├── standards/               documentation and code standards, and the templates
 ├── tickets/                 ticket specs and plans, flat, frozen once the ticket closes
@@ -44,12 +42,13 @@ documented in `apps/fleet_host_agent/`; the [event](/documentation/glossary/a_to
 schedule page in `crates/frontend/pages/operations_pages/src/schedule/` is documented in
 `documentation/crates/frontend/pages/operations_pages/schedule/` and all
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) material sits in
-`documentation/crates/frontend/workspaces/mission_creator_workspace/`. One code tree keeps a shorter document path until
-the [restructure](/documentation/restructure/README.md) reshapes it: a document about the mod leaves
-out `apps/` and `Scripts/Game/TBD/` and sits in `mod/`. What spans the code has a top-level folder of its
+`documentation/crates/frontend/workspaces/mission_creator_workspace/`. The mod's scripts have no
+`src/`, and a document about them leaves out `Scripts/Game/TBD/` instead: the screens of
+`apps/mod/tbd-framework/Scripts/Game/TBD/UI/` are documented in
+`documentation/apps/mod/tbd-framework/UI/`. What spans the code has a top-level folder of its
 own: `architecture/`, `runbooks/`, `standards/`, `design_system/`, `known_bugs/`, `tickets/` and
-`archive/`, with the `glossary/` folder and `product_roadmap.md` beside them, and the active
-program has `restructure/`. The
+`archive/`, with the `glossary/` folder, `product_roadmap.md` and the relocation manifests'
+`relocation_manifests/` beside them. The
 [documentation standards](/documentation/standards/documentation_standards.md) set the layout,
 names and lifecycle; the [README standard](/documentation/standards/readme_standard.md) shapes
 every README.
@@ -86,11 +85,11 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 |---|---|
 | what a code folder holds and how to use it | the README.md in that folder |
 | the top-level folders, the workspace members and where code, contracts, assets and documents live | the [workspace layout](/documentation/architecture/workspace_layout.md) |
-| a web page's behaviour, design, open work and decisions | `apps/frontend/pages/<area>/<page>/`, indexed by the [frontend README](/documentation/apps/frontend/README.md) |
-| the Mission Creator: features, roadmap, UX decisions, Eden reference | [apps/frontend/apps/editor/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
+| a web page's behaviour, design, open work and decisions | `crates/frontend/pages/<area>_pages/<page>/`, indexed by the [frontend README](/documentation/apps/frontend/README.md) |
+| the Mission Creator: features, roadmap, UX decisions, Eden reference | [crates/frontend/workspaces/mission_creator_workspace/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
 | the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [apps/api/](/documentation/apps/api/README.md), starting at the [API overview](/documentation/apps/api/api_overview.md) |
 | the map's streaming, rendering and GPU crates, the paper doll and the editing layer | [crates/](/documentation/crates/README.md) |
-| the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [mod/](/documentation/mod/README.md) |
+| the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [apps/mod/](/documentation/apps/mod/README.md) |
 | how a terrain becomes the map data the platform serves | [assets/](/documentation/assets/README.md) |
 | how a game host carries out server commands | [apps/fleet_host_agent/](/documentation/apps/fleet_host_agent/README.md) |
 | the ticket viewer | [apps/ticketboard/](/documentation/apps/ticketboard/README.md) |
@@ -110,7 +109,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 - [Applications](/apps/README.md) — the API, the app, the service worker, the host agent and
   ticketboard, documented under `apps/`.
 - [Library crates](/crates/README.md) — documented under `documentation/crates/`.
-- [Mod suite](/apps/mod/README.md) — documented under `mod/`.
+- [Mod suite](/apps/mod/README.md) — documented under `documentation/apps/mod/`.
 - [Developer tools](/tools/README.md) — documented under `documentation/tools/`.
 - [Contracts](/contracts/README.md) — documented under `documentation/contracts/`.
 - [Assets](/assets/README.md) — documented under `documentation/assets/`.

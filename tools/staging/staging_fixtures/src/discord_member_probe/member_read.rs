@@ -18,8 +18,6 @@
 //! are dropped; the printed line carries ids, statuses, times and header values, never the token
 //! or the member's profile.
 
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use reqwest::header::{AUTHORIZATION, HeaderMap, USER_AGENT};
 use serde_json::{Value, json};
 
@@ -260,13 +258,10 @@ fn seconds_to_ms(seconds: f64) -> Option<u64> {
         .then(|| (seconds * 1000.0).ceil() as u64)
 }
 
-/// The host's clock in Unix milliseconds.
+/// The host's clock in Unix milliseconds, read through the workspace's one clock
+/// ([`time_source::SystemClock`]).
 pub(super) fn unix_now_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |elapsed| {
-            u64::try_from(elapsed.as_millis()).unwrap_or(u64::MAX)
-        })
+    time_source::Clock::now_unix_ms(&time_source::SystemClock)
 }
 
 /// Parse `observe-discord-member`: the target flags only.

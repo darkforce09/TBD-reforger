@@ -42,7 +42,7 @@ crates/mission/mission_document/src/rows/
 ├── side_cache.rs        `SideKeyMemo`: squad side keys cached until the next transaction
 ├── slot_edits.rs        slot field, identity, object, loadout and batch edits, removal, a seed
 ├── slot_rows.rs         in-transaction slot writes: the leader rule, squad clean-up, indices
-├── tests/               unit tests for writes, undo steps, peers, hydrate, compile, merges; source scrub
+├── tests/               unit tests for writes, undo steps, peers, hydrate, compile, merges
 ├── transforms.rs        slot, vehicle and object moves, rotations and transform patches
 ├── triggers.rs          triggers: add, reshape, name, owner, activation, rules, remove, JSON view
 ├── undo.rs              undo, redo, explicit undo groups and the depth cap

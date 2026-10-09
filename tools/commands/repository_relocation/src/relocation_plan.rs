@@ -13,7 +13,8 @@
 //! only when a `rust_path` row moves a `crate::` module.
 //!
 //! **Invariants:** nothing is written while a plan is built; each pass reads the text the previous
-//! pass produced; a pass edits a file only as far as its [`FileTreatment`] allows; binaries and
+//! pass produced; a pass edits a file only as far as its [`FileTreatment`] allows (this tool's own
+//! test sources only in their code, never in a string literal or a comment); binaries and
 //! Git LFS pointers are moved with their folders and never read as text; a move whose `from` is
 //! not tracked or whose `to` already exists, and rows that would put two things in one place or
 //! that no order of moves can make or that would meet an occupied `to` when the apply runs them
@@ -33,11 +34,11 @@ use super::path_mapping::{PathMapping, is_at_or_below, parent_folder};
 use super::path_references::anchor_resolution::ResolutionContext;
 use super::path_references::path_reference_edits;
 use super::repository_files::{FileContent, PathSet, RepositorySnapshot};
-use super::rust_lexer::line_of;
+use super::rust_lexer::{code_spans, line_of};
 use super::rust_paths::module_tree::ModuleTree;
 use super::rust_paths::path_rules::RustPathRules;
 use super::rust_paths::rust_path_edits;
-use super::text_edits::{Edit, apply_edits, merge_edits};
+use super::text_edits::{AllowedSpans, Edit, apply_edits, merge_edits};
 use super::text_tokens::text_token_edits;
 
 /// One move of the plan.
@@ -197,7 +198,10 @@ pub(crate) fn build_plan(
             }
             text = apply_counted(&text, &outcome.edits, &mut edits_by_row);
         }
-        if treatment == FileTreatment::Live {
+        if matches!(
+            treatment,
+            FileTreatment::Live | FileTreatment::FixtureSource
+        ) {
             let rules = RustPathRules::from_rows(
                 rows.iter()
                     .filter(|row| row.kind == RowKind::RustPath && row.scope.contains(file)),
@@ -216,21 +220,29 @@ pub(crate) fn build_plan(
                     None
                 };
                 let outcome = rust_path_edits(&text, &rules, module.as_deref());
+                let allowed = rewritable_spans(&text, treatment);
                 for (offset, message) in outcome.unresolved {
-                    plan.unresolved.push(UnresolvedItem {
-                        path: file.clone(),
-                        line: line_of(&text, offset),
-                        message,
-                    });
+                    if allowed.allows(&(offset..offset + 1)) {
+                        plan.unresolved.push(UnresolvedItem {
+                            path: file.clone(),
+                            line: line_of(&text, offset),
+                            message,
+                        });
+                    }
                 }
-                text = apply_counted(&text, &outcome.edits, &mut edits_by_row);
+                let edits = allowed_edits(outcome.edits, &allowed);
+                text = apply_counted(&text, &edits, &mut edits_by_row);
             }
             let text_rows: Vec<&ManifestRow> = rows
                 .iter()
                 .filter(|row| row.kind == RowKind::Text && row.scope.contains(file))
                 .collect();
             if !text_rows.is_empty() {
-                let edits = merge_edits(&text, text_token_edits(&text, &text_rows));
+                let allowed = rewritable_spans(&text, treatment);
+                let edits = allowed_edits(
+                    merge_edits(&text, text_token_edits(&text, &text_rows)),
+                    &allowed,
+                );
                 text = apply_counted(&text, &edits, &mut edits_by_row);
             }
         }
@@ -248,6 +260,24 @@ pub(crate) fn build_plan(
 }
 
 /// `text` with `edits` applied, each edit counted against its row.
+/// The spans of `text` the Rust path and text passes may edit under `treatment`: the whole of a
+/// live file, the code of this tool's test sources, whose string literals and comments are
+/// fixture text.
+fn rewritable_spans(text: &str, treatment: FileTreatment) -> AllowedSpans {
+    match treatment {
+        FileTreatment::FixtureSource => AllowedSpans::Only(code_spans(text)),
+        _ => AllowedSpans::Everything,
+    }
+}
+
+/// The edits of `edits` that lie inside `allowed`.
+fn allowed_edits(edits: Vec<Edit>, allowed: &AllowedSpans) -> Vec<Edit> {
+    edits
+        .into_iter()
+        .filter(|edit| allowed.allows(&edit.span))
+        .collect()
+}
+
 fn apply_counted(text: &str, edits: &[Edit], counts: &mut BTreeMap<usize, usize>) -> String {
     for edit in edits {
         *counts.entry(edit.row_line).or_default() += 1;

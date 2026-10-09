@@ -1,7 +1,7 @@
 use super::*;
 
 /// Axis-aligned box as 12 outward-wound triangles with matching vertex normals.
-fn cube_mesh(min: [f64; 3], max: [f64; 3]) -> TriMesh {
+fn cube_mesh(min: [f64; 3], max: [f64; 3]) -> TriangleMesh {
     let v = |x, y, z| [x, y, z];
     let corners = [
         v(min[0], min[1], min[2]), // 0
@@ -38,7 +38,7 @@ fn cube_mesh(min: [f64; 3], max: [f64; 3]) -> TriMesh {
         tri_normal.push(n);
         tri_normal.push(n);
     }
-    TriMesh {
+    TriangleMesh {
         verts,
         tris,
         tri_normal,
@@ -46,15 +46,15 @@ fn cube_mesh(min: [f64; 3], max: [f64; 3]) -> TriMesh {
 }
 
 fn analytic_box_dump(min: [f64; 3], max: [f64; 3]) -> VoxelDump {
-    contour_tracing::generate_dump(
-        DumpIdent {
+    voxel_dump_lattice::generate_dump(
+        DumpIdentity {
             slug: "t".into(),
             resource: "t://".into(),
         },
         min,
         max,
         |axis, a, b| {
-            let (c1, c2) = cross_axes(axis);
+            let (c1, c2) = perpendicular_axes(axis);
             let inside = a >= min[c1] && a < max[c1] && b >= min[c2] && b < max[c2];
             if inside {
                 (vec![min[axis]], vec![max[axis]])
@@ -65,10 +65,10 @@ fn analytic_box_dump(min: [f64; 3], max: [f64; 3]) -> VoxelDump {
     )
 }
 
-fn mesh_dump(mesh: &TriMesh) -> VoxelDump {
+fn mesh_dump(mesh: &TriangleMesh) -> VoxelDump {
     generate(
         mesh,
-        DumpIdent {
+        DumpIdentity {
             slug: "t".into(),
             resource: "t://".into(),
         },
@@ -110,7 +110,7 @@ fn open_sheet_is_one_sided() {
         [1.0, 2.0, 0.0],
     ];
     let n = [-1.0, 0.0, 0.0];
-    let mesh = TriMesh {
+    let mesh = TriangleMesh {
         verts,
         tris: vec![[0, 1, 2], [0, 2, 3]],
         tri_normal: vec![n, n],
@@ -137,7 +137,7 @@ fn wedge_slope_registers_on_vertical_march() {
     ];
     let s = 1.0 / 2.0f64.sqrt();
     let n = [-s, s, 0.0];
-    let mesh = TriMesh {
+    let mesh = TriangleMesh {
         verts,
         tris: vec![[0, 1, 2], [0, 2, 3]],
         tri_normal: vec![n, n],
@@ -145,12 +145,12 @@ fn wedge_slope_registers_on_vertical_march() {
     let dump = mesh_dump(&mesh);
     let meta = dump.meta.as_ref().unwrap();
     // A y− (top-down) line at plan (ix, iz) must record entry at y = x(line) with the
-    // dump's r2 precision.
+    // dump's round_to_two_decimals precision.
     let ix = meta.dims[0] / 2;
     let iz = meta.dims[2] / 2;
-    let fx = meta.origin[0] + (ix as f64 + 0.5) * CELL;
+    let fx = meta.origin[0] + (ix as f64 + 0.5) * LATTICE_CELL_SIZE_METERS;
     let entry = dump.y_down.get(&(ix, iz)).expect("ramp seen from above");
-    let want = contour_tracing::r2(fx - meta.origin[1]);
+    let want = voxel_dump_lattice::round_to_two_decimals(fx - meta.origin[1]);
     assert!(
         (entry[0] - want).abs() < 1e-9,
         "ramp height: got {} want {want}",
@@ -167,16 +167,20 @@ fn winding_flip_detected_and_corrected() {
     for n in &mut inverted.tri_normal {
         *n = [-n[0], -n[1], -n[2]];
     }
-    let origin = [min[0] - PAD, min[1] - PAD, min[2] - PAD];
+    let origin = [
+        min[0] - LATTICE_PADDING_METERS,
+        min[1] - LATTICE_PADDING_METERS,
+        min[2] - LATTICE_PADDING_METERS,
+    ];
     let span = [
-        max[0] - min[0] + 2.0 * PAD,
-        max[1] - min[1] + PAD + 1.2,
-        max[2] - min[2] + 2.0 * PAD,
+        max[0] - min[0] + 2.0 * LATTICE_PADDING_METERS,
+        max[1] - min[1] + LATTICE_PADDING_METERS + 1.2,
+        max[2] - min[2] + 2.0 * LATTICE_PADDING_METERS,
     ];
     let dims = [
-        (span[0] / CELL).ceil() as usize,
-        (span[1] / CELL).ceil() as usize,
-        (span[2] / CELL).ceil() as usize,
+        (span[0] / LATTICE_CELL_SIZE_METERS).ceil() as usize,
+        (span[1] / LATTICE_CELL_SIZE_METERS).ceil() as usize,
+        (span[2] / LATTICE_CELL_SIZE_METERS).ceil() as usize,
     ];
     let bx = AxisBins::build(&inverted, 0, origin, dims);
     let bz = AxisBins::build(&inverted, 2, origin, dims);
@@ -195,8 +199,14 @@ fn winding_flip_detected_and_corrected() {
 
 #[test]
 fn min_sep_merges_close_hits() {
-    assert_eq!(min_sep(vec![1.0, 1.0, 1.005, 1.5], false), vec![1.0, 1.5]);
-    assert_eq!(min_sep(vec![2.0, 1.995, 1.0], true), vec![2.0, 1.0]);
+    assert_eq!(
+        minimum_separation(vec![1.0, 1.0, 1.005, 1.5], false),
+        vec![1.0, 1.5]
+    );
+    assert_eq!(
+        minimum_separation(vec![2.0, 1.995, 1.0], true),
+        vec![2.0, 1.0]
+    );
 }
 
 #[test]

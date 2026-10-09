@@ -83,8 +83,8 @@ Mission Creator itself in its read-only review mode, not a copy of it.
   build) and `web_sys` in the browser build.
 - Used by:
   - `apps/frontend/src/app_routes.rs`, the route table;
-  - source pins that read this folder's files:
-    a mission document test in `crates/mission/mission_document/src/rows/tests/cases_1.rs`;
+  - source pins that read this folder's files: the crate's own tests in
+    `crates/frontend/workspaces/mission_creator_workspace/src/tests/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     `/missions/:id/edit` route, and `cargo xtask verify editor-orbat-coherency`, which scans named
     files under `ui/modals/`, the page `mission_editor.rs`, the engine bridge crate and the Arsenal

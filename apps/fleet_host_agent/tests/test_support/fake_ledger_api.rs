@@ -21,10 +21,10 @@ use tokio::task::JoinHandle;
 use uuid::Uuid;
 
 /// The fencing token of every command the stand-in hands out.
-pub const FENCING_TOKEN: i64 = 7;
+pub(crate) const FENCING_TOKEN: i64 = 7;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum LedgerEvent {
+pub(crate) enum LedgerEvent {
     Claim {
         authorization: Option<String>,
     },
@@ -48,7 +48,7 @@ pub enum LedgerEvent {
 
 /// A failure answered instead of a success.
 #[derive(Debug, Clone, Copy)]
-pub enum Failure {
+pub(crate) enum Failure {
     ServiceUnavailable,
     StaleFencingToken,
 }
@@ -85,10 +85,10 @@ struct LedgerState {
 
 /// Shared handle to the stand-in's event log.
 #[derive(Clone)]
-pub struct EventLog(Arc<Mutex<LedgerState>>);
+pub(crate) struct EventLog(Arc<Mutex<LedgerState>>);
 
 impl EventLog {
-    pub fn record_effect(&self, action: &str) {
+    pub(crate) fn record_effect(&self, action: &str) {
         self.lock().events.push(LedgerEvent::Effect {
             action: action.to_owned(),
         });
@@ -99,14 +99,14 @@ impl EventLog {
     }
 }
 
-pub struct FakeLedgerApi {
+pub(crate) struct FakeLedgerApi {
     address: SocketAddr,
     log: EventLog,
     task: JoinHandle<()>,
 }
 
 impl FakeLedgerApi {
-    pub async fn start() -> Self {
+    pub(crate) async fn start() -> Self {
         let log = EventLog(Arc::new(Mutex::new(LedgerState::default())));
         let router = Router::new()
             .route("/api/v1/fleet-executor/commands/claim", post(claim))
@@ -129,16 +129,16 @@ impl FakeLedgerApi {
         Self { address, log, task }
     }
 
-    pub fn base_url(&self) -> reqwest::Url {
+    pub(crate) fn base_url(&self) -> reqwest::Url {
         reqwest::Url::parse(&format!("http://{}/", self.address)).expect("a URL")
     }
 
-    pub fn event_log(&self) -> EventLog {
+    pub(crate) fn event_log(&self) -> EventLog {
         self.log.clone()
     }
 
     /// Queues a command for the next claim and returns its id.
-    pub fn enqueue(&self, action: &str, arguments: Value) -> Uuid {
+    pub(crate) fn enqueue(&self, action: &str, arguments: Value) -> Uuid {
         let command_id = Uuid::new_v4();
         self.log.lock().queue.push_back(json!({
             "command_id": command_id,
@@ -151,24 +151,24 @@ impl FakeLedgerApi {
         command_id
     }
 
-    pub fn fail_claims(&self, failures: &[Failure]) {
+    pub(crate) fn fail_claims(&self, failures: &[Failure]) {
         self.log.lock().claim_failures.extend(failures);
     }
 
-    pub fn fail_executing_reports(&self, failures: &[Failure]) {
+    pub(crate) fn fail_executing_reports(&self, failures: &[Failure]) {
         self.log.lock().executing_failures.extend(failures);
     }
 
-    pub fn fail_result_reports(&self, failures: &[Failure]) {
+    pub(crate) fn fail_result_reports(&self, failures: &[Failure]) {
         self.log.lock().result_failures.extend(failures);
     }
 
     /// Runs `observer` as each `executing` report arrives and logs what it returns.
-    pub fn observe_on_executing(&self, observer: impl Fn() -> String + Send + 'static) {
+    pub(crate) fn observe_on_executing(&self, observer: impl Fn() -> String + Send + 'static) {
         self.log.lock().executing_observer = Some(Box::new(observer));
     }
 
-    pub fn events(&self) -> Vec<LedgerEvent> {
+    pub(crate) fn events(&self) -> Vec<LedgerEvent> {
         self.log.lock().events.clone()
     }
 }

@@ -15,7 +15,7 @@ use tokio::task::JoinHandle;
 
 /// The server's answer to `#players`. The names are not ASCII, so a split into one-byte parts
 /// cuts through characters.
-pub const PLAYERS_RESPONSE: &str = "Players on server:\n\
+pub(crate) const PLAYERS_RESPONSE: &str = "Players on server:\n\
     [Player#] ; [Player UID] ; [Player Name]\n\
     ------------------------------------------\n\
     0 ; 3d8f0e52-6c5a-4e0b-9a55-0c2b1d7e4f10 ; Rhodes\n\
@@ -27,7 +27,7 @@ const SERVER_MESSAGE: u8 = 0x02;
 
 /// Faults applied to the next commands. Keep-alives (empty commands) never consume a fault.
 #[derive(Debug, Clone, Default)]
-pub struct Faults {
+pub(crate) struct Faults {
     /// Command packets discarded on arrival, unexecuted.
     pub discard_commands: usize,
     /// Commands executed whose responses are then discarded.
@@ -44,7 +44,7 @@ pub struct Faults {
 
 /// One command packet from a logged-in client, retransmissions and keep-alives included.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ReceivedCommand {
+pub(crate) struct ReceivedCommand {
     pub sequence: u8,
     pub text: String,
 }
@@ -63,7 +63,7 @@ struct ServerState {
     acknowledgements: Vec<u8>,
 }
 
-pub struct FakeBattlEyeServer {
+pub(crate) struct FakeBattlEyeServer {
     socket: Arc<UdpSocket>,
     state: Arc<Mutex<ServerState>>,
     task: JoinHandle<()>,
@@ -72,7 +72,7 @@ pub struct FakeBattlEyeServer {
 impl FakeBattlEyeServer {
     /// A server on a free loopback port that drops a login after `idle_timeout` without a
     /// command packet, as Arma Reforger does after 45 s.
-    pub async fn start(password: &str, idle_timeout: Duration) -> Self {
+    pub(crate) async fn start(password: &str, idle_timeout: Duration) -> Self {
         let socket = Arc::new(UdpSocket::bind("127.0.0.1:0").await.expect("a free port"));
         let state = Arc::new(Mutex::new(ServerState {
             password: password.to_owned(),
@@ -93,36 +93,36 @@ impl FakeBattlEyeServer {
         }
     }
 
-    pub fn address(&self) -> SocketAddr {
+    pub(crate) fn address(&self) -> SocketAddr {
         self.socket.local_addr().expect("a bound socket")
     }
 
-    pub fn set_faults(&self, faults: Faults) {
+    pub(crate) fn set_faults(&self, faults: Faults) {
         self.state().faults = faults;
     }
 
     /// Answers every later `command` with `reply`.
-    pub fn set_reply(&self, command: &str, reply: &str) {
+    pub(crate) fn set_reply(&self, command: &str, reply: &str) {
         self.state()
             .scripted_replies
             .insert(command.to_owned(), reply.to_owned());
     }
 
     /// Forgets every login, as a restarted game server does.
-    pub fn restart(&self) {
+    pub(crate) fn restart(&self) {
         self.state().sessions.clear();
     }
 
-    pub fn login_attempts(&self) -> usize {
+    pub(crate) fn login_attempts(&self) -> usize {
         self.state().login_attempts
     }
 
-    pub fn received_commands(&self) -> Vec<ReceivedCommand> {
+    pub(crate) fn received_commands(&self) -> Vec<ReceivedCommand> {
         self.state().received_commands.clone()
     }
 
     /// The sequence numbers of every transmission of `text`.
-    pub fn transmissions_of(&self, text: &str) -> Vec<u8> {
+    pub(crate) fn transmissions_of(&self, text: &str) -> Vec<u8> {
         self.state()
             .received_commands
             .iter()
@@ -131,16 +131,16 @@ impl FakeBattlEyeServer {
             .collect()
     }
 
-    pub fn executed_commands(&self) -> Vec<String> {
+    pub(crate) fn executed_commands(&self) -> Vec<String> {
         self.state().executed_commands.clone()
     }
 
-    pub fn acknowledgements(&self) -> Vec<u8> {
+    pub(crate) fn acknowledgements(&self) -> Vec<u8> {
         self.state().acknowledgements.clone()
     }
 
     /// Sends a server message to every logged-in client.
-    pub async fn send_server_message(&self, sequence: u8, text: &str) {
+    pub(crate) async fn send_server_message(&self, sequence: u8, text: &str) {
         let clients: Vec<SocketAddr> = self.state().sessions.keys().copied().collect();
         let mut payload = vec![sequence];
         payload.extend_from_slice(text.as_bytes());

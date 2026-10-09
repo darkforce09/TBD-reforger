@@ -20,7 +20,7 @@ use terrain_elevation::manifest::DemManifest;
 use terrain_elevation::png::decode_png_to_meters;
 use terrain_elevation::sampling::sample_elevation_from_meters_cache;
 
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use world_export_pipeline::json_number_formatting::{js_math_round, js_num};
 
 /* ─────────────────────────── locations export ─────────────────────────── */
@@ -41,11 +41,11 @@ const REQUIRED_EVERON_TOWNS: [&str; 7] = [
 /* ─────────────────────────── height-labels export (native restore) ─────────────────────────── */
 
 #[cfg(test)]
-#[path = "tests/map_labels/map_labels_tests.rs"]
+#[path = "tests/map_labels_tests.rs"]
 mod map_labels_tests;
 
-mod importance_by_name;
-pub(crate) use importance_by_name::export_locations;
+mod export_locations;
+pub(crate) use export_locations::export_locations;
 
 mod export_height_labels;
 pub(crate) use export_height_labels::export_height_labels;

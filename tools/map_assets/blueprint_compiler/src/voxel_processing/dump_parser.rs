@@ -14,7 +14,7 @@ use std::path::Path;
 use crate::error::{Result, ResultExt, bail};
 use serde_json::Value;
 
-use crate::voxel_processing::voxel_types::{DumpMeta, FurnRec, ScanMap, VoxelDump};
+use crate::voxel_processing::voxel_types::{DumpMetadata, FurnitureRecord, ScanMap, VoxelDump};
 
 pub(crate) fn parse_dump(path: &Path) -> Result<VoxelDump> {
     let file = File::open(path).with_context(|| format!("open {}", path.display()))?;
@@ -45,7 +45,7 @@ pub(crate) fn parse_reader<R: BufRead>(reader: R, label: &str) -> Result<VoxelDu
             serde_json::from_str(trimmed).with_context(|| format!("{label}:{lineno}: bad JSON"))?;
 
         if lineno == 1 {
-            let meta: DumpMeta = serde_json::from_value(value)
+            let meta: DumpMetadata = serde_json::from_value(value)
                 .with_context(|| format!("{label}:1: bad meta object"))?;
             if meta.v != crate::voxel_processing::voxel_types::DUMP_VERSION {
                 bail!(
@@ -67,7 +67,7 @@ pub(crate) fn parse_reader<R: BufRead>(reader: R, label: &str) -> Result<VoxelDu
                 data_lines += 1;
             }
             Value::Object(obj) if obj.contains_key("furn") => {
-                let rec: FurnRec = serde_json::from_value(obj["furn"].clone())
+                let rec: FurnitureRecord = serde_json::from_value(obj["furn"].clone())
                     .with_context(|| format!("{label}:{lineno}: bad furn record"))?;
                 dump.furniture.push(rec);
                 data_lines += 1;

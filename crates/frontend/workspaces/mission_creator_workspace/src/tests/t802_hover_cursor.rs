@@ -261,7 +261,7 @@ fn the_throttle_runs_before_the_pick_and_before_the_gesture_machine() {
 #[test]
 fn the_hover_read_never_touches_the_gesture_state() {
     let body = pointermove();
-    let open = ["let now_ms = js_sys::", "Date::now()"].concat();
+    let open = ["let now_ms = time_source::", "wall_clock_ms()"].concat();
     assert_eq!(
         body.matches(open.as_str()).count(),
         1,

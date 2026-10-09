@@ -8,7 +8,7 @@ formatters, the canonical-UTC validation, and the crate root that exports them.
 ```text
 crates/foundation/time_source/src/
 ├── browser_clock.rs   `BrowserClock`: `Date.now()`, compiled on wasm32 only
-├── clock.rs           `Clock`, the wall-clock trait, and `PlatformClock`, the target's real clock
+├── clock.rs           `Clock`, the wall-clock trait, `PlatformClock`, the target's real clock, and `wall_clock_ms`
 ├── error.rs           `Error` and `Result`: why a timestamp fails the canonical-UTC rule
 ├── lib.rs             the crate root: module header, `mod` lines and re-exports
 ├── manual_clock.rs    `ManualClock`: the test clock, set and advanced by hand

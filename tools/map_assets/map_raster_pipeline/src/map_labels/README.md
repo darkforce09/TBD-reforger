@@ -12,7 +12,7 @@ archive built from these files comes from the sibling `map_label_archives.rs`.
 ```text
 tools/map_assets/map_raster_pipeline/src/map_labels/
 ├── export_height_labels.rs  `export-height-labels`: elevation-model peaks and named heights
-└── importance_by_name.rs    `export-locations`: rows from the world export, importances, and gates G3–G7
+└── export_locations.rs      `export-locations`: rows from the world export, importances, and gates G3–G7
 ```
 
 ## How it works
@@ -27,7 +27,7 @@ assets/terrains/<terrain>/manifest.json + dem/everon-dem-16bit.png + locations.j
 - `export_locations` keeps the rows whose prefab sits under `World/Locations/`: each named location
   becomes a town, a locality (a sawmill, farm, quarry or mine inside a town name, at importance 0.4)
   or an airport, and hills and peaks keep their kind. It adds the four Everon places the export
-  lacks (the `cfgworld_supplement`), gives each row an id, a kind and an importance from
+  lacks (the `world_config_location_supplement`), gives each row an id, a kind and an importance from
   `importance_by_name`, and sorts by name. The gates then require at least ten rows and the seven
   required Everon towns, and reject short or placeholder names, sub-features tagged as towns and
   localities above importance 0.45; any failure exits 1 without writing. `--dry-run` prints the
@@ -42,7 +42,8 @@ assets/terrains/<terrain>/manifest.json + dem/everon-dem-16bit.png + locations.j
 - Depends on: `place_names::peaks` and `terrain_elevation` (`manifest`, `png`, `sampling`) for
   the elevation model and peak rules;
   `world_export_pipeline::json_number_formatting` for the number spelling;
-  the `repository_layout` crate (with `find_repository_root` for the checkout root) for the folders.
+  the `repository_root` crate for the checkout root and the `repository_layout` crate for the
+  folders.
 - Used by: `tools/map_assets/map_raster_pipeline/src/command_line.rs` (`export-locations`,
   `export-height-labels`); `map labels-rkyv` reads both outputs; `cargo xtask schema locations` and
   `cargo xtask schema height-labels` check the committed files.

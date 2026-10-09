@@ -56,10 +56,12 @@ async fn post_refresh(app: &Router, token: &str) -> (StatusCode, Value) {
         .uri("/api/v1/auth/refresh")
         .header(header::CONTENT_TYPE, "application/json")
         .body(Body::from(body))
-        .unwrap();
+        .expect("the request builds");
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     let json = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
     (status, json)
 }

@@ -36,7 +36,11 @@ newtype_ids = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
 repository_layout = { workspace = true }
+repository_root = { workspace = true }
 reqwest = { workspace = true, features = ["json", "charset"] }
+# The ring crypto provider installed before every client, so a build that unifies `reqwest`
+# with a TLS backend still builds clients.
+rustls = { workspace = true, features = ["ring", "std"] }
 serde = { workspace = true, features = ["derive"] }
 # `float_roundtrip` parses every f64 bit-exactly: the ballistics agreement gate decodes the browser
 # bench's reading and compares its floats bit for bit with the native solves.

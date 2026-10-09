@@ -1,7 +1,7 @@
 # Test support
 
 The source tree of `frontend_test_support`, the helpers the frontend crates' tests share: the
-repository-root finder and the repository files it reads (the captured
+repository files read from the checkout root `repository_root` finds (the captured
 [API](/documentation/glossary/a_to_f.md#api) responses, the contract schemas, the API route
 tables), the source scrubber, the joining of the shards a source pin reads, and the `view!`
 attribute guard several page areas run over their own folders. Everything here is test-only.
@@ -14,9 +14,9 @@ crates/frontend/foundation/frontend_test_support/src/
 ├── fixtures.rs               `golden!`, the captured responses, the API route tables, `Cargo.toml`
 ├── lib.rs                    the module tree
 ├── prelude.rs                the helpers most tests import
-├── repository_root.rs        the repository-root finder and the cached reads of repository files
+├── repository_root.rs        the calling crate's checkout root and the cached reads of repository files
 ├── source_shards.rs          joins the shards of one logical source file for a source pin
-├── tests/                    unit tests for the scrubber, the root finder and the attribute guard
+├── tests/                    unit tests for the scrubber, the repository file reads and the attribute guard
 └── view_attribute_guard.rs   the source guard over `view!` attribute values
 ```
 
@@ -25,17 +25,17 @@ crates/frontend/foundation/frontend_test_support/src/
 Every frontend crate names this crate under `[dev-dependencies]`, so no shipped build compiles
 it.
 
-- `repository_root.rs`: `repository_root(manifest_dir)` walks up from the caller's
-  `env!("CARGO_MANIFEST_DIR")` to the nearest folder holding the root `Cargo.lock` and a
-  `Cargo.toml` with a `[workspace]` table, and panics with the path it searched when there is
-  none. `repository_text` and `repository_path` address a file by its path from that root, so a
+- `repository_root.rs`: `repository_root(manifest_dir)` is
+  `repository_root::find_repository_root_from` from the caller's `env!("CARGO_MANIFEST_DIR")`, the
+  nearest folder holding the `.ai/tickets/ROOT` marker, and panics with the walk's error (the
+  folder searched from and the marker) when there is none. `repository_text` and `repository_path` address a file by its path from that root, so a
   test reads the same file whatever the depth of its crate; `repository_text` reads each file once
   per test process and hands out `&'static str`. `source_file_folder(manifest_dir, file!())` is the
   folder of the calling source file, for a test that scans the folders around it. The caller
   passes `env!("CARGO_MANIFEST_DIR")` because `env!` expands in the crate that spells it.
 - `fixtures.rs`: `golden!("GET__me.json")` forwards the calling crate's manifest folder to
   `golden_text`, which reads one captured response from `contracts/fixtures/api_goldens/`
-  (`FIXTURE_DIR`) through the root finder; `api_route_source` concatenates the eight domain route
+  (`FIXTURE_DIR`) under that root; `api_route_source` concatenates the eight domain route
   tables of the API, one named path per domain, for guards that assert a frontend call has a route
   behind it; `crate_cargo_toml(manifest_dir)` returns the calling crate's own manifest, and
   `strip_toml_comments` removes its comments, for guards on a declared dependency or feature.
@@ -51,7 +51,7 @@ it.
 
 ## Boundaries
 
-- Depends on: files read at test run time from the repository root: the fixture corpus in
+- Depends on: `repository_root` for the root; files read at test run time from it: the fixture corpus in
   `contracts/fixtures/api_goldens/`, the route tables `routes.rs` of the eight API domain crates
   under `crates/api/`, and whatever repository path a test names; the calling crate's
   `Cargo.toml`; the production folders a test hands the attribute guard.

@@ -140,7 +140,7 @@ fn colliding_pairs_lists_every_pair() {
 #[test]
 #[ignore = "reads the live repo wave.lock; run explicitly with -- --ignored"]
 fn live_lock_parses_verbatim() {
-    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    let root = repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the checkout holding this crate");
     match load_lock(&root) {
         LockState::Loaded(lock) => {

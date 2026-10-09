@@ -6,7 +6,7 @@
 //! `cargo xtask repro` group ([`reproduction`]: the mission-version upload reproduction).
 //! **Position:** a command crate of `tools/commands`, over `deploy_settings` (the staging host
 //! and its folders), `deployment` (the staging fleet's instances, ports and units),
-//! `process_runner` (ssh, sshpass, ping and curl) and `repository_layout` (the checkout root).
+//! `process_runner` (ssh, sshpass, ping and curl) and `repository_root` (the checkout root).
 //! The `debug`, `repro` and `mod` groups of `xtask` call it.
 //! **Signals & state:** none held; a command appends to the log file it names, writes and removes
 //! its own temp files and reads the process environment.

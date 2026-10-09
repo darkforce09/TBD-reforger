@@ -46,8 +46,8 @@ cargo xtask verify crate-tiers                                                  
 - Used by: the API's fire-mission and ballistics-catalog services, the mortar calculator and the
   agreement bench of the single-page app, and the agreement and offline mortar gates of the
   developer tools.
-- Rules: a ballistics crate depends on foundation and ballistics crates only, never on `legacy/`,
-  an application or a tool (`cargo xtask verify crate-tiers`); every public identifier is a
+- Rules: a ballistics crate depends on foundation and ballistics crates only, never on an
+  application or a tool (`cargo xtask verify crate-tiers`); every public identifier is a
   newtype id that serialises as its bare string, so catalog, fire-mission and calibration JSON keep
   their bytes (`cargo xtask verify crate-anatomy`).
 

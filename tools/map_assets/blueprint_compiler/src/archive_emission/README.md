@@ -13,8 +13,8 @@ tools/map_assets/blueprint_compiler/src/archive_emission/
 ├── archive_command.rs     the `bvh-batch --all-prefabs` arm and its report; `run_archive`
 ├── archive_writer.rs      `build` and `run`: descriptors, mesh index and blueprints folded into rkyv
 ├── blueprint_assembly.rs  `assemble`, `validate_and_write`: bands to a checked `BuildingBlueprint`
-├── library_reader/        the library builder, its manifest and its writer
-├── library_reader.rs      `PrefabRow`, `LibraryOptions` and `Library`; re-exports the builder
+├── prefab_library/        the library builder, its manifest and its writer
+├── prefab_library.rs      `PrefabRow`, `LibraryOptions` and `Library`; re-exports the builder
 └── tests/                 the unit tests of the assembly, the library and the archive
 ```
 
@@ -40,7 +40,7 @@ document against `contracts/definitions/building-blueprint.schema.json`, and wri
 
 `archive_command.rs` parses `bvh-batch --all-prefabs [--terrain everon] [--only-kind K]…
 [--limit N] [--hot N] [--dry-run] [--all-layers] [--paks <dir>] [--extract <dir>] [--out <dir>]`,
-builds the library through `library_reader/`, prints the census, and writes it under
+builds the library through `prefab_library/`, prints the census, and writes it under
 `assets/terrains/<terrain>/prefabs/` unless `--dry-run`. Its `run_archive` hands
 `blueprint-from-voxels archive` to `archive_writer.rs`.
 
@@ -58,8 +58,8 @@ default state and each furniture record's footprint size (`wire_blueprint`).
 
 ## Public surface
 
-- `developer_tools::blueprint::run`, the blueprint root's `blueprint-from-voxels` entry, reaches
-  `archive` through `run_archive`; `developer_tools::blueprint::run_bvh_batch` reaches the
+- `blueprint_compiler::run`, the blueprint root's `blueprint-from-voxels` entry, reaches
+  `archive` through `run_archive`; `blueprint_compiler::run_occlusion_sidecar_batch` reaches the
   `--all-prefabs` arm. Both are `cargo xtask map` commands.
 - Nothing else crosses the blueprint compiler's boundary.
 
@@ -67,13 +67,13 @@ default state and each furniture record's footprint size (`wire_blueprint`).
 
 - Depends on:
   - the blueprint root's `types`, `params`, `walls`, `roof`, `march` and `hull` modules, and the
-    batch walk, sources and writer in `tools/map_assets/blueprint_compiler/src/bvh/`;
+    batch walk, sources and writer in `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/`;
   - `building_interiors::blueprint` (the JSON blueprint), `world_file_formats::archives`
     (`BuildingBlueprintArchive`, the codec, the archive schema version) and
     `world_line_of_sight::occluder_library` (descriptors, manifest);
   - the `repository_layout` crate, `jsonschema`, and the schemas in `contracts/definitions/`.
-- Used by: the blueprint root's `run` and `interpret_one`; `run_bvh_batch` in
-  `tools/map_assets/blueprint_compiler/src/bvh/batch_processing/run_bvh_batch.rs`; through them
+- Used by: the blueprint root's `run` and `interpret_one`; `run_occlusion_sidecar_batch` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/batch_processing/batch_command_line.rs`; through them
   `cargo xtask map blueprint-from-voxels` and `cargo xtask map bvh-batch --all-prefabs`.
 - Rules:
   - the archive round-trips every committed descriptor and carries every committed blueprint level

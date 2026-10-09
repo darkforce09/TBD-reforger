@@ -278,7 +278,9 @@ async fn assert_family_revoked(
     refresh_tokens: &[&str],
 ) {
     let pool = harness.pool();
-    check_refresh_families(pool, &member.id).await.unwrap();
+    check_refresh_families(pool, &member.id)
+        .await
+        .expect("the refresh-family invariant check runs");
     assert_eq!(
         live_credentials(pool, &member.id).await,
         (0, 0),

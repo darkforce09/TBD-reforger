@@ -80,9 +80,15 @@ async fn req(
         }
         None => Body::empty(),
     };
-    let resp = app.clone().oneshot(b.body(body).unwrap()).await.unwrap();
+    let resp = app
+        .clone()
+        .oneshot(b.body(body).expect("the request builds"))
+        .await
+        .unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),

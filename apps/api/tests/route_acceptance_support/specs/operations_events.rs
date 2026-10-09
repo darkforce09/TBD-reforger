@@ -483,7 +483,7 @@ fn directory_and_leave_specs() -> Vec<RouteSpec> {
 }
 
 /// Every spec of the `operations_events` part.
-pub fn specs() -> Vec<RouteSpec> {
+pub(crate) fn specs() -> Vec<RouteSpec> {
     [event_specs(), access_specs(), directory_and_leave_specs()]
         .into_iter()
         .flatten()

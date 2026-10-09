@@ -38,8 +38,8 @@ module to the tooling; each crate's README then says what its own folders hold.
 | `ticket_registry` | library, `tools/tickets` tier 4 | the registry view, typed operations, validation, `queue.json` and the roadmap and gap-analysis markers, the corpus pins and the bodies of the `cargo xtask ticket` verbs |
 | `verification_core` | library, `tools/foundation` tier 0 | the fail-closed primitives: verdicts, findings, pattern scans, the report and the shared verification lock |
 | `process_runner` | library, `tools/foundation` tier 1 | child processes in their own process group with deadlines and honest statuses, the container-to-host bridge, the ssh transport |
-| `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length, test placement, exemptions, engine layers, crate directions, workspace laws |
-| `repository_layout` | library, `tools/foundation` tier 0 | the checkout-root walk and the repository locations more than one tool names |
+| `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length, test placement, exemptions, the apps' dependency directions, the workspace laws |
+| `repository_layout` | library, `tools/foundation` tier 0 | the repository locations more than one tool names |
 | `deploy_settings` | library, `tools/foundation` tier 2 | the `deploy/deploy.env` reader: the precedence of the file over the process environment, the deploy host, its remote folders and the ssh transport choice |
 | `tool_test_support` | library, `tools/foundation` tier 1, dev-dependency only | the environment and working-directory locks and the test checkout root the tool tests share |
 | `enfusion_pak` | library, `tools/enfusion` tier 0 | the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) `.pak` archive reader: one parser and one decompressor under the blueprint and world policies, the loose and layered sources |
@@ -73,17 +73,17 @@ verification_core ◀── process_runner, repository_laws        (tools/founda
 ```
 
 1. A `tools/foundation` crate depends only on lower `tools/foundation` crates (`process_runner`
-   and `repository_laws` on `verification_core`, which depends on none)
-   (`foundation_crates_depend_only_on_lower_foundation_crates`), and a `tools/tickets` crate only
-   on `tools/foundation` crates, on `time_source`, `content_digest` and `newtype_ids`, and on
+   and `repository_laws` on `verification_core`, which depends on none) and on the checkout-root
+   finder `repository_root` (`foundation_crates_depend_only_on_lower_foundation_crates`), and a
+   `tools/tickets` crate only on `tools/foundation` crates, on `time_source`, `content_digest`,
+   `newtype_ids` and `repository_root`, and on
    ticket crates of a lower tier
    (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates`), so each is read, tested
    and reasoned about without the tools above it.
 2. `xtask` and `developer_tools` are binary-only packages whose workspace dependencies are tool
-   crates; neither depends on the other, and no member depends on either
+   crates alone (the checkout-root finder comes through `repository_layout`'s prelude); neither depends on the other, and no member depends on either
    (`tooling_dependency_direction_is_enforced`).
-3. No tool depends on a member under `legacy/` (the strangler law), and no tokio, axum, reqwest,
-   resvg or image enters xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`):
+3. No tokio, axum, reqwest, resvg or image enters xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`):
    the async servers and the raster crates run behind the `developer_tools` binaries, so neither
    a server nor an image codec rebuilds the command surface.
 4. Ticket logic has one owner: the xtask `ticket` group delegates to `ticket_registry` and the
@@ -106,17 +106,18 @@ literal. A tool's own layout module declares itself on its first line
 
 | Module | Owns |
 |---|---|
-| `tools/foundation/repository_layout` | the checkout-root walk and the locations more than one tool names: the ticket registry files, the artifact tree, the reference lanes and their folders, the contract and map-asset trees, the enfusion-mcp npm package, the browser gate pins, the documentation root, the roadmap and gap analysis, the deploy tree, the server profiles, the MCP fixtures, the runbooks and documentation areas the commands name, and the build output folder with its purpose subfolders |
+| `tools/foundation/repository_layout` | the locations more than one tool names: the ticket registry files, the artifact tree, the reference lanes and their folders, the contract and map-asset trees, the enfusion-mcp npm package, the browser gate pins, the documentation root, the roadmap and gap analysis, the deploy tree, the server profiles, the MCP fixtures, the runbooks and documentation areas the commands name, and the build output folder with its purpose subfolders |
 | `tools/tickets/ticket_model/src/repository.rs` | the handoff document, the sparse-checkout sets, and in its `documentation` submodule the documents only the ticket domain names |
 | `tools/map_assets/map_raster_pipeline/src/decision_record_locations.rs` | the decision records of the inland-water, aerial-orthophoto and cartographic lanes |
 | `tools/enfusion/enfusion_script_index/src/script_index_layout.rs` | the Enfusion symbol index and the capability verdict table |
 | `tools/browser_testing/browser_gate_suites/src/gate_layout.rs` | the map-asset mounts of the gates' server and the editor gate runbook |
 
-Every tool resolves the checkout root through `repository_layout::find_repository_root`
-(`tools/foundation/repository_layout`), which walks up to `.ai/tickets/ROOT`, so a command run in a
+Every tool resolves the checkout root through `repository_root::find_repository_root`
+(`crates/foundation/repository_root`, the one root walk of the workspace, which the API's and the
+frontend crates' tests use as well; xtask reaches it through `repository_layout::prelude`), which walks up to `.ai/tickets/ROOT`, so a command run in a
 linked worktree reads that worktree's files; a working directory outside any checkout is an
-error, never a guessed folder. The same crate spells the locations more than one tool
-names: the ticket registry files, the artifact tree, the reference lanes, the documentation root
+error, never a guessed folder. `tools/foundation/repository_layout` spells the locations more
+than one tool names: the ticket registry files, the artifact tree, the reference lanes, the documentation root
 and the build output folder. `only_a_layout_module_spells_a_repository_path` in
 `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` holds the rule for production source.
 

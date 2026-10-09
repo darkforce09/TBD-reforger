@@ -66,9 +66,9 @@ use super::*;
 ///     smokes at t=60 has proved nothing. Owning the directory removes the race instead of sampling
 ///     it.
 ///   * **Falling back late would be unsafe.** Switching caches *after* discovering a bad one means a
-///     second `set_var` once the browser is already up — i.e. inside the multi-threaded window
-///     the multi-threaded window, after `start_server` spawned tokio tasks and `reqwest::Client::new()`
-///     started reading proxy env vars. The only sound place to decide is before any of that.
+///     second `set_var` once the browser is already up — i.e. inside the multi-threaded window,
+///     after `start_server` spawned tokio tasks and its `reqwest` client started reading proxy
+///     env vars. The only sound place to decide is before any of that.
 ///
 /// A deliberate setting is still honoured — through `cdp::GATE_FONT_CACHE_ENV`, which is *about the
 /// gate*. That distinction is the whole point: `XDG_CACHE_HOME` says "put caches here" and says nothing
@@ -132,7 +132,7 @@ pub(super) fn font_cache_report() -> String {
 
 /// Load the committed pin manifest of the checkout the gate runs in.
 pub(super) fn load_manifest() -> Result<Value> {
-    let path = ::repository_layout::find_repository_root()?
+    let path = ::repository_root::find_repository_root()?
         .join(::repository_layout::BROWSER_GATE_ENVIRONMENT);
     let raw = std::fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
     serde_json::from_str(&raw).context("parse gate-env.json")

@@ -34,7 +34,7 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// A pak archive or a loose game file could not be read.
     #[error(transparent)]
     Pak(#[from] enfusion_pak::Error),
@@ -66,7 +66,7 @@ pub enum Error {
 
 impl Error {
     /// A refusal carrying `text` as its whole message.
-    pub(crate) fn msg(text: impl Into<String>) -> Self {
+    pub(crate) fn message(text: impl Into<String>) -> Self {
         Error::Message(text.into())
     }
 
@@ -91,7 +91,7 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 /// A refusal ([`Error::Message`]) whose text is built like `format!`.
 macro_rules! refusal {
     ($($argument:tt)*) => {
-        $crate::error::Error::msg(format!($($argument)*))
+        $crate::error::Error::message(format!($($argument)*))
     };
 }
 pub(crate) use refusal;

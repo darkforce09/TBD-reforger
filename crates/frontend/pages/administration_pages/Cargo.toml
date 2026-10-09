@@ -17,6 +17,8 @@ tier = 11
 targets = "any"
 
 [dependencies]
+# The wall clock and the UTC formatter behind new post ids and today's date.
+time_source = { workspace = true }
 # The event, access, review, server, fleet, member, announcement, audit and ballistics catalog
 # wire types and their typed identifiers.
 frontend_api_dtos = { workspace = true }

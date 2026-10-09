@@ -31,7 +31,7 @@ use axum::http::StatusCode;
 
 /// The authority a generated session must carry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ExpectedAuthority {
+pub(crate) struct ExpectedAuthority {
     /// The session authorizes requests at all.
     pub live: bool,
     /// The effective site rank of a live session.
@@ -51,7 +51,7 @@ struct MembershipStanding {
 
 impl ExpectedAuthority {
     /// The authority `case` must carry.
-    pub fn of(case: &AuthorityCase) -> Self {
+    pub(crate) fn of(case: &AuthorityCase) -> Self {
         let development_session = matches!(case.provenance, SessionProvenance::Development(_));
         let live = matches!(case.account_fate, AccountFate::Active)
             && matches!(
@@ -73,7 +73,7 @@ impl ExpectedAuthority {
     }
 
     /// The status a route gated on `gate` must answer for this session.
-    pub fn status_for(&self, gate: Rank) -> StatusCode {
+    pub(crate) fn status_for(&self, gate: Rank) -> StatusCode {
         if !self.live {
             StatusCode::UNAUTHORIZED
         } else if self.rank >= gate {

@@ -19,7 +19,7 @@
 use std::path::Path;
 
 use repository_laws::workspace_members::{WorkspaceMember, read_workspace_members};
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 use crate::error::{Error, Result};
 use crate::frontend_package_lane::{frontend_packages_among, is_frontend_member};

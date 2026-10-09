@@ -9,7 +9,7 @@ opaque, glass or foliage. They also hold the one march skeleton every voxel dump
 
 ```text
 tools/map_assets/blueprint_compiler/src/architectural_analysis/
-├── contour_tracing.rs         the shared march skeleton: 0.1 m lattice, padding, march order, `r2`
+├── collision_face_pairing.rs  one-sided collision faces paired into solid intervals, for the walls
 ├── convex_hulls.rs            `hull_triangles`: the triangulated convex hull of a small point cloud
 ├── floor_plates.rs            `floor_plate`: a level's walkable cells and heights around its slab
 ├── polygon_rings.rs           `trace`: outer rings and holes of a plan grid, traced on cell edges
@@ -18,7 +18,7 @@ tools/map_assets/blueprint_compiler/src/architectural_analysis/
 ├── tests/                     the unit tests of every stage
 ├── vertical_slabs.rs          `analyze`: slabs, floors, eave, ridge, chimney and the roof slope field
 ├── wall_extraction/           the `segments` and `grid` wall extractors and the exterior flood fill
-└── wall_extraction.rs         `Algo`, `BandWalls`, the `--debug-dir` records; re-exports `extract_band`
+└── wall_extraction.rs         `WallAlgorithm`, `BandWalls`, the `--debug-dir` records; re-exports `extract_band_walls`
 ```
 
 ## How it works
@@ -31,7 +31,7 @@ The files are modules of `architectural_analysis`, declared in
 VoxelDump ──slabs::analyze──▶ VerticalScan (floors, eave, ridge, top surface, top slope)
     │
     ├─ per floor band [floor .. next floor or eave]:
-    │     walls::extract_band ──▶ walls, exterior flags, masses
+    │     walls::extract_band_walls ──▶ walls, exterior flags, masses
     │     plate::floor_plate  ──▶ walkable cells ──rings::trace──▶ footprint + floor polygons
     ├─ attic band [last band .. ridge] when the ridge rises high enough: walls only, no plate
     └─ roof::build ──▶ RoofGrid (in blueprint assembly)
@@ -47,11 +47,9 @@ left-most turn at a vertex where two cells touch diagonally, and drops rings und
 and leaves a cell empty unless its fine block is covered to `roof_min_coverage`: a phantom roof
 would block sight lines the engine clears.
 
-`contour_tracing.rs` is not a tracing stage: it holds the wire conventions of the Workbench sensor
-(`TBD_BuildingTraceScanner.c`): the scan box is the bounds padded 0.6 m (1.2 m above), the cell is
-0.1 m, coordinates are rounded to two decimals, and empty scanlines are omitted. The analytic test
-buildings and `voxels-from-mesh` both march through `generate_dump`, so the two generators differ
-only in their intersection maths.
+`collision_face_pairing.rs` rebuilds solid intervals from the scan runs: Enfusion collision faces
+register only when marched into from the front, so it pairs each forward entry face with the
+nearest closing face (`pair_faces_consuming`), each closing face used at most once.
 
 `surface_classification.rs` maps a `.gamemat` stem to a surface kind (`glass*` and `plexiglass*`
 are glass; `foliage*`, `grass*`, `moss*` and `seaweed*` are foliage; the rest is opaque), reads a
@@ -67,16 +65,16 @@ folder's README.
 
 ## Boundaries
 
-- Depends on: `tools/map_assets/blueprint_compiler/src/voxel_processing/` (`Params`, `VoxelDump`,
+- Depends on: `tools/map_assets/blueprint_compiler/src/voxel_processing/` (`AnalysisParameters`, `VoxelDump`,
   `VerticalScan`, `PlanGrid`), the face pairing in
-  `tools/map_assets/blueprint_compiler/src/bvh/instance_pairs.rs`, and
+  `tools/map_assets/blueprint_compiler/src/architectural_analysis/collision_face_pairing.rs`, and
   `building_interiors::blueprint` (`FloorPolygon`, `RoofGrid`) and
   `spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind`.
 - Used by: the blueprint root (`run`, `interpret_one`, `build_bands`); the blueprint assembly in
-  `tools/map_assets/blueprint_compiler/src/archive_emission/` (walls, roof, `r2`) and its prefab
+  `tools/map_assets/blueprint_compiler/src/archive_emission/` (walls, roof, `round_to_two_decimals`) and its prefab
   library (`hull_triangles`); the COLL reader in
   `tools/map_assets/blueprint_compiler/src/mesh_decoding/`, whose `xob-inspect` also classifies
-  triangles; the sidecar batch in `tools/map_assets/blueprint_compiler/src/bvh/`;
+  triangles; the sidecar batch in `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/`;
   the voxel generators in `tools/map_assets/blueprint_compiler/src/voxel_processing/`.
 - Rules: ring tracing works on integer lattice coordinates and is deterministic
   (`trace_is_deterministic`), with holes wound clockwise (`donut_has_one_cw_hole`); the roof grid

@@ -14,8 +14,7 @@ DELETES NOTHING. The chunk emitter must keep working through this step, because 
 re-emits map-object-chunk-sample.bin through write_chunk_bin and demands byte identity.
 
 T-935.16 owns tools/tbd-tools/src/world/build.rs and world_assets/world_host.rs too, and cannot share a
-wave with this row or with T-935.19.
-"""
+wave with this row or with T-935.19. Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-core/src/world/binary/archives.rs: removed in commit 1660b03f8, no successor; crates/map-engine-core/src/world/binary/chunk_container.rs: removed in commit 1660b03f8, no successor; tools/tbd-tools/src/world/binary_emit.rs: removed in commit b4d8b7ca0, no successor; tools/tbd-tools/src/world/build.rs: removed in commit b4d8b7ca0, no successor; world_assets/world_host.rs: removed in commit 1660b03f8, no successor."""
 priority = 2
 depends_on = ["T-935.17"]
 parent = "T-935"

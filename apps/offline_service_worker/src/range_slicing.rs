@@ -13,14 +13,14 @@
 //! `206`.
 
 /// `206 Partial Content`.
-pub const STATUS_PARTIAL_CONTENT: u16 = 206;
+pub(crate) const STATUS_PARTIAL_CONTENT: u16 = 206;
 
 /// `416 Range Not Satisfiable`.
-pub const STATUS_RANGE_NOT_SATISFIABLE: u16 = 416;
+pub(crate) const STATUS_RANGE_NOT_SATISFIABLE: u16 = 416;
 
 /// One byte range as the client wrote it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ByteRangeRequest {
+pub(crate) enum ByteRangeRequest {
     /// `bytes=a-b`: bytes `a` through `b`, inclusive.
     Bounded {
         /// First byte offset.
@@ -42,7 +42,7 @@ pub enum ByteRangeRequest {
 
 /// Why a `Range` header is ignored.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RangeHeaderError {
+pub(crate) enum RangeHeaderError {
     /// The unit is not `bytes`.
     UnsupportedUnit,
     /// More than one range; the full body is served instead of a multipart response.
@@ -53,7 +53,7 @@ pub enum RangeHeaderError {
 
 /// One satisfiable slice of a body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ByteSlice {
+pub(crate) struct ByteSlice {
     /// First byte offset.
     pub start: u64,
     /// Last byte offset, inclusive.
@@ -64,17 +64,17 @@ pub struct ByteSlice {
 
 impl ByteSlice {
     /// One past the last byte offset, the `end` argument of `Blob.slice`.
-    pub fn end_exclusive(&self) -> u64 {
+    pub(crate) fn end_exclusive(&self) -> u64 {
         self.end_inclusive + 1
     }
 
     /// Number of bytes in the slice, the `Content-Length` of the `206`.
-    pub fn len(&self) -> u64 {
+    pub(crate) fn len(&self) -> u64 {
         self.end_exclusive() - self.start
     }
 
     /// The `Content-Range` header value, `bytes a-b/total`.
-    pub fn content_range(&self) -> String {
+    pub(crate) fn content_range(&self) -> String {
         format!(
             "bytes {}-{}/{}",
             self.start, self.end_inclusive, self.total_len
@@ -84,7 +84,7 @@ impl ByteSlice {
 
 /// How to answer a request over a body of known length.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RangeResponsePlan {
+pub(crate) enum RangeResponsePlan {
     /// No usable `Range` header: answer with the full body and its original status.
     FullBody,
     /// Answer `206` with this slice.
@@ -97,7 +97,7 @@ pub enum RangeResponsePlan {
 }
 
 /// Parses a `Range` header value holding one byte range.
-pub fn parse_range_header(value: &str) -> Result<ByteRangeRequest, RangeHeaderError> {
+pub(crate) fn parse_range_header(value: &str) -> Result<ByteRangeRequest, RangeHeaderError> {
     let (unit, ranges) = value
         .trim()
         .split_once('=')
@@ -126,7 +126,7 @@ pub fn parse_range_header(value: &str) -> Result<ByteRangeRequest, RangeHeaderEr
 }
 
 /// Resolves `request` against a body of `total_len` bytes.
-pub fn resolve_range(request: ByteRangeRequest, total_len: u64) -> RangeResponsePlan {
+pub(crate) fn resolve_range(request: ByteRangeRequest, total_len: u64) -> RangeResponsePlan {
     let unsatisfiable = RangeResponsePlan::Unsatisfiable { total_len };
     if total_len == 0 {
         return unsatisfiable;
@@ -153,7 +153,7 @@ pub fn resolve_range(request: ByteRangeRequest, total_len: u64) -> RangeResponse
 
 /// Plans the response to a request carrying `range_header` (if any) over a body of `total_len`
 /// bytes; an unusable header yields [`RangeResponsePlan::FullBody`].
-pub fn plan_range_response(range_header: Option<&str>, total_len: u64) -> RangeResponsePlan {
+pub(crate) fn plan_range_response(range_header: Option<&str>, total_len: u64) -> RangeResponsePlan {
     match range_header.map(parse_range_header) {
         Some(Ok(request)) => resolve_range(request, total_len),
         None | Some(Err(_)) => RangeResponsePlan::FullBody,
@@ -161,7 +161,7 @@ pub fn plan_range_response(range_header: Option<&str>, total_len: u64) -> RangeR
 }
 
 /// The `Content-Range` header value of a `416`, `bytes */total`.
-pub fn unsatisfied_content_range(total_len: u64) -> String {
+pub(crate) fn unsatisfied_content_range(total_len: u64) -> String {
     format!("bytes */{total_len}")
 }
 

@@ -2,15 +2,17 @@
 //! glued to a `\n`, `\t`, `\r` or `\0` escape, a `file://` URL, a `/../` piece joined to a base, a
 //! token that climbs back out of a folder (`apps/../from`) and one whose lead names no folder
 //! (`7/../..`, a test datum), the live README beside the manifests, frozen areas the tool names by
-//! their place after the moves, the dry run's verification of the planned tree, and the spellings
+//! their place after the moves, the dry run's verification of the planned tree, the spellings
 //! that look like paths and name none: a lone `/` and a synthetic fixture path that only starts
-//! with a moved folder's name.
+//! with a moved folder's name, the README index of a frozen area whose Contents tree follows the
+//! moves while its prose stays, and this tool's own test sources, whose literals and comments are
+//! fixture text.
 
-use super::file_treatment::manifests_folder;
+use super::file_treatment::{FileTreatment, TreatmentAreas, manifests_folder};
 use super::fixture_repository::FixtureRepository;
 use super::{apply, dry_run, verify};
-use repository_layout::ARCHIVE_DIR;
 use repository_layout::documentation::DOCUMENTATION_ROOT;
+use repository_layout::{ARCHIVE_DIR, TICKET_DOCUMENTS_DIR};
 
 #[test]
 fn relocate_spellings_after_control_escapes_are_rewritten_and_verified() {
@@ -342,15 +344,122 @@ fn relocate_climbs_led_by_a_folder_no_anchor_holds_stay_as_written() {
         .write("apps/api/src/identity/services/tests/profile.rs", profile)
         .track();
     let manifest = repo.manifest(
-        "path\tapps/api/src/identity/services/tests/profile.rs\tcrates/api/api_discord/src/tests/profile.rs\t\n\
+        "path\tapps/api/src/identity/services/tests/profile.rs\tapps/api/src/discord_link/tests/profile.rs\t\n\
          path\told_assets\tnew_assets\t\n",
     );
 
     assert_eq!(dry_run(repo.root(), &manifest), 0);
     assert_eq!(apply(repo.root(), &manifest), 0);
     assert_eq!(
-        repo.read("crates/api/api_discord/src/tests/profile.rs"),
+        repo.read("apps/api/src/discord_link/tests/profile.rs"),
         "const ID: &str = \"7/../..\";\nconst DATA: &str = \"apps/../new_assets\";\n"
     );
     assert_eq!(verify(repo.root(), Some(&manifest)), 0);
+}
+
+/// A program folder with a README index, archived by one `path` row: the index's Contents tree
+/// names the folder where it now lies, while the archived prose, the roles and the record beside
+/// it keep the spellings they were written with.
+#[test]
+fn relocate_frozen_readme_index_contents_tree_follows_the_moves() {
+    let repo = FixtureRepository::new("frozen-readme-index");
+    let program = format!("{DOCUMENTATION_ROOT}/program");
+    let archived = format!("{ARCHIVE_DIR}/program");
+    let readme = format!(
+        "**Status:** live\n\n# Program\n\nThe plan lived at `{program}/plan.md`.\n\n\
+         ## Contents\n\n```text\n{program}/\n├── plan.md    the plan as {program}/plan.md read\n\
+         └── README.md  this index\n```\n\nSee [the plan](/{program}/plan.md).\n"
+    );
+    let plan = format!("**Status:** archived\n\nWritten at `{program}/plan.md`.\n");
+    repo.write(&format!("{program}/README.md"), &readme)
+        .write(&format!("{program}/plan.md"), &plan)
+        .track();
+    let manifest = repo.manifest(&format!("path\t{program}\t{archived}\t\n"));
+
+    assert_eq!(dry_run(repo.root(), &manifest), 0);
+    assert_eq!(apply(repo.root(), &manifest), 0);
+    let expected = readme
+        .replace(
+            &format!("```text\n{program}/\n"),
+            &format!("```text\n{archived}/\n"),
+        )
+        .replace(&format!("](/{program}/"), &format!("](/{archived}/"));
+    assert_eq!(repo.read(&format!("{archived}/README.md")), expected);
+    assert_eq!(repo.read(&format!("{archived}/plan.md")), plan);
+    assert_eq!(verify(repo.root(), Some(&manifest)), 0);
+
+    let stale_tree = expected.replace(
+        &format!("```text\n{archived}/\n"),
+        &format!("```text\n{program}/\n"),
+    );
+    repo.write(&format!("{archived}/README.md"), &stale_tree);
+    assert_eq!(
+        verify(repo.root(), Some(&manifest)),
+        1,
+        "a retired spelling in the index's Contents tree is a finding"
+    );
+
+    let areas = TreatmentAreas::current(None);
+    for folder in [ARCHIVE_DIR, TICKET_DOCUMENTS_DIR] {
+        assert_eq!(
+            areas.treatment_of(&format!("{folder}/topic/README.md"), ""),
+            FileTreatment::FrozenIndex
+        );
+        assert_eq!(
+            areas.treatment_of(&format!("{folder}/topic/notes.md"), ""),
+            FileTreatment::FrozenDocument
+        );
+    }
+}
+
+/// This tool's own test sources describe throwaway checkouts: a manifest that moves a real path of
+/// the same spelling rewrites their code but never their string literals or comments, and the
+/// verification judges their code alone.
+#[test]
+fn relocate_own_test_fixtures_keep_their_literals_and_comments() {
+    let repo = FixtureRepository::new("own-test-fixtures");
+    let tool = "tools/commands/repository_relocation";
+    let fixture = "//! Moves `old_assets/a.json` in a throwaway checkout.\n\
+                   use crate::old_layer::Helper;\n\
+                   const ROW: &str = \"path\\told_assets\\tnew_assets\\t\\n\";\n\
+                   const READ: &str = \"old_assets/a.json\"; // crate::old_layer::Helper\n";
+    repo.write("old_assets/a.json", "{}\n")
+        .write(
+            &format!("{tool}/Cargo.toml"),
+            "[package]\nname = \"tool\"\n",
+        )
+        .write(
+            &format!("{tool}/src/lib.rs"),
+            "use crate::old_layer::Helper;\nconst DATA: &str = \"old_assets/a.json\";\n",
+        )
+        .write(&format!("{tool}/src/tests/scenarios.rs"), fixture)
+        .track();
+    let manifest = repo.manifest(&format!(
+        "path\told_assets\tnew_assets\t\n\
+         rust_path\tcrate::old_layer::\tcrate::new_layer::\t{tool}\n"
+    ));
+
+    assert_eq!(dry_run(repo.root(), &manifest), 0);
+    assert_eq!(apply(repo.root(), &manifest), 0);
+    assert_eq!(
+        repo.read(&format!("{tool}/src/tests/scenarios.rs")),
+        fixture.replacen("use crate::old_layer::", "use crate::new_layer::", 1),
+        "only the code of the tool's test sources follows the manifest"
+    );
+    assert_eq!(
+        repo.read(&format!("{tool}/src/lib.rs")),
+        "use crate::new_layer::Helper;\nconst DATA: &str = \"new_assets/a.json\";\n",
+        "the rest of the crate is live"
+    );
+    assert_eq!(verify(repo.root(), Some(&manifest)), 0);
+
+    repo.write(
+        &format!("{tool}/src/tests/scenarios.rs"),
+        &format!("{fixture}use crate::old_layer::Other;\n"),
+    );
+    assert_eq!(
+        verify(repo.root(), Some(&manifest)),
+        1,
+        "a retired prefix in the code of the tool's test sources is still a finding"
+    );
 }

@@ -14,7 +14,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-crc32fast = "1.5.0"
+crc32fast = { workspace = true }
 # The executor route shapes and the machine credential format, shared with the platform API.
 fleet_wire_contract = { workspace = true }
 rand = { workspace = true }
@@ -22,8 +22,8 @@ rand = { workspace = true }
 # the aws-lc-rs C build, the same arrangement as the API crate.
 reqwest = { workspace = true, features = ["json", "rustls-no-provider"] }
 rustls = { workspace = true, features = ["ring", "std", "tls12"] }
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
 toml = { workspace = true }
@@ -34,5 +34,8 @@ uuid = { workspace = true, features = ["serde"] }
 [dev-dependencies]
 # The stand-in platform API of the ledger tests.
 axum = { workspace = true }
-tempfile = "3.27.0"
+tempfile = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
+
+[lints]
+workspace = true

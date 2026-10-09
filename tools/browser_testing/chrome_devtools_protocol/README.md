@@ -9,7 +9,7 @@ calls, events, navigation, evaluation, trusted input, screenshots and request in
 
 ```text
 tools/browser_testing/chrome_devtools_protocol/
-├── Cargo.toml  the `chrome_devtools_protocol` library package: `newtype_ids`, `tokio`, `tokio-tungstenite`, `reqwest`, `futures-util`, `serde_json`, `base64`, `libc`, `thiserror`; layout tier 1
+├── Cargo.toml  the `chrome_devtools_protocol` library package: `newtype_ids`, `tokio`, `tokio-tungstenite`, `reqwest`, `rustls` (ring), `futures-util`, `serde_json`, `base64`, `libc`, `thiserror`; layout tier 1
 └── src/        the browser and page handles, Chromium discovery, the launch and page setup, the gate font cache, the error type
 ```
 
@@ -61,7 +61,7 @@ At the crate root: `Browser`, `Page`, `GpuBackend`, `VIEWPORT`, `launch`, `launc
 ## Boundaries
 
 - Depends on: `newtype_ids` (the typed request id); `tokio` (the browser child, its output
-  drains, the page sockets), `tokio-tungstenite`, `reqwest` (the debugging endpoint), `futures-util`,
+  drains, the page sockets), `tokio-tungstenite`, `reqwest` (the debugging endpoint) with `rustls`'s ring provider, `futures-util`,
   `serde_json`, `base64`, `libc` (process-group signals) and `thiserror`.
 - Used by: `tools/browser_testing/browser_gate_suites`, every gate and the capture harness in it.
 - Rules: tier 1 of `tools/browser_testing`; Chromium is spawned through `tokio::process`, because

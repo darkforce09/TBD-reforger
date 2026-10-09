@@ -181,7 +181,7 @@ fn workspace(root: &Path, members: &[&str]) {
 }
 
 /// Every workspace member's source is scanned, whatever top-level folder holds it: a dangling
-/// citation in a member under `crates/` or `legacy/` fails the scan as one under `apps/` does.
+/// citation in a member under `crates/` or `engines/` fails the scan as one under `apps/` does.
 #[test]
 fn every_workspace_members_top_level_folder_is_scanned_and_can_fail() {
     let root = fixture_dir("workspace-members");
@@ -191,7 +191,7 @@ fn every_workspace_members_top_level_folder_is_scanned_and_can_fail() {
         &[
             "apps/api",
             "crates/foundation/guard",
-            "legacy/engine",
+            "engines/renderer",
             "tools/xtask",
         ],
     );
@@ -207,7 +207,7 @@ fn every_workspace_members_top_level_folder_is_scanned_and_can_fail() {
     );
     write(
         &root,
-        "legacy/engine/src/lib.rs",
+        "engines/renderer/src/lib.rs",
         concat!("// @contract", " good.schema.json#/$defs/absent\n"),
     );
 
@@ -225,8 +225,8 @@ fn every_workspace_members_top_level_folder_is_scanned_and_can_fail() {
     assert!(
         scan.problems
             .iter()
-            .any(|p| p.contains("legacy/engine/src/lib.rs") && p.contains("pointer")),
-        "a bad pointer cited under legacy/ must fail: {:?}",
+            .any(|p| p.contains("engines/renderer/src/lib.rs") && p.contains("pointer")),
+        "a bad pointer cited under engines/ must fail: {:?}",
         scan.problems
     );
     let _ = fs::remove_dir_all(&root);

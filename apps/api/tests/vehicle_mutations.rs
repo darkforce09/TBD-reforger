@@ -63,7 +63,10 @@ async fn list(suite: &ContentSuite) -> Vec<Value> {
     let (status, body) = suite.call(Some(&suite.member), "GET", LIST, None).await;
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_valid(CONTRACT, Some("VehicleList"), &body);
-    body["data"].as_array().unwrap().clone()
+    body["data"]
+        .as_array()
+        .expect("the `data` field is an array")
+        .clone()
 }
 
 /// The lifecycle stamps of a stored row: `(created_by, updated_by, deleted_by, deleted)`.
@@ -78,11 +81,14 @@ async fn stamps(
     .bind(id)
     .fetch_one(suite.pool())
     .await
-    .unwrap()
+    .expect("the read of vehicle_databases returns a row")
 }
 
 fn id_of(row: &Value) -> String {
-    row["id"].as_str().unwrap().to_owned()
+    row["id"]
+        .as_str()
+        .expect("the `id` field is a string")
+        .to_owned()
 }
 
 #[tokio::test]
@@ -507,7 +513,7 @@ async fn latest_audit(suite: &ContentSuite, id: &str) -> (String, String, String
     .bind(id)
     .fetch_one(suite.pool())
     .await
-    .unwrap()
+    .expect("the read of audit_logs returns a row")
 }
 
 async fn audits_of(suite: &ContentSuite, id: &str) -> i64 {
@@ -515,7 +521,7 @@ async fn audits_of(suite: &ContentSuite, id: &str) -> i64 {
         .bind(id)
         .fetch_one(suite.pool())
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
 }
 
 #[tokio::test]

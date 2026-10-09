@@ -68,7 +68,8 @@ None: no feature, no environment variable.
   client, the typed endpoint calls, the multipart upload and the audit stream), `frontend_api_dtos`
   (the wire types and their typed identifiers), `frontend_ui` (the interface primitives and the
   date, clipboard and formatting helpers), `frontend_route_table` (the route paths the pages link
-  to), `leptos`, `futures`, `serde_json`, `url`; on `wasm32`, `leptos_router`, `gloo-timers`,
+  to), `time_source` (the clock and UTC formatter of new posts), `leptos`, `futures`,
+  `serde_json`, `url`; on `wasm32`, `leptos_router`, `gloo-timers`,
   `js-sys`, `wasm-bindgen` and `web-sys`; `frontend_test_support` for its tests only.
 - Used by: the single-page app (`apps/frontend`), whose route table mounts the seven pages.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,

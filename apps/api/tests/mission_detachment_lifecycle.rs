@@ -34,8 +34,12 @@ impl Fixture {
     async fn new() -> Self {
         let url =
             common::require_test_database_url().expect("mission lifecycle requires PostgreSQL");
-        let pool = api_database::connect(&url).await.unwrap();
-        api_database::migrate(&pool).await.unwrap();
+        let pool = api_database::connect(&url)
+            .await
+            .expect("the test database accepts a connection");
+        api_database::migrate(&pool)
+            .await
+            .expect("the migrations apply to the test database");
         let state =
             api::composition::application_state(pool, Config::for_tests(url, "mission-detachment"));
         let actor = format!("mission-detachment-{}", Uuid::new_v4());
@@ -62,12 +66,20 @@ impl Fixture {
         )
         .await;
         assert_eq!(created.0, StatusCode::CREATED, "{created:?}");
-        let mission = created.1["id"].as_str().unwrap().parse().unwrap();
+        let mission = created.1["id"]
+            .as_str()
+            .expect("the `id` field is a string")
+            .parse()
+            .expect("the `id` field parses as an id");
         let starts_at = (chrono::Utc::now() + chrono::Duration::days(3)).to_rfc3339();
         let created = telemetry_support::call(&app, "POST", "/api/v1/events", Some(&token), None,
             Some(&json!({"name_override":"Detachment fixture","start_time":starts_at,"status":"open"}).to_string())).await;
         assert_eq!(created.0, StatusCode::CREATED, "{created:?}");
-        let event = created.1["id"].as_str().unwrap().parse().unwrap();
+        let event = created.1["id"]
+            .as_str()
+            .expect("the `id` field is a string")
+            .parse()
+            .expect("the `id` field parses as an id");
         let reporter = ReportingServer::open(&app, &state.pool, "Detachment server").await;
         Self {
             state,
@@ -104,13 +116,17 @@ impl Fixture {
     async fn attach_with_attendance(&self) -> (Uuid, Uuid) {
         let attached = self.attach().await;
         assert_eq!(attached.0, StatusCode::CREATED, "{attached:?}");
-        let attachment: Uuid = attached.1["id"].as_str().unwrap().parse().unwrap();
+        let attachment: Uuid = attached.1["id"]
+            .as_str()
+            .expect("the `id` field is a string")
+            .parse()
+            .expect("the `id` field parses as an id");
         let slot: Uuid =
             sqlx::query_scalar("SELECT id FROM orbat_slots WHERE event_mission_id = $1")
                 .bind(attachment)
                 .fetch_one(&self.state.pool)
                 .await
-                .unwrap();
+                .expect("the read of orbat_slots returns a row");
         let registered = self
             .call(
                 "POST",
@@ -126,12 +142,12 @@ impl Fixture {
         .bind(&self.actor)
         .fetch_one(&self.state.pool)
         .await
-        .unwrap();
+        .expect("the read of event_registrations returns a row");
         let arma: String = sqlx::query_scalar("SELECT arma_id FROM users WHERE discord_id = $1")
             .bind(&self.actor)
             .fetch_one(&self.state.pool)
             .await
-            .unwrap();
+            .expect("the read of users returns a row");
         let ingested = self
             .reporter
             .report_results(
@@ -170,7 +186,7 @@ impl Fixture {
             .bind(self.mission)
             .fetch_one(&self.state.pool)
             .await
-            .unwrap()
+            .expect("the read of missions returns a row")
     }
 
     async fn evidence_counts(&self, action: Option<&str>) -> (i64, i64) {
@@ -185,7 +201,7 @@ impl Fixture {
         .bind(&self.actor)
         .fetch_one(&self.state.pool)
         .await
-        .unwrap()
+        .expect("the read of audit_logs returns a row")
     }
 
     async fn history(&self, attachment: Uuid) -> Value {
@@ -204,7 +220,7 @@ impl Fixture {
              'authored_audit', (SELECT jsonb_agg(to_jsonb(a) ORDER BY a.id) FROM audit_logs a
                  WHERE (a.target_id = $1::text AND a.action = 'event.mission_removed')
                     OR (a.target_id = $2::text AND a.action = 'event.mission_attached')))"
-        ).bind(attachment).bind(self.event).bind(self.mission).fetch_one(&self.state.pool).await.unwrap()
+        ).bind(attachment).bind(self.event).bind(self.mission).fetch_one(&self.state.pool).await.expect("the read of event_missions returns a row")
     }
 
     async fn service_history(&self) -> Value {
@@ -212,7 +228,13 @@ impl Fixture {
         assert_eq!(response.0, StatusCode::OK, "{response:?}");
         assert_eq!(response.1["upcoming"], json!([]));
         let history = response.1["service_history"].clone();
-        assert_eq!(history.as_array().unwrap().len(), 1);
+        assert_eq!(
+            history
+                .as_array()
+                .expect("the service history is an array")
+                .len(),
+            1
+        );
         assert_eq!(history[0]["operation"], self.title);
         history
     }
@@ -226,7 +248,7 @@ async fn detach_then_lifecycle_preserves_history(delete: bool) {
             .bind(registration)
             .fetch_one(&f.state.pool)
             .await
-            .unwrap();
+            .expect("the read of event_registrations returns a row");
     f.detach(attachment).await;
     let before = f.history(attachment).await;
     let service_before = f.service_history().await;
@@ -295,7 +317,7 @@ async fn detach_then_lifecycle_preserves_history(delete: bool) {
     .bind(registration)
     .fetch_one(&f.state.pool)
     .await
-    .unwrap();
+    .expect("the read of event_registration_participation returns a row");
     assert_eq!(
         retained,
         (
@@ -412,7 +434,7 @@ async fn wait_for_catalog_lock(pool: &sqlx::PgPool, blocker_pid: i32) {
             .bind(blocker_pid)
             .fetch_one(pool)
             .await
-            .unwrap();
+            .expect("the read of pg_stat_activity returns a row");
             if blocked {
                 return;
             }

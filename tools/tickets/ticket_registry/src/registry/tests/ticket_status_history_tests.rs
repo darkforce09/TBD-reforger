@@ -10,7 +10,7 @@ use repository_layout::TICKETS_DIR;
 #[test]
 fn dual_read_json_then_toml() {
     use std::process::Command;
-    let tmp = repository_layout::find_repository_root()
+    let tmp = repository_root::find_repository_root()
         .expect("repository root")
         .join("target")
         .join("ticket-status-history-revisions");
@@ -47,7 +47,7 @@ fn dual_read_json_then_toml() {
     .to_string();
 
     fs::remove_file(tmp.join(super::historical_registry_json())).unwrap();
-    fs::write(tmp.join(repository_layout::ROOT_MARKER), "#\n").unwrap();
+    fs::write(tmp.join(repository_root::ROOT_MARKER), "#\n").unwrap();
     let aaa = serde_json::json!({"id":"T-AAA","status":"shipped"});
     let bbb = serde_json::json!({"id":"T-BBB","status":"shipped"});
     fs::write(

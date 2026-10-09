@@ -77,17 +77,19 @@ async fn req(
     }
     let body_bytes = if let Some(v) = body {
         b = b.header(header::CONTENT_TYPE, "application/json");
-        Body::from(serde_json::to_vec(&v).unwrap())
+        Body::from(serde_json::to_vec(&v).expect("the value serialises to JSON bytes"))
     } else {
         Body::empty()
     };
     let resp = app
         .clone()
-        .oneshot(b.body(body_bytes).unwrap())
+        .oneshot(b.body(body_bytes).expect("the request builds"))
         .await
         .unwrap();
     let status = resp.status();
-    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
     (
         status,
         serde_json::from_slice(&bytes).unwrap_or(Value::Null),

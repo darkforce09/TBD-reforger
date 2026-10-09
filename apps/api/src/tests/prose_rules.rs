@@ -97,7 +97,7 @@ fn crate_root() -> PathBuf {
 
 /// The repository root, found above the application's directory.
 fn repository_root() -> PathBuf {
-    repository_layout::find_repository_root_from(&crate_root())
+    repository_root::find_repository_root_from(&crate_root())
         .expect("the repository root above the API crate")
 }
 

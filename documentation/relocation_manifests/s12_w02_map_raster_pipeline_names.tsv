@@ -1,0 +1,25 @@
+# Stage S12 W2 — self-describing names in the map raster pipeline: files named for their first
+# function or for the `sap` scratch folder are named for their job (the supertexture cells the
+# aerial orthophoto is stitched from), and every test file is `src/tests/<topic>_tests.rs`.
+# Paths name the tree before the moves; `mod` lines are edited by hand.
+kind	from	to	scope
+#
+path	tools/map_assets/map_raster_pipeline/src/aerial_orthophoto/sap_dir.rs	tools/map_assets/map_raster_pipeline/src/aerial_orthophoto/supertexture_seam_metrics.rs
+path	tools/map_assets/map_raster_pipeline/src/aerial_orthophoto/analyze_sap_seams.rs	tools/map_assets/map_raster_pipeline/src/aerial_orthophoto/supertexture_seam_analysis.rs
+path	tools/map_assets/map_raster_pipeline/src/aerial_orthophoto/stitch_sap_ortho.rs	tools/map_assets/map_raster_pipeline/src/aerial_orthophoto/supertexture_orthophoto_stitch.rs
+path	tools/map_assets/map_raster_pipeline/src/inland_water/sap_dir.rs	tools/map_assets/map_raster_pipeline/src/inland_water/water_composite.rs
+path	tools/map_assets/map_raster_pipeline/src/inland_water_archive/emit_water.rs	tools/map_assets/map_raster_pipeline/src/inland_water_archive/water_archive_emission.rs
+path	tools/map_assets/map_raster_pipeline/src/inland_water_archive/reduce_depth.rs	tools/map_assets/map_raster_pipeline/src/inland_water_archive/water_archive_codec.rs
+path	tools/map_assets/map_raster_pipeline/src/satellite_archive/map_assets_root.rs	tools/map_assets/map_raster_pipeline/src/satellite_archive/satellite_and_pyramid_verification.rs
+path	tools/map_assets/map_raster_pipeline/src/map_labels/importance_by_name.rs	tools/map_assets/map_raster_pipeline/src/map_labels/export_locations.rs
+path	tools/map_assets/map_raster_pipeline/src/glyphs.rs	tools/map_assets/map_raster_pipeline/src/glyph_atlas.rs
+#
+# the test files
+path	tools/map_assets/map_raster_pipeline/src/tests/decision_record_locations/tests.rs	tools/map_assets/map_raster_pipeline/src/tests/decision_record_locations_tests.rs
+path	tools/map_assets/map_raster_pipeline/src/tests/empty_write_refusal/tests.rs	tools/map_assets/map_raster_pipeline/src/tests/empty_write_refusal_tests.rs
+path	tools/map_assets/map_raster_pipeline/src/tests/inland_water_archive/tests.rs	tools/map_assets/map_raster_pipeline/src/tests/inland_water_archive_tests.rs
+path	tools/map_assets/map_raster_pipeline/src/tests/map_label_archives/tests.rs	tools/map_assets/map_raster_pipeline/src/tests/map_label_archives_tests.rs
+path	tools/map_assets/map_raster_pipeline/src/tests/map_labels/map_labels_tests.rs	tools/map_assets/map_raster_pipeline/src/tests/map_labels_tests.rs
+path	tools/map_assets/map_raster_pipeline/src/tests/satellite_archive_container/container_tests.rs	tools/map_assets/map_raster_pipeline/src/tests/satellite_archive_container_tests.rs
+#
+rust_path	crate::glyphs::	crate::glyph_atlas::	tools/map_assets/map_raster_pipeline

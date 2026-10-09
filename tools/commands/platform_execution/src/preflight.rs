@@ -28,7 +28,7 @@ use std::time::{Duration, SystemTime};
 use crate::{Error, Result};
 
 use process_runner::Run;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 struct Counters {
     block: u32,

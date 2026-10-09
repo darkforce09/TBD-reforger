@@ -68,7 +68,8 @@ None: the crate reads no environment variable and declares no feature.
     changed or stray Rust file, and its files are exempt from the typed id rule of
     `cargo xtask verify crate-anatomy` by their `generated` folder;
   - `lib.rs` allows the lints typify's output trips on the `generated` module (`missing_docs`,
-    `clippy::unwrap_used`, `clippy::module_inception`, `clippy::derivable_impls`) and says why
+    `clippy::unwrap_used`, `clippy::module_inception`, `clippy::derivable_impls`,
+    `rustdoc::invalid_html_tags`) and says why
     beside the attribute; every other workspace lint applies;
   - every generated file stays within 500 lines (`cargo xtask verify file-length`): the codegen
     splits a large definition and refuses a file it cannot split;

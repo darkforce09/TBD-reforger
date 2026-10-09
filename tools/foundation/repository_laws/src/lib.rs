@@ -7,7 +7,7 @@
 //! ([`exemption_mechanisms`]); the dependency
 //! direction between the website crates ([`crate_dependencies`]); and the workspace laws over the
 //! members the root manifest names ([`workspace_members`], [`workspace_laws`]): crate tiers,
-//! crate anatomy, the strangler rule, frontend layering and Tailwind sources.
+//! crate anatomy, test-file reachability, frontend layering and Tailwind sources.
 //!
 //! **Position:** tier 1 of `tools/foundation`, over `verification_core` (the outcome
 //! vocabulary, the scans and the patterns) and `regex`. `cargo xtask verify file-length` renders

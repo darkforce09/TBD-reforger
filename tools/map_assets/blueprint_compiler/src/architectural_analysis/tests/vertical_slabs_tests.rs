@@ -4,8 +4,8 @@ use crate::voxel_processing::synthetic_fixtures;
 #[test]
 fn box_room_yields_single_ground_slab() {
     let d = synthetic_fixtures::box_room(6.0, 4.0, 2.6, 0.15);
-    let m = d.meta();
-    let p = Params {
+    let m = d.metadata();
+    let p = AnalysisParameters {
         min_floor_y: -0.5 - m.origin[1],
         ..Default::default()
     };
@@ -33,8 +33,8 @@ fn box_room_yields_single_ground_slab() {
 #[test]
 fn gable_slope_field_flags_roof_planes() {
     let d = synthetic_fixtures::gable_box(6.0, 4.0, 2.6, 4.2, 0.15);
-    let m = d.meta();
-    let p = Params {
+    let m = d.metadata();
+    let p = AnalysisParameters {
         min_floor_y: -0.5 - m.origin[1],
         ..Default::default()
     };

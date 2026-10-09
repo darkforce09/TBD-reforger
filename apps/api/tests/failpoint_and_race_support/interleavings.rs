@@ -14,7 +14,7 @@ use std::future::Future;
 
 /// Which of two contenders reaches the contested boundary first.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Interleaving {
+pub(crate) enum Interleaving {
     /// The first contender leads; the second follows.
     FirstLeads,
     /// The second contender leads; the first follows.
@@ -23,11 +23,11 @@ pub enum Interleaving {
 
 impl Interleaving {
     /// Both orders, in the order [`run_in_both_orders`] plays them.
-    pub const BOTH: [Self; 2] = [Self::FirstLeads, Self::SecondLeads];
+    pub(crate) const BOTH: [Self; 2] = [Self::FirstLeads, Self::SecondLeads];
 
     /// `(leader, follower)` for the contenders `(first, second)`; applied to a
     /// `(leader, follower)` pair it gives `(first, second)` back.
-    pub fn arrange<T>(self, first: T, second: T) -> (T, T) {
+    pub(crate) fn arrange<T>(self, first: T, second: T) -> (T, T) {
         match self {
             Self::FirstLeads => (first, second),
             Self::SecondLeads => (second, first),
@@ -35,7 +35,7 @@ impl Interleaving {
     }
 
     /// The order's name, as failure output prints it.
-    pub fn name(self) -> &'static str {
+    pub(crate) fn name(self) -> &'static str {
         match self {
             Self::FirstLeads => "first contender leads",
             Self::SecondLeads => "second contender leads",
@@ -50,7 +50,9 @@ impl Interleaving {
 /// let [first_leads, second_leads] = run_in_both_orders(|order| last_seat_race(order)).await;
 /// assert_ne!(first_leads.winner, second_leads.winner);
 /// ```
-pub async fn run_in_both_orders<Scenario, Played, Outcome>(mut scenario: Scenario) -> [Outcome; 2]
+pub(crate) async fn run_in_both_orders<Scenario, Played, Outcome>(
+    mut scenario: Scenario,
+) -> [Outcome; 2]
 where
     Scenario: FnMut(Interleaving) -> Played,
     Played: Future<Output = Outcome>,

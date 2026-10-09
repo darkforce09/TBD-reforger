@@ -90,7 +90,7 @@ fn bites(name: &str, source: &str, body: &str, want: &[&str]) {
 /// the intended alarm: the pin needs repointing, not deleting.
 #[test]
 fn the_live_deploy_sources_hold() {
-    let root = repository_layout::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
+    let root = repository_root::find_repository_root_from(Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("repository root");
     assert_eq!(
         audit(&root)

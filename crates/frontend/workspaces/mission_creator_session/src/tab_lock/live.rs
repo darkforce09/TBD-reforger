@@ -137,7 +137,7 @@ pub fn join(mission_id: &mission_model::ids::MissionId) {
     post(&Msg {
         kind: "hello".to_string(),
         tab: super::tab_id(),
-        since: js_sys::Date::now(),
+        since: time_source::wall_clock_ms(),
     });
 }
 
@@ -214,7 +214,7 @@ thread_local! {
 fn opened_at() -> f64 {
     let at = OPENED_AT.get();
     if at.is_nan() {
-        let now = js_sys::Date::now();
+        let now = time_source::wall_clock_ms();
         OPENED_AT.set(now);
         return now;
     }

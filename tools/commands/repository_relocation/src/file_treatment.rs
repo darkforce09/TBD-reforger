@@ -1,15 +1,20 @@
-//! Which rewrites a tracked file may receive: live, frozen, a closed ticket, or none.
+//! Which rewrites a tracked file may receive: live, frozen, a frozen area's README index, a
+//! closed ticket, this tool's own test sources, or none.
 //!
 //! **Role:** sorts every file into a [`FileTreatment`]. Frozen Markdown records (the ticket
 //! documents and the archive) keep their prose and backticks as history and receive only link
-//! destination rewrites; a closed ticket file receives rewrites on its `spec`, `plan` and `owns`
-//! values only, the fields the ticket registry resolves against the tree (`spec` and `plan` must
-//! exist, `owns` must match the wave lock); the relocation manifests (the
-//! `.tsv` files of the manifests folder, whose `from` columns name retired paths on purpose), the
-//! manifest being run, every SQL migration (a `.sql` file directly in a `migrations` folder;
-//! `sqlx` refuses to boot on an applied migration whose checksum changed) and every other file in
-//! a frozen area receive nothing. The rest of the manifests folder, such as its README, is live,
-//! and so is every other `.sql` file and every other file of a `migrations` folder.
+//! destination rewrites; a `README.md` there is a live index of its folder, so the tree part of
+//! its Contents block's lines (the root folder and each entry's name, never the roles) receives
+//! every rewrite a live document receives as well; a closed ticket file receives rewrites
+//! on its `spec`, `plan` and `owns` values only, the fields the ticket registry resolves against
+//! the tree (`spec` and `plan` must exist, `owns` must match the wave lock); this tool's own test
+//! sources spell paths of throwaway checkouts in their string literals and comments, so only their
+//! code is rewritten; the relocation manifests (the `.tsv` files of the manifests folder, whose
+//! `from` columns name retired paths on purpose), the manifest being run, every SQL migration (a
+//! `.sql` file directly in a `migrations` folder; `sqlx` refuses to boot on an applied migration
+//! whose checksum changed) and every other file in a frozen area receive nothing. The rest of the
+//! manifests folder, such as its README, is live, and so is every other `.sql` file and every other
+//! file of a `migrations` folder.
 //!
 //! **Position:** consulted by the plan builder ([`super::relocation_plan`]) before any pass runs
 //! and by the verification ([`super::retired_spellings`]), both with the areas where the
@@ -35,7 +40,15 @@ use repository_layout::documentation::DOCUMENTATION_ROOT;
 use repository_layout::{ARCHIVE_DIR, TICKET_DOCUMENTS_DIR};
 
 /// The relocation manifests' folder below the documentation root.
-const MANIFESTS_BELOW_DOCUMENTATION: &str = "restructure/manifests";
+const MANIFESTS_BELOW_DOCUMENTATION: &str = "relocation_manifests";
+
+/// This tool's own test sources: their string literals and comments describe throwaway checkouts,
+/// so a manifest that moves a real path of the same spelling never rewrites or judges them. The
+/// spelling is a repository path, so a manifest that moves this crate rewrites it with the move.
+const RELOCATION_TEST_SOURCES: &str = "tools/commands/repository_relocation/src/tests";
+
+/// The file name of a folder's index document.
+const README_NAME: &str = "README.md";
 
 /// The extension of a relocation manifest.
 const MANIFEST_EXTENSION: &str = ".tsv";
@@ -56,8 +69,13 @@ pub(crate) enum FileTreatment {
     Live,
     /// A frozen Markdown record: link destinations only.
     FrozenDocument,
+    /// A frozen area's `README.md`, a live index of its folder: link destinations and the tree
+    /// part of its Contents block's lines.
+    FrozenIndex,
     /// A closed ticket: its `spec`, `plan` and `owns` values only.
     ClosedTicket,
+    /// This tool's own test sources: code only, never a string literal or a comment.
+    FixtureSource,
     /// Nothing is rewritten or verified.
     Excluded,
 }
@@ -74,6 +92,7 @@ pub(crate) struct TreatmentAreas {
     archive: String,
     ticket_documents: String,
     tickets: String,
+    fixture_sources: String,
     run_manifest: Option<String>,
 }
 
@@ -86,6 +105,7 @@ impl TreatmentAreas {
             archive: ARCHIVE_DIR.to_string(),
             ticket_documents: TICKET_DOCUMENTS_DIR.to_string(),
             tickets: TICKETS_DIR.to_string(),
+            fixture_sources: RELOCATION_TEST_SOURCES.to_string(),
             run_manifest: run_manifest.map(str::to_string),
         }
     }
@@ -99,6 +119,7 @@ impl TreatmentAreas {
             archive: moved(&self.archive),
             ticket_documents: moved(&self.ticket_documents),
             tickets: moved(&self.tickets),
+            fixture_sources: moved(&self.fixture_sources),
             run_manifest: self.run_manifest.as_deref().map(moved),
         }
     }
@@ -111,11 +132,16 @@ impl TreatmentAreas {
             return FileTreatment::Excluded;
         }
         if is_at_or_below(path, &self.archive) || is_at_or_below(path, &self.ticket_documents) {
-            return if is_markdown(path) {
+            return if path.rsplit('/').next() == Some(README_NAME) {
+                FileTreatment::FrozenIndex
+            } else if is_markdown(path) {
                 FileTreatment::FrozenDocument
             } else {
                 FileTreatment::Excluded
             };
+        }
+        if is_at_or_below(path, &self.fixture_sources) {
+            return FileTreatment::FixtureSource;
         }
         if self.is_ticket_file(path) && ticket_is_closed(text) {
             return FileTreatment::ClosedTicket;

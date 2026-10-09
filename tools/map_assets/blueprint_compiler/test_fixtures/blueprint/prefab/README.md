@@ -25,8 +25,8 @@ name, and walks the house from there, so the fixtures themselves hold no models.
 ## Format
 
 - Encoding: ASCII Enfusion prefab text, one root entity per `.et` file, under `Prefabs/<kind>/`.
-- Schema: the `.et` grammar that `parse_et` in
-  `tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/tokenize.rs` reads; the
+- Schema: the `.et` grammar that `parse_entity_template` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads; the
   [synthetic prefab tree README](/tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/README.md)
   lists the shapes the files exercise.
 - Adding a file: add it under `Prefabs/`, as that README describes.
@@ -35,16 +35,16 @@ name, and walks the house from there, so the fixtures themselves hold no models.
 
 - Producers: people; the files are written by hand.
 - Consumers: `resolver_walks_inheritance_sockets_and_children`
-  (`tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs`),
+  (`tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/prefab_templates_tests.rs`),
   `walker_places_door_set_window_and_furniture_from_fixtures`
-  (`tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs`) and
+  (`tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/batch_processing_tests.rs`) and
   `compiler_fixtures_resolve_from_root_crate_and_source_directory`
   (`tools/map_assets/blueprint_compiler/src/tests/blueprint_from_voxels_tests.rs`).
 
 ## Boundaries
 
-- Depends on: the `.et` grammar and the `PrefabResolver` and `Walker` in
-  `tools/map_assets/blueprint_compiler/src/bvh/`.
+- Depends on: the `.et` grammar and the `PrefabResolver` and `ChildEntityWalker` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/`.
 - Used by: the three tests above.
 - Rules: the tests address the folder as `prefab` under the blueprint fixture root, so a move
   updates the three test files above in the same change; the walker test copies every file here,
@@ -52,7 +52,7 @@ name, and walks the house from there, so the fixtures themselves hold no models.
 
 ## Related documentation
 
-- [Prefab text tokenizer](/tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/README.md) —
+- [Entity-template parser](/tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/README.md) —
   the `.et` tokenizer and block shapes.
-- [Occlusion sidecars and prefab placement](/tools/map_assets/blueprint_compiler/src/bvh/README.md) —
+- [Occlusion sidecars and prefab placement](/tools/map_assets/blueprint_compiler/src/occlusion_sidecars/README.md) —
   the prefab walk these fixtures exercise.

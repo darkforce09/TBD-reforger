@@ -24,7 +24,7 @@ deployment = { workspace = true }
 newtype_ids = { workspace = true }
 process_runner = { workspace = true }
 regex = { workspace = true }
-repository_layout = { workspace = true }
+repository_root = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 # The wall clock of the NDJSON rows' `timestamp`.
@@ -32,6 +32,7 @@ time_source = { workspace = true }
 verification_core = { workspace = true }
 
 [dev-dependencies]
+repository_layout = { workspace = true }
 # The environment lock the tests that prepend to `PATH` hold.
 tool_test_support = { workspace = true }
 

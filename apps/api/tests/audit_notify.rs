@@ -106,7 +106,7 @@ async fn seed_slot(pool: &PgPool, em: Uuid, callsign: &str) -> Uuid {
 }
 
 async fn seed_registration(pool: &PgPool, em: Uuid, who: &str, slot: Option<Uuid>) -> Uuid {
-    let mut fixture = (pool).begin().await.unwrap();
+    let mut fixture = (pool).begin().await.expect("a transaction begins");
     let allocation = common::participant_allocation(&mut fixture, em, who).await;
     let id = sqlx::query_scalar(
         "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, allocation_id) \
@@ -119,7 +119,7 @@ async fn seed_registration(pool: &PgPool, em: Uuid, who: &str, slot: Option<Uuid
     .fetch_one(&mut *fixture)
     .await
     .expect("seed registration");
-    fixture.commit().await.unwrap();
+    fixture.commit().await.expect("the transaction commits");
     id
 }
 

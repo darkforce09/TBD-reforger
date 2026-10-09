@@ -40,7 +40,7 @@ use repository_layout::{
     contract_catalogs_dir, contract_definitions_dir, definition_path, registry_fixtures_dir,
 };
 
-use repository_layout::find_repository_root as repo_root;
+use repository_root::find_repository_root as repo_root;
 
 /* ─────────────────────────── citations ─────────────────────────── */
 

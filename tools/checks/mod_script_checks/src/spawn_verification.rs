@@ -24,7 +24,7 @@ use std::time::Duration;
 use crate::Result;
 
 use process_runner::Run;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 use verification_core::NotRun;
 
 /// The default world when the operator names none.

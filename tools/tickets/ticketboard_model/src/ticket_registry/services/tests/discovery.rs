@@ -4,7 +4,7 @@ use std::fs;
 
 fn mk_repo(root: &Path) {
     fs::create_dir_all(root.join(repository_layout::TICKETS_DIR)).unwrap();
-    fs::write(root.join(repository_layout::ROOT_MARKER), "").unwrap();
+    fs::write(root.join(repository_root::ROOT_MARKER), "").unwrap();
 }
 
 #[test]

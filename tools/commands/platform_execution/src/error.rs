@@ -53,7 +53,7 @@ pub enum Error {
     },
     /// The checkout root could not be found.
     #[error(transparent)]
-    RepositoryLayout(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
     /// The ticket registry could not be read.
     #[error(transparent)]
     TicketRegistry(#[from] ticket_registry::Error),

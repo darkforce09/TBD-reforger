@@ -1,0 +1,13 @@
+id = "T-1265"
+kind = "work"
+title = "Order the unreachable end-trigger finding by objective kind"
+summary = "SchemaEndTriggerList (Systems/Mission/Loaders/Validation/TBD_MissionWinConditionChecks.c:287) lists the end triggers in the schema endOn order, which interleaves faction_eliminated between the objective kinds' triggers; the finding text could list them by kind."
+class = "audit"
+status = "idea"
+notes = "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation/TBD_MissionWinConditionChecks.c:287 SchemaEndTriggerList builds the 'no reachable end trigger' finding text (used at :89) in the schema's endOn order, which interleaves faction_eliminated between the objective kinds' triggers; the order was kept so the text stays byte-identical. Listing the triggers by kind would be simpler; a product wording choice. Source: restructure finding F-M3-05 (M3 stage log)."
+created_at = "2026-10-04T02:35:31Z"
+
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "objectives"

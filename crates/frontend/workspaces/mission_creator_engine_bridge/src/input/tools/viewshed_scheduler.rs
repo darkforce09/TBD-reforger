@@ -3,7 +3,7 @@
 //! Signals & state: one `requestAnimationFrame` closure at a time, however many placements arrive.
 //! Invariants: the scheduling policy — one live job per tool, budgeted batches, cancel on new
 //! placement, cap refusals — is the engine's. What lives here is the browser's half of it: the
-//! clock, the frame pump, the operator-facing log line, and the object-wash restart that follows a
+//! clock (the wall clock, [`time_source::wall_clock_ms`]), the frame pump, the operator-facing log line, and the object-wash restart that follows a
 //! completed terrain disc.
 
 // The wasm host installs these services; on native the engine's own defaults apply and nothing
@@ -16,12 +16,6 @@ use map_editing_tools::viewshed_scheduler::{SchedulerHost, install_host};
 thread_local! {
     /// One rAF closure at a time, however many placements arrive.
     static PUMPING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
-}
-
-/// Milliseconds from an arbitrary epoch — the clock every batch budget is measured against.
-#[cfg(target_arch = "wasm32")]
-fn now_ms() -> f64 {
-    js_sys::Date::now()
 }
 
 /// Surface a cap refusal to the operator: which cap, and the measured value that broke it.
@@ -43,7 +37,7 @@ fn on_terrain_finished() {
 #[cfg(target_arch = "wasm32")]
 pub fn install_scheduler_host() {
     install_host(SchedulerHost {
-        now_ms,
+        now_ms: time_source::wall_clock_ms,
         report_refusal,
         request_pump: start_pump,
         on_terrain_finished,

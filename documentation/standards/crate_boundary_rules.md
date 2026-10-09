@@ -2,15 +2,14 @@
 
 # Crate boundary rules
 
-The crate-level laws between the crates that draw and stream the map, the mission crates and the
-apps that use them: which crate may name which, where state lives, how the map renderer hands
-frames to the GPU crates, and which law holds each wall. The walls are crate boundaries: the crate tiers law
-(`cargo xtask verify crate-tiers`) checks every dependency edge against its category matrix and its
-firewalls. The code is the final word: the matrix in
-`tools/foundation/repository_laws/src/workspace_laws/crate_layout.rs` and the firewalls in
-`tools/foundation/repository_laws/src/workspace_laws/crate_firewalls.rs` define each rule exactly,
-and this document states them and the reasons behind them. The laws themselves are listed in
-[laws and gates](/documentation/restructure/laws_and_gates.md#crate-tiers-cargo-xtask-verify-crate-tiers).
+The crate-level laws of the workspace: which crate may name which, where state lives, how the
+map renderer hands frames to the GPU crates, and which law holds each wall. The walls are crate
+boundaries: the crate-tier law (`cargo xtask verify crate-tiers`) checks every dependency edge
+against its category matrix and its firewalls, and four sibling workspace laws hold the shape of
+each crate, its test files, the frontend's layers and the stylesheet's sources. The code is the
+final word: the laws live in `tools/foundation/repository_laws/src/workspace_laws/`, and
+[section 5](#5-the-workspace-laws) states each rule as that code enforces it, with the file that
+enforces it.
 
 ## 1. Layers and dependency direction
 
@@ -61,13 +60,13 @@ map_rendering, paper_doll ──► streaming, map_overlay, terrain, … (engine
 | Survives a reload: the engine side | Dies with the tab: `frontend` |
 |---|---|
 | the mission document, its entities and its undo stack (`crates/mission/mission_document/`, `crates/mission_editing/mission_editing_session/src/history/`) | hover and drag in progress |
-| the selection (`crates/mission_editing/mission_editing_session/src/host.rs`) | the pointer gesture state machine (`editor/input/`) |
+| the selection (`crates/mission_editing/mission_editing_session/src/host.rs`) | the pointer gesture state machine (`crates/frontend/workspaces/mission_creator_engine_bridge/src/input/`) |
 | the tool command definitions (`crates/mission_editing/mission_editing_commands/`, `crates/mission_editing/map_editing_tools/`) | the keybind map |
 | the line-of-sight, ruler and viewshed algorithms (`crates/mission_editing/map_editing_tools/` and the line of sight crates under `crates/line_of_sight/`) | panels open or closed, dock sizes |
-| the decisions behind serialising and hydrating a draft (`crates/mission_editing/mission_persistence/`) | the tab lock, the save-status signal and the title (`editor/shell/`) |
+| the decisions behind serialising and hydrating a draft (`crates/mission_editing/mission_persistence/`) | the tab lock, the save-status signal and the title (`crates/frontend/workspaces/mission_creator_session/src/`) |
 
-A file whose home is unclear goes where this rule sends it. The frontend paths are under
-`crates/frontend/workspaces/mission_creator_workspace/src/`. Where the bytes of a draft are stored (IndexedDB) and how
+A file whose home is unclear goes where this rule sends it. The frontend side is the Mission
+Creator crates under `crates/frontend/workspaces/`. Where the bytes of a draft are stored (IndexedDB) and how
 they travel is the frontend's; what they mean is `mission_persistence`'s.
 
 ## 2. Walls between the crates
@@ -189,16 +188,207 @@ only a browser has (the canvas, preference readers, clocks, storage) to the map 
 and closures, and keeps the state [section 1](#where-state-lives) gives it. The frontend app's start
 function is its one JavaScript export.
 
-## 5. The laws that hold the walls
+## 5. The workspace laws
+
+Five laws judge the members of the root `Cargo.toml`. `cargo xtask ci verify-workspace-laws` runs
+them in this order and stops at the first failure, and each is also its own `cargo xtask verify`
+command: crate tiers, crate anatomy, test-file reachability, frontend layering and Tailwind
+sources. Each prints `<LAW>: PASS`, or `FAIL` with exit 1 on a finding and exit 2 when an input
+could not be read; a missing input never passes. The paths that move with the tree (the manifest
+sweep roots, the frontend layer tables and crate orders, the stylesheet) are constants of
+`tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`, which xtask passes
+in. Where each law runs is in [CI gates](/documentation/standards/coding_standards/ci_gates.md#verify-workspace-laws)
+(rules WS-1 to WS-5).
+
+### 5.1 The judged set
+
+The layout laws judge every member that declares `[package.metadata.layout]` plus every member
+under `crates/<category…>/<name>` or `tools/<category>/<name>` (`is_judged` in
+`tools/foundation/repository_laws/src/workspace_laws/crate_layout.rs`). Outside that set stand
+only the apps under `apps/` and the two tool binaries of `TOOL_BINARY_PATHS`, `tools/xtask` and
+`tools/developer_tools`; the report names them in a note. Any other member outside the judged set
+is a rule 2 finding: a crate that carries no layout table and sits nowhere the layout knows
+cannot slip past the matrix.
+
+### 5.2 Crate tiers (`cargo xtask verify crate-tiers`)
+
+`tools/foundation/repository_laws/src/workspace_laws/crate_tiers.rs` judges seven rules:
+
+1. **Membership.** Every `Cargo.toml` under `apps`, `crates` and `tools` (outside folders named
+   `tests`, `fixtures`, `test_fixtures`, `target` and `node_modules`) is a workspace member. The
+   root `members` list reaches the library crates through one glob per category
+   (`crates/<category>/*`, and `crates/frontend/*/*` for the frontend's layer folders), so a
+   manifest in a category no glob lists fails here.
+2. **Declarations.** Each judged member declares `[package.metadata.layout]` with a `category`, a
+   whole-number `tier` and `targets` (`any` or `wasm32`); every member outside the judged set is
+   an app or a tool binary ([5.1](#51-the-judged-set)).
+3. **Location.** The declared category is the crate's parent folder and a category the layout
+   knows, and the package name equals the folder name.
+4. **Tiers.** A crate with no judged workspace dependency is tier 0; any other is 1 plus the
+   highest tier among its dependencies, over normal and build edges in every target table. The
+   declared tier equals that number, and every edge points strictly down.
+5. **Category matrix.** Every normal and build edge is allowed by the matrix of
+   [5.3](#53-the-category-matrix), and a crate built for every target reaches a `wasm32` crate
+   only from its `[target.'cfg(target_arch = "wasm32")'.dependencies]` table.
+6. **Firewalls.** The external-crate and source firewalls of [5.4](#54-the-firewalls) hold.
+7. **Dev-dependencies.** A dev-dependency is outside the tier order and the matrix, because it
+   never ships, but it never points at an app under `apps/`.
+
+### 5.3 The category matrix
+
+`category_edge_allowed` in `crate_layout.rs` decides rule 5. A category's class comes from its
+folder path alone, and an edge to or from a category with no class (an unknown category, an app,
+a tool binary) is refused.
+
+| A crate in | May depend on |
+|---|---|
+| `crates/foundation` | foundation crates |
+| `crates/contracts` | foundation and contracts crates |
+| `crates/mission` | foundation, mission and `crates/geometry` crates |
+| `crates/ballistics` | foundation and ballistics crates |
+| `crates/graphics` | foundation and graphics crates |
+| the other engine categories: `crates/geometry`, `crates/world_formats`, `crates/terrain`, `crates/world_objects`, `crates/line_of_sight`, `crates/map_overlay`, `crates/streaming` | foundation and contracts crates and every engine category, graphics included |
+| `crates/map_rendering`, `crates/paper_doll` | foundation, contracts, mission, ballistics and rendering crates and every engine category |
+| `crates/mission_editing` | foundation crates whose `targets` is not `wasm32`; mission and mission editing crates; the geometry, world formats, terrain, world objects, line of sight and map overlay categories (never ballistics, streaming, graphics or rendering) |
+| `crates/api` | foundation, contracts, mission, ballistics and api crates |
+| `crates/frontend/<layer>` (`foundation`, `features`, `pages`, `workspaces`) | every class but api and tools |
+| `tools/<category>` | foundation, contracts, mission, ballistics and tool crates, and engine crates whose `targets` is `any`; never a `wasm32` crate; the api crates from `tools/staging/staging_fixtures` only (`STAGING_FIXTURES_PATH`) |
+
+The engine categories are `ENGINE_CATEGORIES` (the graphics category among them), and the mission
+editing subset is `MISSION_EDITING_ENGINE_CATEGORIES`. Inside the frontend class the
+[frontend-layering law](#57-frontend-layering-cargo-xtask-verify-frontend-layering) orders the
+layers.
+
+### 5.4 The firewalls
+
+`tools/foundation/repository_laws/src/workspace_laws/crate_firewalls.rs` judges rule 6. The
+manifest firewalls read the normal and build edges of each judged member onto an external crate
+(a package no workspace member carries):
+
+- **wgpu** (and `wgpu-*`): only in `crates/map_rendering` crates and the packages of
+  `GPU_PACKAGES`: `gpu_device`, `gpu_frame`, `renderer_core` and `paper_doll_renderer`.
+- **Browser crates** (`web-sys`, `js-sys`, `wasm-bindgen`, `wasm-bindgen-futures`, `gloo`,
+  `gloo-*`): never in a mission editing crate; elsewhere only in `wasm32` crates, frontend crates,
+  and `time_source` from a target table.
+- **sqlx and axum** (and `sqlx-*`, `axum-*`): only in api crates. Axum is also allowed in the
+  categories of `HARNESS_SERVER_CATEGORIES`, `tools/browser_testing` and `tools/staging`, whose
+  crates are test and staging harness servers rather than product code; sqlx is also allowed in
+  the one crate at `SQLX_STAGING_TOOL_PATH`, `tools/staging/staging_fixtures`, the staging host
+  tool that seeds and cleans staging rows directly.
+- **leptos** (and `leptos_*`, `leptos-*`): only in frontend crates.
+- **The xtask closure:** no member of the dependency closure of xtask, walked from the xtask
+  member over normal and build edges although xtask is outside the judged set, declares
+  `tokio`, `axum`, `reqwest`, `resvg` or `image` (`XTASK_CLOSURE_BANS`); this keeps the harness
+  servers out of xtask.
+
+Three source scans complete the rule:
+
+- **Map nouns in graphics:** no line of a graphics crate's sources matches
+  `MAP_NOUN_DECLARATION_PATTERN`, a declaration keyword (`struct`, `enum`, `trait`, `type`, `fn`,
+  `const`, `static`, `mod`) followed by an identifier holding `terrain`, `symbology`, `mission`,
+  `orbat` or `arma`, case-insensitive ([section 3](#3-the-graphics-category-a-pure-renderer)).
+- **Browser words in mission editing:** no `.rs` file under `crates/mission_editing/` spells
+  `web_sys`, `leptos` or `wasm_bindgen` as a whole word, in code or prose
+  ([2B](#2b-the-headless-editing-layer)); a category folder holding no `.rs` file is a finding,
+  never a clean scan.
+- **JavaScript exports:** no `.rs` file of a workspace member outside `apps/frontend`,
+  `crates/foundation/browser_platform` and `apps/offline_service_worker`
+  (`WASM_BINDGEN_EXPORT_FOLDERS`) carries a `#[wasm_bindgen]` attribute, plain, path-qualified
+  or under `cfg_attr`, at the start of a line; a walk of no `.rs` file at all is a finding.
+
+### 5.5 Crate anatomy (`cargo xtask verify crate-anatomy`)
+
+`crate_anatomy.rs` and `crate_anatomy_sources.rs` hold every judged library crate (a crate with
+`[lib]` or `src/lib.rs`; a crate of binaries only is exempt and named in a note) to one shape:
+
+- `lib.rs` is at most 80 lines of doc comments, attributes, `mod` and `pub use` lines, and
+  declares `pub mod prelude`;
+- a `pub fn` returning `Result` needs an `error.rs` with a `thiserror` `pub enum Error` and a
+  `pub type Result`; no `anyhow` dependency;
+- a README.md with a Contents block;
+- `edition`, `rust-version`, `[lints]` and every dependency come from the workspace;
+- the only features are `test_fixtures` and `failpoints`, each enabled only by a dev-dependency;
+- no primitive-typed public `id` or `*_id` field or `pub fn` parameter, outside `generated`
+  folders and `#[wasm_bindgen]` items;
+- no public re-export of another workspace crate outside the crate's prelude module, in any form
+  `public_reexports.rs` reads (an item, a module or the crate root, an alias, a group, a statement
+  over several lines, `pub extern crate`). Test files are never judged.
+
+### 5.6 Test-file reachability (`cargo xtask verify test-file-reachability`)
+
+`test_file_reachability.rs` finds every `.rs` file of a member that sits in a `tests` folder,
+under `src/` or in the member's own `tests/` folder, and that no target of the member loads. The
+walk starts at the target roots (the manifest's `[lib]` and `[[bin]]` paths, `src/lib.rs`,
+`src/main.rs`, `src/bin/`, `tests/*.rs`, `tests/*/main.rs`, `benches/*.rs`, `examples/*.rs`) and
+follows every `mod` declaration with its `#[path]`, plus every trybuild case
+(`compile_fail` / `pass`) a loaded file names. An unreached file is a finding: its tests never
+run while the tree looks covered. An integration target is never itself a finding, and the walk
+skips `target` folders and any folder holding its own `Cargo.toml`.
+
+### 5.7 Frontend layering (`cargo xtask verify frontend-layering`)
+
+The frontend's layers are foundation < features < pages and workspaces < the app shell
+(`apps/frontend`). Pages and workspaces are peers: neither depends on the other, and no page crate
+depends on another page crate. `frontend_layering.rs` and `frontend_layering/crate_edges.rs` judge
+two modes, hard at zero, so every edge (production or test, normal, dev or build) fails:
+
+- **crate-edge mode** (`FRONTEND_CRATE_EDGES`): a crate's layer is its folder
+  `crates/frontend/<layer>/`, and the crate orders hold inside a layer folder:
+  `FOUNDATION_CRATE_ORDER` (`frontend_ui` < `frontend_api_dtos` < {`frontend_transport`,
+  `frontend_route_table`} < `frontend_session` < {`frontend_offline`, `frontend_map_view`}, the
+  braced crates peers, `frontend_test_support` reached only through dev-dependencies),
+  `MISSION_CREATOR_CRATE_ORDER` (`mission_creator_state` < `mission_creator_engine_bridge` <
+  `mission_creator_session` < `mission_creator_arsenal` < `mission_creator_workspace`) and
+  `DEBUG_BENCHES_CRATE_ORDER`, an order of its own that no Mission Creator crate touches. A
+  frontend crate in no layer folder or in none of its folder's orders, and a crate an order names
+  that no member carries, are findings;
+- **in-crate mode** (`APP_LAYERS`): the app's own modules (`main.rs`, `app_routes.rs`, `shell/`,
+  `tests/`) all map onto the shell layer, and a source no row maps is a finding.
+
+### 5.8 Tailwind sources (`cargo xtask verify tailwind-sources`)
+
+`tailwind_sources.rs` holds the `@source` lines of `apps/frontend/style/aegis.css` exact: every
+member with a non-dev `leptos` dependency, the app included, is named by exactly one line whose
+glob, resolved from the stylesheet's folder, is `<member>/src/**/*.rs`. A member no line names, a
+member several lines name, and a line naming no leptos member (an ancestor or wildcard folder
+included) are findings. Trunk's `[watch]` list in `apps/frontend/Trunk.toml` covers
+`crates/frontend`, so a change in any frontend crate rebuilds the bundle.
+
+### 5.9 The apps and the tool crates
+
+The apps carry no layout table, so the matrix does not judge them. Their limits are deny-lists in
+`tools/foundation/repository_laws/src/crate_dependencies.rs`, run by the `engineering_laws` test
+binary of `apps/api`: the frontend never links `api`; `api` links neither `frontend` nor a GPU
+crate; the offline service worker links none of `api`, `frontend` or a GPU crate.
+
+The tool crates keep a direction of their own, pinned by
+`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`
+(`cargo test -p repository_checks`):
+
+- the tool binaries `tools/xtask` and `tools/developer_tools` hold no library, depend among the
+  workspace crates only on tool crates at `tools/<category>/<name>`, never on each other, and no
+  member depends on either; xtask reaches the checkout root through `repository_layout`'s
+  prelude;
+- a `tools/foundation` crate depends only on `tools/foundation` crates of a lower declared tier
+  and on `crates/foundation/repository_root`, the workspace's one checkout-root finder;
+- a `tools/tickets` crate depends only on `tools/foundation` crates, on `time_source`,
+  `content_digest`, `newtype_ids` and `repository_root`, and on `tools/tickets` crates of a lower
+  declared tier.
+
+### 5.10 Which law holds which wall
 
 | Wall | Law | Where |
 |---|---|---|
 | Edges point down the tiers and across the allowed categories | crate tiers rules 4 and 5 | `crate_tiers.rs`, the matrix in `crate_layout.rs` |
-| wgpu only in the rendering categories and the GPU packages | crate tiers firewall | `crate_firewalls.rs` |
+| wgpu only in the rendering category and the GPU packages | crate tiers firewall | `crate_firewalls.rs` |
 | Browser crates only in wasm-only crates, `time_source` behind a target table and the frontend | crate tiers firewall | `crate_firewalls.rs` |
 | A wasm-only crate reached from a crate built for every target only through its wasm32 table | crate tiers rule 5 | `crate_tiers.rs` |
 | No map noun in a graphics declaration | crate tiers firewall | `crate_firewalls.rs` |
 | No browser crate or token in the mission editing layer | crate tiers firewall | `crate_firewalls.rs` |
+| Every library crate keeps the standard shape | crate anatomy | `crate_anatomy.rs`, `crate_anatomy_sources.rs` |
+| Every test file compiles | test-file reachability | `test_file_reachability.rs` |
+| Lower frontend layers never name higher ones; pages and workspaces stay apart | frontend layering | `frontend_layering.rs` |
+| Every leptos crate's classes reach the stylesheet | Tailwind sources | `tailwind_sources.rs` |
 | The frame path stays damage-driven | source pins | `crates/map_rendering/map_renderer/src/tests/damage_discipline.rs` |
 
 Every law runs in `cargo xtask ci ci-local` and in CI; a law whose input is missing fails rather
@@ -224,7 +414,9 @@ Tickets:
 - [Map streaming documentation](/documentation/crates/streaming/README.md) — the loaders, the map
   host and the asset sink contract.
 - [GPU rendering documentation](/documentation/crates/graphics/README.md) — the graphics crates.
-- [Laws and gates](/documentation/restructure/laws_and_gates.md) — the crate tiers law and its
-  firewalls.
+- [Workspace laws README](/tools/foundation/repository_laws/src/workspace_laws/README.md) — the
+  code of the five workspace laws and their tests.
+- [CI gates](/documentation/standards/coding_standards/ci_gates.md#verify-workspace-laws) — where
+  the workspace laws run (rules WS-1 to WS-5).
 - [Coding standards](/documentation/standards/coding_standards/README.md) — the repository's
   other code rules.

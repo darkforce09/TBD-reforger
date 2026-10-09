@@ -47,7 +47,8 @@ No feature and no environment variable.
 - `wire_format`: `RawJson`, `rfc3339_utc_date`, `content_digest::{canonical_json, canonical_sha256}`.
 - `text`: `html_sanitizer::{sanitize_html, snippet, truncate, cap_runes}` and
   `content_url_policy::{is_safe_image_url, is_safe_link_url, is_external_link}`.
-- `http`: `pagination::PageParams` and `path_parameters::PathParams`.
+- `http`: `pagination::PageParams`, `path_parameters::PathParams` and
+  `required_text_field::required_trimmed_text`.
 - `Error` and `Result`.
 - `prelude`: `ApiError`, `PageParams`, `PathParams` and `RawJson`.
 

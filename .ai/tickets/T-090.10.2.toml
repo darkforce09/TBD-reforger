@@ -8,6 +8,7 @@ order = 8060
 spec = "documentation/tickets/specs/t090_10_map_engine_v2.md"
 plan = "documentation/tickets/plans/t-090_10_2_plan.md"
 executor = "claude-code"
+notes = "Paths with no successor (checked 2026-10-04, restructure S12): crates/map-engine-render/src/engine.rs: removed in commit 1660b03f8, no successor; world_assets/mod.rs: removed in the restructure (commit 8ef0f0f97), no successor."
 depends_on = [
     "T-090.5.4",
     "T-090.8.1",
@@ -52,8 +53,8 @@ owns = [
     "apps/frontend/src/editor/world_assets/satellite.rs",
     "apps/frontend/src/editor/panels/settings_modal.rs",
     "crates/map-engine-render/src/engine.rs",
-    "packages/map-assets/everon/manifest.json",
-    "packages/tbd-schema/schema/terrain-manifest.schema.json",
+    "assets/terrains/everon/manifest.json",
+    "contracts/definitions/terrain-manifest.schema.json",
 ]
 
 [scope]

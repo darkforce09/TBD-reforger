@@ -152,9 +152,9 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
     // "a tool reporting success over an input it never examined" is the defect this
     // program is built around. Pin it to the migration directory the database was built
     // from, so the check has to be reading `_sqlx_migrations` to pass.
-    let migrations_folder = repository_layout::find_repository_root_from(std::path::Path::new(
-        env!("CARGO_MANIFEST_DIR"),
-    ))
+    let migrations_folder = repository_root::find_repository_root_from(std::path::Path::new(env!(
+        "CARGO_MANIFEST_DIR"
+    )))
     .expect("the repository root above the API crate")
     .join("crates/api/api_database/migrations");
     let on_disk = std::fs::read_dir(migrations_folder)

@@ -14,24 +14,26 @@
 
 use std::collections::HashMap;
 
-use crate::bvh::instance_pairs::{ascending, pair_consuming};
-use crate::voxel_processing::analysis_parameters::Params;
+use crate::architectural_analysis::collision_face_pairing::{
+    ascending_closing_faces, pair_faces_consuming,
+};
+use crate::voxel_processing::analysis_parameters::AnalysisParameters;
 use crate::voxel_processing::voxel_types::{
-    MassRect, PlanGrid, ScanMap, VerticalScan, VoxelDump, WallSeg,
+    MassRectangle, PlanGrid, ScanMap, VerticalScan, VoxelDump, WallSegment,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Algo {
+pub(crate) enum WallAlgorithm {
     Segments,
     Grid,
 }
 
 #[derive(Debug)]
 pub(crate) struct BandWalls {
-    pub walls: Vec<WallSeg>,
+    pub walls: Vec<WallSegment>,
     /// (segment, is_exterior) — exterior classification is algorithm-specific.
     pub exterior: Vec<bool>,
-    pub masses: Vec<MassRect>,
+    pub masses: Vec<MassRectangle>,
     /// Diagnostic: raw observation / rect count before merging.
     pub raw_count: usize,
 }
@@ -81,15 +83,15 @@ struct Obs {
 #[path = "tests/wall_extraction_tests.rs"]
 mod tests;
 
-#[path = "wall_extraction/extract_band.rs"]
-mod extract_band;
-pub(crate) use extract_band::extract_band;
+#[path = "wall_extraction/segment_wall_extractor.rs"]
+mod segment_wall_extractor;
+pub(crate) use segment_wall_extractor::extract_band_walls;
 
-#[path = "wall_extraction/classify_exterior_flood.rs"]
-mod classify_exterior_flood;
-use classify_exterior_flood::classify_exterior_flood;
-use classify_exterior_flood::grid_band;
-pub(crate) use classify_exterior_flood::rects_from_grid;
+#[path = "wall_extraction/grid_wall_extractor.rs"]
+mod grid_wall_extractor;
+use grid_wall_extractor::classify_exterior_by_flood_fill;
+use grid_wall_extractor::grid_band_walls;
+pub(crate) use grid_wall_extractor::rectangles_from_grid;
 
 #[cfg(test)]
-use extract_band::cluster_columns;
+use segment_wall_extractor::cluster_columns;

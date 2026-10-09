@@ -27,7 +27,7 @@ use serde_json::{Value, json};
 
 use crate::fixture_injection::{DOM_SERIALIZER_SRC, FREEZE_SRC};
 use crate::server::{ServeConfig, start_server};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use chrome_devtools_protocol::{self as cdp, Browser};
 
 // The committed seed golden ids (memory/fixtures): mission / event / event-mission.

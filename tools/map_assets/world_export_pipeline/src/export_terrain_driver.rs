@@ -24,7 +24,8 @@ use std::io::{self, Write};
 use std::path::Path;
 
 use process_runner::Run;
-use repository_layout::{find_repository_root, map_scratch_dir};
+use repository_layout::map_scratch_dir;
+use repository_root::find_repository_root;
 use verification_core::verdict::NotRun;
 
 use crate::error::{Result, refuse};

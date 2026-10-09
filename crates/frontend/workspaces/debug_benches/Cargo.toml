@@ -16,6 +16,8 @@ tier = 9
 targets = "any"
 
 [dependencies]
+# The wall clock the world line-of-sight bench times its passes with.
+time_source = { workspace = true }
 # The building blueprints, compounds, section cuts and their line of sight the map benches draw.
 building_interiors = { workspace = true }
 interior_line_of_sight = { workspace = true }

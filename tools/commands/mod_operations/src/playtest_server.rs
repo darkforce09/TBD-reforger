@@ -77,7 +77,7 @@ use std::path::{Path, PathBuf};
 use crate::Result;
 
 use host::Host;
-use repository_layout::find_repository_root;
+use repository_root::find_repository_root;
 
 /// Printed verbatim by `-h` / `--help`.
 ///

@@ -44,7 +44,7 @@ pub enum Error {
     NotRun(#[from] verification_core::NotRun),
     /// No checkout root above the working directory.
     #[error(transparent)]
-    RepositoryRoot(#[from] repository_layout::Error),
+    RepositoryRoot(#[from] repository_root::Error),
 }
 
 /// The result of a workstation setup command.

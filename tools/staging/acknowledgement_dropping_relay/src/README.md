@@ -10,16 +10,17 @@ about.
 
 ```text
 tools/staging/acknowledgement_dropping_relay/src/
-├── cli.rs                the `serve` and `control` commands and their exit codes
-├── connection_abort.rs   the listener whose connections the relay can end without writing a byte
-├── control_socket.rs     the mode-600 control socket, its line protocol, and the `control` client
-├── drop_policy.rs        the arming, the claim and result routes it matches, the status document
-├── error.rs              `Error`, `Result` and `error_chain`, the one-line rendering of an error and its causes
-├── lib.rs                the crate root: module header, `mod` lines and the public surface
-├── prelude.rs            the command line, the control client, the settings and the status for glob import
-├── relay.rs              `start` and `serve`: forwarding, the withheld answer, the event log
-├── relay_settings.rs     the loopback rule on the listen address and the upstream, the hold time
-└── tests/                unit tests, and runs against a stub API on a free loopback port
+├── cli.rs               the `serve` and `control` commands and their exit codes
+├── connection_abort.rs  the listener whose connections the relay can end without writing a byte
+├── control_socket.rs    the mode-600 control socket, its line protocol, and the `control` client
+├── drop_policy.rs       the arming, the claim and result routes it matches, the status document
+├── error.rs             `Error`, `Result` and `error_chain`, the one-line rendering of an error and its causes
+├── http_client.rs       `http_client_builder`: every HTTP client, built after the rustls ring provider is installed
+├── lib.rs               the crate root: module header, `mod` lines and the public surface
+├── prelude.rs           the command line, the control client, the settings and the status for glob import
+├── relay.rs             `start` and `serve`: forwarding, the withheld answer, the event log
+├── relay_settings.rs    the loopback rule on the listen address and the upstream, the hold time
+└── tests/               unit tests, and runs against a stub API on a free loopback port
 ```
 
 ## How it works

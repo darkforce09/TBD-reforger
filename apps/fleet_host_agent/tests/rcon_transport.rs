@@ -58,7 +58,7 @@ async fn players(client: &RconClient) -> Result<String, RconError> {
 async fn console_host(server: &FakeBattlEyeServer) -> HostActionExecutor {
     let process_control = ProcessControl::new(ProcessControlSettings {
         systemctl_program: "/nonexistent/systemctl".into(),
-        unit: SystemdUnitName::parse("tbd-reforger.service").unwrap(),
+        unit: SystemdUnitName::parse("tbd-reforger.service").expect("the unit name is valid"),
         start_dwell: Duration::ZERO,
         verb_timeout: Duration::from_secs(1),
         state_read_timeout: Duration::from_secs(1),

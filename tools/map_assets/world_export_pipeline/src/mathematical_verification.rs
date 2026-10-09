@@ -27,7 +27,7 @@ use crate::polygon_geometry as geometry;
 use crate::polygon_geometry::{cell_of, check_anchors, chunk_key};
 use crate::vegetation_density as density;
 use ::repository_layout::contract_definitions_dir;
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 
 const MAX_CHUNK_AGGREGATE_BYTES: u64 = 40 * 1024 * 1024;
 

@@ -12,7 +12,7 @@ parent = "T-090"
 main_goal = "Mission Creator will expose AI inside the Eden-style editor. The AI must read the world base layer (1M+ map objects) with the same certainty a human gets from selecting an entity in Workbench."
 context = ["Mission Creator will expose AI inside the Eden-style editor; the AI must read the 1M+ object world base layer with Workbench-selection certainty."]
 requirement = [
-    "ResolvedWorldObject is the exact AI tool shape, exactly as packages/tbd-schema/schema/map-object-resolved.schema.json defines it.",
+    "ResolvedWorldObject is the exact AI tool shape, exactly as contracts/definitions/map-object-resolved.schema.json defines it.",
     "No parallel field names invented in frontend AI code; the schema is the single contract.",
 ]
 current_state = ["The schema slice pinned the ResolvedWorldObject shape; the frontend resolver in world_assets does not yet produce it for the AI surface."]
@@ -32,7 +32,7 @@ estimated = ["scope"]
 owns = [
     "apps/frontend/src/editor/world_assets/resolved.rs",
     "apps/frontend/src/editor/world_assets/mod.rs",
-    "packages/tbd-schema/schema/map-object-resolved.schema.json",
+    "contracts/definitions/map-object-resolved.schema.json",
 ]
 
 [scope]

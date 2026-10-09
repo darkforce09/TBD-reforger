@@ -66,7 +66,7 @@ unreported.
   underneath as its source, so `xtask: …` prints the step and every cause, and a gate that
   prints a read failure itself (`terrain_manifest`) prints the step alone.
 - `labels::REQUIRED_EVERON_TOWNS`, `labels::MAJOR_EVERON_ROADS`, and the `world_line_of_sight`
-  types (`Dem`, `WorldParityFile`, `ReplayReport`) and loaders (`load_cell`, `load_dem`,
+  types (`ElevationRaster`, `WorldParityFile`, `ReplayReport`) and loaders (`load_cell_occluder`, `load_elevation_raster`,
   `replay`), are public, but only the gates and their tests use them.
 
 ## Boundaries
@@ -91,7 +91,7 @@ unreported.
   (`a_chunks_dir_holding_no_bin_is_dangling`,
   `dangling_binary_paths_are_rejected_one_by_one`); the schema's POD row layout matches the Rust
   POD (`live_pod_row_doc_matches_the_rust_pod`), all in
-  `tools/map_assets/map_asset_verification/src/tests/terrain_manifest.rs`.
+  `tools/map_assets/map_asset_verification/src/tests/terrain_manifest_tests.rs`.
 
 ## Related documentation
 

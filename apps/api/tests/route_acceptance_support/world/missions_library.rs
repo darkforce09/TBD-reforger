@@ -36,7 +36,7 @@ use crate::route_acceptance_support::world::{Fixture, PartWorld, WorldCore};
 const VERSION_BODY_LIMIT: i64 = 2 << 20;
 /// The committed faction-library sample every faction body starts from.
 fn faction_sample() -> std::path::PathBuf {
-    repository_layout::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
+    repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
         .join("contracts/fixtures/registry/faction-library.sample.json")
 }
@@ -45,7 +45,7 @@ const MAGAZINE: &str = "{00000000000000A2}Prefabs/Weapons/Magazines/Magazine_Rou
 const CHARACTER: &str = "{00000000000000A3}Prefabs/Characters/Character_RouteAcceptance.et";
 
 /// The missions library world.
-pub struct MissionsLibraryWorld {
+pub(crate) struct MissionsLibraryWorld {
     live: Uuid,
     live_version: Uuid,
     live_artifact: Uuid,

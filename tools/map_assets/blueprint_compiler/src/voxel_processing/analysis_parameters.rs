@@ -11,7 +11,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields, default)]
-pub(crate) struct Params {
+pub(crate) struct AnalysisParameters {
     // ── face pairing ────────────────────────────────────────────────────────────────────────
     /// Max distance ahead a forward face may pair with an opposing face (one wall thickness).
     pub max_pair_m: f64,
@@ -124,7 +124,7 @@ pub(crate) struct Params {
     pub roof_erode_cells: usize,
 }
 
-impl Default for Params {
+impl Default for AnalysisParameters {
     fn default() -> Self {
         Self {
             max_pair_m: 0.7,
@@ -186,7 +186,7 @@ impl Default for Params {
     }
 }
 
-impl Params {
+impl AnalysisParameters {
     /// Defaults overlaid with a partial JSON override file.
     pub(crate) fn load(path: Option<&std::path::Path>) -> crate::error::Result<Self> {
         match path {

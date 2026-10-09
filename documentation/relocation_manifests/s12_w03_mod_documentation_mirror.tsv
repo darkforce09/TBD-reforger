@@ -1,0 +1,7 @@
+# Stage S12 G8, wave 3: the mod's documentation mirror moves under documentation/apps/, so it sits
+# at the mod's code path (apps/mod/) like every other application's documentation; inside an addon
+# the documents still leave out Scripts/Game/TBD/. Paths name the tree before the moves.
+kind	from	to	scope
+#
+# the whole mod documentation mirror: the index, the three addons' documents and the program record
+path	documentation/mod	documentation/apps/mod

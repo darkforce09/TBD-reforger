@@ -18,7 +18,7 @@ use crate::error::{Result, bail};
 use serde_json::{Value, json};
 
 use super::image_operations::{self, Rgb8};
-use ::repository_layout::find_repository_root;
+use ::repository_root::find_repository_root;
 use enfusion_pak::PakVfs;
 use time_source::iso_from_system_time;
 use world_export_pipeline::json_number_formatting::{js_math_round, js_num};
@@ -70,11 +70,11 @@ const VALLEY_CARVE_M: f32 = 0.8;
 // valleyCarveM prints as 0.8 in JS.
 const WET_VALLEY_CARVE_JSON: f64 = 0.8;
 
-mod sap_dir;
-pub(crate) use sap_dir::composite_water_ortho;
-use sap_dir::dilate;
-use sap_dir::read_dem_u16;
-use sap_dir::sap_dir;
+mod water_composite;
+pub(crate) use water_composite::composite_water_ortho;
+use water_composite::dilate;
+use water_composite::read_elevation_raster_u16;
+use water_composite::supertexture_scratch_dir;
 
 mod analyze_water_sources;
 pub(crate) use analyze_water_sources::analyze_water_sources;

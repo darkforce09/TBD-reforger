@@ -16,7 +16,7 @@ use std::path::PathBuf;
 /// When no checkout root is found from the working directory.
 #[must_use]
 pub fn fixture(name: &str) -> PathBuf {
-    ::repository_layout::find_repository_root()
+    ::repository_root::find_repository_root()
         .expect("repository root")
         .join("tools/map_assets/blueprint_compiler/test_fixtures/blueprint")
         .join(name)

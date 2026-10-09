@@ -1,0 +1,13 @@
+id = "T-1273"
+kind = "work"
+title = "Add cargo xtask wrappers for enf capability and citations"
+summary = "The mod wave gate runs cargo run -p developer_tools --bin enf -- capability and -- citations directly (tools/commands/mod_operations/src/wave_execution/execution.rs:341-366); cargo xtask has no command for either (tools/xtask/src/commands has no enf group)."
+class = "chore"
+status = "idea"
+notes = "tools/commands/mod_operations/src/wave_execution/execution.rs:341-366: the mod wave gate's 'capability' and 'oracle citations' steps run cargo run -q -p developer_tools --bin enf -- capability and -- citations; every other step is a cargo xtask command. tools/xtask/src/commands has no enf group, so an operator types the developer_tools form by hand. Add cargo xtask wrappers (for example under cargo xtask mod) and point the gate steps and the docs at them. The unmerged slice/T-939.4 branch the same finding named is T-1002's. Source: restructure finding F-034 (program progress record)."
+created_at = "2026-10-04T02:36:19Z"
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

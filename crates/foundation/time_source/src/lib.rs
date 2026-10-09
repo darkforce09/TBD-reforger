@@ -1,28 +1,26 @@
 //! Wall-clock and monotonic time, and UTC timestamps in RFC 3339.
 //!
 //! **Role:** one [`Clock`] trait (wall-clock Unix milliseconds) with `SystemClock` (native),
-//! `BrowserClock` (`wasm32`, `Date.now()`), the per-target alias [`PlatformClock`] and the
-//! test clock [`ManualClock`]; the monotonic frame-timing source [`monotonic_ms`]; the UTC
-//! formatters [`rfc3339_utc_millis`] / [`iso_from_system_time`] (`2026-07-04T23:43:38.437Z`) and
-//! [`rfc3339_utc_seconds`] / [`now_utc_rfc3339`] (`2026-08-14T12:34:56Z`); and the canonical-UTC
-//! check [`validate_rfc3339_utc`].
+//! `BrowserClock` (`wasm32`, `Date.now()`), the per-target alias [`PlatformClock`], its reading
+//! as the plain function [`wall_clock_ms`], and the test clock [`ManualClock`]; the monotonic
+//! frame-timing source [`monotonic_ms`]; the UTC formatters [`rfc3339_utc_millis`] /
+//! [`iso_from_system_time`] (`2026-07-04T23:43:38.437Z`) and [`rfc3339_utc_seconds`] /
+//! [`now_utc_rfc3339`] (`2026-08-14T12:34:56Z`); and the canonical-UTC check
+//! [`validate_rfc3339_utc`].
 //! **Position:** foundation tier; `time` (parsing) on every target, `js-sys` and `web-sys` on
-//! `wasm32` only. The clocks and formatters it replaces map onto it as follows:
-//! - the map renderer's frame timing and the render diagnostics' benchmark read [`monotonic_ms`]
-//!   (`performance.now()` with the `Date.now()` fallback), and the benchmark's wall clock is
-//!   `BrowserClock.now_unix_ms_f64()`;
-//! - map engine viewshed scheduler host: [`monotonic_ms`] is a `fn() -> f64`, so it fills
-//!   `SchedulerHost::now_ms` and replaces both fallbacks (native `SystemTime`, wasm tick counter)
-//!   with a clock that advances on every target; tests keep injecting their own `fn`;
-//! - map engine `streaming/host/viewport.rs` and `world_loader/ingest.rs`: the inline
-//!   `js_sys::Date::now()` is `BrowserClock.now_unix_ms_f64()`, the same value;
-//! - map engine CRDT undo-group clocks: `RealClock` is [`PlatformClock`], `ManualClock` is
-//!   [`ManualClock`], and the injected wasm `fn() -> u64` is no longer needed because
-//!   `BrowserClock` reads `Date.now()` itself; a `yrs::sync::Clock` adapter over
-//!   `Arc<dyn Clock>` keeps their floor of 1 ms;
-//! - developer tools `iso_from_system_time` and ticket tools `now_utc_rfc3339` and
-//!   `validate_rfc3339_utc`: the same names here, byte-identical output, and an [`Error`] whose
-//!   text is the old message.
+//! `wasm32` only. Every `Date.now()`, `performance.now()` and `SystemTime::now()` reading of the
+//! library crates comes through here:
+//! - durations and budgets read [`monotonic_ms`] (`performance.now()` with the `Date.now()`
+//!   fallback): the map renderer's frame timing, the render diagnostics' benchmark, the
+//!   viewshed scheduler's default budget clock (a `fn() -> f64` slot) and the validation panel's
+//!   debounce;
+//! - wall-clock instants read [`wall_clock_ms`] or [`PlatformClock`]: the streaming settle and
+//!   ingest frame stamps, the Mission Creator's persistence, tab-lock, warm-session, hover and
+//!   viewport readings, and the frontend's countdown and draft ids;
+//! - injected clocks take an `Arc<dyn Clock>`: the CRDT undo-group clocks wrap [`PlatformClock`]
+//!   (or [`ManualClock`] in tests) in a `yrs::sync::Clock` adapter with a 1 ms floor;
+//! - the developer and ticket tools format and validate timestamps with the formatters and
+//!   [`validate_rfc3339_utc`], whose [`Error`] text is the message their callers print.
 //!
 //! **Signals & state:** none, except [`ManualClock`]'s atomic reading and the native
 //! [`monotonic_ms`] origin, fixed by its first call.
@@ -42,7 +40,7 @@ mod utc_validation;
 
 #[cfg(target_arch = "wasm32")]
 pub use browser_clock::BrowserClock;
-pub use clock::{Clock, PlatformClock};
+pub use clock::{Clock, PlatformClock, wall_clock_ms};
 pub use error::{Error, Result};
 pub use manual_clock::ManualClock;
 pub use monotonic::monotonic_ms;

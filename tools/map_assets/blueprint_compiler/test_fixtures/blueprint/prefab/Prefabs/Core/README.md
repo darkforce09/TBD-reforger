@@ -17,8 +17,8 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/Core/
 
 - Encoding: ASCII Enfusion prefab text, one root entity per file, with invented GUIDs and
   resource paths; nothing here is game content.
-- Schema: the `.et` grammar that `parse_et` in
-  `tools/map_assets/blueprint_compiler/src/bvh/prefab_catalog/tokenize.rs` reads; each file is a
+- Schema: the `.et` grammar that `parse_entity_template` in
+  `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads; each file is a
   class head with no base, so it ends an inheritance chain.
 - Adding a file: give it an ID and GUIDs no other fixture uses, reference it from a sibling folder
   as `"{GUID}Prefabs/Core/<name>.et"`, and run `cargo test -p developer_tools blueprint::prefab`.
@@ -28,16 +28,16 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/Core/
 - Producers: people; the files are written by hand.
 - Consumers:
   - `resolver_walks_inheritance_sockets_and_children` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/prefab_catalog_tests.rs` resolves
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/prefab_templates_tests.rs` resolves
     `Prefabs/Houses/House_Wood.et` and asserts that its chain ends at `Building_Base.et` and that
     this file's placeholder mesh `Common/Models/Default.xob` never wins over the house's own mesh;
   - `walker_places_door_set_window_and_furniture_from_fixtures` in
-    `tools/map_assets/blueprint_compiler/src/bvh/tests/batch_processing_tests.rs` walks the house, whose table and
+    `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/tests/batch_processing_tests.rs` walks the house, whose table and
     chairs inherit `Prop_Base.et` and whose furniture composition inherits `Furniture_base.et`.
 
 ## Boundaries
 
-- Depends on: the `.et` grammar `parse_et` reads.
+- Depends on: the `.et` grammar `parse_entity_template` reads.
 - Used by: the two tests above, through the prefab folder root
   `tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/`.
 - Rules: the resolver test pins the chain `Prefabs/Houses/House_Wood.et` →

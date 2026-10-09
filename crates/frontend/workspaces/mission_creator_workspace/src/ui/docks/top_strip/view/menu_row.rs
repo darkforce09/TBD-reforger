@@ -213,7 +213,7 @@ macro_rules! menu_row {
                     $last_flush
                         .get()
                         .map(|ts| {
-                            let elapsed = js_sys::Date::now() - ts;
+                            let elapsed = time_source::wall_clock_ms() - ts;
                             let label = format_draft_recency(elapsed);
                             let aria = label.clone();
                             view! {

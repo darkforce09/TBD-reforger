@@ -57,7 +57,7 @@ cargo xtask mcp selftest                    # drives the stub and a stub-backed 
 
 ## Boundaries
 
-- Depends on: `enfusion_mcp` (`server_entrypoint`), `repository_layout` (the root walk),
+- Depends on: `enfusion_mcp` (`server_entrypoint`), `repository_root` (the root walk),
   `serde_json`, `thiserror`, `tokio` (runtime, Unix socket, child process, signals, timers).
 - Used by: the `mcpd` binary in `tools/developer_tools/src/bin/mcpd.rs`; through it,
   `cargo xtask mcp daemon`, `cargo xtask mcp call` and `cargo xtask mcp selftest`.

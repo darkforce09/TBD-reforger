@@ -56,5 +56,5 @@ None: Workbench runs these scripts in the editor.
 
 ## Related documentation
 
-- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the call path
+- [Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — the call path
   from the MCP tools to these handlers, and the upgrade rules.

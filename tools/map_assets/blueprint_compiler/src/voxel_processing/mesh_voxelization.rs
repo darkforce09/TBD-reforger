@@ -1,6 +1,6 @@
 //! **Role:** `cargo xtask map voxels-from-mesh` — the mesh-based dump generator. Ray-marches real
 //! triangle geometry (a Reforger `.xob`, parsed by [`crate::mesh_decoding::mesh_format`]) over the shared
-//! [`crate::architectural_analysis::contour_tracing`] lattice and emits a standard `<slug>_voxels.jsonl.gz`, so the entire
+//! [`crate::voxel_processing::voxel_dump_lattice`] lattice and emits a standard `<slug>_voxels.jsonl.gz`, so the entire
 //! offline interpreter, parity harness, and viewer run unchanged on real model data.
 //!
 //! Face semantics mirror the Workbench sensor: an entry recorded by the "x+" march is a
@@ -11,7 +11,7 @@
 //! Deviations from the sensor, both parser-legal: no 48-hit cap (no trace budget here),
 //! and hits closer than the engine's 0.02 m re-cast step are merged instead of re-traced.
 //!
-//! **Position:** called by `voxels-from-mesh`; marches through [`crate::architectural_analysis::contour_tracing`].
+//! **Position:** called by `voxels-from-mesh`; marches through [`crate::voxel_processing::voxel_dump_lattice`].
 //! **Signals & state:** none; reads one model and writes one dump.
 //! **Invariants:** a written dump parses back through [`crate::voxel_processing::dump_parser`] before the command succeeds.
 
@@ -21,8 +21,10 @@ use std::path::PathBuf;
 
 use crate::error::{Result, ResultExt, bail};
 
-use crate::architectural_analysis::contour_tracing::{self, CELL, DumpIdent, PAD};
 use crate::mesh_decoding::mesh_format;
+use crate::voxel_processing::voxel_dump_lattice::{
+    self, DumpIdentity, LATTICE_CELL_SIZE_METERS, LATTICE_PADDING_METERS,
+};
 use crate::voxel_processing::voxel_types::VoxelDump;
 
 /// Minimum separation between kept hits along one line — the sensor's STEP_PAST_M.
@@ -30,14 +32,14 @@ const MIN_SEP: f64 = 0.02;
 /// |normal·axis| below this = parallel face; the engine trace does not register these.
 const PARALLEL_EPS: f64 = 1e-9;
 
-pub(crate) struct TriMesh {
+pub(crate) struct TriangleMesh {
     pub verts: Vec<[f64; 3]>,
     pub tris: Vec<[u32; 3]>,
     /// Per-triangle unit normal, oriented outward (matched to vertex normals).
     pub tri_normal: Vec<[f64; 3]>,
 }
 
-impl TriMesh {
+impl TriangleMesh {
     /// Build from a parsed xob: drop excluded-material triangles, apply the axes remap and
     /// optional winding flip, orient each face normal by the packed vertex normals.
     pub(crate) fn from_xob(
@@ -45,7 +47,7 @@ impl TriMesh {
         axes: &AxesRemap,
         flip_winding: bool,
         exclude_material: &[String],
-    ) -> TriMesh {
+    ) -> TriangleMesh {
         let verts: Vec<[f64; 3]> = m.verts.iter().map(|v| axes.apply(*v)).collect();
         let vnorm: Vec<[f64; 3]> = m.vert_normals.iter().map(|v| axes.apply(*v)).collect();
         let mut tris = Vec::with_capacity(m.tris.len());
@@ -63,8 +65,8 @@ impl TriMesh {
             }
             let [a, b, c] = *tri;
             let (va, vb, vc) = (verts[a as usize], verts[b as usize], verts[c as usize]);
-            let g = cross(sub(vb, va), sub(vc, va));
-            let len = dot(g, g).sqrt();
+            let g = cross_product(subtract(vb, va), subtract(vc, va));
+            let len = dot_product(g, g).sqrt();
             if len < 1e-12 {
                 continue; // degenerate
             }
@@ -74,7 +76,7 @@ impl TriMesh {
                 vnorm[a as usize][1] + vnorm[b as usize][1] + vnorm[c as usize][1],
                 vnorm[a as usize][2] + vnorm[b as usize][2] + vnorm[c as usize][2],
             ];
-            if dot(n, avg) < 0.0 {
+            if dot_product(n, avg) < 0.0 {
                 n = [-n[0], -n[1], -n[2]];
             }
             if flip_winding {
@@ -86,7 +88,7 @@ impl TriMesh {
         if dropped > 0 {
             println!("  excluded {dropped} triangles by material filter");
         }
-        TriMesh {
+        TriangleMesh {
             verts,
             tris,
             tri_normal,
@@ -152,15 +154,15 @@ struct AxisBins {
 }
 
 impl AxisBins {
-    fn build(mesh: &TriMesh, axis: usize, origin: [f64; 3], dims: [usize; 3]) -> AxisBins {
-        let (c1, c2) = cross_axes(axis);
+    fn build(mesh: &TriangleMesh, axis: usize, origin: [f64; 3], dims: [usize; 3]) -> AxisBins {
+        let (c1, c2) = perpendicular_axes(axis);
         let (d1, d2) = (dims[c1], dims[c2]);
         let mut bins = vec![Vec::new(); d1 * d2];
         let cell_range = |lo: f64, hi: f64, c: usize, d: usize| -> (usize, usize) {
             // Lines sit at origin[c] + (i + 0.5)·CELL; cover every line inside [lo, hi]
             // with one cell of slack for the exact-boundary case.
-            let a = ((lo - origin[c]) / CELL - 0.5).floor() as i64 - 1;
-            let b = ((hi - origin[c]) / CELL - 0.5).ceil() as i64 + 1;
+            let a = ((lo - origin[c]) / LATTICE_CELL_SIZE_METERS - 0.5).floor() as i64 - 1;
+            let b = ((hi - origin[c]) / LATTICE_CELL_SIZE_METERS - 0.5).ceil() as i64 + 1;
             (
                 a.clamp(0, d as i64 - 1) as usize,
                 b.clamp(0, d as i64 - 1) as usize,
@@ -195,8 +197,8 @@ impl AxisBins {
     }
 
     fn candidates(&self, a: f64, b: f64) -> &[u32] {
-        let j = ((a - self.origin[self.c1]) / CELL - 0.5).round() as i64;
-        let k = ((b - self.origin[self.c2]) / CELL - 0.5).round() as i64;
+        let j = ((a - self.origin[self.c1]) / LATTICE_CELL_SIZE_METERS - 0.5).round() as i64;
+        let k = ((b - self.origin[self.c2]) / LATTICE_CELL_SIZE_METERS - 0.5).round() as i64;
         if j < 0 || k < 0 || j as usize >= self.d1 || k as usize >= self.d2 {
             return &[];
         }
@@ -208,20 +210,20 @@ impl AxisBins {
 #[path = "tests/mesh_voxelization_tests.rs"]
 mod tests;
 
-#[path = "mesh_voxelization/sub.rs"]
-mod sub;
-use sub::backface_first_fraction;
-use sub::cross;
-use sub::cross_axes;
-use sub::dot;
-pub(crate) use sub::generate;
-use sub::print_stats;
-use sub::sub;
-pub(crate) use sub::write_dump;
+#[path = "mesh_voxelization/ray_marching.rs"]
+mod ray_marching;
+use ray_marching::backface_first_fraction;
+use ray_marching::cross_product;
+use ray_marching::dot_product;
+pub(crate) use ray_marching::generate;
+use ray_marching::perpendicular_axes;
+use ray_marching::print_statistics;
+use ray_marching::subtract;
+pub(crate) use ray_marching::write_dump;
 
-#[path = "mesh_voxelization/run_voxels_from_mesh.rs"]
-mod run_voxels_from_mesh;
-pub use run_voxels_from_mesh::run_voxels_from_mesh;
+#[path = "mesh_voxelization/voxelization_command_line.rs"]
+mod voxelization_command_line;
+pub use voxelization_command_line::run_mesh_voxelization;
 
 #[cfg(test)]
-pub(crate) use sub::min_sep;
+pub(crate) use ray_marching::minimum_separation;

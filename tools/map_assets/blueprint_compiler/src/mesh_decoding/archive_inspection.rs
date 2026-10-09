@@ -15,14 +15,16 @@ use std::path::{Path, PathBuf};
 use crate::error::{Result, ResultExt};
 use spatial_indexes::bounding_volume_hierarchy::surface_kind::SurfaceKind;
 
-use crate::architectural_analysis::surface_classification::{gamemat_stem, parse_kind_override};
-use crate::bvh::batch_processing::{decode_asset, open_sources};
+use crate::architectural_analysis::surface_classification::{
+    game_material_stem, parse_kind_override,
+};
 use crate::mesh_decoding::mesh_format;
+use crate::occlusion_sidecars::batch_processing::{decode_asset, open_sources};
 use enfusion_pak::{AssetSource, PakSet};
 
 /// `map xob-inspect <file.xob | Assets/…/X.xob> [--paks <dir>] [--extract <dir>]
 /// [--strings] [--kind <record>=<kind>]…`
-pub fn run_xob_inspect(_root: &std::path::Path, args: &[String]) -> Result<u8> {
+pub fn run_xob_inspection(_root: &std::path::Path, args: &[String]) -> Result<u8> {
     let mut target: Option<String> = None;
     let mut paks: Option<PathBuf> = None;
     let mut extract: Option<PathBuf> = None;
@@ -112,7 +114,7 @@ pub fn run_xob_inspect(_root: &std::path::Path, args: &[String]) -> Result<u8> {
         &target,
         &data,
         &overrides,
-        crate::bvh::batch_processing::LayerPolicy::All,
+        crate::occlusion_sidecars::batch_processing::LayerPolicy::All,
     );
     println!(
         "xob-inspect {target}: {} bytes · {} node records · record layers {:?}",
@@ -172,7 +174,7 @@ pub fn run_xob_inspect(_root: &std::path::Path, args: &[String]) -> Result<u8> {
             }
             println!("  nodes: {}", n.nodes.len());
             for (i, rec) in n.nodes.iter().enumerate() {
-                let w = n.world_of(i);
+                let w = n.world_transform_of(i);
                 println!(
                     "    #{i:3} {:<32} parent {:>4} pos [{:8.3} {:8.3} {:8.3}] yaw {:8.2}° quat [{:.4} {:.4} {:.4} {:.4}] next {} child {}",
                     n.node_name(i).unwrap_or("?"),
@@ -239,7 +241,7 @@ pub fn run_xob_inspect(_root: &std::path::Path, args: &[String]) -> Result<u8> {
                     let label = if mat == u32::MAX {
                         "(no material)".to_string()
                     } else {
-                        gamemat_stem(&name(mat))
+                        game_material_stem(&name(mat))
                     };
                     println!("      {count:6} tris · {label:<24} → {kind:?}");
                 }
@@ -265,7 +267,7 @@ pub fn run_xob_inspect(_root: &std::path::Path, args: &[String]) -> Result<u8> {
 /// read one entry of the game paks (any type: `.ent` worlds, `.et` prefabs, `.conf`, …) and
 /// print it (or its first `--head` bytes) / write it to `--out`. The census + peek tool the
 /// world-scale BVH program needs (`worlds/Eden/Eden.ent` is 68 MB — too big for the MCP reader).
-pub fn run_pak_cat(_root: &std::path::Path, args: &[String]) -> Result<u8> {
+pub fn run_pak_file_print(_root: &std::path::Path, args: &[String]) -> Result<u8> {
     let mut path: Option<String> = None;
     let mut paks: Option<PathBuf> = None;
     let mut head: Option<usize> = None;

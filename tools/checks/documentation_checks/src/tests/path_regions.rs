@@ -4,8 +4,8 @@ use repository_layout::{
     documentation::DOCUMENTATION_ROOT, documentation::GAP_ANALYSIS, documentation::ROADMAP,
 };
 
-/// Top-level folders the span derives rather than lists: today's code trees, the ones the
-/// workspace restructure adds, and one no list has ever named.
+/// Top-level folders the span derives rather than lists: today's code trees and two that no list
+/// has ever named.
 const DERIVED_TOP_LEVEL_FOLDERS: [&str; 8] = [
     "apps",
     "tools",
@@ -13,7 +13,7 @@ const DERIVED_TOP_LEVEL_FOLDERS: [&str; 8] = [
     "assets",
     "crates",
     "deploy",
-    "legacy",
+    "engines",
     "a_folder_born_later",
 ];
 
