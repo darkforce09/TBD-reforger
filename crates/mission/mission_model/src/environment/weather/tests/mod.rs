@@ -5,7 +5,7 @@
 
 use super::*;
 
-use crate::authored_blocks::{copy_authored_blocks, is_authored_block};
+use crate::authored_blocks::copy_authored_blocks;
 
 use serde_json::json;
 

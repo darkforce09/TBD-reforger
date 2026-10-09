@@ -15,7 +15,6 @@ crates/mission_editing/map_editing_tools/src/
 ├── prelude.rs           the most used tool types and entry points, for a glob import
 ├── ruler/               the session-local ruler polyline, its legs, and the tool mode enum
 ├── selection/           the left-button gesture model, picks, marquee and index self-checks
-├── tests/               the source scrub the ruler and line-of-sight source guards read
 └── viewshed_scheduler/  one budgeted, cancellable visibility job per tool
 ```
 

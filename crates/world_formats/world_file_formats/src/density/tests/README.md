@@ -8,7 +8,6 @@ production decoder's source.
 
 ```text
 crates/world_formats/world_file_formats/src/density/tests/
-├── tbdd_class_r_scrub.rs     the comment and test-module scrubber the source scan reads `tbdd.rs` through
 ├── tbdd_parity_reference.rs  the byte-by-byte reference decoder the parity tests compare against
 └── tbdd_tests.rs             Everon parity, synthetic shapes, unaligned payloads, header layout, refusals
 ```

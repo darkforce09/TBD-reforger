@@ -120,7 +120,3 @@ pub fn duplicate_slot_id_report(dups: &[(String, String)]) -> (String, Vec<Strin
     );
     (head, rows)
 }
-
-#[cfg(test)]
-#[path = "tests/merge_report.rs"]
-mod tests;

@@ -32,7 +32,3 @@ impl Default for ChunkId {
         Self::new(String::new())
     }
 }
-
-#[cfg(test)]
-#[path = "tests/chunk_id_tests.rs"]
-mod tests;

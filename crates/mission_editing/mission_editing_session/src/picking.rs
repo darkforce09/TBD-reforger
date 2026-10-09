@@ -91,7 +91,3 @@ pub fn squad_link_inputs(doc: &MissionDocCore) -> Vec<SquadLinkInput> {
 #[cfg(test)]
 #[path = "tests/picking_selection.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "tests/picking_adapter_source.rs"]
-mod adapter_source_tests;

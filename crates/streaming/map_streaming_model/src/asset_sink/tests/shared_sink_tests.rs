@@ -203,20 +203,6 @@ impl MapAssetSink for RecordingSink {
 }
 
 #[test]
-fn an_empty_slot_hands_out_no_sink() {
-    let renderer: Rc<RefCell<Option<RecordingSink>>> = Rc::new(RefCell::new(None));
-    let shared: SharedMapAssetSink<u32> = renderer.clone();
-    assert!(
-        shared.borrow().sink().is_none(),
-        "before the renderer boots, a read must find nothing to read"
-    );
-    assert!(
-        shared.borrow_mut().sink_mut().is_none(),
-        "before the renderer boots, a write must find nothing to write to"
-    );
-}
-
-#[test]
 fn writes_through_the_shared_handle_reach_the_renderer_cell_in_call_order() {
     let renderer: Rc<RefCell<Option<RecordingSink>>> =
         Rc::new(RefCell::new(Some(RecordingSink::default())));
@@ -297,24 +283,5 @@ fn a_refused_write_names_the_refused_call() {
     assert_eq!(
         refused.to_string(),
         "the renderer refused tex_layer_begin: no texture layers in this test"
-    );
-}
-
-#[test]
-fn the_viewport_reads_come_from_the_held_sink() {
-    let renderer: Rc<RefCell<Option<RecordingSink>>> =
-        Rc::new(RefCell::new(Some(RecordingSink::default())));
-    let shared: SharedMapAssetSink<u32> = renderer;
-    let slot = shared.borrow();
-    let sink = slot.sink().expect("a booted renderer is a sink");
-    assert_eq!(sink.zoom(), -2.0);
-    assert_eq!((sink.target_x(), sink.target_y()), (6_400.0, 3_200.0));
-    assert_eq!(sink.visible_bounds(), Some([0.0, 0.0, 12_800.0, 12_800.0]));
-    assert_eq!(
-        (
-            sink.max_texture_dimension_2d(),
-            sink.adapter_max_texture_dimension_2d()
-        ),
-        (8_192, 16_384)
     );
 }

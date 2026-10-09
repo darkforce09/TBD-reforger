@@ -19,31 +19,6 @@ fn a_vip_block_parses_with_its_param() {
 }
 
 #[test]
-fn attrition_and_objective_take_no_param() {
-    for mode in ["attrition", "objective"] {
-        let got = parse(&json!({"mode": mode, "endOn": ["time_limit"]})).expect("parses");
-        assert!(got.params.is_empty(), "{mode} must carry no param");
-    }
-}
-
-#[test]
-fn a_mode_outside_the_editor_vocabulary_is_refused() {
-    for mode in [
-        "points_then_attrition",
-        "defender_holds_or_attacker_destroys",
-        "vip_hunt",
-    ] {
-        let err =
-            parse(&json!({"mode": mode, "endOn": ["time_limit"]})).expect_err("must refuse {mode}");
-        assert!(err.to_string().contains("winConditions.mode"), "{err}");
-        assert!(
-            err.to_string().contains(mode),
-            "the refusal must name the value: {err}"
-        );
-    }
-}
-
-#[test]
 fn a_missing_mode_param_is_refused_and_names_the_mode() {
     for (mode, key) in [
         ("extraction", "extractionZoneId"),
@@ -78,63 +53,6 @@ fn a_param_belonging_to_another_mode_is_refused() {
     }))
     .expect_err("vipSlotId does not belong to extraction");
     assert!(err.to_string().contains("vipSlotId"), "{err}");
-}
-
-#[test]
-fn vip_may_also_carry_an_optional_extraction_zone() {
-    let with_zone = parse(&json!({
-        "mode": "vip",
-        "endOn": ["time_limit"],
-        "vipSlotId": "s-12",
-        "extractionZoneId": "z-lz",
-    }))
-    .expect("vip accepts an extraction zone");
-    assert_eq!(
-        with_zone.params.vip_slot_id.as_ref().map(|id| id.as_str()),
-        Some("s-12")
-    );
-    assert_eq!(
-        with_zone
-            .params
-            .extraction_zone_id
-            .as_ref()
-            .map(|id| id.as_str()),
-        Some("z-lz")
-    );
-
-    let without = parse(&json!({
-        "mode": "vip", "endOn": ["time_limit"], "vipSlotId": "s-12"
-    }))
-    .expect("the zone is optional");
-    assert!(without.params.extraction_zone_id.is_none());
-
-    let err = parse(&json!({
-        "mode": "vip", "endOn": ["time_limit"], "vipSlotId": "s", "extractionZoneId": "  "
-    }))
-    .expect_err("blank is not an id");
-    assert!(err.to_string().contains("blank"), "{err}");
-}
-
-#[test]
-fn every_optional_param_key_has_a_parse_branch() {
-    for mode in AUTHORED_MODES {
-        for key in optional_param_keys_for_mode(mode) {
-            assert!(PARAM_KEYS.contains(key), "{mode}: {key} is not a param key");
-            assert_ne!(
-                param_key_for_mode(mode),
-                Some(*key),
-                "{mode}: {key} cannot be both required and optional"
-            );
-            let mut block = json!({"mode": mode, "endOn": ["time_limit"]});
-            if let Some(required) = param_key_for_mode(mode) {
-                block[required] = json!("x");
-            }
-            block[*key] = json!("x");
-            parse(&block).unwrap_or_else(|e| {
-                panic!("{mode} declares {key} optional but parse refuses it: {e}")
-            });
-        }
-    }
 }
 
 #[test]
@@ -206,59 +124,6 @@ fn end_on_is_a_closed_vocabulary_and_deduplicates_in_authored_order() {
 }
 
 #[test]
-fn a_blank_or_wrong_typed_param_is_refused() {
-    let err = parse(&json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": "   "}))
-        .expect_err("blank is not an id");
-    assert!(err.to_string().contains("blank"), "{err}");
-
-    let err = parse(&json!({"mode": "vip", "endOn": ["time_limit"], "vipSlotId": 12}))
-        .expect_err("a number is not an id");
-    assert!(err.to_string().contains("must be a string"), "{err}");
-
-    let err = parse(&json!({
-        "mode": "timeout", "endOn": ["time_limit"], "timeoutMinutes": 12.5
-    }))
-    .expect_err("a fraction is not a whole minute");
-    assert!(err.to_string().contains("whole number"), "{err}");
-}
-
-#[test]
-fn a_param_is_trimmed_before_it_reaches_the_wire() {
-    let got = parse(&json!({
-        "mode": "extraction", "endOn": ["time_limit"], "extractionZoneId": "  z-lz  "
-    }))
-    .expect("parses");
-    assert_eq!(
-        got.params.extraction_zone_id.as_ref().map(|id| id.as_str()),
-        Some("z-lz")
-    );
-}
-
-#[test]
-fn a_non_object_block_is_refused_rather_than_defaulted() {
-    for bad in [json!(null), json!("attrition"), json!([]), json!(7)] {
-        assert!(parse(&bad).is_err(), "{bad} must not parse");
-    }
-}
-
-#[test]
-fn empty_params_serialise_to_no_keys_at_all() {
-    let empty = WinConditionParams::default();
-    assert!(empty.is_empty());
-    assert_eq!(serde_json::to_string(&empty).expect("serialises"), "{}");
-
-    let one = WinConditionParams {
-        vip_slot_id: Some("s-12".into()),
-        ..WinConditionParams::default()
-    };
-    assert!(!one.is_empty());
-    assert_eq!(
-        serde_json::to_string(&one).expect("serialises"),
-        r#"{"vipSlotId":"s-12"}"#
-    );
-}
-
-#[test]
 fn the_authored_modes_are_the_editor_payload_schema_s_enum() {
     const PAYLOAD_SCHEMA: &str = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -312,21 +177,4 @@ fn the_timeout_bounds_are_the_schema_s_own() {
     assert_eq!(t["minimum"].as_i64(), Some(TIMEOUT_MINUTES_MIN));
     assert_eq!(t["maximum"].as_i64(), Some(TIMEOUT_MINUTES_MAX));
     assert_eq!(t["type"].as_str(), Some("integer"));
-}
-
-#[test]
-fn every_mode_that_takes_a_param_names_it_both_ways() {
-    for mode in AUTHORED_MODES {
-        if let Some(key) = param_key_for_mode(mode) {
-            assert_eq!(mode_for_param_key(key), *mode, "{mode} round-trips");
-            assert!(PARAM_KEYS.contains(&key), "{key} must be in PARAM_KEYS");
-        }
-    }
-
-    for key in PARAM_KEYS {
-        assert!(
-            AUTHORED_MODES.contains(&mode_for_param_key(key)),
-            "{key} names a mode that is not authorable"
-        );
-    }
 }

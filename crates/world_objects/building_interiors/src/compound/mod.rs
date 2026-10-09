@@ -12,7 +12,3 @@
 pub mod assembly;
 pub mod doors;
 pub mod instances;
-
-#[cfg(test)]
-#[path = "tests/instances_tests.rs"]
-mod tests;

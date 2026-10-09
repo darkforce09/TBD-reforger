@@ -39,8 +39,6 @@ fn everon() -> Vec<LevelBytes> {
         .collect()
 }
 
-const MB_512: u64 = 512 * MIB;
-
 const MB_1024: u64 = 1024 * MIB;
 
 const DEM_METERS: u64 = 6_400 * 6_400 * 4;

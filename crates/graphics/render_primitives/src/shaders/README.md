@@ -9,7 +9,7 @@ and the compute kernel that culls sprites, embedded in the crate as a string.
 crates/graphics/render_primitives/src/shaders/
 ├── mod.rs       the module tree; `SHADER_WGSL`, the WGSL source embedded with `include_str!`
 ├── shader.wgsl  every render entry point and the `cs_icon_cull` compute kernel
-└── tests/       unit tests that pin the text uniform block and text sampling in the source
+└── tests/       the unit test that pins the text uniform block size in the source
 ```
 
 ## How it works

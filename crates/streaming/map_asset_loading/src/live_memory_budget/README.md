@@ -14,8 +14,7 @@ crates/streaming/map_asset_loading/src/live_memory_budget/
 ├── accounting.rs          the live ledger's calls: hold, set, release, heap marks, satellite floor claim
 ├── mod.rs                 the module tree; re-exports the budget's calls, holds the thread-local ledger
 ├── platform.rs            the configured budget (`?memBudgetMb`, `window.__memBudgetMb`) and the heap size
-├── published_snapshot.rs  the live HUD tail and the `window.__t9386` snapshot
-└── tests/                 the native page readers' test
+└── published_snapshot.rs  the live HUD tail and the `window.__t9386` snapshot
 ```
 
 ## How it works

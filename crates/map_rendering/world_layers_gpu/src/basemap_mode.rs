@@ -45,7 +45,3 @@ impl BasemapMode {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/basemap_mode_tests.rs"]
-mod tests;

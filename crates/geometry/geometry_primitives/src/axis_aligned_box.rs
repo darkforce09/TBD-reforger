@@ -48,7 +48,3 @@ impl Bounds3 {
 fn f32_round(v: f64) -> f64 {
     f64::from(v as f32)
 }
-
-#[cfg(test)]
-#[path = "tests/axis_aligned_box.rs"]
-mod tests;

@@ -8,8 +8,6 @@ quad's anchor-relative rectangle and pipeline choice. The GPU layers compile for
 
 ```text
 crates/map_rendering/world_layers_gpu/src/tests/
-├── basemap_mode_tests.rs   the report spellings and the mode codes of `BasemapMode`
-├── error_tests.rs          the call tags and reason texts of `Error`'s messages
 ├── raster_layout_tests.rs  the order and the refusals of the single-bitmap raster check
 └── textured_quad_tests.rs  the anchor-relative rectangle and the textured lane's pipeline
 ```

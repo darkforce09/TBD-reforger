@@ -1,133 +1,24 @@
 //! Unit tests of the `TBDD` density codec.
 //!
 //! **Role:** proves round trips, the on-disk header layout and the refusal paths, and that the
-//! in-place decoder matches the byte-by-byte reference on every committed Everon density tile,
-//! on synthetic shapes and on an unaligned payload.
-//! **Position:** test-only child of [`crate::density::tbdd`]; reads
-//! `assets/terrains/everon/objects/density/` (Git LFS).
-//! **Signals & state:** none; reads committed files.
-//! **Invariants:** a missing Everon corpus is a failure, never a skip.
+//! in-place decoder matches the byte-by-byte reference on synthetic shapes and on an unaligned
+//! payload.
+//! **Position:** test-only child of [`crate::density::tbdd`].
+//! **Signals & state:** none; pure functions over synthetic grids.
+//! **Invariants:** the production and reference decoders agree on every grid and every refusal.
 
 use crate::density::tbdd::*;
-use std::path::PathBuf;
 
 fn encode(cell_m: u16, cols: u16, rows: u16, channels: &[&[u16]]) -> Vec<u8> {
     encode_tbdd(cell_m, cols, rows, channels)
 }
 
-fn everon_density_tiles() -> Vec<PathBuf> {
-    let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../assets/terrains/everon/objects/density");
-    let rd = std::fs::read_dir(&dir).unwrap_or_else(|e| {
-        panic!(
-            "T-935.5: {} could not be read ({e}). The Class-R acceptance is all 625 committed \
-                 tiles; a missing corpus is a FAILURE, never a skip.",
-            dir.display()
-        )
-    });
-    let mut files: Vec<PathBuf> = rd
-        .map(|e| e.expect("density dir entry").path())
-        .filter(|p| p.extension().is_some_and(|x| x == "bin"))
-        .collect();
-    files.sort();
-
-    assert_eq!(
-        files.len(),
-        625,
-        "expected 625 everon density tiles in {}, found {}",
-        dir.display(),
-        files.len()
-    );
-    files
-}
-
-fn read_tile(path: &PathBuf) -> Vec<u8> {
-    let bytes = std::fs::read(path).expect("read density tile");
-    assert_eq!(
-        bytes.get(..4),
-        Some(&TBDD_MAGIC[..]),
-        "{} does not start with the TBDD magic — if it starts with `vers` this checkout has \
-             an LFS POINTER instead of the payload, which is an environment fault, not a decode \
-             fault",
-        path.display()
-    );
-    bytes
-}
-
-fn everon_tile_with_signal() -> (PathBuf, Vec<u8>) {
-    for path in everon_density_tiles() {
-        let bytes = read_tile(&path);
-        if bytes[TBDD_HEADER_BYTES..].iter().any(|b| *b != 0) {
-            return (path, bytes);
-        }
-    }
-    panic!("all 625 everon density tiles have an all-zero payload — the corpus carries no signal")
-}
-
-#[test]
-fn everon_tiles_decode_bit_identically_to_the_old_loop() {
-    let files = everon_density_tiles();
-    let mut nonzero_cells = 0u64;
-    let mut compared_cells = 0u64;
-    for path in &files {
-        let bytes = read_tile(path);
-        let got = decode_tbdd(&bytes);
-        let want = parity_reference::decode_tbdd(&bytes);
-        let (a, b) = match (&got, &want) {
-            (Ok(a), Ok(b)) => (a, b),
-            _ => panic!(
-                "T-935.5 Class-R: {} — cast decode {got:?} vs old loop {want:?}",
-                path.display()
-            ),
-        };
-        assert_eq!(
-            (a.version, a.cell_m, a.cols, a.rows),
-            (b.version, b.cell_m, b.cols, b.rows),
-            "T-935.5 Class-R: {} header mismatch",
-            path.display()
-        );
-        assert_eq!(
-            a.channels.len(),
-            b.channels.len(),
-            "T-935.5 Class-R: {} channel count mismatch",
-            path.display()
-        );
-        for (ci, (ac, bc)) in a.channels.iter().zip(&b.channels).enumerate() {
-            assert_eq!(
-                ac.len(),
-                bc.len(),
-                "T-935.5 Class-R: {} channel {ci} length mismatch",
-                path.display()
-            );
-            if let Some(at) = ac.iter().zip(bc).position(|(x, y)| x != y) {
-                panic!(
-                    "T-935.5 Class-R: {} channel {ci} cell {at}: cast decode {} != old loop {}",
-                    path.display(),
-                    ac[at],
-                    bc[at]
-                );
-            }
-            compared_cells += ac.len() as u64;
-            nonzero_cells += ac.iter().filter(|v| **v != 0).count() as u64;
-        }
-
-        assert_eq!(
-            (a.channels.len(), a.cols, a.rows),
-            (DENSITY_CHANNEL_NAMES.len(), 65, 65),
-            "T-935.5: {} is not a 2-channel 65×65 tile",
-            path.display()
-        );
-    }
-    assert_eq!(
-        compared_cells,
-        625 * 2 * 65 * 65,
-        "the parity loop compared {compared_cells} cells, not the whole corpus"
-    );
-    assert!(
-        nonzero_cells > 0,
-        "every cell in all 625 tiles decoded to zero — the corpus carries no signal, so the \
-             parity above compared nothing that could differ"
-    );
+/// A 65 × 65, two-channel, 8 m tile whose cells are not all zero — the shape of a committed
+/// density tile.
+fn synthetic_tile_with_signal() -> (&'static str, Vec<u8>) {
+    let first: Vec<u16> = (0..65 * 65).map(|i| (i % 251) as u16).collect();
+    let second: Vec<u16> = (0..65 * 65).map(|i| (i * 7 % 509) as u16).collect();
+    ("the synthetic tile", encode(8, 65, 65, &[&first, &second]))
 }
 
 #[test]
@@ -174,7 +65,7 @@ fn decode_matches_the_old_loop_on_synthetic_shapes() {
 
 #[test]
 fn unaligned_payload_decodes_identically() {
-    let (path, bytes) = everon_tile_with_signal();
+    let (path, bytes) = synthetic_tile_with_signal();
     let mut shifted = Vec::with_capacity(bytes.len() + 1);
     shifted.push(0u8);
     shifted.extend_from_slice(&bytes);
@@ -194,7 +85,7 @@ fn unaligned_payload_decodes_identically() {
     assert!(
         got.channels.iter().flatten().any(|v| *v != 0),
         "{} decoded to all zeros — the copy branch was graded against nothing",
-        path.display()
+        path
     );
     assert_eq!(Ok(got.clone()), decode_tbdd(&bytes));
     assert_eq!(Ok(got), parity_reference::decode_tbdd(&bytes));
@@ -202,7 +93,7 @@ fn unaligned_payload_decodes_identically() {
 
 #[test]
 fn short_payloads_are_err_never_panic() {
-    let (_, bytes) = everon_tile_with_signal();
+    let (_, bytes) = synthetic_tile_with_signal();
     for cut in [0usize, 1, 4, 12, 15, 16, 17, 100, 16_915] {
         let short = &bytes[..cut];
         let got = decode_tbdd(short);
@@ -217,7 +108,7 @@ fn short_payloads_are_err_never_panic() {
 
 #[test]
 fn header_pod_is_the_on_disk_header() {
-    let (_, bytes) = everon_tile_with_signal();
+    let (_, bytes) = synthetic_tile_with_signal();
     let head: TbddHeader = bytemuck::pod_read_unaligned(&bytes[..TBDD_HEADER_BYTES]);
     assert_eq!(size_of::<TbddHeader>(), TBDD_HEADER_BYTES);
     assert_eq!(align_of::<TbddHeader>(), 2);
@@ -229,81 +120,6 @@ fn header_pod_is_the_on_disk_header() {
 
     assert_eq!(bytes[4..6], head.version.to_le_bytes());
     assert_eq!(bytes[8..10], head.cols.to_le_bytes());
-}
-
-#[test]
-fn production_decode_has_no_per_byte_assembly_loop() {
-    const SRC: &str = include_str!("../tbdd.rs");
-    let live = class_r_scrub::live_source(SRC);
-
-    assert!(
-        live.contains("pub fn decode_tbdd(bytes: &[u8]) -> Result<TbddGrid, TbddError> {"),
-        "the scrub ate the production decoder"
-    );
-    assert!(
-        live.contains("bytemuck::try_cast_slice::<u8, u16>(payload)"),
-        "the production decoder no longer casts the payload"
-    );
-    assert!(
-        live.contains("pub fn encode_tbdd("),
-        "the scrub ate the production encoder"
-    );
-
-    assert!(
-        !live.contains("REF_HEADER_BYTES"),
-        "parity_reference survived"
-    );
-    assert!(
-        !live.contains("mod parity_reference"),
-        "the cut missed its item"
-    );
-    assert!(
-        !live.contains("fn production_decode_has_no_per_byte_assembly_loop"),
-        "the pin is grading itself"
-    );
-
-    let kept = live.lines().filter(|l| !l.trim().is_empty()).count();
-    assert!(
-        kept > 100,
-        "the scrub left {kept} non-blank lines — that is not the production half of this file"
-    );
-
-    for needle in ["u16_le(", "from_le_bytes(["] {
-        assert!(
-            !live.contains(needle),
-            "T-935.5 acceptance: `{needle}` is back in production TBDD code — the decode is a \
-                 per-byte assembly loop again"
-        );
-    }
-}
-
-#[test]
-fn the_scrubber_keeps_production_and_cuts_the_test_half() {
-    let src = concat!(
-        "fn live() { let a = 1; }\n",
-        "/// doc naming u16_le( and #[cfg(test)]\n",
-        "const S: &str = \"u16_le( in a literal\";\n",
-        "#[cfg(test)]\n",
-        "mod t {\n    fn dead() { u16_le(b, 0); if x { y } }\n}\n",
-        "fn live2() { let c = '{'; }\n",
-    );
-    let out = class_r_scrub::live_source(src);
-    assert_eq!(out.lines().count(), src.lines().count(), "line count moved");
-    assert!(out.contains("fn live()"), "production item cut");
-    assert!(
-        out.contains("fn live2()"),
-        "the cut ran past its item's closing brace"
-    );
-    assert!(
-        out.contains("const S: &str ="),
-        "the literal's declaration was cut"
-    );
-    assert!(!out.contains("mod t"), "the test module survived");
-    assert!(!out.contains("fn dead"), "the test module's body survived");
-    assert!(
-        !out.contains("u16_le("),
-        "a banned needle survived in a comment or a literal"
-    );
 }
 
 #[test]

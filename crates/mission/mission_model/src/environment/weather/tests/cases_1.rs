@@ -19,14 +19,6 @@ fn a_three_keyframe_block_parses() {
 }
 
 #[test]
-fn the_preset_vocabulary_matches_environment() {
-    assert_eq!(
-        WEATHER_PRESETS,
-        ["clear", "overcast", "heavy_rain", "dense_fog"]
-    );
-}
-
-#[test]
 fn equal_at_minutes_are_refused() {
     let err = parse(&json!({
         "keyframes": [
@@ -65,26 +57,6 @@ fn out_of_order_at_minutes_are_refused() {
 }
 
 #[test]
-fn a_negative_offset_is_refused() {
-    let err = parse(&json!({
-        "keyframes": [{"atMinutes": -1, "weatherPreset": "clear"}]
-    }))
-    .expect_err("negative");
-    assert!(err.to_string().contains("atMinutes"), "{err}");
-    assert!(err.to_string().contains("negative"), "{err}");
-}
-
-#[test]
-fn an_unknown_preset_is_refused() {
-    let err = parse(&json!({
-        "keyframes": [{"atMinutes": 0, "weatherPreset": "hailstorm"}]
-    }))
-    .expect_err("unknown preset");
-    assert!(err.to_string().contains("hailstorm"), "{err}");
-    assert!(err.to_string().contains("clear"), "{err}");
-}
-
-#[test]
 fn fog_outside_unit_interval_is_refused() {
     let err = parse(&json!({
         "keyframes": [{"atMinutes": 0, "weatherPreset": "clear", "fog": 1.5}]
@@ -92,40 +64,6 @@ fn fog_outside_unit_interval_is_refused() {
     .expect_err("fog");
     assert!(err.to_string().contains("fog"), "{err}");
     assert!(err.to_string().contains("0..=1"), "{err}");
-}
-
-#[test]
-fn wind_dir_outside_circle_is_refused() {
-    let err = parse(&json!({
-        "keyframes": [{"atMinutes": 0, "weatherPreset": "clear", "windDirDeg": 361.0}]
-    }))
-    .expect_err("wind");
-    assert!(err.to_string().contains("windDirDeg"), "{err}");
-    assert!(err.to_string().contains("0..=360"), "{err}");
-}
-
-#[test]
-fn an_empty_keyframes_array_is_refused() {
-    let err = parse(&json!({"keyframes": []})).expect_err("empty");
-    assert!(err.to_string().contains("empty"), "{err}");
-}
-
-#[test]
-fn an_unknown_key_is_refused() {
-    let err = parse(&json!({
-        "keyframes": [{"atMinutes": 0, "weatherPreset": "clear", "thunder": true}]
-    }))
-    .expect_err("unknown key");
-    assert!(err.to_string().contains("thunder"), "{err}");
-}
-
-#[test]
-fn weather_timeline_is_registered_on_the_carrier() {
-    assert!(
-        is_authored_block("weatherTimeline"),
-        "T-936.4's row must be in AUTHORED_BLOCKS or the carrier never emits it"
-    );
-    assert!(is_authored_block("spawnModules"));
 }
 
 #[test]

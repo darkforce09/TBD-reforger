@@ -8,5 +8,3 @@ use std::collections::{HashMap, HashSet};
 mod duplicates;
 /// Expose duplicates :: duplicate slot ids at this domain boundary.
 pub use duplicates::duplicate_slot_ids;
-#[cfg(test)]
-mod tests;

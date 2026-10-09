@@ -1,10 +1,12 @@
 //! **Role:** unit tests for [`crate::rigid_transform::Rigid`]: rotation directions, inverses,
-//! quaternion round trips and nested composition precision.
+//! quaternion round trips and nested composition precision; and the union of two
+//! [`crate::axis_aligned_box::Bounds3`] boxes.
 //! **Position:** `src/tests` of `geometry_primitives`, declared by `rigid_transform.rs`.
 //! **Signals & state:** none; pure functions over literal transforms.
 //! **Invariants:** every expected value is written out by hand, never derived from the code under
 //! test.
 
+use crate::axis_aligned_box::Bounds3;
 use crate::rigid_transform::*;
 
 fn close(a: [f64; 3], b: [f64; 3], eps: f64) -> bool {
@@ -79,4 +81,23 @@ fn nested_composition_keeps_sub_micrometre_precision() {
     assert!(close(back, p_world, 1e-6), "{back:?} vs {p_world:?}");
     let (lo, hi) = prop.aabb_of([-0.5, 0.0, -0.5], [0.5, 0.8, 0.5]);
     assert!(lo.iter().zip(hi.iter()).all(|(a, b)| a < b));
+}
+
+#[test]
+fn bounds_union_is_componentwise() {
+    let a = Bounds3 {
+        min: [0.0, 0.0, 0.0],
+        max: [1.0, 1.0, 1.0],
+    };
+    let b = Bounds3 {
+        min: [-1.0, 0.5, 0.0],
+        max: [0.5, 2.0, 3.0],
+    };
+    assert_eq!(
+        a.union(b),
+        Bounds3 {
+            min: [-1.0, 0.0, 0.0],
+            max: [1.0, 2.0, 3.0]
+        }
+    );
 }

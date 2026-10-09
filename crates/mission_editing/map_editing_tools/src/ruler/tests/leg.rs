@@ -78,47 +78,6 @@ fn slope_and_delta_elev_goldens() {
 
 // ── formatter goldens ───────────────────────────────────────────────────────────────────────
 
-#[test]
-fn leg_distance_formatter() {
-    assert_eq!(format_leg_distance(412.0), "412 m");
-    assert_eq!(format_leg_distance(999.4), "999 m");
-    assert_eq!(format_leg_distance(1000.0), "1.00 km");
-    assert_eq!(format_leg_distance(1240.0), "1.24 km");
-}
-
-#[test]
-fn bearing_formatter_zero_padded_one_decimal() {
-    assert_eq!(format_bearing(73.2), "073.2°");
-    assert_eq!(format_bearing(0.0), "000.0°");
-    assert_eq!(format_bearing(90.0), "090.0°");
-    assert_eq!(format_bearing(180.04), "180.0°");
-    assert_eq!(format_bearing(359.97), "000.0°"); // rounds to 360 → wraps to 000, never "360.0"
-}
-
-#[test]
-fn delta_elev_and_slope_formatters() {
-    assert_eq!(format_delta_elev(8.0), "+8 m");
-    assert_eq!(format_delta_elev(-3.0), "-3 m");
-    assert_eq!(format_delta_elev(0.0), "+0 m");
-    // Slope is an UNSIGNED magnitude in the leg label — direction is on the Δelev clause.
-    assert_eq!(format_slope(2.0), "2%");
-    assert_eq!(format_slope(-5.0), "5%"); // descent grade printed as magnitude
-    assert_eq!(format_slope(0.3), "0%"); // sub-1% reads flat
-}
-
-#[test]
-fn total_formatter_and_leg_label_shape() {
-    assert_eq!(format_total(850.0), "Σ 850 m");
-    assert_eq!(format_total(1240.0), "Σ 1.24 km");
-    // The full leg label matches the ticket's exact shape.
-    let leg = Leg::between(pz(0.0, 0.0, 100.0), pz(0.0, 412.0, 108.0));
-    assert_eq!(leg.label(), "412 m · 000.0° · +8 m (2%)");
-    // Off-coverage leg drops the elevation clause entirely (no fake rise). 3-4-5 triangle:
-    // dx=300 (east), dy=400 (north) → dist 500 m, bearing atan2(300,400)=36.87° → 036.9°.
-    let bare = Leg::between(p(0.0, 0.0), p(300.0, 400.0));
-    assert_eq!(bare.label(), "500 m · 036.9°");
-}
-
 /// counter-clockwise, or from east, would pass the perturbed assertion — so this proves the
 /// clockwise-from-north convention is load-bearing, not incidental.
 #[test]

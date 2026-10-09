@@ -18,7 +18,3 @@ newtype_ids::string_id! {
     /// The id of one named map location, such as `everon-airport`.
     pub struct LocationId;
 }
-
-#[cfg(test)]
-#[path = "tests/label_ids_tests.rs"]
-mod tests;

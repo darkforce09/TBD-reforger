@@ -11,7 +11,6 @@ crates/world_formats/world_file_formats/src/archives/tests/
 ├── archive_round_trip_fixtures.rs  one populated value of each archive type, the round-trip and corruption checks
 ├── archive_round_trip_tests.rs     each archive's round trip and refusals, empty archives, the `TBDS` version 2 framing
 ├── archive_wire_identity_tests.rs  each identifier-holding archive serialises to its primitive twin's bytes and reads them back
-├── codec_tests.rs                  `BinaryError`: printable and unprintable magics, every variant renders
 └── primitive_id_record_shapes.rs   the records with bare `u32` and `String` identifier fields, and each archive's projection onto them
 ```
 

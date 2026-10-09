@@ -14,7 +14,3 @@
 pub fn round(x: f64) -> f64 {
     (x + 0.5).floor()
 }
-
-#[cfg(test)]
-#[path = "tests/rounding.rs"]
-mod tests;

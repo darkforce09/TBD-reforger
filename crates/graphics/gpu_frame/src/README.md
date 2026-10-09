@@ -16,8 +16,7 @@ crates/graphics/gpu_frame/src/
 ├── frame_pump/  the shared `requestAnimationFrame` pump and its `FrameTarget` trait
 ├── lib.rs       the crate root: module header and `mod` lines, with no feature gates
 ├── pipeline/    the render pipeline constructors and `create_render_shader`
-├── prelude.rs   the frame vocabulary, the pump and the error type
-└── tests/       the error message test
+└── prelude.rs   the frame vocabulary, the pump and the error type
 ```
 
 ## How it works

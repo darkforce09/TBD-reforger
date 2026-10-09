@@ -8,11 +8,9 @@ document.
 
 ```text
 crates/mission_editing/map_editing_tools/src/ruler/tests/
-├── chain.rs          the polyline capture: append, end, dedup and the escalating dismissal
-├── leg.rs            the leg quantities and every readout's exact shape
-├── projection.rs     label keying and the screen projection of a chain
-├── session_local.rs  the no-document-write guard over the scrubbed ruler sources
-└── tool_mode.rs      which tool claims the left button, and which buttons capture a point
+├── chain.rs          tool-mode arbitration and the polyline capture: append, end, dedup, dismissal
+├── leg.rs            the leg quantities and the bearing rule
+└── projection.rs     label keying and the screen projection of a chain
 ```
 
 ## Boundaries

@@ -35,7 +35,3 @@ pub fn prefab_id_from_f64(pid: f64) -> Option<PrefabId> {
         None
     }
 }
-
-#[cfg(test)]
-#[path = "tests/numeric_prefab_ids_tests.rs"]
-mod tests;

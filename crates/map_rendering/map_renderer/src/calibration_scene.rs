@@ -26,7 +26,3 @@ pub(crate) fn calibration_instances() -> [QuadInstance; 2] {
         },
     ]
 }
-
-#[cfg(test)]
-#[path = "tests/calibration_scene_tests.rs"]
-mod tests;

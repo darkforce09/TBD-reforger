@@ -11,8 +11,7 @@ crates/map_rendering/map_render_diagnostics/src/benchmark/
 ├── frame_benchmark.rs  `render_bench` over n offscreen frames of the live scene
 ├── mod.rs              the module tree
 ├── stress_pool.rs      the stress-quad pool: `seed_stress` and `clear_stress`
-├── stress_scene.rs     `stress_chunk` and `stress_chunk_into`: deterministic quads over the Everon square
-└── tests/              byte-exact cases of the stress scene
+└── stress_scene.rs     `stress_chunk` and `stress_chunk_into`: deterministic quads over the Everon square
 ```
 
 ## How it works

@@ -1,16 +1,13 @@
 # Mission editing session tests
 
 Unit tests of the editing session's picks: the square slot and circular vehicle hits under a frozen
-camera, the document's slot-first tie policy, the marquee order and the squad link inputs; and the
-source pin that the picking adapter resolves through the document's mixed slot-and-vehicle queries.
+camera, the document's slot-first tie policy, the marquee order and the squad link inputs.
 
 ## Contents
 
 ```text
 crates/mission_editing/mission_editing_session/src/tests/
-├── picking_adapter_source.rs  the adapter's mixed pick and marquee calls; the scrubber's cases
-├── picking_selection.rs       picks, marquees, the equal-distance tie and the squad link refile
-└── source_scrub.rs            blanks comments and literals so a source pin sees only compiled code
+└── picking_selection.rs       picks, marquees, the equal-distance tie and the squad link refile
 ```
 
 ## Boundaries

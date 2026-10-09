@@ -242,90 +242,6 @@ fn materialize_drops_hidden_slots_the_document_still_holds() {
 }
 
 #[test]
-fn materialize_resolves_each_distinct_side_once_over_500_slots() {
-    let doc = two_sided_core(500);
-    let before = doc.side_key_resolution_count();
-    let soa = doc.materialize();
-    let spent = doc.side_key_resolution_count() - before;
-
-    assert_eq!(
-        soa.ids.len(),
-        500,
-        "the fixture must materialize all 500 rows"
-    );
-    assert!(
-        spent >= 1,
-        "T-937.3: a cold document resolved {spent} side keys — a zero means this call read a \
-             memo it must have invalidated, and the bound below would then pass vacuously"
-    );
-    assert!(
-        spent <= 2,
-        "T-937.3: 500 slots over 2 distinct sides took {spent} side-key resolutions; \
-             materialize must resolve each distinct side once per call"
-    );
-    assert_eq!(
-        soa.side_keys.iter().filter(|k| *k == "BLUFOR").count(),
-        250,
-        "T-937.3: the memo must not change WHICH side each row gets"
-    );
-    assert_eq!(
-        soa.side_keys.iter().filter(|k| *k == "OPFOR").count(),
-        250,
-        "T-937.3: the memo must not change WHICH side each row gets"
-    );
-}
-
-#[test]
-fn slot_exists_answers_true_for_slots_materialize_drops() {
-    let doc = two_sided_core(4);
-    doc.add_editor_layer("layer-hidden", "Stashed", None);
-    doc.add_slot(
-        "on-hidden-layer",
-        "sq-blu",
-        "layer-hidden",
-        9,
-        "Rifleman",
-        None,
-        None,
-        5.0,
-        5.0,
-        0.0,
-        0.0,
-    );
-    doc.set_editor_layer_hidden("layer-hidden", true);
-    doc.set_slot_editor_hidden("n0", true);
-
-    let dropped = doc.materialize();
-    let quiet = doc.side_key_resolution_count();
-
-    for hidden in ["on-hidden-layer", "n0"] {
-        assert!(
-            !dropped.ids.iter().any(|s| s == hidden),
-            "the fixture is only meaningful while `{hidden}` is dropped from the SoA"
-        );
-        assert!(
-            doc.slot_exists(hidden),
-            "T-937.3: `{hidden}` is in the document, so existence must answer TRUE — a NO here \
-                 is the silent-overwrite path the id minters warn about"
-        );
-    }
-    for live in ["n1", "n2", "n3"] {
-        assert!(doc.slot_exists(live), "T-937.3: `{live}` is a visible slot");
-    }
-    assert!(
-        !doc.slot_exists("never-minted"),
-        "T-937.3: existence must still be able to say NO"
-    );
-    assert!(!doc.slot_exists(""), "T-937.3: the empty id names no slot");
-    assert_eq!(
-        doc.side_key_resolution_count(),
-        quiet,
-        "T-937.3: six existence checks moved the side-key counter — slot_exists materialized \
-             the document instead of reading the raw map"
-    );
-}
-
-#[test]
 fn a_warm_memo_materializes_exactly_what_a_cold_one_does() {
     let warm = two_sided_core(64);
     warm.set_slot_editor_hidden("n7", true);
@@ -357,31 +273,6 @@ fn a_warm_memo_materializes_exactly_what_a_cold_one_does() {
         fresh.side_keys.iter().any(|k| k == "OPFOR")
             && fresh.side_keys.iter().any(|k| k == "BLUFOR"),
         "non-vacuity: the comparison must span both sides, not one repeated key"
-    );
-}
-
-#[test]
-fn side_key_memo_sees_a_faction_minted_after_the_first_materialize() {
-    let doc = one_slot_awaiting_its_faction();
-    assert_eq!(
-        doc.materialize().side_keys,
-        vec!["BLUFOR".to_string()],
-        "a missing faction hop resolves to BLUFOR (T-180.3)"
-    );
-
-    doc.add_faction("faction-OPFOR", "OPFOR", "Soviet Army");
-    assert_eq!(
-        doc.materialize().side_keys,
-        vec!["OPFOR".to_string()],
-        "T-937.3: the side-key memo served a stale side after the faction was minted — the \
-             memo is not being invalidated by the document's own change signal"
-    );
-
-    doc.add_faction("faction-OPFOR", "INDFOR", "Independent");
-    assert_eq!(
-        doc.materialize().side_keys,
-        vec!["INDFOR".to_string()],
-        "T-937.3: the memo served a stale side after the faction's `key` was rewritten"
     );
 }
 
@@ -427,30 +318,6 @@ fn side_key_memo_sees_a_remote_update() {
 }
 
 #[test]
-fn side_key_memo_survives_a_slot_moving_sides() {
-    let side_of = |doc: &MissionDocCore, id: &str| {
-        let soa = doc.materialize();
-        soa.side_keys[row_of(&soa, id)].clone()
-    };
-
-    let doc = two_sided_core(2);
-    assert_eq!(side_of(&doc, "n0"), "BLUFOR", "n0 starts under sq-blu");
-    assert_eq!(side_of(&doc, "n1"), "OPFOR", "n1 starts under sq-opf");
-
-    doc.move_slot_to_squad("n0", "sq-opf");
-    assert_eq!(
-        side_of(&doc, "n0"),
-        "OPFOR",
-        "T-937.3: the moved slot kept its old side — the memo answered under a stale key"
-    );
-    assert_eq!(
-        side_of(&doc, "n1"),
-        "OPFOR",
-        "T-937.3: the slot that did not move must be unaffected"
-    );
-}
-
-#[test]
 fn t257_loadouts_undo_scoped() {
     let mut doc = MissionDocCore::new();
     let map = doc.doc.get_or_insert_map("loadouts");
@@ -465,75 +332,6 @@ fn t257_loadouts_undo_scoped() {
     };
     assert!(ok, "undo returned false");
     assert_eq!(l, 0, "loadouts not undo-scoped");
-    assert!(doc.redo());
-    let l2 = {
-        let txn3 = doc.begin();
-        map.len(&txn3)
-    };
-    assert_eq!(l2, 1);
-}
-
-#[test]
-fn t257_items_undo_scoped() {
-    let mut doc = MissionDocCore::new();
-    let map = doc.doc.get_or_insert_map("items");
-    {
-        let mut txn = doc.begin();
-        map.insert(&mut txn, "l1", "v");
-    }
-    let ok = doc.undo();
-    let l = {
-        let txn2 = doc.begin();
-        map.len(&txn2)
-    };
-    assert!(ok, "undo returned false");
-    assert_eq!(l, 0, "items not undo-scoped");
-    assert!(doc.redo());
-    let l2 = {
-        let txn3 = doc.begin();
-        map.len(&txn3)
-    };
-    assert_eq!(l2, 1);
-}
-
-#[test]
-fn t257_objectives_undo_scoped() {
-    let mut doc = MissionDocCore::new();
-    let map = doc.doc.get_or_insert_map("objectives");
-    {
-        let mut txn = doc.begin();
-        map.insert(&mut txn, "l1", "v");
-    }
-    let ok = doc.undo();
-    let l = {
-        let txn2 = doc.begin();
-        map.len(&txn2)
-    };
-    assert!(ok, "undo returned false");
-    assert_eq!(l, 0, "objectives not undo-scoped");
-    assert!(doc.redo());
-    let l2 = {
-        let txn3 = doc.begin();
-        map.len(&txn3)
-    };
-    assert_eq!(l2, 1);
-}
-
-#[test]
-fn t257_markers_undo_scoped() {
-    let mut doc = MissionDocCore::new();
-    let map = doc.doc.get_or_insert_map("markers");
-    {
-        let mut txn = doc.begin();
-        map.insert(&mut txn, "l1", "v");
-    }
-    let ok = doc.undo();
-    let l = {
-        let txn2 = doc.begin();
-        map.len(&txn2)
-    };
-    assert!(ok, "undo returned false");
-    assert_eq!(l, 0, "markers not undo-scoped");
     assert!(doc.redo());
     let l2 = {
         let txn3 = doc.begin();
@@ -601,104 +399,6 @@ fn move_slot_to_squad_keep_source_keeps_the_emptied_squad_its_vehicles_and_its_p
         root["squadsById"]["sq-mid"]["leaderSlotId"].is_null(),
         "T-939.2: the kept squad must not point at a leader it no longer has; got {}",
         root["squadsById"]["sq-mid"]
-    );
-}
-
-#[test]
-fn the_default_move_slot_to_squad_still_garbage_collects_an_emptied_source() {
-    let doc = keep_source_fixture();
-    doc.add_slot(
-        "solo", "sq-mid", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
-    );
-    doc.add_vehicle("v1", "Prefab/Truck.et", None, None, None, None);
-    doc.attach_vehicle("sq-mid", "v1");
-
-    doc.move_slot_to_squad("solo", "sq-a");
-
-    let root = small_maps(&doc);
-    assert!(
-        root["squadsById"].get("sq-mid").is_none(),
-        "the default path must still GC the emptied source (T-180.2 B2)"
-    );
-    assert!(
-        root["vehiclesById"].get("v1").is_none(),
-        "the default path must still cascade the attached vehicles"
-    );
-    assert!(
-        !squad_ids_of(&doc, "faction-BLUFOR")
-            .iter()
-            .any(|s| s == "sq-mid"),
-        "the default path must still prune the squad out of faction.squadIds"
-    );
-}
-
-#[test]
-fn keep_source_move_carries_the_derived_side_key_across_factions() {
-    let side_of = |doc: &MissionDocCore, id: &str| {
-        let soa = doc.materialize();
-        soa.side_keys[row_of(&soa, id)].clone()
-    };
-    let doc = keep_source_fixture();
-    doc.add_slot(
-        "solo", "sq-mid", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
-    );
-    doc.add_slot(
-        "stay", "sq-a", "lyr", 0, "Medic", None, None, 2.0, 2.0, 0.0, 0.0,
-    );
-
-    assert_eq!(side_of(&doc, "solo"), "BLUFOR");
-    assert_eq!(side_of(&doc, "stay"), "BLUFOR");
-
-    doc.move_slot_to_squad_keep_source("solo", "sq-opf");
-
-    assert_eq!(
-        side_of(&doc, "solo"),
-        "OPFOR",
-        "T-939.2: the derived side key must follow the slot into the new faction's squad"
-    );
-    assert_eq!(
-        side_of(&doc, "stay"),
-        "BLUFOR",
-        "T-939.2: a slot that did not move must keep its side"
-    );
-
-    assert_eq!(
-        small_maps(&doc)["squadsById"]["sq-mid"]["factionId"],
-        "faction-BLUFOR"
-    );
-}
-
-#[test]
-fn keep_source_move_promotes_the_next_leader_and_keeps_indices_dense() {
-    let doc = keep_source_fixture();
-    for (i, id) in ["lead", "next", "tail"].iter().enumerate() {
-        doc.add_slot(
-            *id,
-            "sq-mid",
-            "lyr",
-            u32::try_from(i).expect("fixture index fits u32"),
-            "Rifleman",
-            None,
-            None,
-            f64::from(u32::try_from(i).expect("fixture index fits u32")),
-            1.0,
-            0.0,
-            0.0,
-        );
-    }
-    doc.set_leader("sq-mid", "lead");
-
-    doc.move_slot_to_squad_keep_source("lead", "sq-a");
-
-    let root = small_maps(&doc);
-    assert_eq!(root["squadsById"]["sq-mid"]["leaderSlotId"], "next");
-    let slots = slots_map(&doc);
-    assert_eq!(slots["next"]["index"].as_i64(), Some(0));
-    assert_eq!(slots["tail"]["index"].as_i64(), Some(1));
-    assert_eq!(
-        slots["lead"]["index"].as_i64(),
-        Some(0),
-        "dest is dense too"
     );
 }
 

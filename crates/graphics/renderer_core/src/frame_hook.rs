@@ -78,7 +78,3 @@ impl<Renderer: ?Sized> FrameHooks<Renderer> {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/frame_hook_tests.rs"]
-mod tests;

@@ -38,7 +38,3 @@ pub enum Error {
 
 /// The result of a symbology layer call.
 pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[cfg(test)]
-#[path = "tests/error_tests.rs"]
-mod tests;

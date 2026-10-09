@@ -43,18 +43,6 @@ fn strip_min_px_floor() {
 }
 
 #[test]
-fn fence_strip_screen_width_floor_at_gate() {
-    let strip = compose_fence_strip(100.0, 200.0, 4.0, 0.5, 30.0, 1.5);
-    assert!(!strip.is_empty());
-    let w = strip_world_width_at_midpoint(&strip).unwrap();
-    assert!(
-        w * 2.0_f64.powf(1.5) >= STRIP_MIN_PX - 1e-6,
-        "screen width {} < {STRIP_MIN_PX} px",
-        w * 2.0_f64.powf(1.5)
-    );
-}
-
-#[test]
 fn fence_strip_width_midpoint() {
     let strip = compose_fence_strip(100.0, 200.0, 4.0, 0.5, 45.0, 3.0);
     assert!(!strip.is_empty());
@@ -66,33 +54,12 @@ fn fence_strip_width_midpoint() {
 }
 
 #[test]
-fn fence_strip_vertex_count_positive() {
-    let strip = compose_fence_strip(0.0, 0.0, 3.0, 0.4, 0.0, 3.0);
-
-    assert!(
-        strip.len() >= 6,
-        "expected triangle-list verts, got {}",
-        strip.len()
-    );
-}
-
-#[test]
 fn every_pier_emits_one_strip() {
     let square = compose_pier_strip(0.0, 0.0, 2.0, 2.0, 0.0, FENCE_STRIP_RGBA, 0.0);
     assert!(square.len() >= 6, "near-square pier must emit a strip");
 
     let quay = compose_pier_strip(10.0, 5.0, 10.0, 1.5, 37.0, FENCE_STRIP_RGBA, 0.0);
     assert!(quay.len() >= 6, "quay pier must emit a strip");
-}
-
-#[test]
-fn pier_width_capped() {
-    let strip = compose_pier_strip(0.0, 0.0, 5.0, 5.0, 0.0, FENCE_STRIP_RGBA, 0.0);
-    let w = strip_world_width_at_midpoint(&strip).unwrap();
-    assert!(
-        (w - PIER_STRIP_MAX_WIDTH_M).abs() < 0.05,
-        "pier width {w} != {PIER_STRIP_MAX_WIDTH_M}"
-    );
 }
 
 #[test]

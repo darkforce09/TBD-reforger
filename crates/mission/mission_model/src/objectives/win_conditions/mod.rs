@@ -14,16 +14,12 @@ pub use conditions::AuthoredWinConditions;
 pub use conditions::END_ON_TRIGGERS;
 /// Expose conditions :: fallback trigger at this domain boundary.
 pub use conditions::FALLBACK_TRIGGER;
-#[cfg(test)]
-use conditions::PARAM_KEYS;
 /// Expose conditions :: timeout minutes max at this domain boundary.
 pub use conditions::TIMEOUT_MINUTES_MAX;
 /// Expose conditions :: timeout minutes min at this domain boundary.
 pub use conditions::TIMEOUT_MINUTES_MIN;
 /// Expose conditions ::  win condition params at this domain boundary.
 pub use conditions::WinConditionParams;
-#[cfg(test)]
-use conditions::mode_for_param_key;
 /// Expose conditions :: optional param keys for mode at this domain boundary.
 pub use conditions::optional_param_keys_for_mode;
 /// Expose conditions :: param key for mode at this domain boundary.

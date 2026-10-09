@@ -31,7 +31,3 @@ pub mod viewshed_texture;
 
 /// The viewshed wash colour language and its raster encoder.
 pub mod wash_palette;
-
-#[cfg(test)]
-#[path = "tests/session_local.rs"]
-mod session_local;

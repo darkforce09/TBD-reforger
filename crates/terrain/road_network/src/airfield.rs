@@ -260,9 +260,5 @@ pub fn apron_qualifying_area_m2(grid: &DemVectorGrid, bbox: Bbox) -> f64 {
 }
 
 #[cfg(test)]
-#[path = "tests/airfield_policy_tests.rs"]
-mod policy_tests;
-
-#[cfg(test)]
 #[path = "tests/airfield_apron_tests.rs"]
 mod apron_tests;

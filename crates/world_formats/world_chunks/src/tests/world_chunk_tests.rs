@@ -1,4 +1,5 @@
-//! Unit tests of the chunk JSON decoder over the committed chunk fixtures.
+//! Unit tests of the chunk JSON decoder over the committed chunk fixtures, and of the chunk
+//! identifier's spelling and byte-equal serialised form.
 
 use crate::chunk_id::ChunkId;
 use crate::world_chunk::*;
@@ -152,4 +153,22 @@ fn a_fractional_or_negative_pid_joins_no_prefab() {
         "only the exact f64 of a catalogue id joins its prefab"
     );
     assert_eq!(c.rows_by_class.get(&tree_code), Some(&vec![0_u32, 3]));
+}
+
+#[test]
+fn chunk_id_of_a_cell_is_cx_underscore_cy() {
+    assert_eq!(ChunkId::of_cell(18, 0), "18_0");
+    assert_eq!(ChunkId::of_cell(-3, 4), "-3_4");
+    assert_eq!(ChunkId::of_cell(-3, 4), ChunkId::from("-3_4"));
+}
+
+#[test]
+fn chunk_id_serialises_exactly_as_its_string() {
+    for id in ["18_0", "-3_4", "0_0"] {
+        let typed = serde_json::to_vec(&ChunkId::from(id)).expect("serialise");
+        let bare = serde_json::to_vec(&id.to_string()).expect("serialise");
+        assert_eq!(typed, bare);
+        let back: ChunkId = serde_json::from_slice(&bare).expect("deserialise");
+        assert_eq!(back, id);
+    }
 }

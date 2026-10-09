@@ -6,7 +6,6 @@ Unit tests of `geometry_primitives`, each file declared by the module it tests t
 
 ```text
 crates/geometry/geometry_primitives/src/tests/
-├── axis_aligned_box.rs  the union of two boxes is component-wise
 └── rigid_transform.rs   rotation directions, inverses, quaternion round trips, nested composition precision
 ```
 

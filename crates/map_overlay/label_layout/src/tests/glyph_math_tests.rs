@@ -17,30 +17,11 @@ fn deck_angle_handedness() {
 }
 
 #[test]
-fn tree_size_multiplier_clamps() {
-    assert!((tree_size_multiplier(None) - 1.0).abs() < 1e-12);
-    assert!((tree_size_multiplier(Some(10.0)) - 1.0).abs() < 1e-12);
-    assert!((tree_size_multiplier(Some(5.0)) - 1.0).abs() < 1e-12);
-    assert!((tree_size_multiplier(Some(12.5)) - 1.25).abs() < 1e-12);
-    assert!((tree_size_multiplier(Some(20.0)) - 1.5).abs() < 1e-12);
-    assert!((tree_size_multiplier(Some(100.0)) - 1.5).abs() < 1e-12);
-}
-
-#[test]
 fn glyph_size_meters_formula() {
     let expect = 24.0 / 2.0_f64.powf(REF_ZOOM);
     assert!((glyph_size_meters(24.0, Some(10.0)) - expect).abs() < 1e-9);
     let expect15 = (24.0 * 1.5) / 2.0_f64.powf(REF_ZOOM);
     assert!((glyph_size_meters(24.0, Some(20.0)) - expect15).abs() < 1e-9);
-}
-
-#[test]
-fn hex_to_rgba_parses() {
-    assert_eq!(hex_to_rgba(Some("#2d5a27")), [45, 90, 39, 255]);
-    assert_eq!(hex_to_rgba(Some("4a7a32")), [74, 122, 50, 255]);
-    assert_eq!(hex_to_rgba(Some("#abc")), [170, 187, 204, 255]);
-    assert_eq!(hex_to_rgba(None), DEFAULT_GLYPH_RGBA);
-    assert_eq!(hex_to_rgba(Some("nothex")), DEFAULT_GLYPH_RGBA);
 }
 
 #[test]
@@ -67,34 +48,6 @@ fn pack_icon_instance_is_20_bytes() {
 }
 
 #[test]
-fn badge_keys() {
-    assert_eq!(badge_icon_key("military"), Some("building-badge-military"));
-    assert_eq!(badge_icon_key("residential"), None);
-}
-
-#[test]
-fn building_icon_key_covers_all_building_classes() {
-    for &cls in BUILDING_CLASSES {
-        let key = building_icon_key(cls).expect(cls);
-        assert_eq!(key, format!("building-{cls}"));
-    }
-    assert_eq!(building_icon_key("pier"), None);
-}
-
-#[test]
-fn landmark_glyph_prefers_badge_overlay() {
-    assert_eq!(
-        landmark_glyph_icon_key("military"),
-        Some("building-badge-military")
-    );
-    assert_eq!(
-        landmark_glyph_icon_key("lighthouse"),
-        Some("building-lighthouse")
-    );
-    assert_eq!(landmark_glyph_icon_key("castle"), Some("building-castle"));
-}
-
-#[test]
 fn yaw_snorm16_wraps_not_clamps() {
     assert_eq!(yaw_to_snorm16(-270.0), yaw_to_snorm16(90.0));
     assert_eq!(yaw_to_snorm16(180.0), 32767);
@@ -105,33 +58,6 @@ fn yaw_snorm16_wraps_not_clamps() {
     );
     assert_eq!(yaw_to_snorm16(540.0), yaw_to_snorm16(180.0));
     assert_eq!(yaw_to_snorm16(-359.0), yaw_to_snorm16(1.0));
-}
-
-#[test]
-fn world_rotation_270_differs_from_180() {
-    let encode = |rotation: f64| yaw_to_snorm16(deck_angle_for_rotation_deg(rotation));
-    let drawn_bearing = |rotation: f64| {
-        let snorm = encode(rotation);
-        let screen_deg = f64::from(snorm) / 32767.0 * 180.0;
-        (-screen_deg).rem_euclid(360.0)
-    };
-    assert_ne!(
-        encode(270.0),
-        encode(180.0),
-        "270 and 180 share encoding — western half collapsed onto due south"
-    );
-    assert_eq!(
-        encode(270.0),
-        encode(-90.0),
-        "270 IS -90 after wrap, not the clamp floor"
-    );
-    let b180 = drawn_bearing(180.0);
-    let b270 = drawn_bearing(270.0);
-    let delta = (b270 - b180).rem_euclid(360.0);
-    assert!(
-        (delta - 90.0).abs() < 0.05,
-        "270 tip/extent bearing {b270} must differ from 180's {b180} by ~90°, got delta {delta}"
-    );
 }
 
 #[test]

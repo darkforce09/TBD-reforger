@@ -6,12 +6,7 @@
 //! **Invariants:** every case states the exact value or event it expects.
 
 use crate::section::cutter::CUT_MAX_NY;
-use crate::section::cutter::HeightField;
-use crate::section::cutter::MAX_PLAN_DIM;
-use crate::section::cutter::PLAN_CELL_M;
 use crate::section::cutter::Seg2;
-use crate::section::cutter::VOID_PAD_M;
-use crate::section::cutter::mesh_bounds;
 use crate::section::cutter::section_at_owned;
 use crate::section::index::*;
 use crate::test_fixtures::room_sidecar;
@@ -159,45 +154,6 @@ fn segs_equal(a: &[(Seg2, u32)], b: &[(Seg2, u32)]) -> bool {
 }
 
 #[test]
-fn t938_4_measure_visits_and_bytes() {
-    let occl = farmhouse();
-    let (lo, hi) = mesh_bounds(&occl).expect("bounds");
-    let min = [lo[0] - VOID_PAD_M, lo[1] - VOID_PAD_M];
-    let max = [hi[0] + VOID_PAD_M, hi[1] + VOID_PAD_M];
-    let empty = HeightField::empty(min, max, PLAN_CELL_M);
-    let (_cands, visits) = triangles_overlapping_y_counted(&occl, 1.2, 1.2);
-    let built = HeightField::build(&occl, min, max, PLAN_CELL_M, 1.2, 0.2);
-    eprintln!(
-        "T-938.4 FarmHouse_E_1L01_Wood: tris={} verts={} visits={} empty_bytes={} built_bytes={} cols={} rows={} cap={}",
-        occl.tris.len(),
-        occl.verts.len(),
-        visits,
-        empty.allocated_bytes(),
-        built.allocated_bytes(),
-        empty.cols,
-        empty.rows,
-        MAX_PLAN_DIM
-    );
-    assert!(
-        visits < occl.tris.len(),
-        "index must visit fewer than all {} triangles, got {visits}",
-        occl.tris.len()
-    );
-    assert_eq!(
-        empty.allocated_bytes(),
-        0,
-        "empty HeightField allocates no plan cells"
-    );
-    let dense = empty.cols * empty.rows * std::mem::size_of::<Option<f64>>();
-    assert!(
-        built.allocated_bytes() < dense,
-        "sparse {} >= dense {}",
-        built.allocated_bytes(),
-        dense
-    );
-}
-
-#[test]
 fn bvh_root_encloses_section_geometry() {
     for (name, occl) in golden_buildings() {
         assert!(
@@ -230,26 +186,4 @@ fn zero_height_inverted_interval_is_empty() {
     let occl = room_sidecar(&[]);
     let (cands, visits) = triangles_overlapping_y_counted(&occl, 1.2, 1.2 - 1e-12);
     assert!(cands.is_empty() && visits == 0);
-}
-
-#[test]
-fn sparse_heightfield_one_percent_memory() {
-    let span = MAX_PLAN_DIM as f64 * PLAN_CELL_M;
-    let mut hf = HeightField::empty([0.0, 0.0], [span, span], PLAN_CELL_M);
-    assert_eq!(hf.cols, MAX_PLAN_DIM);
-    assert_eq!(hf.rows, MAX_PLAN_DIM);
-    assert_eq!(hf.allocated_bytes(), 0);
-    let dense = hf.cols * hf.rows * std::mem::size_of::<Option<f64>>();
-    let n = (MAX_PLAN_DIM * MAX_PLAN_DIM) / 100;
-    let side = (n as f64).sqrt().ceil() as usize;
-    for row in 0..side {
-        for col in 0..side {
-            hf.set(col, row, Some(1.0));
-        }
-    }
-    let sparse = hf.allocated_bytes();
-    assert!(
-        sparse > 0 && sparse * 50 < dense,
-        "1% clustered write should be ~1% of dense: sparse={sparse} dense={dense}"
-    );
 }

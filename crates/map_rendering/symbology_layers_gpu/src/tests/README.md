@@ -8,6 +8,5 @@ and the sprite atlas table, and the error messages' stable tags. The GPU layers 
 
 ```text
 crates/map_rendering/symbology_layers_gpu/src/tests/
-├── error_tests.rs          the atlas tags of `Error`'s messages
 └── icon_uniforms_tests.rs  the uniform block offsets and packing, the anchor conversion, `sprite_atlas_for`
 ```

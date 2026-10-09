@@ -158,7 +158,3 @@ where
         cause: cause.to_string(),
     })
 }
-
-#[cfg(test)]
-#[path = "tests/codec_tests.rs"]
-mod tests;

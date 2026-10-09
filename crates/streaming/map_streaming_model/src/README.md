@@ -15,7 +15,6 @@ crates/streaming/map_streaming_model/src/
 ├── lib.rs                      the crate root: the module tree
 ├── memory_budget/              the ledger, the asset rows, the satellite floor walk, the HUD tail
 ├── prelude.rs                  the common names for `use map_streaming_model::prelude::*;`
-├── tests/                      tests of the world-layer switches
 └── world_layer_preferences.rs  `WorldLayerPrefs`: the twelve world-layer switches and their defaults
 ```
 

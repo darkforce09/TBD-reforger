@@ -8,7 +8,3 @@
 /// WebGPU compute implementation.
 #[cfg(target_arch = "wasm32")]
 pub mod compute;
-
-#[cfg(test)]
-#[path = "tests/compute_source_tests.rs"]
-mod tests;

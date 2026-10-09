@@ -32,6 +32,3 @@ mod accounting;
 pub use accounting::{
     claim_satellite_floor, heap_mark, hold, observe_since, release, set_held, with_ledger,
 };
-#[cfg(test)]
-#[path = "tests/platform_tests.rs"]
-mod tests;

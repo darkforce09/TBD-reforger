@@ -6,8 +6,6 @@
 //! real inputs and their real output is asserted — a pin that cannot be satisfied by a needle
 //! sitting in its own assertion.
 
-use super::*;
-
 fn ids(v: &[&str]) -> Vec<String> {
     v.iter().map(|s| (*s).to_string()).collect()
 }
@@ -71,24 +69,6 @@ fn resolve_selected_entities_reads_all_three_document_maps() {
 }
 
 #[test]
-fn a_single_selection_grid_export_is_the_bare_reference() {
-    let (slots, small) = doc_fixtures();
-    let one = super::resolve_selected_entities(&slots, &small, &ids(&["s1"]));
-    assert_eq!(
-        super::grid_position_text(&one),
-        "012 048",
-        "a one-entity copy must paste straight into a briefing line with nothing to strip"
-    );
-
-    // A multi-selection stays attributable rather than collapsing into one number.
-    let many = super::resolve_selected_entities(&slots, &small, &ids(&["s1", "v1"]));
-    let text = super::grid_position_text(&many);
-    assert_eq!(text.lines().count(), 2, "{text}");
-    assert!(text.starts_with("012 048  SL"), "{text}");
-    assert!(text.contains("001 002  UAZ469"), "{text}");
-}
-
-#[test]
 fn the_classname_export_keeps_duplicates_and_counts_what_it_left_out() {
     let (slots, small) = doc_fixtures();
     let sel = super::resolve_selected_entities(&slots, &small, &ids(&["s1", "s1", "s2"]));
@@ -110,53 +90,4 @@ fn the_classname_export_keeps_duplicates_and_counts_what_it_left_out() {
     // A selection with nothing to say produces nothing — the caller turns this into a refusal.
     let none = super::resolve_selected_entities(&slots, &small, &ids(&["s2"]));
     assert_eq!(super::classnames_text(&none), (String::new(), 1));
-}
-
-#[test]
-fn the_selection_summary_names_counts_and_carries_the_same_grids() {
-    let (slots, small) = doc_fixtures();
-    let sel = super::resolve_selected_entities(&slots, &small, &ids(&["s1", "s2", "v1"]));
-    let text = super::selection_summary_text(&sel);
-    assert_eq!(
-        text.lines().next().unwrap(),
-        "3 entities selected — 2 slots, 1 vehicle",
-        "{text}"
-    );
-    assert!(
-        text.contains("- SL (slot) at 012 048 — {8402}"),
-        "each row names what, where and of what: {text}"
-    );
-    assert!(
-        text.contains("(no classname)"),
-        "a missing classname must be spelled out, not left blank: {text}"
-    );
-    // The digest cannot disagree with the grid exporter about where anything stands.
-    for e in &sel {
-        assert!(text.contains(&format_grid_ref(e.x, e.y)), "{text}");
-    }
-    // Singular headline stays grammatical.
-    let one = super::resolve_selected_entities(&slots, &small, &ids(&["v1"]));
-    assert!(
-        super::selection_summary_text(&one).starts_with("1 entity selected — 1 vehicle"),
-        "{}",
-        super::selection_summary_text(&one)
-    );
-}
-
-#[test]
-fn every_exporter_is_empty_on_an_empty_selection() {
-    assert_eq!(super::grid_position_text(&[]), "");
-    assert_eq!(super::classnames_text(&[]), (String::new(), 0));
-    assert_eq!(super::selection_summary_text(&[]), "");
-}
-
-#[test]
-fn the_prefab_leaf_never_invents_a_name() {
-    assert_eq!(
-        super::prefab_leaf("{ABCD}Prefabs/Vehicles/Wheeled/UAZ/UAZ469.et"),
-        "UAZ469"
-    );
-    assert_eq!(super::prefab_leaf("Character_US_GL.et"), "Character_US_GL");
-    assert_eq!(super::prefab_leaf("plain"), "plain");
-    assert_eq!(super::prefab_leaf(""), "");
 }

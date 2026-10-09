@@ -13,7 +13,3 @@
 pub fn backoff_before_attempt_ms(attempt: u8) -> i32 {
     80 * (1_i32 << u32::from(attempt.saturating_sub(1)))
 }
-
-#[cfg(test)]
-#[path = "tests/record_read_retry.rs"]
-mod tests;

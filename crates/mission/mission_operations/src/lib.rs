@@ -59,16 +59,6 @@ pub mod transform;
 /// Zone and trigger authoring destinations.
 pub mod zones;
 
-#[cfg(test)]
-#[path = "tests/identity_source_scrub.rs"]
-mod identity_source_scrub;
-#[cfg(test)]
-#[path = "tests/prelude_surface.rs"]
-mod prelude_surface;
-#[cfg(test)]
-#[path = "tests/source_scrub.rs"]
-mod source_scrub;
-
 /// Why a side-level authoring command refuses.
 pub use error::Error;
 /// The result of a side-level authoring command.

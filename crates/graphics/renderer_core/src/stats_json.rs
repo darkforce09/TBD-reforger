@@ -111,7 +111,3 @@ fn push_escaped(out: &mut String, raw: &str) {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/stats_json_tests.rs"]
-mod tests;

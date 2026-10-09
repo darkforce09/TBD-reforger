@@ -1,16 +1,13 @@
-//! Role: the Everon glyph and strip cases' fixtures: the Everon residency, the chunk and island
-//! drivers, and the badge and landmark oracles.
+//! Role: the Everon glyph and strip cases' fixtures: the Everon residency and the chunk driver.
 //! Position: `chunk_draw_buffers::tests::everon_glyphs_and_strips`, compiled only in test builds;
 //! drives `crate::world_residency::WorldResidency` over the committed export
 //! under `assets/terrains/everon/` and the glyphs under `assets/glyphs/`.
 //! Signals & state: none; every case builds its own residency.
-//! Invariants: the oracles read the export directly, never the residency's draw buffers.
+//! Invariants: the fixtures read the export directly, never the residency's draw buffers.
 
 use map_draw_lanes::zoom_gates::class_visible;
 
 use prefab_catalog::render_classes::class_code;
-
-use render_primitives::color_normalization::norm;
 
 use crate::world_residency::WorldResidency;
 use prefab_catalog::footprint_lookups::building_prefab_lookup;
@@ -33,8 +30,6 @@ use std::fs;
 use std::path::PathBuf;
 
 const FIXTURE_CHUNK: &str = "2_12";
-
-const N_MIN_BUILDING_GLYPH_LOOKUP: usize = 15;
 
 fn map_assets() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../assets/terrains")
@@ -181,50 +176,6 @@ fn oracle_badge_count(
     n
 }
 
-fn oracle_landmark_glyph_count_for_chunk(
-    r: &WorldResidency,
-    chunk_id: &str,
-    prefab_class: &HashMap<u16, String>,
-    atlas_keys: &HashSet<String>,
-    z: f64,
-) -> usize {
-    if !class_visible("buildingBadge", z) {
-        return 0;
-    }
-    let Some(chunk) = r.chunk(&ChunkId::from(chunk_id)) else {
-        return 0;
-    };
-    let building_code = class_code("building");
-    let Some(rows) = chunk.rows_by_class.get(&building_code) else {
-        return 0;
-    };
-    let landmark = ["lighthouse", "castle", "bridge"];
-    let mut n = 0usize;
-    for &row in rows {
-        let row = row as usize;
-        let Some(cls) = prefab_class.get(&chunk.prefab_idx[row]) else {
-            continue;
-        };
-        if !landmark.contains(&cls.as_str()) {
-            continue;
-        }
-        let Some(key) = landmark_glyph_icon_key(cls) else {
-            continue;
-        };
-        if atlas_keys.contains(key) {
-            n += 1;
-        }
-    }
-    n
-}
-
-fn badge_glyph_indices(buf: &[u8]) -> Vec<u16> {
-    let stride = label_layout::glyph_math::ICON_INSTANCE_STRIDE;
-    buf.chunks(stride)
-        .map(|chunk| u16::from_le_bytes(chunk[14..16].try_into().unwrap()))
-        .collect()
-}
-
 fn world_glyphs_atlas_keys() -> HashSet<String> {
     let raw = std::fs::read_to_string(glyph_assets().join("atlas/world-glyphs.json"))
         .expect("world-glyphs.json");
@@ -235,62 +186,6 @@ fn world_glyphs_atlas_keys() -> HashSet<String> {
         .keys()
         .cloned()
         .collect()
-}
-
-const EVERON_TERRAIN_M: f64 = 12800.0;
-
-const PIER_CENSUS: u32 = 2299;
-
-const BRIDGE_CENSUS: usize = 144;
-
-fn drive_full_island(r: &mut WorldResidency, z: f64) {
-    let missing = r.set_viewport(0.0, 0.0, EVERON_TERRAIN_M, EVERON_TERRAIN_M, z);
-    let dir = map_assets().join("everon/objects/chunks");
-    for id in &missing {
-        match std::fs::read(dir.join(format!("{id}.json.gz"))) {
-            Ok(bytes) => {
-                r.ingest_chunk_gz(id, &bytes).unwrap();
-            }
-            Err(_) => r.note_undelivered(id),
-        }
-    }
-    r.end_apply_frame(0.0);
-}
-
-fn island_bridge_count(r: &WorldResidency) -> usize {
-    let building_code = class_code("building");
-    let mut ids = r.chunk_residency.pinned_ids().to_vec();
-    ids.sort();
-    let mut n = 0usize;
-    for id in &ids {
-        let Some(chunk) = r.chunk(&ChunkId::from(id.as_str())) else {
-            continue;
-        };
-        let Some(rows) = chunk.rows_by_class.get(&building_code) else {
-            continue;
-        };
-        for &row in rows {
-            let row = row as usize;
-            if let Some(info) = r.chunk_residency.building_prefab(chunk.prefab_idx[row])
-                && info.building_class == "bridge"
-            {
-                n += 1;
-            }
-        }
-    }
-    n
-}
-
-fn fill_instances_with_color(fill: &[f32], rgba: [u8; 4]) -> usize {
-    let want = norm(rgba);
-    fill.chunks_exact(10)
-        .filter(|inst| {
-            (inst[6] - want[0]).abs() < 1e-6
-                && (inst[7] - want[1]).abs() < 1e-6
-                && (inst[8] - want[2]).abs() < 1e-6
-                && (inst[9] - want[3]).abs() < 1e-6
-        })
-        .count()
 }
 
 mod cases_1;

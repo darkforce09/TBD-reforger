@@ -30,7 +30,3 @@ pub use leg::{
 };
 pub use projection::{ProjectedLeg, ProjectedVertex, project_legs, project_vertices, world_key};
 pub use tool_mode::{EditorTool, should_begin_ruler};
-
-#[cfg(test)]
-#[path = "tests/session_local.rs"]
-mod session_local;

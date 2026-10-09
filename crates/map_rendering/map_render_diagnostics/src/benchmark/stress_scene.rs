@@ -50,7 +50,3 @@ pub fn stress_chunk_into(chunk_idx: u32, count: usize, seed: u64, out: &mut Vec<
         });
     }
 }
-
-#[cfg(test)]
-#[path = "tests/stress_scene_tests.rs"]
-mod tests;

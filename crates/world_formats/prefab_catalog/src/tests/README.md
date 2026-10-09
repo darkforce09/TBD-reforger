@@ -8,7 +8,6 @@ map-object enums schema.
 
 - `footprint_lookups_tests.rs`
 - `instance_kinds_tests.rs`
-- `numeric_prefab_ids_tests.rs`
 - `prefab_rows_tests.rs`
 - `prefab_tables_tests.rs`
 - `render_classes_tests.rs`

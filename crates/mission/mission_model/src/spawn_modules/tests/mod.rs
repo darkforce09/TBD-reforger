@@ -5,8 +5,6 @@
 
 use super::*;
 
-use crate::authored_blocks::{copy_authored_blocks, is_authored_block};
-
 use serde_json::json;
 
 fn wave() -> Value {

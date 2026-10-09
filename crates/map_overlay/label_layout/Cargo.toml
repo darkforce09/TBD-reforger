@@ -21,9 +21,5 @@ render_primitives = { workspace = true }
 # The location rows of a terrain's `locations.json` derive their JSON form.
 serde = { workspace = true, features = ["derive"] }
 
-[dev-dependencies]
-# The glyph coverage and id cases read the committed Everon label data.
-serde_json = { workspace = true }
-
 [lints]
 workspace = true

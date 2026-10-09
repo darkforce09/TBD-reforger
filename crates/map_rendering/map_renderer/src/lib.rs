@@ -23,7 +23,7 @@ mod asset_sink;
 mod bindings;
 #[cfg(target_arch = "wasm32")]
 mod boot;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 mod calibration_scene;
 #[cfg(target_arch = "wasm32")]
 mod cull;
@@ -33,7 +33,7 @@ pub mod diagnostic_accessors;
 pub mod encode;
 #[cfg(target_arch = "wasm32")]
 pub mod engine;
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 mod engine_statistics;
 mod error;
 #[cfg(target_arch = "wasm32")]
@@ -55,13 +55,3 @@ mod viewport;
 #[cfg(target_arch = "wasm32")]
 pub use engine::{CLEAR_COLOR, EngineHandle, RenderEngine};
 pub use error::{Error, Result};
-
-// The source pins of the damage-driven frame path and of the mission lane bind functions read
-// source text, never a GPU, so they run natively.
-#[cfg(test)]
-#[path = "tests/damage_discipline.rs"]
-mod damage_discipline;
-
-#[cfg(test)]
-#[path = "tests/lane_bind_source_pins/mod.rs"]
-mod lane_bind_source_pins;

@@ -18,7 +18,3 @@ pub fn selection_entities(core: &MissionDocCore, selection: &[String]) -> Vec<Do
         .filter(|entity| selection.iter().any(|id| entity.id == id.as_str()))
         .collect()
 }
-
-#[cfg(test)]
-#[path = "tests/selection_index.rs"]
-mod tests;

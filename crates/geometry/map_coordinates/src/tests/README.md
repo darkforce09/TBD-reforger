@@ -8,8 +8,7 @@ Unit tests of `map_coordinates`, one file per module, each declared by its modul
 ```text
 crates/geometry/map_coordinates/src/tests/
 ├── chunk_math.rs      preload margins, clamped rectangles, id order and the Everon viewport chunk set
-├── grid_reference.rs  6-, 8- and 10-figure formatting, edge-label agreement, parsing, refusals
-└── rounding.rs        `round` against JavaScript's `Math.round`, halves included
+└── grid_reference.rs  6-, 8- and 10-figure formatting, edge-label agreement, parsing, refusals
 ```
 
 ## Boundaries

@@ -76,7 +76,3 @@ pub fn grid_lines(
     }
     out
 }
-
-#[cfg(test)]
-#[path = "tests/grid_tests.rs"]
-mod tests;

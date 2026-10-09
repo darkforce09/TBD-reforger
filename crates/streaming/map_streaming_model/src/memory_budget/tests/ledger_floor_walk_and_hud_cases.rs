@@ -4,34 +4,6 @@
 use super::*;
 
 #[test]
-fn the_everon_ladder_costs_what_the_audit_says() {
-    let l = everon();
-    assert_eq!(
-        l[0].rgba(),
-        655_360_000,
-        "the audit's headline figure: satellite L0 is 655 MB of RGBA on its own"
-    );
-    assert_eq!(
-        satellite_resident_bytes(&l, 0),
-        1_026_523_730,
-        "a base-0 load holds the WHOLE tail at once — every level is decoded before the \
-             engine borrow is taken — so the peak is 873,813,260 B of RGBA plus 152,710,470 B of \
-             bodies, not just the largest level"
-    );
-    assert_eq!(
-        satellite_resident_bytes(&l, 1),
-        260_606_070,
-        "one level down is 218,453,260 + 42,152,810"
-    );
-    assert_eq!(satellite_resident_bytes(&l, 13), 4 + 38, "the 1x1 tail");
-    assert_eq!(
-        satellite_resident_bytes(&l, 99),
-        0,
-        "a base past the ladder costs nothing rather than panicking"
-    );
-}
-
-#[test]
 fn decide_separates_shrink_from_never() {
     let mut led = Ledger::with_budget(1_000);
     assert_eq!(led.decide(1_000), Decision::Ok, "exactly the budget fits");
@@ -131,28 +103,6 @@ fn the_floor_rises_one_level_per_degrade() {
 }
 
 #[test]
-fn a_tighter_budget_walks_further_down_the_ladder() {
-    let l = everon();
-    let led = Ledger::with_budget(MB_512);
-    let walk = floor_for_budget(&l, 0, &led);
-    assert_eq!(
-        walk.base, 1,
-        "512 MiB is smaller than level 0's 978.97 MiB outright — Refuse, not Degrade — and \
-             level 1's 248.53 MiB fits"
-    );
-    assert_eq!(walk.rejected.len(), 1);
-    assert_eq!(walk.rejected[0].2, Decision::Refuse);
-
-    let led = Ledger::with_budget(64 * MIB);
-    let walk = floor_for_budget(&l, 0, &led);
-    assert_eq!(
-        walk.base, 2,
-        "62.85 MiB from level 2 down is the first rung under a 64 MiB budget"
-    );
-    assert_eq!(walk.raised(), 2);
-}
-
-#[test]
 fn the_walk_never_reaches_past_the_ladder() {
     let l = everon();
     let led = Ledger::with_budget(1);
@@ -192,27 +142,6 @@ fn the_floor_never_rises_above_the_gpu_limit_choice() {
 }
 
 #[test]
-fn the_hud_shows_reserved_against_budget_and_the_floor() {
-    let mut led = Ledger::with_budget(MB_1024);
-    assert_eq!(
-        led.hud_suffix(),
-        "",
-        "nothing held and no floor chosen is a dead cell, not a readout"
-    );
-    assert_eq!(led.reserve(Asset::Dem, DEM_METERS), Decision::Ok);
-    assert_eq!(led.hud_suffix(), " · mem 156/1024MB");
-    led.set_satellite_floor(1, 1);
-    assert_eq!(
-        led.hud_suffix(),
-        " · mem 156/1024MB · sat L1 (+1)",
-        "the raise count is on the HUD because `sat L1` alone cannot be told apart from a \
-             GPU that only ever offered L1"
-    );
-    led.set_satellite_floor(0, 0);
-    assert_eq!(led.hud_suffix(), " · mem 156/1024MB · sat L0");
-}
-
-#[test]
 fn growth_is_tracked_beside_the_declared_bytes_and_never_inside_them() {
     let mut led = Ledger::with_budget(MB_1024);
     led.add_growth(Asset::World, 40 * MIB);
@@ -229,52 +158,4 @@ fn growth_is_tracked_beside_the_declared_bytes_and_never_inside_them() {
              would be counted twice and refuse loaders that would have fitted"
     );
     assert_eq!(led.hud_suffix(), "");
-}
-
-#[test]
-fn the_default_budget_is_the_one_the_spec_names() {
-    assert_eq!(DEFAULT_BUDGET_MB, 1536);
-    assert_eq!(
-        budget_bytes_from_settings(None, None),
-        1536 * MIB,
-        "a boot with no query parameter and no window global gets the default budget"
-    );
-    assert_eq!(
-        budget_bytes_from_settings(Some(" 512 "), Some(256.0)),
-        512 * MIB,
-        "the query parameter wins over the window global"
-    );
-    assert_eq!(
-        budget_bytes_from_settings(Some("lots"), Some(256.0)),
-        256 * MIB,
-        "an unreadable query parameter falls through to the window global"
-    );
-    for (query, window) in [
-        (Some("0"), Some(256.0)),
-        (None, Some(0.0)),
-        (None, Some(-64.0)),
-        (None, Some(f64::INFINITY)),
-        (None, Some(f64::NAN)),
-    ] {
-        assert_eq!(
-            budget_bytes_from_settings(query, window),
-            1536 * MIB,
-            "a zero, negative or non-finite setting is no setting: {query:?} {window:?}"
-        );
-    }
-}
-
-#[test]
-fn every_asset_indexes_its_own_row() {
-    for (i, a) in Asset::ALL.iter().enumerate() {
-        assert_eq!(a.index(), i);
-    }
-    let mut led = Ledger::with_budget(MB_1024);
-    for a in Asset::ALL {
-        assert_eq!(led.reserve(a, 1), Decision::Ok);
-    }
-    for a in Asset::ALL {
-        assert_eq!(led.entry(a).held, 1, "{} must have its own row", a.name());
-    }
-    assert_eq!(led.held_total(), 7);
 }

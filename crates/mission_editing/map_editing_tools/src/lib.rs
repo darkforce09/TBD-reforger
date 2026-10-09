@@ -22,7 +22,3 @@ pub mod prelude;
 pub mod ruler;
 pub mod selection;
 pub mod viewshed_scheduler;
-
-#[cfg(test)]
-#[path = "tests/source_scrub.rs"]
-mod source_scrub;

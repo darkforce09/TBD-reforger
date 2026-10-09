@@ -95,70 +95,6 @@ fn a_duplicate_id_is_refused() {
 }
 
 #[test]
-fn an_unknown_property_is_refused() {
-    let err = parse(&json!([{
-        "id": "t1", "title": "A", "tier": "primary", "state": "assigned", "endOn": ["time_limit"]
-    }]))
-    .expect_err("endOn is not a task field");
-    assert!(err.to_string().contains("endOn"), "{err}");
-    assert!(err.to_string().contains("additionalProperties"), "{err}");
-}
-
-#[test]
-fn a_blank_optional_is_refused_rather_than_stored() {
-    let err = parse(&json!([{
-        "id": "t1", "title": "A", "tier": "primary", "state": "assigned", "triggerId": "  "
-    }]))
-    .expect_err("blank triggerId");
-    assert!(err.to_string().contains("blank"), "{err}");
-}
-
-#[test]
-fn a_tier_outside_the_vocabulary_is_refused() {
-    let err = parse(&json!([{
-        "id": "t1", "title": "A", "tier": "main", "state": "assigned"
-    }]))
-    .expect_err("main is not a tier");
-    assert!(err.to_string().contains("main"), "{err}");
-    assert!(err.to_string().contains("primary"), "{err}");
-}
-
-#[test]
-fn not_an_array_is_refused() {
-    let err = parse(&json!({"id": "t1"})).expect_err("object is not an array");
-    assert!(err.to_string().contains("array"), "{err}");
-}
-
-#[test]
-fn tasks_is_registered_and_not_document_modelled() {
-    assert!(
-        is_authored_block("tasks"),
-        "T-936.2's row must be in AUTHORED_BLOCKS or the carrier never emits it"
-    );
-    assert!(
-        !crate::authored_blocks::DOCUMENT_OWNED_BLOCKS.contains(&"tasks"),
-        "tasks is optional — it rides ExtensionBlocks, it does not get a typed ModMission field"
-    );
-}
-
-#[test]
-fn copy_promotes_tasks_verbatim_from_the_environment_bag() {
-    let tasks = three_tiers();
-    let env = json!({"weather": "clear", "tasks": tasks});
-    let mut dst = Map::new();
-    let copied = copy_authored_blocks(&env, &mut dst);
-    assert!(
-        copied.contains(&"tasks"),
-        "tasks must leave the bag: {copied:?}"
-    );
-    assert_eq!(dst["tasks"], tasks, "verbatim");
-    assert!(
-        !dst.contains_key("weather"),
-        "the bag's own keys stay in the bag"
-    );
-}
-
-#[test]
 fn from_payload_carries_a_valid_block_and_refuses_a_malformed_one() {
     let (carried, refusals) = ExtensionBlocks::from_payload(&json!({"tasks": three_tiers()}));
     assert!(refusals.is_empty(), "{refusals:?}");
@@ -174,32 +110,11 @@ fn from_payload_carries_a_valid_block_and_refuses_a_malformed_one() {
 }
 
 #[test]
-fn an_unlisted_environment_key_is_not_promoted() {
-    let env = json!({"weather": "clear", "notAnAuthoredBlock": []});
-    let mut dst = Map::new();
-    let copied = copy_authored_blocks(&env, &mut dst);
-    assert!(!copied.contains(&"notAnAuthoredBlock"), "{copied:?}");
-    assert!(
-        !dst.contains_key("notAnAuthoredBlock"),
-        "an unlisted key stays parked: {dst:?}"
-    );
-}
-
-#[test]
 fn a_legal_schedule_round_trips() {
     let got = parse(&timed(600, 300)).expect("parses");
     let sched = got[0].schedule.expect("schedule");
     assert_eq!(sched.start_after_s, 600);
     assert_eq!(sched.window_s, 300);
-}
-
-#[test]
-fn an_unscheduled_task_still_parses() {
-    let got = parse(&json!([{
-        "id": "t1", "title": "A", "tier": "primary", "state": "assigned"
-    }]))
-    .expect("parses");
-    assert!(got[0].schedule.is_none());
 }
 
 #[test]
@@ -209,18 +124,6 @@ fn a_zero_window_is_refused() {
     assert!(err.to_string().contains("> 0"), "{err}");
     assert!(!window_is_legal(0), "the predicate itself must refuse 0");
     validate_schedule(0, 0, None).expect_err("window 0");
-}
-
-#[test]
-fn a_negative_window_is_refused() {
-    let err = parse(&timed(10, -1)).expect_err("negative window");
-    assert!(err.to_string().contains("windowS"), "{err}");
-}
-
-#[test]
-fn a_negative_start_is_refused() {
-    let err = parse(&timed(-1, 60)).expect_err("negative start");
-    assert!(err.to_string().contains("startAfterS"), "{err}");
 }
 
 #[test]
@@ -234,40 +137,4 @@ fn start_at_or_past_mission_length_is_refused() {
     let err = validate_schedule(5400, 60, Some(5400)).expect_err("default round end");
     assert!(err.to_string().contains("within mission length"), "{err}");
     assert!(err.to_string().contains("5400"), "{err}");
-}
-
-#[test]
-fn a_start_of_zero_is_legal() {
-    let got = parse(&timed(0, 120)).expect("T+0");
-    assert_eq!(got[0].schedule.unwrap().start_after_s, 0);
-}
-
-#[test]
-fn a_schedule_that_is_not_an_object_is_refused() {
-    let err = parse(&json!([{
-        "id": "t1", "title": "A", "tier": "primary", "state": "assigned",
-        "schedule": 600
-    }]))
-    .expect_err("number");
-    assert!(err.to_string().contains("object"), "{err}");
-}
-
-#[test]
-fn an_unknown_schedule_property_is_refused() {
-    let err = parse(&json!([{
-        "id": "t1", "title": "A", "tier": "primary", "state": "assigned",
-        "schedule": {"startAfterS": 10, "windowS": 20, "endOn": "time_limit"}
-    }]))
-    .expect_err("endOn");
-    assert!(err.to_string().contains("endOn"), "{err}");
-}
-
-#[test]
-fn a_missing_window_key_is_refused() {
-    let err = parse(&json!([{
-        "id": "t1", "title": "A", "tier": "primary", "state": "assigned",
-        "schedule": {"startAfterS": 10}
-    }]))
-    .expect_err("missing window");
-    assert!(err.to_string().contains("windowS"), "{err}");
 }

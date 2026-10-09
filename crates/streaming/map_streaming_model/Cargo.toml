@@ -22,9 +22,5 @@ render_primitives = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 
-[dev-dependencies]
-# The world-layer preference tests read the stored JSON spelling.
-serde_json = { workspace = true }
-
 [lints]
 workspace = true

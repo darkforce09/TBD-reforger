@@ -1,9 +1,10 @@
-//! Role: layer authoring over a live document.
+//! Role: layer authoring over a live document and the selected entities read off its index.
 //! Position: a unit test of `entity::layers` in `mission_operations`.
 //! Signals & state: explicit data inputs; no UI or graphics state.
 //! Invariants: preserve authored order, numeric precision, and wire representations.
 
 use super::*;
+use crate::entity::selection_entities;
 
 fn document_with_one_layer() -> MissionDocCore {
     let core = MissionDocCore::new();
@@ -141,4 +142,24 @@ fn an_empty_document_seeds_the_default_folder_the_caller_names() {
     assert_eq!(seeded.layer_id, "layer-default");
     assert!(!seeded.active_layer_was_stale);
     assert_eq!(layer_rows(&core).len(), 1);
+}
+
+#[test]
+fn an_empty_selection_indexes_nothing() {
+    let core = MissionDocCore::new();
+    core.add_editor_layer("layer-a", "Alpha", None);
+    assert!(selection_entities(&core, &[]).is_empty());
+}
+
+#[test]
+fn only_the_selected_ids_come_back_and_an_unknown_id_matches_nothing() {
+    let core = MissionDocCore::new();
+    core.add_editor_layer("layer-a", "Alpha", None);
+    core.add_editor_layer("layer-b", "Bravo", None);
+
+    let picked = selection_entities(&core, &["layer-b".to_string()]);
+    assert_eq!(picked.len(), 1);
+    assert_eq!(picked[0].id, "layer-b");
+
+    assert!(selection_entities(&core, &["nothing-here".to_string()]).is_empty());
 }

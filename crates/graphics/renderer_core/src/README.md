@@ -16,7 +16,7 @@ crates/graphics/renderer_core/src/
 ├── prelude.rs          the contracts, the statistics and the JSON writer
 ├── render_stats.rs     `RenderStats`: the last frame's CPU time, its moving average, the submitted flag, per-lane counts
 ├── stats_json.rs       `StatsJson`: one flat JSON object, field by field, in the caller's order
-└── tests/              the native tests of the statistics, the JSON writer, the hooks and the binding ids
+└── tests/              the native tests of the packet binding ids
 ```
 
 ## How it works

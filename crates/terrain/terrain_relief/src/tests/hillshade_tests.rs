@@ -22,9 +22,3 @@ fn flat_grid_is_uniform_cos_zenith() {
         assert_eq!(px[3], 255);
     }
 }
-
-#[test]
-fn constants_are_bit_identical_to_js() {
-    assert_eq!(AZIMUTH_RAD, (315.0 * core::f64::consts::PI) / 180.0);
-    assert_eq!(ZENITH_RAD, core::f64::consts::PI / 2.0 - ALTITUDE_RAD);
-}

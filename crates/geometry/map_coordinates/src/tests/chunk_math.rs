@@ -1,10 +1,11 @@
 //! **Role:** unit tests for the chunk grid: preload margins, clamped rectangles, id order and the
-//! viewport chunk set on Everon.
+//! viewport chunk set on Everon; and [`crate::rounding::round`] against JavaScript's `Math.round`.
 //! **Position:** `src/tests` of `map_coordinates`, declared by `chunk_math.rs`.
 //! **Signals & state:** none; pure functions over literal boxes.
 //! **Invariants:** every expected id and rectangle is written out by hand.
 
 use crate::chunk_math::*;
+use crate::rounding::round;
 
 const EVERON: TerrainSizeM = TerrainSizeM {
     width: 12800.0,
@@ -93,4 +94,14 @@ fn ids_for_rect_row_major() {
         cy1: 1,
     });
     assert_eq!(ids, vec!["0_0", "1_0", "0_1", "1_1"]);
+}
+
+#[test]
+fn matches_js_math_round() {
+    assert_eq!(round(2.5), 3.0);
+    assert_eq!(round(-2.5), -2.0);
+    assert_eq!(round(0.5), 1.0);
+    assert_eq!(round(-0.5), 0.0);
+    assert_eq!(round(2.4), 2.0);
+    assert_eq!(round(2.6), 3.0);
 }

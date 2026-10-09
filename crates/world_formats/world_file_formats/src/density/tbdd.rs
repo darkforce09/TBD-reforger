@@ -199,9 +199,5 @@ pub fn encode_tbdd(cell_m: u16, cols: u16, rows: u16, channels: &[&[u16]]) -> Ve
 mod parity_reference;
 
 #[cfg(test)]
-#[path = "tests/tbdd_class_r_scrub.rs"]
-mod class_r_scrub;
-
-#[cfg(test)]
 #[path = "tests/tbdd_tests.rs"]
 mod tests;

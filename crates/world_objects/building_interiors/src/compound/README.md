@@ -12,8 +12,7 @@ crates/world_objects/building_interiors/src/compound/
 ├── assembly.rs   `CompoundBuilding`: a shell and its instances, assembled atomically and flattened
 ├── doors.rs      door records and states, the hinge or slide motion, and the door lookups
 ├── instances.rs  the `<slug>.instances.json` model: instance records and kinds, and live instances
-├── mod.rs        the module tree
-└── tests/        the instances JSON round-trip test
+└── mod.rs        the module tree
 ```
 
 ## How it works

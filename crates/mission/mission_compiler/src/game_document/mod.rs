@@ -43,8 +43,6 @@ mod substitutions;
 pub use substitutions::KitSubstitution;
 /// Expose substitutions ::  kit substitution report at this domain boundary.
 pub use substitutions::KitSubstitutionReport;
-#[cfg(test)]
-use substitutions::MAX_REPORTED_SUBSTITUTIONS;
 use substitutions::SubstitutionAcc;
 #[cfg(test)]
 use substitutions::escape_resource_name;
@@ -129,8 +127,6 @@ pub use flow::FLOW_DEFAULT_JIP;
 pub use flow::FLOW_DEFAULT_SAFESTART_S;
 /// Expose flow :: flow default timelimit s at this domain boundary.
 pub use flow::FLOW_DEFAULT_TIMELIMIT_S;
-#[cfg(test)]
-use flow::JIP_VALUES;
 use flow::RadioNetSource;
 use flow::cap_net_label;
 use flow::derive_flow;
@@ -160,8 +156,6 @@ mod environment;
 use environment::EnvironmentAxes;
 /// Expose environment :: apply authored environment at this domain boundary.
 pub use environment::apply_authored_environment;
-#[cfg(test)]
-use environment::clock_hhmm;
 mod export;
 /// Expose export ::  compiled output at this domain boundary.
 pub use export::CompiledOutput;

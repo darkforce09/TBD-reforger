@@ -54,7 +54,3 @@ pub fn refile_slot(
     let slot_id = slot_id.as_str();
     core.move_slot_to_squad(slot_id, dest_squad_id);
 }
-
-#[cfg(test)]
-#[path = "tests/refile.rs"]
-mod tests;

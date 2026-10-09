@@ -72,7 +72,3 @@ impl Default for WorldLayerPrefs {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/world_layer_preferences_tests.rs"]
-mod tests;

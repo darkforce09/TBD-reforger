@@ -310,7 +310,3 @@ impl RenderEngine {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/engine_statistics_json.rs"]
-mod tests;

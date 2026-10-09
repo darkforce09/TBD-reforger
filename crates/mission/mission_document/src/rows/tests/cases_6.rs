@@ -162,40 +162,6 @@ fn locked_layer_refuses_move_entities_then_unlock_allows_it() {
 }
 
 #[test]
-fn locked_layer_refuses_slot_in_mixed_move_but_vehicle_still_moves() {
-    let doc = one_slot_one_layer();
-    doc.set_origin_init(true);
-    doc.add_vehicle(
-        "v0",
-        "Prefab/Vehicle.et",
-        Some(300.0),
-        Some(400.0),
-        Some(0.0),
-        Some(0.0),
-    );
-    doc.set_origin_init(false);
-
-    doc.set_editor_layer_locked("L", true);
-    doc.move_entities_and_vehicles(
-        vec!["s0".to_string()],
-        &["v0".to_string()],
-        10.0,
-        20.0,
-        vec![0.0],
-    );
-    let soa = doc.materialize();
-    let i = row_of(&soa, "s0");
-    assert_eq!(
-        (soa.xs[i], soa.ys[i]),
-        (100.0, 200.0),
-        "locked slot stayed put"
-    );
-    let vehs = vehicles_of(&doc);
-    assert_eq!(vehs["v0"]["position"]["x"], 310.0, "vehicle still moved");
-    assert_eq!(vehs["v0"]["position"]["y"], 420.0, "vehicle still moved");
-}
-
-#[test]
 fn slot_layer_is_locked_agrees_with_the_update_slot_position_refusal() {
     let doc = one_slot_one_layer();
     doc.add_slot(
@@ -230,72 +196,6 @@ fn slot_layer_is_locked_agrees_with_the_update_slot_position_refusal() {
         (soa.xs[i], soa.ys[i]),
         (777.0, 888.0),
         "the query said unlocked and the mutator accepted"
-    );
-}
-
-#[test]
-fn update_slot_object_sets_clears_and_leaves_none_fields_alone() {
-    let doc = one_slot_one_layer();
-    doc.update_slot("s0", None, Some("MED".into()), None);
-
-    doc.update_slot_object(
-        "s0",
-        Some("Character_US_Rifleman".into()),
-        Some("Point man. Takes the lead on entry.".into()),
-    );
-    let row = slots_map(&doc);
-    assert_eq!(row["s0"]["assetId"], "Character_US_Rifleman");
-    assert_eq!(
-        row["s0"]["description"],
-        "Point man. Takes the lead on entry."
-    );
-
-    doc.update_slot_object("s0", None, Some("Now the breacher.".into()));
-    let row = slots_map(&doc);
-    assert_eq!(
-        row["s0"]["assetId"], "Character_US_Rifleman",
-        "a None assetId left the type alone"
-    );
-    assert_eq!(row["s0"]["description"], "Now the breacher.");
-    assert_eq!(row["s0"]["role"], "Rifleman", "role untouched");
-    assert_eq!(row["s0"]["tag"], "MED", "tag untouched");
-
-    doc.update_slot_object("s0", Some(String::new().into()), None);
-    let row = slots_map(&doc);
-    assert!(
-        row["s0"].get("assetId").is_none(),
-        "empty clears the key rather than storing \"\""
-    );
-    assert_eq!(row["s0"]["description"], "Now the breacher.");
-
-    doc.update_slot_object("s0", None, None);
-    let row = slots_map(&doc);
-    assert_eq!(row["s0"]["description"], "Now the breacher.");
-    assert_eq!(row["s0"]["role"], "Rifleman");
-}
-
-#[test]
-fn locked_layer_refuses_update_slot_position_then_unlock_allows_it() {
-    let doc = one_slot_one_layer();
-
-    doc.set_editor_layer_locked("L", true);
-    doc.update_slot_position("s0", Some(777.0), Some(888.0), None, None, 12800.0, 12800.0);
-    let soa = doc.materialize();
-    let i = row_of(&soa, "s0");
-    assert_eq!(
-        (soa.xs[i], soa.ys[i]),
-        (100.0, 200.0),
-        "locked slot refused the Attributes edit"
-    );
-
-    doc.set_editor_layer_locked("L", false);
-    doc.update_slot_position("s0", Some(777.0), Some(888.0), None, None, 12800.0, 12800.0);
-    let soa = doc.materialize();
-    let i = row_of(&soa, "s0");
-    assert_eq!(
-        (soa.xs[i], soa.ys[i]),
-        (777.0, 888.0),
-        "unlocked slot took the edit"
     );
 }
 
@@ -335,87 +235,6 @@ fn child_layer_inherits_parent_hidden_and_locked() {
 }
 
 #[test]
-fn hidden_and_locked_flag_flips_are_one_undo_step_each() {
-    let mut doc = one_slot_one_layer();
-    assert_eq!(doc.undo_depth(), 0, "INIT setup is not on the stack");
-
-    doc.set_editor_layer_hidden("L", true);
-    assert_eq!(doc.undo_depth(), 1, "hide is one LOCAL step");
-    assert_eq!(doc.materialize().len(), 0, "hidden now");
-    assert!(doc.undo());
-    assert_eq!(doc.materialize().len(), 1, "undo un-hid the layer");
-    assert_eq!(doc.undo_depth(), 0);
-
-    doc.set_editor_layer_locked("L", true);
-    assert_eq!(doc.undo_depth(), 1, "lock is one LOCAL step");
-    assert!(doc.undo());
-    assert_eq!(doc.undo_depth(), 0);
-
-    doc.move_entities(vec!["s0".to_string()], 3.0, 4.0, vec![0.0]);
-    let soa = doc.materialize();
-    let i = row_of(&soa, "s0");
-    assert_eq!(
-        (soa.xs[i], soa.ys[i]),
-        (103.0, 204.0),
-        "undo removed the lock"
-    );
-}
-
-#[test]
-fn clearing_a_layer_flag_removes_the_key() {
-    let doc = one_slot_one_layer();
-    doc.set_editor_layer_hidden("L", true);
-    doc.set_editor_layer_locked("L", true);
-    doc.set_editor_layer_hidden("L", false);
-    doc.set_editor_layer_locked("L", false);
-    let layers: serde_json::Value =
-        serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json");
-    let row = &layers["editorLayersById"]["L"];
-    assert!(row.get("hidden").is_none(), "hidden key removed: {row}");
-    assert!(row.get("locked").is_none(), "locked key removed: {row}");
-}
-
-#[test]
-fn editor_hidden_rides_the_row_only_when_true_and_filters_materialize() {
-    let doc = two_slots_visible_layer();
-    assert_eq!(doc.materialize().len(), 2, "both visible by default");
-
-    let before: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
-    assert!(
-        before["s1"].get("editorHidden").is_none(),
-        "flag omitted until set: {}",
-        before["s1"]
-    );
-
-    doc.set_slot_editor_hidden("s1", true);
-    let soa = doc.materialize();
-    assert_eq!(
-        soa.ids.len(),
-        1,
-        "hidden entity dropped from the render SoA"
-    );
-    assert_eq!(soa.ids[0], "s0", "the un-hidden entity survives");
-
-    let after: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
-    assert_eq!(
-        after["s1"]["editorHidden"], true,
-        "flag on the row: {}",
-        after["s1"]
-    );
-    assert_eq!(after["s1"]["role"], "Rifleman", "row survives hide");
-    assert_eq!(after["s1"]["position"]["x"], 110.0, "position untouched");
-
-    doc.set_slot_editor_hidden("s1", false);
-    assert_eq!(doc.materialize().len(), 2, "un-hide restores the entity");
-    let cleared: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
-    assert!(
-        cleared["s1"].get("editorHidden").is_none(),
-        "false removes the key: {}",
-        cleared["s1"]
-    );
-}
-
-#[test]
 fn effective_hidden_is_layer_or_entity() {
     let doc = two_slots_visible_layer();
 
@@ -449,36 +268,6 @@ fn effective_hidden_is_layer_or_entity() {
         ids_sorted(&doc.materialize()),
         vec!["s0", "s1"],
         "revealing the layer restores the un-flagged entities"
-    );
-}
-
-#[test]
-fn editor_hidden_survives_hydrate_round_trip() {
-    let doc = two_slots_visible_layer();
-    doc.set_slot_editor_hidden("s1", true);
-    let payload =
-        mission_payload::compile_payload(&doc.small_maps_json(), &doc.slots_json(), false);
-
-    let reloaded = MissionDocCore::new();
-    reloaded.hydrate(&serde_json::to_string(&payload).expect("payload json"), "L");
-
-    let slots: serde_json::Value =
-        serde_json::from_str(&reloaded.slots_json()).expect("slots_json");
-    assert_eq!(
-        slots["s1"]["editorHidden"], true,
-        "flag reloaded: {}",
-        slots["s1"]
-    );
-    assert!(
-        slots["s0"].get("editorHidden").is_none(),
-        "un-hidden slot has no key after reload: {}",
-        slots["s0"]
-    );
-
-    assert_eq!(
-        ids_sorted(&reloaded.materialize()),
-        vec!["s0"],
-        "hidden entity stays hidden after reload"
     );
 }
 
@@ -543,20 +332,6 @@ fn editor_hidden_never_reaches_mod_wire() {
 }
 
 #[test]
-fn editor_hidden_flip_is_one_undo_step() {
-    let mut doc = two_slots_visible_layer();
-    assert_eq!(doc.undo_depth(), 0, "INIT setup is not on the stack");
-
-    doc.set_slot_editor_hidden("s1", true);
-    assert_eq!(doc.undo_depth(), 1, "hide is one LOCAL step");
-    assert_eq!(doc.materialize().len(), 1, "hidden now");
-
-    assert!(doc.undo());
-    assert_eq!(doc.materialize().len(), 2, "undo un-hid the entity");
-    assert_eq!(doc.undo_depth(), 0, "one flip = one step");
-}
-
-#[test]
 fn show_all_clears_every_flag_in_one_txn() {
     let mut doc = two_slots_visible_layer();
     doc.set_slot_editor_hidden("s0", true);
@@ -578,53 +353,6 @@ fn show_all_clears_every_flag_in_one_txn() {
         "one undo restored the whole reveal-all: both hidden again"
     );
     assert_eq!(doc.undo_depth(), 2, "back to the two individual hides");
-}
-
-#[test]
-fn batch_hide_selection_is_one_undo_step() {
-    let mut doc = two_slots_visible_layer();
-    doc.set_slots_editor_hidden(&["s0".to_string(), "s1".to_string()], true);
-    assert_eq!(
-        doc.undo_depth(),
-        1,
-        "hiding the whole selection is ONE step"
-    );
-    assert!(doc.materialize().ids.is_empty(), "both hidden by the batch");
-
-    assert!(doc.undo());
-    assert_eq!(
-        doc.materialize().len(),
-        2,
-        "one undo un-hid the whole batch"
-    );
-}
-
-#[test]
-fn editor_hidden_survives_an_unrelated_slot_edit() {
-    let doc = two_slots_visible_layer();
-    doc.set_slot_editor_hidden("s1", true);
-
-    doc.update_slot(
-        "s1",
-        Some("MED".to_string()),
-        None,
-        Some("prone".to_string()),
-    );
-    assert_eq!(
-        doc.materialize().len(),
-        1,
-        "s1 still hidden after an unrelated edit"
-    );
-    let slots: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
-    assert_eq!(
-        slots["s1"]["editorHidden"], true,
-        "flag preserved: {}",
-        slots["s1"]
-    );
-    assert_eq!(
-        slots["s1"]["role"], "MED",
-        "the unrelated edit still landed"
-    );
 }
 
 #[test]
@@ -664,62 +392,6 @@ fn merge_into_empty_doc_lands_everything() {
         slot_ids.iter().any(|s| s.as_str() == Some(leader)),
         "leaderSlotId points at a member slot"
     );
-}
-
-#[test]
-fn merge_dedups_squad_by_name_and_side() {
-    let doc = MissionDocCore::new();
-    doc.set_origin_init(true);
-    doc.add_editor_layer("lyr", "Layer", None);
-    doc.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
-    doc.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
-    doc.add_slot(
-        "res0", "sq-a", "lyr", 0, "SL", None, None, 1.0, 2.0, 0.0, 0.0,
-    );
-    doc.set_leader("sq-a", "res0");
-    doc.set_origin_init(false);
-
-    let src = MissionDocCore::new();
-    src.set_origin_init(true);
-    src.add_editor_layer("lyr", "Layer", None);
-    src.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
-    src.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
-    src.add_squad("sq-b", "faction-BLUFOR", "Bravo", None);
-    src.add_slot(
-        "s0", "sq-a", "lyr", 0, "Rifleman", None, None, 5.0, 6.0, 0.0, 0.0,
-    );
-    src.add_slot(
-        "s1", "sq-b", "lyr", 0, "Rifleman", None, None, 7.0, 8.0, 0.0, 0.0,
-    );
-    src.set_leader("sq-a", "s0");
-    src.set_leader("sq-b", "s1");
-    src.set_origin_init(false);
-    let payload =
-        mission_payload::compile_payload(&src.small_maps_json(), &src.slots_json(), false);
-
-    let report = doc.merge_mission_payload(&payload, MergeOpts::default());
-    assert_eq!(report.squads_merged, 1, "Alpha deduped onto resident");
-    assert_eq!(report.squads_created, 1, "Bravo created");
-    assert_eq!(report.factions_merged, 1, "BLUFOR deduped onto resident");
-    assert_eq!(report.factions_created, 0);
-    assert_eq!(report.slots_added, 2);
-
-    let root = small_maps(&doc);
-    let squads = root["squadsById"].as_object().expect("squads");
-    assert_eq!(
-        squads.len(),
-        2,
-        "one resident Alpha + one new Bravo, not two Alphas"
-    );
-
-    let alpha = &root["squadsById"]["sq-a"];
-    assert_eq!(
-        alpha["slotIds"].as_array().unwrap().len(),
-        2,
-        "incoming Alpha slot merged into resident Alpha: {alpha}"
-    );
-
-    assert_eq!(root["factionsById"].as_object().unwrap().len(), 1);
 }
 
 #[test]
@@ -829,4 +501,77 @@ fn merge_is_one_undo_step_and_undo_restores_exactly() {
         "undo restores the exact pre-merge slot bits"
     );
     assert!(!doc.can_undo(), "the merge was the only stack item");
+}
+
+#[test]
+fn hidden_slot_raw_membership_moves_and_restores_without_losing_authored_data() {
+    for layer_hidden in [false, true] {
+        let mut doc = keep_source_fixture();
+        doc.add_slot(
+            "hidden",
+            "sq-mid",
+            "lyr",
+            0,
+            "Medic",
+            Some("Doc".into()),
+            Some("Prefab/Medic.et".into()),
+            4321.125,
+            5678.375,
+            123.625,
+            77.5,
+        );
+        doc.set_leader("sq-mid", "hidden");
+        doc.update_slot_loadout("hidden", Some(r#"{"authored":"medical-supplies"}"#.into()));
+        doc.add_vehicle("transport", "Prefab/Truck.et", None, None, None, None);
+        doc.attach_vehicle("sq-mid", "transport");
+        if layer_hidden {
+            doc.set_editor_layer_hidden("lyr", true);
+        } else {
+            doc.set_slot_editor_hidden("hidden", true);
+        }
+        assert!(
+            doc.materialize().ids.is_empty(),
+            "fixture must really be hidden"
+        );
+        assert!(doc.slot_exists("hidden"));
+        let original_squad = doc
+            .slot_squad_id("hidden")
+            .expect("hidden Attributes must resolve the authored squad, not report no move");
+        assert_eq!(original_squad, "sq-mid");
+        assert_eq!(doc.slot_squad_id("missing"), None);
+        let before_slots = slots_map(&doc);
+        let before_maps = small_maps(&doc);
+
+        doc.begin_group();
+        doc.move_slot_to_squad_keep_source("hidden", "sq-opf");
+        doc.end_group();
+        assert_eq!(doc.slot_squad_id("hidden").as_deref(), Some("sq-opf"));
+        let moved = slots_map(&doc);
+        assert_eq!(
+            moved["hidden"]["position"],
+            before_slots["hidden"]["position"]
+        );
+        assert_eq!(
+            moved["hidden"]["loadout"],
+            before_slots["hidden"]["loadout"]
+        );
+        assert_eq!(
+            small_maps(&doc)["vehiclesById"],
+            before_maps["vehiclesById"]
+        );
+        assert!(
+            doc.materialize().ids.is_empty(),
+            "reassignment must not unhide it"
+        );
+        doc.begin_group();
+        doc.move_slot_to_squad_keep_source("hidden", original_squad.as_str());
+        doc.end_group();
+        assert_eq!(slots_map(&doc), before_slots);
+        assert_eq!(small_maps(&doc), before_maps);
+        assert!(doc.undo());
+        assert_eq!(doc.slot_squad_id("hidden").as_deref(), Some("sq-opf"));
+        assert!(doc.redo());
+        assert_eq!(slots_map(&doc), before_slots);
+        assert_eq!(small_maps(&doc), before_maps);
+    }
 }

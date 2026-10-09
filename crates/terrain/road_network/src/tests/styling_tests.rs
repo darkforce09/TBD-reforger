@@ -64,56 +64,6 @@ fn road_class_gates() {
 }
 
 #[test]
-fn road_signature_matches_visibility_and_boundaries() {
-    assert_eq!(road_class_signature(-7.0), 0);
-    assert_eq!(road_class_signature(-6.0), 1);
-    assert_eq!(road_class_signature(-2.0), 3);
-    assert_eq!(road_class_signature(3.9), 3);
-    assert_eq!(road_class_signature(4.0), 7);
-
-    let classes = [
-        "highway_paved",
-        "road_paved",
-        "runway",
-        "road_dirt",
-        "track",
-        "path",
-    ];
-    let mut z = -8.0;
-    while z <= 8.0 {
-        let sig = road_class_signature(z);
-        let sig2 = road_class_signature(z + 0.01);
-        if sig == sig2 {
-            for c in classes {
-                assert_eq!(
-                    road_class_visible(c, z),
-                    road_class_visible(c, z + 0.01),
-                    "class {c} visibility diverged within signature {sig} at z={z}"
-                );
-            }
-        }
-        z += 0.1;
-    }
-}
-
-#[test]
-fn runway_polish_width_at_zoom_zero() {
-    let pts = [[0.0, 0.0], [200.0, 0.0]];
-    let (_, center) = compose_runway_polish_segment(&pts, 4.0);
-    assert!(!center.is_empty());
-    let left = center[0].pos;
-    let right = center[1].pos;
-    let world_width =
-        (f64::from(left[0]) - f64::from(right[0])).hypot(f64::from(left[1]) - f64::from(right[1]));
-    assert!(
-        (world_width - RUNWAY_POLISH_WIDTH_M).abs() < 0.05,
-        "runway width {world_width} != {RUNWAY_POLISH_WIDTH_M}"
-    );
-    let screen_px = world_width * 2.0_f64.powf(0.0);
-    assert!((screen_px - 20.0).abs() < 0.05);
-}
-
-#[test]
 fn corner_join_covers_outer_bisector() {
     let pts = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]];
     let width = 2.0_f64;

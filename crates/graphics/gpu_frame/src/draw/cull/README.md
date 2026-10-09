@@ -9,8 +9,7 @@ which must agree with the CPU reference `render_primitives::draw::cull::oracle`
 ```text
 crates/graphics/gpu_frame/src/draw/cull/
 ├── compute.rs  `IconComputeCull`: per-lane compute culling into an indirect draw (WebAssembly)
-├── mod.rs      the module tree
-└── tests/      the source check that every lane binds its own parameter buffer
+└── mod.rs      the module tree
 ```
 
 ## How it works
@@ -24,10 +23,6 @@ survivor count into the 16-byte `draw_indirect` arguments (`INDIRECT_STRIDE`), s
 no CPU round trip. With the debug readout on, it also copies the count into a readback buffer and
 computes the CPU count for comparison (`oracle::cpu_count_for_encode`); `kick_readback` maps those
 buffers.
-
-`compute.rs` compiles for WebAssembly only, so `tests/compute_source_tests.rs` reads its source
-text on the native target to prove that every lane writes and binds its own parameter buffer.
-The file name `compute.rs` is therefore load-bearing.
 
 ## Boundaries
 

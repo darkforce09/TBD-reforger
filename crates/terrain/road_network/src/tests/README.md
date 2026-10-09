@@ -8,7 +8,6 @@ Unit tests of `road_network`, one file per concern, each declared by the module 
 ```text
 crates/terrain/road_network/src/tests/
 ├── airfield_apron_tests.rs        the apron fill over synthetic vector grids: flatness, height band, area
-├── airfield_policy_tests.rs       the airfield box around the runways and the airfield structure gate
 ├── cartographic_strip_tests.rs    fence, pier and bridge-rail strips along a footprint's long axis
 ├── export_image_styling_tests.rs  export image styles, layer file round trip, draw order permutation
 ├── network_tests.rs               segments from the JSON export and the archive, widths, refusals

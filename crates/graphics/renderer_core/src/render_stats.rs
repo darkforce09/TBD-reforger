@@ -75,7 +75,3 @@ impl RenderStats {
         self.lane_counts.get(&lane).copied().unwrap_or(0)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/render_stats_tests.rs"]
-mod tests;

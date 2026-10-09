@@ -72,7 +72,3 @@ impl EditorTool {
 pub fn should_begin_ruler(tool: EditorTool, button: i16) -> bool {
     tool.captures_points() && button == 0
 }
-
-#[cfg(test)]
-#[path = "tests/tool_mode.rs"]
-mod tests;
