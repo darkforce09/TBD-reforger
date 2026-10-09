@@ -1,0 +1,217 @@
+//! The configured fleet is the set of active servers: the dashboard lists them by name with
+//! their statuses and totals, and the status read and status stream show inactive servers to
+//! administrators alone.
+//!
+//! Every case runs on the binary's isolated `fleet_dashboard` database and holds [`FLEET`],
+//! because each asserts fleet-wide state that sibling modules also write, and compares the
+//! served fleet with the `servers` and `server_statuses` rows read right after.
+
+use crate::{common, telemetry_support};
+
+use axum::Router;
+use axum::http::StatusCode;
+use serde_json::{Value, json};
+use sqlx::PgPool;
+use telemetry_support::match_reports::ReportingServer;
+use telemetry_support::report_fixtures::{boot_isolated_with_state, first_stream_status};
+use telemetry_support::{admin_token, call, heartbeat};
+use tokio::sync::Mutex;
+use uuid::Uuid;
+
+static FLEET: Mutex<()> = Mutex::const_new(());
+
+fn unique(prefix: &str) -> String {
+    common::unique_arma(prefix)
+}
+
+async fn member_token(app: &Router) -> String {
+    common::dev_login_token(app, "fleet_dashboard", "enlisted").await
+}
+
+/// Register an active server with no runtime session and no status row.
+async fn silent_server(pool: &PgPool, name: &str) -> Uuid {
+    sqlx::query_scalar(
+        "INSERT INTO servers (name, ip, port, is_active) VALUES ($1, '127.0.0.1', 2001, true) RETURNING id",
+    )
+    .bind(name)
+    .fetch_one(pool)
+    .await
+    .expect("the insert into servers returns its row")
+}
+
+/// An online server with a status row, deactivated when `active` is false.
+async fn reporting_server(
+    app: &Router,
+    pool: &PgPool,
+    name: &str,
+    players: i64,
+    backlog: i64,
+    active: bool,
+) -> Uuid {
+    let server = ReportingServer::open(app, pool, name).await;
+    let (status, body) = heartbeat(
+        app,
+        &server.session,
+        1,
+        json!({
+            "is_online": true, "player_count": players, "max_players": 40,
+            "telemetry_queue": { "backlog": backlog, "capacity": 512, "dropped_total": 1, "oldest_age_seconds": 5 },
+        }),
+    )
+    .await;
+    assert!(status.is_success(), "{status} {body}");
+    if !active {
+        sqlx::query("UPDATE servers SET is_active = false WHERE id = $1")
+            .bind(server.server_id)
+            .execute(pool)
+            .await
+            .expect("the update of servers succeeds");
+    }
+    server.server_id
+}
+
+async fn dashboard_fleet(app: &Router, bearer: &str) -> Value {
+    let (status, body) = call(app, "GET", "/api/v1/dashboard", Some(bearer), None, None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    body["fleet"].clone()
+}
+
+fn listed(fleet: &Value) -> Vec<(Uuid, String)> {
+    fleet["servers"]
+        .as_array()
+        .expect("fleet servers")
+        .iter()
+        .map(|entry| {
+            (
+                entry["server_id"]
+                    .as_str()
+                    .expect("the `server_id` field is a string")
+                    .parse()
+                    .expect("the `server_id` field parses as an id"),
+                entry["name"]
+                    .as_str()
+                    .expect("the `name` field is a string")
+                    .to_owned(),
+            )
+        })
+        .collect()
+}
+
+async fn active_servers(pool: &PgPool) -> Vec<(Uuid, String)> {
+    sqlx::query_as("SELECT id, name FROM servers WHERE is_active ORDER BY name, id")
+        .fetch_all(pool)
+        .await
+        .expect("the read of servers runs")
+}
+
+/// The fleet totals recomputed from the rows: a server without a status row counts offline.
+async fn stored_totals(pool: &PgPool) -> Value {
+    let row: (i64, i64, i64, i64, i64, i64) = sqlx::query_as(
+        "SELECT count(*)::int8,
+                count(*) FILTER (WHERE s.is_online)::int8,
+                COALESCE(sum(s.player_count) FILTER (WHERE s.is_online), 0)::int8,
+                COALESCE(sum(s.max_players) FILTER (WHERE s.is_online), 0)::int8,
+                COALESCE(sum(s.telemetry_queue_backlog), 0)::int8,
+                COALESCE(sum(s.telemetry_queue_dropped_total), 0)::int8
+         FROM servers LEFT JOIN server_statuses s ON s.server_id = servers.id
+         WHERE servers.is_active",
+    )
+    .fetch_one(pool)
+    .await
+    .expect("the read of servers returns a row");
+    json!({
+        "configured": row.0, "online": row.1, "players": row.2, "max_players": row.3,
+        "telemetry_backlog": row.4, "telemetry_dropped_total": row.5,
+    })
+}
+
+#[tokio::test]
+async fn fleet_dashboard_lists_every_active_server_ordered_by_name() {
+    let _fleet = FLEET.lock().await;
+    let (app, pool, _state) = boot_isolated_with_state("fleet_dashboard").await;
+    let admin = admin_token(&app).await;
+    let stem = unique("fleet-order");
+    let charlie = reporting_server(&app, &pool, &format!("{stem}-c"), 2, 0, true).await;
+    let alpha = silent_server(&pool, &format!("{stem}-a")).await;
+    let bravo = reporting_server(&app, &pool, &format!("{stem}-b"), 4, 3, true).await;
+    let twin_one = silent_server(&pool, &format!("{stem}-d")).await;
+    let twin_two = silent_server(&pool, &format!("{stem}-d")).await;
+
+    let fleet = dashboard_fleet(&app, &admin).await;
+    let served = listed(&fleet);
+    assert_eq!(
+        served,
+        active_servers(&pool).await,
+        "every active server, by name then id"
+    );
+    let mine: Vec<Uuid> = served
+        .iter()
+        .map(|entry| entry.0)
+        .filter(|id| [alpha, bravo, charlie, twin_one, twin_two].contains(id))
+        .collect();
+    let mut twins = [twin_one, twin_two];
+    twins.sort();
+    assert_eq!(mine, [alpha, bravo, charlie, twins[0], twins[1]]);
+    assert_eq!(fleet["totals"], stored_totals(&pool).await);
+    assert!(fleet.get("server_status").is_none());
+}
+
+#[tokio::test]
+async fn fleet_dashboard_inactive_status_read_and_stream_are_for_administrators_only() {
+    let _fleet = FLEET.lock().await;
+    let (app, pool, _state) = boot_isolated_with_state("fleet_dashboard").await;
+    let (admin, member) = (admin_token(&app).await, member_token(&app).await);
+    let active = reporting_server(&app, &pool, &unique("fleet-read-active"), 3, 0, true).await;
+    let inactive = reporting_server(&app, &pool, &unique("fleet-read-inactive"), 3, 0, false).await;
+
+    let read = |server: Uuid, bearer: String| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "GET",
+                &format!("/api/v1/servers/{server}/status"),
+                Some(&bearer),
+                None,
+                None,
+            )
+            .await
+        }
+    };
+    let stream = |server: Uuid| format!("/api/v1/servers/{server}/status/stream");
+
+    let (status, body) = read(inactive, member.clone()).await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
+    let (status, _) = first_stream_status(&app, &stream(inactive), &member).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+
+    let (status, body) = read(inactive, admin.clone()).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(
+        (body["id"].clone(), body["is_active"].clone()),
+        (json!(inactive), json!(false))
+    );
+    assert_eq!(body["status"]["player_count"], 3);
+    let (status, frame) = first_stream_status(&app, &stream(inactive), &admin).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        frame.expect("the stream opens with the status")["server_id"],
+        json!(inactive)
+    );
+
+    let (status, body) = read(active, member.clone()).await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "an active server is readable by a member: {body}"
+    );
+    let (status, frame) = first_stream_status(&app, &stream(active), &member).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(frame.expect("status frame")["server_id"], json!(active));
+    let stored: bool = sqlx::query_scalar("SELECT is_active FROM servers WHERE id = $1")
+        .bind(inactive)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert!(!stored);
+}

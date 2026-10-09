@@ -189,7 +189,7 @@ The crate declares no Cargo feature.
   domain crates depend on one another only along the domain graph, no crate imports another
   domain's handlers, every domain's one route table is merged by `src/router.rs`, and only
   `src/bin/api_server.rs` names `api_background_workers`; an applied migration never
-  changes (`tests/migrations_are_immutable.rs`); neither the application nor any API crate
+  changes (`tests/http_infrastructure/migrations_are_immutable.rs`); neither the application nor any API crate
   depends on a GPU crate (the eight crates the wgpu firewall admits) or on an application
   package such as `frontend_application` (`cargo xtask verify crate-tiers`); the
   crate builds with the workspace root's `rust-toolchain.toml` and `rustfmt.toml`; the local

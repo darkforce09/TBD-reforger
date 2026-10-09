@@ -3,9 +3,9 @@
 //!
 //! **Role:** [`route_sweep`] names every swept GET route with its registered template, a concrete
 //! URI over the [`Seed`] rows and the caller that authenticates it.
-//! **Position:** read by `tests/null_tolerance_reads.rs`, which drives each entry through the
-//! router after [`super::database_fixtures::blast_nulls`] and compares the templates with the API
-//! route tables; the fire-mission and the per-row entries come from the sibling modules.
+//! **Position:** read by `tests/http_infrastructure/null_tolerance_reads.rs`, which drives each
+//! entry through the router after [`super::database_fixtures::blast_nulls`] and compares the
+//! templates with the API route tables; the fire-mission and the per-row entries come from the sibling modules.
 //! **Signals & state:** none; pure functions.
 //! **Invariants:** every template is spelled as the API route tables register it, so the coverage
 //! check matches each swept route to exactly one registration.

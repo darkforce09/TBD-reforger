@@ -303,16 +303,3 @@ pub(crate) async fn event_runtime(f: &Fixture) -> (Uuid, String, Uuid) {
     let (live, _) = running_session(f, &secret, &deployed).await;
     (server, secret, live)
 }
-
-/// The artifact the server's recorded deployment runs, as [`seed_deployment`] answered it.
-pub(crate) async fn deployed_artifact(f: &Fixture, server: Uuid) -> (Uuid, String) {
-    sqlx::query_as(
-        "SELECT d.artifact_id, a.document_sha256 FROM mission_deployments d
-         JOIN mission_artifacts a ON a.id = d.artifact_id
-         WHERE d.server_id = $1 ORDER BY d.requested_at DESC LIMIT 1",
-    )
-    .bind(server)
-    .fetch_one(f.pool())
-    .await
-    .expect("the read of mission_deployments returns a row")
-}

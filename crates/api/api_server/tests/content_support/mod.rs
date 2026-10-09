@@ -27,8 +27,6 @@ use uuid::Uuid;
 
 use crate::{common, contract_support};
 
-/// The JSON request body limit of every content route except the upload (1 MiB).
-pub(crate) const JSON_BODY_LIMIT: usize = 1 << 20;
 /// The contract every content refusal is checked against.
 const CONTENT_CONTRACT: &str = "content-upload.schema.json";
 
@@ -56,7 +54,18 @@ impl ContentSuite {
     pub(crate) async fn new(suite: &str) -> Self {
         let scratch = fresh_scratch_dir(suite);
         let upload_dir = scratch.join("uploads");
-        Self::boot(suite, scratch, upload_dir).await
+        let url = common::require_test_database_url().expect("content suites require PostgreSQL");
+        Self::boot(suite, scratch, upload_dir, url).await
+    }
+
+    /// [`ContentSuite::new`] over the binary's isolated database for `scope`
+    /// ([`common::require_isolated_test_database_url`]), for a case that stores a row the whole
+    /// database admits once, such as the committed vanilla ballistics catalog version.
+    pub(crate) async fn isolated(suite: &str, scope: &str) -> Self {
+        let scratch = fresh_scratch_dir(suite);
+        let upload_dir = scratch.join("uploads");
+        let url = common::require_isolated_test_database_url(scope);
+        Self::boot(suite, scratch, upload_dir, url).await
     }
 
     /// A router whose upload directory names a regular file, so every upload write fails.
@@ -64,11 +73,11 @@ impl ContentSuite {
         let scratch = fresh_scratch_dir(suite);
         let upload_dir = scratch.join("uploads-is-a-regular-file");
         std::fs::write(&upload_dir, b"not a directory").expect("the scratch file writes");
-        Self::boot(suite, scratch, upload_dir).await
+        let url = common::require_test_database_url().expect("content suites require PostgreSQL");
+        Self::boot(suite, scratch, upload_dir, url).await
     }
 
-    async fn boot(suite: &str, scratch: PathBuf, upload_dir: PathBuf) -> Self {
-        let url = common::require_test_database_url().expect("content suites require PostgreSQL");
+    async fn boot(suite: &str, scratch: PathBuf, upload_dir: PathBuf, url: String) -> Self {
         let pool = api_database::connect(&url)
             .await
             .expect("the test database accepts a connection");
@@ -380,59 +389,4 @@ pub(crate) fn vehicle_body(tag: &str) -> Value {
         "primary_threat": "ATGM",
         "profile_image_url": "https://example.com/leopard.png",
     })
-}
-
-/// A JSON body of `len` bytes or more: `value` with a `padding` string that fills it.
-pub(crate) fn oversized_json(mut value: Value, len: usize) -> Vec<u8> {
-    value["padding"] = json!("a".repeat(len));
-    value.to_string().into_bytes()
-}
-
-/// A uniquely named trigger that raises on `operation` of `table` for rows whose `column` equals
-/// `value`, injecting a real storage failure into one actor's or one row's transaction only.
-pub(crate) async fn inject_failure(
-    pool: &PgPool,
-    table: &str,
-    operation: &str,
-    column: &str,
-    value: &str,
-) -> String {
-    let name = format!("content_failure_{}", Uuid::new_v4().simple());
-    assert!(
-        matches!(
-            (table, column),
-            ("audit_logs", "actor_id")
-                | ("vehicle_databases", "id")
-                | ("vehicle_databases", "created_by")
-        ),
-        "no failure injection is defined for {table}.{column}"
-    );
-    assert!(matches!(operation, "INSERT" | "UPDATE"));
-    assert!(
-        value
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'),
-        "the injected value is interpolated into SQL and must stay a bare token: {value}"
-    );
-    let sql = format!(
-        "CREATE FUNCTION {name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-            IF NEW.{column}::text = '{value}' THEN RAISE EXCEPTION 'injected content failure'; END IF;
-            RETURN NEW; END; $$;
-         CREATE TRIGGER {name} BEFORE {operation} ON {table} FOR EACH ROW EXECUTE FUNCTION {name}();"
-    );
-    sqlx::raw_sql(sqlx::AssertSqlSafe(sql.as_str()))
-        .execute(pool)
-        .await
-        .expect("the failure-injection SQL installs");
-    name
-}
-
-/// Drops a trigger [`inject_failure`] installed on `table`.
-pub(crate) async fn clear_failure(pool: &PgPool, name: &str, table: &str) {
-    sqlx::raw_sql(sqlx::AssertSqlSafe(format!(
-        "DROP TRIGGER {name} ON {table}; DROP FUNCTION {name}();"
-    )))
-    .execute(pool)
-    .await
-    .expect("the `DROP TRIGGER` statement succeeds");
 }

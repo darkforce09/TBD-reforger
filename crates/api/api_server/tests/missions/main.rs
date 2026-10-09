@@ -11,7 +11,15 @@ mod common;
 mod mission_artifact_support;
 #[path = "../missions_support/mod.rs"]
 mod missions_support;
+#[path = "../telemetry_support/mod.rs"]
+mod telemetry_support;
 
+mod mission_archive_lifecycle;
 mod mission_authored_preservation;
+mod mission_deployment_transitions;
+mod mission_detachment_lifecycle;
+mod mission_review_binding;
 mod missions_approvals_and_authorization;
 mod missions_compiled_document;
+mod missions_library_paging_and_overrides;
+mod missions_versions_and_metadata;

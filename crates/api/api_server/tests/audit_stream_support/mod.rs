@@ -1,14 +1,14 @@
 //! Live audit stream harness for the audit replay suite.
 //!
-//! **Role:** boots the real router over this binary's private database, opens
+//! **Role:** boots the real router over the binary's isolated `audit_stream` database, opens
 //! `GET /api/v1/admin/audit-logs/stream` with an optional `Last-Event-ID`, parses its SSE body with
 //! bounded waits, drives `audit_delivery_stream` directly, and plants and inspects audit rows,
 //! publications and the retained floor.
-//! **Position:** compiled into `tests/audit_replay.rs` (`mod audit_stream_support;`); it adds no
-//! test binary. It reaches the database through
+//! **Position:** mounted by `tests/http_infrastructure/main.rs` for its `audit_replay` module; it
+//! adds no test binary. It reaches the database through
 //! `tests/common` and the API through `api_server::router::router`.
-//! **Signals & state:** [`SUITE_LOCK`] serialises the cases of one binary, which share one
-//! database, one publication sequence and one retained floor; each [`SseReader`] owns one response
+//! **Signals & state:** [`SUITE_LOCK`] serialises the cases, which share one isolated database
+//! (a case renames the audit table), one publication sequence and one retained floor; each [`SseReader`] owns one response
 //! body and the bytes of its unfinished event.
 //! **Invariants:** every wait is bounded and names what it waited for; a stream that ends or fails
 //! while a case waits on it fails the case; the publication table, read after the fact, is the
@@ -18,19 +18,17 @@
 
 use std::time::{Duration, Instant};
 
-use api_administration::services::audit_delivery::AuditStreamItem;
-use api_administration::services::audit_notifier::{AuditNotify, AuditSignal};
+use api_administration::services::audit_notifier::AuditNotify;
 use api_administration::services::audit_publication::publish_audit_batch;
 use api_configuration::configuration::Config;
 use api_server::router::router;
-use api_state::AppState;
 use axum::Router;
 use axum::body::{Body, BodyDataStream, to_bytes};
 use axum::http::{HeaderValue, Request, StatusCode, header};
-use futures::{Stream, StreamExt};
+use futures::StreamExt;
 use serde_json::Value;
 use sqlx::{Executor, PgPool, Postgres};
-use tokio::sync::{Mutex, MutexGuard, broadcast, mpsc};
+use tokio::sync::{Mutex, MutexGuard};
 use tokio::time::timeout;
 use tower::ServiceExt;
 use uuid::Uuid;
@@ -42,9 +40,6 @@ pub(crate) const AUDIT_SCHEMA: &str = "audit-log.schema.json";
 
 /// The audit table's own name.
 pub(crate) const AUDIT_TABLE: &str = "audit_logs";
-
-/// The name the audit table carries while a case withholds it from the replay read.
-pub(crate) const WITHHELD_AUDIT_TABLE: &str = "audit_logs_withheld";
 
 /// Serialises the cases of one test binary: they share the publication sequence and the floor.
 static SUITE_LOCK: Mutex<()> = Mutex::const_new(());
@@ -61,18 +56,16 @@ pub(crate) fn case_tag(case: &str) -> String {
 
 /// The router, its pool and listener, and an administrator's access token.
 pub(crate) struct AuditHarness {
-    pub state: AppState,
     pub app: Router,
     pub pool: PgPool,
-    pub notify: AuditNotify,
     pub admin_token: String,
 }
 
 impl AuditHarness {
-    /// Boots the router over this binary's database and waits until the audit listener is up.
+    /// Boots the router over the binary's isolated `audit_stream` database and waits until the
+    /// audit listener is up.
     pub(crate) async fn boot(suite: &str) -> Self {
-        let url = common::require_test_database_url()
-            .expect("the audit stream suites require their PostgreSQL database");
+        let url = common::require_isolated_test_database_url("audit_stream");
         let pool = api_database::connect(&url)
             .await
             .expect("connect test database");
@@ -89,10 +82,8 @@ impl AuditHarness {
         let notify = AuditNotify::for_pool(&pool);
         wait_listening(&notify).await;
         Self {
-            state,
             app,
             pool,
-            notify,
             admin_token,
         }
     }
@@ -272,13 +263,6 @@ impl SseReader {
         }
         rows
     }
-
-    /// Asserts no event arrives within `bound`.
-    pub(crate) async fn expect_quiet(&mut self, bound: Duration, why: &str) {
-        if let Some(event) = self.next_event(bound).await {
-            panic!("expected no event within {bound:?} ({why}), got {event:?}");
-        }
-    }
 }
 
 /// One `\n\n`-terminated SSE block as an event, or `None` for a comment-only block.
@@ -308,36 +292,6 @@ fn parse_block(block: &str) -> Option<SseEvent> {
     })
 }
 
-/// Drives a delivery stream on its own task, the way a connected client keeps polling, and
-/// forwards every item; the task ends when the receiver is dropped.
-pub(crate) fn drive<S>(items: S) -> mpsc::UnboundedReceiver<AuditStreamItem>
-where
-    S: Stream<Item = AuditStreamItem> + Send + 'static,
-{
-    let (sender, receiver) = mpsc::unbounded_channel();
-    tokio::spawn(async move {
-        let mut items = Box::pin(items);
-        while let Some(item) = items.next().await {
-            if sender.send(item).is_err() {
-                return;
-            }
-        }
-    });
-    receiver
-}
-
-/// The next forwarded item within `bound`, or `None`; a stream that ended fails the case.
-pub(crate) async fn next_item(
-    items: &mut mpsc::UnboundedReceiver<AuditStreamItem>,
-    bound: Duration,
-) -> Option<AuditStreamItem> {
-    match timeout(bound, items.recv()).await {
-        Err(_) => None,
-        Ok(None) => panic!("the delivery stream ended"),
-        Ok(Some(item)) => Some(item),
-    }
-}
-
 /// Bounded wait for the listener to be up.
 pub(crate) async fn wait_listening(notify: &AuditNotify) {
     let bound = Duration::from_secs(10);
@@ -349,27 +303,6 @@ pub(crate) async fn wait_listening(notify: &AuditNotify) {
     timeout(bound, settle)
         .await
         .unwrap_or_else(|_| panic!("audit listener not up within {bound:?}"));
-}
-
-/// Bounded wait for `wanted` on `receiver`, skipping every other signal and any lag.
-pub(crate) async fn wait_signal(
-    receiver: &mut broadcast::Receiver<AuditSignal>,
-    wanted: AuditSignal,
-    bound: Duration,
-    why: &str,
-) {
-    let deadline = Instant::now() + bound;
-    loop {
-        let left = deadline.saturating_duration_since(Instant::now());
-        match timeout(left, receiver.recv()).await {
-            Ok(Ok(signal)) if signal == wanted => return,
-            Ok(Ok(_)) | Ok(Err(broadcast::error::RecvError::Lagged(_))) => continue,
-            Ok(Err(broadcast::error::RecvError::Closed)) => {
-                panic!("signal channel closed while waiting for {wanted:?}: {why}")
-            }
-            Err(_) => panic!("no {wanted:?} within {bound:?}: {why}"),
-        }
-    }
 }
 
 /// Plants one audit row in `relation` (see [`AUDIT_TABLE`], [`WITHHELD_AUDIT_TABLE`]). Even
@@ -452,21 +385,6 @@ pub(crate) async fn sequence_of(pool: &PgPool, audit_id: i64) -> Option<i64> {
         .fetch_optional(pool)
         .await
         .expect("read publication sequence")
-}
-
-/// Bounded wait until something publishes `audit_id`; answers its sequence.
-pub(crate) async fn wait_published(pool: &PgPool, audit_id: i64, bound: Duration) -> i64 {
-    let deadline = Instant::now() + bound;
-    loop {
-        if let Some(sequence) = sequence_of(pool, audit_id).await {
-            return sequence;
-        }
-        assert!(
-            Instant::now() < deadline,
-            "audit row {audit_id} not published within {bound:?}"
-        );
-        tokio::time::sleep(Duration::from_millis(20)).await;
-    }
 }
 
 /// `(tail, retained floor)`: `last_sequence` and `retained_after_sequence`.

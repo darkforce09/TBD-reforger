@@ -55,9 +55,6 @@ pub(crate) static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
 /// Namespaced to a range these suites own outright — verified unused across the whole
 /// repository (the sibling suites, `src/` and `seeds/`) before it was picked.
 pub(crate) const OTHER: &str = "000000000000334002";
-/// A third seeded identity — the one that must stay on the waitlist while someone else moves
-/// between seats. Same private range as [`OTHER`].
-pub(crate) const THIRD: &str = "000000000000334003";
 /// The identity `dev-login` mints for every role
 /// (`api_identity_and_access::handlers::developer_login::DEV_USER_ID`).
 ///

@@ -23,8 +23,6 @@ mod game_server_reports;
 
 pub(crate) use game_server_reports::ReportingGameServer;
 
-pub(crate) const PARTNER_ROLE: &str = "partner-role-rifleman";
-
 /// Serializes the tests of one suite that request or drain event reservation re-evaluations. The
 /// queue is global to the database, so one test's drain would otherwise lease and re-evaluate
 /// another test's event while that test observes it.

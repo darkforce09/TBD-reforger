@@ -1,0 +1,365 @@
+//! Dashboard / leaderboards / deployments / LOA / audit reads. Skips without
+//! `TEST_DATABASE_URL`. SSE endpoints are excluded (they never complete under oneshot).
+//!
+//! **Caller identity owns the seeded rows.** Authenticating via `dev-login` (`…001`) while the
+//! assertions that matter for the dashboard 500 class depend on `WHERE assigned_to = $me` /
+//! `WHERE discord_id = $me` branches that never see a matching row makes `GET /dashboard` 200
+//! vacuous — the same defect `null_tolerance` measures. This file mints a private session for
+//! [`DASH_UID`] and seeds every caller-scoped row against that same id.
+
+use crate::common;
+
+use api_configuration::configuration::Config;
+
+use api_server::router::router;
+use axum::Router;
+use axum::body::{Body, to_bytes};
+use axum::http::{Request, StatusCode, header};
+use chrono::Utc;
+use serde_json::Value;
+use sqlx::PgPool;
+use tower::ServiceExt;
+use uuid::Uuid;
+
+/// Private snowflake for this suite — never the shared `dev-login` id (`…001`).
+const DASH_UID: &str = "000000000000000341";
+
+/// Tag prefix for events this suite inserts. Soft-delete is scoped to this prefix only —
+/// never a blanket `DELETE FROM events`, which would destroy sibling suites' rows.
+const EVENT_TAG: &str = "Dashboard-Reads-";
+
+/// Boot the router and mint a real admin session for [`DASH_UID`].
+///
+/// Mints through `POST /auth/refresh` rather than `dev-login` on purpose:
+/// `dev-login` always issues `…001`, a shared id on the integration DB. Seeding
+/// caller-scoped rows against a different id than the bearer token is exactly how a
+/// `/dashboard` 200 passes without ever executing the assignment branch.
+async fn setup() -> Option<(Router, String, PgPool)> {
+    let url = common::require_test_database_url()?;
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, role, is_banned, created_at, updated_at) \
+         VALUES ($1, 'Dashboard Reads', 'admin', false, now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET role = 'admin', is_banned = false",
+    )
+    .bind(DASH_UID)
+    .execute(&pool)
+    .await
+    .expect("seed suite user");
+
+    // Retire prior runs of this suite's fixtures.
+    let like = format!("{EVENT_TAG}%");
+    let _ = sqlx::query(
+        "UPDATE events SET deleted_at = now(), updated_at = now() \
+         WHERE deleted_at IS NULL AND name_override LIKE $1",
+    )
+    .bind(&like)
+    .execute(&pool)
+    .await;
+    for sql in [
+        "DELETE FROM leave_requests WHERE discord_id = $1",
+        "WITH removed_participation AS (DELETE FROM event_registration_participation WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)), removed_history AS (DELETE FROM event_registration_history WHERE registration_id IN (SELECT id FROM event_registrations WHERE discord_id = $1)) DELETE FROM event_registrations WHERE discord_id = $1",
+        "DELETE FROM orbat_slots WHERE assigned_to = $1",
+        "DELETE FROM event_missions WHERE event_id IN (SELECT id FROM events WHERE created_by = $1)",
+        "DELETE FROM events WHERE created_by = $1",
+        "DELETE FROM missions WHERE author_id = $1",
+        "DELETE FROM refresh_tokens WHERE discord_id = $1",
+    ] {
+        sqlx::query(sql)
+            .bind(DASH_UID)
+            .execute(&pool)
+            .await
+            .unwrap_or_else(|e| panic!("cleanup `{sql}`: {e}"));
+    }
+
+    common::fixtures::seed_membership(&pool, DASH_UID, "test-tbd-guild", "admin").await;
+    let raw = api_identity_and_access::services::session_issuance::issue_refresh(
+        &pool,
+        &api_identifiers::DiscordUserId::new(DASH_UID),
+    )
+    .await
+    .expect("seed persisted session");
+
+    let app = router(api_server::composition::application_state(
+        pool.clone(),
+        Config::for_tests(url, "dash-secret"),
+    ));
+    let resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/auth/refresh")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(format!(r#"{{"refresh_token":"{raw}"}}"#)))
+                .expect("the request builds"),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status(), StatusCode::OK, "mint session for {DASH_UID}");
+    let body: Value = serde_json::from_slice(
+        &to_bytes(resp.into_body(), usize::MAX)
+            .await
+            .expect("the response body reads to the end"),
+    )
+    .expect("the body decodes as JSON");
+    let access = body["access_token"]
+        .as_str()
+        .expect("access_token")
+        .to_string();
+    Some((app, access, pool))
+}
+
+async fn call(
+    app: &Router,
+    method: &str,
+    uri: &str,
+    tok: &str,
+    body: Option<&str>,
+) -> (StatusCode, Value) {
+    let mut b = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(header::AUTHORIZATION, format!("Bearer {tok}"));
+    if body.is_some() {
+        b = b.header(header::CONTENT_TYPE, "application/json");
+    }
+    let req = b
+        .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
+        .expect("the request builds");
+    let resp = app.clone().oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .expect("the response body reads to the end");
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
+}
+
+/// Seed an upcoming event + mission + ORBAT assignment + registration owned by [`DASH_UID`].
+///
+/// Returns `(event_id, event_name, event_mission_id)` so assertions can pin identity, not mere
+/// key presence.
+async fn seed_owned_upcoming(pool: &PgPool) -> (String, String, Uuid) {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("the system clock is after the Unix epoch")
+        .as_nanos();
+    let name = format!("{EVENT_TAG}{stamp}");
+    let start: chrono::DateTime<Utc> = sqlx::query_scalar(
+        "SELECT CASE \
+           WHEN m IS NULL THEN now() + interval '2 hours' \
+           WHEN m - interval '1 hour' > now() THEN m - interval '1 hour' \
+           ELSE now() + interval '30 seconds' \
+         END \
+         FROM ( \
+           SELECT min(start_time) AS m FROM events \
+           WHERE created_by = $1 AND deleted_at IS NULL AND start_time > now() \
+             AND status::text IN ('scheduled', 'open', 'live') \
+         ) t",
+    )
+    .bind(DASH_UID)
+    .fetch_one(pool)
+    .await
+    .expect("compute next_event fixture start_time");
+
+    let mission_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO missions (title, author_id, terrain, game_mode, weather, time_of_day, \
+         max_players, status, created_at, updated_at) \
+         VALUES ($1, $2, 'everon', 'pve_coop', 'clear', '14:00', 16, 'live', now(), now()) \
+         RETURNING id",
+    )
+    .bind(format!("Dashboard mission {stamp}"))
+    .bind(DASH_UID)
+    .fetch_one(pool)
+    .await
+    .expect("seed mission");
+
+    let event_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO events (name_override, start_time, status, max_slots, created_by, \
+         created_at, updated_at) \
+         VALUES ($1, $2, 'scheduled', 16, $3, now(), now()) RETURNING id",
+    )
+    .bind(&name)
+    .bind(start)
+    .bind(DASH_UID)
+    .fetch_one(pool)
+    .await
+    .expect("seed event");
+
+    let em_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
+         VALUES ($1, $2, $3, now(), now()) RETURNING id",
+    )
+    .bind(event_id)
+    .bind(mission_id)
+    .bind(start)
+    .fetch_one(pool)
+    .await
+    .expect("seed event_mission");
+
+    // Assignment branch: `WHERE orbat_slots.assigned_to = $me` must match the bearer.
+    let slot_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO orbat_slots (event_mission_id, faction, squad, callsign, role, loadout, \
+         tag, slot_index, assigned_to, assigned_at) \
+         VALUES ($1, 'USA', 'Alpha', 'HAVOC', 'SL', 'L85A3', 'CMD', 0, $2, now()) RETURNING id",
+    )
+    .bind(em_id)
+    .bind(DASH_UID)
+    .fetch_one(pool)
+    .await
+    .expect("seed orbat_slot");
+
+    // Deployments upcoming branch: `WHERE event_registrations.discord_id = $me`.
+    let mut fixture = (pool).begin().await.expect("a transaction begins");
+    let allocation = common::participant_allocation(&mut fixture, em_id, DASH_UID).await;
+    sqlx::query(
+        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, reservation_state, \
+         registered_at, allocation_id) VALUES ($1, $2, $3, 'registered', now(), $4)",
+    )
+    .bind(em_id)
+    .bind(DASH_UID)
+    .bind(slot_id)
+    .bind(allocation)
+    .execute(&mut *fixture)
+    .await
+    .expect("seed event_registration");
+    fixture.commit().await.expect("the transaction commits");
+
+    (event_id.to_string(), name, em_id)
+}
+
+#[tokio::test]
+async fn dashboard_leaderboards_deployments_loa_audit() {
+    let Some((app, tok, pool)) = setup().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+
+    let (eid, name, _em_id) = seed_owned_upcoming(&pool).await;
+
+    // Dashboard — null-safe aggregate + real next_event + real my_assignment.
+    let (st, body) = call(&app, "GET", "/api/v1/dashboard", &tok, None).await;
+    assert_eq!(st, StatusCode::OK, "dashboard: {body}");
+    assert!(body["recent_announcements"].is_array());
+    let next = body.get("next_event").cloned().unwrap_or(Value::Null);
+    assert!(
+        next.is_object(),
+        "next_event must be the seeded upcoming op, got {next}"
+    );
+    assert_eq!(next["event_id"], eid.as_str(), "next_event: {next}");
+    assert_eq!(next["name"], name.as_str(), "next_event: {next}");
+    assert_eq!(next["status"], "scheduled", "next_event: {next}");
+    assert_eq!(next["max_slots"], 16, "next_event: {next}");
+    assert!(
+        next["start_time"]
+            .as_str()
+            .is_some_and(|s| s.ends_with('Z')),
+        "next_event.start_time must be RFC3339 Z: {next}"
+    );
+    assert!(next["registered"].is_number(), "next_event: {next}");
+    assert!(next["terrain"].is_string(), "next_event: {next}");
+
+    // Reachability pin: authenticating as DASH_UID while rows are owned by DASH_UID makes
+    // `WHERE assigned_to = $me` fire; a mismatched bearer leaves it empty under a vacuous 200.
+    let assignment = body.get("my_assignment").cloned().unwrap_or(Value::Null);
+    assert!(
+        assignment.is_object(),
+        "my_assignment must be the seeded ORBAT seat owned by the bearer, got {assignment}"
+    );
+    assert_eq!(
+        assignment["event_id"],
+        eid.as_str(),
+        "my_assignment: {assignment}"
+    );
+    assert_eq!(assignment["faction"], "USA", "my_assignment: {assignment}");
+    assert_eq!(assignment["squad"], "Alpha", "my_assignment: {assignment}");
+    assert_eq!(assignment["role"], "SL", "my_assignment: {assignment}");
+
+    // Leaderboards — envelope + bad category.
+    let (st, body) = call(&app, "GET", "/api/v1/leaderboards", &tok, None).await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["category"], "kd");
+    assert!(body["data"].is_array());
+    let (st, _) = call(
+        &app,
+        "GET",
+        "/api/v1/leaderboards?category=bogus",
+        &tok,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST);
+
+    // User stats — zeroed for a user with no telemetry.
+    let (st, body) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/users/{DASH_UID}/stats"),
+        &tok,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["stats"]["discord_id"], DASH_UID);
+    assert!(body["attendance_rate"].is_number());
+
+    // My deployments — upcoming must include the seeded registration (exercises the explicit
+    // event_registrations column list; a bare-* decode failure would 500 here once a future
+    // nullable non-Option column lands).
+    let (st, body) = call(&app, "GET", "/api/v1/me/deployments", &tok, None).await;
+    assert_eq!(st, StatusCode::OK, "deployments: {body}");
+    let upcoming = body["upcoming"].as_array().expect("upcoming array");
+    assert!(
+        upcoming.iter().any(|u| u["event_id"] == eid.as_str()),
+        "upcoming must contain the seeded registration for {eid}, got {upcoming:?}"
+    );
+    assert!(body["service_history"].is_array());
+
+    // LOA submit → list → admin review.
+    let loa = r#"{"starts_on":"2026-08-01","ends_on":"2026-08-05","reason":"holiday"}"#;
+    let (st, body) = call(&app, "POST", "/api/v1/me/leave-requests", &tok, Some(loa)).await;
+    assert_eq!(st, StatusCode::CREATED, "loa: {body}");
+    let loa_id = body["id"].as_str().unwrap().to_string();
+    assert_eq!(body["status"], "pending");
+    // Dates serialize as midnight-UTC timestamps (the wire spelling for a `date` column).
+    assert_eq!(body["starts_on"], "2026-08-01T00:00:00Z");
+
+    let (_, body) = call(&app, "GET", "/api/v1/me/leave-requests", &tok, None).await;
+    assert!(
+        body["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|l| l["id"] == loa_id.as_str())
+    );
+
+    let bad = r#"{"starts_on":"nope","ends_on":"2026-08-05"}"#;
+    let (st, _) = call(&app, "POST", "/api/v1/me/leave-requests", &tok, Some(bad)).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST);
+
+    let (st, body) = call(&app, "GET", "/api/v1/admin/leave-requests", &tok, None).await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(body["total"].as_i64().unwrap() >= 1);
+
+    let (st, body) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/admin/leave-requests/{loa_id}"),
+        &tok,
+        Some(r#"{"status":"approved"}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert_eq!(body["status"], "approved");
+
+    // Audit logs list (keyset envelope).
+    let (st, body) = call(&app, "GET", "/api/v1/admin/audit-logs", &tok, None).await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(body["data"].is_array());
+    assert!(body.as_object().unwrap().contains_key("next_cursor"));
+}

@@ -7,3 +7,15 @@
 
 #[path = "../common/mod.rs"]
 mod common;
+#[path = "../content_support/mod.rs"]
+mod content_support;
+#[path = "../contract_support/mod.rs"]
+mod contract_support;
+#[path = "../wiki_support/mod.rs"]
+mod wiki_support;
+
+mod cms_announcement_body;
+mod content_storage;
+mod factions;
+mod vehicle_mutations;
+mod wiki_features;

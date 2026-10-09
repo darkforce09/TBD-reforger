@@ -26,8 +26,6 @@ use crate::{common, contract_support};
 pub(crate) const WIKI_CONTRACT: &str = "wiki-page.schema.json";
 /// The contract of the content routes' error envelope.
 const CONTENT_CONTRACT: &str = "content-upload.schema.json";
-/// The largest `body_md` a save accepts, in bytes.
-pub(crate) const MAX_BODY_BYTES: usize = 262_144;
 
 /// A signed-in caller: the Discord id the API stamps and the bearer token it presents.
 pub(crate) struct Actor {
@@ -276,11 +274,6 @@ pub(crate) fn save_body(title: &str, body_md: &str, base_revision: Option<i64>) 
     })
 }
 
-/// `lines` joined by `\n`, so a body's line numbers read straight off the slice (index + 1).
-pub(crate) fn markdown(lines: &[&str]) -> String {
-    lines.join("\n")
-}
-
 /// Asserts a refusal: its status, the `{error, details?}` envelope of the content contract, a
 /// wiki refusal's `details` against `WikiSaveRefusal`, and no `details.code` other than `code`.
 pub(crate) fn assert_refusal(
@@ -295,126 +288,4 @@ pub(crate) fn assert_refusal(
     if code.is_some_and(|code| code.starts_with("wiki_")) {
         contract_support::assert_valid(WIKI_CONTRACT, Some("WikiSaveRefusal"), &body["details"]);
     }
-}
-
-/// The `(line, code)` of every finding of a `422 wiki_markup_refused`, in answer order, after
-/// checking each finding explains itself.
-pub(crate) fn findings(body: &Value) -> Vec<(i64, String)> {
-    body["details"]["findings"]
-        .as_array()
-        .unwrap_or_else(|| panic!("no findings: {body}"))
-        .iter()
-        .map(|finding| {
-            assert!(
-                finding["detail"].as_str().is_some_and(|d| !d.is_empty()),
-                "{finding}"
-            );
-            (
-                finding["line"]
-                    .as_i64()
-                    .expect("the `line` field is an integer"),
-                finding["code"]
-                    .as_str()
-                    .expect("the `code` field is a string")
-                    .to_owned(),
-            )
-        })
-        .collect()
-}
-
-/// Every object of `value`, depth first, in document order.
-pub(crate) fn objects(value: &Value) -> Vec<&Value> {
-    let mut found = Vec::new();
-    let mut pending = vec![value];
-    while let Some(current) = pending.pop() {
-        match current {
-            Value::Array(items) => pending.extend(items.iter().rev()),
-            Value::Object(fields) => {
-                found.push(current);
-                pending.extend(fields.values().rev());
-            }
-            _ => {}
-        }
-    }
-    found
-}
-
-/// The inline `text{text}`.
-pub(crate) fn text(text: &str) -> Value {
-    json!({ "type": "text", "text": text })
-}
-
-/// A paragraph holding one text run.
-pub(crate) fn paragraph(run: &str) -> Value {
-    json!({ "type": "paragraph", "inlines": [text(run)] })
-}
-
-/// A heading whose inlines are `inlines`.
-pub(crate) fn heading(level: u8, anchor: &str, inlines: Value) -> Value {
-    json!({ "type": "heading", "level": level, "anchor": anchor, "inlines": inlines })
-}
-
-/// A callout of `kind` holding one paragraph of one text run.
-pub(crate) fn callout(kind: &str, run: &str) -> Value {
-    json!({ "type": "callout", "kind": kind, "blocks": [paragraph(run)] })
-}
-
-/// A safe link whose children are one text run.
-pub(crate) fn link(href: &str, external: bool, label: &str) -> Value {
-    json!({ "type": "link", "href": href, "external": external, "children": [text(label)] })
-}
-
-/// `inner` wrapped in `depth` nested quotes.
-pub(crate) fn nested_quotes(depth: usize, inner: Value) -> Value {
-    (0..depth).fold(
-        inner,
-        |block, _| json!({ "type": "quote", "blocks": [block] }),
-    )
-}
-
-/// A uniquely named trigger that raises on `operation` of `table` for rows whose `column` equals
-/// `value`, injecting a real storage failure into one page's save only.
-pub(crate) async fn inject_failure(
-    pool: &PgPool,
-    table: &str,
-    operation: &str,
-    column: &str,
-    value: &str,
-) -> String {
-    let name = format!("wiki_failure_{}", Uuid::new_v4().simple());
-    assert!(
-        matches!(
-            (table, column),
-            ("wiki_pages", "slug") | ("wiki_page_revisions", "slug") | ("audit_logs", "target_id")
-        ),
-        "no failure injection is defined for {table}.{column}"
-    );
-    assert!(matches!(operation, "INSERT" | "UPDATE"));
-    assert!(
-        value
-            .bytes()
-            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'),
-        "the injected value is interpolated into SQL and must stay a bare slug: {value}"
-    );
-    let sql = format!(
-        "CREATE FUNCTION {name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-            IF NEW.{column}::text = '{value}' THEN RAISE EXCEPTION 'injected wiki failure'; END IF;
-            RETURN NEW; END; $$;
-         CREATE TRIGGER {name} BEFORE {operation} ON {table} FOR EACH ROW EXECUTE FUNCTION {name}();"
-    );
-    sqlx::raw_sql(sqlx::AssertSqlSafe(sql.as_str()))
-        .execute(pool)
-        .await
-        .expect("the failure-injection SQL installs");
-    name
-}
-
-/// Drops a trigger [`inject_failure`] installed on `table`.
-pub(crate) async fn clear_failure(pool: &PgPool, name: &str, table: &str) {
-    sqlx::raw_sql(sqlx::AssertSqlSafe(format!(
-        "DROP TRIGGER {name} ON {table}; DROP FUNCTION {name}();"
-    )))
-    .execute(pool)
-    .await
-    .expect("the `DROP TRIGGER` statement succeeds");
 }

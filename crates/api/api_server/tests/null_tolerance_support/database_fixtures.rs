@@ -19,7 +19,9 @@ use super::fire_mission_fixtures::seed_fire_missions;
 use super::{NULL_UID, OBSERVABILITY_TOKEN, REACHABILITY_KEEP, STATE_BOUND_KEEP, SweepCaller};
 use crate::common;
 
-/// Boot the router and mint a real admin session for [`super::NULL_UID`].
+/// Boot the router over the binary's isolated `null_tolerance` database, where NULLing every
+/// nullable column reaches no sibling module's rows, and mint a real admin session for
+/// [`super::NULL_UID`].
 ///
 /// The session is minted through `POST /auth/refresh` rather than `dev-login` on purpose:
 /// `dev-login` always mints `000000000000000001`, which is a *shared* id on the integration
@@ -28,7 +30,7 @@ use crate::common;
 /// the one it authenticates as. Inserting a `refresh_tokens` row keyed by
 /// `auth::hash_token` — the same hash the handler recomputes — gives this suite its own user.
 pub(crate) async fn boot() -> Option<(Router, PgPool, String)> {
-    let url = common::require_test_database_url()?;
+    let url = common::require_isolated_test_database_url("null_tolerance");
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");
 

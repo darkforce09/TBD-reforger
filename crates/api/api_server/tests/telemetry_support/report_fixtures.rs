@@ -3,7 +3,8 @@
 //!
 //! * [`boot_with_state`] — the router of [`super::boot`] plus the [`AppState`] behind it, so a
 //!   suite can issue a persisted session for an account it seeded ([`account_token`]) or drive
-//!   the realtime hub directly.
+//!   the realtime hub directly; [`boot_isolated_with_state`] is the same over an isolated
+//!   database of the binary.
 //! * [`counters`], [`line`], [`report`] — the `match-results` body pieces of
 //!   `match-telemetry.schema.json`.
 //! * [`link_identity`] — the production link flow: the account asks for a code and a game
@@ -39,6 +40,17 @@ use crate::common;
 pub(crate) async fn boot_with_state() -> (Router, PgPool, AppState) {
     let url = common::require_test_database_url()
         .expect("TEST_DATABASE_URL is required for the telemetry suites");
+    boot_with_state_on(url).await
+}
+
+/// [`boot_with_state`] over the binary's isolated database for `scope`
+/// ([`common::require_isolated_test_database_url`]), for a module whose assertions read
+/// fleet-wide rows that sibling modules also write.
+pub(crate) async fn boot_isolated_with_state(scope: &str) -> (Router, PgPool, AppState) {
+    boot_with_state_on(common::require_isolated_test_database_url(scope)).await
+}
+
+async fn boot_with_state_on(url: String) -> (Router, PgPool, AppState) {
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");
     let state = api_server::composition::application_state(
