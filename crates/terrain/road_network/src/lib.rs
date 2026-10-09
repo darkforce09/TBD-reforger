@@ -6,7 +6,8 @@
 //! expands polylines into triangle strips ([`styling`]); packs the visible roads into casing and
 //! centreline buffers ([`mesh`]); runs fence, pier and bridge-rail strips along a footprint's long
 //! axis ([`cartographic_strip`]); and boxes the runways and fills the flat apron inside the box
-//! ([`airfield`]).
+//! ([`airfield`]); and holds the class colours, widths, layer files and draw order of the
+//! Workbench road export images ([`export_image_styling`]).
 //! **Position:** terrain category, tier 3, depending on `world_file_formats` (the road archive and
 //! the segment id), `prefab_catalog` (footprint corners), `terrain_elevation` (the vector grid the
 //! apron reads), `render_primitives` (the apron's mesh) and `map_coordinates` (the box type). The
@@ -21,6 +22,7 @@
 pub mod airfield;
 pub mod cartographic_strip;
 pub mod error;
+pub mod export_image_styling;
 pub mod mesh;
 pub mod network;
 pub mod prelude;

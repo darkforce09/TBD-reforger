@@ -45,9 +45,9 @@ folder are ignored.
 
 ## Workspace members
 
-One Cargo workspace (resolver 3) holds every Rust crate: 160 members, which are 5 apps under
-`apps/`, 112 library crates under `crates/`, 41 tool crates under `tools/<category>/` and the two
-tool binaries `tools/xtask` and `tools/developer_tools`. The crate-tier law judges the 153 crates
+One Cargo workspace (resolver 3) holds every Rust crate: 161 members, which are 5 apps under
+`apps/`, 113 library crates under `crates/`, 41 tool crates under `tools/<category>/` and the two
+tool binaries `tools/xtask` and `tools/developer_tools`. The crate-tier law judges the 154 crates
 and leaves out only the apps and the two binaries. Members inherit edition 2024 and rust-version
 1.95 from `[workspace.package]`.
 
@@ -68,6 +68,7 @@ and leaves out only the apps and the two binaries. Members inherit edition 2024 
 | [`crates/foundation/repository_root/`](/crates/foundation/repository_root/README.md) | `repository_root` | the one checkout-root finder: the walk up to the `.ai/tickets/ROOT` marker the tools and the tests share |
 | [`crates/foundation/orbat_slot_ids/`](/crates/foundation/orbat_slot_ids/README.md) | `orbat_slot_ids` | an ORBAT slot's two ids: `SlotUid`, the durable editor id, and `SlotId`, the derived wire id |
 | [`crates/geometry/geometry_primitives/`](/crates/geometry/geometry_primitives/README.md) | `geometry_primitives` | vector ops, segment geometry, rigid transforms, axis-aligned boxes |
+| [`crates/geometry/grid_rasterization/`](/crates/geometry/grid_rasterization/README.md) | `grid_rasterization` | half-up rounding, the uniform Catmull-Rom spline, polygon scanline spans and anti-aliased disc stamps over a sample grid |
 | [`crates/geometry/map_coordinates/`](/crates/geometry/map_coordinates/README.md) | `map_coordinates` | terrain frames, chunk math, rounding, grid references |
 | [`crates/geometry/camera_math/`](/crates/geometry/camera_math/README.md) | `camera_math` | the orthographic map camera, the orbit camera, 4x4 matrices |
 | [`crates/geometry/spatial_indexes/`](/crates/geometry/spatial_indexes/README.md) | `spatial_indexes` | the triangle BVH and its `.bvh` sidecar, the flat-tree build core, the point grid, picks and clusters |
@@ -78,8 +79,8 @@ and leaves out only the apps and the two binaries. Members inherit edition 2024 
 | [`crates/terrain/terrain_elevation/`](/crates/terrain/terrain_elevation/README.md) | `terrain_elevation` | raster placement, PNG and raw grid decoding, bilinear sampling and the vector grid |
 | [`crates/terrain/terrain_relief/`](/crates/terrain/terrain_relief/README.md) | `terrain_relief` | the hillshade image, contour rings with summit picks and the sea band fills |
 | [`crates/terrain/satellite_imagery/`](/crates/terrain/satellite_imagery/README.md) | `satellite_imagery` | the `.tbd-sat` container reader: header, both index versions, checks and level picks |
-| [`crates/terrain/road_network/`](/crates/terrain/road_network/README.md) | `road_network` | road segments and the class codec, styling and zoom gates, road meshes, cartographic strips, the airfield |
-| [`crates/terrain/water_bodies/`](/crates/terrain/water_bodies/README.md) | `water_bodies` | the bathymetry water mask, the level suffix plan, the inland water archive and the sea fill mesh |
+| [`crates/terrain/road_network/`](/crates/terrain/road_network/README.md) | `road_network` | road segments and the class codec, styling and zoom gates, the export image styles, road meshes, cartographic strips, the airfield |
+| [`crates/terrain/water_bodies/`](/crates/terrain/water_bodies/README.md) | `water_bodies` | the bathymetry water mask and palette, the level suffix plan, the inland water archive and the sea fill mesh |
 | [`crates/world_objects/vegetation/`](/crates/world_objects/vegetation/README.md) | `vegetation` | forest regions, the canopy mass outline, tree counts and island density bins |
 | [`crates/world_objects/building_interiors/`](/crates/world_objects/building_interiors/README.md) | `building_interiors` | building blueprints and sight-line attribution, compounds with doors, section cuts |
 | [`crates/world_objects/place_names/`](/crates/world_objects/place_names/README.md) | `place_names` | spot heights, town and road names, their declutter, the labels archive and glyph packing |
@@ -204,7 +205,7 @@ and leaves out only the apps and the two binaries. Members inherit edition 2024 
 | [`tools/enfusion/enfusion_script_index/`](/tools/enfusion/enfusion_script_index/README.md) | `enfusion_script_index` | the Enfusion script oracle behind `enf` (symbol indexes, lookups, citation and capability checks, vanilla extraction) and the vanilla page mirrors behind `cargo xtask fetch` |
 | [`tools/map_assets/blueprint_compiler/`](/tools/map_assets/blueprint_compiler/README.md) | `blueprint_compiler` | the building-blueprint compiler: voxel dumps and game models to blueprints, occlusion sidecars and the blueprint archive, behind `cargo xtask map` |
 | [`tools/map_assets/map_asset_verification/`](/tools/map_assets/map_asset_verification/README.md) | `map_asset_verification` | the gates over a terrain's committed map assets and the map golden fixtures behind `cargo xtask schema` and `verify blas-manifest`, and the world line-of-sight probe behind `cargo xtask map world-los` |
-| [`tools/map_assets/map_raster_pipeline/`](/tools/map_assets/map_raster_pipeline/README.md) | `map_raster_pipeline` | the map raster pipeline behind the `map` binary: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives and the world-glyph atlas |
+| [`tools/map_assets/map_raster_pipeline/`](/tools/map_assets/map_raster_pipeline/README.md) | `map_raster_pipeline` | the map raster pipeline behind the `map` binary: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives, the world-glyph atlas, and PNG images of the Workbench water and road exports |
 | [`tools/map_assets/world_export_pipeline/`](/tools/map_assets/world_export_pipeline/README.md) | `world_export_pipeline` | the world-export pipeline behind the `world` binary: a terrain's object chunks, catalogue, census, density tiles, forest regions, roads and elevation from a Workbench export, and the gates that prove them |
 | [`tools/browser_testing/chrome_devtools_protocol/`](/tools/browser_testing/chrome_devtools_protocol/README.md) | `chrome_devtools_protocol` | the Chrome DevTools Protocol client of the browser gates: Chromium discovery and launch, pages over WebSockets, the gate font cache |
 | [`tools/browser_testing/browser_gate_suites/`](/tools/browser_testing/browser_gate_suites/README.md) | `browser_gate_suites` | the browser gates of the single-page app and the `gate` and `capture` command lines: the static server, the DOM oracle, route drift, the Mission Creator smokes, the data viewer gate, the ballistics agreement and offline mortar gates, the capture rig, the doctor |

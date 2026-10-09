@@ -3,7 +3,8 @@
 //! **Role:** reads the bathymetry container as a pyramid of depth and mask levels and pairs it
 //! with the world rectangle as a water mask, plans the level suffix a capped load fetches, reads
 //! the inland water archive of lakes, rivers and ponds ([`vectors`]), and triangulates the sea
-//! band into the sea fill mesh ([`mesh`]).
+//! band into the sea fill mesh ([`mesh`]); and colours water depth on the Workbench water export
+//! images ([`bathymetry_palette`]).
 //! **Position:** terrain category, tier 4, depending on `terrain_relief` (the sea band),
 //! `render_primitives` (the fill mesh and triangulation), `world_file_formats` (the `TBDB` header
 //! and the vectors archive), `rkyv`, `bytemuck` and `thiserror`. The map engine's water loader
@@ -15,6 +16,7 @@
 //! answers exactly as the whole file does; a malformed container, extent or archive is refused
 //! rather than guessed.
 
+pub mod bathymetry_palette;
 pub mod error;
 pub mod mesh;
 pub mod prelude;

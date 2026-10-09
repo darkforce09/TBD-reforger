@@ -134,8 +134,9 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── offline_cache_policy/            <-- Offline cache names, request classes, offline pack and network fallback rules the service worker applies
 │   ├── fleet_wire_contract/             <-- Fleet-command wire shapes, executor kinds, the machine-credential format and secret-file limits
 │   └── contract_schema_types/           <-- Rust types generated from contracts/definitions (`cargo xtask ci schema-codegen`)
-├── geometry/                            <-- Engine geometry: vectors, segments, rigid transforms, map coordinates, cameras, spatial indexes
+├── geometry/                            <-- Engine geometry: vectors, segments, rigid transforms, map coordinates, cameras, spatial indexes, grid rasterization
 │   ├── geometry_primitives/             <-- 3D vector ops, 2D segment geometry, rigid transforms, axis-aligned boxes
+│   ├── grid_rasterization/              <-- Half-up rounding, Catmull-Rom spline, polygon scanline spans, anti-aliased disc stamps
 │   ├── map_coordinates/                 <-- Terrain frames (map centres, bounds), chunk math, rounding, grid references
 │   ├── camera_math/                     <-- Orthographic map camera, orbit camera, 4x4 matrices
 │   └── spatial_indexes/                 <-- Triangle BVH and its .bvh sidecar, the flat-tree build core, point grid, picks, clusters
@@ -148,8 +149,8 @@ crates/                                  <-- Library crates grouped by category 
 │   ├── terrain_elevation/               <-- Raster placement, PNG and raw grid decoding, bilinear sampling, the vector grid
 │   ├── terrain_relief/                  <-- Hillshade image, contour rings with summit picks, sea band fills
 │   ├── satellite_imagery/               <-- The .tbd-sat container reader: header, both index versions, checks, level picks
-│   ├── road_network/                    <-- Road segments and class codec, styling and zoom gates, road meshes, cartographic strips, airfield
-│   └── water_bodies/                    <-- Bathymetry water mask, level suffix plan, inland water archive, sea fill mesh
+│   ├── road_network/                    <-- Road segments and class codec, styling and zoom gates, export image styles, road meshes, cartographic strips, airfield
+│   └── water_bodies/                    <-- Bathymetry water mask and palette, level suffix plan, inland water archive, sea fill mesh
 ├── map_overlay/                         <-- What the map draws on the terrain and in what order
 │   ├── map_draw_lanes/                  <-- The 48 lane roles, their paint order and wire ids, the zoom gates
 │   ├── label_layout/                    <-- Label declutter, town importance, world glyph sizing, label glyph packing
@@ -308,7 +309,7 @@ tools/                                   <-- Every developer tool in the reposit
 ├── map_assets/                          <-- Map asset crates
 │   ├── blueprint_compiler/              <-- Building blueprints from voxel dumps and game models, occlusion sidecars, the blueprint archive
 │   ├── map_asset_verification/          <-- Gates over a terrain's committed map assets and the map goldens; the world line-of-sight probe
-│   ├── map_raster_pipeline/             <-- The `map` pipeline: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives and the glyph atlas
+│   ├── map_raster_pipeline/             <-- The `map` pipeline: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives, the glyph atlas, Workbench water and road export images
 │   └── world_export_pipeline/           <-- The `world` pipeline: a terrain's chunks, catalogue, census, density, regions, roads and elevation from a Workbench export, and their gates
 ├── developer_tools/                     <-- The eight tool binaries, each a one-line `main` over one tool crate (no library)
 │   └── src/bin/                         <-- Executables: enf, gate, mcpd, world, map, capture, acknowledgement-dropping-relay, staging-load

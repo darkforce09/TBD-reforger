@@ -81,9 +81,6 @@ target-*/
 /apps/mod/tbd-framework/ServerData.json
 /apps/mod/tbd-framework/meta
 
-# Mod helper scripts (Rust raster pipeline replaced these)
-apps/mod/tbd-export/tools/*.mjs
-
 # ==============================================================================
 # 8. Assets & Pipeline Intermediates (assets/)
 # ==============================================================================

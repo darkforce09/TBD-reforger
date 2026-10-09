@@ -294,6 +294,9 @@ gpu_device = { path = "crates/graphics/gpu_device" }
 # The frame vocabulary, draw encoding, compute sprite cull, render pipelines and the frame pump
 # (`crates/graphics/gpu_frame`).
 gpu_frame = { path = "crates/graphics/gpu_frame" }
+# Grid rasterization arithmetic: half-up rounding, the uniform Catmull-Rom spline, polygon
+# scanline spans and anti-aliased disc stamps (`crates/geometry/grid_rasterization`).
+grid_rasterization = { path = "crates/geometry/grid_rasterization" }
 heck = "0.5"
 hex = "0.4.3"
 # The scheme guard on stored and rendered links (`crates/foundation/http_url_guard`).

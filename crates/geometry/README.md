@@ -10,6 +10,7 @@ so every build of the map engine links them, the API's included.
 crates/geometry/
 ├── camera_math/          `camera_math`: the deck.gl-parity orthographic camera, the doll's orbit camera, gl-matrix 4x4
 ├── geometry_primitives/  `geometry_primitives`: 3D vector products, 2D segment tests, rigid transforms, 3D boxes
+├── grid_rasterization/   `grid_rasterization`: half-up rounding, Catmull-Rom spline, polygon scanline, anti-aliased disc stamps
 ├── map_coordinates/      `map_coordinates`: terrain centres and bounds, the chunk grid, rounding, grid references
 └── spatial_indexes/      `spatial_indexes`: the triangle BVH and its sidecar format, the flat-tree build core, point grid, picks, clusters
 ```

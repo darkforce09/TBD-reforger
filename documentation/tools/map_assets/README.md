@@ -10,7 +10,7 @@ cross lanes, the reasons and the open work.
 
 ```text
 documentation/tools/map_assets/
-└── map_raster_pipeline.md  `map`: satellite, Map view, labels, water archives and the glyph atlas
+└── map_raster_pipeline.md  `map`: satellite, Map view, labels, water archives, glyph atlas, export images
 ```
 
 ## How it works
@@ -21,7 +21,7 @@ linked, not repeated:
 
 | Executable | What it does | Code |
 |---|---|---|
-| `map` | builds and verifies a terrain's satellite container, tile pyramids, cartographic render, labels and water archives, and the world-glyph atlas | [`map_raster_pipeline`](/tools/map_assets/map_raster_pipeline/README.md) |
+| `map` | builds and verifies a terrain's satellite container, tile pyramids, cartographic render, labels and water archives, and the world-glyph atlas; draws the Workbench water and road exports as PNG images | [`map_raster_pipeline`](/tools/map_assets/map_raster_pipeline/README.md) |
 
 The executable is a one-line `developer_tools` binary
 ([executables README](/tools/developer_tools/src/bin/README.md)); the world export it reads from is

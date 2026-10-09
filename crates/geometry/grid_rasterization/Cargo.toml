@@ -1,0 +1,22 @@
+# The arithmetic that turns vector shapes into the samples of a regular grid: JavaScript's
+# half-up rounding, the uniform Catmull-Rom spline with its plan-view tangent and normal, the
+# even-odd scanline fill of a polygon over a sample grid, and the anti-aliased disc stamp of a
+# stroked segment, with no map, world, file or GPU concept.
+[package]
+name = "grid_rasterization"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Grid rasterization arithmetic: half-up rounding, the uniform Catmull-Rom spline, polygon scanline spans and anti-aliased disc stamps."
+
+[package.metadata.layout]
+category = "crates/geometry"
+tier = 0
+targets = "any"
+
+[dependencies]
+
+[lints]
+workspace = true

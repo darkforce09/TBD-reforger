@@ -36,6 +36,12 @@ placement guard asks. `WaterVectors::from_bytes` aligns, validates and version-c
 and reads the lakes, rivers and ponds in place. `compose_sea_mesh` triangulates the sea band's
 rings with their per-vertex colours at the layer's opacity.
 
+The Workbench water export images (`map water-images`) colour their rasterized mask and depth
+grid with `bathymetry_palette`: a mask byte is a `WaterClass` (0 land, 1 sea, 2 lake or pond,
+3 river), and each water class has a depth ramp, from 0 m to 210 m for the sea, 18 m for lakes
+and ponds and 25 m for rivers, whose channels interpolate linearly and round a tie up. The sea
+darkens to 0.78 within 0.18 m of the 5, 10, 20, 50, 100, 150 and 200 m contours.
+
 ## Getting started
 
 Run from the repository root:
@@ -49,6 +55,9 @@ cargo test -p water_bodies   # bathymetry levels, mask, suffix plan and archive 
 - `vectors`: `TBDB_ENCODING_V1`, `WATER_VECTORS_ALIGN`, `downsample_index`, `Bathymetry`,
   `BathymetryLevel`, `SuffixPlan`, `suffix_plan`, `WaterAt`, `WaterMask` and `WaterVectors`.
 - `mesh`: `compose_sea_mesh`.
+- `bathymetry_palette`: `WaterClass`, `palette_class_for_mask_code`, `DepthStop`,
+  `OCEAN_DEPTH_STOPS`, `LAKE_DEPTH_STOPS`, `RIVER_DEPTH_STOPS`, `DARK_LAND_RGB`,
+  `interpolate_depth_stops`, `bathymetry_rgb` and `contour_multiplier`.
 - `Error` and `Result` (`error`), and `prelude`, which re-exports the items above but
   `WATER_VECTORS_ALIGN`.
 
@@ -62,7 +71,8 @@ cargo test -p water_bodies   # bathymetry levels, mask, suffix plan and archive 
   the sea mesh; `map_streaming_host`, which answers `is_water` and `is_known_dry_land` from the
   mask; and the inland water pipeline in
   `tools/map_assets/map_raster_pipeline/src/`, which writes both files with
-  `downsample_index` and reads them back in its tests.
+  `downsample_index` and reads them back in its tests, and whose water export image lane colours
+  its images with `bathymetry_palette`.
 - Rules: every level agrees with level 0 (`every_mip_level_agrees_with_level_zero` in
   `src/tests/vectors_tests.rs`); a point off the map is unknown, never dry
   (`outside_the_map_is_unknown_not_dry`); a suffix answers exactly as the whole file does

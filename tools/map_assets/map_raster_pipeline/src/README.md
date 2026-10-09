@@ -4,7 +4,8 @@ The source of the `map_raster_pipeline` crate, the library behind the `map` bina
 [Workbench](/documentation/glossary/n_to_z.md#workbench) exports into the image and label assets a
 terrain serves under `assets/terrains/<terrain>/` (the unified satellite container, the satellite
 and Map view tile pyramids, the label sets and archives, the water archives) and the world-glyph
-atlas under `assets/glyphs/atlas/`, and verifies each against the terrain's `manifest.json`.
+atlas under `assets/glyphs/atlas/`, and verifies each against the terrain's `manifest.json`. It
+also draws a Workbench water or road export as PNG images into a folder beside the export.
 
 ## Contents
 
@@ -19,29 +20,34 @@ tools/map_assets/map_raster_pipeline/src/
 ├── empty_write_refusal.rs          `refuse_empty_write`, the guard against empty overwrites
 ├── error.rs                        `Error` and `Result`, the context and refusal helpers
 ├── glyph_atlas.rs                  `build-glyph-atlas`: SVG glyphs to one WebP atlas and its mapping
-├── image_operations.rs             PNG and WebP codecs, Lanczos resize, crop, blur, HSL and contrast
+├── image_operations/               the streaming row-by-row PNG writer of the export image lanes
+├── image_operations.rs             PNG and WebP codecs, Lanczos resize, crop, blur, HSL and contrast; declares the PNG writer
 ├── inland_water/                   the inland-water classifier and the orthophoto's water tint
 ├── inland_water.rs                 water tint colours and classifier thresholds; declares the water modules
 ├── inland_water_archive/           the mip reductions and writers behind `map water`
 ├── inland_water_archive.rs         `map water` staging and output names; declares the archive modules
+├── lib.rs                          the crate root: module header, `mod` lines and the re-exports
 ├── map_label_archives.rs           `labels-rkyv`: `locations/map_labels.rkyv` from the three label files
 ├── map_labels/                     the `locations.json` and `height-labels.json` exporters
 ├── map_labels.rs                   required Everon towns and locality rules; declares the label modules
 ├── prelude.rs                      the common names for glob import
-├── lib.rs                          the crate root: module header, `mod` lines and the re-exports
+├── road_export_images/             the road export's layer loading, RGBA canvas and image writes
+├── road_export_images.rs           `road-images`: the Workbench road export drawn as PNG images
 ├── satellite_archive/              the satellite container builder and the container and pyramid checks
 ├── satellite_archive.rs            declares the satellite modules and re-exports their entry points
 ├── satellite_archive_container.rs  the version 2 `TBDS` container: rkyv index, writer and reader
-└── tests/                          unit tests for the archives, the label exporters, the empty guard and the locations
+├── tests/                          unit tests for the archives, label exporters, empty guard, locations, PNG writer and export images
+├── water_export_images/            the water export's folder search, grid decoding, vector rasterization and image writes
+└── water_export_images.rs          `water-images`: the Workbench water export drawn as PNG images
 ```
 
 ## How it works
 
 `tools/developer_tools/src/bin/map.rs` calls `entrypoint` (`command_line.rs`), which parses one of
-twenty-two subcommands and calls one lane's entry function, which returns the exit code; an error
-prints `map: <message>` with its causes and exits 1. Each lane is a `<lane>.rs` file that holds the lane's constants and declares its
-submodules from the folder of the same name, so a folder's README covers the steps and the file
-covers the numbers.
+twenty-four subcommands and calls one lane's entry function, which returns the exit code; an error
+prints `map: <message>` with its causes and exits 1. Each lane is a `<lane>.rs` file that holds
+the lane's constants and declares its submodules from the folder of the same name, so a folder's
+README covers the steps and the file covers the numbers.
 
 | Lane | Subcommands | Reads | Writes |
 |---|---|---|---|
@@ -52,7 +58,11 @@ covers the numbers.
 | map labels | `export-locations`, `export-height-labels`, `labels-rkyv` | the raw entity export, the elevation model | `locations.json`, `height-labels.json`, `locations/map_labels.rkyv` |
 | inland water archive | `water` | the Workbench inland-water export | `water/water_vectors.rkyv`, `water/bathymetry.tbd-bath` |
 | glyphs | `build-glyph-atlas` | `assets/glyphs/manifest.json` and its SVGs | `assets/glyphs/atlas/` |
+| water export images | `water-images` | a Workbench water export folder (given), optionally a `--dem` PNG | `<terrain>-water-*.png` or `<terrain>-inland-water-*.png` in `images/` under the water folder or `--out-dir` |
+| road export images | `road-images` | a Workbench road export folder (given) | `<terrain>-roads-transparent.png`, `<terrain>-roads-dark.png`, `layer-<stem>.png` in `images/` under the roads folder or `--out-dir` |
 
+The two export image lanes take their input folder on the command line (positionally or by
+`--export-dir` / `--roads-dir`) and write only into their image folder, never into `assets/`.
 Everything under `assets/scratch/` and every tile pyramid is gitignored; the containers, label
 files, archives and manifests are committed. The stitch, water and cartographic lanes handle Everon
 only. The stitch, the glyph atlas, the height labels and both archive emitters refuse an empty
@@ -76,6 +86,8 @@ read back through the `world_file_formats` validating reader before they are wri
   - `world_file_formats` (`archives`, `containers`, `ids`), `terrain_elevation`, `water_bodies`,
     `road_network`, `prefab_catalog::world_payload` and `place_names`, which fix every binary
     format and the peak rules;
+  - `grid_rasterization` for the export images' half-up rounding, spline, scanline and disc
+    arithmetic;
   - the `image`, `png`, `image-webp`, `webp` and `resvg` crates, and `process_runner` for the
     `cargo` gates `verify-cartographic` runs.
 - Used by: `tools/developer_tools/src/bin/map.rs`; the `map-water-everon`,
@@ -97,4 +109,4 @@ read back through the `world_file_formats` validating reader before they are wri
 - [CI command group](/tools/commands/ci_task_catalog/src/README.md) — the map tasks that run this
   pipeline.
 - [Map raster pipeline](/documentation/tools/map_assets/map_raster_pipeline.md) — the
-  satellite, Map view, label, water and glyph lanes in depth, with their rules and open work.
+  satellite, Map view, label, water, glyph and export image lanes in depth, with their rules and open work.

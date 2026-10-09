@@ -1,18 +1,22 @@
 //! `map`, the map raster pipeline's command line: satellite and cartographic rasters, tile
-//! pyramids, glyph atlases, map labels and the inland-water lane.
+//! pyramids, glyph atlases, map labels, the inland-water lane and the Workbench water and road
+//! export images.
 //!
-//! **Role:** the clap command tree of the twenty-two subcommands and the dispatch of each to its
+//! **Role:** the clap command tree of the twenty-four subcommands and the dispatch of each to its
 //! lane's entry function.
 //! **Position:** the `map` binary of `developer_tools` calls [`entrypoint`]; the lanes of this
 //! crate do the work and return the exit code.
 //! **Signals & state:** none; parses the process arguments once.
 //! **Invariants:** a lane's exit code is the process exit code; any failure prints
-//! `map: <message>` with every cause underneath and exits 1; a clap usage error exits 2.
+//! `map: <message>` with every cause underneath and exits 1; a clap usage error exits 2; the
+//! export-image subcommands take their input folder exactly once, positionally or by option.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 
-use crate::error::Result;
+use crate::error::{Result, ResultExt};
+use crate::road_export_images::{self, RoadImageOptions};
+use crate::water_export_images::{self, WaterImageMode, WaterImageOptions};
 use crate::{
     aerial_orthophoto, cartographic_rendering, glyph_atlas, inland_water, inland_water_archive,
     map_label_archives, map_labels, satellite_archive, satellite_archive_container,
@@ -162,6 +166,76 @@ enum Cmd {
         #[arg(long, default_value_t = satellite_archive_container::DEFAULT_CONTAINER_VERSION)]
         container_version: u16,
     },
+    /// Draw a Workbench water export as PNG images: bathymetry, dark bathymetry, 16-bit depth,
+    /// class mask and preview
+    WaterImages {
+        /// The Workbench export folder, or a folder above its water folder
+        #[arg(
+            value_name = "EXPORT_DIR",
+            required_unless_present = "export_dir_option",
+            conflicts_with = "export_dir_option"
+        )]
+        export_dir: Option<PathBuf>,
+        /// The Workbench export folder, given as an option instead of positionally
+        #[arg(long = "export-dir", value_name = "DIR")]
+        export_dir_option: Option<PathBuf>,
+        /// The image folder; `images` under the water folder when not given
+        #[arg(long, value_name = "DIR")]
+        out_dir: Option<PathBuf>,
+        /// Which images to write
+        #[arg(long, value_enum, ignore_case = true, default_value = "water")]
+        mode: WaterImageMode,
+        /// The terrain name: a folder searched under the export folder and the image name prefix
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+        /// A 16-bit grey elevation PNG at 2 m per sample that deepens lakes and ponds to the
+        /// water column above the terrain
+        #[arg(long, value_name = "PNG")]
+        dem: Option<PathBuf>,
+        /// Accepted and has no effect: the export's metadata file selects the inland files
+        #[arg(long)]
+        inland_only: bool,
+        /// The image resolution in metres per pixel; zero or less keeps the export's resolution
+        #[arg(long, value_name = "M_PER_PX", allow_negative_numbers = true)]
+        res: Option<f64>,
+        /// Draw only the world region MIN_X,MIN_Z,MAX_X,MAX_Z (metres); only the vectors are drawn
+        #[arg(
+            long,
+            value_name = "MIN_X,MIN_Z,MAX_X,MAX_Z",
+            allow_hyphen_values = true,
+            value_parser = water_export_images::parse_region_of_interest
+        )]
+        roi: Option<[f64; 4]>,
+        /// Skip drawing the lake, pond and river vectors over the export grids
+        #[arg(long)]
+        no_vector_enhance: bool,
+    },
+    /// Draw a Workbench road export as PNG images: transparent and dark masters and one layer per
+    /// road class
+    RoadImages {
+        /// The Workbench road export folder: `roads_meta.json` and the six layer files
+        #[arg(
+            value_name = "ROADS_DIR",
+            required_unless_present = "roads_dir_option",
+            conflicts_with = "roads_dir_option"
+        )]
+        roads_dir: Option<PathBuf>,
+        /// The Workbench road export folder, given as an option instead of positionally
+        #[arg(long = "roads-dir", value_name = "DIR")]
+        roads_dir_option: Option<PathBuf>,
+        /// The image folder; `images` under the roads folder when not given
+        #[arg(long, value_name = "DIR")]
+        out_dir: Option<PathBuf>,
+        /// The width and height of every image, in pixels
+        #[arg(long, value_name = "PX", default_value_t = 2048)]
+        size: u32,
+        /// The terrain name the two master images are prefixed with
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+        /// Mark the junctions of three or more roads on the two master images
+        #[arg(long)]
+        show_junctions: bool,
+    },
 }
 
 /// Runs the `map` command line: parses the process arguments, runs the subcommand and returns its
@@ -268,6 +342,50 @@ fn run() -> Result<ExitCode> {
             &terrain,
             tile_threshold,
             container_version,
+        )?)),
+        Cmd::WaterImages {
+            export_dir,
+            export_dir_option,
+            out_dir,
+            mode,
+            terrain,
+            dem,
+            inland_only,
+            res,
+            roi,
+            no_vector_enhance,
+        } => Ok(ExitCode::from(water_export_images::run(
+            &WaterImageOptions {
+                export_dir: export_dir
+                    .or(export_dir_option)
+                    .context("water-images needs an export folder: EXPORT_DIR or --export-dir")?,
+                out_dir,
+                mode,
+                terrain,
+                dem_path: dem,
+                inland_only,
+                resolution_m_per_px: res,
+                region_of_interest: roi,
+                vector_enhance: !no_vector_enhance,
+            },
+        )?)),
+        Cmd::RoadImages {
+            roads_dir,
+            roads_dir_option,
+            out_dir,
+            size,
+            terrain,
+            show_junctions,
+        } => Ok(ExitCode::from(road_export_images::run(
+            &RoadImageOptions {
+                roads_dir: roads_dir
+                    .or(roads_dir_option)
+                    .context("road-images needs a roads folder: ROADS_DIR or --roads-dir")?,
+                out_dir,
+                size_px: size,
+                terrain,
+                show_junctions,
+            },
         )?)),
     }
 }

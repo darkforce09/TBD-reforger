@@ -7,16 +7,17 @@ the airfield, the error and the crate root that declares them.
 
 ```text
 crates/terrain/road_network/src/
-├── airfield.rs            the box around the runways, its apron fill, and the airfield structures
-├── cartographic_strip.rs  thin strips along a footprint's long axis: fences, piers and bridge rails
-├── error.rs               `Error` and `Result`: the archive's `BinaryError` behind one type
-├── lib.rs                 the crate root: module header, `mod` lines and re-exports
-├── mesh.rs                `compose_roads_mesh`: casing and centreline buffers of the visible roads
-├── network.rs             road segments from the JSON export or the archive, centred and measured
-├── prelude.rs             the names most readers import
-├── road_class.rs          the closed road-class table and its one-byte wire code
-├── styling.rs             the road class table, the zoom gates, and the polyline-to-strip expansion
-└── tests/                 unit tests for the network, the styling, the strips and the airfield
+├── airfield.rs              the box around the runways, its apron fill, and the airfield structures
+├── cartographic_strip.rs    thin strips along a footprint's long axis: fences, piers and bridge rails
+├── error.rs                 `Error` and `Result`: the archive's `BinaryError` behind one type
+├── export_image_styling.rs  the road export images' class colours, widths, layer files, draw order and junctions
+├── lib.rs                   the crate root: module header, `mod` lines and re-exports
+├── mesh.rs                  `compose_roads_mesh`: casing and centreline buffers of the visible roads
+├── network.rs               road segments from the JSON export or the archive, centred and measured
+├── prelude.rs               the names most readers import
+├── road_class.rs            the closed road-class table and its one-byte wire code
+├── styling.rs               the road class table, the zoom gates, and the polyline-to-strip expansion
+└── tests/                   unit tests for the network, the styling, the strips and the airfield
 ```
 
 ## How it works

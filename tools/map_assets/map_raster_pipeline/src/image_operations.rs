@@ -1,6 +1,7 @@
-//! Shared image primitives: PNG input and output, the WebP header parse the pyramid and satellite
-//! verifiers read, WebP encoding (lossless through `image-webp`, lossy through the vendored libwebp
-//! of the `webp` crate), Lanczos resize, standard deviation, box blur and HSL.
+//! Shared image primitives: PNG input and output, the streaming row-by-row PNG writer
+//! ([`png_writing`]), the WebP header parse the pyramid and satellite verifiers read, WebP
+//! encoding (lossless through `image-webp`, lossy through the vendored libwebp of the `webp`
+//! crate), Lanczos resize, standard deviation, box blur and HSL.
 //!
 //! **Role:** the image types and operations every lane shares.
 //! **Position:** called by every image lane of the crate.
@@ -8,6 +9,8 @@
 //! **Invariants:** images are row-major with 3 (RGB) or 4 (RGBA) bytes per pixel.
 
 use crate::error::{Result, ResultExt, bail};
+
+pub(crate) mod png_writing;
 
 pub(crate) struct Rgb8 {
     pub(crate) w: usize,

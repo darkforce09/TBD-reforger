@@ -51,8 +51,8 @@ exist for the road export: the header boots the export world, a sub-scene of van
 and Eden's AI world. The developer tools read the exports from the Workbench profile folder, which
 under Proton is Steam's prefix for app 1874910
 (`…/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/`).
-A local `tools/` folder may hold PNG helper scripts, which git ignores (`.gitignore`,
-`apps/mod/tbd-export/tools/*.mjs`).
+`map water-images` and `map road-images` (the `map` binary of `developer_tools`) draw the water
+and road exports as PNG images.
 
 ## Getting started
 
@@ -116,8 +116,9 @@ Workbench, or a game, loads `tbd-export`.
   that its files follow. Nothing from `apps/mod/tbd-framework/`.
 - Used by: `cargo xtask mod dev-bootstrap`, which opens this project
   (`tools/commands/mod_operations/src/development_bootstrap.rs`); `cargo xtask mcp wbcall`; the
-  map commands and world export pipeline that read the map exports
-  (`tools/xtask/src/commands/map/`, `tools/map_assets/world_export_pipeline/src/`); the
+  map commands, world export pipeline and map raster pipeline that read the map exports
+  (`tools/xtask/src/commands/map/`, `tools/map_assets/world_export_pipeline/src/`,
+  `tools/map_assets/map_raster_pipeline/src/`); the
   equipment and vehicle validation in `tools/commands/mod_operations/src/equipment_vehicle_export/`;
   and, through the copied catalogs in `contracts/catalogs/`, `cargo xtask db registry-import`.
 - Rules: the dependencies stay vanilla and `TBD_EMCP`, never `TBD_Framework`, and the addon holds

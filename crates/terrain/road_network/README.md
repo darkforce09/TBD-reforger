@@ -50,6 +50,12 @@ footprint's long axis: fences at `FENCE_STRIP_WIDTH_M` (0.35 m), piers up to
 `PIER_STRIP_MAX_WIDTH_M` (6 m) wide, bridge rails up to `BRIDGE_RAILING_RADIUS_M` (8 m) off the
 axis, and none narrower than `STRIP_MIN_PX` (1.5) pixels.
 
+The Workbench road export images (`map road-images`) use their own table,
+`export_image_styling`, keyed by the same class names: each class has a colour, a world width a
+segment without its own width takes, and a minimum stroke in pixels; it reads `<stem>.json` and
+writes `layer-<stem>.png` for the stems `highways`, `roads_paved`, `roads_dirt`, `tracks`, `paths`
+and `runways`; and the classes draw runways first and highways last.
+
 ## Getting started
 
 Run from the repository root:
@@ -68,6 +74,10 @@ cargo test -p road_network   # network, styling, strip and airfield tests
 - `mesh`: `RoadMeshGpu`, `RoadInput` and `compose_roads_mesh`.
 - `cartographic_strip`: the fence, pier and bridge-rail strips.
 - `airfield`: `compute_airfield_bbox`, `build_airfield_apron_mesh` and the structure gate.
+- `export_image_styling`: `RoadExportImageStyle`, `road_export_image_style`,
+  `ROAD_EXPORT_LAYER_FILES`, `road_export_layer_file_stem`, `ROAD_EXPORT_DRAW_ORDER`,
+  `ROAD_EXPORT_DARK_BACKGROUND_RGB` and the junction marker's `ROAD_JUNCTION_RGB`,
+  `ROAD_JUNCTION_ALPHA`, `ROAD_JUNCTION_RADIUS_PX` and `ROAD_JUNCTION_MIN_DEGREE`.
 - `Error` and `Result` (`error`), and `prelude`, which re-exports the items above.
 
 ## Boundaries
@@ -86,6 +96,8 @@ cargo test -p road_network   # network, styling, strip and airfield tests
     `expand_polyline_strip`;
   - `tools/developer_tools/src/`, whose world export writes the archive from the JSON (its class
     bytes through `road_class_code`) and whose label pipeline and checks read the network.
+  - `tools/map_assets/map_raster_pipeline/src/`, whose road export image lane strokes the
+    Workbench road export with `export_image_styling`.
 - Rules: the archive reader refuses a class code it cannot name, another schema version and
   corrupt bytes (`unnameable_class_code_is_an_error_not_a_vanished_road`,
   `wrong_schema_version_is_refused_even_though_the_bytes_validate`, `corrupt_buffers_are_refused`

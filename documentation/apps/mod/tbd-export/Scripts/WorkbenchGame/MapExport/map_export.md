@@ -39,8 +39,8 @@ file's format.
 |---|---|---|---|
 | Elevation | [`Terrain/DEM/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/README.md) | `terrain/heightmap.txt`, `terrain/dem_meta.json` | `world raw-u16-dem-png`, with the paths passed by hand |
 | Cartographic raster | [`Terrain/Satellite/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Satellite/README.md) | `satellite/rasterization.tga` and its meta | nothing |
-| Road network | [`Terrain/Roads/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Roads/README.md) | `roads/`, one file per road class | nothing |
-| Water | [`Terrain/Water/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water/README.md) | `water/` rasters, lakes, rivers, ponds | nothing; `map water` expects other names (see below) |
+| Road network | [`Terrain/Roads/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Roads/README.md) | `roads/`, one file per road class | `map road-images` (PNG images) |
+| Water | [`Terrain/Water/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water/README.md) | `water/` rasters, lakes, rivers, ponds | `map water-images` (PNG images); `map water` expects other names (see below) |
 | Vegetation | [`Vegetation/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Vegetation/README.md) | `vegetation/`, one file per class | nothing |
 | Full world objects | [`Objects/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/README.md) | `TBD_WorldExport_full.jsonl`, `TBD_WorldExport_full_meta.json` in the profile root | `world copy-export-profile --full` |
 | Classified objects | [`Objects/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/README.md) | `buildings/`, `props/`, `vegetation/trees.jsonl` and `rocks.jsonl` | nothing |
@@ -49,13 +49,30 @@ file's format.
 | Places | [`Locations/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Locations/README.md) | `locations/locations.json` | nothing |
 | Landmark anchors | [`Locations/Anchors/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Locations/Anchors/README.md) | `anchors/verification.json` | nothing |
 | Prefab and arsenal lists | [`Registry/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Registry/README.md) | `registry/prefabs.json`, `registry/arsenal.json` | nothing |
-| Runtime road network | [`Scripts/Game/TBD/Export/`](/apps/mod/tbd-export/Scripts/Game/TBD/Export/README.md) | `everon/roads/`, the Workbench road file names | nothing |
+| Runtime road network | [`Scripts/Game/TBD/Export/`](/apps/mod/tbd-export/Scripts/Game/TBD/Export/README.md) | `everon/roads/`, the Workbench road file names | `map road-images` (PNG images) |
 
 The committed road archive does not come from either road export: `world build-roads` decodes the
 road topology from the game paks. The item [registry](/documentation/glossary/n_to_z.md#registry)
 catalogs in `contracts/catalogs/` come from a separate plugin,
 `apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c`, whose two
 `$profile:TBD_Registry*.json` files are copied into the catalog folder by hand.
+
+### Export images
+
+The water and road layers' files turn into PNG images with the `map` binary, run from the
+repository root against the export folder in the Workbench profile:
+
+```bash
+cargo run -q -p developer_tools --bin map -- water-images <profile>/TBD_Export/everon --mode all
+cargo run -q -p developer_tools --bin map -- road-images <profile>/TBD_Export/everon/roads
+```
+
+`water-images` searches the folder it is given for the water folder and writes the bathymetry,
+dark bathymetry, 16-bit depth, class mask and preview images into `images/` beside the water
+files; `road-images` writes the transparent and dark road masters and one image per road class into
+`images/` under the roads folder. The images serve inspection only: no committed asset is built
+from them. The [map raster pipeline](/documentation/tools/map_assets/map_raster_pipeline.md#workbench-export-images)
+gives the options and the drawing rules.
 
 ### Entry points
 

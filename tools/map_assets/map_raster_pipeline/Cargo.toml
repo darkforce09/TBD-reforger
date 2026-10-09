@@ -1,8 +1,10 @@
 # The map raster pipeline behind the `map` binary: it turns the game's archives and the Workbench
 # exports into a terrain's satellite container, tile pyramids, cartographic render, label sets and
-# archives, water archives, and the world-glyph atlas, and verifies each against its manifest.
+# archives, water archives, and the world-glyph atlas, and verifies each against its manifest; and it
+# draws the Workbench water and road exports as PNG images.
 # `clap` parses `map`; `serde_json` keeps the key order and the exact float spelling of the JSON it
 # rewrites; `image`, `png`, `image-webp`, `webp` and `resvg` decode, encode and rasterise;
+# `grid_rasterization` holds the export images' rounding, spline, scanline and disc arithmetic;
 # `process_runner` runs the `cargo` gates the cartographic aggregator calls; `thiserror` carries the
 # error. It is never in xtask's dependency closure: xtask runs the `map` binary as a child process.
 [package]
@@ -12,7 +14,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "The map raster pipeline: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives and the glyph atlas"
+description = "The map raster pipeline: a terrain's satellite container, tile pyramids, cartographic render, labels, water archives, the glyph atlas and the Workbench export images"
 
 [package.metadata.layout]
 category = "tools/map_assets"
@@ -23,6 +25,7 @@ targets = "any"
 clap = { workspace = true, features = ["derive"] }
 content_digest = { workspace = true }
 enfusion_pak = { workspace = true }
+grid_rasterization = { workspace = true }
 image = { workspace = true, features = ["png", "tga"] }
 image-webp = { workspace = true }
 place_names = { workspace = true }

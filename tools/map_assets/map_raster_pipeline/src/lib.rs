@@ -5,10 +5,12 @@
 //! `satellite_archive_container`), renders the cartographic Map view and its land cover
 //! (`cartographic_rendering`), classifies and tints the inland water (`inland_water`), writes the
 //! water and label archives (`inland_water_archive`, `map_label_archives`), exports the label
-//! sets (`map_labels`) and builds the world-glyph atlas (`glyph_atlas`). [`entrypoint`] is the `map`
-//! binary.
+//! sets (`map_labels`), builds the world-glyph atlas (`glyph_atlas`) and draws the Workbench water
+//! and road exports as PNG images (`water_export_images`, `road_export_images`). [`entrypoint`] is
+//! the `map` binary.
 //! **Position:** tier 7 of `tools/map_assets`, over `world_export_pipeline` (number spelling, the
-//! `.topo` and texture decoders), the world format, terrain and place-name crates, `enfusion_pak`,
+//! `.topo` and texture decoders), the world format, terrain and place-name crates,
+//! `grid_rasterization` (the export images' rasterization arithmetic), `enfusion_pak`,
 //! `repository_layout` and `process_runner`. The `map` binary of `developer_tools` calls
 //! [`entrypoint`]; `cargo xtask ci` runs that binary as a child process, so no image codec enters
 //! xtask's dependency closure.
@@ -38,10 +40,15 @@ mod inland_water_archive;
 mod map_label_archives;
 mod map_labels;
 pub mod prelude;
+/// `road-images`: the Workbench road export stroked into transparent, dark and per-class layer
+/// PNGs.
+mod road_export_images;
 mod satellite_archive;
 /// The `TBDS` v2 satellite container (32-byte header + rkyv `TbdSatIndexV2`), the writer, the
 /// reader and the tile geometry; `satellite_archive` keeps the call sites.
 mod satellite_archive_container;
+/// `water-images`: the Workbench water export rasterized into mask, depth and bathymetry PNGs.
+mod water_export_images;
 
 pub use command_line::entrypoint;
 pub use error::{Error, Result};
