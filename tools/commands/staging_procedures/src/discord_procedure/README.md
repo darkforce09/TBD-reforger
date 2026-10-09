@@ -16,8 +16,7 @@ tools/commands/staging_procedures/src/discord_procedure/
 ├── outage_steps.rs            steps 3-6: drop-in, outage page reads, aged snapshot, override, recovery
 ├── partner_steps.rs           steps 1-2 with the 60-second measure, and the shared probe builders
 ├── rate_limit_steps.rs        step 7 (baseline, bucket spend timed on the host) and step 8 (cleanup)
-├── reconciliation_readers.rs  the API's `discord_reconciliation` log lines and outcome counter
-└── tests/                     recorded runs on the fake clock, planted defects, receipt, lists
+└── reconciliation_readers.rs  the API's `discord_reconciliation` log lines and outcome counter
 ```
 
 ## How it works

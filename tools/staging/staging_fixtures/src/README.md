@@ -19,7 +19,6 @@ tools/staging/staging_fixtures/src/
 ├── membership_aging.rs     `age-membership-snapshot`: stages a main-guild snapshot as verified hours ago
 ├── reserved_accounts.rs    the Discord id range reserved for synthetic staging accounts
 ├── secret_files.rs         the per-instance secret layout, exclusive mode-600 writes and promotion
-├── tests/                  unit tests for the argument list and the reserved range
 └── tool_failure.rs         refused (exit 2) and failed (exit 1), and their messages
 ```
 
@@ -82,11 +81,7 @@ database URL never reach stdout or stderr, and `ApiEnvironment`'s `Debug` prints
   the reads and guarded deletes no API service covers; `dotenvy` for the API env file, `reqwest`
   and `rustls` for the Discord reads, `tracing-subscriber` for the
   services' error logs on stderr.
-- Used by: the operator on the staging host;
-  `tools/staging/staging_fixtures/tests/staging_fixtures_fleet.rs`,
-  `tools/staging/staging_fixtures/tests/staging_fixtures_fixture_events.rs`,
-  `tools/staging/staging_fixtures/tests/staging_fixtures_population.rs` and
-  `tools/staging/staging_fixtures/tests/staging_fixtures_discord.rs`, which run the built binary.
+- Used by: the operator on the staging host.
 - Rules: every subcommand is a row of `SUBCOMMANDS` whose parser takes all its flags before any
   guard runs; a subcommand writes only in `RunMode::Apply`; synthetic accounts take their ids from
   `reserved_accounts.rs` and nothing deletes outside that range; secret files are created only

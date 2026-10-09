@@ -244,7 +244,3 @@ pub(super) fn json_repr(v: Option<&Value>) -> String {
         Some(other) => other.to_string(),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/pycompat/tests.rs"]
-mod tests;

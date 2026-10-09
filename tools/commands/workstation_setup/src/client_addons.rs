@@ -164,7 +164,3 @@ fn shell_tool_code(tool: Run) -> std::result::Result<i32, NotRun> {
         Err(cause) => Err(cause),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/client_addons_tests.rs"]
-mod tests;

@@ -13,8 +13,7 @@ tools/commands/staging_procedures/src/remote_actions/
 ├── host_fixture_commands.rs  every `staging-fixtures` subcommand, from the host checkout root
 ├── mod.rs                    the module tree
 ├── outage_dropin.rs          the API unit's `HTTPS_PROXY` drop-in: install, remove, state
-├── relay_control.rs          the relay's `control` socket: arm, disarm, status
-└── tests/                    unit tests for every action's command
+└── relay_control.rs          the relay's `control` socket: arm, disarm, status
 ```
 
 ## How it works

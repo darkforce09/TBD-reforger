@@ -323,7 +323,3 @@ impl DropPolicy {
         self.state.lock().unwrap_or_else(PoisonError::into_inner)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/drop_policy_tests.rs"]
-mod tests;

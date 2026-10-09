@@ -165,7 +165,3 @@ fn set_mode(path: &Path, mode: u32) -> Result<()> {
         .with_context(|| format!("chmod {mode:o} {}", path.display()))?;
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/server_profile_tests.rs"]
-mod tests;

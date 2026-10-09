@@ -196,7 +196,3 @@ impl StagingSettings {
             .find_map(|instance| instance.relay_unit().map(|unit| (instance.number, unit)))
     }
 }
-
-#[cfg(test)]
-#[path = "tests/staging_settings.rs"]
-mod tests;

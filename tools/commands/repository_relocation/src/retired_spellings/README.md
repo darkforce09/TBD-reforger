@@ -40,5 +40,4 @@ pass matches whole segments, each a slice of the file.
   `repository_files.rs` and `rust_paths::path_rules`.
 - Used by: `tools/commands/repository_relocation/src/retired_spellings.rs` only.
 - Rules: the single pass gives every manifest the verdicts, notes and offence order the per-row
-  judge gives it
-  (`relocate_verify_single_pass_matches_the_per_row_judge_over_composed_manifests`).
+  judge gives it.

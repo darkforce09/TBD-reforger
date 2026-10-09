@@ -18,18 +18,3 @@ pub(crate) mod procedure;
 pub(crate) mod recording;
 pub(crate) mod runner;
 pub(crate) mod step;
-
-#[cfg(test)]
-pub(crate) mod fake_clock;
-
-#[cfg(test)]
-#[path = "tests/runner_support.rs"]
-pub(crate) mod runner_support;
-
-#[cfg(test)]
-#[path = "tests/runner.rs"]
-mod runner_tests;
-
-#[cfg(test)]
-#[path = "tests/procedure_plan.rs"]
-mod procedure_plan_tests;

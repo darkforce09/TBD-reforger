@@ -7,7 +7,7 @@
 //! cleans the fixtures and the account file whatever happened.
 //!
 //! **Position:** called by `staging_dispatch.rs`; reaches the local stack through a
-//! [`RehearsalEnvironment`] ([`LocalStack`] live, a stub in the tests), and shares the judges,
+//! [`RehearsalEnvironment`] ([`LocalStack`] live), and shares the judges,
 //! the queries and the workstation seam with the recorded run.
 //!
 //! **Signals & state:** a private scratch folder under `target/staging/load/` holding the account

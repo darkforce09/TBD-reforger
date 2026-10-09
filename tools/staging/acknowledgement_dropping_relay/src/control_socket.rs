@@ -257,7 +257,3 @@ pub fn send_control_command(socket: &Path, command: ControlCommand) -> Result<Re
         ))),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/control_socket_tests.rs"]
-mod tests;

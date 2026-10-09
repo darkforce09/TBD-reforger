@@ -1,15 +1,11 @@
-//! The database source checks: `cargo xtask verify wiki-seeds`, `faction-library-seeds` and
-//! `no-select-star`.
+//! The database source check: `cargo xtask verify no-select-star`.
 //!
-//! **Role:** declares the three gates; each pins a seed file or the API's query sources to the
-//! contract it must keep.
+//! **Role:** declares the gate that holds the API's query sources to explicit column lists on
+//! tables with nullable columns.
 //! **Position:** inside `database_operations`; the xtask binary's `verify` and `ci` groups call
-//! them; [`wiki_seeds`] and [`faction_library_seeds`] read the seed order in
-//! `crate::local_database::SEEDS`.
+//! it.
 //! **Signals & state:** none.
 //! **Invariants:** a gate's verdict is its exit code (0 held, 1 findings, 2 did not run), and a
 //! gate that examined nothing fails.
 
-pub mod faction_library_seeds;
 pub mod sql_deserialization;
-pub mod wiki_seeds;

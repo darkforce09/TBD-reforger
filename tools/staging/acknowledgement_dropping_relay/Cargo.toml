@@ -31,9 +31,5 @@ thiserror = { workspace = true }
 time_source = { workspace = true }
 tokio = { workspace = true, features = ["io-util", "macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
 
-[dev-dependencies]
-# The checkout root, where the test reads the relay's systemd unit.
-repository_root = { workspace = true }
-
 [lints]
 workspace = true

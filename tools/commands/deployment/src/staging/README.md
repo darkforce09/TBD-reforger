@@ -25,7 +25,7 @@ tools/commands/deployment/src/staging/
 ├── remote/                              the fleet pipeline, the ssh and rsync argv, the boot verdict per instance
 ├── remote.rs                            `Runner`, which drives the shared ssh transport and prints instead of spawning on dry runs
 ├── render.rs                            the modpack source, `game.mods[]` and the server config check
-└── tests/                               unit tests of every module here
+└── tests/                               unit tests for the config, the payloads, the render and the remote deploy
 ```
 
 ## How it works
@@ -100,7 +100,7 @@ as a bearer token on curl's stdin, else from the single `TBD_WORKSHOP_MOD_ID`.
 
 ## Boundaries
 
-- Depends on: `tool_test_support` and `deploy_settings` (the settings
+- Depends on: `deploy_settings` (the settings
   file, the deploy host and the remote folder defaults); `process_runner`; `serde_json` and
   `regex`; the three template units of `deploy/systemd/`, embedded by
   `fleet_units.rs`; on the host, the website API that `cargo xtask deploy website` runs there, the
@@ -118,30 +118,19 @@ as a bearer token on curl's stdin, else from the single `TBD_WORKSHOP_MOD_ID`.
   rewrites an instance's profile with `payloads.rs`' `instance_profile_commands`.
 - Rules: `deploy.env` is parsed, never executed, and a command line in it stops the deploy
   (`a_command_line_in_the_deploy_file_is_refused_and_never_run` in `tests/config/tests.rs`); its
-  values beat the process environment (`deploy_env_file_beats_the_process_environment`); a retired
-  setting is refused without printing its value
-  (`a_retired_setting_is_refused_with_its_replacement_and_without_its_value`); the port rules hold
-  (`five_instances_take_their_ports_from_the_three_bases`,
-  `a_shared_or_overflowing_port_breaks_the_rules` in `tests/fleet_instances/tests.rs`); a render
-  for five instances carries its own ports, visibility and placeholders
-  (`render_only_writes_every_instance_of_the_five` in `tests/fleet_server_config/tests.rs`); the
-  unit texts are pinned (`tests/fleet_units/tests.rs`); the migration's argv and effect are pinned,
-  its effect under a local bash (`tests/legacy_single_instance_migration/tests.rs`); the host agent
-  name migration's decision table, script and effect under a local bash, its refusals changing
-  nothing and its second run a no-op (`tests/host_agent_name_migration/tests.rs`); the secret file
+  values beat the process environment; a retired
+  setting is refused without printing its value; the port rules hold; a render
+  for five instances carries its own ports, visibility and placeholders; the host agent name
+  migration's refusals change nothing and its second run is a no-op; the secret file
   check fails closed and prints no secret under a local bash
   (`the_secret_file_check_runs_and_never_prints_a_secret` in `tests/payloads/tests.rs`); an
   instance's `TBD_BackendConfig.json` has one writer, `instance_profile_commands`, which the
-  instance files carry (`instance_files_are_written_from_host_secrets_and_never_carry_one`); its
-  `backendUrl` is `TBD_BACKEND_URL`'s one reading, without a trailing `/`
-  (`the_backend_url_has_one_reading_without_a_trailing_slash` in `tests/fleet_instances/tests.rs`,
-  `the_backend_url_is_the_one_reading_without_a_trailing_slash` in `tests/config/tests.rs`); no argv
+  instance files carry; its
+  `backendUrl` is `TBD_BACKEND_URL`'s one reading, without a trailing `/`; no argv
   and no dry-run line holds a secret
   (`the_ssh_password_is_in_no_argv_and_only_in_the_child_environment`,
   `the_dry_run_plan_walks_every_instance_and_prints_no_secret` in `tests/remote/tests.rs`); the
-  boot of the previous run never passes for the new one
-  (`the_log_folder_newest_before_the_restart_never_counts` in
-  `tests/remote/instance_boot_verdict_tests.rs`); the pipeline runs no compose command
+  boot of the previous run never passes for the new one; the pipeline runs no compose command
   (`cargo xtask verify staging-compose-paths`).
 
 ## Related documentation

@@ -2,7 +2,7 @@
 //!
 //! **Role:** installs the ring provider as the rustls process default, once, and hands out the
 //! `reqwest` clients and builders every construction site uses.
-//! **Position:** called by the relay's upstream client and the tests.
+//! **Position:** called by the relay's upstream client.
 //! **Signals & state:** one process-wide `Once`; the rustls process default it sets.
 //! **Invariants:** this crate's `reqwest` speaks plain HTTP on its own, but a build that unifies
 //! features with a crate enabling `rustls-no-provider` (a workspace-wide `cargo test`, or a binary

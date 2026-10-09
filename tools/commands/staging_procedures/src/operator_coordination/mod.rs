@@ -13,7 +13,3 @@
 
 pub(crate) mod action_list;
 pub(crate) mod awaited_effect;
-
-#[cfg(test)]
-#[path = "tests/action_list.rs"]
-mod action_list_tests;

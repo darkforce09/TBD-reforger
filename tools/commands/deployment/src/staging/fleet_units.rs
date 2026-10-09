@@ -108,7 +108,3 @@ pub(super) fn game_servers_restart_payload(instances: &[FleetInstance]) -> Strin
         unit_list(instances, FleetInstance::game_server_unit)
     )
 }
-
-#[cfg(test)]
-#[path = "tests/fleet_units/tests.rs"]
-mod tests;

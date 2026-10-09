@@ -11,8 +11,7 @@ tools/commands/staging_procedures/src/support_commands/
 ├── host_capacity.rs  `status --capacity`: load average, memory, each unit's memory and CPU
 ├── mod.rs            the module tree
 ├── preflight.rs      `PreflightCheck`, the harness's own checks, and the met or unmet report
-├── status.rs         the resting state and setup content beside their expected values
-└── tests/            unit tests for preflight, status, capacity and fingerprints
+└── status.rs         the resting state and setup content beside their expected values
 ```
 
 ## How it works

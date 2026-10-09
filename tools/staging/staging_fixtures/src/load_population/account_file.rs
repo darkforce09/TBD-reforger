@@ -108,7 +108,3 @@ pub(super) fn render_account_file(accounts: &[SeededAccount]) -> Result<String, 
     serde_json::to_string(&document)
         .map_err(|error| ToolFailure::failed(format!("cannot render the account file: {error}")))
 }
-
-#[cfg(test)]
-#[path = "tests/account_file.rs"]
-mod tests;

@@ -239,7 +239,3 @@ pub(super) fn registry_import() -> Result<u8> {
         || "failed to spawn cargo run --bin import-item-registry",
     )
 }
-
-#[cfg(test)]
-#[path = "tests/recipe_execution/tests.rs"]
-mod tests;

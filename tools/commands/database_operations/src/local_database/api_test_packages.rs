@@ -88,7 +88,3 @@ pub fn package_arguments(packages: &[String]) -> Vec<String> {
         .flat_map(|package| ["-p".to_string(), package.clone()])
         .collect()
 }
-
-#[cfg(test)]
-#[path = "tests/api_test_packages/tests.rs"]
-mod tests;

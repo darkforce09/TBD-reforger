@@ -10,8 +10,7 @@ Both live in the run folder `target/staging/<check>/<run>/`.
 tools/commands/staging_procedures/src/observation_journal/
 ├── browser_inbox.rs  `browser_inbox/<step>.json` entries, accepted only inside the step's window
 ├── journal.rs        `journal.jsonl` lines and `artifacts/<sha256>.txt` files
-├── mod.rs            the module tree
-└── tests/            unit tests for the journal and the inbox window rules
+└── mod.rs            the module tree
 ```
 
 ## How it works

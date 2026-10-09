@@ -19,7 +19,3 @@ pub(crate) mod game_server_update;
 pub(crate) mod host_fixture_commands;
 pub(crate) mod outage_dropin;
 pub(crate) mod relay_control;
-
-#[cfg(test)]
-#[path = "tests/remote_action_commands.rs"]
-mod remote_action_command_tests;

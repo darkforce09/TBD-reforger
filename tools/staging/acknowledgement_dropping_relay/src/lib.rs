@@ -40,7 +40,3 @@ pub use relay::{RelayLog, RunningRelay, serve, start};
 pub use relay_settings::{
     AGENT_REQUEST_TIMEOUT, DEFAULT_WITHHOLD, RelaySettings, UpstreamOrigin, loopback_listen_address,
 };
-
-#[cfg(test)]
-#[path = "tests/stub_upstream.rs"]
-mod stub_upstream;

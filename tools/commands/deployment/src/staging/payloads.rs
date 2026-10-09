@@ -7,8 +7,7 @@
 //!
 //! **Position:** called by the deploy pipeline in `super::remote`, and for the profile's commands by
 //! the staging harness's `mod_runtime` credential promotion (the xtask binary's
-//! `staging fleet` procedure); pure, so the tests pin the bytes, which is the
-//! stand-in for live coverage a development machine cannot have.
+//! `staging fleet` procedure); pure: every payload is a string built from its inputs.
 //!
 //! **Signals & state:** none.
 //!

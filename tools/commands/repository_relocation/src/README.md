@@ -28,7 +28,6 @@ tools/commands/repository_relocation/src/
 ├── rust_lexer.rs         a lossless Rust tokenizer telling code, literals and comments apart
 ├── rust_paths/           the `rust_path` row pass: `use` trees, code paths, doc links, chains
 ├── scope_history.rs      where a manifest's scope lies, and where its retired spellings live again, after the later manifests' moves
-├── tests/                unit tests and whole runs on throwaway git checkouts
 ├── text_edits.rs         byte-span edits, their merge and application, and the allowed spans
 └── text_tokens.rs        the `text` row pass: identifier-like tokens on word boundaries
 ```
@@ -168,55 +167,31 @@ own row. `text` rows are not judged.
   `ticket_model::StatusName` for the closed ticket statuses; the frozen-area constants in
   `tools/foundation/repository_layout/src/documentation_locations.rs`; `git` on the path.
 - Used by: `tools/xtask/src/commands/refactor/dispatch.rs` only.
-- Rules: nothing is written before the whole plan is computed, free of unresolved items
-  (`relocate_unresolvable_literal_fails_apply_with_nothing_written`) and its planned tree verifies
-  clean (`relocate_dry_run_verifies_the_planned_tree_and_fails_on_a_hidden_leftover`); a SQL
-  migration moves byte-identical and is never judged, while every other `.sql` file is live
-  (`relocate_sql_migrations_move_byte_identical_and_are_not_verified`); a spelling that only looks
+- Rules: nothing is written before the whole plan is computed, free of unresolved items and its planned tree verifies
+  clean; a SQL
+  migration moves byte-identical and is never judged, while every other `.sql` file is live; a spelling that only looks
   like a path is never rewritten: a literal of separators alone and a plain fixture path that only
-  starts with a moved folder's name stay as written
-  (`relocate_lone_separator_literals_name_no_path`,
-  `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); a literal every crate
+  starts with a moved folder's name stay as written; a literal every crate
   spells for its own files, a fixture path relative to a temporary checkout and a path whose tail
-  names nothing stay as written in a file that leaves its crate, listed as ambiguous
-  (`relocate_crate_generic_literals_in_a_file_leaving_its_crate_stay_as_written`); each move lands
-  exactly at its `to` in any manifest order
-  (`relocate_folder_rows_sharing_a_parent_each_land_at_their_to`), colliding rows are refused with
-  both lines (`relocate_rows_that_collide_are_refused_with_both_lines`), and a failure after any
-  step leaves the index and the working tree byte-identical
-  (`relocate_failed_apply_leaves_index_and_tree_byte_identical`), and the dry run refuses a row
-  the apply would meet occupied (`relocate_dry_run_refuses_a_file_row_its_folder_row_already_lands`);
-  a crate whose manifest git does not track yet keeps its literals through an unrelated apply
-  (`relocate_crate_with_an_untracked_manifest_survives_an_unrelated_apply`); a file moved into a new
+  names nothing stay as written in a file that leaves its crate, listed as ambiguous; each move lands
+  exactly at its `to` in any manifest order, colliding rows are refused with
+  both lines, and a failure after any
+  step leaves the index and the working tree byte-identical, and the dry run refuses a row
+  the apply would meet occupied;
+  a crate whose manifest git does not track yet keeps its literals through an unrelated apply; a file moved into a new
   crate folder re-anchors its `CARGO_MANIFEST_DIR` joins at the crate manifest the same manifest
   moves there or an untracked one on disk, and a file moved where no crate manifest lies below the
-  root leaves them unresolved
-  (`relocate_manifest_dir_joins_follow_a_crate_manifest_the_same_manifest_moves`,
-  `relocate_manifest_dir_joins_follow_an_untracked_crate_manifest_at_the_destination`,
-  `relocate_manifest_dir_joins_into_a_folder_with_no_crate_manifest_are_unresolved`); an earlier manifest's
+  root leaves them unresolved; an earlier manifest's
   scope is judged where later manifests moved it, holds when they emptied it and fails closed
-  otherwise (`relocate_verify_judges_an_earlier_scope_where_a_later_manifest_moved_it`,
-  `relocate_verify_passes_a_scope_a_later_manifest_emptied_and_fails_an_unexplained_one`), and a
-  scope its own rows emptied file by file applies and holds
-  (`relocate_manifest_that_empties_its_own_scope_file_by_file_applies_and_verifies`,
-  `relocate_verify_composes_a_scope_emptied_by_its_own_rows_through_later_manifests`); a retired
+  otherwise, and a
+  scope its own rows emptied file by file applies and holds; a retired
   `path` spelling is legal again only below a later manifest's `to`, never from an earlier one,
-  and a later retirement judges it again
-  (`relocate_verify_passes_a_spelling_a_later_manifest_moved_back`,
-  `relocate_verify_lets_an_uncommitted_manifest_revive_a_spelling`,
-  `relocate_verify_fails_a_retired_spelling_no_later_manifest_revives`,
-  `relocate_verify_judges_a_revived_spelling_retired_again_with_the_later_row`,
-  `relocate_verify_revives_nothing_from_a_manifest_ordered_before_the_retiring_one`,
-  `relocate_verify_revives_only_the_path_below_a_retired_folder_a_later_row_names`,
-  `relocate_verify_revives_nothing_from_a_later_move_into_a_folder_above`); the
-  manifest order survives a move of the manifests folder
-  (`relocate_manifest_order_survives_a_move_of_the_manifests_folder`); a frozen area's README
-  index takes live rewrites in its Contents tree only
-  (`relocate_frozen_readme_index_contents_tree_follows_the_moves`); this crate's test sources keep
-  their literals and comments (`relocate_own_test_fixtures_keep_their_literals_and_comments`); the passes
+  and a later retirement judges it again; the
+  manifest order survives a move of the manifests folder; a frozen area's README
+  index takes live rewrites in its Contents tree only; this crate's test sources keep
+  their literals and comments; the passes
   and the verification share `file_treatment.rs`, `path_references::allowed_spans` and
-  `path_tokens::classify_occurrence`, so they judge the same bytes the same way; tests are named
-  `relocate_*` and run on throwaway checkouts, never on this one.
+  `path_tokens::classify_occurrence`, so they judge the same bytes the same way.
 
 ## Related documentation
 

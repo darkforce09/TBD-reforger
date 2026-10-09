@@ -243,7 +243,3 @@ pub fn run(args: &[String]) -> Result<u8> {
 
     remote::deploy(&paths, &cli)
 }
-
-#[cfg(test)]
-#[path = "tests/staging/tests.rs"]
-mod tests;

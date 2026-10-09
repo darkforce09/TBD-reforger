@@ -11,8 +11,7 @@ services, which makes it the one tool crate the crate-tier law lets depend on th
 ```text
 tools/staging/staging_fixtures/
 ├── Cargo.toml  the `staging_fixtures` binary package (`staging-fixtures`): the api crates, sqlx, reqwest and rustls, layout tier 10
-├── src/        the subcommand table, the guards, the fleet, load and Discord subcommands and the secret files
-└── tests/      the four suites that run the built binary against their own database, and their support module
+└── src/        the subcommand table, the guards, the fleet, load and Discord subcommands and the secret files
 ```
 
 ## How it works
@@ -23,25 +22,15 @@ argv ─▶ the subcommand's flags parse ─▶ the API env file's DATABASE_URL 
         with --apply, through the api crates' services
 ```
 
-`src/README.md` describes the guards, each subcommand and the secret files. The suites in `tests/`
-run the executable cargo builds for them (`CARGO_BIN_EXE_staging-fixtures`) against a database of
-their own and read the result back: the rows, the files, and, for the load fixtures, the API itself,
-which `tests/common/api_under_test.rs` composes from the same api crates and middleware chain as
-the `api_server` application, since a tool crate never depends on an application.
+`src/README.md` describes the guards, each subcommand and the secret files.
 
 ## Getting started
 
 Run from the repository root:
 
 ```bash
-cargo test -p staging_fixtures --bins   # the unit tests: argument lists, the reserved range, the fixture plan, the Discord reads
 cargo build --release -p staging_fixtures --bin staging-fixtures   # target/release/staging-fixtures, as the website deploy builds it on the host
 ```
-
-The four suites need a database: with `cargo xtask db up` running, export `TEST_DATABASE_URL` naming
-an allow-listed base database (`rust_it`, `tbd_gate*`, `*_cold`, `*_it` or `*_probe`) and run
-`cargo test -p staging_fixtures --test staging_fixtures_fleet` (or `_fixture_events`,
-`_population`, `_discord`); each suite derives, creates and migrates a database of its own from it.
 
 ## Configuration
 
@@ -55,8 +44,7 @@ another, read without touching the process environment:
 | `DISCORD_BOT_TOKEN` | empty | for the Discord member reads; both seedings refuse while it is set | `src/discord_member_probe/discord_target.rs`, `src/load_population/population_seeding.rs`, `src/load_fixture_events/fixture_seeding.rs` |
 
 The process environment's `RUST_LOG` sets the filter of the services' error log on stderr (`warn`
-when unset; `src/main.rs`). The suites read
-`TEST_DATABASE_URL` (`tests/common/database.rs`). No feature.
+when unset; `src/main.rs`). No feature.
 
 ## Public surface
 

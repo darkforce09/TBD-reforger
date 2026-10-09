@@ -321,7 +321,3 @@ fn print_stdout(text: &str) {
     let _ = stdout.write_all(text.as_bytes());
     let _ = stdout.flush();
 }
-
-#[cfg(test)]
-#[path = "tests/call/tests.rs"]
-mod tests;

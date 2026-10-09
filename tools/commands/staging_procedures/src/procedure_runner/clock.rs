@@ -5,7 +5,7 @@
 //! passes [`time_source::SystemClock`] itself.
 //!
 //! **Position:** passed to `runner.rs` by `recording.rs`; `staging_dispatch.rs` passes
-//! [`time_source::SystemClock`], tests pass `fake_clock.rs`.
+//! [`time_source::SystemClock`].
 //!
 //! **Signals & state:** none; the system clock is the process's wall clock.
 //!

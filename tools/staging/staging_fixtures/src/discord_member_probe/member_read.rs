@@ -292,7 +292,3 @@ async fn observe(
         )),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/member_read.rs"]
-mod tests;

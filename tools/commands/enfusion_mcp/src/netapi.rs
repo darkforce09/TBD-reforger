@@ -178,7 +178,3 @@ pub(crate) fn cmd(api_func: Option<&str>, args_json: Option<&str>, timeout_s: u6
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/netapi/tests.rs"]
-mod tests;

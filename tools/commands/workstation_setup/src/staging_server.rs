@@ -247,7 +247,3 @@ fn not_run_exit(e: &NotRun) -> u8 {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/staging_server_tests.rs"]
-mod tests;

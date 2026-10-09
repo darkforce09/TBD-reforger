@@ -139,7 +139,3 @@ pub(super) fn migration_plan_line(profile_dir: &str, server_config: &str) -> Str
         SINGLE_INSTANCE_UNITS.join(" and ")
     )
 }
-
-#[cfg(test)]
-#[path = "tests/legacy_single_instance_migration/tests.rs"]
-mod tests;

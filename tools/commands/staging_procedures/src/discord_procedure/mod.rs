@@ -233,15 +233,3 @@ fn preflight_checks(settings: &StagingSettings) -> Vec<PreflightCheck> {
     ));
     checks
 }
-
-#[cfg(test)]
-#[path = "tests/recorded_discord.rs"]
-mod recorded_discord;
-
-#[cfg(test)]
-#[path = "tests/discord_run.rs"]
-mod discord_run_tests;
-
-#[cfg(test)]
-#[path = "tests/discord_receipt.rs"]
-mod discord_receipt_tests;

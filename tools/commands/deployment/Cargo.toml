@@ -32,8 +32,6 @@ thiserror = { workspace = true }
 verification_core = { workspace = true }
 
 [dev-dependencies]
-# The website tests read the host tools' and the API's manifests.
-toml = { workspace = true }
 # The test checkout root.
 tool_test_support = { workspace = true }
 

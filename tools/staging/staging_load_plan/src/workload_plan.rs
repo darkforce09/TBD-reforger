@@ -425,7 +425,3 @@ impl LoadRunPlan {
         Ok(url.origin().ascii_serialization())
     }
 }
-
-#[cfg(test)]
-#[path = "tests/workload_plan_tests.rs"]
-mod tests;

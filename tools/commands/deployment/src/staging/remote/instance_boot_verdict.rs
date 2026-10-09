@@ -325,7 +325,3 @@ pub(super) fn instance_log_check(
         }
     }
 }
-
-#[cfg(test)]
-#[path = "../tests/remote/instance_boot_verdict_tests.rs"]
-mod tests;

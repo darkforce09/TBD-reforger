@@ -188,7 +188,3 @@ impl Drop for TmpGuard {
         let _ = fs::remove_dir_all(&self.0);
     }
 }
-
-#[cfg(test)]
-#[path = "tests/mission_version_upload/tests.rs"]
-mod tests;

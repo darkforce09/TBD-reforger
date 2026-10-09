@@ -56,7 +56,6 @@ with the same line vocabulary `mod remote-logs` uses in
 Run from the repository root:
 
 ```bash
-cargo test -p enfusion_mcp   # the call usage, the daemon paths, netapi framing, smoke with a stub cargo, wb-logs verdicts, the entrypoint tiers
 cargo xtask mcp selftest     # the whole call path offline, against the recorded transcripts and the mcpd stub
 ```
 
@@ -147,7 +146,7 @@ Each runs as `cargo xtask mcp <command>`; a clap usage error exits 2.
 - Depends on: `process_runner` (`Run`, its detached spawn, `which`), `repository_layout` (the
   root walk, `MCP_TRANSCRIPT_FIXTURES_DIR`, the `dev-mcpd` build subfolder, the pinned entry module),
   `verification_core` (`lock::flock_exclusive`, `Pattern`, `gate::probe_str`), `clap`, `libc`
-  (`getuid`), `serde_json` and `thiserror`; `tool_test_support` in tests; the `mcpd`
+  (`getuid`), `serde_json` and `thiserror`; the `mcpd`
   binary of `tools/developer_tools/`, which this crate builds and starts; the `timeout`, `kill`,
   `pgrep` and `pkill` tools; a running Workbench with its NET API for `smoke`, `wbcall` and live
   calls.

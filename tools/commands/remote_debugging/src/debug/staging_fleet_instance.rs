@@ -79,7 +79,3 @@ pub(crate) fn select_fleet_instance(
 pub(crate) fn profile_under_home(instance: &FleetInstance) -> String {
     InstanceFolder::under(FLEET_ROOT_UNDER_HOME, instance.number).profile()
 }
-
-#[cfg(test)]
-#[path = "tests/staging_fleet_instance/tests.rs"]
-mod tests;

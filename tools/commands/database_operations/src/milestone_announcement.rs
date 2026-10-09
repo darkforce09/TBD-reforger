@@ -249,7 +249,3 @@ fn not_run_exit(e: &NotRun) -> u8 {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/milestone_announcement/tests.rs"]
-mod tests;

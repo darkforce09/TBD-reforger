@@ -14,8 +14,7 @@ tools/commands/remote_debugging/src/reproduction/
 ├── mission_version_upload.rs  `mission-upload`: dev login, mission create, one upload per size
 ├── mod.rs                     the module tree and the `ReproCmd` and `run` re-exports
 ├── reproduction_command.rs    the `ReproCmd` clap enum: three commands
-├── reproduction_dispatch.rs   `run`: routes each `ReproCmd` to its function
-└── tests/                     unit tests for the token extraction from the dev-login redirect
+└── reproduction_dispatch.rs   `run`: routes each `ReproCmd` to its function
 ```
 
 ## How it works
@@ -75,8 +74,7 @@ Each runs as `cargo xtask repro <command>`; a clap usage error exits 2.
 - Depends on: `process_runner` for curl; `serde_json` and `regex`; curl; the website API
   with its dev login, `POST /api/v1/missions` and `POST /api/v1/missions/{id}/versions`.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; people reproducing an upload failure.
-- Rules: the token comes from the `access_token` of the dev-login redirect
-  (`extract_token_matches_sed` in `tests/mission_version_upload/tests.rs`); the upload loop never
+- Rules: the token comes from the `access_token` of the dev-login redirect; the upload loop never
   stops on a failed upload.
 
 ## Related documentation

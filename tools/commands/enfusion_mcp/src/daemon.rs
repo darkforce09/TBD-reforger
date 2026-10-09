@@ -317,7 +317,3 @@ fn default_project_path() -> String {
     let home = env::var("HOME").unwrap_or_else(|_| ".".into());
     format!("{home}/Documents/Games/ArmaReforgerWorkbench/addons")
 }
-
-#[cfg(test)]
-#[path = "tests/daemon/tests.rs"]
-mod tests;

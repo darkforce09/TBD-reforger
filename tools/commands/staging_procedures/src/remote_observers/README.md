@@ -15,7 +15,6 @@ tools/commands/staging_procedures/src/remote_observers/
 ├── metrics_reader.rs         `/metrics` with the bearer read on the host and piped to curl
 ├── mod.rs                    the module tree
 ├── remote_command.rs         `RemoteCommand`, `CommandPurpose`, `HostCommandRunner`, shell quoting
-├── tests/                    unit tests for every observer's command and parser
 ├── unit_journal_reader.rs    a unit's `journalctl --user` lines since a Unix time
 └── unit_state_reader.rs      `systemctl --user show`: state, PID, start, memory, CPU
 ```
@@ -37,5 +36,5 @@ the only remote argument and spawns it with a 120 s timeout for a read and 3600 
 - Depends on: `process_runner::secure_shell_transport`; `process_runner`; on the host, bash,
   docker, `systemctl`, `journalctl`, curl and the `staging-fixtures` tool.
 - Used by: the procedure runner's probes, `support_commands/`, `environment_identity/`.
-- Rules: every observer builds a read; no command line or script carries a secret; the tests pin
-  each command and the read-only psql guard.
+- Rules: every observer builds a read; no command line or script carries a secret; psql reads run
+  behind the read-only guard.

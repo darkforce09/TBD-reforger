@@ -36,11 +36,8 @@ output, so tokio and the HTTP client stay out of xtask's dependency closure.
 Run from the repository root:
 
 ```bash
-cargo test -p staging_load_generator   # the account rotation, the guard, the command line and runs against a stub API
+cargo build -p staging_load_generator   # the account rotation, the guard, the command line and the run engine
 ```
-
-The run tests bind 127.0.0.2 to 127.0.0.6 as source addresses, which every Linux loopback
-interface answers for.
 
 ## Configuration
 
@@ -62,7 +59,7 @@ target origin, the source addresses, the account file and the fixture events.
   binary for the recorded run and the local rehearsal.
 - Rules: tier 2 of `tools/staging` (`cargo xtask verify crate-tiers`); never a dependency of
   xtask (the tokio firewall of the crate-tier law); no token reaches a log, an error, the report or
-  standard output (`account_rotation.rs` and its tests).
+  standard output (`account_rotation.rs`).
 
 ## Related documentation
 

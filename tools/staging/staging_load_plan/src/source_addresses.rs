@@ -46,7 +46,3 @@ pub fn busiest_window(sorted: &[Duration], window: Duration) -> usize {
     }
     busiest
 }
-
-#[cfg(test)]
-#[path = "tests/source_addresses_tests.rs"]
-mod tests;

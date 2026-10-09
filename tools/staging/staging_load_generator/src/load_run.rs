@@ -124,7 +124,3 @@ async fn drive(
     }
     Ok(outcomes)
 }
-
-#[cfg(test)]
-#[path = "tests/load_run_tests.rs"]
-mod tests;

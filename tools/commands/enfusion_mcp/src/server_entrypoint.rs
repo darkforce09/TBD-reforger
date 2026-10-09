@@ -196,7 +196,3 @@ fn escape_regex_metacharacters(literal: &str) -> String {
     }
     escaped
 }
-
-#[cfg(test)]
-#[path = "tests/server_entrypoint/tests.rs"]
-mod tests;

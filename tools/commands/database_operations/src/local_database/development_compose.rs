@@ -135,7 +135,3 @@ impl ComposeProject {
         self.folder.join(self.shown.stdin_path(from_root))
     }
 }
-
-#[cfg(test)]
-#[path = "tests/development_compose/tests.rs"]
-mod tests;

@@ -89,18 +89,10 @@ text).
 - Used by: `super::relocation_plan` (the pass) and `super::retired_spellings` (`allowed_spans`,
   `path_tokens::classify_occurrence`).
 - Rules: Rust code outside literals and comments is never edited; a bare `../` in prose or a
-  comment is no candidate (`relocate_bare_parent_tokens_in_prose_and_comments_stay_as_written`); a URL, a fragment-only link and an
+  comment is no candidate; a URL, a fragment-only link and an
   absolute path are never relative candidates; a literal of separators alone and a plain Rust
   token whose whole path is untracked name nothing, and so does a climbing token whose lead
-  segment is no tracked folder at the anchor
-  (`relocate_lone_separator_literals_name_no_path`,
-  `relocate_climb_whose_lead_names_no_folder_stays_as_written`,
-  `relocate_plain_fixture_paths_under_a_moved_folder_name_stay_as_written`); a literal whose
-  meaning the moves do not change is never rewritten (`relocate_depth_change_rerelativises_include_and_manifest_dir_literals`,
-  `relocate_unresolvable_literal_fails_apply_with_nothing_written`); a literal its spelling does
-  not pin to one anchor is left as written and reported ambiguous
-  (`relocate_crate_generic_literals_in_a_file_leaving_its_crate_stay_as_written`); escape-adjacent spellings,
-  `file:` URLs and `/../` pieces are rewritten or unresolved, never skipped
-  (`relocate_spellings_after_control_escapes_are_rewritten_and_verified`,
-  `relocate_file_urls_carrying_a_repository_path_are_rewritten`,
-  `relocate_slash_led_climbs_in_macro_arguments_follow_their_anchor`).
+  segment is no tracked folder at the anchor; a literal whose
+  meaning the moves do not change is never rewritten; a literal its spelling does
+  not pin to one anchor is left as written and reported ambiguous; escape-adjacent spellings,
+  `file:` URLs and `/../` pieces are rewritten or unresolved, never skipped.

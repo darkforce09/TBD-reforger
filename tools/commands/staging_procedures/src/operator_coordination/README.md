@@ -10,8 +10,7 @@ run prints while it waits.
 tools/commands/staging_procedures/src/operator_coordination/
 ├── action_list.rs     `PlannedAction` and the rendering of `staging action-list`
 ├── awaited_effect.rs  the `AWAIT <step>: <instruction>` line, the inbox hint, the outcome lines
-├── mod.rs             the module tree
-└── tests/             unit tests for the rendering
+└── mod.rs             the module tree
 ```
 
 ## How it works

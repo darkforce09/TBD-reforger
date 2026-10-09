@@ -33,13 +33,12 @@ it through `encode_report`. `src/README.md` describes each module.
 Run from the repository root:
 
 ```bash
-cargo test -p staging_load_plan   # the plan checks, the catalog, the pacing, the records, the census and the codec
+cargo build -p staging_load_plan   # the plan checks, the catalog, the pacing, the records, the census and the codec
 ```
 
 ## Configuration
 
-One feature, `test_fixtures`: the sample workloads, templates and fixture events of `sample_plans`,
-enabled only from the load generator's `[dev-dependencies]`. No environment variable.
+No feature and no environment variable.
 
 ## Public surface
 
@@ -48,7 +47,7 @@ enabled only from the load generator's `[dev-dependencies]`. No environment vari
   `encode_report`, `decode_report`, `Error` and `Result`.
 - The modules `workload_plan`, `run_settings`, `request_catalog`, `pacing`, `latency_recording`,
   `concurrency_census`, `client_outcome`, `source_addresses`, `load_report`, `identifiers` and
-  `process_boundary`; `sample_plans` behind `test_fixtures`.
+  `process_boundary`.
 - `prelude`: the plan and report types, the two checks, the codec and `Error`.
 
 ## Boundaries
@@ -59,7 +58,7 @@ enabled only from the load generator's `[dev-dependencies]`. No environment vari
   `staging_procedures` load procedure, which builds plans, checks addresses and judges reports.
 - Rules: tier 1 of `tools/staging` (`cargo xtask verify crate-tiers`); no async runtime and no
   HTTP client, since xtask depends on it (the tokio firewall of the crate-tier law); a plan and a
-  report round-trip through the codec byte for byte (`src/tests/process_boundary_tests.rs`).
+  report round-trip through the codec byte for byte.
 
 ## Related documentation
 

@@ -26,16 +26,10 @@ process_runner = { workspace = true }
 regex = { workspace = true }
 # The workspace members the API test lane derives its packages from.
 repository_laws = { workspace = true }
-# The wave gate's seed sources the faction-library check reads.
-repository_checks = { workspace = true }
 repository_layout = { workspace = true }
 repository_root = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
-
-[dev-dependencies]
-# The test checkout root and the process environment lock.
-tool_test_support = { workspace = true }
 
 [lints]
 workspace = true

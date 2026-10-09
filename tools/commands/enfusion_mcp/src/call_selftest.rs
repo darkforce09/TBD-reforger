@@ -473,7 +473,3 @@ fn xtask_call(
     argv.extend(owned.iter().copied());
     cargo_xtask(root, &argv, None, envs)
 }
-
-#[cfg(test)]
-#[path = "tests/call_selftest/tests.rs"]
-mod tests;

@@ -18,7 +18,6 @@ tools/commands/staging_procedures/src/fleet_procedure/
 ├── mod.rs                  `FleetProcedure`: the `StagingProcedure` of the fleet check
 ├── operator_lists.rs       the numbered action list and the recovery list
 ├── single_server_reads.rs  W9–W14's committed queries: the operator's link, command leases, credentials
-├── tests/                  recorded observer answers, the waves on the fake clock, a recorded receipt
 └── waves/                  W1–W14: the wave table and the steps built from it
 ```
 
@@ -97,5 +96,4 @@ left midway.
 - Used by: `tools/commands/staging_procedures/src/staging_dispatch.rs`.
 - Rules: every read only reads (the config read prints only the `scenarioId` value, never the
   passwords the config holds); a wave's deadline counts from its first observed request row; the
-  harness never reads stdin; the unit tests are `cargo test -p staging_procedures --locked
-  fleet_procedure::`.
+  harness never reads stdin.

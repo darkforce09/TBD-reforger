@@ -19,8 +19,7 @@ tools/staging/acknowledgement_dropping_relay/src/
 ├── lib.rs               the crate root: module header, `mod` lines and the public surface
 ├── prelude.rs           the command line, the control client, the settings and the status for glob import
 ├── relay.rs             `start` and `serve`: forwarding, the withheld answer, the event log
-├── relay_settings.rs    the loopback rule on the listen address and the upstream, the hold time
-└── tests/               unit tests, and runs against a stub API on a free loopback port
+└── relay_settings.rs    the loopback rule on the listen address and the upstream, the hold time
 ```
 
 ## How it works
@@ -88,8 +87,7 @@ takes the command id from the route and the fencing token from the report the ag
 
 - Depends on: `axum` (the listener, through a listener of its own whose connections can be
   aborted), `reqwest` (the upstream client: no proxy, no redirects), `tokio`, `clap`, `serde`,
-  `serde_json`, `newtype_ids`, `time_source` (the drop record's wall-clock stamp) and `thiserror`;
-  the tests also read the relay's systemd unit through `repository_layout`.
+  `serde_json`, `newtype_ids`, `time_source` (the drop record's wall-clock stamp) and `thiserror`.
 - Used by: `developer_tools`' `acknowledgement-dropping-relay` executable, which the unit
   `acknowledgement-dropping-relay@N` runs on the staging host (installed by
   `cargo xtask deploy staging`), and the staging fleet procedure, which runs `control` there.
@@ -98,8 +96,6 @@ takes the command id from the route and the fencing token from the report the ag
     names at most the method, the path, the command id and its fencing token.
   - The claim and result documents follow `fleet-command.schema.json` (the `@contract` tags in
     `drop_policy.rs`, checked by the contract-citation gate).
-  - The tests run the relay and a stub API on free loopback ports and put the control socket in a
-    mode-700 folder under the system temporary folder.
 
 ## Related documentation
 

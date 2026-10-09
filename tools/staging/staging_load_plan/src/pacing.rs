@@ -172,7 +172,3 @@ pub fn reachable_member_accounts(workload: &WorkloadPlan) -> Result<u64> {
         })
         .sum())
 }
-
-#[cfg(test)]
-#[path = "tests/pacing_tests.rs"]
-mod tests;

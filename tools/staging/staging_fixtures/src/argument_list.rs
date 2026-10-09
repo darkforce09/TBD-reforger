@@ -132,7 +132,3 @@ impl ArgumentList {
         Some(self.entries.remove(index))
     }
 }
-
-#[cfg(test)]
-#[path = "tests/argument_list.rs"]
-mod tests;

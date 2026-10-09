@@ -5,10 +5,10 @@
 //! [`restore`] and [`restore_drill`] are the verified dump, the guarded `pg_restore` and the
 //! restore-into-scratch proof; [`container_database`] is the one container runtime, container exec,
 //! scratch allow-list and dump verifier they share, with the `deploy db` verbs;
-//! [`database_checks`] holds the seed and query source gates; [`milestone_announcement`] seeds the
+//! [`database_checks`] holds the query source gate; [`milestone_announcement`] seeds the
 //! milestone announcement.
 //! **Position:** tier 4 of `tools/commands`, over `process_runner`, `repository_layout`,
-//! `verification_core`, `content_digest`, `repository_checks` (the wave gate's seed sources) and
+//! `verification_core`, `content_digest` and
 //! `api_readiness_checks` (the property-test seed). The xtask binary's `db`, `verify`, `ci`, `mk`
 //! and `mod` groups and the `deployment` crate's `deploy db` call it.
 //! **Signals & state:** none; each call reads the process environment and the checkout and runs

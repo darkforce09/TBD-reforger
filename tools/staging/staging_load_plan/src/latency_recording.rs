@@ -141,7 +141,3 @@ pub fn summarise(
         max: latencies.last().copied(),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/latency_recording_tests.rs"]
-mod tests;

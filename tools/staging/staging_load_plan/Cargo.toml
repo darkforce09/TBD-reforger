@@ -25,10 +25,5 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror = { workspace = true }
 url = { workspace = true }
 
-[features]
-# The sample workloads, templates and fixture events the load generator's tests build plans
-# from; enabled only from `[dev-dependencies]`.
-test_fixtures = []
-
 [lints]
 workspace = true

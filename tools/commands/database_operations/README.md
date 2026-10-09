@@ -174,7 +174,7 @@ clap usage error exits 2.
   `deploy/systemd/`; the remote steps of `cargo xtask deploy website`, which run
   `db repair-migration-checksum`.
 - Rules: tier 4 of `tools/commands` (`cargo xtask verify crate-tiers`); `LANE_COMMANDS` names
-  exactly the `DbCmd` commands (`lane_commands_match_the_clap_enum`); `SEEDS` keeps its five files
+  exactly the `DbCmd` commands; `SEEDS` keeps its five files
   in order and the two seed gates read it; `tbd_reforger` is never a test-it label or a scratch
   target (`safe_scratch_allow_list_admits_scratch_names_and_refuses_the_live_database`).
 

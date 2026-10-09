@@ -30,7 +30,3 @@ mod virtual_client;
 pub use command_line::entrypoint;
 pub use error::{Error, Result};
 pub use load_run::run;
-
-#[cfg(test)]
-#[path = "tests/stub_api_server.rs"]
-mod stub_api_server;

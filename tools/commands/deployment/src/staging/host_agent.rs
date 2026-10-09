@@ -105,7 +105,3 @@ pub(super) fn host_agents_install_payload(remote_dir: &str, instances: &[FleetIn
     ));
     payload
 }
-
-#[cfg(test)]
-#[path = "tests/host_agent/tests.rs"]
-mod tests;

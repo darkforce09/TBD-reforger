@@ -47,14 +47,11 @@ under, a `deploy.env` that does not load) exits 1.
   `tools/commands/remote_debugging/src/debug/remote_logs.rs`; `verification_core` (`Pattern`,
   `gate::probe_str`); `process_runner::Run`; `deploy_settings` and, through
   `tools/commands/remote_debugging/src/debug/staging_fleet_instance.rs`,
-  `deployment::staging::fleet_instances`; ssh or sshpass; `tool_test_support` in tests.
+  `deployment::staging::fleet_instances`; ssh or sshpass.
 - Used by: `tools/commands/mod_operations/src/mod_dispatch.rs` (`mod remote-logs`), through
   `remote_debugging::debug::remote_logs::run`; the last step of
   `cargo xtask deploy staging`, which runs `mod remote-logs` and reads 2 as a pass.
-- Rules: an unreadable or absent log is ENVIRONMENT, never a zero count
-  (`missing_file_is_environment` in `tools/commands/remote_debugging/src/debug/tests/remote_logs/tests.rs`);
-  a log without tagged lines fails (`stale_fails`); a healthy boot without a player is PARTIAL
-  (`healthy_is_partial`); `--instance N` reads only instance N's profile
-  (`remote_logs_instance_reads_that_instances_profile`), and a fleet host without `--instance` is
-  refused (`remote_logs_single_server_on_a_fleet_host_is_refused`); the pattern vocabulary is shared by hand with
+- Rules: an unreadable or absent log is ENVIRONMENT, never a zero count;
+  a log without tagged lines fails; a healthy boot without a player is PARTIAL; `--instance N` reads only instance N's profile, and a fleet host without `--instance` is
+  refused; the pattern vocabulary is shared by hand with
   `tools/commands/enfusion_mcp/src/workbench_logs.rs`, and a change here is made there too.

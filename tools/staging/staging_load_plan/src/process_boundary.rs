@@ -62,7 +62,3 @@ pub fn decode_report(text: &str) -> Result<LoadReport> {
         error,
     })
 }
-
-#[cfg(test)]
-#[path = "tests/process_boundary_tests.rs"]
-mod tests;

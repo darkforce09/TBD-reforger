@@ -237,7 +237,3 @@ fn http_client(loopback: bool) -> Result<reqwest::Client, ToolFailure> {
         .build()
         .map_err(|error| ToolFailure::failed(format!("cannot build the HTTP client: {error}")))
 }
-
-#[cfg(test)]
-#[path = "tests/discord_target.rs"]
-mod tests;

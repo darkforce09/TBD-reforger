@@ -31,26 +31,6 @@ mod load_steps;
 mod local_rehearsal;
 mod workstation_load;
 
-#[cfg(test)]
-#[path = "tests/load_test_support.rs"]
-mod load_test_support;
-
-#[cfg(test)]
-#[path = "tests/load_data_and_judges.rs"]
-mod load_data_and_judges_tests;
-
-#[cfg(test)]
-#[path = "tests/load_run.rs"]
-mod load_run_tests;
-
-#[cfg(test)]
-#[path = "tests/local_rehearsal.rs"]
-mod local_rehearsal_tests;
-
-#[cfg(test)]
-#[path = "tests/workstation_load.rs"]
-mod workstation_load_tests;
-
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

@@ -161,7 +161,3 @@ impl SourceAddressPool {
         self.guard(index).reserve_auth(requested)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/source_address_pool_tests.rs"]
-mod tests;

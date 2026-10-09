@@ -20,8 +20,7 @@ tools/commands/workstation_setup/
 `tools/xtask/src/cli/mod.rs` mounts `SetupCmd` as the `setup` group and `tools/xtask/src/cli/dispatch.rs`
 hands it to `workstation_setup::run`, which calls each module's `run`. Every command writes only under the profile directory, `$HOME` or the paths
 its arguments name, prints what it made, and returns its exit code. Each module has a
-`run_with_root` or `run_with_paths` entry that takes its roots as arguments, so the tests run
-against throwaway trees instead of the operator's Steam install or home.
+`run_with_root` or `run_with_paths` entry that takes its roots as arguments.
 
 `staging_server` is not a `setup` subcommand: `tools/commands/mod_operations/src/mod_dispatch.rs`
 sends `cargo xtask mod bootstrap-staging` to it. It reads `TBD_SSH_HOST`, `TBD_REMOTE_DIR`,
@@ -99,7 +98,7 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   from its `enfusion_mod_folders`), `deploy_settings` (the deploy host and the
   remote folders), `process_runner` (`ssh`, `sshpass`, `mkdir`, `ln` and `whoami`),
   `verification_core` (`NotRun`), `clap` (the subcommand), `serde_json` (the backend config) and
-  `thiserror`; `tool_test_support` in tests.
+  `thiserror`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, which dispatches the group, and
     `tools/commands/mod_operations/src/mod_dispatch.rs`, for `mod bootstrap-staging`;
@@ -111,22 +110,17 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   - people setting up a machine, following the runbooks below.
 - Rules:
   - The backend config is written mode 600 inside a mode 700 folder, and the credential is written
-    in place, keeping the other keys and their order (`clean_tree_writes_modes_and_no_mission` and
-    `machine_credential_is_written_into_the_backend_config_in_place` in
-    `src/tests/server_profile_tests.rs`).
-  - A missing input exits 1 rather than succeeding (`missing_backend_exits_1`,
-    `missing_gproj_exits_1`, `missing_addons_dir_exits_1`, `arm_missing_host_exits_1`).
+    in place, keeping the other keys and their order.
+  - A missing input exits 1 rather than succeeding.
   - The Direct Join hint never fails the command and names the host, its address or the setting
-    to fill (`the_join_hint_names_the_host_its_address_or_the_setting_to_fill`).
-  - Tests use the `run_with_*` entries on throwaway roots and never touch the real Steam tree or
-    home.
+    to fill.
 
 ## Getting started
 
 Run from the repository root:
 
 ```bash
-cargo test -p workstation_setup   # every command on throwaway homes and trees
+cargo build -p workstation_setup   # every `setup` command
 ```
 
 ## Related documentation

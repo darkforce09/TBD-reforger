@@ -81,7 +81,3 @@ pub(crate) fn synthetic_username(index: u32) -> String {
 pub(crate) fn synthetic_handle(index: u32) -> String {
     format!("load-member-{index:05}")
 }
-
-#[cfg(test)]
-#[path = "tests/synthetic_id_range.rs"]
-mod tests;

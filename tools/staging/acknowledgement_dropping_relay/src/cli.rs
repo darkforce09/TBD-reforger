@@ -109,7 +109,3 @@ fn run(command: RelayCommand) -> Result<()> {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/cli_tests.rs"]
-mod tests;

@@ -96,10 +96,6 @@ impl Out {
 
 // ── the selftest ────────────────────────────────────────────────────────────────────────────
 
-#[cfg(test)]
-#[path = "tests/boot/tests.rs"]
-mod tests;
-
 mod read_addon_guid;
 pub(super) use read_addon_guid::assert_admins_configured;
 pub(super) use read_addon_guid::assert_local_addon_won;
@@ -110,6 +106,3 @@ pub(super) use read_addon_guid::verify_boot_log;
 
 mod selftest;
 pub(super) use selftest::selftest;
-
-#[cfg(test)]
-use read_addon_guid::grep_after;

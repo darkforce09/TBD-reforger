@@ -20,7 +20,6 @@ tools/staging/staging_load_generator/src/
 ├── member_request_lane.rs  one client's paced slots, each sent as the account it holds
 ├── prelude.rs              `run`, `entrypoint` and `Error` for glob import
 ├── source_address_pool.rs  the source addresses and their per-address ceilings
-├── tests/                  unit tests, the command line, and runs against a stub API from 127.0.0.2 to 127.0.0.6
 └── virtual_client.rs       one client: its address-bound connection and its two lanes side by side
 ```
 
@@ -105,8 +104,7 @@ string of a step may name the placeholders `{account_index}`, `{discord_id}`, `{
 - Depends on: `staging_load_plan` for the plan, catalog, pacing, records, report and the
   process-boundary codec; `reqwest` (one client per virtual client, bound to its source address,
   no proxy, no redirects, at most one idle connection), `tokio` (its runtime, timers and `watch`
-  handover), `clap` (the command line), `serde`, `serde_json` and `thiserror`; the tests also use
-  `axum` and `futures` for the stub API and `staging_load_plan`'s `test_fixtures` samples.
+  handover), `clap` (the command line), `serde`, `serde_json` and `thiserror`.
 - Used by: `developer_tools`' `staging-load` binary, which the `staging_procedures` load procedure runs
   as a child process for the recorded run and the local rehearsal.
 - Rules:
@@ -116,8 +114,6 @@ string of a step may name the placeholders `{account_index}`, `{discord_id}`, `{
     `account_rotation.rs`, checked by the contract-citation gate).
   - No template reaches the game-runtime, fleet-executor or ingest routes: the catalog refuses
     them, so the member load stays apart from the game operations it is measured beside.
-  - The tests bind 127.0.0.2 to 127.0.0.6 as source addresses, which every Linux loopback
-    interface answers for.
 
 ## Related documentation
 

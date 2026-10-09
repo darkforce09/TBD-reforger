@@ -63,7 +63,7 @@ and exits 1.
   API origin), `deploy_settings` (the settings and the deploy host), `process_runner`
   (`secure_shell_transport`, `Run`), `staging_load_plan` (the load plan and report),
   `repository_layout`, `content_digest`, `time_source`, `clap`, `serde`, `serde_json`,
-  `thiserror`; `tool_test_support`, `regex` and `toml` in its tests; `ssh` (or `sshpass`) and
+  `thiserror`; `ssh` (or `sshpass`) and
   curl here, and bash, systemd user units, docker, curl and steamcmd on the host.
 - Used by: `TopCmd::Staging` in `tools/xtask/src/cli/`; the staging verification runbooks; the
   `staging_harness` check of the API acceptance register

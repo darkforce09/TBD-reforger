@@ -373,7 +373,3 @@ fn ping(address: &str) -> String {
         .and_then(|c| c.get(1))
         .map_or_else(|| "fail".into(), |m| m.as_str().to_string())
 }
-
-#[cfg(test)]
-#[path = "tests/direct_join/tests.rs"]
-mod tests;

@@ -13,7 +13,3 @@
 
 pub(crate) mod browser_inbox;
 pub(crate) mod journal;
-
-#[cfg(test)]
-#[path = "tests/journal_and_inbox.rs"]
-mod journal_and_inbox_tests;

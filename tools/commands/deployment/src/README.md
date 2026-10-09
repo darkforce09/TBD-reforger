@@ -12,8 +12,6 @@ tools/commands/deployment/src/
 ├── api_environment_file_preflight.rs  the probe of the host's API `.env` both deploys run before their rsync
 ├── deploy_command.rs                  the `DeployCmd` clap enum: `website`, `db` and `staging`
 ├── deploy_dispatch.rs                 `run`: routes each `DeployCmd` to its driver
-├── deployment_checks/                 the staging-compose-paths gate
-├── deployment_checks.rs               declares the deployment source gate
 ├── development_machine_only_paths.rs  the rsync excludes both deploys share: build folders and local tool state
 ├── enfusion_mod_paths.rs              the mod folder's entries the deploys' rsyncs leave out and the rsync exclusion of a mod folder entry
 ├── error.rs                           `Error` and `Result`
@@ -23,7 +21,7 @@ tools/commands/deployment/src/
 ├── remote_rust_toolchain.rs           the PATH line every remote step runs before it calls cargo or trunk
 ├── staging/                           the staging deploy: settings, render, payloads, pipeline and boot verdict
 ├── staging.rs                         `deploy staging`: `Paths`, the flag parser and the mode order
-├── tests/                             unit tests for the shared excludes, the mod paths, the host-owned paths, the `.env` probe, staging flags and website
+├── tests/                             unit tests for the shared excludes, the host-owned paths, the `.env` probe and website
 ├── website/                           the website deploy's pure steps: rsync argv, remote shells, probe, unit
 └── website.rs                         `deploy website`: deploy.env, the refusals and the step runner
 ```

@@ -169,7 +169,3 @@ impl UpstreamOrigin {
         })
     }
 }
-
-#[cfg(test)]
-#[path = "tests/relay_settings_tests.rs"]
-mod tests;

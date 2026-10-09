@@ -19,7 +19,7 @@ tools/commands/database_operations/src/local_database/
 ├── repair_migration_checksum.rs  `db repair-migration-checksum`: repoints comments-only edits
 ├── selftest.rs                   `db selftest`: six arms over the recipes, the guard and the cleanup
 ├── test_it.rs                    `db test-it`: one isolated database per run, then its cleanup
-└── tests/                        unit tests for the plumbing, API packages, compose, recipes, recipe execution, repair and test-it
+└── tests/                        unit tests for the checksum repair and test-it
 ```
 
 ## How it works
@@ -47,8 +47,8 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   in `crates/api/api_server` (a `--test` selection names `-p api_server` alone, the package that holds the
   integration binaries) with `TEST_DATABASE_URL` on port 5434, `TBD_API_VERIFICATION=true` and the
   marker's `PROPTEST_RNG_SEED`. The cleanup then always runs, whatever the tests did: it selects
-  the run's database and every `<name>_<suite>_it` the harnesses in
-  `crates/api/api_server/tests/common/database.rs` and `tools/staging/staging_fixtures/tests/common/database.rs`
+  the run's database and every `<name>_<suite>_it` the harness in
+  `crates/api/api_server/tests/common/database.rs`
   derived from it, re-checks each row's ownership
   and drops it with `FORCE`.
 - `api_test_packages::api_test_packages` derives the API lanes' packages from the workspace:
@@ -96,10 +96,7 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   runs `test_it::run_complete_suite` in process; the remote checksum step of
   `cargo xtask deploy website`, which runs `db repair-migration-checksum --force` against the
   staging container.
-- Rules: every compose call names the layout's file and runs in its folder
-  (`the_checkout_project_runs_compose_on_the_layout_file_in_its_folder` in
-  `tests/development_compose/tests.rs`), and a seed is opened through the path its line shows
-  (`every_seed_is_opened_through_the_path_its_line_shows`); a label outside the scratch allow-list
+- Rules: every compose call names the layout's file and runs in its folder, and a seed is opened through the path its line shows; a label outside the scratch allow-list
   is refused before any database is created
   (`the_guard_refuses_the_live_database_and_nonidentifiers` in `tests/test_it/tests.rs`); the
   cleanup drops only exact namespace matches (`cleanup_uses_an_exact_prefix_and_suffix`,
@@ -107,6 +104,5 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   (`cargo_spawn_error_still_runs_cleanup`); a statement change is never classed as comments-only
   (`a_changed_statement_is_never_comments_only`,
   `a_double_dash_inside_a_string_literal_is_not_a_comment` in
-  `tests/repair_migration_checksum/tests.rs`); the frozen baseline covers every rendered recipe
-  (`baseline_covers_every_rendered_target` in `tests/selftest/tests.rs`).
+  `tests/repair_migration_checksum/tests.rs`); the frozen baseline covers every rendered recipe.
 

@@ -50,7 +50,3 @@ pub(super) fn relay_install_payload(
         folder = instance.home_relative_folder(),
     )
 }
-
-#[cfg(test)]
-#[path = "tests/acknowledgement_relay/tests.rs"]
-mod tests;

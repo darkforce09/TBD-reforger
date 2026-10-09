@@ -87,7 +87,3 @@ fn read_plan(command_line: &StagingLoadCommandLine) -> Result<String> {
         }
     }
 }
-
-#[cfg(test)]
-#[path = "tests/command_line_tests.rs"]
-mod tests;

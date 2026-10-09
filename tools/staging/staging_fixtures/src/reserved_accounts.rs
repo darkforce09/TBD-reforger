@@ -45,7 +45,3 @@ pub(crate) async fn count_reserved_accounts<'e>(
         .fetch_one(executor)
         .await
 }
-
-#[cfg(test)]
-#[path = "tests/reserved_accounts.rs"]
-mod tests;

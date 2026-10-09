@@ -29,5 +29,3 @@ tools/commands/remote_debugging/src/
   `verification_core`, `time_source`, `clap`, `serde_json`, `regex` and `thiserror`.
 - Used by: the crate root's re-exports and public modules, read by the `debug`, `repro` and `mod`
   groups of `xtask`.
-- Rules: unit tests live in each group's `tests/` folder, wired by `#[path]`; the tests that set
-  `PATH` or `HOME` hold `tool_test_support::lock_env`.

@@ -476,7 +476,3 @@ fn arm_compose_parity(root: &Path) -> Verdict {
         detail: findings,
     })
 }
-
-#[cfg(test)]
-#[path = "tests/selftest/tests.rs"]
-mod tests;

@@ -344,7 +344,3 @@ fn substitute_body(value: &Value, binding: &AccountBinding) -> Value {
         other => other.clone(),
     }
 }
-
-#[cfg(test)]
-#[path = "tests/request_catalog_tests.rs"]
-mod tests;

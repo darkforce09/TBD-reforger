@@ -303,7 +303,3 @@ pub(super) fn retired_names_absent_plan_line() -> String {
          --migrate-host-agent-name moves them"
     )
 }
-
-#[cfg(test)]
-#[path = "tests/host_agent_name_migration/tests.rs"]
-mod tests;

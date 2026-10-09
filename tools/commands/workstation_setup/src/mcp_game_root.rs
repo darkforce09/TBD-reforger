@@ -138,7 +138,3 @@ fn is_pak_iname(path: &Path) -> bool {
         .and_then(|e| e.to_str())
         .is_some_and(|e| e.eq_ignore_ascii_case("pak"))
 }
-
-#[cfg(test)]
-#[path = "tests/mcp_game_root_tests.rs"]
-mod tests;

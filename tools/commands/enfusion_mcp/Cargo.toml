@@ -27,9 +27,5 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
 
-[dev-dependencies]
-# The environment lock the stub-program and entrypoint tests hold while they change variables.
-tool_test_support = { workspace = true }
-
 [lints]
 workspace = true

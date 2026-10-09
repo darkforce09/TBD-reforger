@@ -26,8 +26,7 @@ tools/commands/staging_procedures/src/
 ├── staging_command.rs      the `StagingCmd` clap tree: read-only, confirmed and recorded subcommands
 ├── staging_dispatch.rs     `run`: routes each subcommand; runs confirmed actions and their `--dry-run` plans
 ├── staging_settings.rs     the settings read from `deploy.env`, the fleet and API origin shared with `deploy staging`
-├── support_commands/       `preflight`, `status` (and `--capacity`) and `fingerprints`
-└── tests/                  unit tests for the settings
+└── support_commands/       `preflight`, `status` (and `--capacity`) and `fingerprints`
 ```
 
 ## How it works
@@ -47,5 +46,4 @@ tools/commands/staging_procedures/src/
 
 - Depends on: the crates the [crate README](/tools/commands/staging_procedures/README.md) lists.
 - Used by: the xtask binary through `run` and `StagingCmd`.
-- Rules: the read-only commands and every probe send only read commands; the unit tests are
-  `cargo test -p staging_procedures --locked`.
+- Rules: the read-only commands and every probe send only read commands.

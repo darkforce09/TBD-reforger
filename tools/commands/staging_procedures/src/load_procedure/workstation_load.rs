@@ -4,8 +4,7 @@
 //! invalid refresh sent from a chosen source address with `curl`, and the member load run by the
 //! `staging-load` executable as a child process.
 //!
-//! **Position:** held by `LoadProcedure` and the local rehearsal; the tests replace it with a
-//! stub that answers at once. The member load builds `developer_tools`' `staging-load` binary
+//! **Position:** held by `LoadProcedure` and the local rehearsal. The member load builds `developer_tools`' `staging-load` binary
 //! into the cargo target folder, writes the plan to its standard input and reads the report from
 //! its standard output, both through `staging_load_plan`'s process-boundary codec, so the
 //! generator's tokio runtime and HTTP client never enter xtask.

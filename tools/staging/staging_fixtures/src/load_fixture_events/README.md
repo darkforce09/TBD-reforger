@@ -11,8 +11,7 @@ tools/staging/staging_fixtures/src/load_fixture_events/
 ├── fixture_cleaning.rs  `clean-load-fixture-events`: deletes the fixture events and their registrations
 ├── fixture_plan.rs      the fixture's shape: titles, start times, place cap and the 2 × 8 × 8 ORBAT
 ├── fixture_seeding.rs   `seed-load-fixture-events`: the preconditions, the plan and the writes
-├── mod.rs               the two parsers the subcommand table in `main.rs` names
-└── tests/               unit tests for the fixture's capacity, slot order and planned events
+└── mod.rs               the two parsers the subcommand table in `main.rs` names
 ```
 
 ## How it works
@@ -50,11 +49,10 @@ are one transaction, and neither writes without `--apply`.
   `api_operations::services::event_authoring::{event_creation, mission_attachment}`,
   `mission_model::orbat::{OrbatSquadTemplate, OrbatSlotTemplate}` and
   `api_audit_log::required_audit::append_system_audit`.
-- Used by: the subcommand table in `tools/staging/staging_fixtures/src/main.rs`;
-  `tools/staging/staging_fixtures/tests/staging_fixtures_fixture_events.rs`, which runs the built binary.
+- Used by: the subcommand table in `tools/staging/staging_fixtures/src/main.rs`.
 - Rules: the seeding needs the load population (`seed-load-population`) first and the cleaning runs
   before its removal; the cleaning deletes only `[Load fixture]` events whose author lies in the
-  reserved range, and what hangs off them; test functions start with `staging_fixtures_`.
+  reserved range, and what hangs off them.
 
 ## Related documentation
 

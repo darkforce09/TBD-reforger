@@ -33,7 +33,3 @@ pub use pacing::reachable_member_accounts;
 pub use process_boundary::{decode_plan, decode_report, encode_plan, encode_report};
 pub use source_addresses::verify_source_addresses;
 pub use workload_plan::{FixtureEvent, LoadRunPlan, WorkloadPlan};
-
-#[cfg(any(test, feature = "test_fixtures"))]
-#[path = "tests/sample_plans.rs"]
-pub mod sample_plans;

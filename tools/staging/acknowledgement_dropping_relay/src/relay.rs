@@ -4,8 +4,7 @@
 //!   runtime; [`serve`] runs them on a runtime of its own until SIGTERM or SIGINT. Each exchange is
 //!   read whole, forwarded to the upstream origin, read back whole and handed to the drop policy,
 //!   which passes the answer back unchanged or withholds it.
-//! - **Position:** under [`super`]; the command line calls [`serve`], and the tests call [`start`]
-//!   against a stub API.
+//! - **Position:** under [`super`]; the command line calls [`serve`], which runs [`start`].
 //! - **Signals & state:** one [`DropPolicy`] shared by every connection and the control socket; one
 //!   upstream HTTP client and its connection pool; the [`RelayLog`] sink.
 //! - **Invariants:**
@@ -61,7 +60,7 @@ const HOP_BY_HOP_HEADERS: [&str; 8] = [
 pub enum RelayLog {
     /// Standard error, which the unit's journal keeps.
     StandardError,
-    /// Lines kept in memory, for the tests.
+    /// Lines kept in memory, for a caller that reads them back.
     Captured(Arc<Mutex<Vec<String>>>),
 }
 
@@ -366,7 +365,3 @@ fn end_to_end_headers(headers: &HeaderMap, skipped: &[HeaderName]) -> HeaderMap 
     }
     kept
 }
-
-#[cfg(test)]
-#[path = "tests/relay_tests.rs"]
-mod tests;

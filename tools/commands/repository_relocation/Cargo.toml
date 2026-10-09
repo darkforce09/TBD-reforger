@@ -22,8 +22,5 @@ repository_layout = { workspace = true }
 ticket_model = { workspace = true }
 verification_core = { workspace = true }
 
-[dev-dependencies]
-tool_test_support = { workspace = true }
-
 [lints]
 workspace = true

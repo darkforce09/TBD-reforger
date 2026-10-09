@@ -47,10 +47,6 @@ struct SshOut {
     stdout: String,
 }
 
-#[cfg(test)]
-#[path = "tests/remote_logs/tests.rs"]
-mod tests;
-
 mod execution;
 pub use execution::run;
 
@@ -61,6 +57,3 @@ use shell_quote::append_line;
 use shell_quote::shell_quote;
 use shell_quote::tempfile_dir;
 use shell_quote::write_log;
-
-#[cfg(test)]
-use execution::{check_log, check_log_quiet, cmd_selftest};

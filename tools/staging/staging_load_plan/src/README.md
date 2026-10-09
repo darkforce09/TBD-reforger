@@ -23,7 +23,6 @@ tools/staging/staging_load_plan/src/
 ├── request_catalog.rs     the compiled request mix: weighted picks, placeholders, resolved requests
 ├── run_settings.rs        the workload's numbers as a run applies them: durations and ceiling windows
 ├── source_addresses.rs    the check that every source address is this machine's, and the busiest window
-├── tests/                 unit tests, and the sample workloads behind the `test_fixtures` feature
 └── workload_plan.rs       the committed workload's shape and the run's bindings, with their checks
 ```
 
@@ -57,7 +56,6 @@ unexpected errors, refreshes, late switches, addresses and templates over the wh
   `request_catalog`; the schedules and `SeededRandom` in `pacing`; `RequestRecord` and
   `RequestOutcome` in `latency_recording`; `ClientOutcome`; `GUARD_MARGIN` and `busiest_window` in
   `source_addresses`; the ids in `identifiers`.
-- `sample_plans`, behind the `test_fixtures` feature.
 
 ## Boundaries
 
@@ -67,8 +65,7 @@ unexpected errors, refreshes, late switches, addresses and templates over the wh
   assembles its report) and by the `staging_procedures` load procedure (which builds plans, checks addresses and
   judges reports).
 - Rules: a report holds counts, latencies, addresses and template ids, never a token, a header or
-  a body; a plan and a report round-trip through the codec byte for byte
-  (`tests/process_boundary_tests.rs`); unit tests live in `tests/` files declared with `#[path]`.
+  a body; a plan and a report round-trip through the codec byte for byte.
 
 ## Related documentation
 

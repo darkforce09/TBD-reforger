@@ -16,8 +16,7 @@ tools/commands/remote_debugging/src/debug/
 ├── probes.rs       the A2S query, the NDJSON row writer and the six-row direct-join block
 ├── remote_logs/    the verdict, the remote fetch and the self-test of `mod remote-logs`
 ├── remote_logs.rs  the log patterns of `mod remote-logs`; declares its three files and re-exports `run`
-├── staging_fleet_instance.rs  `--instance N`: instance N of `deploy staging`'s own fleet settings, and its profile folder
-└── tests/          unit tests for the direct-join probes, the remote-logs verdicts and the instance selection
+└── staging_fleet_instance.rs  `--instance N`: instance N of `deploy staging`'s own fleet settings, and its profile folder
 ```
 
 ## How it works
@@ -123,14 +122,12 @@ Each runs as `cargo xtask debug <command>`; a clap usage error exits 2.
   `deployment::staging::fleet_instances` (the fleet's instances, ports, folders and
   units) and `process_runner` (`PathGuard`, and `Run` for ssh, sshpass and ping); `verification_core` for
   patterns and verdicts; `time_source` for the rows' timestamps; `serde_json` and `regex`; ssh,
-  sshpass and ping on the development machine; `tool_test_support` in tests.
+  sshpass and ping on the development machine.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; `tools/commands/mod_operations/src/mod_dispatch.rs`,
   for `mod remote-logs`; `cargo xtask deploy staging`, which runs `mod remote-logs` last; people.
 - Rules: a local probe never aborts the summary, and a missing Steam manifest reads `unknown`
-  while a `buildid` line with two fields reads empty
-  (`steam_two_field_buildid_is_empty_not_unknown` in `tests/direct_join/tests.rs`); with no host
-  the host's probes record `skipped` and reach no network
-  (`clean_empty_home_writes_unknown_and_missing`); documents name the host only as `TBD_SSH_HOST`.
+  while a `buildid` line with two fields reads empty; with no host
+  the host's probes record `skipped` and reach no network; documents name the host only as `TBD_SSH_HOST`.
 
 ## Related documentation
 

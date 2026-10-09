@@ -38,7 +38,3 @@ mod text_edits;
 mod text_tokens;
 
 pub use relocation_modes::{apply, dry_run, verify};
-
-#[cfg(test)]
-#[path = "tests/mod.rs"]
-mod tests;

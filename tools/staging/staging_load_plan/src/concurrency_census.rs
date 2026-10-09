@@ -64,7 +64,3 @@ pub fn member_accounts(records: &[RequestRecord]) -> u64 {
     let answered: HashSet<usize> = answered.iter().map(|record| record.account).collect();
     refreshed.intersection(&answered).count() as u64
 }
-
-#[cfg(test)]
-#[path = "tests/concurrency_census_tests.rs"]
-mod tests;

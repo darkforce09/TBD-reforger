@@ -39,17 +39,11 @@ command's exit code; an `Error` means the command could not run, and xtask print
 - Depends on: `deploy_settings` (the settings file, the deploy host and its folders),
   `deployment` (the staging fleet's instances, ports, folders and units), `process_runner`,
   `repository_root` (the checkout root), `verification_core` (`NotRun`, patterns and probes),
-  `time_source` (the NDJSON rows' timestamps), `clap`, `serde_json`, `regex` and `thiserror`;
-  `tool_test_support` in tests.
+  `time_source` (the NDJSON rows' timestamps), `clap`, `serde_json`, `regex` and `thiserror`.
 - Used by: the `debug`, `repro` and `mod` groups of `tools/xtask`; `cargo xtask deploy staging`,
   which runs `mod remote-logs` last; people diagnosing a failed join, boot or upload.
 - Rules:
-  - No test reaches a real host, the staging fleet or a running API: the probes are driven
-    through `run_with` on throwaway checkouts and homes, with no staging host or a `.invalid` one
-    (`clean_empty_home_writes_unknown_and_missing`,
-    `direct_join_instance_probes_its_own_unit_ports_and_profile`).
-  - An unreadable or absent log is ENVIRONMENT, never a zero count
-    (`missing_file_is_environment`).
+  - An unreadable or absent log is ENVIRONMENT, never a zero count.
   - The remote log vocabulary is shared by hand with
     `tools/commands/enfusion_mcp/src/workbench_logs.rs`.
 
@@ -58,7 +52,7 @@ command's exit code; an `Error` means the command could not run, and xtask print
 Run from the repository root:
 
 ```bash
-cargo test -p remote_debugging   # the probes, the verdicts and the token extraction, offline
+cargo build -p remote_debugging   # the probes, the verdicts and the token extraction
 ```
 
 ## Related documentation

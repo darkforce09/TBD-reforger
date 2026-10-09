@@ -38,6 +38,4 @@ with the comment lost.
 - Used by: `super::relocation_plan` (the pass, with a module tree when a row moves a `crate::`
   module) and `super::retired_spellings` (the same pass without a module, to find surviving
   prefixes).
-- Rules: a rule matches whole segments only and the longest `from` wins; edits never overlap
-  (`relocate_rust_path_rewrites_use_trees_doc_links_and_super_chains`,
-  `relocate_use_trees_flatten_and_render`).
+- Rules: a rule matches whole segments only and the longest `from` wins; edits never overlap.

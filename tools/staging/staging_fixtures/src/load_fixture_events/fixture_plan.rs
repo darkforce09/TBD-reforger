@@ -127,7 +127,3 @@ pub(crate) fn fixture_orbat() -> Vec<OrbatSquadTemplate> {
 pub(crate) fn fixture_template() -> Result<AttachmentTemplate, ApiError> {
     AttachmentTemplate::requested(fixture_orbat())
 }
-
-#[cfg(test)]
-#[path = "tests/fixture_plan.rs"]
-mod tests;

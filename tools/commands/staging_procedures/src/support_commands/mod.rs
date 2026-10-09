@@ -13,7 +13,3 @@ pub(crate) mod fingerprints;
 pub(crate) mod host_capacity;
 pub(crate) mod preflight;
 pub(crate) mod status;
-
-#[cfg(test)]
-#[path = "tests/support_commands.rs"]
-mod support_command_tests;

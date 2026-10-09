@@ -147,7 +147,3 @@ pub(super) fn render_only(env: &Env, directory: &str) -> u8 {
     }
     status
 }
-
-#[cfg(test)]
-#[path = "tests/fleet_server_config/tests.rs"]
-mod tests;

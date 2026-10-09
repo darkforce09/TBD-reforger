@@ -11,8 +11,7 @@ tools/staging/staging_fixtures/src/load_population/
 ├── account_file.rs          the account file: its target checks, the load engine's format, the mode-600 write
 ├── mod.rs                   the two parsers, the reserved id range of a population and the synthetic profiles
 ├── population_cleanup.rs    `clean-load-population`: the census and the deletion, also used to undo a seeding
-├── population_seeding.rs    `seed-load-population`: the guards, the per-account services and the undo
-└── tests/                   unit tests for the id range, the profiles and the account file format
+└── population_seeding.rs    `seed-load-population`: the guards, the per-account services and the undo
 ```
 
 ## How it works
@@ -55,13 +54,10 @@ a `staging.load_population_cleaned` audit row; audit rows naming the accounts st
   `api_audit_log::required_audit`; `serde` and `serde_json` for the account file.
 - Used by: the subcommand table in `tools/staging/staging_fixtures/src/main.rs`; the
   `staging load` harness, which runs both subcommands on the host; the fixture events of
-  `load_fixture_events/`, authored by the population's first account;
-  `tools/staging/staging_fixtures/tests/staging_fixtures_population.rs`.
-- Rules: every id lies in the reserved range (`SyntheticIdRange`, tested in
-  `tests/synthetic_id_range.rs`); a seeding runs before `seed-load-fixture-events` and a cleanup
+  `load_fixture_events/`, authored by the population's first account.
+- Rules: every id lies in the reserved range (`SyntheticIdRange`); a seeding runs before `seed-load-fixture-events` and a cleanup
   after `clean-load-fixture-events`; the account file keeps exactly the keys `discord_id` and
-  `refresh_token` (`tests/account_file.rs`); no token reaches stdout or stderr
-  (`staging_fixtures_population.rs` checks every run).
+  `refresh_token`; no token reaches stdout or stderr.
 
 ## Related documentation
 

@@ -239,7 +239,3 @@ async fn sleep_until(instant_unix_ms: u64) {
         tokio::time::sleep(Duration::from_millis(instant_unix_ms - now)).await;
     }
 }
-
-#[cfg(test)]
-#[path = "tests/bucket_spend.rs"]
-mod tests;

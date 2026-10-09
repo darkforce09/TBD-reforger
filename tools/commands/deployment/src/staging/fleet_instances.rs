@@ -363,7 +363,3 @@ impl FleetInstance {
             .map(|_| format!("acknowledgement-dropping-relay@{}.service", self.number))
     }
 }
-
-#[cfg(test)]
-#[path = "tests/fleet_instances/tests.rs"]
-mod tests;

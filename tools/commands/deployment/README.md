@@ -143,7 +143,7 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
   host-owned path (`both_rsyncs_exclude_every_host_owned_path`) and run only after the `.env`
   probe answers 0 (`a_missing_file_refuses_before_the_rsync`); the website deploy refuses a remote
   folder outside the deploy user's `tbd` folder (`remote_prefix_rejects_escape_and_outside`); an
-  unknown staging option stops before `--help` (`unknown_option_short_circuits_before_help`).
+  unknown staging option stops before `--help`.
 
 ## Related documentation
 

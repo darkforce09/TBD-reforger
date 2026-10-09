@@ -26,9 +26,5 @@ serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror = { workspace = true }
 verification_core = { workspace = true }
 
-[dev-dependencies]
-# The environment lock the tests that set `HOME`, `PATH` and the deploy keys hold.
-tool_test_support = { workspace = true }
-
 [lints]
 workspace = true

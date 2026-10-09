@@ -92,10 +92,9 @@ pub(super) fn resolve_modpack_doc(env: &Env) -> Result<(String, String), u8> {
 /// `curl -sS -o "$out" -w '%{http_code}' -H @- "$url"`, the `Authorization` header on stdin.
 ///
 /// **NEVER EXECUTED LOCALLY.** No credential of this tier exists on any machine in this program
-/// (see the module header), so this path has no live coverage at all; `tests::curl_argv_is_stable`
-/// pins the argv instead. `curl` is spawned rather than a Rust HTTP client added, because the
-/// argv is the thing under test and because adding reqwest+TLS to xtask for one unreachable call
-/// would be a large dependency bought with no evidence. The bearer token travels on curl's stdin
+/// (see the module header), so this path has no live coverage. `curl` is spawned rather than a
+/// Rust HTTP client added, because adding reqwest+TLS to xtask for one unreachable call would be a
+/// large dependency bought with no evidence. The bearer token travels on curl's stdin
 /// ([`curl_header_stdin`]), so no process list and no printed argv ever holds it.
 fn fetch_modpack_url(env: &Env) -> Result<(String, String), u8> {
     let out = std::env::temp_dir().join(format!("tbd-modpack.{}.json", std::process::id()));

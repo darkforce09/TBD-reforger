@@ -83,40 +83,29 @@ tools/commands/deployment/src/website/
   settings through `deploy_settings`; on the host, the `postgres` and `caddy`
   services of `deploy/compose.staging.yml` and the Caddyfile the `caddy` service
   mounts.
-- Used by: `tools/commands/deployment/src/website.rs`; `cargo xtask verify
-  staging-compose-paths`, which reads `remote_steps.rs` as text.
+- Used by: `tools/commands/deployment/src/website.rs`.
 - Rules: the exclude list keeps the secrets, the asset and scratch trees
   (`rsync_excludes_the_secrets_asset_and_scratch_trees` in
   `tools/commands/deployment/src/tests/website/tests.rs`) and every development-machine-only
-  path (`rsync_excludes_every_development_machine_only_path`), the dry run prints every exclusion
-  (`the_dry_run_prints_every_exclusion_the_development_machine_only_paths_included`), and the argv
+  path (`rsync_excludes_every_development_machine_only_path`), the dry run prints every exclusion, and the argv
   ends with source and destination
-  (`rsync_argv_keeps_source_and_destination_last`); the plan ends with the checksum repair
-  (`the_remote_plan_ends_with_the_checksum_repair`), and the Caddy
-  step follows compose, not the app build (`the_web_server_step_follows_compose_and_not_the_app_build`);
-  the host tools build after the API and skip with it
-  (`the_staging_host_tools_build_after_the_api_and_skip_with_it`), each is built and proven
-  (`the_staging_host_tools_step_builds_and_proves_every_executable`) and is a `[[bin]]` of the
-  package it names, the API server and the relay under the names their units run
-  (`every_built_executable_is_one_its_package_declares`); the API build names `api_server` and
-  `api-server` and the app build runs in the app's folder
-  (`the_api_and_app_builds_name_the_server_package_and_the_app_folder`); the `.env` probe reaches
-  the host as one login-shell word
-  (`the_api_environment_file_probe_reaches_the_host_as_one_login_shell_word`) and the unit loads
-  the file it proves
-  (`the_api_unit_runs_in_the_server_folder_with_the_env_the_preflight_proves`); the Caddyfile trusts only
-  the tunnel's peer (`the_caddyfile_trusts_forwarded_addresses_only_from_the_tunnel_peer`);
+  (`rsync_argv_keeps_source_and_destination_last`); the plan ends with the checksum repair, and the Caddy
+  step follows compose, not the app build;
+  the host tools build after the API and skip with it, each is built and proven and is a `[[bin]]` of the
+  package it names, the API server and the relay under the names their units run; the API build names `api_server` and
+  `api-server` and the app build runs in the app's folder; the `.env` probe reaches
+  the host as one login-shell word and the unit loads
+  the file it proves; the Caddyfile trusts only
+  the tunnel's peer;
   every compose step names the staging compose file
-  (`every_compose_step_runs_the_staging_compose_file_from_the_checkout`, and
-  `cargo xtask verify staging-compose-paths` over this folder's `remote_steps.rs`); a step reaches
+  (`every_compose_step_runs_the_staging_compose_file_from_the_checkout`); a step reaches
   the host's login shell whole (`a_remote_step_reaches_the_login_shell_as_one_word`); the Caddy
   reload names the Caddyfile where the compose service mounts it, and the Caddyfile's site root
-  is where it mounts the app (`the_caddy_service_serves_what_the_caddyfile_and_the_reload_name`);
+  is where it mounts the app;
   the service mounts the Caddyfile's own folder and no folder that holds `deploy.env`
   (`the_caddy_service_mounts_no_folder_holding_the_deploy_secrets`);
   the API unit keeps its runtime files in its own state folder
   (`the_unit_template_keeps_the_runtime_files_in_its_state_directory`); the
   `crates/api/api_server/.env.example` the host's `.env` starts from sets none of the variables the
-  API unit pins, since a value in the `.env` overrides the unit's
-  (`the_env_template_sets_none_of_the_variables_the_unit_pins`); the install command
-  renders the shipped template (`the_unit_install_command_renders_the_shipped_template_for_the_remote_dir`).
+  API unit pins, since a value in the `.env` overrides the unit's; the install command
+  renders the shipped template.

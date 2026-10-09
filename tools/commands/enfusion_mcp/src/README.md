@@ -20,7 +20,6 @@ tools/commands/enfusion_mcp/src/
 ├── prelude.rs            `McpCmd`, `run`, `preprocess_cli_args` and the server command types for glob import
 ├── server_entrypoint.rs  which `enfusion-mcp` server command a caller starts, in four tiers, and its process pattern
 ├── smoke.rs              `smoke`: live `wb_connect` and `wb_state` calls through `call`
-├── tests/                unit tests for call, the self-test, daemon, netapi, the server entrypoint, smoke and wb-logs
 └── workbench_logs.rs     `wb-logs`: the spawn verdict over the newest Workbench Play console log
 ```
 
@@ -46,7 +45,7 @@ xtask: preprocess_cli_args ─▶ clap ─▶ McpCmd ─▶ run (dispatch.rs)
 ## Boundaries
 
 - Depends on: `process_runner`, `repository_layout`, `verification_core`, `clap`, `libc`,
-  `serde_json`, `thiserror`; `tool_test_support` in `tests/`.
+  `serde_json`, `thiserror`.
 - Used by: the xtask binary (`McpCmd`, `run`, `preprocess_cli_args`), xtask's mod development
   bootstrap (`daemon`), and `enfusion_mcp_broker` (`server_entrypoint`).
 - Rules: the exit codes in the [crate README](/tools/commands/enfusion_mcp/README.md) are pinned

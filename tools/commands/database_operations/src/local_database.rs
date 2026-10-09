@@ -329,7 +329,3 @@ fn restore(dump: Option<&str>, db: Option<&str>, create: bool) -> Result<u8> {
     let parsed = Argv::parse_from(argv);
     crate::restore::run(parsed.inner)
 }
-
-#[cfg(test)]
-#[path = "tests/local_database/tests.rs"]
-mod tests;

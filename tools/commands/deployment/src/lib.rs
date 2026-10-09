@@ -4,13 +4,12 @@
 //! **Role:** [`run`] dispatches one [`DeployCmd`]: the website deploy (rsync, the remote build of
 //! the API and the single-page app, the systemd unit), the staging deploy of the game-server
 //! fleet ([`staging`]: its settings, units, payloads and boot verdicts), and `deploy db`, which
-//! the `database_operations` crate carries; [`deployment_checks`] holds the
-//! `verify staging-compose-paths` gate; [`remote_rust_toolchain`] is the toolchain line every
+//! the `database_operations` crate carries; [`remote_rust_toolchain`] is the toolchain line every
 //! remote build payload starts with. Both deploys exclude the same host-owned paths from their
 //! `--delete` rsync and refuse it while the host lacks the API's `.env`.
 //! **Position:** tier 5 of `tools/commands`, over `database_operations`, `deploy_settings`,
-//! `process_runner`, `repository_layout` and `verification_core`. The xtask binary's `deploy`,
-//! `verify` and `ci` groups call it, and the `staging_procedures` and `remote_debugging` crates
+//! `process_runner`, `repository_layout` and `verification_core`. The xtask binary's `deploy`
+//! and `ci` groups call it, and the `staging_procedures` and `remote_debugging` crates
 //! read the fleet layout.
 //! **Signals & state:** none; each call reads `deploy/deploy.env` and the checkout afresh.
 //! **Invariants:** no deploy ships a path the development machine alone holds or touches a path
@@ -20,7 +19,6 @@
 mod api_environment_file_preflight;
 mod deploy_command;
 mod deploy_dispatch;
-pub mod deployment_checks;
 mod development_machine_only_paths;
 mod enfusion_mod_paths;
 mod error;

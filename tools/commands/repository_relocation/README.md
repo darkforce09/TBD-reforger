@@ -58,7 +58,6 @@ file treatments, the move order, that composition and the single pass.
 Run from the repository root:
 
 ```bash
-cargo test -p repository_relocation   # unit tests and whole runs on throwaway git checkouts
 cargo xtask refactor relocate --verify   # judge every stage manifest
 ```
 
@@ -84,17 +83,10 @@ No feature and no environment variable; `git` must be on the path.
 - Rules: tier 3 of `tools/commands` (`cargo xtask verify crate-tiers`); nothing is written before
   the whole plan is computed and its planned tree verifies clean; a failed apply leaves the index
   and the working tree byte-identical; a climbing token whose named lead is no tracked folder
-  at an anchor is not read from that anchor
-  (`relocate_climb_whose_lead_names_no_folder_stays_as_written`); a crate-folder literal of a file
-  moved where no crate manifest lies below the root is unresolved
-  (`relocate_manifest_dir_joins_into_a_folder_with_no_crate_manifest_are_unresolved`); the
-  manifest order survives a move of the manifests folder
-  (`relocate_manifest_order_survives_a_move_of_the_manifests_folder`); only a later manifest's
-  `path` row revives a retired spelling, and a later retirement judges it again
-  (`relocate_verify_passes_a_spelling_a_later_manifest_moved_back`,
-  `relocate_verify_revives_nothing_from_a_manifest_ordered_before_the_retiring_one`,
-  `relocate_verify_judges_a_revived_spelling_retired_again_with_the_later_row`); tests run on throwaway
-  checkouts and read only the committed format sample from this one.
+  at an anchor is not read from that anchor; a crate-folder literal of a file
+  moved where no crate manifest lies below the root is unresolved; the
+  manifest order survives a move of the manifests folder; only a later manifest's
+  `path` row revives a retired spelling, and a later retirement judges it again.
 
 ## Related documentation
 

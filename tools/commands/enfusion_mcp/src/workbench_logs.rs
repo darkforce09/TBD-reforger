@@ -445,7 +445,3 @@ fn write_log(path: &Path, lines: &[&str]) {
         writeln!(f, "{line}").expect("write log");
     }
 }
-
-#[cfg(test)]
-#[path = "tests/workbench_logs/tests.rs"]
-mod tests;

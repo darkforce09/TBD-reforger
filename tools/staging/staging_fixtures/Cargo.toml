@@ -63,18 +63,5 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 
-[dev-dependencies]
-# The configuration, the application state and the services the suites build the API under test
-# from, and the route tables of the three domains whose routes the suites call.
-api_configuration = { workspace = true }
-api_equipment_datasets = { workspace = true }
-api_missions = { workspace = true }
-api_state = { workspace = true }
-# The router under test and the fake Discord the member read suite serves.
-axum = { workspace = true }
-tokio = { workspace = true, features = ["process", "sync", "net"] }
-tower = { workspace = true, features = ["util"] }
-tower-http = { workspace = true, features = ["catch-panic"] }
-
 [lints]
 workspace = true

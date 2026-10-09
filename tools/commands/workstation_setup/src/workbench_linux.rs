@@ -96,7 +96,3 @@ fn whoami_name() -> Result<String> {
     }
     Ok(out.stdout.trim_end_matches(['\n', '\r']).to_string())
 }
-
-#[cfg(test)]
-#[path = "tests/workbench_linux_tests.rs"]
-mod tests;

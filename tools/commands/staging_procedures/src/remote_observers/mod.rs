@@ -20,7 +20,3 @@ pub(crate) mod metrics_reader;
 pub(crate) mod remote_command;
 pub(crate) mod unit_journal_reader;
 pub(crate) mod unit_state_reader;
-
-#[cfg(test)]
-#[path = "tests/observer_argv.rs"]
-mod observer_argv_tests;

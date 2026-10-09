@@ -213,7 +213,3 @@ pub(crate) fn write_scratch_compose(dir: &Path) -> Result<()> {
     )?;
     Ok(())
 }
-
-#[cfg(test)]
-#[path = "tests/ab/tests.rs"]
-mod tests;

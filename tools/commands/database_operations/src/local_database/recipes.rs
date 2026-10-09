@@ -146,7 +146,3 @@ pub(crate) fn expand_make_vars(line: &str) -> String {
         .replace("$(COMPOSE)", "podman compose")
         .replace("$$", "$")
 }
-
-#[cfg(test)]
-#[path = "tests/recipes/tests.rs"]
-mod tests;

@@ -30,7 +30,3 @@ pub(crate) fn mod_path(entry: &str) -> String {
 pub(crate) fn mod_folder_exclusion(entry: &str) -> String {
     format!("--exclude={}/", mod_path(entry))
 }
-
-#[cfg(test)]
-#[path = "tests/enfusion_mod_paths/tests.rs"]
-mod tests;

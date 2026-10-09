@@ -9,14 +9,12 @@ recorded run that binds one run to its receipt.
 ```text
 tools/commands/staging_procedures/src/procedure_runner/
 ├── clock.rs          `WaitingClock`: the workspace clock (`time_source`) extended with waiting
-├── fake_clock.rs     test-only clock whose sleep advances it
 ├── mod.rs            the module tree
 ├── probe_reading.rs  one observation: host read or browser entry, judgement, journal entry
 ├── procedure.rs      the `StagingProcedure` trait, `ProcedurePlan` checks and manifest definition
 ├── recording.rs      `record`: plan check, `begin`, run folder, identities, run, `finish`
 ├── runner.rs         `ProcedureRunner`: AWAIT lines, host actions, request rows, deadlines, cases
-├── step.rs           steps, kinds, probes, verdicts, deadlines, effects and declared cases
-└── tests/            unit tests for the runner, the plan checks, and shared fakes
+└── step.rs           steps, kinds, probes, verdicts, deadlines, effects and declared cases
 ```
 
 ## How it works
@@ -53,5 +51,4 @@ receipt naming it.
   operator_coordination, environment_identity}`;
   `api_readiness_checks::operational_recording`.
 - Used by: the three procedure modules and `tools/commands/staging_procedures/src/staging_dispatch.rs`.
-- Rules: the engine never reads stdin; the fake clock and the scripted host in
-  `tests/runner_support.rs` are the seams the procedures' tests use too.
+- Rules: the engine never reads stdin.

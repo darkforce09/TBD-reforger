@@ -93,8 +93,7 @@ instance without one.
   nothing and its plan names every instance and no secret (`dry_run_never_spawns`,
   `the_website_api_check_never_spawns_on_a_dry_run`,
   `the_dry_run_plan_walks_every_instance_and_prints_no_secret`); a stale log never passes a new
-  boot (`the_log_folder_newest_before_the_restart_never_counts` in
-  `tools/commands/deployment/src/staging/tests/remote/instance_boot_verdict_tests.rs`); the API check names
+  boot; the API check names
   the health route and the website deploy
   (`the_website_api_check_names_the_health_route_and_the_website_deploy`); the log verdict reads all
   four outcomes and never guesses (`v6_maps_all_four_outcomes_and_refuses_to_guess`); a missing

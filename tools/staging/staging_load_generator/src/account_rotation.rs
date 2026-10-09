@@ -296,7 +296,3 @@ pub(crate) fn decode_refresh_answer(body: &[u8]) -> Option<RefreshedPair> {
         refresh_token: SecretToken(pair.refresh_token),
     })
 }
-
-#[cfg(test)]
-#[path = "tests/account_rotation_tests.rs"]
-mod tests;

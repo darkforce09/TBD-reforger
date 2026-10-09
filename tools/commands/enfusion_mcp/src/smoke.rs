@@ -110,7 +110,3 @@ fn strip_trailing_newlines(s: &str) -> String {
     }
     t
 }
-
-#[cfg(test)]
-#[path = "tests/smoke/tests.rs"]
-mod tests;

@@ -23,7 +23,6 @@ tools/commands/staging_procedures/src/load_procedure/
 ├── load_steps.rs                  the plan: ten declared cases, five steps, deadlines and the hard stop
 ├── local_rehearsal.rs             `load --rehearse-local` against the local stack, recording nothing
 ├── mod.rs                         `LoadProcedure` and the entry points `staging_dispatch.rs` calls
-├── tests/                         unit tests: committed data, judges, the recorded run, the actions, the rehearsal, the child-process seam
 └── workstation_load.rs            the keying refresh through `curl` and the member load as the `staging-load` child process
 ```
 
@@ -81,5 +80,4 @@ recorded run keeps the acceptance thresholds (100 clients, 1,000 member accounts
   the committed data in `tools/xtask/staging/`.
 - Used by: `tools/commands/staging_procedures/src/staging_dispatch.rs`.
 - Rules: no token reaches an argument, the output, the journal or the receipt (the token file is
-  read for its Discord ids only, the engine reads it once); `--rehearse-local` records nothing;
-  the tests are `cargo test -p staging_procedures --locked load_procedure::`.
+  read for its Discord ids only, the engine reads it once); `--rehearse-local` records nothing.

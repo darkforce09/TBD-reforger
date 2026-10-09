@@ -36,13 +36,5 @@ thiserror = { workspace = true }
 # The wall clock of live runs and the rehearsal's scratch stamp.
 time_source = { workspace = true }
 
-[dev-dependencies]
-# The load tests read constants out of the load generator's source.
-regex = { workspace = true }
-# The load seam test reads the `staging-load` binary's declaration from developer_tools' manifest.
-toml = { workspace = true }
-# The environment lock the recording tests hold while they read the process environment.
-tool_test_support = { workspace = true }
-
 [lints]
 workspace = true

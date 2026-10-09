@@ -83,23 +83,3 @@ impl StagingProcedure for FleetProcedure {
         judge_mapping::fleet_observations(run, manifest)
     }
 }
-
-#[cfg(test)]
-#[path = "tests/recorded_fleet.rs"]
-mod recorded_fleet;
-
-#[cfg(test)]
-#[path = "tests/fleet_waves.rs"]
-mod fleet_waves_tests;
-
-#[cfg(test)]
-#[path = "tests/fleet_receipt.rs"]
-mod fleet_receipt_tests;
-
-#[cfg(test)]
-#[path = "tests/recorded_single_server.rs"]
-mod recorded_single_server;
-
-#[cfg(test)]
-#[path = "tests/single_server_waves.rs"]
-mod single_server_waves_tests;

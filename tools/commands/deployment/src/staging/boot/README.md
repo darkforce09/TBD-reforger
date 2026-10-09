@@ -46,9 +46,6 @@ gproj's), `TBD_ADDONS_STAGING` (required, exit 2 without it), `TBD_ADMIN_COUNT` 
   `tools/commands/deployment/src/staging/config.rs` (the GUID cross-check);
   `tools/commands/deployment/src/staging/remote/instance_boot_verdict.rs` (each fleet
   instance's log check after a live restart).
-- Rules: the addon check tells the checkout from the Workshop copy by path, not GUID
-  (`addon_check_discriminates_on_path_not_guid` in
-  `tools/commands/deployment/src/staging/tests/boot/tests.rs`); the last `Loaded addons:` block
-  wins (`last_loaded_addons_block_wins`); a missing log is never a pass
-  (`missing_log_is_not_a_pass`); the self-test exits 0 only when every fixture gives its expected
+- Rules: the addon check tells the checkout from the Workshop copy by path, not GUID; the last `Loaded addons:` block
+  wins; a missing log is never a pass; the self-test exits 0 only when every fixture gives its expected
   answer.

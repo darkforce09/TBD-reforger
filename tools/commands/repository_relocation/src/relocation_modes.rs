@@ -22,7 +22,7 @@
 //! checkout, or a missing manifests folder — never a pass. A dry run and an apply judge the
 //! planned tree with the verification `--verify` runs, so a plan that passes its dry run leaves a
 //! checkout that verifies clean. The example manifest in the manifests folder is the format sample
-//! the tests run and is never judged as a stage manifest.
+//! and is never judged as a stage manifest.
 
 use std::path::{Path, PathBuf};
 
@@ -40,7 +40,7 @@ use crate::repository_files::RepositorySnapshot;
 use crate::retired_spellings::{ManifestToJudge, RowJudgement, judge_manifests};
 use crate::scope_history::LaterMoves;
 
-/// The manifest in the manifests folder that documents the format and feeds the tests.
+/// The manifest in the manifests folder that documents the format.
 pub(crate) const EXAMPLE_MANIFEST: &str = "example.tsv";
 
 /// The label every verification report of the checkout carries.

@@ -12,8 +12,7 @@ tools/staging/staging_fixtures/src/discord_member_probe/
 ├── bucket_spend.rs      `spend-discord-member-bucket`: the start and hold, the request cap, the summary
 ├── discord_target.rs    the member, guild and API base of a read, the bot credential and the client
 ├── member_read.rs       one read, its outcome and rate-limit headers, and `observe-discord-member`
-├── mod.rs               the two parsers
-└── tests/               unit tests for the target flags, the answer classification and the spend schedule
+└── mod.rs               the two parsers
 ```
 
 ## How it works
@@ -57,12 +56,10 @@ and exits 0 only when it saw the bucket spent and stopped at the hold or the cap
   ring provider, `url`, `serde_json` and `tokio`.
 - Used by: the subcommand table in `tools/staging/staging_fixtures/src/main.rs`; the
   `staging discord` harness's `discord_member_reader` observer, which runs both on the host and
-  parses their lines; `tools/staging/staging_fixtures/tests/staging_fixtures_discord.rs`.
+  parses their lines.
 - Rules: the bot token goes only into the `Authorization` header of a request to Discord or to a
-  loopback address, and never into a message or a printed line (`tests/discord_target.rs`; the
-  integration suite checks every run's output); a spend never sends more than 50 requests, never
-  reads a spent bucket before its reset, and never reads after the hold (`tests/bucket_spend.rs`
-  and the fake-Discord suite); a dry run sends nothing.
+  loopback address, and never into a message or a printed line; a spend never sends more than 50 requests, never
+  reads a spent bucket before its reset, and never reads after the hold; a dry run sends nothing.
 
 ## Related documentation
 
