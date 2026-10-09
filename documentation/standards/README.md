@@ -13,7 +13,7 @@ the website's engines. Developers and AI agents read the matching standard befor
 documentation/standards/
 ├── coding_standards/           code rules by topic, each with a stable rule id and the gate that holds it
 ├── commit_checklist.md         what a commit that changes code carries and verifies before it lands
-├── crate_boundary_rules.md     crate-level laws between the graphics, streaming, rendering, mission and editing crates and the apps
+├── crate_boundary_rules.md     crate-level laws between the graphics, streaming, rendering, mission and editing crates and the applications
 ├── documentation_standards.md  comment rules, cross-boundary tags, the documentation tree and lifecycle
 ├── readme_standard.md          README sections, kinds and the Contents block the gate checks
 ├── templates/                  copyable skeletons for every README kind and document type

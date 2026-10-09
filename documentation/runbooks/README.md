@@ -54,7 +54,7 @@ Start from the task:
 | Shipping the website | [website deployment](/documentation/runbooks/website_deployment.md) |
 | Running the dedicated game server | [game server staging](/documentation/runbooks/game_server_staging/README.md), or [two-client playtest](/documentation/runbooks/two_client_playtest/README.md) on a development machine |
 | Mod work that needs Workbench | [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md), then [spawn determinism](/documentation/runbooks/spawn_determinism.md) after a spawn or loadout change |
-| Rebuilding a terrain's object and road data | [terrain export runbook](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) |
+| Rebuilding a terrain's object and road data | [terrain export runbook](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/terrain_export_runbook.md) |
 | A new game build, or a change to the ballistics oracle | [ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md) |
 | The mortar calculator offline | [offline mortar page](/documentation/runbooks/offline_mortar_page.md) |
 | One ticket, one agent | [ticket run pipeline](/documentation/runbooks/ticket_run_pipeline.md) |
@@ -73,7 +73,7 @@ feature folder, rather than here; this index lists it so every procedure is foun
   capture drivers behind the editor gates and editor capture.
 - [Deploy files](/deploy/) — the templates and systemd units the deployment
   runbooks install.
-- [Enfusion MCP handlers](/apps/mod/tbd-emcp/) — the Workbench side of the MCP bridge.
+- [Enfusion MCP handlers](/mod/tbd-emcp/) — the Workbench side of the MCP bridge.
 - [Cursor rules](/.cursor/rules/) — the project rules the Cursor setup loads.
 
 ## Boundaries

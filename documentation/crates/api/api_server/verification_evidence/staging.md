@@ -90,7 +90,7 @@ the load check is the SHA-256 of the two committed workload files, each length-f
 
 ### Binding a run to the tree
 
-The receipt binds to the source fingerprint (tracked and untracked source files under `apps/`,
+The receipt binds to the source fingerprint (tracked and untracked source files under `mod/`,
 `crates/`, `tools/`, `contracts/`, `.github/`, `.cargo/` and this folder) and to the configuration
 fingerprint (the local `.env` files, `deploy/deploy.env` and the verifying process's
 environment, PATH and CARGO_TARGET_DIR included). Hence:

@@ -44,12 +44,12 @@ estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
     "packages/tbd-schema/schema/mission.schema.json",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
+    "mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
+    "mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
+    "mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
 ]
 
 [scope]

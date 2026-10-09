@@ -55,11 +55,11 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 
 | X | Home |
 |---|---|
-| gameplay [EnfScript](/documentation/glossary/a_to_f.md#enfscript) | `apps/mod/tbd-framework/Scripts/Game/TBD/<area>/` (`API`, `Core`, `Gamemode`, `Session`, `Systems`, `UI`) |
-| a UI layout | `apps/mod/tbd-framework/UI/layouts/` (`Common`, `Hud`, `Session`) |
-| a [mission header](/documentation/glossary/g_to_m.md#mission-header) | `apps/mod/tbd-framework/Missions/` |
-| a Workbench export plugin | `apps/mod/tbd-export/Scripts/WorkbenchGame/` |
-| an Enfusion MCP handler | `apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/` |
+| gameplay [EnfScript](/documentation/glossary/a_to_f.md#enfscript) | `mod/tbd-framework/Scripts/Game/TBD/<area>/` (`API`, `Core`, `Gamemode`, `Session`, `Systems`, `UI`) |
+| a UI layout | `mod/tbd-framework/UI/layouts/` (`Common`, `Hud`, `Session`) |
+| a [mission header](/documentation/glossary/g_to_m.md#mission-header) | `mod/tbd-framework/Missions/` |
+| a Workbench export plugin | `mod/tbd-export/Scripts/WorkbenchGame/` |
+| an Enfusion MCP handler | `mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/` |
 
 ## Tooling and tickets
 
@@ -77,7 +77,7 @@ crates and the app are in the [crate boundary rules](/documentation/standards/cr
 | X | Home |
 |---|---|
 | what a code folder holds | its own `README.md`, per the [README standard](/documentation/standards/readme_standard.md) |
-| any other Markdown about code: feature docs, specs, decisions, research | `documentation/`, in the folder that mirrors the code folder; never a `docs` folder under `apps/`, `crates/`, `tools/`, `contracts/` or `assets/` |
+| any other Markdown about code: feature docs, specs, decisions, research | `documentation/`, in the folder that mirrors the code folder; never a `docs` folder under `crates/`, `mod/`, `tools/`, `contracts/` or `assets/` |
 | a procedure | `documentation/runbooks/` |
 | a design reference image or export | the `visual_references/` folder of the feature it depicts |
 | a recorded defect | `documentation/known_bugs/` |

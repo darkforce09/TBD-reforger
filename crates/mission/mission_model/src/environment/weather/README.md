@@ -30,7 +30,7 @@ atMinutes must be strictly increasing (previous was 0)".
 `validate` is `parse` with the value dropped: the check of the `weatherTimeline` row of
 `AUTHORED_BLOCKS` in `crate::authored_blocks`. The compile carries a valid block
 verbatim to the compiled document's root, and in the game
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/TBD_WeatherRuntime.c` applies
+`mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Ingestion/TBD_WeatherRuntime.c` applies
 each keyframe at its offset.
 
 ## Boundaries

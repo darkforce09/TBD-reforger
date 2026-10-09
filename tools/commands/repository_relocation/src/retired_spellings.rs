@@ -9,7 +9,10 @@
 //! comment or a string literal. Each row is one [`Verdict`]. A folder or glob scope is first
 //! followed through the manifest's own moves and then those of the manifests after it
 //! ([`LaterMoves`], [`judged_scope`]): judged where they put it, and, when they emptied it,
-//! judged as holding nothing, with a note.
+//! judged as holding nothing, with a note. A `path` row's retired spelling is legal again at or
+//! below the `to` of a later manifest's `path` row when that `to` is the row's `from` or a path
+//! below it ([`Revivals`]): occurrences there are no offence of the row, files tracked there do not
+//! keep its `from` tracked, and each such revival leaves a note.
 //!
 //! The run is one pass: the tree's text files are read once ([`tree_text`]), every manifest's
 //! `path` spellings and `rust_path` prefix segments go into one Aho-Corasick automaton
@@ -33,7 +36,8 @@
 //! never a pass; a folder scope that is missing after every move is a did-not-run unless a row of
 //! its own or a later manifest took files out of it; judging several manifests in one run gives each the
 //! verdicts, notes and offence order it gets when judged alone (files in path order, offsets in
-//! source order).
+//! source order); only a strictly later manifest revives a spelling, and a still-later manifest
+//! that retires it again judges it with its own row.
 
 mod spelling_matcher;
 mod tree_text;
@@ -51,7 +55,7 @@ use super::path_references::path_tokens::{PathOccurrence, classify_occurrence};
 use super::repository_files::{PathSet, TrackedTree};
 use super::rust_lexer::{code_spans, line_of};
 use super::rust_paths::rust_path_edits;
-use super::scope_history::{JudgedScope, LaterMoves, judged_scope};
+use super::scope_history::{JudgedScope, LaterMoves, Revivals, judged_scope};
 use super::text_edits::AllowedSpans;
 use spelling_matcher::{FileHits, SpellingIndex, SpellingMatcher};
 use tree_text::{TextFile, TreeText, UnreadFile, is_judged};
@@ -67,7 +71,7 @@ pub(crate) struct ManifestToJudge<'a> {
     pub(crate) rows: &'a [ManifestRow],
     /// The repository path of the manifest being run, when it lies in the checkout.
     pub(crate) run_manifest: Option<&'a str>,
-    /// The moves of the manifests after it.
+    /// The moves of the manifests after it, which may move scopes and revive retired spellings.
     pub(crate) later: &'a LaterMoves,
 }
 
@@ -107,7 +111,8 @@ pub(crate) fn judge_manifests(
     };
     let mut offences: Offences = manifests
         .iter()
-        .map(|manifest| still_tracked(tree.paths(), manifest.rows))
+        .zip(&plans)
+        .map(|(manifest, plan)| still_tracked(tree.paths(), manifest.rows, plan))
         .collect();
     for (position, file) in text.files().iter().enumerate() {
         let hits = matcher.scan(&file.text, file.is_rust());
@@ -131,8 +136,9 @@ pub(crate) fn judge_manifests(
 
 /// How one row of a manifest is judged.
 enum RowPlan {
-    /// A `path` row: offences collected from the combined matcher.
-    Path,
+    /// A `path` row: offences collected from the combined matcher, except where a later manifest
+    /// put its spelling back in use.
+    Path(Revivals),
     /// A `rust_path` row judged over the files of its scope after every move.
     RustPath(RowScope),
     /// A `rust_path` row whose scope the later moves emptied: held, with this note.
@@ -167,7 +173,7 @@ impl ManifestPlan {
             rows.push(match row.kind {
                 RowKind::Path => {
                     index.add_path_row(&row.from, at);
-                    RowPlan::Path
+                    RowPlan::Path(manifest.later.revivals_of(&row.from))
                 }
                 RowKind::RustPath => {
                     match judged_scope(tree, &mapping, manifest.later, manifest.label, row) {
@@ -200,7 +206,8 @@ impl JudgedFile<'_> {
     }
 
     /// Each path spelling's retired occurrences in the file, added to every row that retires the
-    /// spelling and whose manifest judges the file, where its treatment opens them.
+    /// spelling and whose manifest judges the file, where its treatment opens them and no later
+    /// manifest revived the spelling.
     fn path_offences(
         &self,
         paths: &PathSet,
@@ -220,7 +227,11 @@ impl JudgedFile<'_> {
                 continue;
             }
             for &(manifest, row) in &index.path_rows[*spelling] {
-                let treatment = self.treatment(&plans[manifest]);
+                let plan = &plans[manifest];
+                let treatment = self.treatment(plan);
+                let RowPlan::Path(revivals) = &plan.rows[row] else {
+                    continue;
+                };
                 if !is_judged(treatment) {
                     continue;
                 }
@@ -228,7 +239,10 @@ impl JudgedFile<'_> {
                 offences[manifest][row].extend(
                     retired
                         .iter()
-                        .filter(|start| allowed.allows(&(**start..**start + length)))
+                        .filter(|start| {
+                            allowed.allows(&(**start..**start + length))
+                                && !revivals.covers_occurrence(&self.file.text[**start..])
+                        })
                         .map(|start| offence(&self.file.path, &self.file.text, *start)),
                 );
             }
@@ -295,11 +309,17 @@ impl JudgedFile<'_> {
     }
 }
 
-/// One offence list per row of `rows`: a `path` row's `from` still tracked opens its list.
-fn still_tracked(paths: &PathSet, rows: &[ManifestRow]) -> Vec<Vec<String>> {
+/// One offence list per row of `rows`: a `path` row's `from` still tracked opens its list, unless
+/// every tracked file at or below it lies where a later manifest revived the spelling.
+fn still_tracked(paths: &PathSet, rows: &[ManifestRow], plan: &ManifestPlan) -> Vec<Vec<String>> {
     rows.iter()
-        .map(|row| match row.kind {
-            RowKind::Path if paths.contains(&row.from) => {
+        .zip(&plan.rows)
+        .map(|(row, row_plan)| match row_plan {
+            RowPlan::Path(revivals)
+                if paths
+                    .files_at_or_below(&row.from)
+                    .any(|file| !revivals.covers_path(file)) =>
+            {
                 vec![format!("`{}` is still tracked", row.from)]
             }
             _ => Vec::new(),
@@ -316,7 +336,13 @@ fn assemble(
     let mut judgement = RowJudgement::default();
     for ((row, row_plan), offences) in manifest.rows.iter().zip(plan.rows).zip(offences) {
         let verdict = match row_plan {
-            RowPlan::Path | RowPlan::RustPath(_) => verdict(manifest.label, row, offences),
+            RowPlan::Path(revivals) => {
+                judgement
+                    .notes
+                    .extend(revivals.notes(manifest.label, row.line));
+                verdict(manifest.label, row, offences)
+            }
+            RowPlan::RustPath(_) => verdict(manifest.label, row, offences),
             RowPlan::Emptied(note) => {
                 judgement.notes.push(note);
                 Verdict::Held

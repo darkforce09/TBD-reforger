@@ -149,7 +149,7 @@ are required too.
   schemas in `contracts/definitions/` and, at run time, the asset trees in `assets/terrains/` and
   `assets/glyphs/`.
 - Used by: the single-page app in `crates/frontend/shell/frontend_application/`; the game servers,
-  through the mod's `apps/mod/tbd-framework/Scripts/Game/TBD/API/`; the game server host agent in
+  through the mod's `mod/tbd-framework/Scripts/Game/TBD/API/`; the game server host agent in
   `crates/fleet/game_server_host_agent/`;
   the `mk rust-api`, `db` and `deploy website` commands of `tools/xtask/`; and the release image
   that `deploy/Dockerfile` builds.

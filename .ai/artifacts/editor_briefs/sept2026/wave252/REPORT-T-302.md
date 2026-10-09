@@ -21,8 +21,8 @@ On this worktree (main-equivalent at `b59b99116`, pre-slice):
 
 | path | what |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | `LogWeaponEquipResult` prints `[TBD][Equip] slot=<n> weapon=<res> result=<ok\|replaced\|failed>` at each weapon-row IssueEquip outcome (insert=ok, TryReplace=replaced, fail/skip-fail=failed, same-prefab skip=ok). Equip APIs unchanged. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | Lockstep (same CODE). Pre-existing comment punctuation twins (em-dash / `→` vs ASCII) left as-is. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | `LogWeaponEquipResult` prints `[TBD][Equip] slot=<n> weapon=<res> result=<ok\|replaced\|failed>` at each weapon-row IssueEquip outcome (insert=ok, TryReplace=replaced, fail/skip-fail=failed, same-prefab skip=ok). Equip APIs unchanged. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | Lockstep (same CODE). Pre-existing comment punctuation twins (em-dash / `→` vs ASCII) left as-is. |
 | `xtask/src/mod_world_boot.rs` | Four-weapon compiled fixture on `sl_ar` (`Character_US_Unarmed` so inserts are `result=ok`). `t302_assert` requires four `result=ok` lines covering slots 0–3 and zero replaced/failed. Wired into `--compiled` boot and `--selftest`. Helpers compacted under `#[rustfmt::skip]` to stay SIZE-3 ≤1000 (995 lines). |
 
 Weapons (arsenal WEAPON_SLOTS pairs):

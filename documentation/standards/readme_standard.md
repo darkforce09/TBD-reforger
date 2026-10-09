@@ -18,7 +18,8 @@ it is tracked. The exempt folders are:
   trees); any other casing, such as `GENERATED`, is an ordinary folder;
 - a folder whose name begins with `.` (tool configuration);
 - the pending-merge area, `pending_merge/` directly under the documentation root;
-- the retired documentation root (`docs`), which must hold nothing (markdown-placement judges it).
+- the retired top-level folders (`docs`, whose documents live under `documentation/`, and `apps`,
+  whose mod lives under `mod/`), which must hold nothing (markdown-placement judges them).
 
 An exempt folder needs no README, and a README.md inside one is neither required nor checked; the
 parent's Contents block describes the exempt folder in one line. The repository root's README.md
@@ -139,16 +140,16 @@ table, with a skeleton and a worked sample written from a real folder; the
 
 | Kind | Kind sections, in order | Template | Examples |
 |---|---|---|---|
-| area root | Getting started | `readme_area_root.md` | `crates/`, `apps/mod/`, `tools/` |
-| crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `crates/api/api_server/`, `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/` |
+| area root | Getting started | `readme_area_root.md` | `crates/`, `mod/`, `tools/` |
+| crate, package or addon root | Getting started, Configuration, Public surface | `readme_crate_root.md` | `crates/api/api_server/`, `tools/enfusion_mcp_node_package/`, `mod/tbd-framework/` |
 | domain or subsystem | Public surface | `readme_domain.md` | `crates/api/api_missions/src/`, `crates/streaming/map_asset_loading/src/terrain/` |
 | leaf | none | `readme_leaf.md` | `crates/line_of_sight/interior_line_of_sight/src/` |
 | page | Routes, Data, States | `readme_page.md` | `crates/frontend/pages/operations_pages/src/schedule/` |
 | app | Routes, Public surface | `readme_app.md` | `crates/frontend/workspaces/mission_creator_workspace/src/` |
 | command-line | Commands | `readme_command_line.md` | `tools/developer_tools/src/bin/`, `tools/commands/database_operations/src/` |
 | data (contracts, assets, fixtures, migrations, seeds) | Format, Producers and consumers | `readme_data.md` | `contracts/fixtures/missions/`, `crates/api/api_database/migrations/` |
-| mod scripts | Authority | `readme_mod_scripts.md` | `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` |
-| mod assets | Format, Referenced by | `readme_mod_assets.md` | `apps/mod/tbd-framework/Prefabs/` |
+| mod scripts | Authority | `readme_mod_scripts.md` | `mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` |
+| mod assets | Format, Referenced by | `readme_mod_assets.md` | `mod/tbd-framework/Prefabs/` |
 | deploy or config | Configuration, Installed by | `readme_deploy_config.md` | `deploy/` |
 | documentation folder | Code | `readme_documentation_folder.md` | `documentation/runbooks/` |
 
@@ -194,14 +195,14 @@ Go down this list and take the first kind that fits.
 
 1. **documentation folder**: any folder under `documentation/`.
 2. **area root**: the top of a code tree, or a folder that groups several products without being
-   one (`crates/`, `apps/`, `apps/mod/`, `tools/`, `contracts/`).
+   one (`crates/`, `mod/`, `tools/`, `contracts/`).
 3. **crate, package or addon root**: the folder that holds a `Cargo.toml`, a `package.json` or an
    Enfusion `addon.gproj` (`crates/api/api_server/`, `tools/tickets/ticketboard_desktop/`,
-   `tools/enfusion_mcp_node_package/`, `apps/mod/tbd-framework/`).
+   `tools/enfusion_mcp_node_package/`, `mod/tbd-framework/`).
 4. **mod scripts**: a folder at or under an addon's `Scripts/`
-   (`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`).
-5. **mod assets**: any other folder inside an addon (`apps/mod/tbd-framework/Prefabs/`,
-   `apps/mod/tbd-framework/Configs/`).
+   (`mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`).
+5. **mod assets**: any other folder inside an addon (`mod/tbd-framework/Prefabs/`,
+   `mod/tbd-framework/Configs/`).
 6. **deploy or config**: templates, service units and profiles that set up a host or a server
    (`deploy/`, `tools/xtask/dedicated_server_profiles/`).
 7. **data**: schemas, fixtures, migrations, seeds and asset data that code reads rather than runs
@@ -307,7 +308,7 @@ specifies every rule.
 | Gate | What it checks |
 |---|---|
 | `cargo xtask verify readme-coverage` | every folder in the README span has a tracked README.md, and every README.md in the span passes the Contents grammar |
-| `cargo xtask verify markdown-placement` | the code trees hold no Markdown besides README.md (outside `tests`, `generated`, `Generated` and dot-folders), the retired documentation root holds no file, and every live document under `documentation/` stays within 500 lines, apart from the exemptions the gates README lists |
+| `cargo xtask verify markdown-placement` | the code trees hold no Markdown besides README.md (outside `tests`, `generated`, `Generated` and dot-folders), the retired top-level folders hold no file, and every live document under `documentation/` stays within 500 lines, apart from the exemptions the gates README lists |
 | `cargo xtask verify link-check` | every link in every README and documentation file reaches a tracked target, anchors and line ranges included; in live documents, every backticked repository path exists and every cited `cargo xtask` command exists in the command tree, fenced blocks included |
 
 The Contents check is the only structural rule a gate enforces. The section order, the kind

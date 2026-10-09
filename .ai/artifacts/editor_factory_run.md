@@ -45,7 +45,7 @@ abbreviated or misremembered sha, and it refused one of this run's on exactly th
 `TBD_WAVE_GENERATION_FLOOR=100` (aim current_wave at this program, not the legacy backlog).
 
 **Shape per wave:** worktrees → ≤3 slice agents (Opus; Fable for `.c` under
-apps/mod/tbd-framework/) → BARRIER all report → merge all → `wave.sh gate` → ONE Fable
+mod/tbd-framework/) → BARRIER all report → merge all → `wave.sh gate` → ONE Fable
 adversarial verifier on merged main → triage (BLOCKERs fixed in-wave, rest deferred with
 diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync'` → close commit.
 

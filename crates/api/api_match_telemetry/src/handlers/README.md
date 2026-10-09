@@ -54,11 +54,11 @@ crates/api/api_match_telemetry/src/handlers/
   models and services; `api_foundation` for errors and `api_http_layer` for `AuthUser`.
 - Used by: the domain's `routes.rs`; over HTTP, the
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s session loop in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c` and its results reporter in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c`. The reporter's
+  `mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c` and its results reporter in
+  `mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c`. The reporter's
   registrations and results revisions and the recorded event batches reach the ingests through the
   durable queue that
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Delivery/TBD_TelemetryDelivery.c`
+  `mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Delivery/TBD_TelemetryDelivery.c`
   sends; no frontend page calls the event read.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the

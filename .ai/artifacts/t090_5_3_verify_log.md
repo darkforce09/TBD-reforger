@@ -137,4 +137,4 @@ h. The N4 px→m conversion helper is `worldObjectsClient.worldPickRadiusM(deckZ
 ## Commit
 
 - Commit: `T-090.5.3: worker chunk streaming + chunkStore LRU/budget + pick wiring` — tag **T-090.5.3** (tag is the authoritative pointer; sha in the return note).
-- `apps/mod/tbd-framework/resourceDatabase.rdb` (pre-existing dirty) excluded.
+- `mod/tbd-framework/resourceDatabase.rdb` (pre-existing dirty) excluded.

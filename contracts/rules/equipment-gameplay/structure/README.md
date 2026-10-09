@@ -30,7 +30,7 @@ contracts/rules/equipment-gameplay/structure/
 - Consumers: `Policy::load` in `tools/commands/mod_operations/src/equipment_gameplay/policy.rs`,
   through which the xtask equipment gameplay and equipment export commands read the rows;
   `cargo xtask mod generate-equipment-gameplay-policy` writes them into
-  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/structure/`.
+  `mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/structure/`.
 
 ## Boundaries
 

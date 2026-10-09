@@ -100,7 +100,7 @@ pub(super) fn preflight_with_root(root: &Path) -> u8 {
     let bin = PathBuf::from(format!(
         "{home}/.local/share/Steam/steamapps/common/Arma Reforger Server/ArmaReforgerServer"
     ));
-    let rdb = root.join("apps/mod/tbd-framework/resourceDatabase.rdb");
+    let rdb = root.join(FRAMEWORK_ADDON_DIR).join("resourceDatabase.rdb");
     let mut fail = 0u8;
     if !is_executable(&bin) {
         eprintln!(
@@ -114,7 +114,7 @@ pub(super) fn preflight_with_root(root: &Path) -> u8 {
     let rdb_ok = rdb.is_file() && rdb.metadata().map(|m| m.len() > 0).unwrap_or(false);
     if !rdb_ok {
         eprintln!(
-            "::error title=mod-gates checkout incomplete::apps/mod/tbd-framework/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
+            "::error title=mod-gates checkout incomplete::{FRAMEWORK_ADDON_DIR}/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
         );
         fail = 1;
     }
@@ -137,7 +137,7 @@ pub(super) fn run_with_root(root: &Path, opts: &Opts) -> u8 {
         "{home}/.local/share/Steam/steamapps/common/Arma Reforger Server"
     ));
     let server_bin = server_dir.join("ArmaReforgerServer");
-    let mod_src = root.join("apps/mod/tbd-framework");
+    let mod_src = root.join(FRAMEWORK_ADDON_DIR);
 
     if !is_executable(&server_bin) {
         return env_fail(
@@ -195,16 +195,16 @@ pub(super) fn compile_inner(
 ) -> io::Result<u8> {
     fs::create_dir_all(run_dir.join("addons"))?;
     fs::create_dir_all(run_dir.join("profile"))?;
-    let link = run_dir.join("addons/tbd-framework");
+    let link = run_dir.join("addons").join(FRAMEWORK_ADDON_FOLDER_NAME);
     let _ = fs::remove_file(&link);
     std::os::unix::fs::symlink(mod_src, &link)?;
     // ONE ADDON. The gate compiles what ships: a dedicated server loads only `TBD_Framework`.
-    // `apps/mod/tbd-export` is a standalone addon that depends on vanilla Reforger and on
+    // `mod/tbd-export` is a standalone addon that depends on vanilla Reforger and on
     // tbd-emcp; both are Workbench tooling a dedicated server never reads
     // (`Scripts/WorkbenchGame`, see the help text), so they compile inside Workbench. The one
     // thing tbd-export holds that this gate could compile is its five
     // `Scripts/Game/TBD/Export/*.c` road-exporter scripts — to cover them, symlink
-    // `apps/mod/tbd-export` beside the framework link above and append `,TBD_Export` here.
+    // `mod/tbd-export` beside the framework link above and append `,TBD_Export` here.
     let mut addons = String::from("TBD_Framework");
 
     if opts.selftest {
@@ -324,10 +324,10 @@ pub(super) fn compile_inner(
         }
         println!("      The shipping mod has no Scripts/WorkbenchGame by design (2026-09-12): the");
         println!(
-            "      map-export plugins live in apps/mod/tbd-export and the enfusion-mcp handlers"
+            "      map-export plugins live in {EXPORT_ADDON_DIR} and the enfusion-mcp handlers"
         );
         println!(
-            "      in apps/mod/tbd-emcp. An injected EnfusionMCP/ copy (wb_launch gprojPath=…)"
+            "      in {MCP_BRIDGE_ADDON_DIR}. An injected EnfusionMCP/ copy (wb_launch gprojPath=…)"
         );
         println!("      lands here too — delete it; the server cannot compile any of it.");
         return Ok(1);
@@ -387,8 +387,8 @@ pub(super) fn count_game_scripts(addon: &Path) -> io::Result<u64> {
 /// 2026-09-12 — the shipping mod carries no Workbench tooling, and this is what keeps it so.
 ///
 /// `Scripts/WorkbenchGame` left tbd-framework when tbd-export stopped being a mirror of it: the
-/// map-export plugins live in `apps/mod/tbd-export`, the enfusion-mcp bridge handlers in
-/// `apps/mod/tbd-emcp`, and tbd-export depends on both. The dedicated server never reads that
+/// map-export plugins live in `mod/tbd-export`, the enfusion-mcp bridge handlers in
+/// `mod/tbd-emcp`, and tbd-export depends on both. The dedicated server never reads that
 /// module, so nothing in this gate can compile it — this guard is the only thing that notices it
 /// coming back. It does come back: the MCP's `wb_launch gprojPath=…` copies 19 `EMCP_WB_*.c` into
 /// whichever addon was opened, and a second copy beside tbd-emcp's is a Workbench "Multiple

@@ -30,7 +30,11 @@ refuses unless that dry run is clean, then makes the moves and writes and verifi
 the format sample `example.tsv`, against the checkout as it stands; each manifest's scopes follow
 its own moves and then the moves of the manifests that entered the history after it, since a
 committed manifest is never edited. The order follows each manifest back through its exact renames
-to the commit that first added it, so moving the manifests folder keeps it. A climbing token
+to the commit that first added it, so moving the manifests folder keeps it. A retired `path`
+spelling is legal again at or below the `to` of a later manifest's `path` row when that `to` is the
+spelling or a path below it (never a folder above it), both in live text and for the earlier row's still-tracked
+check, with a `note:` line; a still-later manifest that retires it again judges it with its own
+row. A climbing token
 `<seg>/../…` counts as a path reference only under an anchor (the file's folder, the owning
 crate's folder, the repository root) where its named lead (the segments before its first `..`) is a tracked folder, so a test
 datum such as `"7/../.."` is never read as a path and never stops an apply. A literal read from
@@ -85,7 +89,11 @@ No feature and no environment variable; `git` must be on the path.
   moved where no crate manifest lies below the root is unresolved
   (`relocate_manifest_dir_joins_into_a_folder_with_no_crate_manifest_are_unresolved`); the
   manifest order survives a move of the manifests folder
-  (`relocate_manifest_order_survives_a_move_of_the_manifests_folder`); tests run on throwaway
+  (`relocate_manifest_order_survives_a_move_of_the_manifests_folder`); only a later manifest's
+  `path` row revives a retired spelling, and a later retirement judges it again
+  (`relocate_verify_passes_a_spelling_a_later_manifest_moved_back`,
+  `relocate_verify_revives_nothing_from_a_manifest_ordered_before_the_retiring_one`,
+  `relocate_verify_judges_a_revived_spelling_retired_again_with_the_later_row`); tests run on throwaway
   checkouts and read only the committed format sample from this one.
 
 ## Related documentation

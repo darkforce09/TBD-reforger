@@ -21,6 +21,9 @@ use regex::Regex;
 
 use crate::compile_host::{Session, hostrun, is_executable, kill_run, mktemp_dir, require_host};
 use crate::server_launcher;
+use repository_layout::enfusion_mod_folders::{
+    EXPORT_ADDON_DIR, FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME, MCP_BRIDGE_ADDON_DIR,
+};
 use repository_root::find_repository_root;
 
 /// The text `mod compile --help` prints.

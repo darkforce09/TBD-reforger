@@ -138,7 +138,7 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      committed baseline: set equality on failing route names, and the four clean routes (notfound,
      eventmgr, callback, login) must still pass. Pass -> fail is a hard stop.
   2. Leave the dirty working tree alone. ~70 files are modified/untracked that are NOT ours
-     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
+     (mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
      tools/). Stage ONLY files you authored. Never `git add -A`.
   3. The gate ratchets **repo-wide**, not just over the paths Phase 3 touched. Stagger the expiry
      dates by tree — the program document suggests 2027-01-31 for api/tools/crates/ticketboard and
@@ -158,7 +158,7 @@ KNOWN RED BEFORE 3C TOUCHES ANYTHING — not yours, not regressions:
                                    tools/tbd-tools/src/world/forest_smooth.rs 1243
                                    xtask/src/{backfill_stamps 1282, check 2329, estimate_tokens
                                      1647, wave/base 1124, wave/land 1659, wave_lock 2169}
-  cargo test -p xtask            8 failures, all pinning a missing apps/mod/** script:
+  cargo test -p xtask            8 failures, all pinning a missing mod/** script:
                                    gate_t437::tests::{collapsed_returns_fail_registry_pins,
                                      live_tree_holds, paraphrase_injection_is_caught}
                                    schema_gates::t212_objective_spine_tests::{objective_spine_is_

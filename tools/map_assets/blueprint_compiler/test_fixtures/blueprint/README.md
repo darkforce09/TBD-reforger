@@ -84,7 +84,7 @@ moves one re-blesses the fixture or the assertion on purpose.
 
 - Producers:
   - the `tbd-export` Workbench handler `EMCP_WB_TbdBlueprint`
-    (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/EMCP_WB_TbdBlueprint.c`),
+    (`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/EMCP_WB_TbdBlueprint.c`),
     through `cargo xtask mcp wbcall`: action `recon` writes `<slug>_children.json`, `parity` writes
     `<slug>_parity.json`, `dump` writes `<slug>_voxels.jsonl` (compressed here), and
     `world-parity` writes `world_parity_<cx>_<cy>.json`, all into the Workbench profile's

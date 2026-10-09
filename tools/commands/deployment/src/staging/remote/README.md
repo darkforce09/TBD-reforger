@@ -53,9 +53,9 @@ fails; ssh's own failure keeps its code, 255. The ssh password, with `TBD_SSH_PA
 `sshpass -e` through the spawned process's `SSHPASS` variable, never an argument.
 
 The rsync excludes `.git/`, `target/`, the
-untracked reference trees under `apps/mod/` (the Coalition framework, the vanilla scripts, the
+untracked reference trees under `mod/` (the Coalition framework, the vanilla scripts, the
 playable selector), a `Tbd_framework` folder and the local test profile, the
-`apps/mod/tbd-export/` and `apps/mod/tbd-emcp/` addons, `node_modules`, the API's `.env` and
+`mod/tbd-export/` and `mod/tbd-emcp/` addons, `node_modules`, the API's `.env` and
 `.tools/`, `deploy.env`, the `assets` terrain, scratch and equipment trees, and
 `crates/frontend/shell/frontend_application/dist/`, the app the website deploy built in the same
 checkout (the three host-owned paths of `tools/commands/deployment/src/host_owned_paths.rs`, which

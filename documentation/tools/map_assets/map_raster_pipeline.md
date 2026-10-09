@@ -149,7 +149,7 @@ the canvas with the "over" rule and a 0.75 px feathered edge.
 - The inland-water archive reads `TBD_InlandWaterExport_*` staging files
   (`tools/map_assets/map_raster_pipeline/src/inland_water_archive.rs`) — the Workbench
   water exporter writes `bathymetry_mask.txt`, `bathymetry_depth.txt`, `lakes.json` and
-  `rivers.json` (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water/`), and nothing
+  `rivers.json` (`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water/`), and nothing
   renames them.
 - `export-height-labels` reads `dem/everon-dem-16bit.png` whatever `--terrain` names
   (`tools/map_assets/map_raster_pipeline/src/map_labels/export_height_labels.rs:9`).

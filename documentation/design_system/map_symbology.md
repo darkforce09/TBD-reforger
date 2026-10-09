@@ -18,14 +18,14 @@ APP-6 frames, no echelon modifiers and no civilian side.
   `crates/map_rendering/symbology_layers_gpu/src/glyph_atlas_gpu.rs`;
   and the marker lane's parse in
   `crates/mission_editing/mission_editing_session/src/lanes/markers.rs`.
-- Game: [`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md):
+- Game: [`mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`](/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md):
   `TBD_MarkerService.c` (which markers a player may see), `TBD_MarkerWire.c` and
   `TBD_MarkerStyleCodec.c` (the wire), `TBD_MarkerIcons.c` (authored icon to engine icon) and
   `Client/TBD_MarkerApplier.c` (drawing).
 - Contract: the `marker` definition in `contracts/definitions/mission.schema.json`.
 - Related: the [design tokens](/documentation/design_system/design_tokens.md), whose palette the
   side tints come from, and the
-  [tactical marker palette](/documentation/apps/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md),
+  [tactical marker palette](/documentation/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md),
   the in-game marker behaviour and the drawing toolbar it designs.
 
 ## Behaviour
@@ -93,7 +93,7 @@ Its `label` draws as a caption through the map's text pipeline.
 
 1. The server sends each player only their own side's markers, at most 64 (`MAX_MARKERS`), with
    labels cut to 64 characters; the
-   [tactical marker palette](/documentation/apps/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
+   [tactical marker palette](/documentation/mod/tbd-framework/UI/tactical_marker_palette/tactical_marker_palette_specification.md)
    documents the flow.
 2. Each client inserts them as the engine's own `PLACED_CUSTOM` map markers.
    `TBD_MarkerIcons.Resolve` tries the running game's icon names first, then the table of the 64

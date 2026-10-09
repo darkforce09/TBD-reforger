@@ -1,7 +1,7 @@
 //! `cargo xtask setup server-profile`: write the dedicated-server profile this checkout boots with.
 //!
-//! Path pins:
-//! `MONO_ROOT`, `MOD_ROOT=apps/mod`.
+//! Path pins: the checkout root and, under it, the mod folder
+//! ([`repository_layout::workspace_folders::ENFUSION_MOD_DIR`]).
 //!
 //! Builds a dedicated-server profile tree: `profile/TBD_BackendConfig.json` from the committed
 //! example, with the game runtime's machine credential filled in when it is known, and the
@@ -22,22 +22,28 @@ use std::path::{Path, PathBuf};
 
 use crate::error::{Result, ResultExt};
 
+use repository_layout::enfusion_mod_folders::{FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME};
+use repository_layout::workspace_folders::ENFUSION_MOD_DIR;
 use repository_root::find_repository_root;
 
 /// Where the game runtime's machine credential comes from.
 const MACHINE_CREDENTIAL_VARIABLE: &str = "TBD_MACHINE_CREDENTIAL";
-const BACKEND_EXAMPLE_REL: &str = "apps/mod/tbd-framework/Data/backend.example.json";
-const REGISTRY_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
+/// The committed backend config example the profile starts from, relative to the framework addon.
+const BACKEND_EXAMPLE_IN_FRAMEWORK: &str = "Data/backend.example.json";
+/// The optional registry override, relative to the framework addon.
+const REGISTRY_IN_FRAMEWORK: &str = "Data/registry.json";
 
 /// The path pins, for an already-resolved monorepo root.
 struct Paths {
     mod_root: PathBuf,
+    framework_addon: PathBuf,
 }
 
 impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
-            mod_root: root.join("apps/mod"),
+            mod_root: root.join(ENFUSION_MOD_DIR),
+            framework_addon: root.join(FRAMEWORK_ADDON_DIR),
         }
     }
 }
@@ -60,7 +66,7 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
     // 700 before anything is written: the backend config carries the machine credential.
     set_mode(&profile_root, 0o700)?;
 
-    let backend_src = root.join(BACKEND_EXAMPLE_REL);
+    let backend_src = paths.framework_addon.join(BACKEND_EXAMPLE_IN_FRAMEWORK);
     let backend_dst = profile_root.join("TBD_BackendConfig.json");
     if let Err(e) = fs::copy(&backend_src, &backend_dst) {
         if e.kind() == io::ErrorKind::NotFound {
@@ -82,7 +88,7 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
     }
 
     // Optional registry override — bash `cp … 2>/dev/null || true`.
-    let registry_src = root.join(REGISTRY_REL);
+    let registry_src = paths.framework_addon.join(REGISTRY_IN_FRAMEWORK);
     let registry_dst = profile_root.join("TBD_Registry.json");
     let _ = fs::copy(&registry_src, &registry_dst);
 
@@ -104,7 +110,7 @@ pub fn run_with_root(root: &Path, profile_arg: Option<&Path>) -> Result<u8> {
     }
     println!();
     println!("Workbench checklist:");
-    println!("  1. Open tbd-framework/addon.gproj");
+    println!("  1. Open {FRAMEWORK_ADDON_FOLDER_NAME}/addon.gproj");
     println!("  2. Load mission Missions/TBD_Dev_POC.conf (or your scenario)");
     println!("  3. Add TBD_FrameworkManager + TBD_RegistryPocComponent to GameMode entity");
     println!(

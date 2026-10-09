@@ -7,11 +7,11 @@ use super::super::{Break, BreakListing, judge as judge_gate};
 use super::*;
 use crate::GateRequest;
 use crate::fixture_checkout::{FixtureCheckout, failures, outcome_counts};
-use repository_layout::ARCHIVE_DIR;
+use repository_layout::{ARCHIVE_DIR, RETIRED_TOP_LEVEL_FOLDERS};
 
 /// The top-level folders of the fixture checkouts below.
 fn top_level(first: &str) -> bool {
-    ["apps", "tools", "contracts", ".ai"].contains(&first)
+    ["engines", "tools", "contracts", ".ai"].contains(&first)
 }
 
 fn path(path: &str, folder: bool) -> CodeSpanReading {
@@ -56,13 +56,13 @@ impl IgnoreRules for FakeIgnoreRules {
     }
 }
 
-/// A checkout whose top-level folders are `apps`, `contracts` and `tools`, with a tracked
+/// A checkout whose top-level folders are `engines`, `contracts` and `tools`, with a tracked
 /// source file and two READMEs.
 fn checkout(tag: &str) -> FixtureCheckout {
     let mut fixture = FixtureCheckout::new(&format!("backticked-{tag}"));
     fixture
-        .tracked("apps/tool/src/main.rs", "fn main() {}\n")
-        .tracked("apps/tool/README.md", "# Tool\n")
+        .tracked("engines/tool/src/main.rs", "fn main() {}\n")
+        .tracked("engines/tool/README.md", "# Tool\n")
         .tracked("contracts/definitions/mission.schema.json", "{}\n")
         .tracked("tools/README.md", "# Tools\n");
     fixture
@@ -104,9 +104,9 @@ fn only_a_span_under_a_top_level_folder_is_a_repository_path() {
     for text in [
         "README.md",
         "src/main.rs",
-        "https://example.com/apps/x",
-        "/apps/tool",
-        "./apps/tool",
+        "https://example.com/engines/x",
+        "/engines/tool",
+        "./engines/tool",
         "cargo xtask verify link-check",
         "documentation/guide.md",
     ] {
@@ -117,26 +117,26 @@ fn only_a_span_under_a_top_level_folder_is_a_repository_path() {
         );
     }
     assert_eq!(
-        read_code_span(" apps/tool/README.md ", top_level),
-        path("apps/tool/README.md", false)
+        read_code_span(" engines/tool/README.md ", top_level),
+        path("engines/tool/README.md", false)
     );
 }
 
 #[test]
 fn every_pattern_class_is_skipped() {
     for (text, kind) in [
-        ("apps/*.rs", PatternKind::Glob),
-        ("apps/tool/?.rs", PatternKind::Glob),
-        ("apps/[ab]/mod.rs", PatternKind::Glob),
-        ("apps/<page>/mod.rs", PatternKind::Placeholder),
+        ("engines/*.rs", PatternKind::Glob),
+        ("engines/tool/?.rs", PatternKind::Glob),
+        ("engines/[ab]/mod.rs", PatternKind::Glob),
+        ("engines/<page>/mod.rs", PatternKind::Placeholder),
         (".ai/tickets/T-<id>.toml", PatternKind::Placeholder),
         ("contracts/{definitions,rules}", PatternKind::Set),
-        ("apps/$APP/README.md", PatternKind::Variable),
-        ("apps/tool --release", PatternKind::Command),
-        ("apps/tool/x\ty", PatternKind::Command),
-        ("apps/https://example.com/x?y=1", PatternKind::Url),
-        ("apps/website/...", PatternKind::Elision),
-        ("apps/…/mod.rs", PatternKind::Elision),
+        ("engines/$APP/README.md", PatternKind::Variable),
+        ("engines/tool --release", PatternKind::Command),
+        ("engines/tool/x\ty", PatternKind::Command),
+        ("engines/https://example.com/x?y=1", PatternKind::Url),
+        ("engines/website/...", PatternKind::Elision),
+        ("engines/…/mod.rs", PatternKind::Elision),
     ] {
         assert_eq!(
             read_code_span(text, top_level),
@@ -149,14 +149,14 @@ fn every_pattern_class_is_skipped() {
 #[test]
 fn a_line_suffix_and_a_fragment_are_stripped_before_the_check() {
     for (text, expected) in [
-        ("apps/tool/src/main.rs:12", "apps/tool/src/main.rs"),
-        ("apps/tool/src/main.rs:12-40", "apps/tool/src/main.rs"),
-        ("apps/tool/src/main.rs:12:5", "apps/tool/src/main.rs"),
+        ("engines/tool/src/main.rs:12", "engines/tool/src/main.rs"),
+        ("engines/tool/src/main.rs:12-40", "engines/tool/src/main.rs"),
+        ("engines/tool/src/main.rs:12:5", "engines/tool/src/main.rs"),
         (
             "contracts/definitions/mission.schema.json#/definitions/Slot",
             "contracts/definitions/mission.schema.json",
         ),
-        ("apps/tool/README.md#usage", "apps/tool/README.md"),
+        ("engines/tool/README.md#usage", "engines/tool/README.md"),
     ] {
         assert_eq!(
             read_code_span(text, top_level),
@@ -165,9 +165,9 @@ fn a_line_suffix_and_a_fragment_are_stripped_before_the_check() {
         );
     }
     for text in [
-        "apps/tool/main.rs:main",
-        "apps/tool/main.rs:12-",
-        "apps/tool/x:1:2:3",
+        "engines/tool/main.rs:main",
+        "engines/tool/main.rs:12-",
+        "engines/tool/x:1:2:3",
     ] {
         assert_eq!(
             read_code_span(text, top_level),
@@ -180,19 +180,19 @@ fn a_line_suffix_and_a_fragment_are_stripped_before_the_check() {
 #[test]
 fn a_trailing_slash_asks_for_a_folder_and_segments_are_normalised() {
     assert_eq!(
-        read_code_span("apps/tool/", top_level),
-        path("apps/tool", true)
+        read_code_span("engines/tool/", top_level),
+        path("engines/tool", true)
     );
     assert_eq!(
-        read_code_span("apps/tool", top_level),
-        path("apps/tool", false)
+        read_code_span("engines/tool", top_level),
+        path("engines/tool", false)
     );
     assert_eq!(
-        read_code_span("apps//tool/./src/../README.md", top_level),
-        path("apps/tool/README.md", false)
+        read_code_span("engines//tool/./src/../README.md", top_level),
+        path("engines/tool/README.md", false)
     );
     assert_eq!(
-        read_code_span("apps/../../outside", top_level),
+        read_code_span("engines/../../outside", top_level),
         CodeSpanReading::Path(CitedPath {
             path: None,
             folder: false
@@ -204,11 +204,11 @@ fn a_trailing_slash_asks_for_a_folder_and_segments_are_normalised() {
 fn a_tracked_file_or_folder_passes_without_asking_git() {
     let mut fixture = checkout("tracked");
     let ignore_rules = FakeIgnoreRules::default();
-    let text = "# Doc\n\n`apps/tool/src/main.rs:1` `apps/tool` `apps/tool/` `apps/tool/README.md` \
+    let text = "# Doc\n\n`engines/tool/src/main.rs:1` `engines/tool` `engines/tool/` `engines/tool/README.md` \
                 `contracts/definitions/mission.schema.json#/definitions/Slot`\n";
     let (breaks, not_run, totals) = judge_documents(
         &mut fixture,
-        &[("apps/tool/guide.md", text)],
+        &[("engines/tool/guide.md", text)],
         &ignore_rules,
         &[],
     );
@@ -227,11 +227,11 @@ fn a_tracked_file_or_folder_passes_without_asking_git() {
 #[test]
 fn a_path_naming_nothing_breaks_and_a_file_is_no_folder() {
     let mut fixture = checkout("nothing");
-    let text = "# Doc\n\nSee `apps/tool/src/gone.rs:4`.\n\n`apps/tool/src/main.rs/` and \
-                `apps/../../outside`.\n";
+    let text = "# Doc\n\nSee `engines/tool/src/gone.rs:4`.\n\n`engines/tool/src/main.rs/` and \
+                `engines/../../outside`.\n";
     let (breaks, not_run, _) = judge_documents(
         &mut fixture,
-        &[("apps/tool/README.md", text)],
+        &[("engines/tool/README.md", text)],
         &FakeIgnoreRules::default(),
         &[],
     );
@@ -239,11 +239,11 @@ fn a_path_naming_nothing_breaks_and_a_file_is_no_folder() {
     assert_eq!(
         breaks,
         [
-            "apps/tool/README.md:5: backticked path names nothing: `apps/../../outside` climbs \
+            "engines/tool/README.md:5: backticked path names nothing: `engines/../../outside` climbs \
              above the repository root",
-            "apps/tool/README.md:3: backticked path names nothing: `apps/tool/src/gone.rs:4` \
-             (checked as `apps/tool/src/gone.rs`)",
-            "apps/tool/README.md:5: backticked path names nothing: `apps/tool/src/main.rs/`",
+            "engines/tool/README.md:3: backticked path names nothing: `engines/tool/src/gone.rs:4` \
+             (checked as `engines/tool/src/gone.rs`)",
+            "engines/tool/README.md:5: backticked path names nothing: `engines/tool/src/main.rs/`",
         ]
     );
 }
@@ -252,16 +252,17 @@ fn a_path_naming_nothing_breaks_and_a_file_is_no_folder() {
 fn every_waiting_path_is_asked_in_one_batch_and_an_ignored_one_passes() {
     let mut fixture = checkout("ignored");
     let ignore_rules = FakeIgnoreRules::ignoring(&[
-        "apps/tool/target/debug/tool",
+        "engines/tool/target/debug/tool",
         "tools/deploy/deploy.env",
-        "apps/tool/dist/",
+        "engines/tool/dist/",
     ]);
-    let first = "# First\n\n`apps/tool/target/debug/tool` `apps/tool/dist` `apps/tool/gone.md`\n";
-    let second = "# Second\n\n`tools/deploy/deploy.env` `apps/tool/gone.md` `apps/gone/`\n";
+    let first =
+        "# First\n\n`engines/tool/target/debug/tool` `engines/tool/dist` `engines/tool/gone.md`\n";
+    let second = "# Second\n\n`tools/deploy/deploy.env` `engines/tool/gone.md` `engines/gone/`\n";
     let (breaks, not_run, totals) = judge_documents(
         &mut fixture,
         &[
-            ("apps/tool/first.md", first),
+            ("engines/tool/first.md", first),
             ("contracts/second.md", second),
         ],
         &ignore_rules,
@@ -271,21 +272,21 @@ fn every_waiting_path_is_asked_in_one_batch_and_an_ignored_one_passes() {
     assert_eq!(
         breaks,
         [
-            "apps/tool/first.md:3: backticked path names nothing: `apps/tool/gone.md`",
-            "contracts/second.md:3: backticked path names nothing: `apps/tool/gone.md`",
-            "contracts/second.md:3: backticked path names nothing: `apps/gone/`",
+            "engines/tool/first.md:3: backticked path names nothing: `engines/tool/gone.md`",
+            "contracts/second.md:3: backticked path names nothing: `engines/tool/gone.md`",
+            "contracts/second.md:3: backticked path names nothing: `engines/gone/`",
         ]
     );
     assert_eq!(
         *ignore_rules.batches.borrow(),
         [vec![
-            "apps/gone/".to_string(),
-            "apps/tool/dist".to_string(),
-            "apps/tool/dist/".to_string(),
-            "apps/tool/gone.md".to_string(),
-            "apps/tool/gone.md/".to_string(),
-            "apps/tool/target/debug/tool".to_string(),
-            "apps/tool/target/debug/tool/".to_string(),
+            "engines/gone/".to_string(),
+            "engines/tool/dist".to_string(),
+            "engines/tool/dist/".to_string(),
+            "engines/tool/gone.md".to_string(),
+            "engines/tool/gone.md/".to_string(),
+            "engines/tool/target/debug/tool".to_string(),
+            "engines/tool/target/debug/tool/".to_string(),
             "tools/deploy/deploy.env".to_string(),
             "tools/deploy/deploy.env/".to_string(),
         ]],
@@ -306,7 +307,10 @@ fn a_failed_batch_did_not_run_and_breaks_nothing() {
     };
     let (breaks, not_run, totals) = judge_documents(
         &mut fixture,
-        &[("apps/tool/README.md", "`apps/gone.md` `apps/tool/`\n")],
+        &[(
+            "engines/tool/README.md",
+            "`engines/gone.md` `engines/tool/`\n",
+        )],
         &ignore_rules,
         &[],
     );
@@ -320,20 +324,21 @@ fn a_failed_batch_did_not_run_and_breaks_nothing() {
 fn an_exempt_historical_spelling_passes() {
     let mut fixture = checkout("exempt");
     let exemptions = [(
-        "apps/retired_tool/",
+        "engines/retired_tool/",
         "the guide names the retired tree on purpose",
     )];
-    let text = "`apps/retired_tool` `apps/retired_tool/` `apps/retired_tool/src/main.rs`\n";
+    let text =
+        "`engines/retired_tool` `engines/retired_tool/` `engines/retired_tool/src/main.rs`\n";
     let (breaks, _, totals) = judge_documents(
         &mut fixture,
-        &[("apps/tool/README.md", text)],
+        &[("engines/tool/README.md", text)],
         &FakeIgnoreRules::default(),
         &exemptions,
     );
     assert_eq!(
         breaks,
-        ["apps/tool/README.md:1: backticked path names nothing: \
-             `apps/retired_tool/src/main.rs`"],
+        ["engines/tool/README.md:1: backticked path names nothing: \
+             `engines/retired_tool/src/main.rs`"],
         "an exemption covers its own spelling, not the paths below it"
     );
     assert!(
@@ -342,32 +347,44 @@ fn an_exempt_historical_spelling_passes() {
     );
 }
 
+/// Every retired top-level folder (`docs`, `apps`) is read as a repository path although the
+/// checkout tracks nothing there, so a live document that names a retired tree breaks; the same
+/// spans under a folder that is neither tracked nor retired are not repository paths.
 #[test]
-fn the_retired_documentation_root_is_read_even_when_nothing_is_tracked_there() {
+fn every_retired_top_level_folder_is_read_even_when_nothing_is_tracked_there() {
     let mut fixture = checkout("retired-root");
-    let text = format!("`{RETIRED_DOCS_ROOT}/specs/plan.md`\n");
-    let (breaks, _, _) = judge_documents(
+    assert_eq!(
+        RETIRED_TOP_LEVEL_FOLDERS
+            .iter()
+            .map(|(folder, _)| *folder)
+            .collect::<Vec<_>>(),
+        ["docs", "apps"]
+    );
+    let text = "`docs/specs/plan.md` `apps/tool/README.md` `apps/` `parked/mod/README.md`\n";
+    let (breaks, not_run, _) = judge_documents(
         &mut fixture,
-        &[("apps/tool/README.md", &text)],
+        &[("engines/tool/README.md", text)],
         &FakeIgnoreRules::default(),
         &[],
     );
+    assert_eq!(not_run, 0);
     assert_eq!(
         breaks,
-        [format!(
-            "apps/tool/README.md:1: backticked path names nothing: \
-             `{RETIRED_DOCS_ROOT}/specs/plan.md`"
-        )]
+        [
+            "engines/tool/README.md:1: backticked path names nothing: `docs/specs/plan.md`",
+            "engines/tool/README.md:1: backticked path names nothing: `apps/tool/README.md`",
+            "engines/tool/README.md:1: backticked path names nothing: `apps/`",
+        ]
     );
 }
 
 #[test]
 fn fenced_code_is_not_read_for_paths_and_patterns_are_counted() {
     let mut fixture = checkout("fenced");
-    let text = "```text\napps/gone.md\n```\n\n`apps/*.md` `apps/<x>`\n";
+    let text = "```text\napps/gone.md\n```\n\n`engines/*.md` `engines/<x>`\n";
     let (breaks, _, totals) = judge_documents(
         &mut fixture,
-        &[("apps/tool/README.md", text)],
+        &[("engines/tool/README.md", text)],
         &FakeIgnoreRules::default(),
         &[],
     );
@@ -381,10 +398,10 @@ fn fenced_code_is_not_read_for_paths_and_patterns_are_counted() {
 #[test]
 fn frozen_records_are_never_judged_by_the_rule() {
     let mut fixture = checkout("frozen");
-    let stale = "# Record\n\nSee `apps/tool/gone.rs`.\n";
+    let stale = "# Record\n\nSee `engines/tool/gone.rs`.\n";
     fixture
         .tracked(&format!("{ARCHIVE_DIR}/topic/record.md"), stale)
-        .tracked("apps/tool/guide/README.md", stale);
+        .tracked("engines/tool/guide/README.md", stale);
     let ignore_rules = FakeIgnoreRules::default();
     let mut rules: Vec<Box<dyn DocumentRule + '_>> =
         vec![Box::new(BacktickedPaths::new(&ignore_rules, &[]))];
@@ -400,7 +417,7 @@ fn frozen_records_are_never_judged_by_the_rule() {
             .iter()
             .map(|failure| failure.lines().next().unwrap_or("").to_string())
             .collect::<Vec<_>>(),
-        ["FAIL: apps/tool/guide/README.md: 1 break(s)"]
+        ["FAIL: engines/tool/guide/README.md: 1 break(s)"]
     );
     assert_eq!(outcome_counts(&run), (3, 1, 0));
     assert!(
@@ -410,7 +427,7 @@ fn frozen_records_are_never_judged_by_the_rule() {
 }
 
 /// The top-level folders come from the listing, so a backticked path under a folder no list names
-/// is judged like one under `apps/`.
+/// is judged like one under `engines/`.
 #[test]
 fn a_path_under_a_top_level_folder_no_list_names_is_judged() {
     let mut fixture = checkout("derived-top-level");
@@ -419,13 +436,15 @@ fn a_path_under_a_top_level_folder_no_list_names_is_judged() {
         "# Doc\n\n`a_folder_born_later/settings.toml` and `a_folder_born_later/gone.toml`.\n";
     let (breaks, not_run, _) = judge_documents(
         &mut fixture,
-        &[("apps/tool/README.md", text)],
+        &[("engines/tool/README.md", text)],
         &FakeIgnoreRules::default(),
         &[],
     );
     assert_eq!(not_run, 0);
     assert_eq!(
         breaks,
-        ["apps/tool/README.md:3: backticked path names nothing: `a_folder_born_later/gone.toml`"]
+        [
+            "engines/tool/README.md:3: backticked path names nothing: `a_folder_born_later/gone.toml`"
+        ]
     );
 }

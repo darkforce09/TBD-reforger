@@ -42,7 +42,7 @@ folders follow the row's `category` path.
 ## Boundaries
 
 - Depends on: the parent `asset_catalog.rs` (`CatalogNode`, `PlacePayload`, the side predicates,
-  `object_alias_registered`, which reads `apps/mod/tbd-framework/Data/registry.json` embedded at
+  `object_alias_registered`, which reads `mod/tbd-framework/Data/registry.json` embedded at
   compile time); `RegistryItem` from `frontend_api_dtos`; `classname_tail` from
   `mission_operations::assets`.
 - Used by: `asset_catalog.rs`, which re-exports the builders and the search; through it, in

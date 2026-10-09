@@ -27,7 +27,7 @@ fn body(source: &str, signature: &str) -> String {
 #[test]
 fn invalid_side_is_neutral_but_absent_and_valid_sides_keep_their_roles() {
     let root = repo_root().expect("repo root");
-    let lane = root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives");
+    let lane = root.join("mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives");
     let objective = strip_enfusion_comments_and_strings(
         &fs::read_to_string(lane.join("Engine/Model/TBD_Objective.c")).expect("objective source"),
     );

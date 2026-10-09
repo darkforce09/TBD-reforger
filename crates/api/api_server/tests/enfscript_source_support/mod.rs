@@ -2,7 +2,7 @@
 //! banners, fields and JSON key bindings, methods with their bodies, tagged constant groups, and
 //! the classes `JsonLoadContext`/`JsonSaveContext` read or write.
 //!
-//! **Role:** turns `apps/mod/tbd-framework/Scripts/**/*.c` into [`ScriptFile`] outlines, so the
+//! **Role:** turns `mod/tbd-framework/Scripts/**/*.c` into [`ScriptFile`] outlines, so the
 //! contract parity suite judges the mod's wire classes against `contracts/definitions` without
 //! an EnfScript compiler.
 //!
@@ -27,7 +27,7 @@ use std::path::{Path, PathBuf};
 pub(crate) fn scripts_root() -> PathBuf {
     repository_root::find_repository_root_from(std::path::Path::new(env!("CARGO_MANIFEST_DIR")))
         .expect("the repository root above the API package")
-        .join("apps/mod/tbd-framework/Scripts")
+        .join("mod/tbd-framework/Scripts")
 }
 
 /// One script file's outline.

@@ -3,7 +3,8 @@
 //! **Role:** starts the shared `requestAnimationFrame` pump over a map view's engine, with an
 //! optional per-frame hook for readouts that follow the camera.
 //! **Position:** wraps [`gpu_frame::frame_pump::RafPump`]; the Mission Creator's frame loop
-//! (`apps/editor/bridge/viewport.rs`) and [`super::mount::mount_map_view`] start it.
+//! (`mission_creator_engine_bridge`'s `bridge/viewport.rs`) and [`super::mount::mount_map_view`]
+//! start it.
 //! **Signals & state:** the pump owns its frame counter; the hook owns whatever it captures.
 //! **Invariants:** the engine draws only when damaged (camera, resize or content change); the pump
 //! stops at the first frame after `disposed` is set.

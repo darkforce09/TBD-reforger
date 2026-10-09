@@ -16,7 +16,7 @@ Ticket `:1497` is stale. Live `mod_slot_loadout` is `flatten.rs:2012`. Before th
 | Flatten mapper ignores SlotLoadoutV2 `attachments[]` edges | `crates/map-engine-core/src/mission/flatten.rs:2012` (pre-slice: optic/magazine assign only; no `gear.attachments`) | `rg -n "fn mod_slot_loadout|gear.optic|gear.magazine|attachments" crates/map-engine-core/src/mission/flatten.rs` |
 | Compiled golden gear has no `attachments` key (empty edges omitted, non-empty never emitted) | `packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json` slots `blufor:Ranger:SL:0` etc. | `python3` load golden; print `sorted(slot["loadout"]["gear"].keys())` — keys were backpack/boots/handgun/handwear/helmet/magazine/optic/pants/primary/throwable/uniform/vest; `"attachments" in g` was `False` |
 | Schema `gear` is `additionalProperties: false` over string fields only | `packages/tbd-schema/schema/mission.schema.json:380-399` (pre-slice: no `attachments` property) | `sed -n '380,399p' packages/tbd-schema/schema/mission.schema.json` |
-| Equip helper mounts optic/magazine only | `TBD_LoadoutEquipHelper.c:996-997` (pre-slice `IssueWeaponItem("optic"/"magazine")` only) | `rg -n "IssueWeaponItem" apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` |
+| Equip helper mounts optic/magazine only | `TBD_LoadoutEquipHelper.c:996-997` (pre-slice `IssueWeaponItem("optic"/"magazine")` only) | `rg -n "IssueWeaponItem" mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` |
 
 A suppressor in Arsenal `weapons[0].attachments` therefore never reached `/compiled` and could not be mounted.
 
@@ -26,12 +26,12 @@ A suppressor in Arsenal `weapons[0].attachments` therefore never reached `/compi
 |---|---|---|
 | `packages/tbd-schema/schema/mission.schema.json` | 382 (description clause), 388-393 (`attachments` property) | Surgical insert: optional `gear.attachments[]` of `wireSafeString` `minLength: 1`. No `json.dumps`. |
 | `crates/map-engine-core/src/mission/flatten.rs` | 226-230 (`ModSlotGear.attachments`), 262 (`is_empty`), 2012 (`mod_slot_loadout`), 2056-2064 (emit), 5661 (`arsenal_suppressor_edge_reaches_compiled_gear`) | Emit primary (0,primary) SlotLoadoutV2 edges; skip empty strings; omit empty list (byte-identical). Golden pin uses live suppressor `{E52C9791E1554A5F}Prefabs/Weapons/Attachments/Muzzle/Suppressor_M16/Suppressor_M16.et`. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | 384, 415, 447, 985-1015, 1029-1034, 1068, 1178 | Count attachments in verdict denominator; after optic/magazine `IssueWeaponItem("attach", …)`; `[TBD][Equip] attach=<res> result=<ok\|failed>` via `LogAttachResult`. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | same CODE (ASCII twin) | Lockstep. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` | 10 | **Required bind:** `ref array<string> attachments` on `TBD_SlotGearStruct`. Without this, `gear.attachments` is invisible to JsonLoadContext and the helper would not compile. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` | 10 | Export twin. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` | 267 (copy), 284 (warn) | TestNPC v2 path copies primary edges onto `gear.attachments`; warns only for non-primary weapons. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` | same CODE | Export twin. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | 384, 415, 447, 985-1015, 1029-1034, 1068, 1178 | Count attachments in verdict denominator; after optic/magazine `IssueWeaponItem("attach", …)`; `[TBD][Equip] attach=<res> result=<ok\|failed>` via `LogAttachResult`. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c` | same CODE (ASCII twin) | Lockstep. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` | 10 | **Required bind:** `ref array<string> attachments` on `TBD_SlotGearStruct`. Without this, `gear.attachments` is invisible to JsonLoadContext and the helper would not compile. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` | 10 | Export twin. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` | 267 (copy), 284 (warn) | TestNPC v2 path copies primary edges onto `gear.attachments`; warns only for non-primary weapons. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` | same CODE | Export twin. |
 
 Did **not** edit `xtask/src/schema_gates.rs`. Did **not** run `schema-codegen` (`mission.schema.json` is not a typify target). Did **not** emit T-216 slot deltas or other flatten holes.
 
@@ -103,10 +103,10 @@ EnfusionMCP copy already present (19 `.c`) — not committed.
 
 Brief owns list omitted the JsonLoadContext struct and the TestNPC copy path. Helper `gear.attachments` does not compile without the struct field. Reported, not silent.
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` — bind `TBD_SlotGearStruct.attachments`
-- `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` — twin
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` — copy primary edges for `$profile` TestNPC; stop lying T-197 "NOT mounted" warning on primary
-- `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` — twin
+- `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` — bind `TBD_SlotGearStruct.attachments`
+- `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` — twin
+- `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` — copy primary edges for `$profile` TestNPC; stop lying T-197 "NOT mounted" warning on primary
+- `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` — twin
 
 ## found_not_fixed
 
@@ -136,11 +136,11 @@ Brief owns list omitted the JsonLoadContext struct and the TestNPC copy path. He
 
 On disk in this worktree:
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c`
-- `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c`
-- `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c`
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c`
-- `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c`
+- `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c`
+- `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c`
+- `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c`
+- `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c`
+- `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c`
+- `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c`
 
 Export copies are pure ASCII. `cargo xtask mod compile` lockstep clean.

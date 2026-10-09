@@ -113,7 +113,7 @@ action.
     and the `staging-fixtures` host tool in `tools/staging/staging_fixtures/`;
   - over HTTP, the [server control](/documentation/glossary/n_to_z.md#server-control) and server intel
     pages in the page crates under `crates/frontend/pages/`, the game server host agent in
-    `crates/fleet/game_server_host_agent/`, and the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
+    `crates/fleet/game_server_host_agent/`, and the game runtime in `mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
   carries its `/// @route` tag (`cargo xtask verify route-tags`); the domain's generated contract

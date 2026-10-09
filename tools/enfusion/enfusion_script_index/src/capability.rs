@@ -11,7 +11,7 @@
 //! CRF source file must map to an explicit TBD verdict. A file that matches no rule is
 //! reported `UNTRIAGED` and the check FAILS. A forgotten capability becomes a build error.
 //!
-//! The verdict table (`documentation/apps/mod/tbd-framework/capability_verdicts.tsv`) is
+//! The verdict table (`documentation/mod/tbd-framework/capability_verdicts.tsv`) is
 //! hand-authored and reviewed — it is product judgement. The aggregation is mechanical. Same
 //! split as the rest of the oracle: humans decide, the tool measures.
 
@@ -57,7 +57,7 @@ pub const VERDICTS: &[&str] = &[
     "REPLACE",  // CRF's mechanism swapped for TBD JSON
     "LATER",    // wanted, not on the critical path
     "SKIP",     // deliberately out of scope
-    "DEFERRED", // out of scope BY OPERATOR WORD (see documentation/apps/mod/tbd-framework/mod_design.md §Deferrals)
+    "DEFERRED", // out of scope BY OPERATOR WORD (see documentation/mod/tbd-framework/mod_design.md §Deferrals)
 ];
 
 /// Read the verdict table at `path`, longest prefix first.

@@ -50,7 +50,7 @@ Enfusion's world plus game-mode configuration that a dedicated server boots: an
 see. It is not a [mission](#mission), the platform document a mission maker authors in the
 [Mission Creator](#mission-creator), which the mod's mission loader loads into the running game.
 
-In code: the `SCR_MissionHeader` configs in `apps/mod/tbd-framework/Missions/`, such as
+In code: the `SCR_MissionHeader` configs in `mod/tbd-framework/Missions/`, such as
 `TBD_Dev_POC.conf`, resource `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf`; the dedicated-server
 config's `game.scenarioId`, which names that resource
 (`tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json`), and `TBD_SCENARIO` in

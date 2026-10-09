@@ -69,9 +69,9 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 ### citations
 
 - Synopsis: `schema citations`
-- Does: resolves every `@contract <file>.schema.json#<pointer>` tag in the code under `apps/` and
-  `tools/` against `contracts/definitions/`, and prints the scanned scope and a count per
-  file extension.
+- Does: resolves every `@contract <file>.schema.json#<pointer>` tag in the code under every
+  workspace member's top-level folder (`crates/`, `tools/`) and under `mod/` against
+  `contracts/definitions/`, and prints the scanned scope and a count per file extension.
 - Exit codes: 0 every citation resolves; 1 a dangling citation, a missing scan root or no
   citation found.
 - Example: `cargo xtask schema citations`

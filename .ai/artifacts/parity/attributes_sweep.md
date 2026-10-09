@@ -39,7 +39,7 @@ The point of the split is **factory vs workbench**, so the classes are drawn on 
 |---|---|---|
 | **(a)** | No *mission-contract* blocker. The compiled schema already carries the key, **or** the value is editor-only state that is never compiled. Work is SPA (and where noted, website API). | factory, `executor: claude-code` |
 | **(b)** | `mission.schema.json` must be widened first. A mod-side reader exists or is a small addition once the key is legal. | `executor: workbench` |
-| **(c)** | Enfusion-side support must be built — no concept exists in `apps/mod/tbd-framework` at all, or a runtime system (AI, triggers, damage model) would have to exist first. Usually needs (b) as well; the deeper blocker wins. | `executor: workbench` |
+| **(c)** | Enfusion-side support must be built — no concept exists in `mod/tbd-framework` at all, or a runtime system (AI, triggers, damage model) would have to exist first. Usually needs (b) as well; the deeper blocker wins. | `executor: workbench` |
 | **(d)** | Out of scope: an A3-engine concept with no Enfusion analogue, a scripting handle with no scripting layer, or something TBD refused **by design with a test pinning the refusal**. | none — closed question |
 
 **(d) ⇔ parity `na` by construction.** All 22 `d` rows are `na` and no other row is.
@@ -60,7 +60,7 @@ $ grep -c '"additionalProperties": false' packages/tbd-schema/schema/mission-edi
 0                           # THE EDITOR PAYLOAD IS OPEN — see the finding below
 ```
 
-Word-boundary sweep over `apps/mod/tbd-framework` (`grep -rwoE <word> . | wc -l`):
+Word-boundary sweep over `mod/tbd-framework` (`grep -rwoE <word> . | wc -l`):
 
 | word | hits | word | hits | word | hits |
 |---|---|---|---|---|---|
@@ -74,8 +74,8 @@ Word-boundary sweep over `apps/mod/tbd-framework` (`grep -rwoE <word> . | wc -l`
 Methodology check, reproducing the trap the README records:
 
 ```
-$ grep -rl  stance apps/mod/tbd-framework | wc -l    → 39 files
-$ grep -rlw stance apps/mod/tbd-framework | wc -l    → 0  files
+$ grep -rl  stance mod/tbd-framework | wc -l    → 39 files
+$ grep -rlw stance mod/tbd-framework | wc -l    → 0  files
 ```
 
 **Confirmed exactly as recorded.** Every one of the 39 was `instance`.
@@ -133,14 +133,14 @@ faction · groupCallsign · role · kit · x · z · y · headingDeg · loadout`
 | ATTR-FIELD-OBJ-PLAYER-SP | — | na | d | Single-player playable flag. TBD is MP-only milsim | — |
 | ATTR-FIELD-OBJ-PLAYABLE-MP | — | na | d | Every TBD slot is a roster seat by construction; `TBD_SpawnManager.c:963,1166` spawns each body with **AI disabled**. There is no playable/AI distinction to author | — |
 | ATTR-FIELD-OBJ-ROLE-DESC | ATTR-TAB-002 | partial | a | `role` (`attributes.rs:336`, placeholder `"Rifleman"`) doubles as label and description and does reach the game (`slot.role`, read `TBD_MissionSlotStruct.c:63`). No separate free-text description | T-082 |
-| ATTR-FIELD-OBJ-LOCK | — | missing | c | Vehicle lock state. `lock` word-boundary in `apps/mod` = 4, none an authored vehicle lock. T-215 shipped vehicle placement + cargo, not lock | new — vehicle states |
-| ATTR-FIELD-OBJ-SKILL | ATTR-TAB-003 | na | d | AI skill, and there are no AI units to skill (`TBD_SpawnManager.c:963`). `skill` word-boundary in `apps/mod` = **0**. **`gap_analysis.md:100` scores this `missing`; that is wrong — see §4** | — |
-| ATTR-FIELD-OBJ-HEALTH | — | missing | c | No authored initial health anywhere. `health` word-boundary in `apps/mod` = **0**; the 95 `damage` hits are the runtime damage system | new — entity states |
-| ATTR-FIELD-OBJ-FUEL | — | missing | c | `fuel` word-boundary in `apps/mod` = 1. No key on `$defs/entity` (closed) and no reader | new — vehicle states |
+| ATTR-FIELD-OBJ-LOCK | — | missing | c | Vehicle lock state. `lock` word-boundary in `mod` = 4, none an authored vehicle lock. T-215 shipped vehicle placement + cargo, not lock | new — vehicle states |
+| ATTR-FIELD-OBJ-SKILL | ATTR-TAB-003 | na | d | AI skill, and there are no AI units to skill (`TBD_SpawnManager.c:963`). `skill` word-boundary in `mod` = **0**. **`gap_analysis.md:100` scores this `missing`; that is wrong — see §4** | — |
+| ATTR-FIELD-OBJ-HEALTH | — | missing | c | No authored initial health anywhere. `health` word-boundary in `mod` = **0**; the 95 `damage` hits are the runtime damage system | new — entity states |
+| ATTR-FIELD-OBJ-FUEL | — | missing | c | `fuel` word-boundary in `mod` = 1. No key on `$defs/entity` (closed) and no reader | new — vehicle states |
 | ATTR-FIELD-OBJ-AMMO | — | missing | c | Vehicle/turret ammo as an *attribute*. `slot.loadout.cargo` and `$defs/entityInventory` cover carried items, not a turret ammo count | new — vehicle states |
 | ATTR-FIELD-OBJ-RANK | ORBAT Manager | **partial** | b | **Authored and dropped.** Input `orbat_manager.rs:1336-1355` → `store.rs:1301` → dropped at compile (T-216 ledger, `flatten.rs:2584-2649`). `$defs/slot` closed; `TBD_MissionSlotStruct.c` has no field | T-216 follow-on (new) |
-| ATTR-FIELD-OBJ-STANCE | ATTR-TAB-001 | **partial** | c | **Authored and dropped.** `<select>` stand/crouch/prone `attributes.rs:297-312` → `store.rs:1246` → dropped. `stance` word-boundary in `apps/mod` = **0** — needs a schema key *and* an Enfusion spawn-pose call | T-216 follow-on (new) |
-| ATTR-FIELD-OBJ-DYN-SIM | — | na | d | A3 dynamic simulation. `simulation` word-boundary in `apps/mod` = **0**; Enfusion has no equivalent author-facing system | — |
+| ATTR-FIELD-OBJ-STANCE | ATTR-TAB-001 | **partial** | c | **Authored and dropped.** `<select>` stand/crouch/prone `attributes.rs:297-312` → `store.rs:1246` → dropped. `stance` word-boundary in `mod` = **0** — needs a schema key *and* an Enfusion spawn-pose call | T-216 follow-on (new) |
+| ATTR-FIELD-OBJ-DYN-SIM | — | na | d | A3 dynamic simulation. `simulation` word-boundary in `mod` = **0**; Enfusion has no equivalent author-facing system | — |
 | ATTR-FIELD-OBJ-WAKE-DYN-SIM | — | na | d | Same system | — |
 | ATTR-FIELD-OBJ-ENABLE-SIM | — | na | d | Same system | — |
 | ATTR-FIELD-OBJ-SIMPLE-OBJ | — | na | d | A3 render-optimisation concept (`objectIsSimple`); no Enfusion analogue | — |
@@ -175,9 +175,9 @@ faction · groupCallsign · role · kit · x · z · y · headingDeg · loadout`
 | ATTR-FIELD-GRP-INIT | — | na | d | SQF string; no evaluator | — |
 | ATTR-FIELD-GRP-CALLSIGN | LEFT-ORBAT-001 | match | a | Squad callsign authored in ORBAT Manager → compiled `$defs/group.callsign`, copied verbatim into `slot.groupCallsign` and read by `TBD_MissionSlotStruct.c:62`. One of only two ORBAT identity values that survives the compile | T-180 (shipped) |
 | ATTR-FIELD-GRP-PLACEMENT-RADIUS | — | missing | b | `$defs/group` is `callsign`/`type`/`roles`, closed. Natural 2D control | new — placement scatter |
-| ATTR-FIELD-GRP-COMBAT-MODE | — | missing | c | `combatMode` word-boundary = **0** in both frontend and `apps/mod`. Presupposes AI groups, which do not exist | T-079 |
+| ATTR-FIELD-GRP-COMBAT-MODE | — | missing | c | `combatMode` word-boundary = **0** in both frontend and `mod`. Presupposes AI groups, which do not exist | T-079 |
 | ATTR-FIELD-GRP-BEHAVIOUR | — | missing | c | `behaviour`/`behavior` as a field = **0** in both trees (44 mod hits + 13 frontend hits are all doc prose). No AI subject | T-079 |
-| ATTR-FIELD-GRP-FORMATION | — | missing | c | `formation` = 1 frontend hit (prose, `editor_ops.rs:1324`), **0** in `apps/mod` | T-079 |
+| ATTR-FIELD-GRP-FORMATION | — | missing | c | `formation` = 1 frontend hit (prose, `editor_ops.rs:1324`), **0** in `mod` | T-079 |
 | ATTR-FIELD-GRP-SPEED-MODE | — | missing | c | `speedMode` = **0** both trees | T-079 |
 | ATTR-FIELD-GRP-DYN-SIM | — | na | d | Same A3 system as `OBJ-DYN-SIM` | — |
 | ATTR-FIELD-GRP-DELETE-EMPTY | — | na | d | Garbage-collects an emptied AI group; no AI groups to collect | — |
@@ -266,7 +266,7 @@ activation/condition/timer/effects model.
 All absent, and more deeply than the id list suggests. `grep -rin waypoint` across
 `crates/frontend/shell/frontend_application/src`, `crates/` and `packages/tbd-schema/schema/` returns **exactly 2 hits** —
 `mission.schema.json:608`/`:609`, the strings `"waypoint"`/`"waypoint2"` inside the marker **icon
-alias enum**. Glyph names, not entities. `waypoint` word-boundary in `apps/mod` = 1, the same icon file.
+alias enum**. Glyph names, not entities. `waypoint` word-boundary in `mod` = 1, the same icon file.
 
 **The scoping fact for T-079:** a waypoint orders an AI group, and `TBD_SpawnManager.c:963,1166`
 spawns every slot body with **AI disabled**. Waypoints today would have no subject.
@@ -279,7 +279,7 @@ spawns every slot body with **AI disabled**. Waypoints today would have no subje
 | ATTR-FIELD-WP-POSITION | — | missing | b | 2D map is the ideal surface; needs the entity | T-079 |
 | ATTR-FIELD-WP-COMBAT-MODE | — | missing | c | Per-waypoint AI override; `combatMode` = 0 hits anywhere | T-079 |
 | ATTR-FIELD-WP-BEHAVIOUR | — | missing | c | 0 hits as a field | T-079 |
-| ATTR-FIELD-WP-FORMATION | — | missing | c | 0 hits in `apps/mod` | T-079 |
+| ATTR-FIELD-WP-FORMATION | — | missing | c | 0 hits in `mod` | T-079 |
 | ATTR-FIELD-WP-SPEED | — | missing | c | 0 hits as a field | T-079 |
 | ATTR-FIELD-WP-CONDITION | — | missing | c | Completion condition — same structured-model argument as `TRG-CONDITION`. Eden also allows completion via connected triggers (`CONN-WP-ACT-001`), so this is coupled to the trigger slice | T-079 |
 
@@ -391,7 +391,7 @@ it must be argued against the terrain-follow intent rather than as a bug report.
 
 The row reads `ATTR-FIELD-OBJ-SKILL | ATTR-TAB-003 | missing | — | States stub`. AI skill has no
 subject: `TBD_SpawnManager.c:963,1166` spawns every slot body with **AI disabled**, and `skill`
-word-boundary in `apps/mod/tbd-framework` returns **0**. Scoring it `missing` implies buildable work
+word-boundary in `mod/tbd-framework` returns **0**. Scoring it `missing` implies buildable work
 and has it feeding the States-tab ticket. It is a closed question unless TBD adds AI units, which is
 a product decision far larger than an attribute.
 
@@ -454,7 +454,7 @@ semantics**, which any "one undo step per keystroke" ticket must not flatten.
 | N1 | **Mission presentation: briefing text + thumbnail in the SPA** | `SCN-OVERVIEW-TEXT`, `SCN-PICTURE` (2) | a | **Highest value-per-unit-effort in the sweep.** The API already accepts both; there is no caller. Blocks FNF-style derived briefings |
 | N2 | **Editor comments (canvas annotations)** | 3 `CMT-*` | a | **No ticket anywhere** — was T-651 in the draft set only. Editor-only, never compiled, editor payload is open. Small and self-contained |
 | N3 | **Editor layer flags: visibility + transform lock** | `LYR-ENABLE-VIS`, `LYR-ENABLE-XFORM` (2) | a | Editor-only. Note there is *no* layer visibility toggle today; the 12 world-layer checkboxes are a different object |
-| N4 | **T-216 follow-on: carry tag/callsign/rank/stance/leaderSlotId to the wire** | `OBJ-CALLSIGN`, `OBJ-RANK`, `OBJ-STANCE` + TBD-only `tag`, `leaderSlotId` (3 ids + 2) | 2×b, 1×c | The contract delta is **already written out** at `flatten.rs:2620-2632`. `stance` additionally needs an Enfusion spawn-pose call (0 word-boundary hits in `apps/mod`). T-216 is `shipped` — it shipped the *ledger and its tripwire*, not the fix. Related: **T-242** (`idea`) |
+| N4 | **T-216 follow-on: carry tag/callsign/rank/stance/leaderSlotId to the wire** | `OBJ-CALLSIGN`, `OBJ-RANK`, `OBJ-STANCE` + TBD-only `tag`, `leaderSlotId` (3 ids + 2) | 2×b, 1×c | The contract delta is **already written out** at `flatten.rs:2620-2632`. `stance` additionally needs an Enfusion spawn-pose call (0 word-boundary hits in `mod`). T-216 is `shipped` — it shipped the *ledger and its tripwire*, not the fix. Related: **T-242** (`idea`) |
 | N5 | **Placement scatter: radius + area shape** | `OBJ-PLACEMENT-RADIUS`, `OBJ-SHAPE`, `GRP-PLACEMENT-RADIUS` (3) | b | A 2D top-down editor is the *best* surface for this — draw the scatter circle. Cheapest coherent (b) slice: one key on `$defs/slot` and one on `$defs/group` |
 | N6 | **Vehicle states: lock, fuel, ammo** | `OBJ-LOCK`, `OBJ-FUEL`, `OBJ-AMMO` (3) | c | Natural successor to shipped T-215. Adjacent to **T-076** (crew UI) / **T-077** (empty vehicle), both `idea` — but those are *placement* tickets, not attribute tickets; keep separate |
 | N7 | **Entity states: health, damage-allowed, hide, size, stamina** | `OBJ-HEALTH`, `-ALLOW-DAMAGE`, `-SHOW-MODEL`, `-SIZE`, `-STAMINA` (5) | c | **Gated on `entities[]` acquiring a consumer** — `mission.schema.json:72` says nothing on any shipped build reads it. `OBJ-STAMINA` carries an `UNKNOWN:` needing a Workbench API check |

@@ -40,7 +40,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c",
     "packages/tbd-schema/schema/mission.schema.json",
     "packages/tbd-schema/golden-missions/empty-warning-fields.json",
 ]

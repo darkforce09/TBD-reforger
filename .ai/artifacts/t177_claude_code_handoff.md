@@ -1,6 +1,6 @@
 # T-177 — Claude Code handoff
 
-**Start on `main` after T-176 @ `a5940fad`.** Do not touch `apps/mod/` or docs/registry.
+**Start on `main` after T-176 @ `a5940fad`.** Do not touch `mod/` or docs/registry.
 
 ## Operator word
 

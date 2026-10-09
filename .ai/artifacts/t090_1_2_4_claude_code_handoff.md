@@ -102,7 +102,7 @@ From [`.ai/artifacts/t090_1_2_2_verify_log.md`](t090_1_2_2_verify_log.md):
 
 ### Phase P1 — Production export (only if P0 PASS)
 
-1. New or extended Workbench plugin under `apps/mod/tbd-framework/Scripts/WorkbenchGame/` (sibling naming OK: `TBD_EngineOrthoExportPlugin.c`).
+1. New or extended Workbench plugin under `mod/tbd-framework/Scripts/WorkbenchGame/` (sibling naming OK: `TBD_EngineOrthoExportPlugin.c`).
 2. Export **≥12800×12800** RGB PNG to:
    - `packages/map-assets/everon/staging/engine/everon-engine-ortho.png` (gitignored)
    - Meta: `packages/map-assets/everon/staging/engine/TBD_EngineOrtho_meta.json`
@@ -133,7 +133,7 @@ SAP ortho required for A/B — re-stitch only if missing: `node scripts/map-asse
 
 | File | Role |
 |------|------|
-| `apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c` | **Reference only** — MapDataExporter plumbing, NOT quality target |
+| `mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c` | **Reference only** — MapDataExporter plumbing, NOT quality target |
 | `scripts/map-assets/verify-sap-ortho.mjs` | Orientation + bounds guard pattern |
 | `scripts/map-assets/analyze-sap-seams.mjs` | Grid metric reference |
 | `scripts/map-assets/lib/sap-seam-metrics.mjs` | Reusable gradient/band helpers |

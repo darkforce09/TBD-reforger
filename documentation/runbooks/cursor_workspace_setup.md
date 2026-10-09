@@ -6,7 +6,8 @@ Opens this repository in Cursor so that its project rules load, the local stack 
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) MCP server reaches
 [Workbench](/documentation/glossary/n_to_z.md#workbench) for [mod](/documentation/glossary/g_to_m.md#mod)
 work, and the health checks pass. Run it once per machine, and again after a clone to a new
-path; it changes no code and takes about ten minutes plus the first builds.
+path or a change to where the addons sit in the checkout; it changes no code and takes about ten
+minutes plus the first builds.
 
 ## Prerequisites
 
@@ -22,11 +23,11 @@ path; it changes no code and takes about ten minutes plus the first builds.
 |---|---|---|
 | `.cursor/rules/*.mdc` | yes | the project rules Cursor loads for the whole workspace |
 | `.cursor/mcp.json` | yes | the workspace's Enfusion MCP server entry: `node` on the pinned package, and the three `ENFUSION_*` paths |
-| `apps/mod/.mcp.json` | yes | the same server for an agent started inside `apps/mod/`, launched as `npx -y enfusion-mcp` |
+| `mod/.mcp.json` | yes | the same server for an agent started inside `mod/`, launched as `npx -y enfusion-mcp` |
 | `.ai/tickets/`, `.ai/artifacts/` | tickets yes, artifacts partly | the [ticket](/documentation/glossary/n_to_z.md#ticket) files and the agents' working files; Cursor loads no rule from `.ai/` |
 
 The repository holds one `.cursor/` folder, at its root. Both tracked MCP files hard-code one
-workstation's absolute paths, and `apps/mod/.mcp.json` starts whatever `enfusion-mcp` release npm
+workstation's absolute paths, and `mod/.mcp.json` starts whatever `enfusion-mcp` release npm
 serves rather than the pinned 0.6.1 in `tools/enfusion_mcp_node_package/`. Treat them as the
 shape of the entry, not as values: step 4 points `.cursor/mcp.json` at this machine.
 
@@ -129,7 +130,21 @@ Run every command from the repository root.
    two `mod_validate` results, then `Bootstrap complete.`; its `npm ci` creates the `dist/index.js`
    the MCP file names. Cursor's MCP settings then show `enfusion-mcp` connected.
 
-6. Check the ticket files.
+6. For mod work only, point your own client and Workbench at the checkout's addons. The client
+   addon link and Workbench's project list hold absolute paths into the checkout, so they name the
+   addons where they sit now only after this step.
+
+   ```bash
+   cargo xtask setup client-addons
+   ```
+
+   Expected: `mod/tbd-framework/` linked into `~/.local/share/tbd-server-addons/` and the Steam
+   launch options to paste (`-addonsDir "<that folder>" -addons B2C3D4E5F6A78901`). In Workbench,
+   open each addon you work on from its `mod/<addon>/addon.gproj` (`mod/tbd-framework/addon.gproj`,
+   `mod/tbd-export/addon.gproj`, `mod/tbd-emcp/addon.gproj`); `cargo xtask mod dev-bootstrap`
+   (step 5) opens `mod/tbd-export/addon.gproj` itself.
+
+7. Check the ticket files.
 
    ```bash
    cargo xtask ticket check --strict
@@ -137,7 +152,7 @@ Run every command from the repository root.
 
    Expected: the debt and token counters, then `check OK`.
 
-7. Check the contracts: generated types fresh, the golden missions valid and the contract
+8. Check the contracts: generated types fresh, the golden missions valid and the contract
    citations resolved.
 
    ```bash
@@ -147,7 +162,7 @@ Run every command from the repository root.
    Expected: `verify-codegen-fresh`, `schema-validate` and `verify-citations` run in turn and the
    command exits 0.
 
-8. Check the app.
+9. Check the app.
 
    ```bash
    cargo xtask mk ci-local-leptos
@@ -200,7 +215,7 @@ and the [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_cr
 cargo xtask ticket check --strict
 ```
 
-Expected: `check OK`; with steps 3, 7 and 8 green and, for mod work, `enfusion-mcp` connected, the
+Expected: `check OK`; with steps 3, 8 and 9 green and, for mod work, `enfusion-mcp` connected, the
 workspace is ready.
 
 ## Troubleshooting
@@ -210,7 +225,8 @@ workspace is ready.
 | a chat ignores the project rules | a parent or a subfolder was opened as the workspace | open the checkout root (step 1) |
 | the `enfusion-mcp` server fails to start: `Cannot find module …/dist/index.js` | the pinned package is not installed, or the path in `.cursor/mcp.json` names another checkout | step 5, then fix the `node` argument (step 4) |
 | MCP calls time out | Workbench is not running, or its Net API is off | the `ACTION REQUIRED` line of `mod dev-bootstrap` names the fix; see [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md#troubleshooting) |
-| an agent inside `apps/mod/` runs another `enfusion-mcp` release | `apps/mod/.mcp.json` launches `npx -y enfusion-mcp`, unpinned | point it at the pinned `dist/index.js`, as step 4 does for Cursor |
+| a local client loads the Workshop copy, or Workbench lists an addon it cannot open | the client addon link or Workbench's project entry names a path where the addon no longer sits | step 6 |
+| an agent inside `mod/` runs another `enfusion-mcp` release | `mod/.mcp.json` launches `npx -y enfusion-mcp`, unpinned | point it at the pinned `dist/index.js`, as step 4 does for Cursor |
 | an agent refuses to update documentation beside its code | it follows an instruction outside the project rules, such as an old prompt or a Cursor rule saved outside `.cursor/rules/` | documentation ships with its code (`CLAUDE.md` law 10, [The project rules](#the-project-rules)); check Cursor's own project rules for a stale copy (step 2) |
 | `curl` exits 22 on `/healthz` | the probe returned 503: the database is down or the migrations failed | [Local development](/documentation/runbooks/local_development.md#troubleshooting) |
 

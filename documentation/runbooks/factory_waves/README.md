@@ -34,7 +34,7 @@ main ──┬── slice/<A> worktree ─▶ slice agent A ─┐
 ```
 
 The orchestrator never implements. It plans, dispatches, integrates, verifies, sequences and owns
-every ticket status change; everything under `apps/`, `contracts/`, `assets/` and
+every ticket status change; everything under `crates/`, `mod/`, `contracts/`, `assets/` and
 `tools/` is written by an agent in a worktree. That keeps the orchestrator's context clear and
 gives each ticket a whole context of its own. The rules every wave follows:
 

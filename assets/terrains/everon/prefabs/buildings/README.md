@@ -57,7 +57,7 @@ scene file under `?scene=1`; without the sidecar it draws the plan from the blue
   interpretation and `blueprint_ingestion.rs` for the blueprints, which write here by default; `occlusion_sidecars/` for the
   sidecar, the instances file and the scene file. `ingest-blueprints` copies the blueprints the
   `tbd-export` building plugins write in the [Workbench](/documentation/glossary/n_to_z.md#workbench)
-  profile (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/`).
+  profile (`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/`).
 - Consumers:
   - the debug building viewer and interior bench
     (`crates/frontend/workspaces/debug_benches/src/building_viewer/`,

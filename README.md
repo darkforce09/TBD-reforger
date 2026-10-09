@@ -24,7 +24,6 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── .gitignore                   keeps the deploy settings, build output, export scratch and local reference copies out of git
 ├── .world-boot-warning-baseline the per-mission warning budget of `cargo xtask mod world-boot`
 ├── AGENTS.md                    a symlink to CLAUDE.md for agents that read AGENTS.md
-├── apps/                        the Enfusion mod suite the game servers run; no Rust crate
 ├── assets/                      terrain datasets and the world-object glyph set, served at `/map-assets`
 ├── Cargo.lock                   the workspace lockfile
 ├── Cargo.toml                   the Cargo workspace: the product crates, the applications among them, and the tool crates
@@ -34,6 +33,7 @@ that controls those servers, the contracts and map data they share, and the deve
 ├── crates/                      the tiered product crates by category: API server, single-page app, service worker, game server host agent and their libraries
 ├── deploy/                      the release Dockerfile, compose files, Caddy site, deploy settings template, systemd units
 ├── documentation/               all documentation: feature docs, runbooks, standards, glossary, archive
+├── mod/                         the Enfusion mod suite the game servers run; no Rust crate
 ├── rust-toolchain.toml          the pinned Rust toolchain with rustfmt, clippy and the wasm32 target
 └── tools/                       the developer tools: `xtask`, the ticket crates and the ticketboard desktop viewer, `developer_tools`, the tool foundations
 ```
@@ -58,7 +58,7 @@ browser ── crates/frontend/shell/frontend_application (Mission Creator)
                        ▲
                        │ HTTPS, outbound from the game side
            ┌───────────┴───────────┐
-  apps/mod/tbd-framework   crates/fleet/game_server_host_agent
+  mod/tbd-framework        crates/fleet/game_server_host_agent
   (dedicated server:       (game host: claims
    fetches the mission)     fleet commands)
 
@@ -92,4 +92,4 @@ section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and
 - [CLAUDE.md](/CLAUDE.md) — project laws, directory atlas and canonical commands.
 - [Glossary](/documentation/glossary/README.md) — the project's terms.
 - [Crates](/crates/README.md) — the product crates by category, the applications among them.
-- [Game mod](/apps/README.md) — the Enfusion mod suite in `apps/`.
+- [Game mod](/mod/README.md) — the Enfusion mod suite in `mod/`.

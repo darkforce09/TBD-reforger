@@ -8,8 +8,8 @@ parent = "T-946"
 verify = ["a host with spectator max range 0 must leash at 2000 m, never unlimited"]
 created_at = "2026-09-07T01:00:00Z"
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/Host/TBD_SpectatorHost.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/Host/TBD_SpectatorHost.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/Host/TBD_SpectatorHost.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/Host/TBD_SpectatorHost.c",
 ]
 
 [scope]

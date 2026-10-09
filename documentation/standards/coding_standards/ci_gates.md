@@ -42,8 +42,8 @@ repeat it.
    [comment gate README](/tools/checks/mod_script_checks/src/enfusion_comments/README.md),
    sections 6 and 7 of the
    [documentation standards](/documentation/standards/documentation_standards.md#6-enfusion-comments))
-   over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts` and
-   `apps/mod/tbd-emcp/Scripts`.
+   over the pinned mod Scripts roots, today `mod/tbd-framework/Scripts` and
+   `mod/tbd-emcp/Scripts`.
 3. `cargo xtask verify no-select-star`: no `SELECT *` or `RETURNING *` in the API's SQL, outside
    the two tables with no nullable column; the
    [database verifications README](/tools/commands/database_operations/src/database_checks/README.md) has the
@@ -65,21 +65,21 @@ order and stops at the first failure; `ci-local` runs it right after `verify-ci-
 in every path that moves with the tree. Each law prints `<LAW>: PASS`, or `FAIL` with exit 1 on a
 finding and exit 2 when an input could not be read. The judged set is every workspace member that
 declares `[package.metadata.layout]` plus every member under `crates/<category…>/<name>` or
-`tools/<category>/<name>`; the members outside the set (the apps and the two tool binaries) are
-listed in a note.
+`tools/<category>/<name>`; the members outside the set (the two tool binaries) are listed in a
+note.
 
 ### WS-1 crate tiers
 
 `cargo xtask verify crate-tiers` judges rules 1 to 7 of the crate-tier law: every `Cargo.toml`
-under `apps`, `crates` and `tools` (outside test trees, fixtures and build output) is a workspace
+in the checkout (outside hidden folders, test trees, fixtures and build output) is a workspace
 member; each judged member declares `category`, `tier` and `targets`, and every member outside the
-judged set is an app or one of the two tool binaries; a judged member sits at its category plus
+judged set is one of the two tool binaries; a judged member sits at its category plus
 its name and declares the tier its dependencies give it (0 with no judged dependency, otherwise 1
 plus the highest); edges point strictly down and follow the category matrix; a wasm-only crate is
 reached from a crate for every platform only through a `cfg(target_arch = "wasm32")` table; the
 external-crate firewalls hold (wgpu, the browser crates, sqlx and axum, leptos, the dependency
 closure of xtask, map nouns in graphics, browser words in mission editing, `#[wasm_bindgen]`
-exports); and dev-dependencies never point at apps. The
+exports); and no member depends on an application package, in any table. The
 [crate boundary rules](/documentation/standards/crate_boundary_rules.md#52-crate-tiers-cargo-xtask-verify-crate-tiers)
 state each rule, the matrix and the firewalls in full.
 

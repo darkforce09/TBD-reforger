@@ -7,6 +7,7 @@
 //! **Signals & state:** a shared failure counter the suite passes in.
 //! **Invariants:** a must-fail fixture that passes, or fails for another reason, is a finding.
 use super::*;
+use repository_layout::enfusion_mod_folders::FRAMEWORK_ADDON_DIR;
 
 pub(super) fn validate(
     root: &Path,
@@ -29,7 +30,7 @@ pub(super) fn validate(
     // "no reader on any shipped build" wording to come out. See UNREAD_WIRE_FIELDS.
     println!("Unread 1.3 wire fields (each must stay reader-free until its reader lands):");
     {
-        let mod_root = root.join("apps/mod/tbd-framework");
+        let mod_root = root.join(FRAMEWORK_ADDON_DIR);
         let bad = unread_wire_field_failures(&mod_root)?;
         if bad.is_empty() {
             println!(
@@ -71,9 +72,9 @@ pub(super) fn validate(
                  (TBD_MissionLoader.MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024)"
             ));
         }
-        let loader = root.join(
-            "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c",
-        );
+        let loader = root
+            .join(FRAMEWORK_ADDON_DIR)
+            .join("Scripts/Game/TBD/Systems/Mission/Loaders/Mission/TBD_MissionLoader.c");
         let loader_src =
             fs::read_to_string(&loader).with_context(|| format!("read {}", loader.display()))?;
         if !loader_src.contains("MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024") {

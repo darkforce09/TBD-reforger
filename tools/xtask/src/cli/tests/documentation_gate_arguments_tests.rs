@@ -25,9 +25,9 @@ fn every_documentation_verb_takes_a_repeatable_path_and_the_untracked_flag() {
     for verb in ["readme-coverage", "markdown-placement", "link-check"] {
         let arguments = gate_arguments(
             verb,
-            &["--path", "apps", "--with-untracked", "--path", "tools"],
+            &["--path", "mod", "--with-untracked", "--path", "tools"],
         );
-        assert_eq!(arguments.paths, ["apps", "tools"], "{verb}");
+        assert_eq!(arguments.paths, ["mod", "tools"], "{verb}");
         assert!(arguments.with_untracked, "{verb}");
         let bare = gate_arguments(verb, &[]);
         assert!(bare.paths.is_empty(), "{verb}");
@@ -46,7 +46,7 @@ fn the_verb_takes_the_report_flag_beside_the_documentation_gate_arguments() {
         "link-check",
         "--report",
         "--path",
-        "apps",
+        "mod",
         "--with-untracked",
         "--path",
         "tools",
@@ -57,7 +57,7 @@ fn the_verb_takes_the_report_flag_beside_the_documentation_gate_arguments() {
             cmd: VerifyCmd::LinkCheck { report, arguments },
         } => {
             assert!(report);
-            assert_eq!(arguments.paths, ["apps", "tools"]);
+            assert_eq!(arguments.paths, ["mod", "tools"]);
             assert!(arguments.with_untracked);
         }
         other => panic!("link-check parsed as {other:?}"),

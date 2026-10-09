@@ -145,7 +145,7 @@ Report schema per spec §4. Ready for Cursor doc sync.
 ═══ PREFLIGHT ═══
 cd .ai/artifacts/worktrees/T-940.4 && export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target && git branch --show-current
 ═══ READ ═══
-Spec §3; docs/plans/t-940_4_plan.md; handlers/telemetry/telemetry.rs:570-600; apps/mod/…/Backend/TBD_ResultsReporter.c (emit); tests/deployments_combat.rs.
+Spec §3; docs/plans/t-940_4_plan.md; handlers/telemetry/telemetry.rs:570-600; mod/…/Backend/TBD_ResultsReporter.c (emit); tests/deployments_combat.rs.
 ═══ PROBLEM ═══
 telemetry.rs:594-598 ignores flat top-level counters (documented :579-592) while the mod emits only the
 flat shape, so deaths and kills from every match are dropped.

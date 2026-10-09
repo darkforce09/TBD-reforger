@@ -1,5 +1,7 @@
 use super::*;
-use repository_layout::{ARCHIVE_DIR, PENDING_MERGE_DIR, RETIRED_DOCS_ROOT, TICKET_DOCUMENTS_DIR};
+use repository_layout::{
+    ARCHIVE_DIR, PENDING_MERGE_DIR, RETIRED_TOP_LEVEL_FOLDERS, TICKET_DOCUMENTS_DIR,
+};
 use repository_layout::{
     documentation::DOCUMENTATION_ROOT, documentation::GAP_ANALYSIS, documentation::ROADMAP,
 };
@@ -7,7 +9,7 @@ use repository_layout::{
 /// Top-level folders the span derives rather than lists: today's code trees and two that no list
 /// has ever named.
 const DERIVED_TOP_LEVEL_FOLDERS: [&str; 8] = [
-    "apps",
+    "mod",
     "tools",
     "contracts",
     "assets",
@@ -19,11 +21,11 @@ const DERIVED_TOP_LEVEL_FOLDERS: [&str; 8] = [
 
 #[test]
 fn a_path_is_within_a_folder_only_at_a_component_boundary() {
-    assert!(is_within("apps", "apps"));
-    assert!(is_within("apps/a/b.rs", "apps"));
-    assert!(is_within("apps/a/b.rs", "apps/a"));
-    assert!(!is_within("apps_extra/x", "apps"));
-    assert!(!is_within("app", "apps"));
+    assert!(is_within("engines", "engines"));
+    assert!(is_within("engines/a/b.rs", "engines"));
+    assert!(is_within("engines/a/b.rs", "engines/a"));
+    assert!(!is_within("engines_extra/x", "engines"));
+    assert!(!is_within("engine", "engines"));
     assert!(
         is_within("anything", ""),
         "the repository root holds every path"
@@ -32,16 +34,16 @@ fn a_path_is_within_a_folder_only_at_a_component_boundary() {
 
 #[test]
 fn paths_split_into_folder_and_name() {
-    assert_eq!(parent_folder("apps/a/b.rs"), "apps/a");
+    assert_eq!(parent_folder("engines/a/b.rs"), "engines/a");
     assert_eq!(parent_folder("top.md"), "");
-    assert_eq!(file_name("apps/a/b.rs"), "b.rs");
+    assert_eq!(file_name("engines/a/b.rs"), "b.rs");
     assert_eq!(file_name("top.md"), "top.md");
-    assert_eq!(join("apps/a", README), "apps/a/README.md");
+    assert_eq!(join("engines/a", README), "engines/a/README.md");
     assert_eq!(join("", README), "README.md");
 }
 
 /// The span is every folder below the repository root, so a top-level folder is judged the moment
-/// it is tracked; the exempt folders and the retired documentation root stay outside it.
+/// it is tracked; the exempt folders and the retired top-level folders stay outside it.
 #[test]
 fn the_readme_span_is_every_folder_below_the_repository_root() {
     for top_level in DERIVED_TOP_LEVEL_FOLDERS
@@ -55,8 +57,12 @@ fn the_readme_span_is_every_folder_below_the_repository_root() {
     assert!(in_readme_span(ARCHIVE_DIR));
     assert!(!in_readme_span(PENDING_MERGE_DIR));
     assert!(!in_readme_span(&format!("{PENDING_MERGE_DIR}/writer")));
-    assert!(!in_readme_span(RETIRED_DOCS_ROOT));
-    assert!(!in_readme_span(&format!("{RETIRED_DOCS_ROOT}/images")));
+    for (retired, _) in RETIRED_TOP_LEVEL_FOLDERS {
+        assert!(!in_readme_span(retired), "{retired} is retired");
+        assert!(!in_readme_span(&format!("{retired}/images")));
+    }
+    assert!(!in_readme_span("apps/tool"));
+    assert!(in_readme_span("apps_extra"));
     for hidden in [
         ".ai",
         ".ai/tickets",
@@ -69,8 +75,8 @@ fn the_readme_span_is_every_folder_below_the_repository_root() {
     assert!(!in_readme_span(""));
 }
 
-/// A file lies in a code tree when any top-level folder but the two documentation roots holds
-/// it; a file at the repository root lies in none.
+/// A file lies in a code tree when any top-level folder but the documentation root and the retired
+/// folders holds it; a file at the repository root lies in none.
 #[test]
 fn every_top_level_folder_but_the_documentation_roots_is_a_code_tree() {
     for top_level in DERIVED_TOP_LEVEL_FOLDERS {
@@ -79,7 +85,8 @@ fn every_top_level_folder_but_the_documentation_roots_is_a_code_tree() {
     }
     for outside in [
         format!("{DOCUMENTATION_ROOT}/runbooks/deploy.md"),
-        format!("{RETIRED_DOCS_ROOT}/guide.md"),
+        "docs/guide.md".to_string(),
+        "apps/tool/NOTES.md".to_string(),
         "CLAUDE.md".to_string(),
         README.to_string(),
     ] {
@@ -89,29 +96,29 @@ fn every_top_level_folder_but_the_documentation_roots_is_a_code_tree() {
 
 #[test]
 fn test_generated_and_hidden_folders_are_exempt_with_their_subtrees() {
-    assert!(below_exempt_folder("apps/x/tests"));
-    assert!(below_exempt_folder("apps/x/tests/fixtures"));
-    assert!(below_exempt_folder("apps/x/generated/models"));
-    assert!(below_exempt_folder("apps/x/.hidden/rules"));
-    assert!(!below_exempt_folder("apps/x/test_fixtures"));
-    assert!(!below_exempt_folder("apps/x/latests"));
-    assert!(!below_exempt_folder("apps/x/src"));
+    assert!(below_exempt_folder("engines/x/tests"));
+    assert!(below_exempt_folder("engines/x/tests/fixtures"));
+    assert!(below_exempt_folder("engines/x/generated/models"));
+    assert!(below_exempt_folder("engines/x/.hidden/rules"));
+    assert!(!below_exempt_folder("engines/x/test_fixtures"));
+    assert!(!below_exempt_folder("engines/x/latests"));
+    assert!(!below_exempt_folder("engines/x/src"));
 }
 
 #[test]
 fn exempt_folders_lie_outside_the_readme_span() {
     for exempt in [
-        "apps/x/tests",
-        "apps/x/tests/fixtures",
+        "engines/x/tests",
+        "engines/x/tests/fixtures",
         "tools/x/generated",
-        "apps/x/.cfg",
-        "apps/x/.cfg/nested",
+        "engines/x/.cfg",
+        "engines/x/.cfg/nested",
     ] {
         assert!(!in_readme_span(exempt), "{exempt} is exempt");
     }
     let tests_below_documentation = format!("{DOCUMENTATION_ROOT}/topic/tests");
     assert!(!in_readme_span(&tests_below_documentation));
-    assert!(in_readme_span("apps/x/test_fixtures"));
+    assert!(in_readme_span("engines/x/test_fixtures"));
     assert!(in_readme_span(&format!("{DOCUMENTATION_ROOT}/topic")));
 }
 
@@ -119,10 +126,10 @@ fn exempt_folders_lie_outside_the_readme_span() {
 fn generated_folder_exemption_matches_the_lowercase_and_capitalised_spellings() {
     let generated_below_documentation = format!("{DOCUMENTATION_ROOT}/topic/Generated");
     for exempt in [
-        "apps/x/generated",
-        "apps/x/generated/models",
-        "apps/mod/x/Policy/Generated",
-        "apps/mod/x/Policy/Generated/weapon",
+        "engines/x/generated",
+        "engines/x/generated/models",
+        "mod/x/Policy/Generated",
+        "mod/x/Policy/Generated/weapon",
         &generated_below_documentation,
     ] {
         assert!(below_exempt_folder(exempt), "{exempt} is exempt");
@@ -136,11 +143,11 @@ fn generated_folder_exemption_matches_the_lowercase_and_capitalised_spellings() 
 #[test]
 fn generated_folder_exemption_ignores_other_casings_and_longer_names() {
     for judged in [
-        "apps/x/GENERATED",
-        "apps/x/GENERATED/models",
-        "apps/x/generated_data",
-        "apps/x/Generated_data",
-        "apps/x/regenerated",
+        "engines/x/GENERATED",
+        "engines/x/GENERATED/models",
+        "engines/x/generated_data",
+        "engines/x/Generated_data",
+        "engines/x/regenerated",
     ] {
         assert!(!below_exempt_folder(judged), "{judged} is judged");
         assert!(
@@ -152,8 +159,8 @@ fn generated_folder_exemption_ignores_other_casings_and_longer_names() {
 
 #[test]
 fn generated_folder_exemption_leaves_the_test_folder_match_exact() {
-    assert!(below_exempt_folder("apps/x/tests"));
-    for judged in ["apps/x/Tests", "apps/x/TESTS", "apps/x/tests_data"] {
+    assert!(below_exempt_folder("engines/x/tests"));
+    for judged in ["engines/x/Tests", "engines/x/TESTS", "engines/x/tests_data"] {
         assert!(!below_exempt_folder(judged), "{judged} is judged");
         assert!(
             in_readme_span(judged),
@@ -164,12 +171,12 @@ fn generated_folder_exemption_leaves_the_test_folder_match_exact() {
 
 #[test]
 fn markdown_is_any_letter_case_of_the_md_extension() {
-    assert!(is_markdown("apps/a/NOTES.md"));
-    assert!(is_markdown("apps/a/NOTES.MD"));
+    assert!(is_markdown("engines/a/NOTES.md"));
+    assert!(is_markdown("engines/a/NOTES.MD"));
     assert!(is_markdown("README.md"));
-    assert!(!is_markdown("apps/a/rules.mdc"));
-    assert!(!is_markdown("apps/a/md"));
-    assert!(!is_markdown("apps/a/.md"));
+    assert!(!is_markdown("engines/a/rules.mdc"));
+    assert!(!is_markdown("engines/a/md"));
+    assert!(!is_markdown("engines/a/.md"));
 }
 
 #[test]

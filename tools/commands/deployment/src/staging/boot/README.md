@@ -30,7 +30,7 @@ tools/commands/deployment/src/staging/boot/
 
 It then says how strong the addon verdict is: a Workshop copy mounted or downloaded this boot, or
 present on disk, makes it a real contest; no rival anywhere is reported as weak evidence.
-`read_addon_guid` reads the GUID from `apps/mod/tbd-framework/addon.gproj`; a readable gproj without
+`read_addon_guid` reads the GUID from `mod/tbd-framework/addon.gproj`; a readable gproj without
 a GUID line yields an empty GUID, which the deploy's settings check then reports as a mismatch.
 
 `verify_boot_cli` (`--verify-boot`) reads no `deploy.env`: it takes `TBD_ADDON_GUID` (else the
@@ -41,7 +41,7 @@ gproj's), `TBD_ADDONS_STAGING` (required, exit 2 without it), `TBD_ADMIN_COUNT` 
 
 - Depends on: `super::Paths` and the `Out` sink in
   `tools/commands/deployment/src/staging/boot.rs`; the `regex` crate; the gproj of
-  `apps/mod/tbd-framework/`.
+  `mod/tbd-framework/`.
 - Used by: `tools/commands/deployment/src/staging.rs` (the two offline modes);
   `tools/commands/deployment/src/staging/config.rs` (the GUID cross-check);
   `tools/commands/deployment/src/staging/remote/instance_boot_verdict.rs` (each fleet

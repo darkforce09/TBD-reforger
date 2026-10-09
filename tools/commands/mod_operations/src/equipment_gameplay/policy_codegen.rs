@@ -9,11 +9,14 @@
 
 use super::policy::Policy;
 use crate::error::{Result, ensure};
+use repository_layout::enfusion_mod_folders::EXPORT_ADDON_DIR;
 use std::{collections::BTreeMap, fs, path::Path};
 
 pub(super) fn generate(root: &Path, check: bool) -> Result<()> {
     let policy = Policy::load(root)?;
-    let directory = root.join("apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated");
+    let directory = root
+        .join(EXPORT_ADDON_DIR)
+        .join("Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated");
     let mut sections = BTreeMap::<String, Vec<String>>::new();
     for class in policy.classes.values() {
         let lines = sections.entry(class.section.clone()).or_default();

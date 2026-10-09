@@ -118,7 +118,7 @@ Every instance loads the synced checkout through `-addonsDir`, so a script chang
 fleet with a redeploy:
 
 1. Compile the mod headless; exit 3 means the engine loaded fewer script files than the tree
-   holds, for example through a missing or unreadable `apps/mod/tbd-framework/resourceDatabase.rdb`.
+   holds, for example through a missing or unreadable `mod/tbd-framework/resourceDatabase.rdb`.
    A clean compile does not prove the rdb is current: the headless compile loads new and moved
    `.c` files without a regenerated rdb, while [Workbench](/documentation/glossary/n_to_z.md#workbench)
    and server packaging need one that matches the tree, which Workbench writes when it next loads
@@ -146,7 +146,7 @@ file). Publishing packs files into the addon folder, which makes Workbench show 
 read-only; delete them and restart the launcher:
 
 ```bash
-rm -f apps/mod/tbd-framework/data.pak apps/mod/tbd-framework/meta apps/mod/tbd-framework/ServerData.json apps/mod/tbd-framework/*_manifest.json
+rm -f mod/tbd-framework/data.pak mod/tbd-framework/meta mod/tbd-framework/ServerData.json mod/tbd-framework/*_manifest.json
 ```
 
 All four are gitignored. A publish does not update the servers, and it can hide a broken deploy:
@@ -154,7 +154,7 @@ with the Workshop copy current, a server that loaded it instead of the checkout 
 every log line. The boot verdict's gproj path is the check that tells them apart.
 
 To load the checkout in a local client instead of the Workshop copy,
-`cargo xtask setup client-addons` links `apps/mod/tbd-framework/` into
+`cargo xtask setup client-addons` links `mod/tbd-framework/` into
 `~/.local/share/tbd-server-addons/` and prints the Steam launch options
 (`-addonsDir "<that folder>" -addons B2C3D4E5F6A78901`); its last line,
 `Restart the game, then Direct Join → <host> (<IPv4 address>) port 2001`, names instance 1 on the

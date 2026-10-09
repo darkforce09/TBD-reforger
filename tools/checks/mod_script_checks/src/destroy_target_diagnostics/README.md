@@ -19,8 +19,8 @@ tools/checks/mod_script_checks/src/destroy_target_diagnostics/
 `verify_destroy_target_diagnostics` reads five files:
 `Types/Destroy/TBD_ObjectiveDestroyTargets.c`, `Engine/Runtime/TBD_ObjectivesComponent.c` and
 `Engine/Registry/TBD_ObjectiveRulesReader.c` under
-`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, `TBD_MissionUnconsumedKeyCheck.c`
-under `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation/`, and
+`mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`, `TBD_MissionUnconsumedKeyCheck.c`
+under `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation/`, and
 `contracts/definitions/mission.schema.json`. Then:
 
 1. Each file is scanned for the exact phrasings in `EXACT_LIES` and the regex paraphrases in

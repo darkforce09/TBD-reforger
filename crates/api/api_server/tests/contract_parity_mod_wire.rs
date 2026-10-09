@@ -4,7 +4,7 @@
 //! `schemaVersion` the compiler emits, and every JSON shape the mod reads, writes or builds by
 //! hand cites a contract or is listed below with the reason it has none.
 //!
-//! The scripts are read at test runtime from `apps/mod/tbd-framework/Scripts`; the tag grammar
+//! The scripts are read at test runtime from `mod/tbd-framework/Scripts`; the tag grammar
 //! is documented in `enfscript_source_support/contract_tag.rs`.
 
 use std::collections::{BTreeMap, BTreeSet};

@@ -131,7 +131,7 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
     models above;
   - over HTTP, the Mission Creator and the mission hub and approval pages in
     `crates/frontend/shell/frontend_application/`, and the mission loaders of the game server in
-    `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
+    `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
 - Rules: no other crate imports this crate's handlers, and `routes.rs` exports the one `routes`
   table that `crates/api/api_server/src/router.rs` merges (`crates/api/api_server/src/tests/architecture_rules.rs`
   checks both); the domain's generated contract types in `contract_schema_types` are written by

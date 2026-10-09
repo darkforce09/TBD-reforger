@@ -1,6 +1,6 @@
 //! `cargo xtask setup client-addons`: link the framework into the client addon folder.
 //!
-//! **Role:** links `apps/mod/tbd-framework` into `$HOME/.local/share/tbd-server-addons`, prints
+//! **Role:** links `mod/tbd-framework` into `$HOME/.local/share/tbd-server-addons`, prints
 //! the Steam launch options that load it, and prints where to Direct Join.
 //!
 //! **Position:** called by [`crate::run`]; the join hint reads the staging
@@ -21,18 +21,19 @@ use crate::error::{Result, ResultExt};
 
 use deploy_settings::{DeployEnvironment, deploy_environment_path};
 use process_runner::Run;
+use repository_layout::enfusion_mod_folders::{FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME};
 use repository_root::find_repository_root;
 use verification_core::NotRun;
 
 /// The path pins, for an already-resolved monorepo root.
 struct Paths {
-    mod_root: PathBuf,
+    framework_addon: PathBuf,
 }
 
 impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
-            mod_root: root.join("apps/mod"),
+            framework_addon: root.join(FRAMEWORK_ADDON_DIR),
         }
     }
 }
@@ -123,8 +124,8 @@ pub fn run_in(root: &Path) -> Result<u8> {
 pub fn run_with_root(root: &Path, home: &Path, target: &DirectJoinTarget) -> Result<u8> {
     let paths = Paths::from_root(root);
     let staging = home.join(".local/share/tbd-server-addons");
-    let framework = paths.mod_root.join("tbd-framework");
-    let link = staging.join("tbd-framework");
+    let framework = paths.framework_addon;
+    let link = staging.join(FRAMEWORK_ADDON_FOLDER_NAME);
 
     // `mkdir -p` as the shell tool on the inherited terminal, so a failure prints GNU mkdir's own
     // message.

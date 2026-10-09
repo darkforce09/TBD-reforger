@@ -77,6 +77,7 @@ documentation/relocation_manifests/
 ├── s13_w01_2_frontend_shell.tsv  stage S13 W1, second of four: the single-page app becomes the frontend_application crate and the offline service worker joins it in the new shell layer crates/frontend/shell; the app's documentation hub becomes its mirror, the planned workspaces join the workspace crate documentation
 ├── s13_w01_3_game_server_host_agent.tsv  stage S13 W1, third of four: the host agent becomes the game_server_host_agent crate in the new category crates/fleet, its documentation mirror under documentation/crates/fleet/, its systemd template game_server_host_agent@.service
 ├── s13_w01_4_ticketboard_desktop.tsv  stage S13 W1, fourth of four: the ticketboard becomes the ticketboard_desktop tool crate under tools/tickets, its package, binary and eframe app id ticketboard_desktop, its documentation mirror under documentation/tools/tickets/
+├── s14_w02_mod_top_level.tsv  stage S14 W2: the Enfusion mod leaves apps/ for a top-level mod/, its documentation mirror for documentation/mod/; apps/ goes
 ├── s1_global_renames.tsv     stage S1: top-level folder and tool package renames, archived records
 ├── s2_apps_and_deploy.tsv    stage S2: website crates to apps/ and legacy/, snake_case packages, deploy/
 ├── s2_brief_archive.tsv      stage S2: the executed S1 agent briefs into the archive
@@ -171,8 +172,8 @@ A manifest is the input of one relocation run: a list of rows, each a `path` mov
 rewrite (`rust_path`, `text`). The tool applies every row of one manifest in one run, moves with
 `git mv` and rewrites every reference to what moved, and refuses the whole manifest when anything
 is unresolved. Once committed, a manifest is a record: its `path` rows' `from` columns are the
-retired spellings the verification keeps out of every live file, and its `rust_path` rows' prefixes
-the ones it keeps out of their scopes.
+retired spellings the verification keeps out of every live file, except where a later manifest puts
+a path back there, and its `rust_path` rows' prefixes the ones it keeps out of their scopes.
 
 ### Format
 
@@ -261,8 +262,8 @@ correction is a new manifest.
    to before.
 3. `cargo xtask refactor relocate --verify` judges every manifest in this folder except
    `example.tsv`, in the order below: no live tracked file spells a `path` row's retired `from` on segment boundaries
-   (frozen records and the manifests themselves excluded), and no `rust_path` prefix is left in its
-   scope. Exit 0 pass, 1 findings, 2 did not run.
+   (frozen records and the manifests themselves excluded) outside where a later manifest revived
+   it, and no `rust_path` prefix is left in its scope. Exit 0 pass, 1 findings, 2 did not run.
 
 ### The registry and its order
 
@@ -281,6 +282,15 @@ judge, so its row holds and the output prints a `note:` line naming the first su
 gone with no row to explain it is still a did-not-run. A manifest named with `--manifest` composes
 the same way when it is a stage manifest of this folder; a dry run and an apply judge their own
 manifest alone, its own rows composed.
+
+A retired `path` spelling (a row's `from` and every path below it) is legal again only at or below
+the `to` of a `path` row of a later manifest in that order, when that `to` is the spelling or a path
+below it; a `to` above the spelling revives nothing. There its occurrences are no finding of the earlier row, the
+files tracked there do not fail the earlier row's still-tracked check, and the output prints a
+`note:` line naming the reviving row. A manifest ordered before the retiring one revives nothing,
+and a row never revives the spellings of its own manifest. A still-later manifest whose `path` row
+retires the spelling again judges it with that row as any `from`, so moving a folder back and away
+again leaves it retired by the last move.
 `text` rows rewrite at apply time only and are not judged by `--verify`.
 
 ## Code

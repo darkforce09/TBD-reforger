@@ -19,7 +19,7 @@ document that cites a symbol the tables do not hold. Mod developers and the AI a
   [executables README](/tools/developer_tools/src/bin/README.md#enf).
 - Related features: the [mod slice workflow](/documentation/runbooks/mod_slice_workflow.md),
   which sets when a slice consults the oracle and which oracle lanes it may read; the
-  [capability verdicts](/documentation/apps/mod/tbd-framework/capability_verdicts.md), the table
+  [capability verdicts](/documentation/mod/tbd-framework/capability_verdicts.md), the table
   `enf capability` checks; the [Enfusion MCP tooling runbook](/documentation/runbooks/enfusion_mcp_tooling.md),
   for the live [Workbench](/documentation/glossary/n_to_z.md#workbench) half of the same tooling.
 
@@ -28,15 +28,15 @@ document that cites a symbol the tables do not hold. Mod developers and the AI a
 ### Building the indexes
 
 ```text
-apps/mod/References/crf_framework/     ──▶ enf index crf     ─┐
-apps/mod/References/vanilla_reference/ ──▶ enf index vanilla ─┴▶ .ai/artifacts/enf-index/<lane>_{symbols,files,modded,rplprops}.tsv
-game paks ─▶ enf extract | enf carve ─▶ apps/mod/References/vanilla_reference/{Scripts,Carved}/
+mod/References/crf_framework/     ──▶ enf index crf     ─┐
+mod/References/vanilla_reference/ ──▶ enf index vanilla ─┴▶ .ai/artifacts/enf-index/<lane>_{symbols,files,modded,rplprops}.tsv
+game paks ─▶ enf extract | enf carve ─▶ mod/References/vanilla_reference/{Scripts,Carved}/
 cargo xtask fetch vanilla-api    ─▶ cached Script API pages ─▶ enf apidoc ─▶ vanilla_api_{classes,members}.tsv
-cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf source ─▶ apps/mod/References/vanilla_reference/Source/
+cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf source ─▶ mod/References/vanilla_reference/Source/
 ```
 
 1. The script sources are the upstream framework in the `crf_framework` lane of
-   [`apps/mod/References/`](/apps/mod/References/README.md) and the vanilla scripts in its
+   [`mod/References/`](/mod/References/README.md) and the vanilla scripts in its
    `vanilla_reference` lane, got out of the game's `.pak` archives (`enf extract` reads by name
    from the archive's file table; `enf carve` scans the raw bytes) or rebuilt from the cached
    source pages (`enf source`). Both source trees stay gitignored.
@@ -60,7 +60,7 @@ cargo xtask fetch vanilla-source ─▶ cached source pages     ─▶ enf sourc
   lane's table. An unresolved marker exits 1. A document names the symbol and the tool supplies
   the coordinates, so no line number is typed by hand.
 - `enf capability` joins the framework index with the rules in
-  `documentation/apps/mod/tbd-framework/capability_verdicts.tsv`, writes
+  `documentation/mod/tbd-framework/capability_verdicts.tsv`, writes
   `.ai/artifacts/enf-index/capability_matrix.tsv`, and exits 1 when a framework file matches no
   rule, so no upstream subsystem goes untriaged.
 
@@ -77,10 +77,10 @@ the unit tests with every workspace member.
 - `.ai/artifacts/enf-index/`: the committed tables, `crf_*.tsv` and `vanilla_*.tsv` (symbols,
   files, `modded`, `rplprops`), `vanilla_api_classes.tsv` and `vanilla_api_members.tsv`, and the
   generated `capability_matrix.tsv`.
-- `documentation/apps/mod/tbd-framework/capability_verdicts.tsv`: the hand-kept verdict per
+- `documentation/mod/tbd-framework/capability_verdicts.tsv`: the hand-kept verdict per
   framework path prefix; its format is in the capability verdicts document.
 - The `crf_framework` and `vanilla_reference` lanes of
-  [`apps/mod/References/`](/apps/mod/References/README.md): the gitignored source lanes, linked
+  [`mod/References/`](/mod/References/README.md): the gitignored source lanes, linked
   into each slice worktree by `cargo xtask platform slice-worktree`.
 
 ## Design

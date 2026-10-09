@@ -30,6 +30,7 @@ use crate::website_api_client::{
 };
 use crate::world_boot_verdict::MissionCtx;
 use process_runner::{Run, StreamingChild};
+use repository_layout::enfusion_mod_folders::{FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME};
 use repository_root::find_repository_root;
 
 const FIXTURE_TITLE: &str = "compiled-boot fixture";

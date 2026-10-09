@@ -159,7 +159,7 @@ lane — do not skip it.**
 ### FILE AFTER THE WAVE — the mod gate cannot run in a slice worktree unaided
 `mirror_lockstep` fails in EVERY slice worktree with 19 `Scripts/WorkbenchGame/EnfusionMCP/*.c`
 "in tbd-export only". Those files are UNTRACKED — `git ls-files` is empty for them and
-`apps/mod/.gitignore:28` ignores the framework copy — so they exist only in the main checkout. The agent
+`mod/.gitignore:28` ignores the framework copy — so they exist only in the main checkout. The agent
 had to copy the gitignored directory into its worktree to reach the compile at all. Nothing to fix in
 slice code; the lockstep walker cannot see an ignored tree. File as a child of T-946.
 

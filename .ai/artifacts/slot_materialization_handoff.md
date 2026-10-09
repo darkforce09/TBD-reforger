@@ -81,7 +81,7 @@ so the mod stays inert on plain vanilla worlds.
 
 ## Reference frameworks (design mirror only)
 
-**CRF** — `apps/mod/crf_framework` (gitignored, local). Load-bearing today:
+**CRF** — `mod/crf_framework` (gitignored, local). Load-bearing today:
 - `Scripts/Game/Systems/VanillaOverrides/.../CRF_SCR_PossessSpawnHandlerComponent.c` — the
   file that revealed the possess pipeline; also shows the faction finalize
   (`SetAffiliatedFaction` + `UpdatePlayerFaction_S` + `OnPlayerFactionSet_S`).

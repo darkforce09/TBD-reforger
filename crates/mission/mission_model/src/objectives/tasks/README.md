@@ -36,8 +36,8 @@ moves, `assigned` to `succeeded` and `assigned` to `failed`, which `is_legal_tra
 `transition` apply. `validate`, `parse` with the value dropped, is the check of the `tasks` row of
 `AUTHORED_BLOCKS` in `crate::authored_blocks`, and the compile carries a valid block
 verbatim to the compiled document's root. In the game,
-`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Tasks/TBD_TaskStateMachine.c` runs the
-same table on the server and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/TBD_TaskHud.c` marks
+`mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Tasks/TBD_TaskStateMachine.c` runs the
+same table on the server and `mod/tbd-framework/Scripts/Game/TBD/UI/Hud/TBD_TaskHud.c` marks
 each assigned task.
 
 ## Boundaries

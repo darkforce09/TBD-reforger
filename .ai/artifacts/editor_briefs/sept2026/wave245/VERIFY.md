@@ -44,7 +44,7 @@ Operator cannot author tasks in Mission Settings. Unit tests (`cargo test -p fro
 
 So the only body that skips `DisableBodyAI` is a **player** LIVE rematerialize into a waypointed group — the opposite of “unclaimed AI seats”. Comment at `:1240` (“Players (claimed seats) are never enabled by T-677”) is false. Unclaimed filter exists only later in `CollectUnclaimedBodies` (`:460-461`) for `AddAIEntityToGroup`.
 
-`rg -n 'ActivateAI\(' apps/mod --glob '*.c'` → **zero** calls. Header comment (`TBD_WaypointRuntime.c:61`) claims the runtime “ActivateAI's” via `AddAIEntityToGroup`. Load-spawned AI stay `DeactivateAI`'d (`:1505/:1517`) unless that engine call unparks them (unproven; human checklist).
+`rg -n 'ActivateAI\(' mod --glob '*.c'` → **zero** calls. Header comment (`TBD_WaypointRuntime.c:61`) claims the runtime “ActivateAI's” via `AddAIEntityToGroup`. Load-spawned AI stay `DeactivateAI`'d (`:1505/:1517`) unless that engine call unparks them (unproven; human checklist).
 
 **Fix:** always `DisableBodyAI` on the player rematerialize path; if AI respawn needs the skip, pass an explicit unclaimed/AI-seat flag. Call `ActivateAI()` on unclaimed members when arming if `AddAIEntityToGroup` does not unpark.
 

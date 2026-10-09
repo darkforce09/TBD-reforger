@@ -35,7 +35,7 @@ use crate::Result;
 use regex::Regex;
 use verification_core::{Pattern, Verdict, gate};
 
-const LOADERS_REL: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders";
+const LOADERS_REL: &str = "mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders";
 const LOADER_FILE: &str = "Mission/TBD_MissionLoader.c";
 const VERIFICATION_FILE: &str = "TBD_MissionArtifactVerification.c";
 const CACHE_FILE: &str = "TBD_MissionArtifactCache.c";

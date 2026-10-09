@@ -26,7 +26,7 @@ tools/checks/mod_script_checks/src/enfusion_comments/
 ## How it works
 
 `verify_enfusion_comments` takes the `--path` values, or `PINNED_ROOTS` when there are none, and
-refuses any root outside `apps/mod`. It walks the roots with `verification_core::scan::walk_files`,
+refuses any root outside `mod`. It walks the roots with `verification_core::scan::walk_files`,
 keeping `.c` files, and runs `check_script` on each. `check_script` builds one `CheckedScript`:
 `enfusion_script_lexer::split_script_lines` splits every line into code and comments (a `//` inside
 a string literal stays code), and `script_outline::outline_script` reads the declarations from the
@@ -39,7 +39,7 @@ above" walks up past attribute-only lines and nothing else.
 
 The report prints one `<rule> <path>:<line> <message>` line per finding, sorted by path, line and
 rule, then a summary line and one count per rule. Exit codes: 0 clean; 1 findings; 2 did not run
-(no roots, a root outside `apps/mod`, a missing root, an unreadable file, or a walk that found no
+(no roots, a root outside `mod`, a missing root, an unreadable file, or a walk that found no
 `.c` file).
 
 ## Boundaries
@@ -49,7 +49,7 @@ rule, then a summary line and one count per rule. Exit codes: 0 clean; 1 finding
 - Used by: `tools/xtask/src/commands/verify/dispatch.rs` (`verify enfusion-comments`).
 - Rules:
   - One rule module per card item, each at or under 500 lines.
-  - `PINNED_ROOTS` entries sit under `apps/mod/` (`pinned_roots_sit_under_the_mod_tree`).
+  - `PINNED_ROOTS` entries sit under `mod/` (`pinned_roots_sit_under_the_mod_tree`).
   - A missing root or an empty walk is exit 2, never a pass (`a_missing_root_does_not_run`,
     `an_empty_walk_does_not_run`).
   - Every rule has a passing and a failing fixture in

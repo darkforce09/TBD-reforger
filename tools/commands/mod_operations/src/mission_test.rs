@@ -19,6 +19,7 @@ use std::path::{Path, PathBuf};
 
 use crate::error::{Result, ResultExt};
 use fleet_wire_contract::machine_credential_format::MACHINE_CREDENTIAL_PREFIX;
+use repository_layout::enfusion_mod_folders::FRAMEWORK_ADDON_DIR;
 use serde_json::Value;
 use verification_core::scan;
 
@@ -105,7 +106,7 @@ fn stage_golden(root: &Path, prof: &Path, cfg: &Path, name: &str) -> Result<u8> 
     )?;
     // The registry override is optional.
     let _ = fs::copy(
-        root.join("apps/mod/tbd-framework/Data/registry.json"),
+        root.join(FRAMEWORK_ADDON_DIR).join("Data/registry.json"),
         prof.join("TBD_Registry.json"),
     );
     println!("staged {name} as the cached artifact:");

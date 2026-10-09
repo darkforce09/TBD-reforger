@@ -14,7 +14,6 @@ it stands.
 
 ```text
 documentation/
-├── apps/                    documents on the game mod in apps/mod/
 ├── architecture/            the workspace as it stands: top-level folders, members, where everything lives
 ├── archive/                 frozen history, one folder per topic
 ├── assets/                  documents on the terrain export and the map data in assets/
@@ -23,6 +22,7 @@ documentation/
 ├── design_system/           design tokens, symbology and interaction patterns the website and mod share
 ├── glossary/                the project's terms and abbreviations, split by first letter
 ├── known_bugs/              the live registry of known bugs
+├── mod/                     documents on the game mod in mod/
 ├── product_roadmap.md       the planned product items by area and the open product questions
 ├── relocation_manifests/    every relocation manifest run: the registry of retired path spellings
 ├── runbooks/                operator procedures: development, deployment, gates, playtests
@@ -46,8 +46,8 @@ schedule page in `crates/frontend/pages/operations_pages/src/schedule/` is docum
 [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) material sits in
 `documentation/crates/frontend/workspaces/mission_creator_workspace/`. The mod's scripts have no
 `src/`, and a document about them leaves out `Scripts/Game/TBD/` instead: the screens of
-`apps/mod/tbd-framework/Scripts/Game/TBD/UI/` are documented in
-`documentation/apps/mod/tbd-framework/UI/`. What spans the code has a top-level folder of its
+`mod/tbd-framework/Scripts/Game/TBD/UI/` are documented in
+`documentation/mod/tbd-framework/UI/`. What spans the code has a top-level folder of its
 own: `architecture/`, `runbooks/`, `standards/`, `design_system/`, `known_bugs/`, `tickets/` and
 `archive/`, with the `glossary/` folder, `product_roadmap.md` and the relocation manifests'
 `relocation_manifests/` beside them. The
@@ -91,7 +91,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 | the Mission Creator: features, roadmap, UX decisions, Eden reference | [crates/frontend/workspaces/mission_creator_workspace/](/documentation/crates/frontend/workspaces/mission_creator_workspace/README.md) |
 | the [API](/documentation/glossary/a_to_f.md#api)'s areas and its verification evidence | [crates/api/api_server/](/documentation/crates/api/api_server/README.md), starting at the [API overview](/documentation/crates/api/api_server/api_overview.md) |
 | the map's streaming, rendering and GPU crates, the paper doll and the editing layer | [crates/](/documentation/crates/README.md) |
-| the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [apps/mod/](/documentation/apps/mod/README.md) |
+| the [mod](/documentation/glossary/g_to_m.md#mod)'s design, screens and export evidence | [mod/](/documentation/mod/README.md) |
 | how a terrain becomes the map data the platform serves | [assets/](/documentation/assets/README.md) |
 | how a game host carries out server commands | [crates/fleet/game_server_host_agent/](/documentation/crates/fleet/game_server_host_agent/README.md) |
 | the ticket viewer | [tools/tickets/ticketboard_desktop/](/documentation/tools/tickets/ticketboard_desktop/README.md) |
@@ -110,8 +110,7 @@ When two sources disagree, the higher one wins and the lower one is corrected:
 
 - [Crates](/crates/README.md) — the API server, the single-page app, the service worker, the game
   server host agent and the library crates, documented under `documentation/crates/`.
-- [Game mod](/apps/README.md) and its [mod suite](/apps/mod/README.md) — documented under
-  `documentation/apps/mod/`.
+- [Game mod](/mod/README.md) — the Enfusion mod suite, documented under `documentation/mod/`.
 - [Developer tools](/tools/README.md) — the tool crates, the ticketboard desktop viewer among them,
   documented under `documentation/tools/`.
 - [Contracts](/contracts/README.md) — documented under `documentation/contracts/`.

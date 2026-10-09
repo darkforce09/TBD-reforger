@@ -120,7 +120,7 @@ Most “map understanding” (forests, roads, object glyphs, cartographic Map vi
 
 ## T-135 — Mission modset manager
 
-**Problem:** Missions may require different Workshop mod sets (vanilla TBD vs Star Wars vs Halo). Today `apps/mod/tbd-framework/Data/registry.json` has a static `modset` array; no per-mission UI or validation.
+**Problem:** Missions may require different Workshop mod sets (vanilla TBD vs Star Wars vs Halo). Today `mod/tbd-framework/Data/registry.json` has a static `modset` array; no per-mission UI or validation.
 
 **Authority:** Build plan §license matrix + “modset = vanilla + TBD + written permission only” on monetized servers.
 

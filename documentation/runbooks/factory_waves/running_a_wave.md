@@ -67,7 +67,7 @@ land ─▶ merge each ─▶ wave gate on merged main ─▶ drop worktrees ─
    cargo xtask platform slice-worktree -- new <ticket id>
    ```
 
-   Expected: `  oracle ok: apps/mod/<lane> -> <path>` for each lane, the note that
+   Expected: `  oracle ok: mod/<lane> -> <path>` for each lane, the note that
    `assets/terrains` holds LFS pointers in the worktree, and
    `worktree: <repo>/.ai/artifacts/worktrees/<ticket id>   branch: slice/<ticket id>`. The subcommand
    is `new`; any other word prints the usage and exits 2.

@@ -29,7 +29,7 @@ the block. The first problem found is the answer, a sentence with its path, such
 `validate` is `parse` with the value dropped: the check of the `audio` row of `AUTHORED_BLOCKS`
 in `crate::authored_blocks`. The compile carries a valid block verbatim to the compiled
 document's root, so no compile step reads the typed rows. In the game,
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Audio/TBD_AudioEmitter.c` arms the emitters and
+`mod/tbd-framework/Scripts/Game/TBD/Systems/Audio/TBD_AudioEmitter.c` arms the emitters and
 plays the cues.
 
 ## Boundaries

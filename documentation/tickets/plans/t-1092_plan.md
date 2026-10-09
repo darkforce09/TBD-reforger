@@ -4,7 +4,7 @@
 
 ## Context
 
-Execution document for [T-1092](/documentation/tickets/specs/t1092_mod_script_modularisation.md): the sub-agent roster and every launch prompt. Progress, amendments and the shared-helper index live in the [progress checkpoint](/documentation/apps/mod/script_modularisation_progress_checkpoint.md).
+Execution document for [T-1092](/documentation/tickets/specs/t1092_mod_script_modularisation.md): the sub-agent roster and every launch prompt. Progress, amendments and the shared-helper index live in the [progress checkpoint](/documentation/mod/script_modularisation_progress_checkpoint.md).
 
 
 The mod scripts break two project laws.
@@ -103,7 +103,7 @@ It writes no product code.
 |---|---|
 | [Spec](/documentation/tickets/specs/t1092_mod_script_modularisation.md) | Problem, goal, locked decisions, acceptance |
 | This plan | Efficiency design, mechanics, roster and every launch prompt |
-| [Progress checkpoint](/documentation/apps/mod/script_modularisation_progress_checkpoint.md) | Roster status, frozen class names, amendments, shared-helper index, forwarders, tick-order baseline, leftovers, ticket batch |
+| [Progress checkpoint](/documentation/mod/script_modularisation_progress_checkpoint.md) | Roster status, frozen class names, amendments, shared-helper index, forwarders, tick-order baseline, leftovers, ticket batch |
 
 **Tickets.**
 - T-1092 is the program ticket "Modularise, document and gate the mod scripts".
@@ -230,7 +230,7 @@ language_bans/README.md, documentation_v2/standards/coding_standards/file_size_a
 1. The walk keeps .rs and .c (rename walk_rust_sources to walk_length_gated_sources). Output:
    "scanned N source file(s) (R .rs, C .c)". The vacuous-walk refusal says "source files".
 2. is_test_file accepts a *_tests stem for .c as well.
-3. Add MOD_SCRIPT_ROOTS = the three `apps/mod/<addon>/Scripts` roots. Never pin all of apps/mod:
+3. Add MOD_SCRIPT_ROOTS = the three `mod/<addon>/Scripts` roots. Never pin all of mod:
    crf_framework and vanilla_reference are gitignored references. Do not add them to
    FILE_LENGTH_PINS yet; P4-1, P5-1 and P6-C each add one.
 4. Tests: .c 500 passes / 501 fails; *_tests.c holds to 1000; the mixed count appears in output.
@@ -254,7 +254,7 @@ Build `cargo xtask verify enfusion-comments [--path <dir|file>]`:
 - Reuse the comment stripping in mod_scripts/destroy_target_diagnostics/strip_c_comments.rs; move
   it to a shared module rather than copying it.
 - Walk with verification_core::scan::walk_files, .c only. Default roots: a pinned-roots const,
-  empty now (later slices fill it). --path narrows to anything under apps/mod.
+  empty now (later slices fill it). --path narrows to anything under mod.
 - Fail closed: a missing root or an empty walk is did-not-run.
 - Detection must be deterministic:
   - Text inside string literals is not a comment.
@@ -269,7 +269,7 @@ Build `cargo xtask verify enfusion-comments [--path <dir|file>]`:
   If tools_v2 has an existing prose-lexicon list (grep "formerly"), share it.
 - Tests: one pass fixture and one fail fixture per rule, plus --path, a missing root and an empty
   walk.
-- Finally run it with --path apps/mod/tbd-framework/Scripts. Put per-rule counts in your report.
+- Finally run it with --path mod/tbd-framework/Scripts. Put per-rule counts in your report.
 Do not touch CI wiring.
 Gates: hcargo test -p xtask enfusion_comments; hcargo clippy -p xtask.
 ```
@@ -277,7 +277,7 @@ Gates: hcargo test -p xtask enfusion_comments; hcargo clippy -p xtask.
 #### P1-3: Mechanical sweep (B0 + CARD)
 
 ```text
-Owned: every .c file under apps/mod/tbd-framework/Scripts and apps/mod/tbd-emcp/Scripts, for
+Owned: every .c file under mod/tbd-framework/Scripts and mod/tbd-emcp/Scripts, for
 mechanical edits only. Write ONE throwaway script in your scratchpad (never in the repo). Run it on
 both trees, then review the diff by sampling.
 The script does exactly these things:
@@ -306,7 +306,7 @@ For each helper:
 - Where the duplicates differ, add a parameter so every existing call site keeps its behaviour, and
   note it in the index.
 Do not change other call sites; the P3 slices do that.
-Helpers (paths under apps/mod/tbd-framework/Scripts/Game/TBD/):
+Helpers (paths under mod/tbd-framework/Scripts/Game/TBD/):
 - Core/Characters/TBD_CharacterUtil.IsDead (IsBodyDead in TriggerRuntime, ObjectivesComponent,
   PlayArea and SpawnManager)
 - Core/TBD_PlayerChat.Broadcast(tag, text) (FrameworkManager, Safestart, FleetPlayerActions); Tell
@@ -384,7 +384,7 @@ Steps:
 6. Complete DONE and report.
 ```
 
-**Slice parameters.** All paths are under `apps/mod/tbd-framework/Scripts/Game/TBD/`.
+**Slice parameters.** All paths are under `mod/tbd-framework/Scripts/Game/TBD/`.
 
 **Wave A**
 
@@ -521,14 +521,14 @@ Steps:
 #### P3-C: closing run (B0 + CARD + SPLIT RULES)
 
 ```text
-Owned: apps/mod/tbd-framework/Scripts, for fixes only.
+Owned: mod/tbd-framework/Scripts, for fixes only.
 1. Remove every forwarder listed in the checkpoint by updating its callers.
 2. Clear the leftovers from roster rows P1-3..P3-14.
 3. Grep every duplicate name from the shared helper index; none may survive.
-4. hcargo xtask verify enfusion-comments --path apps/mod/tbd-framework/Scripts = 0.
+4. hcargo xtask verify enfusion-comments --path mod/tbd-framework/Scripts = 0.
 5. Every .c file at 500 lines or fewer.
 6. hcargo xtask mod compile, then hcargo xtask mod world-boot (the order line matches the baseline).
-7. Docs gates over apps/mod/tbd-framework and documentation_v2/mod.
+7. Docs gates over mod/tbd-framework and documentation_v2/mod.
 8. Collect the "bugs noticed" from every row into the checkpoint "Ticket batch".
 ```
 
@@ -536,7 +536,7 @@ Owned: apps/mod/tbd-framework/Scripts, for fixes only.
 
 ```text
 Owned:
-- FILE_LENGTH_PINS and the enfusion-comments roots (add apps/mod/tbd-framework/Scripts to both)
+- FILE_LENGTH_PINS and the enfusion-comments roots (add mod/tbd-framework/Scripts to both)
 - commands/ci/task_definitions.rs (verify-coding-standards gains enfusion-comments)
 - .github/workflows/ci.yml (the language-gates step after verify-file-length)
 - docs:
@@ -561,17 +561,17 @@ Report any failure that is outside this program with evidence; do not fix it.
 
 #### P5-1: tbd-emcp (P3 writer prompt)
 
-- **Folders:** `apps/mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/` (19 handlers).
+- **Folders:** `mod/tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/` (19 handlers).
 - **Map:** split `EMCP_WB_ModifyEntity.c` (582) by operation family, keeping the NetAPI surface.
 - **Notes:**
   - Keep the `EMCP_` class names, because the broker calls them by name.
   - The README records that the file derives from enfusion-mcp@0.6.1 and is no longer byte-identical.
-  - Pin `apps/mod/tbd-emcp/Scripts` in both gates.
+  - Pin `mod/tbd-emcp/Scripts` in both gates.
   - Replace the compile step with "operator Workbench compile required".
 
-#### P6: tbd-export (P3 writer prompt; launch only once `git status --short apps/mod/tbd-export` is clean)
+#### P6: tbd-export (P3 writer prompt; launch only once `git status --short mod/tbd-export` is clean)
 
-Before launch, the orchestrator runs P1-3's sweep script on tbd-export (as amendment P6-0), re-measures the file sizes and logs the final file sets. All paths are under `apps/mod/tbd-export/Scripts/`.
+Before launch, the orchestrator runs P1-3's sweep script on tbd-export (as amendment P6-0), re-measures the file sizes and logs the final file sets. All paths are under `mod/tbd-export/Scripts/`.
 
 | Wave | Slice | Folders | Map |
 |---|---|---|---|
@@ -583,7 +583,7 @@ Before launch, the orchestrator runs P1-3's sweep script on tbd-export (as amend
 | E | P6-6 | `EquipmentVehicleExport/**`, `VehicleExport/**` | Comments, plus any files over 500 lines. |
 
 - **P6-C** uses the P3-C prompt for tbd-export, plus these steps:
-  - pin `apps/mod/tbd-export/Scripts` in both gates
+  - pin `mod/tbd-export/Scripts` in both gates
   - run `hcargo xtask ci ci-local`
   - close T-1092 and its children, then `ticket sync`
 

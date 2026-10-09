@@ -36,6 +36,8 @@ mod repository_access;
 pub use repository_access::verify_file_length;
 
 mod verify_no_node;
+#[cfg(test)]
+use verify_no_node::refused_node_scripts;
 pub use verify_no_node::verify_no_node;
 
 // The file-length tests reach the library's roots, ceilings and walk under the gate's own rule

@@ -55,7 +55,7 @@ area/ellipse/rectangle marker. Icon + text + position only.
 
 ### Mod side (T-181) is real, and is a different feature
 
-`apps/mod/tbd-framework/Scripts/Game/TBD/Markers/` — 5 files, 1307 lines.
+`mod/tbd-framework/Scripts/Game/TBD/Markers/` — 5 files, 1307 lines.
 `TBD_MarkerService.BuildForPlayer` (`TBD_MarkerData.c:82`) reads `briefing.markers` out of the
 **already-compiled** mission (`:131-138`) and sends the caller's side's rows.
 `TBD_MarkerClient.c:4-10` hands rows to Reforger's own `SCR_MapMarkerManagerComponent`.

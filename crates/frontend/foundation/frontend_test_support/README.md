@@ -67,7 +67,7 @@ None: no feature, no environment variable. The crate reads files at test run tim
   test names and the calling crate's `Cargo.toml`.
 - Used by: the tests of the single-page app (`crates/frontend/shell/frontend_application`) and of every crate under
   `crates/frontend/`, through `[dev-dependencies]`.
-- Rules: no dependency on `apps/` and no shipped dependent (`cargo xtask ci
+- Rules: no dependency on an application crate and no shipped dependent (`cargo xtask ci
   verify-workspace-laws`: the frontend crate order lists it as reached only through
   dev-dependencies); no path here counts parent-folder steps from a crate or a file; a
   whole-frontend scan reads each package once.

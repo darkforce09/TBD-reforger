@@ -11,7 +11,7 @@
 //! `-addonsDir <dir>` **plus** `-config <json>` does BOTH at once (measured on engine 1.7.0.54):
 //!
 //! ```text
-//!   ENGINE : FileSystem: Adding relative directory '<checkout>/apps/mod/tbd-framework'
+//!   ENGINE : FileSystem: Adding relative directory '<checkout>/mod/tbd-framework'
 //!            to filesystem under name TBD_Framework
 //!   ENGINE : Loaded addons:
 //!            gproj: '<addonsDir>/tbd-framework/addon.gproj' guid: 'B2C3D4E5F6A78901'
@@ -75,6 +75,7 @@ mod telemetry_check;
 use std::path::{Path, PathBuf};
 
 use crate::Result;
+use repository_layout::enfusion_mod_folders::{FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME};
 
 use host::Host;
 use repository_root::find_repository_root;

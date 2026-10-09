@@ -77,7 +77,7 @@ Also mine. `wasm_scope_touched` is a prefix test over `Cargo.toml` `path =` deps
 compiles files from **outside** that graph through `include_str!`:
 `packages/tbd-schema/schema/mission.schema.json` (`editor/panels/zones_panel.rs:650`),
 `loadout-export.schema.json` (`arsenal/`), `apps/website/api/src/app.rs` (four `pages/` census tests),
-`apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs:40`).
+`mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs:40`).
 
 **Wave 255 changed `mission.schema.json`.** A slice whose diff was only that file would print
 "frontend untouched", skip, and report PASS over `zone_rule_fields_cover_the_whole_vocabulary` — a

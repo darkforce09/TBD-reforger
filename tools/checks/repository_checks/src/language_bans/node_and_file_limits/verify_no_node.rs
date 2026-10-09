@@ -1,7 +1,24 @@
 use super::*;
+use repository_layout::workspace_folders::ENFUSION_MOD_DIR;
 
-/// Three checks: (1) zero tracked `.mjs`/`.cjs` outside `apps/mod`; (2) no `node ` or `npx `
-/// invocation under `SCAN_DIRS` / `SCAN_FILES`; (3) zero `actions/setup-node` in CI.
+/// The paths of a `git ls-files '*.mjs' '*.cjs'` `listing` the gate refuses: every tracked Node
+/// script outside the Enfusion mod tree, in listing order. Only a path inside the mod folder
+/// itself (`mod/…`) is exempt; a sibling such as `models/` or a nested `tools/mod/` is refused.
+pub(super) fn refused_node_scripts(listing: &str) -> Vec<String> {
+    listing
+        .lines()
+        .filter(|path| {
+            !path
+                .strip_prefix(ENFUSION_MOD_DIR)
+                .is_some_and(|rest| rest.starts_with('/'))
+        })
+        .map(str::to_string)
+        .collect()
+}
+
+/// Three checks: (1) zero tracked `.mjs`/`.cjs` outside `mod/` (`refused_node_scripts`); (2) no
+/// `node ` or `npx ` invocation under `SCAN_DIRS` / `SCAN_FILES`; (3) zero `actions/setup-node`
+/// in CI.
 ///
 /// ── WHY THE SUBJECT LIST FAILS CLOSED ────────────────────────────────────────────────────────
 ///
@@ -13,17 +30,12 @@ pub fn verify_no_node() -> Result<u8> {
     let root = repository_root::find_repository_root()?;
     let mut fails = 0u64;
 
-    println!("==> git ls-files '*.mjs' '*.cjs' (excl apps/mod)");
+    println!("==> git ls-files '*.mjs' '*.cjs' (excl mod)");
     let out = process_runner::Run::new("git")
         .args(["ls-files", "*.mjs", "*.cjs"])
         .cwd(&root)
         .output()?;
-    let tracked: Vec<String> = out
-        .stdout
-        .lines()
-        .filter(|l| !l.starts_with("apps/mod/"))
-        .map(str::to_string)
-        .collect();
+    let tracked = refused_node_scripts(&out.stdout);
     if tracked.is_empty() {
         println!("  OK (none)");
     } else {

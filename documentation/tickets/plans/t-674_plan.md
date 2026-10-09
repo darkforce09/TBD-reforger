@@ -8,7 +8,7 @@ Program closure for the T-216 slot-identity gap. T-674.1 (engine emit, `flatten.
 
 ## Approach
 
-1. After T-674.2 ships, confirm the struct fields, loader binding and validator entry landed (`rg -n 'callsign|leaderSlotId' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/`).
+1. After T-674.2 ships, confirm the struct fields, loader binding and validator entry landed (`rg -n 'callsign|leaderSlotId' mod/tbd-framework/Scripts/Game/TBD/Backend/`).
 2. Compile a fixture mission with every identity key through the API and run `cargo xtask mod compile`; the in-game spawn check goes on the human checklist.
 3. No code unless T-674.2 reports `found_not_fixed` against `TBD_MissionSlotStruct.c`; then fix it here.
 

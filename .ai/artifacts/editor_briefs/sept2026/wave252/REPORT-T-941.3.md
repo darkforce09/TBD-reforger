@@ -15,9 +15,9 @@ Worktree tracked main at dispatch. Defect still present before the edit.
 
 | claim | path:line | command |
 |---|---|---|
-| Only `SCREEN_SHELL` and `LIST_ROW` registered; no END/DEBRIEF layouts | `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c:28-31` (export twin identical constants) | `sed -n '26,34p'` on `HEAD~1` |
-| `SetStage` entered LOBBY/BRIEFING/LIVE only; END/DEBRIEF had no screen hook | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c:977-995` (export twin same dispatch) | `sed -n '970,996p'` on `HEAD~1` |
-| No `UI/End/` scripts; layouts dir had only shell + list-row | `apps/mod/tbd-framework/Scripts/Game/TBD/UI/` and `UI/layouts/` | `ls` before the edit |
+| Only `SCREEN_SHELL` and `LIST_ROW` registered; no END/DEBRIEF layouts | `mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c:28-31` (export twin identical constants) | `sed -n '26,34p'` on `HEAD~1` |
+| `SetStage` entered LOBBY/BRIEFING/LIVE only; END/DEBRIEF had no screen hook | `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c:977-995` (export twin same dispatch) | `sed -n '970,996p'` on `HEAD~1` |
+| No `UI/End/` scripts; layouts dir had only shell + list-row | `mod/tbd-framework/Scripts/Game/TBD/UI/` and `UI/layouts/` | `ls` before the edit |
 
 Quoted (`TBD_UILayouts.c`, pre-edit):
 
@@ -48,12 +48,12 @@ Spec line numbers 1022/1123/1162/1295 had drifted; the live holes were the missi
 
 | path | why |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c` (+ export twin) | Register `END_SCREEN` and `DEBRIEF_SCREEN`. |
-| `apps/mod/tbd-framework/UI/layouts/TBD_EndScreen.layout` (+ export twin) | Shell chrome + `Winner` / `Reason` widgets. Reuses list-row via the shell `TBD_ListBox` default. |
-| `apps/mod/tbd-framework/UI/layouts/TBD_DebriefScreen.layout` (+ export twin) | Shell chrome; empty-state "No players recorded." |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_EndScreen.c` (+ export twin) | Overlay: winner + reason. `Open`/`Close` cannot refuse `SetStage`. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_DebriefScreen.c` (+ export twin) | Overlay scoreboard, sorted by kills (toggle via `SORT BY KILLS` / header row). `TBD_ResultsReporter.FillScoreboard` as a `modded class` (T-940.4 keeps the reporter file). |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` (+ export twin) | `OnEnterEnd` / `OnEnterDebrief`; `ApplyEndScreens` from `NotifyLocalStageUI`; replicated winner/reason/board; kill map on `OnPlayerKilled` while LIVE. |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c` (+ export twin) | Register `END_SCREEN` and `DEBRIEF_SCREEN`. |
+| `mod/tbd-framework/UI/layouts/TBD_EndScreen.layout` (+ export twin) | Shell chrome + `Winner` / `Reason` widgets. Reuses list-row via the shell `TBD_ListBox` default. |
+| `mod/tbd-framework/UI/layouts/TBD_DebriefScreen.layout` (+ export twin) | Shell chrome; empty-state "No players recorded." |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_EndScreen.c` (+ export twin) | Overlay: winner + reason. `Open`/`Close` cannot refuse `SetStage`. |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_DebriefScreen.c` (+ export twin) | Overlay scoreboard, sorted by kills (toggle via `SORT BY KILLS` / header row). `TBD_ResultsReporter.FillScoreboard` as a `modded class` (T-940.4 keeps the reporter file). |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` (+ export twin) | `OnEnterEnd` / `OnEnterDebrief`; `ApplyEndScreens` from `NotifyLocalStageUI`; replicated winner/reason/board; kill map on `OnPlayerKilled` while LIVE. |
 
 Screens are workspace overlays (`TBD_UILayouts.Create`), not Chimera menus: this slice does not own `chimeraMenus.conf`, and a menu that swallows Esc must not be able to block a stage change.
 
@@ -129,8 +129,8 @@ SLICE GATE: PASS
 
 | path:line | repro |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c:7-22` (export twin same; T-940.4 owns the file) | Reporter still omits kill tracking (`kills` absent from the POST, not a live counter). T-940.4 is nested-vs-flat JSON, not a kill feed. DEBRIEF reads deaths from the reporter's ONE LIFE source (`SpawnManager.IsPlayerDead`) via `FillScoreboard`; kills are counted on `TBD_FrameworkManager.OnPlayerKilled` while LIVE. |
-| `apps/mod/tbd-framework/Configs/System/chimeraMenus.conf` (not owned) | No `TBD_UIEnd` / `TBD_UIDebrief` presets. Screens are workspace overlays. First Workbench pass still required for GUID index; `TBD_UILayouts.Create` falls back to the bare path. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c:7-22` (export twin same; T-940.4 owns the file) | Reporter still omits kill tracking (`kills` absent from the POST, not a live counter). T-940.4 is nested-vs-flat JSON, not a kill feed. DEBRIEF reads deaths from the reporter's ONE LIFE source (`SpawnManager.IsPlayerDead`) via `FillScoreboard`; kills are counted on `TBD_FrameworkManager.OnPlayerKilled` while LIVE. |
+| `mod/tbd-framework/Configs/System/chimeraMenus.conf` (not owned) | No `TBD_UIEnd` / `TBD_UIDebrief` presets. Screens are workspace overlays. First Workbench pass still required for GUID index; `TBD_UILayouts.Create` falls back to the bare path. |
 
 ## deviations
 
@@ -149,15 +149,15 @@ Overlays instead of `TBD_MenuStack.Open(ChimeraMenuPreset…)` because `chimeraM
 
 ## twins_confirmed
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_UILayouts.c` — on disk
-- `apps/mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_EndScreen.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/UI/End/TBD_EndScreen.c` — on disk
-- `apps/mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_DebriefScreen.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/UI/End/TBD_DebriefScreen.c` — on disk
-- `apps/mod/tbd-framework/UI/layouts/TBD_EndScreen.layout` — on disk
-- `apps/mod/tbd-export/UI/layouts/TBD_EndScreen.layout` — on disk
-- `apps/mod/tbd-framework/UI/layouts/TBD_DebriefScreen.layout` — on disk
-- `apps/mod/tbd-export/UI/layouts/TBD_DebriefScreen.layout` — on disk
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/UI/TBD_UILayouts.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/UI/TBD_UILayouts.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_EndScreen.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/UI/End/TBD_EndScreen.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/UI/End/TBD_DebriefScreen.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/UI/End/TBD_DebriefScreen.c` — on disk
+- `mod/tbd-framework/UI/layouts/TBD_EndScreen.layout` — on disk
+- `mod/tbd-export/UI/layouts/TBD_EndScreen.layout` — on disk
+- `mod/tbd-framework/UI/layouts/TBD_DebriefScreen.layout` — on disk
+- `mod/tbd-export/UI/layouts/TBD_DebriefScreen.layout` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` — on disk

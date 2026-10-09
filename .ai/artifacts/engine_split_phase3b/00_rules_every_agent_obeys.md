@@ -34,7 +34,7 @@ ZERO BEHAVIOR CHANGE is the contract for all of Phase 3. Moves, splits, dedupes.
 looks or behaves differently, that is a bug in your work.
 
 THE WORKING TREE IS DIRTY AND THAT IS DELIBERATE. ~70 files are modified/untracked that are
-NOT yours: `apps/mod/**` (explicitly out of scope per spec section 7), `CLAUDE.md`,
+NOT yours: `mod/**` (explicitly out of scope per spec section 7), `CLAUDE.md`,
 `xtask/src/{check,constants,gate_mod_compile,sync}.rs`, untracked `documentation/`,
 `tools/`, `docs/platform/ENGINE_SPLIT_PROGRAM.md`, and the `v2/**` READMEs.
 **Stage ONLY files you yourself authored or edited.** Use explicit `git add <path>`; never
@@ -169,7 +169,7 @@ gate v-suite verify          21 of 25 routes fail (T-986, deferred by operator w
                              document's "22" is wrong). The four clean routes - notfound, eventmgr,
                              callback, login - must still PASS. Pass -> fail is a hard stop.
 cargo xtask verify file-length   exit 1, 9 unallowlisted SIZE-3   (Phase 3C clears these)
-cargo test -p xtask          8 failures, all pinning one missing apps/mod/** script:
+cargo test -p xtask          8 failures, all pinning one missing mod/** script:
   gate_t437::tests::collapsed_returns_fail_registry_pins
   gate_t437::tests::live_tree_holds
   gate_t437::tests::paraphrase_injection_is_caught

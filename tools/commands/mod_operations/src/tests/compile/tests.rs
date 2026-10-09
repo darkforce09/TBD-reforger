@@ -5,7 +5,7 @@ fn throwaway(tag: &str) -> PathBuf {
     let root = PathBuf::from(format!("/tmp/t853/compile/ut-{tag}-{}", std::process::id()));
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-    fs::create_dir_all(root.join("apps/mod/tbd-framework")).unwrap();
+    fs::create_dir_all(root.join(FRAMEWORK_ADDON_DIR)).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}\n").unwrap();
     root
 }
@@ -55,7 +55,7 @@ fn no_addon_is_rc3() {
 #[test]
 fn no_server_is_rc3() {
     let root = throwaway("noserver");
-    fs::write(root.join("apps/mod/tbd-framework/addon.gproj"), "x\n").unwrap();
+    fs::write(root.join(FRAMEWORK_ADDON_DIR).join("addon.gproj"), "x\n").unwrap();
     let home = root.join("empty-home");
     fs::create_dir_all(&home).unwrap();
     let code = with_home(&home, || run_with_root(&root, &Opts::default()));
@@ -68,7 +68,7 @@ fn missing_probe_is_rc2() {
     let root = throwaway("missprobe");
     let home = root.join("home");
     fake_server(&home);
-    fs::write(root.join("apps/mod/tbd-framework/addon.gproj"), "x\n").unwrap();
+    fs::write(root.join(FRAMEWORK_ADDON_DIR).join("addon.gproj"), "x\n").unwrap();
     let opts = Opts {
         probe_dir: Some(PathBuf::from("/tmp/t853/compile/no-such-probe-dir-ut")),
         ..Default::default()
@@ -81,7 +81,7 @@ fn missing_probe_is_rc2() {
 #[test]
 fn count_game_scripts_counts_only_c_and_refuses_a_missing_tree() {
     let root = throwaway("count");
-    let fw = root.join("apps/mod/tbd-framework");
+    let fw = root.join(FRAMEWORK_ADDON_DIR);
     assert!(
         count_game_scripts(&fw).is_err(),
         "no Scripts/Game must be an error, never a silent 0"
@@ -101,7 +101,7 @@ fn count_game_scripts_counts_only_c_and_refuses_a_missing_tree() {
 #[test]
 fn workbench_tooling_guard_reports_the_dir_and_what_is_in_it() {
     let root = throwaway("wbguard");
-    let fw = root.join("apps/mod/tbd-framework");
+    let fw = root.join(FRAMEWORK_ADDON_DIR);
     fs::create_dir_all(fw.join("Scripts/Game")).unwrap();
     assert!(workbench_tooling_guard(&fw).is_empty());
     fs::create_dir_all(fw.join("Scripts/WorkbenchGame/EnfusionMCP")).unwrap();

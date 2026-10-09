@@ -32,7 +32,7 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      oracle. Acceptance is a diff against the committed baseline: set equality on failing route
      names, and the four clean routes (notfound, eventmgr, callback, login) must still pass.
   2. Leave the dirty working tree alone. ~69 files are modified/untracked that are NOT ours
-     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
+     (mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
      tools/). Stage ONLY files you authored, with explicit `git add <path>`. Never `git add -A`.
   3. pages/operations/{orbat_manager,faction_manager}.rs → v2/apps/editor/ui/modals/ (they are
      unrouted editor modals, not pages). Keep distinct from v2/pages/operations/orbat_selection/.
@@ -45,7 +45,7 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
 THREE GATES WERE ALREADY RED BEFORE PHASE 3 TOUCHED ANYTHING — not yours, not regressions:
   gate v-suite verify            21 of 25 routes fail (T-986; the doc's "22" is wrong)
   cargo xtask verify file-length exit 1, 9 unallowlisted SIZE-3 — Phase 3C clears them
-  cargo test -p xtask            8 flaky failures, all pinning a missing apps/mod/** script
+  cargo test -p xtask            8 flaky failures, all pinning a missing mod/** script
   Because file-length sits inside verify-coding-standards inside ci-local, **ci-local is red
   until 3C lands**. Judge the xtask suite by NAME SET, never count — it drifts run to run.
 

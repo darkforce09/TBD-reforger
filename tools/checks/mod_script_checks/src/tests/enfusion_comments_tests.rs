@@ -355,7 +355,7 @@ fn outline_reads_methods_fields_and_attributes() {
     assert_eq!(script.item_banner(report).len(), 3);
 }
 
-/// A throwaway repository root holding an `apps/mod` tree.
+/// A throwaway repository root holding a `mod` tree.
 struct TemporaryRepository(PathBuf);
 
 impl TemporaryRepository {
@@ -363,7 +363,7 @@ impl TemporaryRepository {
         let root =
             std::env::temp_dir().join(format!("enfusion-comments-{}-{label}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        std::fs::create_dir_all(root.join("apps/mod")).unwrap();
+        std::fs::create_dir_all(root.join("mod")).unwrap();
         TemporaryRepository(root)
     }
 
@@ -388,13 +388,13 @@ fn run(repo: &TemporaryRepository, paths: &[&str]) -> u8 {
 #[test]
 fn path_narrows_the_walk() {
     let repo = TemporaryRepository::new("narrow");
-    repo.write("apps/mod/clean/TBD_SampleWidget.c", CLEAN);
-    repo.write("apps/mod/dirty/TBD_Wrong.c", CLEAN);
-    assert_eq!(run(&repo, &["apps/mod/clean"]), 0);
-    assert_eq!(run(&repo, &["apps/mod/clean/TBD_SampleWidget.c"]), 0);
-    assert_eq!(run(&repo, &["apps/mod/dirty"]), 1);
-    assert_eq!(run(&repo, &["apps/mod"]), 1);
-    let absolute = repo.0.join("apps/mod/clean");
+    repo.write("mod/clean/TBD_SampleWidget.c", CLEAN);
+    repo.write("mod/dirty/TBD_Wrong.c", CLEAN);
+    assert_eq!(run(&repo, &["mod/clean"]), 0);
+    assert_eq!(run(&repo, &["mod/clean/TBD_SampleWidget.c"]), 0);
+    assert_eq!(run(&repo, &["mod/dirty"]), 1);
+    assert_eq!(run(&repo, &["mod"]), 1);
+    let absolute = repo.0.join("mod/clean");
     assert_eq!(run(&repo, &[absolute.to_str().unwrap()]), 0);
 }
 
@@ -402,27 +402,31 @@ fn path_narrows_the_walk() {
 fn a_path_outside_the_mod_tree_does_not_run() {
     let repo = TemporaryRepository::new("outside");
     repo.write("tools/TBD_SampleWidget.c", CLEAN);
+    repo.write("modules/TBD_SampleWidget.c", CLEAN);
     assert_eq!(run(&repo, &["tools"]), 2);
-    assert_eq!(run(&repo, &["apps/mod/../../tools"]), 2);
+    assert_eq!(run(&repo, &["mod/../tools"]), 2);
+    assert_eq!(run(&repo, &["mod/../../tools"]), 2);
+    assert_eq!(run(&repo, &["modules"]), 2);
+    assert_eq!(run(&repo, &["modules/TBD_SampleWidget.c"]), 2);
 }
 
 #[test]
 fn a_missing_root_does_not_run() {
     let repo = TemporaryRepository::new("missing");
-    assert_eq!(run(&repo, &["apps/mod/absent"]), 2);
+    assert_eq!(run(&repo, &["mod/absent"]), 2);
     assert_eq!(run(&repo, &[]), 2);
 }
 
 #[test]
 fn an_empty_walk_does_not_run() {
     let repo = TemporaryRepository::new("empty");
-    repo.write("apps/mod/notes/readme.txt", "no scripts here");
-    assert_eq!(run(&repo, &["apps/mod/notes"]), 2);
+    repo.write("mod/notes/readme.txt", "no scripts here");
+    assert_eq!(run(&repo, &["mod/notes"]), 2);
 }
 
 #[test]
 fn pinned_roots_sit_under_the_mod_tree() {
     for root in PINNED_ROOTS {
-        assert!(root.starts_with("apps/mod/"), "{root}");
+        assert!(root.starts_with("mod/"), "{root}");
     }
 }

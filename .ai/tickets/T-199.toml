@@ -43,7 +43,7 @@ estimated = [
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "crates/frontend/shell/frontend_application/src/arsenal.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
 ]
 
 [scope]

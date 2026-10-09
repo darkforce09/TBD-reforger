@@ -1,5 +1,5 @@
-//! Where a manifest's `rust_path` scope lies once its own moves and the later manifests' moves are
-//! made.
+//! Where a manifest's `rust_path` scope lies, and where its retired `path` spellings are in use
+//! again, once its own moves and the later manifests' moves are made.
 //!
 //! **Role:** composes the `path` rows of the judged manifest and then of the manifests after it,
 //! in their chronological order ([`super::manifest_chronology`]), so a `rust_path` row's folder or
@@ -7,7 +7,9 @@
 //! judged at its new place, and a scope a row took files out of, the manifest's own rows or a later
 //! manifest's, one file at a time or a folder at a time, is known as emptied. [`judged_scope`]
 //! turns that into the files a row is judged over, the note of an emptied scope, or the
-//! did-not-run of a scope no row explains.
+//! did-not-run of a scope no row explains. [`LaterMoves::revivals_of`] lists the later `path` rows
+//! whose `to` is a retired `from` or a path below it: at or below such a `to` the retired spelling
+//! is a live path again ([`Revivals`]); a `to` above the retired `from` revives nothing.
 //!
 //! **Position:** built by `--verify` for each committed manifest from the manifests after it, and
 //! read by the verification ([`super::retired_spellings`]); a dry run, an apply and a verify of a
@@ -24,12 +26,16 @@
 //! emptied file by file within one manifest, or partly by one manifest and the rest by a later
 //! one, holds with a note, while a missing scope no row explains is never excused; the files a row
 //! took out of a scope are not judged at their destinations, since a `crate::` prefix names
-//! another crate's module once its file has left the crate.
+//! another crate's module once its file has left the crate. Only a strictly later manifest
+//! revives a spelling, never the judged manifest's own rows; revivals are listed oldest manifest
+//! first and, within one manifest, in line order; a revival frees the judged row for good, since a
+//! still-later manifest that retires the spelling again judges it with its own `path` row.
 
 use verification_core::{Kind, NotRun, Verdict};
 
 use super::manifest::{ManifestRow, RowScope};
 use super::path_mapping::{PathMapping, is_at_or_below};
+use super::path_references::path_tokens::ends_on_boundary;
 use super::repository_files::TrackedTree;
 
 /// One later manifest: its label in reports and its moves.
@@ -98,6 +104,81 @@ impl LaterMoves {
             .fold(own.relocate(pattern).into_owned(), |current, later| {
                 later.mapping.relocate(&current).into_owned()
             })
+    }
+}
+
+impl LaterMoves {
+    /// The later `path` rows whose `to` is `from` or lies below it, oldest manifest first and in
+    /// line order within one manifest; a `to` above `from` revives nothing.
+    pub(crate) fn revivals_of(&self, from: &str) -> Revivals {
+        let mut revivals = Vec::new();
+        for later in &self.manifests {
+            let mut moves: Vec<_> = later
+                .mapping
+                .moves()
+                .iter()
+                .filter(|row| is_at_or_below(&row.to, from))
+                .collect();
+            moves.sort_by_key(|row| row.row_line);
+            revivals.extend(moves.into_iter().map(|row| Revival {
+                prefix: row.to.clone(),
+                by: format!("{} line {}", later.label, row.row_line),
+            }));
+        }
+        Revivals {
+            from: from.to_string(),
+            revivals,
+        }
+    }
+}
+
+/// A later `path` row whose `to` puts a retired spelling back in use: at or below `prefix` the
+/// spelling names a live path again.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Revival {
+    /// The later row's `to`: the retired `from` or a path below it.
+    pub(crate) prefix: String,
+    /// The later row, as `<manifest> line <n>`.
+    pub(crate) by: String,
+}
+
+/// Every revival of one retired `path` spelling, in the order [`LaterMoves::revivals_of`] gives.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Revivals {
+    /// The retired spelling: the `from` of the judged row.
+    from: String,
+    revivals: Vec<Revival>,
+}
+
+impl Revivals {
+    /// Whether the occurrence of the retired spelling that starts `spelled` (the file's text from
+    /// the occurrence on) lies at or below a revived prefix: `spelled` begins with the prefix and
+    /// the prefix ends on a segment boundary there. A prefix equal to the retired spelling covers
+    /// every occurrence of it.
+    pub(crate) fn covers_occurrence(&self, spelled: &str) -> bool {
+        self.revivals.iter().any(|revival| {
+            spelled.starts_with(&revival.prefix)
+                && ends_on_boundary(spelled.as_bytes(), revival.prefix.len())
+        })
+    }
+
+    /// Whether the repository path `path` lies at or below a revived prefix.
+    pub(crate) fn covers_path(&self, path: &str) -> bool {
+        self.revivals
+            .iter()
+            .any(|revival| is_at_or_below(path, &revival.prefix))
+    }
+
+    /// One `note:` line per revival of the row on `line` of the manifest labelled `label`.
+    pub(crate) fn notes(&self, label: &str, line: usize) -> impl Iterator<Item = String> + '_ {
+        let label = label.to_string();
+        self.revivals.iter().map(move |revival| {
+            format!(
+                "{label} line {line}: `{}` is in use again at or below `{}`, where {} moved a \
+                 path; its spellings there are not judged against this row",
+                self.from, revival.prefix, revival.by
+            )
+        })
     }
 }
 

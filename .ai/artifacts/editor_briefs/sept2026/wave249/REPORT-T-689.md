@@ -11,22 +11,22 @@ slice/T-689
 
 | claim | path:line | command |
 |---|---|---|
-| No `.c` reader of the wire key `vehicleClasses`. Schema 1.3 already declares it (T-706). `TBD_MissionZoneRulesStruct` ended at `startingOwner`; play-area apply treated every occupant alike. | `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` struct `TBD_MissionZoneRulesStruct` (pre-change last field `startingOwner`; parent `b422aac85`) | `rg -n 'vehicleClasses' apps/mod --glob '*.c'` → only `TBD_ZoneVolume.c:49` comments about AGL excluding aircraft overhead, **zero identifiers**. `git grep -n vehicleClasses b422aac85 -- 'apps/mod/**/*.c'` → empty. |
+| No `.c` reader of the wire key `vehicleClasses`. Schema 1.3 already declares it (T-706). `TBD_MissionZoneRulesStruct` ended at `startingOwner`; play-area apply treated every occupant alike. | `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` struct `TBD_MissionZoneRulesStruct` (pre-change last field `startingOwner`; parent `b422aac85`) | `rg -n 'vehicleClasses' mod --glob '*.c'` → only `TBD_ZoneVolume.c:49` comments about AGL excluding aircraft overhead, **zero identifiers**. `git grep -n vehicleClasses b422aac85 -- 'mod/**/*.c'` → empty. |
 | UNREAD baseline 0 is still the gate's expectation until command center retires the row. | `xtask/src/schema_gates.rs` `UnreadField { name: "vehicleClasses", expected: 0, ticket: "T-689" }` | `cargo xtask schema validate` **after** the reader: FAIL, 6 identifiers (see perturbation). |
 
 ## changes
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` (new, ASCII) | 1–231 | Bind `vehicleClasses`, classify occupant (`infantry` / `ground` / `aircraft` / `sea`), `EffectivePenalty`, apply helper `OccupantConfinedByZone`. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` | same | Export twin; byte-identical to framework. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 120–124 | `ref array<string> vehicleClasses` on `TBD_MissionZoneRulesStruct`. Presence is `Count()` (allocated empty array when the key is absent). |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 120–124 | Same field (lockstep). Pre-existing emdash-vs-hyphen comments untouched. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | 97, 111 | `TBD_PlayAreaVehicleAxis.Clear()` on registry `Clear()` / `Build()` so statics do not leak across in-process mission restarts. |
+| `mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` (new, ASCII) | 1–231 | Bind `vehicleClasses`, classify occupant (`infantry` / `ground` / `aircraft` / `sea`), `EffectivePenalty`, apply helper `OccupantConfinedByZone`. |
+| `mod/tbd-export/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` | same | Export twin; byte-identical to framework. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 120–124 | `ref array<string> vehicleClasses` on `TBD_MissionZoneRulesStruct`. Presence is `Count()` (allocated empty array when the key is absent). |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 120–124 | Same field (lockstep). Pre-existing emdash-vs-hyphen comments untouched. |
+| `mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | 97, 111 | `TBD_PlayAreaVehicleAxis.Clear()` on registry `Clear()` / `Build()` so statics do not leak across in-process mission restarts. |
 | same | 452–454 | `Bind` + count a non-empty list as a legible zoneRules key. |
 | same | 510–515 | Boundary apply: occupant off the governing zone's axis is treated as inside (not in violation). |
 | same | 541 | `base_protection` apply: skip the zone when the occupant is off its axis. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | same code lines | Export twin. |
+| `mod/tbd-export/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | same code lines | Export twin. |
 
 Semantics (schema + FNF v4):
 
@@ -100,7 +100,7 @@ OK: compiled clean
 | `xtask/src/schema_gates.rs` `UNREAD_WIRE_FIELDS` `vehicleClasses` expected 0; `packages/tbd-schema/schema/mission.schema.json` `$defs/zoneRules.vehicleClasses` still says no reader on any shipped build | `cargo xtask schema validate` → FAIL 6 identifiers / T-689. **Expected. Do not fix here.** |
 | `JsonLoadContext` + `ref array<string> vehicleClasses`: absent key and authored `[]` both `Count()==0` | Schema defines `[]` as "confine nobody". Typed reader cannot tell them apart; both bind as today's apply-all so defaults stay exact. Hand-staged `[]` will **not** invert the axis. |
 | `TBD_PlayAreaComponent.c` EvaluatePlayer/FindViolation (not in owns) | Apply is ZoneRegistry reverse-lookup of the body at that XZ. Two living players on the exact same XZ could classify the wrong body; a lookup miss fails toward confine-all (today). |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` `IsAircraft` | Prefab-only / modded air with none of `HelicopterControllerComponent`, `VehicleHelicopterSimulation`, `AirplaneControllerComponent`, `VehicleFixedWingSimulation` classifies as `ground` (plan: unknown vehicle → ground). |
+| `mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` `IsAircraft` | Prefab-only / modded air with none of `HelicopterControllerComponent`, `VehicleHelicopterSimulation`, `AirplaneControllerComponent`, `VehicleFixedWingSimulation` classifies as `ground` (plan: unknown vehicle → ground). |
 
 ## deviations
 
@@ -125,9 +125,9 @@ OK: compiled clean
 
 | path | exists |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` | yes (7449 B, ASCII, identical to export) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` | yes |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | yes |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | yes |
+| `mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` | yes (7449 B, ASCII, identical to export) |
+| `mod/tbd-export/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c` | yes |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes |
+| `mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | yes |
+| `mod/tbd-export/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c` | yes |

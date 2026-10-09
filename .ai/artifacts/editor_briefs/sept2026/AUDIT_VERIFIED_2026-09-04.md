@@ -6,7 +6,7 @@ T-393 SHIPPED, T-227 SHIPPED, T-090.9 ready. API handlers now nest: apps/website
 ## S1 mission flatten / contract (crates/map-engine-core/src/mission/flatten.rs)
 - TRUE vehicles DeclaredPendingEmit, stripped — flatten.rs:3252-3263 (fate :3258, emit_ticket "T-675")
 - TRUE editorTriggers DeclaredPendingEmit — flatten.rs:3271-3283 (:3277, emit_ticket "T-676")
-- TRUE no TBD_TriggerRuntime.c — apps/mod/tbd-framework/Scripts/Game/TBD/{Backend,Core,Gamemode,Markers,Objectives,Radio,Registry,Spectator,UI,Zones}; zero trigger runtime
+- TRUE no TBD_TriggerRuntime.c — mod/tbd-framework/Scripts/Game/TBD/{Backend,Core,Gamemode,Markers,Objectives,Radio,Registry,Spectator,UI,Zones}; zero trigger runtime
 - PARTIAL waypoints: zero logic in core; mod hits are marker-icon aliases only (tbd-export TBD_MarkerIcons.c:352-388); frontend dead comments panels/context_menu.rs:170,188,293 → no movement-order logic anywhere
 - TRUE slot identity stripped — flatten.rs:2404-2419 (SLOT_IDENTITY_DROPS loop only files diagnostics)
 - TRUE $defs/marker additionalProperties:false — packages/tbd-schema/schema/mission.schema.json:1171 (required x,z,icon,label; icon closed 64-key enum)
@@ -63,7 +63,7 @@ T-393 SHIPPED, T-227 SHIPPED, T-090.9 ready. API handlers now nest: apps/website
 - TRUE audit stream 2s poll — handlers/admin/audit.rs:161 interval 2s; route app.rs:728
 - TRUE pool 25 hardcoded — db.rs:31 max_connections(25); :32-34 idle/lifetime/acquire fixed
 
-## S6 Enfusion mod (apps/mod/tbd-framework/Scripts/Game/TBD/)
+## S6 Enfusion mod (mod/tbd-framework/Scripts/Game/TBD/)
 - TRUE Safestart arms only SAFE_START — Gamemode/TBD_SafestartManager.c:252-265 (deliberate :248-250); LOBBY auto-deploy (~250 ms, TBD_SpawnManager m_bAutoDeploy) puts bodies in world during that window
 - PARTIAL deploy lockout — UI/Lobby/TBD_LobbyScreen.c:211-212 race acknowledged; DEPLOY gating :492-507 (ShouldStandDown + IsDeployPending); screen closes rather than locks
 - TRUE END/DEBRIEF no layouts — UI/TBD_UILayouts.c:28,31 only SCREEN_SHELL, LIST_ROW; stages exist Core TBD_GameStage.c:1, TBD_FrameworkManager.c:1022,1123,1162,1295

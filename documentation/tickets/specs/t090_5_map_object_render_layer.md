@@ -252,7 +252,7 @@ individual glyphs must appear only above TREE_GLYPH_MIN_ZOOM (0) per LOD v2 — 
   - Edit docs/**, .ai/tickets/registry.json, docs/TICKET_*.md, CLAUDE status markers
   - Add world supercluster or cluster discs
   - Rewrite seaBand/contours/forestMass/road/building layers
-  - Commit apps/mod/tbd-framework/resourceDatabase.rdb
+  - Commit mod/tbd-framework/resourceDatabase.rdb
 
 ═══ VERIFY (all exit 0) ═══
   cargo xtask ci schema-validate

@@ -379,7 +379,7 @@ pub fn validate_all() -> Result<u8> {
     println!("TBD_MissionValidator unconsumed-key warnings:");
     {
         let validation_dir =
-            root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation");
+            root.join("mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/Validation");
         let validator_c = validation_dir.join("TBD_MissionValidator.c");
         let validator_src = fs::read_to_string(&validator_c)
             .with_context(|| format!("read {}", validator_c.display()))?;

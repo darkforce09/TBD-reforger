@@ -36,7 +36,7 @@ canvas mount
 ├── document_host: seed the document, set the history context ──> undo driver
 ├── host_state: install the editor context ──> docks, inspectors, tools
 ├── world_assets::bootstrap ──> engine streaming host (terrain, satellite, world objects)
-├── viewport::start_raf ──> core::map_view::frame_pump: object wash tick, scale readout,
+├── viewport::start_raf ──> frontend_map_view::frame_pump: object wash tick, scale readout,
 │                           1 s debug HUD sample
 └── boot: Hydrating ──> LoadingMap ──> Ready (hand_over after 220 ms); Failed is sticky
 ```

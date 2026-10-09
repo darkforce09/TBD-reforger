@@ -113,7 +113,7 @@ reader who knows what the ticket meant, not a rename table.
 | T-1077 | legacy/map_engine/src/editing | same | 101 of 111 files moved, spread over crates/ |
 | T-1078 | legacy/graphics_engine/src | same | 57 of 70 files moved, spread over crates/graphics/ |
 | T-1090 | api_v2/src/handlers | apps/website/api_v2/src/handlers | 7 of 28 files moved, spread over crates/api/ |
-| T-1094 | apps/mod/tbd-framework/Scripts/WorkbenchGame | same | 4 of 120 files moved, spread over apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/ |
+| T-1094 | apps/mod/tbd-framework/Scripts/WorkbenchGame | same | 4 of 120 files moved, spread over mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/ |
 | T-1102 | tools/tbd-tools | same | 88 of 112 files moved, spread over tools/ |
 | T-1130 | data/scenario | apps/website/map-engine/src/data/scenario | 162 of 202 files moved, spread over the root/ |
 | T-1137 | tools/ticket_engine | same | 118 of 150 files moved, spread over tools/tickets/ |
@@ -127,7 +127,7 @@ reader who knows what the ticket meant, not a rename table.
 | T-1171 | apps/frontend/src/pages | same | 341 of 352 files moved, spread over crates/frontend/ |
 | T-1180 | apps/website | same | 4217 of 6033 files moved, spread over the root/ |
 | T-1182 | apps/api/src/core | same | 74 of 86 files moved, spread over the root/ |
-| T-1185 | apps/mod/tbd-framework/Scripts/WorkbenchGame | same | 4 of 120 files moved, spread over apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/ |
+| T-1185 | apps/mod/tbd-framework/Scripts/WorkbenchGame | same | 4 of 120 files moved, spread over mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/ |
 | T-1196 | tools/ticket_engine/src | same | 113 of 141 files moved, spread over tools/tickets/ |
 | T-1198 | tools/ticket_engine/src | same | 113 of 141 files moved, spread over tools/tickets/ |
 | T-1201 | packages/map-assets | same | 4630 of 10093 files moved, spread over assets/ |

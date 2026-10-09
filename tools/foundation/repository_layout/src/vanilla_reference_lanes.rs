@@ -9,16 +9,16 @@
 //! committed or deployed.
 
 /// Vanilla scripts `enf extract` copies out of the pak file table by name.
-pub const VANILLA_EXTRACTED_SCRIPTS: &str = "apps/mod/References/vanilla_reference/Scripts";
+pub const VANILLA_EXTRACTED_SCRIPTS: &str = "mod/References/vanilla_reference/Scripts";
 
 /// The official Script API pages `cargo xtask fetch vanilla-api` caches and `enf apidoc` parses.
-pub const VANILLA_SCRIPT_API_PAGES: &str = "apps/mod/References/vanilla_reference/apidoc";
+pub const VANILLA_SCRIPT_API_PAGES: &str = "mod/References/vanilla_reference/apidoc";
 
 /// The source pages `cargo xtask fetch vanilla-source` caches and `enf source` reads.
-pub const VANILLA_SOURCE_PAGES: &str = "apps/mod/References/vanilla_reference/source_html";
+pub const VANILLA_SOURCE_PAGES: &str = "mod/References/vanilla_reference/source_html";
 
 /// Vanilla `.c` files `enf source` rebuilds, method bodies included, from the source pages.
-pub const VANILLA_RECONSTRUCTED_SOURCE: &str = "apps/mod/References/vanilla_reference/Source";
+pub const VANILLA_RECONSTRUCTED_SOURCE: &str = "mod/References/vanilla_reference/Source";
 
 #[cfg(test)]
 #[path = "tests/vanilla_reference_lanes_tests.rs"]

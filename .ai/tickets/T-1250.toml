@@ -1,7 +1,7 @@
 id = "T-1250"
 kind = "work"
 title = "Exempt or document the generated gameplay policy script folders"
-summary = "readme-coverage reports 19 folders under apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/ without a README, and the generator (tools/commands/mod_operations/src/equipment_gameplay/policy_codegen.rs:7, :72-75) refuses any file it did not write, so READMEs cannot be added there."
+summary = "readme-coverage reports 19 folders under mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/ without a README, and the generator (tools/commands/mod_operations/src/equipment_gameplay/policy_codegen.rs:7, :72-75) refuses any file it did not write, so READMEs cannot be added there."
 class = "chore"
 status = "idea"
 notes = "Proposed fix: rename the folder to a generated/ folder the README rule exempts, update the generator and the parent READMEs, and refresh the Workbench resourceDatabase.rdb; Workbench-bound, so the operator runs it. Source: milestone V finding V-F115."

@@ -30,7 +30,7 @@ tools/commands/schema_tooling/src/schema_checks/
 
 | Gate | Checks |
 |---|---|
-| `schema citations` | walks `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under the top-level folder of every workspace member of the root `Cargo.toml` and of `apps/mod/` (skipping `node_modules`, `dist`, `.git`, `build`, `coverage`, `vendor`) for `@contract <file>.schema.json#<pointer>`, and resolves each against `contracts/definitions/`; an unreadable workspace, a missing root or zero citations fails as an unexamined scan |
+| `schema citations` | walks `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under the top-level folder of every workspace member of the root `Cargo.toml` and of `mod/` (skipping `node_modules`, `dist`, `.git`, `build`, `coverage`, `vendor`) for `@contract <file>.schema.json#<pointer>`, and resolves each against `contracts/definitions/`; an unreadable workspace, a missing root or zero citations fails as an unexamined scan |
 | `schema validate` | the suite in `contract_validation/`, with the [mission](/documentation/glossary/g_to_m.md#mission), registry and ballistics sections here; the ballistics section prints `NOT RUN`, never `PASS`, while neither the catalog nor its calibration bundle is committed, and fails when only one is |
 | `schema map-object-enums` | the golden prefabs, `contracts/rules/prefab-classify.json`, the Everon region sample and the glyph manifest keys use only the kinds and classes of `map-object-enums.schema.json` |
 | `schema type-inventory` | the prefab catalogue's `INSTANCE_KINDS` matches the schema's kinds, then every committed type inventory passes its schema and invariants I1 to I5 and I7 (kind sums, class sums, closed class keys, a complete census, manifest counts) |
@@ -40,7 +40,7 @@ Two pins inside the suite fail on purpose when the [mod](/documentation/glossary
 schemaVersion 1.3 wire field to keep exactly its baseline count of identifiers in the mod's
 comment- and string-stripped `.c` sources, so a new reader must update the schema's "no reader"
 wording; and every `kit:` alias a golden mission cites must exist in
-`apps/mod/tbd-framework/Data/registry.json`, apart from the rows of `KNOWN_UNRESOLVABLE_KITS`. An
+`mod/tbd-framework/Data/registry.json`, apart from the rows of `KNOWN_UNRESOLVABLE_KITS`. An
 unresolved `preset:` alias is printed but does not fail, since no spawn path reads presets.
 
 `citations` exits 1 on a dangling citation or a scope failure; the other gates print

@@ -93,7 +93,7 @@ towns and road names from the archive and finds the spot heights on the elevatio
   - the blueprint compiler (`tools/map_assets/blueprint_compiler/src/`), run by
     `cargo xtask map bvh-batch` and `cargo xtask map blueprint-from-voxels`: `prefabs/`;
   - the `tbd-export` addon's Workbench plugins
-    (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`), for the raw exports behind the
+    (`mod/tbd-export/Scripts/WorkbenchGame/MapExport/`), for the raw exports behind the
     elevation model, the objects and the building blueprints;
   - people: the anchors, `road-names.json`, the scene specs and the hand-kept manifest blocks.
 - Consumers:

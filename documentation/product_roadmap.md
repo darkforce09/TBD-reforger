@@ -144,15 +144,15 @@ or a strike.
 3. **Where the replay lives.** T-136's plan puts the replay among the routed pages and names code
    paths that no longer exist, while the after-action review is planned as a workspace crate
    under `crates/frontend/workspaces/` ([after-action review notes](/documentation/crates/frontend/workspaces/aar/after_action_review.md)).
-   The [mod design](/documentation/apps/mod/tbd-framework/mod_design.md) also records full after-action
+   The [mod design](/documentation/mod/tbd-framework/mod_design.md) also records full after-action
    recording as deferred by the operator while T-136 is ready: which one stands?
 4. **Team kills.** The debrief scoreboard counts team kills
-   (`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:908-919`),
+   (`mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:908-919`),
    while the comment above it (`:897`) says they are ignored. Should they count? T-1181 (idea).
 5. **DEBRIEF auto-advance.** The DEBRIEF stage never counts down or advances on its own. Should
    it? T-1181 (idea).
 6. **AI skill.** Seats with waypoints run AI (`TBD_WaypointRuntime.ShouldEnableAIAtSpawn`, in
-   `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`), but neither the mission schema nor the
+   `mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`), but neither the mission schema nor the
    mod has a skill value; the Eden gap row is ATTR-FIELD-OBJ-SKILL in the
    [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md).
    Is AI skill authorable? No ticket.
@@ -184,7 +184,7 @@ ticket file keeps its own. From the plans above:
 
 - [Mission Creator roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md)
   — the editor's tracks, defects and deferred work in full.
-- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the mod's spine, deferrals and
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the mod's spine, deferrals and
   open work.
 - [Product plans](/documentation/archive/product_plans/README.md) — the archived plans these
   items come from.

@@ -64,7 +64,7 @@
   },
   "escalationPath": ["workbench-api-search", "workbench-plugin-capture(perspective-only)", "runtime-rendertarget-harness(not-buildable-as-specified)", "fail"],
   "artifacts": {
-    "plugin": "apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_EngineOrthoExportPlugin.c (validated; SPIKE viewport screenshot)",
+    "plugin": "mod/tbd-framework/Scripts/WorkbenchGame/TBD_EngineOrthoExportPlugin.c (validated; SPIKE viewport screenshot)",
     "abCrops": ".ai/artifacts/t090_1_2_4_ab_crops/ (field_sap.png, roof_sap.png; engine-side pending optional operator run)",
     "verifyScript": "scripts/map-assets/verify-engine-ortho.mjs NOT built - it is P1-gated on P0 PASS (spec/handoff); no engine ortho export exists to verify",
     "verifyLog": ".ai/artifacts/t090_1_2_4_verify_log.md"

@@ -15,6 +15,7 @@ tools/foundation/repository_layout/src/
 ├── deployment.rs           `DEPLOY_DIR` and the settings file, its example, the compose file, the Caddy site and the systemd units inside it
 ├── documentation.rs        `DOCUMENTATION_ROOT`, `ROADMAP` and `GAP_ANALYSIS`
 ├── documentation_locations.rs  the runbooks, the API readiness register and the areas, roots and exemptions of the documentation gates
+├── enfusion_mod_folders.rs  the folder name and checkout folder of each Enfusion mod addon (framework, export, MCP bridge) under the mod folder
 ├── enfusion_mcp_node_package.rs  the pinned `enfusion-mcp` npm package folder and the server module installed in it
 ├── map_assets.rs           the served terrain and glyph trees and the per-island export scratch, joined onto a given root
 ├── lib.rs                  the crate root: module header, `mod` lines and the re-exports
@@ -23,7 +24,7 @@ tools/foundation/repository_layout/src/
 ├── tool_inputs.rs          the dedicated-server profiles, the recorded MCP transcripts and the staging load data the commands load
 ├── upstream_references.rs  `REFERENCES_DIR`, the Coalition Reforger Framework and vanilla lanes, and the PlayableSelector lane
 ├── vanilla_reference_lanes.rs  the extracted scripts, Script API pages, source pages and reconstructed sources inside the vanilla lane
-├── workspace_folders.rs    the applications, library crate and tool folders, the API server crate and its `.env`, and the API database crate's migration and seed folders
+├── workspace_folders.rs    the Enfusion mod, library crate and tool folders, the API server crate and its `.env`, and the API database crate's migration and seed folders
 └── tests/                  unit tests for the shared locations
 ```
 

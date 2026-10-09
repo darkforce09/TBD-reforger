@@ -187,7 +187,7 @@ workspace-wide (rs/ts/tsx/c/json/sql/toml across apps, packages, crates, scripts
 `MissionEnv` derives Clone/Debug/PartialEq only — hand-parsed, no serde, no R-api golden ✓. Two
 `MissionEnv::default()` sites (`eden_settings.rs:65`, `eden_top_strip.rs:554`) unaffected ✓.
 mission.schema.json never carried the keys; `serverMaxViewDistance`/`networkViewDistance` in
-scripts/mod server configs are an unrelated namespace ✓. apps/mod clean ✓.
+scripts/mod server configs are an unrelated namespace ✓. mod clean ✓.
 `keys_nothing_reads_are_not_authored` green ✓. 419 (T-663) + 4 (T-662) = 423 — counts coherent ✓.
 
 **Counts (G).** frontend **423/423**; lod_gates **7/7** under `--features

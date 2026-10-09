@@ -62,5 +62,5 @@ into the policy digest. Three users share it:
   belong to.
 - [Equipment gameplay selection policy](/contracts/rules/equipment-gameplay/README.md) — the
   reviewed rows the policy loads.
-- [Equipment gameplay dataset](/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/README.md)
+- [Equipment gameplay dataset](/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/README.md)
   — the Workbench side that runs the generated tables.

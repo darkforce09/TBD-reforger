@@ -46,7 +46,8 @@ a row in the table.
 - Depends on: the feature doc template; the bench code, the map engine it drives and the ticket
   registry the feature docs are written from.
 - Used by: the in-code READMEs of the `debug_benches` crate and its subfolders, which link the
-  feature docs; the frontend apps README; the
+  feature docs; the
+  [single-page app documentation](/documentation/crates/frontend/shell/frontend_application/README.md); the
   [frontend workspace crate documentation](/documentation/crates/frontend/workspaces/README.md).
 - Rules: a feature doc keeps its name, which those links use; a bench has no design set, and its
   feature doc stays within 500 lines.

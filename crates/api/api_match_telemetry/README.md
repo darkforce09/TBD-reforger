@@ -69,7 +69,7 @@ compile to nothing outside test builds (`api_failpoints`).
 - Used by: the API application (`crates/api/api_server`): its router merges `routes`, the operations domain
   reads the match models for the member service record, and the integration suites call the
   ingest services. Over HTTP: the game runtime's session loop and telemetry delivery in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
+  `mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md);
   `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
   imports against the domain graph.

@@ -50,7 +50,7 @@ MCP preflight: `tbd-dev-bootstrap.sh` → `wb_connect` OK → `mod_validate` 5/5
 | vehicle → weapon chain | `M1025_armed_M2HB.et` → roof → gun mount | `SlotManagerComponent.Slots[RegisteringComponentSlotInfo Roof].Prefab → VehParts/M1025_roof_M2HB.et → Slots[Turret].Prefab → VehParts/M1025_gun_mount_M2HB.et → WeaponSlotComponent { WeaponTemplate "{E517E6CCC1DF5737}Prefabs/Weapons/HeavyWeapons/HMG_M2HB_pintle_M1025.et" }` |
 | character → default loadout | `Character_US_Rifleman.et` | `BaseLoadoutManagerComponent { Slots { LoadoutSlotInfo ArmoredVest { Prefab "{4B57C11AA5161760}...Vest_PASGT.et" } ... } }`; root class `SCR_ChimeraCharacter` |
 
-Offline cross-check: 775 text `.et` prefabs in `apps/mod/crf_framework` (reference-only) show the
+Offline cross-check: 775 text `.et` prefabs in `mod/crf_framework` (reference-only) show the
 same var shapes (`MagazineTemplate` ×52 files, `AttachmentSlotComponent` ×89, `WeaponTemplate`
 ×25, `LoadoutManagerComponent` ×47, `AreaType` ×17).
 
@@ -146,7 +146,7 @@ anywhere in the plugin (`BuildCuratedRows` deleted; denylist = generic dressing-
    `packages/tbd-schema/registry/` and re-run `npm run validate`.
 
 Executed this pass with the three addons above (vanilla-only pass sanctioned by spec Task 6);
-`apps/mod/crf_framework` (reference-only, 775 text prefabs) is the natural second addon for the
+`mod/crf_framework` (reference-only, 775 text prefabs) is the natural second addon for the
 next live proof — its `.et` corpus already cross-validated every container shape offline.
 
 ## A1–A5 gate (T-068.8)

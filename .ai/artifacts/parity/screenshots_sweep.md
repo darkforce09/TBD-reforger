@@ -479,7 +479,7 @@ debug console and the player-HUD flags.
 | DLG-GEN-006 | — | na | d | `Require DLC` checkbox — same | — |
 | DLG-GEN-007 | — | na | d | `Overview (Locked) ▸ Picture` — shown while the mission is campaign-locked. No campaign progression model | — |
 | DLG-GEN-008 | — | na | d | `Overview (Locked) ▸ Text` — same | — |
-| DLG-GEN-009 | — | na | d | `Loading Screen ▸ Picture`. `INFERRED:` the Reforger loading screen is not mission-authored; no `apps/mod/tbd-framework` consumer found | — |
+| DLG-GEN-009 | — | na | d | `Loading Screen ▸ Picture`. `INFERRED:` the Reforger loading screen is not mission-authored; no `mod/tbd-framework` consumer found | — |
 | DLG-GEN-010 | — | na | d | `Loading Screen ▸ Text` — same | — |
 | DLG-GEN-011 | `briefingSeconds` (`AUTHORED_FLOW_KEYS` `eden_chrome.rs:332`, default 600 `:377`) | partial | a | `Show Briefing` — Eden authors **availability**, TBD authors **duration** (and the mod reads it: `TBD_FrameworkManager.OnEnterBriefing`). Different axis of the same feature; no gap worth a slice | — |
 | DLG-GEN-012 | — | na | d | `Show Debriefing`. No debriefing screen exists in `tbd-framework`; a boolean with no reader is exactly what `eden_chrome.rs:4619-4621` forbids | — |
@@ -578,7 +578,7 @@ only** and cannot be changed after a mission exists.
 ### 2.17 `Edit: Performance` (`DLG-PERF-001…016`) — batch03 `163830`
 
 **All sixteen `na`.** Garbage collection and dynamic simulation are Arma-engine runtime knobs; there
-is no `apps/mod/tbd-framework` consumer for any of them and no Enfusion API surfaced for a mission to
+is no `mod/tbd-framework` consumer for any of them and no Enfusion API surfaced for a mission to
 set them. Recorded in full because "we skipped the Performance dialog" and "the Performance dialog is
 out of scope" are different claims and only the second one is defensible.
 
@@ -945,7 +945,7 @@ Claim counts, computed from that block:
 | **NEW-F5** favorites | `eden_dock_right.rs` | 101, 102, 104, 106, 111–115 (9) |
 | **NEW-F6** mission shape | `create_mission_dialog.rs` · `eden_settings.rs` | every label except 100, 110, 117 (16) |
 | **NEW-F7** locations list | `eden_dock_left.rs` | 101–103, 105, 106, 108, 109, 111–117 (14) |
-| **NEW-W1** gadget flags | `apps/mod/tbd-framework/…` + `mission.schema.json` | `executor: workbench` — **takes no wave row**, exactly like T-673…T-682 |
+| **NEW-W1** gadget flags | `mod/tbd-framework/…` + `mission.schema.json` | `executor: workbench` — **takes no wave row**, exactly like T-673…T-682 |
 
 Three consequences worth stating:
 

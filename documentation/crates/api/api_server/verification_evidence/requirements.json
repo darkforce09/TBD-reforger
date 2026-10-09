@@ -417,13 +417,13 @@
         "crates/api/api_server/tests/live_slot_occupancy.rs",
         "contracts/definitions/game-runtime-deployment.schema.json",
         "contracts/definitions/game-runtime-roster.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentAuthorization.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentRequest.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentRequestQueue.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentEndQueue.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_SpawnDeploymentGate.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminService.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/Service/TBD_LobbyService.c"
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentAuthorization.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentRequest.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentRequestQueue.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_DeploymentEndQueue.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Deployment/TBD_SpawnDeploymentGate.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Session/Admin/TBD_AdminService.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/Service/TBD_LobbyService.c"
       ],
       "checks": [
         "events_live_occupancy",
@@ -506,8 +506,8 @@
         "crates/api/api_caller_identity/src/tests/machine_caller.rs",
         "crates/api/api_server/tests/server_machine_credentials.rs",
         "contracts/definitions/machine-credential.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeHttp.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeAnswer.c"
+        "mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeHttp.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/Http/TBD_GameRuntimeAnswer.c"
       ],
       "checks": [
         "fleet_server_credentials",
@@ -531,9 +531,9 @@
         "crates/fleet/game_server_host_agent/src/ledger_client/ledger_messages.rs",
         "crates/fleet/game_server_host_agent/src/ledger_client/mod.rs",
         "crates/fleet/game_server_host_agent/src/ledger_client/retry_backoff.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetCommandPoller.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetCommandExecution.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetCommandArguments.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetCommandPoller.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetCommandExecution.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetCommandArguments.c",
         "crates/frontend/foundation/frontend_transport/src/endpoints/fleet_commands.rs",
         "crates/frontend/pages/administration_pages/src/server_control/fleet_commands/command_requests.rs",
         "crates/fleet/game_server_host_agent/Cargo.toml",
@@ -554,7 +554,7 @@
         "crates/api/api_server/tests/fleet_command_ledger.rs",
         "crates/api/api_server/tests/fleet_support/mod.rs",
         "contracts/definitions/fleet-command.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionLifecycle.c"
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionLifecycle.c"
       ],
       "checks": [
         "fleet_fleet_commands",
@@ -642,7 +642,7 @@
       "implementation": [
         "crates/api/api_server_infrastructure/src/services/fleet_commands/command_arguments.rs",
         "crates/api/api_server_infrastructure/src/services/fleet_commands/executor_claims.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetPlayerActions.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetPlayerActions.c",
         "crates/api/api_server_infrastructure/src/services/fleet_commands/tests/command_arguments.rs",
         "crates/api/api_server/tests/fleet_command_ledger.rs"
       ],
@@ -788,20 +788,20 @@
         "crates/api/api_operations/src/handlers/game_runtime_roster.rs",
         "crates/api/api_operations/src/services/live_slot_occupancy.rs",
         "contracts/definitions/mission-deployment.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_DeployedMission.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionArtifactVerification.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionArtifactCache.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RosterLoader.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_DeployedMission.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionArtifactVerification.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_MissionArtifactCache.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RosterLoader.c",
         "tools/commands/mod_operations/src/world_boot/compiled_lane.rs",
         "tools/commands/mod_operations/src/playtest_server/platform_deployment.rs",
         "crates/api/api_missions/src/handlers/artifact_document_response.rs",
         "crates/api/api_server/tests/mission_deployment_transitions.rs",
         "crates/api/api_server/tests/mission_review_contract.rs",
         "contracts/definitions/game-runtime-roster.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256Job.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256SelfTest.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RuntimeDeploymentStruct.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256Job.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Core/Hashing/TBD_Sha256SelfTest.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/TBD_RuntimeDeploymentStruct.c",
         "tools/commands/mod_operations/src/website_api_client/mission_artifact_cache.rs",
         "tools/commands/mod_operations/src/website_api_client/mission_publication.rs",
         "tools/commands/mod_operations/src/website_api_client/fleet_provisioning.rs"
@@ -824,9 +824,9 @@
         "crates/api/api_missions/src/handlers/mission_deployments.rs",
         "crates/api/api_server_infrastructure/src/handlers/fleet_scenarios.rs",
         "crates/api/api_database/migrations/0053_mission_deployments.sql",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetLoadMissionAction.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/TBD_FleetLoadMissionAction.c",
         "crates/fleet/game_server_host_agent/src/command_execution/mission_restart.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionDeploymentRelay.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_MissionDeploymentRelay.c",
         "crates/frontend/pages/administration_pages/src/server_control/mission_deployments/deployment_request.rs",
         "crates/fleet/game_server_host_agent/src/command_execution/mission_deployment.rs",
         "crates/fleet/game_server_host_agent/src/command_execution/tests/mission_deployment.rs",
@@ -848,7 +848,7 @@
         "crates/api/api_server_infrastructure/src/models/fleet_scenario.rs",
         "crates/api/api_server_infrastructure/src/handlers/tests/fleet_scenarios.rs",
         "crates/api/api_server/tests/mission_deployment_transitions.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_DeployableMissionList.c"
+        "mod/tbd-framework/Scripts/Game/TBD/Session/MissionSelector/TBD_DeployableMissionList.c"
       ],
       "checks": [
         "missions_mission_transitions",
@@ -866,8 +866,8 @@
         "crates/api/api_missions/src/services/mission_deployments/deployment_settlement.rs",
         "crates/api/api_server_infrastructure/src/services/runtime_sessions.rs",
         "crates/api/api_background_workers/src/mission_deployment_reconciler.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_LoadedArtifactReport.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_LoadedArtifactReport.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c",
         "crates/frontend/pages/administration_pages/src/server_control/mission_deployments/deployment_list.rs",
         "crates/frontend/pages/administration_pages/src/server_control/mission_deployments/deployment_wording.rs",
         "crates/frontend/pages/administration_pages/src/server_control/mission_deployments/tests/mission_deployments.rs",
@@ -977,7 +977,7 @@
         "crates/api/api_match_telemetry/src/handlers/server_heartbeat.rs",
         "crates/api/api_identity_and_access/src/handlers/arma_link_confirmation.rs",
         "crates/api/api_server/tests/match_identity.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/TBD_MatchRegistration.c"
+        "mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/TBD_MatchRegistration.c"
       ],
       "checks": [
         "telemetry_match_identity",
@@ -1088,7 +1088,7 @@
         "crates/api/api_database/migrations/0055_match_events.sql",
         "crates/api/api_server/tests/detailed_events.rs",
         "crates/frontend/foundation/frontend_api_dtos/src/match_events.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents"
+        "mod/tbd-framework/Scripts/Game/TBD/Systems/MatchEvents"
       ],
       "checks": [
         "telemetry_detailed_events",
@@ -1110,8 +1110,8 @@
         "crates/api/api_database/migrations/0056_server_status_telemetry_queue.sql",
         "contracts/definitions/game-runtime-session.schema.json",
         "crates/api/api_server/tests/telemetry_queue.rs",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeStatusReadings.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry",
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeStatusReadings.c",
         "crates/frontend/pages/administration_pages/src/server_control/server_card_telemetry.rs",
         "tools/commands/mod_operations/src/playtest_server/telemetry_check.rs"
       ],
@@ -1135,10 +1135,10 @@
         "crates/api/api_server_infrastructure/src/handlers/game_runtime_sessions.rs",
         "crates/api/api_server/tests/runtime_session_fencing.rs",
         "contracts/definitions/game-runtime-session.schema.json",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionLifecycle.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionCall.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionClosing.c",
-        "apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeStatusReadings.c"
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionLifecycle.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionCall.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSessionClosing.c",
+        "mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeStatusReadings.c"
       ],
       "checks": [
         "telemetry_heartbeat_fencing",
@@ -1657,8 +1657,8 @@
         "crates/ballistics/ballistics_calibration/src",
         "contracts/definitions/ballistics-calibration.schema.json",
         "contracts/fixtures/ballistics",
-        "apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle",
-        "apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle",
+        "mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle",
+        "mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle",
         "tools/commands/ballistics_oracle_tooling/src"
       ],
       "checks": [

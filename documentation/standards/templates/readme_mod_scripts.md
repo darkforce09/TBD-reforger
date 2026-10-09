@@ -3,7 +3,7 @@
 # README template: mod scripts
 
 **When to use:** a folder at or under an Enfusion addon's `Scripts/`, such as
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` or a Workbench plugin folder under
+`mod/tbd-framework/Scripts/Game/TBD/Systems/AI/` or a Workbench plugin folder under
 `Scripts/WorkbenchGame/`. The [README standard](/documentation/standards/readme_standard.md)
 defines every rule this template follows; the mod scripts kind adds Authority.
 
@@ -53,12 +53,12 @@ rely on.>
 
 ## Related documentation
 
-- [<document title>](/documentation/apps/mod/<path to the document>) — <what it covers>
+- [<document title>](/documentation/mod/<path to the document>) — <what it covers>
 ````
 
 ## Worked sample
 
-Written from `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`. Its scripts hold no RPC and no
+Written from `mod/tbd-framework/Scripts/Game/TBD/Systems/AI/`. Its scripts hold no RPC and no
 replicated property; they run from the server heartbeat, and Authority says so. No document covers these scripts, so the sample has no Related documentation. The sample
 sits in a fenced block, so no gate reads it as a README; the folder's own README.md is written from
 the same code and may differ.
@@ -73,7 +73,7 @@ and issues their waypoints in order.
 ## Contents
 
 ```text
-apps/mod/tbd-framework/Scripts/Game/TBD/Systems/AI/
+mod/tbd-framework/Scripts/Game/TBD/Systems/AI/
 ├── GroupState/            group AI defaults: combat mode, formation, speed and behaviour
 ├── Waypoints/             waypoint chains: the AI spawn gate, arming groups, issuing waypoints
 ├── TBD_AIGroupFactory.c   spawns an empty SCR_AIGroup from a prefab and adopts a member's faction
@@ -116,9 +116,9 @@ speed setting wins.
   `TBD_FrameworkManager` (the game stage), `TBD_SpawnManager` (slot bodies and player claims),
   `TBD_Log`, and the engine's AI classes (`SCR_AIGroup`, `AIWaypoint`, `AIWaypointCycle`, the
   ScenarioFramework waypoint prefabs).
-- Used by: `TBD_RuntimeHeartbeat` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`
+- Used by: `TBD_RuntimeHeartbeat` in `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/`
   (`Clear`, `Tick`, `TICK_MS`); `TBD_SlotBodyMaterializer` in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Slots/`, which calls
+  `mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Slots/`, which calls
   `TBD_WaypointRuntime.ShouldEnableAIAtSpawn`.
 - Rules: the scripts run on the server only; each reader declares its own wire structs beside the
   code that interprets them instead of adding fields to the mission loader's structs; an absent

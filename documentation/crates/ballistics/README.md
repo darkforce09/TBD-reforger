@@ -37,5 +37,5 @@ documentation/crates/ballistics/
 - [Game ballistics design note](/documentation/crates/api/api_server/verification_evidence/game_ballistics.md)
   — the operator decisions, the identified engine scheme, the calibration criterion and the
   register.
-- [Ballistics oracle](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
+- [Ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
   — the engine measurements the model is calibrated against.

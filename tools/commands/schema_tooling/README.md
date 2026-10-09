@@ -27,7 +27,7 @@ returns the exit code (0 pass, 1 findings). The entries split into:
 - the document suite (`schema validate`) and the one-file mission check (`schema
   validate-file`), in `src/schema_checks/contract_validation/`;
 - the code-to-schema check (`schema citations`), which walks the top-level folder of every
-  workspace member and `apps/mod/`;
+  workspace member and `mod/`;
 - the map-object gates (`schema map-object-enums`, `schema type-inventory`, `schema map-glyphs`),
   which keep the map data, the rules and the glyph set inside the closed enums of
   `map-object-enums.schema.json`;
@@ -56,7 +56,7 @@ cargo xtask ci schema-codegen    # regenerate the contract types after a schema 
 ## Configuration
 
 No feature and no environment variable. The gates read `contracts/`, the terrain documents under
-`assets/terrains/` and the mod sources under `apps/mod/tbd-framework/`; the codegen runs `rustfmt`
+`assets/terrains/` and the mod sources under `mod/tbd-framework/`; the codegen runs `rustfmt`
 from `PATH` in the checkout root.
 
 ## Public surface
@@ -68,7 +68,8 @@ from `PATH` in the checkout root.
 
 ## Boundaries
 
-- Depends on: `repository_layout` (the contract folders), `repository_laws` (the workspace
+- Depends on: `repository_layout` (the contract folders; the framework addon folder the mission
+  validation reads, from its `enfusion_mod_folders`), `repository_laws` (the workspace
   members the citation scan derives its roots from), `process_runner` (rustfmt), `content_digest`,
   `ticket_registry` (the empty-write refusal), `typify`, `schemars`, `syn`, `prettyplease`, `heck`,
   `jsonschema`, `regex`, `walkdir`, `serde_json`, `clap`, `thiserror`, and `prefab_catalog` (the

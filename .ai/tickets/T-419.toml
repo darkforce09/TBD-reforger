@@ -70,8 +70,8 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
 [scope]

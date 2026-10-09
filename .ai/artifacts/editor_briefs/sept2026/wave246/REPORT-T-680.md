@@ -15,8 +15,8 @@ The worktree was branched from main at `475aec391` (T-942 twin widen). Proved be
 
 | claim | path:line | command |
 |---|---|---|
-| `TBD_VehicleState.c` does not exist | (file absent both trees) | `test ! -f apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` → MISSING_FW; same for tbd-export → MISSING_EX |
-| No vehicle-lock / fuel-set / ammo-set reader in `apps/mod` | no hits | python walk of `apps/mod/tbd-framework/Scripts/**/*.c`: zero files contain `TBD_VehicleState` or `LockPilotControls` or `SetTotalFuelPercentage` or `SetAmmoCount` |
+| `TBD_VehicleState.c` does not exist | (file absent both trees) | `test ! -f mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` → MISSING_FW; same for tbd-export → MISSING_EX |
+| No vehicle-lock / fuel-set / ammo-set reader in `mod` | no hits | python walk of `mod/tbd-framework/Scripts/**/*.c`: zero files contain `TBD_VehicleState` or `LockPilotControls` or `SetTotalFuelPercentage` or `SetAmmoCount` |
 | T-675.2 spawn exists but does not apply lock/fuel/ammo | `TBD_SpawnManager.c:1028` | `TBD_MissionVehicleRoster.SeatAuthoredCrews(this);` then the `built <= 0` return — no Apply |
 | Word-boundary `fuel`/`lock`/`ammo` in spawn path is not vehicle state | SpawnManager / MissionVehicleStruct | schema `UNREAD_WIRE_FIELDS` baseline 0 for all three; `TBD_MissionVehicleStruct` has no lock/fuel/ammo members (class starts ~line 68, fields alias/uid/x/z/headingDeg/faction/seats only) |
 
@@ -26,10 +26,10 @@ Not already fixed. Implemented.
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | NEW (365 lines). Wire structs 39–83. `ApplySpawned` 98. `Apply(vehicle, lock, fuel, ammo)` 149. Second parse `GetRawJson` 169. `LockPilotControls` 237. `SetFuel` 282. `SetAmmoCount` 363. | T-677-style second `JsonLoadContext` pass over `vehicles[]` lock/fuel/ammo. Apply at spawn. Unset numerics are `ABSENT = -1000000` and leave engine defaults. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | NEW, byte-identical ASCII twin | T-946.26 mandatory twin. `mirror_lockstep` walks export only. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1029–1031 | After `SeatAuthoredCrews` (vehicles now exist), `TBD_VehicleState.ApplySpawned();` before the `built <= 0` return so a vehicle-only roster still applies. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1029–1031 | Same call site, ASCII comments. |
+| `mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | NEW (365 lines). Wire structs 39–83. `ApplySpawned` 98. `Apply(vehicle, lock, fuel, ammo)` 149. Second parse `GetRawJson` 169. `LockPilotControls` 237. `SetFuel` 282. `SetAmmoCount` 363. | T-677-style second `JsonLoadContext` pass over `vehicles[]` lock/fuel/ammo. Apply at spawn. Unset numerics are `ABSENT = -1000000` and leave engine defaults. |
+| `mod/tbd-export/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | NEW, byte-identical ASCII twin | T-946.26 mandatory twin. `mirror_lockstep` walks export only. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1029–1031 | After `SeatAuthoredCrews` (vehicles now exist), `TBD_VehicleState.ApplySpawned();` before the `built <= 0` return so a vehicle-only roster still applies. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1029–1031 | Same call site, ASCII comments. |
 
 No `packages/tbd-schema` edits. No editor UI. No `flatten.rs`. No `TBD_MissionLoader.c`. No `TBD_MissionVehicleStruct.c`.
 
@@ -174,7 +174,7 @@ IN-GAME BEHAVIOUR CANNOT BE PROVEN HERE. One human-runnable line each:
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | yes (12308 bytes, ASCII, committed) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | yes (byte-identical twin) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (ApplySpawned at 1031) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (same call site) |
+| `mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | yes (12308 bytes, ASCII, committed) |
+| `mod/tbd-export/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c` | yes (byte-identical twin) |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (ApplySpawned at 1031) |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (same call site) |

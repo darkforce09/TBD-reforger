@@ -73,5 +73,5 @@ pure and covered by the native tests.
 
 ## Related documentation
 
-- [Equipment and vehicle source export](/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
+- [Equipment and vehicle source export](/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/README.md)
   — the Workbench exporter that produces the datasets the viewer reads.

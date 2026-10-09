@@ -20,7 +20,7 @@ Rules FMT-1 to FMT-3: how source files are formatted. Code comments and help str
   is UTF-8, ends lines with LF, ends with a final newline and has no trailing whitespace; JSON and
   YAML indent with two spaces. Markdown keeps trailing whitespace, since two trailing spaces are a
   hard line break, and its indentation is not pinned. The paths the checker skips (generated
-  output, fixtures, design exports, binary formats and `apps/mod/`) are listed in
+  output, fixtures, design exports, binary formats and `mod/`) are listed in
   `.editorconfig-checker.json`. Gate: CI-BLOCK, `cargo xtask ci verify-editorconfig`, the first
   step of `cargo xtask ci ci-local` and the `editorconfig` job. The task runs
   `editorconfig-checker` from the repository root and installs the pinned version with

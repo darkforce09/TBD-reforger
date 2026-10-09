@@ -19,7 +19,7 @@ written.
 
 **1 — the spine has no reader in the lane that owns objectives.** Counted with the gate's own
 `count_mod_readers` semantics (comments and string literals stripped) over
-`apps/mod/tbd-framework/Scripts/Game/TBD/Objectives`:
+`mod/tbd-framework/Scripts/Game/TBD/Objectives`:
 
 | `$defs/objective` property | tree-wide | Objectives lane |
 |---|---|---|
@@ -48,7 +48,7 @@ name, so an unspelled key is invisible at runtime.
 
 ```
 thread '...objective_spine_is_read_in_the_objectives_lane' panicked at xtask/src/schema_gates.rs:4389:9:
-$defs/objective properties with NO identifier under .../apps/mod/tbd-framework/Scripts/Game/TBD/Objectives: ["side", "label", "framing", "lock", "autoLose", "variantId"]
+$defs/objective properties with NO identifier under .../mod/tbd-framework/Scripts/Game/TBD/Objectives: ["side", "label", "framing", "lock", "autoLose", "variantId"]
 JsonLoadContext binds by member name, so an unspelled property is unreadable. Either the reader lost a field, or the schema grew one T-212's reader has not taken up yet.
 ```
 
@@ -112,7 +112,7 @@ recursively are **identical**. `cargo xtask schema validate` → `All contracts 
 **P1 — the new spine test.** `string autoLose;` → `string autoLoseZZ;`, both trees.
 ```
 thread '...objective_spine_is_read_in_the_objectives_lane' panicked at xtask/src/schema_gates.rs:4436:9:
-$defs/objective properties with NO identifier under .../apps/mod/tbd-framework/Scripts/Game/TBD/Objectives: ["autoLose"]
+$defs/objective properties with NO identifier under .../mod/tbd-framework/Scripts/Game/TBD/Objectives: ["autoLose"]
 JsonLoadContext binds by member name, so an unspelled property is unreadable. Either the reader lost a field, or the schema grew one T-212's reader has not taken up yet.
 ```
 Restored + `touch` → `test result: ok. 2 passed; 0 failed`.
@@ -197,7 +197,7 @@ Baseline was 11484 classes; +8 for the new enum and five structs. Files unchange
 
 **[]** — none. All four commits touch exactly the six owned paths. `TBD_ObjectivesComponent.c` was
 **not touched in either tree**. The 19 gitignored `EnfusionMCP` `.c` files were copied in per the
-brief and are not committed (`apps/mod/.gitignore:28`).
+brief and are not committed (`mod/.gitignore:28`).
 
 ## found_not_fixed
 
@@ -207,7 +207,7 @@ brief and are not committed (`apps/mod/.gitignore:28`).
    `:815` and already passed to `StatusText` at `:824`. **That file is T-946.55's owns this wave**;
    follow-on is one line per tree.
 2. **The board path this slice made per-side has no consumer today.** `grep -rn
-   "BuildBoardForPlayer" --include='*.c' apps/mod/` returns **2 hits, both the definition**
+   "BuildBoardForPlayer" --include='*.c' mod/` returns **2 hits, both the definition**
    (`TBD_ObjectivesComponent.c:738` in each tree) — no caller. Per-side text reaches the seam and the
    load log; it reaches a *player* only once item 1 lands.
 3. **`objectives[]` still does not reach `/compiled`.** `ModMissionDocument` in `flatten.rs` has no

@@ -9,13 +9,13 @@ on:
     paths:
       - "crates/**"
       - "contracts/**"
-      - "apps/mod/**"
+      - "mod/**"
       - ".github/workflows/contracts.yml"
   pull_request:
     paths:
       - "crates/**"
       - "contracts/**"
-      - "apps/mod/**"
+      - "mod/**"
       - ".github/workflows/contracts.yml"
 
 jobs:

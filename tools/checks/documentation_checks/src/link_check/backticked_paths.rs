@@ -17,7 +17,8 @@
 //! run.
 //!
 //! **Invariants:** frozen records are never judged; a span is read as a repository path only when
-//! its first segment is a tracked top-level folder or the retired documentation root; a trailing
+//! its first segment is a tracked top-level folder or a retired top-level folder
+//! ([`repository_layout::RETIRED_TOP_LEVEL_FOLDERS`]: `docs`, `apps`); a trailing
 //! `/` asks for a folder; a failed ignore batch is one "did not run" verdict for every waiting
 //! path, never a pass or a break; every break names the span as written.
 
@@ -29,7 +30,7 @@ use super::git_ignore_rules::IgnoreRules;
 use super::judged_documents::DocumentArea;
 use super::markdown_scan::CodeSpan;
 use super::{BreakRule, DocumentRule, JudgedDocument, RuleContext, RuleFindings};
-use repository_layout::RETIRED_DOCS_ROOT;
+use repository_layout::is_retired_top_level_folder;
 
 /// Why a code span that starts like a repository path is skipped instead of judged.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -276,7 +277,8 @@ impl DocumentRule for BacktickedPaths<'_> {
     ) {
         let top_level = context.tree.children("").map(|root| &root.folders);
         let is_top_level_folder = |first: &str| {
-            first == RETIRED_DOCS_ROOT || top_level.is_some_and(|folders| folders.contains(first))
+            is_retired_top_level_folder(first)
+                || top_level.is_some_and(|folders| folders.contains(first))
         };
         for span in &document.scan.code_spans {
             match read_code_span(&span.text, is_top_level_folder) {

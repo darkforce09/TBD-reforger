@@ -16,7 +16,7 @@ Worktree at dispatch HEAD `9f4a8c7d1`. Defect present before the edit.
 | claim | evidence |
 |---|---|
 | No `TBD_LoadoutPreview.c` in either tree | `test ! -f` both paths → ABSENT |
-| No `TBD_LoadoutPreview.layout` | `ls apps/mod/tbd-framework/UI/layouts/` had only shell, list-row, END, DEBRIEF |
+| No `TBD_LoadoutPreview.layout` | `ls mod/tbd-framework/UI/layouts/` had only shell, list-row, END, DEBRIEF |
 | Lobby lists seats only | `TBD_LobbyScreen.c` had no `LoadoutPreview` / KIT hook |
 
 The lobby still showed slot names, holder, OPEN/HELD/DEAD. A player could not see the kit before taking the seat.
@@ -25,9 +25,9 @@ The lobby still showed slot names, holder, OPEN/HELD/DEAD. A player could not se
 
 | path | why |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LoadoutPreview.c` (+ export twin) | New widget. `Refresh(TBD_MissionSlotStruct, int)` builds up to 13 icon cells from the scalar gear fields; empty fields skipped; missing UIInfo icon → letter glyph. Logs `[TBD][LoadoutPreview] slot=<n> items=<k>`. HUD-local `LAYOUT` ResourceName; `TBD_UILayouts.Create` then `CreateWidgets` fallback. Did **not** edit `TBD_UILayouts.c`. |
-| `apps/mod/tbd-framework/UI/layouts/TBD_LoadoutPreview.layout` (+ export twin) | Right-column frame, `PreviewTitle` / `PreviewEmpty` / `IconGrid` of 13 ListRow-style cells (`Cell0`–`Cell12`). |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c` (+ export twin) | Host preview beside the slot list (`FrameSlot` shrink of `List`); `GetOnHighlight` updates the grid without claiming; slot activate also refreshes. Reads `TBD_MissionLoader.GetSlotById` (local, no new RPC). |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LoadoutPreview.c` (+ export twin) | New widget. `Refresh(TBD_MissionSlotStruct, int)` builds up to 13 icon cells from the scalar gear fields; empty fields skipped; missing UIInfo icon → letter glyph. Logs `[TBD][LoadoutPreview] slot=<n> items=<k>`. HUD-local `LAYOUT` ResourceName; `TBD_UILayouts.Create` then `CreateWidgets` fallback. Did **not** edit `TBD_UILayouts.c`. |
+| `mod/tbd-framework/UI/layouts/TBD_LoadoutPreview.layout` (+ export twin) | Right-column frame, `PreviewTitle` / `PreviewEmpty` / `IconGrid` of 13 ListRow-style cells (`Cell0`–`Cell12`). |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c` (+ export twin) | Host preview beside the slot list (`FrameSlot` shrink of `List`); `GetOnHighlight` updates the grid without claiming; slot activate also refreshes. Reads `TBD_MissionLoader.GetSlotById` (local, no new RPC). |
 
 ## perturbation
 

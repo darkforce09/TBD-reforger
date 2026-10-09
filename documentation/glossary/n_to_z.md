@@ -41,7 +41,7 @@ page goldens that `gate v-suite` holds the built app to. The ballistics oracle i
 Workbench plugin and play-mode component that record the engine's own shell flights, against
 which a ballistics catalog is calibrated.
 
-In code: `tools/enfusion/enfusion_script_index/src/` (the `enf` binary); the lane links in `tools/commands/platform_execution/src/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `tools/browser_testing/browser_gate_suites/src/dom_oracle/` and the goldens in `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/`; `apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
+In code: `tools/enfusion/enfusion_script_index/src/` (the `enf` binary); the lane links in `tools/commands/platform_execution/src/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `tools/browser_testing/browser_gate_suites/src/dom_oracle/` and the goldens in `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/`; `mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
 
 See: [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md), [Oracle lanes](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes), [DOM oracle fixtures](/tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/README.md), [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
 
@@ -60,7 +60,7 @@ The agent session that plans, launches, reviews, integrates and verifies the wor
 never implementing beyond mechanical fixes: in a sub-agent program and in the factory's
 [wave](#wave) alike. In the mod, the round orchestrator `TBD_FrameworkManager`.
 
-In code: `cargo xtask platform wave`; `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`.
+In code: `cargo xtask platform wave`; `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/`.
 
 See: [Sub-agent orchestration](/documentation/runbooks/sub_agent_orchestration.md), [Factory waves](/documentation/runbooks/factory_waves/README.md), [command center](/documentation/glossary/a_to_f.md#command-center).
 
@@ -142,7 +142,7 @@ API records it. Starting one takes the server's next generation and supersedes i
 heartbeats every 15 s carry a strictly rising sequence; a session silent for 60 s expires and its
 server goes offline; ending a session ends the player lives still open in it.
 
-In code: `crates/api/api_server_infrastructure/src/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `crates/api/api_match_telemetry/src/routes.rs`; `crates/api/api_background_workers/src/runtime_session_expiry.rs`; `apps/mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c`.
+In code: `crates/api/api_server_infrastructure/src/services/runtime_sessions.rs` (table `server_runtime_sessions`); `POST /api/v1/game-runtime/sessions` and its `/end` in `game_runtime_sessions.rs` beside it under `handlers/`; the heartbeat route in `crates/api/api_match_telemetry/src/routes.rs`; `crates/api/api_background_workers/src/runtime_session_expiry.rs`; `mod/tbd-framework/Scripts/Game/TBD/API/RuntimeSession/TBD_RuntimeSession.c`.
 
 See: [machine credential](/documentation/glossary/g_to_m.md#machine-credential), [server infrastructure](#server-infrastructure).
 
@@ -153,9 +153,9 @@ damage handling is off on every body, shots and grenades are deleted as they app
 safety is on. A countdown, 300 s unless the mission or an administrator sets 5 to 3600, runs it to
 `LIVE`; the same shield already holds in the lobby and the briefing. The code spells it safestart.
 
-In code: `TBD_SafestartManager` in `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/Safestart/TBD_SafestartManager.c`; `SAFE_START` in `TBD_EGameStage` beside it; the mission's `flow.safeStartSeconds`.
+In code: `TBD_SafestartManager` in `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/Safestart/TBD_SafestartManager.c`; `SAFE_START` in `TBD_EGameStage` beside it; the mission's `flow.safeStartSeconds`.
 
-See: [Round stages and safe start](/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/README.md), [Safe start HUD](/documentation/apps/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md).
+See: [Round stages and safe start](/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/README.md), [Safe start HUD](/documentation/mod/tbd-framework/UI/safe_start_hud/safe_start_hud_specification.md).
 
 ### scenario
 
@@ -261,7 +261,7 @@ set in the `visual_references/` folder of the feature it depicts. A set is named
 `<set>.png` and, when the export carries tokens, `design_tokens.md`. The built interface wins; the
 [feature doc](/documentation/glossary/a_to_f.md#feature-doc)'s Design section says how it differs.
 
-In code: none; the built styles a set is compared with are `crates/frontend/shell/frontend_application/style/aegis.css` on the website and `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
+In code: none; the built styles a set is compared with are `crates/frontend/shell/frontend_application/style/aegis.css` on the website and `mod/tbd-framework/Scripts/Game/TBD/UI/Core/Theme/TBD_UITheme.c` in the mod.
 
 See: [Design system](/documentation/design_system/README.md), [Stitch token exports](/documentation/design_system/token_exports/README.md).
 
@@ -326,6 +326,6 @@ Enfusion's editor application, where worlds, prefabs and mission headers are edi
 run: the `tbd-export` plugins export the terrain, object and registry data the platform ingests,
 and the `tbd-emcp` handlers let the Enfusion MCP tools drive Workbench from outside.
 
-In code: `apps/mod/tbd-export/Scripts/WorkbenchGame/`; `tools/developer_tools/src/bin/mcpd.rs`.
+In code: `mod/tbd-export/Scripts/WorkbenchGame/`; `tools/developer_tools/src/bin/mcpd.rs`.
 
 See: [Enfusion](/documentation/glossary/a_to_f.md#enfusion), [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md).

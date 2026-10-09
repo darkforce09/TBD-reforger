@@ -8,8 +8,8 @@
 //! **Signals & state:** none; constants and pure functions.
 //! **Invariants:** the judged set is every member that declares `[package.metadata.layout]` plus
 //! every member under `crates/<category…>/<name>` or `tools/<category>/<name>`; the only members
-//! outside it are the [`TOOL_BINARY_PATHS`], and any other — a crate under `apps/` included — is a
-//! finding of rule 2; the class of a category is decided by its folder path alone, and an unknown
+//! outside it are the [`TOOL_BINARY_PATHS`], and any other — a crate in a top-level folder the
+//! layout does not name, `mod/` included — is a finding of rule 2; the class of a category is decided by its folder path alone, and an unknown
 //! category has no class (a finding, never a silent default). Every arm of the category matrix
 //! lists the classes it allows, so a new class is reachable from no category until an arm names
 //! it.

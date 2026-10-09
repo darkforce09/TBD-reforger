@@ -46,7 +46,7 @@ usage_fail::run ─ parse flags (a token acts where it stands: `--help` exits 0 
 - `render_server_json` starts from `tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json`
   and sets the bind and public address and ports, the A2S port, name, `scenarioId`, `maxPlayers`,
   `visible`, `admins` and one `TBD_Framework` mod entry whose id is the GUID read from
-  `apps/mod/tbd-framework/addon.gproj`.
+  `mod/tbd-framework/addon.gproj`.
 - With `--mission`, `platform_deployment` logs in through the
   [dev login](/documentation/glossary/a_to_f.md#dev-login) as an administrator. It takes the mission's
   approved [artifact](/documentation/glossary/a_to_f.md#artifact), submitting and approving the current

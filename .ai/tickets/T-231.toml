@@ -50,7 +50,7 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c"]
+owns = ["mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c"]
 
 [scope]
 domain = "repo"

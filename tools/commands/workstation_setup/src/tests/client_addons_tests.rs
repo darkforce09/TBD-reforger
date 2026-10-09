@@ -6,6 +6,7 @@
 use super::*;
 use crate::error::ResultExt;
 use process_runner::PathGuard;
+use repository_layout::workspace_folders::ENFUSION_MOD_DIR;
 use std::fs;
 use std::io;
 use std::os::unix::fs as unix_fs;
@@ -50,7 +51,7 @@ fn clean_tree_symlinks_and_prints() {
     assert!(meta.file_type().is_symlink());
     assert_eq!(
         fs::read_link(&link).unwrap(),
-        root.join("apps/mod/tbd-framework")
+        root.join(FRAMEWORK_ADDON_DIR)
     );
 }
 
@@ -207,10 +208,14 @@ fn throwaway_root(tag: &str, with_framework: bool) -> PathBuf {
     let root = tempfile_dir(tag);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}\n").unwrap();
-    fs::create_dir_all(root.join("apps/mod")).unwrap();
+    fs::create_dir_all(root.join(ENFUSION_MOD_DIR)).unwrap();
     if with_framework {
-        fs::create_dir_all(root.join("apps/mod/tbd-framework")).unwrap();
-        fs::write(root.join("apps/mod/tbd-framework/addon.gproj"), "gproj\n").unwrap();
+        fs::create_dir_all(root.join(FRAMEWORK_ADDON_DIR)).unwrap();
+        fs::write(
+            root.join(FRAMEWORK_ADDON_DIR).join("addon.gproj"),
+            "gproj\n",
+        )
+        .unwrap();
     }
     root
 }

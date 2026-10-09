@@ -16,9 +16,9 @@ First action of the run, before any edit. Code commit `7a73689fdfed5f2aa29d9fc1b
 | claim | evidence |
 |---|---|
 | Component | `CharacterStaminaComponent` extends `BaseStaminaComponent`. Game wrapper `SCR_CharacterStaminaComponent` is an empty subclass. |
-| Getter | `BaseStaminaComponent.GetStamina()` — `apps/mod/vanilla_reference/Scripts/Game/generated/Base/BaseStaminaComponent.c:14` (`proto external float GetStamina();`). No setter in that generated class. |
-| Drain restore, not a toggle | CRF override calls `AddStamina(staminaToRestore)` inside `OnStaminaDrain` (`apps/mod/crf_framework/Scripts/Game/Systems/VanillaOverrides/Character/CRF_SCR_CharacterStaminaComponent.c:20`). That compensates drain during safestart; it is not EnableStamina. |
-| Enable toggle | `rg EnableStamina\|SetStamina\|DisableStamina\|SetUnlimitedStamina` over `apps/mod/vanilla_reference` `.c` files: **zero** enable/disable APIs. `StaminaSystem` generated class is empty. |
+| Getter | `BaseStaminaComponent.GetStamina()` — `mod/vanilla_reference/Scripts/Game/generated/Base/BaseStaminaComponent.c:14` (`proto external float GetStamina();`). No setter in that generated class. |
+| Drain restore, not a toggle | CRF override calls `AddStamina(staminaToRestore)` inside `OnStaminaDrain` (`mod/crf_framework/Scripts/Game/Systems/VanillaOverrides/Character/CRF_SCR_CharacterStaminaComponent.c:20`). That compensates drain during safestart; it is not EnableStamina. |
+| Enable toggle | `rg EnableStamina\|SetStamina\|DisableStamina\|SetUnlimitedStamina` over `mod/vanilla_reference` `.c` files: **zero** enable/disable APIs. `StaminaSystem` generated class is empty. |
 
 Therefore stamina is **not applied**. Authored `stamina: true` logs once per apply pass (`LogStaminaSkip`) and is recorded in found_not_fixed. No no-op setter was invented.
 
@@ -30,8 +30,8 @@ Worktree branched from main at `dbb8d4998` (T-942 twin widen). Proved before wri
 
 | claim | path:line | command |
 |---|---|---|
-| `TBD_EntityState.c` does not exist | (file absent both trees) | `test ! -f apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c` → missing; same for tbd-export |
-| No `allowDamage` / `showModel` / `TBD_EntityState` / `SetHealthScaled` reader in framework TBD scripts | 0 files | python walk of `apps/mod/tbd-framework/Scripts/**/*.c` |
+| `TBD_EntityState.c` does not exist | (file absent both trees) | `test ! -f mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c` → missing; same for tbd-export |
+| No `allowDamage` / `showModel` / `TBD_EntityState` / `SetHealthScaled` reader in framework TBD scripts | 0 files | python walk of `mod/tbd-framework/Scripts/**/*.c` |
 | `health` hit is English, not OBJ-HEALTH | `TBD_SpawnManager.c` comment "perfectly healthy dedicated server" | python context around first `health` |
 | `TBD_MissionEntityStruct` has no health/allowDamage/showModel/size/stamina | `TBD_MissionLoader.c:269-286` | fields are alias/uid/x/z/headingDeg/faction only |
 | Spawn path applies vehicle state, not entity state | `TBD_SpawnManager.c:1031` | `TBD_VehicleState.ApplySpawned();` then `if (built <= 0) return;` — no EntityState |
@@ -42,12 +42,12 @@ Not already fixed. Implemented.
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c` | NEW (350 lines). Wire structs 38–95. Twin index 100–138. `ApplySpawned` 144. `Apply` 207. Second parse `GetRawJson` 230. `SetHealthScaled` 303. `EnableDamageHandling(true)` 316. `SetFlags(EntityFlags.VISIBLE)` 322. `SetScale` 334. Stamina skip-log 343. | T-680-style second `JsonLoadContext` pass over `entities[]` health/allowDamage/showModel/size/stamina. Apply at spawn. Unset numerics are `ABSENT = -1000000`. Bools apply only when bound true. Stamina logged, not applied. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EntityState.c` | NEW, byte-identical ASCII twin | T-946.26 mandatory twin. `mirror_lockstep` walks export only. `non_ascii=0`. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 663 `ResetIndex`; 724 `RecordSpawn` | Record each spawned `entities[]` body so Apply can join on uid / alias\|x\|z without an AABB guess. Reset on the same reload boundary as the vehicle roster. Struct **not** grown. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 663, 724 | Same call sites, ASCII comments. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1032–1034 | After `TBD_VehicleState.ApplySpawned` (and still before `built <= 0` return) `TBD_EntityState.ApplySpawned();` so an entity-only mission still applies. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1032–1034 | Same call site, ASCII comments. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c` | NEW (350 lines). Wire structs 38–95. Twin index 100–138. `ApplySpawned` 144. `Apply` 207. Second parse `GetRawJson` 230. `SetHealthScaled` 303. `EnableDamageHandling(true)` 316. `SetFlags(EntityFlags.VISIBLE)` 322. `SetScale` 334. Stamina skip-log 343. | T-680-style second `JsonLoadContext` pass over `entities[]` health/allowDamage/showModel/size/stamina. Apply at spawn. Unset numerics are `ABSENT = -1000000`. Bools apply only when bound true. Stamina logged, not applied. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EntityState.c` | NEW, byte-identical ASCII twin | T-946.26 mandatory twin. `mirror_lockstep` walks export only. `non_ascii=0`. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 663 `ResetIndex`; 724 `RecordSpawn` | Record each spawned `entities[]` body so Apply can join on uid / alias\|x\|z without an AABB guess. Reset on the same reload boundary as the vehicle roster. Struct **not** grown. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 663, 724 | Same call sites, ASCII comments. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1032–1034 | After `TBD_VehicleState.ApplySpawned` (and still before `built <= 0` return) `TBD_EntityState.ApplySpawned();` so an entity-only mission still applies. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1032–1034 | Same call site, ASCII comments. |
 
 No `packages/tbd-schema` edits. No `flatten.rs`. No `schema_gates.rs`. No `TBD_VehicleState.c`. No `TBD_TaskStateMachine.c`. No editor UI.
 
@@ -185,9 +185,9 @@ EnfusionMCP scripts were already present untracked (T-946.27); not committed.
 
 | path | exists |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c` | yes (NEW, 12340 bytes, ASCII) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EntityState.c` | yes (NEW, 12340 bytes, ASCII, `cmp` identical to framework) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c` | yes (NEW, 12340 bytes, ASCII) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EntityState.c` | yes (NEW, 12340 bytes, ASCII, `cmp` identical to framework) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited) |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited) |

@@ -64,10 +64,10 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
+    "mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
 ]
 
 [scope]

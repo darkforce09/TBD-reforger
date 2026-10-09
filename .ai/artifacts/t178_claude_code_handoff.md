@@ -1,6 +1,6 @@
 # T-178 — Handoff (fresh chat / Grok OK)
 
-**Start on `main` after T-177 @ `e97a01c6`.** Do not touch `apps/mod/` or docs/registry.
+**Start on `main` after T-177 @ `e97a01c6`.** Do not touch `mod/` or docs/registry.
 
 **Operator run note:** Claude Code tokens exhausted — run this ticket in a **new Cursor Agent chat** on this repo with **Grok 4.5**, paste the spec §prompt. If the Cursor code gate asks: explicitly allow code writes for this ticket.
 

@@ -63,8 +63,8 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
 [scope]

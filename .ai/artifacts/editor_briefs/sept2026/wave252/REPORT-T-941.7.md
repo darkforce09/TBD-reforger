@@ -15,7 +15,7 @@ Worktree tracked `b59b99116` at dispatch. Defect still present before the edit.
 
 | claim | path:line | command |
 |---|---|---|
-| `GetBackbone()` null refuses to tune | `apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c:140-145` (export twin identical code) | `git show HEAD:apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c \| sed -n '140,145p'` |
+| `GetBackbone()` null refuses to tune | `mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c:140-145` (export twin identical code) | `git show HEAD:mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c \| sed -n '140,145p'` |
 | Boot warning does not name fallback or say radios still tune | `TBD_RadioComponent.c:125-136` | `git show HEAD:…/TBD_RadioComponent.c \| sed -n '125,136p'` |
 
 Quoted (framework, pre-edit):
@@ -40,10 +40,10 @@ Quoted (framework, pre-edit):
 
 | path | what |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` | `TBD_RadioFallbackTable` + `FallbackChannelTable` (radioPlan copy-through, else defaults 42000/41000 kHz when backbone missing). `TunePlayer` no longer early-returns `NO_BACKBONE`; it still `SetFrequency` + read-back. `WorldFileName` / `FallbackSourceName` for the boot warning. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` | Export twin; ASCII comments/string dashes preserved. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` | Once-per-world warning (`s_bBackboneReported`, cleared in `OnDelete`) names world, `RadioManagerEntity`, and fallback (`radioPlan` \| `defaults`). |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` | Export twin. |
+| `mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` | `TBD_RadioFallbackTable` + `FallbackChannelTable` (radioPlan copy-through, else defaults 42000/41000 kHz when backbone missing). `TunePlayer` no longer early-returns `NO_BACKBONE`; it still `SetFrequency` + read-back. `WorldFileName` / `FallbackSourceName` for the boot warning. |
+| `mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` | Export twin; ASCII comments/string dashes preserved. |
+| `mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` | Once-per-world warning (`s_bBackboneReported`, cleared in `OnDelete`) names world, `RadioManagerEntity`, and fallback (`radioPlan` \| `defaults`). |
+| `mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` | Export twin. |
 
 No `.ent` edit (operator deferral 2026-09-04, quoted).
 
@@ -163,7 +163,7 @@ Operator checklist (deferred world edit, quoted 2026-09-04):
 
 ## twins_confirmed
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` — on disk
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioTuner.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Radio/TBD_RadioComponent.c` — on disk

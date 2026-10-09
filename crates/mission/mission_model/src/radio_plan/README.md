@@ -32,7 +32,7 @@ truncates, so a plan that passes is the plan the game runs.
 document-owned ones and hands the parsed `AuthoredRadioPlan` to the compiler. The compiler writes
 those nets into the compiled plan and, when no valid plan is authored, derives one from the
 [ORBAT](/documentation/glossary/n_to_z.md#orbat). In the game,
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/TBD_RadioPlan.c` loads the nets.
+`mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/TBD_RadioPlan.c` loads the nets.
 
 ## Boundaries
 

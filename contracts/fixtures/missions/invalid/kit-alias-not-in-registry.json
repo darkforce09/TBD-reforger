@@ -1,5 +1,5 @@
 {
-  "$comment": "T-181.36 negative golden — the regression that shipped. slots[0].kit is a well-formed kit: alias that no entry in apps/mod/tbd-framework/Data/registry.json defines. mission.schema.json cannot catch this and must not try: kit aliases come from a generated, extensible registry, so a closed enum in the contract would go stale the moment content is added. The registry cross-reference gate catches it instead. This document is deliberately schema-VALID — if the schema ever started rejecting it the gate says so, because that would mean somebody closed the kit vocabulary. See README.md for the wrapper format.",
+  "$comment": "T-181.36 negative golden — the regression that shipped. slots[0].kit is a well-formed kit: alias that no entry in mod/tbd-framework/Data/registry.json defines. mission.schema.json cannot catch this and must not try: kit aliases come from a generated, extensible registry, so a closed enum in the contract would go stale the moment content is added. The registry cross-reference gate catches it instead. This document is deliberately schema-VALID — if the schema ever started rejecting it the gate says so, because that would mean somebody closed the kit vocabulary. See README.md for the wrapper format.",
   "mustFail": {
     "gate": "registry",
     "at": "/slots/0/kit",

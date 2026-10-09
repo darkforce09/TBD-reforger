@@ -11,7 +11,7 @@ AI agents read it before exporting a terrain again or adding a new one.
 ## Where it lives
 
 - Code: the Workbench export plugins in
-  [`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/README.md);
+  [`mod/tbd-export/Scripts/WorkbenchGame/MapExport/`](/mod/tbd-export/Scripts/WorkbenchGame/MapExport/README.md);
   the world export pipeline in
   [`tools/map_assets/world_export_pipeline/src/`](/tools/map_assets/world_export_pipeline/src/README.md),
   the raster pipeline in

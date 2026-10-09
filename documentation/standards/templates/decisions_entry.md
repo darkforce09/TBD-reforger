@@ -46,7 +46,7 @@ value and for the hillshade layer. Workbench's own height-map export did not wor
 Everon terrain, so the elevation had to come from somewhere the exporter could reach.
 
 **Decision:** The tbd-export Workbench plugin `TBD_MapExportDEM`
-(`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/TBD_MapExportDEM.c`) samples
+(`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/TBD_MapExportDEM.c`) samples
 `WorldEditorAPI.GetTerrainSurfaceY` across the world grid and encodes each height as a linear
 16-bit value between the terrain's lowest and highest points. Everon's committed result is a
 6400 × 6400 16-bit PNG, `assets/terrains/everon/dem/everon-dem-16bit.png`, and its manifest,

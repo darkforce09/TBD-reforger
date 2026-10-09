@@ -69,7 +69,7 @@ does not depend on it** — one perspective screenshot cannot become the 12800²
 
 ## Files
 
-- **New:** `apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_EngineOrthoExportPlugin.c` (validated via `mod_validate` — 0 errors on this file; the 20 report errors are pre-existing `EnfusionMCP/**` addon noise), this log, `t090_1_2_4_engine_render_spike.json`, `t090_1_2_4_ab_crops/{field,roof}_sap.png`.
+- **New:** `mod/tbd-framework/Scripts/WorkbenchGame/TBD_EngineOrthoExportPlugin.c` (validated via `mod_validate` — 0 errors on this file; the 20 report errors are pre-existing `EnfusionMCP/**` addon noise), this log, `t090_1_2_4_engine_render_spike.json`, `t090_1_2_4_ab_crops/{field,roof}_sap.png`.
 - **Untouched (fallback intact):** SAP stitch/decode scripts, T-090.1.2.2 apron-bridge, tile pyramid, `docs/**`, registry.
 
 ## Recommendation

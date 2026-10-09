@@ -58,8 +58,8 @@ owns = [
     "crates/map-engine-core/src/mission/weather.rs",
     "crates/map-engine-core/src/mission/audio.rs",
     "crates/map-engine-core/src/mission/tasks.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c",
+    "mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c",
 ]
 
 [scope]

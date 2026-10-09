@@ -15,8 +15,8 @@ Worktree tracked main at dispatch (`b59b99116` T-942 wave 252 briefs). Defect st
 
 | claim | path:line | command |
 |---|---|---|
-| `super.OnNewMessage` runs before the link handler | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c:32` then `:45` (export twin identical code, ASCII dashes) | `sed -n '30,46p' apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` |
-| IdentityLink entry is `TryHandleChat` | `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c:162` | `rg -n 'static bool TryHandleChat'` |
+| `super.OnNewMessage` runs before the link handler | `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c:32` then `:45` (export twin identical code, ASCII dashes) | `sed -n '30,46p' mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` |
+| IdentityLink entry is `TryHandleChat` | `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c:162` | `rg -n 'static bool TryHandleChat'` |
 | Header admitted the leak | same file `:48-55` | `sed -n '47,56p'` |
 
 Quoted (framework, pre-edit):
@@ -36,16 +36,16 @@ Quoted (framework, pre-edit):
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` | 32-40 | T-941.6 consume-before-broadcast: `TryConsumeBeforeBroadcast` runs **before** `super.OnNewMessage`. TRUE → return (no super, no public echo). Authority flag is `RplSession.Mode() != RplMode.Client`. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` | 32-40 | T-941.6 consume-before-broadcast: `TryConsumeBeforeBroadcast` runs **before** `super.OnNewMessage`. TRUE → return (no super, no public echo). Authority flag is `RplSession.Mode() != RplMode.Client`. |
 | same | (removed :45) | Post-super `TryHandleChat` deleted so the link path cannot double-handle or race the admin gate. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` | same | Export twin; ASCII comments/string dashes preserved. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` | 47-56 | Header rewritten: consume-before-super, private replies, no filter beyond `#tbd link`. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` | same | Export twin; ASCII comments/string dashes preserved. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` | 47-56 | Header rewritten: consume-before-super, private replies, no filter beyond `#tbd link`. |
 | same | 149-172 | `TryConsumeBeforeBroadcast` + `IsLinkCommand` (prefix only; `#tbd Link` folded). Authority calls `TryHandleChat`; every peer still returns TRUE so super is skipped. |
 | same | 241 | Usage no longer claims public visibility. |
 | same | 324 | Synthetic-identity refusal no longer says the code was visible in chat. |
 | same | 650 | `NewCodeAdvice`: "not consumed", not "typed in public chat". |
 | same | 757, 767 | Unchanged: `SendPrivateMessage` for sync and async replies. Code is POSTed in `BuildPayload`, never put in a chat string. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` | same | Export twin; ASCII comments/string dashes preserved. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` | same | Export twin; ASCII comments/string dashes preserved. |
 
 Bare tokens without the `#tbd link` prefix remain ordinary public chat.
 
@@ -150,7 +150,7 @@ Ticket/plan perturbation wording was "misspell `SendPrivateMessage`". Brief word
 
 ## twins_confirmed
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` — on disk
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_AdminCommands.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` — on disk

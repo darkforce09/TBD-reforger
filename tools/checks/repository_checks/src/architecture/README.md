@@ -16,7 +16,7 @@ tools/checks/repository_checks/src/architecture/
 ├── route_tags.rs               the route-tag gate's paths, patterns, sentinels and report text
 ├── tests/                      unit tests for the gates
 ├── wave_gate_sources.rs        the wave gate facade linkage check and the source spellings its audits share
-├── workspace_law_locations.rs  the manifest sweep roots, the Tailwind stylesheet and the frontend-layering configuration the laws read
+├── workspace_law_locations.rs  the application packages, the Tailwind stylesheet and the frontend-layering configuration the laws read
 └── workspace_laws.rs           the five workspace-law gates: print each library report
 ```
 
@@ -38,8 +38,9 @@ Each of the five verbs prints the report of its law in
 [`tools/foundation/repository_laws/src/workspace_laws/`](/tools/foundation/repository_laws/src/workspace_laws/README.md)
 line for line and exits with its code. The paths and names that move with the tree are the
 constants of `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`:
-the manifest sweep roots and the application packages (`CRATE_TIERS`: `APPLICATION_PACKAGES` lists
-the five applications no member may depend on, each a member), the stylesheet, and the
+the application packages (`CRATE_TIERS`: `APPLICATION_PACKAGES` lists the five applications no
+member may depend on, each a member; the crate-tier law's stray-manifest sweep reads the whole
+checkout and takes no folder from here), the stylesheet, and the
 frontend-layering configuration `FRONTEND_LAYERS`. That configuration has two halves:
 
 - the in-crate half, `APP_LAYERS`: the layer table of `crates/frontend/shell/frontend_application`, which holds no module

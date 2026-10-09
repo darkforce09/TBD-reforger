@@ -15,13 +15,13 @@ outside this repository; the framework's side of the contract is its hook points
   one sample per message type in
   [`contracts/fixtures/bridge_samples/`](/contracts/fixtures/bridge_samples/README.md), and
   the hook class `TBD_RadioBridgeStub` in
-  [`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/`](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md).
+  [`mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/`](/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md).
 - Entry: the bridge's `hello` message; on the framework side, the stage-change call in
   `TBD_FrameworkManager.SetStage`
-  (`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c`).
+  (`mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c`).
 - Related features: the framework's own radio tuning, which reads the same `radioPlan.nets[]`
-  and needs no bridge (the [Radio README](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md));
-  the [mod design](/documentation/apps/mod/tbd-framework/mod_design.md), which rules out workshop
+  and needs no bridge (the [Radio README](/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md));
+  the [mod design](/documentation/mod/tbd-framework/mod_design.md), which rules out workshop
   dependencies.
 
 ## Behaviour
@@ -128,8 +128,8 @@ schema file itself.
 ### Known discrepancies
 
 - The hook header says `TBD_FrameworkManager.c:250` calls `OnStageChanged`
-  (`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/TBD_RadioBridgeStub.c:21`) — the call
-  is at `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:1200`.
+  (`mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/TBD_RadioBridgeStub.c:21`) — the call
+  is at `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:1200`.
 - The schema's description says the transport is "decided in Phase 0.2"
   (`contracts/definitions/bridge-messages.schema.json:5`) — no transport is chosen and no
   phase plan exists.

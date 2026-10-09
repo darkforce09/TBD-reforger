@@ -42,7 +42,7 @@ register.rs ──▶ fingerprint.rs (source, configuration) ──▶ [--execut
    timeout and case minimum, a success marker and a compiling case pattern for every check, a
    property list exactly on `property` checks, and every check named by some requirement.
 2. `fingerprint.rs` hashes the source: every tracked or untracked, not ignored file
-   (`git ls-files --cached --others --exclude-standard`) under `apps/`, `crates/`,
+   (`git ls-files --cached --others --exclude-standard`) under `mod/`, `crates/`,
    `tools/`, `contracts/`, `.cargo/`, `.github/` and the evidence folder with a source extension
    (Markdown included), plus a fixed list of root files (the workspace manifest and lock, the
    toolchain, format and lint settings, `AGENTS.md`, `.editorconfig`, `.gitignore`). A symlink

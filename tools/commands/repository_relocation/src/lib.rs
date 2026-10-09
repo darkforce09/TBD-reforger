@@ -40,41 +40,5 @@ mod text_tokens;
 pub use relocation_modes::{apply, dry_run, verify};
 
 #[cfg(test)]
-#[path = "tests/fixture_repository.rs"]
-mod fixture_repository;
-
-#[cfg(test)]
-#[path = "tests/building_blocks.rs"]
-mod building_blocks;
-
-#[cfg(test)]
-#[path = "tests/relocation_scenarios.rs"]
-mod relocation_scenarios;
-
-#[cfg(test)]
-#[path = "tests/rust_path_scenarios.rs"]
-mod rust_path_scenarios;
-
-#[cfg(test)]
-#[path = "tests/unusual_spelling_scenarios.rs"]
-mod unusual_spelling_scenarios;
-
-#[cfg(test)]
-#[path = "tests/move_placement_scenarios.rs"]
-mod move_placement_scenarios;
-
-#[cfg(test)]
-#[path = "tests/ambiguous_literal_scenarios.rs"]
-mod ambiguous_literal_scenarios;
-
-#[cfg(test)]
-#[path = "tests/manifest_chronology_scenarios.rs"]
-mod manifest_chronology_scenarios;
-
-#[cfg(test)]
-#[path = "tests/crate_anchor_scenarios.rs"]
-mod crate_anchor_scenarios;
-
-#[cfg(test)]
-#[path = "tests/single_pass_verification_scenarios.rs"]
-mod single_pass_verification_scenarios;
+#[path = "tests/mod.rs"]
+mod tests;

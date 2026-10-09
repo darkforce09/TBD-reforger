@@ -43,8 +43,8 @@ completed_at = "2026-09-07T00:57:44Z"
 estimated = ["tokens"]
 owns = [
     "apps/website/api/src/handlers/telemetry/telemetry.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
+    "mod/tbd-export/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
     "apps/website/api/tests/deployments_combat.rs",
 ]
 

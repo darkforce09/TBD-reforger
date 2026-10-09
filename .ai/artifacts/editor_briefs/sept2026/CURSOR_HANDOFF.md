@@ -21,14 +21,14 @@ renumber anything to reconcile them; the ledger is right.
 
 ## 2. THE ENFUSION GATE ONLY BECAME REAL AT WAVE 242 — this is the biggest change
 Before T-946.23, `cargo xtask mod compile` compiled **tbd-EXPORT's** copy of all 139 shared scripts and
-never read `apps/mod/tbd-framework`, the only tree the shipping server loads. Every Enfusion slice this
+never read `mod/tbd-framework`, the only tree the shipping server loads. Every Enfusion slice this
 factory ran before wave 242 was gated over code that does not ship.
 
 Now: addon order is `TBD_Export,TBD_Framework` (framework last = framework wins = framework is what
 compiles), and the export mirrors are held by `mirror_lockstep` (`xtask/src/gate_mod_compile.rs:641-711`).
 
 **What this means for every slice that touches a `.c` file:**
-- Edit the SAME relative path in **both** `apps/mod/tbd-framework/` and `apps/mod/tbd-export/`.
+- Edit the SAME relative path in **both** `mod/tbd-framework/` and `mod/tbd-export/`.
 - The two copies must match after comments are stripped, whitespace collapsed, and 23 `ASCII_FOLD`
   punctuation substitutions applied. **Code and string-literal contents must match exactly** — a
   differing resource GUID inside quotes fails, deliberately.

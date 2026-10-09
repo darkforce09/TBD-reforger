@@ -24,7 +24,7 @@ before booking the second player.
    cargo xtask setup client-addons
    ```
 
-   Expected: `apps/mod/tbd-framework/` linked into `~/.local/share/tbd-server-addons/` and the
+   Expected: `mod/tbd-framework/` linked into `~/.local/share/tbd-server-addons/` and the
    Steam launch options to paste (`-addonsDir "<that folder>" -addons B2C3D4E5F6A78901`); its
    last line points at the staging host of `TBD_SSH_HOST`, not at the playtest server, so join the
    address the playtest server prints instead.
@@ -52,7 +52,7 @@ is never a threshold.
 ## The limitations
 
 - **The pre-game screens render mock data.** The lobby, briefing, mission selector and players
-  screens read catalogs built from `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`, because no
+  screens read catalogs built from `mod/tbd-framework/Scripts/Game/TBD/UI/Mock/`, because no
   script calls their `Set()`; the roster wire in `Session/Lobby/TBD_LobbyClient.c` is complete on
   both ends, but nothing calls its `Request`, `Claim`, `Release` or `Deploy`. A lobby click
   changes only the local copy, so the server-side claim, contention and release checks and the
@@ -120,12 +120,12 @@ is never a threshold.
 
 ## Related
 
-- [Lobby specification](/documentation/apps/mod/tbd-framework/UI/lobby/lobby_specification.md) and
-  [briefing specification](/documentation/apps/mod/tbd-framework/UI/briefing/briefing_specification.md)
+- [Lobby specification](/documentation/mod/tbd-framework/UI/lobby/lobby_specification.md) and
+  [briefing specification](/documentation/mod/tbd-framework/UI/briefing/briefing_specification.md)
   — the mock catalogs, screen by screen.
 - [Client join and mod updates](/documentation/runbooks/game_server_staging/client_join_and_mod_updates.md)
   — the Workshop copy, the client addon link and the publish.
-- [Radio](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md) — the tuner and its
+- [Radio](/mod/tbd-framework/Scripts/Game/TBD/Systems/Radio/README.md) — the tuner and its
   fallback channel table.
 - [Event mod program](/documentation/tickets/specs/t181_event_mod_program.md) — the frozen
   specification that records the reconnect, id-recycling and controller-coexistence findings.

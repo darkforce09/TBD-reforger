@@ -39,8 +39,8 @@ Those tests asserted `environment.spawnModules` is **not** copied onto the paylo
 | `crates/frontend/shell/frontend_application/src/editor/panels/spawn_modules.rs` | Undoable module list (kind, faction, template, x/z XOR zone, count, interval, maxAlive, trigger). |
 | `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | Register `spawn_modules`. |
 | `crates/frontend/shell/frontend_application/src/editor/panels/settings_modal.rs` | Mount `{spawn_modules_panel(ctrl)}` + Class-R source pin. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` | Server waves on interval/trigger up to maxAlive; garrison once; cleanup on END. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` | Export twin (byte-identical). |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` | Server waves on interval/trigger up to maxAlive; garrison once; cleanup on END. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` | Export twin (byte-identical). |
 
 ## perturbation
 
@@ -154,5 +154,5 @@ In-game (gate does not stand in for this):
 
 ## twins_confirmed
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` — on disk (`cmp` identical)
+- `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_DynamicSpawner.c` — on disk (`cmp` identical)

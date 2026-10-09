@@ -43,7 +43,7 @@ Both commands also read `game.scenarioId` from the profile to name the mission h
 ## Boundaries
 
 - Depends on: the Arma Reforger dedicated server's config format, and
-  `apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf`, the mission header `scenarioId` names.
+  `mod/tbd-framework/Missions/TBD_Dev_POC.conf`, the mission header `scenarioId` names.
 - Used by: `cargo xtask mod world-boot` and `cargo xtask mod playtest`, through
   `DEV_SERVER_PROFILE` in `tools/foundation/repository_layout/src/tool_inputs.rs`
   (`tools/commands/mod_operations/src/world_boot/execution.rs`,

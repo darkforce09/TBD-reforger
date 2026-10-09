@@ -43,8 +43,8 @@ heading = slot.headingDeg
 |------|------|
 | `packages/tbd-schema/schema/mission.schema.json` | Optional `y`, 1.2 bump |
 | `packages/tbd-schema/golden-missions/*.json` | Must still validate without `y` |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` | Parse `y` |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | Height + yaw policy |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c` | Parse `y` |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | Height + yaw policy |
 | `.ai/artifacts/t092_1_verify_log.md` | M1–M4 + S1–S5 table |
 
 ### Verify (.1)
@@ -82,7 +82,7 @@ cd apps/website && go build ./...
 | `crates/frontend/shell/frontend_application/src/features/mission-creator/compiler/compile.ts` | Flatten hook |
 | `apps/website/internal/handlers/missions.go` (or new) | `/compiled` handler |
 | `apps/website/internal/handlers/handlers.go` | Route registration |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | API path fix |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | API path fix |
 | `packages/tbd-schema/scripts/flatten-orbat-slots.mjs` | Id naming reference |
 | `.ai/artifacts/t092_2_verify_log.md` | S1–S6 + API smoke |
 

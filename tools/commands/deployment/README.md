@@ -129,7 +129,8 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 ## Boundaries
 
 - Depends on: `database_operations` (`deploy db`), `deploy_settings`, `process_runner`,
-  `repository_layout`, `verification_core`, `newtype_ids`, `clap`, `regex`, `serde_json`,
+  `repository_layout` (the shared locations; the addon folders and folder names from its
+  `enfusion_mod_folders`), `verification_core`, `newtype_ids`, `clap`, `regex`, `serde_json`,
   `thiserror`; ssh, sshpass and rsync on the development machine; on the host, cargo, trunk,
   docker or podman compose, systemd user units and the dedicated server.
 - Used by: the `deploy`, `verify` and `ci` groups of `xtask`, and the `staging_procedures` and

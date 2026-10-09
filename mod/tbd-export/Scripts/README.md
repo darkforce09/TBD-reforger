@@ -1,0 +1,56 @@
+# Export addon scripts
+
+The export addon's [EnfScript](/documentation/glossary/a_to_f.md#enfscript), in the two modules
+[Enfusion](/documentation/glossary/a_to_f.md#enfusion) compiles separately: the game module, which
+holds the runtime road network export and the ballistics oracle's simulation run, and the
+[Workbench](/documentation/glossary/n_to_z.md#workbench) module, which holds every exporter that
+runs inside the editor.
+
+## Contents
+
+```text
+mod/tbd-export/Scripts/
+├── Game/           the game module: the runtime road network exporter and the ballistics oracle simulation run
+└── WorkbenchGame/  the Workbench module: map, equipment and vehicle, item registry and ballistics oracle exporters
+```
+
+## How it works
+
+Enfusion compiles `Game/` into the game, a server and Workbench's play mode, and `WorkbenchGame/`
+into Workbench alone. The road network exporter and the ballistics oracle's simulation run are the
+exports that need a running world: the export game mode prefab carries their components, and they
+write once the export [mission header](/documentation/glossary/g_to_m.md#mission-header) is
+playing; the oracle's first half is a Workbench menu entry that hands its generation id to the
+second. Every other exporter
+reads the loaded world, prefabs and configs from inside the editor and runs from a Workbench menu
+entry or a Net API call. Both modules write to the Workbench profile, mostly under
+`$profile:TBD_Export/`.
+
+## Authority
+
+- Server: the road export and the ballistics oracle simulation run in `Game/`; each returns
+  without running on a client.
+- Client: nothing.
+- Owner: nothing.
+- RPCs: none.
+- Replicated properties: none.
+- Workbench: everything in `WorkbenchGame/`, which runs in the editor only.
+
+## Boundaries
+
+- Depends on: vanilla game and Workbench classes only; nothing from `tbd-framework`, which the
+  addon does not load (`mod/tbd-export/addon.gproj`).
+- Used by: the export game mode prefab in `mod/tbd-export/Prefabs/Systems/`, which carries the
+  road export component; people and tools through the Workbench menu and the Net API, as the
+  module READMEs list.
+- Rules: nothing in `Game/` names a class from `WorkbenchGame/`, which a game never compiles; the
+  addon holds no copy of a framework class. `cargo xtask mod compile` compiles the framework addon
+  alone (`tools/commands/mod_operations/src/compile/execution.rs`), so these scripts compile only
+  when Workbench or a game loads `tbd-export`.
+
+## Related documentation
+
+- [Export addon script documentation](/documentation/mod/tbd-export/Scripts/README.md) — the
+  deeper documents of these scripts.
+- [Map export](/documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/map_export.md) —
+  every map layer and the runtime road export.

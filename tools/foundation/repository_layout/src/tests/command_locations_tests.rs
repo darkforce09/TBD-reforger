@@ -31,14 +31,18 @@ const REQUIRED_DOCUMENTATION_LOCATIONS: [(&str, &[&str]); 13] = [
 ];
 
 /// [`crate::documentation_locations`] items that name no location a checkout must hold, each with the reason.
-const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 4] = [
+const EXEMPT_DOCUMENTATION_ITEMS: [(&str, &str); 5] = [
     (
         "PENDING_MERGE_DIR",
         "holds merge sources only while a merge is pending, and is absent otherwise",
     ),
     (
-        "RETIRED_DOCS_ROOT",
-        "names a folder that must hold no tracked file; markdown-placement fails while it does",
+        "RETIRED_TOP_LEVEL_FOLDERS",
+        "names folders that must hold no tracked file; markdown-placement fails while one does",
+    ),
+    (
+        "is_retired_top_level_folder",
+        "a predicate over RETIRED_TOP_LEVEL_FOLDERS, not a location",
     ),
     (
         "PERMALINK_BASE",
@@ -269,12 +273,14 @@ fn the_documentation_areas_sit_inside_the_documentation_root() {
     }
 }
 
-/// The documentation root and the retired documentation root are distinct top-level folders: the
+/// The documentation root and the retired top-level folders are distinct top-level folders: the
 /// documentation gates match them against the first path component, and every other top-level
-/// folder is a code tree.
+/// folder is a code tree. Each retired folder says where its contents live now, and the
+/// predicate answers for exactly the listed names.
 #[test]
 fn the_documentation_gate_roots_are_distinct_top_level_folders() {
-    let roots = [crate::documentation::DOCUMENTATION_ROOT, RETIRED_DOCS_ROOT];
+    let mut roots = vec![crate::documentation::DOCUMENTATION_ROOT];
+    roots.extend(RETIRED_TOP_LEVEL_FOLDERS.iter().map(|(folder, _)| *folder));
     for root in &roots {
         assert!(
             !root.is_empty() && !root.contains('/'),
@@ -283,6 +289,28 @@ fn the_documentation_gate_roots_are_distinct_top_level_folders() {
     }
     let unique: BTreeSet<&str> = roots.iter().copied().collect();
     assert_eq!(unique.len(), roots.len(), "a gate root is listed twice");
+    assert_eq!(
+        RETIRED_TOP_LEVEL_FOLDERS
+            .iter()
+            .map(|(folder, _)| *folder)
+            .collect::<Vec<_>>(),
+        ["docs", "apps"]
+    );
+    for (folder, successor) in RETIRED_TOP_LEVEL_FOLDERS {
+        assert!(!successor.trim().is_empty(), "{folder} names no successor");
+        assert!(is_retired_top_level_folder(folder), "{folder}");
+    }
+    for live in [
+        "documentation",
+        "mod",
+        "crates",
+        "tools",
+        "app",
+        "apps_extra",
+        "",
+    ] {
+        assert!(!is_retired_top_level_folder(live), "{live} is not retired");
+    }
 }
 
 /// A permalink is the prefix, a commit and a path, so the prefix is this repository's blob view

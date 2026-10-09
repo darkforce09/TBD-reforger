@@ -67,8 +67,8 @@ fn rsync_excludes_the_licensed_reference_lanes() {
     let argv = rsync_argv::rsync_argv("ssh", "/repo/", "h:/remote/");
     let excluded = rsync_argv::exclusions(&argv);
     assert!(
-        excluded.contains(&"apps/mod/References/"),
-        "missing --exclude=apps/mod/References/ in {excluded:?}"
+        excluded.contains(&"mod/References/"),
+        "missing --exclude=mod/References/ in {excluded:?}"
     );
 }
 

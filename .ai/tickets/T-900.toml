@@ -68,7 +68,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
     "documentation",
-    "apps/mod/README.md",
+    "mod/README.md",
     "CLAUDE.md",
     "README.md",
 ]

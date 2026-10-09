@@ -54,8 +54,8 @@ impl Repository {
 
     fn seed(&self) {
         self.write("Cargo.toml", "[workspace]\n");
-        self.write("apps/module.rs", "pub fn verified() {}\n");
-        self.git(&["add", "--", "Cargo.toml", "apps/module.rs"]);
+        self.write("mod/module.rs", "pub fn verified() {}\n");
+        self.git(&["add", "--", "Cargo.toml", "mod/module.rs"]);
     }
 
     fn fingerprint(&self) -> String {
@@ -109,9 +109,9 @@ fn content_empty_file_and_tracked_worktree_deletion_have_distinct_fingerprints()
     let repository = Repository::new();
     repository.seed();
     let content = repository.fingerprint();
-    repository.write("apps/module.rs", "");
+    repository.write("mod/module.rs", "");
     let empty = repository.fingerprint();
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
     let deleted = repository.fingerprint();
     assert_eq!(deleted, repository.fingerprint());
     assert_eq!(BTreeSet::from([content, empty, deleted]).len(), 3);
@@ -122,16 +122,16 @@ fn staged_deletion_removes_the_indexed_tombstone_deterministically() {
     let repository = Repository::new();
     repository.seed();
     let original = repository.fingerprint();
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
     let worktree_deletion = repository.fingerprint();
-    repository.git(&["add", "--update", "--", "apps/module.rs"]);
+    repository.git(&["add", "--update", "--", "mod/module.rs"]);
     let staged_deletion = repository.fingerprint();
     assert_eq!(staged_deletion, repository.fingerprint());
     assert_eq!(
         BTreeSet::from([original, worktree_deletion, staged_deletion.clone()]).len(),
         3
     );
-    repository.write("apps/module.rs", "pub fn verified() {}\n");
+    repository.write("mod/module.rs", "pub fn verified() {}\n");
     assert_ne!(repository.fingerprint(), staged_deletion);
 }
 
@@ -141,18 +141,18 @@ fn staged_rename_binds_the_new_path_and_remains_deterministic() {
     repository.seed();
     let original = repository.fingerprint();
     fs::rename(
-        repository.root.join("apps/module.rs"),
-        repository.root.join("apps/renamed.rs"),
+        repository.root.join("mod/module.rs"),
+        repository.root.join("mod/renamed.rs"),
     )
     .unwrap();
     let unstaged = repository.fingerprint();
     assert_ne!(unstaged, original);
-    repository.git(&["add", "--all", "--", "apps"]);
+    repository.git(&["add", "--all", "--", "mod"]);
     let staged = repository.fingerprint();
     assert_ne!(staged, original);
     assert_ne!(staged, unstaged);
     assert_eq!(staged, repository.fingerprint());
-    repository.git(&["mv", "--", "apps/renamed.rs", "apps/module.rs"]);
+    repository.git(&["mv", "--", "mod/renamed.rs", "mod/module.rs"]);
     assert_eq!(repository.fingerprint(), original);
 }
 
@@ -161,14 +161,14 @@ fn additions_and_restoration_change_the_hash_and_staging_present_files_does_not(
     let repository = Repository::new();
     repository.seed();
     let original = repository.fingerprint();
-    repository.write("apps/addition.rs", "pub const NEW: bool = true;\n");
+    repository.write("mod/addition.rs", "pub const NEW: bool = true;\n");
     let added = repository.fingerprint();
     assert_ne!(added, original);
-    repository.git(&["add", "--", "apps/addition.rs"]);
+    repository.git(&["add", "--", "mod/addition.rs"]);
     assert_eq!(repository.fingerprint(), added);
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
     assert_ne!(repository.fingerprint(), added);
-    repository.write("apps/module.rs", "pub fn verified() {}\n");
+    repository.write("mod/module.rs", "pub fn verified() {}\n");
     assert_eq!(repository.fingerprint(), added);
 }
 
@@ -196,6 +196,7 @@ fn a_change_under_an_api_crate_changes_the_fingerprint() {
 #[test]
 fn only_paths_inside_an_input_folder_are_source_inputs() {
     for inside in [
+        "mod/tbd-framework/addon.gproj",
         "crates/api/api_server/src/lib.rs",
         "crates/geometry/geometry_primitives/src/lib.rs",
         "tools/xtask/src/main.rs",
@@ -207,7 +208,8 @@ fn only_paths_inside_an_input_folder_are_source_inputs() {
         assert!(source_input(inside), "{inside} is inside an input folder");
     }
     for outside in [
-        "appsx/main.rs",
+        "modx/main.rs",
+        "mod.rs",
         "crates.rs",
         "toolset/lib.rs",
         "contracts_old/schema.json",
@@ -226,7 +228,7 @@ fn disappearance_or_restoration_after_inventory_is_rejected() {
     let repository = Repository::new();
     repository.seed();
     let inventory = source_inventory(&repository.root).unwrap();
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
     let error = hash_source_inventory(&repository.root, &inventory).unwrap_err();
     assert!(
         error
@@ -234,8 +236,8 @@ fn disappearance_or_restoration_after_inventory_is_rejected() {
             .contains("presence changed after inventory")
     );
     let deleted = source_inventory(&repository.root).unwrap();
-    assert!(deleted.deleted.contains("apps/module.rs"));
-    repository.write("apps/module.rs", "restored");
+    assert!(deleted.deleted.contains("mod/module.rs"));
+    repository.write("mod/module.rs", "restored");
     let error = hash_source_inventory(&repository.root, &deleted).unwrap_err();
     assert!(
         error
@@ -243,9 +245,9 @@ fn disappearance_or_restoration_after_inventory_is_rejected() {
             .contains("presence changed after inventory")
     );
 
-    repository.write("apps/untracked.rs", "untracked");
+    repository.write("mod/untracked.rs", "untracked");
     let untracked = source_inventory(&repository.root).unwrap();
-    fs::remove_file(repository.root.join("apps/untracked.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/untracked.rs")).unwrap();
     assert!(hash_source_inventory(&repository.root, &untracked).is_err());
 }
 
@@ -258,7 +260,7 @@ fn deleted_source_still_fails_required_implementation_register_validation() {
         "version": 1,
         "requirements": [{
             "id": "required-source", "behavior": "Required implementation exists",
-            "implementation": ["apps/module.rs"], "checks": ["source-check"],
+            "implementation": ["mod/module.rs"], "checks": ["source-check"],
             "assumptions": []
         }],
         "checks": [{
@@ -269,7 +271,7 @@ fn deleted_source_still_fails_required_implementation_register_validation() {
     }))
     .unwrap();
     register::validate(&repository.root, &register).unwrap();
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
     assert!(
         source(&repository.root).is_ok(),
         "deletion has a fingerprint"
@@ -287,8 +289,8 @@ fn empty_or_non_source_inventory_fails_closed() {
             .to_string()
             .contains("empty source")
     );
-    repository.write("apps/terrain.bin", "binary fixture");
-    repository.git(&["add", "--", "apps/terrain.bin"]);
+    repository.write("mod/terrain.bin", "binary fixture");
+    repository.git(&["add", "--", "mod/terrain.bin"]);
     assert!(
         source(&repository.root)
             .unwrap_err()
@@ -301,8 +303,8 @@ fn empty_or_non_source_inventory_fails_closed() {
 fn a_directory_cannot_replace_a_fingerprinted_regular_file() {
     let repository = Repository::new();
     repository.seed();
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
-    fs::create_dir(repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
+    fs::create_dir(repository.root.join("mod/module.rs")).unwrap();
     assert!(
         source(&repository.root)
             .unwrap_err()
@@ -317,16 +319,16 @@ fn symlink_files_and_ancestor_directories_fail_instead_of_becoming_tombstones() 
     use std::os::unix::fs::symlink;
     let repository = Repository::new();
     repository.seed();
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
-    symlink("../Cargo.toml", repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
+    symlink("../Cargo.toml", repository.root.join("mod/module.rs")).unwrap();
     assert!(
         source(&repository.root)
             .unwrap_err()
             .to_string()
             .contains("symlink fingerprint input")
     );
-    fs::remove_file(repository.root.join("apps/module.rs")).unwrap();
-    symlink("missing-target", repository.root.join("apps/module.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/module.rs")).unwrap();
+    symlink("missing-target", repository.root.join("mod/module.rs")).unwrap();
     assert!(
         source(&repository.root)
             .unwrap_err()
@@ -335,14 +337,14 @@ fn symlink_files_and_ancestor_directories_fail_instead_of_becoming_tombstones() 
     );
 
     let nested = Repository::new();
-    nested.write("apps/source/module.rs", "tracked source");
-    nested.git(&["add", "--", "apps/source/module.rs"]);
+    nested.write("mod/source/module.rs", "tracked source");
+    nested.git(&["add", "--", "mod/source/module.rs"]);
     fs::rename(
-        nested.root.join("apps/source"),
+        nested.root.join("mod/source"),
         nested.root.join("relocated"),
     )
     .unwrap();
-    symlink("../relocated", nested.root.join("apps/source")).unwrap();
+    symlink("../relocated", nested.root.join("mod/source")).unwrap();
     assert!(
         source(&nested.root)
             .unwrap_err()
@@ -359,9 +361,9 @@ fn tracked_symlink_is_fingerprinted_stably_by_its_tagged_link_text() {
     let linked = repository.fingerprint();
     assert_eq!(linked, repository.fingerprint());
 
-    repository.write("apps/addition.rs", "pub const NEW: bool = true;\n");
+    repository.write("mod/addition.rs", "pub const NEW: bool = true;\n");
     assert_ne!(repository.fingerprint(), linked, "other inputs stay bound");
-    fs::remove_file(repository.root.join("apps/addition.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/addition.rs")).unwrap();
     assert_eq!(repository.fingerprint(), linked);
 
     fs::remove_file(repository.root.join("AGENTS.md")).unwrap();
@@ -409,21 +411,21 @@ fn untracked_symlink_beside_an_accepted_tracked_symlink_is_refused() {
     repository.seed_with_tracked_symlink();
     let accepted = repository.fingerprint();
 
-    repository.link("module.rs", "apps/linked.rs");
+    repository.link("module.rs", "mod/linked.rs");
     assert!(
         repository
             .refusal()
-            .contains("symlink fingerprint input is not tracked as a symlink: apps/linked.rs")
+            .contains("symlink fingerprint input is not tracked as a symlink: mod/linked.rs")
     );
-    fs::remove_file(repository.root.join("apps/linked.rs")).unwrap();
+    fs::remove_file(repository.root.join("mod/linked.rs")).unwrap();
     assert_eq!(repository.fingerprint(), accepted);
 
-    repository.link("../Cargo.toml", "apps/module.rs");
-    assert_eq!(repository.index_mode("apps/module.rs"), "100644");
+    repository.link("../Cargo.toml", "mod/module.rs");
+    assert_eq!(repository.index_mode("mod/module.rs"), "100644");
     assert!(
         repository
             .refusal()
-            .contains("symlink fingerprint input is not tracked as a symlink: apps/module.rs")
+            .contains("symlink fingerprint input is not tracked as a symlink: mod/module.rs")
     );
 }
 

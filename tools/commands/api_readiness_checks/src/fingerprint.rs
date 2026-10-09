@@ -31,13 +31,13 @@ use std::{
 /// The Git index mode of a symbolic link; its blob holds the link text.
 const GIT_SYMLINK_MODE: &str = "120000";
 
-/// The tracked folders whose source files are fingerprint inputs: the applications (the Enfusion
-/// mod, whose API call sites the register cites), the library crates the API is built from
+/// The tracked folders whose source files are fingerprint inputs: the Enfusion mod (whose API call
+/// sites the register cites), the library crates the API is built from
 /// (`crates/api` among them), the tools, the contracts, the evidence register and the build and
 /// CI configuration. A path is an input when it lies under one of
 /// them ([`under_input_root`]), whether or not the folder is spelled with a trailing `/`.
 const INPUT_ROOTS: &[&str] = &[
-    repository_layout::workspace_folders::APPLICATIONS_DIR,
+    repository_layout::workspace_folders::ENFUSION_MOD_DIR,
     repository_layout::workspace_folders::LIBRARY_CRATES_DIR,
     repository_layout::workspace_folders::TOOLS_DIR,
     repository_layout::CONTRACTS_DIR,

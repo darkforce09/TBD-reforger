@@ -74,7 +74,7 @@ tbd-emcp     ──▶ vanilla
 
 ## Related documentation
 
-- [Mod documentation](/documentation/apps/mod/README.md) — index of current mod documents.
+- [Mod documentation](/documentation/mod/README.md) — index of current mod documents.
 - [Code-tree anchor](/documentation/archive/improved_layout/mod_code_tree_anchor.md) — code-tree index file.
-- [Mod design authority](/documentation/apps/mod/tbd-framework/mod_design.md) — architectural non-negotiables.
+- [Mod design authority](/documentation/mod/tbd-framework/mod_design.md) — architectural non-negotiables.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — slice worktree procedures and gates.

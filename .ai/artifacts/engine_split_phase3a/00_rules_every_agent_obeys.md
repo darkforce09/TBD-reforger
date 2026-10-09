@@ -30,7 +30,7 @@ LAW 8 - Comments describe what the code does NOW and WHY. Absolutely no "moved f
         to headers you carry along on a move - rewrite them.
 
 THE WORKING TREE IS DIRTY AND THAT IS DELIBERATE. ~70 files are modified/untracked that are
-NOT yours: `apps/mod/**` (42 files, explicitly out of scope), `CLAUDE.md`, `xtask/src/{check,
+NOT yours: `mod/**` (42 files, explicitly out of scope), `CLAUDE.md`, `xtask/src/{check,
 constants,gate_mod_compile,sync}.rs`, untracked `documentation/`, `tools/`,
 `docs/platform/ENGINE_SPLIT_PROGRAM.md`, and already-deleted `v2/map_engine/` READMEs.
 **Stage ONLY files you yourself authored or edited.** Use explicit `git add <path>`; never
@@ -50,7 +50,7 @@ paraphrase, do not write "all green". Paste the actual text.
 
 ```
 cargo xtask verify file-length   exit 1, 9 unallowlisted SIZE-3   (Phase 3C clears these)
-cargo test -p xtask              8 flaky failures, all pinning one missing apps/mod/** script:
+cargo test -p xtask              8 flaky failures, all pinning one missing mod/** script:
   gate_t437::tests::collapsed_returns_fail_registry_pins
   gate_t437::tests::live_tree_holds
   gate_t437::tests::paraphrase_injection_is_caught
@@ -61,8 +61,8 @@ cargo test -p xtask              8 flaky failures, all pinning one missing apps/
   schema_gates::unread_wire_field_tests::all_1_3_fields_are_unread_on_the_live_tree
 ```
 
-All eight fail on `FAIL: missing apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c`
-— a path absent from the tree and untracked at this commit. `apps/mod/**` is out of scope per the
+All eight fail on `FAIL: missing mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c`
+— a path absent from the tree and untracked at this commit. `mod/**` is out of scope per the
 program document §7. Counts drift between runs (818/10, then 820/8), so judge by **name set**,
 never by count. A failure outside those eight names is yours.
 

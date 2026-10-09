@@ -77,7 +77,7 @@ rules 5 and 6.
 
 ```
 cargo xtask verify file-length   exit 1, 9 unallowlisted SIZE-3   (phase 3C clears these)
-cargo test -p xtask              8 flaky failures, all pinning a missing apps/mod/** script
+cargo test -p xtask              8 flaky failures, all pinning a missing mod/** script
 ```
 
 The eight names are listed in [`00_rules_every_agent_obeys.md`](00_rules_every_agent_obeys.md).

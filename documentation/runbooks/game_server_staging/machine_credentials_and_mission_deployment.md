@@ -172,7 +172,7 @@ API origin, `http://127.0.0.1:8080` by default.
 
 ## What the mod does with the credential
 
-The [game runtime transport](/apps/mod/tbd-framework/Scripts/Game/TBD/API/README.md) lists every
+The [game runtime transport](/mod/tbd-framework/Scripts/Game/TBD/API/README.md) lists every
 call; these are the ones an operator meets.
 
 - At boot the mod reads `GET /api/v1/game-runtime/deployment`: the deployment in flight, else

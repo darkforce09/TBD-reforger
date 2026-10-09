@@ -85,7 +85,7 @@ obligation to reach any of it.
 |---|---|
 | **a** | SPA-buildable today — no mission-contract blocker; editor-only, or the compiled schema already carries the key |
 | **b** | Schema-blocked — `mission.schema.json` carries 25 `additionalProperties: false` and must be widened first |
-| **c** | Mod-blocked — no concept exists in `apps/mod/tbd-framework`, or a runtime (AI, triggers, damage) must exist first |
+| **c** | Mod-blocked — no concept exists in `mod/tbd-framework`, or a runtime (AI, triggers, damage) must exist first |
 | **d** | N/A for a 2D browser editor — a 3D-scene affordance, an A3-engine concept with no Enfusion analogue, or a scripting handle with no scripting layer |
 
 `tbd_id` reuses the existing `gap_analysis.md` / `interactions.md` vocabulary where a row already
@@ -231,7 +231,7 @@ panel `arsenal.rs:1131`; export gate `arsenal.rs:616`). What the mod has that TB
 
 | 3den_id | tbd_id | want | build_class | notes | ticket |
 |---|---|---|---|---|---|
-| 3DEN-VEH-001 | — | maybe | c | §3.4 — Copy Vehicle Customization (textures/animations). Enfusion has variant prefabs rather than A3's `setObjectTexture` slots; a "copy appearance" verb needs a variant concept in `apps/mod/tbd-framework` first. Not obviously worthless, clearly not next | — |
+| 3DEN-VEH-001 | — | maybe | c | §3.4 — Copy Vehicle Customization (textures/animations). Enfusion has variant prefabs rather than A3's `setObjectTexture` slots; a "copy appearance" verb needs a variant concept in `mod/tbd-framework` first. Not obviously worthless, clearly not next | — |
 | 3DEN-VEH-002 | — | maybe | c | §3.4 — Apply Vehicle Customization, random pick per entity if several were copied. Blocked behind -001 | — |
 | 3DEN-VEH-003 | — | maybe | c | §3.4 — Randomize Vehicle Customization across a selection. Same gate | — |
 | 3DEN-VEH-004 | — | no | d | §3.4 — Copy Pylon Settings. Pylons are an A3 aircraft-loadout concept with no Enfusion analogue | — |
@@ -268,7 +268,7 @@ the catalogue does not say so.
 | 3DEN-MISC-001 | — | want | a | §3.6 — Create Trigger (**Whole Map Coverage**): one trigger sized and positioned to cover the terrain exactly. TBD's analogue is a play-area zone covering the whole terrain, which every mission needs and which today means drawing a 12.8 km polygon by hand (`editor_ops.rs:2350` `begin_zone_draw`). One button | new — E11 |
 | 3DEN-MISC-002 | — | want | a | §3.6/§2.9 — **Switch Time** (`ALT+UP`): jump the *editor* to 12:00 with fog/overcast/rain zeroed for maximum visibility, **without touching the scenario**, reversible. TBD's time scrubber writes `meta` (`eden_chrome.rs:1084`), so "make the map readable" and "set the mission's time" are the same control — they should not be | new — E9 |
 | 3DEN-MISC-003 | — | have | a | §3.6/§2.9 — Toggle Grass (`ALT+DOWN`), editor-only clutter hiding. TBD has **12 editor-only world layer toggles** including trees, forest mass and props — `world_layer_prefs.rs:63-74` | — |
-| 3DEN-MISC-004 | — | no | c | §3.6 — Toggle Simple Object (`objectIsSimple`). No simple-object concept in `apps/mod/tbd-framework` | — |
+| 3DEN-MISC-004 | — | no | c | §3.6 — Toggle Simple Object (`objectIsSimple`). No simple-object concept in `mod/tbd-framework` | — |
 | 3DEN-MISC-005 | — | no | c | §3.6 — Toggle Simulation (`enableSimulation`) | — |
 | 3DEN-MISC-006 | — | no | c | §3.6 — Toggle Dynamic Simulation | — |
 | 3DEN-MISC-007 | — | no | d | §3.6 — Toggle Local Object (`isLocalOnly`). An A3 MP locality concept | — |
@@ -389,7 +389,7 @@ nothing to attach to, and building the attribute would mean building the runtime
 
 | 3den_id | tbd_id | want | build_class | notes | ticket |
 |---|---|---|---|---|---|
-| 3DEN-ATTR-001 | — | no | c | §8.1 — **Advanced Damage**: enumerates every hitpoint of the selection and applies per-hitpoint `setHitPointDamage` at start. Needs a damage model in `apps/mod/tbd-framework` first | — |
+| 3DEN-ATTR-001 | — | no | c | §8.1 — **Advanced Damage**: enumerates every hitpoint of the selection and applies per-hitpoint `setHitPointDamage` at start. Needs a damage model in `mod/tbd-framework` first | — |
 | 3DEN-ATTR-002 | — | no | c | §8.1 — **Ambient Animations**: animation-set picker looping via an `AnimDone` EH, with break-out on damage/death/COMBAT. No animation-authoring concept | — |
 | 3DEN-ATTR-003 | ATTR-FIELD-OBJ-SKILL | no | c | §8.1 — **AI Skill**: 10 `setSkill` sliders. `gap_analysis.md` already scores the Eden id `na` for the same reason — every TBD body spawns AI-disabled (`TBD_SpawnManager.c:963,1166`), so `skill` has no subject | — |
 | 3DEN-ATTR-004 | — | no | c | §8.1 — **AI Features**: 21 `disableAI` checkboxes (Move, Target, Cover, Autotarget, **Raycasts**, Path, …). Same gate. Note §2.2: the "Raycasts" entry is `disableAI "CHECKVISIBLE"` — a behaviour toggle, **not** a line-of-sight tool | — |

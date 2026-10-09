@@ -133,7 +133,7 @@ Registry: 146 tickets — 82 shipped · 28 idea · 17 queued · 16 deferred · 3
 | Map asset | `packages/map-assets/<terrain>/` (LFS: dem png + sat .tbd-sat only; staging/tiles rebuildable local) |
 | Ticket | `.ai/tickets/registry.json` + `./scripts/ticket sync` (generated TICKET_*.md never hand-edited) |
 | Spec / doc | `docs/**` only — never `apps/**/docs` or `packages/**/docs` (verify-doc-layout enforces) |
-| Ops script | `scripts/{website,mod,deploy}/` (mod scripts = tooling, distinct from OFF-LIMITS `apps/mod/`) |
+| Ops script | `scripts/{website,mod,deploy}/` (mod scripts = tooling, distinct from OFF-LIMITS `mod/`) |
 | Shared engine code | `crates/map-engine-{core,render,wasm}` |
 | Repo tooling | `xtask` (gates/codegen/ticket lib) · `tools/tbd-tools` (gate harness + asset pipelines) |
 

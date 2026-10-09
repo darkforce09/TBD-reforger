@@ -2,9 +2,9 @@
 
 # Template: Enfusion script header
 
-**When to use:** the opening block of every Enfusion script (`.c`) under `apps/mod/`, and the
+**When to use:** the opening block of every Enfusion script (`.c`) under `mod/`, and the
 banners and tags that follow it through the file. `cargo xtask verify enfusion-comments` checks
-every rule below as ECM-1 to ECM-9; `--path` narrows it to one folder or file under `apps/mod`.
+every rule below as ECM-1 to ECM-9; `--path` narrows it to one folder or file under `mod`.
 
 ## Skeleton
 
@@ -41,7 +41,7 @@ or a separator between a banner and its declaration breaks the banner.
 
 ## Worked sample
 
-Written for `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/TBD_TaskHud.c`, checked against its
+Written for `mod/tbd-framework/Scripts/Game/TBD/UI/Hud/TBD_TaskHud.c`, checked against its
 code: the class keeps the last applied markers and snapshot signature on the client, the server
 pushes the assigned-task snapshot through the player controller, and `PushToPlayers` returns at
 once on a client. The sample is an excerpt: the header, the class banner, one field and one method

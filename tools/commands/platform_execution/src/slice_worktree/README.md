@@ -22,9 +22,9 @@ and an unknown subcommand prints the usage and exits 2. A two-dot sub-slice id m
 one-dot parent, so a sub-slice shares its parent's tree.
 
 - `new <slice>`: adds the worktree from `main`, with git-lfs filters and hooks neutralised. It then
-  links each of the three gitignored oracle lanes of the main checkout's `apps/mod/References/`
+  links each of the three gitignored oracle lanes of the main checkout's `mod/References/`
   (`crf_framework`, `vanilla_reference` and `playable_selector`, all required; see the
-  [reference lanes](/apps/mod/References/README.md)) into the same place in the worktree, and
+  [reference lanes](/mod/References/README.md)) into the same place in the worktree, and
   checks each link resolves. `TBD_PS_ORACLE`, when set and not empty, names the PlayableSelector
   source in place of the `playable_selector` lane. A missing lane prints
   `ERROR: <path> missing — cannot link the <lane> oracle lane` with the README to fill it from,

@@ -292,8 +292,8 @@ Lifecycle:
 ## Oracle run (checkpoint W)
 
 The oracle lives in tbd-export only: a Workbench plugin in
-`apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` (menu `Plugins > TBD > Ballistics
-Oracle`) and a play-mode component in `apps/mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`
+`mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` (menu `Plugins > TBD > Ballistics
+Oracle`) and a play-mode component in `mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`
 on the export game mode. Nothing ships in tbd-framework. The steps are the runbook
 [ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
 

@@ -1,7 +1,7 @@
 //! The `kit:` and `preset:` aliases a mission cites, and the spawn registry's alias set.
 //!
 //! **Role:** collects a mission's kit and preset references with their JSON pointers, reads the
-//! alias set of `apps/mod/tbd-framework/Data/registry.json` and lists the dangling kits.
+//! alias set of `mod/tbd-framework/Data/registry.json` and lists the dangling kits.
 //! **Position:** private to the schema gates, used by the mission validation section.
 //! **Signals & state:** none; pure functions over parsed documents and one file read.
 //! **Invariants:** an empty registry alias set is an error, never an empty pass.
@@ -63,7 +63,7 @@ pub(super) fn dangling_kits(doc: &Value, aliases: &HashSet<String>) -> Vec<(Stri
 /// Read straight out of the mod's `Data/registry.json` rather than a mirror, so the gate cannot
 /// drift from the thing it is gating. Returns the path too, for an honest provenance line.
 pub(super) fn spawn_registry_aliases(root: &Path) -> Result<(PathBuf, HashSet<String>)> {
-    let p = root.join("apps/mod/tbd-framework/Data/registry.json");
+    let p = root.join("mod/tbd-framework/Data/registry.json");
     let doc = read_json(&p)?;
     let set: HashSet<String> = doc["entries"]
         .as_array()

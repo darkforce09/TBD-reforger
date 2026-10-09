@@ -83,8 +83,8 @@ Continue **T-130** on ticket/T-130 — slices **T-130.4, T-130.5, T-130.6** (mod
 ═══ READ ═══
   1. .ai/artifacts/t130_claude_code_handoff.md  (§ T-130.4–.6)
   2. docs/platform/t130_fable_audit_remainder.md
-  3. apps/mod/tbd-framework/Scripts/Game/TBD/Backend/*.c
-  4. apps/mod/tbd-framework/Scripts/Game/TBD/Export/*.c
+  3. mod/tbd-framework/Scripts/Game/TBD/Backend/*.c
+  4. mod/tbd-framework/Scripts/Game/TBD/Export/*.c
   5. features/mission-creator/hooks/useMissionEditor.ts
   6. features/mission-creator/MissionCreatorPage.tsx
   7. pages/admin.tsx

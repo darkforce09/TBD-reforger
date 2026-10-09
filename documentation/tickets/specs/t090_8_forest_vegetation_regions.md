@@ -194,7 +194,7 @@ cover from TBDD density grids + Path B region hulls (36 regions shipped @ T-090.
   - Add treePropLayer / tree glyphs (T-090.5.5)
   - Touch export pipeline or rebuild forest-regions
   - Rewrite roadLayer, buildingLayer, chunkStore core, lodGates
-  - Commit apps/mod/tbd-framework/resourceDatabase.rdb
+  - Commit mod/tbd-framework/resourceDatabase.rdb
 
 ═══ VERIFY (all exit 0) ═══
   cargo xtask ci schema-validate

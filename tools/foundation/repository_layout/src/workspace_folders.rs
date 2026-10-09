@@ -1,7 +1,7 @@
 //! The top-level folders of the repository's code, the API server crate with its local environment
 //! file, and the API database crate's SQL folders.
 //!
-//! **Role:** the repository-relative folders of the applications, the library crates and the
+//! **Role:** the repository-relative folders of the Enfusion mod, the library crates and the
 //! developer tools; the API server crate and the `.env` its binaries read; and the migration and
 //! seed folders of the API's database crate, each once.
 //! **Position:** read by the API readiness fingerprint (the source input folders, the `.env` it
@@ -13,8 +13,9 @@
 //! API server crate and the database crate lie under [`LIBRARY_CRATES_DIR`]; the `.env` lies in
 //! [`API_SERVER_CRATE_DIR`]; the migration and seed folders lie under [`API_DATABASE_CRATE_DIR`].
 
-/// The applications outside the Cargo workspace: the Enfusion game mod suite (`apps/mod`).
-pub const APPLICATIONS_DIR: &str = "apps";
+/// The Enfusion mod suite: the game mod and the two Workbench addons, outside the Cargo workspace
+/// and holding no Rust crate.
+pub const ENFUSION_MOD_DIR: &str = "mod";
 
 /// The library crates, grouped by category (`crates/<category>/<crate>`).
 pub const LIBRARY_CRATES_DIR: &str = "crates";

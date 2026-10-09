@@ -41,8 +41,8 @@ files included, since it reads the working tree, and prints
 | Root | Holds |
 |---|---|
 | the folder of every workspace member the root `Cargo.toml` names | every crate, its tests, benches and build script included; a crate is walked from the commit that makes it a member |
-| `apps/mod/tbd-framework/Scripts` | the shipping game mod's EnfScript |
-| `apps/mod/tbd-emcp/Scripts` | the Enfusion MCP bridge's Workbench handlers |
+| `mod/tbd-framework/Scripts` | the shipping game mod's EnfScript |
+| `mod/tbd-emcp/Scripts` | the Enfusion MCP bridge's Workbench handlers |
 
 A pinned root or an explicit member folder that is missing, an unreadable file or a walk that
 finds no source file is a check that did not run (exit 2 or 1), never a pass. Generated Rust is
@@ -51,14 +51,14 @@ held to the same limit.
 
 Outside the walk, and so unenforced by this gate:
 
-- The addon scripts of `apps/mod/tbd-export`, until they are pinned.
+- The addon scripts of `mod/tbd-export`, until they are pinned.
   `MOD_SCRIPT_ROOTS` in
   [node_and_file_limits.rs](/tools/checks/repository_checks/src/language_bans/node_and_file_limits.rs)
   names the three roots the gate may pin, and T-1092 pins them one addon at a time once its
-  scripts meet the ceilings: `apps/mod/tbd-framework/Scripts` and `apps/mod/tbd-emcp/Scripts`
-  are pinned, and `apps/mod/tbd-export/Scripts` follows at P6-C. The gitignored
-  reference lanes in `apps/mod/References/` are never pinned; a compile-time assertion rejects
-  any `apps/mod` pin outside the three roots.
+  scripts meet the ceilings: `mod/tbd-framework/Scripts` and `mod/tbd-emcp/Scripts`
+  are pinned, and `mod/tbd-export/Scripts` follows at P6-C. The gitignored
+  reference lanes in `mod/References/` are never pinned; a compile-time assertion rejects
+  any `mod` pin outside the three roots.
 - Rust files outside every member folder: none exist. The URL case table the API and the
   single-page app share is `crates/foundation/http_url_guard/src/cases.rs`, a module of a member
   crate, so the walk covers it.

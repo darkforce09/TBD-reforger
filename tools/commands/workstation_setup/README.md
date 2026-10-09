@@ -44,12 +44,12 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 ### server-profile
 
 - Synopsis: `setup server-profile [PROFILE]`; `PROFILE` defaults to `TBD_PROFILE`, then
-  `apps/mod/.local-test-profile`.
+  `mod/.local-test-profile`.
 - Does: creates `<PROFILE>/profile/` (mode 700) and copies
-  `apps/mod/tbd-framework/Data/backend.example.json` to `profile/TBD_BackendConfig.json` (mode
+  `mod/tbd-framework/Data/backend.example.json` to `profile/TBD_BackendConfig.json` (mode
   600); the config holds two keys, `backendUrl` and `machineCredential`. It writes
   `machineCredential` from `TBD_MACHINE_CREDENTIAL` when that is set. It then copies
-  `apps/mod/tbd-framework/Data/registry.json` to `profile/TBD_Registry.json`, best effort: the mod
+  `mod/tbd-framework/Data/registry.json` to `profile/TBD_Registry.json`, best effort: the mod
   reads that copy only when its own `Data/registry.json` is missing. A profile without a
   [machine credential](/documentation/glossary/g_to_m.md#machine-credential) boots no
   [mission](/documentation/glossary/g_to_m.md#mission), since the mission comes from the server's
@@ -84,7 +84,7 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 ### client-addons
 
 - Synopsis: `setup client-addons`
-- Does: links `apps/mod/tbd-framework/` into `$HOME/.local/share/tbd-server-addons/` (the link is
+- Does: links `mod/tbd-framework/` into `$HOME/.local/share/tbd-server-addons/` (the link is
   made even when the target is missing) and prints the Steam launch options that load it and a
   Direct Join hint: `Direct Join → <host> (<IPv4 address>) port 2001` for the host of
   `TBD_SSH_HOST` in `deploy.env`, the host with the reason when it has no IPv4 address from here, or
@@ -95,7 +95,8 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
 
 ## Boundaries
 
-- Depends on: `repository_root` (the checkout root), `repository_layout` (the shared locations), `deploy_settings` (the deploy host and the
+- Depends on: `repository_root` (the checkout root), `repository_layout` (the shared locations; the framework addon's folder and folder name
+  from its `enfusion_mod_folders`), `deploy_settings` (the deploy host and the
   remote folders), `process_runner` (`ssh`, `sshpass`, `mkdir`, `ln` and `whoami`),
   `verification_core` (`NotRun`), `clap` (the subcommand), `serde_json` (the backend config) and
   `thiserror`; `tool_test_support` in tests.
@@ -106,7 +107,7 @@ command prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
     host (`tools/commands/deployment/src/staging/payloads.rs`), and `cargo xtask staging fleet
     --record`, whose `mod_runtime` credential promotion runs the same payload commands;
   - the mod, whose registry loader names `cargo xtask setup server-profile` when no registry file
-    exists (`apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Registry.c`);
+    exists (`mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Registry.c`);
   - people setting up a machine, following the runbooks below.
 - Rules:
   - The backend config is written mode 600 inside a mode 700 folder, and the credential is written

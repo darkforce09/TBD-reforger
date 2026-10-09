@@ -20,9 +20,9 @@ Developers and agents read it before writing a class string, a layout colour or 
   [`crates/frontend/foundation/frontend_ui/src/`](/crates/frontend/foundation/frontend_ui/README.md) also
   import.
 - Mod: `TBD_UITheme` in
-  [`apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/`](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md)
+  [`mod/tbd-framework/Scripts/Game/TBD/UI/Core/`](/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md)
   (`TBD_UITheme.c`), with `TBD_UILayouts.MountRounded` for rounded surfaces and the layouts in
-  [`apps/mod/tbd-framework/UI/`](/apps/mod/tbd-framework/UI/README.md).
+  [`mod/tbd-framework/UI/`](/mod/tbd-framework/UI/README.md).
 - Map side tints and glyphs: the [map symbology](/documentation/design_system/map_symbology.md).
 
 ## Behaviour

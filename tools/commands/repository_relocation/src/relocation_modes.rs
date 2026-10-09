@@ -6,7 +6,8 @@
 //! writes it and then verifies the same manifest on the checkout; `--verify` judges one manifest,
 //! or every committed manifest when none is named, against the checkout as it stands, each
 //! manifest's scopes followed through the moves of the stage manifests after it in the order they
-//! entered the history ([`crate::manifest_chronology`], [`crate::scope_history`]).
+//! entered the history, and its retired `path` spellings legal again where those moves revived
+//! them ([`crate::manifest_chronology`], [`crate::scope_history`]).
 //!
 //! **Position:** re-exported at the crate root and called by the `cargo xtask refactor relocate`
 //! dispatch of the xtask binary; built from the manifest parser, the plan builder, the plan

@@ -78,7 +78,7 @@ pub(crate) enum VerifyCmd {
     /// docs, network tags, boundary tags, attribute descriptions, context-free prose, file name)
     #[command(name = "enfusion-comments")]
     EnfusionComments {
-        /// Judge only this file or folder under apps/mod instead of the pinned roots (repeatable)
+        /// Judge only this file or folder under mod/ instead of the pinned roots (repeatable)
         #[arg(long = "path", value_name = "PATH")]
         paths: Vec<String>,
     },
@@ -97,7 +97,7 @@ pub(crate) enum VerifyCmd {
     /// CI schema parity + hollow recipe tripwire
     #[command(name = "ci-schema-parity")]
     CiSchemaParity,
-    /// Crate-tier law: every manifest under apps/, crates/ and tools/ is a workspace member;
+    /// Crate-tier law: every manifest under crates/, mod/ and tools/ is a workspace member;
     /// each judged crate, the applications included, declares [package.metadata.layout], sits at
     /// its category plus its name, and declares the tier its dependencies give it; the only
     /// members outside the judged set are the tool binaries (tools/xtask, tools/developer_tools);

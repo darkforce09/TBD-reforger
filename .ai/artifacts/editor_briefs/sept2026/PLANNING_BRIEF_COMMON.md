@@ -32,7 +32,7 @@ Programs: kind = "program", children = [...], status = "queued". Slices: kind = 
 status = "queued" (command center promotes to ready). Body lines ≤ 30 words each.
 Owns MUST be file-disjoint between slices that should run in the same wave; two slices that both need the
 same file simply pack into different waves — that is fine, say so in approach.
-Mod scripts: `apps/mod/tbd-framework/Scripts/...` exact paths. Files that will be NEW: still list them.
+Mod scripts: `mod/tbd-framework/Scripts/...` exact paths. Files that will be NEW: still list them.
 
 ## Plan document: copy docs/plans/TEMPLATE.md → docs/plans/<id>_plan.md. Four sections: Context, Approach
 (ordered steps naming files), Risks (+fallback), Verification (commands mirroring verify[]). Honest, specific.

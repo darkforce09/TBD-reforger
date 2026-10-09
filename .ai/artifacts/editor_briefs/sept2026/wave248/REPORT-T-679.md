@@ -15,8 +15,8 @@ The worktree was branched from main at `4b01ae415` (T-942 twin widen). Proved be
 
 | claim | path:line | command |
 |---|---|---|
-| `TBD_PlacementScatter.c` does not exist | (file absent both trees) | `ls apps/mod/tbd-framework/Scripts/Game/TBD/Backend/` — no PlacementScatter; same for tbd-export |
-| SpawnManager never reads scatter keys | `TBD_SpawnManager.c` | `rg -n "placementRadius\|placementShape\|Scatter" apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` — zero hits |
+| `TBD_PlacementScatter.c` does not exist | (file absent both trees) | `ls mod/tbd-framework/Scripts/Game/TBD/Backend/` — no PlacementScatter; same for tbd-export |
+| SpawnManager never reads scatter keys | `TBD_SpawnManager.c` | `rg -n "placementRadius\|placementShape\|Scatter" mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` — zero hits |
 | Slot/group structs have no scatter members | `TBD_MissionSlotStruct.c:51-85`, `TBD_MissionLoader.c` `TBD_MissionOrbatGroupStruct` (~139) | class fields stop at identity / `leaderSlotId`; no `placementRadius` |
 | UNREAD baseline is still 0 | `xtask/src/schema_gates.rs:2552-2558` | `UnreadField { name: "placementRadius", expected: 0, ticket: "T-679" }` and same for `placementShape` |
 | Flatten does not emit the keys | (no matches) | `rg -n "placementRadius\|placementShape" apps/website -g '*.rs'` empty |
@@ -27,10 +27,10 @@ Not already fixed. Implemented.
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | NEW (352 lines). Wire structs 44–90. `Scatter` 116. `ForSlot` 139. Second parse `GetRawJson` 205. Sentinel `ABSENT = -1000000` 46/64. | T-680-style second `JsonLoadContext` pass over `slots[]` + `orbat.*.groups[]` `placementRadius`/`placementShape`. Zero radius returns `center`. Slot jitter + shared group offset. Deterministic seed from slot key. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | NEW, byte-identical ASCII twin (12338 bytes) | T-946.26 mandatory twin. `mirror_lockstep` walks export only. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1199–1205 | `SpawnSlotBody` (initial materialize and respawn) calls `ForSlot` before `GetSurfaceY`. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1199–1205 | Same call site. New comments ASCII. Pre-existing emdash-vs-hyphen in nearby comments left alone. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | NEW (352 lines). Wire structs 44–90. `Scatter` 116. `ForSlot` 139. Second parse `GetRawJson` 205. Sentinel `ABSENT = -1000000` 46/64. | T-680-style second `JsonLoadContext` pass over `slots[]` + `orbat.*.groups[]` `placementRadius`/`placementShape`. Zero radius returns `center`. Slot jitter + shared group offset. Deterministic seed from slot key. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | NEW, byte-identical ASCII twin (12338 bytes) | T-946.26 mandatory twin. `mirror_lockstep` walks export only. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1199–1205 | `SpawnSlotBody` (initial materialize and respawn) calls `ForSlot` before `GetSurfaceY`. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1199–1205 | Same call site. New comments ASCII. Pre-existing emdash-vs-hyphen in nearby comments left alone. |
 
 No `packages/tbd-schema` edits. No `flatten.rs`. No `schema_gates.rs`. No `TBD_MissionLoader.c` / `TBD_MissionSlotStruct.c` / `TBD_MissionValidator.c`. No WaypointRuntime / ZoneVolume / ObjectiveRegistry / zones_panel.
 
@@ -168,7 +168,7 @@ IN-GAME BEHAVIOUR CANNOT BE PROVEN HERE. One human-runnable line each:
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | yes (12338 bytes, ASCII, committed) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | yes (byte-identical twin) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (`ForSlot` at 1203) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (same call site) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | yes (12338 bytes, ASCII, committed) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c` | yes (byte-identical twin) |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (`ForSlot` at 1203) |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (same call site) |

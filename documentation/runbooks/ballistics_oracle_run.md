@@ -15,7 +15,7 @@ the trim and the checks a few minutes.
   `assets/equipment/gameplay/generations/<generation id>/export/`, written by the tbd-export
   equipment export plugin; its generation id (16 uppercase hexadecimal digits, for example
   `6A6F008DC5395616`) names every step below.
-- Workbench with the tbd-export addon (`apps/mod/tbd-export/addon.gproj`). The oracle is
+- Workbench with the tbd-export addon (`mod/tbd-export/addon.gproj`). The oracle is
   tbd-export only; nothing of it ships in tbd-framework.
 - The Workbench profile folder in `PROFILE_DIR`, by default
   `$HOME/Documents/Games/ArmaReforgerWorkbench/profile`; the oracle writes under
@@ -43,7 +43,7 @@ the trim and the checks a few minutes.
    sha256 <digest>, folder <folder>`; for the vanilla shells the file is about 13.9 MB (the run of
    2026-09-28 wrote 13,888,200 bytes).
 
-3. Open `apps/mod/tbd-export/worlds/TBD_Export_Everon.ent` and press Play.
+3. Open `mod/tbd-export/worlds/TBD_Export_Everon.ent` and press Play.
 
    Expected: about one second in, `Simulation run started`; then
    `Simulation run complete: 4185 samples` (31 charges × 5 elevations × 9 winds × 3 target
@@ -150,9 +150,9 @@ Expected: `200`, `etag` equal to the catalog sha256 the trim printed, and
 
 ## Related
 
-- [Ballistics oracle](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
+- [Ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md)
   — what the oracle measures and why.
-- [Ballistics oracle plugin](/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/README.md)
+- [Ballistics oracle plugin](/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/README.md)
   — the edit-mode half, its dialog and its output.
 - [Ballistics trim](/tools/commands/ballistics_oracle_tooling/src/README.md) — the trim command's rules
   and exit codes.

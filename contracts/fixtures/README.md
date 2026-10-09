@@ -69,7 +69,7 @@ instead of letting malformed missions through until one reaches a live
 ## Boundaries
 
 - Depends on: the schemas in `contracts/definitions/`, the spawn registry
-  `apps/mod/tbd-framework/Data/registry.json`, and the binary formats of
+  `mod/tbd-framework/Data/registry.json`, and the binary formats of
   `crates/world_formats/world_file_formats/src/`.
 - Used by: the xtask schema gates, the developer tools' map verification, the xtask mod commands
   and the crate tests above.

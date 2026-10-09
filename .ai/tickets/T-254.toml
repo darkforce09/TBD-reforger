@@ -48,7 +48,7 @@ owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "crates/map-engine-core/src/mission/compile.rs",
     "crates/map-engine-core/src/mission/flatten.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
 [scope]

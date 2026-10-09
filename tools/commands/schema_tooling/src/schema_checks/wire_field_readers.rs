@@ -64,7 +64,7 @@ pub(super) fn count_mod_readers(mod_root: &Path, name: &str) -> Result<usize> {
 
 /// The `UNREAD_WIRE_FIELDS` invariant as a list of failure strings (empty = all fields still unread
 /// at their baseline). Shared by the runtime gate and the unit test so neither can drift from the
-/// other's idea of "unread". `mod_root` is `apps/mod/tbd-framework`.
+/// other's idea of "unread". `mod_root` is `mod/tbd-framework`.
 pub(super) fn unread_wire_field_failures(mod_root: &Path) -> Result<Vec<String>> {
     // A field spelled twice would let one row mask the other; catch the authoring slip here.
     let mut seen = HashSet::new();

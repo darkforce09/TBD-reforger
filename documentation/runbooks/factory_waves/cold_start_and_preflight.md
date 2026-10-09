@@ -23,7 +23,7 @@ comment, and one that is in neither was not recorded and is re-derived from the 
 - A container runtime for the local Postgres, as
   [Local development](/documentation/runbooks/local_development.md) describes.
 - The three oracle lanes (`crf_framework`, `vanilla_reference` and `playable_selector`) filled in
-  the main checkout's `apps/mod/References/`, as its [README](/apps/mod/References/README.md)
+  the main checkout's `mod/References/`, as its [README](/mod/References/README.md)
   describes (all gitignored); `slice-worktree new` refuses to create a worktree without any of
   them.
 

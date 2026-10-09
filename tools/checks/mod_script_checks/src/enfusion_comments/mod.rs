@@ -5,12 +5,12 @@
 //! and the per-rule counts, and returns the exit code.
 //!
 //! **Position:** called by `tools/xtask/src/commands/verify/dispatch.rs`; reads scripts under
-//! `apps/mod/`; each rule lives in its own sibling module and sees a `CheckedScript`.
+//! `mod/`; each rule lives in its own sibling module and sees a `CheckedScript`.
 //!
 //! **Signals & state:** none; reads files, writes stdout.
 //!
 //! **Invariants:**
-//! - Fail closed: no roots, a root outside `apps/mod`, a missing root, an unreadable file or a walk
+//! - Fail closed: no roots, a root outside [`ENFUSION_MOD_DIR`] (`mod`), a missing root, an unreadable file or a walk
 //!   that finds no `.c` file is did-not-run (exit 2), never a clean pass.
 //! - Exit 0 clean, 1 findings, 2 did not run.
 //! - Output order is deterministic: files sorted by path, findings by line, then rule.
@@ -31,6 +31,7 @@ mod trailing_member_doc_rule;
 use std::collections::BTreeMap;
 use std::path::{Component, Path, PathBuf};
 
+use repository_layout::workspace_folders::ENFUSION_MOD_DIR;
 use verification_core::NotRun;
 use verification_core::scan::{walk_files, with_extension};
 
@@ -38,17 +39,11 @@ use checked_script::CheckedScript;
 use findings::{Finding, RuleId};
 
 /// Repository-relative roots judged when no `--path` is given; each entry is a folder or file
-/// under [`MOD_TREE`] whose scripts meet the card.
-pub(crate) const PINNED_ROOTS: &[&str] = &[
-    "apps/mod/tbd-framework/Scripts",
-    "apps/mod/tbd-emcp/Scripts",
-];
-
-/// The only tree `--path` may point into.
-const MOD_TREE: &str = "apps/mod";
+/// under [`ENFUSION_MOD_DIR`], the only tree `--path` may point into, whose scripts meet the card.
+pub(crate) const PINNED_ROOTS: &[&str] = &["mod/tbd-framework/Scripts", "mod/tbd-emcp/Scripts"];
 
 /// Runs every rule over the scripts under `paths` (repository-relative or absolute, each under
-/// `apps/mod`), or under `PINNED_ROOTS` when `paths` is empty.
+/// [`ENFUSION_MOD_DIR`]), or under `PINNED_ROOTS` when `paths` is empty.
 ///
 /// Returns 0 when every script is clean, 1 when a rule found a violation, 2 when the check could
 /// not run; prints the report to stdout either way.
@@ -139,7 +134,7 @@ fn collect_scripts(repo: &Path, paths: &[String]) -> Result<Vec<PathBuf>, String
     if requested.is_empty() {
         return Err("no roots: the pinned root list is empty and no --path was given".to_string());
     }
-    let mod_tree = repo.join(MOD_TREE);
+    let mod_tree = repo.join(ENFUSION_MOD_DIR);
     let mut roots = Vec::new();
     for raw in &requested {
         let candidate = Path::new(raw);
@@ -150,7 +145,7 @@ fn collect_scripts(repo: &Path, paths: &[String]) -> Result<Vec<PathBuf>, String
         };
         let escapes = root.components().any(|part| part == Component::ParentDir);
         if escapes || !root.starts_with(&mod_tree) {
-            return Err(format!("`{raw}` is not under {MOD_TREE}"));
+            return Err(format!("`{raw}` is not under {ENFUSION_MOD_DIR}"));
         }
         roots.push(root);
     }

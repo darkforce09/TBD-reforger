@@ -155,8 +155,9 @@ pub(crate) fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // job uses (host target with every target, wasm32, the frontend job on wasm32 and natively),
     // every one with `-D warnings`. The lanes partition the workspace members, derived from the
     // root manifest (`gate/clippy_package_sets.rs`), so every member a wave can change — the
-    // applications, the API crates and every `crates/**` library — is linted by one of them.
-    r.run("clippy apps and crates", || {
+    // application crates, the API crates and every other `crates/**` library — is linted by one
+    // of them.
+    r.run("clippy native crates", || {
         match native_clippy_packages(&ctx.root) {
             Ok(packages) => checkrun(ctx, &native_clippy_argv(&packages)),
             Err(error) => {

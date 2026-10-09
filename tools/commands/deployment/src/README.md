@@ -15,6 +15,7 @@ tools/commands/deployment/src/
 ├── deployment_checks/                 the staging-compose-paths gate
 ├── deployment_checks.rs               declares the deployment source gate
 ├── development_machine_only_paths.rs  the rsync excludes both deploys share: build folders and local tool state
+├── enfusion_mod_paths.rs              the mod folder's entries the deploys' rsyncs leave out and the rsync exclusion of a mod folder entry
 ├── error.rs                           `Error` and `Result`
 ├── host_owned_paths.rs                the paths the host keeps in its checkout, which both rsyncs exclude
 ├── lib.rs                             the crate root: module header, `mod` lines and the re-exports
@@ -22,7 +23,7 @@ tools/commands/deployment/src/
 ├── remote_rust_toolchain.rs           the PATH line every remote step runs before it calls cargo or trunk
 ├── staging/                           the staging deploy: settings, render, payloads, pipeline and boot verdict
 ├── staging.rs                         `deploy staging`: `Paths`, the flag parser and the mode order
-├── tests/                             unit tests for the shared excludes, the host-owned paths, the `.env` probe, staging flags and website
+├── tests/                             unit tests for the shared excludes, the mod paths, the host-owned paths, the `.env` probe, staging flags and website
 ├── website/                           the website deploy's pure steps: rsync argv, remote shells, probe, unit
 └── website.rs                         `deploy website`: deploy.env, the refusals and the step runner
 ```
@@ -37,6 +38,10 @@ tools/commands/deployment/src/
 - Both rsync builders exclude `host_owned_paths::HOST_OWNED_PATHS`, and both deploys hand their
   rsync to `api_environment_file_preflight::rsync_only_when_present`, which runs it only after the
   host's probe exits 0.
+- Both rsync builders build their mod folder exclusions with `enfusion_mod_paths`; the addon
+  folders and folder names come from `repository_layout::enfusion_mod_folders`, which the staging
+  instance files payload (the framework addon link into each instance's addons folder), the
+  addon GUID read and the boot verdict's addon check read as well.
 
 ## Boundaries
 

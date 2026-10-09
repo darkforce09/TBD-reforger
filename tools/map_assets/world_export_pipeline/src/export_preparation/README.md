@@ -76,5 +76,5 @@ returns the process exit code: 0 done, 1 refused or failed. Paths below are unde
 
 - [Everon elevation model](/assets/terrains/everon/dem/README.md) — the PNG that
   `raw-u16-dem-png` writes.
-- [DEM export plugin](/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/README.md) —
+- [DEM export plugin](/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/README.md) —
   the Workbench plugin that writes the height grid and meta `raw-u16-dem-png` reads.

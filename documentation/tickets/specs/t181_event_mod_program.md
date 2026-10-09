@@ -6,8 +6,8 @@
 
 **Hub doc.** Open this to know what the program is and what to run next.
 Registry: [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-reforger/blob/5035931ce80324db81d84fb9535433689d72f208/.ai/tickets/registry.json) · North star:
-[`TBD_MOD_DESIGN.md`](/documentation/apps/mod/tbd-framework/mod_design.md) (T-181.4) · Capability verdicts:
-[`capability_verdicts.tsv`](/documentation/apps/mod/tbd-framework/capability_verdicts.tsv)
+[`TBD_MOD_DESIGN.md`](/documentation/mod/tbd-framework/mod_design.md) (T-181.4) · Capability verdicts:
+[`capability_verdicts.tsv`](/documentation/mod/tbd-framework/capability_verdicts.tsv)
 
 ## What this program is
 
@@ -20,7 +20,7 @@ Registry: [`.ai/tickets/registry.json`](https://github.com/darkforce09/TBD-refor
 | Engine-native lobby, briefing, slotting, respawn, spectator | **Reforger ships none of it — the mod must build all of it** |
 
 That last row is the whole reason this is a program and not a feature. **CRF** (Arma Public
-License, 266 `.c` / 71,606 LOC, gitignored at `apps/mod/crf_framework`) is the proof it can be
+License, 266 `.c` / 71,606 LOC, gitignored at `mod/References/crf_framework`) is the proof it can be
 done and is the reference oracle — **indexed, never vendored**.
 
 **Locked decisions:** events are **ONE LIFE** (death is terminal; an admin can respawn a glitch
@@ -70,7 +70,7 @@ Default to the fast lane. Measured: compile **780 ms**, whole gate **1.3 s** —
 | T-181.3.3 | **full vanilla source WITH BODIES** via AR Explorer | `SCR_BaseGameMode.c` resolves |
 | T-181.4 | `TBD_MOD_DESIGN.md` + `@idx` citation gate + CRF-leak gate | hallucinated symbol exits 1 |
 
-**The vanilla oracle has four lanes** — see [`vanilla_carve_coverage.md`](/documentation/apps/mod/tbd-framework/vanilla_source_coverage.md).
+**The vanilla oracle has four lanes** — see [`vanilla_carve_coverage.md`](/documentation/mod/tbd-framework/vanilla_source_coverage.md).
 Lane 4 (AR Explorer Doxygen source, same game version, method bodies included) supersedes the
 others; the pak-compression codec was never cracked and no longer needs to be.
 
@@ -148,7 +148,7 @@ is already the backend it binds to; `m_bAutoDeploy` turns off the PIE auto-wave 
 
 ## The Workbench pass — what it unblocks and what it settles
 
-One slow-lane pass (open `apps/mod/tbd-framework` in Workbench so it regenerates
+One slow-lane pass (open `mod/tbd-framework` in Workbench so it regenerates
 `resourceDatabase.rdb`) is now gating FOUR screens and settling two open risks. Do it before the
 first live test, then verify headlessly.
 

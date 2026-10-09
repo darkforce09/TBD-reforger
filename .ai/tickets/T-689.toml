@@ -66,12 +66,12 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c",
+    "mod/tbd-export/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c",
+    "mod/tbd-export/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c",
 ]
 
 [scope]

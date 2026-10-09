@@ -36,7 +36,7 @@ strings when the table has neither.
   `resolves_known_vehicles_and_refuses_unknown` in `tests/cases_1.rs`); every side the mod knows
   (`blufor`, `opfor`, `indfor`, `civ`) has its own default
   (`every_mod_faction_key_has_its_own_default`); the table's kits mirror the `kit:` entries of the
-  mod's spawn registry, `apps/mod/tbd-framework/Data/registry.json` (`cargo xtask schema validate`).
+  mod's spawn registry, `mod/tbd-framework/Data/registry.json` (`cargo xtask schema validate`).
 
 ## Related documentation
 

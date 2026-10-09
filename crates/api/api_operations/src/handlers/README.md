@@ -87,8 +87,8 @@ server.
   `crates/frontend/pages/administration_pages/src/event_manager/`, the mortar calculator in
   `crates/frontend/pages/field_tools_pages/src/mortar/`, the endpoint helpers in
   `crates/frontend/foundation/frontend_transport/src/endpoints/`, and the game runtime's roster loader in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` and deployment queues in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`.
+  `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` and deployment queues in
+  `mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
   roster never compiles or pairs at read time

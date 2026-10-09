@@ -17,7 +17,7 @@ tools/checks/mod_script_checks/
 
 ## How it works
 
-Every check takes the checkout root, reads committed files under `apps/mod/`, prints its own
+Every check takes the checkout root, reads committed files under `mod/`, prints its own
 report and returns its exit status: 0 held, 1 a violation, 2 a check that did not run. The source
 pins prove each ban and pin on a perturbed copy that must fail, so a check that can no longer fail
 is itself a failure. The spawn runs drive a running Workbench through `cargo xtask mcp`

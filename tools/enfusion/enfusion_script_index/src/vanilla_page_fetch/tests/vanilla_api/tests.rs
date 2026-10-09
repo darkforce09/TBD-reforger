@@ -11,7 +11,7 @@ fn scratch(name: &str) -> PathBuf {
             .as_nanos()
     ));
     let _ = fs::remove_dir_all(&p);
-    fs::create_dir_all(p.join("apps/mod/References/vanilla_reference/apidoc")).unwrap();
+    fs::create_dir_all(p.join(repository_layout::VANILLA_SCRIPT_API_PAGES)).unwrap();
     fs::create_dir_all(p.join(".ai/tickets")).unwrap();
     fs::write(p.join(".ai/tickets/ROOT"), "{}").unwrap();
     p
@@ -19,7 +19,8 @@ fn scratch(name: &str) -> PathBuf {
 
 fn seed_index(root: &Path) {
     fs::write(
-        root.join("apps/mod/References/vanilla_reference/apidoc/annotated.html"),
+        root.join(repository_layout::VANILLA_SCRIPT_API_PAGES)
+            .join("annotated.html"),
         "<html>index</html>\n",
     )
     .unwrap();
@@ -119,7 +120,7 @@ fn a_checkout_without_the_references_folder_is_refused() {
     let err = run(&root, &[]).unwrap_err();
     assert!(format!("{err:#}").contains("is missing"), "{err:#}");
     assert!(
-        !root.join("apps/mod/References").exists(),
+        !root.join(repository_layout::REFERENCES_DIR).exists(),
         "nothing recreated"
     );
     let _ = fs::remove_dir_all(root);

@@ -214,7 +214,7 @@ each call with the DTO it reads or sends. Server-side:
 - [T-1076 — Derive terrain checks and create dialog from the terrain registry](/.ai/tickets/T-1076.toml)
   (idea, no plan): the New Mission dialog offers only terrains that have map data; today it offers
   Arland, which has none.
-- [T-1005 — Refactor frontend so core and pages stop importing apps/editor](/.ai/tickets/T-1005.toml)
+- [T-1005 — Refactor frontend so core and pages stop importing the Mission Creator workspace](/.ai/tickets/T-1005.toml)
   (idea, no plan): the upload stops importing the Mission Creator's code directly.
 - [T-846 — role_notice query is written on editor denial but never read](/.ai/tickets/T-846.toml)
   (deferred, no plan): a viewer the route guard sends here from a `mission_maker` route learns why.

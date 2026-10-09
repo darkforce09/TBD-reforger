@@ -11,7 +11,7 @@ use serde_json::Value;
 /// happens to appear elsewhere in the file cannot satisfy the assertion by accident.
 fn reader_struct_bodies() -> String {
     let src = std::fs::read_to_string(repo_root().expect("repo root").join(
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/TBD_ObjectiveEntityReader.c",
+        "mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Registry/TBD_ObjectiveEntityReader.c",
     ))
     .expect("read TBD_ObjectiveEntityReader.c");
 

@@ -11,7 +11,7 @@ than repeats.
 
 ## 1. Scope and authority
 
-- The rules apply to every comment in `apps/`, `crates/` and `tools/` and to every document
+- The rules apply to every comment in `crates/`, `mod/` and `tools/` and to every document
   under `documentation/`; the audience is developers and AI agents.
 - When sources disagree, the running code wins, then `CLAUDE.md`, then the rest of the
   [authority ladder](/documentation/README.md#authority-ladder) in the entry README.
@@ -108,7 +108,7 @@ narrative about another implementation and retired paths in the API crates' sour
 refuses ticket identifiers, retired names and deleted script names in every tracked file under
 `tools/`. Elsewhere review holds them. The comment below states an engine constraint and the
 invariant that follows from it
-(`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:61-63`):
+(`mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:61-63`):
 
 ```c
 	//! Sentinel for "y absent from JSON". JsonLoadContext leaves a missing key at the
@@ -197,13 +197,13 @@ pub struct AuditStreamReady {
 
 ## 6. Enfusion comments
 
-These rules cover every EnfScript file of the three addons under `apps/mod/`. Every line a change
+These rules cover every EnfScript file of the three addons under `mod/`. Every line a change
 adds to a `.c` file is ASCII: write `--`, `->` and `...` rather than typographic dashes, arrows and
 ellipses. `git diff -U0 -- <file> | grep -P '^\+.*[^\x00-\x7F]'` prints nothing for a conforming
 change.
 
 **File header.** A top-level script or Workbench plugin opens with a `/** … */` block naming the
-file and what it does. From `apps/mod/tbd-export/Scripts/Game/TBD/Export/TBD_RoadClassifier.c:1-12`:
+file and what it does. From `mod/tbd-export/Scripts/Game/TBD/Export/TBD_RoadClassifier.c:1-12`:
 
 ```c
 /**
@@ -225,7 +225,7 @@ file and what it does. From `apps/mod/tbd-export/Scripts/Game/TBD/Export/TBD_Roa
 name does not carry gets a trailing `//!<` comment with its unit, default or JSON key. A
 hand-written JSON DTO struct carries `//! @contract` and documents every field, because
 `JsonLoadContext` maps JSON keys to field names and the coupling is invisible otherwise. From
-`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:37-44`:
+`mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:37-44`:
 
 ```c
 //! One container cargo row (loadout-export v2 {container,item,qty}).
@@ -240,11 +240,11 @@ class TBD_SlotCargoStruct
 
 A method banner states where the call runs when the call crosses machines, as
 `//! @authority owner` does on `TBD_RequestLobbyRoster`
-(`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/SCR_PlayerController.c:20`).
+(`mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/SCR_PlayerController.c:20`).
 
 **Editor attributes.** Every `[Attribute]` carries a description (`desc:` or the third positional
 argument) with its unit and default, and every `[ComponentEditorProps]` a `description:`. From
-`apps/mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/TBD_SpectatorComponent.c:43`:
+`mod/tbd-framework/Scripts/Game/TBD/Session/Spectator/TBD_SpectatorComponent.c:43`:
 
 ```c
 	[Attribute("2000", desc: "Max metres a spectator may steer their streaming host from their own death position. Default 2000. 0 uses the default; never unlimited.")]
@@ -253,16 +253,16 @@ argument) with its unit and default, and every `[ComponentEditorProps]` a `descr
 **REST call sites.** The class or method that calls the API carries `//! @route <METHOD> <path>`
 naming the route it calls, so a search for the route string finds both the Rust handler and the
 EnfScript caller. From
-`apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Delivery/TBD_TelemetryDelivery.c:63`,
+`mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Delivery/TBD_TelemetryDelivery.c:63`,
 on the method that posts the telemetry queue's head entry, one tag per route it may call:
 ``//! @route POST /api/v1/ingest/match-results``.
 
 **Gate.** `cargo xtask verify enfusion-comments` checks the rules of this section and section 7
 (rules ECM-1 to ECM-9, specified in the
 [comment gate README](/tools/checks/mod_script_checks/src/enfusion_comments/README.md))
-over the pinned mod Scripts roots, today `apps/mod/tbd-framework/Scripts` and
-`apps/mod/tbd-emcp/Scripts`; `--path` narrows it to
-any folder or file under `apps/mod/`. `cargo xtask ci verify-coding-standards` and the CI
+over the pinned mod Scripts roots, today `mod/tbd-framework/Scripts` and
+`mod/tbd-emcp/Scripts`; `--path` narrows it to
+any folder or file under `mod/`. `cargo xtask ci verify-coding-standards` and the CI
 language-gates job run it without `--path`.
 
 ## 7. Network authority
@@ -280,10 +280,10 @@ In a replicated game, which machine runs a method is part of its contract.
   above, and `@replicated` above every `[RplProp]`.
 - A server gate, `if (TBD_Authority.IsClient())`, carries a
   `// Authority only -- <reason>` comment above it, as at
-  `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/SCR_PlayerController.c:24`.
+  `mod/tbd-framework/Scripts/Game/TBD/Session/Admin/SCR_PlayerController.c:24`.
 
-From `apps/mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/SCR_PlayerController.c:33-36` and
-`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:25-27`:
+From `mod/tbd-framework/Scripts/Game/TBD/Session/Lobby/SCR_PlayerController.c:33-36` and
+`mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/TBD_FrameworkManager.c:25-27`:
 
 ```c
 	//! @authority server
@@ -311,8 +311,8 @@ documentation/
 ├── architecture/          the workspace layout as it stands
 ├── glossary/              project terms and abbreviations, one file per letter range
 ├── product_roadmap.md     the operator-curated plan
-├── apps/                  mirrors apps/mod/ alone: mod/ (tbd-framework/, tbd-export/, tbd-emcp/)
 ├── crates/<category>/<crate>/  tools/<category>/<crate>/  contracts/  assets/
+├── mod/                   mirrors mod/: tbd-framework/, tbd-export/, tbd-emcp/
 ├── design_system/         tokens, typography, colour, symbology, token exports
 ├── runbooks/              every operator procedure
 ├── standards/             this document, the README standard, templates/, coding standards,
@@ -337,11 +337,11 @@ documentation/
   `crates/frontend/pages/operations_pages/src/schedule/` under
   `documentation/crates/frontend/pages/operations_pages/schedule/`, and
   `crates/frontend/workspaces/mission_creator_workspace/src/` under
-  `documentation/crates/frontend/workspaces/mission_creator_workspace/`). `documentation/apps/`
-  mirrors the mod alone, whose scripts have no `src/`: a mirror of the mod keeps `apps/` and leaves out
-  `Scripts/Game/TBD/` instead (the screens of `apps/mod/tbd-framework/Scripts/Game/TBD/UI/` are
-  documented under `documentation/apps/mod/tbd-framework/UI/`), while the Workbench plugins under
-  `Scripts/WorkbenchGame/` keep their path (`documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`).
+  `documentation/crates/frontend/workspaces/mission_creator_workspace/`). The mod follows the
+  same rule in `documentation/mod/`; its scripts have no `src/`, so its mirror leaves out
+  `Scripts/Game/TBD/` instead (the screens of `mod/tbd-framework/Scripts/Game/TBD/UI/` are
+  documented under `documentation/mod/tbd-framework/UI/`), while the Workbench plugins under
+  `Scripts/WorkbenchGame/` keep their path (`documentation/mod/tbd-export/Scripts/WorkbenchGame/MapExport/`).
   The grain is chosen
   per case: one `pages/account/` folder covers login, the auth callback and settings, while
   administration has a folder per page.
@@ -450,8 +450,8 @@ every Rust `@route` tag with the routes the API registers, in both directions, a
 (run by `cargo xtask db test-it`) also holds each tag's sub-path and `partial` marker against the
 fields of the class it sits on. `cargo xtask ci verify-coding-standards` and
 `cargo xtask ci verify-citations` run them, and `cargo xtask ci ci-local` runs both. The citation
-check reads `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `apps/` and
-`tools/`, never Markdown, and prints that scope on every run; when the printed scope and this
+check reads `.c`, `.go`, `.js`, `.mjs`, `.rs`, `.ts` and `.tsx` files under `crates/`, `mod/`
+and `tools/`, never Markdown, and prints that scope on every run; when the printed scope and this
 section disagree, the printed scope is right. A third check, `cargo xtask verify enfusion-comments`,
 holds the EnfScript tags and the Enfusion comment rules of sections 6 and 7 over the pinned mod
 Scripts roots, and `cargo xtask ci verify-coding-standards` runs it too. Review holds the other

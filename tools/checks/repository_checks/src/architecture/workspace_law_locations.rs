@@ -1,17 +1,16 @@
 //! The locations the workspace laws (`cargo xtask verify crate-tiers` and its siblings) read.
 //!
-//! **Role:** the folders whose manifests must be workspace members, the application packages no
-//! member may depend on, the stylesheet whose `@source` lines must name every leptos crate, and
+//! **Role:** the application packages no member may depend on, the stylesheet whose `@source` lines must name every leptos crate, and
 //! the frontend-layering configuration: the in-crate layer table of the app, its module orders,
 //! and the layer folders and crate orders of the frontend crates.
 //! **Position:** read by [`super::workspace_laws`]; the laws themselves live in
 //! `repository_laws::workspace_laws` and know no path or crate name that moves with the tree, so
 //! a stage that moves a folder or births a crate rewrites these constants.
 //! **Signals & state:** none; constants.
-//! **Invariants:** every path is repository-relative or (in a layer table) crate-relative; a
-//! sweep root that does not exist yet holds no manifest; a crate order and the application list
-//! name packages, each the name of its folder and each a workspace member (an absent one is a
-//! finding of its law).
+//! **Invariants:** every path is repository-relative or (in a layer table) crate-relative; a crate
+//! order and the application list name packages, each the name of its folder and each a workspace
+//! member (an absent one is a finding of its law). The crate-tier law's stray-manifest sweep reads
+//! the whole checkout, so it takes no folder from here.
 
 use repository_laws::workspace_laws::crate_tiers::CrateTierConfiguration;
 use repository_laws::workspace_laws::frontend_layering::crate_edges::{
@@ -21,11 +20,6 @@ use repository_laws::workspace_laws::frontend_layering::{
     FrontendCrateLayers, FrontendLayer, FrontendLayerRow, FrontendLayering, SubAreaOrder,
     SubAreaTier,
 };
-
-/// Folders whose every `Cargo.toml` (outside test trees, fixtures and build output) must be a
-/// workspace member. A folder that does not exist yet holds no manifest. `apps/` holds the game
-/// mod and no crate, so a manifest placed there is a finding of rule 1 or rule 2, never exempt.
-pub(crate) const MANIFEST_SWEEP_ROOTS: &[&str] = &["apps", "crates", "tools"];
 
 /// The application packages: the binaries the platform deploys or runs — the API server, the
 /// single-page app and its offline service worker, the game server host agent and the ticketboard
@@ -38,9 +32,8 @@ pub(crate) const APPLICATION_PACKAGES: &[&str] = &[
     "ticketboard_desktop",
 ];
 
-/// What the crate-tier law reads: the sweep roots and the application packages.
+/// What the crate-tier law reads: the application packages.
 pub(crate) const CRATE_TIERS: &CrateTierConfiguration<'static> = &CrateTierConfiguration {
-    manifest_sweep_roots: MANIFEST_SWEEP_ROOTS,
     application_packages: APPLICATION_PACKAGES,
 };
 

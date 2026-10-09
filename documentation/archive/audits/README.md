@@ -30,7 +30,7 @@ defects. Paths and line counts are as they stood when each audit was written.
 
 - [API](/crates/api/api_server/), [frontend](/crates/frontend/shell/frontend_application/), [map engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/map_engine) and
   [graphics engine](https://github.com/darkforce09/TBD-reforger/tree/2a105fa4fbc0a23062fcff3dc5aedd387127c5d9/legacy/graphics_engine) — the website crates the audits read.
-- [Mod](/apps/mod/) — the addons the codebase audit also covered.
+- [Mod](/mod/) — the addons the codebase audit also covered.
 
 ## Boundaries
 

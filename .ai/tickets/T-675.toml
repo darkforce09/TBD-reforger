@@ -56,4 +56,4 @@ citations = [
     "commit 113108a1 salvage",
     "T-216 drop ledger sixth row",
 ]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Manager/TBD_SpawnManager.c"]
+owns = ["mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Manager/TBD_SpawnManager.c"]

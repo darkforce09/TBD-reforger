@@ -37,7 +37,7 @@ block among the document-owned ones and hands the parsed value to the compiler. 
 checks the parameters against the zones and [slots](/documentation/glossary/n_to_z.md#slot) it emitted
 and falls back to `FALLBACK_TRIGGER` when no trigger survives; with no valid block it derives an
 `attrition` rule. In the game,
-`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/WinConditions/TBD_WinConditionEvaluator.c` evaluates
+`mod/tbd-framework/Scripts/Game/TBD/Gamemode/Stages/WinConditions/TBD_WinConditionEvaluator.c` evaluates
 the rule.
 
 ## Boundaries

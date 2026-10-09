@@ -93,7 +93,7 @@ path through `PathParams`
   `127.0.0.1:8080`; on the deploy host, Caddy serves the built app and proxies API traffic to the
   same port (`deploy/caddy/Caddyfile`).
 - The [game runtime](/documentation/glossary/g_to_m.md#game-runtime), the mod's
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, calls `/api/v1/game-runtime/*` with its
+  `mod/tbd-framework/Scripts/Game/TBD/API/`, calls `/api/v1/game-runtime/*` with its
   `mod_runtime` credential: runtime sessions and heartbeats, the event roster, player
   [deployments](/documentation/glossary/a_to_f.md#deployment), and the
   [mission deployment](/documentation/glossary/g_to_m.md#mission-deployment) it should run with the

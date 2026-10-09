@@ -39,8 +39,8 @@ assertion `left == right` failed: phantom side padded into factions[]: ["blufor"
 | `crates/map-engine-core/src/mission/flatten.rs` | 3508-3510 | Radio harvest comment no longer refers to a stub faction that is not invented. |
 | `crates/map-engine-core/src/mission/flatten.rs` | 3598+ | `faction_eliminated` still only when `sides_holding_slots >= 2`. Not reintroduced as an unconditional second side. |
 | `crates/map-engine-core/src/mission/flatten.rs` | 5647 `single_faction_compile_does_not_pad_a_phantom_opfor` | Class-R: one faction, ORBAT/briefings have no `opfor`, wire `factions.len()==1`, no `faction_eliminated`. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` | CheckFactions close ~340 | Dropped `declared.Count() == 1` warning (`mission.schema.json expects at least two`). Empty-side warning kept at 769. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` | same relative close ~340 | Twin of the framework edit (ASCII hyphen already in this tree). Empty-side warning kept at 769. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` | CheckFactions close ~340 | Dropped `declared.Count() == 1` warning (`mission.schema.json expects at least two`). Empty-side warning kept at 769. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` | same relative close ~340 | Twin of the framework edit (ASCII hyphen already in this tree). Empty-side warning kept at 769. |
 
 Two-faction Class-R: `compiler_shaped_golden_is_a_fresh_emitter_output` **ok** (byte-identical). `cargo test -p map-engine-core --all-features mission::flatten` → **91 passed, 0 failed, 2 ignored** (manual dump/regen only; no `skip:`).
 
@@ -121,7 +121,7 @@ OK: compiled clean
 
 []
 
-Grep of `apps/mod/**/*.c` for `factions[1]`, `GetFactionAt`, `factionKeys[1]`: no hits. Briefing/ORBAT iterate declared factions; with the pad gone they do not invent a second side. The remaining `factions/1` notes in `cargo xtask schema validate` kit-alias output are two-faction golden `/factions/1/presetId` paths, not a hard-coded second side.
+Grep of `mod/**/*.c` for `factions[1]`, `GetFactionAt`, `factionKeys[1]`: no hits. Briefing/ORBAT iterate declared factions; with the pad gone they do not invent a second side. The remaining `factions/1` notes in `cargo xtask schema validate` kit-alias output are two-faction golden `/factions/1/presetId` paths, not a hard-coded second side.
 
 ## deviations
 
@@ -145,6 +145,6 @@ Ticket `verify` named `cargo xtask ci schema-validate` and `cargo xtask ci schem
 
 | relative path | framework | export |
 |---|---|---|
-| `Scripts/Game/TBD/Backend/TBD_MissionValidator.c` | `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` on disk | `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` on disk |
+| `Scripts/Game/TBD/Backend/TBD_MissionValidator.c` | `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` on disk | `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` on disk |
 
 No other `.c` files edited.

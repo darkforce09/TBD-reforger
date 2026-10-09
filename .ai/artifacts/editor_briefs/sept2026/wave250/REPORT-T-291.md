@@ -29,10 +29,10 @@ Ticket line numbers (flatten.rs:2104) are stale; live trim is `derive_settings`.
 | path | why |
 |---|---|
 | `crates/map-engine-core/src/mission/flatten.rs` | Editor-only comments on `ModFaction` / `ModOrbatRole` / `ModMissionDocument` (color, radio, layers). `derive_settings` docs name T-291 readers. Tests `t291_runtime_orphans_reach_the_compiled_wire` and `t291_color_radio_layers_are_editor_only_and_do_not_reach_the_wire`. Did **not** invent T-290's emit-ledger table. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` | Replicated `m_sSpectatorPolicy` / `m_bNightVision`. `ApplyAuthoredWeather` (`SetWindDirectionOverride` on `windDirDeg`, ABSENT sentinel). `ApplyAuthoredSettings` latches settings + `BumpMe()`. Spawn hook strips `EGadgetType.NIGHT_VISION` when policy is off (local named `gadgetMgr`, not `gadgets`, so T-705 unread baseline stays 6). |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` | ASCII twin of the above. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c` | Reads `TBD_FrameworkManager.GetSpectatorPolicy()` on the **client**. `none` → stay on death view; `own_side_delayed_60s` → 60 s delay + faction restriction ON; `free` → restriction OFF, enter immediately. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c` | ASCII twin of the above. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` | Replicated `m_sSpectatorPolicy` / `m_bNightVision`. `ApplyAuthoredWeather` (`SetWindDirectionOverride` on `windDirDeg`, ABSENT sentinel). `ApplyAuthoredSettings` latches settings + `BumpMe()`. Spawn hook strips `EGadgetType.NIGHT_VISION` when policy is off (local named `gadgetMgr`, not `gadgets`, so T-705 unread baseline stays 6). |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c` | ASCII twin of the above. |
+| `mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c` | Reads `TBD_FrameworkManager.GetSpectatorPolicy()` on the **client**. `none` → stay on death view; `own_side_delayed_60s` → 60 s delay + faction restriction ON; `free` → restriction OFF, enter immediately. |
+| `mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c` | ASCII twin of the above. |
 
 Not touched: `packages/tbd-schema/**`, `TBD_GadgetFlags.c`, `TBD_MissionLoader.c`, `TBD_WeatherRuntime.c`, `.ai/tickets/`, docs.
 

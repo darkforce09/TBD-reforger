@@ -38,7 +38,7 @@ module to the tooling; each crate's README then says what its own folders hold.
 | `ticket_registry` | library, `tools/tickets` tier 4 | the registry view, typed operations, validation, `queue.json` and the roadmap and gap-analysis markers, the corpus pins and the bodies of the `cargo xtask ticket` verbs |
 | `verification_core` | library, `tools/foundation` tier 0 | the fail-closed primitives: verdicts, findings, pattern scans, the report and the shared verification lock |
 | `process_runner` | library, `tools/foundation` tier 1 | child processes in their own process group with deadlines and honest statuses, the container-to-host bridge, the ssh transport |
-| `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length, test placement, exemptions, the apps' dependency directions, the workspace laws |
+| `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length, test placement, exemptions, the workspace laws (the crate tiers among them, which hold every member's dependency direction) |
 | `repository_layout` | library, `tools/foundation` tier 0 | the repository locations more than one tool names |
 | `deploy_settings` | library, `tools/foundation` tier 2 | the `deploy/deploy.env` reader: the precedence of the file over the process environment, the deploy host, its remote folders and the ssh transport choice |
 | `tool_test_support` | library, `tools/foundation` tier 1, dev-dependency only | the environment and working-directory locks and the test checkout root the tool tests share |

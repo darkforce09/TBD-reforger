@@ -24,8 +24,8 @@ That is the drop: a 200 on the shipping payload wrote identity-core-only and no 
 | path | why |
 |---|---|
 | `apps/website/api/src/handlers/telemetry/telemetry.rs` | Capture flat counter keys as `Option` values. `effective_counters()` uses nested when present; otherwise `fold_flat_counters()` builds a complete scoreline (unsent numerics 0, `is_command` false, `command_win` NULL). Identity-only (neither shape) still writes no counters. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c` | `BuildPlayerRow` emits nested `counters` (zeros for unmeasured fields, `command_win` null) and keeps flat `deaths` for one release. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c` | ASCII twin of the emit. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c` | `BuildPlayerRow` emits nested `counters` (zeros for unmeasured fields, `command_win` null) and keeps flat `deaths` for one release. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c` | ASCII twin of the emit. |
 | `apps/website/api/tests/deployments_combat.rs` | Flat-payload golden (kills=17…); both-shapes-equal (flat == nested; conflicting leftover flat ignored); reporter deaths-only == nested equivalent. |
 | `apps/website/api/tests/telemetry.rs` | **Outside owns.** T-393 goldens that pinned the drop/400 now assert the fold (shipping deaths stored; complete flat body 200). Partial nested `counters` still 400. Identity-only re-ingest still not a write. |
 

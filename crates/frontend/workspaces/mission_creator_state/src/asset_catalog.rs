@@ -12,7 +12,7 @@ use frontend_api_dtos::RegistryItem;
 
 const MOD_SPAWN_REGISTRY_JSON: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../../../apps/mod/tbd-framework/Data/registry.json"
+    "/../../../../mod/tbd-framework/Data/registry.json"
 ));
 
 #[must_use]

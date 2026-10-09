@@ -92,7 +92,7 @@ folder, declared with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 - Used by: the integration suites in `crates/api/api_server/tests/`; through the binaries, the
   `cargo xtask` recipes, the release image and the systemd unit that run them; over HTTP, the
   single-page app in `crates/frontend/shell/frontend_application/`, the game servers through
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, and the
+  `mod/tbd-framework/Scripts/Game/TBD/API/`, and the
   [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) in
   `crates/fleet/game_server_host_agent/`.
 - Rules (`tests/architecture_rules.rs`, which reads the source and the Cargo manifests of this

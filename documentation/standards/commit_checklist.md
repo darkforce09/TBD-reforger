@@ -55,8 +55,8 @@ working context.
 - The design exports in a `visual_references/` folder, which are references, not the source of
   the UI; the live UI is the Leptos code under `crates/frontend/shell/frontend_application/src/`.
 
-Markdown never goes under a `docs` folder in `apps/`, `crates/`, `tools/`, `contracts/` or `assets/`; it goes in
-`documentation/`, beside the feature it describes.
+Markdown never goes under a `docs` folder in `crates/`, `mod/`, `tools/`, `contracts/` or
+`assets/`; it goes in `documentation/`, beside the feature it describes.
 
 ## Verify before committing
 

@@ -118,7 +118,7 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
      against the committed baseline: set equality on failing route names, and the four clean
      routes (notfound, eventmgr, callback, login) must still pass. Pass -> fail is a hard stop.
   2. Leave the dirty working tree alone. ~70 files are modified/untracked that are NOT ours
-     (apps/mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
+     (mod/** is out of scope per §7, plus CLAUDE.md, xtask/src/*, documentation/,
      tools/, v2/** READMEs). Stage ONLY files you authored. Never `git add -A`.
   3. `pages/operations/{orbat_manager,faction_manager}.rs` -> `v2/apps/editor/ui/modals/` (unrouted
      editor modals, not pages). Keep distinct from `v2/pages/operations/orbat_selection/`.
@@ -132,7 +132,7 @@ OPERATOR DECISIONS ALREADY MADE — do not re-ask:
 KNOWN RED BEFORE 3B TOUCHES ANYTHING — not yours, not regressions:
   gate v-suite verify            21 of 25 routes fail (T-986; the program doc's "22" is wrong)
   cargo xtask verify file-length exit 1, 9 unallowlisted SIZE-3 — Phase 3C clears them
-  cargo test -p xtask            8 failures, all pinning a missing apps/mod/** script:
+  cargo test -p xtask            8 failures, all pinning a missing mod/** script:
                                    gate_t437::tests::{collapsed_returns_fail_registry_pins,
                                      live_tree_holds, paraphrase_injection_is_caught}
                                    schema_gates::t212_objective_spine_tests::{objective_spine_is_

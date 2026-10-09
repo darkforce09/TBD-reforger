@@ -7,7 +7,7 @@ pinned `enfusion-mcp` server: brings the bridge up, calls MCP tools and raw Net 
 back a Workbench Play log, and cleans up the broker. [Mod](/documentation/glossary/g_to_m.md#mod) developers and agents run it whenever a
 task needs Workbench. The first call pays a one-time index load of about 35 seconds; later calls go
 to the warm broker. How the bridge is built, and the `mcp call` against `mcp wbcall` choice, is in
-[Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md); every command's
+[Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md); every command's
 synopsis and exit codes are in the [MCP commands README](/tools/commands/enfusion_mcp/README.md).
 
 ## Prerequisites
@@ -51,7 +51,7 @@ Run every command from the repository root.
    Expected: `== TBD dev bootstrap ==`, `Port 5775 is listening.`, `Pre-warming MCP daemon...`,
    the `wb_connect` answer, the two `mod_validate` results, then `Bootstrap complete.` and exit 0.
    When the port stays closed for `TBD_WB_WAIT_SEC` seconds (default 180) it prints
-   `ACTION REQUIRED: Launch Arma Reforger Tools from Steam, open …/apps/mod/tbd-export/addon.gproj,
+   `ACTION REQUIRED: Launch Arma Reforger Tools from Steam, open …/mod/tbd-export/addon.gproj,
    enable Net API (File > Options > General).` and exits 1; do that and run it again.
 
 3. Check the broker.
@@ -71,7 +71,7 @@ Run every command from the repository root.
 
    Expected: the text content of the result on stdout and exit 0. The `wb_*` tools reach the open
    Workbench (`cargo xtask mcp call wb_state`); `mod_validate` checks an addon on disk
-   (`cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'`).
+   (`cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/mod/tbd-framework"}'`).
 
 5. Call a Net API handler directly, for a handler no MCP tool maps to.
 
@@ -129,12 +129,12 @@ stderr of a failed attempt.
 | the first call takes about 35 s | the server's index load; the broker then stays warm | none; step 2 pre-warms it |
 | `mcp-daemon: failed to start (see <socket>.log)` | `mcpd` exited or its socket did not accept within 60 s | read the log; `mcp call` still works one-shot |
 | Workbench reports "Multiple declaration" and the `wb_*` tools die | `wb_launch` with `gprojPath` copied a second handler set into that addon | delete that addon's copied `Scripts/WorkbenchGame/EnfusionMCP/`, restart Workbench; never pass `gprojPath` |
-| `wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open …` | Workbench has another project open, so `TBD_EMCP` is not loaded | open the export addon and rerun step 2 |
+| `wb_connect failed — Workbench must have mod/tbd-export/addon.gproj open …` | Workbench has another project open, so `TBD_EMCP` is not loaded | open the export addon and rerun step 2 |
 | machine load climbs while nothing calls | stray brokers or servers from crashed sessions | step 7 |
 
-Never point the MCP's `wb_cleanup` at `apps/mod/tbd-emcp`: it deletes the committed handlers. The
+Never point the MCP's `wb_cleanup` at `mod/tbd-emcp`: it deletes the committed handlers. The
 loading rules behind both warnings are in
-[Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md).
+[Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md).
 
 ### Environment
 
@@ -170,9 +170,9 @@ The server command comes from the first tier that resolves
 
 - [MCP commands](/tools/commands/enfusion_mcp/README.md) — every `cargo xtask mcp` command, its
   flow and its exit codes.
-- [Enfusion MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — the bootstrap
+- [Enfusion MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — the bootstrap
   order, the loading rules and the known gaps.
-- [TBD EMCP addon](/apps/mod/tbd-emcp/README.md) — the nineteen Net API handlers and the
+- [TBD EMCP addon](/mod/tbd-emcp/README.md) — the nineteen Net API handlers and the
   `enfusion-mcp` upgrade procedure.
 - [Developer tool executables](/tools/developer_tools/src/bin/README.md) — the `mcpd` binary.
 - [Enfusion MCP broker](/tools/enfusion/enfusion_mcp_broker/README.md) — the broker `mcpd` runs,

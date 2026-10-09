@@ -7,7 +7,7 @@ How work on the TBD [mod](/documentation/glossary/g_to_m.md#mod) runs: an orches
 slice in its own git worktree, and `cargo xtask mod wave` merges, gates, reaps and pushes them.
 The rules below are operator-defined and binding; read them before dispatching any slice agent.
 The program is the [mod program spec](/documentation/tickets/specs/t181_event_mod_program.md),
-and the [mod design](/documentation/apps/mod/tbd-framework/mod_design.md) is the standard every slice
+and the [mod design](/documentation/mod/tbd-framework/mod_design.md) is the standard every slice
 meets.
 
 ```text
@@ -28,9 +28,9 @@ reason in.
 - `CLAUDE.md`, the mod design and the program spec, read.
 - Everything the agents need is committed on `main`. A worktree branches from a commit, so
   anything uncommitted on `main` is missing inside it.
-- The three oracle lanes filled in the main checkout's `apps/mod/References/` (see
+- The three oracle lanes filled in the main checkout's `mod/References/` (see
   [Oracle lanes](#oracle-lanes)): `crf_framework`, `vanilla_reference` and `playable_selector`,
-  each gitignored and filled as the [reference lanes README](/apps/mod/References/README.md)
+  each gitignored and filled as the [reference lanes README](/mod/References/README.md)
   describes; `TBD_PS_ORACLE` may name another PlayableSelector checkout in place of the last.
 - The Arma Reforger dedicated server under Steam and a host bridge (`distrobox-host-exec` or
   `host-spawn`), which `mod compile` and the world boot need; the
@@ -41,7 +41,7 @@ reason in.
   the program.
 - [Workbench](/documentation/glossary/n_to_z.md#workbench) only for world, prefab and play-in-editor
   work: `cargo xtask mod dev-bootstrap` brings it and the MCP bridge up, as the
-  [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md#bringing-the-bridge-up)
+  [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md#bringing-the-bridge-up)
   describes.
 
 ### The environment every prompt carries
@@ -80,7 +80,7 @@ output trying to fix it.
 6. **Verify green: dispatch the next wave** without waiting to be asked.
 7. **Never give two concurrent agents write access to the same contended file.**
    `Systems/Spawning/Manager/TBD_SpawnManager.c` and `Gamemode/Orchestrator/TBD_FrameworkManager.c` (under
-   `apps/mod/tbd-framework/Scripts/Game/TBD/`) are the usual ones. The limit is file collisions,
+   `mod/tbd-framework/Scripts/Game/TBD/`) are the usual ones. The limit is file collisions,
    not Workbench.
 8. **Agents never ship.** They implement, compile, gate their slice and report. The orchestrator
    owns every ticket status change, through `cargo xtask ticket`.
@@ -135,7 +135,7 @@ Run every step from the repository root of the main checkout unless it says the 
    cargo xtask mod wave prep <N>
    ```
 
-   Expected: for each slice, `  oracle ok: apps/mod/References/<lane> -> <source>` for each of
+   Expected: for each slice, `  oracle ok: mod/References/<lane> -> <source>` for each of
    the three lanes, the note that `assets/terrains` holds LFS pointers in the worktree, and
    `worktree: <root>/.ai/artifacts/worktrees/<slice>   branch: slice/<slice>`. A missing lane
    prints an `ERROR: … missing` line and `REFUSING` for that slice instead. `prep` exits 0 even
@@ -221,7 +221,7 @@ exits 1 on any `@idx` citation that does not resolve. `verify no-crf-leak` exits
 the check's [README](/tools/checks/repository_checks/src/licensing/README.md) describes what it scans.
 
 On the current tree the gate cannot pass: `verify ui-layouts` finds no layout because it does not
-walk the subfolders of `apps/mod/tbd-framework/UI/layouts/`.
+walk the subfolders of `mod/tbd-framework/UI/layouts/`.
 
 ## Verify
 
@@ -276,14 +276,14 @@ is generated and `enf citations` gates prose citations.
 |---|---|
 | Does a CRF or vanilla scripted symbol exist? | `cargo run -q -p developer_tools --bin enf -- lookup <Symbol>` (the CRF index by default); add `--index .ai/artifacts/enf-index/vanilla_symbols.tsv` for vanilla |
 | Is a class in the official Script API? | `rg '^<Class>\t' .ai/artifacts/enf-index/vanilla_api_classes.tsv` |
-| What does vanilla actually do? | `rg <pattern>` over the `Source/` folder of the `vanilla_reference` lane in `apps/mod/References/`: real source with method bodies |
+| What does vanilla actually do? | `rg <pattern>` over the `Source/` folder of the `vanilla_reference` lane in `mod/References/`: real source with method bodies |
 | More vanilla source | `cargo xtask fetch vanilla-source <ClassName>…`, then `enf source`; the site is one person's, so never `--all` |
-| How does a working framework do it? | `rg <pattern>` over the `crf_framework` lane in `apps/mod/References/`: CRF, Arma Public License, reference only |
-| How is a lobby or slot picker shaped? | `rg <pattern>` over the `playable_selector` lane in `apps/mod/References/`: no licence, design only ([Oracle lanes](#oracle-lanes)) |
+| How does a working framework do it? | `rg <pattern>` over the `crf_framework` lane in `mod/References/`: CRF, Arma Public License, reference only |
+| How is a lobby or slot picker shaped? | `rg <pattern>` over the `playable_selector` lane in `mod/References/`: no licence, design only ([Oracle lanes](#oracle-lanes)) |
 | Where does a subsystem live? | `enf dirs`, and `.ai/artifacts/enf-index/capability_matrix.tsv` |
 | Does my change compile? | `cargo xtask mod compile`: about 1.3 s on the native server, no Workbench |
 | Does an API exist, definitively? | `cargo xtask mod compile --probe=<dir>`: call it in a throwaway `.c` file in that dir; a clean compile means it exists |
-| Workbench, prefabs, resource names | the [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md): look names up with its tools, never type a GUID by hand |
+| Workbench, prefabs, resource names | the [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md): look names up with its tools, never type a GUID by hand |
 
 **Two kinds of Enfusion class, two oracles.** A scripted class (`SCR_BaseGameMode`,
 `SCR_PlayerController`) ships as `.c` source: check it with `enf lookup` or `rg` over the
@@ -315,8 +315,8 @@ A probe that would compile under both answers is not a probe.
 
 ## Oracle lanes
 
-The three lanes are folders of `apps/mod/References/`, each filled on the machine that needs it
-as the [reference lanes README](/apps/mod/References/README.md) describes. `slice-worktree new`
+The three lanes are folders of `mod/References/`, each filled on the machine that needs it
+as the [reference lanes README](/mod/References/README.md) describes. `slice-worktree new`
 links each into every worktree; all are gitignored, so a fresh tree has none until that step runs.
 They are not equivalent, and the difference is legal, not stylistic.
 
@@ -341,17 +341,17 @@ tree that fails later. `TBD_PS_ORACLE`, when set and not empty, names another Pl
 checkout in place of the `playable_selector` lane, for `new` and the leak gate alike.
 
 **The gate.** `cargo xtask verify no-crf-leak` (the name covers every lane) fails on a `CRF_` or
-`PS_` identifier in the code of `apps/mod/tbd-framework/` and `apps/mod/tbd-export/`, and on an
+`PS_` identifier in the code of `mod/tbd-framework/` and `mod/tbd-export/`, and on an
 oracle asset GUID reused there that no vanilla pak also contains, printing under each such GUID
-the `path:line` of every reference to it in our addons. `apps/mod/tbd-emcp/` is third-party and
+the `path:line` of every reference to it in our addons. `mod/tbd-emcp/` is third-party and
 not scanned. Comment lines naming an oracle are allowed and encouraged — citing what was
 design-mirrored is the practice — it is the prefix in code that fails; a `@`-prefixed Workshop mod
 name such as `@CRF_Framework` is a name, not an identifier, and passes. Without the CRF or
 PlayableSelector lane the gate exits 2 (did not run) and names the missing lane.
 
 **The deploys.** `cargo xtask deploy staging` and `cargo xtask deploy website` exclude the whole
-`apps/mod/References/` folder from their rsync, so every lane in it, present or future, stays off
-both servers. The staging server only runs `apps/mod/tbd-framework`, so an oracle on it is licence
+`mod/References/` folder from their rsync, so every lane in it, present or future, stays off
+both servers. The staging server only runs `mod/tbd-framework`, so an oracle on it is licence
 exposure for no benefit, and the main checkout holds the lanes as real folders, so a dropped
 exclude ships every lane.
 
@@ -359,7 +359,7 @@ exclude ships every lane.
 `tools/foundation/repository_layout/src/documentation_locations.rs`, the link step in
 `tools/commands/platform_execution/src/slice_worktree/git_plain.rs`, the prefix and lane in
 `tools/checks/repository_checks/src/licensing/upstream_code_leaks.rs` when it is a licensed code lane,
-and its row in the [reference lanes README](/apps/mod/References/README.md). The deploy excludes
+and its row in the [reference lanes README](/mod/References/README.md). The deploy excludes
 need no edit, because they exclude the folder. A lane missing any of them is a liability.
 
 ## Verify agent prompt
@@ -384,7 +384,7 @@ START HERE
   cargo xtask mod wave gate            # every step must pass; a failure IS a finding
   git log --oneline -15 main
   git diff --stat <pre-land commit>..main
-Read documentation/apps/mod/tbd-framework/mod_design.md and
+Read documentation/mod/tbd-framework/mod_design.md and
 documentation/runbooks/mod_slice_workflow.md first.
 
 WHAT TO ATTACK, in priority order
@@ -401,7 +401,7 @@ WHAT TO ATTACK, in priority order
    read the diff for structural copying too.
 4. Enfusion correctness. Every API called must exist:
      cargo run -q -p developer_tools --bin enf -- lookup <Symbol>
-     rg <pattern> apps/mod/References/vanilla_reference/Source/
+     rg <pattern> mod/References/vanilla_reference/Source/
    The compile gate catches undefined symbols, not wrong-but-existing usage: an
    [RplProp(onRplName:)] handler that assumes it fires on the authority (it fires only on the
    proxy), or set/array.Remove treated as by-key (it is by index).
@@ -435,7 +435,7 @@ UI slice as done when it only compiles.
 |---|---|---|
 | `mod wave land` prints `MERGE FAILED for <slice>` | `merge` refused: dirty tree, or `land: no gate verdict for <slice>`, a red verdict, or a verdict `STALE` against the branch tip | commit in the worktree, then run `cargo xtask platform wave gate --slice <slice id>` from the worktree and land again |
 | `Gate FAILED after merge. Worktrees kept for inspection.` | a gate step failed on merged `main`; `ui layouts` fails on every run today ([The mod wave gate](#the-mod-wave-gate)) | read each `FAIL` block and run the failing step's command on its own; after a real fix on `main`, run `cargo xtask mod wave gate`, then `platform slice-worktree -- reap` and `mod wave push` by hand |
-| `new` prints `ERROR: <path> missing — cannot link the <lane> oracle lane` and `REFUSING` | a lane is absent from the main checkout's `apps/mod/References/` (or `TBD_PS_ORACLE` names a missing folder) | fill the lane as the [reference lanes README](/apps/mod/References/README.md) describes, or point `TBD_PS_ORACLE` at a PlayableSelector checkout, then re-run `slice-worktree -- new <slice id>` |
+| `new` prints `ERROR: <path> missing — cannot link the <lane> oracle lane` and `REFUSING` | a lane is absent from the main checkout's `mod/References/` (or `TBD_PS_ORACLE` names a missing folder) | fill the lane as the [reference lanes README](/mod/References/README.md) describes, or point `TBD_PS_ORACLE` at a PlayableSelector checkout, then re-run `slice-worktree -- new <slice id>` |
 | `verify no-crf-leak` exits 2 naming a missing lane | the CRF or PlayableSelector lane is absent, so the leak check did not run | fill the lane as above and re-run the check |
 | `REFUSING to bypass the LFS hook: <n> file(s) under assets/terrains/` | the push range carries LFS-tracked files | with git-lfs installed, `git push origin main` |
 | `enf lookup <Class> --index …/vanilla_api_classes.tsv` prints `NOT FOUND` for a listed class | `lookup` reads four-column symbol indexes; the API class index has two columns | `rg '^<Class>\t'` over the TSV instead |
@@ -444,7 +444,7 @@ UI slice as done when it only compiles.
 
 ## Related
 
-- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the non-negotiables and the
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the non-negotiables and the
   Enfusion facts every slice meets.
 - [Mod program spec](/documentation/tickets/specs/t181_event_mod_program.md) — the program the
   waves carry out.
@@ -456,13 +456,13 @@ UI slice as done when it only compiles.
   gate and its verdict receipt.
 - [Factory waves](/documentation/runbooks/factory_waves/README.md) — the same worktree cycle for
   the platform program.
-- [Workbench MCP bridge](/documentation/apps/mod/tbd-emcp/workbench_mcp_bridge.md) — bringing
+- [Workbench MCP bridge](/documentation/mod/tbd-emcp/workbench_mcp_bridge.md) — bringing
   Workbench and the MCP tools up with `mod dev-bootstrap`.
-- [Loadouts](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/README.md) — the dev harness
+- [Loadouts](/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/README.md) — the dev harness
   that equips `$profile:TBD_LoadoutTest.json` on a test body.
 - [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md) — `enf lookup`,
   `citations` and `capability`.
 - [Upstream code leak gate](/tools/checks/repository_checks/src/licensing/README.md) —
   `verify no-crf-leak` in full.
-- [Vanilla source coverage](/documentation/apps/mod/tbd-framework/vanilla_source_coverage.md) — which
+- [Vanilla source coverage](/documentation/mod/tbd-framework/vanilla_source_coverage.md) — which
   lane answers which vanilla question.

@@ -15,7 +15,7 @@ Command: `pwd && git branch --show-current`
 |---|---|---|
 | T-936.2 tasks model has no `schedule` / `startAfterS` / `windowS` | `crates/map-engine-core/src/mission/tasks.rs` on `dbb8d4998` (worktree parent / main at dispatch) | `git show dbb8d4998:crates/map-engine-core/src/mission/tasks.rs \| grep -n -i 'schedule\|startAfter\|windowS'` → no hits |
 | `$defs/task` has `additionalProperties: false` and no `schedule` property | `packages/tbd-schema/schema/mission.schema.json:1216-1255` | same `git show` of that span; properties stop at `description` |
-| State machine has no mission-clock schedule | `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` on parent: `TBD_TaskStruct` is id/title/tier/state/triggerId/markerId/description only | `git show dbb8d4998:...TBD_TaskStateMachine.c` |
+| State machine has no mission-clock schedule | `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` on parent: `TBD_TaskStruct` is id/title/tier/state/triggerId/markerId/description only | `git show dbb8d4998:...TBD_TaskStateMachine.c` |
 
 The defect still existed. T-936.2 / T-115 are shipped; they do not implement T-133.
 
@@ -29,8 +29,8 @@ The defect still existed. T-936.2 / T-115 are shipped; they do not implement T-1
 | `crates/frontend/shell/frontend_application/src/editor/panels/tasks_panel.rs` | 198-263 | `with_schedule` / `schedule_seconds`; empty-empty clears; half-filled refused; calls `validate_schedule(..., Some(mission_length_s))` |
 | `crates/frontend/shell/frontend_application/src/editor/panels/tasks_panel.rs` | 529-574 | unmounted panel still authors Start after (s) / Window (s); wasm reads `flow.timeLimitSeconds` (default 5400) |
 | `crates/frontend/shell/frontend_application/src/editor/panels/tasks_panel.rs` | 725-761 | wasm-native tests for write, zero-window refusal copy, start-past-length refusal copy, clear, half-fill |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | 26-34, 87-90, 202-203, 231, 267, 386-499 | `TBD_TaskScheduleStruct` with ABSENT sentinels; LIVE mission clock; inactive before `startAfterS`; evaluate inside `windowS`; fail when the window closes; log `[TBD][Task] id=<n> t=<s> -> <state>` |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | same | export twin, identical ASCII |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | 26-34, 87-90, 202-203, 231, 267, 386-499 | `TBD_TaskScheduleStruct` with ABSENT sentinels; LIVE mission clock; inactive before `startAfterS`; evaluate inside `windowS`; fail when the window closes; log `[TBD][Task] id=<n> t=<s> -> <state>` |
+| `mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | same | export twin, identical ASCII |
 
 ## perturbation
 
@@ -121,6 +121,6 @@ Schedule lives on the task object via the `KNOWN_KEYS` block in `tasks.rs` (the 
 
 ## twins_confirmed
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` exists
-- `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` exists
+- `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` exists
+- `mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` exists
 - byte-identical, pure ASCII

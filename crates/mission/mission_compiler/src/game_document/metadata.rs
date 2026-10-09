@@ -59,7 +59,7 @@ pub(super) const ROLE_FALLBACK: &str = "unassigned";
 /// Stand-in for a squad with neither `callsign` nor `name`. Only reached when the squad also has no id, because the id is preferred — two unnamed squads must not collapse onto one callsign, or their derived slot ids collide and the mod's duplicate-id check (a hard error there) rejects the whole document.
 pub(super) const CALLSIGN_FALLBACK: &str = "squad";
 
-/// `TBD_RadioPlan.MAX_NETS` (`apps/mod/tbd-framework/.../Radio/TBD_RadioPlan.c:91`). **The schema states no `maxItems` on `radioPlan.nets`** — this limit exists only in the mod, which accepts the first 32 nets in DOCUMENT ORDER and drops the rest. It is mirrored here so the cut is made by the side that can make it fairly: see [`derive_radio_plan`] for why document order is load-bearing.
+/// `TBD_RadioPlan.MAX_NETS` (`mod/tbd-framework/.../Radio/TBD_RadioPlan.c:91`). **The schema states no `maxItems` on `radioPlan.nets`** — this limit exists only in the mod, which accepts the first 32 nets in DOCUMENT ORDER and drops the rest. It is mirrored here so the cut is made by the side that can make it fairly: see [`derive_radio_plan`] for why document order is load-bearing.
 pub(super) const MOD_MAX_NETS: usize = 32;
 
 /// `TBD_RadioPlan.MAX_LABEL_CHARS` (`TBD_RadioPlan.c:94`). Again mod-only — the schema puts no `maxLength` on `net.label`. `TBD_RadioPlan.CapLabel` truncates past it without a word to anyone, so the truncation is done here instead, where the compiled document a human can read already shows the string the player will see.

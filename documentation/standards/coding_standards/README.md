@@ -33,7 +33,7 @@ an exact number, command or tool, it is not a rule yet.
 **Authority.** Running code wins over every document, then `CLAUDE.md` (its laws), then these
 standards. Comment and tag rules (`@route`, `@contract`, `@authority`, doc-comment presence) belong
 to the [documentation standards](/documentation/standards/documentation_standards.md); the
-layer walls between the map crates, the graphics crates and the apps belong to the
+layer walls between the map crates, the graphics crates and the applications belong to the
 [crate boundary rules](/documentation/standards/crate_boundary_rules.md). A code rule that
 depends on one of those links to it and does not restate it.
 

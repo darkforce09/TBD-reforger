@@ -48,8 +48,8 @@ A schema reaches code in one of three ways:
   API goldens (`crates/api/api_server/tests/contract_support/mod.rs`).
 
 `cargo xtask schema citations` (the `verify-citations` CI task) resolves every
-`@contract <schema>#<pointer>` tag in `.c`, `.rs` and the other code files under `apps/` and
-`tools/` against these files, so a renamed schema or definition fails where code still cites it.
+`@contract <schema>#<pointer>` tag in `.c`, `.rs` and the other code files under `crates/`,
+`mod/` and `tools/` against these files, so a renamed schema or definition fails where code still cites it.
 
 | Contract | Schemas | Read by |
 |---|---|---|

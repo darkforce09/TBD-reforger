@@ -12,17 +12,17 @@
 
 /// The gitignored folder holding the licensed upstream reference trees beside its tracked
 /// README.md. Nothing under it is committed or deployed.
-pub const REFERENCES_DIR: &str = "apps/mod/References";
+pub const REFERENCES_DIR: &str = "mod/References";
 
 /// The Coalition Reforger Framework lane (Arma Public License): read and cite, never copy.
-pub const CRF_FRAMEWORK_REFERENCE: &str = "apps/mod/References/crf_framework";
+pub const CRF_FRAMEWORK_REFERENCE: &str = "mod/References/crf_framework";
 
 /// The vanilla lane: extracted Arma Reforger scripts and the official Script API pages (Bohemia
 /// Interactive copyright).
-pub const VANILLA_REFERENCE: &str = "apps/mod/References/vanilla_reference";
+pub const VANILLA_REFERENCE: &str = "mod/References/vanilla_reference";
 
 /// The PlayableSelector checkout, which carries no licence: design mirror only.
-pub const PLAYABLE_SELECTOR_REFERENCE: &str = "apps/mod/References/playable_selector";
+pub const PLAYABLE_SELECTOR_REFERENCE: &str = "mod/References/playable_selector";
 
 /// An environment variable naming another PlayableSelector checkout. When it is set and not
 /// empty it replaces [`PLAYABLE_SELECTOR_REFERENCE`] as the lane's source.

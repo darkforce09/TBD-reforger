@@ -6,7 +6,7 @@
   "Exclude": [
     "node_modules",
     "dist",
-    "apps/mod/",
+    "^mod/",
     "contracts/fixtures/api_goldens/",
     "tools/browser_testing/browser_gate_suites/fixtures/",
     "\\.ai/artifacts/",

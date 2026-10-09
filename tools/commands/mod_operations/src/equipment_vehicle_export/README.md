@@ -26,7 +26,7 @@ tools/commands/mod_operations/src/equipment_vehicle_export/
 
 The Workbench plugins write a generation under
 `$profile:TBD_Export/equipment_vehicle_exports/generations/<generation id>/`
-(`apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Generation/TBD_SourceExportGeneration.c`).
+(`mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Generation/TBD_SourceExportGeneration.c`).
 
 - Validate: `validation::validate` checks `generation.json` and every record and snapshot against
   `contracts/definitions/equipment-vehicle-export.schema.json`, compiled in with
@@ -60,5 +60,5 @@ The Workbench plugins write a generation under
 
 ## Related documentation
 
-- [Equipment and vehicle export evidence](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
+- [Equipment and vehicle export evidence](/documentation/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/verification_evidence/README.md)
   — recorded validation and publication runs.

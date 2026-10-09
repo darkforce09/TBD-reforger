@@ -59,7 +59,7 @@ Smoke floor: `OUTLINE_SEGS_FLOOR = 50_000` in `tools/tbd-tools/src/smokes.rs` (f
 - Reintroducing 32 m landcover forest wash
 - Progressive per-chunk `push_composite`
 - Retuning `CANOPY_MASS_ISO` / redensify
-- T-071.1 / `apps/mod/**`
+- T-071.1 / `mod/**`
 
 ## Manual G-A (operator)
 

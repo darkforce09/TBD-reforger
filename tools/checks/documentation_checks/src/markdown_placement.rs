@@ -2,9 +2,9 @@
 //!
 //! **Role:** the `markdown-placement` gate. Over the tracked files the scope selects it judges
 //! three rules: the code trees — every top-level folder but the documentation root and the
-//! retired documentation root, derived from the listing so a new top-level folder is judged at
+//! retired top-level folders, derived from the listing so a new top-level folder is judged at
 //! once — hold no Markdown file but README.md (test, generated-output and hidden folders
-//! excepted); the retired documentation root holds no tracked file; and every live Markdown
+//! excepted); each retired top-level folder (`docs`, `apps`) holds no tracked file; and every live Markdown
 //! document under the documentation root is at most `LIVE_DOCUMENT_LINE_LIMIT` lines.
 //!
 //! **Position:** `cargo xtask verify markdown-placement [--path <dir>]... [--with-untracked]`
@@ -29,7 +29,7 @@ use crate::path_regions::{
     is_size_exempt, is_within, parent_folder,
 };
 use crate::tracked_tree::TrackedTree;
-use repository_layout::RETIRED_DOCS_ROOT;
+use repository_layout::RETIRED_TOP_LEVEL_FOLDERS;
 use repository_layout::documentation::DOCUMENTATION_ROOT;
 
 /// The gate's name on its header and summary lines.
@@ -63,16 +63,21 @@ fn judge(repo_root: &Path, listing: Result<TrackedTree, NotRun>, request: &GateR
         request.untracked,
         vec![
             format!(
-                "==> {GATE}: code trees hold only {README}, {RETIRED_DOCS_ROOT}/ holds nothing, \
-                 live documents stay at or under {LIVE_DOCUMENT_LINE_LIMIT} lines"
+                "==> {GATE}: code trees hold only {README}, {} hold nothing, live documents stay \
+                 at or under {LIVE_DOCUMENT_LINE_LIMIT} lines",
+                RETIRED_TOP_LEVEL_FOLDERS
+                    .iter()
+                    .map(|(folder, _)| format!("{folder}/"))
+                    .collect::<Vec<_>>()
+                    .join(" and ")
             ),
             scope_line(&scope, &tree),
         ],
     );
     let code_trees = judge_code_trees(&tree, &scope, &mut run.verdicts);
-    let retired = judge_retired_root(&tree, &scope, &mut run.verdicts);
+    let retired = judge_retired_folders(&tree, &scope, &mut run.verdicts);
     let documents = judge_documents(repo_root, &tree, &scope, &mut run.verdicts);
-    if code_trees.judged + documents.judged == 0 && retired.is_none() {
+    if code_trees.judged + documents.judged == 0 && retired.iter().all(|(_, held)| held.is_none()) {
         run.verdicts
             .push(judged_nothing(GATE, Kind::Ban, repo_root, &scope));
         return run;
@@ -82,10 +87,17 @@ fn judge(repo_root: &Path, listing: Result<TrackedTree, NotRun>, request: &GateR
             "  code trees: {} Markdown file(s) judged, {} other than {README}",
             code_trees.judged, code_trees.failed
         ),
-        match retired {
-            Some(held) => format!("  {RETIRED_DOCS_ROOT}/: {held} tracked file(s)"),
-            None => format!("  {RETIRED_DOCS_ROOT}/: outside the scope"),
-        },
+        format!(
+            "  {}",
+            retired
+                .iter()
+                .map(|(folder, held)| match held {
+                    Some(held) => format!("{folder}/: {held} tracked file(s)"),
+                    None => format!("{folder}/: outside the scope"),
+                })
+                .collect::<Vec<_>>()
+                .join("; ")
+        ),
         format!(
             "  {DOCUMENTATION_ROOT}/: {} live document(s) judged, {} over \
              {LIVE_DOCUMENT_LINE_LIMIT} lines, {} unreadable",
@@ -118,33 +130,38 @@ fn judge_code_trees(tree: &TrackedTree, scope: &GateScope, verdicts: &mut Vec<Ve
     tally
 }
 
-/// Rule 2: the retired documentation root holds no tracked file. `None` when the scope does not
-/// reach it; otherwise how many tracked files it holds.
-fn judge_retired_root(
+/// Rule 2: every retired top-level folder holds no tracked file, one verdict per retired folder
+/// the scope reaches. Returns each retired folder with `None` when the scope does not reach it
+/// and otherwise how many tracked files it holds.
+fn judge_retired_folders(
     tree: &TrackedTree,
     scope: &GateScope,
     verdicts: &mut Vec<Verdict>,
-) -> Option<usize> {
-    if !scope.overlaps(RETIRED_DOCS_ROOT) {
-        return None;
-    }
-    let held: Vec<&str> = tree
-        .files()
-        .filter(|path| is_within(path, RETIRED_DOCS_ROOT) && scope.contains(path))
-        .collect();
-    verdicts.push(if held.is_empty() {
-        Verdict::Held
-    } else {
-        Verdict::Failed(Finding {
-            headline: format!(
-                "{RETIRED_DOCS_ROOT}/ holds {} tracked file(s); every document lives under \
-                 {DOCUMENTATION_ROOT}/",
-                held.len()
-            ),
-            detail: held.iter().map(ToString::to_string).collect(),
+) -> Vec<(&'static str, Option<usize>)> {
+    RETIRED_TOP_LEVEL_FOLDERS
+        .iter()
+        .map(|&(folder, successor)| {
+            if !scope.overlaps(folder) {
+                return (folder, None);
+            }
+            let held: Vec<&str> = tree
+                .files()
+                .filter(|path| is_within(path, folder) && scope.contains(path))
+                .collect();
+            verdicts.push(if held.is_empty() {
+                Verdict::Held
+            } else {
+                Verdict::Failed(Finding {
+                    headline: format!(
+                        "{folder}/ holds {} tracked file(s); {successor}",
+                        held.len()
+                    ),
+                    detail: held.iter().map(ToString::to_string).collect(),
+                })
+            });
+            (folder, Some(held.len()))
         })
-    });
-    Some(held.len())
+        .collect()
 }
 
 /// Rule 3: every live Markdown document under the documentation root is at most

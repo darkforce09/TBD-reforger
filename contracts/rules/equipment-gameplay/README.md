@@ -80,7 +80,7 @@ class whose native type must equal or inherit the accepted one.
 - Producers: people, reviewing every class and field a complete diagnostic generation reports.
 - Consumers:
   - `cargo xtask mod generate-equipment-gameplay-policy`, which writes the selection tables under
-    `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/`
+    `mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/`
     (one folder per section, and `TBD_GameplayPolicyGenerated.c` with the digest), and with
     `--check` refuses drift between the policy and those tables;
   - `cargo xtask mod project-equipment-gameplay`, which projects a complete diagnostic generation

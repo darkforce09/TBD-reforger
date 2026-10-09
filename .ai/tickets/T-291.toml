@@ -40,10 +40,10 @@ completed_at = "2026-09-06T23:39:07Z"
 estimated = ["tokens"]
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+    "mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c",
+    "mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorController.c",
 ]
 
 [scope]

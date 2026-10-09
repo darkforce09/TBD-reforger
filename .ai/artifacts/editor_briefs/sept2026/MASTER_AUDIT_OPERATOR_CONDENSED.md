@@ -47,7 +47,7 @@
 - no Workshop sync; wiki.rs parser minimal; vehicle DB no PUT/PATCH/DELETE; mortar calc flat vacuum, HTTP
 - rcon 503 for kick/ban/change_map; list_users limit 20 no pagination; audit-logs/stream 2s poll + missing audit events; db.rs:32 pool 25 hardcoded
 
-## S6 Enfusion mod (apps/mod/tbd-framework) — executor gate: mod paths need explicit claude-code assignment
+## S6 Enfusion mod (mod/tbd-framework) — executor gate: mod paths need explicit claude-code assignment
 - damage live in LOBBY/BRIEFING (TBD_SafestartManager arms only SAFE_START)
 - TBD_LobbyScreen deploy lockout on BRIEFING
 - END/DEBRIEF no UI; TickCountdown loops at 0 if SetStage(LIVE) refused

@@ -31,8 +31,8 @@ Weather was one static `environment.weatherPreset`. A payload carrying `weatherT
 | `crates/map-engine-core/src/mission/extensions.rs` | AUTHORED_BLOCKS row `weatherTimeline`; `len()==4`; not in `DOCUMENT_OWNED_BLOCKS`. |
 | `crates/frontend/shell/frontend_application/src/editor/panels/weather_timeline.rs` | NEW. Add/edit/delete/reorder, undoable via `update_environment`, refuses equal/out-of-order `atMinutes`. |
 | `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | Register `weather_timeline`. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c` | NEW. Server applies keyframes at `atMinutes` via `ForceWeatherTo`; fog/windDirDeg overrides; logs each transition. Presence is `keyframes.Count()`. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c` | ASCII twin. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c` | NEW. Server applies keyframes at `atMinutes` via `ForceWeatherTo`; fog/windDirDeg overrides; logs each transition. Presence is `keyframes.Count()`. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_WeatherRuntime.c` | ASCII twin. |
 
 `compile.rs` was not edited (generic `copy_authored_blocks`). `flatten.rs` was not edited (T-291). No `schema_gates.rs`.
 

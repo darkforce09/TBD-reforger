@@ -5,7 +5,7 @@ const B: &str = "{BBBBBBBBBBBBBBBB}";
 const C: &str = "{0123456789ABCDEF}";
 
 /// A throwaway four-lane tree (`mod`/`crf`/`ps`/`vanilla`). Never inside the repo: a fixture
-/// under `apps/mod/` would be scanned by the gate it is testing.
+/// under `mod/` would be scanned by the gate it is testing.
 struct Fixture(PathBuf);
 
 impl Fixture {

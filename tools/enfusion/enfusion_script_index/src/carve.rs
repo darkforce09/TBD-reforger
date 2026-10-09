@@ -223,7 +223,7 @@ pub fn carve(game_root: &Path, out_dir: &Path) -> Result<CarveStats> {
         "carved zero script blobs — refusing empty _MANIFEST.tsv overwrite",
     )?;
     std::fs::write(out_dir.join("_MANIFEST.tsv"), manifest)?;
-    std::fs::write(out_dir.join("REFERENCE-ONLY.md"), REFERENCE_ONLY_MD)?;
+    std::fs::write(out_dir.join("REFERENCE-ONLY.md"), reference_only_notice())?;
     Ok(st)
 }
 
@@ -280,7 +280,13 @@ fn flush_blob(
     Ok(())
 }
 
-const REFERENCE_ONLY_MD: &str = r#"# Reference only — carved vanilla Enfusion source
+/// The notice a carve writes beside its output: what the tree is, its licence, and the command
+/// that regenerates it into the vanilla lane ([`repository_layout::VANILLA_REFERENCE`]).
+fn reference_only_notice() -> String {
+    REFERENCE_ONLY_NOTICE.replace("@VANILLA_REFERENCE@", repository_layout::VANILLA_REFERENCE)
+}
+
+const REFERENCE_ONLY_NOTICE: &str = r#"# Reference only — carved vanilla Enfusion source
 
 **GENERATED. GITIGNORED. NEVER COMMIT.**
 
@@ -293,7 +299,7 @@ Regenerate with:
 
     cargo run -q -p developer_tools --bin enf -- carve \
       --game "$HOME/.local/share/Steam/steamapps/common/Arma Reforger" \
-      --out apps/mod/References/vanilla_reference --replace
+      --out @VANILLA_REFERENCE@ --replace
 
 Filenames are `Carved/<pak>/<seq>_<sha8>.c` because scripts are **not name-addressable** inside
 the pak FILE tree — there are no `.c` names to recover. `_MANIFEST.tsv` records the pak, byte

@@ -38,9 +38,9 @@ Read CLAUDE.md first. Implement **T-674.2** — Enfusion reader for slot identit
 ═══ READ ═══  docs/plans/t-674_2_plan.md; Backend/TBD_MissionSlotStruct.c; Backend/TBD_MissionLoader.c; Backend/TBD_MissionValidator.c:42; Gamemode/TBD_SpawnManager.c
 ═══ PROBLEM ═══  The mod has no fields for the identity keys, no stance call, and its validator refuses schemaVersion 1.3, so T-674.1's wire is rejected outright.
 ═══ SHIPPED ═══  T-674.1 emit (must be shipped).
-═══ LANGUAGE GATE ═══  Enfusion script (.c) under apps/mod/tbd-framework only; no schema JSON; no TypeScript.
+═══ LANGUAGE GATE ═══  Enfusion script (.c) under mod/tbd-framework only; no schema JSON; no TypeScript.
 ═══ LOCKED ═══
-  - Verify the gap on main first (rg the keys in apps/mod: zero readers)
+  - Verify the gap on main first (rg the keys in mod: zero readers)
   - Perturbation proof: red pasted verbatim, touch after restore
   - owns = the listed files only; new sibling .c files are named in the ticket
   - No packages/tbd-schema edits (T-706 owns widening)
@@ -67,9 +67,9 @@ Read CLAUDE.md first. Implement **T-674** — program closure.
 ═══ READ ═══  docs/plans/t-674_plan.md; docs/plans/t-674_plan.md; the two child reports
 ═══ PROBLEM ═══  Closure after both slices ship; no code unless T-674.2 reported found_not_fixed on TBD_MissionSlotStruct.c.
 ═══ SHIPPED ═══  T-674.1; T-674.2.
-═══ LANGUAGE GATE ═══  Enfusion script (.c) under apps/mod/tbd-framework only; no schema JSON; no TypeScript.
+═══ LANGUAGE GATE ═══  Enfusion script (.c) under mod/tbd-framework only; no schema JSON; no TypeScript.
 ═══ LOCKED ═══
-  - Verify the gap on main first (rg the keys in apps/mod: zero readers)
+  - Verify the gap on main first (rg the keys in mod: zero readers)
   - Perturbation proof: red pasted verbatim, touch after restore
   - owns = the listed files only; new sibling .c files are named in the ticket
   - No packages/tbd-schema edits (T-706 owns widening)

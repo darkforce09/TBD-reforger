@@ -26,11 +26,11 @@ fn schema_dir(root: &Path) -> PathBuf {
     dir
 }
 
-/// The red proof, as a test: a dangling `@contract` in `apps/**/*.rs` and a bad pointer in
+/// The red proof, as a test: a dangling `@contract` in `crates/**/*.rs` and a bad pointer in
 /// `tools/**/*.rs` are both caught; the existing tools tree is scanned too.
 #[test]
-fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
-    let root = fixture_dir("apps-tools-rs");
+fn rust_under_crates_and_tooling_is_scanned_and_can_fail() {
+    let root = fixture_dir("crates-tools-rs");
     let schemas = schema_dir(&root);
     workspace(
         &root,
@@ -52,7 +52,7 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
     );
     write(
         &root,
-        "apps/mod/tbd-framework/Scripts/z.c",
+        "mod/tbd-framework/Scripts/z.c",
         concat!("//! @contract", " good.schema.json#/\n"),
     );
     write(
@@ -79,7 +79,7 @@ fn rust_under_apps_and_tooling_is_scanned_and_can_fail() {
             .iter()
             .any(|p| p.contains("crates/api/api_server/src/handlers/x.rs")
                 && p.contains("not found")),
-        "missing-schema in apps/**/*.rs must fail: {:?}",
+        "missing-schema in crates/**/*.rs must fail: {:?}",
         scan.problems
     );
     assert!(
@@ -103,17 +103,15 @@ fn missing_scan_root_is_a_scope_failure_not_a_pass() {
         "crates/api/api_server/src/a.rs",
         concat!("//! @contract", " good.schema.json#/\n"),
     );
-    // `apps/` itself exists (it holds the mod in the real tree), so the one missing root is
-    // `apps/mod/`.
-    fs::create_dir_all(root.join("apps")).expect("apps folder");
+    // The member's own top-level folder `crates/` exists, so the one missing root is `mod/`.
 
     let scan = scan_citations(&root, &schemas).expect("scan");
     assert!(scan.problems.is_empty(), "the one citation resolves");
-    assert_eq!(scan.scope_errors.len(), 1, "apps/mod/ absent");
+    assert_eq!(scan.scope_errors.len(), 1, "mod/ absent");
     assert!(
         scan.scope_errors
             .iter()
-            .any(|e| e.starts_with("scan root apps/mod/"))
+            .any(|e| e.starts_with("scan root mod/"))
     );
     let _ = fs::remove_dir_all(&root);
 }
@@ -138,8 +136,8 @@ fn empty_corpus_is_a_scope_failure_not_a_pass() {
 
 /// The printed scope sentence is generated from the extensions and the roots the scan walks, so
 /// it cannot drift from the walker; over the live checkout those roots hold the top-level folder
-/// of every workspace member, `apps/`, `crates/` (the frontend crates' `@contract` tags among
-/// them) and `tools/` among them.
+/// of every workspace member and the mod suite: `crates/` (the frontend crates' `@contract` tags
+/// among them), `mod/` and `tools/`.
 #[test]
 fn scope_line_is_generated_from_the_walked_roots() {
     let root = tool_test_support::test_repo_root();
@@ -161,7 +159,7 @@ fn scope_line_is_generated_from_the_walked_roots() {
         );
     }
     assert!(CODE_EXTS.contains(&"rs"), "T-611: rs must stay scanned");
-    for r in ["apps", "crates", "tools"] {
+    for r in ["crates", "mod", "tools"] {
         assert!(roots.iter().any(|root| root == r), "{r}/ must stay scanned");
     }
 }
@@ -185,7 +183,7 @@ fn workspace(root: &Path, members: &[&str]) {
 }
 
 /// Every workspace member's source is scanned, whatever top-level folder holds it: a dangling
-/// citation in a member under `crates/` or `engines/` fails the scan as one under `apps/` does.
+/// citation in a member under `crates/` or `engines/` fails the scan as one under `tools/` does.
 #[test]
 fn every_workspace_members_top_level_folder_is_scanned_and_can_fail() {
     let root = fixture_dir("workspace-members");
@@ -201,7 +199,7 @@ fn every_workspace_members_top_level_folder_is_scanned_and_can_fail() {
     );
     write(
         &root,
-        "apps/mod/tbd-framework/Scripts/z.c",
+        "mod/tbd-framework/Scripts/z.c",
         concat!("//! @contract", " good.schema.json#/\n"),
     );
     write(
@@ -244,7 +242,7 @@ fn an_unreadable_workspace_is_a_scope_failure_not_a_pass() {
     let schemas = schema_dir(&root);
     write(
         &root,
-        "apps/mod/z.c",
+        "mod/z.c",
         concat!("//! @contract", " good.schema.json#/\n"),
     );
     write(

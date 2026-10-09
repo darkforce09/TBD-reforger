@@ -16,8 +16,8 @@ Verified on this worktree at `65f4d44f3` (slice base, before any T-682 commits) 
 | claim | path:line | command |
 |---|---|---|
 | `ModEnvironment` serialises only `dateTime` / `weatherPreset`; no `windDirDeg` / `fog` / `wind` / `viewDistance` fields | `crates/map-engine-core/src/mission/flatten.rs:407` (`pub struct ModEnvironment` was two skip-empty strings) | `rg -n 'windDirDeg\|struct ModEnvironment' crates/map-engine-core/src/mission/flatten.rs` — zero `windDirDeg` hits |
-| No Enfusion environment reader | (file absent) | `ls apps/mod/tbd-framework/Scripts/Game/TBD/Backend/` — no `TBD_EnvironmentReader.c` |
-| Loader does not bind or apply environment | `TBD_MissionLoader.c` document struct ended at `settings` | `rg -n 'environment\|fog\|wind\|viewDistance' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` — zero hits |
+| No Enfusion environment reader | (file absent) | `ls mod/tbd-framework/Scripts/Game/TBD/Backend/` — no `TBD_EnvironmentReader.c` |
+| Loader does not bind or apply environment | `TBD_MissionLoader.c` document struct ended at `settings` | `rg -n 'environment\|fog\|wind\|viewDistance' mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` — zero hits |
 | Editor still refuses to author those keys (must stay that way) | `crates/frontend/shell/frontend_application/src/editor/panels/env.rs:328` `keys_nothing_reads_are_not_authored` | left untouched; test still passes |
 
 ## changes
@@ -29,10 +29,10 @@ Verified on this worktree at `65f4d44f3` (slice base, before any T-682 commits) 
 | `crates/map-engine-core/src/mission/flatten.rs` | 3657–3665 | Copy axes into the emitted `ModEnvironment` |
 | `crates/map-engine-core/src/mission/flatten.rs` | 3720+ | `EnvironmentAxes` + range gates; `0` fog/wind/dir is `Some(0)`, not drop |
 | `crates/map-engine-core/src/mission/flatten.rs` | 7543+ | Four tests: authored emit + 1.3 latch, authored zeros kept, absent omit + no 1.3 bump, malformed/out-of-range dropped |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | NEW (180 lines) | Bind struct with `ABSENT = -1e6`; apply fog/wind via `BaseWeatherManagerEntity` overrides; view distance via `GetGame().SetViewDistance`. Does **not** apply `dateTime`/`weatherPreset` (every compiled doc already has those; applying them would change boot for missions without fog/wind/viewDistance) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | NEW | Byte-identical twin |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 359, 1094 | `environment` on `TBD_MissionDocumentStruct`; `TBD_EnvironmentReader.Apply()` after `ApplyMissionSettings()` |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 359, 1094 | Same code (comments already ASCII-divergent from framework, as before) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | NEW (180 lines) | Bind struct with `ABSENT = -1e6`; apply fog/wind via `BaseWeatherManagerEntity` overrides; view distance via `GetGame().SetViewDistance`. Does **not** apply `dateTime`/`weatherPreset` (every compiled doc already has those; applying them would change boot for missions without fog/wind/viewDistance) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | NEW | Byte-identical twin |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 359, 1094 | `environment` on `TBD_MissionDocumentStruct`; `TBD_EnvironmentReader.Apply()` after `ApplyMissionSettings()` |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 359, 1094 | Same code (comments already ASCII-divergent from framework, as before) |
 
 Not touched: `packages/tbd-schema/**`, `crates/frontend/shell/frontend_application/src/editor/panels/env.rs`, `.ai/tickets/`.
 
@@ -132,7 +132,7 @@ Required for `SLICE GATE: PASS` (not edited; command centre):
 |---|---|
 | `xtask/src/schema_gates.rs` ~2650 (`UNREAD_WIRE_FIELDS` fog/wind/viewDistance expected 0) | `cargo xtask schema validate` after this reader: fog 11, wind 10, viewDistance 8. Same command the slice gate runs. |
 | `packages/tbd-schema/schema/mission.schema.json` `$defs/environment` description | Still says nothing reads `fog`/`wind`/`viewDistance` and that `ModEnvironment` does not serialise `windDirDeg`. Both sentences are now false. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` ~1160 (`environment` unconsumed presence warning) and export twin | `CheckUnconsumedKeys` still treats the whole `environment` block as unconsumed. Fog/wind/viewDistance now have a consumer; `dateTime`/`weatherPreset` still do not (T-290 inventory; not applied here on purpose). Validator is not in owns. Wallpaper warning on every compiled mission. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c` ~1160 (`environment` unconsumed presence warning) and export twin | `CheckUnconsumedKeys` still treats the whole `environment` block as unconsumed. Fog/wind/viewDistance now have a consumer; `dateTime`/`weatherPreset` still do not (T-290 inventory; not applied here on purpose). Validator is not in owns. Wallpaper warning on every compiled mission. |
 
 `cargo test -p map-engine-core --all-features --lib`: 955 passed, 1 failed (`dem::peaks::tests::everon_peaks_max_above_350` → `Invalid PNG signature`) — worktree LFS pointer, environmental, not chased.
 
@@ -158,7 +158,7 @@ HEAD `611106680d1e3c0cd786a949a775cfb99a653b17`. Worktree clean. No push.
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | yes (7716 bytes) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | yes (7716 bytes, `cmp` identical) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited; code agrees after comment-strip lockstep; framework comments still use em-dashes in older hunks) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | yes (7716 bytes) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c` | yes (7716 bytes, `cmp` identical) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited; code agrees after comment-strip lockstep; framework comments still use em-dashes in older hunks) |

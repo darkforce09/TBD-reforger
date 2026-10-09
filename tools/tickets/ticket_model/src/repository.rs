@@ -13,6 +13,7 @@
 //! that only historical commits carry keep the spelling those commits were made with.
 
 use repository_layout::documentation::DOCUMENTATION_ROOT;
+use repository_layout::workspace_folders::ENFUSION_MOD_DIR;
 use repository_layout::{ARTIFACTS_DIR, TICKETS_DIR};
 
 /// The handoff document an executing agent writes for one ticket or slice.
@@ -53,7 +54,10 @@ pub const SPARSE_CHECKOUT_SETS: &[(&str, &[&str])] = &[
             documentation::CRATES_DOCUMENTATION_DIR,
         ],
     ),
-    ("mod", &["apps/mod", documentation::MOD_DOCUMENTATION_DIR]),
+    (
+        "mod",
+        &[ENFUSION_MOD_DIR, documentation::MOD_DOCUMENTATION_DIR],
+    ),
     ("shared", &["contracts"]),
     (
         "root",
@@ -84,9 +88,9 @@ pub mod documentation {
     /// there.
     pub const CRATES_DOCUMENTATION_DIR: &str = "documentation/crates";
 
-    /// The game mod's documentation, which mirrors `apps/mod` inside `documentation/apps`. A `mod`
-    /// slice checks it out beside the code.
-    pub const MOD_DOCUMENTATION_DIR: &str = "documentation/apps/mod";
+    /// The game mod's documentation, which mirrors the mod folder (`mod/`). A `mod` slice checks it
+    /// out beside the code.
+    pub const MOD_DOCUMENTATION_DIR: &str = "documentation/mod";
 
     /// One four-section plan document per ticket, named by [`plan_path`].
     pub const PLANS_DIR: &str = "documentation/tickets/plans";

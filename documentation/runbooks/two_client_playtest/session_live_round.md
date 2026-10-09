@@ -7,7 +7,7 @@ the move to LIVE, one terminal death, the admin respawn, a reconnect, the end of
 the evidence capture before anything restarts. It takes about 20 minutes and follows
 [Session: join to deploy](/documentation/runbooks/two_client_playtest/session_join_to_deploy.md);
 the one-life rule it tests is set out in
-[mod design](/documentation/apps/mod/tbd-framework/mod_design.md#2-non-negotiables).
+[mod design](/documentation/mod/tbd-framework/mod_design.md#2-non-negotiables).
 
 ## Prerequisites
 
@@ -47,7 +47,7 @@ the one-life rule it tests is set out in
    ```
 
    (`TBD_SpawnManager.OnPlayerKilled`), and their client enters spectator: `F` free camera, `←`
-   and `→` next and previous, `TAB` roster, `V` view (`apps/mod/tbd-framework/Configs/System/Actions/`).
+   and `→` next and previous, `TAB` roster, `V` view (`mod/tbd-framework/Configs/System/Actions/`).
    `[TBD][Spawn] player=<n> killed — re-armed for respawn (slot retained)` instead means
    `m_bOneLife` is off on the prefab, and the session is not testing the event configuration.
 
@@ -142,8 +142,8 @@ body and the end of the round.
 
 - [Pass criteria and evidence](/documentation/runbooks/two_client_playtest/pass_criteria_and_evidence.md)
   — the next runbook: judging and capturing the session.
-- [Spawning](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — one life,
+- [Spawning](/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — one life,
   the admin respawn and the reconnect reclaim in the mod.
-- [Admin session](/apps/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/README.md) — the `#tbd`
+- [Admin session](/mod/tbd-framework/Scripts/Game/TBD/Session/Admin/README.md) — the `#tbd`
   commands and the audit trail.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — the index.

@@ -72,7 +72,7 @@ executor kind.
   the server intel page in `crates/frontend/pages/command_center_pages/src/server_intel/`, the
   host agent's ledger client in `crates/fleet/game_server_host_agent/src/ledger_client/`, and the game runtime's
   [API](/documentation/glossary/a_to_f.md#api) scripts in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
+  `mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
   server writes live under `/api/v1/servers`, not `/api/v1/admin/servers`, because every

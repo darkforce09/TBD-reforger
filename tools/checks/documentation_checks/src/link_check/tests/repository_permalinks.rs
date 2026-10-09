@@ -42,16 +42,16 @@ fn a_blob_permalink_names_a_full_commit_and_a_decoded_path() {
 
 #[test]
 fn a_tree_permalink_names_a_folder_or_the_root_at_a_full_commit() {
-    let folder = permalink(&format!("{}/tree/{COMMIT}/apps/mod/", home()));
+    let folder = permalink(&format!("{}/tree/{COMMIT}/mod/", home()));
     assert_eq!(
         (
             folder.view,
             folder.path.as_str(),
             folder.fragment.as_deref()
         ),
-        (PermalinkView::Tree, "apps/mod", None)
+        (PermalinkView::Tree, "mod", None)
     );
-    assert_eq!(folder.object_name(), format!("{COMMIT}:apps/mod"));
+    assert_eq!(folder.object_name(), format!("{COMMIT}:mod"));
     for root in [
         format!("{}/tree/{COMMIT}", home()),
         format!("{}/tree/{COMMIT}/", home()),
@@ -233,7 +233,7 @@ fn the_real_history_answers_a_lookup_in_one_batch() {
     let objects = GitObjects::new(&root);
     let names = vec![
         "HEAD:Cargo.toml".to_string(),
-        "HEAD:apps".to_string(),
+        "HEAD:mod".to_string(),
         "HEAD:".to_string(),
         "HEAD:no-such-file-anywhere.md".to_string(),
     ];

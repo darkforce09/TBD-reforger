@@ -24,7 +24,7 @@ use std::time::Duration;
 use process_runner::{Output, Run};
 use verification_core::NotRun;
 
-use super::path_mapping::parent_folder;
+use super::path_mapping::{is_at_or_below, parent_folder};
 
 /// The manifest file that makes a folder a crate.
 pub(crate) const CRATE_MANIFEST: &str = "Cargo.toml";
@@ -83,6 +83,18 @@ impl PathSet {
     /// Whether `path` names a file or a folder of the set; the root `""` always exists.
     pub(crate) fn contains(&self, path: &str) -> bool {
         path.is_empty() || self.files.contains(path) || self.folders.contains(path)
+    }
+
+    /// Every file that is `path` or lies below it, in path order; none when `path` names nothing
+    /// of the set.
+    pub(crate) fn files_at_or_below<'a>(
+        &'a self,
+        path: &'a str,
+    ) -> impl Iterator<Item = &'a String> {
+        self.files
+            .range::<str, _>((std::ops::Bound::Included(path), std::ops::Bound::Unbounded))
+            .take_while(move |file| file.starts_with(path))
+            .filter(move |file| is_at_or_below(file, path))
     }
 
     /// Whether `path` names a folder of the set: one that holds a file; the root `""` always does.

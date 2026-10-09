@@ -45,7 +45,7 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-owns = ["apps/mod/tbd-framework/Prefabs/** + Gamemode/TBD_SCR_RespawnSystemComponent.c"]
+owns = ["mod/tbd-framework/Prefabs/** + Gamemode/TBD_SCR_RespawnSystemComponent.c"]
 
 [scope]
 domain = "mod"

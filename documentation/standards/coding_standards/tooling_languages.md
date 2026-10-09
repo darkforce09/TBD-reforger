@@ -24,7 +24,7 @@ states the rules and why they exist.
   [shell_scripts.rs](/tools/checks/repository_checks/src/language_bans/shell_scripts.rs), covers
   shell, Make, Python and the Node script extensions `.mjs` and `.cjs`. Any tracked match fails.
   There is no inventory, no allowlist and no "may only shrink" count. No path prefix is skipped:
-  `apps/mod/` is scanned like everything else, and [EnfScript](/documentation/glossary/a_to_f.md#enfscript)
+  `mod/` is scanned like everything else, and [EnfScript](/documentation/glossary/a_to_f.md#enfscript)
   sources pass only because `.c` is not in the table. A failed `git ls-files`, an empty listing or
   an unreadable tracked path fails the gate. Gate: CI-SCRIPT, both command names.
 
@@ -35,7 +35,7 @@ tooling is Rust.
 
 A companion gate, `cargo xtask verify no-node`, holds Node to the
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) MCP runtime: no tracked `.mjs` or `.cjs` file
-outside `apps/mod/`, no `node` or `npx` call in a workflow or shell line under `.github/`, and no
+outside `mod/`, no `node` or `npx` call in a workflow or shell line under `.github/`, and no
 `actions/setup-node` step. It has no rule code; the
 [file length and Node ban README](/tools/checks/repository_checks/src/language_bans/node_and_file_limits/README.md)
 describes it.

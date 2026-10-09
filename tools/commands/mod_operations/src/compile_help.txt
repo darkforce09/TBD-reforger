@@ -42,8 +42,8 @@
 #     actually error. That is why --selftest uses an undefined symbol, not bad punctuation.
 #   * The server compiles ONLY the Game module (probed 2026-08-28): Scripts/WorkbenchGame is
 #     never read headless — not even lexed. Since 2026-09-12 the shipping mod carries no such
-#     directory at all (map-export plugins: apps/mod/tbd-export; enfusion-mcp handlers:
-#     apps/mod/tbd-emcp — thin addons that depend on tbd-framework and compile only inside
+#     directory at all (map-export plugins: mod/tbd-export; enfusion-mcp handlers:
+#     mod/tbd-emcp — thin addons that depend on tbd-framework and compile only inside
 #     Workbench), and the gate exits 1 if tbd-framework/Scripts/WorkbenchGame reappears. After a
 #     green verdict the load-count guard requires loaded >= vanilla baseline + the number of .c
 #     files under tbd-framework/Scripts/Game (exit 3 = the engine loaded fewer files than the tree

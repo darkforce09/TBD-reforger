@@ -100,7 +100,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-citations",
-        help: "Verify @contract citations in code under every workspace member's top-level folder (apps/, crates/, tools/) and apps/mod/ — NOT documentation/ prose (documentation/standards/documentation_standards.md §10)",
+        help: "Verify @contract citations in code under every workspace member's top-level folder (crates/, tools/) and the mod folder (mod/) — NOT documentation/ prose (documentation/standards/documentation_standards.md §10)",
         group: "schema",
         lane: Lane::Ci,
         steps: &[xt!("cargo xtask schema citations", false, || Ok(

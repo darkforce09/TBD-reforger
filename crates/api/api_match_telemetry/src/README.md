@@ -86,7 +86,7 @@ mod treats as permanent. Reports about a source the server has not registered ar
 - Used by:
   - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table, and
     `api_operations`, through the match models;
-  - over HTTP, the game runtime in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`: the runtime
+  - over HTTP, the game runtime in `mod/tbd-framework/Scripts/Game/TBD/API/`: the runtime
     session loop posts heartbeats, and the telemetry delivery in `MatchTelemetry/Delivery/` posts
     the registrations, results revisions and event batches its durable queue holds.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the

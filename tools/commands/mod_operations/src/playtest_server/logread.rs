@@ -13,6 +13,7 @@
 
 use std::path::Path;
 
+use repository_layout::enfusion_mod_folders::FRAMEWORK_ADDON_FOLDER_NAME;
 use verification_core::Pattern;
 
 use super::Opts;
@@ -213,7 +214,10 @@ pub(super) fn assert_local_addon_won(paths: &RunPaths, o: &Opts, addon_guid: &st
             return false;
         }
     };
-    let wanted = format!("{}/addons/tbd-framework/addon.gproj", o.run_dir);
+    let wanted = format!(
+        "{}/addons/{FRAMEWORK_ADDON_FOLDER_NAME}/addon.gproj",
+        o.run_dir
+    );
     if loaded.contains(&wanted) {
         return true;
     }

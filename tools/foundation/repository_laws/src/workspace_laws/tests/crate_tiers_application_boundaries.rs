@@ -2,7 +2,7 @@
 //! fleet and shell categories, and the retired dependency deny-lists of the website applications,
 //! each row of which the crate-tier law now catches over fixture workspaces.
 
-use super::tests::{CONFIGURATION, assert_one_finding};
+use super::tests::assert_one_finding;
 use super::*;
 use crate::workspace_laws::fixture_workspace::{
     Dependency, FixtureWorkspace, application_manifest, green_workspace, normal,
@@ -11,7 +11,6 @@ use crate::workspace_laws::fixture_workspace::{
 /// The fixture configuration with the application of [`green_workspace`], `api_server`, listed.
 const SERVER_APPLICATION: &CrateTierConfiguration<'static> = &CrateTierConfiguration {
     application_packages: &["api_server"],
-    ..*CONFIGURATION
 };
 
 /// The crate-tier findings over `workspace` with [`SERVER_APPLICATION`].
@@ -120,7 +119,6 @@ fn crate_tiers_rule_7_an_application_package_that_is_no_member_is_a_finding() {
     let workspace = green_workspace("tiers-rule-7-absent");
     let configuration = CrateTierConfiguration {
         application_packages: &["api_server", "retired_application"],
-        ..*SERVER_APPLICATION
     };
     let report = check_crate_tiers(workspace.root(), &configuration);
     assert_eq!(report.exit_code, 1, "{}", report.lines.join("\n"));
@@ -281,7 +279,6 @@ fn deny_list_workspace(planted: &str) -> (FixtureWorkspace, CrateTierConfigurati
         workspace.layout_crate(path, 0, "any", &[]);
     }
     let configuration = CrateTierConfiguration {
-        manifest_sweep_roots: CONFIGURATION.manifest_sweep_roots,
         application_packages: &[
             "api_server",
             "frontend_application",

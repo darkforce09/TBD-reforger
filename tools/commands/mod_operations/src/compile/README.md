@@ -40,7 +40,7 @@ run / run_selftest / run_preflight            (execution.rs)
   at the repository root, by booting the server with no addons.
 - `run_selftest` passes only when the deliberately broken selftest addon makes the gate exit 1;
   `run_preflight` checks only that the server binary and a non-empty
-  `apps/mod/tbd-framework/resourceDatabase.rdb` exist.
+  `mod/tbd-framework/resourceDatabase.rdb` exist.
 
 ## Boundaries
 

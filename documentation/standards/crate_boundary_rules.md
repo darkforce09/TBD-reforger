@@ -202,8 +202,7 @@ them in this order and stops at the first failure, and each is also its own `car
 command: crate tiers, crate anatomy, test-file reachability, frontend layering and Tailwind
 sources. Each prints `<LAW>: PASS`, or `FAIL` with exit 1 on a finding and exit 2 when an input
 could not be read; a missing input never passes. The paths and names that move with the tree (the
-manifest sweep roots, the application packages, the frontend layer tables and crate orders, the
-stylesheet) are constants of
+application packages, the frontend layer tables and crate orders, the stylesheet) are constants of
 `tools/checks/repository_checks/src/architecture/workspace_law_locations.rs`, which xtask passes
 in. Where each law runs is in [CI gates](/documentation/standards/coding_standards/ci_gates.md#verify-workspace-laws)
 (rules WS-1 to WS-5).
@@ -219,19 +218,19 @@ offline service worker at `crates/frontend/shell/`, the game server host agent a
 `tools/tickets/ticketboard_desktop`, each with its layout table. Outside the judged set stand
 only the two tool binaries of `TOOL_BINARY_PATHS`, `tools/xtask` and `tools/developer_tools`
 (`is_tool_binary`); the report names them in a note. Any other member outside the judged set,
-a crate under `apps/` included, is a rule 2 finding: a crate that carries no layout table and sits
-nowhere the layout knows cannot slip past the matrix. `apps/` holds the game mod and no crate,
-and stays a sweep root, so a manifest placed there is a finding of rule 1 or rule 2, never
-exempt.
+a crate under `mod/` included, is a rule 2 finding: a crate that carries no layout table and sits
+nowhere the layout knows cannot slip past the matrix. The game mod at `mod/` holds no crate, and
+the manifest sweep of rule 1 reads the whole checkout, so a manifest placed there is a finding of
+rule 1 or rule 2, never exempt.
 
 ### 5.2 Crate tiers (`cargo xtask verify crate-tiers`)
 
 `tools/foundation/repository_laws/src/workspace_laws/crate_tiers.rs` judges seven rules over the
-`CrateTierConfiguration` xtask passes (`CRATE_TIERS`: the sweep roots and the application
-packages):
+`CrateTierConfiguration` xtask passes (`CRATE_TIERS`: the application packages):
 
-1. **Membership.** Every `Cargo.toml` under `apps`, `crates` and `tools` (outside folders named
-   `tests`, `fixtures`, `test_fixtures`, `target` and `node_modules`) is a workspace member. The
+1. **Membership.** Every `Cargo.toml` in the checkout (outside hidden folders, folders named
+   `tests`, `fixtures`, `test_fixtures`, `target` and `node_modules`, and build folders named
+   `target-<purpose>`) is a workspace member; the root manifest is the workspace itself. The
    root `members` list reaches the library crates through one glob per category
    (`crates/<category>/*`, `crates/fleet/*` among them, and `crates/frontend/*/*` for the
    frontend's layer folders), so a manifest in a category no glob lists fails here.

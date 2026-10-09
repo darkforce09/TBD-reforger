@@ -72,7 +72,7 @@ impl IsolatedRepository {
             "requirements": [{
                 "id": "staging_fleet",
                 "behavior": "fleet acceptance is recorded",
-                "implementation": ["apps/module.rs"],
+                "implementation": ["mod/module.rs"],
                 "checks": ["staging_fleet"],
                 "assumptions": [],
             }],
@@ -83,7 +83,7 @@ impl IsolatedRepository {
             _environment: environment,
         };
         repository.write("Cargo.toml", "[workspace]\n");
-        repository.write("apps/module.rs", "pub fn recorded() {}\n");
+        repository.write("mod/module.rs", "pub fn recorded() {}\n");
         repository.write(
             API_READINESS_REGISTER,
             &serde_json::to_string_pretty(&register).unwrap(),

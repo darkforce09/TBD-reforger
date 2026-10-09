@@ -29,7 +29,7 @@ Two visual sources, per-slot per the t090_10 normative layer stack:
 3. **Land-cover gate:** no `landCover` class exists in lodGates; `world-landcover` rides `classVisible('forestFill')` + the `forest` toggle this slice (field/waterBody rows don't exist yet). Revisit when P4+ exports land them.
 4. **Iso:** `DENSITY_ISO = 1` (plan §3.3 default, exported const). At iso=1 on integer corner counts, isolated count-1 corners collapse to zero area by interpolation — lone trees are not forest (regions export used threshold 2 for the same reason).
 5. **Verifier gate 7 fix** (`packages/tbd-schema/scripts/verify-t090-spec-consistency.mjs`): pre-existing FAIL on main since the handoff commit `f216a081` — the t090_8 spec's embedded copy-paste prompt cites `npm run test/build/lint` under a `cd crates/frontend/shell/frontend_application` line, and gate 7 resolved npm scripts against tbd-schema's package.json only (its line-scoped path exemption misses multi-line blocks). Fixed semantically: scripts now resolve against **both** package.jsons; a script missing from both still fails.
-6. **Operator worktree state:** `.ai/tickets/registry.json` + `docs/TICKET_BRAINSTORM.md` carried uncommitted T-145/T-146 idea rows (operator's, another session) and `apps/mod/tbd-framework/resourceDatabase.rdb` was dirty — all deliberately left unstaged.
+6. **Operator worktree state:** `.ai/tickets/registry.json` + `docs/TICKET_BRAINSTORM.md` carried uncommitted T-145/T-146 idea rows (operator's, another session) and `mod/tbd-framework/resourceDatabase.rdb` was dirty — all deliberately left unstaged.
 
 ## Automated gates — ALL PASS
 

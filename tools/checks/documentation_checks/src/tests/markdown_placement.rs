@@ -19,27 +19,27 @@ fn lines(count: usize) -> String {
 fn code_trees_hold_only_readme_markdown() {
     let mut fixture = FixtureCheckout::new("placement-code");
     fixture
-        .tracked("apps/README.md", "# Apps\n")
-        .tracked("apps/tool/NOTES.md", "# Notes\n")
-        .tracked("apps/tool/rules.MD", "# Rules\n")
-        .tracked("apps/tool/tests/fixture.md", "")
-        .tracked("apps/tool/generated/api.md", "")
-        .tracked("apps/.cursor/guide.md", "")
-        .tracked("apps/tool/main.rs", "");
+        .tracked("engines/README.md", "# Engines\n")
+        .tracked("engines/tool/NOTES.md", "# Notes\n")
+        .tracked("engines/tool/rules.MD", "# Rules\n")
+        .tracked("engines/tool/tests/fixture.md", "")
+        .tracked("engines/tool/generated/api.md", "")
+        .tracked("engines/.cursor/guide.md", "")
+        .tracked("engines/tool/main.rs", "");
     let run = run(&fixture, &[]);
     assert_eq!(
         failures(&run),
         [
-            "FAIL: apps/tool/NOTES.md: Markdown in a code tree; a code tree holds only README.md, \
+            "FAIL: engines/tool/NOTES.md: Markdown in a code tree; a code tree holds only README.md, \
              and documents live under documentation/",
-            "FAIL: apps/tool/rules.MD: Markdown in a code tree; a code tree holds only README.md, \
+            "FAIL: engines/tool/rules.MD: Markdown in a code tree; a code tree holds only README.md, \
              and documents live under documentation/",
         ]
     );
     assert_eq!(
         outcome_counts(&run),
-        (2, 2, 0),
-        "README.md and the empty retired root held"
+        (3, 2, 0),
+        "README.md and the two empty retired folders held"
     );
     assert_eq!(
         run.totals[0],
@@ -52,17 +52,17 @@ fn code_trees_hold_only_readme_markdown() {
 fn generated_folder_exemption_spares_markdown_below_the_capitalised_folder_only() {
     let mut fixture = FixtureCheckout::new("placement-generated-spellings");
     fixture
-        .tracked("apps/tool/Generated/weapon/table.md", "")
-        .tracked("apps/tool/generated/api.md", "")
-        .tracked("apps/tool/GENERATED/table.md", "")
-        .tracked("apps/tool/generated_data/notes.md", "");
+        .tracked("engines/tool/Generated/weapon/table.md", "")
+        .tracked("engines/tool/generated/api.md", "")
+        .tracked("engines/tool/GENERATED/table.md", "")
+        .tracked("engines/tool/generated_data/notes.md", "");
     let run = run(&fixture, &[]);
     assert_eq!(
         failures(&run),
         [
-            "FAIL: apps/tool/GENERATED/table.md: Markdown in a code tree; a code tree holds only \
+            "FAIL: engines/tool/GENERATED/table.md: Markdown in a code tree; a code tree holds only \
              README.md, and documents live under documentation/",
-            "FAIL: apps/tool/generated_data/notes.md: Markdown in a code tree; a code tree holds \
+            "FAIL: engines/tool/generated_data/notes.md: Markdown in a code tree; a code tree holds \
              only README.md, and documents live under documentation/",
         ]
     );
@@ -72,23 +72,46 @@ fn generated_folder_exemption_spares_markdown_below_the_capitalised_folder_only(
     );
 }
 
+/// Each retired top-level folder holds no tracked file: a tracked file under `docs/` or `apps/`
+/// fails with where that folder's contents live now, and a tracked file there is never judged as
+/// a code tree's Markdown.
 #[test]
-fn the_retired_root_holds_no_tracked_file() {
+fn the_retired_folders_hold_no_tracked_file() {
     let mut fixture = FixtureCheckout::new("placement-retired");
     fixture
-        .tracked(&format!("{RETIRED_DOCS_ROOT}/guide.md"), "# Guide\n")
-        .tracked(&format!("{RETIRED_DOCS_ROOT}/images/map.png"), "")
-        .tracked("apps/README.md", "# Apps\n");
-    let run = run(&fixture, &[]);
-    let root = RETIRED_DOCS_ROOT;
+        .tracked("docs/guide.md", "# Guide\n")
+        .tracked("docs/images/map.png", "")
+        .tracked("engines/README.md", "# Engines\n");
+    let docs_only = run(&fixture, &[]);
     assert_eq!(
-        failures(&run),
-        [format!(
-            "FAIL: {root}/ holds 2 tracked file(s); every document lives under documentation/\n      \
-             {root}/guide.md\n      {root}/images/map.png"
-        )]
+        failures(&docs_only),
+        [
+            "FAIL: docs/ holds 2 tracked file(s); every document lives under documentation/\n      \
+          docs/guide.md\n      docs/images/map.png"
+        ]
     );
-    assert_eq!(run.totals[1], format!("  {root}/: 2 tracked file(s)"));
+    assert_eq!(
+        docs_only.totals[1],
+        "  docs/: 2 tracked file(s); apps/: 0 tracked file(s)"
+    );
+    fixture
+        .tracked("apps/README.md", "# Apps\n")
+        .tracked("apps/tool/NOTES.md", "# Notes\n");
+    let both = run(&fixture, &[]);
+    assert_eq!(
+        failures(&both)[1],
+        "FAIL: apps/ holds 2 tracked file(s); the Enfusion mod lives under mod/ and every \
+         application is a crate\n      apps/README.md\n      apps/tool/NOTES.md"
+    );
+    assert_eq!(failures(&both).len(), 2, "{:?}", failures(&both));
+    assert_eq!(
+        both.totals[0],
+        "  code trees: 1 Markdown file(s) judged, 0 other than README.md"
+    );
+    assert_eq!(
+        both.totals[1],
+        "  docs/: 2 tracked file(s); apps/: 2 tracked file(s)"
+    );
 }
 
 #[test]
@@ -128,8 +151,8 @@ fn frozen_and_pending_documents_are_outside_the_limit() {
     assert_eq!(failures(&run), Vec::<String>::new());
     assert_eq!(
         outcome_counts(&run),
-        (2, 0, 0),
-        "the root README and the retired root"
+        (3, 0, 0),
+        "the root README and the two retired folders"
     );
 }
 
@@ -138,7 +161,7 @@ fn a_document_missing_from_the_disk_did_not_run() {
     let mut fixture = FixtureCheckout::new("placement-unreadable");
     fixture.listed_only("documentation/runbooks/gone.md");
     let run = run(&fixture, &[]);
-    assert_eq!(outcome_counts(&run), (1, 0, 1));
+    assert_eq!(outcome_counts(&run), (2, 0, 1));
     assert_eq!(
         run.totals[2],
         "  documentation/: 1 live document(s) judged, 0 over 500 lines, 1 unreadable"
@@ -150,22 +173,25 @@ fn a_document_missing_from_the_disk_did_not_run() {
 fn the_scope_narrows_every_rule() {
     let mut fixture = FixtureCheckout::new("placement-scope");
     fixture
+        .tracked("engines/tool/NOTES.md", "# Notes\n")
+        .tracked("docs/guide.md", "# Guide\n")
         .tracked("apps/tool/NOTES.md", "# Notes\n")
-        .tracked(&format!("{RETIRED_DOCS_ROOT}/guide.md"), "# Guide\n")
         .tracked("documentation/long.md", &lines(600))
         .tracked("documentation/area/short.md", &lines(5));
     let documentation = run(&fixture, &["documentation/area"]);
     assert_eq!(outcome_counts(&documentation), (1, 0, 0));
     assert_eq!(
         documentation.totals[1],
-        format!("  {RETIRED_DOCS_ROOT}/: outside the scope")
+        "  docs/: outside the scope; apps/: outside the scope"
     );
-    let code = run(&fixture, &["apps"]);
+    let code = run(&fixture, &["engines"]);
     assert_eq!(outcome_counts(&code), (0, 1, 0));
-    let retired = run(&fixture, &[RETIRED_DOCS_ROOT]);
+    let retired = run(&fixture, &["docs"]);
     assert_eq!(outcome_counts(&retired), (0, 1, 0));
+    let retired_applications = run(&fixture, &["apps"]);
+    assert_eq!(outcome_counts(&retired_applications), (0, 1, 0));
     let whole = run(&fixture, &[]);
-    assert_eq!(outcome_counts(&whole), (1, 3, 0));
+    assert_eq!(outcome_counts(&whole), (1, 4, 0));
 }
 
 #[test]
@@ -173,9 +199,9 @@ fn untracked_markdown_is_placed_only_with_untracked_files_included() {
     let mut fixture = FixtureCheckout::new("placement-untracked");
     fixture
         .tracked(".gitignore", "build/\n")
-        .tracked("apps/README.md", "# Apps\n")
-        .untracked("apps/tool/NOTES.md", "# Notes\n")
-        .untracked("apps/tool/build/report.md", "# Report\n")
+        .tracked("engines/README.md", "# Engines\n")
+        .untracked("engines/tool/NOTES.md", "# Notes\n")
+        .untracked("engines/tool/build/report.md", "# Report\n")
         .untracked("documentation/runbooks/long.md", &lines(501));
     let run_listed_by_git = |untracked| {
         judge(
@@ -192,7 +218,7 @@ fn untracked_markdown_is_placed_only_with_untracked_files_included() {
     assert_eq!(
         failures(&with_untracked),
         [
-            "FAIL: apps/tool/NOTES.md: Markdown in a code tree; a code tree holds only README.md, \
+            "FAIL: engines/tool/NOTES.md: Markdown in a code tree; a code tree holds only README.md, \
              and documents live under documentation/",
             "FAIL: documentation/runbooks/long.md: 501 lines; a live document stays at or \
              under 500, so split it by topic into a folder with a README.md index",
@@ -227,7 +253,7 @@ fn a_failed_listing_or_an_empty_scope_did_not_run() {
 
     let mut fixture = FixtureCheckout::new("placement-empty-scope");
     fixture
-        .tracked("apps/README.md", "# Apps\n")
+        .tracked("engines/README.md", "# Engines\n")
         .tracked(".ai/tickets/ROOT", "");
     let outside = run(&fixture, &[".ai"]);
     assert_eq!(outcome_counts(&outside), (0, 0, 1));
@@ -235,9 +261,9 @@ fn a_failed_listing_or_an_empty_scope_did_not_run() {
     assert_eq!(outside.print(), 2);
 }
 
-/// Every top-level folder but the documentation roots is a code tree, so Markdown in a folder no
-/// list names is placed like Markdown in `apps/`; the repository root and hidden folders are not
-/// code trees.
+/// Every top-level folder but the documentation root and the retired folders is a code tree, so
+/// Markdown in a folder no list names is placed like Markdown in any other code tree; the
+/// repository root and hidden folders are not code trees.
 #[test]
 fn markdown_in_a_top_level_folder_no_list_names_is_placed() {
     let mut fixture = FixtureCheckout::new("placement-derived-code-trees");

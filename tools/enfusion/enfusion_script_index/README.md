@@ -2,7 +2,7 @@
 
 The `enfusion_script_index` crate, the library behind the `enf` binary: it turns
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) script sources (the gitignored upstream
-framework and vanilla lanes of the [reference lanes](/apps/mod/References/README.md)) into TSV
+framework and vanilla lanes of the [reference lanes](/mod/References/README.md)) into TSV
 symbol indexes of names and `file:line` coordinates, answers lookups against them, checks the
 `@idx` citations in `documentation/` and the framework capability verdicts, extracts, carves and
 reconstructs vanilla sources, and mirrors the vanilla reference pages behind `cargo xtask fetch`.
@@ -19,14 +19,14 @@ tools/enfusion/enfusion_script_index/
 
 ```text
 reference lanes ─▶ enf index ─▶ .ai/artifacts/enf-index/<lane>_*.tsv ─▶ enf lookup | dirs | citations | capability
-game paks (enfusion_pak) ─▶ enf extract | carve | dump-entry ─▶ apps/mod/References/vanilla_reference/
+game paks (enfusion_pak) ─▶ enf extract | carve | dump-entry ─▶ mod/References/vanilla_reference/
 cargo xtask fetch vanilla-api | vanilla-source (vanilla_page_fetch) ─▶ cached HTML ─▶ enf apidoc | source
 ```
 
 `run_command_line` parses `enf`, runs the command and returns its exit code: 0 done, 1 a check
 failed or a command produced nothing, 2 a command could not run (its error printed after `enf: `
 with every cause). Every lane shares one scanner, a committed index is never replaced by an empty
-one, and a lane output lands only inside `apps/mod/References/`. `src/README.md` describes each
+one, and a lane output lands only inside `mod/References/`. `src/README.md` describes each
 module.
 
 ## Getting started
@@ -35,7 +35,7 @@ Run from the repository root:
 
 ```bash
 cargo test -p enfusion_script_index                          # scanner, parsers, guards and offline page mirrors
-cargo run -q -p developer_tools --bin enf -- index crf --root apps/mod/References/crf_framework
+cargo run -q -p developer_tools --bin enf -- index crf --root mod/References/crf_framework
 cargo run -q -p developer_tools --bin enf -- citations       # every @idx marker in documentation/
 cargo xtask fetch vanilla-api                                # the Script API index into the vanilla lane
 ```

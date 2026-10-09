@@ -27,7 +27,7 @@ tools/commands/repository_relocation/src/
 ├── retired_spellings/   the verification's read-once tree text and its combined spelling matcher
 ├── rust_lexer.rs         a lossless Rust tokenizer telling code, literals and comments apart
 ├── rust_paths/           the `rust_path` row pass: `use` trees, code paths, doc links, chains
-├── scope_history.rs      where a manifest's scope lies after its own and the later manifests' moves
+├── scope_history.rs      where a manifest's scope lies, and where its retired spellings live again, after the later manifests' moves
 ├── tests/                unit tests and whole runs on throwaway git checkouts
 ├── text_edits.rs         byte-span edits, their merge and application, and the allowed spans
 └── text_tokens.rs        the `text` row pass: identifier-like tokens on word boundaries
@@ -144,8 +144,13 @@ Moving the manifests folder therefore keeps the order. A committed manifest is n
 folder, a scope a row emptied, its own manifest's rows file by file or a later manifest's, holds
 with a `note:` line naming the first such row, and a missing scope no row explains is a
 did-not-run. The files a row took out of a scope are not judged at their destinations: a
-`crate::` prefix means another crate's module once its file has left the crate. `path` rows need no composition (a
-retired path stays retired) and `text` rows are not judged.
+`crate::` prefix means another crate's module once its file has left the crate. A `path` row's
+retired spelling (its `from` and every path below it) is legal again only at or below the `to` of a
+later manifest's `path` row whose `to` is that `from` or a path below it, never a folder above it
+(`LaterMoves::revivals_of`): there its occurrences are no offence of the row, files tracked there
+do not keep its `from` tracked, and each revival prints a `note:` line; a row never revives its own
+manifest's spellings, and a still-later manifest that retires the spelling again judges it with its
+own row. `text` rows are not judged.
 
 ## Public surface
 
@@ -194,7 +199,16 @@ retired path stays retired) and `text` rows are not judged.
   `relocate_verify_passes_a_scope_a_later_manifest_emptied_and_fails_an_unexplained_one`), and a
   scope its own rows emptied file by file applies and holds
   (`relocate_manifest_that_empties_its_own_scope_file_by_file_applies_and_verifies`,
-  `relocate_verify_composes_a_scope_emptied_by_its_own_rows_through_later_manifests`); the
+  `relocate_verify_composes_a_scope_emptied_by_its_own_rows_through_later_manifests`); a retired
+  `path` spelling is legal again only below a later manifest's `to`, never from an earlier one,
+  and a later retirement judges it again
+  (`relocate_verify_passes_a_spelling_a_later_manifest_moved_back`,
+  `relocate_verify_lets_an_uncommitted_manifest_revive_a_spelling`,
+  `relocate_verify_fails_a_retired_spelling_no_later_manifest_revives`,
+  `relocate_verify_judges_a_revived_spelling_retired_again_with_the_later_row`,
+  `relocate_verify_revives_nothing_from_a_manifest_ordered_before_the_retiring_one`,
+  `relocate_verify_revives_only_the_path_below_a_retired_folder_a_later_row_names`,
+  `relocate_verify_revives_nothing_from_a_later_move_into_a_folder_above`); the
   manifest order survives a move of the manifests folder
   (`relocate_manifest_order_survives_a_move_of_the_manifests_folder`); a frozen area's README
   index takes live rewrites in its Contents tree only

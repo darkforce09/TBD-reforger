@@ -1,7 +1,7 @@
 id = "T-1092.4"
 kind = "work"
 title = "Pin tbd-framework in both gates and wire CI"
-summary = "file-length and enfusion-comments pin apps/mod/tbd-framework/Scripts; ci-local and ci.yml run the comment gate; standards and CLAUDE.md describe it."
+summary = "file-length and enfusion-comments pin mod/tbd-framework/Scripts; ci-local and ci.yml run the comment gate; standards and CLAUDE.md describe it."
 class = "chore"
 status = "idea"
 spec = "documentation/tickets/specs/t1092_mod_script_modularisation.md"

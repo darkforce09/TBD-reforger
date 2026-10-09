@@ -1,0 +1,70 @@
+# Mission audio emitters and music cues
+
+Plays the sound a [mission](/documentation/glossary/g_to_m.md#mission) authors: emitters that sound
+while a player stands within their radius, armed when the round goes live or when their trigger
+fires, and music cues played on the round's start and end and on each task's success or failure.
+
+## Contents
+
+```text
+mod/tbd-framework/Scripts/Game/TBD/Systems/Audio/
+├── SCR_PlayerController.c   the emitter and music cue delivery RPCs on the player controller
+├── TBD_AudioBlockStruct.c   the `audio` block's JSON structs: emitters, music cues, document root
+├── TBD_AudioEmitter.c       the server registry and tick: reads the block, arms emitters, fires cues
+├── TBD_AudioLocalSources.c  the client's spawned sound sources, one per emitter id
+└── TBD_AudioSourceEntity.c  the client sound source entity that plays inside its radius
+```
+
+## How it works
+
+[`TBD_RuntimeHeartbeat`](../../Gamemode/Orchestrator/Heartbeat/README.md) ticks
+`TBD_AudioEmitter` each second on the server in a framework world. The tick reads the document's
+`audio` block once per mission id with a second pass opened by `TBD_MissionJsonPass.LoadRoot`
+into `TBD_AudioDocStruct`: `emitters[]` (`id`, `x`, `z`, optional `y`, `sound`, `radiusM`,
+`loop`, `triggerId`) and `musicCues[]` (`id`, `event`, `track`). `event` is an Enforce keyword,
+so the pass renames that key to `cueEvent` in a copy of the JSON before it binds.
+
+- Cues: `mission_start` fires once when the stage reaches `LIVE`, `mission_end` once at `END`, and
+  `task_succeeded` or `task_failed` when a task of `TBD_TaskStateMachine` moves into that state.
+  Every cue with that event is pushed to every connected player.
+- Emitters: while `LIVE`, an emitter with no `triggerId` arms at once, and one with a `triggerId`
+  arms when `TBD_TriggerRuntime.HasFired` reports that trigger `FIRED`; a `triggerId` that names no prepared
+  trigger logs one WARNING and stays silent. Each emitter arms once and is pushed to the players
+  connected at that moment.
+
+On the client, `TBD_AudioLocalSources.Spawn` spawns one `TBD_AudioSourceEntity` per emitter
+id at the emitter's position (the terrain surface when `y` is absent). Each frame the entity
+measures the distance to the local player's controlled entity; inside `radiusM` it plays the sound
+through `SCR_UISoundEntity.SoundEvent`, once for a one-shot and every 4 s for a loop. The sound
+itself is 2D: the radius is what makes it positional, and the volume does not change with distance.
+
+## Authority
+
+- Server: reading the `audio` block, the tick, arming, and choosing what to send. The heartbeat
+  runs the tick only on the server; `TBD_AudioEmitter`, `TBD_PushAudioEmitter` and
+  `TBD_PushAudioCue` carry `@authority server`.
+- Client: nothing beyond what its owner RPCs deliver.
+- Owner: the addressed player's client spawns the local sound source and plays cues. On a host
+  that is also a player, the push plays locally without an RPC. `TBD_AudioLocalSources` and
+  `TBD_AudioSourceEntity` carry `@authority client`.
+- RPCs, on the modded `SCR_PlayerController`:
+  - `TBD_RpcDo_AudioEmitter`: Reliable, Owner (`@rpc Reliable Owner`); starts one emitter.
+  - `TBD_RpcDo_AudioCue`: Reliable, Owner (`@rpc Reliable Owner`); plays one music track.
+- Replicated properties: none.
+
+## Boundaries
+
+- Depends on: `TBD_MissionLoader.GetMissionId` and `TBD_MissionJsonPass` (the mission id and the
+  second pass); `TBD_AnnounceOnce` (the one idle line); `TBD_FrameworkManager` (the stage); `TBD_TaskStateMachine` in `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/`
+  (task states); `TBD_TriggerRuntime` in `mod/tbd-framework/Scripts/Game/TBD/Systems/Zones/`
+  (trigger states); `TBD_Log`; the engine's `SCR_UISoundEntity`, `SCR_PlayerController` and
+  `PlayerManager`.
+- Used by: `TBD_RuntimeHeartbeat` in
+  `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Orchestrator/Heartbeat/` calls
+  `TBD_AudioEmitter.Tick` and `TBD_AudioEmitter.Clear`; each client runs through the modded
+  `SCR_PlayerController`.
+- Rules: the server alone reads the document, and clients act only on what an owner RPC delivers;
+  presence is `Count()` on `emitters` and `musicCues`, never a null test on `audio`; each emitter
+  arms and each start or end cue fires once per mission; lines added stay ASCII, and
+  `cargo xtask mod compile` checks that the scripts compile, while whether a sound plays in a round
+  is checked by hand.

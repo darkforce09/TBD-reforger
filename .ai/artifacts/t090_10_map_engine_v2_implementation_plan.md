@@ -2,7 +2,7 @@
 
 **Slice:** T-090.10.1 (plan only — no code) · **Authority:** [`t090_10_map_engine_v2.md`](../../docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md) · [`t090_legacy_raster_pipeline.md`](../../docs/specs/Mission_Creator_Architecture/t090_legacy_raster_pipeline.md) · T-144.1 report [`t144_arma3_map_architecture_report.md`](t144_arma3_map_architecture_report.md) @ `b1949182`
 **Consumers:** T-090.3 (export) → T-090.5 (render) → T-090.8 (forest) → T-090.9 (interaction); Cursor locks §5 into `t090_render_lod_contract.md` **v2** on doc sync.
-**Reference policy:** Arma 3 = engine ground truth (T-144.1). **Reforger = script/UX reference only — no Enfusion C++ source exists in scope and none may be introduced**; permissible references are our own mod scripts (`apps/mod/tbd-framework`), Workbench MCP behavior, and shipped-game UX observation.
+**Reference policy:** Arma 3 = engine ground truth (T-144.1). **Reforger = script/UX reference only — no Enfusion C++ source exists in scope and none may be introduced**; permissible references are our own mod scripts (`mod/tbd-framework`), Workbench MCP behavior, and shipped-game UX observation.
 
 ---
 

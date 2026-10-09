@@ -161,4 +161,4 @@ Dev-login: `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
 
 **Done @ 2026-06-27:** Phase 1 acceptance in program hub; CLAUDE §Status; MC ROADMAP; mod README NPC vs player boundary; `active_slice` → **T-068.7**.
 
-**Mod script (E11):** [`TBD_LoadoutEquipComponent.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) · [`TBD_GameMode.et`](../../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et) · wear fix **T-068.5.1** @ `b233b11` · scaffold **T-068.5** @ `21ec91e`.
+**Mod script (E11):** [`TBD_LoadoutEquipComponent.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) · [`TBD_GameMode.et`](../../../mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et) · wear fix **T-068.5.1** @ `b233b11` · scaffold **T-068.5** @ `21ec91e`.

@@ -1,6 +1,6 @@
 //! `cargo xtask fetch vanilla-api` — mirror Bohemia's Arma Reforger Script API reference.
 //!
-//! Doxygen HTML lands in the `apidoc/` folder of the vanilla lane in `apps/mod/References/`,
+//! Doxygen HTML lands in the `apidoc/` folder of the vanilla lane in `mod/References/`,
 //! which must already exist. Index only by default; class
 //! names or `--from-file` fetch pages too. A cached page that is non-empty is never refetched.
 //!

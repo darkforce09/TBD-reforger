@@ -34,7 +34,7 @@ their closing line. A tracked path fails when:
   the first token of a line counts; `.md` files and binary files skip this scan, and `#` and `//`
   comment lines never count.
 
-There is no inventory or allowlist, and no path prefix is skipped: `apps/mod/` is scanned like
+There is no inventory or allowlist, and no path prefix is skipped: `mod/` is scanned like
 everything else, and [Enfusion](/documentation/glossary/a_to_f.md#enfusion) `.c` sources pass because `.c` is not in the table. A failed
 `git ls-files`, an empty listing or an unreadable tracked path fails the gate rather than passing
 it.

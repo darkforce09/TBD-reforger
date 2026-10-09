@@ -107,7 +107,7 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
         ));
     }
 
-    let mod_src = root.join("apps/mod/tbd-framework");
+    let mod_src = root.join(FRAMEWORK_ADDON_DIR);
     let addon_guid = read_addon_guid(&mod_src.join("addon.gproj")).unwrap_or_default();
     if addon_guid.is_empty() {
         eprintln!(
@@ -133,7 +133,7 @@ pub(super) fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
     let run_dir = tempfile_dir("tbd-worldboot")?;
     fs::create_dir_all(run_dir.join("addons"))?;
     fs::create_dir_all(run_dir.join("profile"))?;
-    let link = run_dir.join("addons/tbd-framework");
+    let link = run_dir.join("addons").join(FRAMEWORK_ADDON_FOLDER_NAME);
     let _ = fs::remove_file(&link);
     #[cfg(unix)]
     std::os::unix::fs::symlink(&mod_src, &link)?;

@@ -80,7 +80,7 @@ These were checked directly and do **not** need re-deriving:
 
 ## A methodology note worth keeping — and its limit
 
-The attributes agent recorded a trap it avoided: `grep -rl stance apps/mod` returns **39 files**,
+The attributes agent recorded a trap it avoided: `grep -rl stance mod` returns **39 files**,
 which would have supported "the mod has a stance concept". A **word-boundary** search returns
 **zero** — every hit was the substring inside `instance`.
 

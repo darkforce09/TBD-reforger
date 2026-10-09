@@ -86,7 +86,7 @@ read from the physics world.
   `tool_test_support`, `jsonschema` and `walkdir` in tests; the gameplay export and the oracle
   output of the generation.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; people, after a new equipment export or oracle
-  run (the oracle plugin lives in `apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/`).
+  run (the oracle plugin lives in `mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/`).
 - Rules: the trim never reads an unverified byte and never writes over a refusal; two runs over
   the same inputs write identical bytes; the written documents validate against
   `ballistics-catalog.schema.json` and `ballistics-calibration.schema.json` and pin each other by

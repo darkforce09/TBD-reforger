@@ -67,8 +67,8 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c",
+    "mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c",
+    "mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c",
 ]
 
 [scope]

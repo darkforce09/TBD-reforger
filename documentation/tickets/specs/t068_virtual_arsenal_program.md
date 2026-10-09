@@ -294,7 +294,7 @@ Audit after MCP executor fix (2026-06). Treat as **checklist** when advancing sl
 
 | # | Risk | Mitigation (locked in specs) |
 |---|------|------------------------------|
-| 1 | **Fake ResourceNames** — mock catalog ids (`a-nato-rifleman`) ≠ Enfusion GUIDs | **T-068.1 MCP** for real paths; `registry_dev.sql` must use GUIDs from [`registry.json`](../../../apps/mod/tbd-framework/Data/registry.json) POC + gear rows from MCP — never mock tree ids |
+| 1 | **Fake ResourceNames** — mock catalog ids (`a-nato-rifleman`) ≠ Enfusion GUIDs | **T-068.1 MCP** for real paths; `registry_dev.sql` must use GUIDs from [`registry.json`](../../../mod/tbd-framework/Data/registry.json) POC + gear rows from MCP — never mock tree ids |
 | 2 | **Executor = workbench skipped `ticket run`** | T-068.1 / .5 / .8 → **`claude-code`** + MCP (fixed) |
 | 3 | **Arsenal stub looked “done”** | T-068.4 **A0** stub grep + E2E **E8** screenshot gate |
 | 4 | **Export JSON never reaches Postgres** | Rule **#12** — document `import-registry-items` in T-068.6 **E2** sign-off when using Workbench data |

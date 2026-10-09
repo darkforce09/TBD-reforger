@@ -51,7 +51,7 @@ fn scratch(name: &str) -> PathBuf {
     assert_eq!(g(&p, "config user.email t@t.t").0, 0);
     assert_eq!(g(&p, "config user.name t").0, 0);
     // EVERY LANE MUST BE IGNORED — load-bearing, not tidiness. `new` symlinks them INSIDE the
-    // worktree, so an un-ignored lane shows as `?? apps/mod/References/<lane>` and the tree is
+    // worktree, so an un-ignored lane shows as `?? mod/References/<lane>` and the tree is
     // PERMANENTLY DIRTY: every guard here then refuses forever. The root `.gitignore` carries
     // the same two rules: everything in the references folder but its README.md, matched
     // without a trailing slash so the worktree's symlinks are ignored too (a slash matches only

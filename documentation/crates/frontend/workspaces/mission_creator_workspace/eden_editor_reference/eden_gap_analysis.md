@@ -101,7 +101,7 @@ leaves them untouched.
 | XFORM-MOVE-001 | XFORM-MOVE-001 | match | — | A drag past the threshold moves the selection with a preview and commits one undo step on release |
 | XFORM-ALT-001 | — | partial | — | The view is top-down, so there is no Alt-drag; the transform widget's elevation arm changes Z by a vertical drag (`bridge/gizmo_z.rs`, `bridge/overlays/z_drag.rs`), and the Transform tab has a numeric Z |
 | XFORM-SHIFT-001 | XFORM-ROT-001 | match | T-648 ✅ | Shift+drag on a selected entity rotates the selection (`input/pointer_gestures/pointer_move.rs`) |
-| XFORM-VERT-001 | — | partial | — | Z is metres above sea level only, with no datum toggle. A slot with no `y` on the wire spawns on the terrain surface and an explicit `y` wins (`TBD_SlotBodyMaterializer.c` in `/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Slots/`) |
+| XFORM-VERT-001 | — | partial | — | Z is metres above sea level only, with no datum toggle. A slot with no `y` on the wire spawns on the terrain surface and an explicit `y` wins (`TBD_SlotBodyMaterializer.c` in `/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/Slots/`) |
 | XFORM-SNAP-001 | — | partial | — | Terrain only: a placed entity's Z starts at 0 and an X or Y edit resets it, so it spawns on the ground; nothing snaps to an object surface. The inventory's own XFORM-SNAP-001 is the snap grid (KEY-GRID-001) |
 
 ### Transformation widget — WIDGET (6)

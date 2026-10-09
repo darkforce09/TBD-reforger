@@ -65,14 +65,14 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerClient.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerController.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerClient.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerController.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerClient.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerController.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
+    "mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerClient.c",
+    "mod/tbd-export/Scripts/Game/TBD/Markers/TBD_MarkerController.c",
+    "mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
 [scope]

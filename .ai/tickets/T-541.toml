@@ -55,8 +55,8 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
     "crates/frontend/shell/frontend_application/src/arsenal_rules.rs",
 ]
 

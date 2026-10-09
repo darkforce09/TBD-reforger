@@ -44,7 +44,7 @@ rewrites the catalogue and its archives; a full rebuild is `cargo xtask map expo
 ### Kit aliases
 
 `kit-aliases.json` is the inverse of the [mod](/documentation/glossary/g_to_m.md#mod)'s spawn registry
-`apps/mod/tbd-framework/Data/registry.json`, which maps each alias to a prefab. `kits` (15 rows)
+`mod/tbd-framework/Data/registry.json`, which maps each alias to a prefab. `kits` (15 rows)
 maps a character prefab's resource name to its `kit:` alias, `vehicles` (222 rows) maps a vehicle
 prefab to its `veh:` alias, `factionDefaults` gives each side (`blufor`, `opfor`, `indfor`, `civ`)
 the `kit:` and `preset:` a [slot](/documentation/glossary/n_to_z.md#slot) falls back to, and
@@ -105,7 +105,7 @@ policy's digest.
 
 - Depends on: the enums of `contracts/definitions/map-object-enums.schema.json`, the glyph keys
   of `assets/glyphs/manifest.json`, the spawn registry
-  `apps/mod/tbd-framework/Data/registry.json` and the vehicle items of
+  `mod/tbd-framework/Data/registry.json` and the vehicle items of
   `contracts/catalogs/registry-items.workbench.json`.
 - Used by: the developer tools' world export, the map engine's mission compiler and the API that
   links it, the xtask schema gates and the wave gate, and the equipment export's gameplay

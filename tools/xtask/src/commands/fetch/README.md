@@ -18,7 +18,7 @@ tools/xtask/src/commands/fetch/
 `dispatch.rs` picks the checkout root and hands the raw arguments to the mirror in the
 [`enfusion_script_index`](/tools/enfusion/enfusion_script_index/README.md) crate's
 `vanilla_page_fetch` module, which caches the pages in the `vanilla_reference` lane of the
-[reference lanes](/apps/mod/References/README.md) and returns the exit code; the caching rules,
+[reference lanes](/mod/References/README.md) and returns the exit code; the caching rules,
 the upstream hosts and the curl recipe are in that module's README. `TBD_FETCH_ROOT` points
 either command at another root, which the crate's tests use; otherwise `vanilla-source` finds the
 checkout root from the working directory, and `vanilla-api` takes `PWD` when it is the checkout
@@ -37,7 +37,7 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
   An unknown name or an HTTP failure is reported (`MISS`, `FAIL`) and counted, not fatal. The
   pause defaults to 0.4 s.
 - Exit codes: 0 done, misses included; 1 the index held no source links, after `map.tsv` is
-  emptied; 2 `--grep` without a pattern; 1 with `xtask: <error>` when `apps/mod/References/` is
+  emptied; 2 `--grep` without a pattern; 1 with `xtask: <error>` when `mod/References/` is
   missing or the index cannot be downloaded.
 - Example: `cargo xtask fetch vanilla-source --grep Respawn`
 
@@ -49,7 +49,7 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
   fetches none). A missing class page prints `MISS` and does not fail the run. The pause defaults
   to 0.3 s; `TBD_FETCH_VANILLA_API_CURL` names a curl binary to use instead of the one on `PATH`.
 - Exit codes: 0 done; 1 the class index could not be fetched; 2 `--from-file` without a path;
-  1 with `xtask: <error>` when `apps/mod/References/` is missing.
+  1 with `xtask: <error>` when `mod/References/` is missing.
 - Example: `cargo xtask fetch vanilla-api SCR_BaseGameMode`
 
 ## Boundaries
@@ -67,7 +67,7 @@ Clap's help is turned off on both, so every argument, `--help` included, reaches
 
 ## Related documentation
 
-- [Vanilla source coverage](/documentation/apps/mod/tbd-framework/vanilla_source_coverage.md) —
+- [Vanilla source coverage](/documentation/mod/tbd-framework/vanilla_source_coverage.md) —
   which vanilla classes the mod relies on and how to fetch them.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — where the fetch fits in
   mod work.

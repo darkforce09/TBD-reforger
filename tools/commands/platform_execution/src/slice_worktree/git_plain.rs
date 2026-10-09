@@ -232,7 +232,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
     }
 
     // ── ORACLE LANES ─────────────────────────────────────────────────────────────────────────
-    // The reference lanes in `apps/mod/References/` are GITIGNORED, so a fresh worktree has the
+    // The reference lanes in `mod/References/` are GITIGNORED, so a fresh worktree has the
     // folder (its README.md is tracked) but none of the lanes, and an agent with no way to query
     // CRF or read vanilla source falls back on training-data guesses about Enfusion, which are
     // wrong. Link each lane in from the main checkout (read-only; no disk cost, no risk of a
@@ -279,7 +279,7 @@ pub(super) fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
 
         let dst = abs_dir.join(lane);
         if let Err(e) = ln_sfn(src, &dst) {
-            // `ln -sfn` failing is fatal: the worktree has no `apps/mod/References/` folder.
+            // `ln -sfn` failing is fatal: the worktree has no `mod/References/` folder.
             eprintln!(
                 "ln: failed to create symbolic link '{}': {e}",
                 dst.display()
@@ -344,12 +344,12 @@ pub(super) fn ln_sfn(src: &Path, dst: &Path) -> std::io::Result<()> {
 /// Is the lane genuinely linked?
 ///
 /// ── FAIL-OPEN CLOSED (1 of 3) ────────────────────────────────────────────────────────────────
-/// The bash verifies with `[ -d "$dir/apps/mod/$ref" ]`, which FOLLOWS symlinks and so also passes
+/// The bash verifies with `[ -d "$dir/mod/$ref" ]`, which FOLLOWS symlinks and so also passes
 /// for a plain real directory ln just descended into (see [`ln_sfn`]) — printing `oracle ok` for a
 /// lane that was never linked, the exact "reports success over an input it never examined" defect
 /// its own comment says the check was added to stop. Requiring a symlink resolving to `src` closes
 /// it. The happy path is unchanged so no baseline moves, and the bad path is unreachable today
-/// (the lanes are gitignored) — but one `git add -f apps/mod/References/crf_framework/` makes
+/// (the lanes are gitignored) — but one `git add -f mod/References/crf_framework/` makes
 /// it reachable, and it fails silent.
 pub(super) fn lane_is_linked(dst: &Path, src: &Path) -> bool {
     match fs::symlink_metadata(dst) {

@@ -93,8 +93,8 @@ fn walk_is_nonempty_anti_vacuity() {
         "/tools/tickets/ticketboard_desktop/src/",
         "/crates/api/api_server/src/",
         "/crates/frontend/shell/frontend_application/src/",
-        "/apps/mod/tbd-framework/Scripts/",
-        "/apps/mod/tbd-emcp/Scripts/",
+        "/mod/tbd-framework/Scripts/",
+        "/mod/tbd-emcp/Scripts/",
     ] {
         assert!(
             joined.contains(needle),
@@ -197,13 +197,13 @@ fn enfusion_script_tests_basename_holds_to_1000_lines() {
         "a 1001-line *_tests.c fails"
     );
     assert!(is_test_file(
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.c"
+        "mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.c"
     ));
     assert!(!is_test_file(
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash.c"
+        "mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash.c"
     ));
     assert!(!is_test_file(
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.h"
+        "mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.h"
     ));
 }
 
@@ -224,6 +224,28 @@ fn summary_reports_the_mixed_extension_count() {
     );
 }
 
+/// The Node-script exemption is the mod folder itself: `mod/…` is exempt, while a sibling whose
+/// name starts with `mod`, a nested `mod/` folder elsewhere and a root-level file are refused.
+#[test]
+fn node_scripts_are_exempt_only_inside_the_mod_folder() {
+    let listing = "mod/tbd-emcp/handler.mjs\n\
+                   models/loader.mjs\n\
+                   modding.cjs\n\
+                   tools/mod/runner.mjs\n\
+                   mod.mjs\n\
+                   mod/References/upstream/build.cjs\n";
+    assert_eq!(
+        refused_node_scripts(listing),
+        [
+            "models/loader.mjs",
+            "modding.cjs",
+            "tools/mod/runner.mjs",
+            "mod.mjs"
+        ]
+    );
+    assert_eq!(refused_node_scripts(""), Vec::<String>::new());
+}
+
 #[test]
 fn mod_script_roots_are_the_three_shipped_addons() {
     let root = this_repo();
@@ -237,12 +259,12 @@ fn mod_script_roots_are_the_three_shipped_addons() {
         );
     }
     assert!(mod_pins_are_script_roots(
-        &["tools/xtask", "apps/mod/tbd-emcp/Scripts"],
+        &["tools/xtask", "mod/tbd-emcp/Scripts"],
         MOD_SCRIPT_ROOTS
     ));
-    assert!(!mod_pins_are_script_roots(&["apps/mod"], MOD_SCRIPT_ROOTS));
+    assert!(!mod_pins_are_script_roots(&["mod"], MOD_SCRIPT_ROOTS));
     assert!(!mod_pins_are_script_roots(
-        &["apps/mod/vanilla_reference/Scripts"],
+        &["mod/vanilla_reference/Scripts"],
         MOD_SCRIPT_ROOTS
     ));
 }

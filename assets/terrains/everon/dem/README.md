@@ -32,7 +32,7 @@ assets/terrains/everon/dem/
 ## Producers and consumers
 
 - Producers: the `tbd-export` DEM plugin in [Workbench](/documentation/glossary/n_to_z.md#workbench)
-  (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/`) samples the engine's
+  (`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/DEM/`) samples the engine's
   surface height into a raw grid and its metadata; `cargo run -p developer_tools --bin world --
   raw-u16-dem-png --raster <grid> --meta <meta> --out <png>` packs them into this image.
 - Consumers:

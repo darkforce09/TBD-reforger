@@ -30,7 +30,7 @@ pub const SLICE_WORKFLOW_RUNBOOK: &str = "documentation/runbooks/mod_slice_workf
 pub const PLATFORM_FACTORY_RUNBOOK: &str = "documentation/runbooks/factory_waves/README.md";
 
 /// The mod's design authority, including the upstream-code oracle lanes.
-pub const MOD_DESIGN: &str = "documentation/apps/mod/tbd-framework/mod_design.md";
+pub const MOD_DESIGN: &str = "documentation/mod/tbd-framework/mod_design.md";
 
 /// How to run the spawn-determinism gate, which needs a live Workbench.
 pub const SPAWN_DETERMINISM_RUNBOOK: &str = "documentation/runbooks/spawn_determinism.md";
@@ -72,12 +72,27 @@ pub const CURSOR_RULE_DIRS: &[&str] = &[".cursor/rules"];
 /// links.
 pub const PROJECT_INSTRUCTIONS: &str = "CLAUDE.md";
 
-/// A documentation root that must not exist: every document lives under
-/// [`crate::documentation::DOCUMENTATION_ROOT`], and `cargo xtask verify markdown-placement`
-/// fails while this folder holds a tracked file. `cargo xtask verify link-check` reads a
-/// backticked path under it as a repository path whether or not the folder still holds files, so
-/// a live document that names the retired tree breaks.
-pub const RETIRED_DOCS_ROOT: &str = "docs";
+/// The top-level folders the repository retired, each with where its contents live now: `docs`,
+/// whose documents live under [`crate::documentation::DOCUMENTATION_ROOT`], and `apps`, whose
+/// Enfusion mod lives under [`crate::workspace_folders::ENFUSION_MOD_DIR`] and whose applications
+/// are crates. None may exist: `cargo xtask verify markdown-placement` fails while one holds a
+/// tracked file, and the README and code-tree rules leave them to that verdict. `cargo xtask
+/// verify link-check` reads a backticked path under one as a repository path whether or not the
+/// folder still holds files, so a live document that names a retired tree breaks.
+pub const RETIRED_TOP_LEVEL_FOLDERS: &[(&str, &str)] = &[
+    ("docs", "every document lives under documentation/"),
+    (
+        "apps",
+        "the Enfusion mod lives under mod/ and every application is a crate",
+    ),
+];
+
+/// Whether `folder` is the name of one of the [`RETIRED_TOP_LEVEL_FOLDERS`].
+pub fn is_retired_top_level_folder(folder: &str) -> bool {
+    RETIRED_TOP_LEVEL_FOLDERS
+        .iter()
+        .any(|(retired, _)| *retired == folder)
+}
 
 /// Repository paths a live document names on purpose although nothing is tracked or ignored
 /// there, each with the reason it is named. `cargo xtask verify link-check` passes a

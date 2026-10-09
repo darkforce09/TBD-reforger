@@ -34,7 +34,7 @@ See: [event manager](#event-manager), [approvals](#approvals), [server control](
 The review of a finished match, abbreviated AAR: in the game, the END banner and the DEBRIEF
 scoreboard; on the website, a map replay that is planned and not built, as a workspace.
 
-In code: `apps/mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`; the website's replay has no code yet.
+In code: `mod/tbd-framework/Scripts/Game/TBD/Session/PostGame/`; the website's replay has no code yet.
 
 See: [After-action review](/documentation/crates/frontend/workspaces/aar/after_action_review.md).
 
@@ -219,7 +219,7 @@ Most often the Eden editor, Arma 3's scenario editor: the design the
 catalogued interaction by interaction with an ID each. In [Enfusion](#enfusion) resource paths,
 Eden is also Everon's world, `worlds/Eden/Eden.ent`, which the mod's worlds inherit.
 
-In code: the Mission Creator's shell measurements taken from Eden in `crates/frontend/workspaces/mission_creator_state/src/layout.rs`; `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent` and `apps/mod/tbd-export/worlds/TBD_Export_Everon.ent`, whose parent is `worlds/Eden/Eden.ent`.
+In code: the Mission Creator's shell measurements taken from Eden in `crates/frontend/workspaces/mission_creator_state/src/layout.rs`; `mod/tbd-framework/worlds/TBD_Dev_POC.ent` and `mod/tbd-export/worlds/TBD_Export_Everon.ent`, whose parent is `worlds/Eden/Eden.ent`.
 
 See: [Eden editor reference](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/README.md), [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md).
 
@@ -229,7 +229,7 @@ Enforce Script, Enfusion's C-like scripting language, in `.c` files under an add
 `Scripts/Game/` compiles into the game and the dedicated server, `Scripts/WorkbenchGame/` into
 Workbench. Its comment rules are in the [documentation standards](/documentation/standards/documentation_standards.md#6-enfusion-comments).
 
-In code: `apps/mod/tbd-framework/Scripts/Game/TBD/`; `cargo xtask mod compile`, the compile gate.
+In code: `mod/tbd-framework/Scripts/Game/TBD/`; `cargo xtask mod compile`, the compile gate.
 
 See: [Enfusion](#enfusion), [mod](/documentation/glossary/g_to_m.md#mod).
 
@@ -238,7 +238,7 @@ See: [Enfusion](#enfusion), [mod](/documentation/glossary/g_to_m.md#mod).
 Bohemia Interactive's engine behind Arma Reforger: the game, its dedicated server and the Workbench
 editor run on it. Its scripts are [EnfScript](#enfscript), and its content ships as addons.
 
-In code: the three addons under `apps/mod/`, each with an `addon.gproj`.
+In code: the three addons under `mod/`, each with an `addon.gproj`.
 
 See: [Workbench](/documentation/glossary/n_to_z.md#workbench), [mission header](/documentation/glossary/g_to_m.md#mission-header), [mod](/documentation/glossary/g_to_m.md#mod).
 

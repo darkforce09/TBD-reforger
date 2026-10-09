@@ -4,8 +4,10 @@
 //! the whole tree, and every row scans every judged file on its own. A checkout with several
 //! composed manifests (shared and overlapping spellings, a single-segment path that is also a Rust
 //! prefix segment, scopes a later manifest moved or emptied, a missing scope, a manifest that moves
-//! a frozen area, frozen records, a closed ticket, a migration, over forty offences in one row) is
-//! judged by both, and every verdict and note must render identically.
+//! a frozen area, frozen records, a closed ticket, a migration, over forty offences in one row,
+//! retired spellings a later manifest's `path` row revives whole or below the retired folder) is
+//! judged by both, and every verdict and note must render identically. The oracle reads the
+//! revivals from the later manifests' rows on its own.
 
 use std::path::Path;
 
@@ -15,9 +17,11 @@ use super::file_treatment::{FileTreatment, TreatmentAreas, manifests_folder};
 use super::fixture_repository::FixtureRepository;
 use super::manifest::{ManifestRow, RowKind, RowScope, parse_manifest};
 use super::manifest_chronology::chronological_manifests;
-use super::path_mapping::{PathMapping, normalize, parent_folder};
+use super::path_mapping::{PathMapping, is_at_or_below, normalize, parent_folder};
 use super::path_references::allowed_spans;
-use super::path_references::path_tokens::{PathOccurrence, classify_occurrence, match_starts};
+use super::path_references::path_tokens::{
+    PathOccurrence, classify_occurrence, ends_on_boundary, match_starts,
+};
 use super::path_references::relative_references::ReferenceFileKind;
 use super::repository_files::{FileContent, PathSet, RepositorySnapshot, TrackedTree};
 use super::retired_spellings::{ManifestToJudge, RowJudgement, judge_manifests};
@@ -38,8 +42,12 @@ fn relocate_verify_single_pass_matches_the_per_row_judge_over_composed_manifests
 
     let expected: Vec<String> = manifests
         .iter()
-        .flat_map(|(label, rows, later)| {
-            rendered(oracle_verify_rows(&snapshot, label, rows, None, later))
+        .enumerate()
+        .flat_map(|(position, (label, rows, later))| {
+            let revived_by = &manifests[position + 1..];
+            rendered(oracle_verify_rows(
+                &snapshot, label, rows, None, later, revived_by,
+            ))
         })
         .collect();
     let judged: Vec<ManifestToJudge<'_>> = manifests
@@ -79,6 +87,22 @@ fn relocate_verify_single_pass_matches_the_per_row_judge_over_composed_manifests
     assert!(
         expected.iter().any(|line| line.contains("TargetMissing")),
         "a missing scope is a did-not-run: {expected:#?}"
+    );
+    let revival_notes = expected
+        .iter()
+        .filter(|line| line.starts_with("note:") && line.contains("is in use again"))
+        .count();
+    assert_eq!(
+        revival_notes, 2,
+        "a whole and a partial revival each leave a note: {expected:#?}"
+    );
+    assert!(
+        !expected.iter().any(|line| line.contains("Revived: ")),
+        "revived spellings are no offence: {expected:#?}"
+    );
+    assert!(
+        expected.iter().any(|line| line.contains("Not revived: ")),
+        "a spelling beside a revived path still is: {expected:#?}"
     );
     assert_eq!(
         verify(repo.root(), None),
@@ -121,7 +145,10 @@ fn composed_checkout() -> FixtureRepository {
     .commit("stage b");
     repo.write(
         &manifest("stage_c.tsv"),
-        &format!("{HEADER}path\tapp/src/emptied/mod.rs\tapp/src/flat.rs\t\n"),
+        &format!(
+            "{HEADER}path\tapp/src/emptied/mod.rs\tapp/src/flat.rs\t\n\
+             path\tshelf\told_tools/revived\t\n"
+        ),
     )
     .commit("stage c");
     for moved in ["app/src/widgets", "app/src/emptied"] {
@@ -131,7 +158,8 @@ fn composed_checkout() -> FixtureRepository {
         &manifest("stage_d.tsv"),
         &format!(
             "{HEADER}path\tlegacy\tagain_retired\t\n\
-             rust_path\tcrate::gone::\tcrate::here::\tapp/src/nowhere\n"
+             rust_path\tcrate::gone::\tcrate::here::\tapp/src/nowhere\n\
+             path\tparking\tapp/src/widgets\t\n"
         ),
     )
     .write(
@@ -149,7 +177,9 @@ fn composed_checkout() -> FixtureRepository {
         "README.md",
         &format!(
             "See `old_tools/run.cfg`, /retired/a.md, ./retired/b.md, ../old_tools/c.md, \
-             https://example.com/retired/x, my_legacy, retired.md and\\nlegacy/esc.\n{many_offences}"
+             https://example.com/retired/x, my_legacy, retired.md and\\nlegacy/esc.\n\
+             Revived: `old_tools/revived/a.md` and `app/src/widgets/parked.rs`.\n\
+             Not revived: `old_tools/revived.md`.\n{many_offences}"
         ),
     )
     .write(
@@ -167,12 +197,15 @@ fn composed_checkout() -> FixtureRepository {
     )
     .write("tools_moved/run.cfg", "#!/bin/sh\necho retired/run\n")
     .write("docs/guide.md", "# Guide\n")
+    .write("old_tools/revived/kept.txt", "back under a revived path\n")
+    .write("app/src/widgets/parked.rs", "pub struct Parked;\n")
     .track();
     repo
 }
 
-/// Every stage manifest of the checkout, oldest first, with the moves of the manifests after it.
-fn composed_manifests(root: &Path) -> Vec<(String, Vec<ManifestRow>, LaterMoves)> {
+/// Every stage manifest of the checkout, oldest first, with the moves of the manifests after it;
+/// shared with the spelling revival scenarios.
+pub(super) fn composed_manifests(root: &Path) -> Vec<(String, Vec<ManifestRow>, LaterMoves)> {
     let read: Vec<(String, Vec<ManifestRow>)> = chronological_manifests(root)
         .expect("order the fixture manifests")
         .iter()
@@ -199,8 +232,9 @@ fn composed_manifests(root: &Path) -> Vec<(String, Vec<ManifestRow>, LaterMoves)
         .collect()
 }
 
-/// One line per note and per verdict, in the order the report receives them.
-fn rendered(judgement: RowJudgement) -> Vec<String> {
+/// One line per note and per verdict, in the order the report receives them; shared with the
+/// spelling revival scenarios.
+pub(super) fn rendered(judgement: RowJudgement) -> Vec<String> {
     judgement
         .notes
         .iter()
@@ -228,6 +262,7 @@ fn oracle_verify_rows(
     rows: &[ManifestRow],
     run_manifest: Option<&str>,
     later: &LaterMoves,
+    revived_by: &[(String, Vec<ManifestRow>, LaterMoves)],
 ) -> RowJudgement {
     let mapping = PathMapping::from_rows(rows);
     let areas = TreatmentAreas::current(run_manifest).relocated(&mapping);
@@ -251,7 +286,15 @@ fn oracle_verify_rows(
     }
     for row in rows {
         let verdict = match row.kind {
-            RowKind::Path => oracle_path_row(tree.paths(), &files, label, row),
+            RowKind::Path => {
+                let revivals = oracle_revivals(revived_by, &row.from);
+                judgement.notes.extend(
+                    revivals
+                        .iter()
+                        .map(|(to, by)| oracle_revival_note(label, row, to, by)),
+                );
+                oracle_path_row(tree.paths(), &files, label, row, &revivals)
+            }
             RowKind::RustPath => match oracle_scope(tree, &mapping, later, label, row) {
                 Ok(scope) => oracle_rust_path_row(&files, &scope, label, row),
                 Err(Ok(note)) => {
@@ -267,14 +310,43 @@ fn oracle_verify_rows(
     judgement
 }
 
+/// Every `path` row of the later manifests whose `to` is `from` or a path below it, as its `to`
+/// and `<manifest> line <n>`, oldest manifest first, in line order.
+fn oracle_revivals(
+    later: &[(String, Vec<ManifestRow>, LaterMoves)],
+    from: &str,
+) -> Vec<(String, String)> {
+    later
+        .iter()
+        .flat_map(|(label, rows, _)| {
+            rows.iter()
+                .filter(|row| row.kind == RowKind::Path && is_at_or_below(&row.to, from))
+                .map(move |row| (row.to.clone(), format!("{label} line {}", row.line)))
+        })
+        .collect()
+}
+
+fn oracle_revival_note(label: &str, row: &ManifestRow, to: &str, by: &str) -> String {
+    format!(
+        "{label} line {}: `{}` is in use again at or below `{to}`, where {by} moved a path; its \
+         spellings there are not judged against this row",
+        row.line, row.from
+    )
+}
+
 fn oracle_path_row(
     paths: &PathSet,
     files: &[OracleFile],
     label: &str,
     row: &ManifestRow,
+    revivals: &[(String, String)],
 ) -> Verdict {
     let mut offences = Vec::new();
-    if paths.contains(&row.from) {
+    let outside_revivals = |path: &String| !revivals.iter().any(|(to, _)| is_at_or_below(path, to));
+    if paths
+        .files()
+        .any(|path| is_at_or_below(path, &row.from) && outside_revivals(path))
+    {
         offences.push(format!("`{}` is still tracked", row.from));
     }
     for file in files {
@@ -282,7 +354,14 @@ fn oracle_path_row(
         let allowed = allowed_spans(&file.text, file.treatment, kind);
         for start in match_starts(&file.text, &row.from) {
             let end = start + row.from.len();
-            if allowed.allows(&(start..end)) && oracle_is_retired(paths, file, start, end) {
+            let rest = &file.text[start..];
+            let revived = revivals.iter().any(|(to, _)| {
+                rest.starts_with(to.as_str()) && ends_on_boundary(rest.as_bytes(), to.len())
+            });
+            if allowed.allows(&(start..end))
+                && !revived
+                && oracle_is_retired(paths, file, start, end)
+            {
                 offences.push(oracle_offence(&file.path, &file.text, start));
             }
         }

@@ -53,14 +53,18 @@ fn throwaway_root(tag: &str, with_backend: bool) -> PathBuf {
     let root = tempfile_dir(tag);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
-    fs::create_dir_all(root.join("apps/mod/tbd-framework/Data")).unwrap();
+    fs::create_dir_all(root.join(FRAMEWORK_ADDON_DIR).join("Data")).unwrap();
     if with_backend {
         fs::write(
-            root.join(BACKEND_EXAMPLE_REL),
+            root.join(FRAMEWORK_ADDON_DIR).join(BACKEND_EXAMPLE_IN_FRAMEWORK),
             "{\n  \"backendUrl\": \"http://127.0.0.1:8080\",\n  \"machineCredential\": \"replace-with-a-mod_runtime-credential\"\n}\n",
         )
         .unwrap();
     }
-    fs::write(root.join(REGISTRY_REL), "{\"ok\":true}\n").unwrap();
+    fs::write(
+        root.join(FRAMEWORK_ADDON_DIR).join(REGISTRY_IN_FRAMEWORK),
+        "{\"ok\":true}\n",
+    )
+    .unwrap();
     root
 }

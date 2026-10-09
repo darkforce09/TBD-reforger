@@ -25,6 +25,7 @@ use super::fleet_instances::{
     MOD_RUNTIME_CREDENTIAL_FILE, RCON_PASSWORD_FILE,
 };
 use super::fleet_server_config::{JOIN_PASSWORD_PLACEHOLDER, RCON_PASSWORD_PLACEHOLDER};
+use repository_layout::enfusion_mod_folders::{FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME};
 
 /// A machine credential as the platform issues it, as a bash regular expression.
 pub const MACHINE_CREDENTIAL_SHAPE: &str = "^tbdm_[0-9a-f]{32}_[0-9a-f]{64}$";
@@ -111,7 +112,7 @@ INSTANCE="$HOME/@INSTANCE_FOLDER@"
 SECRETS="$INSTANCE/secrets"
 mkdir -p "$SECRETS" "$INSTANCE/profile" "@ADDONS@"
 chmod 700 "$FLEET" "$INSTANCE" "$SECRETS" "$INSTANCE/profile"
-ln -sfn "@REMOTE@/apps/mod/tbd-framework" "@ADDONS@/tbd-framework"
+ln -sfn "@REMOTE@/@FRAMEWORK_FOLDER@" "@ADDONS@/@FRAMEWORK_ADDON@"
 if [ ! -s "$SECRETS/@RCON_FILE@" ]; then
   RCON_PASSWORD="$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')"
   (set -o noclobber; printf '%s\n' "$RCON_PASSWORD" > "$SECRETS/@RCON_FILE@")
@@ -187,6 +188,8 @@ pub fn instance_files_payload(
         .replace("@INSTANCE_FOLDER@", &instance.home_relative_folder())
         .replace("@ADDONS@", &env.addons_staging)
         .replace("@REMOTE@", &env.remote_dir)
+        .replace("@FRAMEWORK_FOLDER@", FRAMEWORK_ADDON_DIR)
+        .replace("@FRAMEWORK_ADDON@", FRAMEWORK_ADDON_FOLDER_NAME)
         .replace("@RCON_FILE@", RCON_PASSWORD_FILE)
         .replace("@RCON_SHAPE@", RCON_PASSWORD_SHAPE)
         .replace("@JOIN_FILE@", JOIN_PASSWORD_FILE)

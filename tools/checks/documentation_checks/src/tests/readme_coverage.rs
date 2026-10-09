@@ -33,18 +33,18 @@ fn folders_with_matching_readmes_hold_both_rules() {
     let mut fixture = FixtureCheckout::new("coverage-clean");
     fixture
         .tracked(
-            "apps/README.md",
-            &readme_with_contents("apps/", &["└── tool/  the tool"]),
+            "engines/README.md",
+            &readme_with_contents("engines/", &["└── tool/  the tool"]),
         )
         .tracked(
-            "apps/tool/README.md",
+            "engines/tool/README.md",
             &readme_with_contents(
-                "apps/tool/",
+                "engines/tool/",
                 &["├── main.rs  entry point", "└── tests/  unit tests"],
             ),
         )
-        .tracked("apps/tool/main.rs", "fn main() {}\n")
-        .tracked("apps/tool/tests/cases.rs", "\n");
+        .tracked("engines/tool/main.rs", "fn main() {}\n")
+        .tracked("engines/tool/tests/cases.rs", "\n");
     let run = run(&fixture, &[]);
     assert_eq!(failures(&run), no_failures());
     assert_eq!(outcome_counts(&run), (4, 0, 0), "two folders, two READMEs");
@@ -64,12 +64,15 @@ fn a_folder_without_a_readme_fails_coverage() {
     let mut fixture = FixtureCheckout::new("coverage-missing");
     fixture
         .tracked(
-            "apps/README.md",
-            &readme_with_contents("apps/", &["└── tool/  the tool"]),
+            "engines/README.md",
+            &readme_with_contents("engines/", &["└── tool/  the tool"]),
         )
-        .tracked("apps/tool/main.rs", "fn main() {}\n");
+        .tracked("engines/tool/main.rs", "fn main() {}\n");
     let run = run(&fixture, &[]);
-    assert_eq!(failures(&run), ["FAIL: apps/tool/: no tracked README.md"]);
+    assert_eq!(
+        failures(&run),
+        ["FAIL: engines/tool/: no tracked README.md"]
+    );
     assert_eq!(run.print(), 1);
 }
 
@@ -78,9 +81,9 @@ fn test_generated_hidden_and_pending_merge_folders_need_no_readme() {
     let mut fixture = FixtureCheckout::new("coverage-skipped");
     fixture
         .tracked(
-            "apps/README.md",
+            "engines/README.md",
             &readme_with_contents(
-                "apps/",
+                "engines/",
                 &[
                     "├── .config/     tool configuration",
                     "├── generated/   generated models",
@@ -88,9 +91,9 @@ fn test_generated_hidden_and_pending_merge_folders_need_no_readme() {
                 ],
             ),
         )
-        .tracked("apps/.config/settings.toml", "")
-        .tracked("apps/generated/models/model.rs", "")
-        .tracked("apps/tests/deep/case.rs", "")
+        .tracked("engines/.config/settings.toml", "")
+        .tracked("engines/generated/models/model.rs", "")
+        .tracked("engines/tests/deep/case.rs", "")
         .tracked(
             &format!("{PENDING_MERGE_DIR}/writer/source.md"),
             "# Source\n",
@@ -107,7 +110,7 @@ fn test_generated_hidden_and_pending_merge_folders_need_no_readme() {
     assert_eq!(
         outcome_counts(&run),
         (4, 0, 0),
-        "apps and documentation only"
+        "engines and documentation only"
     );
 }
 
@@ -116,9 +119,9 @@ fn generated_folder_exemption_spares_the_capitalised_folder_and_no_other_spellin
     let mut fixture = FixtureCheckout::new("coverage-generated-spellings");
     fixture
         .tracked(
-            "apps/README.md",
+            "engines/README.md",
             &readme_with_contents(
-                "apps/",
+                "engines/",
                 &[
                     "├── GENERATED/       tables in capitals",
                     "├── Generated/       generated script tables",
@@ -127,16 +130,16 @@ fn generated_folder_exemption_spares_the_capitalised_folder_and_no_other_spellin
                 ],
             ),
         )
-        .tracked("apps/Generated/weapon/table.c", "")
-        .tracked("apps/generated/models/model.rs", "")
-        .tracked("apps/GENERATED/table.c", "")
-        .tracked("apps/generated_data/input.json", "");
+        .tracked("engines/Generated/weapon/table.c", "")
+        .tracked("engines/generated/models/model.rs", "")
+        .tracked("engines/GENERATED/table.c", "")
+        .tracked("engines/generated_data/input.json", "");
     let run = run(&fixture, &[]);
     assert_eq!(
         failures(&run),
         [
-            "FAIL: apps/GENERATED/: no tracked README.md",
-            "FAIL: apps/generated_data/: no tracked README.md",
+            "FAIL: engines/GENERATED/: no tracked README.md",
+            "FAIL: engines/generated_data/: no tracked README.md",
         ]
     );
     assert_eq!(
@@ -152,9 +155,9 @@ fn a_readme_inside_an_exempt_folder_is_not_held_to_its_contents() {
     let mut fixture = FixtureCheckout::new("coverage-exempt-readme");
     fixture
         .tracked(
-            "apps/README.md",
+            "engines/README.md",
             &readme_with_contents(
-                "apps/",
+                "engines/",
                 &[
                     "├── .cfg/       tool configuration",
                     "├── generated/  generated models",
@@ -163,12 +166,12 @@ fn a_readme_inside_an_exempt_folder_is_not_held_to_its_contents() {
                 ],
             ),
         )
-        .tracked("apps/.cfg/README.md", NO_CONTENTS)
-        .tracked("apps/generated/README.md", NO_CONTENTS)
-        .tracked("apps/tests/README.md", NO_CONTENTS)
-        .tracked("apps/tests/case.rs", "")
-        .tracked("apps/tool/README.md", NO_CONTENTS)
-        .tracked("apps/tool/main.rs", "")
+        .tracked("engines/.cfg/README.md", NO_CONTENTS)
+        .tracked("engines/generated/README.md", NO_CONTENTS)
+        .tracked("engines/tests/README.md", NO_CONTENTS)
+        .tracked("engines/tests/case.rs", "")
+        .tracked("engines/tool/README.md", NO_CONTENTS)
+        .tracked("engines/tool/main.rs", "")
         .tracked(
             &format!("{DOCUMENTATION_ROOT}/README.md"),
             &readme_with_contents(
@@ -181,17 +184,17 @@ fn a_readme_inside_an_exempt_folder_is_not_held_to_its_contents() {
     assert_eq!(
         failures(&whole),
         [
-            "FAIL: apps/tool/README.md: Contents does not match the folder (1 violation(s))\n      \
-          apps/tool/README.md:1: no `## Contents` heading"
+            "FAIL: engines/tool/README.md: Contents does not match the folder (1 violation(s))\n      \
+          engines/tool/README.md:1: no `## Contents` heading"
         ],
         "only the README of a folder in the span is judged"
     );
     assert_eq!(outcome_counts(&whole), (5, 1, 0));
-    let inside_exempt = run(&fixture, &["apps/tests"]);
+    let inside_exempt = run(&fixture, &["engines/tests"]);
     assert_eq!(outcome_counts(&inside_exempt), (0, 0, 1));
     assert!(
         failures(&inside_exempt)[0]
-            .starts_with("FAIL: readme-coverage judged nothing in apps/tests")
+            .starts_with("FAIL: readme-coverage judged nothing in engines/tests")
     );
 }
 
@@ -200,19 +203,19 @@ fn every_contents_violation_prints_as_path_line_message() {
     let mut fixture = FixtureCheckout::new("coverage-violations");
     fixture
         .tracked(
-            "apps/README.md",
-            &readme_with_contents("apps", &["├── main.rs  entry", "└── gone.rs  deleted"]),
+            "engines/README.md",
+            &readme_with_contents("engines", &["├── main.rs  entry", "└── gone.rs  deleted"]),
         )
-        .tracked("apps/main.rs", "")
-        .tracked("apps/extra.rs", "");
+        .tracked("engines/main.rs", "")
+        .tracked("engines/extra.rs", "");
     let run = run(&fixture, &[]);
     assert_eq!(
         failures(&run),
         [
-            "FAIL: apps/README.md: Contents does not match the folder (3 violation(s))\n      \
-          apps/README.md:8: the root line is `apps`, not the folder path `apps/`\n      \
-          apps/README.md:8: tracked child `extra.rs` matches no entry\n      \
-          apps/README.md:10: entry `gone.rs` matches no tracked child"
+            "FAIL: engines/README.md: Contents does not match the folder (3 violation(s))\n      \
+          engines/README.md:8: the root line is `engines`, not the folder path `engines/`\n      \
+          engines/README.md:8: tracked child `extra.rs` matches no entry\n      \
+          engines/README.md:10: entry `gone.rs` matches no tracked child"
         ]
     );
     assert_eq!(
@@ -227,12 +230,12 @@ fn untracked_files_are_neither_children_nor_readmes() {
     let mut fixture = FixtureCheckout::new("coverage-untracked");
     fixture
         .tracked(
-            "apps/README.md",
-            &readme_with_contents("apps/", &["└── main.rs  entry point"]),
+            "engines/README.md",
+            &readme_with_contents("engines/", &["└── main.rs  entry point"]),
         )
-        .tracked("apps/main.rs", "")
-        .untracked("apps/scratch.rs", "")
-        .untracked("apps/notes/README.md", "# Notes\n");
+        .tracked("engines/main.rs", "")
+        .untracked("engines/scratch.rs", "")
+        .untracked("engines/notes/README.md", "# Notes\n");
     let run = run(&fixture, &[]);
     assert_eq!(failures(&run), no_failures());
     assert_eq!(outcome_counts(&run), (2, 0, 0));
@@ -243,18 +246,18 @@ fn an_untracked_readme_makes_its_folder_pass_only_with_untracked_files_included(
     let mut fixture = FixtureCheckout::new("coverage-untracked-readme");
     fixture
         .tracked(
-            "apps/README.md",
-            &readme_with_contents("apps/", &["└── tool/  the tool"]),
+            "engines/README.md",
+            &readme_with_contents("engines/", &["└── tool/  the tool"]),
         )
-        .tracked("apps/tool/main.rs", "fn main() {}\n")
+        .tracked("engines/tool/main.rs", "fn main() {}\n")
         .untracked(
-            "apps/tool/README.md",
-            &readme_with_contents("apps/tool/", &["└── main.rs  entry point"]),
+            "engines/tool/README.md",
+            &readme_with_contents("engines/tool/", &["└── main.rs  entry point"]),
         );
     let committed = run_listed_by_git(&fixture, UntrackedFiles::Invisible);
     assert_eq!(
         failures(&committed),
-        ["FAIL: apps/tool/: no tracked README.md"]
+        ["FAIL: engines/tool/: no tracked README.md"]
     );
     assert_eq!(committed.summary_label(), "readme-coverage");
     assert_eq!(committed.print(), 1);
@@ -280,25 +283,25 @@ fn an_untracked_folder_is_a_child_only_with_untracked_files_included_and_an_igno
     fixture
         .tracked(".gitignore", "build/\n")
         .tracked(
-            "apps/README.md",
+            "engines/README.md",
             &readme_with_contents(
-                "apps/",
+                "engines/",
                 &["├── fresh/   the new tool", "└── main.rs  entry"],
             ),
         )
-        .tracked("apps/main.rs", "")
+        .tracked("engines/main.rs", "")
         .untracked(
-            "apps/fresh/README.md",
-            &readme_with_contents("apps/fresh/", &["└── lib.rs  the library"]),
+            "engines/fresh/README.md",
+            &readme_with_contents("engines/fresh/", &["└── lib.rs  the library"]),
         )
-        .untracked("apps/fresh/lib.rs", "")
-        .untracked("apps/build/output.txt", "");
+        .untracked("engines/fresh/lib.rs", "")
+        .untracked("engines/build/output.txt", "");
     let committed = run_listed_by_git(&fixture, UntrackedFiles::Invisible);
     assert_eq!(
         failures(&committed),
         [
-            "FAIL: apps/README.md: Contents does not match the folder (1 violation(s))\n      \
-          apps/README.md:9: entry `fresh/` matches no tracked child"
+            "FAIL: engines/README.md: Contents does not match the folder (1 violation(s))\n      \
+          engines/README.md:9: entry `fresh/` matches no tracked child"
         ]
     );
     assert_eq!(outcome_counts(&committed), (1, 1, 0));
@@ -316,18 +319,18 @@ fn an_untracked_folder_is_a_child_only_with_untracked_files_included_and_an_igno
 fn the_scope_narrows_the_judged_folders() {
     let mut fixture = FixtureCheckout::new("coverage-scope");
     fixture
-        .tracked("apps/README.md", "# Apps\n\nNo Contents.\n")
+        .tracked("engines/README.md", "# Engines\n\nNo Contents.\n")
         .tracked(
-            "apps/tool/README.md",
-            &readme_with_contents("apps/tool/", &["└── main.rs  entry point"]),
+            "engines/tool/README.md",
+            &readme_with_contents("engines/tool/", &["└── main.rs  entry point"]),
         )
-        .tracked("apps/tool/main.rs", "");
-    let scoped = run(&fixture, &["apps/tool"]);
+        .tracked("engines/tool/main.rs", "");
+    let scoped = run(&fixture, &["engines/tool"]);
     assert_eq!(failures(&scoped), no_failures());
     assert_eq!(outcome_counts(&scoped), (2, 0, 0));
     assert_eq!(
         scoped.header[1],
-        "    scope: apps/tool; git listed 3 tracked file(s)"
+        "    scope: engines/tool; git listed 3 tracked file(s)"
     );
     let whole = run(&fixture, &[]);
     assert_eq!(outcome_counts(&whole), (3, 1, 0));
@@ -337,8 +340,8 @@ fn the_scope_narrows_the_judged_folders() {
 fn a_tracked_readme_missing_from_the_disk_did_not_run() {
     let mut fixture = FixtureCheckout::new("coverage-unreadable");
     fixture
-        .listed_only("apps/README.md")
-        .tracked("apps/main.rs", "");
+        .listed_only("engines/README.md")
+        .tracked("engines/main.rs", "");
     let run = run(&fixture, &[]);
     assert_eq!(
         outcome_counts(&run),
@@ -347,7 +350,7 @@ fn a_tracked_readme_missing_from_the_disk_did_not_run() {
     );
     assert!(
         failures(&run)[0]
-            .starts_with("FAIL: apps/README.md could not be read — target file missing: ")
+            .starts_with("FAIL: engines/README.md could not be read — target file missing: ")
     );
     assert_eq!(run.print(), 2);
 }
@@ -400,16 +403,16 @@ fn a_refused_or_empty_scope_did_not_run() {
     let mut fixture = FixtureCheckout::new("coverage-bad-scope");
     fixture
         .tracked(
-            "apps/README.md",
-            &readme_with_contents("apps/", &["└── main.rs  entry point"]),
+            "engines/README.md",
+            &readme_with_contents("engines/", &["└── main.rs  entry point"]),
         )
-        .tracked("apps/main.rs", "")
+        .tracked("engines/main.rs", "")
         .tracked(".ai/tickets/ROOT", "");
-    let refused = run(&fixture, &["apps/missing"]);
+    let refused = run(&fixture, &["engines/missing"]);
     assert_eq!(outcome_counts(&refused), (0, 0, 1));
     assert!(
         failures(&refused)[0]
-            .starts_with("FAIL: readme-coverage scope `apps/missing` names no tracked folder")
+            .starts_with("FAIL: readme-coverage scope `engines/missing` names no tracked folder")
     );
     let outside = run(&fixture, &[".ai"]);
     assert_eq!(outcome_counts(&outside), (0, 0, 1));
@@ -418,8 +421,8 @@ fn a_refused_or_empty_scope_did_not_run() {
 }
 
 /// The span comes from the listing, not from a list of names: a top-level folder nothing names
-/// is judged like `apps/`, while the repository root, hidden folders and the retired
-/// documentation root are not.
+/// is judged like `engines/`, while the repository root, hidden folders and the retired top-level
+/// folders (`docs`, `apps`), tracked again here, are not: markdown-placement fails them instead.
 #[test]
 fn a_top_level_folder_no_list_names_is_judged_by_default() {
     let mut fixture = FixtureCheckout::new("coverage-derived-span");
@@ -427,10 +430,10 @@ fn a_top_level_folder_no_list_names_is_judged_by_default() {
         .tracked("README.md", "# Project\n")
         .tracked("Cargo.toml", "")
         .tracked(
-            "apps/README.md",
-            &readme_with_contents("apps/", &["└── main.rs  entry point"]),
+            "engines/README.md",
+            &readme_with_contents("engines/", &["└── main.rs  entry point"]),
         )
-        .tracked("apps/main.rs", "")
+        .tracked("engines/main.rs", "")
         .tracked(
             "a_folder_born_later/README.md",
             &readme_with_contents("a_folder_born_later/", &["└── settings.toml  settings"]),
@@ -438,18 +441,19 @@ fn a_top_level_folder_no_list_names_is_judged_by_default() {
         .tracked("a_folder_born_later/settings.toml", "")
         .tracked("deploy/compose.yml", "")
         .tracked(".github/workflows/ci.yml", "")
-        .tracked("docs/images/map.png", "");
+        .tracked("docs/images/map.png", "")
+        .tracked("apps/tool/notes.txt", "");
     let run = run(&fixture, &[]);
     assert_eq!(failures(&run), ["FAIL: deploy/: no tracked README.md"]);
     assert_eq!(
         outcome_counts(&run),
         (4, 1, 0),
-        "apps and a_folder_born_later hold both rules, deploy fails coverage"
+        "engines and a_folder_born_later hold both rules, deploy fails coverage"
     );
     assert_eq!(
         run.header[0],
         "==> readme-coverage: every folder below the repository root carries a README.md whose \
-         Contents block matches it (top-level folders: a_folder_born_later, apps, deploy)"
+         Contents block matches it (top-level folders: a_folder_born_later, deploy, engines)"
     );
     assert_eq!(run.print(), 1);
 }

@@ -17,7 +17,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 5. **Categorize Variants & Primitives (Avoid Flat Dumps)**:
    Avoid flat dumping of dozens of files or variant variations into a single folder. Related variants, numerical sets (e.g. column counts, rounded radius variants), and functional primitives should be grouped into dedicated, well-named subfolders to maintain clean directory comprehension.
 6. **Strict Boundary Layers**:
-   - Every product crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`; the applications are crates like any other (`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`, `ticketboard_desktop`), and no member depends on one of them. The crate-tier law (`cargo xtask verify crate-tiers`) holds every dependency edge: tiers point strictly down, the category matrix allows the edge, and the external-crate firewalls hold. The only members outside the layout are the two tool binaries `tools/xtask` and `tools/developer_tools`; `apps/` holds the game mod and no crate. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
+   - Every product crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`; the applications are crates like any other (`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`, `ticketboard_desktop`), and no member depends on one of them. The crate-tier law (`cargo xtask verify crate-tiers`) holds every dependency edge: tiers point strictly down, the category matrix allows the edge, and the external-crate firewalls hold. The only members outside the layout are the two tool binaries `tools/xtask` and `tools/developer_tools`; the game mod at `mod/` holds no crate, and the crate-tier law sweeps the whole checkout for manifests, so a `Cargo.toml` placed there is a finding. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
    - Foundation and contracts (`crates/foundation/`, `crates/contracts/`): Leaf crates and one-boundary contract crates. Foundation depends on foundation only; contracts on foundation and contracts.
    - Graphics crates (`crates/graphics/`: `render_primitives`, `gpu_device`, `gpu_frame`, `renderer_core`): Map-agnostic rendering — byte layouts, the GPU context, the frame vocabulary, pipelines, draw encoding, the renderer contracts. Knows **zero** map concepts (no map noun in a declared name); depends on foundation and graphics crates only.
    - Map engine crates (the engine categories `crates/geometry/`, `crates/world_formats/`, `crates/terrain/`, `crates/world_objects/`, `crates/line_of_sight/`, `crates/map_overlay/`, `crates/streaming/` over graphics, and the rendering categories `crates/map_rendering/` and `crates/paper_doll/` above them): spatial computation, world and terrain formats, streaming, the render engine and its typed GPU layers. Streaming crates never depend on rendering crates; `wgpu` lives only in `crates/map_rendering/` and the GPU packages. Zero UI/Leptos dependencies.
@@ -29,7 +29,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
    - Production files must stay **at or under 500 lines**.
    - Test files (inside a `tests/` folder or named `*_tests.rs`) must stay **at or under 1000 lines**.
-   - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees and the pinned mod Scripts roots (`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`) by raw line count.
+   - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees and the pinned mod Scripts roots (`mod/tbd-framework/Scripts`, `mod/tbd-emcp/Scripts`) by raw line count.
    - **Zero Exemptions / No Allowlist**: There is NO allowlist file and NO exemption mechanism. Never create an allowlist (`.coding-standards-allowlist.yaml` or any other), use allowlist comments, or bypass these limits. If a file approaches or exceeds 500 lines, you MUST decompose it by responsibility into cohesive submodules.
    - **No inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 8. **In-Code Documentation Standards (Rust & Enfusion)**:
@@ -45,7 +45,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
      - **Cross-Boundary Tags**:
        - Axum HTTP handlers MUST declare `/// @route <METHOD> <path>` (machine-checked by `cargo xtask verify route-tags`).
        - Schema-projecting DTOs and models MUST declare `//! @contract <schema>#<pointer>` (machine-checked by `cargo xtask schema citations`).
-   - **Enfusion Mod Standards (`Doxygen` — `apps/mod/`)** (banners, headers, member docs and tags machine-checked by `cargo xtask verify enfusion-comments` over the pinned mod Scripts roots):
+   - **Enfusion Mod Standards (`Doxygen` — `mod/`)** (banners, headers, member docs and tags machine-checked by `cargo xtask verify enfusion-comments` over the pinned mod Scripts roots):
      - **Class & Method Banners**: `//!` single-line banners describing class purpose and method contracts.
      - **Field & Enum Members**: `//!<` trailing doc comments documenting units, default values, and JSON key bindings.
      - **File/Plugin Headers**: `/** ... */` multi-line block headers for top-level scripts and Workbench plugins.
@@ -73,40 +73,39 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 The [workspace layout](/documentation/architecture/workspace_layout.md) explains the top-level folders and every workspace member.
 
 ```text
-apps/                                    <-- The Enfusion game mod and its README; no Rust crate lives here
-└── mod/                                 <-- Enfusion engine mod suite (three addons)
-    ├── tbd-framework/                   <-- Shipping game mod (TBD_Framework; depends on vanilla only)
-    │   ├── Configs/                     <-- Menu presets, input contexts, key actions
-    │   ├── Data/                        <-- Alias spawn registry, backend config template
-    │   ├── Missions/                    <-- Mission headers a server boots (TBD Dev POC on Everon)
-    │   ├── Prefabs/                     <-- Game mode with its manager components, player controller
-    │   ├── worlds/                      <-- TBD Dev POC world and the layer that places the game mode
-    │   ├── Scripts/Game/TBD/            <-- Gameplay scripts (compiled into game runtime)
-    │   │   ├── API/                     <-- Platform bridge: game-runtime session, fleet commands, identity links, results
-    │   │   ├── Core/                    <-- Structured log, prefab registry, player chat, SHA-256
-    │   │   ├── Gamemode/                <-- Stage machine, safe start, objectives, tasks, end conditions
-    │   │   ├── Session/                 <-- Mission selection, lobby, briefing, spectator, post-game
-    │   │   ├── Systems/                 <-- Mission load, spawns, loadouts, zones, AI, audio, markers, radio
-    │   │   └── UI/                      <-- Menu framework, components, HUD, mock catalogs
-    │   └── UI/                          <-- UI layout definitions and textures
-    │       ├── Textures/                <-- Rounded-shape disc, hero art, masks, icons
-    │       └── layouts/                 <-- Enfusion widget layout files (.layout)
-    │           ├── Common/              <-- Reusable design system primitives (panels, rows, chips, inputs)
-    │           ├── Hud/                 <-- Objective panel shown during live play
-    │           └── Session/             <-- Pre-game screens, post-game overlays, shared bars and panels
-    ├── tbd-export/                      <-- Workbench export addon (TBD_Export; depends on vanilla + TBD_EMCP, not the framework)
-    │   ├── Missions/                    <-- Export mission header (Everon export world)
-    │   ├── Prefabs/                     <-- Export game mode carrying the road export component
-    │   ├── worlds/                      <-- Standalone export world over vanilla Eden
-    │   └── Scripts/
-    │       ├── Game/TBD/Export/         <-- Runtime road-network export component; ballistics oracle play-mode simulation run
-    │       └── WorkbenchGame/           <-- Workbench export plugins (MapExport, EquipmentExport, EquipmentVehicleExport, VehicleExport, BallisticsOracle, registry)
-    ├── tbd-emcp/                        <-- Enfusion MCP bridge handler scripts (TBD_EMCP)
-    │   └── Scripts/WorkbenchGame/EnfusionMCP/ <-- 19 committed NetAPI automation handlers
-    └── References/                      <-- Licensed upstream reference lanes, gitignored except README
-        ├── crf_framework/               <-- Upstream Coalition Reforger Framework scripts and assets
-        ├── vanilla_reference/           <-- Extracted vanilla Reforger scripts and Script API pages
-        └── playable_selector/           <-- PlayableSelector checkout (design-mirror only)
+mod/                                     <-- Enfusion game mod suite: three addons, the reference lanes and its README; no Rust crate lives here
+├── tbd-framework/                       <-- Shipping game mod (TBD_Framework; depends on vanilla only)
+│   ├── Configs/                         <-- Menu presets, input contexts, key actions
+│   ├── Data/                            <-- Alias spawn registry, backend config template
+│   ├── Missions/                        <-- Mission headers a server boots (TBD Dev POC on Everon)
+│   ├── Prefabs/                         <-- Game mode with its manager components, player controller
+│   ├── worlds/                          <-- TBD Dev POC world and the layer that places the game mode
+│   ├── Scripts/Game/TBD/                <-- Gameplay scripts (compiled into game runtime)
+│   │   ├── API/                         <-- Platform bridge: game-runtime session, fleet commands, identity links, results
+│   │   ├── Core/                        <-- Structured log, prefab registry, player chat, SHA-256
+│   │   ├── Gamemode/                    <-- Stage machine, safe start, objectives, tasks, end conditions
+│   │   ├── Session/                     <-- Mission selection, lobby, briefing, spectator, post-game
+│   │   ├── Systems/                     <-- Mission load, spawns, loadouts, zones, AI, audio, markers, radio
+│   │   └── UI/                          <-- Menu framework, components, HUD, mock catalogs
+│   └── UI/                              <-- UI layout definitions and textures
+│       ├── Textures/                    <-- Rounded-shape disc, hero art, masks, icons
+│       └── layouts/                     <-- Enfusion widget layout files (.layout)
+│           ├── Common/                  <-- Reusable design system primitives (panels, rows, chips, inputs)
+│           ├── Hud/                     <-- Objective panel shown during live play
+│           └── Session/                 <-- Pre-game screens, post-game overlays, shared bars and panels
+├── tbd-export/                          <-- Workbench export addon (TBD_Export; depends on vanilla + TBD_EMCP, not the framework)
+│   ├── Missions/                        <-- Export mission header (Everon export world)
+│   ├── Prefabs/                         <-- Export game mode carrying the road export component
+│   ├── worlds/                          <-- Standalone export world over vanilla Eden
+│   └── Scripts/
+│       ├── Game/TBD/Export/             <-- Runtime road-network export component; ballistics oracle play-mode simulation run
+│       └── WorkbenchGame/               <-- Workbench export plugins (MapExport, EquipmentExport, EquipmentVehicleExport, VehicleExport, BallisticsOracle, registry)
+├── tbd-emcp/                            <-- Enfusion MCP bridge handler scripts (TBD_EMCP)
+│   └── Scripts/WorkbenchGame/EnfusionMCP/ <-- 19 committed NetAPI automation handlers
+└── References/                          <-- Licensed upstream reference lanes, gitignored except README
+    ├── crf_framework/                   <-- Upstream Coalition Reforger Framework scripts and assets
+    ├── vanilla_reference/               <-- Extracted vanilla Reforger scripts and Script API pages
+    └── playable_selector/               <-- PlayableSelector checkout (design-mirror only)
 
 crates/                                  <-- Product crates grouped by category (crates/<category>/<crate>), the applications among them; every manifest under it is a workspace member declaring its tier
 ├── foundation/                          <-- Base crates: tier 0 leaves, plus orbat_slot_ids on newtype_ids
@@ -345,8 +344,8 @@ assets/                                  <-- Terrain datasets and the world-obje
 
 documentation/                           <-- All documentation; entry, map and authority ladder: README.md
 ├── architecture/                        <-- Workspace layout as it stands: top-level folders, members, where code, contracts, assets and docs live
-├── apps/ crates/ tools/ contracts/ assets/
-│                                        <-- Feature docs at the code's path minus src/ (mod docs sit under apps/mod/ and drop Scripts/Game/TBD/)
+├── crates/ mod/ tools/ contracts/ assets/
+│                                        <-- Feature docs at the code's path minus src/ (mod docs drop Scripts/Game/TBD/)
 ├── relocation_manifests/                <-- Manifests of every tracked move (`cargo xtask refactor relocate`), the format and the retired-spelling registry
 ├── runbooks/                            <-- Procedures: local development, deployment, gates, playtests
 ├── standards/                           <-- Documentation, README and coding standards; document templates

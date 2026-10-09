@@ -1,4 +1,5 @@
 use super::*;
+use repository_layout::enfusion_mod_folders::FRAMEWORK_ADDON_DIR;
 use std::path::PathBuf;
 
 fn tmp(tag: &str) -> PathBuf {
@@ -195,12 +196,17 @@ fn rival_precedence_matches_the_bash_if_chain() {
 fn guid_reads_out_of_the_real_gproj() {
     // Not a fixture: the live gproj, because the whole point of read_addon_guid is that a
     // literal drifts from the source silently.
+    // Every checkout tracks the gproj, so an absent one fails here instead of passing with
+    // nothing read.
     let root = tool_test_support::test_repo_root();
-    if root.join("apps/mod/tbd-framework/addon.gproj").is_file() {
-        let g = read_addon_guid(&root).expect("gproj present");
-        assert!(
-            g.len() >= 8 && g.chars().all(|c| c.is_ascii_hexdigit()),
-            "guid={g}"
-        );
-    }
+    let g = read_addon_guid(&root).unwrap_or_else(|| {
+        panic!(
+            "no readable {FRAMEWORK_ADDON_DIR}/addon.gproj in the checkout at {}",
+            root.display()
+        )
+    });
+    assert!(
+        g.len() >= 8 && g.chars().all(|c| c.is_ascii_hexdigit()),
+        "guid={g}"
+    );
 }

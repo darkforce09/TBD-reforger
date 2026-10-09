@@ -6,7 +6,7 @@
 //! instead of a plausible-sounding invention:
 //!
 //! ```text
-//! enf index crf --root apps/mod/References/crf_framework --out .ai/artifacts/enf-index
+//! enf index crf --root mod/References/crf_framework --out .ai/artifacts/enf-index
 //! enf lookup CRF_EGamemodeState --index .ai/artifacts/enf-index/crf_symbols.tsv
 //! enf dirs --index .ai/artifacts/enf-index/crf_symbols.tsv --depth 4
 //! ```

@@ -255,7 +255,7 @@ If >45 min total, run inter-object on subset only.
 | 1 | `scripts/map-assets/run-geometry-audit.ts` |
 | 2 | `scripts/map-assets/obbSamples.ts` — transform + sample helpers |
 | 3 | `scripts/map-assets/spatialHash.ts` — neighbor query |
-| 4 | Optional `apps/mod/.../TBD_MapObjectAuditPlugin.c` |
+| 4 | Optional `mod/.../TBD_MapObjectAuditPlugin.c` |
 | 5 | Vitest fixtures: tilted box, half-buried rock, floating building |
 | 6 | Extend T-090.2 schema `bounds` block |
 

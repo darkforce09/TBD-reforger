@@ -15,7 +15,7 @@ Worktree tracked main at dispatch. Defect still present before the edit.
 
 | claim | path:line | command |
 |---|---|---|
-| `m_fHostMaxRangeM` attribute defaults to 0 meaning unlimited | `apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c:54-62` (export twin identical code, ASCII dashes) | `sed -n '54,74p' apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` |
+| `m_fHostMaxRangeM` attribute defaults to 0 meaning unlimited | `mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c:54-62` (export twin identical code, ASCII dashes) | `sed -n '54,74p' mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` |
 | Authority passes the raw attribute into the host; 0 never becomes a finite leash | same file `:74` | `TBD_SpectatorHost.Start(m_sHostPrefab, m_fHostMaxRangeM)` |
 | Host then treats `<= 0` as unlimited on every client position request | `TBD_SpectatorHost.c:820-823` (`if (s_fMaxRangeM <= 0) return wanted;`) | sibling, not owned |
 
@@ -39,11 +39,11 @@ Quoted (framework, pre-edit `:54-74`):
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` | 38-40 | `DEFAULT_HOST_MAX_RANGE_M = 2000` dated T-941.5 (2026-09-07). |
+| `mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` | 38-40 | `DEFAULT_HOST_MAX_RANGE_M = 2000` dated T-941.5 (2026-09-07). |
 | same | 58-68 | `:56-60` comment restated with the T-941.5 date; attribute default `"2000"`. 0 is the default, never unlimited. |
 | same | 80 | Authority arms the host with `ClampHostMaxRangeM(m_fHostMaxRangeM)`, not the raw attribute. |
 | same | 112-126 | `ClampHostMaxRangeM`: non-positive → 2000; otherwise `Math.Clamp(value, 0, ceiling)` so a type-broken clamp is compile-visible. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` | same | Export twin; ASCII comment dashes preserved. Normalized-equal to framework. |
+| `mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` | same | Export twin; ASCII comment dashes preserved. Normalized-equal to framework. |
 
 `TBD_SpectatorController.c` not touched (T-291). `TBD_SpectatorHost.c` not touched (not in owns). Position requests still go through `TBD_SpectatorHost.ClampToRange`; that path is live because this slice never arms `s_fMaxRangeM <= 0`.
 
@@ -114,7 +114,7 @@ SLICE GATE: PASS
 
 | path:line | repro |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorHost.c:98` (export twin same) | Header still says `m_fHostMaxRangeM` is `0 = unlimited`. Behaviour is correct once this slice never passes `<= 0`; the comment is stale. Sibling file; T-941.5 owns only `TBD_SpectatorComponent.c`. |
+| `mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorHost.c:98` (export twin same) | Header still says `m_fHostMaxRangeM` is `0 = unlimited`. Behaviour is correct once this slice never passes `<= 0`; the comment is stale. Sibling file; T-941.5 owns only `TBD_SpectatorComponent.c`. |
 | same `:226` | `Start` log still prints `range=%1 m (0 = unlimited)`. |
 | same `:820-823` | `ClampToRange` still returns the unclamped client position when `s_fMaxRangeM <= 0`. A future caller of `TBD_SpectatorHost.Start(..., 0)` would restore unlimited. Only caller today is this component. |
 | `docs/mod/TBD_MOD_DESIGN.md:149-156` | Design doc still describes default `0` as unlimited. Docs are out of owns; no docs edit this slice. |
@@ -137,5 +137,5 @@ None. Position-request clamp stays in `TBD_SpectatorHost.ClampToRange` (not owne
 
 ## twins_confirmed
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Spectator/TBD_SpectatorComponent.c` — on disk

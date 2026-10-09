@@ -91,7 +91,7 @@ fn the_matcher_reads_folders_files_and_anchoring_as_rsync_does() {
         "crates/frontend/shell/frontend_application/target-picker/mod.rs"
     ));
     assert!(rsync_excludes("/.mcp.json", ".mcp.json"));
-    assert!(!rsync_excludes("/.mcp.json", "apps/.mcp.json"));
+    assert!(!rsync_excludes("/.mcp.json", "mod/.mcp.json"));
     assert!(rsync_excludes(
         "/.claude/worktrees/",
         ".claude/worktrees/slice/Cargo.toml"

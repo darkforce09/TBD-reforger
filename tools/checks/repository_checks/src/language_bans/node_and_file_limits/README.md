@@ -18,7 +18,7 @@ tools/checks/repository_checks/src/language_bans/node_and_file_limits/
 and prints its result. The scan walks every `.rs` and `.c` file under the law roots of
 [`repository_laws`](/tools/foundation/repository_laws/src/README.md): the folder of
 every workspace member the root `Cargo.toml` names, plus the script roots in `PINNED_SCRIPT_ROOTS`
-(`apps/mod/tbd-framework/Scripts`, `apps/mod/tbd-emcp/Scripts`). A file is a test file when a path component is `tests` or
+(`mod/tbd-framework/Scripts`, `mod/tbd-emcp/Scripts`). A file is a test file when a path component is `tests` or
 its stem ends in `_tests` (`.rs` or `.c`); a test file may hold 1000 lines (`TEST_MAX_LINES`), any
 other file 500 (`PRODUCTION_MAX_LINES`). There is no exemption list. Each file over its limit
 prints one `SIZE-3:` line on stderr, and the summary line on stdout reads
@@ -28,16 +28,17 @@ so is a walk that found no source file at all. The
 `engineering_laws` test binary of `api` reads the same scan, so the gate and that binary
 judge the tree the same way.
 
-`MOD_SCRIPT_ROOTS` names the three addon script roots (`apps/mod/tbd-framework/Scripts`,
-`apps/mod/tbd-emcp/Scripts`, `apps/mod/tbd-export/Scripts`), the only `apps/mod` trees the law may
-pin; a compile-time assertion (`mod_pins_are_script_roots`) rejects any other `apps/mod` pin, so the
+`MOD_SCRIPT_ROOTS` names the three addon script roots (`mod/tbd-framework/Scripts`,
+`mod/tbd-emcp/Scripts`, `mod/tbd-export/Scripts`), the only `mod` trees the law may
+pin; a compile-time assertion (`mod_pins_are_script_roots`) rejects any other `mod` pin, so the
 gitignored `crf_framework` and `vanilla_reference` references never enter the walk. The framework
 and tbd-emcp roots are pinned; the tbd-export root joins once that addon's scripts sit under the
 ceilings.
 
 `verify no-node` runs three checks and counts each failure:
 
-1. `git ls-files '*.mjs' '*.cjs'` outside `apps/mod/` lists nothing.
+1. `git ls-files '*.mjs' '*.cjs'` outside `mod/` lists nothing (`refused_node_scripts`: only a
+   path inside the mod folder itself is exempt, never a sibling such as `models/`).
 2. No line of a `.sh`, `.yml` or `.yaml` file under `SCAN_DIRS` (`.github`) or a file in
    `SCAN_FILES` (empty) calls `node ` or `npx ` in command position; `#` and `//` comment lines are
    skipped. A declared subject that is missing or unreadable is a failure, so deleting a file

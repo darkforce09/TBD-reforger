@@ -10,7 +10,7 @@ No one-call Workbench export exists (spike S3). The clean, scriptable path = the
 rasterizer, **`MapDataExporter.ExportRasterization`** (the same call the WE *Export Map Data →
 Rasterization* tool / `SCR_WorldMapExportTool` drives). **Capture method id = 2** (plugin → engine API).
 
-- Plugin: `apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c` (menu `Plugins,TBD,Export TBD Satellite`).
+- Plugin: `mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c` (menu `Plugins,TBD,Export TBD Satellite`).
 - worldPath = `worlds/Eden/Eden.ent` (Everon base world; clean terrain + towns/forests).
 - **Path quirk solved:** `ExportRasterization` does NOT resolve the `$profile:` VFS (FileIO does → rc=32 "Could not open output file"). It needs a real OS path; under Proton that's a Windows path in the prefix. Passing the profile **directory** `C:/Users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/` → **rc=0**; the engine names the output after the world → **`Eden.tga`**.
 - Output: **4096×4096 RGBA TGA**, 67,108,882 B (= 4096²·4 + 18-byte header). Resolution is engine-fixed (3.125 m/px for Everon), **not** the 6400² the plan assumed — corrected; the pyramid build resizes per level. **B2:** `MapDataExporter` exposes no output-size param → 4096² is engine-locked; true meter-detail needs the SAP super-textures (`worlds/Eden/Eden/.Data/Eden_*_supertexture.edds`, `.edds` decode — separate effort).

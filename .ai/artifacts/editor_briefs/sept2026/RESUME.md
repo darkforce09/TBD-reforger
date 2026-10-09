@@ -105,7 +105,7 @@ briefs, each told to commit after every self-contained step so the next outage l
   not an agent:
   * **T-946.1** — the top-level ticket id space is EXHAUSTED at T-999. Every new finding is filed as
     a child of T-946. This blocks all further top-level filing and needs a numbering decision.
-  * **T-957** — `apps/mod/vanilla_reference` is 2,483 files rotated by the pre-T-305 pak reader,
+  * **T-957** — `mod/vanilla_reference` is 2,483 files rotated by the pre-T-305 pak reader,
     and the committed `enf-index` TSVs were built over them. Re-extraction rewrites a committed
     artifact tree.
   * **T-981 / T-985** — the building archive cannot carry the 1,322 BLOCKING prefabs (no instance

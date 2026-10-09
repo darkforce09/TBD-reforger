@@ -52,7 +52,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/website/api/src/contract/validate.rs",
     "xtask/src/schema_gates.rs",
 ]

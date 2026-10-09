@@ -2,13 +2,12 @@ use super::{
     UNREAD_WIRE_FIELDS, count_mod_readers, repo_root, strip_enfusion_comments_and_strings,
     unread_wire_field_failures,
 };
+use repository_layout::enfusion_mod_folders::FRAMEWORK_ADDON_DIR;
 use std::fs;
 use std::path::PathBuf;
 
 fn mod_root() -> PathBuf {
-    repo_root()
-        .expect("repo root")
-        .join("apps/mod/tbd-framework")
+    repo_root().expect("repo root").join(FRAMEWORK_ADDON_DIR)
 }
 
 /// Green on the live tree: every remaining row is at its pinned baseline. This is the assertion

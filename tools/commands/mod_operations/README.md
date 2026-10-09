@@ -38,7 +38,8 @@ The commands themselves are described in the
 - Depends on: `platform_execution` (the slice worktrees the mod wave driver prepares, lands and
   reaps), `workstation_setup`, `enfusion_mcp`, `database_operations`, `remote_debugging`,
   `mod_script_checks`, `ticket_model`, `ticket_registry`, `ticket_wave_lock`, `process_runner`,
-  `repository_layout`, `verification_core`, `content_digest`, `fleet_wire_contract`, `clap`,
+  `repository_layout` (the mod folder and the three addon folders, from its
+  `enfusion_mod_folders`), `verification_core`, `content_digest`, `fleet_wire_contract`, `clap`,
   `flate2`, `heck`, `jsonschema`, `libc`, `regex`, `serde`, `serde_json`, `tar`, `thiserror`,
   `walkdir`; the Arma Reforger dedicated server and Workbench, `curl`, `git`, `npm` and `cargo`
   as subprocesses.
@@ -53,4 +54,4 @@ The commands themselves are described in the
   cycle `mod wave` automates.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — a playtest a
   second client joins, with `mod playtest`.
-- [Mod suite](/apps/mod/README.md) — the addons these commands compile, boot and export from.
+- [Mod suite](/mod/README.md) — the addons these commands compile, boot and export from.

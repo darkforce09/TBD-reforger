@@ -21,7 +21,7 @@ tools/map_assets/map_raster_pipeline/src/inland_water_archive/
 `assets/scratch/<id>/water/`, or a directory, whose export then sits under
 `<dir>/scratch/water/`. A missing terrain or staging folder exits 1. The four staging names below
 are the ones this module reads; the Workbench water exporter in
-`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water/` writes its rasters as
+`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Terrain/Water/` writes its rasters as
 `bathymetry_mask.txt` and `bathymetry_depth.txt`, and no code renames them to the names read here.
 
 ```text

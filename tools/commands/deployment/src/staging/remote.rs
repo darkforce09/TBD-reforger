@@ -29,8 +29,8 @@
 //! ── THE EXCLUDE LIST IS A LICENCE BOUNDARY, NOT AN OPTIMISATION ──────────────────────────────
 //!
 //! EXCLUDE EVERY ORACLE LANE, not just CRF. These are read-only reference trees; the
-//! server only ever runs `apps/mod/tbd-framework` (see the addon symlink), so shipping them is
-//! pure licence exposure for zero benefit. Every lane lives in `apps/mod/References/`, and both
+//! server only ever runs `mod/tbd-framework` (see the addon symlink), so shipping them is
+//! pure licence exposure for zero benefit. Every lane lives in `mod/References/`, and both
 //! rsync builders exclude that whole folder with one rule, so a lane added there is excluded
 //! without an edit here. In the MAIN checkout (which is what deploys) the lanes are real
 //! directories, not the worktree symlinks, and they hold ~30 MB of carved Bohemia game source.

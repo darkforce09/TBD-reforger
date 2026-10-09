@@ -1,18 +1,20 @@
 //! The crate-tier law: membership, layout declarations, the tier order and the category matrix.
 //!
-//! **Role:** judges rules 1–7 of the crate-tier law over a checkout: every manifest under the
-//! sweep roots is a workspace member (1); each judged member declares its layout, and every member
+//! **Role:** judges rules 1–7 of the crate-tier law over a checkout: every manifest in the
+//! checkout is a workspace member (1); each judged member declares its layout, and every member
 //! outside the judged set is a tool binary (2); each judged member sits at its category plus its
 //! name (3); tiers are recomputed from dependencies and edges point strictly down (4); the
 //! category edge matrix and the wasm-only edge rule hold (5); the firewalls hold (6,
 //! `super::crate_firewalls`); and no member depends on an application package, in any table (7).
 //! **Position:** `cargo xtask verify crate-tiers` prints [`check_crate_tiers`]; xtask passes the
-//! [`CrateTierConfiguration`] (the sweep roots and the application packages). Reads
+//! [`CrateTierConfiguration`] (the application packages). Reads
 //! [`crate::workspace_members`].
 //! **Signals & state:** none; reads the checkout.
 //! **Invariants:** a member's tier is 0 with no judged workspace dependency and otherwise 1 plus
 //! the highest tier among them, over normal and build edges in every target table; the declared
-//! tier must equal it. A sweep root that does not exist holds no manifest and is named in a note.
+//! tier must equal it. The stray-manifest sweep starts at the checkout root and enters every
+//! folder but the hidden ones and [`is_skipped_by_the_sweep`]'s, so a manifest in any top-level
+//! folder — one no layout names included — is judged; the root manifest is the workspace itself.
 //! The tool binaries ([`super::crate_layout::is_tool_binary`]) are listed in a note; any other
 //! member outside the judged set is a rule 2 finding. Rule 7 reads every member's every table —
 //! normal, build, dev and target-specific — under each edge's real package name, a crate's edge
@@ -40,11 +42,20 @@ pub const SWEEP_SKIPPED_FOLDERS: &[&str] = &[
     "node_modules",
 ];
 
+/// Folder-name prefix of the per-purpose build folders (`target-<purpose>`) the stray-manifest
+/// sweep does not enter beside [`SWEEP_SKIPPED_FOLDERS`]' `target`.
+pub const SWEEP_SKIPPED_BUILD_FOLDER_PREFIX: &str = "target-";
+
+/// True when the stray-manifest sweep does not enter a folder called `name`: a name in
+/// [`SWEEP_SKIPPED_FOLDERS`] or a build folder named with [`SWEEP_SKIPPED_BUILD_FOLDER_PREFIX`].
+/// Hidden folders never reach the sweep at all.
+pub fn is_skipped_by_the_sweep(name: &str) -> bool {
+    SWEEP_SKIPPED_FOLDERS.contains(&name) || name.starts_with(SWEEP_SKIPPED_BUILD_FOLDER_PREFIX)
+}
+
 /// What the crate-tier law reads that moves with the tree; xtask passes it in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CrateTierConfiguration<'a> {
-    /// Repository-relative folders whose every manifest must be a member (rule 1).
-    pub manifest_sweep_roots: &'a [&'a str],
     /// The application packages, by package name: each must be a member, and no member depends
     /// on one in any table (rule 7).
     pub application_packages: &'a [&'a str],
@@ -63,7 +74,6 @@ pub fn crate_tier_outcome(
     repo_root: &Path,
     configuration: &CrateTierConfiguration<'_>,
 ) -> Result<LawOutcome, NotRun> {
-    let manifest_sweep_roots = configuration.manifest_sweep_roots;
     let members = read_workspace_members(repo_root)?;
     let judged: Vec<&WorkspaceMember> = members.iter().filter(|m| is_judged(m)).collect();
     let mut outcome = LawOutcome {
@@ -74,9 +84,14 @@ pub fn crate_tier_outcome(
         ),
         ..LawOutcome::default()
     };
-    let sweep = sweep_manifests(repo_root, manifest_sweep_roots)?;
-    outcome.notes.push(sweep.note(manifest_sweep_roots));
-    for manifest_folder in &sweep.folders {
+    let manifest_folders = sweep_manifests(repo_root)?;
+    outcome.notes.push(format!(
+        "swept {} manifest(s) across the checkout, outside hidden folders, {} and {}*",
+        manifest_folders.len(),
+        SWEEP_SKIPPED_FOLDERS.join(", "),
+        SWEEP_SKIPPED_BUILD_FOLDER_PREFIX
+    ));
+    for manifest_folder in &manifest_folders {
         if !members.iter().any(|member| &member.path == manifest_folder) {
             outcome.findings.push(format!(
                 "rule 1: {manifest_folder}/Cargo.toml is not a workspace member — add the folder \
@@ -150,57 +165,27 @@ fn application_edge_findings(
     findings
 }
 
-/// The manifests the sweep found.
-struct ManifestSweep {
-    /// Repository-relative folders holding a `Cargo.toml`.
-    folders: Vec<String>,
-    /// Sweep roots that do not exist.
-    absent_roots: Vec<String>,
-}
-
-impl ManifestSweep {
-    /// The note line naming what the sweep read.
-    fn note(&self, roots: &[&str]) -> String {
-        let absent = if self.absent_roots.is_empty() {
-            String::new()
-        } else {
-            format!(" ({} absent)", self.absent_roots.join(", "))
-        };
-        format!(
-            "swept {} manifest(s) under {}{absent}",
-            self.folders.len(),
-            roots.join(", ")
-        )
-    }
-}
-
-/// Every folder under `roots` that holds a `Cargo.toml`, outside [`SWEEP_SKIPPED_FOLDERS`].
-fn sweep_manifests(repo_root: &Path, roots: &[&str]) -> Result<ManifestSweep, NotRun> {
-    let mut sweep = ManifestSweep {
-        folders: Vec::new(),
-        absent_roots: Vec::new(),
-    };
-    let mut pending: Vec<String> = Vec::new();
-    for root in roots {
-        if repo_root.join(root).is_dir() {
-            pending.push(root.to_string());
-        } else {
-            sweep.absent_roots.push(root.to_string());
-        }
-    }
+/// Every folder of the checkout below its root that holds a `Cargo.toml`, sorted, entering no
+/// hidden folder and no folder [`is_skipped_by_the_sweep`] names.
+fn sweep_manifests(repo_root: &Path) -> Result<Vec<String>, NotRun> {
+    let mut folders = Vec::new();
+    let mut pending: Vec<String> = child_folder_names(repo_root)?
+        .into_iter()
+        .filter(|name| !is_skipped_by_the_sweep(name))
+        .collect();
     while let Some(folder) = pending.pop() {
         let absolute = repo_root.join(&folder);
         if absolute.join("Cargo.toml").is_file() {
-            sweep.folders.push(folder.clone());
+            folders.push(folder.clone());
         }
         for name in child_folder_names(&absolute)? {
-            if !SWEEP_SKIPPED_FOLDERS.contains(&name.as_str()) {
+            if !is_skipped_by_the_sweep(&name) {
                 pending.push(format!("{folder}/{name}"));
             }
         }
     }
-    sweep.folders.sort();
-    Ok(sweep)
+    folders.sort();
+    Ok(folders)
 }
 
 /// Rules 2 and 3 for one judged member.

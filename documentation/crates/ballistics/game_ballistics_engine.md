@@ -28,7 +28,7 @@ API's fire-mission save run the same code, natively and in the browser, with the
     where catalogs are uploaded and judged;
   - the [ballistics agreement bench](/documentation/crates/frontend/workspaces/debug_benches/ballistics_agreement_page.md),
     which proves the browser build solves bit for bit like the native one;
-  - the [ballistics oracle](/documentation/apps/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md),
+  - the [ballistics oracle](/documentation/mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/ballistics_oracle.md),
     the engine measurements behind the calibration.
 
 ## Behaviour

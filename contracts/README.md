@@ -4,7 +4,7 @@ Every data shape that crosses a network, process or language boundary on the pla
 [API](/documentation/glossary/a_to_f.md#api), the single-page app, the map engine, the game
 [mod](/documentation/glossary/g_to_m.md#mod), the developer tools and the external voice bridge. The
 tree holds data only (JSON Schemas, lookup tables, exported catalogues and golden samples) and no
-code; the code that follows it lives in `apps/` and `tools/`.
+code; the code that follows it lives in `crates/`, `mod/` and `tools/`.
 
 ## Contents
 
@@ -63,9 +63,9 @@ once `cargo xtask db up` has started it.
 
 ## Boundaries
 
-- Depends on: the mod's spawn registry `apps/mod/tbd-framework/Data/registry.json`, which the kit
+- Depends on: the mod's spawn registry `mod/tbd-framework/Data/registry.json`, which the kit
   aliases and the mission fixtures must agree with; the registry export plugin in
-  `apps/mod/tbd-export/Scripts/WorkbenchGame/`, which produces the catalogues; the binary chunk and
+  `mod/tbd-export/Scripts/WorkbenchGame/`, which produces the catalogues; the binary chunk and
   density formats of `crates/world_formats/world_file_formats/src/`; and the glyph keys of
   `assets/glyphs/manifest.json`.
 - Used by:
@@ -75,7 +75,7 @@ once `cargo xtask db up` has started it.
     schema embeds for zones and loadout export;
   - `crates/mission/`: the embedded kit-alias table (`mission_payload`) and the compiler's
     fixture tests (`mission_compiler`, `mission_model`, `mission_document`);
-  - `apps/mod/`: DTO classes whose `@contract` tags cite the mission, loadout and registry schemas;
+  - `mod/`: DTO classes whose `@contract` tags cite the mission, loadout and registry schemas;
   - `crates/fleet/game_server_host_agent/`, whose ledger client follows the fleet-command schema;
   - `tools/xtask/` (the schema gates, codegen, `db registry-import` and the `mod` commands that
     stage fixture missions) and `tools/developer_tools/` (world export, blueprint compiler and

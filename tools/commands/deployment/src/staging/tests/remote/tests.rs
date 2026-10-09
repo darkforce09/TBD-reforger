@@ -85,11 +85,11 @@ fn rsync_argv_keeps_every_exclude_in_order() {
     // The licence boundary. The whole references folder, plus the credential itself.
     let deploy_env_exclude = format!("--exclude={}", repository_layout::DEPLOY_ENV);
     for needed in [
-        "--exclude=apps/mod/References/",
+        "--exclude=mod/References/",
         &deploy_env_exclude,
         "--exclude=crates/api/api_server/.env",
-        "--exclude=apps/mod/tbd-export/",
-        "--exclude=apps/mod/tbd-emcp/",
+        "--exclude=mod/tbd-export/",
+        "--exclude=mod/tbd-emcp/",
         // Build output and map assets: a game-server host needs neither, and `--delete` would
         // otherwise reach them on the server.
         "--exclude=target/",

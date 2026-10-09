@@ -4,7 +4,7 @@ Every developer tool in the repository: the `cargo xtask` command line, the tool
 command groups dispatch onto (grouped by category), the heavy offline tools, the ticketboard
 desktop viewer, and the npm package that pins the Enfusion MCP server. Developers, AI agents, the
 CI workflows and the host's timers run them; the products they build, check and deploy are the
-crates under `crates/` and the game mod in `apps/`.
+crates under `crates/` and the game mod in `mod/`.
 
 ## Contents
 

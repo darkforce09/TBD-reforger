@@ -31,7 +31,7 @@ tools/commands/deployment/src/website/
 - `rsync_argv`: `rsync -e <ssh> -avz --delete` of the checkout root with exclusions for `.git/`,
   build output (`target/`, which holds the gates' private folders too, `node_modules`), the
   server's `deploy.env`, the served terrain tree `assets/terrains/`, the scratch and equipment asset
-  trees, `packages/`, the untracked reference trees under `apps/mod/` and the local test profile,
+  trees, `packages/`, the untracked reference trees under `mod/` and the local test profile,
   followed by the paths both deploys exclude: the host-owned paths of
   `tools/commands/deployment/src/host_owned_paths.rs` (the API's `.env` and `.tools/`, and
   `crates/frontend/shell/frontend_application/dist/`), then the patterns from

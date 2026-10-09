@@ -151,7 +151,7 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
     [server control](/documentation/glossary/n_to_z.md#server-control) pages in
     `crates/frontend/pages/administration_pages/src/`, the
     [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
-    `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands through
+    `mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands through
     `tools/commands/mod_operations/src/website_api_client/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and

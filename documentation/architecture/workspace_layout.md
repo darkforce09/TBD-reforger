@@ -18,7 +18,6 @@ where code, contracts, assets, documents and agent configuration live.
 
 ```text
 TBD-reforger/
-├── apps/            the Enfusion mod suite (mod/); no Rust crate
 ├── crates/          the tiered product crates, grouped by category (foundation/, contracts/, geometry/, world_formats/, streaming/, map_rendering/, graphics/, api/, fleet/, frontend/, …):
 │                    the API server, the single-page app, the service worker and the game server
 │                    host agent among them
@@ -28,6 +27,8 @@ TBD-reforger/
 │                    (foundation/, tickets/, commands/, checks/, enfusion/, browser_testing/,
 │                    staging/, map_assets/; the ticketboard desktop viewer in tickets/), and the
 │                    pinned Enfusion MCP npm package
+├── mod/             the Enfusion mod suite: the addons tbd-framework/, tbd-export/ and tbd-emcp/
+│                    and the gitignored reference lanes (References/); no Rust crate
 ├── contracts/       JSON Schemas, rules, catalogs and fixtures of every shape that crosses a boundary
 ├── assets/          terrain datasets (Git LFS), the world-object glyph set, the storage specification
 ├── documentation/   every document: feature docs, runbooks, standards, glossary, tickets, archive
@@ -235,7 +236,7 @@ GPU crates (`crates/graphics/`) are crates like any other; the
 [crates README](/crates/README.md) lists every category. The two tool binaries, `tools/xtask` and
 `tools/developer_tools`, depend only on tool crates (the checkout-root finder
 `crates/foundation/repository_root` comes through `repository_layout`'s prelude), and no tokio, axum, reqwest, resvg or image
-enters xtask's dependency closure. The mod suite under `apps/mod/` is not
+enters xtask's dependency closure. The mod suite under `mod/` is not
 Cargo code: its three Enfusion addons are built by Workbench and checked by `cargo xtask mod compile`.
 
 ## Where things live
@@ -243,7 +244,7 @@ Cargo code: its three Enfusion addons are built by Workbench and checked by `car
 ```text
 code ─────────── crates/<category>/<crate>/ product crates by category, the applications among them
                  tools/<category>/<crate>/  repository tooling (xtask and developer_tools directly under tools/)
-                 apps/mod/                  the Enfusion mod suite
+                 mod/                       the Enfusion mod suite: three addons, no Rust crate
 deploy ───────── deploy/                    release image, compose files, Caddy, systemd units
 shapes ───────── contracts/definitions/     JSON Schemas, the source of generated contract types
                  contracts/fixtures/        golden test data, positive and negative
@@ -254,9 +255,9 @@ documents ────── documentation/<code path>/ feature docs mirroring t
 work tracking ── .ai/tickets/               one TOML per ticket, the queue and the templates
 ```
 
-- **Code.** A product's code and its README sit in its crate folder under `crates/` (the mod in
-  `apps/mod/`, the ticketboard desktop viewer in `tools/tickets/`); every folder carries
-  a README.md built to the [README standard](/documentation/standards/readme_standard.md), and
+- **Code.** A product's code and its README sit in its crate folder under `crates/` (the
+  ticketboard desktop viewer in `tools/tickets/`), and the game mod's addons in `mod/`; every
+  folder carries a README.md built to the [README standard](/documentation/standards/readme_standard.md), and
   the code trees hold no other Markdown. Engine and layer boundaries are in the
   [crate boundary rules](/documentation/standards/crate_boundary_rules.md).
 - **Contracts.** Every shape that crosses a network, process or language boundary is a schema in
@@ -269,7 +270,7 @@ work tracking ── .ai/tickets/               one TOML per ticket, the queue a
   `documentation/crates/streaming/` for `crates/streaming/`,
   `documentation/crates/frontend/workspaces/mission_creator_workspace/` for
   `crates/frontend/workspaces/mission_creator_workspace/src/`. The mod's documents sit in
-  `documentation/apps/mod/` and leave out the framework's `Scripts/Game/TBD/`, as the
+  `documentation/mod/` and leave out the framework's `Scripts/Game/TBD/`, as the
   [documentation standards](/documentation/standards/documentation_standards.md) set out.
 - **Deployment.** `deploy/` holds what runs the platform outside a developer machine: the API's
   release `Dockerfile` (its build context narrowed by the root `.dockerignore`), the development

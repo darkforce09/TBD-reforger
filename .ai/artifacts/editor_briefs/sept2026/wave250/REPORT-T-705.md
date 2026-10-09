@@ -15,7 +15,7 @@ The worktree was branched from main at the T-942 wave-250 brief commit. Proved b
 
 | claim | path:line | command |
 |---|---|---|
-| `TBD_GadgetFlags.c` does not exist | (file absent both trees) | `ls apps/mod/tbd-framework/Scripts/Game/TBD/Backend/` — no GadgetFlags; same for tbd-export |
+| `TBD_GadgetFlags.c` does not exist | (file absent both trees) | `ls mod/tbd-framework/Scripts/Game/TBD/Backend/` — no GadgetFlags; same for tbd-export |
 | Slot struct has no `gadgets` member | `TBD_MissionSlotStruct.c` fields stop at identity / loadout | `rg gadgets` over Backend `.c` — zero hits |
 | MissionLoader never binds gadgets | `TBD_MissionLoader.c` | `rg gadgets` — zero hits |
 | Wire exists since T-706 | `packages/tbd-schema/schema/mission.schema.json:464` `$defs/slot.gadgets` → `#/$defs/gadgetFlags` (`map`/`compass`/`watch`/`gps`/`radio`) | golden `schema-1_3-wire-fields.json:290` authors the block |
@@ -27,10 +27,10 @@ Not already fixed. Implemented.
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | NEW (494 lines). Wire `map<string,bool> gadgets` 33. `Bind` 73. `OnPlayerSpawned` 98. `ApplyToBody` 134. Second parse `GetRawJson` in `Parse`. | T-679-style second `JsonLoadContext` pass over `slots[].gadgets`. Authored false withholds; authored true ensures; omit (`Count()==0` / `Find` miss) keeps kit defaults. Apply 800 ms after player spawn so loadout cargo (`VerifyTick` 500 ms) cannot put a withheld gadget back. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | NEW, byte-identical ASCII twin (16060 bytes, `non_ascii=0`) | T-946.26 mandatory twin. `mirror_lockstep` walks export only. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 1127 `TBD_GadgetFlags.Bind()` | After `TBD_EnvironmentReader.Apply()`, before `TBD_MissionParams.Resolve()`. Struct **not** grown. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 1127 | Same call site, ASCII comments. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | NEW (494 lines). Wire `map<string,bool> gadgets` 33. `Bind` 73. `OnPlayerSpawned` 98. `ApplyToBody` 134. Second parse `GetRawJson` in `Parse`. | T-679-style second `JsonLoadContext` pass over `slots[].gadgets`. Authored false withholds; authored true ensures; omit (`Count()==0` / `Find` miss) keeps kit defaults. Apply 800 ms after player spawn so loadout cargo (`VerifyTick` 500 ms) cannot put a withheld gadget back. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | NEW, byte-identical ASCII twin (16060 bytes, `non_ascii=0`) | T-946.26 mandatory twin. `mirror_lockstep` walks export only. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 1127 `TBD_GadgetFlags.Bind()` | After `TBD_EnvironmentReader.Apply()`, before `TBD_MissionParams.Resolve()`. Struct **not** grown. |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 1127 | Same call site, ASCII comments. |
 
 No `packages/tbd-schema` edits. No `flatten.rs`. No `schema_gates.rs`. No `TBD_MissionSlotStruct.c`. No `TBD_SpawnManager.c`. No editor panel.
 
@@ -184,7 +184,7 @@ IN-GAME BEHAVIOUR CANNOT BE PROVEN HERE. One human-runnable line each:
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | yes (16060 bytes, ASCII, committed) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | yes (byte-identical twin) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (`Bind()` at 1127) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (same call site) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | yes (16060 bytes, ASCII, committed) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c` | yes (byte-identical twin) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (`Bind()` at 1127) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (same call site) |

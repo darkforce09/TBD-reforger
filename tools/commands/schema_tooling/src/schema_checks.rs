@@ -36,6 +36,7 @@ use prefab_catalog::instance_kinds::INSTANCE_KINDS;
 
 use repository_laws::workspace_members::read_workspace_members;
 
+use repository_layout::workspace_folders::ENFUSION_MOD_DIR;
 use repository_layout::{
     contract_catalogs_dir, contract_definitions_dir, definition_path, registry_fixtures_dir,
 };
@@ -53,13 +54,14 @@ use repository_root::find_repository_root as repo_root;
 /// per-extension breakdown are the visible evidence that the tree holds no Go or Node sources.
 const CODE_EXTS: [&str; 7] = ["c", "go", "js", "mjs", "rs", "ts", "tsx"];
 /// Code folders outside the Cargo workspace whose contract citations must resolve: the Enfusion
-/// mod suite, whose script trees (`.c`) declare `@contract` on their JSON DTO structs.
+/// mod suite ([`ENFUSION_MOD_DIR`]), whose script trees (`.c`) declare `@contract` on their JSON
+/// DTO structs.
 ///
 /// Every other scan root is derived from the workspace members ([`scan_roots`]), so no member is
 /// left out by a list that was not extended. Markdown is excluded because prose examples are not
 /// code contract declarations, and the contract and asset trees hold data, not code that declares
 /// a citation, so neither is a member or listed here.
-const NON_WORKSPACE_CODE_ROOTS: [&str; 1] = ["apps/mod"];
+const NON_WORKSPACE_CODE_ROOTS: [&str; 1] = [ENFUSION_MOD_DIR];
 const IGNORE_DIRS: [&str; 6] = [
     "node_modules",
     "dist",
@@ -113,7 +115,7 @@ mod instance_kind_lockstep_tests;
 // WHY THIS IS A GATE AND NOT A SCHEMA ENUM
 // ---------------------------------------
 // `mission.schema.json` types a slot kit as `^kit:[a-z0-9_]+$`. That checks the SHAPE. Whether the
-// alias exists is a registry question, and the registry (`apps/mod/tbd-framework/Data/registry.json`)
+// alias exists is a registry question, and the registry (`mod/tbd-framework/Data/registry.json`)
 // is generated/extensible content — a closed enum in the contract would have to be re-cut every time
 // a kit is added, would go stale silently, and would reject valid missions authored against a newer
 // registry. So the vocabulary check belongs HERE: same corpus, build time, reading the very file the

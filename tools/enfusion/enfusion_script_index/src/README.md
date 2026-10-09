@@ -3,7 +3,7 @@
 The modules of the `enfusion_script_index` crate, the library behind the `enf` binary. It turns
 [Enfusion](/documentation/glossary/a_to_f.md#enfusion) script sources (the gitignored
 `crf_framework` and `vanilla_reference` lanes of the
-[reference lanes](/apps/mod/References/README.md)) into committed TSV symbol indexes,
+[reference lanes](/mod/References/README.md)) into committed TSV symbol indexes,
 answers lookups against them, and checks the `@idx` citations in `documentation/` and the
 framework capability verdicts; `vanilla_page_fetch/` mirrors the vanilla reference pages that
 `enf apidoc` and `enf source` parse. The enfusion-mcp broker behind `mcpd` is the
@@ -35,12 +35,12 @@ tools/enfusion/enfusion_script_index/src/
 ## How it works
 
 ```text
-apps/mod/References/crf_framework/ ─┐
+mod/References/crf_framework/ ─┐
 vanilla .c tree                    ─┴▶ enf index <crf|vanilla> ─▶ symbols::scan ─▶ .ai/artifacts/enf-index/<lane>_*.tsv
-game paks ─▶ enf extract (PakVfs) ─▶ apps/mod/References/vanilla_reference/Scripts/
-          ─▶ enf carve            ─▶ apps/mod/References/vanilla_reference/Carved/
+game paks ─▶ enf extract (PakVfs) ─▶ mod/References/vanilla_reference/Scripts/
+          ─▶ enf carve            ─▶ mod/References/vanilla_reference/Carved/
 cached HTML ─▶ enf apidoc ─▶ vanilla_api_classes.tsv, vanilla_api_members.tsv
-            ─▶ enf source ─▶ apps/mod/References/vanilla_reference/Source/
+            ─▶ enf source ─▶ mod/References/vanilla_reference/Source/
 index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ capability_matrix.tsv
 ```
 
@@ -52,14 +52,14 @@ index TSVs ─▶ enf lookup | enf dirs | enf citations | enf capability ─▶ 
   crf#`, `@idx vanilla#` and `@idx api#` marker against `crf_symbols.tsv`, `vanilla_symbols.tsv` and
   `vanilla_api_classes.tsv`.
 - `capability::build` joins `crf_files.tsv` and `crf_symbols.tsv` with the rules in
-  `documentation/apps/mod/tbd-framework/capability_verdicts.tsv`, writes `capability_matrix.tsv`, and
+  `documentation/mod/tbd-framework/capability_verdicts.tsv`, writes `capability_matrix.tsv`, and
   fails when any framework file matches no rule.
 - `extract` reads scripts by name from the pak file table through `enfusion_pak::PakVfs`;
   `carve` scans raw pak bytes instead, and `dump-entry` writes one entry's stored bytes for codec
   work.
 - `index`, `apidoc`, `source` and `carve` refuse an empty result through `refuse_empty_write` before
   they write.
-- `carve`, `extract` and `source` write only inside `apps/mod/References/`:
+- `carve`, `extract` and `source` write only inside `mod/References/`:
   `reference_output::checked_reference_output` refuses an output folder outside it, the folder
   itself, a path holding `..`, and a checkout without the folder. `carve` and `extract` remove a
   previous output only when given `--replace` (`reference_output::clear_previous_output`);

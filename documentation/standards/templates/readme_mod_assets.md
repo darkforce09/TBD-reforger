@@ -3,8 +3,8 @@
 # README template: mod assets
 
 **When to use:** any folder inside an Enfusion addon other than `Scripts/`: prefabs, configs,
-mission headers, worlds, layouts, textures, sounds and data (`apps/mod/tbd-framework/Prefabs/`,
-`apps/mod/tbd-framework/Configs/`). The
+mission headers, worlds, layouts, textures, sounds and data (`mod/tbd-framework/Prefabs/`,
+`mod/tbd-framework/Configs/`). The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the mod assets kind adds Format and Referenced by.
 
@@ -54,12 +54,12 @@ each asset inherits from, and what it overrides. An ASCII diagram in a text bloc
 
 ## Related documentation
 
-- [<document title>](/documentation/apps/mod/<path to the document>) — <what it covers>
+- [<document title>](/documentation/mod/<path to the document>) — <what it covers>
 ````
 
 ## Worked sample
 
-Written from `apps/mod/tbd-framework/Prefabs/Systems/`, the framework's two prefabs, each listed by
+Written from `mod/tbd-framework/Prefabs/Systems/`, the framework's two prefabs, each listed by
 name beside its `.meta` file. No document covers these prefabs, so the sample has no Related
 documentation. The sample sits in a fenced block, so no gate reads it as a README; the folder's own
 README.md is written from the same files and may differ.
@@ -73,7 +73,7 @@ component, and the player controller it hands each player.
 ## Contents
 
 ```text
-apps/mod/tbd-framework/Prefabs/Systems/
+mod/tbd-framework/Prefabs/Systems/
 ├── TBD_GameMode.et               the game mode, carrying the framework's manager components
 ├── TBD_GameMode.et.meta          the game mode's resource GUID, `{7A5B8572ECC15707}`
 ├── TBD_PlayerController.et       the player controller each player gets, two respawn requests off
@@ -104,13 +104,13 @@ Prefabs/Systems/TBD_GameMode.et ──PlayerControllerPrefab──▶ Prefabs/Sy
 - Resource GUID: each `.et` has a `.et.meta` file whose `Name "{GUID}Prefabs/…"` line holds the
   resource GUID other resources refer to it by; a referenced GUID never changes.
 - Naming: `TBD_<Subject>.et`. This folder holds the framework's own system entities; prefabs of
-  another role go in a sibling folder under `apps/mod/tbd-framework/Prefabs/`.
+  another role go in a sibling folder under `mod/tbd-framework/Prefabs/`.
 - Adding a prefab: create it in Workbench inside this addon, which writes the `.meta` with a new
   GUID, and commit the `.et` and its `.meta` together.
 
 ## Referenced by
 
-- `apps/mod/tbd-framework/worlds/TBD_Dev_POC_Layers/default.layer` places the game mode by resource
+- `mod/tbd-framework/worlds/TBD_Dev_POC_Layers/default.layer` places the game mode by resource
   GUID: `SCR_BaseGameMode TBD_GameMode : "{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et"`.
 - `TBD_GameMode.et` names the player controller by resource GUID in its `PlayerControllerPrefab`
   property.
@@ -118,9 +118,9 @@ Prefabs/Systems/TBD_GameMode.et ──PlayerControllerPrefab──▶ Prefabs/Sy
   `TBD_SpawnManager`, `TBD_SafestartManager`, `TBD_LoadoutEquipComponent`,
   `TBD_SpectatorComponent`, `TBD_LobbyComponent`, `TBD_PlayAreaComponent`, `TBD_MarkerComponent`,
   `TBD_RadioComponent`, `TBD_ObjectivesComponent` and `TBD_PreSlotComponent` are component blocks
-  of `TBD_GameMode.et`, from the classes in `apps/mod/tbd-framework/Scripts/Game/TBD/`.
-- The mission header `apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf` reaches the game mode
-  through its world, `apps/mod/tbd-framework/worlds/TBD_Dev_POC.ent`, which it names as the
+  of `TBD_GameMode.et`, from the classes in `mod/tbd-framework/Scripts/Game/TBD/`.
+- The mission header `mod/tbd-framework/Missions/TBD_Dev_POC.conf` reaches the game mode
+  through its world, `mod/tbd-framework/worlds/TBD_Dev_POC.ent`, which it names as the
   resource `{F652B97A6F497348}worlds/TBD_Dev_POC.ent`.
 - Everon's exported type inventory lists the game mode prefab by resource name
   (`assets/terrains/everon/objects/type-inventory.json`).
@@ -129,7 +129,7 @@ Prefabs/Systems/TBD_GameMode.et ──PlayerControllerPrefab──▶ Prefabs/Sy
 
 - Depends on: the vanilla parent prefabs `{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et`
   and `{225E51284CC95CFA}Prefabs/Characters/Core/DefaultPlayerControllerMP.et` from the game's
-  data, and the component classes in `apps/mod/tbd-framework/Scripts/Game/TBD/`.
+  data, and the component classes in `mod/tbd-framework/Scripts/Game/TBD/`.
 - Used by: the framework's world layer and, through it, its mission header, as listed above.
 - Rules: a script component runs only on an entity whose prefab carries it, so a new manager
   component is added to `TBD_GameMode.et`, and `cargo xtask mod world-boot` fails when a listed

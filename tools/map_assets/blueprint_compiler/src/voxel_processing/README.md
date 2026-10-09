@@ -77,7 +77,7 @@ overrides some keys, keeps the defaults for the rest and refuses an unknown key.
   which march the synthetic buildings and parse
   `tools/map_assets/blueprint_compiler/test_fixtures/blueprint/FarmHouse_E_1L01_Wood_voxels.jsonl.gz`.
 - Rules: the wire format is the one `TBD_BuildingVoxelDump.c` writes
-  (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingVoxelDump.c`),
+  (`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingVoxelDump.c`),
   and the parser refuses rather than repairs a dump that breaks it
   (`missing_end_line_is_truncation`, `wrong_line_count_fails` and `march_order_violation_fails` in
   `tools/map_assets/blueprint_compiler/src/voxel_processing/tests/dump_parser_tests.rs`); an unknown `--params` key fails

@@ -3,8 +3,8 @@
 # T-941 — Enfusion mod lifecycle: safestart, lobby, screens, HUD, spectator, link, radio, vehicles
 
 Owner: command center. Source: master audit S6 (2026-09-04), verified against main @ 072988d57 (README.md in this
-directory). Scope: TBD-Reforger only. Executor: claude-code. Mod dir `apps/mod/tbd-framework/Scripts/Game/TBD/`;
-layouts in `apps/mod/tbd-framework/UI/layouts/`. No script unit-test lane exists: the gate proves compile + boot;
+directory). Scope: TBD-Reforger only. Executor: claude-code. Mod dir `mod/tbd-framework/Scripts/Game/TBD/`;
+layouts in `mod/tbd-framework/UI/layouts/`. No script unit-test lane exists: the gate proves compile + boot;
 in-game behaviour is the MANUAL checklist of each block.
 
 Operator authorization (quoted): agents may edit the Enfusion mod scripts; gate = cargo xtask mod compile; in-game

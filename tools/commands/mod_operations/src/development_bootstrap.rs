@@ -1,7 +1,7 @@
 //! `cargo xtask mod dev-bootstrap`: bring a workstation to the state mod work needs.
 //!
 //! **Role:** installs the pinned `enfusion-mcp` package, warms the MCP daemon, sets up the MCP game
-//! root, launches Workbench with `-gproj apps/mod/tbd-export/addon.gproj` (which skips the project
+//! root, launches Workbench with `-gproj mod/tbd-export/addon.gproj` (which skips the project
 //! picker and loads tbd-framework and tbd-emcp through the dependency); `--api` also starts the
 //! compose database (`cargo xtask db up`) and the API dev server (`cargo xtask mk rust-api`),
 //! `--server` sets up the dedicated-server profile.
@@ -10,7 +10,7 @@
 //! tree for tests.
 //! **Signals & state:** sets the `ENFUSION_*` process variables it defaults (on the main thread,
 //! before any child starts) so the helpers it spawns see them; the helpers run detached.
-//! **Invariants:** the enfusion-mcp Workbench handlers are committed in `apps/mod/tbd-emcp`, so
+//! **Invariants:** the enfusion-mcp Workbench handlers are committed in `mod/tbd-emcp`, so
 //! nothing is copied into an addon (a second handler set beside tbd-emcp's would shadow it and
 //! break the bridge); a checkout missing those handlers stops the command. Every other external
 //! step reports and continues, because this command prepares a machine rather than verifying one:
@@ -25,6 +25,9 @@ use std::time::Duration;
 
 use crate::Result;
 use process_runner::Run;
+use repository_layout::enfusion_mod_folders::{
+    EXPORT_ADDON_DIR, FRAMEWORK_ADDON_DIR, MCP_BRIDGE_ADDON_DIR,
+};
 
 use repository_root::find_repository_root;
 
@@ -33,7 +36,6 @@ const RERUN_COMMAND: &str = "cargo xtask mod dev-bootstrap";
 
 struct Paths {
     mono_root: PathBuf,
-    mod_root: PathBuf,
     enfusion_mcp_node_package: PathBuf,
 }
 
@@ -41,7 +43,6 @@ impl Paths {
     fn from_root(root: &Path) -> Self {
         Self {
             mono_root: root.to_path_buf(),
-            mod_root: root.join("apps/mod"),
             enfusion_mcp_node_package: repository_layout::enfusion_mcp_node_package_dir(root),
         }
     }
@@ -64,14 +65,15 @@ pub(crate) fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
     // maps the shell's view, so the `/home` form is the one it can open.
     let root = symlinked_home_path(root);
     let p = Paths::from_root(&root);
-    let mod_dir = p.mod_root.join("tbd-framework");
-    let export_dir = p.mod_root.join("tbd-export");
+    let mod_dir = p.mono_root.join(FRAMEWORK_ADDON_DIR);
+    let export_dir = p.mono_root.join(EXPORT_ADDON_DIR);
     // The session project: tbd-export depends on tbd-framework AND tbd-emcp, so opening it loads
     // all three and the Net API handlers with them.
     let gproj = export_dir.join("addon.gproj");
     let emcp_ping = p
-        .mod_root
-        .join("tbd-emcp/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Ping.c");
+        .mono_root
+        .join(MCP_BRIDGE_ADDON_DIR)
+        .join("Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_Ping.c");
 
     let wb_port = std::env::var("ENFUSION_WORKBENCH_PORT").unwrap_or_else(|_| "5775".into());
     let wait_sec: u64 = std::env::var("TBD_WB_WAIT_SEC")
@@ -113,7 +115,7 @@ pub(crate) fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
 
     if !emcp_ping.is_file() {
         out_line(&format!(
-            "checkout incomplete: {} missing — the enfusion-mcp handlers live in apps/mod/tbd-emcp and are never copied into another addon",
+            "checkout incomplete: {} missing — the enfusion-mcp handlers live in {MCP_BRIDGE_ADDON_DIR} and are never copied into another addon",
             emcp_ping.display()
         ))?;
         return Ok(1);
@@ -176,16 +178,12 @@ pub(crate) fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
             print!("{}", m.text);
             let _ = io::stdout().flush();
             if m.code != 0 {
-                out_line(
-                    "wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open (it loads tbd-emcp, which carries the Net API handlers); open it and retry.",
-                )?;
+                out_line(&workbench_connect_failure())?;
                 return Ok(1);
             }
         }
         Err(_) => {
-            out_line(
-                "wb_connect failed — Workbench must have apps/mod/tbd-export/addon.gproj open (it loads tbd-emcp, which carries the Net API handlers); open it and retry.",
-            )?;
+            out_line(&workbench_connect_failure())?;
             return Ok(1);
         }
     }
@@ -336,6 +334,13 @@ fn port_open(port: &str) -> bool {
         return true;
     }
     false
+}
+
+/// The line printed when the Workbench Net API does not answer: the project that must be open.
+fn workbench_connect_failure() -> String {
+    format!(
+        "wb_connect failed — Workbench must have {EXPORT_ADDON_DIR}/addon.gproj open (it loads tbd-emcp, which carries the Net API handlers); open it and retry."
+    )
 }
 
 fn out_line(s: &str) -> Result<()> {

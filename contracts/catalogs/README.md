@@ -57,7 +57,7 @@ fill the arsenal with sample data while every test still passes.
 ## Producers and consumers
 
 - Producers: `TBD_RegistryItemsExportPlugin` in
-  `apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c`, which writes
+  `mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryItemsExportPlugin.c`, which writes
   `$profile:TBD_RegistryItems.json` and then `$profile:TBD_RegistryCompat.json`, the second
   doubling as the run-complete sentinel. Its `WorkbenchPluginAttribute` line is commented out in
   the committed source, so the menu entry its header names ("Plugins, TBD, Export TBD Registry

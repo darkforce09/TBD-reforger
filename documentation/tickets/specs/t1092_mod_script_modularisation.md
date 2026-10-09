@@ -5,7 +5,7 @@
 Program ticket. Children: T-1092.1 (gates and mechanical sweep), T-1092.2 (shared foundations),
 T-1092.3 (framework decomposition and documentation), T-1092.4 (framework pin and CI),
 T-1092.5 (tbd-emcp), T-1092.6 (tbd-export). Execution: [plan](/documentation/tickets/plans/t-1092_plan.md);
-progress: [checkpoint](/documentation/apps/mod/script_modularisation_progress_checkpoint.md).
+progress: [checkpoint](/documentation/mod/script_modularisation_progress_checkpoint.md).
 
 ## In one sentence
 
@@ -26,7 +26,7 @@ documented to the Enfusion comment standard, and held there by two CI gates.
 
 ## Goal
 
-- Every `.c` file under `apps/mod/{tbd-framework,tbd-emcp,tbd-export}/Scripts` is at or under
+- Every `.c` file under `mod/{tbd-framework,tbd-emcp,tbd-export}/Scripts` is at or under
   500 lines, one primary type per file, with subfolders where a file became three or more.
 - Duplicates are merged into shared helpers; one ordered runtime heartbeat replaces the eight
   `modded SCR_BaseGameMode` tick drivers; same-addon `modded class` blocks are folded into their
@@ -41,7 +41,7 @@ documented to the Enfusion comment standard, and held there by two CI gates.
 
 - New gameplay behaviour, JSON key renames, RPC renames, class renames referenced by prefabs,
   layouts or configs.
-- `apps/mod/crf_framework` and `apps/mod/vanilla_reference` (gitignored references).
+- `mod/References/crf_framework` and `mod/References/vanilla_reference` (gitignored references).
 
 ## Locked decisions
 
@@ -85,4 +85,4 @@ The roster, slices and launch prompts are in the [plan](/documentation/tickets/p
 ## Claude Code prompt — T-1092 (copy-paste)
 
 The program runs from the prompts in the [plan](/documentation/tickets/plans/t-1092_plan.md);
-resume by reading the [checkpoint](/documentation/apps/mod/script_modularisation_progress_checkpoint.md).
+resume by reading the [checkpoint](/documentation/mod/script_modularisation_progress_checkpoint.md).

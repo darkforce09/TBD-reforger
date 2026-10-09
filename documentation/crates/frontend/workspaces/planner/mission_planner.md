@@ -29,7 +29,7 @@ None: no code serves the planner. The nearest built pieces are these:
    `crates/mission/mission_model/src/tactical_graphics/`.
 2. The [mod](/documentation/glossary/g_to_m.md#mod) puts a mission's briefing markers on the in-game
    map and sends each player only their own side's markers
-   (`apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`).
+   (`mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/`).
 3. Nothing stores a plan per member or per event, and no in-game menu loads a plan from the
    website.
 

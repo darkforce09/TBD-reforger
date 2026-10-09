@@ -10,7 +10,7 @@ them; mod developers run them by hand.
 
 ```text
 tools/enfusion/enfusion_script_index/src/vanilla_page_fetch/
-├── reference_cache.rs  the cache folder each mirror fills in the vanilla lane, refused without `apps/mod/References/`
+├── reference_cache.rs  the cache folder each mirror fills in the vanilla lane, refused without `mod/References/`
 ├── tests/              unit tests for both mirrors on scratch checkouts, offline
 ├── vanilla_api.rs      `vanilla-api`: the Script API reference in Doxygen HTML
 └── vanilla_source.rs   `vanilla-source`: vanilla script source pages, one per `.c` file
@@ -19,11 +19,11 @@ tools/enfusion/enfusion_script_index/src/vanilla_page_fetch/
 ## How it works
 
 Both mirrors cache in the `vanilla_reference` lane of the
-[reference lanes](/apps/mod/References/README.md), which `.gitignore` keeps out of git, and never
+[reference lanes](/mod/References/README.md), which `.gitignore` keeps out of git, and never
 fetch a page whose cached copy is non-empty. `reference_cache::prepare_vanilla_cache` creates the
 mirror's cache folder (`repository_layout::VANILLA_SCRIPT_API_PAGES` or
 `repository_layout::VANILLA_SOURCE_PAGES`) and refuses, before any fetch, when the checkout has no
-`apps/mod/References/` folder; it never creates that folder. Each fetch is a `curl` run through
+`mod/References/` folder; it never creates that folder. Each fetch is a `curl` run through
 `process_runner::Run` with a browser user agent, because the upstream hosts refuse curl's
 default, and a pause of `TBD_FETCH_DELAY` seconds after each page fetched from the network. Both
 end by printing the `enf` command that indexes what they cached, and return the exit code.

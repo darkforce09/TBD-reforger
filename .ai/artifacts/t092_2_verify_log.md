@@ -45,7 +45,7 @@ orbat instances 4 == slots 4 (loader parity gate); `meta.id msn_a7531a73…`, `t
 ## Kit-alias mapping table (spec deliverable)
 
 Source of truth: `packages/tbd-schema/registry/kit-aliases.json` (inverse of the `kit:` rows in
-`apps/mod/tbd-framework/Data/registry.json`; mirrored by `make schema-codegen` into
+`mod/tbd-framework/Data/registry.json`; mirrored by `make schema-codegen` into
 `internal/contract/registry/` for go:embed + `frontend/src/types/contract/` for the TS flatten).
 
 | ResourceName (palette assetId) | kit alias |

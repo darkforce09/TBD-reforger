@@ -341,8 +341,9 @@ impl Env {
             && g != self.addon_guid
         {
             eprintln!(
-                "TBD_ADDON_GUID='{}' does not match apps/mod/tbd-framework/addon.gproj",
-                self.addon_guid
+                "TBD_ADDON_GUID='{}' does not match {}/addon.gproj",
+                self.addon_guid,
+                repository_layout::enfusion_mod_folders::FRAMEWORK_ADDON_DIR
             );
             eprintln!("  ('{g}'). The gproj is the source of truth — fix deploy.env, or the boot");
             eprintln!("  assertion will be checking an addon id this checkout does not publish.");

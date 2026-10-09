@@ -24,7 +24,7 @@ use super::TOOL_MEMBER_FOLDER;
 /// The package the native lint names whatever else the workspace holds: the API server.
 pub(super) const ANCHOR_NATIVE_PACKAGE: &str = "api_server";
 
-/// The packages the wave gate's `clippy apps and crates` step lints for the host target: every
+/// The packages the wave gate's `clippy native crates` step lints for the host target: every
 /// workspace member under `repo_root` outside [`TOOL_MEMBER_FOLDER`], outside the frontend family
 /// and outside [`wasm32_clippy_packages`], in member-path order. That is the API server with
 /// every API crate, the game server host agent, and every other `crates/**` library.

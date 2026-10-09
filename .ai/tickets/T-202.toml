@@ -69,8 +69,8 @@ estimated = [
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
+    "mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
 ]
 
 [scope]

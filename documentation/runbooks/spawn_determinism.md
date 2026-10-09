@@ -8,7 +8,7 @@ plays the framework world, grades the log, and the normalised outcomes of all ru
 byte-identical. Run it after a change to the framework's spawn, [slot](/documentation/glossary/n_to_z.md#slot)
 or loadout code. It needs a live Workbench and has no headless or CI path: `cargo xtask ci
 ci-local` and `cargo xtask platform wave gate` never run it. Five runs take about 15 minutes. What
-the spawn code does is in the [Spawning README](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md).
+the spawn code does is in the [Spawning README](/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md).
 
 ## Prerequisites
 
@@ -127,13 +127,13 @@ is added to that log by hand.
 
 ## Related
 
-- [Spawning](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — slot bodies,
+- [Spawning](/mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/README.md) — slot bodies,
   the possess deploy, one life and the vanilla stand-down the gate exercises.
 - [Enfusion MCP tooling](/documentation/runbooks/enfusion_mcp_tooling.md) — the `mcp call` path
   the gate drives Workbench through, and `cargo xtask mcp wb-logs`, a single Play log's spawn
   verdict.
 - [Mod verification gates](/tools/checks/mod_script_checks/src/README.md) — the gate's
   code beside the other mod script checks.
-- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the framework's spawn rules.
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the framework's spawn rules.
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — where the gate sits in
   mod work.

@@ -46,10 +46,10 @@ owns = [
     "crates/map-engine-core/src/world/classify.rs",
     "xtask/src/golden_gate.rs",
     "xtask/src/map_blueprint/verify.rs",
-    "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldFullExportPlugin.c",
-    "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_MapExportObjects.c",
-    "apps/mod/tbd-framework/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldFullExportPlugin.c",
-    "apps/mod/tbd-framework/Scripts/WorkbenchGame/MapExport/Objects/TBD_MapExportObjects.c",
+    "mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldFullExportPlugin.c",
+    "mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/TBD_MapExportObjects.c",
+    "mod/tbd-framework/Scripts/WorkbenchGame/MapExport/Objects/TBD_WorldFullExportPlugin.c",
+    "mod/tbd-framework/Scripts/WorkbenchGame/MapExport/Objects/TBD_MapExportObjects.c",
 ]
 
 [scope]

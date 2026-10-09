@@ -43,7 +43,7 @@ takes effect on the next xtask build.
 ## Producers and consumers
 
 - Producers: people write the schemas. The documents they describe come from the Workbench
-  gameplay export in `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/`,
+  gameplay export in `mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/`,
   and the receipt from `publish-equipment-vehicle-export`.
 - Consumers: `equipment_gameplay/validation.rs` and
   `equipment_vehicle_export/gameplay_receipt.rs` under `tools/commands/mod_operations/src/`,

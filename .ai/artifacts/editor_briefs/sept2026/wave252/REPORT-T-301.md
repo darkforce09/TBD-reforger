@@ -15,14 +15,14 @@ Ticket `:519` is **not** stale on this tree. Live `BuildKit` is still `TBD_Brief
 
 **claim:** a slot with a launcher, handgun, or throwable never shows those weapons on the briefing kit list.
 
-**path:line:** `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c:519-533` (and the export twin). `AddKitLine` for Primary, Optic, Magazine, Uniform, Vest, Helmet, Backpack only.
+**path:line:** `mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c:519-533` (and the export twin). `AddKitLine` for Primary, Optic, Magazine, Uniform, Vest, Helmet, Backpack only.
 
 **command (pre-edit, both trees):**
 
 ```
 rg -n "AddKitLine|launcher|handgun|throwable|pants|boots|handwear" \
-  apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c \
-  apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_BriefingData.c
+  mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c \
+  mod/tbd-export/Scripts/Game/TBD/UI/TBD_BriefingData.c
 ```
 
 Paste (framework + export identical AddKitLine set):
@@ -44,8 +44,8 @@ Zero hits for `launcher`, `handgun`, `throwable`, `pants`, `boots`, `handwear` i
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c` | header `:520-522`; rows `:532-534` | After Primary: Launcher, Handgun, Throwable via existing `AddKitLine` empty-skip. Header documents row order and that pants/boots/handwear stay hidden. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_BriefingData.c` | same CODE (ASCII hyphen in the older header line) | Lockstep twin. |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c` | header `:520-522`; rows `:532-534` | After Primary: Launcher, Handgun, Throwable via existing `AddKitLine` empty-skip. Header documents row order and that pants/boots/handwear stay hidden. |
+| `mod/tbd-export/Scripts/Game/TBD/UI/TBD_BriefingData.c` | same CODE (ASCII hyphen in the older header line) | Lockstep twin. |
 
 No new payload fields. No source-scan test (brief: script only, no new files; owns are these two `.c` only). Did not edit schema, flatten, tickets, or docs.
 

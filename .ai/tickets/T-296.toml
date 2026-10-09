@@ -34,7 +34,7 @@ estimated = [
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
     "scripts/mod/verify-t296-results-reporter-identity-comments.sh",
 ]
 

@@ -35,8 +35,8 @@ created_at = "2026-09-03T14:49:12Z"
 completed_at = "2026-09-03T19:04:42Z"
 estimated = ["tokens"]
 owns = [
-    "apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings",
-    "apps/mod/tbd-export/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TbdBlueprint.c",
+    "mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings",
+    "mod/tbd-export/Scripts/WorkbenchGame/EnfusionMCP/EMCP_WB_TbdBlueprint.c",
     "xtask/tests/fixtures/FarmHouse_E_1L01_Wood_children.json",
     "xtask/tests/fixtures/FarmHouse_E_1L01_Wood_parity_doors.json",
 ]

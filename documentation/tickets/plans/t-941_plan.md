@@ -5,7 +5,7 @@
 ## Context
 Master audit S6 (2026-09-04) verified against main: safestart arms only SAFE_START, lobby deploy race, no END/DEBRIEF
 screens, chat-only objectives, spectator range 0 = unlimited, link code in public chat, radio NO_BACKBONE, naked
-vehicles. Eight script slices under `apps/mod/tbd-framework/`. Operator: agents may edit the Enfusion mod scripts;
+vehicles. Eight script slices under `mod/tbd-framework/`. Operator: agents may edit the Enfusion mod scripts;
 gate = cargo xtask mod compile; in-game behaviour goes on a human checklist.
 
 ## Approach

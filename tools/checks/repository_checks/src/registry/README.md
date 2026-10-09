@@ -18,7 +18,7 @@ tools/checks/repository_checks/src/registry/
 
 The palette derives an object's alias from its [Workbench](/documentation/glossary/n_to_z.md#workbench) resource name and display name
 (`derive_object_alias` in `crates/mission/mission_operations/src/assets.rs`), and the
-mod's `SpawnMissionEntities` looks that alias up in `apps/mod/tbd-framework/Data/registry.json`.
+mod's `SpawnMissionEntities` looks that alias up in `mod/tbd-framework/Data/registry.json`.
 Nothing joins the two ends at compile time, so the check recomputes the alias independently:
 
 1. All three inputs must exist: the Workbench catalog

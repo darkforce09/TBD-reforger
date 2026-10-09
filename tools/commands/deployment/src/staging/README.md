@@ -82,7 +82,7 @@ config there: a render on the development machine carries only the placeholders
 `TBD_RCON_PASSWORD_FROM_HOST_FILE` and `TBD_JOIN_PASSWORD_FROM_HOST_FILE`.
 
 `Env::validate` refuses, before anything is sent: a `TBD_ADDON_GUID` that differs from
-`apps/mod/tbd-framework/addon.gproj`; a `TBD_REMOTE_DIR` containing `prairielearn`; ports that
+`mod/tbd-framework/addon.gproj`; a `TBD_REMOTE_DIR` containing `prairielearn`; ports that
 break the fleet's port rules; a missing mod source (`TBD_WORKSHOP_MOD_ID`, `TBD_MODPACK_JSON` or
 `TBD_MODPACK_URL`); admin ids outside the engine's two patterns. The settings load refuses an
 agent origin that is neither https nor loopback http, and a relay whose upstream is not loopback.

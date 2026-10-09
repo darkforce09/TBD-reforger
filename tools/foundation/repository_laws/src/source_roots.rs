@@ -12,8 +12,8 @@
 //! from the commit that makes it a member. A missing root manifest, a workspace that names no
 //! member, an explicit member folder that is missing and a missing script root are each
 //! [`NotRun::TargetMissing`], never a smaller walk. A member nested inside another member is
-//! walked once, as part of the outer one. Only the shipped addon script roots may be pinned, which
-//! a compile-time assertion holds.
+//! walked once, as part of the outer one. Only the shipped addon script roots, each inside
+//! [`ENFUSION_MOD_TREE`], may be pinned, which two compile-time assertions hold.
 
 use std::path::{Path, PathBuf};
 
@@ -21,38 +21,45 @@ use super::workspace_members::read_workspace_members;
 use verification_core::scan;
 use verification_core::verdict::NotRun;
 
+/// The repository-relative folder of the Enfusion mod suite, the one tree whose script roots the
+/// laws may pin only from [`MOD_SCRIPT_ROOTS`].
+pub const ENFUSION_MOD_TREE: &str = "mod";
+
 /// Enfusion script roots every structural law walks beside the workspace members. A missing root
 /// is [`NotRun::TargetMissing`], never an empty pass.
-pub const PINNED_SCRIPT_ROOTS: &[&str] = &[
-    "apps/mod/tbd-framework/Scripts",
-    "apps/mod/tbd-emcp/Scripts",
-];
+pub const PINNED_SCRIPT_ROOTS: &[&str] = &["mod/tbd-framework/Scripts", "mod/tbd-emcp/Scripts"];
 
-/// Enfusion script roots of the three shipped addons, the only `apps/mod` trees the laws may pin.
-/// The gitignored upstream reference lanes in `apps/mod/References/` never enter
+/// Enfusion script roots of the three shipped addons, the only [`ENFUSION_MOD_TREE`] folders the
+/// laws may pin. The gitignored upstream reference lanes in `mod/References/` never enter
 /// [`PINNED_SCRIPT_ROOTS`]. Each root joins the pins once its addon's scripts sit
 /// at or under the ceilings.
 pub const MOD_SCRIPT_ROOTS: &[&str] = &[
-    "apps/mod/tbd-framework/Scripts",
-    "apps/mod/tbd-export/Scripts",
-    "apps/mod/tbd-emcp/Scripts",
+    "mod/tbd-framework/Scripts",
+    "mod/tbd-export/Scripts",
+    "mod/tbd-emcp/Scripts",
 ];
 
 /// File extensions the length law counts: Rust sources and Enfusion scripts.
 pub const LENGTH_GATED_EXTENSIONS: &[&str] = &["rs", "c"];
 
 const _: () = assert!(
-    mod_pins_are_script_roots(PINNED_SCRIPT_ROOTS, MOD_SCRIPT_ROOTS),
-    "an apps/mod pin in PINNED_SCRIPT_ROOTS must be one of MOD_SCRIPT_ROOTS"
+    folders_lie_in_tree(MOD_SCRIPT_ROOTS, ENFUSION_MOD_TREE),
+    "every entry of MOD_SCRIPT_ROOTS must lie inside ENFUSION_MOD_TREE"
 );
 
-/// Compile-time guard: every `apps/mod/` entry of `pins` is exactly one of `script_roots`, so a
-/// gitignored reference tree or a whole addon folder can never be pinned.
+const _: () = assert!(
+    mod_pins_are_script_roots(PINNED_SCRIPT_ROOTS, MOD_SCRIPT_ROOTS),
+    "a mod pin in PINNED_SCRIPT_ROOTS must be one of MOD_SCRIPT_ROOTS"
+);
+
+/// Compile-time guard: every entry of `pins` that is [`ENFUSION_MOD_TREE`] or lies inside it is
+/// exactly one of `script_roots`, so a gitignored reference tree or a whole addon folder can never
+/// be pinned.
 pub const fn mod_pins_are_script_roots(pins: &[&str], script_roots: &[&str]) -> bool {
     let mut pin_index = 0;
     while pin_index < pins.len() {
         let pin = pins[pin_index].as_bytes();
-        if bytes_start_with(pin, b"apps/mod/") || bytes_equal(pin, b"apps/mod") {
+        if is_tree_or_inside(pin, ENFUSION_MOD_TREE.as_bytes()) {
             let mut root_index = 0;
             let mut matched = false;
             while root_index < script_roots.len() {
@@ -68,6 +75,26 @@ pub const fn mod_pins_are_script_roots(pins: &[&str], script_roots: &[&str]) -> 
         pin_index += 1;
     }
     true
+}
+
+/// Compile-time guard: every entry of `folders` is a folder strictly inside `tree`, so a script
+/// root spelled under any other top-level folder can never become a mod script root.
+pub const fn folders_lie_in_tree(folders: &[&str], tree: &str) -> bool {
+    let tree = tree.as_bytes();
+    let mut index = 0;
+    while index < folders.len() {
+        let folder = folders[index].as_bytes();
+        if bytes_equal(folder, tree) || !is_tree_or_inside(folder, tree) {
+            return false;
+        }
+        index += 1;
+    }
+    true
+}
+
+/// True when the repository-relative `path` is `tree` itself or a path below it.
+const fn is_tree_or_inside(path: &[u8], tree: &[u8]) -> bool {
+    bytes_start_with(path, tree) && (path.len() == tree.len() || path[tree.len()] == b'/')
 }
 
 const fn bytes_start_with(bytes: &[u8], prefix: &[u8]) -> bool {

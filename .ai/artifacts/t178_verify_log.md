@@ -70,7 +70,7 @@
 ## Explicit not done (legal)
 
 - **T-071.1** ORBAT Manager CRUD
-- **`apps/mod/**`**
+- **`mod/**`**
 - Reintroducing 32 m landcover forest wash
 
 ## Inventory

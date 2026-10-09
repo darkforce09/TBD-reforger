@@ -7,17 +7,14 @@ use crate::workspace_laws::fixture_workspace::{
     Dependency, FixtureWorkspace, application_manifest, green_workspace, normal,
 };
 
-/// The fixture workspaces' configuration: the sweep roots of this repository and no application
-/// package, so a fixture judges rules 1–6 alone; the rule 7 tests list the application of
-/// [`green_workspace`].
+/// The fixture workspaces' configuration: no application package, so a fixture judges rules 1–6
+/// alone; the rule 7 tests list the application of [`green_workspace`].
 pub(super) const CONFIGURATION: &CrateTierConfiguration<'static> = &CrateTierConfiguration {
-    manifest_sweep_roots: &["apps", "crates", "tools"],
     application_packages: &[],
 };
 
 /// The application packages of this repository, as `cargo xtask verify crate-tiers` passes them.
 const THIS_REPOSITORY: &CrateTierConfiguration<'static> = &CrateTierConfiguration {
-    manifest_sweep_roots: &["apps", "crates", "tools"],
     application_packages: &[
         "api_server",
         "frontend_application",
@@ -398,6 +395,59 @@ fn crate_tiers_a_stray_manifest_is_rule_1_and_test_trees_are_not_swept() {
     workspace.write("crates/foundation/newtype_ids/target/debug/Cargo.toml", "");
     let found = findings(&workspace);
     assert_eq!(found, vec!["rule 1: apps/orphan/Cargo.toml is not a workspace member — add the folder to the root [workspace] members".to_string()]);
+}
+
+/// The sweep covers the whole checkout: a stray manifest in the mod tree, in a top-level folder no
+/// layout names, directly under a top-level folder or deep in the documentation is rule 1; hidden
+/// folders (slice worktrees), per-purpose build folders and vendored packages are not swept.
+#[test]
+fn crate_tiers_a_stray_manifest_anywhere_in_the_checkout_is_rule_1() {
+    for stray in [
+        "mod/orphan",
+        "apps/x",
+        "parked",
+        "documentation/notes/sample",
+    ] {
+        let workspace = green_workspace("tiers-stray-anywhere");
+        workspace.write(
+            &format!("{stray}/Cargo.toml"),
+            &application_manifest("orphan", ""),
+        );
+        assert_eq!(
+            findings(&workspace),
+            vec![format!(
+                "rule 1: {stray}/Cargo.toml is not a workspace member — add the folder to the \
+                 root [workspace] members"
+            )],
+            "{stray}"
+        );
+    }
+    let workspace = green_workspace("tiers-stray-unswept");
+    for unswept in [
+        ".ai/artifacts/worktrees/T-1/crates/foundation/newtype_ids",
+        "target-ci/package/newtype_ids",
+        "target/package/newtype_ids",
+        "mod/References/upstream/node_modules/binding",
+    ] {
+        workspace.write(
+            &format!("{unswept}/Cargo.toml"),
+            &application_manifest("newtype_ids", ""),
+        );
+    }
+    let report = check_crate_tiers(workspace.root(), CONFIGURATION);
+    assert_eq!(report.exit_code, 0, "{}", report.lines.join("\n"));
+    assert!(
+        report
+            .lines
+            .iter()
+            .any(|line| line.starts_with("note: swept ")
+                && line.ends_with(
+                    " manifest(s) across the checkout, outside hidden folders, tests, fixtures, \
+                 test_fixtures, target, node_modules and target-*"
+                )),
+        "{}",
+        report.lines.join("\n")
+    );
 }
 
 #[test]

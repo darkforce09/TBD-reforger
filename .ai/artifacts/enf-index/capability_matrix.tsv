@@ -15,7 +15,7 @@ Battle royale zone	SKIP	2	1755	44
 Vehicle depot	LATER	2	1643	57	
 Map staging	LATER	3	1479	51	pre-mission staging area
 Helpers layer	BUILD	11	1289	65	grow as needed; do not port wholesale
-CRF Workbench plugins	SKIP	7	1206	46	TBD has its own under apps/mod/tbd-framework/Scripts/WorkbenchGame
+CRF Workbench plugins	SKIP	7	1206	46	TBD has its own under mod/tbd-framework/Scripts/WorkbenchGame
 Radio / VON frequency plan	LATER	7	1104	38	vanilla VON override
 Parachutes	SKIP	3	1099	63	
 Gamemode state machine	BUILD	2	1075	44	InitilizePlayer: pre-spawned character -> DisableAI -> faction -> assign -> notify

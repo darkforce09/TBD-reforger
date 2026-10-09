@@ -16,7 +16,7 @@ alwaysApply: true
   `crates/frontend/shell/frontend_application/`, package `frontend_application`, Leptos and Trunk,
   over the other `crates/frontend/` crates, with the `offline_service_worker` beside it; the game
   server host agent `crates/fleet/game_server_host_agent/`; the map's streaming, rendering and GPU
-  crates) · `deploy/` (Dockerfile, compose, Caddy, systemd units) · `apps/mod/` (the Enfusion
+  crates) · `deploy/` (Dockerfile, compose, Caddy, systemd units) · `mod/` (the Enfusion
   addons) · `tools/` (tool crates by category under `tools/<category>/`, the ticketboard desktop
   viewer `tools/tickets/ticketboard_desktop/` among them, the binaries `xtask` and
   `developer_tools`, the pinned enfusion-mcp npm package) · `contracts/` · `assets/`; the

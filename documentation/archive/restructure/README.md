@@ -44,7 +44,7 @@ this folder, in [restructure research](/documentation/archive/restructure_resear
 
 ## Code
 
-- [Apps](/apps/README.md), [crates](/crates/README.md) and [tools](/tools/README.md) — the
+- [Apps](/mod/README.md), [crates](/crates/README.md) and [tools](/tools/README.md) — the
   workspace the program restructured.
 
 ## Boundaries

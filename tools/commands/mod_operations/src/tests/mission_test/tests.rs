@@ -66,10 +66,10 @@ fn throwaway_root(tag: &str, with_golden: bool) -> PathBuf {
     let root = tempfile_dir(tag);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
-    fs::create_dir_all(root.join("apps/mod/tbd-framework/Data")).unwrap();
+    fs::create_dir_all(root.join(FRAMEWORK_ADDON_DIR).join("Data")).unwrap();
     fs::create_dir_all(repository_layout::mission_fixtures_valid_dir(&root)).unwrap();
     fs::write(
-        root.join("apps/mod/tbd-framework/Data/registry.json"),
+        root.join(FRAMEWORK_ADDON_DIR).join("Data/registry.json"),
         "{\"ok\":true}\n",
     )
     .unwrap();

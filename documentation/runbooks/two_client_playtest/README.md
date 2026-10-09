@@ -83,7 +83,7 @@ Facts every topic relies on:
   contract and `mod dev-server`.
 - [Development server profile](/tools/xtask/dedicated_server_profiles/README.md) — the server
   config the playtest renders from.
-- [TBD Framework addon](/apps/mod/tbd-framework/README.md) — the scripts whose log lines the
+- [TBD Framework addon](/mod/tbd-framework/README.md) — the scripts whose log lines the
   session reads.
 
 ## Boundaries
@@ -91,12 +91,12 @@ Facts every topic relies on:
 - Depends on: the [runbook template](/documentation/standards/templates/runbook.md); the xtask
   `mod`, `db`, `mk`, `setup`, `verify` and `ticket` command trees; the website API's
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime) and mission routes; the mod's log
-  lines under `apps/mod/tbd-framework/Scripts/Game/TBD/`; the golden missions in
+  lines under `mod/tbd-framework/Scripts/Game/TBD/`; the golden missions in
   `contracts/fixtures/missions/valid/`.
 - Used by: the two playtest tickets, which cite this README's path; the
-  READMEs of `apps/mod/`, `apps/mod/tbd-framework/` and its `Missions/` and `worlds/` folders,
+  READMEs of `mod/`, `mod/tbd-framework/` and its `Missions/` and `worlds/` folders,
   the xtask `mod_ops/`, `playtest_server/`, `setup/` and `dedicated_server_profiles/` folders; a
-  code comment in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/Application/TBD_LoadoutApplication.c`
+  code comment in `mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/Application/TBD_LoadoutApplication.c`
   that relies on this runbook's `loadout INCOMPLETE` and `loadout DEGRADED` greps; the mod and
   game server staging docs.
 - Rules: this README keeps its path, because tickets and code cite it; a topic file stays at or
@@ -108,9 +108,9 @@ Facts every topic relies on:
 
 - [Game server staging](/documentation/runbooks/game_server_staging/README.md) — the same
   server on the staging host, deployed with `cargo xtask deploy staging`.
-- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the event loop and the one-life
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the event loop and the one-life
   rule the session exercises.
-- [TBD Framework documentation](/documentation/apps/mod/tbd-framework/README.md) — the in-game
+- [TBD Framework documentation](/documentation/mod/tbd-framework/README.md) — the in-game
   screens, with the lobby and briefing specifications.
 - [Arsenal loadout editor](/documentation/crates/frontend/workspaces/mission_creator_arsenal/arsenal_loadout_editor.md)
   — authoring the loadouts the session checks on a player.

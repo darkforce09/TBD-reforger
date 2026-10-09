@@ -4,11 +4,11 @@
 use super::{count_mod_readers, definition_path, read_json, repo_root};
 use std::path::PathBuf;
 
-/// `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives` — the lane that owns objectives.
+/// `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives` — the lane that owns objectives.
 fn objectives_lane() -> PathBuf {
     repo_root()
         .expect("repo root")
-        .join("apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives")
+        .join("mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives")
 }
 
 /// Property names of one `#/$defs/<name>` object, in schema order.

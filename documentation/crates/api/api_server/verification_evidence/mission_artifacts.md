@@ -126,7 +126,7 @@ gameplay data the compiler cannot represent is refused at compilation with 422
 
 ## Consumers
 
-- **Game runtime** (`apps/mod/tbd-framework`): `TBD_DeployedMission.c` reads the deployment and
+- **Game runtime** (`mod/tbd-framework`): `TBD_DeployedMission.c` reads the deployment and
   loads its artifact only after `TBD_MissionArtifactVerification.c` has matched the SHA-256 of the
   exact bytes (`Core/Hashing/`); `TBD_MissionArtifactCache.c` keeps the last verified artifact and
   its deployment identity in `$profile:TBD_MissionArtifactCache/`, which runs, with a warning,

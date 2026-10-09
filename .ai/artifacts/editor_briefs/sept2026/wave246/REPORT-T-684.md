@@ -15,9 +15,9 @@ Verified on this worktree at `475aec391` (slice base, before any T-684 commits) 
 
 | claim | path:line | command |
 |---|---|---|
-| No Enfusion `missionParams` reader | (identifier absent) | `rg -n "missionParams\|MissionParam" apps/mod --glob '*.c'` — zero hits |
-| `TBD_MissionParams.c` does not exist | (file absent) | `ls apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c` — No such file |
-| `TBD_MissionDocumentStruct` has no `missionParams` member | `TBD_MissionLoader.c:310-360` (struct ended at `environment`) | `rg -n "class TBD_MissionDocumentStruct" apps/mod --glob '*.c'` — present; no `missionParams` field |
+| No Enfusion `missionParams` reader | (identifier absent) | `rg -n "missionParams\|MissionParam" mod --glob '*.c'` — zero hits |
+| `TBD_MissionParams.c` does not exist | (file absent) | `ls mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c` — No such file |
+| `TBD_MissionDocumentStruct` has no `missionParams` member | `TBD_MissionLoader.c:310-360` (struct ended at `environment`) | `rg -n "class TBD_MissionDocumentStruct" mod --glob '*.c'` — present; no `missionParams` field |
 | T-706 already declared the wire key | `packages/tbd-schema/schema/mission.schema.json:125` (`missionParams` array, `$defs/missionParam`) | `rg -n '"missionParams"' packages/tbd-schema/schema/mission.schema.json` |
 | UNREAD_WIRE_FIELDS baseline 0 | `xtask/src/schema_gates.rs:2630-2636` `expected: 0, ticket: "T-684"` | left untouched |
 
@@ -25,12 +25,12 @@ Verified on this worktree at `475aec391` (slice base, before any T-684 commits) 
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | NEW (401 lines) | Struct bind (`name`, `titleKey`, `values`, `displays`); `Get(symbol)` / `Has(symbol)` / `Count()`; launch file `$profile:TBD_MissionParams.json`; fail-closed unknown symbol |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | NEW | Byte-identical twin |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | NEW (401 lines) | Struct bind (`name`, `titleKey`, `values`, `displays`); `Get(symbol)` / `Has(symbol)` / `Count()`; launch file `$profile:TBD_MissionParams.json`; fail-closed unknown symbol |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | NEW | Byte-identical twin |
 | same, `TBD_MissionParamStruct.authoredDefault` | 65 | Wire key `default` cannot be an Enforce member (keyword; compile probe RED "Syntax error" / "Unexpected scope"). Second `JsonLoadContext` pass `ReadValue("default", authored)` at 227 — key is a STRING. Index join with the primary parse. |
 | same, `Resolve` / `FillAuthoredDefaults` / `LoadLaunchSelections` | 100 / 200 / 355 | Allocate-on-absent then `Count()`; server-config selections else authored default if it is in `values[]` |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 364, 1103 | `missionParams` on `TBD_MissionDocumentStruct`; `TBD_MissionParams.Resolve()` after `TBD_EnvironmentReader.Apply()` |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 364, 1103 | Same code |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 364, 1103 | `missionParams` on `TBD_MissionDocumentStruct`; `TBD_MissionParams.Resolve()` after `TBD_EnvironmentReader.Apply()` |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | 364, 1103 | Same code |
 
 Launch-selection surface (honest): **server config** `$profile:TBD_MissionParams.json` `{ "selections": [ { "name": "<symbol>", "value": <int> } ] }`, else the authored default. There is no lobby.
 
@@ -160,7 +160,7 @@ HEAD `57c35e19d`. Worktree clean. No push.
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | yes (13689 bytes, ASCII) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | yes (13689 bytes, `cmp` identical) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited; new hunks ASCII and code-identical) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | yes (13689 bytes, ASCII) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionParams.c` | yes (13689 bytes, `cmp` identical) |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited) |
+| `mod/tbd-export/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` | yes (edited; new hunks ASCII and code-identical) |

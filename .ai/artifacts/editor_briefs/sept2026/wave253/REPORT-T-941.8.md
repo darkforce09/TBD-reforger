@@ -15,8 +15,8 @@ Worktree tracked `8c4669ca9` at dispatch. Defect still present before the edit.
 
 | claim | path:line | command |
 |---|---|---|
-| Roster spawn then T-680 authored state; no default full fuel | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c:1054-1065` (export twin identical code) | `git show HEAD:…/TBD_SpawnManager.c \| sed -n '1054,1065p'` |
-| T-680 leaves unset fuel at engine default (ABSENT sentinel) | `apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c:147-161` | `Apply()` only calls `ApplyFuel` when `fuel != ABSENT` |
+| Roster spawn then T-680 authored state; no default full fuel | `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c:1054-1065` (export twin identical code) | `git show HEAD:…/TBD_SpawnManager.c \| sed -n '1054,1065p'` |
+| T-680 leaves unset fuel at engine default (ABSENT sentinel) | `mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c:147-161` | `Apply()` only calls `ApplyFuel` when `fuel != ABSENT` |
 | No per-class cargo table / inventory insert on the spawn path | SpawnManager | no `TBD_VehicleSpawnDefaults` / no `inventory` insert after `SeatAuthoredCrews` |
 
 Quoted (framework, pre-edit):
@@ -37,8 +37,8 @@ Not already fixed. Implemented.
 
 | path | what |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | Call site `MaterializeSlotBodies` ~1062–1067: `ApplyCargo()` then T-680 `ApplySpawned()` then `ApplyDefaultFuel()`. Helper classes at EOF: `TBD_VehicleSpawnInvRow` / `TBD_VehicleSpawnWire` (fuel ABSENT = `-1000000`, inventory presence = `Count()`) / `TBD_VehicleSpawnDoc` / `TBD_VehicleSpawnDefaults`. Class table keyed by alias class `jeep`/`truck`/`apc`/`helo`/`default`. Missing prefab: one `WARNING` naming it. Default fuel is `TBD_VehicleState.Apply(body, false, 1.0, ABSENT)` only when `!HasFuel()`. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | Export twin. New block is ASCII-identical to framework (existing file still has the pre-existing em-dash fold elsewhere). |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | Call site `MaterializeSlotBodies` ~1062–1067: `ApplyCargo()` then T-680 `ApplySpawned()` then `ApplyDefaultFuel()`. Helper classes at EOF: `TBD_VehicleSpawnInvRow` / `TBD_VehicleSpawnWire` (fuel ABSENT = `-1000000`, inventory presence = `Count()`) / `TBD_VehicleSpawnDoc` / `TBD_VehicleSpawnDefaults`. Class table keyed by alias class `jeep`/`truck`/`apc`/`helo`/`default`. Missing prefab: one `WARNING` naming it. Default fuel is `TBD_VehicleState.Apply(body, false, 1.0, ABSENT)` only when `!HasFuel()`. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | Export twin. New block is ASCII-identical to framework (existing file still has the pre-existing em-dash fold elsewhere). |
 
 Did not edit `TBD_VehicleState.c`, `TBD_MissionLoader.c`, flatten, or schema. Crew seating left at T-675.2.
 

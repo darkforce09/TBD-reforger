@@ -110,8 +110,11 @@ fn checkout(tag: &str) -> FixtureCheckout {
             "documentation/guide.md",
             "# Guide\n\n## Setup steps\n\nText.\n",
         )
-        .tracked("apps/tool/src/main.rs", "fn main() {}\n// two\n// three\n")
-        .tracked("apps/tool/README.md", "# Tool\n");
+        .tracked(
+            "engines/tool/src/main.rs",
+            "fn main() {}\n// two\n// three\n",
+        )
+        .tracked("engines/tool/README.md", "# Tool\n");
     fixture
 }
 
@@ -119,7 +122,7 @@ fn checkout(tag: &str) -> FixtureCheckout {
 fn a_checkout_path_must_name_a_tracked_file_or_folder() {
     let mut fixture = checkout("paths");
     fixture.untracked("documentation/draft.md", "# Draft\n");
-    let text = "[ok](guide.md) [folder](/apps/tool/) [root](/)\n\
+    let text = "[ok](guide.md) [folder](/engines/tool/) [root](/)\n\
                 [gone](missing.md) [draft](draft.md)\n[out](../../outside.md)\n";
     let (breaks, not_run) = judge_document(
         &mut fixture,
@@ -141,12 +144,38 @@ fn a_checkout_path_must_name_a_tracked_file_or_folder() {
     assert_eq!(not_run, 0);
 }
 
+/// A link into a retired top-level folder (`apps/`, `docs/`) names nothing the checkout tracks,
+/// so it breaks like any other missing target, as a file or as a folder.
+#[test]
+fn a_link_into_a_retired_top_level_folder_is_a_missing_target() {
+    let mut fixture = checkout("retired");
+    let text = "[mod](/apps/tool/README.md) [apps](/apps/) [specs](/docs/specs/plan.md)\n";
+    let (breaks, not_run) = judge_document(
+        &mut fixture,
+        "documentation/index.md",
+        text,
+        &FakeObjects::default(),
+    );
+    assert_eq!(
+        breaks,
+        [
+            "documentation/index.md:1: missing target: `/apps/tool/README.md` resolves to \
+             `apps/tool/README.md`, which is no tracked file or folder",
+            "documentation/index.md:1: missing target: `/apps/` resolves to `apps`, which is no \
+             tracked file or folder",
+            "documentation/index.md:1: missing target: `/docs/specs/plan.md` resolves to \
+             `docs/specs/plan.md`, which is no tracked file or folder",
+        ]
+    );
+    assert_eq!(not_run, 0);
+}
+
 #[test]
 fn a_fragment_must_match_a_heading_or_fit_a_line_anchor() {
     let mut fixture = checkout("fragments");
     let text = "[a](guide.md#setup-steps) [b](guide.md#nope) [c](#local) [d](#elsewhere)\n\
-                [e](/apps/tool/src/main.rs#L2-L3) [f](/apps/tool/src/main.rs#L4)\n\
-                [g](/apps/tool/src/main.rs#main) [h](/apps/tool#x) [i](guide.md?plain=1#L5)\n\
+                [e](/engines/tool/src/main.rs#L2-L3) [f](/engines/tool/src/main.rs#L4)\n\
+                [g](/engines/tool/src/main.rs#main) [h](/engines/tool#x) [i](guide.md?plain=1#L5)\n\
                 [j](guide.md#L1)\n\n## Local\n";
     let (breaks, _) = judge_document(
         &mut fixture,
@@ -162,11 +191,11 @@ fn a_fragment_must_match_a_heading_or_fit_a_line_anchor() {
             "documentation/index.md:1: missing anchor: `#elsewhere`: this document has no \
              heading or anchor `elsewhere`",
             "documentation/index.md:2: line anchor out of range: \
-             `/apps/tool/src/main.rs#L4`: the file has 3 line(s)",
-            "documentation/index.md:3: missing anchor: `/apps/tool/src/main.rs#main`: \
-             `apps/tool/src/main.rs` is not rendered Markdown, so `main` matches nothing; only a \
+             `/engines/tool/src/main.rs#L4`: the file has 3 line(s)",
+            "documentation/index.md:3: missing anchor: `/engines/tool/src/main.rs#main`: \
+             `engines/tool/src/main.rs` is not rendered Markdown, so `main` matches nothing; only a \
              #L<n> or #L<n>-L<m> line anchor applies",
-            "documentation/index.md:3: missing anchor: `/apps/tool#x`: `apps/tool` is a \
+            "documentation/index.md:3: missing anchor: `/engines/tool#x`: `engines/tool` is a \
              folder, which has no anchors",
             "documentation/index.md:4: missing anchor: `guide.md#L1`: \
              `documentation/guide.md` has no heading or anchor `L1`",
@@ -367,7 +396,7 @@ fn every_other_page_of_this_repository_is_external_and_never_fetched() {
          [release]({home}/releases/tag/v1.0) [wiki]({home}/wiki) [log]({home}/commits/main)\n\
          [diff]({home}/compare/main...next)\n"
     );
-    fixture.tracked("apps/mod/README.md", &text);
+    fixture.tracked("mod/README.md", &text);
     let tree = fixture.tree();
     let context = RuleContext {
         repo_root: fixture.root(),
@@ -378,7 +407,7 @@ fn every_other_page_of_this_repository_is_external_and_never_fetched() {
     let mut findings = RuleFindings::default();
     let scanned = scan(&text);
     let document = JudgedDocument {
-        path: "apps/mod/README.md",
+        path: "mod/README.md",
         scan: &scanned,
     };
     rule.judge(&document, &context, &mut findings);

@@ -15,7 +15,7 @@ Worktree tracked main at dispatch. Defect still present before the edit.
 
 | claim | path:line | command |
 |---|---|---|
-| Arm predicate is SAFE_START only; anything else Lift()s | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c:248-264` (export twin identical code) | `sed -n '247,265p' apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` |
+| Arm predicate is SAFE_START only; anything else Lift()s | `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c:248-264` (export twin identical code) | `sed -n '247,265p' mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` |
 
 Quoted (framework, pre-edit):
 
@@ -39,10 +39,10 @@ Armed stage set **before**: `{SAFE_START}` only. LOBBY auto-deploy therefore spa
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` | 247-251 | Dated decision comment names T-941.1 (2026-09-07) and lobby auto-deploy (~250 ms). |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` | 247-251 | Dated decision comment names T-941.1 (2026-09-07) and lobby auto-deploy (~250 ms). |
 | same | 259 | Arm predicate widened to `LOBBY \|\| BRIEFING \|\| SAFE_START`. Any other stage (LIVE, END, DEBRIEF, LOADING) still `Lift()`s once. |
 | same | 270-333 | `Arm()` is idempotent for the shield (`if (first)`). Countdown + "Live in" broadcast start only when `GetStage() == SAFE_START` and `m_iSecondsRemaining == NOT_RUNNING`. `TickSweep` still starts on first arm so late joiners during BRIEFING are covered. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` | same | Export twin; ASCII comments/string dashes preserved. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` | same | Export twin; ASCII comments/string dashes preserved. |
 
 `TickCountdown` body not edited (three exits remain). `TBD_SpawnManager.c` not touched.
 
@@ -117,7 +117,7 @@ SLICE GATE: PASS
 
 | path:line | repro |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c:787-789` (export twin same) | Stale comment still says "SAFE_START arms the safestart and anything else lifts it". Call is still `safestart.OnStageChanged(stage)` for every transition — behaviour is correct; comment is wrong. Sibling file; T-941.1 owns only `TBD_SafestartManager.c`. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c:787-789` (export twin same) | Stale comment still says "SAFE_START arms the safestart and anything else lifts it". Call is still `safestart.OnStageChanged(stage)` for every transition — behaviour is correct; comment is wrong. Sibling file; T-941.1 owns only `TBD_SafestartManager.c`. |
 
 ## deviations
 
@@ -137,5 +137,5 @@ Arm() now starts `TickCountdown` only on SAFE_START. The brief said do not touch
 
 ## twins_confirmed
 
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` — on disk
-- `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` — on disk
+- `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` — on disk
+- `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SafestartManager.c` — on disk

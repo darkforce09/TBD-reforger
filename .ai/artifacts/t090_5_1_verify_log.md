@@ -64,6 +64,6 @@ Code-level verification done; in-browser visual confirmation → operator (prece
 
 ## Out of scope confirmed untouched
 
-`docs/**`, `.ai/tickets/registry.json`, `docs/TICKET_*.md`, `scripts/map-assets/**`, `packages/map-assets/**`, Workbench plugins, legacy map-view branches in `useTerrainBasemapLayer` (T-090.10.2), `apps/mod/tbd-framework/resourceDatabase.rdb` (pre-existing dirty, not committed).
+`docs/**`, `.ai/tickets/registry.json`, `docs/TICKET_*.md`, `scripts/map-assets/**`, `packages/map-assets/**`, Workbench plugins, legacy map-view branches in `useTerrainBasemapLayer` (T-090.10.2), `mod/tbd-framework/resourceDatabase.rdb` (pre-existing dirty, not committed).
 
 **Next:** T-090.5.2 roads + buildings live (needs glyph atlas build) — after Cursor doc sync of this slice.

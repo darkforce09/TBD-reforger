@@ -46,7 +46,7 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-owns = ["apps/mod/tbd-framework/Configs/**"]
+owns = ["mod/tbd-framework/Configs/**"]
 
 [scope]
 domain = "mod"

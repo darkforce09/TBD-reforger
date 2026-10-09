@@ -1,0 +1,46 @@
+# Once-per-key logging
+
+Gates over `TBD_Log` that write a line once per key, so a recurring condition is reported
+without flooding the log.
+
+## Contents
+
+```text
+mod/tbd-framework/Scripts/Game/TBD/Core/Logging/
+├── TBD_AnnounceOnce.c  an informational line once per key until the key is rearmed
+└── TBD_WarnOnce.c      a WARNING line once per channel and key, optionally bounded per channel
+```
+
+## How it works
+
+`TBD_WarnOnce.Warn(channel, key, message, maxKeysPerChannel)` keeps one set of warned keys per
+channel and writes `[TBD][<channel>] <message>` at WARNING the first time a key is seen. With
+`maxKeysPerChannel` at or above 0 the channel's set is cleared once it holds more keys than that,
+so a key may warn again; the default -1 keeps every key.
+
+`TBD_AnnounceOnce` keeps one set of claimed keys. `Claim(key)` is true the first time since the
+last `Rearm(key)`; `Event` and `Kv` write `TBD_Log.Event` or `TBD_Log.Kv` behind a claim.
+A runtime that re-arms per world or per mission calls `Rearm` when it resets.
+
+## Authority
+
+- Server: nothing of its own; both run wherever they are called.
+- Client: nothing of its own.
+- Owner: nothing.
+- RPCs: none.
+- Replicated properties: none.
+
+## Boundaries
+
+- Depends on: `TBD_Log` in `mod/tbd-framework/Scripts/Game/TBD/Core/`.
+- Used by: `TBD_WarnOnce` by `TBD_UIIcons`, `TBD_BriefingService`, `TBD_LoadoutPreviewDresser` and
+  `TBD_LoadoutPreviewMount`; `TBD_AnnounceOnce` by the mission runtimes (`TBD_TriggerRuntime`,
+  `TBD_WeatherRuntime`, `TBD_AudioEmitter`, `TBD_DynamicSpawner`, `TBD_GroupState`,
+  `TBD_WaypointRuntime`), `TBD_TaskStateMachine`, `TBD_WinConditionEvaluator`,
+  `TBD_WinConditionModes`, `TBD_ObjectivesComponent` and `TBD_PlayAreaComponent`.
+- Rules: the line shape is exactly `[TBD][<channel>] <message>`; lines added stay ASCII;
+  `cargo xtask mod compile` checks that the scripts compile.
+
+## Related documentation
+
+- [Framework core utilities](/mod/tbd-framework/Scripts/Game/TBD/Core/README.md) — `TBD_Log` and the rest of the core

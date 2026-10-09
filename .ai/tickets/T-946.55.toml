@@ -16,7 +16,7 @@ context = [
     "Anchor 2026-09-07: TBD_ObjectivesComponent.c:692 calls ReplicateHud(players, connected, objectives) every Deliver tick; the method is at :747.",
     "Each call sends a Reliable Owner RPC of three string arrays per player at 1 Hz, so cost scales with players x objectives and never falls to zero when idle.",
     "The verifier's point was that this can exceed the chat pump T-941.4 removed, which makes the fix a regression on the metric it was chosen for.",
-    "ENFUSION: both twins must change together. apps/mod/tbd-framework and apps/mod/tbd-export copies of TBD_ObjectivesComponent.c, ASCII-only in the export tree, held in lockstep by mirror_lockstep.",
+    "ENFUSION: both twins must change together. mod/tbd-framework and mod/tbd-export copies of TBD_ObjectivesComponent.c, ASCII-only in the export tree, held in lockstep by mirror_lockstep.",
 ]
 requirement = [
     "A dirty check gates ReplicateHud: the RPC goes out only when the objective board differs from what that owner was last sent.",
@@ -42,8 +42,8 @@ acceptance = [
 ]
 created_at = "2026-09-07T04:34:00Z"
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime/TBD_ObjectivesComponent.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime/TBD_ObjectivesComponent.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime/TBD_ObjectivesComponent.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Engine/Runtime/TBD_ObjectivesComponent.c",
 ]
 
 [scope]

@@ -48,7 +48,7 @@ flowchart LR
 
 T-092.2 builds **mod compiled document**; T-092 adds **`GET /api/v1/missions/:id/compiled`** (service token) returning that document.
 
-**Mod config fix:** Update [`TBD_MissionLoader.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c) path to **`/api/v1/missions/{id}/compiled`** (and [`backend.example.json`](../../../apps/mod/tbd-framework/Data/backend.example.json) docs).
+**Mod config fix:** Update [`TBD_MissionLoader.c`](https://github.com/darkforce09/TBD-reforger/blob/1cc2d686cf46465db4657266ef8ec455d6706376/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c) path to **`/api/v1/missions/{id}/compiled`** (and [`backend.example.json`](../../../mod/tbd-framework/Data/backend.example.json) docs).
 
 ---
 

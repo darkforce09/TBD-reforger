@@ -125,6 +125,6 @@ version and submit it again.
   environment variables and exit codes.
 - [Playtest server](/documentation/runbooks/two_client_playtest/playtest_server.md) — the next
   runbook: the joinable server.
-- [Loadouts](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/README.md) — the loadout
+- [Loadouts](/mod/tbd-framework/Scripts/Game/TBD/Systems/Loadouts/README.md) — the loadout
   pass that prints these lines.
 - [Two-client playtest](/documentation/runbooks/two_client_playtest/README.md) — the index.

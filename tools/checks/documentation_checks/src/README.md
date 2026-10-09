@@ -67,7 +67,7 @@ The README span is every tracked folder below the repository root, the top-level
 included, minus the exempt folders and everything below them: a folder named exactly `tests`,
 `generated` or `Generated` (the spelling of the Enfusion script trees; no other casing), a folder
 whose name begins with `.`, the pending-merge area (`PENDING_MERGE_DIR`) and the retired
-documentation root (`RETIRED_DOCS_ROOT`), which markdown-placement judges. The top-level folders are
+top-level folders (`RETIRED_TOP_LEVEL_FOLDERS`: `docs`, `apps`), which markdown-placement judges. The top-level folders are
 derived from the listing, never from a list of names, so the span fails closed: a top-level folder
 is judged from the moment it is tracked, and only a rule above takes one out. The hidden-folder rule
 covers the tool configuration at the root (`.github`, `.ai`, `.cursor`, `.claude`, `.cargo`), and
@@ -118,10 +118,12 @@ check is the only structural rule: section order, headings and wording are not c
 
 1. The code trees hold no tracked `.md` file, in any letter case, other than README.md, except below a
    `tests`, `generated`, `Generated` or `.`-prefixed folder. A code tree is every top-level folder
-   but the documentation root (`DOCUMENTATION_ROOT`) and the retired documentation root, derived
+   but the documentation root (`DOCUMENTATION_ROOT`) and the retired top-level folders, derived
    from the listing like the README span, so Markdown in a new top-level folder is judged at once;
    a file at the repository root lies in no code tree.
-2. The retired documentation root (`RETIRED_DOCS_ROOT`: `docs`) holds no tracked file.
+2. Each retired top-level folder (`RETIRED_TOP_LEVEL_FOLDERS`: `docs`, whose documents live under
+   `documentation/`, and `apps`, whose mod lives under `mod/`) holds no tracked file; one verdict
+   per retired folder the scope reaches, and a finding names where the folder's contents live now.
 3. Every tracked `.md` file, in any letter case, under the documentation root is at most 500 lines,
    except under the [ticket](/documentation/glossary/n_to_z.md#ticket) records
    (`TICKET_DOCUMENTS_DIR`), the archive (`ARCHIVE_DIR`) and the pending-merge area, and two
@@ -175,8 +177,8 @@ break names its rule:
    looked up in one `git cat-file --batch-check`, and the blobs a fragment needs are read in one
    `git cat-file --batch`, so a shallow clone reports older commits as unknown.
 8. backticked path names nothing: an inline code span (fenced blocks are not read for paths) whose
-   first `/`-separated segment is a tracked top-level folder of the checkout, or the retired
-   documentation root (`RETIRED_DOCS_ROOT`) whether or not it still holds files, is a repository
+   first `/`-separated segment is a tracked top-level folder of the checkout, or a retired
+   top-level folder (`RETIRED_TOP_LEVEL_FOLDERS`: `docs`, `apps`) whether or not it still holds files, is a repository
    path. A span that holds whitespace (a command), `://` (a URL), `*`, `?` or `[` (a glob), `<` or
    `>` (a placeholder), `{` or `}` (a set), `$` (a variable), or `...` or `…` (an elision) is a
    pattern, counted and skipped. Any other such span loses a `#` fragment and a trailing `:N`,

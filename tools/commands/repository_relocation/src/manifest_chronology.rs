@@ -2,7 +2,8 @@
 //!
 //! **Role:** lists every stage manifest of the manifests folder (every `.tsv` but the format
 //! sample) and orders them chronologically, so `--verify` can follow an earlier manifest's scopes
-//! through the moves of the manifests after it ([`super::scope_history`]). A manifest keeps its
+//! through the moves of the manifests after it, and tell where those moves revived its retired
+//! spellings ([`super::scope_history`]). A manifest keeps its
 //! place when it moves: a rename is followed back to the commit that first added the file, so
 //! moving the whole manifests folder leaves the order unchanged.
 //!

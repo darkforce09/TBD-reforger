@@ -8,8 +8,8 @@
 //! **Position:** a layer of the `repository_laws` crate over [`super::workspace_members`] and
 //! [`super::cargo_manifest`]. `cargo xtask verify crate-tiers`, `crate-anatomy`,
 //! `test-file-reachability`, `frontend-layering` and `tailwind-sources` print these reports;
-//! xtask passes in every path that moves with the tree (the manifest sweep roots, the frontend
-//! layer table, the stylesheet).
+//! xtask passes in every path and name that moves with the tree (the application packages, the
+//! frontend layer table, the stylesheet).
 //! **Signals & state:** none; each law reads the checkout and returns a report.
 //! **Invariants:** a law that could not read an input reports exit 2 and "did not run", never a
 //! pass; a finding is exit 1; a report's last line is `<LAW>: PASS` or `<LAW>: FAIL (…)`.

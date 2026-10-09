@@ -478,4 +478,4 @@ Living snapshot of what exists in the monorepo vs this plan. Update when phases 
 
 **Staging:** `bash scripts/deploy-staging.sh` → [`STAGING-SERVER.md`](/documentation/runbooks/game_server_staging/README.md)
 
-**Handoff docs:** [`README.md`](/documentation/apps/mod/README.md) · [`CLAUDE-CODE-START.md`](/documentation/runbooks/mod_slice_workflow.md) · [`MILESTONES.md`](/documentation/archive/product_plans/mod_milestones.md)
+**Handoff docs:** [`README.md`](/documentation/mod/README.md) · [`CLAUDE-CODE-START.md`](/documentation/runbooks/mod_slice_workflow.md) · [`MILESTONES.md`](/documentation/archive/product_plans/mod_milestones.md)

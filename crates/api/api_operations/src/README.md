@@ -141,7 +141,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
     [event manager](/documentation/glossary/a_to_f.md#event-manager) in
     `crates/frontend/pages/administration_pages/src/event_manager/`, the mortar calculator in
     `crates/frontend/pages/field_tools_pages/src/mortar/`, and the game runtime's roster loader
-    and deployment queues in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/`.
+    and deployment queues in `mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
   router merges (`domain_handlers_import_no_foreign_handlers` and
   `every_domain_exports_a_route_table` in `crates/api/api_server/src/tests/architecture_rules.rs`);

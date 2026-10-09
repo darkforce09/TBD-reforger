@@ -101,11 +101,11 @@ owns = [
     "scripts/mod/mcp-wb-logs.sh",
     "scripts/mod/tbd-spawn-verify.sh",
     "scripts/mod/tbd-spawn-determinism.sh",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c",
     "documentation/tickets/specs",
-    "apps/mod/README.md",
-    "apps/mod/tbd-framework/README.md",
+    "mod/README.md",
+    "mod/tbd-framework/README.md",
 ]
 
 [scope]

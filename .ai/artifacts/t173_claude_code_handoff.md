@@ -1,7 +1,7 @@
 # T-173 — Claude Code handoff (perf pass)
 
 **Start on `main` after T-172 tag.**  
-**Do not touch `apps/mod/`.**  
+**Do not touch `mod/`.**  
 **Do not edit docs/registry** — return a Cursor list for prose if needed.
 
 ## Operator word (closes T-172 residual into this ticket)

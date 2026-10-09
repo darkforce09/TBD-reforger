@@ -38,11 +38,11 @@ and string literals with the repo's own rule, **extracts the replication decisio
 (is the push gated at all; the `HudChanged` truth table; whether the per-owner store is pruned), then
 simulates 60 ticks x 8 players x 4 objectives and counts RPCs.
 
-`awk -f idle_hud_probe.awk apps/mod/tbd-framework/…/TBD_ObjectivesComponent.c` on the **unmodified**
+`awk -f idle_hud_probe.awk mod/tbd-framework/…/TBD_ObjectivesComponent.c` on the **unmodified**
 file, exit 1:
 
 ```
-SOURCE FACTS (read from apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c)
+SOURCE FACTS (read from mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c)
   per-owner store member m_mHudSignatures ....... NO
   ReplicateHud gates the push (if !HudChanged) ... NO
   HudChanged: unknown owner => send ............... NO
@@ -85,8 +85,8 @@ Two files, both twins, identical after ASCII folding.
 
 | path | change |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | the gate |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | mirror |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | the gate |
+| `mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | mirror |
 
 1. **`m_mHudSignatures`** — `protected ref map<int, string>`, built in `OnPostInit` **before** the
    `RplMode.Client` bail-out so no path can reach a null map. Cleared in `OnDelete`.
@@ -138,7 +138,7 @@ IDLE HUD PROBE: PASS
 ### The `objectives` pin was not disturbed
 
 `xtask/src/schema_gates.rs:2455` asserts `objectives == 13` by exact equality over
-`apps/mod/tbd-framework` after comments and string literals are stripped. Measured with a
+`mod/tbd-framework` after comments and string literals are stripped. Measured with a
 transcription of the gate's own `strip_enfusion_comments_and_strings` rule, per file across the whole
 tree:
 
@@ -172,11 +172,11 @@ The dirty check was made to **always report dirty**, in **both** twins so lockst
 
 Twins re-diffed after perturbing: `TWINS STILL IN LOCKSTEP (both perturbed)`.
 
-**RED, verbatim** (`awk -f idle_hud_probe.awk apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c`):
+**RED, verbatim** (`awk -f idle_hud_probe.awk mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c`):
 
 ```
 ################ PERTURBED: idle probe (framework twin) ################
-SOURCE FACTS (read from apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c)
+SOURCE FACTS (read from mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c)
   per-owner store member m_mHudSignatures ....... yes
   ReplicateHud gates the push (if !HudChanged) ... yes
   HudChanged: unknown owner => send ............... NO
@@ -298,7 +298,7 @@ Nothing in `xtask/`, `TBD_ObjectiveHud.c`, `schema_gates.rs` or any sibling's pa
 
 - **The client's HUD pull path is dead code.** The brief lists `PushHudTo` as reachable from
   `TBD_ObjectiveHud.c:288 TBD_RequestObjectiveHud()`; that line is the **declaration**, not a call
-  site. `grep -rn "TBD_RequestObjectiveHud" apps/mod/` returns four hits: the declaration in each
+  site. `grep -rn "TBD_RequestObjectiveHud" mod/` returns four hits: the declaration in each
   twin's `TBD_ObjectiveHud.c:287`, and the two new comment references I added. **Nothing invokes it**,
   so neither `TBD_RpcAsk_ObjectiveHud` nor `PushHudTo` can fire on this build. This does not weaken the
   fix — the anti-starvation guarantee is `HudChanged` returning true on a map miss, which needs no
@@ -379,7 +379,7 @@ from `world-boot`.
 ## Appendix — `idle_hud_probe.awk`, verbatim
 
 Run as
-`awk -f idle_hud_probe.awk apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c`
+`awk -f idle_hud_probe.awk mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c`
 (exit 0 = green, 1 = at least one RED). Works on either twin.
 
 ```awk

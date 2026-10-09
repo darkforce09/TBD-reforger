@@ -3,7 +3,7 @@
 # README template: area root
 
 **When to use:** the top of a code tree, or a folder that groups several products without being one
-(`crates/`, `apps/`, `apps/mod/`, `tools/`, `contracts/`, `assets/`). The
+(`crates/`, `mod/`, `tools/`, `contracts/`, `assets/`). The
 [README standard](/documentation/standards/readme_standard.md) defines every rule this template
 follows; the area root kind adds Getting started.
 
@@ -76,7 +76,7 @@ crates/
 ## How it works
 
 The API is the hub. Members use the single-page app in a browser. On each game host, the dedicated
-server runs the mod in `apps/mod/`, which reads its mission deployment from the API's
+server runs the mod in `mod/`, which reads its mission deployment from the API's
 `/api/v1/game-runtime/` routes and reports results to `/api/v1/ingest/`. Beside the server, the
 [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) polls
 `/api/v1/fleet-executor/` over outbound HTTPS and carries out each fleet command.

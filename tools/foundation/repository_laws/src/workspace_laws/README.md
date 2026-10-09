@@ -31,14 +31,14 @@ Every law reads the members with `workspace_members::read_workspace_members` and
 **judged set**: every member that declares `[package.metadata.layout]` plus every member under
 `crates/<category…>/<name>` or `tools/<category>/<name>`, the applications included. Outside the
 set stand only the tool binaries of `crate_layout::TOOL_BINARY_PATHS` (`tools/xtask`,
-`tools/developer_tools`), named in a note; any other member outside it, a crate under `apps/`
-included, is a rule 2 finding of the crate-tier law. A report prints `==> <law> — <summary>`, its notes, one `FAIL:` line per finding and a
+`tools/developer_tools`), named in a note; any other member outside it, a crate in a top-level
+folder the layout does not name included, is a rule 2 finding of the crate-tier law. A report prints `==> <law> — <summary>`, its notes, one `FAIL:` line per finding and a
 verdict line `<LAW>: PASS`, `<LAW>: FAIL (<n> finding(s))` (exit 1) or `<LAW>: FAIL (did not run)`
 (exit 2, an input missing or unreadable).
 
 | Law | Function | Judges |
 |---|---|---|
-| Crate tiers | `crate_tiers::check_crate_tiers(root, configuration)` (`CrateTierConfiguration`: the sweep roots and the application packages) | 1 every `Cargo.toml` under the sweep roots (outside `tests`, `fixtures`, `test_fixtures`, `target`, `node_modules`) is a member; 2 each judged member declares its layout, and every member outside the judged set is a tool binary; 3 category equals the parent folder, package equals the folder name; 4 declared tier equals 1 plus the highest judged dependency tier (0 with none), edges strictly down; 5 the category matrix, and a wasm-only crate reached from an `any` crate only through a wasm32 table; 6 the firewalls; 7 no member depends on an application package in any table (normal, build, dev, target-specific; a crate's edge onto itself excepted), and every application package is a member |
+| Crate tiers | `crate_tiers::check_crate_tiers(root, configuration)` (`CrateTierConfiguration`: the application packages) | 1 every `Cargo.toml` in the checkout below its root (outside hidden folders, `tests`, `fixtures`, `test_fixtures`, `target`, `target-*`, `node_modules`) is a member; 2 each judged member declares its layout, and every member outside the judged set is a tool binary; 3 category equals the parent folder, package equals the folder name; 4 declared tier equals 1 plus the highest judged dependency tier (0 with none), edges strictly down; 5 the category matrix, and a wasm-only crate reached from an `any` crate only through a wasm32 table; 6 the firewalls; 7 no member depends on an application package in any table (normal, build, dev, target-specific; a crate's edge onto itself excepted), and every application package is a member |
 | Crate anatomy | `crate_anatomy::check_crate_anatomy(root)` | each judged library crate: `lib.rs` ≤ 80 lines of doc comments, attributes, `mod` and `pub use` lines; `pub mod prelude`; a `thiserror` `error.rs` when a `pub fn` returns `Result`; no `anyhow`; a README Contents block; inherited `edition`, `rust-version`, `[lints]` and dependencies; only `test_fixtures` and `failpoints`, enabled only by dev-dependencies; no primitive public `id` / `*_id` outside `generated/` and `#[wasm_bindgen]`; no public re-export of another workspace crate outside the crate's prelude module, in any form `public_reexports` reads — an item, a module or the crate root: `pub use <crate>::…`, `pub use <crate>;`, an alias (`pub use <crate> as x;`), a leading `::`, a group at the top or nested (`pub use {<crate> as x};`, `pub use <crate>::{self as x};`), a statement over several lines, `pub extern crate <crate> as x;` |
 | Test-file reachability | `test_file_reachability::check_test_file_reachability(root)` | every `.rs` file of a member in a `tests` folder — under `src/` or the member's own `tests/` — is loaded by the module tree of one of its targets (the manifest's `[lib]` and `[[bin]]` paths, `src/lib.rs`, `src/main.rs`, `src/bin/`, `tests/*.rs`, `tests/*/main.rs`, `benches/`, `examples/`) through `mod` declarations and their `#[path]`, or named as a trybuild case (`compile_fail` / `pass`) by a loaded file; the module tree follows the Rust reference's path rules (see the [declaration reader README](/tools/foundation/repository_laws/src/workspace_laws/test_file_reachability/README.md)); an integration target is never a finding |
 | Frontend layering | `frontend_layering::check_frontend_layering(root, layering)` | in-crate mode: import edges where a lower layer names a higher one, pages and workspaces name each other, one page area names another, a sub-area of an ordered folder names a sibling above its own tier or a peer of its tier (a mutual-group tier excepted), or a production file names a test-only sub-area; one finding per (file, target place), production and test apart. Crate-edge mode: the same layer order and orders over every dependency edge between frontend crates (normal, dev, build), page crates as peers, a test-only crate only through dev-dependencies, two orders of one layer folder independent, and a frontend crate in no layer folder or no order of its folder a finding. Hard at zero, so any edge fails, as does a source no row maps or a child of an ordered folder in no tier |
@@ -103,7 +103,7 @@ The frontend-layering configuration (`FrontendLayering`) is the caller's, in two
 
 - `WorkspaceLawReport` (`exit_code`, `lines`, `from_outcome`) and `LawOutcome`.
 - `crate_tiers`: `check_crate_tiers`, `crate_tier_outcome`, `CrateTierConfiguration`,
-  `SWEEP_SKIPPED_FOLDERS`.
+  `SWEEP_SKIPPED_FOLDERS`, `SWEEP_SKIPPED_BUILD_FOLDER_PREFIX`, `is_skipped_by_the_sweep`.
 - `crate_anatomy`: `check_crate_anatomy`, `crate_anatomy_outcome`, `is_library`,
   `ALLOWED_FEATURES`, `INHERITED_PACKAGE_KEYS`.
 - `crate_layout`: `CategoryClass`, `TargetPlatforms`, `EdgeEnd`, `category_class`,
@@ -131,9 +131,12 @@ The frontend-layering configuration (`FrontendLayering`) is the caller's, in two
     `tailwind_sources_a_missing_stylesheet_did_not_run`,
     `frontend_crate_edges_a_missing_app_or_root_manifest_did_not_run`);
   - a manifest under `crates/` in a category no member glob of the root manifest lists is rule 1
-    (`crate_tiers_a_crate_in_a_category_no_member_glob_lists_is_rule_1`);
-  - a member outside the judged set that is not a tool binary is rule 2, a crate under `apps/`
-    included (`crate_tiers_a_member_outside_the_judged_set_is_rule_2_unless_a_tool_binary`,
+    (`crate_tiers_a_crate_in_a_category_no_member_glob_lists_is_rule_1`), and so is a stray
+    manifest anywhere in the checkout — the mod tree, a top-level folder no layout names, a deep
+    documentation folder — while hidden folders, build folders and vendored packages are not swept
+    (`crate_tiers_a_stray_manifest_anywhere_in_the_checkout_is_rule_1`);
+  - a member outside the judged set that is not a tool binary is rule 2, a crate in a top-level
+    folder the layout does not name included (`crate_tiers_a_member_outside_the_judged_set_is_rule_2_unless_a_tool_binary`,
     `crate_tiers_a_crate_under_apps_is_rule_2`);
   - an edge onto an application in any table is rule 7, and every row of the retired deny-lists
     of the website applications is caught (`crate_tiers_every_retired_deny_list_row_is_caught`);

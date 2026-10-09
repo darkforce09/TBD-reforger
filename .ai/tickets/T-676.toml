@@ -64,7 +64,7 @@ estimated = [
     "scope",
     "tokens",
 ]
-owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c"]
+owns = ["mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c"]
 
 [scope]
 domain = "mod"

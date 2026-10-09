@@ -18,6 +18,7 @@ mod deployment;
 pub mod documentation;
 mod documentation_locations;
 mod enfusion_mcp_node_package;
+pub mod enfusion_mod_folders;
 mod map_assets;
 pub mod prelude;
 mod ticket_registry;
@@ -52,8 +53,8 @@ pub use documentation_locations::{
     API_READINESS_EVIDENCE_PREFIX, API_READINESS_REGISTER, ARCHIVE_DIR, CURSOR_RULE_DIRS,
     FACTORY_PACK_WAVE, HISTORICAL_PATH_SPELLINGS, HOME_SERVER_RUNBOOK, MOD_DESIGN,
     PENDING_MERGE_DIR, PERMALINK_BASE, PLATFORM_FACTORY_RUNBOOK, PROJECT_INSTRUCTIONS,
-    RETIRED_DOCS_ROOT, SLICE_WORKFLOW_RUNBOOK, SPAWN_DETERMINISM_RUNBOOK, STAGING_SERVER_RUNBOOK,
-    TICKET_DOCUMENTS_DIR,
+    RETIRED_TOP_LEVEL_FOLDERS, SLICE_WORKFLOW_RUNBOOK, SPAWN_DETERMINISM_RUNBOOK,
+    STAGING_SERVER_RUNBOOK, TICKET_DOCUMENTS_DIR, is_retired_top_level_folder,
 };
 pub use enfusion_mcp_node_package::{
     ENFUSION_MCP_ENTRYPOINT, ENFUSION_MCP_NODE_PACKAGE_DIR, enfusion_mcp_entrypoint,

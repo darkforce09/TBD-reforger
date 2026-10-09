@@ -67,13 +67,13 @@ impl Staging {
             _environment: environment,
         };
         staging.write("Cargo.toml", "[workspace]\n");
-        staging.write("apps/module.rs", "pub fn recorded() {}\n");
+        staging.write("mod/module.rs", "pub fn recorded() {}\n");
         let register = json!({
             "version": 1,
             "requirements": [{
                 "id": check.id(),
                 "behavior": "staging acceptance is recorded",
-                "implementation": ["apps/module.rs"],
+                "implementation": ["mod/module.rs"],
                 "checks": [check.id()],
                 "assumptions": [],
             }],
@@ -389,7 +389,7 @@ fn drift_fails_the_run_and_the_receipt_keeps_the_start_digests() {
     let staging = Staging::new(StagingCheck::Fleet);
     let start = fingerprint::source(&staging.root).unwrap();
     let session = staging.begin(StagingCheck::Fleet).unwrap();
-    staging.write("apps/module.rs", "pub fn edited_during_the_run() {}\n");
+    staging.write("mod/module.rs", "pub fn edited_during_the_run() {}\n");
     let recorded = session.finish(fleet_outcome(passing_cases())).unwrap();
     staging.assert_refused(
         &recorded,

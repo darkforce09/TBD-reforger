@@ -62,7 +62,7 @@ interactions sweep did not triage that axis and inventing it here would launder 
 
 | # | Row(s) | Before | After | Basis |
 |---|---|---|---|---|
-| 1 | `ATTR-FIELD-OBJ-SKILL` | `missing` | **`na`** (class d) | Bodies spawn AI-disabled (`TBD_SpawnManager.c:963,1166`); `skill` word-boundary in `apps/mod` = 0. `missing` implied buildable work with no subject |
+| 1 | `ATTR-FIELD-OBJ-SKILL` | `missing` | **`na`** (class d) | Bodies spawn AI-disabled (`TBD_SpawnManager.c:963,1166`); `skill` word-boundary in `mod` = 0. `missing` implied buildable work with no subject |
 | 2 | `ENV-SETTINGS-002` | `partial`, *"Thermals + view dist in dialog"* | **`missing`**, notes rewritten | T-193 (`b30f5490`) removed both; `eden_chrome.rs:4622-4629` now asserts they are not authorable. Same subject as `ATTR-FIELD-SCN-VIEW-DIST`, also `missing`. Noted that `feature_inventory.md:1732` still records Status `working` and is stale for the same reason |
 | 3 | `ATTR-FIELD-LYR-NAME` | `match` | **`missing`** (class a) | `rename_editor_layer` has one mention repo-wide — its own definition (`store.rs:1886`). Verified independently in this pass, see the disagreement note below |
 | 4 | `OBJ-CALLSIGN` · `OBJ-RANK` · `OBJ-STANCE` | no rows existed | **`partial`** (b/b/c) | T-216 ledger `flatten.rs:2584-2649` records the compile silently drops them; `TBD_MissionSlotStruct.c:59-69` has no field for any. *"The editor authors it"* ≠ *"it reaches the game"* |

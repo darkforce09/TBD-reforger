@@ -15,9 +15,9 @@ Verified on this worktree at `475aec391` (slice base, before the T-678 commit) �
 
 | claim | path:line | command |
 |---|---|---|
-| `TBD_GroupState.c` does not exist in either tree | `apps/mod/tbd-framework/Scripts/Game/TBD/AI/` contained only `TBD_WaypointRuntime.c` | `ls apps/mod/tbd-framework/Scripts/Game/TBD/AI/` and the export twin — no GroupState |
-| Loader group struct has no combatMode / behaviour / formation / speedMode | `TBD_MissionLoader.c:139-159` `TBD_MissionOrbatGroupStruct` ends at `leaderSlotId` | `python3` print of those lines; `rg -n 'combatMode' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/` — zero hits |
-| Group-level combatMode/formation have no Enfusion reader | WP comments only in `TBD_WaypointRuntime.c:6,:42` | `rg -n 'combatMode\|formation' apps/mod/tbd-framework --glob '*.c'` — no identifier, only T-678-forward comments and unrelated "formation" geology prose |
+| `TBD_GroupState.c` does not exist in either tree | `mod/tbd-framework/Scripts/Game/TBD/AI/` contained only `TBD_WaypointRuntime.c` | `ls mod/tbd-framework/Scripts/Game/TBD/AI/` and the export twin — no GroupState |
+| Loader group struct has no combatMode / behaviour / formation / speedMode | `TBD_MissionLoader.c:139-159` `TBD_MissionOrbatGroupStruct` ends at `leaderSlotId` | `python3` print of those lines; `rg -n 'combatMode' mod/tbd-framework/Scripts/Game/TBD/Backend/` — zero hits |
+| Group-level combatMode/formation have no Enfusion reader | WP comments only in `TBD_WaypointRuntime.c:6,:42` | `rg -n 'combatMode\|formation' mod/tbd-framework --glob '*.c'` — no identifier, only T-678-forward comments and unrelated "formation" geology prose |
 | T-706 already widened `$defs/group` | `packages/tbd-schema/schema/mission.schema.json:268-296` enums blue..red / careless..stealth / column..diamond / limited\|normal\|full | not edited (T-706 owns) |
 | Golden already authors all four on Alpha | `packages/tbd-schema/golden-missions/schema-1_3-wire-fields.json:45-48` `combatMode=yellow` `behaviour=aware` `formation=wedge` `speedMode=normal`; Grom has none | not edited |
 | Baseline Enfusion compile clean before edits | n/a | first `cargo xtask mod compile` after the new files (APIs proven live): `OK: compiled clean` / `loaded 5747x files; 11375x classes` |
@@ -28,8 +28,8 @@ Did **not** reimplement waypoints. Did **not** touch `TBD_SpawnManager.c` (T-680
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c` | NEW (524 lines) | Second `JsonLoadContext` pass over `GetRawJson()` (`:156`) for `orbat.*.groups[]` `combatMode`/`behaviour`/`formation`/`speedMode`. Presence is `IsEmpty()` (`HasAnyAttr` `:55`). At LIVE, find the T-677 `SCR_AIGroup` already parenting a slot body (`FindLiveGroup` `:286`) and apply defaults. Heartbeat is `modded class SCR_BaseGameMode` (`:490`). |
-| `apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c` | NEW | Byte-identical twin (`cmp` identical, 17537 bytes, pure ASCII) |
+| `mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c` | NEW (524 lines) | Second `JsonLoadContext` pass over `GetRawJson()` (`:156`) for `orbat.*.groups[]` `combatMode`/`behaviour`/`formation`/`speedMode`. Presence is `IsEmpty()` (`HasAnyAttr` `:55`). At LIVE, find the T-677 `SCR_AIGroup` already parenting a slot body (`FindLiveGroup` `:286`) and apply defaults. Heartbeat is `modded class SCR_BaseGameMode` (`:490`). |
+| `mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c` | NEW | Byte-identical twin (`cmp` identical, 17537 bytes, pure ASCII) |
 
 Exact API calls (engine 192142):
 
@@ -151,5 +151,5 @@ HEAD `6826c010397f0001288cff71aef9e95f1482ad92`. Worktree clean. No push.
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c` | yes (17537 bytes, ASCII) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c` | yes (17537 bytes, ASCII, `cmp` identical) |
+| `mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c` | yes (17537 bytes, ASCII) |
+| `mod/tbd-export/Scripts/Game/TBD/AI/TBD_GroupState.c` | yes (17537 bytes, ASCII, `cmp` identical) |

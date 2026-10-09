@@ -189,7 +189,7 @@ fault point to nothing. The `engineering_laws` suite holds both halves.
 - Used by:
   - the single-page app in `crates/frontend/shell/frontend_application/`, whose Trunk server proxies `/api` and
     `/map-assets` to the API on `127.0.0.1:8080` in development;
-  - the game servers, through the mod's `apps/mod/tbd-framework/Scripts/Game/TBD/API/`, and the
+  - the game servers, through the mod's `mod/tbd-framework/Scripts/Game/TBD/API/`, and the
     game server host agent in `crates/fleet/game_server_host_agent/`;
   - the `mk rust-api`, `db`, `ci` and `deploy website` commands of `tools/xtask/`;
   - the release image that `deploy/Dockerfile` builds, the optional `api` service of

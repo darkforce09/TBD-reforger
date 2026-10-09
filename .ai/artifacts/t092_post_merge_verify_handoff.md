@@ -77,8 +77,8 @@ Return: SHAs, tags, updated verify logs — **"Ready for Cursor doc sync T-092"*
 | Area | Path |
 |------|------|
 | Schema 1.2 + `y` | `packages/tbd-schema/schema/mission.schema.json` |
-| Mod spawn | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` |
-| Mod loader | `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` |
+| Mod spawn | `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` |
+| Mod loader | `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` |
 | Flatten TS | `crates/frontend/shell/frontend_application/.../compiler/flattenModDocument.ts` |
 | Flatten Go | `apps/website/internal/services/mission_compile.go` |
 | Route | `apps/website/internal/handlers/missions_compiled.go` |

@@ -119,11 +119,11 @@ full order.
 
 - It stages `<run dir>` (default `$HOME/tbd-playtest`): the profile from
   `cargo xtask setup server-profile`, the backend config rewritten from
-  `apps/mod/tbd-framework/Data/backend.example.json` on every start (`backendUrl` and
+  `mod/tbd-framework/Data/backend.example.json` on every start (`backendUrl` and
   `machineCredential`; hand edits do not survive), `addons/tbd-framework` linking the checkout,
   and `server.json` rendered from `tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json`
   with the ports, `visible`, `maxPlayers`, `admins` and one mod entry keyed by the GUID in
-  `apps/mod/tbd-framework/addon.gproj`.
+  `mod/tbd-framework/addon.gproj`.
 - With `--mission`, it logs in through the [dev login](/documentation/glossary/a_to_f.md#dev-login)
   as an administrator, takes the mission's approved [artifact](/documentation/glossary/a_to_f.md#artifact)
   (submitting and approving the current version when there is none), makes sure Everon has its

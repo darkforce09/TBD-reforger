@@ -31,8 +31,8 @@ The worktree is `slice/T-936.5` at merge-base + T-942 packing. Before any code:
 | `crates/map-engine-core/src/mission/extensions.rs` | AUTHORED_BLOCKS row `audio`; `len()==5`; not in `DOCUMENT_OWNED_BLOCKS`. |
 | `crates/frontend/shell/frontend_application/src/editor/panels/audio_emitters.rs` | NEW. Emitter list + cue table, undoable via `update_environment`, place-on-map via `begin_place_marker`. |
 | `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | Register `audio_emitters`. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AudioEmitter.c` | NEW. Server arms emitters (triggerId via T-676) and fires cues; clients spawn one `TBD_AudioSourceEntity` per emitter and honour radius/loop. Presence is array `Count()`. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_AudioEmitter.c` | ASCII twin. |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_AudioEmitter.c` | NEW. Server arms emitters (triggerId via T-676) and fires cues; clients spawn one `TBD_AudioSourceEntity` per emitter and honour radius/loop. Presence is array `Count()`. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_AudioEmitter.c` | ASCII twin. |
 
 `flatten.rs` was not edited (T-291 / T-946.44). No `schema_gates.rs`.
 

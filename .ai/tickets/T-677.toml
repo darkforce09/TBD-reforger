@@ -66,10 +66,10 @@ estimated = [
     "tokens",
 ]
 owns = [
-    "apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "mod/tbd-export/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c",
+    "mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
 ]
 
 [scope]

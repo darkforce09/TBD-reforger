@@ -22,6 +22,7 @@ mod deploy_command;
 mod deploy_dispatch;
 pub mod deployment_checks;
 mod development_machine_only_paths;
+mod enfusion_mod_paths;
 mod error;
 mod host_owned_paths;
 pub mod prelude;

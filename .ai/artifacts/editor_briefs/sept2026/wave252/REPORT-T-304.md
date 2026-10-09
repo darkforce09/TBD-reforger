@@ -34,10 +34,10 @@ Not already fixed. Implemented. Registry rows stay wrong until the operator re-s
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryScan.c` | 314–372 | `ClassKeysMostDerivedFirst` / `SortClassNamesMostDerivedFirst` / `ClassIsMoreDerived` / `AssertClassNamesMostDerivedFirst`. typename has no parent-walk API — pair `IsInherited`, stable insertion sort, most-derived first. Assertion prints `T-304 ASSERT` + `LogLevel.ERROR` if a strict subtype is sorted after its base (hash-order failure mode). |
+| `mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryScan.c` | 314–372 | `ClassKeysMostDerivedFirst` / `SortClassNamesMostDerivedFirst` / `ClassIsMoreDerived` / `AssertClassNamesMostDerivedFirst`. typename has no parent-walk API — pair `IsInherited`, stable insertion sort, most-derived first. Assertion prints `T-304 ASSERT` + `LogLevel.ERROR` if a strict subtype is sorted after its base (hash-order failure mode). |
 | same | 538–591 | `ReadPhysAttrsPass`: iterate ordered keys, never `foreach (comps)`. Read `Attributes.ItemPhysAttributes` when `isInvItem \|\| isStorage` so `SCR_WeaponAttachmentsStorageComponent` yields weapon `Weight` / `ItemVolume`. Capacity pass unchanged (universal first, then fallback). |
 | same | HasCompSuffix, CollectObjectVarClasses, CollectResourceVarValues, HasCompInheritedFrom, ItemAttachmentType, CollectVehicleWeapons, CollectLoadoutPrefabs, CollectInitialCargo, FirstUiName | Every class-keyed `comps` foreach now goes through `ClassKeysMostDerivedFirst`. Zero remaining `foreach (string cls, array<BaseContainer> bucket : comps)`. |
-| `apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryScan.c` | (byte-identical) | ASCII twin of the framework copy. `cmp` empty. |
+| `mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryScan.c` | (byte-identical) | ASCII twin of the framework copy. `cmp` empty. |
 
 No registry JSON edits. No `packages/tbd-schema`. No `flatten.rs`. No `schema_gates.rs`. No sibling wave files.
 
@@ -115,8 +115,8 @@ green_exit=0
 
 Only:
 
-- `apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryScan.c`
-- `apps/mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryScan.c`
+- `mod/tbd-framework/Scripts/WorkbenchGame/TBD_RegistryScan.c`
+- `mod/tbd-export/Scripts/WorkbenchGame/TBD_RegistryScan.c`
 
 plus this report. EnfusionMCP copy is gitignored (19 files, not committed).
 

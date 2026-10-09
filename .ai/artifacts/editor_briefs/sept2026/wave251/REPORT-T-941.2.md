@@ -15,9 +15,9 @@ Worktree tracked `slice/T-941.2` at dispatch (`87bd9d9b0`). Defect still present
 
 | claim | path:line | command |
 |---|---|---|
-| Race note: close, don't lock | `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c:211-212` (export twin same) | `sed -n '183,216p' …/TBD_LobbyScreen.c` |
+| Race note: close, don't lock | `mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c:211-212` (export twin same) | `sed -n '183,216p' …/TBD_LobbyScreen.c` |
 | DEPLOY gating closes via ShouldStandDown | same file `:492-507` / `OnRosterChanged` `Call(DeferredClose)` | `sed -n '183,208p'` and `sed -n '488,511p'` |
-| Auto-deploy fires ~250 ms into LOBBY | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c:2346-2354` + `ScheduleDeployAllConnectedPlayers` `CallLater(..., 250, false)` | `sed -n '2330,2400p'` |
+| Auto-deploy fires ~250 ms into LOBBY | `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c:2346-2354` + `ScheduleDeployAllConnectedPlayers` `CallLater(..., 250, false)` | `sed -n '2330,2400p'` |
 
 Quoted (framework, pre-edit):
 
@@ -139,8 +139,8 @@ SLICE GATE: PASS
 
 | path:line | repro |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyController.c:193, 232, 880, 983-1006` (export twin) | Comments still describe the LOBBY 250 ms auto-deploy wave and `ShouldStandDown` closing the picker. Behaviour is now in SpawnManager/LobbyScreen; this file is T-139 / not in owns. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyData.c:134` | Same stale `m_bAutoDeploy, still 1` comment. Not in owns. |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyController.c:193, 232, 880, 983-1006` (export twin) | Comments still describe the LOBBY 250 ms auto-deploy wave and `ShouldStandDown` closing the picker. Behaviour is now in SpawnManager/LobbyScreen; this file is T-139 / not in owns. |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyData.c:134` | Same stale `m_bAutoDeploy, still 1` comment. Not in owns. |
 | `TBD_LobbyScreen.c` known blocker (preset / `resourceDatabase.rdb`) | Unchanged: `TBD_UILobby` still needs a Workbench pass before the screen can open in a live client. Headless compile/boot do not register it. |
 
 ## deviations
@@ -165,7 +165,7 @@ In-game (gate cannot stand in):
 
 | framework | export |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c` | `apps/mod/tbd-export/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c` |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c` | `mod/tbd-export/Scripts/Game/TBD/UI/Lobby/TBD_LobbyScreen.c` |
 
 Export kept ASCII comments/dashes. Both trees compiled in the same `mod compile` pass.

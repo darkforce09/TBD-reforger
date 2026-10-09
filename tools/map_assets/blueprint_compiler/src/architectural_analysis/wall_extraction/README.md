@@ -24,7 +24,7 @@ band:
   `classify_exterior_by_flood_fill` then floods from the grid border through non-wall cells, and a wall
   that touches the reached outside is exterior.
 - `grid` marks occupancy at a low and a high row the way the in-engine extractor
-  (`apps/mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingTraceExtract.c`)
+  (`mod/tbd-export/Scripts/WorkbenchGame/MapExport/Objects/Buildings/TBD_BuildingTraceExtract.c`)
   does, keeps the cells set in both, splits them into maximal rectangles (`rectangles_from_grid`) and
   merges collinear neighbours (`merge_wall_rectangles`). A rectangle within 0.3 m of the occupancy
   extremes is exterior.

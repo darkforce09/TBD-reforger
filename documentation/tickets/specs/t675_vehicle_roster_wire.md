@@ -38,9 +38,9 @@ Read CLAUDE.md first. Implement **T-675.2** — Enfusion reader for vehicles[] +
 ═══ READ ═══  docs/plans/t-675_2_plan.md; Backend/TBD_MissionLoader.c; Gamemode/TBD_SpawnManager.c; new Backend/TBD_MissionVehicleStruct.c
 ═══ PROBLEM ═══  The loader has no vehicles[] field and SpawnManager spawns bodies only, so authored crews never sit in vehicles.
 ═══ SHIPPED ═══  T-675.1 emit; T-674.2 loader binding + validator 1.3 (same files, packs first).
-═══ LANGUAGE GATE ═══  Enfusion script (.c) under apps/mod/tbd-framework only; no schema JSON; no TypeScript.
+═══ LANGUAGE GATE ═══  Enfusion script (.c) under mod/tbd-framework only; no schema JSON; no TypeScript.
 ═══ LOCKED ═══
-  - Verify the gap on main first (rg the keys in apps/mod: zero readers)
+  - Verify the gap on main first (rg the keys in mod: zero readers)
   - Perturbation proof: red pasted verbatim, touch after restore
   - owns = the listed files only; new sibling .c files are named in the ticket
   - No packages/tbd-schema edits (T-706 owns widening)
@@ -65,9 +65,9 @@ Read CLAUDE.md first. Implement **T-675** — program closure.
 ═══ READ ═══  docs/plans/t-675_plan.md; docs/plans/t-675_plan.md; child reports
 ═══ PROBLEM ═══  Closure after both slices ship; no code unless T-675.2 reported found_not_fixed on TBD_SpawnManager.c.
 ═══ SHIPPED ═══  T-675.1; T-675.2.
-═══ LANGUAGE GATE ═══  Enfusion script (.c) under apps/mod/tbd-framework only; no schema JSON; no TypeScript.
+═══ LANGUAGE GATE ═══  Enfusion script (.c) under mod/tbd-framework only; no schema JSON; no TypeScript.
 ═══ LOCKED ═══
-  - Verify the gap on main first (rg the keys in apps/mod: zero readers)
+  - Verify the gap on main first (rg the keys in mod: zero readers)
   - Perturbation proof: red pasted verbatim, touch after restore
   - owns = the listed files only; new sibling .c files are named in the ticket
   - No packages/tbd-schema edits (T-706 owns widening)

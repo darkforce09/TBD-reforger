@@ -30,10 +30,10 @@ Confirmed before the first edit (`pwd && git branch --show-current`). HEAD after
 | `crates/map-engine-core/src/mission/extensions.rs` | 81 `key: "tasks"` | AUTHORED_BLOCKS row so `copy_authored_blocks` / `ExtensionBlocks::from_payload` emit `tasks` |
 | `crates/frontend/shell/frontend_application/src/editor/panels/tasks_panel.rs` | NEW; `add_task`/`remove_task`/`move_task`/`with_field`/`env_patch` | Undoable list; tier, trigger, marker pickers |
 | `crates/frontend/shell/frontend_application/src/editor/panels/mod.rs` | 33 `pub mod tasks_panel` | Register the panel |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | NEW; `TryTransition` :185; `IsLegal` :209 | Server-authoritative table; T-676 FIRED → succeeded; INERT/missing trigger → failed |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | NEW twin | T-946.26 |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c` | NEW; `InsertStaticMarker` :115; `BuildSnapshot` :122 | One HUD marker per assigned task via `TBD_MarkerIcons`; hidden once omitted from snapshot |
-| `apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_TaskHud.c` | NEW twin | T-946.26 |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | NEW; `TryTransition` :185; `IsLegal` :209 | Server-authoritative table; T-676 FIRED → succeeded; INERT/missing trigger → failed |
+| `mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | NEW twin | T-946.26 |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c` | NEW; `InsertStaticMarker` :115; `BuildSnapshot` :122 | One HUD marker per assigned task via `TBD_MarkerIcons`; hidden once omitted from snapshot |
+| `mod/tbd-export/Scripts/Game/TBD/UI/TBD_TaskHud.c` | NEW twin | T-946.26 |
 
 ## perturbation
 
@@ -149,7 +149,7 @@ Command center / T-936.1 bookkeeping should retarget that dummy key (same `audio
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | yes (12778 B) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | yes (12778 B, byte-identical, ASCII) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c` | yes (8084 B) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_TaskHud.c` | yes (8084 B, byte-identical, ASCII) |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | yes (12778 B) |
+| `mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c` | yes (12778 B, byte-identical, ASCII) |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c` | yes (8084 B) |
+| `mod/tbd-export/Scripts/Game/TBD/UI/TBD_TaskHud.c` | yes (8084 B, byte-identical, ASCII) |

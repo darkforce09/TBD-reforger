@@ -19,7 +19,7 @@ contracts/fixtures/missions/invalid/
 `schema` fixture must be rejected by `contracts/definitions/mission.schema.json`, and every
 finding must sit at or below `mustFail.at`. A `registry` fixture must pass the schema and fail only
 the kit-alias cross-reference against the [mod](/documentation/glossary/g_to_m.md#mod)'s spawn registry
-`apps/mod/tbd-framework/Data/registry.json`, again at or below its pointer. A fixture rejected for
+`mod/tbd-framework/Data/registry.json`, again at or below its pointer. A fixture rejected for
 any other reason fails the run, so each file stays pinned to its reason.
 
 | Fixture | Gate | Pointer | Defect |
@@ -54,7 +54,7 @@ any other reason fails the run, so each file stays pinned to its reason.
 ## Boundaries
 
 - Depends on: `contracts/definitions/mission.schema.json` and the `entries[].alias` values of
-  `apps/mod/tbd-framework/Data/registry.json`.
+  `mod/tbd-framework/Data/registry.json`.
 - Used by: the xtask schema gate only.
 - Rules: every fixture is rejected, by its named gate, at or below its pointer, and for no other
   reason (`cargo xtask schema validate`); a `registry` fixture passes the schema; a fixture is

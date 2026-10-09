@@ -16,6 +16,7 @@
 
 use super::*;
 use crate::staging::fleet_instances::game_server_unit_of;
+use repository_layout::enfusion_mod_folders::{FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME};
 
 /// `read_addon_guid` — the addon GUID, read from the gproj rather than trusted from `deploy.env`.
 ///
@@ -30,7 +31,7 @@ use crate::staging::fleet_instances::game_server_unit_of;
 /// `config.rs`: an empty guid there compares unequal to `TBD_ADDON_GUID` only if the gproj was
 /// readable, which is the case worth aborting on.
 pub(crate) fn read_addon_guid(mono_root: &Path) -> Option<String> {
-    let gproj = mono_root.join("apps/mod/tbd-framework/addon.gproj");
+    let gproj = mono_root.join(FRAMEWORK_ADDON_DIR).join("addon.gproj");
     let text = fs::read_to_string(&gproj).ok()?;
     let line_re = Regex::new(r#"(?m)^[[:space:]]*GUID[[:space:]]+"[0-9A-Fa-f]+""#).expect("static");
     let hex_re = Regex::new("[0-9A-Fa-f]{8,}").expect("static");
@@ -89,7 +90,7 @@ pub(crate) fn assert_local_addon_won(
     guid: &str,
     addons_dir: &str,
 ) -> i32 {
-    let want = format!("{addons_dir}/tbd-framework/addon.gproj");
+    let want = format!("{addons_dir}/{FRAMEWORK_ADDON_FOLDER_NAME}/addon.gproj");
 
     let Some(text) = read_log(log) else {
         out.e(format!("FAIL: boot log not found: {}", log.display()));

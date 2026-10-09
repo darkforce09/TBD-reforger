@@ -14,7 +14,7 @@ parent = "T-090"
 main_goal = "Every surface the program changed is documented where the doc hub says it lives."
 context = [
     "packages/map-assets/README.md has no objects/ or prefabs/ rows; documentation/runbooks/enfusion_mcp_tooling.md never mentions mcp wbcall or EMCP_WB_TbdBlueprint.",
-    "apps/mod/tbd-export/README.md is a stale copy of the framework README.",
+    "mod/tbd-export/README.md is a stale copy of the framework README.",
 ]
 requirement = [
     "documentation/crates/frontend/workspaces/mission_creator_workspace/ux_spec.md gains a LOS + viewshed section (object verdict wording, coverage honesty, palette).",
@@ -38,7 +38,7 @@ owns = [
     "documentation/crates/frontend/shell/frontend_application/README.md",
     "packages/map-assets/README.md",
     "documentation/runbooks/enfusion_mcp_tooling.md",
-    "apps/mod/tbd-export/README.md",
+    "mod/tbd-export/README.md",
 ]
 
 [scope]

@@ -1,7 +1,7 @@
 //! `cargo xtask fetch vanilla-source` — mirror vanilla Enfusion method bodies.
 //!
 //! Pages come from arexplorer.zeroy.com and are cached in the `source_html/` folder of the
-//! vanilla lane in `apps/mod/References/`, which must already exist; a cached page that is non-empty is never
+//! vanilla lane in `mod/References/`, which must already exist; a cached page that is non-empty is never
 //! refetched. The default set is a curated spine of the classes the framework builds on;
 //! `--all`, `--grep <pattern>` and explicit class names widen it.
 //!

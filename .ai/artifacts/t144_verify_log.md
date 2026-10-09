@@ -10,7 +10,7 @@
 | **R3** | Gap table references live T-090 slices by id | **PASS** | §9/§10 cite T-090.1.2.9 (active), T-090.3, T-090.5, T-090.8, T-090.9, T-090.1.2.3, T-090.1.2.8, T-091.2, T-092, T-063, T-065, T-143 — all live registry ids |
 | **R4** | ≥15 primary source files cited with path + symbol from own discovery | **PASS** | §11 indexes **40** files; >60 file:line citations across §0–§8 (e.g. `uiMap.hpp:3202 DisplayArcadeMap`, `uiMap.cpp:2005 DrawField`, `uiMap.cpp:2390 DrawForestsNew`, `landSave.cpp:3271 LoadMapObjects`, `mapTypes.hpp:12 MAP_TYPES_ALL`, `mapObject.hpp:61 MapObjectForest`, `uiMapExt.cpp:2228 FindSign`, `uiMapExt.cpp:3141 RoadSurfaceY`, `collisions.cpp:137 ObjMapRadiusRectangle`, `displayUI.cpp:17765 CDPCreateEditor`, `wpch.hpp:18 config chain`, `world.cpp:17242 CreateMainMap` …) |
 | **R5** | No edits under `Arma_3_SourceCode_Old/**` | **PASS** | Read-only access throughout (`rg`/`sed -n`/`Read`/`head`/`wc`/`find`/`file` only; two read-only Explore subagents). No write/build command was issued against that tree |
-| **R6** | No edits to `apps/`, `packages/`, `docs/` in TBD-Reforger | **PASS** | `git status` at commit time: only `.ai/artifacts/t144_*` added; pre-existing unrelated dirty file `apps/mod/tbd-framework/resourceDatabase.rdb` left untouched and **excluded** from the commit |
+| **R6** | No edits to `apps/`, `packages/`, `docs/` in TBD-Reforger | **PASS** | `git status` at commit time: only `.ai/artifacts/t144_*` added; pre-existing unrelated dirty file `mod/tbd-framework/resourceDatabase.rdb` left untouched and **excluded** from the commit |
 
 ## Optional sanity
 

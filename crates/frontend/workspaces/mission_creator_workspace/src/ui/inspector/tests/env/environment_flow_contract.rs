@@ -11,7 +11,7 @@ use super::{
 /// `viewDistance` and `thermals` had working controls in Mission Settings for four waves. They
 /// wrote the document, took an undo step and read back correctly, and the value stopped dead at
 /// the editor boundary every single time: `ModEnvironment` is `dateTime` + `weatherPreset`, the
-/// `missions` row has no column for either, and neither word occurs anywhere in `apps/mod`. The
+/// `missions` row has no column for either, and neither word occurs anywhere in `mod`. The
 /// controls were removed rather than wired through, because there is nothing on the far side to
 /// wire them to.
 ///

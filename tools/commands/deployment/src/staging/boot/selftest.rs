@@ -9,6 +9,7 @@
 //! only when every arm bit.
 
 use super::*;
+use repository_layout::enfusion_mod_folders::{FRAMEWORK_ADDON_DIR, FRAMEWORK_ADDON_FOLDER_NAME};
 
 /// `--verify-boot-selftest`: prove the verdict can FAIL. A gate that has never been observed
 /// failing is not a gate. Every fixture here is a log the engine really can produce.
@@ -46,10 +47,10 @@ pub(crate) fn selftest(_paths: &Paths) -> u8 {
     );
     // (b) THE FIX: -addonsDir + -config. Same two healthy lines, different gproj path.
     let both_flags = format!(
-        "00:20:30.385 ENGINE       : FileSystem: Adding relative directory '/home/deploy/tbd/apps/mod/tbd-framework' to filesystem under name TBD_Framework\n\
+        "00:20:30.385 ENGINE       : FileSystem: Adding relative directory '/home/deploy/tbd/{FRAMEWORK_ADDON_DIR}' to filesystem under name TBD_Framework\n\
          00:20:30.564  ENGINE       : Loaded addons:\n\
          00:20:30.564   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'\n\
-         00:20:30.564   ENGINE       : gproj: '{staging}/tbd-framework/addon.gproj' guid: '{guid}'\n\
+         00:20:30.564   ENGINE       : gproj: '{staging}/{FRAMEWORK_ADDON_FOLDER_NAME}/addon.gproj' guid: '{guid}'\n\
          00:20:28.401  BACKEND      : Server config loaded.\n\
          00:20:28.401   BACKEND      : JSON is Valid\n\
          00:20:58.689 BACKEND      : Server registered with address: 192.0.2.10:2001\n"
@@ -57,7 +58,7 @@ pub(crate) fn selftest(_paths: &Paths) -> u8 {
     // (c) addons mode: right code, no room. The other broken half.
     let addons_only = format!(
         "21:52:30.564  ENGINE       : Loaded addons:\n\
-         21:52:30.564   ENGINE       : gproj: '{staging}/tbd-framework/addon.gproj' guid: '{guid}'\n\
+         21:52:30.564   ENGINE       : gproj: '{staging}/{FRAMEWORK_ADDON_FOLDER_NAME}/addon.gproj' guid: '{guid}'\n\
          21:52:36.933 SCRIPT       : [TBD][Validate] mission result=PASS errors=0 warnings=5\n\
          21:52:40.000 SCRIPT       : [TBD][Stage] LOADING -> LOBBY\n"
     );

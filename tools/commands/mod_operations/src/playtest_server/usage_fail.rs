@@ -160,7 +160,7 @@ pub(crate) fn run(args: &[String]) -> Result<u8> {
 
 /// The body, with the environment injected so tests can drive it.
 pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
-    let mod_src = root.join("apps/mod/tbd-framework");
+    let mod_src = root.join(FRAMEWORK_ADDON_DIR);
     let server_dir = format!("{home}/.local/share/Steam/steamapps/common/Arma Reforger Server");
     let server_bin = PathBuf::from(&server_dir).join("ArmaReforgerServer");
     let dev_config = root.join(repository_layout::DEV_SERVER_PROFILE);
@@ -393,7 +393,7 @@ pub(super) fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     // ── addon staging dir ────────────────────────────────────────────────────────────────────
     // A symlink to the live checkout, exactly like the staging deploy's. This is the copy that
     // must win at load time; `assert_local_addon_won` below proves it did.
-    let link = format!("{}/addons/tbd-framework", o.run_dir);
+    let link = format!("{}/addons/{FRAMEWORK_ADDON_FOLDER_NAME}", o.run_dir);
     // bash `ln -sfn`: replace the LINK, never follow it into the target directory.
     if std::fs::symlink_metadata(&link).is_ok() {
         let _ = std::fs::remove_file(&link);

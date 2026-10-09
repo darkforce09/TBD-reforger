@@ -1,0 +1,13 @@
+id = "T-1282"
+kind = "work"
+title = "Move the Enfusion mod to a top-level mod folder"
+summary = "The Enfusion mod moves out of the applications folder to a top-level mod/ and its documentation mirror to documentation/mod; the applications folder is deleted; the relocation tool lets a later manifest revive a retired path spelling."
+class = "chore"
+status = "idea"
+plan = "documentation/tickets/plans/t-1282_plan.md"
+notes = "Restructure stage S14, run from the detached worktree tbd-restructure-s14. The plan holds the decisions, waves, amendments, findings F-S14-NN, the ignored-data move list and the operator steps."
+created_at = "2026-10-09T14:58:27Z"
+
+[scope]
+domain = "repo"
+layer = "docs"

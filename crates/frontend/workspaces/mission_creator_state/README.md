@@ -64,7 +64,7 @@ None: no feature, no environment variable.
   `map_streaming_model`, `unit_symbology`, `newtype_ids`, `thiserror`, `leptos`, `serde`,
   `serde_json` and, in the browser build, `web-sys` for `localStorage`; `frontend_test_support`
   and `camera_math` for its tests only; the embedded `contracts/definitions/mission.schema.json`,
-  `contracts/definitions/loadout-export.schema.json` and `apps/mod/tbd-framework/Data/registry.json`.
+  `contracts/definitions/loadout-export.schema.json` and `mod/tbd-framework/Data/registry.json`.
 - Used by: every Mission Creator layer above it: the engine bridge and input layer, the session,
   the Arsenal, the rendered surfaces, the page and the review workspace in
   `crates/frontend/workspaces/mission_creator_workspace/src/`.

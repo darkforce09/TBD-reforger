@@ -25,7 +25,7 @@ citations = [
     "documentation/runbooks/two_client_playtest/README.md",
     "T-068 parent summary",
 ]
-owns = ["documentation/apps/mod/tbd-framework/capability_verdicts.tsv"]
+owns = ["documentation/mod/tbd-framework/capability_verdicts.tsv"]
 
 [scope]
 domain = "repo"

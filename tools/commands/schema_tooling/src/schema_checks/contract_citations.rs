@@ -1,6 +1,6 @@
 //! `cargo xtask schema citations`: every `@contract` tag in code resolves to a schema and pointer.
 //!
-//! **Role:** [`citations`] walks the top-level folder of every workspace member and `apps/mod/`
+//! **Role:** [`citations`] walks the top-level folder of every workspace member and `mod/`
 //! for `@contract <file>.schema.json#<pointer>` tags and resolves each against
 //! `contracts/definitions/`.
 //! **Position:** a gate entry re-exported by the crate root; the scan roots come from
@@ -92,7 +92,12 @@ pub(super) fn scan_citations(root: &Path, schema_dir: &Path) -> Result<CitationS
         scope_errors.push(why);
         Vec::new()
     });
-    for code_root in NON_WORKSPACE_CODE_ROOTS {
+    // A non-workspace code root that is itself a scan root is judged once, by the walk below; a
+    // nested one must exist on its own, since its top-level scan root existing proves nothing.
+    for code_root in NON_WORKSPACE_CODE_ROOTS
+        .iter()
+        .filter(|code_root| !roots.iter().any(|scan| scan == *code_root))
+    {
         if !root.join(code_root).is_dir() {
             scope_errors.push(format!(
                 "scan root {code_root}/ does not exist under {} — the gate cannot vouch for a tree it never read",

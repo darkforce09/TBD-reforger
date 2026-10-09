@@ -404,7 +404,7 @@ crates/frontend/shell/frontend_application/src/eden_dock_right.rs; crates/fronte
 > `NEW: apps/website/api/src/handlers/compositions.rs` + `NEW: apps/website/api/migrations/<n>_compositions.sql`
 > + `apps/website/api/src/models/mod.rs` + `crates/frontend/shell/frontend_application/src/dto.rs`. That version is
 > **better for packing** (two of four paths are new files) and is still `claude-code` — the Rust
-> workspace, not `packages/` or `apps/mod/`. Graded **low** either way; this is a design decision,
+> workspace, not `packages/` or `mod/`. Graded **low** either way; this is a design decision,
 > not a search result.
 
 ### T-079 — split four ways
@@ -487,19 +487,19 @@ files. Four ids plus the highest-frequency Eden shortcut, in one ticket.
 ## 4. Excluded as workbench — and why
 
 Rule applied, per the brief: **anything modifying
-`packages/tbd-schema/schema/mission.schema.json` or `apps/mod/tbd-framework/` is program 2.** No
+`packages/tbd-schema/schema/mission.schema.json` or `mod/tbd-framework/` is program 2.** No
 `owns` derived. The blocking evidence is cited so no one re-litigates it.
 
 | Excluded | ids | Blocking evidence |
 |---|---|---|
 | **Marker style / Area markers** | `MRK-SIZE`, `-ROTATION`, `-SHAPE`, `-BRUSH`, `-COLOR`, `-ALPHA` (6) | `$defs/marker` is exactly `{x, z, icon, label}` and closed. Icon-vs-Area is Eden's whole second marker model. Must ship **after** the T-069/T-213 core or it converts a factory ticket into a workbench one (`attributes_sweep.md:444`) |
-| **T-076b — vehicle roster to the wire** | — | `flatten.rs:2631`: the delta is *"document root + a new `$def`"*, key `vehicles`. `:2634-2640` proves the declared `entities[]` cannot carry it — `$defs/alias` is `^(kit\|comp\|veh\|preset\|layer\|prop\|item):[a-z0-9_]+$` and `apps/mod/tbd-framework/Data/registry.json` holds **one** `veh:` row, so alias substitution would be the T-200 silent-substitution defect with a 10-tonne vehicle |
+| **T-076b — vehicle roster to the wire** | — | `flatten.rs:2631`: the delta is *"document root + a new `$def`"*, key `vehicles`. `:2634-2640` proves the declared `entities[]` cannot carry it — `$defs/alias` is `^(kit\|comp\|veh\|preset\|layer\|prop\|item):[a-z0-9_]+$` and `mod/tbd-framework/Data/registry.json` holds **one** `veh:` row, so alias substitution would be the T-200 silent-substitution defect with a 10-tonne vehicle |
 | **T-079b — waypoints** | 9 `WP-*` + `RIGHT-MODE-004`, `CONN-WP-ACT-001`, `CONN-WP-ATTACH-001`, `CONN-RAND-START-001`, `KEY-WP-001`, `ACTION-WP-QUICK-001` | **Blocked on AI units existing**, not on schema. `TBD_SpawnManager.c:963,1166` spawns every body with AI disabled — waypoints have no subject (`attributes_sweep.md:446`, the sweep's own "single biggest scoping correction available to T-079") |
-| **T-079a/b runtime** — trigger activation + effects | 12 of 13 `TRG-*` | A new Enfusion runtime in `apps/mod/tbd-framework/`. Only the **geometry + palette mode** half is derived in §3 |
+| **T-079a/b runtime** — trigger activation + effects | 12 of 13 `TRG-*` | A new Enfusion runtime in `mod/tbd-framework/`. Only the **geometry + palette mode** half is derived in §3 |
 | **Group AI state** | `GRP-COMBAT-MODE`, `-BEHAVIOUR`, `-FORMATION`, `-SPEED-MODE` (4) | Same AI gate as waypoints. `combatMode` / `speedMode` word-boundary = **0** in both trees; `formation` = 1 frontend hit, and it is prose in `editor_ops.rs:1324` |
-| **N4 — T-216 follow-on** | `OBJ-CALLSIGN`, `OBJ-RANK`, `OBJ-STANCE` + TBD-only `tag`, `leaderSlotId` | The contract delta is pre-written at `flatten.rs:2620-2632` — five `$defs/slot` / `$defs/group` keys. `stance` additionally needs an Enfusion spawn-pose call (`stance` word-boundary in `apps/mod` = **0**). Related ticket: T-242 |
+| **N4 — T-216 follow-on** | `OBJ-CALLSIGN`, `OBJ-RANK`, `OBJ-STANCE` + TBD-only `tag`, `leaderSlotId` | The contract delta is pre-written at `flatten.rs:2620-2632` — five `$defs/slot` / `$defs/group` keys. `stance` additionally needs an Enfusion spawn-pose call (`stance` word-boundary in `mod` = **0**). Related ticket: T-242 |
 | **N5 — placement scatter** | `OBJ-PLACEMENT-RADIUS`, `OBJ-SHAPE`, `GRP-PLACEMENT-RADIUS` (3) | `$defs/slot` and `$defs/group` both closed. Cheapest coherent (b) slice, but still a widening |
-| **N6 — vehicle states** | `OBJ-LOCK`, `-FUEL`, `-AMMO` (3) | `$defs/entity` closed; no reader. `fuel` word-boundary in `apps/mod` = 1, `lock` = 4 and none is an authored vehicle lock |
+| **N6 — vehicle states** | `OBJ-LOCK`, `-FUEL`, `-AMMO` (3) | `$defs/entity` closed; no reader. `fuel` word-boundary in `mod` = 1, `lock` = 4 and none is an authored vehicle lock |
 | **N7 — entity states** | `OBJ-HEALTH`, `-ALLOW-DAMAGE`, `-SHOW-MODEL`, `-SIZE`, `-STAMINA` (5) | Gated on `entities[]` acquiring a consumer — `mission.schema.json:72` records that nothing on any shipped build reads it. `OBJ-STAMINA` additionally carries an unresolved Workbench API question |
 | **N8 — environment readers** | `SCN-FOG`, `-WIND`, `-VIEW-DIST` (3) | Refused **by test**: `eden_chrome.rs:4624` iterates `["viewDistance", "thermals", "windDirDeg", "fog", "wind"]` and asserts none is carried. The mod reader comes first, the control second. `windDirDeg` is in the schema and `ModEnvironment` (`flatten.rs:268-275`) does not even serialise it |
 | **`OBJ-UNIT-NAME`** | 1 | `$defs/slot` closed; rides the T-216 follow-on |
@@ -512,7 +512,7 @@ check on both derivations.
 **Two near-misses that are NOT excluded, stated so they are not wrongly moved:**
 
 - **T-078 / T-650 gaining `apps/website/api/` + a migration** is still the Rust workspace and still
-  `claude-code`. Not `packages/`, not `apps/mod/`.
+  `claude-code`. Not `packages/`, not `mod/`.
 - **T-069/T-213 gaining `crates/map-engine-render/`** is likewise in-workspace. A render lane is
   not a contract change; `$defs/marker` already declares `{x, z, icon, label}` and the icon enum is
   closed at 64 aliases, so the marker **core** needs no schema edit at all. That is the whole reason

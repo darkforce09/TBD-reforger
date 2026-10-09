@@ -1,8 +1,8 @@
 //! The upstream-code leak gate, `cargo xtask verify no-crf-leak`: no code and no asset GUID of a
 //! licensed reference lane may reach a shipped addon.
 //!
-//! **Role:** Scans our addons (`apps/mod/tbd-framework`, `apps/mod/tbd-export`) for two kinds of
-//! leak from the reference lanes in `apps/mod/References/`: a lane's identifier prefix (`CRF_`,
+//! **Role:** Scans our addons (`mod/tbd-framework`, `mod/tbd-export`) for two kinds of
+//! leak from the reference lanes in `mod/References/`: a lane's identifier prefix (`CRF_`,
 //! `PS_`) used as code, and an asset GUID a lane declares in its own `UI/` or `Prefabs/` folders
 //! reused in our files while no vanilla game `.pak` holds it. `crf_framework` is Arma Public
 //! License (read, cite and design-mirror, never copy); `playable_selector` carries no licence at
@@ -18,7 +18,7 @@
 //! **Invariants:**
 //! - Exit 0 only when every step ran and found nothing; exit 1 lists the findings; exit 2 (did not
 //!   run) when a lane, an addon tree or a file cannot be read. A lane that is absent or holds no
-//!   `UI/` or `Prefabs/` folder is exit 2 naming the lane and `apps/mod/References/README.md`.
+//!   `UI/` or `Prefabs/` folder is exit 2 naming the lane and `mod/References/README.md`.
 //! - A finding is a licence decision, never an exemption: a reported GUID is resolved by
 //!   re-authoring the reference from vanilla or by recording an attribution, never by an
 //!   allow-list or a narrowed pattern.
@@ -53,9 +53,9 @@ use repository_layout::{CRF_FRAMEWORK_REFERENCE, REFERENCES_DIR};
 use repository_layout::{PLAYABLE_SELECTOR_OVERRIDE_ENV, PLAYABLE_SELECTOR_REFERENCE};
 
 /// The shipping addon whose scripts and assets must stay free of upstream code.
-const MOD_REL: &str = "apps/mod/tbd-framework";
+const MOD_REL: &str = "mod/tbd-framework";
 /// The Workbench export addon, ours as well (tbd-emcp is third-party enfusion-mcp code, not ours).
-const EXPORT_REL: &str = "apps/mod/tbd-export";
+const EXPORT_REL: &str = "mod/tbd-export";
 /// Where the vanilla `.pak` files live, relative to `$HOME`.
 const VANILLA_HOME_REL: &str = ".local/share/Steam/steamapps/common/Arma Reforger/addons/data";
 /// Injected dev-only tooling, gitignored; excluded from the identifier step, not the GUID step.

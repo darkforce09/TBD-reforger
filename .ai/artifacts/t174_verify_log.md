@@ -1,7 +1,7 @@
 # T-174 — verify log (MC sat fidelity + heatmap removal + dock guide fix)
 
 **Branch:** `main` · **Depends on:** T-173 (`dddf3158`) · **Scope:** `crates/frontend/shell/frontend_application/**` +
-`crates/map-engine-*`. **Not** `apps/mod/**`.
+`crates/map-engine-*`. **Not** `mod/**`.
 
 **Operator override (plan review):** *"Remove the heatmap, it's not something I want."* → S2 is a
 **full removal** of the density-heatmap glow (no toggle), keeping the load-bearing over-budget LOD

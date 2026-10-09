@@ -18,10 +18,10 @@ tools/checks/repository_checks/src/licensing/
 
 ## How it works
 
-The gate reads files on disk, tracked or not: our code in `apps/mod/tbd-framework/` and
-`apps/mod/tbd-export/`; the `crf_framework` and `playable_selector` lanes of
-`apps/mod/References/` (gitignored, so filled per machine as
-[its README](/apps/mod/References/README.md) describes; a non-empty `TBD_PS_ORACLE` names another
+The gate reads files on disk, tracked or not: our code in `mod/tbd-framework/` and
+`mod/tbd-export/`; the `crf_framework` and `playable_selector` lanes of
+`mod/References/` (gitignored, so filled per machine as
+[its README](/mod/References/README.md) describes; a non-empty `TBD_PS_ORACLE` names another
 PlayableSelector checkout); and the vanilla game paks under the Steam install in `$HOME`. A lane
 that is absent or holds no `UI/` or `Prefabs/` folder stops the run with exit 2 before any check.
 Then it runs two steps:
@@ -47,9 +47,9 @@ runbook. A run reads the ~25 GB of paks once; on the development machine it take
 by disk reads.
 
 With the lanes filled and a local game install, the gate exits 1 on four CRF GUIDs: the two that
-`apps/mod/tbd-framework/Data/registry.json` references, the `robotomono_msdf_28.fnt` font GUID
-that the layouts under `apps/mod/tbd-framework/UI/layouts/` use, and a backpack prefab GUID in
-`apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Verification/TBD_SourceReaderVerification.c`.
+`mod/tbd-framework/Data/registry.json` references, the `robotomono_msdf_28.fnt` font GUID
+that the layouts under `mod/tbd-framework/UI/layouts/` use, and a backpack prefab GUID in
+`mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Verification/TBD_SourceReaderVerification.c`.
 Each is a licence decision (re-author from vanilla or record an attribution), never an exemption.
 
 ## Public surface
@@ -86,5 +86,5 @@ Each is a licence decision (re-author from vanilla or record an attribution), ne
 
 - [Mod slice workflow](/documentation/runbooks/mod_slice_workflow.md) — the reference lanes a
   slice worktree links.
-- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the design authority the
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the design authority the
   failure text cites.

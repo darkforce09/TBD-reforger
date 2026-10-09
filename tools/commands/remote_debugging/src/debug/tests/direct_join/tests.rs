@@ -6,7 +6,7 @@ fn fixture_root(tag: &str) -> PathBuf {
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join(".ai/tickets")).unwrap();
     fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
-    fs::create_dir_all(root.join("apps/mod")).unwrap();
+    fs::create_dir_all(root.join(repository_layout::workspace_folders::ENFUSION_MOD_DIR)).unwrap();
     fs::create_dir_all(root.join(repository_layout::DEPLOY_DIR)).unwrap();
     root
 }

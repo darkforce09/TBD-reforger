@@ -1,7 +1,7 @@
 # T-172 — Claude Code handoff (Leptos bug bash)
 
 **Start on `main` after T-171.**  
-**Do not touch `apps/mod/`.**  
+**Do not touch `mod/`.**  
 **Do not edit docs/registry/CLAUDE sync markers** — return a Cursor list only if prose needs updating after ship.
 
 ## One-line

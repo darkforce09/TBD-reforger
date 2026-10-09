@@ -46,7 +46,7 @@ name: mod-gates
 #        pull_request:
 #          branches: [main]
 #          paths:
-#            - "apps/mod/**"
+#            - "mod/**"
 #            - "tools/xtask/**"
 #            - "contracts/fixtures/missions/valid/**"
 #            - ".github/workflows/mod-gates.yml"

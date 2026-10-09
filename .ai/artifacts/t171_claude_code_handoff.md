@@ -1,7 +1,7 @@
 # T-171 — Claude Code handoff (monorepo / website hygiene)
 
 **Start only after T-169 is tagged/shipped on `main`.**  
-**Do not touch `apps/mod/`.**  
+**Do not touch `mod/`.**  
 **Do not edit docs/registry/CLAUDE status markers** — return a **complete** fix list; Cursor applies as T-171.docs (role split, not content deferral).
 
 Authority: [`docs/platform/t171_monorepo_hygiene_program.md`](../../docs/platform/t171_monorepo_hygiene_program.md).
@@ -48,7 +48,7 @@ Implement **T-171** — full monorepo/website hygiene (not mod).
     apps/website/api/       ← Axum API crate (from today’s apps/website crate root)
     crates/frontend/shell/frontend_application/  ← Leptos SPA (from apps/website-leptos)
   Package names aligned: api + frontend (prefer; ASK only if truly blocked)
-  apps/mod/** OFF LIMITS
+  mod/** OFF LIMITS
   No silent deferrals of hygiene items found in inventory
   Forest/site lag are product polish already operator-noted on T-166 — not a reason to skip
   structure/fixture/ADR-path hygiene
@@ -87,7 +87,7 @@ Implement **T-171** — full monorepo/website hygiene (not mod).
 ═══ DO NOT ═══
   - Start before T-169 shipped
   - Edit docs/** / registry / CLAUDE sync markers (return list instead)
-  - Touch apps/mod/**
+  - Touch mod/**
   - Invent Out-of-scope / “fold forward” / “P1 later” for anything in the phases above
   - Blind rm -rf internal/ while make seed still reads it
   - Regress /map-assets always-on, Trunk no_redirect, FRONTEND_URL=:3000

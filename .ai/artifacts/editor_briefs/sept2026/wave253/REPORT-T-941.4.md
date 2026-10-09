@@ -41,9 +41,9 @@ Quoted (`Tell`, pre-edit `:816`):
 
 | path | why |
 |---|---|
-| `apps/mod/tbd-framework/UI/layouts/TBD_ObjectiveHud.layout` (+ export twin) | Corner HUD: list + `CaptureBar`/`CaptureFill`. C3 geometry agrees. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/UI/Hud/TBD_ObjectiveHud.c` (+ export twin) | Overlay HUD. Layout via HUD-local `LAYOUT` constant (not `TBD_UILayouts.c`). Owner RPC on `modded class SCR_PlayerController`. State icons in the list; bar bound to the local player's capture objective. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` (+ export twin) | Replicate board + capture percent at the 1 Hz tick. Drop the per-tick chat pump. Chat keeps only CAPTURED / DESTROYED / HELD. Hide HUD when leaving LIVE. |
+| `mod/tbd-framework/UI/layouts/TBD_ObjectiveHud.layout` (+ export twin) | Corner HUD: list + `CaptureBar`/`CaptureFill`. C3 geometry agrees. |
+| `mod/tbd-framework/Scripts/Game/TBD/UI/Hud/TBD_ObjectiveHud.c` (+ export twin) | Overlay HUD. Layout via HUD-local `LAYOUT` constant (not `TBD_UILayouts.c`). Owner RPC on `modded class SCR_PlayerController`. State icons in the list; bar bound to the local player's capture objective. |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` (+ export twin) | Replicate board + capture percent at the 1 Hz tick. Drop the per-tick chat pump. Chat keeps only CAPTURED / DESTROYED / HELD. Hide HUD when leaving LIVE. |
 
 New identifier `objectives` was avoided in added code so T-706 unread-wire baseline stays 13.
 

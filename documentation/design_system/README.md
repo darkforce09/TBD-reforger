@@ -44,11 +44,11 @@ folder, in its feature doc and its `visual_references/`; this folder holds only 
   pane, dialog, sheet and status pill the patterns use.
 - [Unit symbology](/crates/map_overlay/unit_symbology/README.md) — the role, vehicle and
   side tables, the glyph atlases and the marker glyphs.
-- [Mod interface core](/apps/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md) —
+- [Mod interface core](/mod/tbd-framework/Scripts/Game/TBD/UI/Core/README.md) —
   `TBD_UITheme`, the mod's copy of the tokens, and `MountRounded`.
-- [Framework interface assets](/apps/mod/tbd-framework/UI/README.md) — the layouts and textures
+- [Framework interface assets](/mod/tbd-framework/UI/README.md) — the layouts and textures
   that carry the mod's fonts and rounded shapes.
-- [Mission map markers](/apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md) — the
+- [Mission map markers](/mod/tbd-framework/Scripts/Game/TBD/Systems/Markers/README.md) — the
   in-game marker icons and colours.
 
 ## Boundaries
@@ -65,7 +65,7 @@ folder, in its feature doc and its `visual_references/`; this folder holds only 
 
 ## Related documentation
 
-- [Mod design](/documentation/apps/mod/tbd-framework/mod_design.md) — the rules the mod's interface
+- [Mod design](/documentation/mod/tbd-framework/mod_design.md) — the rules the mod's interface
   keeps, the Aegis mirror among them.
 - [Frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md) — the website's pages
   and the design references they follow.

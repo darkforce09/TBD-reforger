@@ -164,9 +164,9 @@ pub(super) fn load_count_guard(
                 "the Game module loaded {loaded} files; vanilla-only is {vanilla} and tbd-framework holds {ours} Scripts/Game .c files, so at least {} were expected: {what}",
                 vanilla + ours
             ),
-            Some(
-                "The engine loaded fewer script files than the tree holds, usually through a missing or unreadable apps/mod/tbd-framework/resourceDatabase.rdb (new or moved .c files alone do not cause this; the headless compile loads them without a regenerated rdb). Fix: open apps/mod/tbd-export/addon.gproj in Workbench (it loads tbd-framework as a dependency and regenerates the rdb), then re-run. If the vanilla game shrank instead, delete .compile-vanilla-baseline to recalibrate.",
-            ),
+            Some(&format!(
+                "The engine loaded fewer script files than the tree holds, usually through a missing or unreadable {FRAMEWORK_ADDON_DIR}/resourceDatabase.rdb (new or moved .c files alone do not cause this; the headless compile loads them without a regenerated rdb). Fix: open {EXPORT_ADDON_DIR}/addon.gproj in Workbench (it loads tbd-framework as a dependency and regenerates the rdb), then re-run. If the vanilla game shrank instead, delete .compile-vanilla-baseline to recalibrate.",
+            )),
         )));
     }
     if vanilla > 0 {

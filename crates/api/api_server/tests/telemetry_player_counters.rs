@@ -33,7 +33,7 @@ async fn report(reporter: &ReportingServer, app: &Router, body: &str) -> (Status
 ///
 /// # Source of truth for these bytes
 ///
-/// `apps/mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/TBD_MatchResultsRevision.c`
+/// `mod/tbd-framework/Scripts/Game/TBD/API/MatchTelemetry/Reports/TBD_MatchResultsRevision.c`
 /// — the envelope from `BuildBody` (key order and all), each row from `BuildLine`. Both hand-build JSON by
 /// string concatenation, so there is no serializer that could quietly fill a field in: what
 /// those two functions write is exactly what the backend receives. Reproduced here in that

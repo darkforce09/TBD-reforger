@@ -93,7 +93,7 @@ lists the call and its DTO. Server-side:
 
 ## Open work
 
-- [T-1005 — Refactor frontend so core and pages stop importing apps/editor](/.ai/tickets/T-1005.toml)
+- [T-1005 — Refactor frontend so core and pages stop importing the Mission Creator workspace](/.ai/tickets/T-1005.toml)
   (idea, no plan): the page stops importing `MissionEditorPage` and `review_mode` from the Mission
   Creator directly, through a shared module.
 

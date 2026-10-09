@@ -135,7 +135,7 @@ Implement **T-152.19** — one-button Workbench label export (Path A E2E).
 ═══ READ (in order — spec wins) ═══
   1. docs/specs/Mission_Creator_Architecture/t152_19_workbench_one_button_export.md
   2. .ai/artifacts/t152_11_fidelity_audit_report.md §9
-  3. apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_LocationsExportPlugin.c
+  3. mod/tbd-framework/Scripts/WorkbenchGame/TBD_LocationsExportPlugin.c
   4. scripts/map-assets/{export-locations.mjs,lib/locations-export.mjs,lib/road-names.mjs}
   5. .ai/artifacts/t152_6_locations_spike.json + t152_9_road_name_spike.json
   6. docs/mod/MCP_TOOLING.md

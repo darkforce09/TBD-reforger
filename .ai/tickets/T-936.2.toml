@@ -59,10 +59,10 @@ owns = [
     "crates/map-engine-core/src/mission/extensions.rs",
     "crates/frontend/shell/frontend_application/src/editor/panels/tasks_panel.rs",
     "crates/frontend/shell/frontend_application/src/editor/panels/mod.rs",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
-    "apps/mod/tbd-export/Scripts/Game/TBD/UI/TBD_TaskHud.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
+    "mod/tbd-framework/Scripts/Game/TBD/UI/TBD_TaskHud.c",
+    "mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_TaskStateMachine.c",
+    "mod/tbd-export/Scripts/Game/TBD/UI/TBD_TaskHud.c",
 ]
 
 [scope]

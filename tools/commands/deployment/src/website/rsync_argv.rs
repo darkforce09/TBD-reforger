@@ -13,6 +13,7 @@
 //! exclusion of the argv, in argv order.
 
 use crate::development_machine_only_paths;
+use crate::enfusion_mod_paths::{LOCAL_TEST_PROFILE, mod_folder_exclusion};
 use crate::host_owned_paths::HOST_OWNED_PATHS;
 
 /// The `rsync` argv after the program name, source and destination included.
@@ -54,7 +55,7 @@ pub(crate) fn rsync_argv(rsync_e: &str, mono: &str, dest: &str) -> Vec<String> {
         "--exclude=packages/".into(),
         // The licensed upstream reference lanes: never shipped (see `deploy::staging::remote`).
         format!("--exclude={}/", repository_layout::REFERENCES_DIR),
-        "--exclude=apps/mod/.local-test-profile/".into(),
+        mod_folder_exclusion(LOCAL_TEST_PROFILE),
     ];
     // What the host owns in its checkout, excluded by `deploy staging` too: the API's `.env` and
     // `.tools/`, and the app built there.

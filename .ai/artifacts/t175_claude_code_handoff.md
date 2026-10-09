@@ -1,6 +1,6 @@
 # T-175 — Claude Code handoff
 
-**Start on `main` after T-174 @ `bbb99526`.** Do not touch `apps/mod/` or docs/registry.
+**Start on `main` after T-174 @ `bbb99526`.** Do not touch `mod/` or docs/registry.
 
 ## Operator word (2026-07-18)
 

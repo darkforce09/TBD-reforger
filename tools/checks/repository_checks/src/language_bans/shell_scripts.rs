@@ -16,9 +16,9 @@
 //!
 //! ── ENFUSION IS NOT A PREFIX SKIP ────────────────────────────────────────────────────────────
 //!
-//! `apps/mod/**` Enfusion source is `.c` (and layouts, configs). `.c` is not in this table, so
-//! those files are not banned. This gate does **not** skip `apps/mod/**` as a prefix — a planted
-//! a tracked shell file under `apps/mod/` is still FAIL. Widening that skip is how a shell script
+//! `mod/**` Enfusion source is `.c` (and layouts, configs). `.c` is not in this table, so
+//! those files are not banned. This gate does **not** skip `mod/**` as a prefix — a tracked
+//! shell file planted under `mod/` is still FAIL. Widening that skip is how a shell script
 //! would re-enter under the Enfusion tree.
 //!
 //! ── FAIL-CLOSED ──────────────────────────────────────────────────────────────────────────────
@@ -284,7 +284,7 @@ fn banned_by_table(rel: &str) -> Option<String> {
 
 /// Docs may *name* the ban (`python3 -c` in a how-to). They are not interpreters.
 /// `*.md` is not in [`TRACKED_LANGUAGE_BANS`]; this skip is only the command-position scan.
-/// Enfusion `.c` is not in the table and is not a prefix skip of `apps/mod/**`.
+/// Enfusion `.c` is not in the table and is not a prefix skip of `mod/**`.
 fn skip_python3_scan(rel: &str) -> bool {
     rel.rsplit('/').next().unwrap_or(rel).ends_with(".md")
 }

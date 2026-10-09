@@ -51,7 +51,7 @@ estimated = [
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "scripts/mod/verify-t437-destroy-inert-diagnostics.sh",
-    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+    "mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
 ]
 
 [scope]

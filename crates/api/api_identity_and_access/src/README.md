@@ -86,7 +86,7 @@ administrator does to a member lives in `api_administration`.
   - the workers in `crates/api/api_background_workers/src/`, and every other domain through
     the services above;
   - over HTTP, the account pages and the navigation frame in `crates/frontend/shell/frontend_application/`, and the
-    identity link of the mod in `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
+    identity link of the mod in `mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, `routes.rs` exports the table the router
   merges, and only the router names this crate from the API's application source
   (`crates/api/api_server/src/tests/architecture_rules.rs` checks all three); every handler carries

@@ -73,7 +73,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod generate-equipment-gameplay-policy [--check]`
 - Does: generates the export addon's gameplay selection tables in
-  `apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/`
+  `mod/tbd-export/Scripts/WorkbenchGame/EquipmentVehicleExport/Gameplay/Policy/Generated/`
   from `contracts/rules/equipment-gameplay/`; with `--check` it writes nothing and compares.
 - Exit codes: 0 written, or unchanged under `--check`; 1 the policy could not be read, or with
   `--check` a table differs or an extra file is present.
@@ -136,7 +136,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod dev-bootstrap [--api] [--server]`
 - Does: sets up the MCP game root, installs the pinned `enfusion-mcp` package, launches Workbench
-  on `apps/mod/tbd-export/addon.gproj` when its Net API port (`ENFUSION_WORKBENCH_PORT`, 5775) is
+  on `mod/tbd-export/addon.gproj` when its Net API port (`ENFUSION_WORKBENCH_PORT`, 5775) is
   closed, warms the MCP daemon, checks `wb_connect`, and validates both addons. `--api` runs
   `cargo xtask db up` (reporting a failure) and then a detached `cargo xtask mk rust-api`;
   `--server` runs `setup server-profile` and then `mod dev-server` with no arguments. Every step
@@ -211,7 +211,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 ### compile
 
 - Synopsis: `mod compile [--selftest] [--keep-logs] [--probe=DIR]`
-- Does: compiles the Game scripts of `apps/mod/tbd-framework` with the headless dedicated server
+- Does: compiles the Game scripts of `mod/tbd-framework` with the headless dedicated server
   and prints each error as `file:line`; `--probe` also compiles a throwaway addon of `.c` files.
 - Exit codes: 0 clean; 1 compile errors, or `tbd-framework/Scripts/WorkbenchGame` exists; 2 no
   verdict; 3 environment, including the engine loading fewer script files than the tree holds (a
@@ -230,7 +230,7 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
 
 - Synopsis: `mod compile-preflight`
 - Does: checks that the dedicated server binary and a non-empty
-  `apps/mod/tbd-framework/resourceDatabase.rdb` exist, printing GitHub error annotations.
+  `mod/tbd-framework/resourceDatabase.rdb` exist, printing GitHub error annotations.
 - Exit codes: 0 both present; 1 either missing.
 - Example: `cargo xtask mod compile-preflight`
 
@@ -303,4 +303,4 @@ Run each as `cargo xtask mod <subcommand>` from the repository root.
   `dev-bootstrap` and the spawn checks use.
 - [Spawn determinism](/documentation/runbooks/spawn_determinism.md) — running
   `mod spawn-determinism`.
-- [Mod suite](/apps/mod/README.md) — the addons these commands compile, boot and export from.
+- [Mod suite](/mod/README.md) — the addons these commands compile, boot and export from.

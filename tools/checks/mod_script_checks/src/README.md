@@ -31,23 +31,23 @@ tools/checks/mod_script_checks/src/
 
 ## How it works
 
-Every check reads committed files under `apps/mod/tbd-framework/` (`enfusion-comments`: anywhere
-under `apps/mod/`) from the checkout root and prints its own report. The source pins share one
+Every check reads committed files under `mod/tbd-framework/` (`enfusion-comments`: anywhere
+under `mod/`) from the checkout root and prints its own report. The source pins share one
 discipline: a live pin, then RED proofs that perturb the source text in memory and must fail, so a
 check that can no longer fail is itself a failure; `enfusion-comments` proves each rule on a passing
 and a failing fixture instead. None of them writes a file.
 
 | Check | Reads | Holds |
 |---|---|---|
-| `mission-rest-size-limits` | `Mission/TBD_MissionLoader.c`, `TBD_MissionArtifactVerification.c`, `TBD_MissionArtifactCache.c` in `apps/mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` | `IsMissionBodyWithinCap(` is called before `ParseMissionJson(` in comment-stripped code, its body compares `Length() <= MISSION_FILE_MAX_BYTES`, and the verification and cache refuse oversized documents |
-| `player-identity-comments` | `apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_PlayerIdentity.c` | no comment claims `#tbd link` is unimplemented; the truth pins stay |
-| `results-reporter-identity-comments` | `apps/mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c` | the same, for the identity the reporter sends |
+| `mission-rest-size-limits` | `Mission/TBD_MissionLoader.c`, `TBD_MissionArtifactVerification.c`, `TBD_MissionArtifactCache.c` in `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` | `IsMissionBodyWithinCap(` is called before `ParseMissionJson(` in comment-stripped code, its body compares `Length() <= MISSION_FILE_MAX_BYTES`, and the verification and cache refuse oversized documents |
+| `player-identity-comments` | `mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_PlayerIdentity.c` | no comment claims `#tbd link` is unimplemented; the truth pins stay |
+| `results-reporter-identity-comments` | `mod/tbd-framework/Scripts/Game/TBD/API/Results/TBD_ResultsReporter.c` | the same, for the identity the reporter sends |
 | `destroy-target-diagnostics` | the objective sources, the mission validator's unconsumed-key check and `mission.schema.json` | no diagnostic claims `entities[]` go unspawned (see its folder's README) |
-| `enfusion-comments` | every `.c` file under the pinned roots in `enfusion_comments/mod.rs`, or under `--path` (anything in `apps/mod/`) | rules ECM-1 to ECM-9 of the [Enfusion script header](/documentation/standards/templates/enfusion_script_header.md) card; exit 2 when a root is missing or the walk is empty (see its folder's README) |
-| `ui-layouts` | the `.layout` files directly in `apps/mod/tbd-framework/UI/layouts/` (not its subfolders), and every file under `apps/mod/tbd-framework/Scripts/Game/TBD/UI/` | C1 brace balance, C2 attested slot classes, C3 frame slot geometry, C4 container children declare a slot, C5 every widget name a script looks up exists, C6 a container child's slot sets its alignment |
+| `enfusion-comments` | every `.c` file under the pinned roots in `enfusion_comments/mod.rs`, or under `--path` (anything in `mod/`) | rules ECM-1 to ECM-9 of the [Enfusion script header](/documentation/standards/templates/enfusion_script_header.md) card; exit 2 when a root is missing or the walk is empty (see its folder's README) |
+| `ui-layouts` | the `.layout` files directly in `mod/tbd-framework/UI/layouts/` (not its subfolders), and every file under `mod/tbd-framework/Scripts/Game/TBD/UI/` | C1 brace balance, C2 attested slot classes, C3 frame slot geometry, C4 container children declare a slot, C5 every widget name a script looks up exists, C6 a container child's slot sets its alignment |
 
 The `ui-layouts` walk does not descend: every committed layout sits in a subfolder of
-`apps/mod/tbd-framework/UI/layouts/` (`Common/`, `Hud/` or `Session/`), so the check finds
+`mod/tbd-framework/UI/layouts/` (`Common/`, `Hud/` or `Session/`), so the check finds
 no file and exits 1 with `FAIL: no .layout files under …`.
 
 `spawn_determinism.rs` and `spawn_verification.rs` are not `verify` verbs: `cargo xtask mod`

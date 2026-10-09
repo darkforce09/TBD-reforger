@@ -33,7 +33,7 @@ include_str!(concat!(
 | `map_engine` sources | `"/../../legacy/map_engine/src/..."` |
 | the frontend's own test fixtures | `"/tests/fixtures/..."` |
 | `packages/tbd-schema/schema/*.json` | `"/../../../packages/tbd-schema/schema/..."` |
-| `apps/mod/tbd-framework/Data/registry.json` | `"/../../../apps/mod/tbd-framework/Data/registry.json"` |
+| `mod/tbd-framework/Data/registry.json` | `"/../../../mod/tbd-framework/Data/registry.json"` |
 
 ## Scope — exactly this, nothing else
 

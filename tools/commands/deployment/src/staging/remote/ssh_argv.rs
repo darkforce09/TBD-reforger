@@ -14,8 +14,14 @@
 //! only a development machine holds.
 
 use super::*;
+use crate::enfusion_mod_paths::{
+    LOCAL_TEST_PROFILE, UNTRACKED_FRAMEWORK_FOLDER, mod_folder_exclusion,
+};
 use crate::host_owned_paths::{
     API_ENVIRONMENT_FILE, API_HOST_TOOLS_FOLDER, BUILT_APPLICATION_FOLDER,
+};
+use repository_layout::enfusion_mod_folders::{
+    EXPORT_ADDON_FOLDER_NAME, MCP_BRIDGE_ADDON_FOLDER_NAME,
 };
 
 /// The full `rsync` argv. The exclude list is the licence boundary described in [`super`]'s header;
@@ -36,13 +42,13 @@ pub(crate) fn rsync_argv(
         "--delete".into(),
         "--exclude=.git/".into(),
         format!("--exclude={}/", repository_layout::REFERENCES_DIR),
-        "--exclude=apps/mod/Tbd_framework/".into(),
-        "--exclude=apps/mod/.local-test-profile/".into(),
+        mod_folder_exclusion(UNTRACKED_FRAMEWORK_FOLDER),
+        mod_folder_exclusion(LOCAL_TEST_PROFILE),
         "--exclude=**/node_modules/".into(),
         format!("--exclude={API_HOST_TOOLS_FOLDER}"),
         format!("--exclude={API_ENVIRONMENT_FILE}"),
-        "--exclude=apps/mod/tbd-export/".into(),
-        "--exclude=apps/mod/tbd-emcp/".into(),
+        mod_folder_exclusion(EXPORT_ADDON_FOLDER_NAME),
+        mod_folder_exclusion(MCP_BRIDGE_ADDON_FOLDER_NAME),
         format!("--exclude={}", repository_layout::DEPLOY_ENV),
         // Build output and the map asset trees: a game-server host needs none of it, and the
         // scratch tree alone is 1.5 GB of gitignored export intermediates. Excluded paths are

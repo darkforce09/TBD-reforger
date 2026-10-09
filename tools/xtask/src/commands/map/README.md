@@ -132,7 +132,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   `world` binary the export driver runs; the game paks and the Workbench exports each command
   reads.
 - Used by: `tools/xtask/src/cli/dispatch.rs`; people, following the export and blueprint steps
-  in `assets/terrains/README.md` and the `apps/mod/tbd-export/` plugins, whose output these
+  in `assets/terrains/README.md` and the `mod/tbd-export/` plugins, whose output these
   commands read.
 - Rules: `export-terrain` runs the phase gate before anything is built, and a missing staged
   export is exit 2, never a build over nothing; the argument parser keeps its defaults and refusals

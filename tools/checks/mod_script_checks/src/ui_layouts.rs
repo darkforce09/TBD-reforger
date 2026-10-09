@@ -29,7 +29,7 @@
 //!   inset. C3 removes the ambiguity by requiring them to agree, so it cannot matter which one the
 //!   engine reads.
 //! * Alignment is `LayoutHorizontalAlign { Left=0, Center=1, Right=2, Stretch=3 }` —
-//!   `apps/mod/References/vanilla_reference/Scripts/Core/generated/UI/LayoutHorizontalAlign.c`.
+//!   `mod/References/vanilla_reference/Scripts/Core/generated/UI/LayoutHorizontalAlign.c`.
 //! * `ButtonSlot` / `OverlaySlot` / `SizeLayoutSlot` / `ScrollLayoutSlot` all derive from
 //!   `AlignableSlot` and accept only `HorizontalAlign` / `VerticalAlign` / `Padding`. `Anchor`,
 //!   `PositionX` and `Offset*` belong to `FrameWidgetSlot` ALONE — putting them on a
@@ -116,8 +116,8 @@ const FINDERS: &[&str] = &["FindAnyWidget", "FindHandlerOn", "FindText", "Find"]
 /// `cargo xtask verify ui-layouts`: prints the layout gate report for the checkout at `repo_root`
 /// and returns its exit status.
 pub fn verify_ui_layouts(repo_root: &Path) -> Result<u8> {
-    let ui_dir = repo_root.join("apps/mod/tbd-framework/UI/layouts");
-    let script_dir = repo_root.join("apps/mod/tbd-framework/Scripts/Game/TBD/UI");
+    let ui_dir = repo_root.join("mod/tbd-framework/UI/layouts");
+    let script_dir = repo_root.join("mod/tbd-framework/Scripts/Game/TBD/UI");
 
     let mut fail = false;
 

@@ -3,7 +3,7 @@
 //! ── WHAT THE GATE IS FOR ─────────────────────────────────────────────────────────────────────
 //!
 //! The 2D editor's Objects palette writes an alias into the mission payload; the mod's
-//! `SpawnMissionEntities` looks it up in `apps/mod/tbd-framework/Data/registry.json` for the
+//! `SpawnMissionEntities` looks it up in `mod/tbd-framework/Data/registry.json` for the
 //! prefab GUID to spawn. Nothing in the type system joins the two ends — the alias is *derived*
 //! on the web side by `asset_catalog.rs::derive_object_alias` and *consumed by name* in Enfusion
 //! — so only a census can hold the pairing, and breaking it costs the author a crate that never
@@ -59,7 +59,7 @@ use serde_json::Value;
 use verification_core::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 
 /// What `SpawnMissionEntities` actually reads at mission load.
-const MOD_REL: &str = "apps/mod/tbd-framework/Data/registry.json";
+const MOD_REL: &str = "mod/tbd-framework/Data/registry.json";
 /// The mission-domain derivation used by the frontend; pinned independently of this mirror.
 const FE_REL: &str = "crates/mission/mission_operations/src/assets.rs";
 /// Kinds the Objects palette offers. Anything else is a character, vehicle or gear item, and

@@ -7,10 +7,10 @@
 # set Cargo.lock records, so the workspace manifest, the lock file and the folders that hold the
 # members (tools, crates) come along, beside the two contract folders whose files the API embeds
 # with `include_str!` (the JSON Schemas of contracts/definitions, and contracts/rules:
-# kit-aliases.json and equipment-gameplay/native-matching.json). `apps/` holds no member, only
-# the Enfusion mod, so it stays out with everything else. An exception names a folder literally:
-# the container builders skip an excluded folder unless an exception starts with its path, so a
-# wildcard exception such as `!crates/*/Cargo.toml` re-includes nothing.
+# kit-aliases.json and equipment-gameplay/native-matching.json). The Enfusion mod at `mod/` holds
+# no member and no file a Rust build reads, so it stays out with everything else. An exception
+# names a folder literally: the container builders skip an excluded folder unless an exception
+# starts with its path, so a wildcard exception such as `!crates/*/Cargo.toml` re-includes nothing.
 *
 !Cargo.toml
 !Cargo.lock

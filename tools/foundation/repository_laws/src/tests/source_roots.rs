@@ -42,26 +42,30 @@ fn source_roots_a_test_file_is_a_tests_component_or_a_tests_stem() {
     assert!(is_test_file("apps/server/tests/integration.rs"));
     assert!(is_test_file("tools/xtask/src/fixture_tests.rs"));
     assert!(is_test_file(
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.c"
+        "mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.c"
     ));
     assert!(!is_test_file("tools/xtask/src/test_helpers.rs"));
     assert!(!is_test_file(
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash.c"
+        "mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash.c"
     ));
     assert!(!is_test_file(
-        "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.h"
+        "mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Hash_tests.h"
     ));
 }
 
 #[test]
-fn source_roots_only_the_shipped_addon_script_roots_may_be_pinned_under_apps_mod() {
+fn source_roots_only_the_shipped_addon_script_roots_may_be_pinned_inside_the_mod_tree() {
     assert!(mod_pins_are_script_roots(
-        &["tools/xtask", "apps/mod/tbd-emcp/Scripts"],
+        &["tools/xtask", "mod/tbd-emcp/Scripts"],
         MOD_SCRIPT_ROOTS
     ));
-    assert!(!mod_pins_are_script_roots(&["apps/mod"], MOD_SCRIPT_ROOTS));
+    assert!(mod_pins_are_script_roots(
+        &["models/tbd-emcp/Scripts"],
+        MOD_SCRIPT_ROOTS
+    ));
+    assert!(!mod_pins_are_script_roots(&["mod"], MOD_SCRIPT_ROOTS));
     assert!(!mod_pins_are_script_roots(
-        &["apps/mod/vanilla_reference/Scripts"],
+        &["mod/vanilla_reference/Scripts"],
         MOD_SCRIPT_ROOTS
     ));
     assert!(mod_pins_are_script_roots(
@@ -73,6 +77,24 @@ fn source_roots_only_the_shipped_addon_script_roots_may_be_pinned_under_apps_mod
             MOD_SCRIPT_ROOTS
                 .iter()
                 .all(|root| !root.contains(reference))
+        );
+    }
+}
+
+#[test]
+fn source_roots_every_mod_script_root_lies_inside_the_mod_tree() {
+    assert_eq!(ENFUSION_MOD_TREE, "mod");
+    assert!(folders_lie_in_tree(MOD_SCRIPT_ROOTS, ENFUSION_MOD_TREE));
+    assert!(folders_lie_in_tree(&[], ENFUSION_MOD_TREE));
+    for outside in [
+        "addons/mod/tbd-framework/Scripts",
+        "models/tbd-framework/Scripts",
+        "tools/xtask",
+        "mod",
+    ] {
+        assert!(
+            !folders_lie_in_tree(&["mod/tbd-emcp/Scripts", outside], ENFUSION_MOD_TREE),
+            "{outside} must not count as a folder inside the mod tree"
         );
     }
 }
@@ -212,11 +234,11 @@ fn source_roots_still_walk_the_pinned_mod_script_roots() {
     let members = ["crates/foundation/ids"];
     let checkout = member_workspace("scripts", &members, &members);
     checkout.write(
-        "apps/mod/tbd-export/Scripts/Game/TBD_Export.c",
+        "mod/tbd-export/Scripts/Game/TBD_Export.c",
         "class TBD_Export {}\n",
     );
     checkout.write(
-        "apps/mod/vanilla_reference/Scripts/Game/Vanilla.c",
+        "mod/vanilla_reference/Scripts/Game/Vanilla.c",
         "class Vanilla {}\n",
     );
     let gated = relative_files(

@@ -1,6 +1,6 @@
 use super::*;
 
-/// A throwaway checkout holding `apps/mod/References/` (or not), removed on drop.
+/// A throwaway checkout holding `mod/References/` (or not), removed on drop.
 struct Scratch(PathBuf);
 
 impl Scratch {
@@ -40,16 +40,18 @@ fn a_lane_inside_the_references_folder_is_accepted() {
 fn an_output_outside_the_references_folder_is_refused() {
     let s = Scratch::new("outside", true);
     let refs = s.references();
+    let mod_folder = ::repository_layout::workspace_folders::ENFUSION_MOD_DIR;
+    let references = ::repository_layout::REFERENCES_DIR;
     for out in [
-        "apps/mod/vanilla_reference/Scripts",
-        "apps/mod/References",
-        "apps/mod/References/../vanilla_reference",
-        "/tmp/elsewhere",
+        format!("{mod_folder}/vanilla_reference/Scripts"),
+        references.to_string(),
+        format!("{references}/../vanilla_reference"),
+        "/tmp/elsewhere".to_string(),
     ] {
-        let err = reference_output_within(&refs, &s.0, Path::new(out));
+        let err = reference_output_within(&refs, &s.0, Path::new(&out));
         assert!(err.is_err(), "{out} must be refused");
     }
-    assert!(!s.0.join("apps/mod/vanilla_reference").exists());
+    assert!(!s.0.join(mod_folder).join("vanilla_reference").exists());
 }
 
 #[test]

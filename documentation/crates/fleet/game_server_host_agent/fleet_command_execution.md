@@ -26,7 +26,7 @@ developers changing either half, read this for the design and its limits.
   and [machine credentials](/documentation/crates/api/api_server/verification_evidence/machine_credentials.md);
   the [server control page](/documentation/crates/frontend/pages/administration_pages/server_control/server_control_page.md),
   where operators issue commands; the [game runtime](/documentation/glossary/g_to_m.md#game-runtime)'s own executor in
-  [`apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`](/apps/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/README.md);
+  [`mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/`](/mod/tbd-framework/Scripts/Game/TBD/API/FleetCommands/README.md);
   the [game server staging runbook](/documentation/runbooks/game_server_staging/README.md).
 
 ## Behaviour

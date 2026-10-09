@@ -29,7 +29,7 @@ fn instance_files_are_written_from_host_secrets_and_never_carry_one() {
     assert!(p.contains("INSTANCE=\"$HOME/tbd/fleet/instance-3\"\n"));
     assert!(p.contains("chmod 700 \"$FLEET\" \"$INSTANCE\" \"$SECRETS\" \"$INSTANCE/profile\"\n"));
     assert!(p.contains(
-        "ln -sfn \"/home/deploy/tbd/repo/apps/mod/tbd-framework\" \"/home/deploy/tbd/addons/tbd-framework\"\n"
+        "ln -sfn \"/home/deploy/tbd/repo/mod/tbd-framework\" \"/home/deploy/tbd/addons/tbd-framework\"\n"
     ));
     // The RCON password is generated on the host, once, create-exclusive, and read back checked.
     assert!(p.contains("if [ ! -s \"$SECRETS/rcon-password\" ]; then\n"));

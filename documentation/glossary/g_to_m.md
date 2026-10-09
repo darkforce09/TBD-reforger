@@ -13,7 +13,7 @@ The TBD framework mod running inside a dedicated server, seen from the API: with
 [machine credential](#machine-credential) it opens and ends runtime sessions, sends heartbeats, reads
 rosters and artifacts, authorizes player lives into slots, and runs broadcasts, kicks and loads.
 
-In code: the `/api/v1/game-runtime/` routes; `apps/mod/tbd-framework/Scripts/Game/TBD/API/`.
+In code: the `/api/v1/game-runtime/` routes; `mod/tbd-framework/Scripts/Game/TBD/API/`.
 
 See: [fleet command](/documentation/glossary/a_to_f.md#fleet-command), [deployment](/documentation/glossary/a_to_f.md#deployment).
 
@@ -153,7 +153,7 @@ Enfusion's world plus game-mode configuration that a dedicated server boots: an
 `SCR_MissionHeader` config naming the world, the game mode, and the name and description players
 see. It is not a [mission](#mission), which the mod's mission loader loads into the running game.
 
-In code: `apps/mod/tbd-framework/Missions/` (`TBD_Dev_POC.conf`); `game.scenarioId` in `tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json`; the code says scenario.
+In code: `mod/tbd-framework/Missions/` (`TBD_Dev_POC.conf`); `game.scenarioId` in `tools/xtask/dedicated_server_profiles/tbd-dev-server.config.json`; the code says scenario.
 
 See: [fleet scenario](/documentation/glossary/a_to_f.md#fleet-scenario), [Game server staging](/documentation/runbooks/game_server_staging/README.md).
 
@@ -173,9 +173,9 @@ The Arma Reforger modification the repository ships, in three addons (Enfusion p
 an `addon.gproj`): `tbd-framework`, the game mod that runs TBD sessions; `tbd-export`, the Workbench
 export tooling; `tbd-emcp`, the Workbench bridge handlers the Enfusion MCP tools call.
 
-In code: `apps/mod/tbd-framework/`, `apps/mod/tbd-export/`, `apps/mod/tbd-emcp/`.
+In code: `mod/tbd-framework/`, `mod/tbd-export/`, `mod/tbd-emcp/`.
 
-See: [EnfScript](/documentation/glossary/a_to_f.md#enfscript), [Mod suite](/apps/mod/README.md).
+See: [EnfScript](/documentation/glossary/a_to_f.md#enfscript), [Mod suite](/mod/README.md).
 
 ### modpack
 

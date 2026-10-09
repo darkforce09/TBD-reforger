@@ -36,7 +36,7 @@ crates/
 The website's [API](/documentation/glossary/a_to_f.md#api) is the hub. Members use the single-page
 app in a browser; the offline service worker beside it serves the offline packs from the cache. On
 each game host the dedicated server runs the [mod](/documentation/glossary/g_to_m.md#mod) in
-`apps/mod/`, which talks to the API's `/api/v1/game-runtime/`, `/api/v1/ingest/` and
+`mod/`, which talks to the API's `/api/v1/game-runtime/`, `/api/v1/ingest/` and
 `/api/v1/fleet-executor/` routes. Beside the server, the
 [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) polls the API's
 `/api/v1/fleet-executor/` routes over outbound HTTPS, carries out each

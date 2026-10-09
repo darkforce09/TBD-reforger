@@ -15,10 +15,10 @@ Verified on this worktree at `65f4d44f3` (slice base, before the T-677 commit) �
 
 | claim | path:line | command |
 |---|---|---|
-| Every slot body is AI-disabled at spawn (one call site; `SpawnSlotBody` is also the rematerialize path) | `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c:1236` `DisableBodyAI(body);` (export twin same line) | `rg -n 'DisableBodyAI\(body\)' apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` — one call |
+| Every slot body is AI-disabled at spawn (one call site; `SpawnSlotBody` is also the rematerialize path) | `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c:1236` `DisableBodyAI(body);` (export twin same line) | `rg -n 'DisableBodyAI\(body\)' mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` — one call |
 | `DisableBodyAI` deactivates the agent + next-frame recheck | same file `:1491` / `:1505` | `rg -n 'DeactivateAI' …/TBD_SpawnManager.c` |
-| No waypoint runtime, no `AI/` folder | (files absent) | `ls apps/mod/tbd-framework/Scripts/Game/TBD/AI/` — empty |
-| Loader group struct has no `waypoints` field | `TBD_MissionLoader.c:139` `TBD_MissionOrbatGroupStruct` ends at `leaderSlotId` | `rg -n 'waypoints' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/` — zero hits |
+| No waypoint runtime, no `AI/` folder | (files absent) | `ls mod/tbd-framework/Scripts/Game/TBD/AI/` — empty |
+| Loader group struct has no `waypoints` field | `TBD_MissionLoader.c:139` `TBD_MissionOrbatGroupStruct` ends at `leaderSlotId` | `rg -n 'waypoints' mod/tbd-framework/Scripts/Game/TBD/Backend/` — zero hits |
 | Baseline Enfusion compile clean before edits | n/a | `cargo xtask mod compile` → `OK: compiled clean` / `loaded 5742x files; 11333x classes` |
 
 Did **not** implement T-678 (group `combatMode` / `formation` / group-level defaults). `combatMode` and `formation` UNREAD_WIRE_FIELDS rows stayed at baseline 0.
@@ -27,10 +27,10 @@ Did **not** implement T-678 (group `combatMode` / `formation` / group-level defa
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | NEW (881 lines) | Second `JsonLoadContext` pass over `GetRawJson()` for `orbat.*.groups[].waypoints` (loader is T-682-owned). At LIVE, form `SCR_AIGroup` from Group_Base, `AddAIEntityToGroup` unclaimed seats, issue waypoints in document order. Type→ScenarioFramework prefab; `radiusM`→`SetCompletionRadius`; `vehicleUid`→`SCR_EntityWaypoint.SetEntity`; `cycle`→`AIWaypointCycle.SetWaypoints` infinite; `speedMode`/`behaviour`→`SCR_AIGroupCharactersMovementSpeedSetting`. Heartbeat is `modded class SCR_BaseGameMode` (same idiom as T-676). |
-| `apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | NEW | Byte-identical twin (`cmp` identical, 29545 bytes, pure ASCII) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1234–1242 | AI spawn gate: `DisableBodyAI` unless `TBD_WaypointRuntime.ShouldEnableAIAtSpawn(slot)` (waypointed group **and** stage LIVE). Lobby/safestart still parks. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1234–1242 | Same code (pre-existing comment dash already ASCII in export) |
+| `mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | NEW (881 lines) | Second `JsonLoadContext` pass over `GetRawJson()` for `orbat.*.groups[].waypoints` (loader is T-682-owned). At LIVE, form `SCR_AIGroup` from Group_Base, `AddAIEntityToGroup` unclaimed seats, issue waypoints in document order. Type→ScenarioFramework prefab; `radiusM`→`SetCompletionRadius`; `vehicleUid`→`SCR_EntityWaypoint.SetEntity`; `cycle`→`AIWaypointCycle.SetWaypoints` infinite; `speedMode`/`behaviour`→`SCR_AIGroupCharactersMovementSpeedSetting`. Heartbeat is `modded class SCR_BaseGameMode` (same idiom as T-676). |
+| `mod/tbd-export/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | NEW | Byte-identical twin (`cmp` identical, 29545 bytes, pure ASCII) |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1234–1242 | AI spawn gate: `DisableBodyAI` unless `TBD_WaypointRuntime.ShouldEnableAIAtSpawn(slot)` (waypointed group **and** stage LIVE). Lobby/safestart still parks. |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | 1234–1242 | Same code (pre-existing comment dash already ASCII in export) |
 
 Not touched: `packages/tbd-schema/**`, `crates/map-engine-core/src/mission/flatten.rs` (T-682), `TBD_MissionLoader.c` (T-682), editor UI, `.ai/tickets/`.
 
@@ -162,7 +162,7 @@ HEAD `9eeca4adda8a56effd72275b4ba0a4d261089503`. Worktree clean. No push.
 
 | path | on disk |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | yes (29545 bytes) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | yes (29545 bytes, `cmp` identical, pure ASCII) |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited) |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited; code agrees after comment-strip lockstep; export comments already used ASCII hyphens in the CRF hunk) |
+| `mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | yes (29545 bytes) |
+| `mod/tbd-export/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c` | yes (29545 bytes, `cmp` identical, pure ASCII) |
+| `mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited) |
+| `mod/tbd-export/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c` | yes (edited; code agrees after comment-strip lockstep; export comments already used ASCII hyphens in the CRF hunk) |

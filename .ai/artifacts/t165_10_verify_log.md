@@ -14,7 +14,7 @@
 ## The closure gate — `xtask verify no-node` (`make verify-no-node`)
 
 Three checks, verify-no-python pattern:
-1. `git ls-files '*.mjs' '*.cjs'` outside `apps/mod` → **0** (was 90 at T-165.0).
+1. `git ls-files '*.mjs' '*.cjs'` outside `mod` → **0** (was 90 at T-165.0).
 2. No `node `/`npx ` command-position invocations in the Makefile, `scripts/`, or
    `.github/` outside the enfusion-mcp floor (allowlist: `scripts/mod/mcp-call.sh`,
    whose `.js`-entry runner tiers are the floor by design). One straggler found and
@@ -36,7 +36,7 @@ registry T-165 → `shipped` (active_slice cleared).
 
 ## Program end-state (T-165.0 → .10)
 
-- **90 tracked .mjs (13.8k LOC) + dom.js/freeze.js + bcdec.wasm → 0** (apps/mod excluded
+- **90 tracked .mjs (13.8k LOC) + dom.js/freeze.js + bcdec.wasm → 0** (mod excluded
   by charter). Survivor: the third-party `enfusion-mcp` npm package under `scripts/mod`
   (+ its node_modules), the declared floor.
 - packages/tbd-schema is npm-free (package.json/lock/node_modules deleted @ .9).

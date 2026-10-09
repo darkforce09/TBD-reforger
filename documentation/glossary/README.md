@@ -117,7 +117,7 @@ across the repository.
 
 - [Library crates](/crates/README.md) — the API server and its domains, the single-page app and
   its pages, the Mission Creator, the game server host agent and the map crates most entries name.
-- [Mod suite](/apps/mod/README.md) — the addons, EnfScript, safe start and the game runtime.
+- [Mod suite](/mod/README.md) — the addons, EnfScript, safe start and the game runtime.
 - [Developer tools](/tools/README.md) — tickets, waves, slices, gates and the oracles.
 - [Website API](/crates/api/api_server/README.md) — the API server crate and its binaries.
 - [Game server host agent](/crates/fleet/game_server_host_agent/README.md) — the game server host

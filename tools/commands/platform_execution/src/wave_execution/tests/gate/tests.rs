@@ -237,7 +237,7 @@ fn the_wave_gate_clippy_lanes_cover_every_workspace_member() {
         .collect::<Vec<_>>()
         .join(" ");
     for wired in [
-        r#"r.run("clippy apps and crates", || { match native_clippy_packages(&ctx.root) { Ok(packages) => checkrun(ctx, &native_clippy_argv(&packages)),"#,
+        r#"r.run("clippy native crates", || { match native_clippy_packages(&ctx.root) { Ok(packages) => checkrun(ctx, &native_clippy_argv(&packages)),"#,
         r#"r.run("clippy wasm32 members", || { match wasm32_clippy_packages(&ctx.root) {"#,
         r#"let argv = wasm32_clippy_argv(&packages);"#,
     ] {

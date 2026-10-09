@@ -13,9 +13,9 @@ HEAD at dispatch: `4b01ae415` (twin-widen already on this branch). Worktree matc
 
 | claim | path:line | command |
 |---|---|---|
-| Zero Enfusion readers of the six T-706 keys | `apps/mod/**/*.c` (no matches) | `rg attackerCount\|defenderCount\|advantagePercent\|minHeight\|maxHeight\|startingOwner apps/mod` → empty before the patch |
-| Loader zone rules bound only play-area three | `TBD_MissionLoader.c` `TBD_MissionZoneRulesStruct` (graceSeconds / warnEverySeconds / penalty only) | `sed -n '90,125p' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` |
-| No `TBD_ZoneVolume.c` in either tree | `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/` listed PlayArea/Trigger/Zone/Geometry/Registry only | `ls .../Zones/` |
+| Zero Enfusion readers of the six T-706 keys | `mod/**/*.c` (no matches) | `rg attackerCount\|defenderCount\|advantagePercent\|minHeight\|maxHeight\|startingOwner mod` → empty before the patch |
+| Loader zone rules bound only play-area three | `TBD_MissionLoader.c` `TBD_MissionZoneRulesStruct` (graceSeconds / warnEverySeconds / penalty only) | `sed -n '90,125p' mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` |
+| No `TBD_ZoneVolume.c` in either tree | `mod/tbd-framework/Scripts/Game/TBD/Zones/` listed PlayArea/Trigger/Zone/Geometry/Registry only | `ls .../Zones/` |
 | Schema already has the six keys (T-706) | `packages/tbd-schema/schema/mission.schema.json` `$defs/zoneRules` | python dump of properties; do not edit |
 | Flatten still does not emit them | (not in owns; confirmed empty) | `rg placementRadius\|attackerCount` in flatten.rs was empty per brief |
 | Inspector already generates from `$defs/zoneRules` | `zones_panel.rs` `zone_rule_fields()` | existing `zone_rule_fields_cover_the_whole_vocabulary` |
@@ -24,10 +24,10 @@ HEAD at dispatch: `4b01ae415` (twin-widen already on this branch). Worktree matc
 
 | path | line | why |
 |---|---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` (export twin) | 109–119 | Bind the six keys on `TBD_MissionZoneRulesStruct` with `ABSENT` / `ABSENT_INT` (0 and -5 are authored). JsonLoadContext maps by member name. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c` (export twin, NEW) | whole file | Volume AGL test (per-entity `GetSurfaceY`), attacker/defender counts, advantagePercent, startingOwner. TBD rules, WOG sentence marked INFERRED only. |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c` (export twin) | 132, 163, 395–396, 753 | Read/Clear; ApplyStartingOwner + LogBound; destroy query uses `ContainsOrigin` (XZ + AGL). |
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` (export twin) | 308, 342, 560–561 | **Outside owns** — without these call sites the volume/count rules never reach capture/hold presence. See files_outside_owns. |
+| `mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c` (export twin) | 109–119 | Bind the six keys on `TBD_MissionZoneRulesStruct` with `ABSENT` / `ABSENT_INT` (0 and -5 are authored). JsonLoadContext maps by member name. |
+| `mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c` (export twin, NEW) | whole file | Volume AGL test (per-entity `GetSurfaceY`), attacker/defender counts, advantagePercent, startingOwner. TBD rules, WOG sentence marked INFERRED only. |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c` (export twin) | 132, 163, 395–396, 753 | Read/Clear; ApplyStartingOwner + LogBound; destroy query uses `ContainsOrigin` (XZ + AGL). |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` (export twin) | 308, 342, 560–561 | **Outside owns** — without these call sites the volume/count rules never reach capture/hold presence. See files_outside_owns. |
 | `crates/frontend/shell/frontend_application/src/editor/panels/zones_panel.rs` | 1280+ | `t685_volume_fields_render_from_zone_rules_schema`: kinds for the six keys (no second inspector). |
 
 TBD semantics (not the inferred WOG sentence):
@@ -122,8 +122,8 @@ OK: compiled clean
 
 | path | why |
 |---|---|
-| `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | SamplePresence is the only capture/hold presence walk. AGL + count gates have to sit here or they are a dead mechanism. |
-| `apps/mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | Export twin (lockstep). |
+| `mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | SamplePresence is the only capture/hold presence walk. AGL + count gates have to sit here or they are a dead mechanism. |
+| `mod/tbd-export/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c` | Export twin (lockstep). |
 
 Not touched: `flatten.rs`, `schema_gates.rs`, `packages/tbd-schema/**`, `TBD_SpawnManager.c`, `TBD_PlacementScatter.c`, `TBD_MissionValidator.c`.
 

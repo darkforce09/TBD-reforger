@@ -6,7 +6,7 @@ use repository_root::find_repository_root;
 fn the_workspace_folders_exist_in_the_checkout() {
     let root = find_repository_root().expect("active checkout");
     for folder in [
-        APPLICATIONS_DIR,
+        ENFUSION_MOD_DIR,
         LIBRARY_CRATES_DIR,
         TOOLS_DIR,
         API_SERVER_CRATE_DIR,
@@ -61,7 +61,7 @@ fn the_database_folders_nest_under_the_library_crates() {
         );
     }
     for folder in [
-        APPLICATIONS_DIR,
+        ENFUSION_MOD_DIR,
         LIBRARY_CRATES_DIR,
         TOOLS_DIR,
         API_SERVER_CRATE_DIR,

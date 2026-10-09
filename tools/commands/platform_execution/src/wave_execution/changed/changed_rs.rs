@@ -310,9 +310,10 @@ pub(crate) fn wasm_changed(ctx: &Ctx, base: &str) -> i32 {
 ///
 /// But the dependency graph is not the whole input set, and the wave-255 verify caught the hole:
 /// the suite compiles files from OUTSIDE that graph, through `include_str!` —
-/// `contracts/definitions/mission.schema.json` (`workspaces/editor/ui/inspector/zones_panel/zone_schema_vocabulary.rs`),
+/// `contracts/definitions/mission.schema.json` (`mission_creator_state/src/zones/zone_schema_vocabulary.rs`),
 /// `loadout-export.schema.json` (`arsenal/`), `crates/api/api_server/src/<domain>/routes.rs`
-/// (four `pages/` census tests), `apps/mod/tbd-framework/Data/registry.json` (`arsenal/asset_catalog.rs`). Wave 255 itself
+/// (four `pages/` census tests), `mod/tbd-framework/Data/registry.json`
+/// (`mission_creator_state/src/asset_catalog.rs`). Wave 255 itself
 /// changed `mission.schema.json`; a slice whose diff was only that file would have printed
 /// "frontend untouched" and skipped, while `zone_rule_fields_cover_the_whole_vocabulary` compiles
 /// that exact file and is documented to fail loudly on a new key.

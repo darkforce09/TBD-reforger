@@ -71,7 +71,7 @@ const LIES: &[&str] = &[
     "link-confirm must not resolve GetArmaId",
 ];
 
-const TARGET: &str = "apps/mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_PlayerIdentity.c";
+const TARGET: &str = "mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_PlayerIdentity.c";
 const LABEL: &str = "player-identity-comments";
 
 /// Every ban and every pin, against one in-memory source. `Ok(())` when the contract holds.

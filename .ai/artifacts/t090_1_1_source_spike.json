@@ -14,7 +14,7 @@
       "status": "WINNER",
       "artifact": "packages/map-assets/everon/staging/spike/TBD_SatExport_everon.tga",
       "provenance": {
-        "producedBy": "apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c (MapDataExporter.ExportRasterization + SetupColors land/ocean/forest palette on worlds/Eden/Eden.ent)",
+        "producedBy": "mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c (MapDataExporter.ExportRasterization + SetupColors land/ocean/forest palette on worlds/Eden/Eden.ent)",
         "shippedAt": "T-090.1 @ 564419e",
         "format": "TGA 4096x4096 8-bit sRGB, top-origin (north-up)",
         "bytes": 67108882

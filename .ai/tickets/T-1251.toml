@@ -1,7 +1,7 @@
 id = "T-1251"
 kind = "work"
 title = "Reach or retire the unreachable tbd-export equipment plugins"
-summary = "The 14 per-domain plugins under apps/mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ carry a commented-out WorkbenchPluginAttribute (e.g. ItemExport/TBD_ItemExportPlugin.c:11, WeaponExport/Weapon/TBD_WeaponExportPlugin.c:18), so no menu reaches them; TBD_SourceDiagnosticExport (EquipmentVehicleExport/Plugins/TBD_EquipmentVehicleExportPlugin.c:33) and TBD_StandardExportVerification (EquipmentExport/Core/ExportDestination/TBD_StandardExportVerification.c:28) have no caller."
+summary = "The 14 per-domain plugins under mod/tbd-export/Scripts/WorkbenchGame/EquipmentExport/ carry a commented-out WorkbenchPluginAttribute (e.g. ItemExport/TBD_ItemExportPlugin.c:11, WeaponExport/Weapon/TBD_WeaponExportPlugin.c:18), so no menu reaches them; TBD_SourceDiagnosticExport (EquipmentVehicleExport/Plugins/TBD_EquipmentVehicleExportPlugin.c:33) and TBD_StandardExportVerification (EquipmentExport/Core/ExportDestination/TBD_StandardExportVerification.c:28) have no caller."
 class = "audit"
 status = "idea"
 notes = "Decide per plugin whether the combined equipment and vehicle export supersedes it (retire it) or it gets its menu entry back. Source: milestone V finding V-F116."

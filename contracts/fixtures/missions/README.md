@@ -46,7 +46,7 @@ xtask schema tests each load single missions from it.
 ## Boundaries
 
 - Depends on: `contracts/definitions/mission.schema.json`, and the spawn registry
-  `apps/mod/tbd-framework/Data/registry.json`, whose `entries[].alias` values are the kit aliases a
+  `mod/tbd-framework/Data/registry.json`, whose `entries[].alias` values are the kit aliases a
   mission may name.
 - Used by: the xtask schema gate, the xtask mod commands and the tests named in the child READMEs.
 - Rules: a valid mission stays valid and under the size ceiling; an invalid fixture breaks exactly

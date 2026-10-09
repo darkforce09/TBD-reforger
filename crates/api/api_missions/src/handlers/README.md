@@ -73,7 +73,7 @@ missing one, and a write by someone who may not edit the mission answers 403.
   [server control](/documentation/glossary/n_to_z.md#server-control) pages in
   `crates/frontend/pages/administration_pages/src/`, the
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
-  `apps/mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
+  `mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
   `tools/commands/mod_operations/src/website_api_client/`.
 - Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
   imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); every

@@ -26,7 +26,7 @@ Column 4 is **semicolon-space separated, repo-root-relative** paths — verified
 file, e.g. row `T-182`:
 
 ```
-packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c; …
+packages/tbd-schema/schema/mission.schema.json; mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c; …
 ```
 
 Waves pack by file-disjointness. Two tickets sharing one path cannot share a wave.
@@ -722,7 +722,7 @@ and if `editor_ops.rs` were split by concern after that, the floor falls to ~5 (
 
 ## 6. Cross-boundary tickets needing `executor: workbench`
 
-Rule applied: anything modifying `packages/tbd-schema/` or `apps/mod/`. These belong in a **second
+Rule applied: anything modifying `packages/tbd-schema/` or `mod/`. These belong in a **second
 program the factory must not auto-dispatch** (CLAUDE.md executor gate: "`workbench` and `human`
 still mean stop").
 
@@ -731,7 +731,7 @@ still mean stop").
 | **T-654** | `packages/tbd-schema/schema/mission.schema.json` | `idea` | Variant predicates are a **document-shape** change. The compiled schema carries **25** `"additionalProperties": false` (parity README §2), including on `$defs/slot`, `$defs/group`, `meta` and `environment` — so any new field is contract-blocked, not merely unbuilt. Needs a schema widening **and** an Enfusion reader. `owns` is empty while it is a design ticket; **the moment it gains one it is `workbench`** |
 
 **No other ticket in T-631…T-660 crosses the boundary.** Verified by inspection of every `owns`
-list above: no path begins `packages/` or `apps/mod/`.
+list above: no path begins `packages/` or `mod/`.
 
 Three near-misses worth stating so they are not re-litigated:
 
