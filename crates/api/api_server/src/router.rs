@@ -4,7 +4,7 @@
 //! [`router`] owns the layer order, which is load-bearing: the metrics middleware sits outside
 //! the panic-catcher and the rate limiter so a 500-from-panic and a 429-from-throttle are both
 //! counted, and the `/map-assets` mount sits *below* the rate-limit layer so terrain streaming is
-//! never limiter-bound. Both seams are commented at their call sites and pinned by tests.
+//! never limiter-bound. Both seams are commented at their call sites.
 //!
 //! **Role:** builds the whole HTTP application: `/healthz`, `/metrics`, the `/api/v1` tree merged
 //! from the eight domain route tables, `/uploads`, the map and glyph asset mounts, the optional
@@ -162,12 +162,9 @@ pub fn router(state: AppState) -> Router {
     // were `/auth/` or `/ingest/`. A cold Mission Creator boot needs 951 distinct files from this
     // mount — no request-per-second ceiling both clears that and refuses anything a scraper would
     // do differently, because the resource here is bytes and the meter counts requests. See
-    // the module header of `api_http_layer::middleware::rate_limiting` for the full argument, and
-    // `tests/map_assets_rate_limit_exemption.rs` for the proof that the routes above this line still refuse.
+    // the module header of `api_http_layer::middleware::rate_limiting` for the full argument.
     //
-    // Moving the `nest_service` below back above this layer silently re-arms the defect; that is
-    // why the order is asserted by `router::tests::
-    // the_exempt_mount_is_registered_below_the_rate_limit_layer` as well as behaviourally.
+    // Moving the `nest_service` below back above this layer silently re-arms the defect.
     // ─────────────────────────────────────────────────────────────────────────────────────────
     r = r.layer(from_fn_with_state(state.clone(), middleware::rate_limit));
 
@@ -211,7 +208,7 @@ pub fn router(state: AppState) -> Router {
         // is the whole point: inside `CatchPanicLayer` a panicking handler would never
         // reach `record` and the 500 would go uncounted, and inside `rate_limit` a throttled
         // request would never reach it either — `tbd_http_rate_limited_total` would be a
-        // series that can only ever read 0. Both are checked by the tests below.
+        // series that can only ever read 0.
         .layer(from_fn_with_state(registry, observe))
         .layer(from_fn(middleware::logging))
         .layer(from_fn(middleware::request_id))

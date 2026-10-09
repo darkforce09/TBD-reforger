@@ -64,6 +64,18 @@ impl Fixture {
     pub(crate) async fn new(suite: &str, shape: EventShape<'_>) -> Self {
         let url =
             common::require_test_database_url().expect("event eligibility requires PostgreSQL");
+        Self::on_database(url, suite, shape).await
+    }
+
+    /// [`Fixture::new`] on an isolated database of the binary
+    /// ([`common::require_isolated_test_database_url`]), for a test whose assertions read every
+    /// event of the database.
+    pub(crate) async fn new_isolated(scope: &str, suite: &str, shape: EventShape<'_>) -> Self {
+        let url = common::require_isolated_test_database_url(scope);
+        Self::on_database(url, suite, shape).await
+    }
+
+    async fn on_database(url: String, suite: &str, shape: EventShape<'_>) -> Self {
         let pool = api_database::connect(&url)
             .await
             .expect("the test database accepts a connection");

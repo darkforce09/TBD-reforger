@@ -26,6 +26,11 @@ use crate::common;
 
 pub(crate) async fn app_and_token(role: &str) -> Option<(Router, String)> {
     let url = common::require_test_database_url()?;
+    Some(app_and_token_on(url, role).await)
+}
+
+/// [`app_and_token`] over the database at `url`.
+async fn app_and_token_on(url: String, role: &str) -> (Router, String) {
     let pool = api_database::connect(&url).await.expect("connect");
     api_database::migrate(&pool).await.expect("migrate");
     let app = router(api_server::composition::application_state(
@@ -53,7 +58,7 @@ pub(crate) async fn app_and_token(role: &str) -> Option<(Router, String)> {
         .find_map(|p| p.strip_prefix("access_token="))
         .expect("the fragment carries an access token")
         .to_string();
-    Some((app, tok))
+    (app, tok)
 }
 
 /// One request with an optional bearer, one optional extra `(name, value)` header and an
@@ -382,10 +387,23 @@ pub(crate) async fn mission_in_event_with_orbat_faction(
 /// maker nor the admin under test.
 pub(crate) async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, String)> {
     let url = common::require_test_database_url()?;
-    let (app, maker) = app_and_token("mission_maker").await?;
-    let (_, admin) = app_and_token("admin").await?;
+    Some(app_pool_and_tokens_on(url).await)
+}
+
+/// [`app_pool_and_tokens`] on an isolated database of the binary
+/// ([`common::require_isolated_test_database_url`]), for a test that changes rows every compile
+/// reads, such as the current modpack.
+pub(crate) async fn isolated_app_pool_and_tokens(
+    scope: &str,
+) -> (Router, sqlx::PgPool, String, String) {
+    app_pool_and_tokens_on(common::require_isolated_test_database_url(scope)).await
+}
+
+async fn app_pool_and_tokens_on(url: String) -> (Router, sqlx::PgPool, String, String) {
+    let (app, maker) = app_and_token_on(url.clone(), "mission_maker").await;
+    let (_, admin) = app_and_token_on(url.clone(), "admin").await;
     let pool = api_database::connect(&url).await.expect("connect");
-    Some((app, pool, maker, admin))
+    (app, pool, maker, admin)
 }
 
 /// Default library page (`limit` omitted → 20, `offset` omitted → 0). The overflow suite uses

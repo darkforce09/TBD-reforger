@@ -128,24 +128,6 @@ impl Fixture {
         .await
     }
 
-    pub(crate) async fn clear(
-        &self,
-        actor: &Actor,
-        mission: usize,
-        slot: usize,
-    ) -> (StatusCode, Value) {
-        self.call(
-            actor,
-            "DELETE",
-            &format!(
-                "/api/v1/event-missions/{}/slots/{}/assign",
-                self.missions[mission], self.slots[mission][slot]
-            ),
-            None,
-        )
-        .await
-    }
-
     pub(crate) async fn register(
         &self,
         actor: &Actor,
@@ -154,42 +136,6 @@ impl Fixture {
     ) -> (StatusCode, Value) {
         self.call(actor, "POST", &format!("/api/v1/event-missions/{}/register", self.missions[mission]),
             Some(json!({"slot_id":slot.map(|slot| self.slots[mission][slot].to_string()).unwrap_or_default()}))).await
-    }
-
-    pub(crate) async fn withdraw(&self, actor: &Actor, mission: usize) -> (StatusCode, Value) {
-        self.call(
-            actor,
-            "DELETE",
-            &format!("/api/v1/event-missions/{}/register", self.missions[mission]),
-            None,
-        )
-        .await
-    }
-
-    pub(crate) async fn squad(&self, actor: &Actor, release: bool) -> (StatusCode, Value) {
-        let action = if release { "release" } else { "reserve" };
-        self.call(
-            actor,
-            "POST",
-            &format!(
-                "/api/v1/event-missions/{}/squads/{action}",
-                self.missions[0]
-            ),
-            Some(json!({"squad":"Alpha"})),
-        )
-        .await
-    }
-
-    pub(crate) async fn operation(&self, name: &str, actor: &Actor) -> (StatusCode, Value) {
-        match name {
-            "assign" => self.assign(actor, 0, 1, &self.players[0]).await,
-            "clear" => self.clear(actor, 0, 0).await,
-            "hold" => self.squad(actor, false).await,
-            "release" => self.squad(actor, true).await,
-            "register" => self.register(actor, 0, Some(1)).await,
-            "withdraw" => self.withdraw(actor, 0).await,
-            _ => panic!("unknown reservation fixture operation {name}"),
-        }
     }
 
     pub(crate) async fn seed_registration(
@@ -223,11 +169,6 @@ impl Fixture {
     pub(crate) async fn seed_occupant(&self, actor: &Actor, mission: usize, slot: usize) {
         sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = clock_timestamp() WHERE id = $2")
             .bind(&actor.id).bind(self.slots[mission][slot]).execute(&self.state.pool).await.expect("the update of orbat_slots succeeds");
-    }
-
-    pub(crate) async fn seed_hold(&self) {
-        sqlx::query("INSERT INTO orbat_reservations(event_mission_id, squad, reserved_by) VALUES ($1, 'Alpha', $2)")
-            .bind(self.missions[0]).bind(&self.leader.id).execute(&self.state.pool).await.expect("the insert into orbat_reservations succeeds");
     }
 
     pub(crate) async fn snapshot(&self) -> Value {
@@ -281,35 +222,6 @@ impl Fixture {
         .fetch_one(&self.state.pool)
         .await
         .expect("the read of audit_logs returns a row")
-    }
-
-    pub(crate) async fn registration_facts(&self, actor: &Actor, mission: usize) -> Value {
-        sqlx::query_scalar(
-            "SELECT jsonb_build_object('registration', to_jsonb(r),
-            'history', (SELECT jsonb_agg(to_jsonb(h) ORDER BY h.id)
-            FROM event_registration_history h WHERE h.registration_id = r.id))
-            FROM event_registrations r WHERE event_mission_id = $1 AND discord_id = $2",
-        )
-        .bind(self.missions[mission])
-        .bind(&actor.id)
-        .fetch_one(&self.state.pool)
-        .await
-        .expect("the read of event_registration_history returns a row")
-    }
-
-    pub(crate) async fn seed_cancelled_registration(&self, actor: &Actor) {
-        self.seed_registration(actor, 0, "withdrawn", None).await;
-        sqlx::query(
-            "UPDATE event_registrations SET release_reason = 'event_cancelled',
-            withdrawn_at = clock_timestamp() - interval '1 hour',
-            attendance_state = 'attended', legacy_attendance_state = 'attended'
-            WHERE event_mission_id = $1 AND discord_id = $2",
-        )
-        .bind(self.missions[0])
-        .bind(&actor.id)
-        .execute(&self.state.pool)
-        .await
-        .expect("the update of event_registrations succeeds");
     }
 
     pub(crate) async fn event_barrier(&self) -> (sqlx::Transaction<'static, sqlx::Postgres>, i32) {

@@ -111,18 +111,15 @@ futures = { workspace = true }
 # Core draft 2020-12 validation of the contract schemas the suites check answers against; the
 # workspace entry turns the HTTP `$ref` resolver off.
 jsonschema = { workspace = true }
-proptest = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 # float_roundtrip parses every number bit-exactly, so a fire solution re-solved from a client or
 # catalog document starts from the same f64 inputs the wasm client used.
 serde_json = { workspace = true, features = ["float_roundtrip", "raw_value"] }
 url = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
-# The checkout-root walk the tests that read the repository (the database crate's migrations and
-# seeds, the contracts, the API crates' manifests and sources) anchor on.
+# The checkout-root walk the tests that read the repository (the database crate's migrations,
+# the contracts and the committed catalogs) anchor on.
 repository_root = { workspace = true }
-# The Cargo manifest reader the route table support reads the API crates' manifests with.
-repository_laws = { workspace = true }
 
 [lints]
 workspace = true

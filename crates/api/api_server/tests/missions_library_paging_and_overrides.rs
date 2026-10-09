@@ -41,7 +41,7 @@ fn find_id_in_missions_list_always_paginates() {
         "find_id_in_missions_list must request limit={{PAGE}}&offset={{offset}}"
     );
 
-    let lifecycle = include_str!("missions_compiled_document.rs")
+    let lifecycle = include_str!("missions/missions_compiled_document.rs")
         .split("async fn mission_lifecycle_and_compiled")
         .nth(1)
         .expect("mission_lifecycle_and_compiled must exist")

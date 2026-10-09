@@ -44,20 +44,21 @@ crate links no map engine and no graphics crate. Game servers
 fetch compiled mission [artifacts](/documentation/glossary/a_to_f.md#artifact) over HTTPS from
 `/api/v1/game-runtime/artifacts/{artifactId}`; nothing is staged on disk for them.
 
-The integration suites in `tests/` build one test binary per top-level file. A binary that needs
-a database derives its own scratch database from `TEST_DATABASE_URL`, creates and migrates it,
-and the suites that drive HTTP build the same router the `api-server` binary serves. Shared support
-lives in `tests/common/` and the `*_support/` folders, which produce no binary of their own.
+The integration suites in `tests/` build one test binary per domain folder (`tests/<binary>/main.rs`
+and its modules). Each binary derives one scratch database from `TEST_DATABASE_URL`, creates and
+migrates it once, and its tests share it, each on rows and ids it mints itself; the few modules
+that read whole tables take an isolated database of their own. The suites that drive HTTP build the
+same router the `api-server` binary serves. Shared support lives in `tests/common/` and the
+`*_support/` folders, which produce no binary of their own.
 
 ### Verification suites
 
-Besides the per-domain suites, two groups of binaries verify the API as a whole; each case's
-name starts with its group's prefix, which the verification register counts.
+Besides the per-domain binaries, two binaries verify the API as a whole:
 
-| Group | Binaries | Shared support |
+| Binary | What it checks | Shared support |
 |---|---|---|
-| route acceptance | one `route_acceptance_<part>` per part (`identity_and_core`, `operations_events`, `operations_reservations`, `operations_ballistics`, `missions_library`, `missions_reviews`, `fleet_and_telemetry`, `administration_center_content`), and `debug_routes_are_development_only` | `route_acceptance_support/`: the route table read from `src/router.rs` and the domain crates' `routes.rs`, the specs and worlds per part, the derived probes and the dimension runner |
-| contract parity | `contract_parity_goldens`, `contract_parity_equipment_viewer`, and each route acceptance part's `contract_parity_<part>_…` case | `contract_parity_support/` (golden index, normalisation, seeded capture, route contracts), `fixtures/equipment_data_viewer/` |
+| `route_acceptance` | every route of each part (`identity_and_core`, `operations_events`, `operations_reservations`, `operations_ballistics`, `missions_library`, `missions_reviews`, `fleet_and_telemetry`, `administration_center_content`) answers its authorized caller with the documented success and contract and refuses its unauthorized callers; the debug routes exist only in a development router | `route_acceptance/route_acceptance_support/`: the specs and worlds per part, the derived probes and the dimension runner |
+| `contract_parity` | the frontend goldens reproduced by the seeded API, the equipment data viewer goldens, and the current profile, event access, game runtime and mission review wire shapes against their contracts | `contract_parity/contract_parity_support/` (golden index, normalisation, seeded capture, route contracts), `fixtures/equipment_data_viewer/` |
 
 The design note linked under Related documentation specifies each group.
 

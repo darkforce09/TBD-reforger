@@ -58,7 +58,7 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 
 | Folder | Package | What it is |
 |---|---|---|
-| [`crates/api/api_server/`](/crates/api/api_server/README.md) | `api_server` | the Axum and sqlx REST API and SSE hub: the top API crate (router, composition root, the `api-server` server and the `import-item-registry` tool) the 23 other crates under `crates/api/` are assembled into, and its 150 integration binaries |
+| [`crates/api/api_server/`](/crates/api/api_server/README.md) | `api_server` | the Axum and sqlx REST API and SSE hub: the top API crate (router, composition root, the `api-server` server and the `import-item-registry` tool) the 23 other crates under `crates/api/` are assembled into, and its ten integration binaries |
 | [`crates/frontend/shell/frontend_application/`](/crates/frontend/shell/frontend_application/README.md) | `frontend_application` | the Leptos single-page app, compiled to WebAssembly and served by Trunk: the shell crate (entry point, route rendering, the platform frame in `shell/`, the stylesheet) the 22 crates of the lower frontend layers are assembled into |
 | [`crates/frontend/shell/offline_service_worker/`](/crates/frontend/shell/offline_service_worker/README.md) | `offline_service_worker` | the WebAssembly service worker behind offline packs, the app's peer in the shell layer |
 | [`crates/fleet/game_server_host_agent/`](/crates/fleet/game_server_host_agent/README.md) | `game_server_host_agent` | the game server host agent beside each game-server instance that carries out fleet commands |
@@ -223,8 +223,8 @@ infrastructure (`api_identifiers`, `api_foundation`, `api_configuration`, `api_d
 `api_http_layer`), kernel
 (`api_mission_vocabulary`, `api_audit_log`, `api_equipment_datasets`, `api_member_activity`,
 `api_discord`, `api_caller_identity`, `api_state`), the eight domain crates and
-`api_background_workers`. Its 154 integration binaries are 150 in `crates/api/api_server/tests/` and the 4
-suites of `staging_fixtures`.
+`api_background_workers`. Its integration binaries are the ten domain binaries in
+`crates/api/api_server/tests/` (one database each) and the suites of `staging_fixtures`.
 
 Every package is named after its folder, in snake_case. A crate under `crates/` sits in the
 folder of its category and declares its tier in its manifest (`cargo xtask verify crate-tiers`).

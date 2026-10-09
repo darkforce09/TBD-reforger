@@ -1,0 +1,255 @@
+//! The sqlx `FromRow` decode path is correct for the tricky types:
+//! Postgres ENUM → Rust enum, `timestamptz` → `DateTime<Utc>`, `bigint` → `i64`,
+//! `numeric` → `f64` (via `::float8` cast), and `jsonb` → RawValue passthrough.
+//!
+//! Skips unless `TEST_DATABASE_URL` is set. [`common::require_test_database_url`] gives
+//! this binary its own `<base>_models_fromrow_it` database.
+//!
+//! NOTE: the app sets `created_at`/`updated_at` explicitly on INSERT (the columns have no DB
+//! default) — the inserts below mirror that.
+//!
+//! Also hosts the sparse-reimport pin for
+//! `crates/api/api_missions/src/services/registry_import.rs`, so that DB consumer goes through the common
+//! guard and the tests-only `src/` scan stays green.
+
+use crate::common;
+
+use api_caller_identity::UserRole;
+use api_identity_and_access::models::user_account::User;
+use api_missions::models::mission::MissionVersion;
+use api_missions::services::registry_import::import_items;
+use uuid::Uuid;
+
+#[tokio::test]
+async fn fromrow_decodes_enum_numeric_timestamp_jsonb() {
+    let Some(url) = common::require_test_database_url() else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+
+    let did = format!("frt-{}", Uuid::new_v4());
+
+    // --- User: enum (role), bigint (total_deployments), numeric cast (attendance_rate) ---
+    // Mirrors the app: non-pointer string columns get '' (never NULL); created/updated set app-side.
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_character, \
+         role, is_banned, ban_reason, total_deployments, attendance_rate, created_at, updated_at) \
+         VALUES ($1, 'FromRow Fran', '', '', '', 'admin', false, '', 7, 94.5, now(), now())",
+    )
+    .bind(&did)
+    .execute(&pool)
+    .await
+    .expect("insert user");
+
+    let u: User = sqlx::query_as(
+        "SELECT discord_id, username, discord_handle, avatar_url, arma_id, arma_character, \
+         role, is_banned, ban_reason, banned_by, banned_at, total_deployments, \
+         attendance_rate::float8 AS attendance_rate, last_login_at, created_at, updated_at \
+         FROM users WHERE discord_id = $1",
+    )
+    .bind(&did)
+    .fetch_one(&pool)
+    .await
+    .expect("decode user");
+    assert_eq!(u.role, UserRole::Admin);
+    assert_eq!(u.total_deployments, 7);
+    assert!((u.attendance_rate - 94.5).abs() < 1e-9, "numeric->f64 cast");
+
+    // --- MissionVersion: jsonb passthrough (Postgres-normalized bytes, no reformat) ---
+    let mid: Uuid = sqlx::query_scalar(
+        "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
+         VALUES ('t', $1, 'everon', 'pve_coop', 10, 'draft', now(), now()) RETURNING id",
+    )
+    .bind(&did)
+    .fetch_one(&pool)
+    .await
+    .expect("insert mission");
+
+    sqlx::query(
+        "INSERT INTO mission_versions (mission_id, semver, json_payload, editor_notes, created_by, created_at) \
+         VALUES ($1, '0.1.0', '{\"b\": 2, \"a\": 1}'::jsonb, '', $2, now())",
+    )
+    .bind(mid)
+    .bind(&did)
+    .execute(&pool)
+    .await
+    .expect("insert version");
+
+    let mv: MissionVersion = sqlx::query_as(
+        "SELECT id, mission_id, semver, json_payload, editor_notes, created_by, created_at \
+         FROM mission_versions WHERE mission_id = $1",
+    )
+    .bind(mid)
+    .fetch_one(&pool)
+    .await
+    .expect("decode version");
+    let v = serde_json::to_value(&mv).expect("serialize");
+    assert_eq!(v["json_payload"]["a"], serde_json::json!(1));
+    assert_eq!(v["json_payload"]["b"], serde_json::json!(2));
+
+    // cleanup
+    let _ = sqlx::query("DELETE FROM mission_versions WHERE mission_id = $1")
+        .bind(mid)
+        .execute(&pool)
+        .await;
+    let _ = sqlx::query("DELETE FROM missions WHERE id = $1")
+        .bind(mid)
+        .execute(&pool)
+        .await;
+    let _ = sqlx::query("DELETE FROM users WHERE discord_id = $1")
+        .bind(&did)
+        .execute(&pool)
+        .await;
+}
+
+/// Sparse re-import must not NULL populated Option columns.
+///
+/// Lives here rather than beside `crates/api/api_missions/src/services/registry_import.rs` so the DB
+/// consumer goes through the common per-binary guard instead of reading `TEST_DATABASE_URL`
+/// raw against the operator base.
+#[tokio::test]
+async fn sparse_reimport_preserves_option_columns() {
+    let Some(url) = common::require_test_database_url() else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let pool = api_database::connect(&url).await.expect("connect");
+    api_database::migrate(&pool).await.expect("migrate");
+
+    const MP: &str = "00000000-0000-4000-a000-000000003377";
+    const RN: &str = "{DEADBEEF00003761}Prefabs/Clothing/Reimport_Sparse_Vest.et";
+
+    let rich = format!(
+        r#"{{
+  "registryItemsVersion": "2",
+  "modpackId": "{MP}",
+  "generatedAt": "2026-07-27T00:00:00Z",
+  "addons": [{{ "guid": "5EB744C5F42E0800", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true }}],
+  "items": [{{
+    "resource_name": "{RN}",
+    "display_name": "  Reimport Sparse Vest  ",
+    "category": "  NATO/Vest  ",
+    "kind": "gear_vest",
+    "abstract": false,
+    "arsenal_type": "VEST",
+    "weight_kg": 2.5,
+    "volume_cm3": 400.0,
+    "max_weight_kg": 15.0,
+    "max_volume_cm3": 2000.0,
+    "addon": "ArmaReforger",
+    "cargo_grid_w": 4,
+    "cargo_grid_h": 6,
+    "icon_url": "items/reimport.png"
+  }}]
+}}"#
+    )
+    .into_bytes();
+
+    let sparse = format!(
+        r#"{{
+  "registryItemsVersion": "2",
+  "modpackId": "{MP}",
+  "generatedAt": "2026-07-27T00:00:00Z",
+  "addons": [{{ "guid": "5EB744C5F42E0800", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true }}],
+  "items": [{{
+    "resource_name": "{RN}",
+    "display_name": "Reimport Sparse Vest Renamed",
+    "category": "NATO/Vest",
+    "kind": "gear_vest"
+  }}]
+}}"#
+    )
+    .into_bytes();
+
+    let mp = Uuid::parse_str(MP).unwrap();
+    for q in [
+        "DELETE FROM registry_items WHERE modpack_id = $1",
+        "DELETE FROM modpacks WHERE id = $1",
+    ] {
+        sqlx::query(q).bind(mp).execute(&pool).await.expect("clean");
+    }
+
+    let c1 = import_items(&pool, &rich, Some(mp.into()), false)
+        .await
+        .expect("rich");
+    assert_eq!((c1.inserted, c1.updated), (1, 0));
+
+    #[derive(sqlx::FromRow)]
+    struct Row {
+        display_name: String,
+        category: String,
+        weight_kg: Option<f64>,
+        volume_cm3: Option<f64>,
+        max_weight_kg: Option<f64>,
+        max_volume_cm3: Option<f64>,
+        addon: Option<String>,
+        arsenal_type: Option<String>,
+        abstract_: Option<bool>,
+        cargo_grid_w: Option<i32>,
+        cargo_grid_h: Option<i32>,
+        icon_url: String,
+    }
+
+    let after_rich: Row = sqlx::query_as(
+        "SELECT display_name, category, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, \
+         addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, \
+         COALESCE(icon_url, '') AS icon_url \
+         FROM registry_items WHERE modpack_id = $1 AND resource_name = $2",
+    )
+    .bind(mp)
+    .bind(RN)
+    .fetch_one(&pool)
+    .await
+    .expect("after rich");
+    assert_eq!(
+        after_rich.display_name, "Reimport Sparse Vest",
+        "trim display_name"
+    );
+    assert_eq!(after_rich.category, "NATO/Vest", "trim category");
+    assert_eq!(after_rich.weight_kg, Some(2.5));
+    assert_eq!(after_rich.icon_url, "items/reimport.png");
+
+    let c2 = import_items(&pool, &sparse, Some(mp.into()), false)
+        .await
+        .expect("sparse");
+    // display_name change forces the UPDATE path; Option absences must not NULL columns.
+    assert_eq!(c2.inserted, 0);
+    assert_eq!(c2.updated, 1, "display_name rename must update the row");
+
+    let after_sparse: Row = sqlx::query_as(
+        "SELECT display_name, category, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, \
+         addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, \
+         COALESCE(icon_url, '') AS icon_url \
+         FROM registry_items WHERE modpack_id = $1 AND resource_name = $2",
+    )
+    .bind(mp)
+    .bind(RN)
+    .fetch_one(&pool)
+    .await
+    .expect("after sparse");
+
+    assert_eq!(after_sparse.display_name, "Reimport Sparse Vest Renamed");
+    assert_eq!(after_sparse.weight_kg, Some(2.5), "weight_kg preserved");
+    assert_eq!(after_sparse.volume_cm3, Some(400.0), "volume_cm3 preserved");
+    assert_eq!(
+        after_sparse.max_weight_kg,
+        Some(15.0),
+        "max_weight_kg preserved"
+    );
+    assert_eq!(
+        after_sparse.max_volume_cm3,
+        Some(2000.0),
+        "max_volume_cm3 preserved"
+    );
+    assert_eq!(after_sparse.addon.as_deref(), Some("ArmaReforger"));
+    assert_eq!(after_sparse.arsenal_type.as_deref(), Some("VEST"));
+    assert_eq!(after_sparse.abstract_, Some(false));
+    assert_eq!(after_sparse.cargo_grid_w, Some(4));
+    assert_eq!(after_sparse.cargo_grid_h, Some(6));
+    assert_eq!(
+        after_sparse.icon_url, "items/reimport.png",
+        "icon_url still never updated"
+    );
+}

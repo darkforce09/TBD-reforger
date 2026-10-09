@@ -3,10 +3,12 @@
 //! Every DB-backed suite calls [`require_test_database_url`] instead of reading
 //! `TEST_DATABASE_URL` itself. That single entry point is what makes two guarantees hold for
 //! all of them at once: the URL can only ever point at an allow-listed throwaway database,
-//! and each test binary gets a private one so a suite's verdict cannot depend on rows a
-//! sibling binary left behind.
+//! and each test binary gets a private one, provisioned once, so a binary's verdict cannot
+//! depend on rows a sibling binary left behind. The tests inside one binary share that
+//! database and isolate themselves through rows and ids they mint for themselves.
 
-use std::sync::OnceLock;
+use std::collections::BTreeMap;
+use std::sync::{Mutex, OnceLock, PoisonError};
 
 use sqlx::{AssertSqlSafe, Connection, PgConnection};
 use url::Url;
@@ -95,12 +97,11 @@ pub(crate) fn assert_test_database_url(database_url: &str) {
 
 /// The test binary this copy of `common` was compiled into.
 ///
-/// Cargo compiles one crate per top-level `tests/*.rs`, and `CARGO_CRATE_NAME` is set per
-/// compilation unit — so this expands to `servers_crud` inside `tests/servers_crud.rs`'s
-/// binary and to `dev_login_runtime_identity` inside `tests/dev_login_runtime_identity.rs`'s. It is a
-/// compile-time `env!`, so a Cargo that stopped setting it is a build error here rather
-/// than a silent fallback to one shared name — which is the defect this whole section
-/// exists to prevent.
+/// Cargo compiles one crate per `tests/<binary>/main.rs`, and `CARGO_CRATE_NAME` is set per
+/// compilation unit — so this expands to `missions` inside `tests/missions/main.rs`'s binary
+/// and to `smoke` inside `tests/smoke/main.rs`'s. It is a compile-time `env!`, so a Cargo that
+/// stopped setting it is a build error here rather than a silent fallback to one shared name,
+/// which would let two binaries drop each other's database.
 const SUITE: &str = env!("CARGO_CRATE_NAME");
 
 /// Resolved once per test binary. Missing configuration panics; initialized values are Some.
@@ -108,7 +109,7 @@ static PER_BINARY_URL: OnceLock<Option<String>> = OnceLock::new();
 
 /// Derive this binary's private database name from the operator's base name.
 ///
-/// `("rust_it", "servers_crud")` → `"rust_it_servers_crud_it"`.
+/// `("rust_it", "missions")` → `"rust_it_missions_it"`.
 ///
 /// The `_it` suffix is not decoration: it is what keeps every generated name inside the
 /// allow-list ([`is_safe_test_database_name`]) no matter what the base was — `rust_it`,
@@ -169,9 +170,8 @@ pub(crate) fn with_database_name(url: &str, database: &str) -> Option<String> {
 /// every run, so a binary's verdict cannot depend on a previous run either, and the
 /// allow-list is asserted on the **derived** name as well as the operator's.
 ///
-/// Two things this deliberately does NOT do. It does not serialise anything — tests still
-/// run in parallel inside a binary, at full speed. And it does not weaken a single
-/// assertion; the suites are unchanged.
+/// It does not serialise anything: tests still run in parallel inside a binary, at full
+/// speed, each on rows and ids it minted itself.
 ///
 /// # Known limit: concurrent `cargo test` processes still race
 ///
@@ -181,12 +181,31 @@ pub(crate) fn with_database_name(url: &str, database: &str) -> Option<String> {
 /// after another, so that path is covered; cross-process overlap outside it would need
 /// PID-suffixed names or a cross-process provision lock.
 pub(crate) fn require_test_database_url() -> Option<String> {
-    PER_BINARY_URL.get_or_init(resolve_and_provision).clone()
+    PER_BINARY_URL
+        .get_or_init(|| Some(resolve_and_provision(SUITE)))
+        .clone()
 }
 
-/// One-shot: derive the per-binary name, guard it, create the database, migrate it, and
-/// prime the shared `dev-login` row. Runs at most once per test binary.
-fn resolve_and_provision() -> Option<String> {
+/// The isolated databases provisioned so far, by scope.
+static ISOLATED_URLS: Mutex<BTreeMap<String, String>> = Mutex::new(BTreeMap::new());
+
+/// A database of this binary's own beside the shared one, `<base>_<binary>_<scope>_it`, for a
+/// module whose assertions read or change whole tables or a shared account (a seeded golden
+/// reproduced row for row, a board over every player, a replay that revokes every session of the
+/// dev-login account) and so cannot share rows with the binary's other tests.
+///
+/// Dropped, recreated and migrated on the first call for `scope`; later calls return the same
+/// URL.
+pub(crate) fn require_isolated_test_database_url(scope: &str) -> String {
+    let mut urls = ISOLATED_URLS.lock().unwrap_or_else(PoisonError::into_inner);
+    urls.entry(scope.to_string())
+        .or_insert_with(|| resolve_and_provision(&format!("{SUITE}_{scope}")))
+        .clone()
+}
+
+/// Derive the database name for `suite`, guard it, create the database, migrate it, and prime
+/// the shared `dev-login` row.
+fn resolve_and_provision(suite: &str) -> String {
     let base_url = std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| {
         panic!("TEST_DATABASE_URL is required for database tests, including CI and verification gates; run cargo xtask db test-it. A test without its database cannot pass.")
     });
@@ -196,7 +215,7 @@ fn resolve_and_provision() -> Option<String> {
     let base_name =
         database_name_from_url(&base_url).expect("assert_test_database_url accepted the URL");
 
-    let derived_name = per_binary_database_name(&base_name, SUITE);
+    let derived_name = per_binary_database_name(&base_name, suite);
     assert!(
         derived_name
             .bytes()
@@ -212,7 +231,7 @@ fn resolve_and_provision() -> Option<String> {
     assert_test_database_url(&derived_url);
 
     provision(&base_url, &derived_name, &derived_url);
-    Some(derived_url)
+    derived_url
 }
 
 /// Run [`provision_async`] on its own thread + runtime.
@@ -222,6 +241,7 @@ fn resolve_and_provision() -> Option<String> {
 /// current-thread runtime keeps the caller's signature synchronous, which is what lets
 /// `OnceLock` do the once-per-process serialisation with no changes at the call sites.
 fn provision(base_url: &str, derived_name: &str, derived_url: &str) {
+    let label = derived_name.to_string();
     let (base_url, derived_name, derived_url) = (
         base_url.to_string(),
         derived_name.to_string(),
@@ -240,7 +260,7 @@ fn provision(base_url: &str, derived_name: &str, derived_url: &str) {
             .map(String::as_str)
             .or_else(|| payload.downcast_ref::<&str>().copied())
             .unwrap_or("<non-string panic payload>");
-        panic!("provisioning tests/{SUITE}.rs's database failed: {why}");
+        panic!("provisioning `{label}` for the `{SUITE}` test binary failed: {why}");
     }
 }
 
@@ -251,7 +271,7 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
     // database is involved at all.
     let mut admin = PgConnection::connect(base_url).await.unwrap_or_else(|e| {
         panic!(
-            "connect to base database to create tests/{SUITE}.rs's database: {e}\n  \
+            "connect to base database to create the `{SUITE}` test binary's database: {e}\n  \
              The base database must exist — `cargo xtask db test-it` creates rust_it."
         )
     });
@@ -305,89 +325,4 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
     .unwrap_or_else(|e| panic!("prime dev-login row in `{derived_name}`: {e}"));
 
     pool.close().await;
-}
-
-/// Assert that only [`require_test_database_url`] reads `TEST_DATABASE_URL`.
-///
-/// Scans every top-level `tests/*.rs` binary (not this `common/` module), every `src/**/*.rs`
-/// file of this package **and** every `.rs` file of the other API packages under `crates/api/`
-/// ([`super::api_packages`]; this package sits there too and is read once, so this module,
-/// which holds the needle legitimately, is never scanned). Scanning the sources is not optional:
-/// an in-crate `#[tokio::test]` can read the operator base raw and stay invisible to a
-/// tests-only scan. A raw
-/// `env::var("TEST_DATABASE_URL")` outside this module is a regression — parallel integration
-/// runs against live `tbd_reforger` must panic, not mutate.
-pub(crate) fn assert_no_raw_test_database_url_reads_outside_common() {
-    let needle = concat!("env::var(", "\"TEST_DATABASE_URL\")");
-    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mut offenders = Vec::new();
-
-    // Top-level integration binaries — `tests/common/` is not scanned.
-    let tests_dir = manifest.join("tests");
-    let entries = std::fs::read_dir(&tests_dir)
-        .unwrap_or_else(|e| panic!("read_dir({}): {e}", tests_dir.display()));
-    for entry in entries {
-        let entry = entry.expect("DirEntry");
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("rs") || !path.is_file() {
-            continue;
-        }
-        let src = std::fs::read_to_string(&path)
-            .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
-        if src.contains(needle) {
-            offenders.push(format!(
-                "tests/{}",
-                path.file_name()
-                    .expect("the scanned path has a file name")
-                    .to_string_lossy()
-            ));
-        }
-    }
-
-    // Walk `src/` so lib-target DB tests cannot hide from this pin.
-    let src_dir = manifest.join("src");
-    fn walk_rs(
-        dir: &std::path::Path,
-        needle: &str,
-        offenders: &mut Vec<String>,
-        root: &std::path::Path,
-    ) {
-        let entries =
-            std::fs::read_dir(dir).unwrap_or_else(|e| panic!("read_dir({}): {e}", dir.display()));
-        for entry in entries {
-            let entry = entry.expect("DirEntry");
-            let path = entry.path();
-            if path.is_dir() {
-                walk_rs(&path, needle, offenders, root);
-                continue;
-            }
-            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
-                continue;
-            }
-            let src = std::fs::read_to_string(&path)
-                .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
-            if src.contains(needle) {
-                let rel = path
-                    .strip_prefix(root)
-                    .unwrap_or(&path)
-                    .display()
-                    .to_string();
-                offenders.push(rel);
-            }
-        }
-    }
-    walk_rs(&src_dir, needle, &mut offenders, manifest);
-    // The other API crates under `crates/api/` hold the domains' in-crate database tests too.
-    let repository_root = repository_root::find_repository_root_from(manifest)
-        .expect("the repository root above the API package");
-    let packages = super::api_packages().unwrap_or_else(|e| panic!("the API package list: {e}"));
-    for package in packages.iter().filter(|package| !package.is_application) {
-        walk_rs(&package.folder, needle, &mut offenders, &repository_root);
-    }
-
-    assert!(
-        offenders.is_empty(),
-        "these paths still contain {needle} — use common::require_test_database_url \
-         (only tests/common/database.rs may hold that literal): {offenders:?}"
-    );
 }

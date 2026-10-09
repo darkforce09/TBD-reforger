@@ -210,7 +210,7 @@ crates/                                  <-- Product crates grouped by category 
 │       ├── src/                         <-- lib.rs · router.rs (route tables, mounts, middleware chain) · composition.rs (state with concrete services)
 │       │   ├── bin/                     <-- The `api-server` server and the `import-item-registry` tool
 │       │   └── tests/                   <-- Executable layout rules (crate graph, domain graph) and prose rules, router pins
-│       ├── tests/                       <-- 150 integration binaries, each on its own database
+│       ├── tests/                       <-- Ten domain integration binaries (tests/<domain>/main.rs), one database each
 │       └── .env.example                 <-- Local configuration template, copied to the untracked .env
 ├── fleet/                               <-- The game-server fleet crates over the fleet wire contract
 │   └── game_server_host_agent/          <-- Game server host agent per game-server instance: claims fleet commands from the API, runs process control, RCON reads and console lines, mission header switches

@@ -274,7 +274,8 @@ operations on identity and access, match telemetry, missions and server infrastr
 center on community content, identity and access, missions, operations and server
 infrastructure), and no kernel or infrastructure crate depends on a domain. The
 `staging-fixtures` host tool in `tools/staging/staging_fixtures/` writes through the domain
-crates' services and carries 4 of the API's 154 integration binaries.
+crates' services and carries the API's integration suites beside the ten binaries of
+`crates/api/api_server/tests/`.
 
 ### State composition
 

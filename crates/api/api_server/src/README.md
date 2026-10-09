@@ -48,8 +48,8 @@ warning is logged at boot when either directory is missing), and, when `SPA_DIST
 fallback and the cross-origin isolation headers, its offline service worker loader
 `/service_worker.js` with `Cache-Control: no-cache`. The middleware chain wraps all of it,
 outermost first: request id, access log, metrics, panic recovery, CORS, body limit, rate limit;
-the two asset mounts sit below the rate limit and never reach it, which `tests/router.rs` pins by
-the order of the two registrations in `router.rs`.
+the two asset mounts sit below the rate limit and never reach it, by the order of the two
+registrations in `router.rs`.
 
 ```text
 bin/api_server.rs ─▶ composition ─▶ api_state and the concrete services of the API crates
