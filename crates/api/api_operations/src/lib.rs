@@ -12,7 +12,7 @@
 //! `api_http_layer` (the caller extractors), `api_member_activity` (the statistics recompute and
 //! the re-evaluation queue), the four domains it names (`api_identity_and_access`,
 //! `api_match_telemetry`, `api_missions`, `api_server_infrastructure`), `api_audit_log`,
-//! `api_configuration`, `api_database`, `api_failpoints`, `api_foundation`, `api_identifiers`,
+//! `api_configuration`, `api_database`, `api_foundation`, `api_identifiers`,
 //! `api_mission_vocabulary`, `mission_model`, the ballistics crates (`ballistics_model`,
 //! `ballistics_solver`, `fire_mission_planning`, `ballistics_calibration`) and
 //! `fleet_wire_contract`. The API's router merges [`routes()`]; the event lifecycle sweeper and

@@ -30,8 +30,6 @@ api_caller_identity = { workspace = true }
 api_configuration = { workspace = true }
 # `is_unique_violation` and `violated_constraint`, the duplicate and constraint refusals.
 api_database = { workspace = true }
-# `fail_point!` at the slot registration commit.
-api_failpoints = { workspace = true }
 # `ApiError`, the RFC 3339 date spelling, the paging and the typed path parameters.
 api_foundation = { workspace = true }
 # The caller extractors `AuthUser`, `LeaderUser` and `AdminUser`.
@@ -82,9 +80,6 @@ tracing = { workspace = true }
 uuid = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
-api_failpoints = { workspace = true, features = ["failpoints"] }
-# The property run recorder of the access, quota and reservation planning property tests.
-api_property_evidence = { workspace = true }
 proptest = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 

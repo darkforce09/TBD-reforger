@@ -17,13 +17,11 @@
 //! * [`http`] — minting access tokens, either through the router's dev-login route or
 //!   straight from the JWT issuer.
 //! * [`fixtures`] — user rows a suite owns outright, plus the unique `arma_id` mint.
-//! * [`source_text`] — the scanners behind the dev-login contract pins in
-//!   `tests/test_support_self_checks.rs`.
+//! * [`source_text`] — the Rust source scanners the route acceptance support reads the route
+//!   tables with.
 //!
 //! The `pub use` block below is this module's surface for the behaviour suites: they reach
-//! helpers as `common::seed_user`, never through a submodule path. The one caller that does
-//! use submodule paths is `tests/test_support_self_checks.rs`, which pins the internals of
-//! this module rather than consuming its surface.
+//! helpers as `common::seed_user`, never through a submodule path.
 
 // Each test binary compiles its own copy of this module and uses a different subset of it,
 // so an item unused by *one* suite is not dead code — but rustc cannot know that, and the

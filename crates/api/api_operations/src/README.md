@@ -118,7 +118,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
 - Depends on:
   - the API kernel crates: `api_state` for the application state, `api_foundation` for the
     errors, pagination, path parameters and wire formats, `api_http_layer` for the extractors,
-    `api_configuration`, `api_database`, `api_failpoints` and `api_identifiers`, with
+    `api_configuration`, `api_database` and `api_identifiers`, with
     `http_url_guard` for the URL guard;
   - the API crates: `api_audit_log` for the audit rows; `api_member_activity` for the user-statistics
     recompute and the reservation re-evaluation queue; `api_caller_identity` for account and identity

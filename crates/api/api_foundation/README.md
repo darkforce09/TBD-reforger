@@ -56,7 +56,7 @@ No feature and no environment variable.
 
 - Depends on: `content_digest` and external crates (`ammonia`, `axum`, `chrono`, `serde`,
   `serde_json`, `sqlx`, `thiserror`, `tracing`).
-- Used by: `api_failpoints`, whose injected failure converts into `ApiError`; the API application
+- Used by: the API application
   (`crates/api/api_server`): every domain's handlers, services and models, its middleware and its integration
   suites.
 - Rules: nothing here names a domain or an API crate above it; the wire spellings are contract,

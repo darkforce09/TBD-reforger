@@ -65,7 +65,7 @@ lists them.
 ## Boundaries
 
 - Depends on: `api_state`, `api_caller_identity`, `api_discord`, `api_member_activity`,
-  `api_audit_log`, `api_http_layer`, `api_failpoints`, `api_configuration`, `api_foundation`,
+  `api_audit_log`, `api_http_layer`, `api_configuration`, `api_foundation`,
   `api_identifiers`, `fleet_wire_contract`, `http_url_guard`, sqlx, axum, serde, chrono, url,
   tracing, thiserror and uuid; Discord's OAuth2 and REST API. It names no other domain.
 - Used by: the API application (`crates/api/api_server`): its router merges `routes`, its background workers

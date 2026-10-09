@@ -12,7 +12,7 @@ router merges.
 
 ```text
 crates/api/api_match_telemetry/
-├── Cargo.toml  the package: `api_state`, `api_caller_identity`, `api_member_activity`, `api_server_infrastructure`, `api_http_layer`, `api_audit_log`, `api_failpoints`, `fleet_wire_contract`, sqlx (`postgres`), axum, layout tier 8
+├── Cargo.toml  the package: `api_state`, `api_caller_identity`, `api_member_activity`, `api_server_infrastructure`, `api_http_layer`, `api_audit_log`, `fleet_wire_contract`, sqlx (`postgres`), axum, layout tier 8
 └── src/        the route table, the handlers, the registration, results-revision and event-batch services, the models, the error and the prelude
 ```
 
@@ -44,8 +44,7 @@ and the routes are proved against Postgres by the API's integration suites.
 
 ## Configuration
 
-No feature and no variable of its own. The `fail_point!` sites around the results revision commit
-compile to nothing outside test builds (`api_failpoints`).
+No feature and no variable of its own.
 
 ## Public surface
 
@@ -63,7 +62,7 @@ compile to nothing outside test builds (`api_failpoints`).
 
 - Depends on: `api_state`, `api_caller_identity`, `api_member_activity`,
   `api_server_infrastructure` (the runtime-session fence, the status row and its publisher),
-  `api_http_layer`, `api_audit_log`, `api_database`, `api_failpoints`, `api_foundation`,
+  `api_http_layer`, `api_audit_log`, `api_database`, `api_foundation`,
   `api_identifiers`, `api_mission_vocabulary`, `fleet_wire_contract`, `http_url_guard`, sqlx,
   axum, serde, chrono, thiserror and uuid. It names no other domain.
 - Used by: the API application (`crates/api/api_server`): its router merges `routes`, the operations domain

@@ -83,17 +83,12 @@ api_configuration = { path = "crates/api/api_configuration" }
 # The API's Postgres pool, migrations, seeds and SQLSTATE classification
 # (`crates/api/api_database`).
 api_database = { path = "crates/api/api_database" }
-# The API's `fail_point!` macro and its test-only failpoint registry (`crates/api/api_failpoints`).
-api_failpoints = { path = "crates/api/api_failpoints" }
 # The API's handler error, JSON wire formats, text policies and request parameters
 # (`crates/api/api_foundation`).
 api_foundation = { path = "crates/api/api_foundation" }
 # The API's access tokens, middleware chain, rate limiters, metrics and health surfaces, realtime
 # hub and outbound retry (`crates/api/api_http_layer`).
 api_http_layer = { path = "crates/api/api_http_layer" }
-# The dev-only property run recorder of the API's property tests
-# (`crates/api/api_property_evidence`).
-api_property_evidence = { path = "crates/api/api_property_evidence" }
 # The API's audit severity and audit line appends (`crates/api/api_audit_log`).
 api_audit_log = { path = "crates/api/api_audit_log" }
 # The API's terrain and game mode enums (`crates/api/api_mission_vocabulary`).
@@ -578,8 +573,6 @@ tower = "0.5.3"
 tower-http = "0.7.0"
 tracing = "0.1.44"
 tracing-subscriber = "0.3.23"
-# The compile-fail test runner.
-trybuild = "1"
 typify = "0.7"
 # Side tints, unit and vehicle classes, the symbol atlas, markers and squad links
 # (`crates/map_overlay/unit_symbology`).

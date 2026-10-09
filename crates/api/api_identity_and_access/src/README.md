@@ -73,7 +73,7 @@ administrator does to a member lives in `api_administration`.
 - Depends on:
   - the API crates `api_state` (the application state), `api_configuration`, `api_foundation`
     (errors and wire formats), `api_http_layer` (the `AuthUser` extractor and the authentication
-    primitives), `api_discord` (the Discord clients) and `api_failpoints`, and the URL guard
+    primitives), and `api_discord` (the Discord clients), and the URL guard
     `http_url_guard`;
   - the API crates `api_audit_log` (the audit log writers for the audit rows of link, grace and
     session changes), `api_caller_identity` (session authority, account authority, locks,

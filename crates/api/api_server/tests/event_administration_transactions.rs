@@ -269,9 +269,12 @@ fn generated_reschedules_preserve_exact_utc_offsets_and_normalize_microseconds_o
     use chrono::Timelike;
     use proptest::prelude::*;
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    api_property_evidence::run_property(
-        "event_schedule_offset_conservation",
-        24,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 24,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &proptest::collection::vec((-3600_i64..3600, 0_u32..1000), 1..5),
         |operations| {
             runtime.block_on(async {
@@ -303,7 +306,8 @@ fn generated_reschedules_preserve_exact_utc_offsets_and_normalize_microseconds_o
                 Ok(())
             })
         },
-    );
+    )
+    .unwrap();
 }
 
 #[tokio::test]

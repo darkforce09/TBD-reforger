@@ -24,8 +24,6 @@ api_audit_log = { workspace = true }
 api_caller_identity = { workspace = true }
 # The modpack models and lookup a server's intel answer carries.
 api_community_content = { workspace = true }
-# `fail_point!` at the fleet command claim and result commits.
-api_failpoints = { workspace = true }
 # `ApiError` and the typed path parameters.
 api_foundation = { workspace = true }
 # The caller extractors, the event stream authorization, the token hashing and the realtime hub.
@@ -49,7 +47,6 @@ tokio = { workspace = true, features = ["sync"] }
 uuid = { workspace = true, features = ["v4", "serde"] }
 
 [dev-dependencies]
-api_failpoints = { workspace = true, features = ["failpoints"] }
 tokio = { workspace = true, features = ["macros", "rt", "sync"] }
 
 [lints]

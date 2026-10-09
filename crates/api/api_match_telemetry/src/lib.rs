@@ -7,7 +7,7 @@
 //! `api_caller_identity` (the machine caller, the identity lock order), `api_http_layer` (the
 //! `AuthUser` extractor), `api_member_activity` (attendance attribution, the statistics and the
 //! leaderboard), `api_server_infrastructure` (the runtime-session fence, the status row and its
-//! publisher), `api_audit_log`, `api_database`, `api_failpoints`, `api_foundation`,
+//! publisher), `api_audit_log`, `api_database`, `api_foundation`,
 //! `api_identifiers`, `api_mission_vocabulary` and `fleet_wire_contract`; names no other domain.
 //! The API's router merges [`routes()`]; the operations domain reads the match models and the
 //! integration suites call the ingest services.

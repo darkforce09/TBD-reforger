@@ -54,9 +54,7 @@ deployments are proved against Postgres by the API's integration suites.
 No feature and no variable of its own. The mission-version body cap is the `version_limit`
 argument of `routes()`, which the API reads from `MISSION_VERSION_MAX_BODY_BYTES`
 ([API environment variables](/documentation/crates/api/api_server/environment_variables.md)); the write lock and
-the deployment requests reread the caller's authority against the guild of the API's `Config`. The
-`fail_point!` sites at the deployment request and review decision commits compile to nothing
-outside test builds (`api_failpoints`).
+the deployment requests reread the caller's authority against the guild of the API's `Config`.
 
 ## Public surface
 
@@ -78,7 +76,7 @@ outside test builds (`api_failpoints`).
 
 - Depends on: `api_state`, `api_caller_identity`, `api_http_layer`, `api_server_infrastructure`
   (the fleet command ledger), `api_community_content` (the modpack a registry belongs to),
-  `api_audit_log`, `api_configuration`, `api_database`, `api_failpoints`, `api_foundation`,
+  `api_audit_log`, `api_configuration`, `api_database`, `api_foundation`,
   `api_identifiers`, `api_mission_vocabulary`, the mission crates `mission_compiler`,
   `mission_model`, `mission_validation` and `mission_wire_safety`,
   `contract_schema_types`, `content_digest`, `fleet_wire_contract`, `http_url_guard`,

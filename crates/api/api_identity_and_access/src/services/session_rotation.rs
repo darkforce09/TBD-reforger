@@ -6,7 +6,6 @@ use super::session_storage::{
 };
 use api_caller_identity::account_authority::{load_account_authority, lock_account};
 use api_caller_identity::arma_identity_link::arma_id_is_linked;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_http_layer::authentication_primitives::hash_token;
 use api_identifiers::{AuthenticationSessionId, DiscordUserId};
@@ -112,9 +111,7 @@ pub async fn rotate_session(
             arma_id_is_linked(&account.arma_id),
         )
         .map_err(|_| ApiError::internal("could not issue token"))?;
-    fail_point!(SessionRotationBeforeCommit);
     tx.commit().await?;
-    fail_point!(SessionRotationAfterCommit);
     Ok((access, expires_at, refresh))
 }
 
@@ -144,7 +141,6 @@ pub async fn logout_session(state: &AppState, raw: &str) -> Result<(), ApiError>
         )
         .await?;
     }
-    fail_point!(SessionLogoutBeforeCommit);
     tx.commit().await?;
     Ok(())
 }

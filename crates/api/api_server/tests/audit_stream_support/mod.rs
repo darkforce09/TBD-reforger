@@ -1,13 +1,11 @@
-//! Live audit stream harness for the audit replay, audit query recovery, audit failure-injection
-//! and audit controlled-race suites.
+//! Live audit stream harness for the audit replay suite.
 //!
 //! **Role:** boots the real router over this binary's private database, opens
 //! `GET /api/v1/admin/audit-logs/stream` with an optional `Last-Event-ID`, parses its SSE body with
 //! bounded waits, drives `audit_delivery_stream` directly, and plants and inspects audit rows,
 //! publications and the retained floor.
-//! **Position:** compiled into `tests/audit_replay.rs`, `tests/audit_query_recovery.rs`,
-//! `tests/failure_injection_audit.rs` and `tests/controlled_races_audit.rs`
-//! (`mod audit_stream_support;`); it adds no test binary. It reaches the database through
+//! **Position:** compiled into `tests/audit_replay.rs` (`mod audit_stream_support;`); it adds no
+//! test binary. It reaches the database through
 //! `tests/common` and the API through `api_server::router::router`.
 //! **Signals & state:** [`SUITE_LOCK`] serialises the cases of one binary, which share one
 //! database, one publication sequence and one retained floor; each [`SseReader`] owns one response

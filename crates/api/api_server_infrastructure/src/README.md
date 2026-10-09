@@ -99,7 +99,7 @@ action.
     the token primitives and the realtime hub; `api_caller_identity` for the machine caller, the
     status stream's session authorization, the administrator recheck inside a transaction and the
     account locks; `api_audit_log` for the audit rows of every registry, credential, command,
-    session and scenario write; `api_failpoints` for the command claim and result failpoints;
+    session and scenario write;
     `api_identifiers` for the typed ids;
   - `fleet_wire_contract` for the fleet command wire shapes, `FleetAction`, `ExecutorKind`, the
     machine credential prefix and the secret-file limits it shares with the game server host agent;

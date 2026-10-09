@@ -24,8 +24,6 @@ api_audit_log = { workspace = true }
 api_caller_identity = { workspace = true }
 # The Postgres error codes a registration race and an event batch conflict map from.
 api_database = { workspace = true }
-# `fail_point!` around the results revision commit.
-api_failpoints = { workspace = true }
 # `ApiError`, the typed path parameters and the canonical JSON digest.
 api_foundation = { workspace = true }
 # The `AuthUser` extractor of the event read.
@@ -51,9 +49,6 @@ serde_json = { workspace = true }
 sqlx = { workspace = true, features = ["runtime-tokio", "postgres", "macros", "uuid", "chrono", "json"] }
 thiserror = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
-
-[dev-dependencies]
-api_failpoints = { workspace = true, features = ["failpoints"] }
 
 [lints]
 workspace = true

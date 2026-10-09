@@ -85,14 +85,10 @@ root; the `.env` it reads is the first one found from the working directory upwa
   (`tools/commands/ci_task_catalog/src/build_lane/recipes/shell_word.rs` and
   `tools/commands/database_operations/src/local_database.rs`); the `editor-api-boot` task of `cargo xtask ci`;
   the release image built by `deploy/Dockerfile`, whose entry point is `api-server`; the systemd
-  unit `deploy/systemd/tbd-website-api.service`, which runs the release `api-server`;
-  `crates/api/api_server/tests/audit_replay_shutdown.rs`, which starts the `api-server` binary and stops
-  it with SIGTERM.
-- Rules: `api_server.rs` is the one file that arms `api_background_workers`
-  (`background_workers_used_only_by_the_binary` in
-  `crates/api/api_server/src/tests/architecture_rules.rs`); the binary names are stable, because the
-  xtask recipes, the Dockerfile and the systemd unit call them by name; a new binary adds its
-  `[[bin]]` table and its file in the same change.
+  unit `deploy/systemd/tbd-website-api.service`, which runs the release `api-server`.
+- Rules: `api_server.rs` is the one file that arms `api_background_workers`; the binary names are
+  stable, because the xtask recipes, the Dockerfile and the systemd unit call them by name; a new
+  binary adds its `[[bin]]` table and its file in the same change.
 
 ## Related documentation
 

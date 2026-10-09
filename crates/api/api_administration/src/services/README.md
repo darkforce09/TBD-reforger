@@ -19,9 +19,7 @@ crates/api/api_administration/src/services/
 
 A trigger announces each insert with `pg_notify('audit_log', …)`. `audit_publication.rs` numbers
 committed rows under a singleton lock, so a reader advancing through publication numbers can never
-skip a row whose transaction committed late; the `audit_publication_worker` runs it. In a test
-build it passes the failpoint `AuditPublicationBeforeCommit` after the notification, and
-`audit_delivery.rs` passes `AuditDeliveryRead` before each snapshot read of a page.
+skip a row whose transaction committed late; the `audit_publication_worker` runs it.
 `audit_delivery.rs` streams published rows from a cursor, woken by `audit_notifier.rs` and polled
 on a timer as well, because a healthy notification channel does not prove a successful read. A
 stream yields `AuditStreamItem::Ready` first, then `AuditStreamItem::Delivery` per row. A cursor

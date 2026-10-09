@@ -10,7 +10,7 @@
 //! `api_caller_identity` (the mission maker and administrator rechecks, the machine caller),
 //! `api_http_layer` (the caller extractors, the realtime hub), `api_server_infrastructure` (the
 //! fleet command ledger a deployment runs on), `api_community_content` (the modpack a registry
-//! belongs to), `api_audit_log`, `api_configuration`, `api_database`, `api_failpoints`,
+//! belongs to), `api_audit_log`, `api_configuration`, `api_database`,
 //! `api_foundation`, `api_identifiers`, `api_mission_vocabulary`, the mission crates
 //! (`mission_compiler`, `mission_model`, `mission_validation`, `mission_wire_safety`) and
 //! `fleet_wire_contract`; names no other domain. The API's router

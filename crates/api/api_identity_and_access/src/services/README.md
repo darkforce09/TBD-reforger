@@ -55,13 +55,6 @@ crates/api/api_identity_and_access/src/services/
   identities, sorted accounts, link codes, match and attendance rows, the leaderboard), attributes
   past matches and attendance to the account, recomputes its statistics and appends the required
   audit, all in one transaction.
-- **Failpoints.** Test builds pass the `api_failpoints` points at these boundaries:
-  `session_rotation.rs` passes `SessionRotationBeforeCommit` after the successor token is written
-  and `SessionRotationAfterCommit` after the commit, and `SessionLogoutBeforeCommit` after the
-  logout audit; `identity_linking.rs` passes `IdentityLinkConfirmBeforeCommit` after the
-  leaderboard refresh; `discord_rest_reconciliation.rs` passes `DiscordRoleSyncBeforeEffect` once
-  the lease and the request budget are held and `DiscordRoleSyncAfterEffect` once Discord has
-  answered, before the observation or failure is recorded. A deploy build compiles them out.
 
 ## Boundaries
 

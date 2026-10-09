@@ -19,7 +19,6 @@ use super::discord_membership_cache::{
     MembershipRefreshLease, accept_membership_observation, claim_membership_refresh,
     record_membership_failure,
 };
-use api_failpoints::fail_point;
 use api_http_layer::observability::metrics_registry::{DiscordReconcileOutcome, Registry};
 use api_identifiers::{DiscordGuildId, DiscordUserId};
 use api_state::AppState;
@@ -99,12 +98,10 @@ pub async fn reconcile_one(state: &AppState) -> sqlx::Result<bool> {
     if !reserve_request_budget(&state.pool, &lease).await? {
         return Ok(false);
     }
-    fail_point!(DiscordRoleSyncBeforeEffect);
     let fetched = state
         .discord
         .fetch_member_with_bot(&state.cfg.discord_bot_token, &guild_id, &discord_id)
         .await;
-    fail_point!(DiscordRoleSyncAfterEffect);
     let (outcome, retry_after_ms) = match fetched {
         Ok(member) => {
             let recorded = accept_membership_observation(

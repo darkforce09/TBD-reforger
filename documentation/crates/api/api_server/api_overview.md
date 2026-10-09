@@ -241,19 +241,16 @@ schema cite it correctly.
 
 Every API crate sits in `crates/api/` and declares its tier (1 plus the highest tier it depends
 on); each links its README. The API server `api_server` depends on the crates its router,
-composition root and binaries name, and reaches `api_foundation`, `api_audit_log`, `api_mission_vocabulary`,
-`api_member_activity`, `api_failpoints` and `api_property_evidence` only as dev-dependencies of
-its tests.
+composition root and binaries name, and reaches `api_foundation`, `api_audit_log`, `api_mission_vocabulary`
+and `api_member_activity` only as dev-dependencies of its tests.
 
 | Group | Crate | Tier | Owns |
 |---|---|---|---|
 | infrastructure | [`api_identifiers`](/crates/api/api_identifiers/README.md) | 1 | the typed ids ([Ids](#ids)) |
 | infrastructure | [`api_foundation`](/crates/api/api_foundation/README.md) | 1 | the `{error, details?}` envelope (`ApiError`), JSON wire formats, text policies, `PathParams` |
-| infrastructure | [`api_failpoints`](/crates/api/api_failpoints/README.md) | 2 | `fail_point!` and the failpoint catalogue ([Failpoints](#failpoints)) |
 | infrastructure | [`api_configuration`](/crates/api/api_configuration/README.md) | 2 | `Config`, trusted proxies, the process shutdown signal |
 | infrastructure | [`api_database`](/crates/api/api_database/README.md) | 3 | the pool, `migrations/`, `seeds/`, SQLSTATE predicates |
 | infrastructure | [`api_http_layer`](/crates/api/api_http_layer/README.md) | 3 | access tokens, the middleware chain and the tier extractors, rate limiters, `/healthz` and `/metrics`, the realtime hub |
-| infrastructure | [`api_property_evidence`](/crates/api/api_property_evidence/README.md) | 1 | dev-only: the property run recorder |
 | kernel | [`api_mission_vocabulary`](/crates/api/api_mission_vocabulary/README.md) | 0 | `TerrainType`, `GameMode` |
 | kernel | [`api_audit_log`](/crates/api/api_audit_log/README.md) | 2 | the audit severity and the audit line appends every domain writes |
 | kernel | [`api_equipment_datasets`](/crates/api/api_equipment_datasets/README.md) | 2 | the equipment dataset imports, index and reads behind community content's viewer routes |
@@ -293,18 +290,6 @@ part through a `FromRef` projection (the pool, the configuration, the token mana
 authority, the CORS origins, the rate limits, the hub, the Discord services), which
 keeps `api_http_layer` below `api_state`. The `api-server` binary, `import-item-registry`
 and every integration suite build their state through `application_state`.
-
-### Failpoints
-
-`fail_point!(<point>)` marks a place on a write path where a test injects a failure or a pause:
-before or after a commit, before an external effect. The macro and the catalogue of 18 points
-live in `api_failpoints`; the domain crates that place points (identity and access,
-administration, server infrastructure, missions, match telemetry, operations) depend on it
-normally and turn its `failpoints` feature on only through their dev-dependencies, as the
-API server does. A test build carries the registry; the deploy build
-(`cargo build --release -p api_server --bin api-server`) compiles every point to nothing. The
-`failure_injection_*` integration binaries arm the points, and the
-[failpoints README](/crates/api/api_failpoints/README.md) gives the arming rules.
 
 ### Ids
 

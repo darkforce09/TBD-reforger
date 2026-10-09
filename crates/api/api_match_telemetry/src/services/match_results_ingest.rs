@@ -24,7 +24,6 @@ use crate::models::telemetry_refusal::telemetry_conflict;
 use api_audit_log::required_audit::append_system_audit;
 use api_caller_identity::identity_ownership::{lock_accounts, lock_identities};
 use api_caller_identity::machine_caller::MachineCaller;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_member_activity::leaderboard_view::refresh_leaderboard_on_connection;
 use api_member_activity::participation_attribution::{
@@ -222,9 +221,7 @@ pub async fn ingest_results_revision(
         recompute_user_stats_on_connection(&mut tx, account).await?;
     }
     refresh_leaderboard_on_connection(&mut tx).await?;
-    fail_point!(ResultsRevisionBeforeCommit);
     tx.commit().await?;
-    fail_point!(ResultsRevisionAfterCommit);
     Ok(result)
 }
 

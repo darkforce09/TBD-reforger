@@ -8,10 +8,6 @@ use tower::ServiceExt;
 
 /// The shared `dev-login` row's `arma_id`, pinned from `DEV_ARMA_ID` in
 /// `crates/api/api_identity_and_access/src/handlers/developer_login.rs`.
-///
-/// `tests/test_support_self_checks.rs` asserts the handler still carries this literal, so a
-/// handler-side change turns into a named failure instead of a fixture that quietly drifts
-/// out of step with production's row shape.
 pub(crate) const DEV_LOGIN_ARMA_ID: &str = "dev-arma-76561190000000001";
 
 /// The development administrator identity. Other development roles use distinct accounts.

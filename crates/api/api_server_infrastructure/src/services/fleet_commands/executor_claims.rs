@@ -18,7 +18,6 @@ use crate::services::runtime_sessions::share_open_session;
 use api_audit_log::required_audit::append_system_audit;
 use api_caller_identity::account_authority::holds_administrator_authority;
 use api_caller_identity::machine_caller::MachineCaller;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 
 /// Seconds a claim stays valid before its executor reports that the effect is starting.
@@ -333,6 +332,5 @@ pub async fn record_result(
         ),
     )
     .await?;
-    fail_point!(FleetCommandResultBeforeCommit);
     receipt(connection, command).await
 }

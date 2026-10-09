@@ -20,7 +20,6 @@ use crate::services::mission_deployments::deployment_reads::deployment_in_effect
 use crate::services::mission_deployments::deployment_requests::{Requester, request_deployment};
 use crate::services::mission_deployments::deployment_settlement::lock_and_settle;
 use api_caller_identity::machine_caller::MachineCaller;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_foundation::http::path_parameters::PathParams;
 use api_state::AppState;
@@ -133,6 +132,5 @@ pub async fn relayed_deployment_request(
     )
     .await?;
     transaction.commit().await?;
-    fail_point!(DeploymentRequestAfterCommit);
     Ok((StatusCode::ACCEPTED, Json(deployment)))
 }

@@ -4,7 +4,6 @@ use api_caller_identity::{
     identity_ownership::{lock_accounts, lock_identities},
     session_authorization::authorize_on_connection,
 };
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_http_layer::middleware::AuthUser;
 use api_identifiers::{ArmaPlayerId, DiscordUserId, ServerId};
@@ -136,7 +135,6 @@ pub async fn confirm_identity(
     append_required_audit(&mut tx, &discord_id, "identity.link", &discord_id,
         &format!("Verified Arma identity on server {confirming_server}; attributed {claimed} historical match rows and {attended} attendance records")).await?;
     refresh_leaderboard_on_connection(&mut tx).await?;
-    fail_point!(IdentityLinkConfirmBeforeCommit);
     tx.commit().await?;
     Ok(ConfirmedIdentity {
         discord_id,

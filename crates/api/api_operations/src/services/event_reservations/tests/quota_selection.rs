@@ -70,9 +70,12 @@ fn operation_strategy() -> impl Strategy<Value = Operation> {
 
 #[test]
 fn generated_operation_sequences_conserve_allocations_and_capacity() {
-    api_property_evidence::run_property(
-        "generated_operation_sequences_conserve_allocations_and_capacity",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             limits_strategy(),
             prop::array::uniform3(-3i64..4),
@@ -208,59 +211,64 @@ fn generated_operation_sequences_conserve_allocations_and_capacity() {
             }
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn arbitrary_u64_usage_agrees_with_wide_integer_arithmetic() {
-    api_property_evidence::run_property(
-        "arbitrary_u64_usage_agrees_with_wide_integer_arithmetic",
-        512,
-        &(any::<[u64; 4]>(), any::<bool>()),
-        |(counts, member)| {
-            let mut usage = ReservationQuotaUsage {
-                member: counts[0],
-                guest: counts[1],
-                open: counts[2],
-                legacy_unclassified: counts[3],
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(&(any::<[u64; 4]>(), any::<bool>()), |(counts, member)| {
+        let mut usage = ReservationQuotaUsage {
+            member: counts[0],
+            guest: counts[1],
+            open: counts[2],
+            legacy_unclassified: counts[3],
+        };
+        let before = usage;
+        let total: u128 = counts.into_iter().map(u128::from).sum();
+        if total <= u128::from(u64::MAX) {
+            prop_assert_eq!(usage.total(), Ok(total as u64));
+        } else {
+            prop_assert_eq!(usage.total(), Err("quota usage overflow"));
+        }
+        let result = usage.reserve(&quotas([None; 3], [0; 3]), member, opening(), 0);
+        if total >= u128::from(u64::MAX) {
+            prop_assert_eq!(result, Err("quota usage overflow"));
+            prop_assert_eq!(usage, before);
+        } else {
+            let preferred = if member {
+                ReservationQuotaKind::Member
+            } else {
+                ReservationQuotaKind::Guest
             };
-            let before = usage;
-            let total: u128 = counts.into_iter().map(u128::from).sum();
-            if total <= u128::from(u64::MAX) {
-                prop_assert_eq!(usage.total(), Ok(total as u64));
-            } else {
-                prop_assert_eq!(usage.total(), Err("quota usage overflow"));
+            prop_assert_eq!(result, Ok(Some(preferred)));
+            prop_assert_eq!(usage.total(), Ok((total + 1) as u64));
+            for kind in KINDS {
+                prop_assert_eq!(
+                    usage.count(kind),
+                    before.count(kind) + u64::from(kind == preferred)
+                );
             }
-            let result = usage.reserve(&quotas([None; 3], [0; 3]), member, opening(), 0);
-            if total >= u128::from(u64::MAX) {
-                prop_assert_eq!(result, Err("quota usage overflow"));
-                prop_assert_eq!(usage, before);
-            } else {
-                let preferred = if member {
-                    ReservationQuotaKind::Member
-                } else {
-                    ReservationQuotaKind::Guest
-                };
-                prop_assert_eq!(result, Ok(Some(preferred)));
-                prop_assert_eq!(usage.total(), Ok((total + 1) as u64));
-                for kind in KINDS {
-                    prop_assert_eq!(
-                        usage.count(kind),
-                        before.count(kind) + u64::from(kind == preferred)
-                    );
-                }
-                prop_assert_eq!(usage.legacy_unclassified, before.legacy_unclassified);
-            }
-            Ok(())
-        },
-    );
+            prop_assert_eq!(usage.legacy_unclassified, before.legacy_unclassified);
+        }
+        Ok(())
+    })
+    .unwrap();
 }
 
 #[test]
 fn every_valid_u32_or_explicit_null_limit_round_trips() {
-    api_property_evidence::run_property(
-        "every_valid_u32_or_explicit_null_limit_round_trips",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(prop::array::uniform3(prop::option::of(any::<u32>())),),
         |(limits,)| {
             let configured = quotas(limits, [0; 3]);
@@ -273,7 +281,8 @@ fn every_valid_u32_or_explicit_null_limit_round_trips() {
             }
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]

@@ -89,7 +89,7 @@ impl DiscordService {
     /// Discord request of this client through that proxy as a `CONNECT` tunnel, and `NO_PROXY`
     /// exempts hosts. A host therefore cuts the API off from Discord by pointing `HTTPS_PROXY` at
     /// a closed port and restarting, which turns each membership read into
-    /// `Discord transport unavailable` (`tests/discord_client_proxy_environment.rs`).
+    /// `Discord transport unavailable`.
     pub fn new(
         client_id: DiscordClientId,
         client_secret: String,

@@ -45,8 +45,7 @@ suites.
 
 ## Configuration
 
-No feature and no variable of its own. The `failpoints` feature of `api_failpoints` is enabled for
-the unit tests only, from `[dev-dependencies]`; the release build carries no failpoint.
+No feature and no variable of its own.
 
 ## Public surface
 
@@ -64,7 +63,7 @@ the unit tests only, from `[dev-dependencies]`; the release build carries no fai
 
 - Depends on: `api_state`, `api_identity_and_access` (the role resync and the grace extension),
   `api_caller_identity`, `api_member_activity`, `api_audit_log`, `api_http_layer`,
-  `api_failpoints`, `api_foundation`, `api_identifiers`, `fleet_wire_contract`, sqlx, axum, serde,
+  `api_foundation`, `api_identifiers`, `fleet_wire_contract`, sqlx, axum, serde,
   chrono, csv, tokio, futures, async-stream, tracing and thiserror. It names no other domain.
 - Used by: the API application (`crates/api/api_server`): its router merges `routes`, its audit publication
   worker runs `publish_audit_batch`, and its audit integration suites drive the services directly;

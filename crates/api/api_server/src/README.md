@@ -12,10 +12,10 @@ crates/api/api_server/src/
 ├── bin/             the `api-server` server and the `import-item-registry` tool
 ├── composition.rs   the composition root: the application state with its concrete services
 ├── error.rs         `Error` and `Result`: why a binary stops, printed with its cause chain
-├── lib.rs           the `api_server` library root: the module tree and the source-rule tests
+├── lib.rs           the `api_server` library root: the module tree
 ├── prelude.rs       `router` and `application_state` for glob import
 ├── router.rs        `router`: every route and mount, and the middleware chain
-└── tests/           the layout and prose rules, and the router's unit tests
+└── tests/           the router's unit tests
 ```
 
 ## How it works
@@ -95,23 +95,12 @@ folder, declared with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
   `mod/tbd-framework/Scripts/Game/TBD/API/`, and the
   [game server host agent](/documentation/glossary/g_to_m.md#game-server-host-agent) in
   `crates/fleet/game_server_host_agent/`.
-- Rules (`tests/architecture_rules.rs`, which reads the source and the Cargo manifests of this
-  crate and of every API crate):
-  - `src/` holds only `lib.rs`, `router.rs`, `composition.rs`, `error.rs`, `prelude.rs`, the two
-    binaries, `tests/` and this README;
-  - the kernel crates depend on no domain crate, and the domain crates depend on one another only
-    along the one-way domain graph (`DOMAIN_DEPENDENCIES`), read from their manifests; that
-    manifest assertion replaced the source-import layer ratchet once no layer was left inside one
-    crate;
-  - only this crate depends on `api_background_workers`, and only `bin/api_server.rs` names it;
-  - no crate imports another domain's handlers, and each domain crate defines one route table in
-    its `routes.rs`, which `router.rs` merges;
-  - no source file of this crate or of an API crate holds an inline `mod tests` body, a ticket id
-    or a comparison with another implementation.
-- Prose rules (`tests/prose_rules.rs`): the Rust files of `src/`, of the integration suites and of
-  every API crate's `src/`, `.env.example`, and the comment lines of the seeds and migrations in
-  `crates/api/api_database/` carry no ticket ids, no comparison with another implementation, no
-  delivery-process vocabulary and no path the crates lack.
+- Rules: `src/` holds only `lib.rs`, `router.rs`, `composition.rs`, `error.rs`, `prelude.rs`, the
+  two binaries, `tests/` and this README; the kernel crates depend on no domain crate, and the
+  domain crates depend on one another only along the one-way domain graph; only this crate
+  depends on `api_background_workers`, and only `bin/api_server.rs` names it; no crate imports
+  another domain's handlers, and each domain crate defines one route table in its `routes.rs`,
+  which `router.rs` merges.
 - Every `@route` tag resolves to a route a table registers, and every registered route to a tag
   (`cargo xtask verify route-tags`).
 

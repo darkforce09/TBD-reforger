@@ -269,128 +269,132 @@ fn mission_holders_seatable(
 
 #[test]
 fn planned_promotions_respect_quota_capacity_eligibility_and_seatability() {
-    api_property_evidence::run_property(
-        "planned_promotions_respect_quota_capacity_eligibility_and_seatability",
-        512,
-        &scope_strategy(),
-        |scope| {
-            let mut planner = plan(&scope);
-            let before = planner.usage();
-            let promotions = planner
-                .plan_promotions(&scope.oracle, &scope.waiting)
-                .unwrap();
-            let mut taken = BTreeSet::new();
-            let mut new_allocations = BTreeMap::new();
-            for promotion in &promotions {
-                let seat = scope.seats.iter().find(|s| s.id == promotion.seat).unwrap();
-                prop_assert!(
-                    seat.occupant.is_none() && taken.insert(seat.id),
-                    "seat reused"
-                );
-                prop_assert_eq!(seat.mission, promotion.mission);
-                prop_assert!(scope.oracle.available(&promotion.account));
-                prop_assert!(
-                    scope
-                        .oracle
-                        .current_admits(&promotion.account, promotion.seat)
-                );
-                let already = scope.allocations.contains_key(&promotion.account)
-                    || new_allocations.contains_key(&promotion.account);
-                prop_assert_eq!(promotion.new_allocation.is_none(), already);
-                if let Some(kind) = promotion.new_allocation {
-                    new_allocations.insert(promotion.account.clone(), kind);
-                    let own_pool = if scope.oracle.current_member(&promotion.account) {
-                        ReservationQuotaKind::Member
-                    } else {
-                        ReservationQuotaKind::Guest
-                    };
-                    prop_assert!(kind == ReservationQuotaKind::Open || kind == own_pool);
-                }
-            }
-            let after = planner.usage();
-            prop_assert_eq!(
-                after.total().unwrap(),
-                before.total().unwrap() + new_allocations.len() as u64
-            );
-            for kind in [
-                ReservationQuotaKind::Member,
-                ReservationQuotaKind::Guest,
-                ReservationQuotaKind::Open,
-            ] {
-                if after.count(kind) > before.count(kind)
-                    && let Some(limit) = scope.settings.quotas.pool(kind).seats
-                {
-                    prop_assert!(after.count(kind) <= u64::from(limit));
-                    prop_assert!(scope.settings.now >= scope.settings.quotas.pool(kind).opens_at);
-                }
-            }
-            if scope.settings.max_slots != 0 && !new_allocations.is_empty() {
-                prop_assert!(after.total().unwrap() <= u64::from(scope.settings.max_slots));
-            }
-            for mission in MISSIONS
-                .iter()
-                .map(|m| EventMissionId::from(Uuid::from_u128(*m)))
-            {
-                let seats = scope.seats.iter().filter(|s| s.mission == mission).count();
-                let mut participants: BTreeSet<&str> = scope
-                    .seats
-                    .iter()
-                    .filter(|s| s.mission == mission)
-                    .filter_map(|s| s.occupant.as_deref())
-                    .collect();
-                participants.extend(
-                    scope
-                        .reservations
-                        .iter()
-                        .filter(|r| r.queued.mission == mission)
-                        .map(|r| r.queued.account.as_str()),
-                );
-                let before_count = participants.len();
-                participants.extend(
-                    promotions
-                        .iter()
-                        .filter(|p| p.mission == mission)
-                        .map(|p| p.account.as_str()),
-                );
-                prop_assert!(participants.len() <= seats.max(before_count));
-            }
-            // Promotions never strand a holder; a mission already awaiting re-evaluation because
-            // its holders cannot all be seated receives no promotion at all.
-            for mission in MISSIONS
-                .iter()
-                .map(|m| EventMissionId::from(Uuid::from_u128(*m)))
-            {
-                if mission_holders_seatable(&scope, mission, &[]) {
-                    prop_assert!(mission_holders_seatable(&scope, mission, &promotions));
-                } else {
-                    prop_assert!(!promotions.iter().any(|p| p.mission == mission));
-                }
-            }
-            // Maximality: after one pass nobody else could be promoted.
-            let promoted: BTreeSet<EventRegistrationId> =
-                promotions.iter().map(|p| p.registration).collect();
-            let remaining: Vec<QueuedRegistration> = scope
-                .waiting
-                .iter()
-                .filter(|w| !promoted.contains(&w.registration))
-                .cloned()
-                .collect();
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(&scope_strategy(), |scope| {
+        let mut planner = plan(&scope);
+        let before = planner.usage();
+        let promotions = planner
+            .plan_promotions(&scope.oracle, &scope.waiting)
+            .unwrap();
+        let mut taken = BTreeSet::new();
+        let mut new_allocations = BTreeMap::new();
+        for promotion in &promotions {
+            let seat = scope.seats.iter().find(|s| s.id == promotion.seat).unwrap();
             prop_assert!(
-                planner
-                    .plan_promotions(&scope.oracle, &remaining)
-                    .unwrap()
-                    .is_empty()
+                seat.occupant.is_none() && taken.insert(seat.id),
+                "seat reused"
             );
-            Ok(())
-        },
-    );
+            prop_assert_eq!(seat.mission, promotion.mission);
+            prop_assert!(scope.oracle.available(&promotion.account));
+            prop_assert!(
+                scope
+                    .oracle
+                    .current_admits(&promotion.account, promotion.seat)
+            );
+            let already = scope.allocations.contains_key(&promotion.account)
+                || new_allocations.contains_key(&promotion.account);
+            prop_assert_eq!(promotion.new_allocation.is_none(), already);
+            if let Some(kind) = promotion.new_allocation {
+                new_allocations.insert(promotion.account.clone(), kind);
+                let own_pool = if scope.oracle.current_member(&promotion.account) {
+                    ReservationQuotaKind::Member
+                } else {
+                    ReservationQuotaKind::Guest
+                };
+                prop_assert!(kind == ReservationQuotaKind::Open || kind == own_pool);
+            }
+        }
+        let after = planner.usage();
+        prop_assert_eq!(
+            after.total().unwrap(),
+            before.total().unwrap() + new_allocations.len() as u64
+        );
+        for kind in [
+            ReservationQuotaKind::Member,
+            ReservationQuotaKind::Guest,
+            ReservationQuotaKind::Open,
+        ] {
+            if after.count(kind) > before.count(kind)
+                && let Some(limit) = scope.settings.quotas.pool(kind).seats
+            {
+                prop_assert!(after.count(kind) <= u64::from(limit));
+                prop_assert!(scope.settings.now >= scope.settings.quotas.pool(kind).opens_at);
+            }
+        }
+        if scope.settings.max_slots != 0 && !new_allocations.is_empty() {
+            prop_assert!(after.total().unwrap() <= u64::from(scope.settings.max_slots));
+        }
+        for mission in MISSIONS
+            .iter()
+            .map(|m| EventMissionId::from(Uuid::from_u128(*m)))
+        {
+            let seats = scope.seats.iter().filter(|s| s.mission == mission).count();
+            let mut participants: BTreeSet<&str> = scope
+                .seats
+                .iter()
+                .filter(|s| s.mission == mission)
+                .filter_map(|s| s.occupant.as_deref())
+                .collect();
+            participants.extend(
+                scope
+                    .reservations
+                    .iter()
+                    .filter(|r| r.queued.mission == mission)
+                    .map(|r| r.queued.account.as_str()),
+            );
+            let before_count = participants.len();
+            participants.extend(
+                promotions
+                    .iter()
+                    .filter(|p| p.mission == mission)
+                    .map(|p| p.account.as_str()),
+            );
+            prop_assert!(participants.len() <= seats.max(before_count));
+        }
+        // Promotions never strand a holder; a mission already awaiting re-evaluation because
+        // its holders cannot all be seated receives no promotion at all.
+        for mission in MISSIONS
+            .iter()
+            .map(|m| EventMissionId::from(Uuid::from_u128(*m)))
+        {
+            if mission_holders_seatable(&scope, mission, &[]) {
+                prop_assert!(mission_holders_seatable(&scope, mission, &promotions));
+            } else {
+                prop_assert!(!promotions.iter().any(|p| p.mission == mission));
+            }
+        }
+        // Maximality: after one pass nobody else could be promoted.
+        let promoted: BTreeSet<EventRegistrationId> =
+            promotions.iter().map(|p| p.registration).collect();
+        let remaining: Vec<QueuedRegistration> = scope
+            .waiting
+            .iter()
+            .filter(|w| !promoted.contains(&w.registration))
+            .cloned()
+            .collect();
+        prop_assert!(
+            planner
+                .plan_promotions(&scope.oracle, &remaining)
+                .unwrap()
+                .is_empty()
+        );
+        Ok(())
+    })
+    .unwrap();
 }
 
 #[test]
 fn promotion_order_is_independent_of_input_permutation() {
-    api_property_evidence::run_property(
-        "promotion_order_is_independent_of_input_permutation",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             scope_strategy(),
             prop::collection::vec(any::<usize>(), 0..12),
@@ -420,109 +424,108 @@ fn promotion_order_is_independent_of_input_permutation() {
             prop_assert_eq!(actual, expected);
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn eligibility_releases_are_confirmed_minimal_and_restore_seatability() {
-    api_property_evidence::run_property(
-        "eligibility_releases_are_confirmed_minimal_and_restore_seatability",
-        512,
-        &scope_strategy(),
-        |scope| {
-            let mut planner = plan(&scope);
-            let releases = planner
-                .plan_eligibility_releases(&scope.oracle, &scope.reservations)
-                .unwrap();
-            let released: BTreeSet<EventRegistrationId> =
-                releases.iter().map(|r| r.registration).collect();
-            prop_assert_eq!(
-                released.len(),
-                releases.len(),
-                "a reservation was released twice"
-            );
-            for release in &releases {
-                let reservation = scope
-                    .reservations
-                    .iter()
-                    .find(|r| r.queued.registration == release.registration)
-                    .unwrap();
-                match release.cause {
-                    ReleaseCause::AccountUnavailable => {
-                        prop_assert!(!scope.oracle.available(&release.account))
-                    }
-                    ReleaseCause::PolicyDenied => {
-                        prop_assert!(scope.oracle.available(&release.account))
-                    }
-                }
-                if let (Some(seat), ReleaseCause::PolicyDenied) = (reservation.seat, release.cause)
-                {
-                    prop_assert!(!scope.oracle.verified_admits(&release.account, seat));
-                }
-            }
-            // Every kept reservation is admitted by last verified facts and holders stay seatable.
-            let kept: Vec<&ActiveReservation> = scope
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(&scope_strategy(), |scope| {
+        let mut planner = plan(&scope);
+        let releases = planner
+            .plan_eligibility_releases(&scope.oracle, &scope.reservations)
+            .unwrap();
+        let released: BTreeSet<EventRegistrationId> =
+            releases.iter().map(|r| r.registration).collect();
+        prop_assert_eq!(
+            released.len(),
+            releases.len(),
+            "a reservation was released twice"
+        );
+        for release in &releases {
+            let reservation = scope
                 .reservations
                 .iter()
-                .filter(|r| !released.contains(&r.queued.registration))
-                .collect();
-            for reservation in &kept {
-                prop_assert!(scope.oracle.available(&reservation.queued.account));
-                if let Some(seat) = reservation.seat {
-                    prop_assert!(
-                        scope
-                            .oracle
-                            .verified_admits(&reservation.queued.account, seat)
-                    );
+                .find(|r| r.queued.registration == release.registration)
+                .unwrap();
+            match release.cause {
+                ReleaseCause::AccountUnavailable => {
+                    prop_assert!(!scope.oracle.available(&release.account))
+                }
+                ReleaseCause::PolicyDenied => {
+                    prop_assert!(scope.oracle.available(&release.account))
                 }
             }
-            for mission in MISSIONS
-                .iter()
-                .map(|m| EventMissionId::from(Uuid::from_u128(*m)))
-            {
-                let free: Vec<OrbatSlotId> = scope
-                    .seats
-                    .iter()
-                    .filter(|s| s.mission == mission)
-                    .filter(|s| {
-                        s.occupant.is_none() || releases.iter().any(|r| r.seat == Some(s.id))
-                    })
-                    .map(|s| s.id)
-                    .collect();
-                let mut matrix = SeatEligibility::new(free.len());
-                let mut holders: Vec<&&ActiveReservation> = kept
-                    .iter()
-                    .filter(|r| r.seat.is_none() && r.queued.mission == mission)
-                    .collect();
-                holders.sort_by(|l, r| l.queued.queue_order(&r.queued));
-                for holder in &holders {
-                    matrix.push_holder(|index| {
-                        scope
-                            .oracle
-                            .verified_admits(&holder.queued.account, free[index])
-                    });
-                }
-                prop_assert!(matrix.all_holders_seatable());
+            if let (Some(seat), ReleaseCause::PolicyDenied) = (reservation.seat, release.cause) {
+                prop_assert!(!scope.oracle.verified_admits(&release.account, seat));
             }
-            // An allocation is released exactly when its participant has nothing left in the event.
-            for release in releases.iter().filter(|r| r.releases_allocation) {
-                prop_assert!(!kept.iter().any(|r| r.queued.account == release.account));
+        }
+        // Every kept reservation is admitted by last verified facts and holders stay seatable.
+        let kept: Vec<&ActiveReservation> = scope
+            .reservations
+            .iter()
+            .filter(|r| !released.contains(&r.queued.registration))
+            .collect();
+        for reservation in &kept {
+            prop_assert!(scope.oracle.available(&reservation.queued.account));
+            if let Some(seat) = reservation.seat {
                 prop_assert!(
-                    !scope
-                        .seats
-                        .iter()
-                        .any(|s| s.occupant.as_deref() == Some(release.account.as_str())
-                            && !scope.reservations.iter().any(|r| r.seat == Some(s.id)))
+                    scope
+                        .oracle
+                        .verified_admits(&reservation.queued.account, seat)
                 );
             }
-            let freed = releases.iter().filter(|r| r.releases_allocation).count() as u64;
-            prop_assert_eq!(
-                planner.usage().total().unwrap() + freed,
-                plan(&scope).usage().total().unwrap()
+        }
+        for mission in MISSIONS
+            .iter()
+            .map(|m| EventMissionId::from(Uuid::from_u128(*m)))
+        {
+            let free: Vec<OrbatSlotId> = scope
+                .seats
+                .iter()
+                .filter(|s| s.mission == mission)
+                .filter(|s| s.occupant.is_none() || releases.iter().any(|r| r.seat == Some(s.id)))
+                .map(|s| s.id)
+                .collect();
+            let mut matrix = SeatEligibility::new(free.len());
+            let mut holders: Vec<&&ActiveReservation> = kept
+                .iter()
+                .filter(|r| r.seat.is_none() && r.queued.mission == mission)
+                .collect();
+            holders.sort_by(|l, r| l.queued.queue_order(&r.queued));
+            for holder in &holders {
+                matrix.push_holder(|index| {
+                    scope
+                        .oracle
+                        .verified_admits(&holder.queued.account, free[index])
+                });
+            }
+            prop_assert!(matrix.all_holders_seatable());
+        }
+        // An allocation is released exactly when its participant has nothing left in the event.
+        for release in releases.iter().filter(|r| r.releases_allocation) {
+            prop_assert!(!kept.iter().any(|r| r.queued.account == release.account));
+            prop_assert!(
+                !scope
+                    .seats
+                    .iter()
+                    .any(|s| s.occupant.as_deref() == Some(release.account.as_str())
+                        && !scope.reservations.iter().any(|r| r.seat == Some(s.id)))
             );
-            Ok(())
-        },
-    );
+        }
+        let freed = releases.iter().filter(|r| r.releases_allocation).count() as u64;
+        prop_assert_eq!(
+            planner.usage().total().unwrap() + freed,
+            plan(&scope).usage().total().unwrap()
+        );
+        Ok(())
+    })
+    .unwrap();
 }
 
 #[test]

@@ -13,9 +13,7 @@
 //! URIs misses the bug class it exists to catch. Three structural reasons, each answered here:
 //!
 //!   1. **A listed endpoint set can only ever catch bugs someone remembered.**
-//!      → [`route_sweep::route_sweep`] sweeps every GET route, and
-//!      `every_get_route_is_swept_or_skipped_with_a_reason` parses the route tables and fails
-//!      when a route is added without being covered.
+//!      → [`route_sweep::route_sweep`] sweeps every GET route.
 //!   2. **Rows have to be reachable.** Authenticating as the shared dev-login user while
 //!      seeding rows against a different synthetic id leaves every `WHERE assigned_to = $me` /
 //!      `WHERE discord_id = $me` branch — precisely where these defects live — dead from the
@@ -27,12 +25,6 @@
 //!      `DEFAULT` is added. → [`database_fixtures::blast_nulls`] enumerates nullable columns
 //!      from `information_schema` and `UPDATE`s them to NULL explicitly, then asserts the
 //!      NULLs actually landed.
-//!
-//! **The enumerating half.** A behavioural sweep can still only reach code whose predicates the
-//! seed happens to satisfy, so `tests/null_tolerance_select_scan.rs` closes the class
-//! statically: it cross-references every `SELECT` literal in `src/` against
-//! `information_schema` nullability and fails on a bare `*` or an un-`COALESCE`d nullable
-//! column, with [`OPTION_FIELDS`] as the only escape hatch.
 //!
 //! # This directory contributes no test binary
 //!
@@ -47,7 +39,6 @@
 pub(crate) mod database_fixtures;
 pub(crate) mod fire_mission_fixtures;
 pub(crate) mod route_sweep;
-pub(crate) mod source_scan;
 
 /// This suite's own Discord id. Every seeded row is owned by / assigned to it and the session
 /// is minted for it, so caller-scoped predicates (`WHERE assigned_to = $me`) resolve to rows

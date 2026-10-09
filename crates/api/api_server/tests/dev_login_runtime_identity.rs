@@ -3,8 +3,7 @@
 //! from the database or over HTTP.
 //!
 //! Dead code writes no rows, so a match arm that is present in the source but never compiled
-//! fails here by construction. That is what these tests buy over the source scanners in
-//! `tests/dev_login_source_contract.rs`.
+//! fails here by construction.
 //!
 //! Skips without `TEST_DATABASE_URL`.
 
@@ -83,10 +82,8 @@ async fn dev_login_unknown_role_defaults_to_admin() {
 
 // ════════════════ dev-login pinned by BEHAVIOUR, not by source ════════════════
 //
-// `common/mod.rs`'s COALESCE pin and `dev_login_roles_use_distinct_discord_ids` in
-// `tests/dev_login_source_contract.rs` both read
-// `crates/api/api_identity_and_access/src/handlers/developer_login.rs` as text. Every scrub-then-grep view can
-// be walked around: `#[cfg(any())]` on the live match arms, and a nested `fn dev_login`, are
+// A text scan of `crates/api/api_identity_and_access/src/handlers/developer_login.rs` can be
+// walked around: `#[cfg(any())]` on the live match arms, and a nested `fn dev_login`, are
 // questions about **reachability**, which no grep can answer.
 //
 // The three tests below answer it by running the handler against a real database. Dead code

@@ -18,7 +18,6 @@ crates/api/
 ├── api_database/            `api_database`: the Postgres pool, the embedded migrations, the development seeds, SQLSTATE predicates
 ├── api_discord/             `api_discord`: the Discord OAuth2, guild-member and announcement webhook clients and their typed failures
 ├── api_equipment_datasets/  `api_equipment_datasets`: the equipment dataset imports, their SQLite navigation index and the generation-pinned read queries
-├── api_failpoints/          `api_failpoints`: the `fail_point!` macro and, in test builds, the failpoint catalogue and arming registry
 ├── api_foundation/          `api_foundation`: the handler error envelope, JSON wire formats, text policies, request parameters
 ├── api_http_layer/          `api_http_layer`: access tokens, the middleware chain and extractors, rate limiters, metrics and health, the realtime hub
 ├── api_identifiers/         `api_identifiers`: the serde- and sqlx-transparent typed ids of every API table key, Discord snowflake and game runtime key
@@ -28,7 +27,6 @@ crates/api/
 ├── api_mission_vocabulary/  `api_mission_vocabulary`: the terrain and game mode enums several API domains name
 ├── api_missions/            `api_missions`: the mission library, versions, artifacts, reviews and approvals, deployments, the armory, factions and registries
 ├── api_operations/          `api_operations`: the event calendar and its access control, ORBAT slotting and reservations, service records, leave requests, fire missions, ballistics catalogs
-├── api_property_evidence/   `api_property_evidence`: the dev-only property run recorder of the API's property tests
 ├── api_server/              `api_server`: the router, the composition root and the `api-server` and `import-item-registry` binaries, over every API crate
 ├── api_server_infrastructure/  `api_server_infrastructure`: the server registry, the live status feed, machine credentials, the fleet command ledger, runtime sessions
 └── api_state/               `api_state`: the application state and its `FromRef` sub-state projections
@@ -46,7 +44,7 @@ category carries its own rules on top of those every library crate keeps:
 - No public `id` / `*_id` field and no public function parameter is a bare `Uuid`, `String`,
   `&str` or integer; ids come from `api_identifiers` (`cargo xtask verify crate-anatomy`).
 - A crate whose public functions return a `Result` keeps a `thiserror` `Error` in `src/error.rs`
-  and no anyhow; only the dev-only `failpoints` and `test_fixtures` features exist.
+  and no anyhow; only the dev-only `test_fixtures` feature exists.
 
 The tier of a crate is 1 plus the highest tier it depends on (0 with no workspace dependency), so
 the domain crates sit above the kernel crates, `api_mission_vocabulary` (tier 0) and

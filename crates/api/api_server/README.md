@@ -48,22 +48,16 @@ The integration suites in `tests/` build one test binary per top-level file. A b
 a database derives its own scratch database from `TEST_DATABASE_URL`, creates and migrates it,
 and the suites that drive HTTP build the same router the `api-server` binary serves. Shared support
 lives in `tests/common/` and the `*_support/` folders, which produce no binary of their own.
-Every test build compiles `api_failpoints` with its `failpoints` feature, which places named
-fault points on commit and external-effect paths; the deploy build compiles them out.
 
 ### Verification suites
 
-Besides the per-domain suites, six groups of binaries verify the API as a whole; each case's
+Besides the per-domain suites, two groups of binaries verify the API as a whole; each case's
 name starts with its group's prefix, which the verification register counts.
 
 | Group | Binaries | Shared support |
 |---|---|---|
-| route acceptance | `route_acceptance_coverage`, one `route_acceptance_<part>` per part (`identity_and_core`, `operations_events`, `operations_reservations`, `operations_ballistics`, `missions_library`, `missions_reviews`, `fleet_and_telemetry`, `administration_center_content`), and `debug_routes_are_development_only` | `route_acceptance_support/`: the route table read from `src/router.rs` and the domain crates' `routes.rs`, the specs and worlds per part, the derived probes and the dimension runner |
-| contract parity | `contract_parity_goldens`, `contract_parity_equipment_viewer`, `contract_parity_mod_wire`, `json_rejection_envelopes`, `query_rejection_envelopes`, and each route acceptance part's `contract_parity_<part>_…` case | `contract_parity_support/` (golden index, normalisation, seeded capture, route contracts), `enfscript_source_support/` (the `@contract` tag grammar of the mod scripts), `fixtures/equipment_data_viewer/` |
-| properties | `session_authority_properties`, `mission_artifact_properties`, `telemetry_revision_properties`, `fleet_command_properties`, `audit_publication_properties`, `reservation_transaction_properties` | `api_property_evidence`, the recorder every property runs through; `session_authority_support/` |
-| controlled races | `controlled_races_identity`, `controlled_races_reservations`, `controlled_races_missions_and_telemetry`, `controlled_races_audit` | `failpoint_and_race_support/`: arming, interleavings, row-lock barriers, persisted-state checks |
-| failure injection | `failure_injection_<area>` for `identity`, `operations`, `missions`, `telemetry`, `fleet`, `audit` and `discord`, and `failure_injection_self_checks` | `failpoint_and_race_support/` |
-| engineering laws | `engineering_laws` | the `repository_laws` and `verification_core` dev-dependencies |
+| route acceptance | one `route_acceptance_<part>` per part (`identity_and_core`, `operations_events`, `operations_reservations`, `operations_ballistics`, `missions_library`, `missions_reviews`, `fleet_and_telemetry`, `administration_center_content`), and `debug_routes_are_development_only` | `route_acceptance_support/`: the route table read from `src/router.rs` and the domain crates' `routes.rs`, the specs and worlds per part, the derived probes and the dimension runner |
+| contract parity | `contract_parity_goldens`, `contract_parity_equipment_viewer`, and each route acceptance part's `contract_parity_<part>_…` case | `contract_parity_support/` (golden index, normalisation, seeded capture, route contracts), `fixtures/equipment_data_viewer/` |
 
 The design note linked under Related documentation specifies each group.
 
@@ -77,7 +71,7 @@ cargo xtask db up        # Postgres 18 in the tbd_reforger_db container, host po
 cargo xtask mk rust-api  # cargo run --bin api-server in this folder; migrates, stays in the foreground
 cargo xtask db seed      # a second terminal, once the API logs `migrations applied`
 cargo xtask db test-it   # the integration suites, each against its own scratch database
-cargo xtask mk rust-test # the library and binary unit tests, source rules included; no database
+cargo xtask mk rust-test # the library and binary unit tests; no database
 ```
 
 Without the recipe, `cargo run -p api_server --bin api-server` starts the same server from any
@@ -120,11 +114,7 @@ directory, which is this folder under `cargo xtask mk rust-api`.
 `.env.example` carries most variables with development values; `TRUSTED_PROXIES`,
 `MISSION_VERSION_MAX_BODY_BYTES`, `SKIP_MIGRATE`, `RUST_LOG` and `TEST_DATABASE_URL` are not in it.
 
-The crate declares no Cargo feature. `Cargo.toml` turns `api_failpoints`'s `failpoints` feature
-on only through a dev-dependency, so every test build (the unit tests and every `tests/*.rs`
-binary) carries the fault-injection registry of `crates/api/api_failpoints/`, and the deploy
-build, `cargo build --release -p api_server --bin api-server`, which passes no feature flag, compiles every
-fault point to nothing. The `engineering_laws` suite holds both halves.
+The crate declares no Cargo feature.
 
 | Variable | Default | Required | Read by |
 |---|---|---|---|
@@ -180,8 +170,7 @@ fault point to nothing. The `engineering_laws` suite holds both halves.
   `api_state`, `api_caller_identity`, `api_discord` and `api_equipment_datasets`, which the
   composition root assembles; `api_http_layer`, whose middleware the router mounts;
   `api_configuration` and `api_database`, which the binaries load and open; and, for the tests
-  only, `api_failpoints` (with its `failpoints` feature), `api_property_evidence` and the mission,
-  ballistics and contract crates the suites build their requests and expectations from. Through
+  only, the mission, ballistics and contract crates the suites build their requests and expectations from. Through
   them: Postgres 18, Discord's OAuth2 and REST APIs and a channel webhook, the schemas in
   `contracts/definitions/`, and, at run time, the asset trees in `assets/terrains/` and
   `assets/glyphs/`, which a development process finds through the checkout's root marker
@@ -198,14 +187,10 @@ fault point to nothing. The `engineering_laws` suite holds both halves.
 - Rules: `src/` holds only the thin application; the kernel crates depend on no domain, the
   domain crates depend on one another only along the domain graph, no crate imports another
   domain's handlers, every domain's one route table is merged by `src/router.rs`, and only
-  `src/bin/api_server.rs` names `api_background_workers` (`src/tests/architecture_rules.rs` reads the
-  API crates' manifests and sources); every source scan of the layout and prose rules and of the
-  integration suites takes the API packages from `tests/common/api_packages.rs`, the one list
-  deduplicated by manifest folder, so no scan reads a crate twice; an applied migration never
+  `src/bin/api_server.rs` names `api_background_workers`; an applied migration never
   changes (`tests/migrations_are_immutable.rs`); neither the application nor any API crate
   depends on a GPU crate (the eight crates the wgpu firewall admits) or on an application
-  package such as `frontend_application` (`cargo xtask verify crate-tiers`), and
-  `api_failpoints`' `failpoints` stays a test-only feature (`tests/engineering_laws.rs`); the
+  package such as `frontend_application` (`cargo xtask verify crate-tiers`); the
   crate builds with the workspace root's `rust-toolchain.toml` and `rustfmt.toml`; the local
   Postgres 18 service
   `db` (container `tbd_reforger_db`, port 5434) is `deploy/compose.dev.yml`; the filled `.env` is
@@ -229,7 +214,6 @@ fault point to nothing. The `engineering_laws` suite holds both halves.
 - [API completion and verification](/documentation/crates/api/api_server/verification_evidence/completion_plan.md)
   — the acceptance contract and requirement register the API is verified against.
 - [Verification completeness](/documentation/crates/api/api_server/verification_evidence/verification_completeness.md)
-  — the route acceptance, contract parity, property, race, failure injection and engineering-law
-  suites, and the failpoint catalogue.
+  — the route acceptance and contract parity suites.
 - [API verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md)
   — the index of the register, the program records and the design notes.

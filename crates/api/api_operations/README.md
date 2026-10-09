@@ -49,9 +49,7 @@ transactions are proved against Postgres by the API's integration suites.
 ## Configuration
 
 No feature and no variable of its own. The reservation writers reread the caller's authority
-against the guild of the API's `Config`. The `fail_point!` site at the slot registration commit
-compiles to nothing outside test builds (`api_failpoints`); the property tests record their runs
-through the dev-only `api_property_evidence`.
+against the guild of the API's `Config`.
 
 ## Public surface
 
@@ -73,7 +71,7 @@ through the dev-only `api_property_evidence`.
   domains `api_identity_and_access` (user lookups, partner guild enrollment),
   `api_match_telemetry` (the matches of a service record), `api_missions` (mission titles, the
   armory, the deployment in effect) and `api_server_infrastructure` (the open runtime session),
-  `api_audit_log`, `api_configuration`, `api_database`, `api_failpoints`, `api_foundation`,
+  `api_audit_log`, `api_configuration`, `api_database`, `api_foundation`,
   `api_identifiers`, `api_mission_vocabulary`, `mission_model`, the ballistics crates
   `ballistics_model`, `ballistics_solver`, `fire_mission_planning` and `ballistics_calibration`,
   `content_digest`, `fleet_wire_contract`, `http_url_guard`, sqlx, axum, serde, chrono,

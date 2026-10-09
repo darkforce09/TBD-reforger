@@ -479,10 +479,7 @@ fn assert_response_contract(value: &Value) {
 fn generated_attendance_corrections_preserve_independent_reservations() {
     use proptest::prelude::*;
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    api_property_evidence::run_property(
-        "attendance_reservation_independence",
-        24,
-        &(0_u8..4, proptest::collection::vec(0_u8..4, 1..6)),
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config { cases: 24, failure_persistence: None, ..Default::default() }).run(&(0_u8..4, proptest::collection::vec(0_u8..4, 1..6)),
         |(reservation, operations)| {
             runtime.block_on(async {
             let f = fixture().await;
@@ -524,8 +521,7 @@ fn generated_attendance_corrections_preserve_independent_reservations() {
             }
             Ok(())
         })
-        },
-    );
+        }).unwrap();
 }
 
 #[tokio::test]

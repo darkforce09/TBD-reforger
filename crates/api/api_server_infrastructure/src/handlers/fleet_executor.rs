@@ -15,7 +15,6 @@ use crate::services::fleet_commands::executor_claims::{
     claim_next_command, mark_executing, record_result,
 };
 use api_caller_identity::machine_caller::MachineCaller;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_foundation::http::path_parameters::PathParams;
 use api_state::AppState;
@@ -57,7 +56,6 @@ pub async fn claim_fleet_command(
     )
     .await?;
     transaction.commit().await?;
-    fail_point!(FleetCommandClaimAfterCommit);
     Ok(match claimed {
         Some(command) => Json(command).into_response(),
         None => StatusCode::NO_CONTENT.into_response(),
@@ -91,6 +89,5 @@ pub async fn finish_fleet_command(
     let mut transaction = state.pool.begin().await?;
     let receipt = record_result(&mut transaction, &caller, command, &request).await?;
     transaction.commit().await?;
-    fail_point!(FleetCommandResultAfterCommit);
     Ok(Json(receipt))
 }

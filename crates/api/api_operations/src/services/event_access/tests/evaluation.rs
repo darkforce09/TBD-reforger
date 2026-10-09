@@ -261,9 +261,12 @@ fn alternative_grants_are_independent_and_conditions_cannot_mix_between_grants()
 
 #[test]
 fn event_access_is_exactly_or_of_and_grants() {
-    api_property_evidence::run_property(
-        "event_access_is_exactly_or_of_and_grants",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(grants_strategy(), any::<[bool; 6]>()),
         |(grants, flags)| {
             let decision = evaluate_access(
@@ -278,14 +281,18 @@ fn event_access_is_exactly_or_of_and_grants() {
             prop_assert_eq!(decision.policy_source, PolicySource::Event);
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn slot_then_squad_then_event_selects_exactly_one_policy() {
-    api_property_evidence::run_property(
-        "slot_then_squad_then_event_selects_exactly_one_policy",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             grants_strategy(),
             prop::option::of(grants_strategy()),
@@ -319,14 +326,18 @@ fn slot_then_squad_then_event_selects_exactly_one_policy() {
             prop_assert_eq!(decision.denial.is_none(), expected_grant(expected, flags));
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn grant_and_condition_permutations_preserve_authority() {
-    api_property_evidence::run_property(
-        "grant_and_condition_permutations_preserve_authority",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             grants_strategy(),
             any::<[bool; 6]>(),
@@ -364,14 +375,18 @@ fn grant_and_condition_permutations_preserve_authority() {
             prop_assert_eq!(original, rearranged);
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn every_mandatory_gate_blocks_every_satisfied_grant() {
-    api_property_evidence::run_property(
-        "every_mandatory_gate_blocks_every_satisfied_grant",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             any::<[bool; 6]>(),
             prop::sample::select(vec![0u8, 1, 2, 4, 5, 7]),
@@ -429,14 +444,18 @@ fn every_mandatory_gate_blocks_every_satisfied_grant() {
             prop_assert_eq!(decision.denial, expected);
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn discord_roles_are_guild_scoped_and_independent_grants_survive_missing_guilds() {
-    api_property_evidence::run_property(
-        "discord_roles_are_guild_scoped_and_independent_grants_survive_missing_guilds",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             "[a-z0-9]{1,20}",
             "[a-z0-9]{1,20}",
@@ -508,14 +527,18 @@ fn discord_roles_are_guild_scoped_and_independent_grants_survive_missing_guilds(
             );
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]
 fn pending_membership_evidence_only_relabels_policy_denials() {
-    api_property_evidence::run_property(
-        "pending_membership_evidence_only_relabels_policy_denials",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             grants_strategy(),
             any::<[bool; 6]>(),
@@ -554,5 +577,6 @@ fn pending_membership_evidence_only_relabels_policy_denials() {
             prop_assert_eq!(relabelled.denial, expected);
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }

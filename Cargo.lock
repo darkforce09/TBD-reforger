@@ -142,7 +142,6 @@ dependencies = [
  "frontend_transport",
  "frontend_ui",
  "futures",
- "http_url_guard",
  "js-sys",
  "leptos",
  "serde_json",
@@ -157,7 +156,6 @@ dependencies = [
  "axum",
  "clap",
  "newtype_ids",
- "repository_root",
  "reqwest",
  "rustls",
  "serde",
@@ -353,7 +351,6 @@ version = "0.1.0"
 dependencies = [
  "api_audit_log",
  "api_caller_identity",
- "api_failpoints",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
@@ -538,20 +535,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "api_failpoints"
-version = "0.1.0"
-dependencies = [
- "api_failpoints",
- "api_foundation",
- "axum",
- "serde_json",
- "sqlx",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "api_foundation"
 version = "0.1.0"
 dependencies = [
@@ -618,7 +601,6 @@ dependencies = [
  "api_caller_identity",
  "api_configuration",
  "api_discord",
- "api_failpoints",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
@@ -648,7 +630,6 @@ dependencies = [
  "api_audit_log",
  "api_caller_identity",
  "api_database",
- "api_failpoints",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
@@ -699,7 +680,6 @@ dependencies = [
  "api_community_content",
  "api_configuration",
  "api_database",
- "api_failpoints",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
@@ -734,7 +714,6 @@ dependencies = [
  "api_caller_identity",
  "api_configuration",
  "api_database",
- "api_failpoints",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
@@ -743,7 +722,6 @@ dependencies = [
  "api_member_activity",
  "api_mission_vocabulary",
  "api_missions",
- "api_property_evidence",
  "api_server_infrastructure",
  "api_state",
  "axum",
@@ -764,16 +742,6 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
-]
-
-[[package]]
-name = "api_property_evidence"
-version = "0.1.0"
-dependencies = [
- "content_digest",
- "proptest",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -810,7 +778,6 @@ dependencies = [
  "api_database",
  "api_discord",
  "api_equipment_datasets",
- "api_failpoints",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
@@ -820,7 +787,6 @@ dependencies = [
  "api_mission_vocabulary",
  "api_missions",
  "api_operations",
- "api_property_evidence",
  "api_server_infrastructure",
  "api_state",
  "axum",
@@ -832,15 +798,10 @@ dependencies = [
  "fire_mission_planning",
  "fleet_wire_contract",
  "futures",
- "http_url_guard",
  "jsonschema",
- "jsonwebtoken",
- "mission_compiler",
  "proptest",
  "repository_laws",
  "repository_root",
- "reqwest",
- "rustls",
  "serde",
  "serde_json",
  "sqlx",
@@ -852,7 +813,6 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
- "verification_core",
 ]
 
 [[package]]
@@ -862,7 +822,6 @@ dependencies = [
  "api_audit_log",
  "api_caller_identity",
  "api_community_content",
- "api_failpoints",
  "api_foundation",
  "api_http_layer",
  "api_identifiers",
@@ -1925,7 +1884,6 @@ version = "0.1.0"
 dependencies = [
  "frontend_api_dtos",
  "frontend_session",
- "frontend_test_support",
  "frontend_transport",
  "frontend_ui",
  "http_url_guard",
@@ -2310,7 +2268,6 @@ dependencies = [
  "content_digest",
  "process_runner",
  "regex",
- "repository_checks",
  "repository_laws",
  "repository_layout",
  "repository_root",
@@ -2331,7 +2288,6 @@ dependencies = [
  "chunk_draw_buffers",
  "fire_mission_planning",
  "frontend_api_dtos",
- "frontend_route_table",
  "frontend_test_support",
  "frontend_transport",
  "futures",
@@ -2529,7 +2485,6 @@ dependencies = [
  "process_runner",
  "regex",
  "repository_layout",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -2911,7 +2866,6 @@ dependencies = [
  "repository_layout",
  "repository_root",
  "thiserror 2.0.18",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -3338,7 +3292,6 @@ dependencies = [
  "frontend_offline",
  "frontend_route_table",
  "frontend_session",
- "frontend_test_support",
  "frontend_transport",
  "frontend_ui",
  "futures",
@@ -3409,7 +3362,6 @@ dependencies = [
  "base64",
  "frontend_api_dtos",
  "frontend_route_table",
- "frontend_test_support",
  "frontend_transport",
  "frontend_ui",
  "futures",
@@ -5357,7 +5309,6 @@ dependencies = [
  "formation_geometry",
  "frontend_api_dtos",
  "frontend_map_view",
- "frontend_test_support",
  "frontend_ui",
  "interior_line_of_sight",
  "js-sys",
@@ -5395,7 +5346,6 @@ version = "0.1.0"
 dependencies = [
  "frontend_api_dtos",
  "frontend_session",
- "frontend_test_support",
  "frontend_transport",
  "frontend_ui",
  "futures",
@@ -5549,7 +5499,6 @@ version = "0.1.0"
 dependencies = [
  "frontend_api_dtos",
  "frontend_session",
- "frontend_test_support",
  "frontend_transport",
  "frontend_ui",
  "http_url_guard",
@@ -5621,7 +5570,6 @@ version = "0.1.0"
 dependencies = [
  "frontend_api_dtos",
  "frontend_session",
- "frontend_test_support",
  "frontend_transport",
  "frontend_ui",
  "leptos",
@@ -5690,7 +5638,6 @@ dependencies = [
  "repository_layout",
  "repository_root",
  "thiserror 2.0.18",
- "tool_test_support",
  "verification_core",
 ]
 
@@ -7478,10 +7425,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.118",
  "thiserror 2.0.18",
- "toml",
- "tool_test_support",
  "verification_core",
- "walkdir",
 ]
 
 [[package]]
@@ -7919,7 +7863,6 @@ dependencies = [
  "prettyplease",
  "process_runner",
  "regex",
- "repository_laws",
  "repository_layout",
  "repository_root",
  "schemars",
@@ -7927,7 +7870,6 @@ dependencies = [
  "syn 2.0.118",
  "thiserror 2.0.18",
  "ticket_registry",
- "tool_test_support",
  "typify",
  "walkdir",
 ]
@@ -8739,9 +8681,7 @@ dependencies = [
 name = "staging_load_generator"
 version = "0.1.0"
 dependencies = [
- "axum",
  "clap",
- "futures",
  "reqwest",
  "rustls",
  "serde",
@@ -8974,12 +8914,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "target-triple"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3a6bfce3d99adfa72d24750a61f782f3036a81e7f86d8841ee1326deaebd171"
-
-[[package]]
 name = "tempfile"
 version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9103,7 +9037,6 @@ dependencies = [
  "jsonschema",
  "process_runner",
  "repository_layout",
- "repository_root",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -9119,7 +9052,6 @@ version = "0.1.0"
 dependencies = [
  "newtype_ids",
  "process_runner",
- "proptest",
  "regex",
  "repository_layout",
  "repository_root",
@@ -9128,7 +9060,6 @@ dependencies = [
  "time",
  "time_source",
  "toml",
- "trybuild",
 ]
 
 [[package]]
@@ -9158,7 +9089,6 @@ version = "0.1.0"
 dependencies = [
  "process_runner",
  "repository_layout",
- "repository_root",
  "serde",
  "thiserror 2.0.18",
  "ticket_model",
@@ -9575,21 +9505,6 @@ name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
-
-[[package]]
-name = "trybuild"
-version = "1.0.120"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e605bf6b39357663d8ba4e984f8be8da8df6bb32e81031d6889024ea8fd68e4"
-dependencies = [
- "glob",
- "serde",
- "serde_derive",
- "serde_json",
- "target-triple",
- "termcolor",
- "toml",
-]
 
 [[package]]
 name = "ttf-parser"
@@ -11048,7 +10963,6 @@ dependencies = [
  "terrain_elevation",
  "thiserror 2.0.18",
  "time_source",
- "tool_test_support",
  "vegetation",
  "verification_core",
  "world_chunks",

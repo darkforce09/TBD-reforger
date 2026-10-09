@@ -165,35 +165,39 @@ fn largest_policy_and_each_adjacent_limit_have_explicit_acceptance_cases() {
 
 #[test]
 fn grant_and_condition_bounds_are_exact() {
-    api_property_evidence::run_property(
-        "grant_and_condition_bounds_are_exact",
-        256,
-        &(0usize..=35, 0usize..=19),
-        |(grants, conditions)| {
-            let policy = EventAccessPolicy {
-                grants: vec![
-                    EventAccessGrant {
-                        conditions: vec![EventAccessCondition::Authenticated {}; conditions],
-                    };
-                    grants
-                ],
-            };
-            let expected = grants <= 32 && (grants == 0 || (1..=16).contains(&conditions));
-            prop_assert_eq!(policy.validate().is_ok(), expected);
-            prop_assert_eq!(
-                validated(serde_json::to_value(&policy).unwrap()).is_ok(),
-                expected
-            );
-            Ok(())
-        },
-    );
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 256,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(&(0usize..=35, 0usize..=19), |(grants, conditions)| {
+        let policy = EventAccessPolicy {
+            grants: vec![
+                EventAccessGrant {
+                    conditions: vec![EventAccessCondition::Authenticated {}; conditions],
+                };
+                grants
+            ],
+        };
+        let expected = grants <= 32 && (grants == 0 || (1..=16).contains(&conditions));
+        prop_assert_eq!(policy.validate().is_ok(), expected);
+        prop_assert_eq!(
+            validated(serde_json::to_value(&policy).unwrap()).is_ok(),
+            expected
+        );
+        Ok(())
+    })
+    .unwrap();
 }
 
 #[test]
 fn identity_bounds_count_utf8_bytes_and_reject_padding() {
-    api_property_evidence::run_property(
-        "identity_bounds_count_utf8_bytes_and_reject_padding",
-        256,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 256,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &("[a-zA-Z0-9_]{1,128}", 1usize..=70),
         |(ascii, unicode_count)| {
             let padded = format!(" {ascii}");
@@ -207,5 +211,6 @@ fn identity_bounds_count_utf8_bytes_and_reject_padding() {
             );
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }

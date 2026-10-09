@@ -5,7 +5,7 @@
 //! in the global middleware chain, [`composition`] builds the application state with its concrete
 //! services, and [`Error`] is why the `api-server` and `import-item-registry` binaries stop.
 //! **Position:** the top of `crates/api`: above the kernel crates (`api_foundation`,
-//! `api_configuration`, `api_database`, `api_failpoints`, `api_http_layer`, `api_audit_log`,
+//! `api_configuration`, `api_database`, `api_http_layer`, `api_audit_log`,
 //! `api_mission_vocabulary`, `api_discord`, `api_equipment_datasets`, `api_caller_identity`,
 //! `api_member_activity`, `api_state`), the domain crates (`api_community_content`,
 //! `api_identity_and_access`, `api_administration`, `api_server_infrastructure`, `api_missions`,
@@ -15,7 +15,7 @@
 //! **Signals & state:** none of its own; the state [`composition::application_state`] returns
 //! owns everything it builds.
 //! **Invariants:** no domain logic lives here: a route belongs to its domain's table, and this
-//! crate only merges the tables; the layout rules in `src/tests/` hold the split.
+//! crate only merges the tables.
 
 pub mod composition;
 mod error;
@@ -23,11 +23,3 @@ pub mod prelude;
 pub mod router;
 
 pub use error::{Error, Result};
-
-#[cfg(test)]
-#[path = "tests/architecture_rules.rs"]
-mod architecture_rules;
-
-#[cfg(test)]
-#[path = "tests/prose_rules.rs"]
-mod prose_rules;

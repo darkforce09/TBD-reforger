@@ -333,9 +333,12 @@ async fn assert_scope_invariants(f: &Fixture) -> Result<(), String> {
 fn generated_reservation_operations_conserve_allocations_quota_and_seatability() {
     use proptest::prelude::*;
     let runtime = tokio::runtime::Runtime::new().unwrap();
-    api_property_evidence::run_property(
-        "reservation_allocation_conservation",
-        24,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 24,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &proptest::collection::vec((0u8..6, 0usize..4, 0usize..2, 0usize..3), 1..14),
         |operations| {
             runtime.block_on(async {
@@ -410,5 +413,6 @@ fn generated_reservation_operations_conserve_allocations_quota_and_seatability()
                 Ok(())
             })
         },
-    );
+    )
+    .unwrap();
 }

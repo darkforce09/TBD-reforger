@@ -47,9 +47,7 @@ server.
 - Every reservation write, and every change to an existing event or its access, takes the event
   scope of `services::event_reservations` first and rechecks the actor's authority after the waits;
   refusals carry a stable `details.code`, and access changes also check the access revision their
-  form was loaded at. In a test build a member's own claim in `slot_registration.rs` passes the
-  failpoint `ReservationClaimBeforeCommit` after its audit row and `ReservationClaimAfterCommit`
-  after its commit.
+  form was loaded at.
 - `event_create_update.rs` creates an event through `services::event_authoring::event_creation`,
   whose field validators `PATCH` also applies, and `event_mission_attachment.rs` attaches through
   `services::event_authoring::mission_attachment`; the `staging-fixtures` host tool writes through

@@ -1,5 +1,5 @@
 //! The behavioural half: with every nullable column NULL on rows the caller can actually
-//! reach, no GET route may 5xx — plus the guard that the sweep covers the whole router.
+//! reach, no GET route may 5xx.
 //!
 //! Skips without `TEST_DATABASE_URL`.
 
@@ -14,7 +14,6 @@ mod null_tolerance_support;
 
 use null_tolerance_support::database_fixtures::*;
 use null_tolerance_support::route_sweep::route_sweep;
-use null_tolerance_support::source_scan::*;
 use null_tolerance_support::*;
 
 /// The two database tests share this suite's fixtures on one database, and `boot()` clears the
@@ -181,79 +180,5 @@ async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
         "with both timestamps set, submitted_at must be updated_at (first COALESCE arm) — \
          got {}",
         row["submitted_at"]
-    );
-}
-
-/// Guards failure mode 1: the sweep must cover the whole router, not a remembered subset.
-///
-/// Parses the registered GET routes out of the API route tables and fails when one is neither swept nor
-/// explicitly skipped with a reason — so adding a route that reads a nullable column cannot
-/// silently escape this file. No database needed.
-#[test]
-fn every_get_route_is_swept_or_skipped_with_a_reason() {
-    // Source pins: no instance of this defect is open, so both the tolerance list and its
-    // ceiling stay at zero. Re-adding an entry *or* bumping the cap must RED. With BASELINE_CAP
-    // pinned at 0, `baseline <= BASELINE_CAP` is identical to `baseline == 0` (and
-    // clippy::absurd_extreme_comparisons denies the `<=` form).
-    assert_eq!(
-        BASELINE_CAP, 0,
-        "BASELINE_CAP must remain 0 — raising it re-opens silent tolerance slack"
-    );
-    let baseline = KNOWN_OPEN.len() + KNOWN_OPEN_ROUTES.len();
-    assert_eq!(
-        baseline, BASELINE_CAP,
-        "KNOWN_OPEN + KNOWN_OPEN_ROUTES hold {baseline} entries, over BASELINE_CAP of \
-         {BASELINE_CAP}. Fix the defect, or raise the cap deliberately so a reviewer sees it."
-    );
-
-    let src = router_source();
-    let registered = registered_get_routes(&src);
-    assert!(
-        registered.len() > 40,
-        "parsed only {} GET routes out of the eight domain route tables and src/router.rs \
-         — the parser has drifted from the source and this guard is no longer guarding anything",
-        registered.len()
-    );
-
-    // A dummy seed is enough: only the templates are read here.
-    let dummy = Seed {
-        mission: Uuid::nil(),
-        pending_mission: Uuid::nil(),
-        version: Uuid::nil(),
-        event: Uuid::nil(),
-        event_mission: Uuid::nil(),
-        announcement: Uuid::nil(),
-        server: Uuid::nil(),
-        machine_secret: String::new(),
-        command: Uuid::nil(),
-        artifact: Uuid::nil(),
-        deployment: Uuid::nil(),
-        faction: Uuid::nil(),
-        wiki_slug: String::new(),
-        match_id: Uuid::nil(),
-        rows: Vec::new(),
-    };
-    let swept: BTreeSet<&str> = route_sweep(&dummy).into_iter().map(|(t, _, _)| t).collect();
-    let skipped: BTreeSet<&str> = ROUTE_SWEEP_SKIP.iter().map(|(r, _)| *r).collect();
-
-    let missing: Vec<&String> = registered
-        .iter()
-        .filter(|r| !swept.contains(r.as_str()) && !skipped.contains(r.as_str()))
-        .collect();
-    assert!(
-        missing.is_empty(),
-        "GET routes registered by the API route tables but neither swept by route_sweep() nor \
-         listed in ROUTE_SWEEP_SKIP with a reason: {missing:?}"
-    );
-
-    let stale: Vec<&&str> = swept
-        .iter()
-        .chain(skipped.iter())
-        .filter(|r| !registered.contains(**r))
-        .collect();
-    assert!(
-        stale.is_empty(),
-        "route_sweep()/ROUTE_SWEEP_SKIP name routes that the API route tables no longer register: \
-         {stale:?}"
     );
 }

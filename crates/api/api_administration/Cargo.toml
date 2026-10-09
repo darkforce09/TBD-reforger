@@ -20,8 +20,6 @@ targets = "any"
 api_audit_log = { workspace = true }
 # `UserRole` and the account identity locks a ban or a warning takes.
 api_caller_identity = { workspace = true }
-# `fail_point!` at the audit publication commit and the audit delivery read.
-api_failpoints = { workspace = true }
 # `ApiError`, the pagination and path parameters, and the wire formats.
 api_foundation = { workspace = true }
 # The `AdminUser` and `AuthUser` extractors and the authorized event stream of the live feed.
@@ -51,7 +49,6 @@ tokio = { workspace = true, features = ["sync", "time", "rt"] }
 tracing = { workspace = true }
 
 [dev-dependencies]
-api_failpoints = { workspace = true, features = ["failpoints"] }
 tokio = { workspace = true, features = ["macros", "rt", "rt-multi-thread"] }
 
 [lints]

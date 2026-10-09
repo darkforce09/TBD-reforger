@@ -15,7 +15,7 @@ and reconciliation, the runtime sessions that fence each boot of the
 
 ```text
 crates/api/api_server_infrastructure/
-├── Cargo.toml  the package: `api_state`, `api_caller_identity`, `api_community_content`, `api_http_layer`, `api_audit_log`, `api_failpoints`, `fleet_wire_contract`, sqlx (`postgres`), axum, layout tier 7
+├── Cargo.toml  the package: `api_state`, `api_caller_identity`, `api_community_content`, `api_http_layer`, `api_audit_log`, `fleet_wire_contract`, sqlx (`postgres`), axum, layout tier 7
 └── src/        the route table, the handlers, the credential, session, command ledger and status services, the models, the error and the prelude
 ```
 
@@ -53,9 +53,7 @@ the sessions and the routes are proved against Postgres by the API's integration
 
 No feature and no variable of its own. The scheduled status publisher's interval
 (`SERVER_STATUS_PUBLISH_INTERVAL_SECS`) belongs to the API's background workers;
-[API environment variables](/documentation/crates/api/api_server/environment_variables.md) lists it. The
-`fail_point!` sites at the command claim and result commits compile to nothing outside test builds
-(`api_failpoints`).
+[API environment variables](/documentation/crates/api/api_server/environment_variables.md) lists it.
 
 ## Public surface
 
@@ -72,7 +70,7 @@ No feature and no variable of its own. The scheduled status publisher's interval
 ## Boundaries
 
 - Depends on: `api_state`, `api_caller_identity`, `api_community_content` (the modpack a server
-  requires), `api_http_layer`, `api_audit_log`, `api_failpoints`, `api_foundation`,
+  requires), `api_http_layer`, `api_audit_log`, `api_foundation`,
   `api_identifiers`, `api_mission_vocabulary`, `fleet_wire_contract`, sqlx, axum, async-stream,
   serde, chrono, tokio, thiserror and uuid. It names no other domain.
 - Used by: the API application (`crates/api/api_server`): its router merges `routes`, its background workers

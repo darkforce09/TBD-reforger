@@ -25,8 +25,6 @@ api_caller_identity = { workspace = true }
 api_configuration = { workspace = true }
 # The Discord OAuth2 and guild-member clients and their typed error.
 api_discord = { workspace = true }
-# `fail_point!` at the session rotation, the link confirmation and the role sync effect.
-api_failpoints = { workspace = true }
 # `ApiError`, the wire formats and the error cause rendering.
 api_foundation = { workspace = true }
 # The token hashing and random codes, the `AuthUser` extractor and the Discord reconciliation
@@ -55,7 +53,6 @@ url = { workspace = true }
 uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
-api_failpoints = { workspace = true, features = ["failpoints"] }
 # A real transport error of the client's own type, for the OAuth failure classification tests.
 reqwest = { workspace = true, features = ["rustls-no-provider"] }
 rustls = { workspace = true, features = ["ring", "std", "tls12", "logging"] }

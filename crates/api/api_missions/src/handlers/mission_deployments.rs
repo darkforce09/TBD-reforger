@@ -18,7 +18,6 @@ use crate::services::mission_deployments::deployment_requests::{
     Requester, cancel_deployment, request_deployment,
 };
 use crate::services::mission_deployments::deployment_settlement::lock_and_settle;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_foundation::http::pagination::PageParams;
 use api_foundation::http::path_parameters::PathParams;
@@ -54,7 +53,6 @@ pub async fn request_server_deployment(
     )
     .await?;
     transaction.commit().await?;
-    fail_point!(DeploymentRequestAfterCommit);
     Ok((StatusCode::ACCEPTED, Json(deployment)))
 }
 

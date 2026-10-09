@@ -38,9 +38,7 @@ executor whose kind the action needs, checks that the requester still holds admi
 authority, and requires the current fencing token on every later report, so an executor whose
 lease lapsed cannot overwrite a newer claim; a
 [game runtime](/documentation/glossary/g_to_m.md#game-runtime) names its open runtime session, and a
-command bound to another session fails. In a test build `record_result` passes the failpoint
-`FleetCommandResultBeforeCommit` after the outcome's audit row; the executor handlers pass
-`FleetCommandClaimAfterCommit` and `FleetCommandResultAfterCommit` after their commits.
+command bound to another session fails.
 `record_result` passes the reported outcome through `command_outcomes.rs` before writing it: a
 succeeded `console_command` reports exactly `{response, response_truncated}` with a response of at
 most 4096 bytes (a failed one reports that or nothing), any other console outcome answers 400 and

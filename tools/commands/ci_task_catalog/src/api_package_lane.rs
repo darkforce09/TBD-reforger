@@ -12,8 +12,7 @@
 //! runner, with the environment every task line gets.
 //! **Invariants:** an API crate is tested, linted and built from the moment the workspace names
 //! it, never only once someone extends a list; an unreadable workspace is a red step, never a
-//! line naming `api_server` alone; the API family runs in one cargo per line, and its only dev-only
-//! feature (`api_failpoints/failpoints`) is one `api_failpoints`' own tests already turn on.
+//! line naming `api_server` alone; the API family runs in one cargo per line.
 
 use std::path::Path;
 

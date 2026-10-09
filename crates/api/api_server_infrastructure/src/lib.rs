@@ -8,7 +8,7 @@
 //! `api_caller_identity` (the machine caller, the session authorization of the status stream,
 //! the administrator recheck), `api_http_layer` (the caller extractors, the event stream
 //! authorization, the token primitives, the realtime hub), `api_community_content` (the modpack
-//! a server requires), `api_audit_log`, `api_failpoints`, `api_foundation`, `api_identifiers`,
+//! a server requires), `api_audit_log`, `api_foundation`, `api_identifiers`,
 //! `api_mission_vocabulary` and `fleet_wire_contract`; names no other domain. The API's router
 //! merges [`routes()`]; the background workers, the match telemetry, missions, operations and
 //! command center domains, the `staging-fixtures` host tool and the integration suites call its

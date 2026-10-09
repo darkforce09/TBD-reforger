@@ -12,7 +12,6 @@ use crate::models::mission::Mission;
 use crate::models::mission_review::{MissionReview, MissionReviewHistory, ReviewComment};
 use crate::services::mission_artifacts::artifact_store::compile_artifact;
 use api_audit_log::required_audit::append_actor_audit;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 
 const REVIEW_COLUMNS: &str = "r.id, r.mission_id, r.artifact_id, a.artifact_digest, a.mission_version_id, \
@@ -207,7 +206,6 @@ pub async fn decide_review(
         ),
     )
     .await?;
-    fail_point!(ReviewDecisionBeforeCommit);
     load_review(connection, review).await
 }
 

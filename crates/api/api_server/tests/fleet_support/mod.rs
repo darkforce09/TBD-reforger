@@ -1,7 +1,6 @@
 //! Registered servers, machine credentials and runtime sessions for the fleet suites, driven
 //! through the real administrator and game-runtime routes of an `event_eligibility_support`
-//! fixture. `executor_interleavings.rs` here is mounted with `#[path]` by
-//! `tests/fleet_command_properties.rs` alone and is not part of this module.
+//! fixture.
 //!
 //! Compiled into each suite that writes `mod fleet_support;` next to
 //! `mod event_eligibility_support;`; it adds no test binary.

@@ -21,7 +21,6 @@ use api_caller_identity::account_authority::holds_administrator_authority;
 use api_caller_identity::identity_ownership::lock_accounts;
 use api_caller_identity::session_authorization::authorize_on_connection;
 use api_configuration::configuration::Config;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_http_layer::middleware::{AuthUser, role_rank};
 use api_server_infrastructure::services::fleet_commands::command_ledger::{
@@ -223,7 +222,6 @@ pub async fn request_deployment(
     .await?;
     let (account, via) = authorize_requester(connection, &requester, config).await?;
     let deployment = record(connection, server, &selection, &account, via).await?;
-    fail_point!(DeploymentRequestBeforeCommit);
     load_deployment(connection, server, deployment).await
 }
 

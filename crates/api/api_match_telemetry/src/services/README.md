@@ -43,9 +43,7 @@ event batch    lock_registered_match ─► conflict probe ─► insert ON CONF
   replaces the present ones (their counters only when the line carries `counters`), reconciles
   attendance through `api_member_activity::participation_attribution`, writes a
   `match.unlinked_players` system audit row for identities no account owns, recomputes each affected
-  account's statistics and refreshes the leaderboard before committing. In a test build the applied
-  path passes the failpoint `ResultsRevisionBeforeCommit` after the leaderboard refresh and
-  `ResultsRevisionAfterCommit` after the commit. An inert retry computes the same answer read-only.
+  account's statistics and refreshes the leaderboard before committing. An inert retry computes the same answer read-only.
 - **Event batch.** `ingest_event_batch` refuses the whole batch with the 409 `EVENT_CONFLICT` when a
   stored `event_id` has another digest, or `EVENT_SEQUENCE_CONFLICT` when a stored `sequence` has
   another `event_id`; otherwise it inserts every event idempotently and adds only the rows actually

@@ -133,11 +133,9 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`crates/ballistics/ballistics_agreement_cases/`](/crates/ballistics/ballistics_agreement_cases/README.md) | `ballistics_agreement_cases` | the seeded lattice of battery fire problems and the bit patterns of their solutions |
 | [`crates/api/api_identifiers/`](/crates/api/api_identifiers/README.md) | `api_identifiers` | the serde- and sqlx-transparent typed ids of every API table key, Discord snowflake and game runtime key |
 | [`crates/api/api_foundation/`](/crates/api/api_foundation/README.md) | `api_foundation` | the handler error envelope, JSON wire formats, text policies, request parameters |
-| [`crates/api/api_failpoints/`](/crates/api/api_failpoints/README.md) | `api_failpoints` | the `fail_point!` macro and, in test builds, the failpoint catalogue and arming registry |
 | [`crates/api/api_configuration/`](/crates/api/api_configuration/README.md) | `api_configuration` | the environment configuration read at boot, trusted proxy networks, the process shutdown signal |
 | [`crates/api/api_database/`](/crates/api/api_database/README.md) | `api_database` | the Postgres pool, the embedded migrations, the development seeds, SQLSTATE predicates |
 | [`crates/api/api_http_layer/`](/crates/api/api_http_layer/README.md) | `api_http_layer` | access tokens, the middleware chain and extractors, rate limiters, metrics and health, the realtime hub |
-| [`crates/api/api_property_evidence/`](/crates/api/api_property_evidence/README.md) | `api_property_evidence` | the dev-only property run recorder of the API's property tests |
 | [`crates/api/api_mission_vocabulary/`](/crates/api/api_mission_vocabulary/README.md) | `api_mission_vocabulary` | the terrain and game mode enums several API domains name |
 | [`crates/api/api_audit_log/`](/crates/api/api_audit_log/README.md) | `api_audit_log` | the audit severity and the best-effort and transactional audit line appends |
 | [`crates/api/api_equipment_datasets/`](/crates/api/api_equipment_datasets/README.md) | `api_equipment_datasets` | the equipment dataset imports, their SQLite navigation index and the generation-pinned read queries |
@@ -220,9 +218,9 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`tools/staging/staging_fixtures/`](/tools/staging/staging_fixtures/README.md) | `staging_fixtures` | the `staging-fixtures` host tool that stages a staging run's fixtures through the API crates' services, with its 4 database suites |
 | [`tools/developer_tools/`](/tools/developer_tools/README.md) | `developer_tools` | the eight tool binaries, each a one-line `main` over one tool crate (script index, browser gates, MCP broker, world export, map assets, capture, the staging load and relay); no library |
 
-The API is the 24 crates under `crates/api/`: the server `api_server` on top and 23 crates below it, grouped as
-infrastructure (`api_identifiers`, `api_foundation`, `api_failpoints`, `api_configuration`,
-`api_database`, `api_http_layer`, the dev-only `api_property_evidence`), kernel
+The API is the 22 crates under `crates/api/`: the server `api_server` on top and 21 crates below it, grouped as
+infrastructure (`api_identifiers`, `api_foundation`, `api_configuration`, `api_database`,
+`api_http_layer`), kernel
 (`api_mission_vocabulary`, `api_audit_log`, `api_equipment_datasets`, `api_member_activity`,
 `api_discord`, `api_caller_identity`, `api_state`), the eight domain crates and
 `api_background_workers`. Its 154 integration binaries are 150 in `crates/api/api_server/tests/` and the 4

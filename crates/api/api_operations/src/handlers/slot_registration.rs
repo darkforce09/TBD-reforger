@@ -25,7 +25,6 @@ use crate::services::event_reservations::{
     waitlist_promotion::promote_waiting_participants,
 };
 use api_audit_log::required_audit::append_actor_audit;
-use api_failpoints::fail_point;
 use api_foundation::error_handling::api_error::ApiError;
 use api_foundation::http::path_parameters::PathParams;
 use api_http_layer::middleware::AuthUser;
@@ -128,9 +127,7 @@ pub async fn register_for_event_mission(
         )
         .await?;
     }
-    fail_point!(ReservationClaimBeforeCommit);
     tx.commit().await?;
-    fail_point!(ReservationClaimAfterCommit);
     let response = ReservationResponse {
         state: registration.state,
         reservation_state: registration.reservation_state,

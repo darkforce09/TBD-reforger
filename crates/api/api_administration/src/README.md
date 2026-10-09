@@ -66,8 +66,8 @@ audit id, and reloads the history on `reset`.
 - Depends on: the API crates `api_state` (the application state), `api_foundation` (errors,
   pagination, wire formats), `api_http_layer` (extractors, the authorized SSE stream),
   `api_audit_log` (the audit log writers and `AuditSeverity`), `api_caller_identity` (`UserRole`
-  and the account locks), `api_member_activity` (the reservation re-evaluation queue) and
-  `api_failpoints`; the domain crate `api_identity_and_access` (the role resync and the grace
+  and the account locks) and `api_member_activity` (the reservation re-evaluation queue); the domain
+  crate `api_identity_and_access` (the role resync and the grace
   extension).
 - Used by:
   - the API's router (`crates/api/api_server/src/router.rs`), which merges the route table, and the

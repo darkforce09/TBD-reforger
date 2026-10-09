@@ -128,7 +128,7 @@ with the artifact's compiled slots, which the event roster in `api_operations` r
 - Depends on:
   - the API crates: `api_state` for the application state, `api_foundation` for the handler
     error, pagination and the wire formats, `api_http_layer` for the extractors and the realtime
-    hub, `api_configuration`, `api_database`, `api_failpoints`, `api_identifiers`,
+    hub, `api_configuration`, `api_database`, `api_identifiers`,
     `api_audit_log` for the audit rows, `api_caller_identity` for session authorization,
     account locks, administrator authority and `MachineCaller`, `api_mission_vocabulary` for
     `TerrainType` and `GameMode`;

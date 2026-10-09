@@ -56,61 +56,66 @@ fn exhaustive_maximum(rows: &[Vec<bool>], seats: usize) -> usize {
 
 #[test]
 fn seat_matching_agrees_with_exhaustive_assignment() {
-    api_property_evidence::run_property(
-        "seat_matching_agrees_with_exhaustive_assignment",
-        512,
-        &matrix_strategy(),
-        |(seats, rows)| {
-            let value = eligibility(seats, &rows);
-            let all: Vec<usize> = (0..rows.len()).collect();
-            prop_assert_eq!(value.all_holders_seatable(), matchable(&rows, seats, &all));
-            let assignment = value.priority_matching();
-            let matched: Vec<usize> = assignment.iter().flatten().copied().collect();
-            let mut distinct = matched.clone();
-            distinct.sort_unstable();
-            distinct.dedup();
-            prop_assert_eq!(distinct.len(), matched.len(), "a seat was assigned twice");
-            for (holder, seat) in assignment.iter().enumerate() {
-                if let Some(seat) = seat {
-                    prop_assert!(rows[holder][*seat], "an inadmissible seat was assigned");
-                }
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(&matrix_strategy(), |(seats, rows)| {
+        let value = eligibility(seats, &rows);
+        let all: Vec<usize> = (0..rows.len()).collect();
+        prop_assert_eq!(value.all_holders_seatable(), matchable(&rows, seats, &all));
+        let assignment = value.priority_matching();
+        let matched: Vec<usize> = assignment.iter().flatten().copied().collect();
+        let mut distinct = matched.clone();
+        distinct.sort_unstable();
+        distinct.dedup();
+        prop_assert_eq!(distinct.len(), matched.len(), "a seat was assigned twice");
+        for (holder, seat) in assignment.iter().enumerate() {
+            if let Some(seat) = seat {
+                prop_assert!(rows[holder][*seat], "an inadmissible seat was assigned");
             }
-            prop_assert_eq!(matched.len(), exhaustive_maximum(&rows, seats));
-            Ok(())
-        },
-    );
+        }
+        prop_assert_eq!(matched.len(), exhaustive_maximum(&rows, seats));
+        Ok(())
+    })
+    .unwrap();
 }
 
 #[test]
 fn priority_matching_keeps_the_greedy_basis_of_earlier_holders() {
-    api_property_evidence::run_property(
-        "priority_matching_keeps_the_greedy_basis_of_earlier_holders",
-        512,
-        &matrix_strategy(),
-        |(seats, rows)| {
-            let mut kept = Vec::new();
-            let mut expected_yielding = Vec::new();
-            for holder in 0..rows.len() {
-                kept.push(holder);
-                if !matchable(&rows, seats, &kept) {
-                    kept.pop();
-                    expected_yielding.push(holder);
-                }
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(&matrix_strategy(), |(seats, rows)| {
+        let mut kept = Vec::new();
+        let mut expected_yielding = Vec::new();
+        for holder in 0..rows.len() {
+            kept.push(holder);
+            if !matchable(&rows, seats, &kept) {
+                kept.pop();
+                expected_yielding.push(holder);
             }
-            let value = eligibility(seats, &rows);
-            prop_assert_eq!(value.unseatable_holders(), expected_yielding);
-            // The survivors are seatable together once the yielding holders leave.
-            prop_assert!(matchable(&rows, seats, &kept));
-            Ok(())
-        },
-    );
+        }
+        let value = eligibility(seats, &rows);
+        prop_assert_eq!(value.unseatable_holders(), expected_yielding);
+        // The survivors are seatable together once the yielding holders leave.
+        prop_assert!(matchable(&rows, seats, &kept));
+        Ok(())
+    })
+    .unwrap();
 }
 
 #[test]
 fn seatability_is_independent_of_holder_and_seat_order() {
-    api_property_evidence::run_property(
-        "seatability_is_independent_of_holder_and_seat_order",
-        512,
+    proptest::test_runner::TestRunner::new(proptest::test_runner::Config {
+        cases: 512,
+        failure_persistence: None,
+        ..Default::default()
+    })
+    .run(
         &(
             matrix_strategy(),
             prop::collection::vec(any::<usize>(), 0..16),
@@ -144,7 +149,8 @@ fn seatability_is_independent_of_holder_and_seat_order() {
             );
             Ok(())
         },
-    );
+    )
+    .unwrap();
 }
 
 #[test]

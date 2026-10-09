@@ -30,7 +30,6 @@ use super::audit_notifier::AuditNotify;
 use super::audit_publication::publish_audit_batch;
 use crate::models::audit_log::AuditLog;
 use crate::models::audit_stream::{AuditStreamReady, AuditStreamReset, AuditStreamResetReason};
-use api_failpoints::fail_point;
 
 /// One published audit row and the publication sequence it was delivered under.
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -133,7 +132,6 @@ struct PublicationWindow {
 /// the page is exactly what the floor it was checked against promises. A cursor the bounds refuse
 /// reads no rows.
 async fn read_window(pool: &PgPool, cursor: i64) -> Result<PublicationWindow, sqlx::Error> {
-    fail_point!(AuditDeliveryRead);
     let mut snapshot = pool.begin().await?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY")
         .execute(&mut *snapshot)
