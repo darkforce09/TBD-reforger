@@ -138,16 +138,16 @@ jobs:
   # crates/frontend package, frontend_application and the offline service worker among them), so a
   # member the workspace gains is tested here from the moment the manifest names it.
   # The world-export and map-asset tests read the committed Everon objects, chunks and BLAS
-  # library (LFS). Pull the Everon tree without the satellite bundle and the DEM, which no test of
-  # this job reads.
+  # library (LFS), and the place-name peaks test reads the Everon DEM. Pull the Everon tree without
+  # the satellite bundle, which no test of this job reads.
   workspace-members:
     name: workspace members (one cargo test --workspace run)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-      - name: fetch LFS test inputs (Everon objects, chunks and BLAS; no satellite, no DEM)
-        run: git lfs pull --include "assets/terrains/everon/**" --exclude "assets/terrains/everon/satellite/**,assets/terrains/everon/dem/**"
+      - name: fetch LFS test inputs (Everon objects, chunks, BLAS and DEM; no satellite)
+        run: git lfs pull --include "assets/terrains/everon/**" --exclude "assets/terrains/everon/satellite/**"
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # pinned; matches root rust-toolchain.toml / gate-env.json
