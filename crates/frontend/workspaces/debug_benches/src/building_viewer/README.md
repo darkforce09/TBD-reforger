@@ -96,10 +96,7 @@ uses).
 - Rules: the pure half stays free of browser and engine handles, so the native tests prove
   the geometry (`world_mapping_round_trips_and_points_north_up`,
   `wash_escapes_only_through_the_window` and the rest of `tests/geometry_and_lanes.rs`); lanes are
-  addressed by `role_id` constants, never by a copied number; the route's row in
-  `crates/frontend/foundation/frontend_route_table/src/routes.rs` must match
-  `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`, which the route-drift gate
-  `gate s-routes` of `tools/developer_tools/` compares.
+  addressed by `role_id` constants, never by a copied number.
 
 ## Related documentation
 

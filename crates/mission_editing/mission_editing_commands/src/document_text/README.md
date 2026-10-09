@@ -47,16 +47,11 @@ crates/mission_editing/mission_editing_commands/src/document_text/
   (`EntityId`), the crate's `Error`, and `serde_json`.
 - Used by: the Mission Creator's document commands
   (`crates/frontend/workspaces/mission_creator_session/src/document_commands.rs`, which re-exports all
-  three modules from `mission_editing_commands::document_text`) and its
-  exporter test
-  (`crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/tests/toolbelt/exporter_grid_reference.rs`, which checks
-  `format_grid_ref` against the map-edge labels).
+  three modules from `mission_editing_commands::document_text`).
 - Rules: the compiled export is byte-identical to its input
   (`class_r_compiled_export_is_byte_identical_to_wire` in `tests/export_text.rs`); a clean compile
-  has no summary (`a_clean_compile_produces_no_diagnostics_summary`); a zero stamp never latches
-  (`t799_zero_stamp_never_latches`); an unparseable merge report degrades to a named line
-  (`class_r_merge_report_unparseable_degrades` in `tests/merge_report.rs`); nothing here names a
-  browser, clipboard or network type.
+  has no summary; a zero stamp never latches; an unparseable merge report degrades to a named
+  line; nothing here names a browser, clipboard or network type.
 
 ## Related documentation
 

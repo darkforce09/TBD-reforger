@@ -92,13 +92,11 @@ The invariants that span the tabs:
   quota, waitlist, member directory and ORBAT routes of the
   [operations](/documentation/glossary/n_to_z.md#operations) domain.
 - Used by: `state.rs`, `event_table.rs` and `page.rs` of
-  `crates/frontend/pages/administration_pages/src/event_manager/`; `event_manager_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins these sources for the
-  event manager's tests.
+  `crates/frontend/pages/administration_pages/src/event_manager/`.
 - Rules: every change names the access revision, and a stale one reloads the view instead of
   overwriting (`a_stale_revision_is_told_apart_from_other_conflicts`); an empty draft admits
   nobody (`an_empty_draft_is_a_policy_that_admits_nobody`) and an own policy without grants says
-  so (`an_own_policy_without_grants_reads_as_admitting_nobody`); inheritance resolves slot, then
+  so; inheritance resolves slot, then
   squad, then event (`captured_overrides_resolve_slot_then_squad_then_operation`); untouched pools
   go back exactly (`untouched_pools_are_sent_back_exactly`); the member search asks only for a
   typed query (`the_member_search_asks_only_for_a_typed_query`). The tests read the captured

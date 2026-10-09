@@ -68,18 +68,10 @@ compiles every surface.
     `session/document_commands/imp/exports.rs` (the compile findings), and the context menu
     gesture under `input/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive these
-    surfaces through the DOM;
-  - `cargo xtask verify editor-orbat-coherency`
-    (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which scans
-    `modals/orbat_manager.rs` and every source file in `modals/orbat_manager/` for banned
-    interface text;
-  - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in
-    `crates/frontend/foundation/frontend_ui/src/tests/ui.rs`, which reads
-    `modals/orbat_manager/dialog.rs`.
+    surfaces through the DOM.
 - Rules: a surface renders and dispatches and never mutates the document itself; nothing outside
   `crates/frontend/workspaces/mission_creator_workspace/src/` imports from this folder; a key binding a surface adds
-  needs a row in the shortcut catalog of `modals/help_modal/` (`every_binding_has_a_help_entry` in
-  `modals/tests/help_modal/shortcut_coverage.rs`).
+  needs a row in the shortcut catalog of `modals/help_modal/`.
 
 ## Related documentation
 

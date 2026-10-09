@@ -15,8 +15,7 @@ editing a schema.
   [`contracts/fixtures/`](/contracts/fixtures/README.md), and the typify codegen in
   [`tools/commands/schema_tooling/src/generate/`](/tools/commands/schema_tooling/src/generate/) (`TARGETS` in
   `schema_types.rs`, 24 schemas).
-- Entry: `cargo xtask schema codegen`, `cargo xtask schema validate` and
-  `cargo xtask schema citations`, and the CI tasks `schema-codegen`, `verify-codegen-fresh` and
+- Entry: `cargo xtask schema codegen` and `cargo xtask schema validate`, and the CI tasks `schema-codegen`, `verify-codegen-fresh` and
   `ci-local-schema`, which the
   [contracts README](/contracts/README.md#getting-started) lists.
 - Related features: the [voice bridge contract](/documentation/contracts/definitions/bridge_messages.md),
@@ -88,8 +87,7 @@ emission and the mod's own version check.
 1. Edit the schema, keeping the rules above.
 2. For a generated schema, run `cargo xtask schema codegen` and commit the regenerated modules.
 3. Update every fixture the change touches, then run `cargo xtask schema validate`.
-4. Update every `@contract <schema>#<pointer>` citation of a renamed or moved definition, then run
-   `cargo xtask schema citations`.
+4. Update every `@contract <schema>#<pointer>` citation of a renamed or moved definition.
 5. Run `cargo xtask ci ci-local-schema`, the schema lane of `ci-local`.
 
 ### Known discrepancies

@@ -41,10 +41,8 @@ of the saved body.
   `frontend_session::AuthStore`.
 - Used by: `../page.rs`, which mounts `article_pane` for the resolved slug; `../revisions/` and
   `../saving/`, which read and write `ArticleState`.
-- Rules: the editing controls follow the reactive `is_admin` memo
-  (`admin_affordance_uses_authed_reactive_role` in `../tests/wiki.rs`); a draft keeps its base
-  revision (`wiki_draft_keeps_its_base_revision_when_the_article_moves_on`); a manual is always
-  fetched on its own, never read from the page list.
+- Rules: the editing controls follow the reactive `is_admin` memo; a draft keeps its base
+  revision; a manual is always fetched on its own, never read from the page list.
 
 ## Related documentation
 

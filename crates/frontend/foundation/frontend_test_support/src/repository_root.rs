@@ -46,27 +46,6 @@ pub fn repository_text(manifest_dir: &str, repository_path: &str) -> &'static st
     cached_text(&self::repository_path(manifest_dir, repository_path))
 }
 
-/// The folder holding the source file `source_file`, as `file!()` spells it in the caller.
-///
-/// Cargo hands rustc the sources of workspace members relative to the repository root, so a
-/// relative `file!()` resolves against the root; an absolute one is used as it is. A test that
-/// scans the folders around itself thereby keeps scanning them wherever its crate moves.
-///
-/// # Panics
-///
-/// When the repository root cannot be found or `source_file` names no file there.
-pub fn source_file_folder(manifest_dir: &str, source_file: &str) -> PathBuf {
-    let file = repository_root(manifest_dir).join(source_file);
-    assert!(
-        file.is_file(),
-        "{} is not a source file under the repository root",
-        file.display()
-    );
-    file.parent()
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| panic!("{} has no parent folder", file.display()))
-}
-
 /// The text of the file at `path`, read on first use and kept for the process.
 ///
 /// # Panics

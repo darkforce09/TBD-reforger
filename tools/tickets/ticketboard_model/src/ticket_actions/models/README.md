@@ -40,9 +40,7 @@ the corpus and the id-to-index map, so a dialog never reaches application state.
   `crate::ticket_registry::models::corpus::Corpus`.
 - Used by: `crate::ticket_actions::services::dialog_builders`; the desktop application:
   `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/`, which paints the dialogs and toasts, and
-  `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`, `command_execution.rs`, `ticket_command_views.rs`,
-  `tests/rendering.rs`), which owns the state.
-- Rules: no egui type appears here (the test
-  `model_dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`); at most one dialog is open at a time, as
-  the application's `Option<Dialog>` field holds it.
+  `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`, `command_execution.rs`, `ticket_command_views.rs`),
+  which owns the state.
+- Rules: no egui type appears here; at most one dialog is open at a time, as the application's
+  `Option<Dialog>` field holds it.

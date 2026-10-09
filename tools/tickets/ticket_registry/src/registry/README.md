@@ -49,8 +49,6 @@ and `read_ticket_title` from one file. At revisions older than one file per tick
 - `ticket_status_history::status_map_at_rev`: the wave-close number check
   (`tools/commands/platform_execution/src/wave_execution/base/wave_close_number.rs`).
 - `ticket_titles::read_ticket_title`: the mod wave driver's display names.
-- `ticket_file_storage::save_toml_tree`: fixture trees in
-  `tools/commands/mod_operations/src/tests/wave_execution.rs`.
 
 ## Boundaries
 

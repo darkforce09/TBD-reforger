@@ -112,10 +112,10 @@ a subcommand prints its usage, and a clap usage error exits 2.
 
 ### gate
 
-- Synopsis: `gate <COMMAND>`: `v-suite`, `s-routes`, `smoke`, `editor-suite`, `doctor`, `r-auth`,
-  `render-check`, `serve`.
-- Does: drives headless Chromium over the DevTools protocol against the built app: the DOM-oracle
-  and route-drift gates, the Mission Creator smoke suite, the session-refresh gate, a render check,
+- Synopsis: `gate <COMMAND>`: `smoke`, `editor-suite`, `doctor`, `r-auth`, `render-check`,
+  `serve`.
+- Does: drives headless Chromium over the DevTools protocol against the built app: the Mission
+  Creator smoke suite, the session-refresh gate, a render check,
   and a static server with the cross-origin isolation headers; `doctor` is the preflight the others
   rely on.
 - Exit codes: 0 green; 1 a gate failed; 2 usage; 3 a driver error.
@@ -166,8 +166,8 @@ a subcommand prints its usage, and a clap usage error exits 2.
 
 - Depends on: the tool crates in the diagram, each its binary's one dependency.
 - Used by:
-  - `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, which run `gate doctor`,
-    `gate editor-suite` and `gate v-suite verify`;
+  - `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, which run `gate doctor` and
+    `gate editor-suite`;
   - `cargo xtask mcp daemon` and `cargo xtask mcp selftest`, which build and launch `mcpd`;
   - `cargo xtask map export-terrain` and the platform wave gate, which run `world`;
   - the `map-water-everon`, `map-cartographic-everon` and `map-cartographic-verify` tasks of

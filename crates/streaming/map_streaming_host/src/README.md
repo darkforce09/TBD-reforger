@@ -75,12 +75,7 @@ guard asking `is_known_dry_land` may refuse a legal spot but never accepts water
   of the world segment, `WORLD_LABEL_FILES`, is the label loader's
   (`map_asset_loading::environment::location_labels::loader`), which the boot reads.
 - Rules:
-  - the Mission Creator's boot-progress tests read the root and the six host modules of the boot
-    by path and require the DEM
-    to stream against its content length (`the_terrain_dem_is_streamed_against_its_content_length`),
-    the density bins to be declared before the world loads
-    (`every_world_batch_declares_its_files_before_it_fetches_them`) and each segment to close on
-    every path (`every_segment_is_closed_and_the_overlay_waits_for_a_full_bar`), all in
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t628_boot_progress.rs`;
+  - the DEM streams against its content length, the density bins are declared before the world
+    loads and each segment closes on every path;
   - a viewport pass takes the `MapHost` out of its handle, so a query or a second flush during
     the pass finds no host and answers empty instead of waiting or panicking.

@@ -63,15 +63,10 @@ write. An arm itself is never document state and never an undo step.
   - the pointer gestures and the window keydown in `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/`
     and the input listeners of
     `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/`, which release or cancel
-    it;
-  - the source pins that read these files through `ENTITY` in
-    `crates/frontend/workspaces/mission_creator_engine_bridge/src/test_support/editor_operations.rs`, and
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t647_placement_interactions.rs`.
+    it.
 - Rules: the discriminant lives on the armed value, never on a reading of which palette tab is open,
-  since the tab can change between the pick-up and the commit; every file here is on the place path
-  that `cargo xtask verify editor-orbat-coherency` scans, which bans `ensure_default_squad` and
-  fails when a listed file is missing, so a renamed file updates the gate's list in
-  `tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`.
+  since the tab can change between the pick-up and the commit; no file here calls
+  `ensure_default_squad`.
 
 ## Related documentation
 

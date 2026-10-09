@@ -38,7 +38,7 @@ module to the tooling; each crate's README then says what its own folders hold.
 | `ticket_registry` | library, `tools/tickets` tier 4 | the registry view, typed operations, validation, `queue.json` and the roadmap and gap-analysis markers, the corpus pins and the bodies of the `cargo xtask ticket` verbs |
 | `verification_core` | library, `tools/foundation` tier 0 | the fail-closed primitives: verdicts, findings, pattern scans, the report and the shared verification lock |
 | `process_runner` | library, `tools/foundation` tier 1 | child processes in their own process group with deadlines and honest statuses, the container-to-host bridge, the ssh transport |
-| `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length, test placement, exemptions, the workspace laws (the crate tiers among them, which hold every member's dependency direction) |
+| `repository_laws` | library, `tools/foundation` tier 1 | the structural engineering laws as pure checks: file length and the workspace laws (crate tiers, crate anatomy, test-file reachability, frontend layering, Tailwind sources) |
 | `repository_layout` | library, `tools/foundation` tier 0 | the repository locations more than one tool names |
 | `deploy_settings` | library, `tools/foundation` tier 2 | the `deploy/deploy.env` reader: the precedence of the file over the process environment, the deploy host, its remote folders and the ssh transport choice |
 | `tool_test_support` | library, `tools/foundation` tier 1, dev-dependency only | the environment and working-directory locks and the test checkout root the tool tests share |
@@ -47,7 +47,7 @@ module to the tooling; each crate's README then says what its own folders hold.
 | `map_asset_verification` | library, `tools/map_assets` tier 7 | the map asset gates: the terrain manifest, the prefab BLAS library, the labels, the elevation anchors and the map-object goldens behind `cargo xtask schema` and `verify blas-manifest`, and the world line-of-sight probe behind `cargo xtask map world-los` |
 | `enfusion_script_index` | library, `tools/enfusion` tier 2 | the script oracle behind `enf`: symbol indexes, lookups, the citation and capability gates, vanilla extraction, and the vanilla page mirrors behind `cargo xtask fetch` |
 | `chrome_devtools_protocol` | library, `tools/browser_testing` tier 1 | the Chrome DevTools Protocol client: Chromium discovery and headless launch in its own process group, pages over one WebSocket each, the gate font cache |
-| `browser_gate_suites` | library, `tools/browser_testing` tier 5 | the headless browser gates of the single-page app: the static server, the DOM oracle, route drift, the Mission Creator smokes, the data viewer gate, the ballistics agreement and offline mortar gates, the capture rig, the doctor, and the `gate` and `capture` command lines |
+| `browser_gate_suites` | library, `tools/browser_testing` tier 5 | the headless browser gates of the single-page app: the static server, the Mission Creator smokes, the data viewer gate, the ballistics agreement and offline mortar gates, the capture rig, the doctor, and the `gate` and `capture` command lines |
 | `map_raster_pipeline` | library, `tools/map_assets` tier 7 | the map raster pipeline behind the `map` binary: the orthophoto stitch, the satellite container and tile pyramids, the cartographic render, the label sets and archives, the water archives and the world-glyph atlas; never in xtask's closure |
 | `developer_tools` | eight binaries, no library | one-line `main`s: `enf` and `mcpd` over the Enfusion crates, `gate` and `capture` over `browser_gate_suites`, `world` and `map` over `world_export_pipeline` and `map_raster_pipeline`, and `acknowledgement-dropping-relay` and `staging-load` over the staging crates |
 | `enfusion_mcp_node_package` | npm data, not a crate | the pinned `enfusion-mcp` server that `mcpd` and `cargo xtask mcp` start |
@@ -74,35 +74,24 @@ verification_core ◀── process_runner, repository_laws        (tools/founda
 
 1. A `tools/foundation` crate depends only on lower `tools/foundation` crates (`process_runner`
    and `repository_laws` on `verification_core`, which depends on none) and on the checkout-root
-   finder `repository_root` (`foundation_crates_depend_only_on_lower_foundation_crates`), and a
-   `tools/tickets` crate only on `tools/foundation` crates, on `time_source`, `content_digest`,
-   `newtype_ids` and `repository_root`, and on
-   ticket crates of a lower tier
-   (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates`), so each is read, tested
-   and reasoned about without the tools above it.
+   finder `repository_root`, and a `tools/tickets` crate only on `tools/foundation` crates, on
+   `time_source`, `content_digest`, `newtype_ids` and `repository_root`, and on ticket crates of a
+   lower tier, so each is read, tested and reasoned about without the tools above it.
 2. `xtask` and `developer_tools` are binary-only packages whose workspace dependencies are tool
-   crates alone (the checkout-root finder comes through `repository_layout`'s prelude); neither depends on the other, and no member depends on either
-   (`tooling_dependency_direction_is_enforced`).
+   crates alone (the checkout-root finder comes through `repository_layout`'s prelude); neither
+   depends on the other, and no member depends on either.
 3. No tokio, axum, reqwest, resvg or image enters xtask's dependency closure (rule 6 of `cargo xtask verify crate-tiers`):
    the async servers and the raster crates run behind the `developer_tools` binaries, so neither
    a server nor an image codec rebuilds the command surface.
 4. Ticket logic has one owner: the xtask `ticket` group delegates to `ticket_registry` and the
-   `wave` group to `ticket_wave_lock` (`ticket_implementations_have_one_owner`), and the
-   ticketboard reads through the public model of `ticket_model`.
-
-The five tests live in `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`, a
-test file of the `repository_checks` crate; its structural rules (line limits, sibling test files)
-cover every tool crate found by folder — each `tools/<name>` and `tools/<category>/<name>` holding
-a `Cargo.toml` (`tooling_crate_folders_are_found_by_folder`). The eight binary names and the layout
-modules are pinned by `the_tooling_tree_holds_its_executables_manifests_and_layout_modules` in the
-same file.
+   `wave` group to `ticket_wave_lock`, and the ticketboard reads through the public model of
+   `ticket_model`.
 
 ### One owner per path
 
 Only the `repository_layout` crate and the tools' own layout modules spell a repository path
 literal. A tool's own layout module declares itself on its first line
-(`//! The repository locations only …`), so the rule finds it without a list
-(`layout_modules_are_the_shared_crate_and_the_self_declared_modules`):
+(`//! The repository locations only …`), so the rule finds it without a list:
 
 | Module | Owns |
 |---|---|
@@ -118,8 +107,7 @@ frontend crates' tests use as well; xtask reaches it through `repository_layout:
 linked worktree reads that worktree's files; a working directory outside any checkout is an
 error, never a guessed folder. `tools/foundation/repository_layout` spells the locations more
 than one tool names: the ticket registry files, the artifact tree, the reference lanes, the documentation root
-and the build output folder. `only_a_layout_module_spells_a_repository_path` in
-`tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` holds the rule for production source.
+and the build output folder.
 
 ### One outcome vocabulary
 
@@ -142,33 +130,28 @@ never an unserialised run.
 map-asset gate, and `cargo xtask ci <task>` one row of the CI task table; `cargo xtask ci
 ci-local` replays the composite the CI jobs run. The three callers reach the same functions in
 the check crates under `tools/checks/` and the command crates under `tools/commands/`, which the
-[verify group README](/tools/xtask/src/commands/verify/README.md) maps verb by verb. Two checks guard the
-surface itself: `verify ci-schema-parity` pins the CI schema job and the `ci-local` rows to the
-full gate set, reading the task table in process, and the documentation gates
-(`readme-coverage`, `markdown-placement`, `link-check`) hold the README and link structure the
-documentation standard sets.
+[verify group README](/tools/xtask/src/commands/verify/README.md) maps verb by verb. The
+documentation gate `link-check` holds the link structure the documentation standard sets.
 
 ### Structural limits and prose
 
 - Production files stay under 500 lines, test files under 1,000, `tools/xtask/src/main.rs`
   under 150, the executables' `src/bin/` files under 250 and the editor smoke scenarios under 450
-  (`tooling_source_files_stay_below_their_structural_limits`). No exemption mechanism exists
-  (`file_size_allowlist_is_permanently_retired`).
-- Unit tests live in sibling files declared with `#[path = "tests/…"]`; an inline test module is
-  refused by a syn walk that also enters macro bodies and function-local modules
-  (`tooling_test_modules_live_in_separate_files`).
+  (`cargo xtask verify file-length` reports the general limits). No exemption mechanism exists.
+- Unit tests live in sibling files declared with `#[path = "tests/…"]`, never in an inline test
+  module.
 - Every tracked file under `tools/` describes the present: no ticket ids, no history words, no
-  retired crate or file spellings, no shell, Python or Node script names, and every Rust file it
-  names exists (`tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`). Commit history owns history.
+  retired crate or file spellings, and no shell, Python or Node script names. Commit history owns
+  history.
 
 ### Data beside the crates
 
 `enfusion_mcp_node_package/` sits outside every crate root on purpose: `verify file-length` walks
 whole crate folders and the structural walk refuses symlinks under `src/`, so a vendored `.rs`
 inside an installed `node_modules/` would be subject to both. The other data folders
-(`xtask/deploy/`, `xtask/dedicated_server_profiles/`, `xtask/fixtures/`,
-`developer_tools/fixtures/`, `map_assets/blueprint_compiler/test_fixtures/`, `tickets/ticket_metrics/tests/fixtures/`)
-sit beside the code that reads them, and a layout module names each once.
+(`xtask/dedicated_server_profiles/`, `xtask/fixtures/`, `xtask/staging/`,
+`map_assets/blueprint_compiler/test_fixtures/`) sit beside the code that reads them, and a layout
+module names each once.
 
 ### Known discrepancies
 
@@ -185,16 +168,15 @@ sit beside the code that reads them, and a layout module names each once.
   `gate doctor` checks.
 - `target/.repository-verification.lock` in the primary checkout: the shared verification lock
   (`GATE_LOCK_RELPATH` in `verification_core`).
-- The CI workflows in `.github/workflows/` (`ci.yml`, `contracts.yml`, `editor-gates.yml`,
-  `mod-gates.yml`, `schema.yml`), which call `cargo xtask` tasks.
+- The CI workflows in `.github/workflows/` (`ci.yml`, `editor-gates.yml`, `mod-gates.yml`), which
+  call `cargo xtask` tasks.
 
 ## Design
 
 The tooling is layered so the cheapest crates carry the rules everything else leans on: the two
 foundational libraries build in seconds and know nothing of the repository's products, the router
 depends on them and on one heavy crate, and only that heavy crate links the map engine. A check
-that cannot run says so, so a green run is proof. Paths, limits and prose rules are held by tests
-rather than by review.
+that cannot run says so, so a green run is proof.
 
 ## Open work
 
@@ -235,5 +217,3 @@ rather than by review.
   image codec changes.
 - Three outcomes, never two: a missing prerequisite must not pass, so "did not run" has its own
   exit code and outranks a failure.
-- Rules live in tests, not in review: dependency direction, path ownership, limits and prose are
-  asserted on every `cargo test -p xtask`.

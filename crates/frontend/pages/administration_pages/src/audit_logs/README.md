@@ -104,19 +104,13 @@ every request run in the browser build only; the views that run them exist in th
   [administration](/documentation/glossary/a_to_f.md#administration) domain.
 - Used by: the `/admin/audit` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Audit Logs" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `audit_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its
-  tests; the DOM oracle's `audit` capture in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`, which answers the stream
-  from `contracts/fixtures/api_goldens/GET__admin__audit-logs__stream.sse.txt`.
-- Rules, all in `tests/`: the paths and the continuation (`first_page_path_has_no_before`,
-  `continuation_path_forwards_cursor_as_before`, `merge_appends_and_returns_cursor`,
-  `empty_page_with_null_cursor_stops`); "Load more" merges into the board under its epoch
-  (`on_load_more_merges_into_the_board`); the stream is aborted on cleanup and the history
-  loads only from the stream's callbacks (`the_route_aborts_its_stream_on_cleanup`,
-  `the_route_loads_history_only_from_the_stream_callbacks`); dedupe, overlap, ordering, the
-  keyset floor and restarts (`audit_board_*` in `tests/live_merge.rs`); the badge and the
-  fallback (`audit_status_*` in `tests/live_status.rs`); the page only reads.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
+- Rules, all in `tests/`: the paths and the continuation
+  (`continuation_path_forwards_cursor_as_before`, `merge_appends_and_returns_cursor`,
+  `empty_page_with_null_cursor_stops`); "Load more" merges into the board under its epoch; the
+  stream is aborted on cleanup and the history loads only from the stream's callbacks; dedupe,
+  overlap, ordering, the keyset floor and restarts (`audit_board_*` in `tests/live_merge.rs`); the
+  badge and the fallback (`audit_status_*` in `tests/live_status.rs`); the page only reads.
 
 ## Related documentation
 

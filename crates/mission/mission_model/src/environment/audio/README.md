@@ -42,8 +42,8 @@ plays the cues.
 - Rules: a radius of zero or below is refused, as the schema's `exclusiveMinimum: 0` refuses it
   (`radius_zero_is_refused` and `a_negative_radius_is_refused` in `tests/cases_1.rs`); ids are
   unique across emitters and cues (`a_duplicate_id_is_refused`); a mission that authors no audio
-  compiles with no `audio` key (`an_unauthored_payload_still_omits_the_audio_key` in
-  `crates/mission/mission_payload/src/tests/extension_round_trips/`);
+  compiles with no `audio` key (`an_unauthored_payload_omits_every_block_key` in
+  `crates/mission/mission_payload/src/tests/extension_round_trips.rs`);
   `MUSIC_EVENTS` and the key lists mirror `$defs/audio`, `$defs/audioEmitter` and `$defs/musicCue`
   by hand, so a schema change there changes this module in the same commit.
 

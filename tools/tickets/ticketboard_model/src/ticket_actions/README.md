@@ -65,17 +65,13 @@ under `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/`.
   `Action`; `crate::ticket_browser`, whose `BrowserEvent::TicketAction` carries it; the desktop
   application: `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/` and `tools/tickets/ticketboard_desktop/src/application/`
   (`mod.rs`, `command_execution.rs`, `action_dispatch.rs`, `feature_views.rs`,
-  `ticket_command_views.rs` and `tests/rendering.rs`).
+  `ticket_command_views.rs`).
 - Rules:
   - every change is a `cargo xtask ticket` command; the feature writes no ticket file and never
     runs `cargo xtask wave repack`;
   - nothing here names egui, and dialogs see only the corpus and the id index, never application
-    state (the test
-    `model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`);
-  - a failed command drops the queued ones and nothing retries
-    (`queue_failure_drops_the_pending_tail_and_never_retries` in
-    `services/commands/tests/commands.rs`).
+    state;
+  - a failed command drops the queued ones and nothing retries.
 
 ## Related documentation
 

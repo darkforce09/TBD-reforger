@@ -73,17 +73,14 @@ Only a queued command offers "Cancel". Every request runs in the browser build o
   and renders `command_requests` and `command_history`; the deployments panel in
   `crates/frontend/pages/administration_pages/src/server_control/mission_deployments/`, which
   words a deployment's command with `command_wording::state_label` and announces through
-  `OutcomeAnnouncer`; `server_control_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`.
+  `OutcomeAnnouncer`.
 - Rules: every state earns exactly its announcement (`every_state_earns_exactly_its_announcement`)
   and `indeterminate` is said to be unknown (`an_indeterminate_outcome_is_said_to_be_unknown`); a
   request is checked as the API checks it (`requests_are_checked_as_the_backend_checks_them`,
   `a_console_line_is_checked_as_the_backend_checks_it`); a console reply reads as the server sent
-  it (`a_console_reply_reads_as_the_server_sent_it`) and is shown under the panel and the history
-  (`a_console_reply_is_shown_under_the_panel_and_the_history_row`); the console offers exactly the
-  seven operator actions and sends only a checked console line
-  (`the_console_offers_exactly_the_operator_actions`); an acceptance is followed to its outcome
-  (`an_acceptance_is_followed_to_its_outcome`), all in `tests/fleet_commands.rs`.
+  it (`a_console_reply_reads_as_the_server_sent_it`), all in `tests/fleet_commands.rs`, and is
+  shown under the panel and the history row; the console offers exactly the seven operator
+  actions and sends only a checked console line; an acceptance is followed to its outcome.
 
 ## Related documentation
 

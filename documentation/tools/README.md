@@ -52,8 +52,8 @@ Procedures that run the tooling are runbooks, not documents here: the
 
 ## Boundaries
 
-- Depends on: the code under `tools/` and the tooling tests in
-  `tools/checks/repository_checks/src/tests/`, which every claim is checked against; the feature doc template; the ticket registry for open work.
+- Depends on: the code under `tools/`, which every claim is checked against; the feature doc
+  template; the ticket registry for open work.
 - Used by: the READMEs of `tools/` and its four crates, which link these documents under
   Related documentation; the [documentation root](/documentation/README.md).
 - Rules: a subfolder mirrors a crate folder's spelling; a document describes the committed code

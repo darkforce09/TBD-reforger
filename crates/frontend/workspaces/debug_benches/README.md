@@ -101,10 +101,7 @@ chromeless, with no navigation entry:
     wall lands on a borrowed lane;
   - the ballistics agreement bench's reading and case mapping are mirrored by the gate
     `gate ballistics-agreement` in
-    `tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`;
-  - the four route rows match
-    `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`, which
-    the route-drift gate `gate s-routes` compares.
+    `tools/browser_testing/browser_gate_suites/src/ballistics_agreement/`.
 
 ## Related documentation
 

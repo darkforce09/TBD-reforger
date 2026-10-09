@@ -136,7 +136,5 @@ The status bar's "OPEN" button has no handler.
 
 ## Decisions
 
-- The ruler and the line of sight are display-only: they write nothing to the mission, which a
-  test holds (`readout_is_display_only_no_doc_writes`).
-- The mode toolbar holds no read-out and the status bar holds every read-out, which a test holds
-  (`mode_toolbar_holds_no_readouts_and_status_bar_holds_them`).
+- The ruler and the line of sight are display-only: they write nothing to the mission.
+- The mode toolbar holds no read-out and the status bar holds every read-out.

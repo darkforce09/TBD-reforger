@@ -67,8 +67,7 @@ one set of patterns, edges, axes and thresholds.
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through the
     selection self-checks.
 - Rules: no tool here holds a pointer event, a reactive signal or an element handle; the ruler and
-  line-of-sight trees name no document mutator (`ruler/tests/session_local.rs` and
-  `line_of_sight/tests/session_local.rs` scan their source).
+  line-of-sight trees name no document mutator.
 
 ## Related documentation
 

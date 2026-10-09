@@ -74,7 +74,7 @@ lock the scope ──▶ scope_snapshot ──▶ reservation_planning (no datab
   `crates/api/api_identity_and_access/src/services/discord_membership_cache.rs`, which queue
   re-evaluations; the `event_reservation_reevaluator` worker in
   `crates/api/api_background_workers/src/`; the test
-  `crates/api/api_server/tests/reservation_quota_allocations.rs`.
+  `crates/api/api_server/tests/events_and_reservations/reservation_quota_allocations.rs`.
 - Rules: planned promotions respect quota, capacity, eligibility and seatability
   (`planned_promotions_respect_quota_capacity_eligibility_and_seatability`) whatever the input
   order (`promotion_order_is_independent_of_input_permutation`), both in

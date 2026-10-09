@@ -57,5 +57,4 @@ tooltip; the panel never shows a measured token count, which the Metrics tab own
   borrowed view and the action-strip callback.
 - Rules: the panel only emits `BrowserEvent`s and changes nothing itself; the comparison takes its
   verdict and its pairs from `ticketboard_model::wave_plan::services::lock_file`, the viewer's one copy of the
-  collision rule, and keeps none of its own;
-  `tools/tickets/ticketboard_desktop/src/application/tests/rendering.rs` paints the details headlessly.
+  collision rule, and keeps none of its own.

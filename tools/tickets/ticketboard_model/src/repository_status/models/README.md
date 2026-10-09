@@ -43,10 +43,5 @@ any other exit is "git unavailable" with the reason.
   `CheckModel`, the git `Coalescer` and the `GitChip`; `background_events.rs` spawns the check and
   `git status` with `CHECK_ARGS` and `GIT_ARGS`; `feature_views.rs` builds the `StatusView`) and
   `tools/tickets/ticketboard_desktop/src/repository_status/ui/`, which paints it.
-- Rules: `CHECK_ARGS` stays the expansion of `CHECK_COMMAND` (`check_command_matches_its_expanded_argv`
-  in `tests/check_status.rs`); only an observed exit 0 is green
-  (`killed_and_spawn_failed_are_red_and_honest`, `red_without_error_lines_points_at_the_output`);
-  a burst of triggers yields one run and one follow-up
-  (`coalescer_burst_yields_one_run_and_one_followup`);
-  no egui type appears here (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+- Rules: `CHECK_ARGS` stays the expansion of `CHECK_COMMAND`; only an observed exit 0 is green;
+  a burst of triggers yields one run and one follow-up; no egui type appears here.

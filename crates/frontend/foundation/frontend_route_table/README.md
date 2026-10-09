@@ -101,9 +101,7 @@ renders padded in a scrolling one.
 
 - Depends on: `frontend_api_dtos` (`Role` and `has_min_role_authed` from its `role` module).
 - Used by: the route guard of the session (`crates/frontend/foundation/frontend_session/src/`); the frame, the
-  top bar and the sidebar in `crates/frontend/shell/frontend_application/src/shell/`; the route drift gate in
-  `tools/browser_testing/browser_gate_suites/src/route_drift.rs`, which reads `src/routes.rs` as
-  text; the headless browser gates of `tools/browser_testing/browser_gate_suites/`, which drive
+  top bar and the sidebar in `crates/frontend/shell/frontend_application/src/shell/`; the headless browser gates of `tools/browser_testing/browser_gate_suites/`, which drive
   the built app by its routes.
 - Rules:
   - `app_routes.rs` and `ROUTES` list the same paths, `ROUTES` adding the fallback as its `*` row;
@@ -114,9 +112,6 @@ renders padded in a scrolling one.
     overview (`denial_redirects_to_overview_with_role_notice` and
     `the_review_workspace_declares_mission_maker_and_redirects_to_its_mission`), all in
     `src/tests/route_authorization.rs`;
-  - `cargo run -q -p developer_tools --bin gate -- s-routes` diffs `ROUTES` against the manifest
-    `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`, so a
-    route change updates that manifest too;
   - the crate depends on no frontend crate above `frontend_api_dtos`
     (`cargo xtask ci verify-workspace-laws`).
 

@@ -62,8 +62,8 @@ Discord is unreachable and their own snapshot is stale.
 - Used by: the domain's `routes.rs`; over HTTP, the personnel and audit log pages in
   `crates/frontend/pages/administration_pages/src/` and the membership status control in
   `crates/frontend/shell/frontend_application/src/shell/membership_status.rs`.
-- Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); a ban
+- Rules: every handler carries its `/// @route` tag; no handler
+  imports another domain's handlers; a ban
   reason and a role are required fields, never defaulted, so a malformed body cannot erase what an
   earlier write recorded.
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with

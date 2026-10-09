@@ -81,7 +81,7 @@ verify-citations), required on every push/PR to `main` (no path filter). Local m
 Harden [`apps/website/.golangci.yml`](https://github.com/darkforce09/TBD-reforger/blob/9cc7a161805fd1c537207e0d329e2cb9c5937137/apps/website/.golangci.yml):
 
 - Add **errcheck**, **govet**, **staticcheck** (in addition to revive `exported`)
-- **Remove `only-new-issues: true`** from [`contracts.yml`](/.github/workflows/contracts.yml) (or merge golangci into `ci.yml` and dedupe)
+- **Remove `only-new-issues: true`** from `contracts.yml` (or merge golangci into `ci.yml` and dedupe)
 - Fix **all** linter findings repo-wide
 
 **Verify:** `golangci-lint run ./...` clean; `cargo xtask db test-it`.
@@ -91,7 +91,7 @@ Harden [`apps/website/.golangci.yml`](https://github.com/darkforce09/TBD-reforge
 and **cyclop** (`max-complexity: 15`). Exclusions: `node_modules` (vendored Go) + generated
 `internal/contract/`, and `_test.go` exempt from errcheck/cyclop (fixtures discard known-good errors;
 integration tests are linear — §2 GO-2/3 + COMP-1 target production logic). **`only-new-issues`
-removed** from [`contracts.yml`](/.github/workflows/contracts.yml) (now a path-filtered
+removed** from `contracts.yml` (now a path-filtered
 supplement); golangci wired into [`ci.yml`](/.github/workflows/ci.yml) backend (after gofmt,
 before build) and `make ci-local-backend`, with the **CI-1** grep guard. **57 findings fixed**
 repo-wide: errcheck 34 → best-effort `//nolint:errcheck`; revive 12 → const-block Godoc; errorlint 7

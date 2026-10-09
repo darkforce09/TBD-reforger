@@ -49,7 +49,6 @@ verb's error output is kept as one line of at most 160 bytes.
   `crates/fleet/game_server_host_agent/tests/process_control.rs` and
   `crates/fleet/game_server_host_agent/tests/host_agent_ledger.rs`, which point `systemctl_program` at a
   stand-in script.
-- Rules: no shell and no argument from outside the validated unit name (the
-  `process_control_runs_systemctl_with_a_fixed_argument_vector` test); a unit that is not loaded
+- Rules: no shell and no argument from outside the validated unit name; a unit that is not loaded
   is never a success, and the verb's exit status never decides the verdict
   (`tests/unit_state_verdict.rs`).

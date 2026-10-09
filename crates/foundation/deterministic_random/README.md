@@ -70,9 +70,7 @@ No features and no environment variables.
   (line-of-sight bench) and `world_export_pipeline` (tests).
 - Rules: the seed-0 reference streams are pinned (`split_mix_64_matches_the_reference_stream`,
   `linear_congruential_64_matches_the_mmix_reference_stream`,
-  `linear_congruential_32_matches_the_c_library_reference_stream`), and so is the bit equality of
-  the multiply and divide spellings of the unit draw (`both_unit_spellings_give_identical_bits`);
-  foundation tier, so the crate depends on no workspace crate (`cargo xtask verify crate-tiers`).
+  `linear_congruential_32_matches_the_c_library_reference_stream`); foundation tier, so the crate depends on no workspace crate (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 

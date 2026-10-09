@@ -24,6 +24,5 @@ and as plain monospace text otherwise.
 - Depends on: `eframe::egui` (`Color32`, `RichText`, `Ui`).
 - Used by: the `ui` modules of `crate::document_viewer`, `crate::execution_metrics`,
   `crate::repository_status`, `crate::ticket_actions` and `crate::ticket_browser`.
-- Rules: this is the only rendering code one feature may import from outside itself; the
-  architecture test `dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs` refuses every other cross-feature UI import.
+- Rules: this is the only rendering code one feature may import from outside itself; no feature
+  imports another feature's UI.

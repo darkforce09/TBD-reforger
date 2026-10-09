@@ -8,7 +8,7 @@ repository, the mod script checks and the documentation gates. Each check conclu
 
 ```text
 tools/checks/
-├── documentation_checks/  `documentation_checks`: README coverage with its Contents check, Markdown placement with its size limit, and the link check with its backticked-path and command-citation rules (`verify`, `ci verify-documentation`)
-├── mod_script_checks/  `mod_script_checks`: the Enfusion comment card, the identity-comment, destroy-target and mission size pins, the UI layout gate and the spawn runs (`verify`, `mod spawn-determinism`, `mod spawn-verify`)
-└── repository_checks/  `repository_checks`: workspace laws, route tags, ORBAT coherency, the language bans and file length, upstream code leaks, registry aliases, and the tooling rules over every tool crate (`verify`)
+├── documentation_checks/  `documentation_checks`: the link check with its backticked-path and command-citation rules (`verify`)
+├── mod_script_checks/  `mod_script_checks`: the UI layout gate and the spawn runs (`verify`, `mod spawn-determinism`, `mod spawn-verify`)
+└── repository_checks/  `repository_checks`: workspace laws, the language bans, upstream code leaks and registry aliases (`verify`)
 ```

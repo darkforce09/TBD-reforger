@@ -57,7 +57,7 @@ pub fn load_registry(root: &Path) -> Result<Registry> {
 /// The live tree is typed, and its one writer is `crate::ops` over [`ticket_model::Corpus`], which
 /// touches exactly the files an operation names. This whole-tree writer would be a second one,
 /// and a second writer is how a mangled `children` list once erased child files. The refusal is
-/// the point; the pins around it assert that no mutator can reach here.
+/// the point.
 #[allow(dead_code)]
 pub fn save_registry(root: &Path, data: &Registry) -> Result<()> {
     if crate::registry::typed_projection::tree_is_phase2(root) {

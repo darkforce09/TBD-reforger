@@ -131,11 +131,9 @@ async fn call(
 ///
 /// **Do not shrink this to "is it on page 1".** `handlers/approvals.rs` serves the
 /// queue `ORDER BY COALESCE(...) ASC, m.id ASC` — *oldest first*, unique-tied — and
-/// nothing anywhere ever removes a `pending_approval` mission from the shared gate database:
-/// the mission suites each leave one behind on every run, `tests/http_infrastructure/null_tolerance_reads.rs`
-/// leaves one with both timestamps NULL (which the sentinel sorts to
-/// the very *front*), and a failure of this assertion leaves this test's own row pending too, so
-/// the ratchet feeds itself. The queue therefore only ever grows, while the row a test just
+/// nothing ever removes a `pending_approval` mission from this binary's database: the suites
+/// sharing it each leave one behind on every run, and a failure of this assertion leaves this
+/// test's own row pending too, so the ratchet feeds itself. The queue therefore only ever grows, while the row a test just
 /// submitted is always the *newest* — i.e. on the **last** page. The moment residue passes one
 /// page a page-1 assertion fails forever, on every branch, for everyone. Measured on
 /// `tbd_gate_it` 2026-07-26: 24 pending rows, 19 from one suite, 4 of them this test's own

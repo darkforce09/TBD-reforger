@@ -73,16 +73,10 @@ from `queue.json`, with the defaults when a key is absent.
 - Used by: `tools/xtask/src/commands/ticket/` (the whole `ticket` group); nothing else calls a
   command directly. The ticketboard runs these commands as `cargo xtask ticket` processes.
 - Rules:
-  - a red `ticket check` refuses every mutation before anything is written
-    (`add_refuses_invalid_registry_without_write` and its siblings in
-    `tests/command_mutation_tests.rs`);
-  - the sync after a write reads the files the write produced, never the value from before it
-    (`ship_regenerates_queue_from_post_state_reload_pin`);
-  - the batch waiver passes only the stale-lock findings and never a missing lock
-    (`the_batch_waiver_never_swallows_a_missing_lock`);
-  - this crate never deletes a worktree or branch and never starts an agent
-    (`cleanup_resolution_preserves_defaults_and_performs_no_deletion`,
-    `dry_run_does_not_call_executor` in `tests/execution_boundaries_tests.rs`).
+  - a red `ticket check` refuses every mutation before anything is written;
+  - the sync after a write reads the files the write produced, never the value from before it;
+  - the batch waiver passes only the stale-lock findings and never a missing lock;
+  - this crate never deletes a worktree or branch and never starts an agent.
 
 ## Related documentation
 

@@ -92,8 +92,8 @@ feature folder, rather than here; this index lists it so every procedure is foun
   the entry README.
 - Rules: a runbook path a constant pins keeps its spelling, or the constant changes in the same
   commit (the layout tests of `cargo test -p xtask` and `cargo test -p developer_tools` require
-  every pinned path to exist); a runbook stays at or under 500 lines
-  (`cargo xtask verify markdown-placement`); every cited command exists in the command tree
+  every pinned path to exist); a runbook stays at or under 500 lines;
+  every cited command exists in the command tree
   (`cargo xtask verify link-check`); no runbook writes a host address, only `TBD_SSH_HOST` from
   `deploy/deploy.env`.
 

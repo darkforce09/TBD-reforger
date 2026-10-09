@@ -179,7 +179,7 @@ pub(crate) fn prune_old_gate_wave_dbs(ctx: &Ctx, wave: i64) {
 /// Prepare the gate database, and REFUSE the destructive prune without the lock.
 ///
 /// THE SECOND VARIABLE AND ITS DATABASE ARE GONE. This used to force-drop and recreate
-/// `tbd_gate_migrate` and export `MIGRATE_TEST_DATABASE_URL` at it, because `tests/db_migrate.rs`
+/// `tbd_gate_migrate` and export `MIGRATE_TEST_DATABASE_URL` at it, because `tests/http_infrastructure/db_migrate.rs`
 /// exercises the migration chain from empty and could not share a DB the other suites had already
 /// migrated. Both `db_migrate.rs` and `models_fromrow.rs` sit on
 /// `common::require_test_database_url`, so each gets its own `<base>_<suite>_it` off

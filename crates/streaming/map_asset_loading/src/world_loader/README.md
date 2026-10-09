@@ -62,10 +62,7 @@ forest fill is in effect, and `metrics.rs` keeps the last eight warm crossings, 
 - Used by: the map host of `map_streaming_host`, which owns one `WorldHost`: boot `init`, the boot
   and settle passes, the airfield apron, the road list for labels, the occluder for queries.
 - Rules:
-  - the Mission Creator's boot-progress tests read these nine files by path and require the chunk
-    batch to be declared before its first fetch
-    (`every_world_batch_declares_its_files_before_it_fetches_them` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t628_boot_progress.rs`);
+  - the chunk batch is declared before its first fetch;
   - a full `init` reports exactly `WORLD_INIT_FILES` world files; a step that fails early reports
     fewer, and the host's `Finish` closes the segment;
   - chunk ids come only from the residency's pin and are marked in flight before they are

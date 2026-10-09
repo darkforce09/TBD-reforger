@@ -28,9 +28,6 @@ crate writes no file under the repository.
   run receipt shape), `ticket_wave_lock` (the lock path, the missing-lock text, the collision
   rule), `repository_layout`, `time_source`; `notify`, `serde`, `serde_json`, `thiserror`, `time`,
   `toml`.
-- Used by: `tools/tickets/ticketboard_desktop`, which also enables the `test_fixtures` feature from its
-  dev-dependencies for the shared test helpers.
+- Used by: `tools/tickets/ticketboard_desktop`.
 - Rules: no source names egui, eframe or rfd, `core` imports no feature, no feature imports
-  `application_state`, and `ticket_registry` imports no consuming feature (the tests in
-  `src/tests/architecture_rules.rs`); the registry round trip in `src/tests/registry_round_trip.rs`
-  proves the board's readers render the committed tickets and wave lock back byte for byte.
+  `application_state`, and `ticket_registry` imports no consuming feature.

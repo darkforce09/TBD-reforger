@@ -21,7 +21,7 @@ contracts/fixtures/equipment-data-viewer/positive/
 | `resources.json` | `resources` | `dataset=diagnostic` |
 | `source-inspection.json` | `properties` | `dataset=diagnostic`, one resource and component node |
 
-`crates/api/api_server/tests/contract_parity_equipment_viewer.rs` holds the exact queries and
+`crates/api/api_server/tests/contract_parity/equipment_viewer.rs` holds the exact queries and
 requires each live answer to equal its page as a JSON value, with nothing normalised.
 
 ## Format

@@ -51,13 +51,8 @@ the host reads as unknown and never as dead.
   (host spawns), and the `libc` crate for the signal handler.
 - Used by: `tools/commands/mod_operations/src/playtest_server/usage_fail.rs`, which calls
   `boot::boot_and_wait` after staging.
-- Rules: the launcher argv is fixed (`the_launcher_argv_is_the_one_the_engine_needs`); the
-  deadline expires at its limit and never naps past it
-  (`the_deadline_expires_at_its_limit_and_never_naps_past_it`,
-  `timeout_values_read_the_way_timeout_1_reads_them`),
-  and the join details come from the engine's own lines
-  (`the_join_details_are_scraped_out_of_the_engines_lines`), all in
-  `tools/commands/mod_operations/src/playtest_server/tests/boot/tests.rs`.
+- Rules: the launcher argv is fixed; the deadline expires at its limit and never naps past it,
+  and the join details come from the engine's own lines.
 
 ## Related documentation
 

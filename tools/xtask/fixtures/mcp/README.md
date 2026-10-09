@@ -34,7 +34,7 @@ that half reads no file here.
   (`protocolVersion`, `capabilities`, `serverInfo`) as `id` 1 and a `"tools/call"` result
   (`content`, optional `isError`) or `error` object as `id` 2.
 - Adding a file: record the server's stdout for the new shape, add the file here, add its arm to
-  `run_at` in `call_selftest.rs` with the exit code it must produce, then run
+  `run_at` in `tools/commands/enfusion_mcp/src/call_selftest.rs` with the exit code it must produce, then run
   `cargo xtask mcp selftest`.
 
 ## Producers and consumers

@@ -101,9 +101,7 @@ applies it.
    scratch database from it. Afterwards the command drops every database of the run, whatever the
    tests did, and exits with the test run's code. Two runs never share a database.
    `--test <binary>` (repeatable), `--lib` and a name filter narrow the run, which then prints
-   `test-selection: narrowed development run; not a readiness receipt`. The binaries that arm
-   the API's `failpoints` feature (`failure_injection_*` and `controlled_races_*`) serialise their
-   own cases, so they need no `--test-threads` flag; the
+   `test-selection: narrowed development run; not a readiness receipt`. The
    [API README](/crates/api/api_server/README.md#verification-suites) maps every verification
    suite to its binaries.
 
@@ -111,7 +109,7 @@ applies it.
 
 sqlx records the SHA-384 of each applied migration file, comments included, and the API refuses to
 boot with `migration N was previously applied but has been modified` once the file changes.
-`crates/api/api_server/tests/migrations_are_immutable.rs` pins every file's checksum, so the edit
+`crates/api/api_server/tests/http_infrastructure/migrations_are_immutable.rs` pins every file's checksum, so the edit
 fails the tests first. A statement change is never repaired: it is a new migration. The schema is
 fine after a comments-only edit, so never reset the volume for this error.
 

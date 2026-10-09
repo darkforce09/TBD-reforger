@@ -19,7 +19,7 @@ crates/frontend/foundation/frontend_transport/src/
 ├── prelude.rs       `Error`, `Fetched` and `TokenProvider`
 ├── sse.rs           the live server status stream the server intel page opens
 ├── sse_frames.rs    the incremental event-stream parser the audit stream reads with
-├── tests/           unit tests for the parser, the audit stream and the stream teardown; source pins
+├── tests/           unit tests for the parser and the audit stream
 └── token_provider.rs  `TokenProvider`: what a request needs from the session that holds the tokens
 ```
 
@@ -113,12 +113,10 @@ paths, the event-stream parser and the audit stream's bookkeeping compile on eve
     `crates/frontend/pages/command_center_pages/src/server_intel/page.rs` and the audit stream
     in `crates/frontend/pages/administration_pages/src/audit_logs/page.rs` among them;
   - the Mission Creator under `crates/frontend/workspaces/mission_creator_workspace/src/`.
-- Rules: one page holds one live stream, torn down on leave
-  (`class_r_sse_abort_teardown_exists` in `tests/sse.rs`,
-  `audit_stream_transport_resumes_from_the_tracker_and_aborts_through_the_handle` in
-  `tests/audit_stream.rs`); a frame that fails to decode is reported, never dropped in silence
+- Rules: one page holds one live stream, torn down on leave; a frame that fails to decode is reported, never dropped in silence
   (`a_bad_payload_is_rejected_with_its_reason_not_silently_dropped` in `frontend_api_dtos`,
-  `audit_stream_an_unreadable_row_is_rejected_and_skipped_by_the_cursor`);
+  `audit_stream_an_unreadable_row_is_rejected_and_skipped_by_the_cursor` in
+  `tests/audit_stream.rs`);
   the parser matches the event-stream rules for every split of its input (`sse_*` in
   `tests/sse_frames.rs`).
 

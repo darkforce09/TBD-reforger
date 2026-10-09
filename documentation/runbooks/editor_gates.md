@@ -3,9 +3,9 @@
 # Editor gates
 
 Runs the headless browser gates of the single-page app: the
-[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) smokes (`gate editor-suite`), the
-frozen DOM oracle (`gate v-suite verify`) and the `gate doctor` preflight that runs before them,
-and shows how to diagnose a gate that hangs or fails. `cargo xtask mk leptos-gates` runs all three;
+[Mission Creator](/documentation/glossary/g_to_m.md#mission-creator) smokes (`gate editor-suite`) and the
+`gate doctor` preflight that runs before them, and shows how to diagnose a gate that hangs or
+fails. `cargo xtask mk leptos-gates` runs both;
 after the release build, the doctor takes about 15 seconds and the whole suite a few minutes. What
 each gate asserts is in the
 [browser gate suites README](/tools/browser_testing/browser_gate_suites/README.md); this runbook
@@ -62,16 +62,15 @@ container's does not run inside that container.
 
    Expected: the API logs `listening on 0.0.0.0:8080`.
 
-3. Build the app and run the doctor, the smoke suite and the DOM oracle.
+3. Build the app and run the doctor and the smoke suite.
 
    ```bash
    cargo xtask mk leptos-gates
    ```
 
-   Expected: the four commands in order, as `--dry-run` prints them:
+   Expected: the three commands in order, as `--dry-run` prints them:
    `cd crates/frontend/shell/frontend_application && trunk build --release`, then
-   `cargo run -q -p developer_tools --bin gate -- doctor`, `… -- editor-suite` and
-   `… -- v-suite verify`; the doctor ends `== gate doctor: OK — 0 warning(s)`, each smoke prints
+   `cargo run -q -p developer_tools --bin gate -- doctor` and `… -- editor-suite`; the doctor ends `== gate doctor: OK — 0 warning(s)`, each smoke prints
    its JSON verdict, and the run exits 0. It stops at the first step that fails, with that step's
    exit code.
 
@@ -102,48 +101,16 @@ is in [Factory waves](/documentation/runbooks/factory_waves/README.md).
    Expected: the smoke's JSON verdict of named checks and exit 0; 1 on a failed check, 2 on a
    missing prerequisite, 3 on a driver error.
 
-6. Run the DOM oracle alone.
-
-   ```bash
-   cargo run -q -p developer_tools --bin gate -- v-suite verify
-   ```
-
-   Expected: a `PASS` or `FAIL` line with the difference count for each of the 26 routes, then
-   `26/26 routes match the frozen oracle` and exit 0; each failing route's first differences
-   follow as JSON, and the exit is 1. `--only <slug>` limits the run to one route.
-
-### Update a DOM oracle reference
-
-The capture that `accept` writes is the same capture `verify` compares, so a route whose fixtures
-are missing or broken cannot be accepted: an API request with no
-fixture fails the route with every unanswered URL and the fixture file that would answer it.
-The fixture naming and the capture's settle rules are in the
-[DOM oracle README](/tools/browser_testing/browser_gate_suites/src/dom_oracle/README.md).
-
-7. Once a route's populated state and every difference `verify` printed are reviewed as intended,
-   accept that one route.
-
-   ```bash
-   cargo run -q -p developer_tools --bin gate -- v-suite accept --only <slug> --note "<the intended change and where it came from>"
-   ```
-
-   Expected: `accept <slug> <bytes> B <digest>  (react ref kept)` and exit 0, with
-   `<slug>.dom.json`, `<slug>.png` and the route's `manifest.json` row (note, size, SHA-256)
-   rewritten in the golden folder under `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/`; the
-   first accept of a route also keeps the original golden as `<slug>.react.dom.json`. Without
-   `--only` and `--note` it exits 2; a capture that fails or is empty or undersized is a driver
-   error, exit 3, and writes no golden. Accept each changed route separately with its own note,
-   and leave unchanged routes alone.
-
 ## Verify
 
-Run the whole oracle again after the accepted updates, and again once they are on `main`.
+Run the suite again after a fix, and again once the fix is on `main`.
 
 ```bash
-cargo run -q -p developer_tools --bin gate -- v-suite verify
+cargo xtask mk leptos-gates
 ```
 
-Expected: `26/26 routes match the frozen oracle` and exit 0.
+Expected: the doctor ends `== gate doctor: OK — 0 warning(s)`, every smoke verdict passes and the
+run exits 0.
 
 ## Troubleshooting
 
@@ -155,8 +122,6 @@ Expected: `26/26 routes match the frozen oracle` and exit 0.
 | `✗ liveness    the headless browser process DIED during the probe …` | a crash, or a browser blocked on a full output pipe: the same signature | P-1 of the debug recipe tells them apart |
 | `✗ liveness    editor page did not become ready within the budget` | a slow or stalled page, a missing build or low memory | check the `dist` and `memory` lines, then the debug recipe |
 | `smoke_hydrate: backend not reachable on :8080`, exit 2 | the API is not running; a gate that could not run never reports green | step 2 |
-| `DOM never stabilized at <path>` | the route's DOM changed on every read for 60 tries | find the animation or poll that keeps it changing; the freeze script covers the clock and random numbers only |
-| a route fails with a list of unanswered `/api/v1/` URLs | the fixture corpus lacks a response the page requests | add the named fixture file under `contracts/fixtures/api_goldens/`, then verify again |
 | `gate: driver error: cdp: ws call timed out (Runtime.evaluate)` after about 130 s | a call to a browser that died or blocked; the per-call timeout is 130 s | run the doctor, then P-1 |
 
 ### Known wedge modes
@@ -262,15 +227,10 @@ check first.
   — each doctor check and the font cache.
 - [Mission Creator smoke tests](/tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/README.md)
   — the smokes, `r-auth` and `render-check`.
-- [DOM oracle gate](/tools/browser_testing/browser_gate_suites/src/dom_oracle/README.md) — the
-  routes, the fixture router and the accept rules.
-- [DOM oracle fixtures](/tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/README.md) — the goldens and
-  the route table.
 - [KB-002](/documentation/known_bugs/kb_002_editor_gate_boot_wedge.md) — the headless-shell
   font-fallback crash.
 - [Testing and CI](/documentation/runbooks/testing_and_ci.md) — the other gates.
-  `.github/workflows/editor-gates.yml` runs this gate nightly, on demand and on pull requests that
-  touch the frontend, the map engine or `tools/developer_tools/`: a Postgres service, the pinned
+  `.github/workflows/editor-gates.yml` runs this gate nightly and on demand: a Postgres service, the pinned
   Chrome for Testing from `cargo xtask ci ci-chrome`, the API from `cargo xtask ci editor-api-boot`,
   then `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`.
 - [Editor capture](/documentation/runbooks/editor_capture.md) — screenshots of a running

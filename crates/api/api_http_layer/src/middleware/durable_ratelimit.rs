@@ -21,8 +21,7 @@
 //! # The three pieces this module depends on
 //!
 //! * the table — `migrations/0021_rate_limit_buckets.sql`, which is [`RATE_LIMIT_BUCKETS_DDL`]
-//!   verbatim (pinned by `tests/durable_rate_limit.rs::migration_0021_is_the_ddl_constant_verbatim`,
-//!   so the bytes the tests prove and the bytes the migration lands cannot drift);
+//!   verbatim;
 //! * the wiring — [`crate::middleware::RateLimitState`], mounted by the API router
 //!   (`api_server::router::router`). The L1 `IpLimiter`s stay in front, narrowed to the
 //!   strict prefixes; `rate_limiting.rs`'s header is the policy and its justification;

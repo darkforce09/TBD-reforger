@@ -28,7 +28,7 @@
 //! ORDER SENSITIVITY: the sorted-keys rule reads document order through `toml::map::Map`,
 //! which preserves insertion order only under the `preserve_order` feature, which this crate's
 //! manifest enables. Without it every table would iterate pre-sorted and the rule could never
-//! fire; the unsorted-red test pins that the feature stays on.
+//! fire.
 
 use std::fs;
 use std::path::{Path, PathBuf};

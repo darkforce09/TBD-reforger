@@ -33,5 +33,4 @@ instead of hiding them, so a lane always shows the lock's exact membership. A cl
   `eframe::egui`.
 - Used by: `crate::application::feature_views`, which paints the Waves tab.
 - Rules: the tab only reads and emits events; it never reorders or recomputes a lane, and filters
-  dim chips without removing them. `tools/tickets/ticketboard_desktop/src/application/tests/rendering.rs` paints
-  the tab over a loaded lock headlessly; the missing and refused screens have no rendering test.
+  dim chips without removing them.

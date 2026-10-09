@@ -34,7 +34,7 @@ own folder, so an import can never fall back to a sample and fill the
 ```text
 definitions/ ──schema codegen──▶ contract_schema_types crate (one module per API domain)
      ├── include_str! ──▶ API validators, Mission Creator zone and loadout checks
-     ├── @contract tags ◀── mod DTO classes, API models (schema citations)
+     ├── @contract tags ◀── mod DTO classes, API models
      └── schema gates ◀── fixtures/, catalogs/ (schema validate)
 
 rules/ ── prefab-classify.json ──▶ world export ──▶ assets/terrains catalogues
@@ -81,15 +81,15 @@ once `cargo xtask db up` has started it.
     stage fixture missions) and `tools/developer_tools/` (world export, blueprint compiler and
     map verification), which find these folders through
     `tools/foundation/repository_layout/src/contracts.rs`;
-  - the `schema.yml` and `contracts.yml` workflows, which run on every change under
-    `contracts/`.
+  - the `schema` job of the `ci.yml` workflow, which runs on every push and pull request to
+    `main`.
 - Rules:
   - the tree holds data only, never code;
   - readers ship before writers emit: a field lands in its schema and in the readers before any
     writer puts it on the wire, as the version 1.3 mission fixtures do ahead of the Mission Creator;
   - a schema change updates its generated types (`cargo xtask ci verify-codegen-fresh`), every
     fixture it validates (`cargo xtask schema validate`) and every `@contract` citation of it
-    (`cargo xtask schema citations`) in the same change;
+    in the same change;
   - live exports stay in `catalogs/` and samples in `fixtures/`.
 
 ## Related documentation

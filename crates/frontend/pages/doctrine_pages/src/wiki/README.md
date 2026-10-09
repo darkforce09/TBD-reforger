@@ -119,22 +119,13 @@ red ("CAUTION", "CRITICAL RULE").
   `leptos_router` (the route parameters and navigation).
 - Used by: the `/wiki` and `/wiki/:slug` routes in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "SOPs & Manuals" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `wiki_source` in
-  `crates/frontend/pages/doctrine_pages/src/tests/source_pins.rs`, which joins every production
-  file of the page for its guard tests; the DOM oracle's `wiki` and `wikislug` captures in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`, answered from
-  `GET__wiki.json`, `GET__wiki__field-manual.json` and `GET__wiki__field-manual__revisions.json`.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
 - Rules: the edit, save and restore controls are gated by the `is_admin` memo over
-  `has_min_role_authed`, never by the browse-mode `has_min_role`
-  (`admin_affordance_uses_authed_reactive_role` in `tests/wiki.rs`); no file writes inner HTML
-  (`wiki_source_never_writes_inner_html`); an unknown slug opens the first manual
-  (`slug_resolution_falls_back_to_first`); categories keep their first-seen order
-  (`categories_preserve_first_seen_order`); a draft keeps the revision it started from
-  (`wiki_draft_keeps_its_base_revision_when_the_article_moves_on` in `tests/page_state.rs`); a slug
-  is one percent-encoded path segment (`wiki_paths_keep_a_slug_to_one_segment`); view! attribute
-  values are braced unless literal, path or closure (`view_attributes_*` in
-  `tests/view_attributes.rs`, which also scans the vehicles page, through the scanner in
-  `crates/frontend/foundation/frontend_test_support/src/view_attribute_guard.rs`).
+  `has_min_role_authed`, never by the browse-mode `has_min_role`; no file writes inner HTML; an
+  unknown slug opens the first manual (`slug_resolution_falls_back_to_first`); categories keep
+  their first-seen order (`categories_preserve_first_seen_order`), both in `tests/wiki.rs`; a
+  draft keeps the revision it started from; a slug is one percent-encoded path segment
+  (`wiki_paths_keep_a_slug_to_one_segment` in `tests/api_paths.rs`).
 
 ## Related documentation
 

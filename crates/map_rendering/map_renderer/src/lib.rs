@@ -15,7 +15,7 @@
 //! **Invariants:** the renderer is damage-driven (a frame is submitted only when something marked
 //! it damaged) and refills its batch list and packet tables in place, never per frame. Every
 //! module that names a GPU or browser type is `wasm32` only; the native build keeps [`Error`], and
-//! the tests add the surface size policy, the statistics report and the calibration scene.
+//! the tests add the surface size policy.
 
 #[cfg(target_arch = "wasm32")]
 mod asset_sink;

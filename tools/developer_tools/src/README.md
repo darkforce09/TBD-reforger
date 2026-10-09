@@ -36,8 +36,5 @@ bin/enf                ──▶ the enfusion_script_index crate (tools/enfusion
 - Depends on: the seven tool crates in the diagram, nothing else.
 - Used by: people and the `cargo xtask` recipes and CI tasks that run a binary by
   `--bin <name>`; no crate depends on the package.
-- Rules: an entry file holds only `main` and its one call and stays under 250 lines
-  (`tooling_source_files_stay_below_their_structural_limits` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`); the package
-  declares no library and depends only on tool crates (`tooling_dependency_direction_is_enforced`
-  in the same file).
+- Rules: an entry file holds only `main` and its one call and stays under 250 lines; the package
+  declares no library and depends only on tool crates.

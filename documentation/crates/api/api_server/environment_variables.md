@@ -191,15 +191,14 @@ means the default, and the boot log states the interval each worker got.
 |---|---|---|---|
 | `SKIP_MIGRATE` | unset | `crates/api/api_server/src/bin/api_server.rs` | any value, even empty, skips the migrations at boot, for a harness that migrates a shared database itself |
 | `RUST_LOG` | `info` | `crates/api/api_server/src/bin/api_server.rs` | the `tracing` filter; an unparseable value means `info` |
-| `HTTPS_PROXY`, `NO_PROXY` | unset: direct connections | `reqwest`, in the clients of `crates/api/api_discord/src/discord_client.rs` and `crates/api/api_discord/src/discord_webhook.rs` | every outbound HTTPS request of the API, Discord's included, goes through the `HTTPS_PROXY` proxy unless its host matches the comma-separated `NO_PROXY` list; lowercase `https_proxy` and `no_proxy` apply when the uppercase name is unset. A proxy that cannot be reached fails each Discord member read as `unavailable` and leaves the recorded membership as it was: the staging outage drill sets `HTTPS_PROXY=http://127.0.0.1:9`, a closed loopback port, and `crates/api/api_server/tests/discord_client_proxy_environment.rs` proves both the proxying and that outcome over loopback |
+| `HTTPS_PROXY`, `NO_PROXY` | unset: direct connections | `reqwest`, in the clients of `crates/api/api_discord/src/discord_client.rs` and `crates/api/api_discord/src/discord_webhook.rs` | every outbound HTTPS request of the API, Discord's included, goes through the `HTTPS_PROXY` proxy unless its host matches the comma-separated `NO_PROXY` list; lowercase `https_proxy` and `no_proxy` apply when the uppercase name is unset. A proxy that cannot be reached fails each Discord member read as `unavailable` and leaves the recorded membership as it was: the staging outage drill sets `HTTPS_PROXY=http://127.0.0.1:9`, a closed loopback port |
 
 ### Tests
 
 | Variable | Read by | Meaning |
 |---|---|---|
 | `TEST_DATABASE_URL` | `crates/api/api_server/tests/common/database.rs` | the base URL each database suite derives its own scratch database from; `cargo xtask db test-it` sets it, and a suite without it fails rather than skips |
-| `TBD_GATE_DB` | `crates/api/api_server/tests/aar_replay_url_backfill.rs` | that suite's fallback when `TEST_DATABASE_URL` is unset |
-| `PROPTEST_RNG_SEED` | `crates/api/api_property_evidence/src/property_run.rs` | the property-test seed, decimal digits; the suites fix a default |
+| `PROPTEST_RNG_SEED` | `tools/commands/api_readiness_checks/src/property_test_configuration.rs` | the property-test seed, decimal digits; `cargo xtask verify api-readiness` fixes a default |
 | `PROPTEST_CASES` | the same | must stay unset: the property suites own their case counts |
 
 ### Where each deployment sets them

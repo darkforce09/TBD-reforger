@@ -73,8 +73,7 @@ None: no feature, no environment variable.
     the frontend layering's crate order);
   - every inset has one definition in `layout.rs`, and the readers use the live accessors;
   - `install_seam` and `unregister_seam` are defined exactly once across the app's source and the
-    Mission Creator crates (`the_seam_mechanism_is_defined_exactly_once_in_the_crate`, in the
-    app's validation-panel tests);
+    Mission Creator crates;
   - every public node key and folder parameter is a newtype id (`cargo xtask verify
     crate-anatomy`).
 

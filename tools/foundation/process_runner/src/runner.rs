@@ -76,13 +76,10 @@ impl Run {
     /// [`Run::output`] drains the two streams into two separate `String`s, which discards the
     /// interleaving. Joining them afterwards invents an order that the child never produced.
     ///
-    /// MEASURED 2026-08-12 on `verify editor-orbat-coherency`: that gate runs 25 `cargo test`
-    /// invocations and its whole 803-line output is a scraped contract.
     /// Cargo writes `Running unittests …` to **stderr** and libtest writes `running N tests` to
-    /// **stdout**. Every package in that gate happens to have exactly one test target today, so
-    /// stderr-then-stdout coincidentally matches — and would stop matching the day any package
-    /// gains a second one, silently reordering a gate's output and breaking a diff contract that
-    /// nobody would think to re-examine.
+    /// **stdout**. For a package with exactly one test target, stderr-then-stdout coincidentally
+    /// matches — and stops matching the day the package gains a second one, silently reordering
+    /// a gate's output and breaking any diff contract over it.
     ///
     /// A single shared pipe is what a shell does for `2>&1`, so the ordering is the child's own
     /// and cannot drift. `std::io::pipe` (stable 1.87; the toolchain pin is 1.95) makes it cheap

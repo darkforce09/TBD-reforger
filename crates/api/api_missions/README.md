@@ -46,7 +46,7 @@ cargo xtask db test-it --test mission_deployment_transitions --test mission_revi
 
 The unit tests cover the schema validators and the zone quantisation against the compiler, the
 loadout projection, the version payload, field and semver validation, the compile diagnostics, the
-artifact store, the slot bindings and the handler source pins; the routes, the reviews and the
+artifact store and the slot bindings; the routes, the reviews and the
 deployments are proved against Postgres by the API's integration suites.
 
 ## Configuration
@@ -87,9 +87,8 @@ the deployment requests reread the caller's authority against the guild of the A
   import, and the integration suites reach the services directly. Over HTTP: the Mission
   Creator, the mission hub, approvals and server control pages, the game runtime and the
   `cargo xtask mod` commands.
-- Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
-  imports against the domain graph.
+- Rules: the API crate rules of [crates/api](/crates/api/README.md); its route table, its handlers
+  and its imports follow the domain graph.
 
 ## Related documentation
 

@@ -54,8 +54,7 @@ The status legend is in the [inventory index](/documentation/crates/frontend/wor
    the pointer gestures folder).
 2. The right button never pans. It opens the map context menu, finishes a tactical graphic being
    drawn, or, released while a placement is armed, cancels the placement. The left button
-   selects, moves, rotates and places, and never moves the camera. The test
-   `rmb_no_longer_pans` pins the right-button rule.
+   selects, moves, rotates and places, and never moves the camera.
 3. World streaming refreshes after the camera settles (120 ms debounce, 250 ms cap).
 4. No key pans the map.
 
@@ -159,7 +158,6 @@ The status legend is in the [inventory index](/documentation/crates/frontend/wor
 ## Decisions
 
 - Only the middle button pans: the right button belongs to the context menu and the left button
-  to selection and placement, so no gesture does two things; `rmb_no_longer_pans` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/tests/t662_input_traps.rs` holds it.
+  to selection and placement, so no gesture does two things.
 - The grid setting lives in the mission document, not in the viewer's preferences: every mission
   maker sees the same map.

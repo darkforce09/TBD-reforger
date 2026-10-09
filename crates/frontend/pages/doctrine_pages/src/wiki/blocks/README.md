@@ -54,9 +54,9 @@ each `ElementTag`, setting each attribute by name and writing each text as a tex
   and the Leptos element builders and `custom_attribute`.
 - Used by: the article body (`../article/article_body.rs`) and the revision view
   (`../revisions/revision_view.rs`) through `render_blocks`.
-- Rules: no view here is built from HTML text, and the page's source never names inner HTML
-  (`wiki_source_never_writes_inner_html` in `../tests/wiki.rs`); an unsafe `href` or `src` never
-  reaches an attribute (`wiki_inlines_unsafe_href_renders_its_children_as_plain_text`,
+- Rules: no view here is built from HTML text, and the page's source never names inner HTML; an
+  unsafe `href` or `src` never reaches an attribute
+  (`wiki_inlines_unsafe_href_renders_its_children_as_plain_text`,
   `wiki_inlines_unsafe_src_renders_the_alt_text`); every block, inline, alignment and callout kind
   of the formatting-guide capture maps to its element
   (`wiki_blocks_formatting_guide_maps_every_block_to_its_element`,

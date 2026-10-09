@@ -39,7 +39,7 @@ cargo xtask db test-it --test telemetry_revisions --test telemetry_queue --test 
 ```
 
 The unit tests cover the wire decoders and their refusals, the revision decision, the shared
-ingest parsers and the source pins of the heartbeat and the results transaction; the transactions
+ingest parsers; the transactions
 and the routes are proved against Postgres by the API's integration suites.
 
 ## Configuration
@@ -69,9 +69,8 @@ No feature and no variable of its own.
   reads the match models for the member service record, and the integration suites call the
   ingest services. Over HTTP: the game runtime's session loop and telemetry delivery in
   `mod/tbd-framework/Scripts/Game/TBD/API/`.
-- Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
-  imports against the domain graph.
+- Rules: the API crate rules of [crates/api](/crates/api/README.md); its route table, its handlers
+  and its imports follow the domain graph.
 
 ## Related documentation
 

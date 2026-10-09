@@ -57,12 +57,8 @@ strip emit `crate::ticket_actions::events::TicketActionEvent`, which comes back 
   and `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`, `feature_views.rs`, `action_dispatch.rs`).
 - Rules:
   - the browser may use other features' models, services and events, never application state,
-    and nothing here names egui (the test
-    `model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`);
-  - filters change projections once per change, never per frame, and never the registry
-    (`filters_compose_as_intersection` and `clear_restores_the_full_measured_count` in
-    `services/tests/filtering.rs`).
+    and nothing here names egui;
+  - filters change projections once per change, never per frame, and never the registry.
 
 ## Related documentation
 

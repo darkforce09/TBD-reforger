@@ -77,8 +77,8 @@ audit id, and reloads the history on `reset`.
     [audit logs](/documentation/glossary/a_to_f.md#audit-logs) pages in
     `crates/frontend/pages/administration_pages/src/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`); no Rust code outside `api_audit_log`
+  router merges; every handler
+  carries its `/// @route` tag; no Rust code outside `api_audit_log`
   inserts into `audit_logs`, which keeps one audit path for the API's code; the wire shapes follow
   `contracts/definitions/personnel-roster.schema.json` and
   `contracts/definitions/audit-log.schema.json`.

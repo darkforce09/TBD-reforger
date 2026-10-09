@@ -37,8 +37,8 @@ it writes. `ticket_wave_lock::collides` and this reader's `colliding_pairs` give
 ## Public surface
 
 - `services::lock_file`: `load_lock` and `LockState`, loaded by
-  `crate::application_state::background_loading`; `WaveLock` and `LockWave`, built by the
-  application tests; `paths_collide` and `colliding_pairs`, used by the comparison view.
+  `crate::application_state::background_loading`; `WaveLock` and `LockWave`;
+  `paths_collide` and `colliding_pairs`, used by the comparison view.
 - `models::wave_projection::WavesModel` and `models::view::WavePlanView`, which `WorkspaceState`
   builds and the desktop application lends and paints.
 - `events::WavePlanEvent`, which `crate::application_state::events` converts into `Action`s.
@@ -49,17 +49,13 @@ it writes. `ticket_wave_lock::collides` and this reader's `colliding_pairs` give
   (`WaveLockUnparsable`); `ticket_model` (`StatusName`, `Ticket`, `TicketId`); `ticket_wave_lock`
   (`lock_path`, `missing_lock_error`); `serde` and `toml`.
 - Used by: `crate::application_state` (`background_loading.rs`, `workspace_state.rs`,
-  `events.rs`) and its tests; the desktop application: `tools/tickets/ticketboard_desktop/src/wave_plan/ui/`,
+  `events.rs`); the desktop application: `tools/tickets/ticketboard_desktop/src/wave_plan/ui/`,
   `tools/tickets/ticketboard_desktop/src/application/` (`mod.rs`, `feature_views.rs`) and the comparison view in
   `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/comparison.rs`.
 - Rules:
-  - the feature reads the lock and never writes it or recomputes packing
-    (`lanes_render_the_lock_verbatim_never_sorted` in `models/tests/wave_projection.rs`);
-  - a missing or malformed lock is a refusal on this tab and never empties the board
-    (`missing_lock_is_the_did_not_run_refusal` in `services/tests/lock_file.rs`);
-  - nothing here names egui (the test
-    `model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+  - the feature reads the lock and never writes it or recomputes packing;
+  - a missing or malformed lock is a refusal on this tab and never empties the board;
+  - nothing here names egui.
 
 ## Related documentation
 

@@ -37,7 +37,7 @@ cargo xtask db test-it --test community_content_reads --test contract_parity_equ
 
 The unit tests need no database: the wiki markup reader with its block goldens (validated against
 `contracts/definitions/wiki-page.schema.json`), the upload format checks and store, the vehicle
-body validation and the announcement handler source pins. The integration suites of `crates/api/api_server`
+body validation. The integration suites of `crates/api/api_server`
 prove the routes against Postgres.
 
 ## Configuration
@@ -68,8 +68,7 @@ No feature and no variable of its own; the handlers read the upload directory
   command center domains (the modpack and announcement models and lookups) and the integration
   suites.
 - Rules: the API crate rules of [crates/api](/crates/api/README.md); a domain crate names no
-  domain outside its edges of the domain graph, here none
-  (`crates/api/api_server/src/tests/architecture_rules.rs`).
+  domain outside its edges of the domain graph, here none.
 
 ## Related documentation
 

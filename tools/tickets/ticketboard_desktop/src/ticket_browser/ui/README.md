@@ -57,7 +57,4 @@ and never imports that feature's `ui`.
   (`StatusName`); `eframe::egui` and `egui_extras`.
 - Used by: `crate::application` (`feature_views.rs` and `mod.rs`).
 - Rules: rendering emits events and mutates only the `Filters` it is handed; it imports no other
-  feature's `ui`, `crate::core::ui` excepted (the test
-  `dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`); a dragged card opens a dialog, never a
-  command.
+  feature's `ui`, `crate::core::ui` excepted; a dragged card opens a dialog, never a command.

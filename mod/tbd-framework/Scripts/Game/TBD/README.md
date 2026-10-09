@@ -85,7 +85,7 @@ each folder clears its static state when a new world starts.
   `cargo xtask mod compile` and `cargo xtask mod world-boot`, which compile and boot them. No
   other addon in `mod/` names these classes.
 - Rules: every class the addon adds carries the `TBD_` prefix; wire structs keep the JSON keys'
-  spelling and carry a `@contract` tag (`cargo xtask schema citations`); RPC and replicated members
+  spelling and carry a `@contract` tag; RPC and replicated members
   carry `@rpc` and `@replicated` tags and context-dependent methods an `@authority` tag; a new game
   mode component is added to `TBD_GameMode.et` and to the manager's roll-call, which `cargo xtask
   mod world-boot` checks; a new script file needs a

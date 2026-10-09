@@ -7,9 +7,9 @@
 //! center reads, the announcement, upload, modpack, vehicle database and wiki routes, and the
 //! development-only equipment data viewer reads.
 //!
-//! **Position:** mounted by `tests/route_acceptance_administration_center_content.rs` with
-//! `#[path]`; builds request bodies with the `content_support` (multipart forms, vehicle bodies)
-//! and `wiki_support` (save bodies, unique slugs) helpers that binary declares, and imports the
+//! **Position:** mounted by `tests/route_acceptance/main.rs` with `#[path]`; builds request bodies
+//! with the `content_support` (multipart forms, vehicle bodies) and `wiki_support` (save bodies,
+//! unique slugs) helpers that binary declares, and imports the
 //! committed equipment exports under `tests/fixtures/equipment_data_viewer/` with the
 //! production importer.
 //!

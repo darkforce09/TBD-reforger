@@ -14,7 +14,7 @@ crates/api/api_http_layer/src/observability/
 ├── mod.rs                 the module tree
 ├── observability_auth.rs  `ObservabilityAuth` and the `OBSERVABILITY_TOKEN` bearer check
 ├── request_observer.rs    `observe`: the middleware that counts every request into the registry
-└── tests/                 unit tests for the registry, the exposition (escaping, the Discord outcome family) and the bearer check
+└── tests/                 unit tests for the bearer check
 ```
 
 ## How it works
@@ -46,8 +46,7 @@ body; the membership stays and `last_error` names the failure). Each counted req
 one `info` line with target `discord_reconciliation` and the fields `outcome`, `guild_scope`
 (`main` or `partner`), `retry_after_ms` (failures only) and `revision`; it names no account, guild
 id or token. The Discord client reads `HTTPS_PROXY` when it is built, so a proxy on a closed port
-turns every request into `unavailable`, which
-`crates/api/api_server/tests/discord_client_proxy_environment.rs` proves over loopback only.
+turns every request into `unavailable`.
 
 `GET /healthz` runs two checks, either of which turns it red: `database`, a `SELECT 1` bounded at
 2 s, and `migrations`, which reads `_sqlx_migrations` and fails when the table is unreadable or
@@ -68,15 +67,13 @@ each check's status, latency and error, the migration counts and the pool gauges
   - the API's router (`api_server::router`), which mounts `observe` and serves `/metrics` and `/healthz`;
   - `api_identity_and_access::services::discord_rest_reconciliation`, which counts each
     Discord membership request into the application state's `Registry`;
-  - the integration suites `crates/api/api_server/tests/observability.rs` and
-    `crates/api/api_server/tests/discord_client_proxy_environment.rs`;
+  - the integration suite `crates/api/api_server/tests/http_infrastructure/observability.rs`;
   - over HTTP: the Caddy site in `deploy/caddy/Caddyfile` publishes
     `/healthz`, and `cargo xtask platform preflight`, the `editor-api-boot` task of
     `cargo xtask ci` and the [Mission Creator](/documentation/glossary/g_to_m.md#mission-creator)
     smoke gates in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/` probe it
     without credentials.
-- Rules: `observe` stays outside panic recovery and the rate limiter, which the router's own tests
-  check (`throttled_requests_are_counted` in
-  `crates/api/api_server/src/tests/router.rs`); `/healthz` discloses nothing beyond
-  `status` without the token (`healthz_discloses_nothing_to_an_unauthenticated_caller`); the
+- Rules: `observe` stays outside panic recovery and the rate limiter; `/healthz` discloses nothing
+  beyond `status` without the token (`healthz_discloses_nothing_to_an_unauthenticated_caller` in
+  `crates/api/api_server/src/tests/router.rs`); the
   `route` label is always a template, never a raw path.

@@ -42,4 +42,4 @@ ones answer `Error::AssetRejected` with the renderer's own account.
   (`crates/map_rendering/map_renderer/src/asset_sink.rs`).
 - Rules:
   - payloads are CPU data only; the browser image is the sink's associated type;
-  - an empty slot hands out no sink (`an_empty_slot_hands_out_no_sink`).
+  - an empty slot hands out no sink.

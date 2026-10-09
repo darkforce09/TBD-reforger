@@ -41,8 +41,7 @@ Why the marker is `.ai/tickets/ROOT` and not the Cargo workspace root (a `Cargo.
   plants the marker on purpose, as the ticket registry tests do.
 - **One stat, no parse.** The probe asks whether one file exists; the Cargo marker has to read the
   root manifest and match a `[workspace]` line, which a comment or a reformatted header breaks.
-- **One answer.** In this repository both markers name the same folder
-  (`the_marker_root_is_the_cargo_workspace_root_above_the_crate` pins that), so the frontend tests
+- **One answer.** In this repository both markers name the same folder, so the frontend tests
   that used the Cargo marker read the same files through this one.
 
 ## Getting started

@@ -63,9 +63,8 @@ a name hash there binds the account to whoever holds that seat or name next.
   (`Arm`); `TBD_PlayerIdentity` by the results report, the fleet commands, `TBD_RosterLoader`,
   `TBD_DeploymentAuthorization` and `TBD_MissionDeploymentRelay`.
 - Rules: every `arma_id` on the wire comes from `TBD_PlayerIdentity.GetArmaId`; the link code is
-  never echoed in public chat or logs; `cargo xtask verify player-identity-comments` keeps the
-  identity comments truthful; lines added stay ASCII and `cargo xtask mod compile` checks that the
-  scripts compile.
+  never echoed in public chat or logs; lines added stay ASCII and `cargo xtask mod compile`
+  checks that the scripts compile.
 
 ## Related documentation
 

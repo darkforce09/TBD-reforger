@@ -81,8 +81,8 @@ None: Workbench runs these scripts in the editor.
   addon it names, and `cargo xtask mod compile` exits 1 when one lands in a
   `Scripts/WorkbenchGame/` folder of `mod/tbd-framework/`; the MCP's `wb_cleanup` deletes
   this folder, so it is never pointed at `mod/tbd-emcp`. The class names, JSON keys and
-  actions stay the package's, because its tools call them; `cargo xtask verify enfusion-comments`
-  and `cargo xtask verify file-length` gate the files.
+  actions stay the package's, because its tools call them; `cargo xtask verify file-length`
+  reports the files' length.
 
 ## Related documentation
 

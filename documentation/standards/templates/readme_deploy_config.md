@@ -129,7 +129,7 @@ and the app's folder read-only, so the site root holds wherever the checkout sit
   `cargo xtask setup client-addons`.
 - `Caddyfile`: served by the `caddy` service of `deploy/compose.staging.yml`,
   which `cargo xtask deploy website` starts and then reloads, so an edit applies with the next
-  deploy. `crates/api/api_server/tests/forwarded_for_trust.rs` pins its `reverse_proxy
+  deploy. `crates/api/api_server/tests/http_infrastructure/forwarded_for_trust.rs` pins its `reverse_proxy
   127.0.0.1:8080` upstream.
 - `systemd/`: each unit's install command is in its header and in that folder's README.
 

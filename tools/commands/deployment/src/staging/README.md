@@ -130,8 +130,7 @@ as a bearer token on curl's stdin, else from the single `TBD_WORKSHOP_MOD_ID`.
   and no dry-run line holds a secret
   (`the_ssh_password_is_in_no_argv_and_only_in_the_child_environment`,
   `the_dry_run_plan_walks_every_instance_and_prints_no_secret` in `tests/remote/tests.rs`); the
-  boot of the previous run never passes for the new one; the pipeline runs no compose command
-  (`cargo xtask verify staging-compose-paths`).
+  boot of the previous run never passes for the new one; the pipeline runs no compose command.
 
 ## Related documentation
 

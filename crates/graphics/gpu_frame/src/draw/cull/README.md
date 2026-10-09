@@ -33,6 +33,5 @@ buffers.
   (`crates/map_rendering/symbology_layers_gpu/src/icon_cull_gpu.rs`), which holds it; and the
   compute-cull readback probe in
   `crates/map_rendering/map_render_diagnostics/src/readback/compute_cull.rs` checks it against the oracle.
-- Rules: every lane binds its own parameter buffer (`per_lane_cull_params_not_shared`); the
-  compute pass returns the oracle's count (`t938_3_gpu_visible_count_equals_cpu_on_fixture` in
+- Rules: every lane binds its own parameter buffer; the compute pass returns the oracle's count (`t938_3_gpu_visible_count_equals_cpu_on_fixture` in
   `render_primitives`).

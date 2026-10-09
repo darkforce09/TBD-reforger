@@ -61,7 +61,6 @@ The checks that judge mod work from the command line:
 | `cargo xtask mod remote-logs` | a dedicated server's `console.log` shows a healthy boot |
 | `cargo xtask debug direct-join` | the probes behind a LAN Direct Join |
 | `cargo xtask verify file-length` | the pinned mod Scripts roots hold to 500 lines per script, 1000 per test script |
-| `cargo xtask verify enfusion-comments` | the pinned mod Scripts roots meet the comment card: headers, banners, member docs and tags |
 
 The mod script modularisation program (splitting, documenting and gating the three addons'
 scripts) keeps its resume state in the

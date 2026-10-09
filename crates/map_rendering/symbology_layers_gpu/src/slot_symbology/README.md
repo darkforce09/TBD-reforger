@@ -60,7 +60,5 @@ move.
   `render_primitives`, and the crate's `icon_uniforms`, `icon_cull_gpu` and `Error`.
 - Used by: `map_renderer`'s render engine (`crates/map_rendering/map_renderer/src/`: the typed
   layers' accessor and camera hook, encode, cull, statistics, boot) and `map_render_diagnostics`.
-- Rules: the bind bodies are pinned by
-  `crates/map_rendering/map_renderer/src/tests/lane_bind_source_pins/symbology_bind_paths.rs` (which reads
-  `atlas.rs`, `slot_lane.rs` and `mission_lanes.rs`) and `comments_bind_skips_pick_bridge.rs`
-  (which reads `mission_lanes.rs` and needs `comments_bind` before `comments_bind_ids` there).
+- Rules: `comments_bind` in `mission_lanes.rs` uploads the comment lane and never touches the pick
+  bridge.

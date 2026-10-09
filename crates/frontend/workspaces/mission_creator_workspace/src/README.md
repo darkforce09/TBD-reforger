@@ -18,7 +18,7 @@ crates/frontend/workspaces/mission_creator_workspace/src/
 ├── mission_editor.rs  `MissionEditorPage`, which mounts the canvas and raises the chrome around it
 ├── prelude.rs         the two route components, for a glob import
 ├── review_workspace/  the Mission Creator, read-only, on the version an artifact compiled from
-├── tests/             unit tests for the page and its source pins, and the review mode's write pins
+├── tests/             unit tests for the page's pure helpers
 └── ui/                docks, top strip, toolbelt, outliner, inspectors and dialogs
 ```
 
@@ -83,19 +83,14 @@ Mission Creator itself in its read-only review mode, not a copy of it.
   build) and `web_sys` in the browser build.
 - Used by:
   - `crates/frontend/shell/frontend_application/src/app_routes.rs`, the route table;
-  - source pins that read this folder's files: the crate's own tests in
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
-    `/missions/:id/edit` route, and `cargo xtask verify editor-orbat-coherency`, which scans named
-    files under `ui/modals/`, the page `mission_editor.rs`, the engine bridge crate and the Arsenal
-    crate.
+    `/missions/:id/edit` route.
 - Rules: a document mutation goes through the hosted commands of `mission_editing_commands`,
   never straight out of a panel; a module that touches `web_sys` or a live engine handle is
   `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line, which the native
   `cargo test -p mission_creator_workspace` build holds; no other frontend crate depends on this
   crate, and only the application root (`app_routes.rs`) imports the items under Public surface,
-  which `cargo xtask verify frontend-layering` holds at zero edges. The coherency gate names its files by path, so moving one of them breaks
-  `cargo xtask verify editor-orbat-coherency`.
+  which `cargo xtask verify frontend-layering` holds at zero edges.
 
 ## Related documentation
 

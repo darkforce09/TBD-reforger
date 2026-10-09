@@ -43,7 +43,7 @@ eframe window and changes the registry only by running `cargo xtask ticket` as a
 Run these from the repository root:
 
 ```bash
-cargo test -p ticket_model -p ticket_metrics -p ticket_wave_lock -p ticket_registry
+cargo test -p ticket_model -p ticket_registry
 cargo xtask ticket check --strict  # the full check of the committed tickets
 cargo xtask wave check             # the wave lock against the ticket files
 ```
@@ -51,10 +51,8 @@ cargo xtask wave check             # the wave lock against the ticket files
 ## Boundaries
 
 - Depends on: the `tools/foundation` crates and, among `crates/foundation`, `time_source`,
-  `content_digest`, `newtype_ids` and `repository_root` (the test
-  `ticket_crates_depend_only_on_foundations_and_lower_ticket_crates` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`); `ticketboard_desktop`
-  also on the `eframe`, `egui_commonmark`, `egui_extras` and `rfd` crates.
+  `content_digest`, `newtype_ids` and `repository_root`; `ticketboard_desktop` also on the `eframe`,
+  `egui_commonmark`, `egui_extras` and `rfd` crates.
 - Used by: `xtask` and `ticketboard_desktop`; `ticketboard_model` is the ticketboard's own
   headless half, used by `ticketboard_desktop` alone, which no crate depends on.
 

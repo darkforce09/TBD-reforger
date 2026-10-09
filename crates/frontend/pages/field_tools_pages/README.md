@@ -63,9 +63,7 @@ None: no feature, no environment variable.
   `serde_json`; on `wasm32`, `frontend_transport`, `frontend_session`, `frontend_ui`,
   `frontend_map_view`, `map_draw_lanes`, `unit_symbology`, `wasm-bindgen` and `web-sys`;
   `frontend_test_support` and `offline_cache_policy` for its tests only.
-- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the page; the API test
-  `crates/api/api_server/tests/fire_mission_solution.rs`, which reads `src/mortar/saved_fires/restore.rs` as
-  text to pin its copy of the legacy grid reader.
+- Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose route table mounts the page.
 - Rules: a page crate depends on foundation and feature crates only, never on another page crate,
   a workspace or the app (`cargo xtask ci verify-workspace-laws`); the page solves with the
   ballistics crates' solver and never with a copy of it

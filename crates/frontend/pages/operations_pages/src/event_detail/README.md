@@ -120,15 +120,13 @@ subtree, which resets the selector's faction and squad tabs.
 - Used by: the `/events/:id` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`; the schedule page
   in `crates/frontend/pages/operations_pages/src/schedule/` (`event_hub_view`); the standalone
   slotting page in `crates/frontend/pages/operations_pages/src/orbat_selection/`
-  (`OrbatSelector`, `MissionStanding`, `standing_notices`); `event_hub_source` in
-  `crates/frontend/pages/operations_pages/src/tests/source_pins.rs` reads its source files.
+  (`OrbatSelector`, `MissionStanding`, `standing_notices`).
 - Rules: `event_hub_view` is the one renderer of an event; a blank or whitespace briefing, the
   event's and each mission's, reads as "No briefing provided."
   (`a_cleared_briefing_renders_the_empty_state_and_never_the_invented_lore` and
   `operation_level_briefing_uses_the_same_empty_rule` in `tests/event_hub.rs`); every meta badge
   comes from the dossier (`meta_badges_are_all_dossier_derived`); the tier checks use the
-  authenticated reactive role, so a browse-mode session is never a leader
-  (`orbat_affordances_use_authed_reactive_role`).
+  authenticated reactive role, so a browse-mode session is never a leader.
 
 ## Related documentation
 

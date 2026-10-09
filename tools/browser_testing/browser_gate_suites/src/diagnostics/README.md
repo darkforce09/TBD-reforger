@@ -35,7 +35,7 @@ aborts the browser. `chrome_devtools_protocol::launch_with_gpu` hands the same f
 | liveness | the Mission Creator at `/missions/smoke/edit?force=webgl&sat=preview` | not ready, or the browser died, fails |
 
 The pins live in `tools/browser_testing/browser_gate_suites/gate-env.json`. The liveness probe serves the dist on
-port 5299 with the map assets and no API proxy, seeds the admin session the DOM oracle uses,
+port 5299 with the map assets and no API proxy, seeds an admin session,
 launches Chromium on debug port 9399, evaluates `1+1` with an 8 s timeout, then polls once a second
 for a canvas and `window.__editorCam`, within `limits.liveness_timeout_secs` (15) plus a 12 s hard
 cap. Before reporting it asks the browser's own `/json/version` whether it is still alive, which

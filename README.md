@@ -82,9 +82,8 @@ section 3 of [CLAUDE.md](/CLAUDE.md). `cargo xtask help` lists the build, CI and
   the game hosts that run the game server host agent; operators who deploy with `cargo xtask deploy`.
 - Rules: the project laws in [CLAUDE.md](/CLAUDE.md), held by review and by the gates
   `cargo xtask ci ci-local` runs; every folder below the root but the test, generated-output and
-  hidden ones carries a README.md that lists its children
-  (`cargo xtask verify readme-coverage`); the code trees hold no Markdown but README.md
-  (`cargo xtask verify markdown-placement`); every link, path and cited command resolves (`cargo xtask verify link-check`).
+  hidden ones carries a README.md that lists its children;
+  the code trees hold no Markdown but README.md; every link, path and cited command resolves (`cargo xtask verify link-check`).
 
 ## Related documentation
 

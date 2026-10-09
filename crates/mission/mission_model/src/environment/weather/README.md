@@ -42,12 +42,11 @@ each keyframe at its offset.
   edit with `validate` and offers `WEATHER_PRESETS`.
 - Rules: an offset equal to or below the one before it is refused (`equal_at_minutes_are_refused`
   and `out_of_order_at_minutes_are_refused` in `tests/cases_1.rs`); `WEATHER_PRESETS` is the
-  vocabulary of `environment.weatherPreset` (`the_preset_vocabulary_matches_environment` pins it),
-  and the compiler keeps its own copy in
+  vocabulary of `environment.weatherPreset`, and the compiler keeps its own copy in
   `crates/mission/mission_compiler/src/game_document/environment.rs`, so a new preset goes
   into both; a mission that authors no timeline compiles with no `weatherTimeline` key
-  (`an_unauthored_payload_still_omits_the_weather_timeline_key` in
-  `crates/mission/mission_payload/src/tests/extension_round_trips/`).
+  (`an_unauthored_payload_omits_every_block_key` in
+  `crates/mission/mission_payload/src/tests/extension_round_trips.rs`).
 
 ## Related documentation
 

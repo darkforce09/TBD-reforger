@@ -42,13 +42,10 @@ writes version 1 and panics when a channel's length is not `cols × rows` or the
 - Rules:
   - the header stays 16 bytes and 2-aligned on a little-endian target (compile-time assertions in
     `tbdd.rs`; `header_pod_is_the_on_disk_header` in `tests/tbdd_tests.rs`);
-  - every committed tile under `assets/terrains/everon/objects/density/` decodes exactly as the
-    byte-by-byte reference decoder in `tests/tbdd_parity_reference.rs` does
-    (`everon_tiles_decode_bit_identically_to_the_old_loop`), aligned or not
-    (`unaligned_payload_decodes_identically`);
-  - the production decoder has no per-byte loop:
-    `production_decode_has_no_per_byte_assembly_loop` scans `tbdd.rs` with the comment and test
-    scrubber in `tests/tbdd_class_r_scrub.rs`;
+  - a tile decodes exactly as the byte-by-byte reference decoder in
+    `tests/tbdd_parity_reference.rs` does (`decode_matches_the_old_loop_on_synthetic_shapes`),
+    aligned or not (`unaligned_payload_decodes_identically`);
+  - the production decoder has no per-byte loop;
   - `tools/map_assets/world_export_pipeline/src/vegetation_density.rs` keeps its own copy
     of the header size, the channel names and the version, so a change here changes it too.
 

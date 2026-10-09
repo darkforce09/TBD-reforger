@@ -31,7 +31,7 @@ key of each building class.
 Run from the repository root:
 
 ```bash
-cargo test -p label_layout   # declutter, importance, glyph sizing, packing and id cases
+cargo test -p label_layout   # declutter, importance, glyph sizing and packing cases
 ```
 
 ## Public surface
@@ -47,15 +47,14 @@ cargo test -p label_layout   # declutter, importance, glyph sizing, packing and 
 ## Boundaries
 
 - Depends on: `render_primitives` (`text::layout`, `text::metrics`, `text::pack`, `text::scale`),
-  `newtype_ids` (the ids), `serde` (the location rows); `serde_json` in tests.
+  `newtype_ids` (the ids), `serde` (the location rows).
 - Used by: `place_names`, whose packers lay out the town, road and height labels;
   `map_asset_loading`'s location loader (`crates/streaming/map_asset_loading/src/environment/location_labels/`);
   `chunk_draw_buffers`' draw buffers and glyph lookup; `map_streaming_host`; and the
   town-label verification of the developer tools
   (`tools/map_assets/map_asset_verification/src/labels/`).
-- Rules: the committed Everon label data draws without a tofu glyph
-  (`g3_committed_label_data_no_tofu`) and keeps its location id bytes through a typed round trip
-  (`the_committed_location_rows_keep_their_id_bytes`); a world rotation covers the whole compass
+- Rules: the committed Everon label data draws without a tofu glyph and keeps its location id
+  bytes through a typed round trip; a world rotation covers the whole compass
   (`every_world_rotation_of_the_compass_gets_its_own_facing`); map overlay tier 1
   (`cargo xtask verify crate-tiers`).
 

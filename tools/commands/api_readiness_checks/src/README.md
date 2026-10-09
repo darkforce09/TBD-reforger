@@ -142,40 +142,20 @@ missing: <dependency>
   builds, and whose `current_fingerprints` `cargo xtask staging fingerprints` prints.
 - Rules:
   - evidence goes stale on any change to a fingerprinted file, Markdown included, or to the
-    configuration, and after 24 hours
-    (`stale_changed_failed_and_omitted_evidence_is_rejected` in `tests/evidence.rs`);
+    configuration, and after 24 hours;
   - a tracked symlink binds its link text, so retargeting it invalidates evidence, and it never
     shares a hash input with a regular file holding the same bytes; an untracked, escaping or
-    dangling symlink fails the fingerprint
-    (`tracked_symlink_is_fingerprinted_stably_by_its_tagged_link_text`,
-    `retargeting_a_tracked_symlink_changes_the_fingerprint`,
-    `untracked_symlink_beside_an_accepted_tracked_symlink_is_refused`,
-    `tracked_symlink_resolving_outside_the_repository_or_nowhere_is_refused` in
-    `tests/source_fingerprint.rs`);
+    dangling symlink fails the fingerprint;
   - a receipt or log is published by an atomic rename inside a directory opened without
-    following symlinks, and never writes through an existing link
-    (`evidence_writes_do_not_follow_symlinks_or_modify_hardlinked_targets`);
-  - an ignored or skipped test fails the check, and a repeated output line counts as one case
-    (`ignored_tests_with_reasons_and_unreported_ignored_summaries_fail`,
-    `duplicate_output_cannot_substitute_for_distinct_acceptance_cases`);
-  - an operational receipt meets every recorded threshold
-    (`operational_load_requires_all_recorded_acceptance_conditions`,
-    `operational_load_refuses_more_reads_and_writes_than_completed_requests_and_a_blank_network`,
-    `operational_fleet_requires_five_servers_two_clients_every_scenario_and_a_fixture_digest`,
-    `operational_discord_requires_every_scenario_and_a_fixture_digest`);
-  - a staging recording passes only when the judge holds its exact receipt and log
-    (`a_passing_recording_is_judged_held` in `tests/operational_recording.rs`); a failed or
+    following symlinks, and never writes through an existing link;
+  - an ignored or skipped test fails the check, and a repeated output line counts as one case;
+  - an operational receipt meets every recorded threshold;
+  - a staging recording passes only when the judge holds its exact receipt and log; a failed or
     not-run case, a rejected measurement, drift or a judge rejection writes a FAIL that exits 1
-    with the real observations and without the success marker, which the judge refuses
-    (`a_failed_case_fails_the_run`,
-    `a_case_not_run_fails_the_run_and_names_the_missing_dependency`,
-    `measurements_the_operational_thresholds_reject_fail_with_the_real_observations`,
-    `drift_fails_the_run_and_the_receipt_keeps_the_start_digests`,
-    `a_judge_rejection_rewrites_a_candidate_pass_as_a_failure`);
-  - free text in a recording cannot forge a case line or the success marker
-    (`free_text_cannot_forge_case_lines_or_the_success_marker`);
+    with the real observations and without the success marker, which the judge refuses;
+  - free text in a recording cannot forge a case line or the success marker;
   - a tool that exits non-zero or prints no version line fails the tool identity instead of
-    recording a blank one (`tool_identity_refuses_a_tool_that_fails_or_prints_no_version`).
+    recording a blank one.
 
 ## Related documentation
 

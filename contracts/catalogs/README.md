@@ -72,7 +72,7 @@ fill the arsenal with sample data while every test still passes.
   - `cargo xtask verify object-registry-aliases`
     (`tools/checks/repository_checks/src/registry/object_registry_aliases.rs`), which requires a
     spawn registry row for every crate and other item the Mission Creator's objects palette offers;
-  - the API's integration test `crates/api/api_server/tests/registry_compat.rs`, which imports both
+  - the API's integration test `crates/api/api_server/tests/smoke/registry_compat.rs`, which imports both
     as ground truth under a test modpack;
   - `contracts/rules/kit-aliases.json`, whose `vehicles` table is derived from the `vehicle`
     items of the items file, and the development seed

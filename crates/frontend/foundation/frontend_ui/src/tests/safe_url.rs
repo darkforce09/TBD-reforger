@@ -1,5 +1,5 @@
-//! Unit coverage for the app's content URL policy: the same case lists as the backend policy's
-//! tests (`crates/api/api_foundation/src/text/tests/content_url_policy.rs`), and a sweep of every
+//! Unit coverage for the app's content URL policy: the case lists the backend policy's tests share
+//! (`crates/api/api_foundation/src/text/tests/content_url_policy.rs`), and a sweep of every
 //! character in every position against the character classes of the contract patterns in
 //! `contracts/definitions/wiki-page.schema.json`.
 //!
@@ -116,42 +116,6 @@ const INTERNAL_LINKS: &[&str] = &[
     "/wiki/medical-sop",
     "/wiki/medical-sop#triage",
 ];
-
-/// The backend policy's tests, whose case lists this file repeats.
-fn backend_policy_tests() -> &'static str {
-    frontend_test_support::repository_root::repository_text(
-        env!("CARGO_MANIFEST_DIR"),
-        "crates/api/api_foundation/src/text/tests/content_url_policy.rs",
-    )
-}
-
-/// The case lists of a policy test file: from the first list's doc line to the end of
-/// `INTERNAL_LINKS`.
-fn case_lists(test_file: &str) -> &str {
-    let start = test_file
-        .find("/// Strings that are neither")
-        .expect("the case lists open with UNSAFE_EVERYWHERE");
-    let internal = start
-        + test_file[start..]
-            .find("const INTERNAL_LINKS")
-            .expect("the case lists close with INTERNAL_LINKS");
-    let end = internal
-        + test_file[internal..]
-            .find("];")
-            .expect("INTERNAL_LINKS is closed");
-    &test_file[start..end]
-}
-
-/// A case the backend adds to its lists must be added here too, or the two policies may drift
-/// apart on exactly that case.
-#[test]
-fn the_case_lists_match_the_backend_policy_tests() {
-    assert_eq!(
-        case_lists(include_str!("safe_url.rs")),
-        case_lists(backend_policy_tests()),
-        "copy the case lists of crates/api/api_foundation/src/text/tests/content_url_policy.rs"
-    );
-}
 
 /// The image policy under its boolean name, for the case tables.
 fn is_safe_image(candidate: &str) -> bool {

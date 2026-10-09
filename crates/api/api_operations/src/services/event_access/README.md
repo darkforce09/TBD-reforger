@@ -51,7 +51,7 @@ Registration status, capacity and opening times never hide an event.
   `api_operations::services::event_reservations`, `api_operations::services::access_administration` and
   `api_operations::services::live_slot_occupancy`; the models `event_access_administration.rs` and
   `event_viewer_access.rs` in `crates/api/api_operations/src/models/`; the test
-  `crates/api/api_server/tests/event_access_context.rs`.
+  `crates/api/api_server/tests/events_and_reservations/event_access_context.rs`.
 - Rules: exactly one policy decides a seat, slot then squad then event
   (`slot_then_squad_then_event_selects_exactly_one_policy`); every mandatory gate blocks every
   grant (`every_mandatory_gate_blocks_every_satisfied_grant`); a malformed effective policy fails

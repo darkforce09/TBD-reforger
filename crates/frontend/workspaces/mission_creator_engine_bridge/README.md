@@ -39,8 +39,9 @@ cargo test -p mission_creator_engine_bridge   # the boot progress, hover, gizmo,
 
 ## Configuration
 
-- `test_fixtures` (dev-only): exposes `test_support` to the tests of the crates above it; the app
-  enables it from `[dev-dependencies]`.
+- `test_fixtures` (dev-only): exposes the test-only hooks (`boot_progress::percent`,
+  `viewport::registry_session::clear_for_test`) to the tests of the crates above it; the workspace
+  crate enables it from `[dev-dependencies]`.
 
 ## Public surface
 
@@ -51,7 +52,6 @@ cargo test -p mission_creator_engine_bridge   # the boot progress, hover, gizmo,
   `gizmo_z`, `tactical_graphics`, `tactical_graphics_authoring`, `viewport` and `world_assets`.
 - `input`: `context_menu_opener`, `pointer_gestures` (`EditorGestureContext`,
   `attach_canvas_gestures`), `window_keydown` and `tools` (ruler, line of sight, viewshed, select).
-- `test_support` (with `test_fixtures`): `production_half` and `editor_operations`.
 - `prelude`: `DocHandle`, the undo drive and `EditorGestureContext` (`wasm32`).
 
 ## Boundaries
@@ -64,8 +64,7 @@ cargo test -p mission_creator_engine_bridge   # the boot progress, hover, gizmo,
 - Used by: the single-page app (`crates/frontend/shell/frontend_application`): the Mission Creator's session, Arsenal, docks,
   inspectors, modals and page.
 - Rules: depends on no Mission Creator crate above `mission_creator_state`
-  (`cargo xtask ci verify-workspace-laws`); `cargo xtask verify editor-orbat-coherency` names the
-  host state files by path.
+  (`cargo xtask ci verify-workspace-laws`).
 
 ## Related documentation
 

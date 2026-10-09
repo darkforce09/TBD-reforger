@@ -39,7 +39,7 @@ refuse rather than treat every slice as finished. An unknown argument exits 2.
   names the command when it sees reclaimable caches.
 - Rules: a live slice's cache is never removed; the warm gate folders stay unless asked for; the
   shared cache and the development API build are never removed; the folder names come from
-  `tools/foundation/repository_layout/src/build_output.rs`; the tests are in `tools/commands/platform_execution/src/wave_execution/tests/reclaim/tests.rs`.
+  `tools/foundation/repository_layout/src/build_output.rs`.
 
 ## Related documentation
 

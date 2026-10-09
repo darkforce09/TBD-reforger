@@ -69,13 +69,11 @@ domain's pattern, and the gap analysis gets its row; a new wiki page gets a mani
   catalog their folder follows; the feature inventory's README and entry schema; the
   [roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md); the ticket
   model's `tools/tickets/ticket_model/src/repository.rs`, `ticket sync`, which reads the gap
-  analysis and writes it back unchanged, and `ticket check`, which reads it; the source test in `crates/frontend/workspaces/mission_creator_arsenal/src/tests/shell_wiring.rs`,
-  which reads the gap analysis; and the ticket registry, whose tickets cite the IDs.
+  analysis and writes it back unchanged, and `ticket check`, which reads it; and the ticket
+  registry, whose tickets cite the IDs.
 - Rules: an ID is never renumbered or reused, because the gap analysis, the roadmap and the
   tickets cite it verbatim; each `| eden_id | … |` table stays whole in one file; the gap analysis has exactly one row per catalog ID; every Eden fact
-  cites its wiki URL; each document stays within 500 lines
-  (`cargo xtask verify markdown-placement`); every child has a Contents line
-  (`cargo xtask verify readme-coverage`).
+  cites its wiki URL; each document stays within 500 lines; every child has a Contents line.
 
 ## Related documentation
 

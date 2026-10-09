@@ -110,14 +110,13 @@ subcommand prints `xtask: <cause>` and exits 1; a clap usage error exits 2.
   `tools/commands/ci_task_catalog/src/task_runner/` for `list-gates`.
 - Used by:
   - `tools/xtask/src/cli/dispatch.rs`, which mounts the group;
-  - the `schema-validate`, `schema-codegen`, `verify-citations` and `verify-terrain` rows of
+  - the `schema-validate`, `schema-codegen` and `verify-terrain` rows of
     `tools/commands/ci_task_catalog/src/task_definitions.rs`, and through them `ci-local-schema` and
     `ci-local`;
   - the platform wave gate's schema step
     (`tools/commands/platform_execution/src/wave_execution/schema.rs`), which runs the listed gates
     as `cargo xtask schema <gate>` subprocesses;
-  - `.github/workflows/schema.yml` (`schema validate`) and the `schema` job of
-    `.github/workflows/ci.yml` (through `ci ci-local-schema`);
+  - the `schema` job of `.github/workflows/ci.yml` (through `ci ci-local-schema`);
   - people, for `validate-file` and `flatten-orbat-slots`.
 - Rules:
   - The flattening refuses a lossy write on both the stdout and the `--in-place` path

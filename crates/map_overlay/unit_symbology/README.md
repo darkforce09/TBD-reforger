@@ -56,10 +56,8 @@ cargo test -p unit_symbology   # marker vocabulary, atlas and caption cases, squ
   marker dock, canvas
   mount and select tool, and the mortar map picker, in `crates/frontend/shell/frontend_application/`.
 - Rules: every marker alias of the schema maps to a glyph (`every_schema_alias_maps`); marker
-  atlas cells 0 and 1 equal the slot atlas (`marker_atlas_cells_0_and_1_match_slot_atlas`); the
-  side tints are pinned in `src/classification.rs` by
-  `cargo xtask verify editor-orbat-coherency`; map overlay tier 2
-  (`cargo xtask verify crate-tiers`).
+  atlas cells 0 and 1 equal the slot atlas; the side tints live in `src/classification.rs`; map
+  overlay tier 2 (`cargo xtask verify crate-tiers`).
 
 ## Related documentation
 

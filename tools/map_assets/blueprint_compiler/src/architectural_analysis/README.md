@@ -81,5 +81,4 @@ folder's README.
   biases low and never reaches past the silhouette (`gable_box_grid_min_biases_low`,
   `coverage_ground_filter_and_erosion_guards`); surface kinds come from game materials, never from
   visual `.emat` names (`gamemat_stems_classify`); these tests are in
-  `tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/` (`polygon_rings_tests.rs`, `roof_profiles_tests.rs`,
-  `surface_classification_tests.rs`).
+  `tools/map_assets/blueprint_compiler/src/architectural_analysis/tests/`.

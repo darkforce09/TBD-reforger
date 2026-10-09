@@ -85,10 +85,7 @@ A commit that lands a ticket names its full id in the subject, for example
   the design exports; the patterns are `STRICT_LEGACY` in
   `tools/tickets/ticket_registry/src/validation/constants.rs`. Use the ticket id instead.
 - **Where no id goes.** READMEs never cite tickets; a feature doc links its open tickets under
-  `## Open work`. Code comments carry no ticket ids: tests hold this for every tracked file under
-  `tools/` (`tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`), for the API's sources
-  (`no_ticket_references_in_source` in `crates/api/api_server/src/tests/architecture_rules.rs`) and
-  for the app's `src/` tree (`crates/frontend/shell/frontend_application/src/tests/doc_audit/mod.rs`).
+  `## Open work`. Code comments carry no ticket ids; review holds this.
 
 The repository also holds git tags named after ticket ids. No command creates them and no gate
 reads them; the ticket file's `shipped_at` sha, written by `ticket stamp-sha`, is the record of

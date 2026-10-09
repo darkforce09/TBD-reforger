@@ -1,8 +1,7 @@
 # Symbology layers tests
 
 The native tests of `symbology_layers_gpu`: the icon uniform block layout, the anchor conversion
-and the sprite atlas table, and the error messages' stable tags. The GPU layers compile for
-`wasm32` only; their bind bodies are pinned by the map engine's lane-bind source pins.
+and the sprite atlas table. The GPU layers compile for `wasm32` only.
 
 ## Contents
 

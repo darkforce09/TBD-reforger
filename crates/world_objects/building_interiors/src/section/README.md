@@ -55,4 +55,4 @@ surface. A field wider than `MAX_PLAN_DIM` (2048) cells on an axis coarsens its 
   (`heightfield_clips_at_the_plane_and_sees_the_stairwell`) and the roof field is the top surface
   (`roof_field_is_the_top_surface`); cut heights clamp into short bands
   (`drawing_levels_and_clamps`); a height field with 1 % of its cells written allocates under a
-  fiftieth of a dense grid of `Option<f64>` cells (`sparse_heightfield_one_percent_memory`).
+  fiftieth of a dense grid of `Option<f64>` cells.

@@ -50,8 +50,6 @@ Check the crate with:
 ```bash
 cargo fmt -p ticketboard_desktop --check
 cargo clippy -p ticketboard_desktop --locked --all-targets --all-features -- -D warnings
-cargo test -p ticketboard_desktop --locked                # temporary fixtures; no window, no ticket command
-cargo test -p ticketboard_model --locked -- --ignored     # the three tests that read the live corpus, estimates and wave lock
 cargo build -p ticketboard_desktop --locked --features glow
 cargo xtask verify file-length
 ```
@@ -86,11 +84,7 @@ cargo xtask verify file-length
   `egui_commonmark`, `egui_extras` and `rfd` crates.
 - Used by: people at a desktop; no crate or command in the repository runs it.
 - Rules: every ticket change goes through a `cargo xtask ticket` command, and the viewer never
-  runs `wave repack` itself; the module layout, the dependency directions and the file-size limits
-  hold under `src/tests/architecture_rules.rs`, whose source inspection
-  (`ticketboard_model`'s `test_fixtures`) reads grouped imports and aliases and ignores comments
-  and string literals; `cargo xtask verify file-length` covers
-  `src/` too.
+  runs `wave repack` itself; `cargo xtask verify file-length` covers `src/`.
 
 ## Related documentation
 

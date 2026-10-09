@@ -11,7 +11,7 @@ shifts under role renames and reorders.
 ```text
 crates/foundation/orbat_slot_ids/
 ├── Cargo.toml  the package: `newtype_ids`, layout tier 1
-└── src/        the two id types, the prelude and their wire-form tests
+└── src/        the two id types and the prelude
 ```
 
 ## How it works
@@ -27,7 +27,7 @@ while every serialized byte stays what the plain string wrote.
 Run from the repository root:
 
 ```bash
-cargo test -p orbat_slot_ids   # the wire form of both ids
+cargo build -p orbat_slot_ids   # the crate holds no tests; its callers test the wire form
 ```
 
 ## Configuration
@@ -48,8 +48,7 @@ No feature and no environment variable.
   over those rows), `mission_compiler` (the game-document substitutions) and `unit_symbology`
   (the squad link inputs).
 - Rules: foundation tier, so the crate depends on foundation crates only (`cargo xtask verify
-  crate-tiers`); both ids stay serde-transparent (`slot_id_serialises_as_the_bare_string_it_wraps`,
-  `derived_wire_slot_id_round_trips_as_the_bare_string`).
+  crate-tiers`); both ids stay serde-transparent.
 
 ## Related documentation
 

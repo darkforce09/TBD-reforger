@@ -120,8 +120,7 @@ Its `label` draws as a caption through the map's text pipeline.
   (`#/$defs/marker` in `contracts/definitions/mission.schema.json`).
 - Slot `role` and kit strings, vehicle aliases and faction keys of the mission document feed the
   unit, vehicle and side tables.
-- `cargo xtask verify editor-orbat-coherency` pins the three side tints to their RGBA literals;
-  `every_schema_alias_maps` in `crates/map_overlay/unit_symbology/src/tests/markers_tests.rs`
+- `every_schema_alias_maps` in `crates/map_overlay/unit_symbology/src/tests/markers_tests.rs`
   checks that every schema alias maps to a glyph.
 
 ## Design

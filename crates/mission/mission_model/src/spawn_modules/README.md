@@ -43,14 +43,13 @@ under the same cap of 32.
   and `FACTION_KEYS`, bounds counts by `MAX_ALIVE` and checks each edit with `validate`, and whose
   tests use `placement_is_exclusive`.
 - Rules: a module is placed by position or by zone, exactly one of them
-  (`both_position_and_zone_are_refused`, `neither_position_nor_zone_is_refused` and
-  `incomplete_position_is_refused` in `tests/cases_1.rs`); a count outside 1 to 32 is refused
-  (`zero_and_over_cap_counts_are_refused`); the vocabularies and the cap are pinned
-  (`spawn_modules_is_registered_on_the_carrier`), and `MAX_ALIVE` equals the
+  (`both_position_and_zone_are_refused` and `neither_position_nor_zone_is_refused` in
+  `tests/cases_1.rs`); a count outside 1 to 32 is refused (`zero_and_over_cap_counts_are_refused`);
+  `MAX_ALIVE` equals the
   [mod](/documentation/glossary/g_to_m.md#mod) spawner's own `MAX_ALIVE`; a mission that authors no
   module compiles with no `spawnModules` key
-  (`an_unauthored_payload_still_omits_the_spawn_modules_key` in
-  `crates/mission/mission_payload/src/tests/extension_round_trips/`).
+  (`an_unauthored_payload_omits_every_block_key` in
+  `crates/mission/mission_payload/src/tests/extension_round_trips.rs`).
 
 ## Related documentation
 

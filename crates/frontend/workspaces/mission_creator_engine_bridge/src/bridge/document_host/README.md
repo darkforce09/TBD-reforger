@@ -97,16 +97,7 @@ the harness.
     dialog in `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/settings_modal/`, and the loadout
     commands in `crates/frontend/workspaces/mission_creator_arsenal/src/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`,
-    through `window.__missionDoc` and `window.__editorHistory`;
-  - the source pins that read `history.rs`: in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`,
-    the helper `live_document_history` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/mission_editor/source.rs`, which
-    `t760_markers_bind_feed.rs`, `t780_connection_line.rs`, `t784_comment_glyph.rs`,
-    `t790_marker_glyph_caption.rs`, `t808_symbology_feed.rs`, `t936_7_tactical_lane_bind.rs` and
-    `w145_selection_prune.rs` call, and `t819_crewed_render_hide.rs`, which includes the file
-    itself; `crates/frontend/workspaces/mission_creator_workspace/src/tests/review_mode/read_only_review.rs`,
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/tests/attributes_modal/numeric_field_input.rs`,
-    and `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`.
+    through `window.__missionDoc` and `window.__editorHistory`.
 - Rules: `doc_host` and `history` hold a live document handle, so each is
   `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line; `edit_persist_hook` holds only the
   registered function and is tested natively

@@ -230,12 +230,7 @@ state) hold what every domain needs and name no domain concept; `api_background_
 timers and calls domain services; each of the eight domain crates owns its route table, handlers,
 services and models, and another domain reaches it only through its services and models, never its
 handlers. The API server (`crates/api/api_server`) only assembles them: its router merges the route tables and
-its composition root builds the state. The rules are executable:
-`crates/api/api_server/src/tests/architecture_rules.rs` checks the layout and
-`crates/api/api_server/src/tests/prose_rules.rs` the prose of comments, seeds and `.env.example`,
-on every unit-test run; `cargo xtask verify route-tags` checks that every handler declares its
-`/// @route`, and `cargo xtask schema citations` checks that the `@contract` tags of the models that project a
-schema cite it correctly.
+its composition root builds the state.
 
 ### Crate map
 
@@ -267,7 +262,7 @@ and `api_member_activity` only as dev-dependencies of its tests.
 | server | [`api_server`](/crates/api/api_server/README.md) | 11 | the router, the composition root, the `api-server` and `import-item-registry` binaries and the integration suites |
 
 A domain crate exposes one `routes()` table, which the router merges; it depends on another
-domain only along the domain graph `crates/api/api_server/src/tests/architecture_rules.rs` holds
+domain only along the domain graph
 (administration on identity and access; server infrastructure on community content; match
 telemetry on server infrastructure; missions on community content and server infrastructure;
 operations on identity and access, match telemetry, missions and server infrastructure; command
@@ -317,7 +312,6 @@ cargo xtask db up
 cargo xtask mk rust-api            # stays in the foreground; wait for `migrations applied`
 curl -sf http://localhost:8080/healthz
 cargo xtask db test-it
-cargo xtask verify route-tags
 ```
 
 Then call the changed endpoint and compare its JSON with the domain's `models/` and the matching
@@ -341,9 +335,6 @@ DTO in `crates/frontend/foundation/frontend_api_dtos/src/`. Acceptance of the AP
   (`contracts/definitions/match-telemetry.schema.json`), `POST /api/v1/ingest/match-events` and
   `GET /api/v1/matches/{matchId}/events` exist; the after-action replay that plays them does
   not.
-- [T-952 — api set_var mutates a shared test process](/.ai/tickets/T-952.toml) (idea, no
-  plan): the pool-setting tests in `crates/api/api_database/src/tests/connection.rs`
-  stop mutating the process environment and use `DbPoolConfig::from_lookup`.
 - [T-1131 — Decide whether Markdown edits should invalidate API readiness evidence](/.ai/tickets/T-1131.toml)
   (idea, no plan): whether documentation stays in the readiness fingerprint.
 

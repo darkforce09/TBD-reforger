@@ -57,10 +57,9 @@ crates/api/api_community_content/src/handlers/vehicle_database/
   `api_foundation` for `ApiError` and the content URL policy; the `vehicle_databases` table (lifecycle columns from migration 0058).
 - Used by: the domain's `routes.rs`, which registers the re-exported handlers; over HTTP, the
   vehicle database page under `crates/frontend/pages/doctrine_pages/src/vehicles/`.
-- Rules: reads take `AuthUser` and writes `AdminUser`; every handler carries its `/// @route` tag
-  (`cargo xtask verify route-tags`); every statement on `vehicle_databases` lives in
-  `vehicle_rows.rs`, and every select list `COALESCE`s the optional columns
-  (`crates/api/api_server/tests/null_tolerance_select_scan.rs`); the wire shapes are
+- Rules: reads take `AuthUser` and writes `AdminUser`; every handler carries its `/// @route` tag;
+  every statement on `vehicle_databases` lives in
+  `vehicle_rows.rs`, and every select list `COALESCE`s the optional columns; the wire shapes are
   `contracts/definitions/vehicle-database.schema.json`.
 
 ## Related documentation

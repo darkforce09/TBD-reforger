@@ -78,8 +78,7 @@ for its scope and the container markers
   check crates under `tools/commands/` and `tools/checks/`; `ticketboard_model` (the streamed and
   detached children).
 - Rules: tier 1 of `tools/foundation`, depending only on `verification_core` among the workspace
-  crates (`foundation_crates_depend_only_on_lower_foundation_crates` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`; `cargo xtask verify crate-tiers`); a
+  crates (`cargo xtask verify crate-tiers`); a
   signal is never an exit code and a timeout kills the process group (a terminal child's timeout
   kills the child alone), which `src/tests/` and `src/run_modes/tests/` hold.
 

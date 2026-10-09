@@ -62,12 +62,11 @@ cargo test -p map_editing_tools   # ruler, line-of-sight verdicts and washes, sc
   `mission_document` (the point index grid cell), `mission_crdt` (`SlotSoa`), `camera_math` (the
   frozen orthographic camera), `spatial_indexes` (the point index), `terrain_line_of_sight`,
   `interior_line_of_sight` and `world_line_of_sight`, `terrain_elevation` (the elevation manifest),
-  `time_source` (the scheduler's default clock); dev `terrain_relief` (the contour colours).
+  `time_source` (the scheduler's default clock).
 - Used by: the single-page app, directly: the Mission Creator in
   `crates/frontend/workspaces/mission_creator_workspace/src/`, the mortar map picker and the debug building viewer.
 - Rules: no `web_sys`, `leptos` or `wasm_bindgen` in this crate; the ruler and line-of-sight trees
-  name no document mutator (`the_ruler_never_writes_the_document`,
-  `the_line_of_sight_tool_never_writes_the_document`); mission editing tier 7
+  name no document mutator; mission editing tier 7
   (`cargo xtask verify crate-tiers`).
 
 ## Related documentation

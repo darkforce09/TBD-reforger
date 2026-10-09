@@ -135,9 +135,7 @@ holds for each command, except on `export-terrain`, which takes `--help` as an a
   in `assets/terrains/README.md` and the `mod/tbd-export/` plugins, whose output these
   commands read.
 - Rules: `export-terrain` runs the phase gate before anything is built, and a missing staged
-  export is exit 2, never a build over nothing; the argument parser keeps its defaults and refusals
-  (`parse_phase_and_default`, `parse_unknown_arg` in
-  `tools/map_assets/world_export_pipeline/src/tests/export_terrain_driver/tests.rs`); `tile-index`
+  export is exit 2, never a build over nothing; the argument parser keeps its defaults and refusals; `tile-index`
   never writes an index over a missing or empty pyramid, and what it writes validates against
   `map-tile-index.schema.json`
   (`tools/map_assets/world_export_pipeline/src/tests/map_tile_index/tests.rs`); this folder holds

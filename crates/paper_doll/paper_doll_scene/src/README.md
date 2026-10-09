@@ -79,9 +79,8 @@ behind the camera.
     because the state bytes and the pick index are positional; no test compares the two lists
     across the crates;
   - there are 14 unique keys and every region has at least one part
-    (`region_keys_count_and_uniqueness` and `every_region_has_at_least_one_instance` in
-    `tests/soldier_model_tests.rs`); the three state colours differ and each hover lifts its colour
-    (`state_colors_distinct_and_hover_lifts`, same file).
+    (`every_region_has_at_least_one_instance` in `tests/soldier_model_tests.rs`); the three state
+    colours differ and each hover lifts its colour.
 
 ## Related documentation
 

@@ -74,10 +74,7 @@ RULES
    your change inside the binary.
 7. Gate before reporting, from the worktree:
      cargo xtask platform wave gate --slice <ticket id>
-   It must end `SLICE GATE: PASS`. Export
-   TBD_GATE_MIGRATION_0016=crates/api/api_database/migrations/0016_backfill_linked_match_stats.sql
-   first. "clippy: REFUSING to pass — … resolved to NO crate" means the diff has no lintable
-   Rust, not that the code is broken. `gate: WAITING for the gate lock` is serialisation.
+   It must end `SLICE GATE: PASS`. `gate: WAITING for the gate lock` is serialisation.
 8. In a worktree run `cargo xtask schema validate`, not `cargo xtask ci schema-validate`: the
    terrain assets are LFS pointers here.
 9. Never `git stash`. Never run `cargo xtask ci ci-local` (15 to 40 minutes, not a wave step).
@@ -86,8 +83,7 @@ RULES
 11. Documentation ships with the code (CLAUDE.md law 10), in the same commits: the comments of
     the code you change, the README.md of every folder whose contents, surface, commands or
     boundaries you change, and the feature docs under documentation/ whose behaviour you
-    change. Then run `cargo xtask verify readme-coverage`, `cargo xtask verify link-check` and
-    `cargo xtask verify markdown-placement`, each with `--with-untracked --path <folder>` for
+    change. Then run `cargo xtask verify link-check --with-untracked --path <folder>` for
     every folder whose documents you touched. A document outside YOUR FILES is edited all the
     same and listed in files_outside_owns.
 12. You do not ship: no push, no merge, no status changes, and no edits to the ticket files

@@ -54,6 +54,5 @@ stores `faction` verbatim in `orbat_slots.faction`, which the
   - `faction` is required on the wire and refused, never trimmed, when blank or padded
     (`orbat_squad_faction_is_required_on_wire`, `faction_join_key_require_and_refuse`);
   - the derived loadout is read from the slot, never hard-coded empty
-    (`derive_fills_loadout_from_summary`, `derive_fills_loadout_from_weapons`);
-    `cargo xtask verify editor-orbat-coherency` fails on `loadout: String::new()` in
-    `orbat_slot_template.rs`.
+    (`derive_fills_loadout_from_summary`, `derive_fills_loadout_from_weapons`), and
+    `orbat_slot_template.rs` never writes `loadout: String::new()`.

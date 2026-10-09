@@ -30,6 +30,4 @@ lines), and the chip's porcelain lines when the chip is dirty and expanded. Clic
   `eframe::egui`.
 - Used by: `trust_banner_ui` in `tools/tickets/ticketboard_desktop/src/application/feature_views.rs`, which lends
   the view and turns the events into actions.
-- Rules: the output and the porcelain lines show verbatim; no other feature imports this module
-  (`dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`).
+- Rules: the output and the porcelain lines show verbatim; no other feature imports this module.

@@ -1,22 +1,14 @@
-//! Helpers the frontend crates' tests share: source scrubbing, repository files, captured fixtures,
-//! the frontend source roots, source shards and the `view!` attribute guard.
+//! Helpers the frontend crates' tests share: repository files and captured fixtures.
 //!
-//! **Role:** gives every frontend test one way to reach repository files and captured API fixtures
-//! (from the repository root, whatever the depth of the calling crate), one way to join the shards
-//! a source pin reads, one list of the frontend packages' source trees, and the scanners several
-//! areas' guards share.
+//! **Role:** gives every frontend test one way to reach repository files, the captured API
+//! fixtures and the API route tables from the repository root, whatever the depth of the calling
+//! crate.
 //! **Position:** a dev-only crate: every frontend crate names it under `[dev-dependencies]`, so no
-//! shipped build links it. Each area keeps its own source pins in its `tests/source_pins.rs`.
+//! shipped build links it.
 //! **Signals & state:** one process-wide cache of repository file texts ([`repository_root`]).
 //! **Invariants:** repository files are found from the caller's `CARGO_MANIFEST_DIR` by walking
-//! up to the repository root, never by a fixed number of parent-folder steps; a joined source
-//! keeps each shard once, so a test asserting on a split file sees exactly the text the single file
-//! held; a whole-frontend scan reads each frontend package once.
+//! up to the repository root, never by a fixed number of parent-folder steps.
 
-pub mod class_r_scrub;
 pub mod fixtures;
-pub mod frontend_source_roots;
 pub mod prelude;
 pub mod repository_root;
-pub mod source_shards;
-pub mod view_attribute_guard;

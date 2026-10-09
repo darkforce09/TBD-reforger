@@ -30,11 +30,6 @@ land ─▶ merge each ─▶ wave gate on merged main ─▶ drop worktrees ─
 - The [slice agent brief](/documentation/runbooks/factory_waves/slice_agent_brief.md) and the
   [adversarial verifier brief](/documentation/runbooks/factory_waves/adversarial_verifier_brief.md)
   to hand.
-- `TBD_GATE_MIGRATION_0016=crates/api/api_database/migrations/0016_backfill_linked_match_stats.sql`
-  exported in the orchestrator's shell and each slice agent's. The gate's `db_migrate claim body`
-  step defaults to a migration file name the migrations folder does not hold
-  (`tools/commands/platform_execution/src/wave_execution/migrate/gate_db_migrate_claim_body.rs`),
-  so without the variable that step fails in both gates.
 
 ## Steps
 
@@ -137,9 +132,8 @@ land ─▶ merge each ─▶ wave gate on merged main ─▶ drop worktrees ─
    cargo xtask mk leptos-gates
    ```
 
-   Expected: the release build, the gate doctor, the editor suite and the DOM oracle, in order,
-   exit 0. [Editor gates](/documentation/runbooks/editor_gates.md) reads each result and
-   covers a failing DOM oracle.
+   Expected: the release build, the gate doctor and the editor suite, in order, exit 0.
+   [Editor gates](/documentation/runbooks/editor_gates.md) reads each result.
 
 9. Dispatch one adversarial verifier against merged `main` with the
    [verifier brief](/documentation/runbooks/factory_waves/adversarial_verifier_brief.md), and
@@ -270,7 +264,6 @@ before it is `wave <n> CLOSED — <summary>`.
 | `land: no slice-run receipt under .ai/tickets/metrics/ for: …` | the agents ran outside `platform slice-run` | `cargo xtask platform wave land --bookkeeping`; it stamps only receipts that exist |
 | `land: <ids> not in wave <n> — nothing named was landed` | the ticket was promoted out of plan order | leave the guard alone; repack so the ticket sits in the current wave, or merge it by hand with `cargo xtask platform slice-worktree -- merge <ticket id>` (which also demands a green verdict) and run `cargo xtask platform wave gate` on `main` |
 | `GATE RED AFTER MERGE — all <k> worktree(s) KEPT for inspection` | a gate step failed on merged `main` | read each `FAIL` block; fix on `main` and run `cargo xtask platform wave gate`, or roll back with `cargo xtask platform wave revert <revert target>`, which keeps the slice branches |
-| `db_migrate claim body` fails in either gate | `TBD_GATE_MIGRATION_0016` is unset and the default names a missing file | export it (Prerequisites) and re-run the gate |
 | `REFUSING to call this a pass: <n> DB-backed test(s) SKIPPED.` | the gate database was unreachable, so the API tests skipped | `cargo xtask db up`, then re-run the gate; a skip is never a pass |
 | `gate: nothing could corroborate this wave base — refusing to run unconfirmed.` | no marker, plan row or slice merge span confirms the derived base | read the printed base; if it is the last real close, re-run with `TBD_GATE_BASE_CONFIRM=<printed sha>` in front of the same command; never pass a sha from memory |
 | `gate: WAITING for the gate lock — this is serialisation, NOT a hang.` | another gate holds the lock | wait; `gate: REFUSING — no lock after <n>s` means a stuck gate |

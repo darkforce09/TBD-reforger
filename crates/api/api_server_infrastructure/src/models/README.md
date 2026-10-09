@@ -43,10 +43,9 @@ conversion folds the five `telemetry_queue_*` columns, all set or all null, into
   `machine_credential.rs` and `fleet_scenario.rs` carry `@contract` tags for the machine
   credential and `mission-deployment.schema.json` fleet scenario definitions they serialize (the
   fleet command tags sit on the `fleet_wire_contract` types), and `server.rs` also cites
-  `server-intel.schema.json` (`ServerStatus`, `TelemetryQueueStatus`); `cargo xtask schema
-  citations` resolves every tag.
+  `server-intel.schema.json` (`ServerStatus`, `TelemetryQueueStatus`).
 - Used by: the domain's handlers and services and `api_command_center` (`ServerStatus`,
-  `ServerStatusRow`); the contract test `crates/api/api_server/tests/game_runtime_contract.rs`, which decodes
+  `ServerStatusRow`); the contract test `crates/api/api_server/tests/contract_parity/game_runtime.rs`, which decodes
   live answers into the generated types; the web app's DTOs in
   `crates/frontend/foundation/frontend_api_dtos/src/` (`servers.rs`, `fleet_commands.rs`,
   `fleet_scenarios.rs`) mirror these shapes.

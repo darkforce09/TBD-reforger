@@ -42,7 +42,7 @@ There is no `HEAD~1` fallback: after several merges that range covers only the l
   ceremony, which runs the marker checks on its candidate commit) and `super::verdict`.
 - Rules: the marker grammar stays anchored, since a looser one lets a subject such as
   `wave 76 CLOSED? reopened` become a base; a base that cannot be verified refuses rather than
-  passes; the tests are in `tools/commands/platform_execution/src/wave_execution/tests/base/tests.rs`.
+  passes.
 
 ## Related documentation
 

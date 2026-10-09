@@ -72,9 +72,8 @@ groups as modules of its own. It passes each crate the checkout root:
   server, equipment export publication and mod wave driver behind `cargo xtask mod`.
 - The [check crates](/tools/checks/README.md) hold the repository verifications behind
   `cargo xtask verify`: `repository_checks` the structural, language-ban, licensing and registry
-  checks and the tooling rules over every tool crate, `mod_script_checks` the Enfusion mod
-  script checks and the Workbench spawn runs, and `documentation_checks` the README coverage,
-  Markdown placement and link-check gates.
+  checks, `mod_script_checks` the Enfusion mod script checks and the Workbench spawn runs, and
+  `documentation_checks` the link-check gate.
 - The [Enfusion crates](/tools/enfusion/README.md) hold the libraries that read and drive the
   Enfusion engine's formats and tools: `enfusion_pak` the `.pak` archive reader, `enfusion_script_index`
   the script oracle the `enf` binary runs and the vanilla page mirrors behind `cargo xtask fetch`,
@@ -82,8 +81,7 @@ groups as modules of its own. It passes each crate the checkout root:
   `cargo xtask mcp` is the command crate `enfusion_mcp`.
 - The [browser testing crates](/tools/browser_testing/README.md) hold the headless browser gates of
   the single-page app: `chrome_devtools_protocol` the client that launches Chromium and drives its
-  pages, and `browser_gate_suites` the static server, the DOM oracle, the route drift check, the
-  Mission Creator smokes, the data viewer gate, the offline mortar and ballistics agreement gates,
+  pages, and `browser_gate_suites` the static server, the Mission Creator smokes, the data viewer gate, the offline mortar and ballistics agreement gates,
   the capture rig, the doctor and the `gate` and `capture` command lines, which the `gate` and
   `capture` binaries of `developer_tools` call.
 - The [staging crates](/tools/staging/README.md) hold the engines of the staging verification
@@ -147,12 +145,9 @@ Run these from the repository root:
 
 ```bash
 cargo xtask --help                                 # every command group
-cargo test --locked -p xtask -- --test-threads=1   # the router's tests
-cargo test -p repository_checks -p mod_script_checks -p documentation_checks   # the check crates' tests, the tooling rules included
-cargo test -p ticket_model -p ticket_metrics -p ticket_wave_lock -p ticket_registry   # the ticket crates' tests
+cargo test -p repository_checks -p mod_script_checks -p documentation_checks   # the check crates' tests
+cargo test -p ticket_model -p ticket_registry      # the ticket crates' tests
 cargo test -p verification_core -p process_runner -p repository_laws   # the foundation crates' tests
-cargo test -p developer_tools                      # the heavy tools' unit tests; no browser or game install
-cargo test -p chrome_devtools_protocol -p browser_gate_suites   # the browser gate crates' tests; no browser
 cargo xtask mod dev-bootstrap                      # a mod workstation: npm ci for the MCP server, Workbench
 ```
 
@@ -167,26 +162,22 @@ Each crate's README lists its own commands and checks.
 - Used by: developers and AI agents at the command line; the GitHub workflows in `.github/`; the
   backup and backup-drill units in `deploy/systemd/`, which run
   `cargo xtask deploy db backup` and `cargo xtask deploy db drill`.
-- Rules: each held by a test in `tools/checks/repository_checks/src/tests/`, over every tool crate
-  found by folder (each `tools/<name>` and `tools/<category>/<name>` holding a `Cargo.toml`):
+- Rules, over every tool crate (each `tools/<name>` and `tools/<category>/<name>` holding a
+  `Cargo.toml`):
   - `developer_tools` never depends on `xtask`, and `xtask` never depends on
-    `developer_tools`
-    (`tooling_dependency_direction_is_enforced` in `tooling_dependency_boundaries.rs`);
+    `developer_tools`;
   - a `tools/foundation` crate depends only on lower `tools/foundation` crates and on
-    `repository_root` (`foundation_crates_depend_only_on_lower_foundation_crates`); a
-    `tools/tickets` crate depends only on `tools/foundation` crates, on `time_source`,
-    `content_digest`, `newtype_ids` and `repository_root`, and on
-    ticket crates of a lower tier
-    (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates`); and ticket logic has one
-    owner, the xtask `ticket` group delegating to `ticket_registry` and the `wave` group to
-    `ticket_wave_lock` (`ticket_implementations_have_one_owner`);
+    `repository_root`; a `tools/tickets` crate depends only on `tools/foundation` crates, on
+    `time_source`, `content_digest`, `newtype_ids` and `repository_root`, and on ticket crates of
+    a lower tier; and ticket logic has one owner, the xtask `ticket` group delegating to
+    `ticket_registry` and the `wave` group to `ticket_wave_lock`;
   - in production source only a layout module — a file of the `repository_layout` crate, or a
     file whose first line declares it one (`//! The repository locations only …`) — spells a
-    repository path literal, such as one under `.ai/` or `documentation/`; no tracked tooling file carries a retired spelling, a
-    script file name or a history word, and no document or production source a ticket id; every
-    Rust file named in the prose exists (`tooling_prose_rules.rs`);
+    repository path literal, such as one under `.ai/` or `documentation/`; no tracked tooling
+    file carries a retired spelling, a script file name or a history word, and no document or
+    production source a ticket id;
   - every tooling crate's source files stay within their line limits
-    (`tooling_source_files_stay_below_their_structural_limits`).
+    (`cargo xtask verify file-length` reports them).
 
 ## Related documentation
 

@@ -93,9 +93,9 @@ nesting deeper than 16, and records each accepted save as a numbered revision.
   - over HTTP, the command center, doctrine and content manager pages in the page
     crates under `crates/frontend/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); a handler
+  router merges; a handler
   folder with its own `routes()` holds every registration of its routes, and `routes.rs` only
-  merges it; every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); the
+  merges it; every handler carries its `/// @route` tag; the
   pack-plus-mods query lives only in `services/modpack_lookup.rs`, and `handlers/media_upload/`
   is the only writer of the upload directory.
 

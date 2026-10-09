@@ -16,7 +16,7 @@ use super::*;
 /// below it (`layer`, `component`, `surface`) are words from `.ai/tickets/scope-vocab.toml`,
 /// resolved by [`crate::Corpus::load`] and `ticket check`, so adding one needs no code change.
 /// On disk the domain is its snake_case name (`domain = "website"`); `frontend` is a layer,
-/// never a domain (the compile-fail test in `tests/fail/` holds that).
+/// never a domain.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Domain {
@@ -132,14 +132,13 @@ pub fn title_is_debt(id: &crate::TicketId, title: &str) -> bool {
     id.as_str() == title || title.split_whitespace().count() > TITLE_WORD_CAP
 }
 
-/// The number of tickets, of either kind, whose title is debt ([`title_is_debt`]). Drift either
-/// way is red in `ticket check` and in the store's ratchet test: a count above the pin means a
-/// title bypassed the gate, and a repair lowers the pin in the same commit. The pin only
-/// shrinks.
+/// The number of tickets, of either kind, whose title is debt ([`title_is_debt`]). A count above
+/// the pin is red in `ticket check` and means a title bypassed the gate; a repair lowers the pin
+/// in the same commit. The pin only shrinks.
 pub const TITLE_DEBT_PIN: usize = 0;
 
-/// The number of live work tickets without a `main_goal` ([`main_goal_is_debt`]), held exactly
-/// by `ticket check` and the store's ratchet test. The operations' post-image gate refuses a
+/// The number of live work tickets without a `main_goal` ([`main_goal_is_debt`]), held by
+/// `ticket check`. The operations' post-image gate refuses a
 /// changed, non-quarantined live work ticket without one, so the count cannot grow. Quarantined
 /// tickets (non-empty `migration_legacy`) count: decomposing the parked text fills `main_goal`
 /// and lowers the pin in the same commit.

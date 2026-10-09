@@ -58,20 +58,14 @@ and writes it with `PUT /api/v1/factions/{id}`; "Save as" creates a faction from
 - Used by: the parent module, whose `OrbatManagerDialog`
   `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs` mounts; the headless editor gates in
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`, which open the dialog by the
-  "ORBAT Manager" label and read its heading, rows and `window.__outlinerStats`;
-  `cargo xtask verify editor-orbat-coherency`
-  (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which scans the
-  parent module and every source file in this folder; the test
-  `orbat_manager_overlay_derives_z_from_the_modal_stack` in
-  `crates/frontend/foundation/frontend_ui/src/tests/ui.rs`, which reads `dialog.rs`.
+  "ORBAT Manager" label and read its heading, rows and `window.__outlinerStats`.
 - Rules: applying a template changes nothing unless the confirmation is accepted
   (`apply_cancel_noop` in
   `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/orbat_manager/roster_and_virtualization.rs`),
   and Escape closes the dialog only while it is the topmost modal;
   no source file here or in the parent module holds the text "Standardization", "IFAK" or
-  "Grenade Complement" in any letter case (`cargo xtask verify editor-orbat-coherency`); the
-  dialog's overlay z-index comes from `modal_stack::z_class`
-  (`orbat_manager_overlay_derives_z_from_the_modal_stack`).
+  "Grenade Complement" in any letter case; the dialog's overlay z-index comes from
+  `modal_stack::z_class`.
 
 ## Related documentation
 

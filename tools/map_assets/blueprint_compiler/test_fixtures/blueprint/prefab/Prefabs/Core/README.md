@@ -21,7 +21,7 @@ tools/map_assets/blueprint_compiler/test_fixtures/blueprint/prefab/Prefabs/Core/
   `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/prefab_templates/entity_template_parser.rs` reads; each file is a
   class head with no base, so it ends an inheritance chain.
 - Adding a file: give it an ID and GUIDs no other fixture uses, reference it from a sibling folder
-  as `"{GUID}Prefabs/Core/<name>.et"`, and run `cargo test -p developer_tools blueprint::prefab`.
+  as `"{GUID}Prefabs/Core/<name>.et"`, and run `cargo test -p blueprint_compiler prefab_templates`.
 
 ## Producers and consumers
 

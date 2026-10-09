@@ -40,7 +40,7 @@ No file holds versions 0022, 0023 and 0024, and none may.
   (`0058_vehicle_database_lifecycle.sql` adds its lifecycle columns without defaults, so older
   entries keep them null, and only then sets the defaults new rows take).
 - Adding a file: give it the next version above the highest on disk, add its
-  `(version, sha384)` row to `PINNED` in `crates/api/api_server/tests/migrations_are_immutable.rs`
+  `(version, sha384)` row to `PINNED` in `crates/api/api_server/tests/http_infrastructure/migrations_are_immutable.rs`
   (`sha384sum` prints the digest), and run `cargo xtask db test-it`. A comments-only edit to an
   applied file updates its pin and needs `cargo xtask db repair-migration-checksum` on every
   database that applied it; any other change to an applied file is a new migration instead.
@@ -63,9 +63,7 @@ No file holds versions 0022, 0023 and 0024, and none may.
   - the migration step of `cargo xtask platform wave gate`
     (`tools/commands/platform_execution/src/wave_execution/migrate.rs`), which audits the recorded
     checksums and applies pending migrations to a database it never drops;
-  - `GET /healthz`, which turns red when `_sqlx_migrations` records a failed migration;
-  - the prose rules in `crates/api/api_server/src/tests/prose_rules.rs`, which read the comment
-    lines.
+  - `GET /healthz`, which turns red when `_sqlx_migrations` records a failed migration.
 
 ## Boundaries
 
@@ -76,7 +74,7 @@ No file holds versions 0022, 0023 and 0024, and none may.
   or deleted (`every_pin_still_has_its_migration_on_disk`); versions strictly increase, new ones
   append after the highest, and 0022 to 0024 stay empty
   (`migration_versions_preserve_the_historical_gap_and_append_after_the_head`), all in
-  `crates/api/api_server/tests/migrations_are_immutable.rs`.
+  `crates/api/api_server/tests/http_infrastructure/migrations_are_immutable.rs`.
 
 ## Related documentation
 

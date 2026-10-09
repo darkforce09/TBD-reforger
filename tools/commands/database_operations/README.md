@@ -5,8 +5,8 @@ The `database_operations` crate: the database side of the repository tooling. It
 [API](/documentation/glossary/a_to_f.md#api), its seeds and registry import, the isolated
 integration-test run, the migration checksum repair and the lane's self-test), the
 `cargo xtask deploy db` verbs (the verified backup, the guarded restore, the restore drill and the
-container helpers they share), the database source gates `cargo xtask verify wiki-seeds`,
-`faction-library-seeds` and `no-select-star`, and the announcement seed that
+container helpers they share), the database source gate `cargo xtask verify no-select-star`,
+and the announcement seed that
 `cargo xtask mod seed-announcement` runs. Developers run the `db` group locally; the systemd
 timers on the website host run the backup and the drill.
 
@@ -143,15 +143,12 @@ clap usage error exits 2.
   `ct-i` return the command's own code.
 - Example: `cargo xtask deploy db is-safe-scratch --db rust_it`
 
-### verify wiki-seeds, faction-library-seeds, no-select-star
+### verify no-select-star
 
-- Synopsis: `cargo xtask verify wiki-seeds`, `cargo xtask verify faction-library-seeds`,
-  `cargo xtask verify no-select-star`
-- Does: the seed list really applies the wiki and faction-library seeds, which hold their pinned
-  rows, and the wave gate runs the faction check; the API's SQL never reads `*` from a table.
-  None needs a running database.
+- Synopsis: `cargo xtask verify no-select-star`
+- Does: the API's SQL never reads `*` from a table. It needs no running database.
 - Exit codes: 0 held; 1 findings; 2 a check could not run.
-- Example: `cargo xtask verify wiki-seeds`
+- Example: `cargo xtask verify no-select-star`
 
 ### mod seed-announcement
 

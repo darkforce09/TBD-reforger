@@ -20,12 +20,12 @@ crates/map_rendering/map_renderer/src/
 ├── engine_statistics.rs     `stats()`, the engine's statistics report as JSON, and the vector-lane counts
 ├── error.rs                 `Error` and `Result`: why the engine refused a create, resize, render or upload
 ├── lane_sinks/              the engine's lanes as lane sinks: its own, and the two borrows the typed layers write through
-├── lib.rs                   the crate root: module header, `mod` lines, the engine and error re-exports, the source pins
+├── lib.rs                   the crate root: module header, `mod` lines, the engine and error re-exports
 ├── lifecycle.rs             `render`, damage, the lane-role adapters, the clear colour, calibration, `poll`
 ├── prelude.rs               the engine, its slot and the error
 ├── pump.rs                  `RenderEngine` as the frame pump's `FrameTarget`
 ├── surface_size.rs          the surface size policy: `round(css·dpr)` device pixels, a non-positive size refused
-├── tests/                   the damage-driven frame path and lane bind source pins, the statistics JSON, the calibration bytes, the surface size and the errors
+├── tests/                   the surface size policy
 ├── typed_layers/            the doors the symbology and world typed layers are lent the engine's lanes through
 ├── upload/                  the belts that upload a lane's geometry and put its batch in the list
 └── viewport.rs              the camera entry points: resize, view, pan, zoom, bounds, camera changed

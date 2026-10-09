@@ -1,8 +1,7 @@
 # The Mission Creator's engine bridge and input layer: the boot machine, the frame-timing belt, the
 # hosted document and its undo drive, the host state the hosted commands read, the overlays laid
 # over the map, the tactical-graphics belt, the canvas gestures, the window keydown dispatches and
-# the browser half of the map tools; with the editor's source-text test helpers behind
-# `test_fixtures`.
+# the browser half of the map tools; with the test-only hooks behind `test_fixtures`.
 [package]
 name = "mission_creator_engine_bridge"
 version = "0.1.0"
@@ -18,8 +17,9 @@ tier = 9
 targets = "any"
 
 [features]
-# Exposes `test_support` (the production half of a source file and the live entity operation
-# sources) to the tests of the upper Mission Creator crates; enabled only from `[dev-dependencies]`.
+# Exposes the test-only hooks (the boot percentage `percent`, the registry cache reset
+# `clear_for_test`) to the tests of the upper Mission Creator crates; enabled only from
+# `[dev-dependencies]`.
 test_fixtures = []
 
 [dependencies]

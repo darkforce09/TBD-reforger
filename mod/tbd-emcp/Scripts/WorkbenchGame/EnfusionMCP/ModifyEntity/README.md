@@ -51,8 +51,8 @@ None: Workbench runs these scripts in the editor.
   API surface the package calls and stay unchanged; the files derive from `enfusion-mcp@0.6.1`
   and differ from its single `EMCP_WB_ModifyEntity.c`, so an upgrade ports changes by hand
   (see the [addon README](/mod/tbd-emcp/README.md#upgrading-enfusion-mcp));
-  `cargo xtask verify enfusion-comments` and `cargo xtask verify file-length` gate the files, and
-  a new file needs a Workbench restart before the handler compiles.
+  `cargo xtask verify file-length` reports the files' length, and a new file needs a Workbench
+  restart before the handler compiles.
 
 ## Related documentation
 

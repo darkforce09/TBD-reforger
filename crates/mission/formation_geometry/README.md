@@ -54,8 +54,7 @@ No features and no environment variables.
 - Used by: the document operations of `mission_operations` (`transform`), the map engine's
   hosted selection transforms, and the Mission Creator's arrange menu and bulk confirmation.
 - Rules: mission tier 1, so the crate depends on foundation crates only
-  (`cargo xtask verify crate-tiers`); every source file is on the place path
-  `cargo xtask verify editor-orbat-coherency` scans.
+  (`cargo xtask verify crate-tiers`); no source file calls `ensure_default_squad`.
 
 ## Related documentation
 

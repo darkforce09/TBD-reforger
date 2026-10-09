@@ -38,10 +38,8 @@ into `ALLOWED_NEW`, `TicketFile` and `.ai/tickets/schema.json` in one commit.
 - Depends on: `repository_layout` (`TICKETS_DIR`), `repository_root` (`ROOT_MARKER`); `ticket_model` (`TicketId` and
   `store::ticket_id_order_key`); the `toml` and `serde_json` crates.
 - Used by: `crate::registry` (`load_registry` and `save_registry` for untyped trees,
-  `typed_projection`, `ticket_titles`, `ticket_status_history`); and the tests of
-  `tools/commands/mod_operations/src/tests/wave_execution.rs`, which build fixture trees with
-  `save_toml_tree`. `on_disk_ids`, `corpus_ids` and the key sets have no caller outside the
-  tests.
+  `typed_projection`, `ticket_titles`, `ticket_status_history`). `on_disk_ids`, `corpus_ids`
+  and the key sets have no caller outside the module.
 - Rules:
   - a ticket written and read back is byte-identical to the registry document it came from
     (`toml_roundtrip_is_byte_identical_to_the_registry_document`);

@@ -59,5 +59,4 @@ are. A degenerate spread falls back to a due-east axis, so no result is NaN. Onl
     `crates/mission/formation_geometry/src/tests/placement_goldens.rs`;
   - the scatter is deterministic, stays inside the hull and ignores the order of the ids
     (`fill_area_deterministic_and_contained`, `fill_area_seed_order_independent`, same file);
-  - every source file here is on the place path that `cargo xtask verify editor-orbat-coherency`
-    scans for `ensure_default_squad`.
+  - no source file here calls `ensure_default_squad`.

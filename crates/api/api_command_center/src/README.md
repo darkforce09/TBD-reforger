@@ -60,8 +60,8 @@ players and capacity, and sum every reported telemetry queue's backlog and drops
   - the API's integration suites in `crates/api/api_server/tests/`;
   - over HTTP, the dashboard and the leaderboard pages in the page crates under `crates/frontend/pages/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`); the view refresh and the counter
+  router merges; every handler
+  carries its `/// @route` tag; the view refresh and the counter
   recomputation each have one home, in `services/`.
 
 ## Related documentation

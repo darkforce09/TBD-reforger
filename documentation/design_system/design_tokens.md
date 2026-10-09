@@ -189,8 +189,7 @@ value takes 8): `RADIUS_PANEL` 12, `RADIUS_PILL` 10, `RADIUS_ROW` 8 and `RADIUS_
 ## Data
 
 No call reads the tokens: Tailwind compiles them into the stylesheet that Trunk writes into
-`crates/frontend/shell/frontend_application/dist/`, and the mod compiles them into its scripts. `cargo xtask verify
-editor-orbat-coherency` pins the map's side tints to their RGBA literals; nothing checks that
+`crates/frontend/shell/frontend_application/dist/`, and the mod compiles them into its scripts. Nothing checks that
 `TBD_UITheme` matches `aegis.css`. The `save-dialog-rect` editor smoke
 (`tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/save_dialog_rect.rs`) measures
 that a dialog first-paints where it settles, the guard for the entrance-animation rule.

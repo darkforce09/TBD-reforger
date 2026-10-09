@@ -57,7 +57,7 @@ A literal whose syntax does not fix its anchor (every candidate read under more 
 path token in a Rust literal or comment, a climbing token in prose or a Cargo manifest) is
 rewritten only when its spelling pins it to the reading that changes it. It is left as written
 and reported ambiguous, never unresolved, when that reading names only a leading part of it (an
-example path whose tail names nothing, such as a comment's `../../tests/cases_1.rs`), or when the
+example path whose tail names nothing, such as a comment's ../../tests/cases_1.rs), or when the
 reading comes from the owning crate's folder and another crate folder reads the same literal as a
 tracked path the moves leave differently: a literal every crate spells for its own files
 (`src/lib.rs`, `src/`) or a fixture path relative to a temporary checkout

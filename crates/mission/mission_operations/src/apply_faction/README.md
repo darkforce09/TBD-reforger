@@ -60,6 +60,4 @@ the leader slot, and counts the roles and vehicles applied.
     overwrites (`reapply_keeps_overlapping_slot_ids_and_positions`);
   - the anchor is the centre of `mission_payload::terrain_bounds` for every terrain
     (`apply_anchor_matches_terrain_bounds`);
-  - every source file here is on the place path that `cargo xtask verify editor-orbat-coherency`
-    scans, which bans `ensure_default_squad` there, fails when a listed file is missing and runs
-    the `apply_faction_` tests.
+  - no source file here calls `ensure_default_squad`.

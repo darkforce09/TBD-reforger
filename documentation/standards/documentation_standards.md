@@ -101,12 +101,7 @@ code as it stands, in the present tense.
 - No restating the signature: a doc comment adds what the name and types do not say.
 - A change that alters documented behaviour updates the comment in the same diff.
 
-Two test suites hold parts of these rules, and run with their crate's tests:
-`crates/api/api_server/src/tests/prose_rules.rs` refuses ticket identifiers, delivery vocabulary,
-narrative about another implementation and retired paths in the API crates' sources, tests,
-`.env.example`, seeds and migration comments; `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`
-refuses ticket identifiers, retired names and deleted script names in every tracked file under
-`tools/`. Elsewhere review holds them. The comment below states an engine constraint and the
+Review holds these rules. The comment below states an engine constraint and the
 invariant that follows from it
 (`mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Data/TBD_MissionSlotStruct.c:61-63`):
 

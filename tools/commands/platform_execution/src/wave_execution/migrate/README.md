@@ -37,8 +37,7 @@ with no file, or a failed migration record all fail the step; none reads as a sk
 - Used by: `super::gate` (both gate drivers) and the `gate --migrate-persist` dispatch in
   `tools/commands/platform_execution/src/wave_execution/flush.rs`.
 - Rules: only merged `main` advances the persist database, so its state is always a prefix of
-  `main`'s migrations; the persist step never drops its database; the tests are in
-  `tools/commands/platform_execution/src/wave_execution/tests/migrate/tests.rs`.
+  `main`'s migrations; the persist step never drops its database.
 
 ## Related documentation
 

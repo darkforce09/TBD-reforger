@@ -86,8 +86,8 @@ server.
   `crates/frontend/foundation/frontend_transport/src/endpoints/`, and the game runtime's roster loader in
   `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/` and deployment queues in
   `mod/tbd-framework/Scripts/Game/TBD/Systems/Spawning/`.
-- Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
+- Rules: every handler carries its `/// @route` tag; no handler
+  imports another domain's handlers; the
   roster never compiles or pairs at read time.
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
   `details.code = request_too_large` over the body limit, 415 without a JSON content type, and 400

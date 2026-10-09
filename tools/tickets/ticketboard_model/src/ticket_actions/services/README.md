@@ -47,8 +47,6 @@ target file and takes none.
   `ticket_model` (`StatusName`, `Ticket`).
 - Used by: the desktop application: `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/` (menus and dialogs)
   and `tools/tickets/ticketboard_desktop/src/application/` (`command_execution.rs`, `action_dispatch.rs`,
-  `ticket_command_views.rs`, `mod.rs`, `tests/rendering.rs`).
-- Rules: nothing here names egui (the test
-  `model_dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`); nothing here writes a ticket file, since
-  every change is a `cargo xtask ticket` command.
+  `ticket_command_views.rs`, `mod.rs`).
+- Rules: nothing here names egui; nothing here writes a ticket file, since every change is a
+  `cargo xtask ticket` command.

@@ -8,7 +8,7 @@ over it together.
 
 ```text
 crates/streaming/chunk_draw_buffers/src/tests/
-├── everon_glyphs_and_strips/           glyphs, badges and strips on the committed Everon export
+├── everon_glyphs_and_strips/           glyph keys and strips on the committed Everon export
 ├── ingest_budget_and_building_toggle/  the ingest budget and the building lane toggles
 ├── mod.rs                              the module tree, compiled only in test builds
 ├── prefab_lane_parity.rs               the archive and JSON prefab lanes compose the same buffers
@@ -28,7 +28,7 @@ cases name by its string becomes a `world_chunks::ChunkId` where a residency cal
 |---|---|---|
 | `residency_lifecycle/` | the lifecycle: requested set, pin key, known-empty chunks, retry cap, LRU eviction, apply-frame accounting, picking, draw set, tree heatmap, glyph memo | synthetic gzip chunks on a 25 × 25 grid of 512 m cells |
 | `ingest_budget_and_building_toggle/` | the ingest budget, the buildings toggle, the building zoom gate | one synthetic building |
-| `everon_glyphs_and_strips/` | the glyph lookup, atlas keys, badges, landmarks, fill de-emphasis, strips | the export under `assets/terrains/everon/` and the glyphs under `assets/glyphs/` |
+| `everon_glyphs_and_strips/` | the atlas keys, building icon keys, the low-zoom landmark gate, strip orientation | the export under `assets/terrains/everon/` and the glyphs under `assets/glyphs/` |
 | `prefab_lane_parity.rs` | the rkyv and JSON prefab lanes through to every draw buffer and the statistics | `prefab_catalog::test_fixtures` and `assets/glyphs/` |
 
 ## Boundaries

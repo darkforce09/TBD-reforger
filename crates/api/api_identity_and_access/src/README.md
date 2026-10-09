@@ -88,9 +88,8 @@ administrator does to a member lives in `api_administration`.
   - over HTTP, the account pages and the navigation frame in `crates/frontend/shell/frontend_application/`, and the
     identity link of the mod in `mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, `routes.rs` exports the table the router
-  merges, and only the router names this crate from the API's application source
-  (`crates/api/api_server/src/tests/architecture_rules.rs` checks all three); every handler carries
-  its `/// @route` tag (`cargo xtask verify route-tags`); the domain's generated contract types
+  merges, and only the router names this crate from the API's application source; every handler
+  carries its `/// @route` tag; the domain's generated contract types
   (`contract_schema_types::identity_and_access`) are written by `cargo xtask ci schema-codegen`
   and never edited by hand.
 

@@ -57,14 +57,10 @@ init origin, before the draft restore and the server hydrate replace the documen
     `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/`;
   - the docks, inspectors, dialogs and outliner rows under
     `crates/frontend/workspaces/mission_creator_workspace/src/ui/`, and the loadout attachments in
-    `crates/frontend/workspaces/mission_creator_arsenal/src/loadout/`;
-  - the source pins that read these files through `CONTEXT` in
-    `crates/frontend/workspaces/mission_creator_engine_bridge/src/test_support/editor_operations.rs`.
+    `crates/frontend/workspaces/mission_creator_arsenal/src/loadout/`.
 - Rules: every entry point opens exactly one borrow of the context, and a document borrow drops
   before the post-edit tail opens its own; the module is `#![cfg(target_arch = "wasm32")]`, and so
-  is its `pub mod` line; an unregistered side signal makes open and close a no-op; every file here
-  is on the place path that `cargo xtask verify editor-orbat-coherency` scans, which fails when a
-  listed file is missing.
+  is its `pub mod` line; an unregistered side signal makes open and close a no-op.
 
 ## Related documentation
 

@@ -46,7 +46,7 @@ unknown ticket) is `Error::Refused`; xtask prints its message bare, with no pref
 Run these from the repository root:
 
 ```bash
-cargo test -p ticket_registry      # every unit test; several read the committed .ai/tickets tree
+cargo test -p ticket_registry      # the registry schema check over the committed .ai/tickets tree
 cargo xtask ticket check --strict  # the full check of the committed tickets, as CI runs it
 cargo xtask ticket sync            # regenerate queue.json, the roadmap block and the gap column
 cargo xtask ticket --help          # every ticket verb
@@ -97,16 +97,11 @@ history.
   nothing else.
 - Rules:
   - tier 4 of `tools/tickets`, depending only on the tooling foundations and the lower ticket
-    crates (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates` in
-    `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`), and ticket logic lives here rather
-    than in xtask, whose `ticket` adapters delegate to it (`ticket_implementations_have_one_owner`,
-    same file);
+    crates, and ticket logic lives here rather than in xtask, whose `ticket` adapters delegate to
+    it;
   - a mutation refuses on a red `ticket check` and writes nothing, and no verb reaches the
-    whole-tree writer (`require_check_ok_blocks_invalid_registry`,
-    `mutators_never_reach_the_value_writer_pin`);
-  - the crate never starts an agent and never deletes a worktree or branch
-    (`dry_run_does_not_call_executor`,
-    `cleanup_resolution_preserves_defaults_and_performs_no_deletion`);
+    whole-tree writer;
+  - the crate never starts an agent and never deletes a worktree or branch;
   - production files stay at or under 500 lines and test files at or under 1,000, with tests in
     separate `tests/` files (`cargo xtask verify file-length`).
 

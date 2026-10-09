@@ -61,8 +61,3 @@ the reason LANG-3 makes an unreadable input a failure rather than a pass.
 `language-gates` job of `.github/workflows/ci.yml` on every push and pull request to `main`, and in
 the platform [wave](/documentation/glossary/n_to_z.md#wave) gate. The full matrix is in
 [Testing and CI](/documentation/runbooks/testing_and_ci.md#gate-matrix).
-
-The tests that hold the rules: `planted_sh_fails`, `makefile_is_banned` and
-`leftover_py_file_fails` in `tools/checks/repository_checks/src/language_bans/tests/python_scripts/tests.rs`;
-`does_not_sweep_in_rust_inner_attributes` and `python3_command_position_ignores_comments` in
-`tools/checks/repository_checks/src/language_bans/tests/shell_scripts/tests.rs`.

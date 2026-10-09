@@ -87,8 +87,6 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 thiserror = { workspace = true }
 
 [dev-dependencies]
-# The error context and `ensure!` of the ballistics migration suite's fixture steps.
-anyhow = { workspace = true }
 # The handler error, the audit lines, the mission vocabulary enums and the member activity
 # aggregates the integration suites assert against.
 api_foundation = { workspace = true }

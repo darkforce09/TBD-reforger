@@ -36,7 +36,7 @@ each lookup is best-effort, so a missing piece is `null` rather than a failed da
 - Used by: the domain's `routes.rs`; the leaderboard paging suite in `crates/api/api_server/tests/`; over HTTP, the dashboard in
   `crates/frontend/pages/command_center_pages/src/dashboard/` and the leaderboards and operator
   dossier in `crates/frontend/pages/operations_pages/src/leaderboards/`.
-- Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); a
+- Rules: every handler carries its `/// @route` tag; no handler
+  imports another domain's handlers; a
   leaderboard category maps to its ordering only through the fixed list, never through request
   text.

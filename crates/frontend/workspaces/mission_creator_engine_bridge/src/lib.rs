@@ -5,8 +5,8 @@
 //! frame-timing belt, the hosted mission document and its undo drive, the host state the hosted
 //! commands read, the overlays laid over the map and the tactical-graphics belt) and the input
 //! layer over it ([`input`]: the canvas gestures, the two window keydown dispatches and the
-//! browser half of the interactive map tools). With `test_fixtures` it also exposes
-//! `test_support`, the source-text helpers the upper editor crates' source pins read through.
+//! browser half of the interactive map tools). With `test_fixtures` it also exposes the
+//! test-only hooks the upper editor crates' tests call (the boot percentage, the cache reset).
 //! **Position:** the second Mission Creator crate: above `mission_creator_state`, the foundation
 //! crates and the mission, editing, streaming and rendering crates; below the session, the
 //! Arsenal and the workspace crates, which mount the canvas, register the callbacks the gestures
@@ -17,7 +17,7 @@
 //! the hosted commands of `mission_editing_commands`.
 //! **Invariants:** depends on no Mission Creator crate above `mission_creator_state`; a module
 //! that touches `web_sys` or a live engine handle is `wasm32`-only, so the native build and tests
-//! compile the pure half of the seam; `test_support` exists only in this crate's tests and with
+//! compile the pure half of the seam; the test-only hooks exist only in this crate's tests and with
 //! the dev-only `test_fixtures` feature.
 
 /// The editor's side of the engine seam: the boot machine, the frame-timing belt, the hosted
@@ -30,8 +30,3 @@ pub mod bridge;
 pub mod input;
 /// The items most callers name, for `use mission_creator_engine_bridge::prelude::*;`.
 pub mod prelude;
-/// Source-text helpers for the editor's source pins: the production half of a source file and
-/// the live entity operation sources. Compiled into this crate's tests and, with `test_fixtures`,
-/// into the upper editor crates' tests.
-#[cfg(any(test, feature = "test_fixtures"))]
-pub mod test_support;

@@ -50,12 +50,9 @@ states, and declares both files.
   `process_runner::Run`, and `git`.
 - Used by: `tools/commands/mod_operations/src/wave_execution.rs`, which re-exports `run` to the
   `mod` dispatch.
-- Rules: a missing lock refuses instead of reporting every wave shipped
-  (`missing_lock_is_a_refusal_not_all_shipped`); `land` refuses a dirty worktree before merging
-  anything (`land_refuses_dirty_worktree`); an unknown subcommand prints the help and exits 2
-  (`unknown_command_prints_help_rc2`); no gate step runs `make`, since the repository has no
-  Makefile (`the_gate_names_no_make_step`); all in
-  `tools/commands/mod_operations/src/tests/wave_execution.rs`.
+- Rules: a missing lock refuses instead of reporting every wave shipped; `land` refuses a dirty
+  worktree before merging anything; an unknown subcommand prints the help and exits 2; no gate
+  step runs `make`, since the repository has no Makefile.
 
 ## Related documentation
 

@@ -71,5 +71,4 @@ repository.rs ──► repository_layout
   `tools/tickets/ticketboard_desktop/`, all through the crate root and the public modules.
 - Rules: `lib.rs` holds only the header, `mod` lines and re-exports; the encoding refuses what
   the model cannot hold, and `write_back` never writes a ticket whose render does not re-parse to
-  the same ticket (`tests/store/corpus_storage_tests.rs`, `tests/proptest_roundtrip_tests.rs`);
-  `commit_subjects.rs` matches ids only at a boundary (`tests/commit_subjects_tests.rs`).
+  the same ticket; `commit_subjects.rs` matches ids only at a boundary.

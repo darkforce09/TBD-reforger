@@ -98,8 +98,6 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
   - `viewport.rs` and `world_assets.rs` in `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/`;
   - the context menu in `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/context_menu/`, which
     registers the right-click opener;
-  - the source pins that read these files, in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`,
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, which drive the
     canvas and the keyboard.
 - Rules:
@@ -107,10 +105,7 @@ drag-move and an elevation drag, one `MissionDocCore` write inside an undo group
     the registered opener;
   - undo and redo go only through `bridge::document_host::history::{undo, redo}`, never the
     document's stack itself;
-  - no two keydown listeners claim the same chord (`no_two_listeners_claim_the_same_chord` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/keymap_census/tests.rs`),
-    and every binding has a help entry (`every_binding_has_a_help_entry` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/shortcut_coverage.rs`);
+  - no two keydown listeners claim the same chord, and every binding has a help entry;
   - a module that touches `web_sys` is `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod`
     line.
 

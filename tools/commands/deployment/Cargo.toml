@@ -1,7 +1,6 @@
 # `cargo xtask deploy website` and `cargo xtask deploy staging`: the rsync and remote build of the
 # website, the staging fleet's config, units, payloads and boot verdicts, the paths no deploy
-# ships, and the `verify staging-compose-paths` check; `deploy db` is the `database_operations`
-# crate's. `thiserror` carries its errors.
+# ships; `deploy db` is the `database_operations` crate's. `thiserror` carries its errors.
 [package]
 name = "deployment"
 version = "0.1.0"
@@ -9,7 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "The website and staging deploy drivers and the staging compose-path check"
+description = "The website and staging deploy drivers and the paths no deploy ships"
 
 [package.metadata.layout]
 category = "tools/commands"

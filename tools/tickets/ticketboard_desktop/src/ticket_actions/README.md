@@ -20,7 +20,4 @@ tools/tickets/ticketboard_desktop/src/ticket_actions/
   `ticketboard_model` models the views read; `crate::core::ui`; `eframe::egui`.
 - Used by: `crate::application`, which lends the views their data and applies the events they
   return.
-- Rules: the folder holds only views
-  (`module_roots_and_documentation_describe_the_entire_source_tree` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`), and no other feature imports its `ui`
-  (`dependency_boundaries_and_external_test_placement_are_enforced`).
+- Rules: the folder holds only views, and no other feature imports its `ui`.

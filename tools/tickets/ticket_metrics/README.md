@@ -37,7 +37,6 @@ ticket has one or the other, never both, so an estimate can never pass for a mea
 Run from the repository root:
 
 ```bash
-cargo test -p ticket_metrics      # the receipt and estimate suites; one test reads this checkout's git log
 cargo xtask ticket metrics        # the run receipts of this checkout, one line per run
 cargo xtask ticket check          # the registry check, including the receipt and estimate rules
 ```

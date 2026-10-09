@@ -51,9 +51,7 @@ every callback.
 - Used by: `crates/frontend/pages/administration_pages/src/audit_logs/page.rs`, which opens the
   stream and aborts it on cleanup.
 - Rules: every connection resumes from the tracker's cursor and carries its own abort signal, and
-  the handle's abort stops the loop and the connection, with no global slot holding the handle
-  (`audit_stream_transport_resumes_from_the_tracker_and_aborts_through_the_handle` in
-  `crates/frontend/foundation/frontend_transport/src/tests/audit_stream.rs`).
+  the handle's abort stops the loop and the connection, with no global slot holding the handle.
 
 ## Related documentation
 

@@ -56,9 +56,7 @@ that state, and its Back and "open externally" buttons come back as `DocumentEve
   `wants_viewer`.
 - Rules:
   - no document outside the repository root is read, by `..` or by a symbolic link, and no read
-    passes 512 KB (`tools/tickets/ticketboard_model/src/document_viewer/services/tests/document_loading.rs`);
+    passes 512 KB;
   - a stale read never replaces the open document, and closing the viewer never changes the ticket
     selection;
-  - nothing here names egui
-    (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+  - nothing here names egui.

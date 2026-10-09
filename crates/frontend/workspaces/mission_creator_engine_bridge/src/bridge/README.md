@@ -97,8 +97,7 @@ the document.
     session also registers its draft writer into the undo driver's draft-persist hook
     (`document_host::edit_persist_hook`), so the edit tail arms a draft write without naming the
     session;
-  - the source pins in `crates/frontend/workspaces/mission_creator_engine_bridge/src/test_support/editor_operations.rs` and the
-    editor's own tests in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`;
+  - the editor's own tests in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`;
   - the headless editor gates in `tools/browser_testing/browser_gate_suites/`, through the window
     gates.
 - Rules: a module that touches `web_sys` or a live engine handle is
@@ -106,8 +105,7 @@ the document.
   the pure half (the boot model, the tactical geometry, the hover machine, the Z arm); a failed boot
   segment stays failed (`BootPhase::advance`); the tactical lane draws and picks one parsed list
   (`the_pick_follows_the_drawn_curve_not_the_authored_chord` in
-  `tests/tactical_graphics/geometry_and_style.rs`); `cargo xtask verify editor-orbat-coherency`
-  scans `tactical_graphics_authoring.rs` with the place path.
+  `tests/tactical_graphics/geometry_and_style.rs`).
 
 ## Related documentation
 

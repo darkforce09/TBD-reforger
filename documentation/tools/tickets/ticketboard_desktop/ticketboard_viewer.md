@@ -103,9 +103,7 @@ state of the work and to move tickets through their statuses.
   tab, a 420-point detail column and the document column (280 to 1600 points, 560 by default);
   below a 1100-point width only the document column shows, and Back closes it alone.
 - Every feature keeps its models, services and events in `ticketboard_model`, which names no egui
-  type, and draws in `tools/tickets/ticketboard_desktop` from a view the application lends it; the architecture
-  tests in `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs` and
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs` hold the module boundaries of both crates.
+  type, and draws in `tools/tickets/ticketboard_desktop` from a view the application lends it.
 - No design reference set exists; the viewer is a developer tool.
 
 ## Open work

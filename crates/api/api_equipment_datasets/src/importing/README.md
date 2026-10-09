@@ -39,7 +39,7 @@ and its manifest digest still matches. Otherwise it takes the `.import.lock` fil
 - Depends on: the service state and `load_dataset` of `service_state.rs`, the index writer in
   `index/`, and the manifest reader in `source/`.
 - Used by: `crates/api/api_background_workers/src/equipment_export_watcher.rs` and the
-  integration suite `crates/api/api_server/tests/contract_parity_equipment_viewer.rs`.
+  integration suite `crates/api/api_server/tests/contract_parity/equipment_viewer.rs`.
 - Rules: one import at a time per data directory (`.import.lock`); the pointer is the last thing
   written, so a failed or interrupted import leaves the previous generation current; the unit
   tests in `tests/import_recovery.rs` of the parent folder hold the recovery paths.

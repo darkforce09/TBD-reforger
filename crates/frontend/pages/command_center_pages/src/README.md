@@ -44,8 +44,7 @@ Recent Intelligence rows link into the announcement board, and its banner into t
   (`/api/v1/announcements`) and its `server_infrastructure` domain (`/api/v1/servers` and the status
   stream).
 - Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs`, whose tiers and layout
-  flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares; the source pins in
-  `crates/frontend/pages/command_center_pages/src/tests/source_pins.rs`.
+  flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares.
 - Rules: the pages only read (each calls `api_get` and nothing that writes), and every page sits
   behind `AuthGate`; no test pins the read-only rule.
 

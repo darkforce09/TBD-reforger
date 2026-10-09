@@ -143,8 +143,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
 - Used by: the `/tools/mortar` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Mortar Calculator" link in
   `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the offline pack trigger in
-  `crates/frontend/foundation/frontend_offline/src/offline_pack.rs`; the DOM oracle's `mortar` capture
-  in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
+  `crates/frontend/foundation/frontend_offline/src/offline_pack.rs`.
 - Rules:
   - the page's solution is the engine's `solve_fire_mission` answer byte for byte
     (`the_solution_is_the_engine_fire_mission_solution_byte_for_byte`), from inputs pinned to the
@@ -160,8 +159,7 @@ one gun from its coordinates or its legacy `x, y` grid text. The selected event 
     (`the_save_body_carries_the_solved_inputs_and_the_client_solution`);
   - a click writes only the placed position (`a_click_writes_only_the_placed_position_as_a_ten_figure_grid`),
     and the crest check warns over a ridge (`the_crest_check_clears_low_ground_and_warns_over_a_ridge`);
-  - the dispersion is labelled an interpretation
-    (`the_dispersion_is_labelled_an_interpretation_not_verified_in_engine`).
+  - the dispersion is labelled an interpretation.
 
 ## Related documentation
 

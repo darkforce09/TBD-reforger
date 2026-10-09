@@ -51,8 +51,7 @@ land [--wave] [--bookkeeping] [<ticket id>…]
   `verified` and `wave --close` dispatch).
 - Rules: every argument parser is an allowlist, since a filter that is ignored lands more than was
   asked for; a red gate after merge never drops a worktree; only `close_ceremony` writes marker
-  commits, and what it checked is what lands, by sha; the tests are in
-  `tools/commands/platform_execution/src/wave_execution/tests/land/tests.rs`.
+  commits, and what it checked is what lands, by sha.
 
 ## Related documentation
 

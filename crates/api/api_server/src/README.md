@@ -101,8 +101,7 @@ folder, declared with `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
   depends on `api_background_workers`, and only `bin/api_server.rs` names it; no crate imports
   another domain's handlers, and each domain crate defines one route table in its `routes.rs`,
   which `router.rs` merges.
-- Every `@route` tag resolves to a route a table registers, and every registered route to a tag
-  (`cargo xtask verify route-tags`).
+- Every `@route` tag names a route a table registers, and every registered route carries a tag.
 
 ## Related documentation
 

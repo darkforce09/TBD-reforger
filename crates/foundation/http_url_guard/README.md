@@ -60,8 +60,8 @@ variable.
 - Used by: the API (`crates/api/api_server`), whose writers of every URL column call the guard (listed in
   `crates/api/api_foundation/src/text/README.md`); the single-page app (`crates/frontend/shell/frontend_application`), whose avatar
   sanitiser, Mission Creator settings, announcement, mission library, service record and
-  leaderboard links call it. With `test_fixtures`: `crates/api/api_server/tests/aar_replay_url_backfill.rs`
-  and the frontend page tests that render a stored link or image.
+  leaderboard links call it. With `test_fixtures`: the frontend page tests that render a stored
+  link or image.
 - Rules: a `false` entry of the table is a security assertion — when the guard starts answering
   `true` to it, the guard is wrong, never the table
   (`refuses_every_input_the_shared_table_marks_refused`); the table keeps its adversarial inputs

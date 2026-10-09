@@ -36,7 +36,7 @@ decision and the two gates compile on every target, so their tests run natively.
 Run from the repository root:
 
 ```bash
-cargo test -p frontend_session   # the store, the gates, the guard, persistence, the sign-out hooks, the source pins
+cargo test -p frontend_session   # the store, the gates, the guard, persistence, the sign-out hooks
 ```
 
 ## Configuration

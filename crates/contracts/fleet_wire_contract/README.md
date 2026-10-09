@@ -75,8 +75,7 @@ None: the crate reads no environment variable and declares no feature.
     (`a_finished_receipt_carries_every_field_in_order`,
     `a_report_reads_null_as_absent_and_refuses_unknown_keys`);
   - the reports, the request and the console types refuse unknown keys; the claim and the receipt
-    tolerate them;
-  - every `@contract` tag resolves (`cargo xtask schema citations`).
+    tolerate them.
 - The single-page app keeps its own fleet command DTOs in `crates/frontend/foundation/frontend_api_dtos/src/`
   (decision D7 of the restructure program), checked against the same schema by its golden tests.
 

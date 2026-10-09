@@ -124,7 +124,4 @@ is added.
     `colliding_client_ids_are_rejected_not_merged` in `tests/cases_2.rs`);
   - a hydrate and a compile keep unknown top-level keys, the schema, the map and the slot order
     (`unknown_top_level_keys_survive_compile_hydrate_compile` in `tests/cases_2.rs`,
-    `t220_hydrate_compile_preserves_schema_map_and_slot_order` in `tests/cases_3.rs`);
-  - `cargo xtask verify editor-orbat-coherency` runs `set_leader_exclusive`,
-    `empty_squad_garbage_collected`, `move_slot_bidirectional`, `leader_invariant_holds`,
-    `attach_vehicle_roundtrip` and the `place_` tests of this crate.
+    `t220_hydrate_compile_preserves_schema_map_and_slot_order` in `tests/cases_3.rs`).

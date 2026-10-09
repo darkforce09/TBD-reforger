@@ -86,16 +86,12 @@ again after a submit or a decision; approve and deny show only on a pending requ
   `DataEnvelope`, `Paginated`), `frontend_session` (`AuthStore`, `Role`), `http_url_guard`,
   `frontend_ui` (`AuthGate`, `MaterialIcon`, `badge_class`, the toasts) and
   `frontend_ui` (countdown and date formatting).
-- Used by: the `/deployments` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`;
-  `deployments_source` in `crates/frontend/pages/operations_pages/src/tests/source_pins.rs` reads its source
-  files.
+- Used by: the `/deployments` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`.
 - Rules: the replay cell emits an `href` only for an `http(s)` URL
   (`aar_cell_emits_an_href_only_for_http_urls` in `tests/deployments.rs`); the leave form's date
   rules match the [API](/documentation/glossary/a_to_f.md#api)'s and the body carries bare dates
   (`loa_date_validation_matches_backend_rules`, `create_leave_body_is_bare_ymd_json`); no invented
-  personal figures appear, and the empty telemetry text stays
-  (`no_fabricated_personal_telemetry_survives_in_this_module`,
-  `personal_telemetry_empty_copy_is_pinned`).
+  personal figures appear.
 
 ## Related documentation
 

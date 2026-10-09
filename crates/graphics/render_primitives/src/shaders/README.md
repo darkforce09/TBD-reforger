@@ -43,8 +43,7 @@ barrier, and one `atomicAdd` per workgroup reserves the output range.
   and the source-text checks in `crate::draw::cull::oracle` and the `crate::draw` tests.
   `map_renderer` reaches the shader only through `gpu_frame`'s `create_render_shader`.
 - Rules: `TextUniforms` is four `f32`s, 16 bytes, with no `vec3` padding, and `vs_text` flips V
-  and reads its grid from the uniform (`g1_text_uniforms_is_16_bytes_no_vec3`,
-  `g1_vs_text_has_v_flip`, `l2_vs_text_grid_from_uniform`); the sprite UV table is
+  and reads its grid from the uniform (`g1_text_uniforms_is_16_bytes_no_vec3`); the sprite UV table is
   `ATLAS_GLYPH_COUNT` entries long and the cell index is clamped to it
   (`shader_uv_table_tracks_atlas_glyph_count` in `crate::draw`); `cs_icon_cull` places its barrier
   before the atomic, which `shader_reduce_barrier_before_atomic` reads from the source and

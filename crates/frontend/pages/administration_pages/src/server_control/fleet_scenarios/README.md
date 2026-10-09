@@ -42,13 +42,12 @@ who last changed a mapping, "you" for the viewer. Every request runs in the brow
   routes of the [server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain.
 - Used by: `page.rs` in `crates/frontend/pages/administration_pages/src/server_control/`,
   which builds the registry, renders the sheet and opens it from the picker's "Fleet scenarios"
-  button; `server_control_source` in `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`.
+  button.
 - Rules: a registration the API would refuse is never sent
   (`terrain_keys_are_checked_as_the_backend_checks_them`,
   `scenario_ids_follow_the_contract_pattern`, `display_names_are_trimmed_and_bounded`), every
-  captured mapping passes the checks (`every_captured_mapping_passes_the_checks`), and changes go
-  through the typed endpoints (`changes_go_through_the_typed_endpoints`), all in
-  `tests/fleet_scenarios.rs`.
+  captured mapping passes the checks (`every_captured_mapping_passes_the_checks`), all in
+  `tests/fleet_scenarios.rs`; changes go through the typed endpoints.
 
 ## Related documentation
 

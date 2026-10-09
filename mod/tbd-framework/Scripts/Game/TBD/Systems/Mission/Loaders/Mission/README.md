@@ -79,7 +79,7 @@ questions (`IsSquadLeader`, a squad by callsign).
   system under `mod/tbd-framework/Scripts/Game/TBD/` that reads the loaded document.
 - Rules: the static read API of `TBD_MissionLoader` keeps its names and signatures; nothing is parsed
   over the byte cap, and `MISSION_FILE_MAX_BYTES`, `x-tbd-missionFileMaxBytes` and the
-  `artifact_bytes` maximum change together (`cargo xtask verify mission-rest-size-limits`); the
+  `artifact_bytes` maximum change together; the
   variant filter runs before validation; the parse changes nothing in the world, and the world
   applier runs only from `TBD_LoadingGate` on the main thread; every static resets per world;
   sources stay ASCII and `cargo xtask mod compile` checks that they compile.

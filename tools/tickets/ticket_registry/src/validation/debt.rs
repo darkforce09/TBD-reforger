@@ -5,8 +5,7 @@
 //! **Position:** under `ticket check`; the counts use `ticket_model::title_is_debt` and
 //! `ticket_model::main_goal_is_debt`, the same instruments as the operations gate.
 //! **Signals & state:** none; reads the typed corpus.
-//! **Invariants:** only growth above a pin is a finding here; the exact pin equality is held by
-//! the ratchet tests on the committed tree.
+//! **Invariants:** only growth above a pin is a finding here; a shrink is never a finding.
 
 use super::*;
 
@@ -40,12 +39,7 @@ pub(super) fn debt_counts(corpus: &ticket_model::Corpus) -> (usize, usize) {
 /// offender slipped past the ops gate. The SHRINK direction is deliberately not a
 /// check red: `check` runs on arbitrary roots (every mutator preflight, scratch
 /// registries in tests), where the live-tree pin equality cannot hold — a fresh
-/// 4-ticket scratch measures 0 debt against a nonzero pin and must stay green. The
-/// both-ways drift-red lives where the tree is ALWAYS the live one: the ticket model's
-/// ratchet tests (`title_debt_ratchet_pin` / `main_goal_debt_ratchet_pin`,
-/// exact `assert_eq!`), which red a repaid-but-unshrunk pin in CI — the exact
-/// MIGRATION_LEGACY_PIN division of labor (test owns the equality, check owns the
-/// new-offender tripwire).
+/// 4-ticket scratch measures 0 debt against a nonzero pin and must stay green.
 pub(super) fn pin_growth_finding(
     label: &str,
     measured: usize,
@@ -64,9 +58,8 @@ pub(super) fn pin_growth_finding(
 /// The queued-tier main_goal rule (b) and the title-debt meter: both bind as measured,
 /// shrink-only pins instead of instant corpus-wide reds, since the debt spans past tickets;
 /// a commit that repays debt shrinks the pin with it. Growth reds every check run (so a slipped offender wedges the next
-/// verb immediately); the pin==measured equality is pinned by the store ratchet
-/// tests — see [`pin_growth_finding`] for why the split. Fail-closed on an
-/// unloadable corpus.
+/// verb immediately); see [`pin_growth_finding`] for why a shrink is not a finding.
+/// Fail-closed on an unloadable corpus.
 pub(super) fn check_debt_pins(root: &Path) -> Vec<String> {
     let corpus = match ticket_model::Corpus::load(root) {
         Ok(c) => c,

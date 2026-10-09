@@ -68,9 +68,5 @@ ballistics_oracle_tooling = { workspace = true }
 # The `ai` group: the agent tool-call guard and the filtered command runner.
 agent_context_guards = { workspace = true }
 
-[dev-dependencies]
-# The tile index schema the map tests validate against.
-jsonschema = { workspace = true }
-
 [lints]
 workspace = true

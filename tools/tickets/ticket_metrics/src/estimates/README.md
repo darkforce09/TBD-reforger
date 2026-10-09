@@ -69,19 +69,17 @@ The `ticket_metrics::estimates` module:
 - Used by: `cmd_stamp_sha` in `tools/tickets/ticket_registry/src/verbs/shipping.rs`; `ticket check`
   through `tools/tickets/ticket_registry/src/validation/runner.rs`, and its `--strict` counters
   in `tools/tickets/ticket_registry/src/validation/command.rs`. `run_estimates` has no caller
-  outside the tests. The ticketboard keeps its own copy of `validate_estimate`
+  in the repository. The ticketboard keeps its own copy of `validate_estimate`
   (`tools/tickets/ticketboard_model/src/execution_metrics/estimated/validation.rs`).
 - Rules:
   - `TOKENS_PER_LOC` is quoted verbatim in the factor document, which also documents every
-    excluded path (`factor_constant_is_pinned_in_the_doc` in `tests/estimate_provenance_tests.rs`);
+    excluded path;
   - `ticket check` refuses an estimate that fails the schema or `validate_estimate`, whose file
     stem differs from its `id`, that sits in a subfolder, whose ticket is not shipped, whose
     `factor` is not `TOKENS_PER_LOC`, that shares a ticket with a run receipt, or whose presence
-    disagrees with `tokens` in the ticket's `estimated` list (`business_rules_red` and
-    `mutual_exclusion_and_marker_coherence`);
-  - an estimate file planted inside the receipt tree reds the receipt check
-    (`planted_estimate_inside_metrics_reds_the_metrics_walker`);
-  - a pass never writes a tree its own check refuses (`scratch_generator_cohorts_fallthrough_and_idempotence`).
+    disagrees with `tokens` in the ticket's `estimated` list;
+  - an estimate file planted inside the receipt tree reds the receipt check;
+  - a pass never writes a tree its own check refuses.
 
 ## Related documentation
 

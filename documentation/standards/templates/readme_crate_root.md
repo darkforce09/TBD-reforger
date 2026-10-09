@@ -154,8 +154,8 @@ are required too.
   the `mk rust-api`, `db` and `deploy website` commands of `tools/xtask/`; and the release image
   that `deploy/Dockerfile` builds.
 - Rules: `src/` holds only the application's assembly; the kernel crates depend on no domain, no crate
-  imports another domain's handlers, and only `src/bin/api_server.rs` names `api_background_workers`
-  (`src/tests/architecture_rules.rs` checks all three); an applied migration never changes
+  imports another domain's handlers, and only `src/bin/api_server.rs` names `api_background_workers`;
+  an applied migration never changes
   (`tests/migrations_are_immutable.rs`).
 
 ## Related documentation

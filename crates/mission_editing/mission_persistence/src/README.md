@@ -78,8 +78,7 @@ save a draft (host)
   (`crates/frontend/workspaces/mission_creator_session/src/hydrate.rs`,
   `crates/frontend/workspaces/mission_creator_session/src/persist.rs` and
   `crates/frontend/workspaces/mission_creator_state/src/review_mode.rs`), its review restore
-  (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/review_restore.rs`) and
-  the shell's title test (`crates/frontend/workspaces/mission_creator_session/src/tests/title_prefer/`).
+  (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/review_restore.rs`).
 - Rules:
   - two accounts never share a key (`a_separator_in_the_owner_cannot_collide_two_accounts` in
     `tests/record_key.rs`);

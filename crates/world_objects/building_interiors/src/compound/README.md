@@ -87,8 +87,7 @@ transformed box.
   (`door_state_fraction_toggle_and_initial_angle`); a sliding leaf moves along its local X
   (`sliding_leaf_translates_along_its_local_x`); a flattened mesh tags every triangle with its
   owner (`flatten_bakes_instances_with_owners_and_owned_cuts_tag_the_leaf`); an instance record
-  round-trips through camelCase JSON (`instances_json_round_trips_camel_case` in
-  `tests/instances_tests.rs`).
+  round-trips through camelCase JSON.
 
 ## Related documentation
 

@@ -60,7 +60,6 @@ installed through Steam, and the Workbench commands need Arma Reforger Tools.
 
 ```bash
 cargo xtask mod compile               # compiles the framework's game scripts headless; exit 0 when clean
-cargo xtask verify enfusion-comments  # the Enfusion comment card over the pinned mod Scripts roots; exit 0 when clean
 cargo xtask mod world-boot            # boots the development mission header headless; exit 0 PASS
 cargo xtask mod dev-bootstrap         # opens Workbench on tbd-export with the MCP bridge; exit 0 once wb_connect answers
 cargo xtask mcp smoke                 # checks the live bridge with wb_connect and wb_state
@@ -116,7 +115,7 @@ Other mod commands:
     app and offline service worker and the game server host agent are crates under `crates/`, and
     every developer tool is a crate under `tools/`.
   - The addons' scripts keep the file-length ceiling and the Enfusion comment card
-    (`cargo xtask verify file-length`, `cargo xtask verify enfusion-comments`).
+    (`cargo xtask verify file-length` reports the ceiling).
   - No addon depends on `tbd-framework`, and it carries no `Scripts/WorkbenchGame/`
     (`cargo xtask mod compile` exits 1 otherwise); no upstream reference code or upstream-only
     asset GUID enters it (`cargo xtask verify no-crf-leak`).

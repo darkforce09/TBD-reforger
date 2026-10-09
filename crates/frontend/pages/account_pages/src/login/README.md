@@ -36,8 +36,7 @@ crates/frontend/pages/account_pages/src/login/
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sign-in links of `AuthGate` in
   `crates/frontend/foundation/frontend_session/src/gates.rs`, of the top bar in
   `crates/frontend/shell/frontend_application/src/shell/top_nav.rs` and of the sign-in callback's failure
-  view; the DOM oracle's `login` capture in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
+  view.
 - Rules: the flow starts with a full-page navigation, never a request, since it continues off-site;
   the path stays reachable signed out and stays named in the frame's `classify_frame`
   (`classify_frame_kinds` in `crates/frontend/shell/frontend_application/src/shell/tests/layout.rs`).

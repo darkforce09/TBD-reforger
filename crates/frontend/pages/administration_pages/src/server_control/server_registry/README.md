@@ -58,15 +58,14 @@ browser build only; the views that run them exist in that build only.
   modpack list of the community content domain.
 - Used by: `page.rs` and `server_cards.rs` in
   `crates/frontend/pages/administration_pages/src/server_control/`, which build the registry,
-  render the sheet, and open it from "Add server" and the card's "Edit"; `server_control_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`.
+  render the sheet, and open it from "Add server" and the card's "Edit".
 - Rules: a registration or change the API would refuse is never sent
   (`names_are_trimmed_and_required`, `addresses_are_checked_as_the_backend_checks_them`,
   `game_ports_are_bounded_as_the_backend_bounds_them`); the form sends the captured registration
   (`a_filled_form_sends_the_captured_registration`) and a change names only what differs
   (`a_change_names_only_what_differs`); an answered row takes the place of its own
-  (`answered_rows_take_their_place`); the writes go through the typed endpoints
-  (`writes_go_through_the_typed_endpoints`), all in `tests/server_registry.rs`.
+  (`answered_rows_take_their_place`), all in `tests/server_registry.rs`; the writes go through the
+  typed endpoints.
 
 ## Related documentation
 

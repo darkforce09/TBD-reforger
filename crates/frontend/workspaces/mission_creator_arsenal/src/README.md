@@ -84,17 +84,14 @@ more than ten slots, through the bridge's `confirm_bulk_n_step`.
   - in `crates/frontend/workspaces/mission_creator_workspace/src/`: `ui/inspector/attributes_modal.rs` (the
     Attributes dialog mounts `ArsenalTab`) and the page tests under `tests/`;
   - `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/arsenal.rs`, which drives the
-    tab in a headless browser and clicks the compatibility panel's buttons by `data-value`;
-  - `tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`, which scans
-    `loadout_commands.rs`.
+    tab in a headless browser and clicks the compatibility panel's buttons by `data-value`.
 - Rules:
   - a pick reaches the document only through `loadout_commands` and the map engine's hosted
     commands, and the history tail runs only on an acknowledged write;
   - `doll.rs` and `loadout_commands.rs` are `#[cfg(target_arch = "wasm32")]` on their `pub mod`
     lines, and `loadout` stays free of `web_sys`, so the native tests cover it;
   - a panel renders and reports; a cargo edit commits in its own handler;
-  - `loadout_commands.rs` must keep its path and never call `ensure_default_squad`
-    (`cargo xtask verify editor-orbat-coherency`).
+  - `loadout_commands.rs` never calls `ensure_default_squad`.
 
 ## Related documentation
 

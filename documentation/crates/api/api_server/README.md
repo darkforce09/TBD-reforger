@@ -12,7 +12,7 @@ Developers and AI agents read it before changing the API or deploying it.
 
 ```text
 documentation/crates/api/api_server/
-├── api_overview.md           the map of the API: boot, request path, callers, routes by domain, crate map, state, failpoints, ids, open work
+├── api_overview.md           the map of the API: boot, request path, callers, routes by domain, crate map, state, ids, open work
 ├── decisions.md              the cross-domain design decisions, dated, with their consequences
 ├── environment_variables.md  every variable the API reads: default, requirement, failure, reader
 └── verification_evidence/    the acceptance register, the program records and the design notes

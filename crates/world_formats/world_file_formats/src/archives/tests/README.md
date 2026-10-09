@@ -1,7 +1,6 @@
 # Archive tests
 
-Unit tests of the rkyv archives: how `BinaryError` renders, that every archive type
-round-trips byte for byte and refuses corrupted bytes and the bytes of another archive type, and
+Unit tests of the rkyv archives: that every archive type round-trips byte for byte and refuses corrupted bytes and the bytes of another archive type, and
 that the identifier types leave every archive's bytes those of its bare primitive fields.
 
 ## Contents
@@ -18,7 +17,7 @@ crates/world_formats/world_file_formats/src/archives/tests/
 
 - Depends on: `crate::archives` (the archive types and `codec`), `crate::containers`
   (`TbdsHeader` and the `ContainerHeader` trait) for the satellite framing case, and `crate::ids`.
-- Used by: `cargo test -p world_file_formats`; `codec_tests.rs` is mounted from `../codec.rs`,
-  the round-trip and wire identity files from `../mod.rs`, each with a `#[path]` attribute.
+- Used by: `cargo test -p world_file_formats`; the round-trip and wire identity files are mounted
+  from `../mod.rs`, each with a `#[path]` attribute.
 - Rules: the tests build their archives in memory and need no asset; a round trip must
   re-serialise to the same bytes, not only to an equal value.

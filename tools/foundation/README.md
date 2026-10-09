@@ -45,10 +45,7 @@ xtask tests ──▶ tool_test_support ──▶ repository_root
 - Depends on: external crates (`regex`, `libc`, `thiserror`), the checkout-root finder
   `repository_root`, and within this folder on lower tiers alone.
 - Used by: `xtask` (every crate, `tool_test_support` from its tests only); the ticket crates in `tools/tickets/`
-  and `ticketboard_desktop` (`repository_layout`); the `api_server` package's `engineering_laws` tests
-  (`verification_core` and `repository_laws`, as dev-dependencies).
+  and `ticketboard_desktop` (`repository_layout`).
 - Rules: each crate declares `category = "tools/foundation"` and its tier
   (`cargo xtask verify crate-tiers`), keeps the crate anatomy (`cargo xtask verify crate-anatomy`),
-  and depends only on lower `tools/foundation` crates and `repository_root`
-  (`foundation_crates_depend_only_on_lower_foundation_crates` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`).
+  and depends only on lower `tools/foundation` crates and `repository_root`.

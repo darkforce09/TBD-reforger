@@ -36,5 +36,4 @@ exists, and emits `MetricsEvent::SelectId`. An elapsed time or last finish that 
 - Used by: `metrics_ui` in `tools/tickets/ticketboard_desktop/src/application/feature_views.rs`, which calls
   `dashboard::metrics_ui` and turns the events into actions.
 - Rules: the measured and estimated panels never share a table, a strip or a total; no other
-  feature imports this module (`dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`).
+  feature imports this module.

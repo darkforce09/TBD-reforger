@@ -61,4 +61,4 @@ as text.
   content URL policy accepts exactly what the contract patterns accept
   (`agrees_with_the_contract_patterns_on_every_character_position` in
   `tests/content_url_policy.rs`), so a pattern change and a policy change land together;
-  announcement bodies are never sanitized (`crates/api/api_server/tests/cms_announcement_body.rs`).
+  announcement bodies are never sanitized (`crates/api/api_server/tests/community_content/cms_announcement_body.rs`).

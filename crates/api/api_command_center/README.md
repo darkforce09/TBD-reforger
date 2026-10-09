@@ -65,9 +65,8 @@ API's `LEADERBOARD_REFRESH_INTERVAL_SECS`
   suites call the leaderboard handler. Over HTTP: the dashboard in
   `crates/frontend/pages/command_center_pages/src/dashboard/` and the leaderboards in
   `crates/frontend/pages/operations_pages/src/leaderboards/`.
-- Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
-  imports against the domain graph.
+- Rules: the API crate rules of [crates/api](/crates/api/README.md); its route table, its handlers
+  and its imports follow the domain graph.
 
 ## Related documentation
 

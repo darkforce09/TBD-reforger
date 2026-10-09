@@ -47,8 +47,8 @@ resolver test resolves them alone.
   an optional base, `components`, `SlotBoneMappings`, anonymous child lists, `$grp` groups,
   `Hierarchy` `PivotID`, `coords`, `angles` and `scale`, and door components.
 - Adding a file: put it in the subfolder of its kind, reference it by `"{GUID}Prefabs/<kind>/<name>.et"`
-  from the prefab that uses it, and run `cargo test -p developer_tools blueprint::prefab` and
-  `cargo test -p developer_tools blueprint::batch`.
+  from the prefab that uses it, and run `cargo test -p blueprint_compiler prefab_templates` and
+  `cargo test -p blueprint_compiler batch_processing`.
 
 ## Producers and consumers
 

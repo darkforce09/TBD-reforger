@@ -43,5 +43,4 @@ never enters the flight parameters, because the flight model's drag is isotropic
   and re-encoded (`sample_catalog_conforms_to_the_schema`,
   `re_encoded_catalog_conforms_to_the_schema_and_round_trips`); decode and schema refuse the same
   unknown fields, missing fields and enum values; each lookup refusal is typed and ordered; the
-  side air-drag scale leaves the flight parameters unchanged
-  (`side_air_drag_scale_never_enters_the_flight_parameters`).
+  side air-drag scale leaves the flight parameters unchanged.

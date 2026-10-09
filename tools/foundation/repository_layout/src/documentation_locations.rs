@@ -10,7 +10,7 @@
 //! [`crate::documentation`].
 //! **Signals & state:** none; constants.
 //! **Invariants:** every item is classified as a location a checkout holds or as an exemption with
-//! its reason (`tests/command_locations_tests.rs`); the areas lie under
+//! its reason; the areas lie under
 //! [`crate::documentation::DOCUMENTATION_ROOT`].
 
 /// A one-line marker an operator drops in while the factory packs a wave, so the wave gate
@@ -75,9 +75,7 @@ pub const PROJECT_INSTRUCTIONS: &str = "CLAUDE.md";
 /// The top-level folders the repository retired, each with where its contents live now: `docs`,
 /// whose documents live under [`crate::documentation::DOCUMENTATION_ROOT`], and `apps`, whose
 /// Enfusion mod lives under [`crate::workspace_folders::ENFUSION_MOD_DIR`] and whose applications
-/// are crates. None may exist: `cargo xtask verify markdown-placement` fails while one holds a
-/// tracked file, and the README and code-tree rules leave them to that verdict. `cargo xtask
-/// verify link-check` reads a backticked path under one as a repository path whether or not the
+/// are crates. None may exist. `cargo xtask verify link-check` reads a backticked path under one as a repository path whether or not the
 /// folder still holds files, so a live document that names a retired tree breaks.
 pub const RETIRED_TOP_LEVEL_FOLDERS: &[(&str, &str)] = &[
     ("docs", "every document lives under documentation/"),

@@ -40,8 +40,7 @@ SIGINT / SIGTERM ─▶ bin/api.rs begins process_shutdown ─▶ axum::serve st
 - Depends on: `tokio::sync::watch`.
 - Used by: `crates/api/api_server/src/bin/api_server.rs`, which begins `process_shutdown`;
   `api_http_layer::middleware::authorized_event_stream`, which waits on it for the audit log feed of
-  `api_administration` and the server status stream of `api_server_infrastructure`;
-  `crates/api/api_server/tests/audit_replay_shutdown.rs`, which begins it in its own process.
+  `api_administration` and the server status stream of `api_server_infrastructure`.
 - Rules: only the `api-server` binary begins `process_shutdown`; the library's unit tests race signals of
   their own, because a begun process shutdown ends every event stream opened afterwards in the same
-  process, which is also why `tests/audit_replay_shutdown.rs` is a binary with one case.
+  process.

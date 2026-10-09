@@ -3,12 +3,9 @@
 //! **Role:** declares every route the app answers ([`ROUTES`]: path, component name, layout flags
 //! and `auth` tier) and the readers over it: [`breadcrumb`] for the top bar, [`full_bleed`] and
 //! [`chromeless`] for the frame, [`role_may_enter`] and [`auth_denial_redirect`] for the route
-//! guard. Paths use the React shape (`/events/:id`) so the table extracted by the S-routes gate
-//! diffs byte-equal against
-//! `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`.
+//! guard. Paths use the React shape (`/events/:id`).
 //! **Position:** above `frontend_api_dtos` (the role ladder), below the session; read by the
-//! session's route guard, by the app shell's frame and top bar, and by the route drift gate, which
-//! parses the [`ROUTES`] table from this file's source text. The render form of the table,
+//! session's route guard and by the app shell's frame and top bar. The render form of the table,
 //! binding each path to its component, is the app's `app_routes.rs`.
 //! **Signals & state:** none; a static table and pure functions.
 //! **Invariants:** each route's `auth` tier is enforced client-side after mount, since the server's
@@ -20,14 +17,11 @@
 use frontend_api_dtos::role::{Role, has_min_role_authed};
 
 /// One route. `auth` is the ProtectedRoute tier ("none" | "mission_maker" | "admin"); `full_bleed`
-/// / `chromeless` are the route-handle layout flags. Read by the route guard and the frame; the
-/// S-routes extractor reads the table too.
+/// / `chromeless` are the route-handle layout flags. Read by the route guard and the frame.
 pub struct RouteDef {
     /// The path in the React shape, `:param` segments matching any value (`/events/:id`).
     pub path: &'static str,
-    /// The name of the component `app_routes.rs` renders for the path. The route drift extractor
-    /// (`tools/browser_testing/browser_gate_suites/src/route_drift.rs`) reads it from this source
-    /// text, and the route tests read it.
+    /// The name of the component `app_routes.rs` renders for the path; the route tests read it.
     pub component: &'static str,
     /// True when the content area fills the viewport and does not scroll.
     pub full_bleed: bool,

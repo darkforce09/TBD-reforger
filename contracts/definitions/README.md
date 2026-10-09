@@ -28,7 +28,7 @@ A schema reaches code in one of three ways:
   `crates/contracts/contract_schema_types/src/generated/`, under the module of the API domain that
   serves or reads it. `cargo xtask ci verify-codegen-fresh` re-renders them in memory
   and fails on any missing, changed or stray file; it runs in `ci-local-schema` and in the
-  `contracts.yml` workflow. `loadout-export.schema.json` stays out of codegen, because its
+  `schema` job of the `ci.yml` workflow. `loadout-export.schema.json` stays out of codegen, because its
   versioned root `oneOf` does not survive typify; its model is hand-written in
   `crates/api/api_missions/src/contract/loadout_projection.rs`.
 - **Embedded validators.** Code embeds a schema with `include_str!` and validates at runtime: the
@@ -46,10 +46,6 @@ A schema reaches code in one of three ways:
   export generation and catalog SHA-256; the developer tools' map verifications read the terrain, label and geometry schemas; and
   the API's contract suites validate live responses, request bodies and the frontend's captured
   API goldens (`crates/api/api_server/tests/contract_support/mod.rs`).
-
-`cargo xtask schema citations` (the `verify-citations` CI task) resolves every
-`@contract <schema>#<pointer>` tag in `.c`, `.rs` and the other code files under `crates/`,
-`mod/` and `tools/` against these files, so a renamed schema or definition fails where code still cites it.
 
 | Contract | Schemas | Read by |
 |---|---|---|
@@ -145,10 +141,10 @@ other map-object schemas, the prefab classification rules and the glyph keys all
 
 - Depends on: nothing; the schemas are the source the code follows.
 - Used by: the API, the Mission Creator, the map engine's tests, the mod, the game server host agent,
-  the developer tools and the xtask gates, as listed above; the `schema.yml` and `contracts.yml`
-  workflows run on every change under `contracts/`.
+  the developer tools and the xtask gates, as listed above; the `schema` job of the
+  `ci.yml` workflow runs on every push and pull request to `main`.
 - Rules: generated types match their schemas byte for byte (`cargo xtask ci verify-codegen-fresh`);
-  every `@contract` citation resolves (`cargo xtask schema citations`); every fixture, catalogue
+  every `@contract` citation resolves; every fixture, catalogue
   and committed manifest validates (`cargo xtask schema validate`); every closed enum lives in
   `map-object-enums.schema.json` (`cargo xtask schema map-object-enums`); a published mission
   artifact is validated once, when it is compiled, and its stored bytes are never reinterpreted

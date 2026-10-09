@@ -74,7 +74,7 @@ leaders and the VIP rule reference) cannot be passed where its derived wire id (
    (`crates/mission/mission_compiler/src/authoring.rs`); without them the compile drops
    the block without a word, which `every_authored_block_key_reaches_the_wire` catches.
 4. A round trip through the payload compiler in
-   `crates/mission/mission_payload/src/tests/extension_round_trips/`.
+   `crates/mission/mission_payload/src/tests/extension_round_trips.rs`.
 
 The copy onto the payload and the carrier need no change; the tests that pin the list at seven
 rows change with it.

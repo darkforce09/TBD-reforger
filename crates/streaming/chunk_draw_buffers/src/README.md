@@ -106,8 +106,7 @@ and the known-empty chunks. The world loader merges it into the page's asset sta
     switch keeps its hysteresis (`class_r_heatmap_hysteresis`) and no zoom step leaves the forest
     blank (`property_never_blank_zoom_ladder`), all in
     `crates/streaming/chunk_draw_buffers/src/tests/residency_lifecycle/cases_1.rs`;
-  - under budget every visible tree packs a glyph (`tree_glyphs_pack_from_real_everon_data` in
-    `crates/streaming/chunk_draw_buffers/src/tests/everon_glyphs_and_strips/cases_1.rs`);
+  - under budget every visible tree packs a glyph;
   - `strips_visible` follows the toggles and the zoom only, never the buffer contents, so an empty
     strip buffer mid-hydration uploads as visible instead of blanking the lane;
   - `stats_json` is written by hand with `format!`, so it must stay valid JSON and keep its key

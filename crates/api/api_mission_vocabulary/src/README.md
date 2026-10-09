@@ -27,6 +27,6 @@ refusing any other spelling with an `Error` that carries the string as given.
 - Depends on: serde, sqlx and thiserror; no other API crate.
 - Used by: `api_missions` (the mission row and its validation), `api_match_telemetry` (the match record
   and its ingest parsing), `api_operations` (the event hub) and `api_server_infrastructure` (server
-  intel); the integration test `crates/api/api_server/tests/models_serde.rs`.
+  intel); the integration test `crates/api/api_server/tests/smoke/models_serde.rs`.
 - Rules: an enum moves here only when a domain other than `api_missions` names it; each enum and its
   Postgres enum in `crates/api/api_database/migrations/` change together.

@@ -75,12 +75,7 @@ binds a key listens on the window.
   - the top strip in `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/`, for the
     controls hint;
   - the headless editor smoke tests in `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/`,
-    which find the Mission Settings and ORBAT Manager dialogs by their headings;
-  - `cargo xtask verify editor-orbat-coherency`
-    (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which scans
-    `orbat_manager.rs` and every source file in `orbat_manager/` for banned interface text;
-  - the test `orbat_manager_overlay_derives_z_from_the_modal_stack` in
-    `crates/frontend/foundation/frontend_ui/src/tests/ui.rs`, which reads `orbat_manager/dialog.rs`.
+    which find the Mission Settings and ORBAT Manager dialogs by their headings.
 - Rules: a dialog stacked over another answers Escape only while topmost; every key a
   window-level editor listener binds has a catalog row.
 

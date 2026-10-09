@@ -28,12 +28,10 @@ TOKENS_PER_LOC = 150
 
 ## Behaviour
 
-### The constant and its pin
+### The constant
 
 The Rust constant is the value the estimator and `ticket check` use. This document quotes it
-verbatim, and `factor_constant_is_pinned_in_the_doc`
-(`tools/tickets/ticket_metrics/src/estimates/tests/estimate_provenance_tests.rs`) fails when the
-two differ, or when this document stops naming the three excluded paths below. `ticket check`
+verbatim and names the three excluded paths below. `ticket check`
 refuses any `.ai/tickets/estimates/<id>.json` whose `factor` differs from the constant, with a
 message that names this document: recalibrating is regenerating, never hand-editing a file.
 
@@ -93,7 +91,7 @@ count.
   (idea, no plan): the ticketboard's copy of the estimate validation gains the factor rule, or
   gives way to the `ticket_metrics` one.
 - [T-1140 — Remove ticket_engine duplicate id helpers and test-only public functions](/.ai/tickets/T-1140.toml)
-  (idea, no plan): `run_estimates`, the whole-registry writing pass that only tests call, stops
+  (idea, no plan): `run_estimates`, the whole-registry writing pass that nothing calls, stops
   being public.
 
 ## Decisions

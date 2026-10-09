@@ -87,9 +87,8 @@ command strip.
   [Eden gap analysis](/documentation/crates/frontend/workspaces/mission_creator_workspace/eden_editor_reference/eden_gap_analysis.md),
   which pairs its rows with Eden's by ID; the [roadmap](/documentation/crates/frontend/workspaces/mission_creator_workspace/mission_creator_roadmap.md)
   and the [decisions log](/documentation/crates/frontend/workspaces/mission_creator_workspace/decisions.md).
-- Rules: one area per file, each within 500 lines (`cargo xtask verify markdown-placement`);
-  every file here has a Contents line (`cargo xtask verify readme-coverage`); an ID is never
-  reused or renumbered; a status is read from the committed code, never from a ticket.
+- Rules: one area per file, each within 500 lines; every file here has a Contents line; an ID is
+  never reused or renumbered; a status is read from the committed code, never from a ticket.
 
 ## Related documentation
 

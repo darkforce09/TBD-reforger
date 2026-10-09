@@ -66,8 +66,7 @@ and exits 1.
   `thiserror`; `ssh` (or `sshpass`) and
   curl here, and bash, systemd user units, docker, curl and steamcmd on the host.
 - Used by: `TopCmd::Staging` in `tools/xtask/src/cli/`; the staging verification runbooks; the
-  `staging_harness` check of the API acceptance register
-  (`cargo test -p staging_procedures --locked`).
+  `staging_harness` check of the API acceptance register.
 - Rules: tier 6 of `tools/commands` (`cargo xtask verify crate-tiers`); no tokio, axum or reqwest
   in its dependency tree (the load generator is a subprocess); no secret enters an argument
   vector, a script, the journal or the receipt (the ssh password travels in `SSHPASS`, the

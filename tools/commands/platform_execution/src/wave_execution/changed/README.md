@@ -52,8 +52,7 @@ The wave gate passes `<base>..HEAD` from `super::base`, because `main...HEAD` is
 - Rules: the wasm scope is derived, never hard-coded, and always holds the frontend itself; a
   manifest that cannot be read adds nothing to it, and the gate's `cargo check` step fails on
   such a workspace first; the frontend scope holds the frontend's include inputs and not the
-  API's (`the_frontends_include_str_inputs_are_in_scope_and_the_apis_are_not`); the tests are in
-  `tools/commands/platform_execution/src/wave_execution/tests/changed/tests.rs`.
+  API's.
 
 ## Related documentation
 

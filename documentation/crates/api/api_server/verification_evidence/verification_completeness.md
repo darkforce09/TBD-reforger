@@ -168,7 +168,7 @@ The `contract_parity_goldens` binary replays the frontend goldens in
 The seeded API reproduces every golden byte for byte, except at the fields where a write answers
 with a value the server generates per request: an id, a secret, or a time stamped at the request.
 Each such field is a row of the normalisation table below (route, field, reason), committed as
-`crates/api/api_server/tests/contract_parity_support/normalised_fields.rs`. At such a field the
+`crates/api/api_server/tests/contract_parity/contract_parity_support/normalised_fields.rs`. At such a field the
 live value must exist, be a string and match its kind's format, and the golden stores the kind's
 fixed placeholder; every other byte compares exactly. The index case fails on a row whose golden
 does not hold that placeholder at that field (a dead or unknown row), and on a placeholder a
@@ -476,7 +476,7 @@ The work is accepted when every gate below passes and its output is recorded in 
 - `cargo clippy -p api_server --all-targets -- -D warnings` (failpoints on) and
   `cargo clippy -p api_server --lib --bins -- -D warnings` (failpoints off).
 - The frontend `r_api` tests, `cargo xtask verify api-readiness`, `cargo xtask ci ci-local` (the
-  `repository_quality` replay) and `cargo xtask ci verify-documentation`.
+  `repository_quality` replay) and `cargo xtask verify link-check`.
 
 A new suite runs twice before it is accepted, so a flaky case shows. Every new check carries a
 perturbation proof, recorded in the checkpoint: a deliberate defect in the code under test, the

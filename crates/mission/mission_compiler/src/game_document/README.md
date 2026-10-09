@@ -96,7 +96,7 @@ authored editor triggers), and the [API](/documentation/glossary/a_to_f.md#api) 
   `tests/cases_3.rs`); `SLOT_RANKS`, `SLOT_STANCES` and `VEHICLE_SEAT_ROLES` equal the schema's
   enums (`the_identity_enums_are_the_schema_s_own`, `the_vehicle_seat_roles_are_the_schema_s_own`);
   findings never move the bytes and are never debug-gated, and substitutions never reach the wire
-  (`a_diagnostic_is_not_a_refusal_and_does_not_move_the_bytes`, `diagnostics_are_never_debug_gated`,
+  (`a_diagnostic_is_not_a_refusal_and_does_not_move_the_bytes`,
   `substitutions_never_reach_the_compiled_wire`).
 
 ## Related documentation

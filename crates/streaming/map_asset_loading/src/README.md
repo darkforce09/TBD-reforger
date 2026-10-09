@@ -87,4 +87,4 @@ session.
 - Used by: `map_streaming_host`; the debug world line-of-sight bench in
   `crates/frontend/workspaces/debug_benches/src/world_los/`.
 - Rules: the chunk, prefab and road lanes and the Everon census are pinned in the crates; the
-  mesh composition's tests are in `tests/`, the live budget's in `live_memory_budget/tests/`.
+  mesh composition's tests are in `tests/`.

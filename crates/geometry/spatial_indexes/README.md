@@ -64,8 +64,7 @@ scenes `Scene`, `cube` and `concat`) for the tests of other crates and is enable
   whose BVH emitters in `tools/map_assets/blueprint_compiler/src/occlusion_sidecars/` write the sidecars.
 - Rules: geometry category, tier 1 (`cargo xtask verify crate-tiers`); no map, GPU or browser
   concept; the sidecar format and the triangle tree's build are deterministic, so the committed
-  sidecars stay byte-identical (`double_emit_is_byte_identical`, and the developer tools'
-  `farmhouse_bvh_sidecar_parity_is_pinned`).
+  sidecars stay byte-identical (`double_emit_is_byte_identical`).
 
 ## Related documentation
 

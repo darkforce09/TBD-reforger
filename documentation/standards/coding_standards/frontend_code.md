@@ -29,8 +29,7 @@ states its Rust form and whether anything checks it. Where the app's files go is
   `crates/frontend/foundation/frontend_api_dtos/src/tests/` hold each DTO to an answer captured from the
   API: re-serialising reproduces the capture byte for byte, and the keys no field reads are
   exactly the ones the test lists. Gate: CI-BLOCK, `cargo test -p frontend_api_dtos` in the
-  `frontend` job. The `@contract` citation gate (`cargo xtask ci verify-citations`) prints
-  that its TS-6 slot is retired, because the app has no separate export-tag surface; the
+  `frontend` job. The
   [DTO README](/crates/frontend/foundation/frontend_api_dtos/src/README.md) describes the goldens.
 - **TS-5 (Readability) — Every exported contract item carries a doc comment.** Rust form: the
   `///` rules of the

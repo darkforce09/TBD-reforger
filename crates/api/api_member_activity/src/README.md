@@ -52,5 +52,5 @@ crates/api/api_member_activity/src/
   takes it last, before its snapshot, so no refresher publishes an older snapshot over a newer
   commit; the two counters come from one statement, and attendance counts only decided
   observations; no handler writes those columns itself (`the_sql_lives_only_in_the_service` in
-  `crates/api/api_server/tests/user_stats_service.rs`); producers of re-evaluation requests never take event
+  `crates/api/api_server/tests/telemetry_and_statistics/user_stats_service.rs`); producers of re-evaluation requests never take event
   locks.

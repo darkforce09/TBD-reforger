@@ -112,8 +112,7 @@ stores outlive it.
     `window.__missionPersist` and `window.__editorCommands`.
 - Rules:
   - while review mode is open nothing is written: no draft, no marker, no election, no version, no
-    row change (`the_review_boot_restores_the_reviewed_version_and_arms_nothing` and its neighbours
-    in `crates/frontend/workspaces/mission_creator_workspace/src/tests/review_mode/read_only_review.rs`);
+    row change;
   - nothing here names a module of `ui/`: the compile findings reach the validation panel only
     through the registered publisher;
   - a module that touches `web_sys` or a live document handle is `#[cfg(target_arch = "wasm32")]`,

@@ -31,13 +31,10 @@ crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/document_hos
     `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/host_state/armed_placement/map_release.rs`, the
     select tool in `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/tools/select_tool.rs` and the
     boot in `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor/canvas_mount/boot_tasks.rs`,
-    which also calls `soa_roles`;
-  - the source pins in `crates/frontend/workspaces/mission_creator_workspace/src/tests/t808_symbology_feed.rs`.
+    which also calls `soa_roles`.
 - Rules: every [slot](/documentation/glossary/n_to_z.md#slot) rebind passes the role column from
-  `soa_roles` and the heading column (`every_slot_feed_binds_role_and_heading`), and every vehicle
-  rebind, the drag preview included, takes its columns from the one id-sorted `vehicle_lane_fields`
-  (`the_vehicle_lane_columns_come_from_one_sorted_reader`), both in
-  `crates/frontend/workspaces/mission_creator_workspace/src/tests/t808_symbology_feed.rs`; the tactical lane packs
+  `soa_roles` and the heading column, and every vehicle rebind, the drag preview included, takes
+  its columns from the one id-sorted `vehicle_lane_fields`; the tactical lane packs
   the same rows the canvas picks from, with the in-flight vertex drag laid over them.
 
 ## Related documentation

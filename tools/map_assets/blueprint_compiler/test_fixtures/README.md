@@ -3,8 +3,7 @@
 Committed inputs and blessed outputs that the `blueprint_compiler` crate's unit tests, and the
 world line-of-sight tests of `map_asset_verification`, load from disk. They pin the
 building blueprint compiler and the world line-of-sight model against
-[Workbench](/documentation/glossary/n_to_z.md#workbench) recordings of the engine. The reference data
-the browser gates compare against lives in `tools/browser_testing/browser_gate_suites/fixtures/`.
+[Workbench](/documentation/glossary/n_to_z.md#workbench) recordings of the engine.
 
 ## Contents
 

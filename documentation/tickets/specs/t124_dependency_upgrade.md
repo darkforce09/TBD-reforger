@@ -31,7 +31,7 @@ Upgraded the monorepo to the newest supported versions: frontend npm (including 
 | **vitest** | 4.1.9 |
 | **gin / gorm / pgx** | 1.12 / 1.31.2 / 5.10 |
 
-CI: [`.github/workflows/contracts.yml`](/.github/workflows/contracts.yml) + [`schema.yml`](/.github/workflows/schema.yml) — Node **26**, Go **1.26**.
+CI: `.github/workflows/contracts.yml` + `schema.yml` — Node **26**, Go **1.26**.
 
 ## Verification (replay @ ship)
 

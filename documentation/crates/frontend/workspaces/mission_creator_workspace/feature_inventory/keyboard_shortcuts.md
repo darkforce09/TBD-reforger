@@ -97,8 +97,7 @@ version": it has no Escape handler, no backdrop close and no entry on the modal 
 The Help menu's "Keyboard Shortcuts (Controls Hint)" opens a floating card, "Controls — keyboard
 shortcuts", with seven groups: Selection, View, Transform & snapping, Arrange, History, Tools and
 Context menu. Its footer reads "This list is pinned against the editor's real key handlers — a
-new binding cannot ship undocumented.", and the tests in
-`crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/` hold that promise.
+new binding cannot ship undocumented."
 
 ### Known discrepancies
 
@@ -155,5 +154,4 @@ new binding cannot ship undocumented.", and the tests in
 - Chords read the physical key code: the bindings stay put on every keyboard layout.
 - Backspace hides the chrome and only Delete deletes: a stray Backspace outside a field never
   removes units.
-- The shortcut list is generated from one catalogue and pinned by a test against the handlers: a
-  binding cannot ship undocumented.
+- The shortcut list is generated from one catalogue.

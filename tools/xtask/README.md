@@ -44,7 +44,6 @@ From the repository root:
 ```bash
 cargo xtask --help                              # every command group
 cargo xtask help                                # every ci task, the mk targets and the db commands
-cargo test --locked -p xtask -- --test-threads=1  # the crate's tests, one thread
 cargo xtask db up                               # local Postgres on :5434, needed by ci-local
 cargo xtask ci ci-local                         # the CI replay: language gates, Rust, frontend, schema
 cargo xtask mk leptos-gates                     # the browser gates, run apart from ci-local
@@ -87,14 +86,12 @@ The crate has no features and reads no configuration file of its own. What it re
 - Depends on: the tool crates `tools/xtask/Cargo.toml` lists (the ticket crates, the check and
   command crates, `blueprint_compiler`, `map_asset_verification`, `world_export_pipeline`,
   `enfusion_script_index` and the
-  `tools/foundation` crates), all by workspace path; anyhow, clap and serde, and `jsonschema` in
-  its tests; at run time cargo, trunk, podman, git and the other host tools each group names. No
+  `tools/foundation` crates), all by workspace path; anyhow, clap and serde; at run time cargo, trunk, podman, git and the other host tools each group names. No
   tokio, axum, reqwest, resvg or image enters its dependency closure (rule 6 of
   `cargo xtask verify crate-tiers`).
 - Used by:
   - people and AI agents, through the alias;
-  - the workflows in `.github/workflows/` (`ci.yml`, `contracts.yml`, `editor-gates.yml`,
-    `mod-gates.yml`, `schema.yml`);
+  - the workflows in `.github/workflows/` (`ci.yml`, `editor-gates.yml`, `mod-gates.yml`);
   - the backup and drill units in `deploy/systemd/`, which run `cargo run -q -p xtask --`;
   - the PreToolUse hook in `.claude/settings.json`, which runs the built binary's `ai guard`;
   - the ticketboard desktop viewer `tools/tickets/ticketboard_desktop/`, which runs

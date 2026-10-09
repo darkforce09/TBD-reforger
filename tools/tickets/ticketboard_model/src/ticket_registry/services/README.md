@@ -35,12 +35,7 @@ banner reports those.
   up from the cwd); `std::fs`.
 - Used by: `tools/tickets/ticketboard_desktop/src/main.rs` (`positional_arg`);
   `tools/tickets/ticketboard_desktop/src/application/lifecycle.rs` and `background_events.rs` (`resolve_repo_root`,
-  `has_tickets_dir`); `tools/tickets/ticketboard_model/src/application_state/background_loading.rs` (`load_corpus`);
-  `tools/tickets/ticketboard_model/src/tests/support/mod.rs` and the ticket browser's
-  tests (the corpus types and `is_child_id`).
-- Rules: a load is all or nothing, naming the refusing file with its error verbatim
-  (`fail_closed_names_the_bad_file`, `fail_closed_on_semantic_error_too` in
-  `tests/corpus_loading.rs`); parents and children add up to the total
-  (`counts_match_the_scratch_corpus`); the command-line root wins even when it is invalid
-  (`arg_wins_even_when_invalid` in `tests/discovery.rs`); nothing here writes a ticket file; the
-  ignored test `live_corpus_loads_and_counts_sum` loads the repository's own tickets.
+  `has_tickets_dir`); `tools/tickets/ticketboard_model/src/application_state/background_loading.rs` (`load_corpus`).
+- Rules: a load is all or nothing, naming the refusing file with its error verbatim; parents and
+  children add up to the total; the command-line root wins even when it is invalid; nothing here
+  writes a ticket file.

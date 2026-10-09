@@ -2,7 +2,7 @@
 
 Unit tests of the line-of-sight tool: the ray capture and viewshed placement, the terrain and object
 verdicts and their wording, the shot and profile projection, the object wash, the wash palette and
-the texture payload, and the guard that a sight check never writes the mission document.
+the texture payload.
 
 ## Contents
 
@@ -20,7 +20,6 @@ crates/mission_editing/map_editing_tools/src/line_of_sight/tests/
 ## Boundaries
 
 - Depends on: the line-of-sight modules (each file mounted beside its module with a `#[path]`
-  attribute), `terrain_line_of_sight`, `world_line_of_sight`, the crate's `source_scrub`, and the
-  dev-dependency `terrain_relief` for the contour colours the wash palette is checked against.
+  attribute), `terrain_line_of_sight` and `world_line_of_sight`.
 - Used by: `cargo test -p map_editing_tools`.
 - Rules: every case builds its rasters and profiles in memory and needs no asset, browser or GPU.

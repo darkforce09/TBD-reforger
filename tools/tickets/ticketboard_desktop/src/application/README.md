@@ -76,9 +76,5 @@ applies them after painting.
   (`TICKETS_DIR`); the `eframe`, `egui_commonmark` and `rfd` crates.
 - Used by: `tools/tickets/ticketboard_desktop/src/main.rs`, which passes `TicketboardApp::new` to
   `eframe::run_native`.
-- Rules: no feature imports this module (the test
-  `dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`); the UI thread never waits on the disk or a
-  subprocess; tickets change only through `cargo xtask ticket` commands; `tests/rendering.rs`
-  paints every tab, the ticket details, every mutation dialog and the refusal and document states
-  headlessly without running a command.
+- Rules: no feature imports this module; the UI thread never waits on the disk or a subprocess;
+  tickets change only through `cargo xtask ticket` commands.

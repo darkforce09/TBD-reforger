@@ -62,8 +62,7 @@ Slot rows store `faction` byte for byte, because the Event Hub joins it to the a
   join-key check.
 - Used by: `crates/api/api_operations/src/handlers/event_create_update.rs` and
   `event_mission_attachment.rs`; the `staging-fixtures` host tool's
-  `tools/staging/staging_fixtures/src/load_fixture_events/`; the API test
-  `tools/staging/staging_fixtures/tests/staging_fixtures_fixture_events.rs`.
+  `tools/staging/staging_fixtures/src/load_fixture_events/`.
 - Rules: every write runs on the caller's transaction, and authority is settled by the caller or,
   for an attachment, by the `AttachmentAuthority` it passes; nothing else inserts `events` or
   `orbat_slots` rows.

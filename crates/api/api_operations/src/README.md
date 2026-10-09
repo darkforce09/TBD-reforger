@@ -143,9 +143,7 @@ pins, refuses a client solution that disagrees, and stores the server's solution
     `crates/frontend/pages/field_tools_pages/src/mortar/`, and the game runtime's roster loader
     and deployment queues in `mod/tbd-framework/Scripts/Game/TBD/Systems/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`domain_handlers_import_no_foreign_handlers` and
-  `every_domain_exports_a_route_table` in `crates/api/api_server/src/tests/architecture_rules.rs`);
-  every handler carries its `/// @route` tag (`cargo xtask verify route-tags`);
+  router merges; every handler carries its `/// @route` tag;
   the domain's generated contract types (`contract_schema_types::operations`) are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
   checks them); every reservation writer takes the one lock

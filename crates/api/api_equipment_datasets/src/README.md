@@ -64,7 +64,7 @@ progress.
 - `EquipmentDatasets` and `EquipmentDataService` (`dataset`, `status`, `current_id`,
   `progress`): for `api_state`'s `AppState`, the API's `composition`, the equipment data viewer
   handlers and the
-  `crates/api/api_server/tests/contract_parity_equipment_viewer.rs` suite.
+  `crates/api/api_server/tests/contract_parity/equipment_viewer.rs` suite.
 - `importing::generation_import::{initialize, poll}`: for the `equipment_export_watcher`
   background worker and the contract parity suite.
 - `queries::ViewerQuery` and the query functions of `queries/`, `source::manifest::safe_child`
@@ -82,7 +82,7 @@ progress.
 - Used by: `api_state`'s `AppState`, the API's `composition`, the equipment data viewer handlers of
   `api_community_content`,
   `crates/api/api_background_workers/src/equipment_export_watcher.rs`, and the integration
-  suite `crates/api/api_server/tests/contract_parity_equipment_viewer.rs`.
+  suite `crates/api/api_server/tests/contract_parity/equipment_viewer.rs`.
 - Rules: nothing is read from the Postgres pool; a generation becomes current only after every
   file matched its manifest and its index was sealed; a query answers from one pinned generation
   and never mixes two; every answer stays under `PAGE_BYTES`.

@@ -29,6 +29,4 @@ text. Clicks come back as `DocumentEvent::CloseViewer` and `DocumentEvent::OpenP
 - Used by: `viewer_pane_ui` in `tools/tickets/ticketboard_desktop/src/application/feature_views.rs`, which lends
   the state, the render cache and the repository root and turns the events into actions.
 - Rules: Back closes only the viewer column and leaves the ticket selection alone; no other
-  feature imports this module (`dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`); the loading, rendered and fallback states
-  paint headlessly in `tools/tickets/ticketboard_desktop/src/application/tests/rendering.rs`.
+  feature imports this module.

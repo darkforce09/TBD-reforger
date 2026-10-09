@@ -57,14 +57,9 @@ only when `tokens` is listed, and says so when no valid estimate file backs it.
   `tools/tickets/ticketboard_desktop/src/execution_metrics/ui/` paints the tables.
 - Rules:
   - estimated totals are the `EstimatedTokens` type and live in their own row, totals and model
-    types, so no code path adds them to a measured total without an explicit unwrap
-    (`the_law_no_code_path_combines_measured_and_estimated` in `tests/estimated.rs`);
+    types, so no code path adds them to a measured total without an explicit unwrap;
   - `validate_file` is a copy of `validate_estimate` in
     `tools/tickets/ticket_metrics/src/estimates/model.rs` plus the patterns of
-    `.ai/tickets/estimates.schema.json`, kept by hand
-    (`checker_mirror_rules_each_produce_a_named_error_row`);
-  - `ESTIMATE_GLYPH` equals the scope breadcrumb's `SCOPE_ESTIMATED_GLYPH`
-    (`estimate_glyph_matches_the_scope_glyph`);
-  - no egui type appears here (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`); the ignored test
-    `live_estimates_load_without_error_rows` reads the repository's own estimates.
+    `.ai/tickets/estimates.schema.json`, kept by hand;
+  - `ESTIMATE_GLYPH` equals the scope breadcrumb's `SCOPE_ESTIMATED_GLYPH`;
+  - no egui type appears here.

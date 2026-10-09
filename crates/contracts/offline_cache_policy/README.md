@@ -69,8 +69,7 @@ committed Everon and Arland manifests under `assets/terrains/`.
   - a gateway or server failure answers from the cached copy and a `4xx` never does
     (`gateway_and_server_failures_prefer_the_saved_copy`,
     `successes_redirects_and_refusals_are_never_masked`);
-  - `TerrainId` keeps the wire shape of a plain string
-    (`terrain_id_serialises_as_the_bare_string_in_both_directions`).
+  - `TerrainId` keeps the wire shape of a plain string.
 
 ## Related documentation
 

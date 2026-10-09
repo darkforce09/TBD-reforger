@@ -76,8 +76,8 @@ in chunks of 10,000 rows; a re-run of the same envelope changes no row.
   - the `mission_deployment_reconciler` worker in `crates/api/api_background_workers/src/`
     and the `import-item-registry` binary in `crates/api/api_server/src/bin/`;
   - the [API](/documentation/glossary/a_to_f.md#api) tests
-    `crates/api/api_server/tests/registry_compat.rs`, `crates/api/api_server/tests/models_fromrow.rs`
-    and `crates/api/api_server/tests/mission_deployment_transitions.rs`.
+    `crates/api/api_server/tests/smoke/registry_compat.rs`, `crates/api/api_server/tests/smoke/models_fromrow.rs`
+    and `crates/api/api_server/tests/missions/mission_deployment_transitions.rs`.
 - Rules: the compile refuses over-capacity cargo with the same check and wording as the save, so
   a version the save would refuse never becomes an artifact
   (`compile_with_catalog_refuses_over_capacity_like_save` in

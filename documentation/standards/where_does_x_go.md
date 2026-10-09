@@ -36,8 +36,7 @@ The API has eight domain crates under `crates/api/`: `api_administration`, `api_
 crate's `routes.rs` with `/api/v1` in front. A kernel crate depends on no domain crate, a domain
 crate depends on another only along the one-way domain graph and never imports its handlers, and
 `api_background_workers` is named only by the server binary
-`crates/api/api_server/src/bin/api_server.rs`; the tests in
-`crates/api/api_server/src/tests/architecture_rules.rs` enforce all four. The walls between the map
+`crates/api/api_server/src/bin/api_server.rs`. The walls between the map
 crates and the app are in the [crate boundary rules](/documentation/standards/crate_boundary_rules.md).
 
 ## Contracts, data and assets

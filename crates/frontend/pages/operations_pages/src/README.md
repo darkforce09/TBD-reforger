@@ -52,12 +52,9 @@ the banner of the viewer's next [deployment](/documentation/glossary/a_to_f.md#d
   (`/api/v1/leaderboards`, `/api/v1/users/{discordId}/stats`) and its `community_content` domain
   (`/api/v1/modpacks`).
 - Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs`, whose tiers and layout
-  flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares; the source pins in
-  `crates/frontend/pages/operations_pages/src/tests/source_pins.rs`.
+  flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares.
 - Rules: `event_hub_view` is the one renderer of an event and `OrbatSelector` the one slotting
-  view, so the schedule, the event hub and the ORBAT selection page cannot drift apart
-  (`schedule_briefing_empty_check_stays_trim_aligned` in `schedule/tests/schedule.rs` keeps the
-  schedule on the shared hub body).
+  view, so the schedule, the event hub and the ORBAT selection page cannot drift apart.
 
 ## Related documentation
 

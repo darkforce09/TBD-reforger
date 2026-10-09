@@ -116,9 +116,7 @@ shows its banner while the membership is stale or the profile says the viewer ma
     `frontend_ui::safe_avatar_url`.
 - Used by: `crates/frontend/shell/frontend_application/src/main.rs`, which mounts `AppLayout`; the fallback of
   `crates/frontend/shell/frontend_application/src/app_routes.rs` and the `*` row of
-  `crates/frontend/foundation/frontend_route_table/src/routes.rs`, which name `NotFoundPage`; the DOM oracle's `notfound`
-  capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`, whose captures of
-  the chromed pages hold the frame too.
+  `crates/frontend/foundation/frontend_route_table/src/routes.rs`, which name `NotFoundPage`.
 - Rules: `classify_frame` is the one place a frame is chosen, naming only `/login` and
   `/auth/callback` and reading every other layout from the route table (`classify_frame_kinds` in
   `tests/layout.rs`); `is_active` matches `/` exactly and every other link by path prefix

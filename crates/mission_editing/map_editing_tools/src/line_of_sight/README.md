@@ -81,15 +81,12 @@ the ruler's point-capture arm (`crate::ruler::should_begin_ruler`).
   - the debug building viewer (`crates/frontend/workspaces/debug_benches/src/building_viewer/geom.rs`),
     through `viewshed_texture`.
 - Rules:
-  - nothing here names the document or its mutators
-    (`the_line_of_sight_tool_never_writes_the_document` in `tests/session_local.rs` scans the
-    scrubbed source);
+  - nothing here names the document or its mutators;
   - the wash encoder emits the north row first, matching the textured shader's flipped V
     (`encoder_flips_rows_so_north_is_texture_row_zero` in `tests/wash_palette.rs`);
   - the wash rationale in `wash_palette.rs` quotes the contour colours
     `terrain_relief::contours::CONTOUR_RGBA` and `CONTOUR_SUMMIT_RGBA`, the constants the relief
-    host draws in, and the wash keeps its alpha under theirs
-    (`viewshed_rationale_cites_live_contour_rgba`);
+    host draws in, and the wash keeps its alpha under theirs;
   - every DEM walk is bounded by `everon_manifest`, whatever terrain is open.
 
 ## Related documentation

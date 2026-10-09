@@ -27,6 +27,4 @@ views reuse. The ticket-free subprocess, log and clock helpers are in
 - Depends on: `eframe::egui`.
 - Used by: the `ui` modules of every feature and `crate::application`.
 - Rules: core imports no feature module and nothing from `ticket_model`, and a feature may import
-  `core::ui` although it never imports another feature's `ui` (the test
-  `dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`).
+  `core::ui` although it never imports another feature's `ui`.

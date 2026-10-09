@@ -44,13 +44,7 @@ working.
   calls `load_lock` on the load thread; the desktop application:
   `tools/tickets/ticketboard_desktop/src/wave_plan/ui/`, the comparison view in
   `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/comparison.rs` (`colliding_pairs`, beside
-  `ticket_wave_lock::collides`), and `tools/tickets/ticketboard_desktop/src/application/tests/rendering.rs`.
+  `ticket_wave_lock::collides`).
 - Rules:
-  - reading only: nothing in the viewer writes the lock
-    (`missing_lock_is_the_did_not_run_refusal`, `unparsable_lock_refuses_with_verbatim_error` in
-    `tests/lock_file.rs`);
-  - the collision rule matches the packer's cases (`collides_mirror_cases`,
-    `colliding_pairs_lists_every_pair`); the tests pin the cases literally rather than comparing
-    with `ticket_wave_lock`;
-  - the committed lock parses (`live_lock_parses_verbatim`, which reads the repository's own
-    `.ai/tickets/wave.lock`).
+  - reading only: nothing in the viewer writes the lock;
+  - the collision rule matches the packer's cases.

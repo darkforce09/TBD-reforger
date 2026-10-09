@@ -29,10 +29,8 @@ string. The whole document, `ModMissionDocument`, sits in the game-document comp
   `WinConditionParams`, the parameters of `ModWinConditions`.
 - Used by: `mission_compiler`, which emits the rows; the API's `ModSlot` and the Mission
   Creator's and document store's zone tests name them here.
-- Rules: a compiled slot carries exactly the keys `$defs/slot` allows
-  (`a_compiled_slot_carries_exactly_these_keys` in
-  `crates/mission/mission_compiler/src/game_document/tests/cases_2.rs`); a net's frequency is
-  `freqMHz` on the wire, never `freqMhz` (`radio_plan_is_derived_from_the_orbat`).
+- Rules: a compiled slot carries exactly the keys `$defs/slot` allows; a net's frequency is
+  `freqMHz` on the wire, never `freqMhz`.
 
 ## Related documentation
 

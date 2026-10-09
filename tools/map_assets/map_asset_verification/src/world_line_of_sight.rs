@@ -20,7 +20,7 @@
 //!
 //! **Position:** called by the `cargo xtask map world-los` adapter with the checkout root; reads
 //! a terrain folder under `assets/terrains/` and an oracle file; its pinned replays in
-//! `tests/world_line_of_sight.rs` read the blueprint compiler's world-parity fixtures.
+//! `tests/world_line_of_sight_tests.rs` read the blueprint compiler's world-parity fixtures.
 //! **Signals & state:** none; each run builds its occluder afresh.
 //! **Invariants:** the occluder is the `world_line_of_sight` crate's, unmodified, so a replay
 //! measures the map's own line of sight; `--dump-misses` is the only file the command writes.

@@ -88,7 +88,7 @@ action.
 - `models`: `Server`, `ServerStatus` with its `TelemetryQueueStatus`, and the `ServerStatusRow`
   projection, read by the dashboard and the heartbeat. The domain's generated contract types
   (`contract_schema_types::server_infrastructure`) are read by the contract test
-  `crates/api/api_server/tests/game_runtime_contract.rs`. `ExecutorKind` and `FleetAction`, which
+  `crates/api/api_server/tests/contract_parity/game_runtime.rs`. `ExecutorKind` and `FleetAction`, which
   `api_match_telemetry`, `api_missions` and `api_operations` read, live in the `fleet_wire_contract` crate.
 
 ## Boundaries
@@ -115,8 +115,8 @@ action.
     pages in the page crates under `crates/frontend/pages/`, the game server host agent in
     `crates/fleet/game_server_host_agent/`, and the game runtime in `mod/tbd-framework/Scripts/Game/TBD/API/`.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`); the domain's generated contract
+  router merges; every handler
+  carries its `/// @route` tag; the domain's generated contract
   types are written by `cargo xtask ci schema-codegen` and never edited by hand; a machine acts only for its own server
   and executor kind.
 

@@ -54,11 +54,9 @@ reads `DESTROYED` or `intact <destroyed>/<required>`; the HUD glyph is `#`.
 - Used by: the lookup in `TBD_ObjectiveKindBehaviour`, through which the objectives engine reaches
   it; the objectives engine also calls `TBD_ObjectiveDestroyTargets` directly.
 - Rules: targets are re-queried every evaluation rather than cached as handles, so a deleted
-  target and a destroyed one read the same; `cargo xtask verify destroy-target-diagnostics` pins
-  the signatures of `ArmDestroyTargets` and `DiagnoseEmptyDestroyTargets` and the inert reasons in
-  `TBD_ObjectiveDestroyTargets.c`; the log and chat strings stay byte-identical.
+  target and a destroyed one read the same; the log and chat strings stay byte-identical.
 
 ## Related documentation
 
-- [Destroy-target diagnostics gate](/tools/checks/mod_script_checks/src/destroy_target_diagnostics/README.md)
-  — what the gate pins in the target search and why
+- [Objective kind behaviours](/mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/README.md)
+  — the behaviours beside this one and the rules they share

@@ -82,10 +82,9 @@ into it unchanged.
   `crates/api/api_server/tests/` that run one pass directly (`drain_due_reevaluations`,
   `expire_runtime_sessions`) or the bucket pruning.
 - Rules: only the API application's manifest depends on this crate, and in its source only
-  `crates/api/api_server/src/bin/api_server.rs` names it (`background_workers_used_only_by_the_binary` in
-  `crates/api/api_server/src/tests/architecture_rules.rs`); a worker holds no query of its own beyond
+  `crates/api/api_server/src/bin/api_server.rs` names it; a worker holds no query of its own beyond
   its loop, the work stays in the owning domain's services; `spawn_all` keeps arming the bucket
-  pruner (`crates/api/api_server/tests/durable_rate_limit.rs` checks `worker_set.rs` for it).
+  pruner (`crates/api/api_server/tests/http_infrastructure/durable_rate_limit.rs` checks `worker_set.rs` for it).
 
 ## Related documentation
 

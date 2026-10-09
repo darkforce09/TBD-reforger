@@ -57,14 +57,11 @@ executable and its argument are described in the crate README.
   `repository_layout` for the `.ai/tickets` folder name; `eframe`, `egui_commonmark`,
   `egui_extras` and `rfd`; at run time `cargo xtask ticket` and `git`, run as subprocesses.
 - Used by: nothing in the repository links it; people run the binary.
-- Rules: each held by a test in `tests/architecture_rules.rs`:
-  - the top level holds only `main.rs`, this README, `tests/` and the eight module folders, each
-    with a `mod.rs`, every folder but `application` holds only `mod.rs`, its README and `ui/`, and
-    the crate README exists (`module_roots_and_documentation_describe_the_entire_source_tree`);
+- Rules:
+  - the top level holds only `main.rs`, this README and the eight module folders, each with a
+    `mod.rs`, every folder but `application` holds only `mod.rs`, its README and `ui/`, and the
+    crate README exists;
   - `core` imports no feature and nothing from `ticket_model`; no feature imports `application`
     or `ticketboard_model::application_state`; a feature imports no other feature's `ui`,
-    `core::ui` excepted; no source declares an inline module or unit test
-    (`dependency_boundaries_and_external_test_placement_are_enforced`);
-  - a production file stays under 500 lines and a test file at or under 1000
-    (`source_files_respect_the_size_limits_without_exemptions`), which
-    `cargo xtask verify file-length` checks as well.
+    `core::ui` excepted; no source declares an inline module or unit test;
+  - a production file stays under 500 lines (`cargo xtask verify file-length` reports it).

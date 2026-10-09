@@ -53,6 +53,4 @@ execution::run ─ --selftest ─▶ world_boot_verdict::cmd_selftest + four-wea
   `mod` dispatch.
 - Rules: an environment fault exits 3 with the harness named, never 1; the equip assertion needs
   exactly four `result=ok` lines for slots 0 to 3 (`EXPECTED_EQUIP_OK` in `world_boot.rs`,
-  proven by the `--selftest` arm); the verdict tests are in
-  `tools/commands/mod_operations/src/tests/world_boot_verdict/tests.rs`, and this folder has no
-  unit tests of its own.
+  proven by the `--selftest` arm).

@@ -27,5 +27,4 @@ crates/api/api_administration/src/models/
 - Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by hand
   (`cargo xtask ci verify-codegen-fresh` checks them); every hand-written wire type carries its
   `@contract` tag (`AuditLog` → `AuditLogEntry`, `AuditStreamReady`, `AuditStreamReset`,
-  `PersonnelPage`, `PersonnelRow`, `Warning` → `personnel-actions.schema.json#/definitions/Warning`),
-  which `cargo xtask schema citations` resolves.
+  `PersonnelPage`, `PersonnelRow`, `Warning` → `personnel-actions.schema.json#/definitions/Warning`).

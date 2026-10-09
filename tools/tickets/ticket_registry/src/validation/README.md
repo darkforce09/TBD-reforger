@@ -65,11 +65,9 @@ whose text asks for `cargo xtask wave repack`, but never the missing-lock refusa
   `cargo xtask ticket check --strict` and reads its `check OK` and `ERROR:` lines
   (`tools/tickets/ticketboard_model/src/repository_status/models/check_status.rs`).
 - Rules:
-  - the committed tree passes the full check (`tip_registry_full_check_ok` in
-    `tests/schema_and_integrity_tests.rs`), and every spec and plan it names exists
-    (`live_tree_names_only_existing_spec_and_plan_files`);
-  - a check that cannot load its input reports the load error
-    (`an_unloadable_corpus_reports_the_load_error`);
+  - the committed tree passes the schema check (`tip_registry_passes_schema` in
+    `tests/schema_and_integrity_tests.rs`), and every spec and plan it names exists;
+  - a check that cannot load its input reports the load error;
   - a red check blocks every mutation (`require_check_ok_blocks_invalid_registry`);
   - both debt pins stay equal to the measured counts, in both directions
     (`debt_pin_growth_verdict`).

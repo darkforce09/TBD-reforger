@@ -107,22 +107,14 @@ build renders the failure branch.
   [administration](/documentation/glossary/a_to_f.md#administration) domain.
 - Used by: the `/admin/personnel` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Personnel Roster" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `personnel_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its
-  tests; the DOM oracle's `personnel` capture in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
-- Rules: the role note offers no website override, with no picker, no input and no role request
-  (`role_ui_explains_discord_authority_without_website_override`); a ban or a warning is never sent
-  without a trimmed reason (`ok_with_blank_is_refused_before_any_request`,
-  `whitespace_only_is_refused_too`, `a_real_reason_is_sent_trimmed`); the ban, warning and resync
-  paths are held against the API's route tables
-  (`admin_ban_and_warnings_paths_match_live_api_routes`,
-  `admin_roles_sync_path_matches_live_api_route`); a banned member is offered an unban
-  (`unban_control_deletes_ban_when_banned`), all in `tests/personnel.rs`; junk or out-of-range
-  URL values fall back to page 1 and 20 per page, and a new search or page size starts at page 1
-  (the `personnel_pagination_*` cases in `tests/roster_query.rs`); previous and next stop at the
-  ends and a page past the end falls back to page 1 (the `personnel_pagination_*` cases in
-  `tests/roster_pager.rs`).
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
+- Rules: the role note offers no website override, with no picker, no input and no role request;
+  a ban or a warning is never sent without a trimmed reason
+  (`ok_with_blank_is_refused_before_any_request`, `whitespace_only_is_refused_too`,
+  `a_real_reason_is_sent_trimmed`, in `tests/personnel.rs`); a banned member is offered an unban;
+  junk or out-of-range URL values fall back to page 1 and 20 per page, a new search or page size
+  starts at page 1, previous and next stop at the ends and a page past the end falls back to
+  page 1 (the `personnel_pagination_*` cases in `tests/roster_query.rs`).
 
 ## Related documentation
 

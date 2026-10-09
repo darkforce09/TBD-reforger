@@ -135,8 +135,7 @@ across the repository.
   writers here.
 - Rules: one entry per term, in the file of its first letter; a heading, and so its anchor, never
   changes once documents link it; every link and backticked path resolves
-  (`cargo xtask verify link-check`); each file stays within 500 lines
-  (`cargo xtask verify markdown-placement`).
+  (`cargo xtask verify link-check`); each file stays within 500 lines.
 
 ## Related documentation
 

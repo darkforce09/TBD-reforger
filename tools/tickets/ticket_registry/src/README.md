@@ -60,13 +60,8 @@ tools/tickets/ticket_registry/src/
   past-revision reads, the fossil path guard and the commit-subject mining.
 - Used by: `tools/xtask/`.
 - Rules:
-  - the operations are the only writer of ticket files, and each writes only the files it names
-    (`mutators_never_reach_the_value_writer_pin` in
-    `registry/tests/typed_projection/typed_projection_tests.rs`);
-  - the sync after a write reads the files the write produced
-    (`ship_regenerates_queue_from_post_state_reload_pin` in
-    `verbs/tests/command_mutation_tests.rs`);
-  - the committed corpus pins load with both tables populated (`tests/corpus_pins_tests.rs`);
+  - the operations are the only writer of ticket files, and each writes only the files it names;
+  - the sync after a write reads the files the write produced;
   - `lib.rs` holds only the module header, `mod` lines and re-exports
     (`cargo xtask verify crate-anatomy`).
 

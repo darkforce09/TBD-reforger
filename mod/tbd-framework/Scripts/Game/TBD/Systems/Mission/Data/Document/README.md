@@ -57,5 +57,5 @@ array. A `ref array<>` field is null when its key is absent.
   and admin services under `mod/tbd-framework/Scripts/Game/TBD/Session/`; the AI, audio,
   marker and radio systems; `TBD_DeclaredFactions` and `TBD_ResultsReporter`.
 - Rules: field names are the JSON keys and never change without the schema; every class carries
-  its `@contract` tag (`cargo xtask schema citations`); presence is tested on content, never on a
+  its `@contract` tag; presence is tested on content, never on a
   null nested object; sources stay ASCII and `cargo xtask mod compile` checks that they compile.

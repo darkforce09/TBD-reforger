@@ -2,14 +2,14 @@
 //! the whitelist ever reaches ORDER BY. Both are pure string pins.
 //!
 //! The DB-observable half — LIMIT/OFFSET paging over tied scores yielding every row exactly once,
-//! in the one order the whitelist specifies — is `tests/leaderboards_paging.rs`. It belongs there
+//! in the one order the whitelist specifies — is `tests/smoke/leaderboards_paging.rs`. It belongs there
 //! because it needs a provisioned database, and only `tests/common::require_test_database_url`
 //! may read `TEST_DATABASE_URL`; `tests/common` is not reachable from a lib test.
 
 use super::*;
 
 /// Every category `order_clause` whitelists. Keep in step with its `match` — this pin checks
-/// every arm's shape and `tests/leaderboards_paging.rs` pages every one of them.
+/// every arm's shape and `tests/smoke/leaderboards_paging.rs` pages every one of them.
 const CATEGORIES: [&str; 5] = [
     "kd",
     "command_win",

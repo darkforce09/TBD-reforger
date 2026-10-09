@@ -58,12 +58,9 @@ their tests run; the whole `wiki` module is one of them.
   `/api/v1/modpacks` routes of the community content domain.
 - Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Doctrine & Info" section in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `wiki_source` and
-  `modpacks_source` in `crates/frontend/pages/doctrine_pages/src/tests/source_pins.rs`.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
 - Rules: every write control is gated by `has_min_role_authed`, never by the browse-mode
-  `has_min_role` (`admin_affordance_uses_authed_reactive_role` in `modpacks/tests/modpacks.rs` and
-  `wiki/tests/wiki.rs`, `the_write_actions_follow_the_signed_in_administrator_role` in
-  `vehicles/tests/page.rs`); each page fetches its list once, and both of its panes read that list.
+  `has_min_role`; each page fetches its list once, and both of its panes read that list.
 
 ## Related documentation
 

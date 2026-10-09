@@ -61,9 +61,6 @@ analysis, which the `git status` chip does.
   `background_events.rs`, `feature_views.rs`).
 - Rules:
   - the viewer never reimplements the check: it runs the command and reports its exit, and only
-    exit 0 is green (`tools/tickets/ticketboard_model/src/repository_status/models/tests/check_status.rs`);
-  - a ticket command's own writes never start a strict check
-    (`tools/tickets/ticketboard_model/src/repository_status/services/tests/file_watch.rs`);
-  - nothing here names egui
-    (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+    exit 0 is green;
+  - a ticket command's own writes never start a strict check;
+  - nothing here names egui.

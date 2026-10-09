@@ -10,7 +10,7 @@ overview with its Edit Armory dialog, and the New Mission dialog that hands an a
 ```text
 crates/frontend/pages/mission_hub_pages/
 ├── Cargo.toml  the package: the foundation crates, `mission_review_record`, `mission_payload`, `http_url_guard`, `leptos`, layout tier 11
-└── src/        the library, the overview and the create dialog, with their tests and source pins
+└── src/        the library, the overview and the create dialog, with their tests
 ```
 
 ## How it works

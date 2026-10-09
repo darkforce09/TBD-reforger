@@ -21,7 +21,7 @@ crates/frontend/foundation/frontend_session/src/
 ├── session_refresh.rs      the per-tab refresh cell, the cross-tab lock, peer rotation, cold start
 ├── session_restore.rs      the cold-start restore every request waits for
 ├── store.rs                `AuthStore`: the session as signals, its mutations and role questions
-└── tests/                  unit tests: store, gates, guard, persistence, sign-out hooks, source pins
+└── tests/                  unit tests: store, gates, guard, persistence, sign-out hooks
 ```
 
 ## How it works
@@ -83,9 +83,7 @@ poll never remounts the page under it.
   `crates/frontend/` that reads the session, gates on a role or wraps its body in a content
   gate.
 - Rules: the access token is never persisted (`persist_blob_shape_matches_tbd_auth` in
-  `tests/auth.rs`); the refresh request is reachable only inside the cross-tab lock
-  (`the_refresh_post_is_reachable_only_from_inside_the_cross_tab_lock` in
-  `tests/session_refresh.rs`); a profile answer never crosses an account switch
+  `tests/auth.rs`); the refresh request is reachable only inside the cross-tab lock; a profile answer never crosses an account switch
   (`profile_response_cannot_cross_an_account_switch` in `tests/store.rs`); a sign-out hook
   receives the departing id and a blank id runs none
   (`a_registered_hook_receives_the_departing_account_id` and `a_blank_departing_id_runs_no_hook`

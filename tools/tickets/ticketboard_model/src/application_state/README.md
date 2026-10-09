@@ -20,6 +20,4 @@ tools/tickets/ticketboard_model/src/application_state/
 
 - Depends on: every feature module of the crate.
 - Used by: `tools/tickets/ticketboard_desktop/src/application/`.
-- Rules: no feature imports this module
-  (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+- Rules: no feature imports this module.

@@ -35,7 +35,7 @@ library build holds the pure half and the native tests cover it.
 Run from the repository root:
 
 ```bash
-cargo test -p mission_creator_workspace   # the panels' pure models and the editor's source pins
+cargo test -p mission_creator_workspace   # the panels' pure models and the editor's pure helpers
 ```
 
 ## Configuration

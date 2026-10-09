@@ -66,9 +66,7 @@ paged roster, bans, warnings, the role resync, the audit trail and its live stre
   the deployments panel reuse; over HTTP, the five API domains above.
 - Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs`, whose tiers, layout flags
   and breadcrumbs `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares; the Administration section of
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the source pins in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`; the DOM oracle captures in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
 - Rules: every page renders its body inside `AdminGate`, and an `admin` route has no denial
   redirect (`denial_redirects_to_overview_with_role_notice` in
   `crates/frontend/foundation/frontend_route_table/src/tests/route_authorization.rs`); every route here declares the `admin`

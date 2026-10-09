@@ -53,7 +53,7 @@ the two are separate types: `PrefabId::from(InstancePrefabId)` always widens, an
     terrain, line of sight and streaming crates, which read them through the accessors.
 - Rules:
   - an identifier's bytes in rkyv, in the `Pod` row and in JSON are exactly its inner value's
-    (`archive_wire_identity_tests.rs` under `../archives/tests/`, the row identity test in
-    `../pod/tests/instance_tests.rs`, `identifiers_serialise_as_their_bare_values` in
-    `tests/identifier_accessor_tests.rs`);
+    (`../archives/tests/archive_wire_identity_tests.rs`,
+    `the_prefab_id_type_keeps_the_primitive_row_bytes` in `../pod/tests/instance_tests.rs`,
+    `identifiers_serialise_as_their_bare_values` in `tests/identifier_accessor_tests.rs`);
   - a consumer reads an identifier through its accessor, never through its tuple field.

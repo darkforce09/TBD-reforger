@@ -34,8 +34,7 @@ The raw lowercase status and class names are the labels everywhere.
 
 - `services::discovery`: `positional_arg` for `main.rs`; `resolve_repo_root` and
   `has_tickets_dir` for the desktop application.
-- `services::corpus_loading::load_corpus` and `is_child_id`, for the application's loading thread
-  and the test fixtures.
+- `services::corpus_loading::load_corpus` and `is_child_id`, for the application's loading thread.
 - `models::corpus`: `Corpus`, `LoadedTicket`, `Counts`, `LoadError`, `LoadResult`, read by every
   feature.
 - `models::projection`: `TicketView`, `view`, `STATUS_ORDER`, `column_of`, `id_sort_key`, the
@@ -46,17 +45,13 @@ The raw lowercase status and class names are the labels everywhere.
 - Depends on: `ticket_model` (`Ticket`, `Status`, `StatusName`, `ScopeV2`, `parse_ticket_toml`);
   `repository_layout::TICKETS_DIR`; `std::fs`. It depends on no other ticketboard module.
 - Used by: `crate::application_state`; `crate::ticket_browser`, `crate::ticket_actions`,
-  `crate::wave_plan` and `crate::execution_metrics`;
-  `tools/tickets/ticketboard_model/src/tests/support/mod.rs`; the desktop application
+  `crate::wave_plan` and `crate::execution_metrics`; the desktop application
   (`tools/tickets/ticketboard_desktop/src/main.rs`, `tools/tickets/ticketboard_desktop/src/application/` and the feature `ui/`
   folders).
 - Rules:
   - the registry imports no consuming feature, only `core` besides itself, and nothing here names
-    egui
-    (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`);
-  - a load is complete or refused, never partial, and never writes a ticket file
-    (`tools/tickets/ticketboard_model/src/ticket_registry/services/tests/corpus_loading.rs`);
+    egui;
+  - a load is complete or refused, never partial, and never writes a ticket file;
   - the load checks each file's shape only; scope-vocabulary legality and the id-to-file-name match
     are left to `cargo xtask ticket check --strict`, whose verdict the status banner shows.
 

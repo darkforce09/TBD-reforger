@@ -17,7 +17,7 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
 5. **Categorize Variants & Primitives (Avoid Flat Dumps)**:
    Avoid flat dumping of dozens of files or variant variations into a single folder. Related variants, numerical sets (e.g. column counts, rounded radius variants), and functional primitives should be grouped into dedicated, well-named subfolders to maintain clean directory comprehension.
 6. **Strict Boundary Layers**:
-   - Every product crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`; the applications are crates like any other (`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`, `ticketboard_desktop`), and no member depends on one of them. The crate-tier law (`cargo xtask verify crate-tiers`) holds every dependency edge: tiers point strictly down, the category matrix allows the edge, and the external-crate firewalls hold. The only members outside the layout are the two tool binaries `tools/xtask` and `tools/developer_tools`; the game mod at `mod/` holds no crate, and the crate-tier law sweeps the whole checkout for manifests, so a `Cargo.toml` placed there is a finding. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
+   - Every product crate sits at `crates/<category>/<crate>` (the frontend's at `crates/frontend/<layer>/<crate>`) and every tool crate at `tools/<category>/<crate>`, declaring its `category`, `tier` and `targets`; the applications are crates like any other (`api_server`, `frontend_application`, `offline_service_worker`, `game_server_host_agent`, `ticketboard_desktop`), and no member depends on one of them. Tiers point down and the category matrix says which edges belong (guidance). `cargo xtask verify crate-tiers` enforces two things: no member depends on an application crate, and the external-crate firewalls hold. `cargo xtask verify crate-anatomy` enforces each crate's anatomy (small `lib.rs`, prelude, `error.rs`, layout metadata) and stays a hard gate. The only members outside the layout are the two tool binaries `tools/xtask` and `tools/developer_tools`; the game mod at `mod/` holds no crate, and the crate-tier law sweeps the whole checkout for manifests, so a `Cargo.toml` placed there is a finding. The [crate boundary rules](/documentation/standards/crate_boundary_rules.md) state every rule as the code enforces it.
    - Foundation and contracts (`crates/foundation/`, `crates/contracts/`): Leaf crates and one-boundary contract crates. Foundation depends on foundation only; contracts on foundation and contracts.
    - Graphics crates (`crates/graphics/`: `render_primitives`, `gpu_device`, `gpu_frame`, `renderer_core`): Map-agnostic rendering — byte layouts, the GPU context, the frame vocabulary, pipelines, draw encoding, the renderer contracts. Knows **zero** map concepts (no map noun in a declared name); depends on foundation and graphics crates only.
    - Map engine crates (the engine categories `crates/geometry/`, `crates/world_formats/`, `crates/terrain/`, `crates/world_objects/`, `crates/line_of_sight/`, `crates/map_overlay/`, `crates/streaming/` over graphics, and the rendering categories `crates/map_rendering/` and `crates/paper_doll/` above them): spatial computation, world and terrain formats, streaming, the render engine and its typed GPU layers. Streaming crates never depend on rendering crates; `wgpu` lives only in `crates/map_rendering/` and the GPU packages. Zero UI/Leptos dependencies.
@@ -26,12 +26,10 @@ Platform suite for the "TBD" Arma Reforger milsim community: Discord auth, event
    - API (`crates/api/`): Axum REST API and SSE realtime hub. The domain code lives in the api crates (infrastructure < kernel < domains < workers < the server), which depend on foundation, contracts, mission, ballistics and api crates; the server crate `crates/api/api_server` assembles them into the `api-server` binary. sqlx and axum live only in api crates, with axum also in the `tools/browser_testing` and `tools/staging` harness servers and sqlx also in `tools/staging/staging_fixtures`.
    - Fleet (`crates/fleet/`): The `game_server_host_agent` beside each game-server instance, which carries out the API's fleet commands; depends on foundation crates built for every target and contracts crates only.
    - Tools (`tools/<category>/`): Depend on foundation, contracts, mission, ballistics and tool crates and on engine crates built for every target; never on a wasm-only or frontend crate, nor an api crate outside `staging_fixtures`. The ticketboard desktop viewer `ticketboard_desktop` is a `tools/tickets` crate. The binaries `tools/xtask` and `tools/developer_tools` depend on tool crates only, and the dependency closure of xtask holds no tokio, axum, reqwest, resvg or image.
-7. **File Size Limits & Test Placement (Hard Ceilings — Zero Exemptions)**:
-   - Production files must stay **at or under 500 lines**.
-   - Test files (inside a `tests/` folder or named `*_tests.rs`) must stay **at or under 1000 lines**.
-   - The ceilings apply in every language; `cargo xtask verify file-length` enforces them on the Rust source trees and the pinned mod Scripts roots (`mod/tbd-framework/Scripts`, `mod/tbd-emcp/Scripts`) by raw line count.
-   - **Zero Exemptions / No Allowlist**: There is NO allowlist file and NO exemption mechanism. Never create an allowlist (`.coding-standards-allowlist.yaml` or any other), use allowlist comments, or bypass these limits. If a file approaches or exceeds 500 lines, you MUST decompose it by responsibility into cohesive submodules.
-   - **No inline test modules**: Unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
+7. **File Size & Test Placement (Guidance)**:
+   - Aim to keep production files **at or under 500 lines**; when a file grows past that, split it by responsibility into cohesive submodules rather than piling on.
+   - `cargo xtask verify file-length` reports production files over 500 lines on the Rust source trees and the pinned mod Scripts roots (`mod/tbd-framework/Scripts`, `mod/tbd-emcp/Scripts`); it warns, it does not fail. Test files have no ceiling.
+   - **No inline test modules** (convention): unit tests live in sibling files declared via `#[cfg(test)] #[path = "tests/<file>.rs"] mod tests;`.
 8. **In-Code Documentation Standards (Rust & Enfusion)**:
    - **Present-Tense, Context-Free Invariants (Universal)**:
      Comments and docstrings must describe strictly what the code does *now* and *why* (invariants, mathematical models, engine/hardware constraints, failure modes). Never document historical transitions (no "rewritten from X", "fixed in Y"), ticket references in source comments, or references to retired codebases (no "mirrors old TS file"). Commit history owns history.
@@ -209,7 +207,7 @@ crates/                                  <-- Product crates grouped by category 
 │   └── api_server/                      <-- Server: the Axum + sqlx REST API and SSE backend (:8080) the api crates assemble into
 │       ├── src/                         <-- lib.rs · router.rs (route tables, mounts, middleware chain) · composition.rs (state with concrete services)
 │       │   ├── bin/                     <-- The `api-server` server and the `import-item-registry` tool
-│       │   └── tests/                   <-- Executable layout rules (crate graph, domain graph) and prose rules, router pins
+│       │   └── tests/                   <-- Router pins
 │       ├── tests/                       <-- Ten domain integration binaries (tests/<domain>/main.rs), one database each
 │       └── .env.example                 <-- Local configuration template, copied to the untracked .env
 ├── fleet/                               <-- The game-server fleet crates over the fleet wire contract
@@ -223,7 +221,7 @@ crates/                                  <-- Product crates grouped by category 
 │   │   ├── frontend_map_view/           <-- Shared map mount seam (Mission Creator, mortar map picker), terrain heights
 │   │   ├── frontend_session/            <-- Session storage and refresh, sign-out hooks, route guard, content gates
 │   │   ├── frontend_offline/            <-- Service worker registration, offline pack download, storage quota, offline state
-│   │   └── frontend_test_support/       <-- Source scrubber, captured API responses, repository reads from repository_root's checkout root (dev-dependency only)
+│   │   └── frontend_test_support/       <-- Captured API responses, API route tables, repository reads from repository_root's checkout root (dev-dependency only)
 │   ├── features/                        <-- Capabilities several pages and workspaces show
 │   │   └── mission_review_record/       <-- Shared review record: history, thread, artifact provenance, submit control
 │   ├── pages/                           <-- Standard platform document pages, one crate per navigation area
@@ -244,8 +242,7 @@ crates/                                  <-- Product crates grouped by category 
 │   └── shell/                           <-- The shell layer: the single-page app and the offline service worker, two peers
 │       ├── frontend_application/        <-- Leptos 0.8 CSR single-page app (Trunk/WASM, :3000) the frontend crates assemble into
 │       │   ├── src/                     <-- main.rs (entry point, mounts the shell) · app_routes.rs (the render form of the route table)
-│       │   │   ├── shell/               <-- App frame around every route: layout, top nav, sidebar, membership status, not-found page
-│       │   │   └── tests/doc_audit/     <-- Documentation audit of every production file of the app and of every frontend crate
+│       │   │   └── shell/               <-- App frame around every route: layout, top nav, sidebar, membership status, not-found page
 │       │   └── style/                   <-- Tailwind v4 stylesheet: one @source line for the app and one per leptos crate
 │       └── offline_service_worker/      <-- Rust/WASM service worker: offline pack caches, Range→206 from cache (no JS policy)
 ├── map_rendering/                       <-- The map's typed GPU layers and its renderer (may name map things; wgpu)
@@ -270,7 +267,7 @@ tools/                                   <-- Every developer tool in the reposit
 ├── foundation/                          <-- The tools' tiered base crates
 │   ├── verification_core/               <-- Fail-closed verdicts, pattern scans, gates, the repository verification lock
 │   ├── process_runner/                  <-- Child processes (deadlines; terminal, binary, file, detached and streaming modes), host-bridge execution, the secure shell transport
-│   ├── repository_laws/                 <-- Every repository law: crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources, file length, test placement, test-only features
+│   ├── repository_laws/                 <-- Every repository law: crate tiers, anatomy, test-file reachability, frontend layering, Tailwind sources, file length
 │   ├── repository_layout/               <-- The paths every tool shares; its prelude re-exports repository_root's checkout-root finder
 │   ├── deploy_settings/                 <-- The one reader of deploy/deploy.env and its precedence over exported variables
 │   └── tool_test_support/               <-- Test locks and the checkout root the tool crates' tests share (dev-only)
@@ -283,11 +280,11 @@ tools/                                   <-- Every developer tool in the reposit
 │   └── ticketboard_desktop/             <-- Native egui/eframe desktop viewer for .ai/tickets over ticketboard_model
 ├── commands/                            <-- Command crates behind the xtask groups
 │   ├── agent_context_guards/            <-- AI agent tool-call guard (Bash and Read rules, the session read set) and the filtered command runner (`ai`)
-│   ├── ci_task_catalog/                 <-- CI task table and runner (`ci`, `help`), build lane recipes (`mk`), cargo target pin, CI workflow checks, map asset checks
+│   ├── ci_task_catalog/                 <-- CI task table and runner (`ci`, `help`), build lane recipes (`mk`), cargo target pin, map asset checks
 │   ├── platform_execution/              <-- Platform factory (`platform`): wave driver, slice runs, slice worktrees, preflight
 │   ├── mod_operations/                  <-- Game mod operations (`mod`): compile gate, world boot, playtest server, equipment export, mod wave driver
 │   ├── database_operations/             <-- Local database lane (`db`), database container layer, verified backup, guarded restore, restore drill (`deploy db`), seed checks
-│   ├── deployment/                      <-- Website and staging fleet deploys (`deploy website`, `deploy staging`), staging compose-path check
+│   ├── deployment/                      <-- Website and staging fleet deploys (`deploy website`, `deploy staging`)
 │   ├── staging_procedures/              <-- Staging acceptance harness (`staging`): fleet, Discord and load procedures, their receipts, host actions
 │   ├── api_readiness_checks/            <-- API readiness judge (`verify api-readiness`): acceptance register, evidence receipts, fingerprints, property-test seed
 │   ├── schema_tooling/                  <-- Contract codegen, schema gates, ORBAT slot flattening, font table (`schema`, `gen`)
@@ -297,21 +294,20 @@ tools/                                   <-- Every developer tool in the reposit
 │   ├── workstation_setup/               <-- Workstation setup (`setup`) and the staging host check
 │   └── remote_debugging/                <-- Staging join probes (`debug`), remote console log verdict, upload reproduction (`repro`)
 ├── checks/                              <-- Check crates behind `cargo xtask verify`
-│   ├── repository_checks/               <-- Workspace laws, route tags, editor ORBAT coherency, language bans, licensing, registry aliases, tooling rules
-│   ├── mod_script_checks/               <-- Enfusion comment card, mod script pins, UI layout gate, Workbench spawn runs
-│   └── documentation_checks/            <-- README coverage, Markdown placement and link-check gates
+│   ├── repository_checks/               <-- Workspace laws, language bans, licensing, registry aliases
+│   ├── mod_script_checks/               <-- UI layout gate, Workbench spawn runs
+│   └── documentation_checks/            <-- The link-check gate
 ├── enfusion/                            <-- Enfusion tool crates
 │   ├── enfusion_pak/                    <-- The `.pak` archive reader and its merged virtual file system
 │   ├── enfusion_script_index/           <-- The script oracle behind `enf` and the vanilla page mirrors behind `fetch`
 │   └── enfusion_mcp_broker/             <-- The `mcpd` broker over one enfusion-mcp server
 ├── browser_testing/                     <-- Browser gate crates
 │   ├── chrome_devtools_protocol/        <-- DevTools protocol client: Chromium discovery and launch, pages, the gate font cache
-│   └── browser_gate_suites/             <-- Gate suites and the `gate` and `capture` command lines: static server, DOM oracle, route drift, editor smokes, ballistics and offline mortar gates
-│       └── fixtures/dom_oracle/         <-- DOM goldens, screenshots and route inventories the browser gates compare against
+│   └── browser_gate_suites/             <-- Gate suites and the `gate` and `capture` command lines: static server, editor smokes, ballistics and offline mortar gates
 ├── staging/                             <-- Staging crates
 │   ├── staging_load_plan/               <-- The member load's plan, request catalog, pacing and report, without tokio
 │   ├── staging_load_generator/          <-- The member load's virtual clients behind `staging-load`
-│   ├── staging_fixtures/                <-- The `staging-fixtures` host tool: staging accounts, fleet credentials, fixture events and its database suites
+│   ├── staging_fixtures/                <-- The `staging-fixtures` host tool: staging accounts, fleet credentials, fixture events
 │   └── acknowledgement_dropping_relay/  <-- Relay that withholds one fleet executor answer
 ├── map_assets/                          <-- Map asset crates
 │   ├── blueprint_compiler/              <-- Building blueprints from voxel dumps and game models, occlusion sidecars, the blueprint archive

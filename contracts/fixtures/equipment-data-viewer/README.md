@@ -17,7 +17,7 @@ contracts/fixtures/equipment-data-viewer/
 
 Both folders hold the same six file names, one per schema in
 `contracts/definitions/equipment-data-viewer/`. The API's
-`crates/api/api_server/tests/contract_parity_equipment_viewer.rs` imports the committed export under
+`crates/api/api_server/tests/contract_parity/equipment_viewer.rs` imports the committed export under
 `crates/api/api_server/tests/fixtures/equipment_data_viewer/` through the production importer, boots
 a development router and requires the answer of each route that has a sample here to equal the
 `positive/` page, validate against its schema and decode into the generated type. The frontend's

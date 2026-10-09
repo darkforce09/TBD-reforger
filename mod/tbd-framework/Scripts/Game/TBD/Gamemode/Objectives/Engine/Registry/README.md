@@ -83,8 +83,4 @@ its `EndTrigger`, and returns the first trigger that fired and the winning side.
 - Rules: the zone is what the runtime enforces and wins every disagreement with a typed row;
   `lock` and `autoLose` are carried and reported, never enforced; a hold objective with no holder
   or length goes inert rather than guessing when the round ends; statics outlive a world, so
-  `TBD_ObjectivesComponent.OnDelete` calls `Clear`. `cargo xtask verify destroy-target-diagnostics`
-  pins the destroy-target reasons in
-  `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/Destroy/TBD_ObjectiveDestroyTargets.c`, and
-  `tools/commands/schema_tooling/src/tests/schema_checks/staged_golden_tests.rs` requires every
-  key the staged 1.3 golden authors under `objectives[]` to be a member of the reader's structs.
+  `TBD_ObjectivesComponent.OnDelete` calls `Clear`.

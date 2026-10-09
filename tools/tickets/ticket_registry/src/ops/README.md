@@ -60,12 +60,10 @@ operation changes, so an operation never refuses because of a ticket it did not 
   back the outcome and re-sync. No caller outside the crate calls an operation directly.
 - Rules:
   - an operation never writes a corpus its own checks refuse, and a refusal leaves the corpus
-    untouched (the tests in `tests/` refuse each case before any write);
-  - the clock is injected, so the same inputs give the same corpus (`injected_clock_determinism`);
-  - an existing collision is never refused on behalf of an operation that did not cause it
-    (`preexisting_collision_is_not_retro_policed`);
-  - no status change leaves `ticket check` red for lack of an order
-    (`no_set_status_leaves_the_check_red_for_lack_of_an_order`).
+    untouched;
+  - the clock is injected, so the same inputs give the same corpus;
+  - an existing collision is never refused on behalf of an operation that did not cause it;
+  - no status change leaves `ticket check` red for lack of an order.
 
 ## Related documentation
 

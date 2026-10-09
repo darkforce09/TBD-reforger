@@ -43,10 +43,6 @@ applies the filters, and rebuilds the visible board rows and tree rows from the 
   loads the vocabulary on the worker thread); the desktop application's filter bar,
   `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/filter_bar.rs`.
 - Rules:
-  - filters change the projection, never the registry, and clearing restores the full count
-    (`clear_restores_the_full_measured_count`, `filters_compose_as_intersection` in
-    `tests/filtering.rs`);
+  - filters change the projection, never the registry, and clearing restores the full count;
   - the vocabulary marks and narrows but never rejects a value; `cargo xtask ticket check` stays
-    the validation authority (`corpus_strays_are_offered_and_marked`,
-    `broken_or_missing_vocab_is_none_never_a_crash`,
-    `stale_lower_selections_are_cleared_top_down` in `tests/scope_facets.rs`).
+    the validation authority.

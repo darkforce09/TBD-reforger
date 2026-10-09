@@ -237,9 +237,7 @@ documents gets only its link destinations rewritten, prose and backticks staying
 `README.md` there is a live index of its folder, so the tree part of its Contents block's lines (the
 root folder and each entry's name, not the roles) is rewritten and verified as a live file is; a
 ticket record whose status is shipped or cancelled gets only its `spec`, `plan` and `owns` entries
-rewritten. The relocation tool's own test sources
-(`tools/commands/repository_relocation/src/tests/`) spell paths of throwaway checkouts, so only their
-code follows a manifest, never a string literal or a comment. A file takes the treatment of the place it lands, so a file moved into the archive is
+rewritten. A file takes the treatment of the place it lands, so a file moved into the archive is
 frozen from that move on.
 Binary files and Git LFS pointers move with their folders and are never edited. SQL migrations (a
 `.sql` file directly in a `migrations` folder, whose checksum `sqlx` pins once a database applies

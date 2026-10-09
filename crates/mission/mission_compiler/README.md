@@ -48,10 +48,8 @@ cargo test -p mission_compiler    # the locked contract, the goldens, every stag
 cargo clippy -p mission_compiler --all-targets -- -D warnings
 ```
 
-Two tests are `#[ignore]`d writers run by hand: `regen_compiler_shaped_fixture` regenerates
-`contracts/fixtures/missions/valid/compiler-shaped-two-faction.json`, and
-`dump_roster_document_for_schema_validate` writes a document for
-`cargo xtask schema validate-file`.
+One test is an `#[ignore]`d writer run by hand: `regen_compiler_shaped_fixture` regenerates
+`contracts/fixtures/missions/valid/compiler-shaped-two-faction.json`.
 
 ## Configuration
 
@@ -91,10 +89,7 @@ All also in `prelude`, the rule ids and flow defaults excepted:
     byte for byte (`compiler_shaped_golden_is_a_fresh_emitter_output` in
     `src/game_document/tests/cases_3.rs`), and `cargo xtask schema validate` checks it against
     `contracts/definitions/mission.schema.json`;
-  - `COMPILER_PACKAGE_VERSION` never changes: it is stored and hashed with every artifact;
-  - the vehicle rows a writer-authored document compiles to are tested from the store
-    (`crates/mission/mission_document/src/tests/vehicle_row_round_trips.rs`), since this crate never
-    depends on the store.
+  - `COMPILER_PACKAGE_VERSION` never changes: it is stored and hashed with every artifact.
 
 ## Related documentation
 

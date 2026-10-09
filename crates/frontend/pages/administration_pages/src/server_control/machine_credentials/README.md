@@ -47,7 +47,7 @@ this build does not know shows as the API spells it. Every request runs in the b
   the sheet and renders it; `executor_label`, which the
   [fleet command](/documentation/glossary/a_to_f.md#fleet-command) console in
   `crates/frontend/pages/administration_pages/src/server_control/fleet_commands/` names executors
-  with; `server_control_source` in `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`.
+  with.
 - Rules: the secret is shown once and never stored; labels and reasons are bounded as the API
   bounds them (`labels_and_reasons_are_bounded_as_the_backend_bounds_them`), the issue form offers
   exactly the API's program kinds (`the_issue_form_offers_the_backend_program_kinds`), and live

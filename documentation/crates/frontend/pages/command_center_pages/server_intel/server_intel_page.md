@@ -141,11 +141,6 @@ The page writes nothing and stores nothing in the browser.
 - The status stream is the only live connection in the command center: the list gives the first
   paint, and the stream keeps it current without polling.
 - No readout invents a value: a missing status shows "—" and a missing terrain shows no name;
-  the tests in
-  `crates/frontend/pages/command_center_pages/src/server_intel/tests/server_intel_t385.rs` keep
-  the theatre wired to the `terrain` key.
-- The copy button reports a copy only after the clipboard write resolved
-  (`class_r_copy_address_routes_through_the_awaited_clipboard_helper` in
-  `crates/frontend/pages/command_center_pages/src/server_intel/tests/server_intel_t773.rs`),
-  because an unconfirmed toast claimed copies that never happened
-  on insecure origins.
+  the theatre reads the `terrain` key.
+- The copy button reports a copy only after the clipboard write resolved, because an unconfirmed
+  toast claimed copies that never happened on insecure origins.

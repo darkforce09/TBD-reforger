@@ -29,14 +29,14 @@ RecordingSession::begin ──▶ the staging procedure runs ──▶ finish(Re
   └── judged log, fixture manifest, receipt (PASS exit 0, FAIL exit 1)
 ```
 
-`src/README.md` describes each step, the staging log grammar and the rules the tests pin.
+`src/README.md` describes each step, the staging log grammar and the rules the judge holds.
 
 ## Getting started
 
 Run from the repository root:
 
 ```bash
-cargo test -p api_readiness_checks   # register, receipts, fingerprints on throwaway Git trees, recordings, the seed
+cargo xtask verify api-readiness   # judge every requirement of the acceptance register
 ```
 
 ## Configuration

@@ -58,8 +58,7 @@ opens it; unset or blank means the default. No feature.
 - Used by: the API's `api-server` and `import-item-registry` binaries, its services that map constraint
   violations, and its integration suites; `cargo xtask db seed`,
   `cargo xtask db repair-migration-checksum` and the wave migration gate read the SQL folders.
-- Rules: an applied migration never changes (`crates/api/api_server/tests/migrations_are_immutable.rs`); the
-  seed and migration comments follow the API's prose rules (`crates/api/api_server/src/tests/prose_rules.rs`).
+- Rules: an applied migration never changes (`crates/api/api_server/tests/http_infrastructure/migrations_are_immutable.rs`).
 
 ## Related documentation
 

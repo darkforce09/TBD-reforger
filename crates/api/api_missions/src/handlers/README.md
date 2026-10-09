@@ -75,8 +75,8 @@ missing one, and a write by someone who may not edit the mission answers 403.
   [game runtime](/documentation/glossary/g_to_m.md#game-runtime) in
   `mod/tbd-framework/Scripts/Game/TBD/`, and the `cargo xtask mod` commands' client in
   `tools/commands/mod_operations/src/website_api_client/`.
-- Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); every
+- Rules: every handler carries its `/// @route` tag; no handler
+  imports another domain's handlers; every
   mission write takes `MissionMakerUser` as well as ownership, so a demotion revokes it.
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with
   `details.code = request_too_large` over the body limit, 415 without a JSON content type, and 400

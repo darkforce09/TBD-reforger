@@ -34,11 +34,9 @@ whenever the dialog closes. The submit runs in the browser build only.
 - Depends on: `frontend_transport` (`client::api_post`, `Error::message_or`),
   `frontend_ui` (`Dialog`, `cn`, the toasts) and the `AuthStore` context.
 - Used by: the mission library page in `crates/frontend/pages/mission_hub_pages/src/library/`,
-  the only surface that opens it; `create_dialog_source` in
-  `crates/frontend/pages/mission_hub_pages/src/tests/source_pins.rs` reads its source files.
-- Rules: the create request carries only fields the endpoint accepts, the briefing included
-  (`the_post_body_carries_the_authored_briefing`), and the form offers no thumbnail it cannot store
-  (`the_create_form_offers_no_thumbnail_it_cannot_store`).
+  the only surface that opens it.
+- Rules: the create request carries only fields the endpoint accepts, the briefing included, and
+  the form offers no thumbnail it cannot store.
 
 ## Related documentation
 

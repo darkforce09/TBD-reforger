@@ -52,8 +52,8 @@ check accepts.
   `KINDS` and `MAX_POINTS` are pinned (`tactical_graphics_is_registered_on_the_carrier`), and the
   schema's `maxItems` of 128 mirrors `MAX_POINTS`; a style outside the marker vocabulary is refused
   (`a_style_outside_the_marker_vocabulary_is_refused`); a valid block passes the carrier whole
-  (`tactical_graphics_registered_here_must_also_be_readable_by_flatten` in
-  `crates/mission/mission_payload/src/tests/extension_round_trips/`).
+  (`every_authored_block_reaches_the_payload_root_and_the_carrier_reads_it_back` in
+  `crates/mission/mission_payload/src/tests/extension_round_trips.rs`).
 
 ## Related documentation
 

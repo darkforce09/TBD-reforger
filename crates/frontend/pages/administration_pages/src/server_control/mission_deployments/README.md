@@ -60,15 +60,13 @@ request runs in the browser build only.
   the [operations](/documentation/glossary/n_to_z.md#operations) domain.
 - Used by: `server_cards.rs` in `crates/frontend/pages/administration_pages/src/server_control/`,
   which builds the panel, renders `deployment_request` and `deployment_list`, and passes
-  `latest_confirmed_session` to the kick form; `server_control_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`.
+  `latest_confirmed_session` to the kick form.
 - Rules: only approved live missions are offered (`only_approved_live_missions_are_offered`) and a
   request names the approved artifact (`a_request_names_the_approved_artifact`); event missions come
   from events on this server (`event_missions_come_from_operations_on_this_server`); a deployment is
-  announced only once it has ended (`a_deployment_is_announced_only_once_it_has_ended`); every
-  refusal says what to change (`every_deployment_refusal_says_what_to_change`); requests are
-  followed and choices read on demand (`requests_are_followed_and_choices_read_on_demand`), all in
-  `tests/mission_deployments.rs`.
+  announced only once it has ended (`a_deployment_is_announced_only_once_it_has_ended`), all in
+  `tests/mission_deployments.rs`; every refusal says what to change; requests are followed and
+  choices read on demand.
 
 ## Related documentation
 

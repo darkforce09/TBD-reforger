@@ -80,8 +80,7 @@ folder's thread-locals: the copied rows of `entity_clipboard.rs` and the armed c
     pointer input commits the `map_editing_tools` `Rotate` gesture through
     `selection_transform::rotate_selection_to_face`.
 - Rules: the document borrow ends before the tail runs; the place path in these
-  files never calls `ensure_default_squad` (`cargo xtask verify editor-orbat-coherency` scans every
-  file here); every id parameter is a newtype id (`cargo xtask verify crate-anatomy`); no
+  files never calls `ensure_default_squad`; every id parameter is a newtype id (`cargo xtask verify crate-anatomy`); no
   `web_sys`, `leptos` or `wasm_bindgen`.
 
 ## Related documentation

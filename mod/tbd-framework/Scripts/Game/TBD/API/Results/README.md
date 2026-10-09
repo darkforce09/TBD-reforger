@@ -57,9 +57,8 @@ request, so nothing blocks the stage machine.
   (`Arm`).
 - Rules: every `arma_id` comes from `TBD_PlayerIdentity.GetArmaId`; `outcome` is always a member of
   the backend's set; every line has a non-empty `role_played` (`unassigned` for a slot authored
-  without one) and `source_event_id`; `cargo xtask verify results-reporter-identity-comments` keeps the reporter's
-  identity comments truthful; lines added stay ASCII and `cargo xtask mod compile` checks that the
-  scripts compile.
+  without one) and `source_event_id`; lines added stay ASCII and `cargo xtask mod compile`
+  checks that the scripts compile.
 
 ## Related documentation
 

@@ -2,8 +2,7 @@
 
 The website and staging deploy drivers, the clap subcommand and dispatch of the `deploy` group,
 the paths no deploy ships, the paths the host owns and the `.env` probe both deploys run before
-their rsync, the remote toolchain line, the staging compose-path check, and the errors they
-report.
+their rsync, the remote toolchain line, and the errors they report.
 
 ## Contents
 

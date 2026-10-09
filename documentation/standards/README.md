@@ -62,9 +62,8 @@ these answers; a rule that fits an existing standard goes into it.
 - Used by: every README and document under `documentation/` and the code trees, which follow
   the README standard and the templates; gate code and CI that cite a standard by section
   (`tools/commands/ci_task_catalog/src/task_definitions.rs`,
-  `tools/checks/repository_checks/src/architecture/route_tags.rs`,
   `tools/checks/repository_checks/src/language_bans/shell_scripts.rs`,
-  `.github/workflows/ci.yml`, `.github/workflows/contracts.yml`, `.editorconfig`); the Cursor rule
+  `.github/workflows/ci.yml`, `.editorconfig`); the Cursor rule
   `.cursor/rules/tbd-platform.mdc`; the runbooks and the entry README.
 - Rules: each standard names the gate that holds each enforced rule; a standard stays around 500
   lines and splits into a folder with a README index when longer, as `coding_standards/` does; a

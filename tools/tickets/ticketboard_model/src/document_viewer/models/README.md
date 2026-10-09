@@ -22,8 +22,5 @@ tools/tickets/ticketboard_model/src/document_viewer/models/
   whose `tools/tickets/ticketboard_desktop/src/document_viewer/ui/` paints it.
 - Rules: every state but `Closed` carries the repository-relative path as clicked, which is both
   the header label and the identity of a read; `land` applies a result only while `Loading` that
-  same path, so a read superseded by another click or by Back is dropped
-  (`stale_results_are_dropped` and `state_machine_transitions` in
-  `tools/tickets/ticketboard_model/src/document_viewer/services/tests/document_loading.rs`); no egui type appears
-  here (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+  same path, so a read superseded by another click or by Back is dropped; no egui type appears
+  here.

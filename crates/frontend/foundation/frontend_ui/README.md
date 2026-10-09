@@ -69,9 +69,8 @@ with is loaded by `crates/frontend/shell/frontend_application/index.html`.
   features, pages and the Mission Creator, whose dialogs and menus join the overlay stack and
   whose chrome layout re-exports the state classes.
 - Rules: only the topmost open overlay answers Escape
-  (`only_the_topmost_open_overlay_answers_escape`); the form controls never re-render per event
-  (`neither_control_re_renders_per_event`); `safe_url` answers as the API's content URL policy
-  does (`the_case_lists_match_the_backend_policy_tests`); the crate depends on no frontend crate
+  (`only_the_topmost_open_overlay_answers_escape`); the form controls never re-render per event;
+  `safe_url` answers as the API's content URL policy does; the crate depends on no frontend crate
   (`cargo xtask ci verify-workspace-laws`).
 
 ## Related documentation

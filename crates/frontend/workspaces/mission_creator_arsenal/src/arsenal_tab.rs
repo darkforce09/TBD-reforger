@@ -37,42 +37,33 @@ use mission_editing_commands::hosted_commands as engine_ops;
 use orbat_slot_ids::SlotUid;
 
 /// Explains the immediate commit and undo contract to the author.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const PERSIST_ALWAYS: &str = "Every pick and cargo edit here is written to the mission document the moment you make it — the Arsenal has no Save button by design, and Ctrl+Z undoes one pick.";
 
 /// The half of the persistence line that reads the live `mission_history` dirty flag: the mission
 /// itself has nothing waiting for the server. Paired with [`PERSIST_UNSAVED`].
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const PERSIST_CLEAN: &str = "The mission has no unsaved changes.";
 
 /// The dirty half: the doc holds work no server version carries yet. This is the same state the top
 /// strip's `•` reports — which this modal's backdrop is busy blurring, hence the repeat here.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const PERSIST_UNSAVED: &str =
     "The mission has unsaved changes — Save Version publishes them to the server.";
 
 /// Explains that the last pick was rejected because its entity no longer exists.
 /// This state takes precedence over the mission-wide dirty indicator.
-#[cfg(any(target_arch = "wasm32", test))]
+#[cfg(target_arch = "wasm32")]
 pub(crate) const PERSIST_REFUSED: &str = "That last pick did NOT reach the mission document — this entity is no longer in the mission (deleted, or undone away while the Arsenal was open). Close this panel and re-open the Arsenal on a live entity; nothing you pick here now will be kept.";
 
 /// Does the live mission document hold work the server has not seen?
 ///
-/// `mission_history` is `cfg(target_arch = "wasm32")` (it drives the hosted doc), so the native view
-/// shell answers `false`: there is no editor mounted there and therefore nothing unsaved. The read
-/// itself is `try_get_untracked`, so the persistence line below tracks a local commit counter to
-/// re-run — the modal scrim means an Arsenal commit is the only edit that can happen while this is
-/// on screen.
-#[cfg(any(target_arch = "wasm32", test))]
+/// The read itself is `try_get_untracked`, so the persistence line tracks a local commit counter
+/// to re-run — the modal scrim means an Arsenal commit is the only edit that can happen while this
+/// is on screen.
+#[cfg(target_arch = "wasm32")]
 pub(crate) fn mission_has_unsaved_work() -> bool {
-    #[cfg(target_arch = "wasm32")]
-    {
-        mission_creator_engine_bridge::bridge::document_host::history::is_dirty()
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        false
-    }
+    mission_creator_engine_bridge::bridge::document_host::history::is_dirty()
 }
 
 /// Reactive state shared by the catalog view and its action handlers.

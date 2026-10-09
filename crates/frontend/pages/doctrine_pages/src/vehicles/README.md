@@ -99,17 +99,14 @@ selection falls back to the first row. Paths carry the id percent-encoded as one
   toasts); `frontend_ui::safe_url::safe_image_src`.
 - Used by: the `/vehicles` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Vehicle Database" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the DOM oracle's `vehicles`
-  capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
-- Rules: groups keep the order each faction first appears (`factions_preserve_first_seen_order` in
-  `tests/vehicle_grid.rs`); the form's rules match the backend validator's boundaries
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
+- Rules: groups keep the order each faction first appears; the form's rules match the backend validator's boundaries
   (`each_limit_admits_its_boundary_and_refuses_one_character_more` and
   `profile_image_url_admits_https_and_site_paths_and_refuses_everything_else` in
   `tests/vehicle_draft.rs`); the write body carries exactly the contract's keys
   (`the_write_body_carries_exactly_the_keys_the_contract_names` in `tests/vehicle_writes.rs`); an
   unsafe image URL shows the placeholder (`an_empty_or_unsafe_image_url_shows_the_placeholder` in
-  `tests/spec_drawer.rs`); the write actions follow the signed-in administrator role
-  (`the_write_actions_follow_the_signed_in_administrator_role` in `tests/page.rs`); every pane
+  `tests/spec_drawer.rs`); the write actions follow the signed-in administrator role; every pane
   reads the one fetched list, which a write changes in place.
 
 ## Related documentation

@@ -45,9 +45,5 @@ span, so the command's last writes start no check.
 - Rules:
   - only a failure of the `.ai/tickets/` watch is an error; the other two degrade visibly;
   - a fire during a ticket command reloads without a check, and a real edit mixed into command
-    residue keeps its check (`suppressed_fires_reload_only`,
-    `mixed_burst_across_the_trailing_edge_keeps_its_check`,
-    `suppression_at_fire_time_beats_a_checkworthy_event` in `tests/file_watch.rs`);
-  - the path filter matches the watched files only
-    (`relevance_filter_matches_the_watched_surfaces_only`); the `notify` shell in `spawn` has no
-    test of its own.
+    residue keeps its check;
+  - the path filter matches the watched files only.

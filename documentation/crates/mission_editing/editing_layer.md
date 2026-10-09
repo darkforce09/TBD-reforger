@@ -140,8 +140,7 @@ The grouping clock and the cap are in the
   mission editing, geometry, world, line of sight and overlay crates only. Engine-layer rule 7
   keeps the map engine's `world/` from naming a mission editing crate, and the mission crates the
   layer drives cannot depend on the map engine at all.
-- `cargo xtask verify editor-orbat-coherency` scans `hosted_commands/` and bans
-  `ensure_default_squad` on the place path.
+- The place path in `hosted_commands/` never calls `ensure_default_squad`.
 
 ## Open work
 

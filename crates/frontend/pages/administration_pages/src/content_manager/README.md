@@ -89,17 +89,12 @@ because a publish refuses a relative one. Every request runs in the browser buil
   [community content](/documentation/glossary/a_to_f.md#community-content) domain.
 - Used by: the `/admin/content` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Comms Broadcaster" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `content_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its
-  tests; the DOM oracle's `content` capture in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
 - Rules: the page boots from the announcements list, never from built-in posts
-  (`content_boots_from_cms_list_not_mock_docs`), and a failed list is never seeded as an empty one
-  (`content_list_error_does_not_seed_as_empty_success`); every category, SOP included, maps to a
-  tag the API accepts (`category_tag_covers_all_ui_categories_including_sop`); the paths are held
-  against the API's route table (`cms_paths_match_axum_routes`); publish, delete, push and the hero
-  upload reach their routes (`publish_edit_delete_push_are_wired_no_fake_toasts`,
-  `hero_multipart_upload_is_wired_not_stubbed`), all in `tests/content.rs`.
+  (`the_captured_cms_list_maps_drafts_and_published_posts`), and a failed list is never seeded as
+  an empty one; every category, SOP included, maps to a tag the API accepts
+  (`category_tag_covers_all_ui_categories_including_sop`), both in `tests/content.rs`; publish,
+  delete, push and the hero upload reach their routes.
 
 ## Related documentation
 

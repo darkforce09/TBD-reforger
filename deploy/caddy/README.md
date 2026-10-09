@@ -60,7 +60,7 @@ Its location in the checkout is `CADDYFILE` in `tools/foundation/repository_layo
   `crates/frontend/shell/frontend_application/dist`.
 - Used by: `cargo xtask deploy website`, whose web server step names the file at
   `/etc/tbd-caddy/Caddyfile` (`tools/commands/deployment/src/website/remote_steps.rs`); the
-  Cloudflare Tunnel, which targets `http://127.0.0.1:3080`; `crates/api/api_server/tests/forwarded_for_trust.rs`,
+  Cloudflare Tunnel, which targets `http://127.0.0.1:3080`; `crates/api/api_server/tests/http_infrastructure/forwarded_for_trust.rs`,
   which pins the `reverse_proxy 127.0.0.1:8080` upstream; the deploy tests in
   `tools/commands/deployment/src/tests/website/tests.rs`.
 - Rules: this folder holds the Caddy site alone, since everything in it is readable inside the

@@ -1,5 +1,5 @@
 # The headless browser gates of the single-page app: the static server with the gates' isolation
-# headers, the DOM oracle and route drift checks, the Mission Creator smokes, the data viewer
+# headers, the Mission Creator smokes, the data viewer
 # gate, the ballistics agreement and offline mortar gates, the screen capture harness, the gate
 # doctor, and the `gate` and `capture` command lines. axum serves the built app, tokio runs every
 # gate, clap parses the command lines, `image` crops and measures captured screenshots, `regex`
@@ -12,7 +12,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
-description = "The browser gates of the single-page app: static server, DOM oracle, route drift, editor smokes, data viewer gate, ballistics agreement, offline mortar, screen capture, doctor, gate and capture command lines"
+description = "The browser gates of the single-page app: static server, editor smokes, data viewer gate, ballistics agreement, offline mortar, screen capture, doctor, gate and capture command lines"
 
 [package.metadata.layout]
 category = "tools/browser_testing"

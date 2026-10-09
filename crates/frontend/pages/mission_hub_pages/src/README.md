@@ -57,11 +57,9 @@ compiled for `wasm32` and for the native test build, where their tests run.
   no workspace and links to the review workspace only by its route; over HTTP, the API's
   `missions` domain (`/api/v1/missions` and its children).
 - Used by: the route table in `crates/frontend/shell/frontend_application/src/app_routes.rs`, whose tiers and layout
-  flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares; the source pins in
-  `tests/source_pins.rs`.
-- Rules: the shared dossier body stays read-only and the review record stays outside it
-  (`the_card_badge_and_the_dossier_grid_share_one_label_mapper` in
-  `overview/tests/mission_overview.rs` holds the one status label both pages use); every review
+  flags `crates/frontend/foundation/frontend_route_table/src/routes.rs` declares.
+- Rules: the shared dossier body stays read-only and the review record stays outside it, and the
+  card badge and the dossier grid share one status label; every review
   renders through the `mission_review_record` crate, for the author and the reviewer alike.
 
 ## Related documentation

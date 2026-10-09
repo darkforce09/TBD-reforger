@@ -56,8 +56,7 @@ the views only render the decisions, which are tested natively.
   `can_register_reservation` in the parent folder.
 - Used by: the parent folder's hub body, mission card, slotting selector, seat row and footer; the
   standalone slotting page in `crates/frontend/pages/operations_pages/src/orbat_selection/`,
-  through the parent's re-export of `MissionStanding` and `standing_notices`; `event_hub_source` in
-  `crates/frontend/pages/operations_pages/src/tests/source_pins.rs`.
+  through the parent's re-export of `MissionStanding` and `standing_notices`.
 - Rules: an unknown pool state reads as closed and an unknown seat standing as restricted, so the
   page never offers what the API would refuse (`an_unknown_pool_state_reads_as_closed`,
   `restricted_seats_are_closed_and_say_why` in `tests/registration_access.rs`); every documented

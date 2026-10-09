@@ -62,7 +62,7 @@ Commits of this program stage by pathspec only.
 | P3 slice 13 | done | 8210e3784 | Admin (subcommands, audit, snapshot via codec), Admin/UI sections; MissionSelector Catalog/ and inspector cards; browser RPCs on the Admin player controller. |
 | P3 slice 14 | done | 8e6fd61eb | UI Common Dropdown/Inputs/Layout/SessionChrome, Core Theme/Screens/Controls; HUD RPCs to `UI/Hud/SCR_PlayerController.c`. Framework: 0 findings in 370 scripts, max 477 lines, compile 0, world-boot PASS. |
 | P3-C | done | 4518a8665 | Forwarders removed, stale references fixed across scripts and docs, dead `TBD_Objective` members dropped, T-1219 filed; order line matches baseline. P3-C2 (this commit) filed T-1220..T-1228 for the bugs the checkpoint had missed. |
-| P4-1 | done | a055c173d, f6f350b51 | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md law 7 and section 3 committed separately; the law 8 sentence ("machine-checked by `cargo xtask verify enfusion-comments`") sits inside the other session's uncommitted law 8 rewrite and lands with it. ci-local exit 1 only on the other session's work (editorconfig in untracked assets/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
+| P4-1 | done | a055c173d, f6f350b51 | tbd-framework pinned in `file-length` and `enfusion-comments`; `verify-coding-standards` and `ci.yml` language-gates run the comment gate; `task_definitions.rs` map steps split to `map_asset_steps.rs`; checkpoint moved here (plans/ takes only `t-<id>_plan.md`); CLAUDE.md law 7 and section 3 committed separately; the law 8 sentence ("machine-checked by cargo xtask verify enfusion-comments") sits inside the other session's uncommitted law 8 rewrite and lands with it. ci-local exit 1 only on the other session's work (editorconfig in untracked assets/equipment, api_v2 rustfmt, 12 equipment route tags, tbd-export and website README coverage). |
 | OP-1 | done (waived) | | Operator 2026-09-26: playtest not relevant in pre-alpha; closed. |
 | P5-1 | done | 3499895f8, c5843279a | ModifyEntity/ split (6 files), 18 handlers documented, 38 JsonApiStruct request/response classes renamed `...Wire` (ECM-6; handler names, action names and JSON keys unchanged; broker calls handlers only); tbd-emcp pinned in both gates; CLAUDE.md law 7 names it. Operator Workbench compile: clean (2026-09-26). Operator accepted the `...Wire` rename. |
 | P6-1 … P6-6 | blocked | | Operator is working on tbd-export now and will say when P6 may start. |
@@ -77,9 +77,9 @@ Additions to a launch prompt beyond concrete values, by slice id.
 | P3 slices 11…14 (wave C) | Brief file gains a "Bugs" section (operator 2026-09-26: bugs are noted with file:line, never fixed) and the wave B helpers (`EndRound`, `CountSurvivors`, `TBD_WarnOnce`, `TBD_AnnounceOnce`, `TBD_Rounding`). Slice notes carry each folder's stale-comment leftovers; P3 slice 13 switches `TBD_MissionDeploymentRelay` off the `JsonEscape` forwarder. |
 | P3 slices 6…10 (wave B) | Brief file gains wave A lessons: name split files after their primary type (ECM-9; companion structs live with their owner, enums get their own file); run `readme-coverage`/`link-check` with `--with-untracked`. |
 | P3-1…P3-5 | Delivered as one scratch brief file (B0 + CARD + SPLIT RULES + writer steps, verbatim) plus a "Parallel wave rules" block: judge compile by own-file errors only; git mv is fine, no other git add/reset. Slice notes add: heartbeat owns Tick calls (keep static Tick signatures); P3-3 adds `TBD_ZoneRegistry.FindById` and `TBD_TriggerRuntime.HasFired` for other slices; P3-5 must not touch `TBD_DebriefScoreboard.c`. |
-| P2-2 | Also update `tools/checks/mod_script_checks/src/enfusion_comments/network_authority_rule.rs:25` so `TBD_Authority.IsClient()`/`IsServer()` calls count as context-dependent (the P2-1 replacement hid 82 sites), with a test. |
+| P2-2 | Also update tools/checks/mod_script_checks/src/enfusion_comments/network_authority_rule.rs:25 so `TBD_Authority.IsClient()`/`IsServer()` calls count as context-dependent (the P2-1 replacement hid 82 sites), with a test. |
 | P1-3 onward | B0 gains: "Never run `hcargo fmt -p <package>` (it reformats the other session's files); check with `hcargo fmt -p xtask -- --check` and format only your own files." |
-| P1-2 | Concurrency note: P1-1 edits `language_bans/` and `node_free_tests.rs` at the same time; the other session's uncommitted `tools/xtask` edits are reported, not fixed, if they break the build. |
+| P1-2 | Concurrency note: P1-1 edits `language_bans/` and node_free_tests.rs at the same time; the other session's uncommitted `tools/xtask` edits are reported, not fixed, if they break the build. |
 
 ## Writer brief file
 
@@ -97,9 +97,8 @@ Wave launches pass one file built from the plan's B0, CARD, SPLIT RULES and writ
 - ECM-9: every file is named after its primary type. Map names like `...Structs` or `...Types`
   are intents, not file names: put a companion struct with its owner, give an enum its own file
   (`TBD_EXxx.c`), and name the file after the class it declares.
-- Run `hcargo xtask verify readme-coverage --with-untracked --path <f>` and
-  `hcargo xtask verify link-check --with-untracked --path <f>`; without the flag, new untracked
-  files fail.
+- Run `hcargo xtask verify link-check --with-untracked --path <f>`; without the flag, new
+  untracked files fail.
 - Shared helpers now also include `TBD_ZoneRegistry.FindById`, `TBD_TriggerRuntime.HasFired(id,
   out bool unknownId)` and `TBD_TriggerRuntime.FindById`.
 - A stale comment in your folders that names a moved file or member is yours to fix.

@@ -46,15 +46,15 @@ participant evidence name to a display name, and an unknown id shows as itself.
   `crates/frontend/pages/administration_pages/src/event_manager/access/`: `state.rs`
   (`AccessPanel`) and `member_search.rs` (`MemberSearch`).
 - Used by: in the same parent folder, `panel.rs`, which renders `groups_section` as the Groups
-  tab, `participants_table.rs`, which words roster evidence with `authorship_line`, and
-  `tests/access_drafts.rs` and `tests/access_evidence.rs`; `event_manager_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the four source files.
+  tab, `participants_table.rs`, which words roster evidence with `authorship_line`, and the
+  parent's drafts and evidence tests in
+  `crates/frontend/pages/administration_pages/src/event_manager/access/tests/`.
 - Rules: the form refuses what the API would refuse
   (`a_group_form_refuses_what_the_backend_would`), an edit sends only what changed
   (`a_group_edit_sends_only_what_changed`, `an_untouched_group_edit_sends_nothing`), and role ids
   split on commas and whitespace without duplicates
-  (`role_ids_split_on_commas_and_whitespace_without_duplicates`), all in the parent's
-  `tests/access_drafts.rs`; a partner-guild group never shows roster controls.
+  (`role_ids_split_on_commas_and_whitespace_without_duplicates`), all in the parent's drafts
+  tests; a partner-guild group never shows roster controls.
 
 ## Related documentation
 

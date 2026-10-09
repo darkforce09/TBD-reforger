@@ -48,4 +48,4 @@ found`) then shows in the status banner.
   `open_path`; `crate::ticket_actions::models`, which holds the `ProcessHandle` of a running
   command; and `crate::repository_status::models`, which keep a `BoundedLog`.
 - Rules: the UI thread never blocks on a child, its pipes or its spawn; each process ends in
-  exactly one terminal event (`tests/process.rs`).
+  exactly one terminal event.

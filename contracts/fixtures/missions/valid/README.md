@@ -75,8 +75,8 @@ readers can ship before writers.
   - the [API](/documentation/glossary/a_to_f.md#api)'s contract test
     `crates/api/api_missions/src/contract/tests/schema_validators.rs`, which pads
     `last-stand-at-montfort.json` past the byte ceiling;
-  - the xtask schema tests `staged_golden_tests.rs` and `side_fallback_tests.rs` in
-    `tools/commands/schema_tooling/src/tests/schema_checks/`, which read
+  - the xtask schema test
+    `tools/commands/schema_tooling/src/tests/schema_checks/side_fallback_tests.rs`, which reads
     `schema-1_3-wire-fields.json`.
 
 ## Boundaries

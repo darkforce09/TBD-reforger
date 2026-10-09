@@ -36,7 +36,7 @@ and the size arithmetic compile on every target, so their tests run natively.
 Run from the repository root:
 
 ```bash
-cargo test -p mission_creator_session   # the save policy, writer election, size, title preference and source pins
+cargo test -p mission_creator_session   # the save policy, writer election, size and the duplicate-slot guard
 ```
 
 ## Public surface

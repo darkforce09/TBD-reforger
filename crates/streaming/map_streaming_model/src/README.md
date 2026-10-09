@@ -42,6 +42,5 @@ crates/streaming/map_streaming_model/src/
   through the map engine's re-exports, the frontend.
 - Rules:
   - `split_range` spans are inclusive, contiguous and cover the tile exactly, and `Ordered`
-    refuses an out-of-range index or an unfilled one rather than shifting the run (the cases in
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t628_boot_progress.rs`);
-  - the stored world-layer keys are pinned by `the_label_switches_are_stored_in_camel_case`.
+    refuses an out-of-range index or an unfilled one rather than shifting the run;
+  - the stored world-layer keys are camelCase.

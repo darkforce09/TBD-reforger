@@ -73,16 +73,14 @@ match on its variants or its `status` and word it with `Error::message_or`.
   - two tabs never spend one refresh token twice, and a waiting tab adopts its peer's rotation
     (`two_tabs_racing_one_single_use_token_both_keep_their_session` and
     `the_waiter_adopts_the_peer_rotation_instead_of_spending_a_second_one` in `tests/client.rs`);
-  - every request path refreshes through the provider's one cell and its locked refresh
-    (`every_auth_path_goes_through_the_one_single_flight_cell` in `tests/client.rs`), and an older
-    generation never clears a newer flight
+  - every request path refreshes through the provider's one cell and its locked refresh, and an
+    older generation never clears a newer flight
     (`older_generation_completion_cannot_clear_newer_pending_flight` in `tests/single_flight.rs`);
   - a stale generation neither joins nor adopts a refresh
     (`stale_generation_at_first_401_cannot_join_or_replace_current_flight` in
     `tests/refresh_generation.rs`);
   - a refusal keeps its reason and a 401 still takes the refresh path
-    (`a_coded_refusal_keeps_its_reason_and_its_fields` and
-    `the_refusal_arm_leaves_a_401_to_the_refresh_contract` in `tests/refusals.rs`), and a failure
+    (`a_coded_refusal_keeps_its_reason_and_its_fields` in `tests/refusals.rs`), and a failure
     never reads as empty data (`an_empty_result_and_a_401_are_different_values` in
     `tests/fetched.rs`);
   - the access token is never written to storage (`persist_blob_shape_matches_tbd_auth` in

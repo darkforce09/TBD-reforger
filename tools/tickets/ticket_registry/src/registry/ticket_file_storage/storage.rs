@@ -3,7 +3,7 @@
 //! **Role:** reads every parent file into a registry value, writes a registry value back as
 //! parent and child files, and lists the ticket ids on disk or in a value.
 //! **Position:** under the ticket file storage module; [`crate::registry::load_registry`] loads
-//! untyped folders here and xtask tests write fixture trees with [`save_toml_tree`].
+//! untyped folders here and `save_registry` writes them back with [`save_toml_tree`].
 //! **Signals & state:** none; reads and writes the ticket folder.
 //! **Invariants:** a save deletes every `T-*.toml` the value does not name, so it only serves
 //! untyped trees, never the typed live tree; a folder with no parent file refuses to load.

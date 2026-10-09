@@ -47,9 +47,8 @@ crates/api/api_operations/src/handlers/fire_missions/
   solution types; `api_http_layer` for `AuthUser`; `api_foundation` for `PathParams` and
   `ApiError`.
 - Used by: `crates/api/api_operations/src/routes.rs`; over HTTP, the mortar calculator in
-  `crates/frontend/pages/field_tools_pages/src/mortar/`; the tests
-  `crates/api/api_server/tests/game_ballistics_fire_missions.rs` and
-  `crates/api/api_server/tests/fire_mission_solution.rs`.
+  `crates/frontend/pages/field_tools_pages/src/mortar/`; the test
+  `crates/api/api_server/tests/fleet_and_ballistics/game_ballistics_fire_missions.rs`.
 - Rules: both routes take `AuthUser`; a refused save stores nothing.
 
 ## Related documentation

@@ -70,14 +70,9 @@ when a dock reflow moves the pane centre, shifts the camera so the world under i
   `mission_editing_commands::hosted_commands`; `mission_document` and `mission_payload`;
   `unit_symbology` (`classification`, `markers`).
 - Used by: the parent's `install_canvas_mount`, which the editor page
-  `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs` calls; the source pins that read
-  these files in `crates/frontend/workspaces/mission_creator_workspace/src/tests/`
-  (`crates/frontend/workspaces/mission_creator_workspace/src/tests/mission_editor/source.rs` and the boot-progress,
-  placement and hover-cursor pins) and in
-  `crates/frontend/workspaces/mission_creator_workspace/src/tests/review_mode/read_only_review.rs`.
+  `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs` calls.
 - Rules: the review restore reads nothing from the draft store and arms no draft writer, flush,
-  marker or writer election (`the_review_boot_restores_the_reviewed_version_and_arms_nothing` in
-  `crates/frontend/workspaces/mission_creator_workspace/src/tests/review_mode/read_only_review.rs`); a
+  marker or writer election; a
   restored or reviewed document is applied under the init origin, so it opens with no undo step.
 
 ## Related documentation

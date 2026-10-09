@@ -13,7 +13,7 @@ crates/map_overlay/label_layout/src/
 ├── label_ids.rs     `LabelId` and `LocationId`
 ├── lib.rs           the crate root: module header, `mod` lines
 ├── prelude.rs       the names most callers import
-├── tests/           unit tests for the declutter, importance, glyph sizing, packing and ids
+├── tests/           unit tests for the declutter, importance, glyph sizing and packing
 └── text_packing.rs  decluttered labels into monospaced glyph instances
 ```
 
@@ -28,5 +28,5 @@ bytes are written by `render_primitives::text::pack`, the one home of glyph pack
 
 - Depends on: `render_primitives::text`, `newtype_ids`, `serde`.
 - Used by: the crate's callers through its modules and `prelude`.
-- Rules: the cases in `tests/` pin the declutter invariant, the town rules, the glyph sizing, the
-  packing against the baked atlas and the id serialisation.
+- Rules: the cases in `tests/` pin the declutter invariant, the town rules, the glyph sizing and
+  the packing against the baked atlas.

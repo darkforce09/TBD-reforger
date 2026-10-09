@@ -25,7 +25,7 @@ crates/frontend/foundation/frontend_ui/src/
 ├── sheet.rs            `Sheet`: the dialog's shape anchored to an edge, for dossiers and detail panels
 ├── slider.rs           `Slider`: the range input with its track and handle painted
 ├── split_pane.rs       `SplitPane` and its row, filter field, empty state and match predicate
-├── tests/              unit tests of the overlay stack, the form controls, the split pane and the helpers; source pins
+├── tests/              unit tests of the overlay stack, the URL policy, the byte sizes and the UTC instants
 ├── toast.rs            `Toasts`: transient notices, the context that raises them and their viewport
 ├── tokens.rs           `HOVER_FILL` and `DISABLED_GLYPH`: the hover and disabled state classes
 └── utc_timestamp.rs    `UtcTimestamp`: UTC instants handled without the browser clock
@@ -85,14 +85,10 @@ server intel page's copy button and the
   `write_clipboard`.
 - Rules: only the topmost open overlay answers Escape
   (`only_the_topmost_open_overlay_answers_escape` in `tests/ui.rs`); the form controls never
-  re-render per event (`neither_control_re_renders_per_event`); the form controls consume the
-  state classes rather than re-typing a hover fill (`both_controls_consume_the_t668_recipes` in
-  `tests/ui_t633_range_and_select.rs`); `safe_url.rs` answers as the API's content URL policy
-  (`crates/api/api_foundation/src/text/content_url_policy.rs`) does, and its tests repeat that
-  policy's case lists, which `the_case_lists_match_the_backend_policy_tests` in
-  `tests/safe_url.rs` keeps identical; the clipboard write toasts success only on the promise's
-  resolve arm (`class_r_write_clipboard_toasts_only_on_the_resolve_arm` in `tests/clipboard.rs`);
-  a UTC instant written back keeps its wire spelling, and anything but a UTC instant is refused
+  re-render per event; the form controls consume the state classes rather than re-typing a hover
+  fill; `safe_url.rs` answers as the API's content URL policy
+  (`crates/api/api_foundation/src/text/content_url_policy.rs`) does (`tests/safe_url.rs`); the
+  clipboard write toasts success only on the promise's resolve arm; a UTC instant written back keeps its wire spelling, and anything but a UTC instant is refused
   (`the_wire_spellings_parse_and_write_back_unchanged` and
   `anything_but_a_valid_utc_instant_is_refused` in `tests/utc_timestamp.rs`).
 

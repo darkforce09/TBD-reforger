@@ -69,6 +69,5 @@ No feature and no environment variable.
   - streaming category, tier 1, any target: no browser crate, no GPU crate
     (`cargo xtask verify crate-tiers`);
   - an empty slot hands out no sink and writes reach the renderer's own cell in call order
-    (`an_empty_slot_hands_out_no_sink`,
-    `writes_through_the_shared_handle_reach_the_renderer_cell_in_call_order`);
+    (`writes_through_the_shared_handle_reach_the_renderer_cell_in_call_order`);
   - the budget rules are held by the tests in `src/memory_budget/tests/`.

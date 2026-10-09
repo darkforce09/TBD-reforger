@@ -89,9 +89,9 @@ mod treats as permanent. Reports about a source the server has not registered ar
     session loop posts heartbeats, and the telemetry delivery in `MatchTelemetry/Delivery/` posts
     the registrations, results revisions and event batches its durable queue holds.
 - Rules: handlers never import another domain's handlers, and `routes.rs` exports the table the
-  router merges (`crates/api/api_server/src/tests/architecture_rules.rs` checks both); every handler
-  carries its `/// @route` tag (`cargo xtask verify route-tags`); every wire model carries its
-  `@contract` tag into `match-telemetry.schema.json` (`cargo xtask schema citations`); the
+  router merges; every handler
+  carries its `/// @route` tag; every wire model carries its
+  `@contract` tag into `match-telemetry.schema.json`; the
   generated types are regenerated, never edited (`cargo xtask ci schema-codegen`).
 
 ## Related documentation

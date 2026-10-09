@@ -9,9 +9,8 @@ and checks what the document, its undo history and its compiled payload hold aft
 
 ```text
 crates/mission/mission_operations/tests/
-├── operation_boundaries.rs    commands at the document's edges: refused transforms, loadout copies, clipboard paste
-├── paste_keeps_authored_z.rs  a pasted slot keeps the authored height of the slot it was copied from
-└── zone_round_trip.rs         zone geometry survives a payload compile and a re-hydrate
+├── operation_boundaries.rs  commands at the document's edges: refused transforms, loadout copies, clipboard paste and its authored heights
+└── zone_round_trip.rs       zone geometry survives a payload compile and a re-hydrate
 ```
 
 ## How it works

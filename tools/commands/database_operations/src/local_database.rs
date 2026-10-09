@@ -52,9 +52,7 @@
 //!
 //! ── ODDITIES PRESERVED (reproduce, pin, document — not silently "improved") ───────────────────
 //!
-//! - `seed` applies five SQL files in a fixed order, and `SEEDS` keeps that order. Two Class-R
-//!   gates — `verify wiki-seeds` and `verify faction-library-seeds` — pin their entry against this
-//!   list, so editing it moves both; that is deliberate, not incidental.
+//! - `seed` applies five SQL files in a fixed order, and `SEEDS` keeps that order.
 //! - `rust-test-it` hardcodes `podman` (not `$(COMPOSE)`), the container name `tbd_reforger_db`,
 //!   the user `tbd`, the maintenance database `tbd_reforger`, and the URL `localhost:5434`. The
 //!   port keeps all five as defaults but routes the runtime/container/user through

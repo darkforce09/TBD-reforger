@@ -31,12 +31,6 @@ status document.
 
 ## Getting started
 
-Run from the repository root:
-
-```bash
-cargo test -p acknowledgement_dropping_relay   # the settings, the drop policy, the control socket and runs against a stub API
-```
-
 The executable is built from `developer_tools` (`cargo build -p developer_tools --bin
 acknowledgement-dropping-relay`); the staging deploy builds it on the staging host.
 

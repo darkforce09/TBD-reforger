@@ -72,8 +72,8 @@ executor kind.
   host agent's ledger client in `crates/fleet/game_server_host_agent/src/ledger_client/`, and the game runtime's
   [API](/documentation/glossary/a_to_f.md#api) scripts in
   `mod/tbd-framework/Scripts/Game/TBD/API/`.
-- Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); the
+- Rules: every handler carries its `/// @route` tag; no handler
+  imports another domain's handlers; the
   server writes live under `/api/v1/servers`, not `/api/v1/admin/servers`, because every
   signed-in member may read the servers.
 - Body decoding: every JSON body is read through `ApiError::from_json_rejection`: 413 with

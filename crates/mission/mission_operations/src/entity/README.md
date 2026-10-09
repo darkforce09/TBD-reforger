@@ -86,8 +86,7 @@ ring below three vertices.
     the pointer release in `crates/frontend/workspaces/mission_creator_engine_bridge/src/input/pointer_gestures/`, the
     zones panel in `crates/frontend/workspaces/mission_creator_workspace/src/ui/inspector/zones_panel/` and the
     outliner in `crates/frontend/workspaces/mission_creator_workspace/src/ui/outliner/`;
-  - `crates/mission/mission_operations/tests/operation_boundaries.rs` and the prelude-surface tests in
-    `crates/mission/mission_operations/src/tests/prelude_surface.rs`.
+  - `crates/mission/mission_operations/tests/operation_boundaries.rs`.
 - Rules:
   - a release commits at most one placement, and a refused one writes nothing
     (`a_character_the_document_refuses_places_nothing`,
@@ -100,8 +99,7 @@ ring below three vertices.
     (`the_last_folder_is_never_deleted_so_the_document_keeps_a_layer` in `tests/layers.rs`), and an
     out-of-set activation never reaches it
     (`an_activation_outside_the_closed_set_never_reaches_the_document` in `tests/triggers.rs`);
-  - `cargo xtask verify editor-orbat-coherency` scans the files it lists from this folder for
-    `ensure_default_squad` and fails when one of them is missing.
+  - no file here calls `ensure_default_squad`.
 
 ## Related documentation
 

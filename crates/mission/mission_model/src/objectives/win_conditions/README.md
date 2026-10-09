@@ -57,7 +57,7 @@ the rule.
   (`the_authored_modes_are_the_editor_payload_schema_s_enum` in `tests/cases_1.rs`); the timeout
   limits are the schema's own (`the_timeout_bounds_are_the_schema_s_own`); a parameter of another
   mode is refused (`a_param_belonging_to_another_mode_is_refused`), and every optional parameter
-  has its parse branch (`every_optional_param_key_has_a_parse_branch`).
+  has its parse branch.
 
 ## Related documentation
 

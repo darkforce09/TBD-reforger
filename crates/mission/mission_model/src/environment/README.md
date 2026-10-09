@@ -45,10 +45,8 @@ block: the compiler reads it itself into the compiled `meta` and `environment`, 
 - Rules: both blocks stay carried rather than document-owned
   (`win_conditions_is_the_registered_block_and_the_document_models_it` in
   `crates/mission/mission_model/src/authored_blocks/tests/cases_1.rs`), and a mission
-  that authors neither compiles with neither key
-  (`an_unauthored_payload_still_omits_the_audio_key` and
-  `an_unauthored_payload_still_omits_the_weather_timeline_key` in
-  `crates/mission/mission_payload/src/tests/extension_round_trips/`).
+  that authors neither compiles with neither key (`an_unauthored_payload_omits_every_block_key` in
+  `crates/mission/mission_payload/src/tests/extension_round_trips.rs`).
 
 ## Related documentation
 

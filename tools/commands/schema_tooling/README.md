@@ -72,7 +72,7 @@ from `PATH` in the checkout root.
   (`gen`) and `tools/commands/ci_task_catalog/src/` (`schema-validate`, `schema-codegen`,
   `verify-codegen-fresh`, and through them `ci-local-schema` and `ci-local`);
   the platform [wave](/documentation/glossary/n_to_z.md#wave) gate's schema step; the `schema` job
-  of `.github/workflows/ci.yml` and `.github/workflows/schema.yml`.
+  of `.github/workflows/ci.yml`.
 - Rules:
   - tier 5 of `tools/commands` (`cargo xtask verify crate-tiers`).
   - A gate that examined nothing fails: a missing enum `$defs`, a missing fixture file.
@@ -80,7 +80,7 @@ from `PATH` in the checkout root.
     `instance_kinds_lockstep_failures` inside `type_inventory` and `unread_wire_field_failures`
     inside `validate_all`.
   - The `schema-validate` gate set changes together with the wave gate's list and the `ci.yml`
-    schema job (`cargo xtask verify ci-schema-parity`).
+    schema job.
   - Everything under the generated folder is generator output: the codegen removes a Rust file it
     does not render and the freshness check refuses one.
 

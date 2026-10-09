@@ -41,7 +41,7 @@ Run these from the repository root.
 cargo build -p developer_tools --bins                 # the eight executables
 cargo run -q -p developer_tools --bin map -- --help   # any binary's command list; likewise enf, gate, world, capture
 cargo xtask ci workspace-member-tests                 # the CI lane: builds these binaries and tests the tool crates they call
-cargo xtask mk leptos-gates                           # the browser gates: builds the app, gate doctor, the editor suite, gate v-suite verify
+cargo xtask mk leptos-gates                           # the browser gates: builds the app, gate doctor, the editor suite
 ```
 
 `cargo check -p developer_tools --all-targets` and `cargo fmt -p developer_tools --check` check the
@@ -82,17 +82,11 @@ ci-local` nor the CI workflow runs them.
   `ci`, `map`, `mcp`, `mod`, `deploy`, `staging` and `platform`); the CI workflow
   `.github/workflows/ci.yml`, whose `workspace-members` job builds the binaries; and people.
 - Rules: the package is binary-only, depends only on tool crates at `tools/<category>/<name>`
-  and never on `xtask`, and no workspace member depends on it
-  (`tooling_dependency_direction_is_enforced`); every target builds under the workspace lints
-  (`[lints] workspace = true`); the eight binary names are fixed
-  (`the_tooling_tree_holds_its_executables_manifests_and_layout_modules`); files stay under 500
-  lines, test files under 1,000, `src/bin/` files under 250 and editor smoke scenarios under 450,
-  and tests live in separate `tests/` files
-  (`tooling_source_files_stay_below_their_structural_limits` and
-  `tooling_test_modules_live_in_separate_files`, all in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`); every tracked file here is held to
-  the prose rules of `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs` (no ticket ids, no history
-  words, no retired names, no script file names, every `.rs` named exists).
+  and never on `xtask`, and no workspace member depends on it; every target builds under the
+  workspace lints (`[lints] workspace = true`); the eight binary names are fixed; files stay under
+  500 lines, test files under 1,000, `src/bin/` files under 250 and editor smoke scenarios under
+  450, and tests live in separate `tests/` files; no tracked file here carries a ticket id, a
+  history word, a retired name or a script file name.
 
 ## Related documentation
 

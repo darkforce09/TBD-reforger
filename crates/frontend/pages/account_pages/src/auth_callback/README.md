@@ -71,9 +71,8 @@ profile fetch fails the stored tokens stay, so a reload can still restore the se
   `web_sys` and `js_sys`.
 - Used by: the `/auth/callback` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the frame in
-  `crates/frontend/shell/frontend_application/src/shell/layout.rs`, which renders this path bare; the DOM
-  oracle's `callback` capture in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`; over redirects, the Discord
+  `crates/frontend/shell/frontend_application/src/shell/layout.rs`, which renders this path bare; over
+  redirects, the Discord
   callback and the dev login in `crates/api/api_identity_and_access/src/handlers/`.
 - Rules: the fragment is scrubbed with a history replace, never a push; the path stays reachable
   signed out and stays named in the frame's `classify_frame` (`classify_frame_kinds` in

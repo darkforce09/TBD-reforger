@@ -75,7 +75,7 @@ cargo test -p mission_editing_commands   # export bytes, report wording, selecti
 - Used by: the Mission Creator in `crates/frontend/workspaces/mission_creator_workspace/src/`, which imports
   `hosted_commands` and `document_text` directly.
 - Rules: no `web_sys`, `leptos` or `wasm_bindgen` in this crate; the place path never calls
-  `ensure_default_squad` (`cargo xtask verify editor-orbat-coherency` scans every hosted command);
+  `ensure_default_squad`;
   every public id parameter and field is a newtype id (`cargo xtask verify crate-anatomy`);
   mission editing tier 7 (`cargo xtask verify crate-tiers`).
 

@@ -134,12 +134,9 @@ covers the site, the mounts and the forwarded-address trust.
   compose file.
 - Used by: the `deploy`, `mod`, `setup` and `debug` commands above, through the layout constants
   and the loader in `tools/foundation/deploy_settings/src/deploy_environment.rs`; the `caddy` service of
-  `deploy/compose.staging.yml`, which mounts `caddy/` alone; the API's forwarded-for
-  test, which reads the Caddyfile; the API's configuration test, which reads the staging compose
-  file.
+  `deploy/compose.staging.yml`, which mounts `caddy/` alone.
 - Rules: `deploy.env` is never committed and never rsynced (both exclude lists name
-  `DEPLOY_ENV`, and `the_deploy_secrets_file_sits_beside_its_example` in
-  `tools/foundation/repository_layout/src/tests/command_locations_tests.rs` pins its place beside the example), and no
+  `DEPLOY_ENV`), and no
   container mounts the folder that holds it
   (`the_caddy_service_mounts_no_folder_holding_the_deploy_secrets` in
   `tools/commands/deployment/src/tests/website/tests.rs`); a

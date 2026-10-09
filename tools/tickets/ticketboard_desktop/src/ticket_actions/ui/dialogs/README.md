@@ -54,5 +54,4 @@ verbatim into the command drawer.
 - Used by: `crate::application::ticket_command_views`, which calls `dialog_ui` each frame a
   dialog is open.
 - Rules: a dialog dispatches only the command whose line it shows, carrying the guard its dialog
-  was opened with; `tools/tickets/ticketboard_desktop/src/application/tests/rendering.rs` paints every dialog
-  headlessly without running a command.
+  was opened with.

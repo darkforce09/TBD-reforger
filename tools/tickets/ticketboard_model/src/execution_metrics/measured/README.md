@@ -52,14 +52,7 @@ broken by key name.
 - Rules:
   - the receipt check is a copy of `validate_record` in
     `tools/tickets/ticket_metrics/src/model.rs` plus the patterns of
-    `.ai/tickets/metrics.schema.json`, kept by hand
-    (`checker_mirror_rules_each_produce_a_named_error_row`,
-    `unknown_field_is_an_error_row_mirroring_the_schema`, `ticket_id_and_sha_pattern_mirrors` in
-    `tests/measured.rs`);
-  - a malformed file is an error row and never part of a sum
-    (`bad_sum_receipt_is_a_named_error_row_excluded_from_sums`,
-    `missing_tokens_consumed_is_a_named_error_row_never_zero`);
-  - an unfinished run counts in runs and unfinished, never in elapsed
-    (`unfinished_run_counts_in_runs_and_unfinished_never_in_elapsed`);
-  - no egui type appears here (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+    `.ai/tickets/metrics.schema.json`, kept by hand;
+  - a malformed file is an error row and never part of a sum;
+  - an unfinished run counts in runs and unfinished, never in elapsed;
+  - no egui type appears here.

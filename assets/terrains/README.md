@@ -83,9 +83,7 @@ check branches on `status`, which records how far a terrain's export has come.
   pipeline and the blueprint compiler, from the raw exports of the `tbd-export` addon's
   [Workbench](/documentation/glossary/n_to_z.md#workbench) plugins.
 - Consumers:
-  - the API's `/map-assets` mount, and its test
-    `crates/api/api_server/tests/map_assets_rate_limit_exemption.rs`, which fetches
-    `terrain-registry.json` to prove the mount is outside the rate limiter;
+  - the API's `/map-assets` mount, outside the rate limiter;
   - the map engine in the browser, per terrain, over `/map-assets/<terrain>/…`;
   - the world export steps above (`tools/map_assets/world_export_pipeline/src/`) and
     `cargo xtask schema validate`, which read the registry;

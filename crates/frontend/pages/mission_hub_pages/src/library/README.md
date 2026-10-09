@@ -115,13 +115,10 @@ cloned.
   `mission_payload::version_body_to_writer`, and
   `frontend_ui::byte_formatting::format_bytes` for the upload size; it imports no
   workspace.
-- Used by: the `/missions` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`;
-  `mission_library_source` in `crates/frontend/pages/mission_hub_pages/src/tests/source_pins.rs`, which the
-  overview page's tests also read.
-- Rules: the create affordances read the authenticated reactive role
-  (`maker_affordance_uses_authed_reactive_role` in `tests/mission_library.rs`); a thumbnail or
-  avatar `src` is only ever an `http(s)` URL (`mission_art_falls_back_for_non_http_thumbnails`,
-  `author_avatar_emits_src_only_for_http_urls`); reordering rows is not a change
+- Used by: the `/missions` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`.
+- Rules: the create affordances read the authenticated reactive role; a thumbnail or avatar `src`
+  is only ever an `http(s)` URL (`mission_art_falls_back_for_non_http_thumbnails` in
+  `tests/mission_library.rs`); reordering rows is not a change
   (`reordering_rows_is_not_a_change` in `tests/mission_library_versions.rs`); the size gate runs
   before the file is read (`the_size_gate_names_both_numbers_and_is_inclusive_at_the_budget`).
 

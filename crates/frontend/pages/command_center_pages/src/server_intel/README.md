@@ -81,14 +81,10 @@ feed. The map backdrop and the theatre tile are images on `lh3.googleusercontent
   `frontend_ui` (`AuthGate`, `MaterialIcon`, `cn`, the toasts), `frontend_ui`
   (uptime formatting and `clipboard::write_clipboard`), the `AuthStore` context, and the images on
   `lh3.googleusercontent.com`.
-- Used by: the `/server-intel` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`;
-  `server_intel_source` in `crates/frontend/pages/command_center_pages/src/tests/source_pins.rs`, which the
-  page's guard tests read.
+- Used by: the `/server-intel` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`.
 - Rules: at most one stream subscription per mount; the panel reads the `terrain` key the list
-  joins in (`server_panel_reads_terrain_key`); the copy button goes through the awaited clipboard
-  helper (`class_r_copy_address_routes_through_the_awaited_clipboard_helper`); leaving the route
-  aborts the status stream (`server_intel_registers_the_stream_abort_on_cleanup` in
-  `tests/stream_teardown.rs`).
+  joins in; the copy button goes through the awaited clipboard helper; leaving the route aborts
+  the status stream.
 
 ## Related documentation
 

@@ -158,10 +158,7 @@ The page stores nothing in the browser.
 ## Decisions
 
 - No invented figures: the page shows only what the API measured, so the personal telemetry block
-  reads "No telemetry recorded" rather than zeros
-  (`no_fabricated_personal_telemetry_survives_in_this_module` and
-  `personal_telemetry_empty_copy_is_pinned` in
-  `crates/frontend/pages/operations_pages/src/deployments/tests/deployments.rs`).
+  reads "No telemetry recorded" rather than zeros.
 - One fetch feeds the record: upcoming deployments and history arrive together, so nothing on the
   page can go stale against anything else on it; each leave panel owns its own fetch because it
   changes on its own.

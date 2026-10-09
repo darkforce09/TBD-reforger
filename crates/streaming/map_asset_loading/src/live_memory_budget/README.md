@@ -63,5 +63,4 @@ republishes `window.__t9386`.
     (`crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/viewport.rs`).
 - Rules:
   - the wasm32 and native builds define `configured_budget_bytes`, `heap_bytes` and `publish` side
-    by side, so the model's tests and this folder's test run natively
-    (`a_native_build_takes_the_default_budget_and_measures_no_linear_memory`).
+    by side, so the model's tests run natively.

@@ -109,9 +109,8 @@ abandoned drag costs no undo step and a finished one costs one.
     `every_apply_draws_a_seed_the_previous_apply_did_not` in `tests/cargo.rs`);
   - a tactical draw is armed only for a kind the validator gives a point floor, and a cancelled
     vertex drag writes nothing (`tests/tactical_graphics.rs`);
-  - the prelude carries the authoring commands and session state a host needs
-    (`tests/prelude_surface.rs`), and `cargo xtask verify editor-orbat-coherency` scans the files
-    it lists here for `ensure_default_squad`.
+  - the prelude carries the authoring commands and session state a host needs, and the place path
+    never calls `ensure_default_squad`.
 
 ## Related documentation
 

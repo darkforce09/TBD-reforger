@@ -72,9 +72,8 @@ lists them.
   run the role sync, the membership reconciliation and the refresh token purge, the administration
   and operations domains call the services, and the `staging-fixtures` host tool and the
   integration suites reach the services directly.
-- Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
-  imports against the domain graph.
+- Rules: the API crate rules of [crates/api](/crates/api/README.md); its route table, its handlers
+  and its imports follow the domain graph.
 
 ## Related documentation
 

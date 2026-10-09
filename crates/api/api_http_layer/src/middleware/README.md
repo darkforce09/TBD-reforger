@@ -100,13 +100,11 @@ reconnects with `Last-Event-ID` as after any end of stream.
     `audit_replay_shutdown.rs`.
 - Rules:
   - `STRICT_PREFIXES` is the only path test in the limiter; the asset exemption is where the
-    router mounts them, below the layer (`the_exempt_mount_is_registered_below_the_rate_limit_layer`
-    in `crates/api/api_server/src/tests/router.rs`, and
-    `crates/api/api_server/tests/map_assets_rate_limit_exemption.rs`);
+    router mounts them, below the layer (`crates/api/api_server/src/router.rs`);
   - the durable tier fails closed, and its numbers equal the in-memory strict tier's;
   - `RATE_LIMIT_BUCKETS_DDL` is migration `0021` verbatim
     (`migration_0021_is_the_ddl_constant_verbatim` in
-    `crates/api/api_server/tests/durable_rate_limit.rs`);
+    `crates/api/api_server/tests/http_infrastructure/durable_rate_limit.rs`);
   - `mission_maker` outranks `leader` in `role_rank` on purpose;
   - every SSE handler passes its stream through `authorize_event_stream`, the one place a stream
     ends at shutdown (`shutdown_closes_an_idle_stream_without_an_event` and its neighbours in

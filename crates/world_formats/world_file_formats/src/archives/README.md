@@ -75,8 +75,7 @@ magic as a byte string (`b"TBDC"`).
     (the doc comment in `version.rs`), and every archive committed under `assets/terrains/` is
     then written again, since the readers accept only the current version;
   - each archive round-trips and refuses corrupted bytes and the bytes of another archive type
-    (`tests/archive_round_trip_tests.rs`); every `BinaryError` variant renders
-    (`every_variant_renders_and_is_an_error` in `tests/codec_tests.rs`);
+    (`tests/archive_round_trip_tests.rs`);
   - an identifier type leaves the archive bytes those of its bare primitive
     (`tests/archive_wire_identity_tests.rs`).
 

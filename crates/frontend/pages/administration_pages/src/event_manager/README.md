@@ -151,17 +151,14 @@ browser build only; the views that run them exist in that build only.
   [server infrastructure](/documentation/glossary/n_to_z.md#server-infrastructure) domain.
 - Used by: the `/admin/events` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Event Manager" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `event_manager_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its
-  tests; the DOM oracle's `eventmgr` capture in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
 - Rules: the edit form sends only changed fields and clears the briefing and banner with an empty
-  string (`edit_dialog_reattach_and_empty_string_clear_are_wired`); the delete confirmation never
-  promises a permanent cascade (`delete_confirm_copy_matches_the_soft_delete_handler`), both in
-  `tests/event_manager.rs`; an edit sends the game server only when it changes
-  (`an_edit_sends_the_server_only_when_it_changes`) and both forms send the chosen one
-  (`both_forms_send_the_chosen_server`), in `tests/server_choice.rs`; the Status picker offers only moves `lifecycle::can_transition`
-  allows, and the API stays the judge.
+  string; the delete confirmation never promises a permanent cascade; an edit sends the game
+  server only when it changes (`an_edit_sends_the_server_only_when_it_changes`) and a new event
+  names a server only when one is chosen
+  (`a_new_operation_names_a_server_only_when_one_is_chosen`), both in `tests/server_choice.rs`;
+  the Status picker offers only moves `lifecycle::can_transition` allows, and the API stays the
+  judge.
 
 ## Related documentation
 

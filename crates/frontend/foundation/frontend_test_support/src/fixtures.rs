@@ -1,9 +1,8 @@
 //! The captured fixtures and the files outside the calling crate that the guard tests read.
 //!
-//! **Role:** hands the captured API response corpus, the API route tables and a crate's own
-//! manifest to the tests, addressing the corpus and the route tables from the repository root and
-//! the manifest from the calling crate's manifest folder.
-//! **Position:** test-only support; the golden round-trip tests and the page guards call it, each
+//! **Role:** hands the captured API response corpus and the API route tables to the tests,
+//! addressing both from the repository root.
+//! **Position:** test-only support; the golden round-trip tests and the endpoint check call it, each
 //! with `env!("CARGO_MANIFEST_DIR")` expanded in its own crate (`golden!` expands it for them).
 //! **Signals & state:** none here; the texts come from the process-wide cache of
 //! [`super::repository_root`].
@@ -11,8 +10,7 @@
 //! folder, never on the calling file or on a fixed depth below the root, so a test reads the same
 //! file wherever its crate sits.
 
-use super::repository_root::{cached_text, repository_text};
-use std::path::Path;
+use super::repository_root::repository_text;
 
 /// The folder the captured API responses live in, relative to the repository root.
 pub const FIXTURE_DIR: &str = "contracts/fixtures/api_goldens/";
@@ -67,63 +65,4 @@ pub fn api_route_source(manifest_dir: &str) -> String {
     API_ROUTE_TABLES
         .map(|table| repository_text(manifest_dir, table))
         .concat()
-}
-
-/// The `Cargo.toml` of the crate whose manifest folder is `manifest_dir` (the caller's
-/// `env!("CARGO_MANIFEST_DIR")`), for guards that assert a dependency or feature is declared.
-///
-/// # Panics
-///
-/// When the manifest cannot be read.
-pub fn crate_cargo_toml(manifest_dir: &str) -> &'static str {
-    cached_text(&Path::new(manifest_dir).join("Cargo.toml"))
-}
-
-/// Strip TOML `#` comments and `//` line comments, respecting strings, so a commented-out
-/// feature line cannot satisfy a manifest pin.
-pub fn strip_toml_comments(src: &str) -> String {
-    let mut out = String::with_capacity(src.len());
-    let mut chars = src.chars().peekable();
-    let mut in_string = false;
-    while let Some(c) = chars.next() {
-        if in_string {
-            out.push(c);
-            if c == '\\' {
-                if let Some(n) = chars.next() {
-                    out.push(n);
-                }
-                continue;
-            }
-            if c == '"' {
-                in_string = false;
-            }
-            continue;
-        }
-        if c == '"' {
-            in_string = true;
-            out.push(c);
-            continue;
-        }
-        if c == '/' && matches!(chars.peek(), Some('/')) {
-            chars.next();
-            for n in chars.by_ref() {
-                if n == '\n' {
-                    out.push('\n');
-                    break;
-                }
-            }
-            continue;
-        }
-        if c == '#' {
-            for n in chars.by_ref() {
-                if n == '\n' {
-                    out.push('\n');
-                    break;
-                }
-            }
-            continue;
-        }
-        out.push(c);
-    }
-    out
 }

@@ -80,14 +80,10 @@ rather than an error.
     `crates/frontend/workspaces/mission_creator_engine_bridge/src/bridge/`, and the loadout commands in
     `crates/frontend/workspaces/mission_creator_arsenal/src/`;
   - the editing crates (`mission_editing_session`, `mission_editing_commands`), which read the
-    selection cell and call the closures they are handed (`confirm_bulk`, `ensure_active_layer`);
-  - the source pins in `crates/frontend/workspaces/mission_creator_engine_bridge/src/test_support/editor_operations.rs`.
+    selection cell and call the closures they are handed (`confirm_bulk`, `ensure_active_layer`).
 - Rules: every module is `#[cfg(target_arch = "wasm32")]`, and so is its `pub mod` line; a
   confirmation is the host's, handed to the engine as a closure, so no browser dialog lives inside
-  the engine; every file here but `mod.rs` is on the place path that
-  `cargo xtask verify editor-orbat-coherency` scans
-  (`tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`), which bans
-  `ensure_default_squad` there and fails when a listed file is missing.
+  the engine; no file here calls `ensure_default_squad`.
 
 ## Related documentation
 

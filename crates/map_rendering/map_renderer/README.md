@@ -71,7 +71,7 @@ None: no feature and no environment variable. The engine is selected by the `was
   (`crates/frontend/foundation/frontend_map_view/src/`, `crates/frontend/workspaces/`), and the render
   diagnostics in `crates/map_rendering/map_render_diagnostics/src/`.
 - Rules: map rendering tier 5 (`cargo xtask verify crate-tiers`); the frame path is damage-driven
-  and refills in place (`src/tests/damage_discipline.rs`); a typed layer is lent a lane sink, never
+  and refills in place; a typed layer is lent a lane sink, never
   the engine.
 
 ## Related documentation

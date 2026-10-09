@@ -29,7 +29,5 @@ tools/xtask/fixtures/
 - Depends on: the commands whose output the recordings stand in for.
 - Used by: `tools/commands/enfusion_mcp/src/call_selftest.rs`.
 - Rules: a fixture folder is reached only through its constant in
-  `tools/foundation/repository_layout/src/tool_inputs.rs`, and
-  `every_committed_location_exists_in_the_checkout` in
-  `tools/foundation/repository_layout/src/tests/command_locations_tests.rs` checks the folder exists; test fixtures of the other tooling crates live with
-  those crates.
+  `tools/foundation/repository_layout/src/tool_inputs.rs`; test fixtures of the other tooling
+  crates live with those crates.

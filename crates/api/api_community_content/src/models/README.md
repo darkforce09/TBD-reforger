@@ -36,7 +36,7 @@ details, which carry `WikiMarkupFinding`s.
   (`UploadResponse`, `ContentError`, `ContentRefusal`) in `contracts/definitions/`.
   `announcement.rs` cites `announcement.schema.json` (`Announcement`, `AnnouncementTag`,
   `AnnouncementStatus`) and `modpack.rs` cites `modpack.schema.json` (`Modpack`, `ModpackMod`)
-  with `@contract` tags, which `cargo xtask schema citations` resolves.
+  with `@contract` tags.
 - Used by: the domain's handlers and services; `api_command_center`'s dashboard (`Announcement`);
   `api_server_infrastructure`'s server intel (`Modpack`, `ModpackMod`); `api_missions`'
   [registry](/documentation/glossary/n_to_z.md#registry) items (`Modpack`); the web app's

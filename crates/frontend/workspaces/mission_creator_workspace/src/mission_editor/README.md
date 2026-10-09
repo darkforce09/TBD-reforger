@@ -70,24 +70,15 @@ keys 1, 2 and 3) and the armed-place release decision are the state layer's `tra
   `mission_document`, `mission_crdt`, `mission_payload` and `mission_operations`;
   `unit_symbology` (`classification`, `markers`) and `terrain_elevation::grid`; over HTTP, `GET /api/v1/registry` and `GET /api/v1/registry/compat`.
 - Used by: the page module `crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs`, and the top
-  strip through `toolbar_dispatch`; the source pins in
-  `crates/frontend/workspaces/mission_creator_workspace/src/tests/`, the keymap census in
-  `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/keymap_census/`.
+  strip through `toolbar_dispatch`.
 - Rules:
-  - `canvas_mount.rs` sits at the 500-line ceiling that `cargo xtask verify file-length` holds, so a
-    new install goes into a part under `canvas_mount/`;
-  - across `canvas_mount.rs` and the pointer-up handler exactly one drag-move commit exists
-    (`only_one_move_arm_commits_the_atomic_mix` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/t648_transform.rs`);
-  - the Arrange chords claim no chord another keydown listener holds
-    (`no_two_listeners_claim_the_same_chord` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/tests/help_modal/keymap_census/tests.rs`);
+  - `canvas_mount.rs` sits at the 500-line ceiling, so a new install goes into a part under
+    `canvas_mount/`;
+  - across `canvas_mount.rs` and the pointer-up handler exactly one drag-move commit exists;
+  - the Arrange chords claim no chord another keydown listener holds;
   - a changed Arrange chord changes both `page_effects.rs` and the `ARRANGE` list in
-    `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/arrange.rs`: the help rows and the
-    six keydown arms in `page_effects.rs` are both checked against the list
-    (`arrange_help_rows_match_the_shared_list`; `the_editor_keydown_binds_the_arrange_chords` and
-    `the_bound_codes_are_exactly_the_shared_lists_chorded_rows` in
-    `crates/frontend/workspaces/mission_creator_workspace/src/tests/mission_editor/arrange_chords.rs`).
+    `crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/top_strip/arrange.rs`, so the help rows and the
+    six keydown arms in `page_effects.rs` stay on the list.
 
 ## Related documentation
 

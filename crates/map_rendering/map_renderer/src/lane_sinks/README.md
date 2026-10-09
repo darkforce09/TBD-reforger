@@ -32,5 +32,4 @@ statistics.
   `world_layers_gpu` (`TexLane`).
 - Used by: `lifecycle.rs` and the upload belts (the engine's own sink), and `typed_layers/`, which
   builds the borrowed sinks beside the layers it lends them to.
-- Rules: the damage pins read `engine_lane_sink.rs` by path
-  (`every_lane_mutation_marks_the_frame_damaged` in `src/tests/damage_discipline.rs`).
+- Rules: every change that alters what is drawn marks the frame damaged.

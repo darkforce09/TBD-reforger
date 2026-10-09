@@ -71,8 +71,8 @@ crates/api/api_identity_and_access/src/handlers/
   [API](/documentation/glossary/a_to_f.md#api) client's token refresh in
   `crates/frontend/foundation/frontend_transport/src/client/refresh.rs`, and the mod's
   `mod/tbd-framework/Scripts/Game/TBD/API/Identity/TBD_IdentityLink.c`, which confirms link codes.
-- Rules: every handler carries its `/// @route` tag (`cargo xtask verify route-tags`); no handler
-  imports another domain's handlers (`crates/api/api_server/src/tests/architecture_rules.rs`); tokens
+- Rules: every handler carries its `/// @route` tag; no handler
+  imports another domain's handlers; tokens
   leave the API only in a URL fragment or a JSON body, never in a query string.
 
 ## Related documentation

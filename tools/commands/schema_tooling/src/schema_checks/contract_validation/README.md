@@ -44,8 +44,7 @@ repeated slot id. It prints `ok` and exits 0 otherwise.
 - Used by: `tools/xtask/src/commands/schema/dispatch.rs` (`schema validate`,
   `schema validate-file`); the `schema-validate` row of
   `tools/commands/ci_task_catalog/src/task_definitions.rs`; the platform [wave](/documentation/glossary/n_to_z.md#wave) gate's schema step
-  (`tools/commands/platform_execution/src/wave_execution/schema.rs`);
-  `.github/workflows/schema.yml`.
+  (`tools/commands/platform_execution/src/wave_execution/schema.rs`).
 - Rules: every family prints its own section and a failure never stops the suite, so one run
   reports every broken document; a schema that fails to compile or a document that fails to read
   aborts the run with an error rather than a pass.

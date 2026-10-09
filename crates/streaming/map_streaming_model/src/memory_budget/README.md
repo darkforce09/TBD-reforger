@@ -47,7 +47,7 @@ positive setting.
 - Rules:
   - a request that would fit an empty budget is told to shrink, never refused, and a reservation
     records nothing unless it fits; measured growth never enters `held`; the walk never returns a
-    level finer than the GPU limit's choice; the default budget is 1,536 MiB (the tests in
-    `tests/` hold each);
+    level finer than the GPU limit's choice (the tests in `tests/` hold each); the default budget
+    is 1,536 MiB;
   - an added asset extends `Asset::ALL`, `Asset::index`, `Asset::name` and the ledger's seven-row
-    entry array together (`every_asset_indexes_its_own_row`).
+    entry array together.

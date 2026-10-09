@@ -102,6 +102,6 @@ cargo test -p road_network   # network, styling, strip and airfield tests
   corrupt bytes (`unnameable_class_code_is_an_error_not_a_vanished_road`,
   `wrong_schema_version_is_refused_even_though_the_bytes_validate`, `corrupt_buffers_are_refused`
   in `src/tests/network_tests.rs`); the width is the median across the pairs
-  (`width_is_median_across_cross_edges`); the visibility signature changes exactly at a class gate
-  (`road_signature_matches_visibility_and_boundaries` in `src/tests/styling_tests.rs`); terrain
+  (`width_is_median_across_cross_edges`); the visibility signature changes exactly at a class
+  gate; terrain
   tier 3 (`cargo xtask verify crate-tiers`).

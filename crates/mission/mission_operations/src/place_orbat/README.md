@@ -40,8 +40,7 @@ from the document on every call, so it is right again after an undo.
   - the squad name a placement mints reads as minted to the open-squad test
     (`minted_names_match_what_placement_writes`), and the open squad is found again after an undo
     (`the_current_squad_is_re_derived_after_undo`);
-  - both files are on the place path that `cargo xtask verify editor-orbat-coherency` scans for
-    `ensure_default_squad`, and the gate runs the `place_` tests.
+  - neither file calls `ensure_default_squad`.
 
 ## Related documentation
 

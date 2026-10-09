@@ -44,7 +44,7 @@ crates/frontend/foundation/frontend_api_dtos/src/
 
 The DTOs mirror the snake_case models of the API's domain crates (`crates/api/api_<domain>/src/models/`),
 and the API wins a disagreement. A DTO that projects a definition in `contracts/definitions/`
-names it in an `@contract` line of its docs, which `cargo xtask schema citations` resolves. They
+names it in an `@contract` line of its docs. They
 are plain `serde` data, and all of them compile into the native test build. `tests/r_api.rs` holds each DTO to a captured answer from
 `contracts/fixtures/api_goldens/`: re-serialising reproduces the capture canonically,
 byte for byte, and the keys no named field reads (the ones a `#[serde(flatten)]` catch-all sweeps

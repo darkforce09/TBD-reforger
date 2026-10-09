@@ -33,7 +33,7 @@ Everything that touches `web_sys`, the paper doll renderer or the live document 
 Run from the repository root:
 
 ```bash
-cargo test -p mission_creator_arsenal   # the loadout core, the export and import gates and the source pins
+cargo test -p mission_creator_arsenal   # the loadout core and the export and import gates
 ```
 
 ## Public surface
@@ -57,8 +57,7 @@ cargo test -p mission_creator_arsenal   # the loadout core, the export and impor
   `wasm-bindgen`, `wasm-bindgen-futures`; `frontend_test_support` for its tests.
 - Used by: the single-page app (`crates/frontend/shell/frontend_application`), whose Attributes dialog mounts `ArsenalTab`;
   `tools/browser_testing/browser_gate_suites/src/editor_smoke_tests/arsenal.rs`, which drives the
-  tab in a headless browser; `tools/checks/repository_checks/src/architecture/editor_orbat_coherency.rs`,
-  which scans `src/loadout_commands.rs`.
+  tab in a headless browser.
 - Rules: depends on no Mission Creator crate above `mission_creator_session`
   (`cargo xtask ci verify-workspace-laws`); a pick reaches the document only through
   `loadout_commands` and the hosted commands.

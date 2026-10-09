@@ -65,11 +65,11 @@ null and left off the wire.
   `wiki_page_revisions` tables of migration 0059.
 - Used by: the domain's `routes.rs`; over HTTP, the wiki page under
   `crates/frontend/pages/doctrine_pages/src/wiki/`.
-- Rules: reads take `AuthUser` and the save `AdminUser`; every handler carries its `/// @route` tag
-  (`cargo xtask verify route-tags`); the save locks the page row, then inserts the revision, then
+- Rules: reads take `AuthUser` and the save `AdminUser`; every handler carries its `/// @route` tag;
+  the save locks the page row, then inserts the revision, then
   appends the audit row, all in one transaction; every nullable column is read through `COALESCE`
-  or into an `Option` (`crates/api/api_server/tests/null_tolerance_select_scan.rs`);
-  `crates/api/api_server/tests/community_content_reads.rs` holds the create, save, conflict,
+  or into an `Option`;
+  `crates/api/api_server/tests/smoke/community_content_reads.rs` holds the create, save, conflict,
   summary and history round trip against the contract.
 
 ## Related documentation

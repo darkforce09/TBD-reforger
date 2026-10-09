@@ -68,9 +68,8 @@ No feature and no variable of its own.
 - Used by: the API application (`crates/api/api_server`): its router merges `routes`, its audit publication
   worker runs `publish_audit_batch`, and its audit integration suites drive the services directly;
   over HTTP, the personnel and audit logs pages of the single-page app.
-- Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
-  imports against the domain graph.
+- Rules: the API crate rules of [crates/api](/crates/api/README.md); its route table, its handlers
+  and its imports follow the domain graph.
 
 ## Related documentation
 

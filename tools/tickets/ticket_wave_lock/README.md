@@ -43,7 +43,6 @@ module and the numbering rules.
 Run from the repository root:
 
 ```bash
-cargo test -p ticket_wave_lock   # packing, numbering, emptied waves, the check and the collision facts
 cargo xtask wave repack          # recompile and write .ai/tickets/wave.lock
 cargo xtask wave check           # compare the committed lock with the ticket files and git history
 cargo xtask slice-collisions     # the largest file-disjoint set of open tickets
@@ -92,10 +91,8 @@ The tests build scratch git repositories under the system temporary folder and n
   - The ticketboard does not link it: its wave lanes parse the lock themselves from
     `repository_layout::WAVE_LOCK` (`tools/tickets/ticketboard_model/src/wave_plan/services/lock_file.rs`).
 - Rules: tier 3 of `tools/tickets`, depending on no ticket crate above `ticket_model`
-  (`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`; `cargo xtask verify crate-tiers`);
-  the repack is the only writer and renders byte for byte the same from the same inputs
-  (`compile_render_is_deterministic_and_roundtrips`); a missing lock is a refusal
-  (`missing_lock_is_a_did_not_run_refusal`); a `TicketId` serialises as its bare string, so the
+  (`cargo xtask verify crate-tiers`); the repack is the only writer and renders byte for byte the
+  same from the same inputs; a missing lock is a refusal; a `TicketId` serialises as its bare string, so the
   lock text never carries the type.
 
 ## Related documentation

@@ -92,10 +92,8 @@ so `TBD_ObjectivesComponent.OnDelete` calls `Clear()`, and the next lookup build
   win-condition checks under `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/` and
   `mod/tbd-framework/Scripts/Game/TBD/Gamemode/`.
 - Rules: behaviours hold no per-objective state; log channels, keys, formats and the chat and HUD
-  strings are the objectives engine's and stay byte-identical; `cargo xtask verify
-  destroy-target-diagnostics` pins the destroy-target reasons in
-  `mod/tbd-framework/Scripts/Game/TBD/Gamemode/Objectives/Types/Destroy/TBD_ObjectiveDestroyTargets.c`;
-  `cargo xtask mod compile` checks that the scripts compile.
+  strings are the objectives engine's and stay byte-identical; `cargo xtask mod compile` checks
+  that the scripts compile.
 
 ## Related documentation
 

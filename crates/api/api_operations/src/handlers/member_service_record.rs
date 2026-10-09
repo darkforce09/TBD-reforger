@@ -21,8 +21,7 @@
 //!   intent) and `match_player_stats.vehicles_destroyed` (a count of vehicles the player
 //!   *killed*, not one they used). Nothing observes what a player actually carried or drove, and
 //!   the ingest contract agrees — `PlayerStatInput` has no weapon field. This is a
-//!   data-collection gap in the mod, not a number to invent; `tests/deployments_combat.rs` is the
-//!   tripwire for the day a column arrives.
+//!   data-collection gap in the mod, not a number to invent.
 //!
 //! **A figure nobody measured serialises as `null`, never as `0`.** `0.00` is a measurement claim
 //! — "we watched, and you scored nothing" — so an absent measurement never wears it. `0.0` is

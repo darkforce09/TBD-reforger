@@ -50,9 +50,8 @@ each assigned task.
 - Rules: only the two moves out of `assigned` are legal, as in the game's table
   (`every_other_pair_is_illegal` in `tests/cases_1.rs`); a window of zero or a negative start is
   refused, and a start at or past the mission length only when a length is given
-  (`a_zero_window_is_refused`, `a_negative_start_is_refused`,
-  `start_at_or_past_mission_length_is_refused`); a blank optional string is refused rather than
-  stored (`a_blank_optional_is_refused_rather_than_stored`).
+  (`a_zero_window_is_refused`, `start_at_or_past_mission_length_is_refused`); a blank optional
+  string is refused rather than stored.
 
 ## Related documentation
 

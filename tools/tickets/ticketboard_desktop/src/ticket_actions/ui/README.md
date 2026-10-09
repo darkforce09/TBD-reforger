@@ -50,7 +50,5 @@ control that could dispatch is disabled while `MutationContext::busy` is true.
   `Ticket`); `eframe::egui`.
 - Used by: `crate::application` (`feature_views.rs` and `ticket_command_views.rs`); the browser
   reaches the menus only through those callbacks.
-- Rules: no other feature imports this module (the test
-  `dependency_boundaries_and_external_test_placement_are_enforced` in
-  `tools/tickets/ticketboard_desktop/src/tests/architecture_rules.rs`); the recovery command
-  `cargo xtask wave repack` appears as text only, never as a button.
+- Rules: no other feature imports this module; the recovery command `cargo xtask wave repack`
+  appears as text only, never as a button.

@@ -61,20 +61,13 @@ forgiven; `descendants` lists the corpus ids that extend an id with a dot, in nu
   (`StatusName`); `std::fs` to read ticket files for the fingerprint.
 - Used by: the rest of `crate::ticket_actions`; the desktop application:
   `tools/tickets/ticketboard_desktop/src/ticket_actions/ui/`, and `tools/tickets/ticketboard_desktop/src/application/`, whose
-  `command_execution.rs` checks `cas_ok`, drives the queue and applies the hint and success tail
-  (with `tests/rendering.rs`).
+  `command_execution.rs` checks `cas_ok`, drives the queue and applies the hint and success tail.
 - Rules:
-  - every argument list is `TICKET_PREFIX` plus one verb tail, with the flags only when set
-    (`ship_builder_argv_and_display`, `add_child_flag_combos`, `remove_force_combo` in
-    `tests/commands.rs`);
+  - every argument list is `TICKET_PREFIX` plus one verb tail, with the flags only when set;
   - the queue runs one command, keeps each parked command's own guard, and drops the tail on
-    failure without retry (`queue_is_single_flight_fifo`,
-    `queue_failure_drops_the_pending_tail_and_never_retries`,
-    `queued_requests_keep_their_captured_fingerprints`);
-  - `running` is never a target of an offered transition
-    (`running_is_never_a_dispatch_target_in_the_normal_ui`, `offered_transitions_matrix_pinned`);
-  - the recovery hint stays text: the viewer never runs `cargo xtask wave repack`
-    (`recovery_hint_triggers_on_the_wave_stale_signature_only`).
+    failure without retry;
+  - `running` is never a target of an offered transition;
+  - the recovery hint stays text: the viewer never runs `cargo xtask wave repack`.
 
 ## Related documentation
 

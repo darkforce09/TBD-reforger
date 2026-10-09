@@ -37,7 +37,7 @@ backoff from 250 ms to 5 s, and tells subscribers to resynchronise after a gap.
 - Used by:
   - the domain's audit log handlers, and `audit_publication_worker` in
     `crates/api/api_background_workers/src/`;
-  - the integration tests `crates/api/api_server/tests/audit_notify.rs` and
-    `crates/api/api_server/tests/audit_publication.rs`.
+  - the integration tests `crates/api/api_server/tests/smoke/audit_notify.rs` and
+    `crates/api/api_server/tests/smoke/audit_publication.rs`.
 - Rules: `audit_logs` is append-only; these services never insert into it: the `api_audit_log`
   writers and the database functions in `crates/api/api_database/migrations/` do.

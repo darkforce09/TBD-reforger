@@ -97,8 +97,6 @@ build `unversioned`. `Cargo.toml` pins edition 2024 and Rust 1.95.
     firewalls of `cargo xtask verify crate-tiers`);
   - its `#[wasm_bindgen]` exports are three of the workspace's few: only this crate,
     `frontend_application` and `crates/foundation/browser_platform` carry one;
-  - every production file under `src/` passes the frontend documentation audit of
-    `crates/frontend/shell/frontend_application/src/tests/doc_audit/mod.rs`;
   - the loader holds no policy: every decision lives in `offline_cache_policy` or in
     `src/range_slicing.rs`, and is unit-tested natively.
 

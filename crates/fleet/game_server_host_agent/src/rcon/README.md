@@ -80,8 +80,7 @@ characters. Reforger's RCON has no broadcast command.
   BattlEye RCon server.
 - Rules: only commands that are safe to repeat go through `execute`; a command through
   `execute_once` is transmitted once and never resent after a new login
-  (`rcon_transport_execute_once_never_retransmits_an_unanswered_command`,
-  `rcon_transport_execute_once_lost_reply_is_not_resent_after_the_new_login`); a corrupted or
+  (`rcon_transport_execute_once_never_retransmits_an_unanswered_command`); a corrupted or
   foreign datagram is dropped, never trusted (`tests/packet_codec.rs`); a retransmitted command
   keeps its sequence number
   (`rcon_transport_lost_request_is_retransmitted_with_the_same_sequence_number`).

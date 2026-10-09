@@ -41,10 +41,8 @@ per-ticket verdicts, the selection and comparison, and whether wave 0 is expande
   the desktop application, whose `tools/tickets/ticketboard_desktop/src/application/feature_views.rs` lends the view
   and whose `tools/tickets/ticketboard_desktop/src/wave_plan/ui/` paints it.
 - Rules:
-  - lanes keep the lock's order and membership, and the viewer never recomputes packing
-    (`lanes_render_the_lock_verbatim_never_sorted` in `tests/wave_projection.rs`);
+  - lanes keep the lock's order and membership, and the viewer never recomputes packing;
   - unplanned is set arithmetic over the lock and the dispatchable tickets, never lane membership
-    from status (`unplanned_is_pure_set_arithmetic`);
-  - a lock id without a ticket file stays visible and flagged
-    (`lock_id_without_ticket_file_is_flagged`);
-  - the copy text is one `<n><TAB><id>` line per ticket (`lane_tsv_format_is_n_tab_id_lines`).
+    from status;
+  - a lock id without a ticket file stays visible and flagged;
+  - the copy text is one `<n><TAB><id>` line per ticket.

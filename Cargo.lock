@@ -759,7 +759,6 @@ dependencies = [
 name = "api_server"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "api_administration",
  "api_audit_log",
  "api_background_workers",
@@ -3387,7 +3386,6 @@ dependencies = [
 name = "frontend_ui"
 version = "0.1.0"
 dependencies = [
- "frontend_test_support",
  "http_url_guard",
  "js-sys",
  "leptos",
@@ -5015,7 +5013,6 @@ dependencies = [
  "spatial_indexes",
  "terrain_elevation",
  "terrain_line_of_sight",
- "terrain_relief",
  "time_source",
  "world_line_of_sight",
 ]
@@ -11073,7 +11070,6 @@ dependencies = [
  "documentation_checks",
  "enfusion_mcp",
  "enfusion_script_index",
- "jsonschema",
  "map_asset_verification",
  "mod_operations",
  "mod_script_checks",

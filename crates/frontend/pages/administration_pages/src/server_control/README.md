@@ -191,17 +191,12 @@ RCON route. Every request runs in the browser build only; the views that run the
   and the modpack list of the community content domain.
 - Used by: the `/admin/server` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Server Control" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; `server_control_source` in
-  `crates/frontend/pages/administration_pages/src/tests/source_pins.rs`, which joins the page's sources for its
-  tests; the DOM oracle's `servercontrol` capture in
-  `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
-- Rules: the page never calls an RCON route (`no_rcon_route_is_called_or_served`) and shows no
-  invented server or console (`no_mock_servers_or_fabricated_console`); every card builds the
-  state of its own server and is keyed on the selection alone
-  (`every_card_builds_the_state_of_its_own_server`); the default pick prefers an active server
-  (`pick_default_prefers_active`); the picker and an empty fleet offer "Add server"
-  (`the_picker_and_an_empty_fleet_offer_to_add_a_server`), all in `tests/server_control.rs`; each
-  panel's own rules are in its folder's README.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
+- Rules: the page never calls an RCON route and shows no invented server or console; every card
+  builds the state of its own server and is keyed on the selection alone; the default pick
+  prefers an active server (`pick_default_prefers_active`, in `tests/server_control.rs`); the
+  picker and an empty fleet offer "Add server"; each panel's own rules are in its folder's
+  README.
 
 ## Related documentation
 

@@ -72,6 +72,5 @@ The validator keeps the last run's findings after the document is discarded, and
   (`HasRun`, `Passed`, the counts and `BuildReportLines`).
 - Rules: every check runs to completion; nested objects are tested on content, never on a null
   reference; the unconsumed-key markers and `AddWarning` subjects stay as
-  `cargo xtask ci schema-validate` pins them, and the entities truth pin stays for
-  `cargo xtask verify destroy-target-diagnostics`; sources stay ASCII and `cargo xtask mod compile`
+  `cargo xtask ci schema-validate` pins them; sources stay ASCII and `cargo xtask mod compile`
   checks that they compile.

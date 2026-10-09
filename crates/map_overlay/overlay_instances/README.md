@@ -54,9 +54,8 @@ cargo test -p overlay_instances   # slot instance cases and fire-mission mark ca
   and cluster lanes with it (`crates/map_rendering/symbology_layers_gpu/src/slot_symbology/`);
   the Mission Creator's select tool and the mortar page's map
   picker (`crates/frontend/pages/field_tools_pages/src/mortar/map_picker/`).
-- Rules: the side tints stay three distinct colours with BLUFOR as the default
-  (`side_tint_three_distinct`, `missing_side_defaults_blufor`); the symbology degrades to dots
-  past the stated scale (`symbology_degrades_to_dots_past_the_stated_m_per_px`); every emitted
+- Rules: the side tints stay three distinct colours with BLUFOR as the default; the symbology
+  degrades to dots past the stated scale; every emitted
   fire-mission coordinate is finite; map overlay tier 3 (`cargo xtask verify crate-tiers`).
 
 ## Related documentation

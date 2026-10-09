@@ -64,14 +64,9 @@ order, and a ticket link selects that ticket on the board.
   `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/detail_panel/`, and `tools/tickets/ticketboard_desktop/src/application/`
   (`action_dispatch.rs`, `feature_views.rs`, `mod.rs`).
 - Rules:
-  - no code path combines a measured and an estimated figure
-    (`the_law_no_code_path_combines_measured_and_estimated` in
-    `tools/tickets/ticketboard_model/src/execution_metrics/estimated/tests/estimated.rs`);
-  - a malformed receipt or estimate is listed by name and left out of every sum (the tests in
-    `measured/tests/measured.rs` and `estimated/tests/estimated.rs`);
-  - nothing here names egui
-    (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`);
+  - no code path combines a measured and an estimated figure;
+  - a malformed receipt or estimate is listed by name and left out of every sum;
+  - nothing here names egui;
   - the feature reads the two trees and never writes them.
 
 ## Related documentation

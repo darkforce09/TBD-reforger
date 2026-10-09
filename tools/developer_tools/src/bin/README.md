@@ -64,11 +64,10 @@ a subcommand prints its usage, and a clap usage error exits 2.
 
 ### gate
 
-- Synopsis: `gate <COMMAND>`: `v-suite`, `s-routes`, `smoke`, `editor-suite`, `doctor`, `r-auth`,
-  `render-check`, `serve`, `equipment-data-viewer`, `mortar-offline`, `ballistics-agreement`.
-- Does: drives headless Chromium over the DevTools protocol against the built app: the DOM oracle
-  (`v-suite verify|accept`), the route-table drift check (`s-routes`), one Mission Creator smoke or
-  the whole suite, the session-refresh gate (`r-auth`), a render check with an optional probe script
+- Synopsis: `gate <COMMAND>`: `smoke`, `editor-suite`, `doctor`, `r-auth`, `render-check`,
+  `serve`, `equipment-data-viewer`, `mortar-offline`, `ballistics-agreement`.
+- Does: drives headless Chromium over the DevTools protocol against the built app: one Mission
+  Creator smoke or the whole suite, the session-refresh gate (`r-auth`), a render check with an optional probe script
   and screenshot, a static server with the cross-origin isolation headers, and a live check of the
   equipment data viewer through a running website (`equipment-data-viewer`), and the mortar
   calculator with the server gone (`mortar-offline`), and the fire-mission solver's WebAssembly
@@ -159,8 +158,8 @@ a subcommand prints its usage, and a clap usage error exits 2.
 
 - Depends on: the tool crates in the diagram, each its binary's one dependency.
 - Used by:
-  - `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, which run `gate doctor`, `gate
-    editor-suite` and `gate v-suite verify`;
+  - `cargo xtask mk gate-doctor` and `cargo xtask mk leptos-gates`, which run `gate doctor` and `gate
+    editor-suite`;
   - `cargo xtask mcp daemon` and `cargo xtask mcp selftest`, which build and launch `mcpd`;
   - `cargo xtask map export-terrain` and the platform wave gate, which run `world`;
   - the `map-water-everon`, `map-cartographic-everon` and `map-cartographic-verify` tasks of `cargo
@@ -172,12 +171,9 @@ a subcommand prints its usage, and a clap usage error exits 2.
     which runs its `control` command there;
   - `cargo xtask staging load` (the recorded run and `--rehearse-local`), which builds
     `staging-load` and runs it as a child process.
-- Rules: an entry file holds only `main` and its one call, and stays under 250 lines
-  (`tooling_source_files_stay_below_their_structural_limits` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`); the eight binary names are stable,
-  because xtask recipes and CI tasks call them by `--bin <name>`
-  (`the_tooling_tree_holds_its_executables_manifests_and_layout_modules`); a new binary adds its
-  `[[bin]]` table and its file in the same change.
+- Rules: an entry file holds only `main` and its one call, and stays under 250 lines; the eight
+  binary names are stable, because xtask recipes and CI tasks call them by `--bin <name>`; a new
+  binary adds its `[[bin]]` table and its file in the same change.
 
 ## Related documentation
 

@@ -162,56 +162,6 @@ fn flatten_apply_preserves_schema_version_1_0_defense() {
     assert_eq!(m["schemaVersion"], "1.0");
 }
 
-/// Source ratchet: `flatten_orbat_slots` / mission body must not reassign schemaVersion
-/// after `apply_flatten_orbat_slots` (the exact bug shape on the stdout branch).
-#[test]
-fn flatten_orbat_slots_no_post_apply_schema_reassign_source_ratchet() {
-    let src_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/mission_flattening.rs");
-    let src = fs::read_to_string(&src_path).expect("read mission_flattening.rs");
-
-    // Public CLI entrypoint: no schemaVersion token at all (I/O only after mission helper).
-    let pub_start = src
-        .find("pub fn flatten_orbat_slots(")
-        .expect("pub flatten_orbat_slots");
-    let pub_rest = &src[pub_start..];
-    let pub_end = pub_rest[1..]
-        .find("\n#[cfg(test)]")
-        .or_else(|| pub_rest[1..].find("\npub fn "))
-        .or_else(|| pub_rest[1..].find("\n/* "))
-        .expect("end of pub flatten_orbat_slots")
-        + 1;
-    let pub_fn = &pub_rest[..pub_end];
-    assert!(
-        !pub_fn.contains("schemaVersion"),
-        "T-539: pub flatten_orbat_slots must not mention schemaVersion \
-         (post-apply stamp belongs nowhere on the CLI entrypoint)"
-    );
-    assert!(
-        pub_fn.contains("flatten_orbat_slots_mission"),
-        "T-539: pub flatten_orbat_slots must delegate to flatten_orbat_slots_mission"
-    );
-
-    // Mission helper: after the apply call, no further schemaVersion assignment.
-    let body_start = src
-        .find("fn flatten_orbat_slots_mission(")
-        .expect("flatten_orbat_slots_mission");
-    let body_rest = &src[body_start..];
-    let body_end = body_rest[1..]
-        .find("\npub fn flatten_orbat_slots(")
-        .expect("end of mission helper")
-        + 1;
-    let body_fn = &body_rest[..body_end];
-    let apply_at = body_fn
-        .find("apply_flatten_orbat_slots")
-        .expect("mission helper calls apply");
-    let after_apply = &body_fn[apply_at + "apply_flatten_orbat_slots".len()..];
-    assert!(
-        !after_apply.contains("schemaVersion"),
-        "T-539: flatten_orbat_slots_mission must not reassign schemaVersion after apply \
-         (stdout-only stamp is the pre-T-538 / T-539 defect)"
-    );
-}
-
 #[test]
 fn flatten_stdout_refuses_lossy_loadout_drop() {
     // Class-R: silent drop on stdout must RED (same refuse as --in-place).

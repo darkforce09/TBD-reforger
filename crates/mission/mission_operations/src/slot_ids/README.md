@@ -31,5 +31,4 @@ repeat an id in a squad, so a duplicate arrives through a hydrated payload.
   `duplicate_slot_id_report` in `crates/mission_editing/mission_editing_commands/src/document_text/merge_report.rs`.
 - Rules: a document built by the store's own writes reports nothing, and a hydrated squad that
   lists an existing id twice reports it with its callsign (`test_duplicate_slot_ids` in
-  `../place_orbat/tests/cases_1.rs`); both source files are on the place path that
-  `cargo xtask verify editor-orbat-coherency` scans for `ensure_default_squad`.
+  `../place_orbat/tests/cases_1.rs`); neither source file calls `ensure_default_squad`.

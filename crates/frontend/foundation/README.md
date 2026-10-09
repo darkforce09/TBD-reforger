@@ -15,7 +15,7 @@ crates/frontend/foundation/
 ├── frontend_offline/       `frontend_offline`: the offline worker registration, the offline pack download, its saved copies and the pack status
 ├── frontend_route_table/   `frontend_route_table`: every route's path, layout flags and access tier, their readers, the sidebar's menu
 ├── frontend_session/       `frontend_session`: the session store, the cross-tab session refresh, the sign-out hooks, the route guard and the content gates
-├── frontend_test_support/  `frontend_test_support`: the repository-root finder, `golden!` and the source scrubber, for tests only
+├── frontend_test_support/  `frontend_test_support`: the repository-root finder and `golden!`, for tests only
 ├── frontend_transport/     `frontend_transport`: the HTTP client, the typed endpoint calls, the server-sent event streams
 └── frontend_ui/            `frontend_ui`: the design-system primitives, the overlay stack, and the formatting, URL policy and clipboard helpers
 ```

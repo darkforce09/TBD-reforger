@@ -1,16 +1,16 @@
 # Deployment
 
 The `deployment` crate: the `cargo xtask deploy` group. It deploys the website to the home server
-and the staging fleet of dedicated game servers, holds the paths no deploy ships, and runs the
-`cargo xtask verify staging-compose-paths` gate. The `deploy db` verbs it carries are the
-`database_operations` crate's. The operator runs the deploys from a development machine.
+and the staging fleet of dedicated game servers, and holds the paths no deploy ships. The
+`deploy db` verbs it carries are the `database_operations` crate's. The operator runs the deploys
+from a development machine.
 
 ## Contents
 
 ```text
 tools/commands/deployment/
 ├── Cargo.toml  the `deployment` library package: `database_operations`, `deploy_settings`, `process_runner`, layout tier 5
-└── src/        the website and staging drivers, the shared excludes, the compose-path check and the errors
+└── src/        the website and staging drivers, the shared excludes and the errors
 ```
 
 ## How it works
@@ -117,14 +117,6 @@ Each runs as `cargo xtask deploy <command>`; a clap usage error exits 2.
 - Does: the verified backup, the dump verifier, the guarded restore, the restore drill and their
   helpers; see the [database operations crate](/tools/commands/database_operations/README.md).
 - Example: `cargo xtask deploy db is-safe-scratch --db rust_it`
-
-### verify staging-compose-paths
-
-- Synopsis: `cargo xtask verify staging-compose-paths`
-- Does: holds that `deploy/compose.staging.yml` has one owner: every compose command of
-  `deploy website` names it, and `deploy staging` runs none.
-- Exit codes: 0 held; 1 findings; 2 a source could not be read.
-- Example: `cargo xtask verify staging-compose-paths`
 
 ## Boundaries
 

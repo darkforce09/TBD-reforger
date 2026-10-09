@@ -70,9 +70,9 @@ No features and no environment variables.
 - Depends on: `serde` (with `derive`), `uuid` (with `serde`).
 - Used by: `api_identifiers` (`crates/api/api_identifiers`), which declares the API's typed ids
   with it; the typed ids of the libraries declare themselves with it.
-- Rules: serialisation is transparent (`serialises_exactly_as_its_string` and its integer and UUID
-  counterparts); a string id is looked up by `&str`
-  (`a_map_keyed_by_the_id_is_looked_up_by_str`); foundation tier, so the crate depends on no
+- Rules: serialisation is transparent (`a_string_id_serialises_exactly_as_its_string` and its
+  integer and UUID counterparts); a string id is looked up by `&str`
+  (`a_map_keyed_by_a_string_id_is_looked_up_by_str`); foundation tier, so the crate depends on no
   workspace crate, and sqlx enters only through the caller (`cargo xtask verify crate-tiers`).
 
 ## Related documentation

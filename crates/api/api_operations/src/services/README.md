@@ -77,12 +77,11 @@ columns, and reads an event's missions with their guns.
   - the `staging-fixtures` host tool in `tools/staging/staging_fixtures/src/`, through
     `event_authoring`;
   - the [API](/documentation/glossary/a_to_f.md#api) tests
-    `crates/api/api_server/tests/attendance_no_show_derivation.rs`,
-    `crates/api/api_server/tests/event_access_context.rs`,
-    `crates/api/api_server/tests/event_administration_transactions.rs`,
-    `crates/api/api_server/tests/event_lifecycle_transactions.rs`,
-    `crates/api/api_server/tests/reservation_quota_allocations.rs` and
-    `crates/api/api_server/tests/user_stats_service.rs`.
+    `crates/api/api_server/tests/events_and_reservations/attendance_no_show_derivation.rs`,
+    `crates/api/api_server/tests/events_and_reservations/event_access_context.rs`,
+    `crates/api/api_server/tests/events_and_reservations/event_administration_transactions.rs`,
+    `crates/api/api_server/tests/events_and_reservations/reservation_quota_allocations.rs` and
+    `crates/api/api_server/tests/telemetry_and_statistics/user_stats_service.rs`.
 - Rules: reads and guards use the derived status, never the stored column, and every time
   comparison uses the database's clock; one lock order holds for every writer of reservations and
   live occupancy; producers outside the domain only queue re-evaluation requests and never take

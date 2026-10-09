@@ -21,9 +21,9 @@ crates/api/api_identity_and_access/src/models/
   `contract_schema_types::identity_and_access::current_profile`. `current_profile.rs` and
   `user_account.rs` carry `@contract` tags for `current-profile.schema.json` (the root and
   `UserAccount`) and `profile-update.schema.json` (`UpdatedProfile`, the `PATCH /api/v1/me`
-  answer), which `cargo xtask schema citations` resolves.
+  answer).
 - Used by: the domain's handlers and services; the contract test
-  `crates/api/api_server/tests/current_profile_contract.rs`, which decodes live answers into the
+  `crates/api/api_server/tests/contract_parity/current_profile.rs`, which decodes live answers into the
   generated types; the web app's `crates/frontend/foundation/frontend_api_dtos/src/auth.rs` mirrors the
   wire shape.
 - Rules: soft-delete columns stay out of these structs, since the queries filter them;

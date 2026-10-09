@@ -132,13 +132,9 @@ time, and no functional test notices: the picture stays the same.
    `gpu_frame::draw::encode::encode` once a frame, never per batch or per instance: without
    link-time optimisation a chatty boundary is thousands of calls that are not inlined.
 
-Rule 3 is the one whose breach is invisible, so it is pinned in the source:
-`crates/map_rendering/map_renderer/src/tests/damage_discipline.rs` reads `lifecycle.rs`,
-`encode.rs`, `engine.rs` and `lane_sinks/engine_lane_sink.rs` at compile time and fails if `render`
-stops refusing an undamaged frame, a lane mutation stops marking damage, the packet stops reading
-the persistent list or the tables are rebuilt rather than refilled. `RenderEngine` needs a GPU
-device, so no native test can build one; the source pin is the proof that remains. The damage
-state machine itself is tested in `render_primitives`
+Rule 3 is the one whose breach is invisible, and review holds it: `RenderEngine` needs a GPU
+device, so no native test can build one. The damage state machine itself is tested in
+`render_primitives`
 (`crates/graphics/render_primitives/src/frame/tests/`).
 
 ### 2C.1 What may name a GPU type
@@ -404,13 +400,10 @@ they hold every other crate's; no deny-list names them. Each wall between them i
 | The worker links no GPU, rendering or streaming crate and no wgpu, in any table | the rendering-stack firewall |
 | Nothing links the game server host agent or the ticketboard desktop viewer | rule 7; no matrix row admits `crates/fleet` |
 
-The test-only feature rule (`tools/foundation/repository_laws/src/test_only_features.rs`) keeps a
-feature such as `failpoints` out of every build that is not a test build; the `engineering_laws`
-test binary of `crates/api/api_server` holds the failpoints crate and every API manifest to it.
+Crate anatomy keeps the test-only features (`test_fixtures`, `failpoints`) out of every build
+that is not a test build: only a dev-dependency may enable one.
 
-The tool crates keep a direction of their own, pinned by
-`tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`
-(`cargo test -p repository_checks`):
+The tool crates keep a direction of their own:
 
 - the tool binaries `tools/xtask` and `tools/developer_tools` hold no library, depend among the
   workspace crates only on tool crates at `tools/<category>/<name>`, never on each other, and no
@@ -438,7 +431,6 @@ The tool crates keep a direction of their own, pinned by
 | Every test file compiles | test-file reachability | `test_file_reachability.rs` |
 | Lower frontend layers never name higher ones; pages and workspaces stay apart; the two shell crates stay apart | frontend layering | `frontend_layering.rs`, `frontend_layering/crate_edges.rs` |
 | Every leptos crate's classes reach the stylesheet | Tailwind sources | `tailwind_sources.rs` |
-| The frame path stays damage-driven | source pins | `crates/map_rendering/map_renderer/src/tests/damage_discipline.rs` |
 
 Crate tiers rules 6 and 7, crate anatomy and Tailwind sources run in `cargo xtask ci ci-local` and
 in CI; the other rows are guidance, checked on demand. A law whose input is missing fails rather

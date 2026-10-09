@@ -60,8 +60,8 @@ services compare these digests to tell an inert retry from a conflict.
   `MatchPlayerStat`); the integration tests in `crates/api/api_server/tests/`
   (`telemetry_revisions.rs`, `detailed_events.rs` and `telemetry_queue.rs` decode live answers
   into the generated types; the null-tolerance tests read `Match`).
-- Rules: every wire type carries its `@contract` tag into `match-telemetry.schema.json`
-  (`cargo xtask schema citations`); the generated types are written by
+- Rules: every wire type carries its `@contract` tag into `match-telemetry.schema.json`;
+  the generated types are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
   checks them); `Match.winning_faction`,
   `aar_replay_url` and `created_at` are plain fields over nullable columns, so every query that reads

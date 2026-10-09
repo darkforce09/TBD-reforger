@@ -133,8 +133,7 @@ game server reads the bytes from `/api/v1/game-runtime/artifacts/{artifactId}`.
     `crates/frontend/shell/frontend_application/`, and the mission loaders of the game server in
     `mod/tbd-framework/Scripts/Game/TBD/Systems/Mission/Loaders/`.
 - Rules: no other crate imports this crate's handlers, and `routes.rs` exports the one `routes`
-  table that `crates/api/api_server/src/router.rs` merges (`crates/api/api_server/src/tests/architecture_rules.rs`
-  checks both); the domain's generated contract types in `contract_schema_types` are written by
+  table that `crates/api/api_server/src/router.rs` merges; the domain's generated contract types in `contract_schema_types` are written by
   `cargo xtask ci schema-codegen` and never edited by hand (`cargo xtask ci verify-codegen-fresh`
   checks them), with `contract/loadout_projection.rs` as the one hand-maintained contract model.
 

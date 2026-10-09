@@ -142,5 +142,4 @@ ticket yet.
 - The list is the page's only view: no table toggle, no calendar and no date window; the API's
   `upcoming` scope decides what it holds.
 - The hub has one renderer: the schedule and `/events/:id` both call `event_hub_view`, so the two
-  cannot drift apart (`schedule_briefing_empty_check_stays_trim_aligned` in
-  `crates/frontend/pages/operations_pages/src/schedule/tests/schedule.rs`).
+  cannot drift apart.

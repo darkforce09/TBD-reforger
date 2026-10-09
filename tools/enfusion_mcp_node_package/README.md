@@ -70,10 +70,8 @@ carries on, so the resolver falls to the npm cache or a download. To install by 
   - the repository root's `.cursor/mcp.json`, which starts the installed module with `node` by an
     absolute path. `mod/.mcp.json` starts `npx -y enfusion-mcp` instead, which this package
     does not pin.
-- Rules: `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs` requires `package.json` to
-  exist here; the entry module must stay under this folder's `node_modules/`
-  (`tools/foundation/repository_layout/src/tests/enfusion_mcp_node_package_tests.rs`); only the manifest, the lockfile and
-  `.nvmrc` are tracked.
+- Rules: `package.json` exists here; the entry module stays under this folder's `node_modules/`;
+  only the manifest, the lockfile and `.nvmrc` are tracked.
 
 ## Related documentation
 

@@ -51,5 +51,7 @@ tools/map_assets/map_raster_pipeline/src/road_export_images/
 - Rules: the decoded pixels of every image equal the reference images of the synthetic export
   (`fixture_export_draws_the_reference_images` in
   `tools/map_assets/map_raster_pipeline/src/tests/road_export_images_tests.rs`); the blend and row
-  rules are pinned in `road_export_images_canvas_tests.rs` and the loose JSON rules in
-  `road_export_images_layer_loading_tests.rs` beside it.
+  rules are pinned in
+  `tools/map_assets/map_raster_pipeline/src/tests/road_export_images_canvas_tests.rs` and the
+  loose JSON rules in
+  `tools/map_assets/map_raster_pipeline/src/tests/road_export_images_layer_loading_tests.rs`.

@@ -33,10 +33,6 @@ command groups that still live in the binary; `cargo xtask verify`, the `ci` tas
 `ci_task_catalog` and the platform wave gate call the same verification functions of the check
 and command crates.
 
-The tooling rules that judge this crate with every other tool crate (dependency direction, line
-limits, test placement, prose) are tests of the `repository_checks` crate
-(`tools/checks/repository_checks/src/tests/`).
-
 ## Public surface
 
 - The `xtask` binary; the crate exposes no library. Everything else is crate-internal, reached

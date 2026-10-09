@@ -43,12 +43,9 @@ describes each module.
 Run from the repository root:
 
 ```bash
-cargo test -p ticket_model   # unit tests and the compile-fail test; some read the live .ai/tickets/ tree and git history
+cargo test -p ticket_model   # the encoding round trip and the model contract tests
 cargo xtask ticket check     # loads the whole corpus through Corpus::load and runs the registry checks
 ```
-
-The store and miner tests load the checkout's own `.ai/tickets/` and run `git log`, so they run
-inside a checkout with its history.
 
 ## Configuration
 
@@ -81,12 +78,9 @@ checkout.
   `xtask` (`TicketId`, `StatusName`, `error_chain_text`); the ticketboard in `tools/tickets/ticketboard_desktop/`
   (the model types, `parse_ticket_toml`, `CLASS_VALUES`, `ESTIMATED_VALUES`).
 - Rules: tier 2 of `tools/tickets`, depending only on foundation crates
-  (`ticket_crates_depend_only_on_foundations_and_lower_ticket_crates` in
-  `tools/checks/repository_checks/src/tests/tooling_dependency_boundaries.rs`; `cargo xtask verify crate-tiers`);
-  every live ticket file renders back byte for byte and loads fail-closed (`src/tests/store/`);
-  `Domain` stays closed (`tests/trybuild.rs`); `src/repository.rs` is the crate's only file
-  that spells a repository path (`only_a_layout_module_spells_a_repository_path` in
-  `tools/checks/repository_checks/src/tests/tooling_prose_rules.rs`).
+  (`cargo xtask verify crate-tiers`); every live ticket file renders back byte for byte and loads
+  fail-closed; `Domain` stays closed; `src/repository.rs` is the crate's only file that spells a
+  repository path.
 
 ## Related documentation
 

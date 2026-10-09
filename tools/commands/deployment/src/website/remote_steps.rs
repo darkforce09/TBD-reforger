@@ -186,7 +186,8 @@ pub(crate) fn spa_build(remote_dir: &str) -> String {
 /// every migration file's hash against the recorded one at boot and refuses to start on a
 /// mismatch, so the repoint has to land first. The server has no `.git/` to recover the applied
 /// bytes from, which is what `--force` states; the edit is proven comments-only on the developer's
-/// checkout before it is committed (`tests/migrations_are_immutable.rs` pins the hashes).
+/// checkout before it is committed
+/// (`crates/api/api_server/tests/http_infrastructure/migrations_are_immutable.rs` pins the hashes).
 pub(crate) fn migration_checksum_repair(remote_dir: &str) -> String {
     format!(
         "cd '{remote_dir}' &&     {PUT_RUST_TOOLCHAIN_ON_PATH} &&     TBD_DB_CONTAINER={STAGING_DB_CONTAINER} cargo xtask db repair-migration-checksum --force"

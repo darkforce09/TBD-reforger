@@ -69,9 +69,7 @@ None: no feature and no environment variable. The GPU layers are selected by the
 - Used by: `map_renderer`, whose render engine holds the layers, and `map_render_diagnostics`;
   the Mission Creator and the mortar map picker under `crates/frontend/shell/frontend_application/src/` through
   `RenderEngine::with_symbology`.
-- Rules: map rendering tier 4 (`cargo xtask verify crate-tiers`); no layer names the renderer;
-  the bind bodies are pinned by `map_renderer`'s lane-bind source pins
-  (`crates/map_rendering/map_renderer/src/tests/lane_bind_source_pins/`).
+- Rules: map rendering tier 4 (`cargo xtask verify crate-tiers`); no layer names the renderer.
 
 ## Related documentation
 

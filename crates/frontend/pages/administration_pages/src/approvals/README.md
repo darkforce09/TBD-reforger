@@ -96,13 +96,9 @@ the views that run them exist in that build only.
   mission and review routes of the [missions](/documentation/glossary/g_to_m.md#missions) domain.
 - Used by: the `/admin/approvals` route in `crates/frontend/shell/frontend_application/src/app_routes.rs` and
   `crates/frontend/foundation/frontend_route_table/src/routes.rs`; the sidebar's "Mission Approvals" link in
-  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`; the DOM oracle's `approvals`
-  capture in `tools/browser_testing/browser_gate_suites/src/dom_oracle/routes.rs`.
-- Rules: every decision names the artifact under review
-  (`every_decision_names_the_artifact_under_review`); a stale refusal reads the queue again and
-  says why (`stale_decisions_reload_the_queue_and_say_why`,
-  `the_decision_is_sent_with_the_artifact_and_stale_refusals_reload`); queue rows name what is
-  under review (`queue_rows_name_what_is_under_review`), all in `tests/approvals.rs`.
+  `crates/frontend/foundation/frontend_route_table/src/navigation_menu.rs`.
+- Rules: every decision names the artifact under review; a stale refusal reads the queue again and
+  says why; queue rows name what is under review.
 
 ## Related documentation
 

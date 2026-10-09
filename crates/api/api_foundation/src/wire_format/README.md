@@ -40,5 +40,5 @@ their key order.
   `crates/api/api_server/tests/`; over HTTP, the single-page app's DTOs and the game server's mod
   parse the spellings.
 - Rules: the spellings above are the wire contract, pinned by
-  `crates/api/api_server/tests/models_serde.rs`; a change to one changes what the single-page app's
+  `crates/api/api_server/tests/smoke/models_serde.rs`; a change to one changes what the single-page app's
   DTO golden tests and the mod parse.

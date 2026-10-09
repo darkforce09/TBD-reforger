@@ -63,10 +63,6 @@ and the adapter's largest 2D texture.
     mount and document host under `crates/frontend/workspaces/mission_creator_workspace/src/` (the marquee, the
     connection and squad lines), and the debug benches under
     `crates/frontend/workspaces/debug_benches/src/` (building interiors).
-- Rules: every lane change goes through `upsert_lane` or `remove_lane`, which mark the frame damaged
-  (`every_lane_mutation_marks_the_frame_damaged` in
-  `crates/map_rendering/map_renderer/src/tests/damage_discipline.rs`); `connections_bind` uploads
-  its lane and never touches the pick bridge of the [slot](/documentation/glossary/n_to_z.md#slot)
-  icons (`connections_bind_body_uploads_its_lane_and_skips_the_pick_bridge`), and the lane bind
-  source pins in `crates/map_rendering/map_renderer/src/tests/lane_bind_source_pins/` read
-  `hairlines.rs` by path, so moving or renaming it breaks them.
+- Rules: every lane change goes through `upsert_lane` or `remove_lane`, which mark the frame
+  damaged; `connections_bind` uploads its lane and never touches the pick bridge of the
+  [slot](/documentation/glossary/n_to_z.md#slot) icons.

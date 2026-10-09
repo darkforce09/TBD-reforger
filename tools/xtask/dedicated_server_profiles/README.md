@@ -48,9 +48,7 @@ Both commands also read `game.scenarioId` from the profile to name the mission h
   `DEV_SERVER_PROFILE` in `tools/foundation/repository_layout/src/tool_inputs.rs`
   (`tools/commands/mod_operations/src/world_boot/execution.rs`,
   `tools/commands/mod_operations/src/playtest_server/usage_fail.rs`).
-- Rules: the file keeps its name and folder, which the layout constants spell and
-  `every_committed_location_exists_in_the_checkout` in
-  `tools/foundation/repository_layout/src/tests/command_locations_tests.rs` checks; `mods` stays present as a list,
+- Rules: the file keeps its name and folder, which the layout constants spell; `mods` stays present as a list,
   because the playtest render replaces it in place and keeps the key order; the profile carries
   development values only.
 

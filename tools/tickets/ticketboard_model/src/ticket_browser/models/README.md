@@ -54,12 +54,7 @@ tools/tickets/ticketboard_model/src/ticket_browser/models/
   them from `tools/tickets/ticketboard_desktop/src/ticket_browser/ui/` and lends `BrowserView` from
   `tools/tickets/ticketboard_desktop/src/application/feature_views.rs`.
 - Rules:
-  - cards sort by order then numeric id, and ids that do not parse sort last
-    (`cards_sort_by_order_then_numeric_id`, `unparsable_ids_sort_last` in `tests/status_board.rs`);
-  - an explicit parent beats a dotted id, and a parent loop never drops a ticket
-    (`explicit_parent_beats_dotted_prefix`, `parent_cycle_rescued_as_root` in
-    `tests/program_tree.rs`);
-  - the body starts at `context` and the quarantine comes last
-    (`section_order_is_pinned_and_quarantine_is_last` in `tests/detail_sections.rs`);
-  - nothing here names egui (`model_dependency_boundaries_and_external_test_placement_are_enforced` in
-    `tools/tickets/ticketboard_model/src/tests/architecture_rules.rs`).
+  - cards sort by order then numeric id, and ids that do not parse sort last;
+  - an explicit parent beats a dotted id, and a parent loop never drops a ticket;
+  - the body starts at `context` and the quarantine comes last;
+  - nothing here names egui.

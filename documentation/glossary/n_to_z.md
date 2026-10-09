@@ -36,14 +36,13 @@ See: [Operations domain](/crates/api/api_operations/src/README.md).
 A source an agent checks a fact against instead of recalling it. The Enfusion script oracle is the
 `enf` tool over the vanilla game scripts and the upstream framework: it indexes their symbols,
 answers lookups and checks `@idx` citations. Its sources, the gitignored oracle lanes, are linked
-into every [slice](#slice) worktree to read and cite, never to copy. The DOM oracle is the frozen
-page goldens that `gate v-suite` holds the built app to. The ballistics oracle is the tbd-export
+into every [slice](#slice) worktree to read and cite, never to copy. The ballistics oracle is the tbd-export
 Workbench plugin and play-mode component that record the engine's own shell flights, against
 which a ballistics catalog is calibrated.
 
-In code: `tools/enfusion/enfusion_script_index/src/` (the `enf` binary); the lane links in `tools/commands/platform_execution/src/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `tools/browser_testing/browser_gate_suites/src/dom_oracle/` and the goldens in `tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/`; `mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
+In code: `tools/enfusion/enfusion_script_index/src/` (the `enf` binary); the lane links in `tools/commands/platform_execution/src/slice_worktree/git_plain.rs`; `cargo xtask verify no-crf-leak`; `mod/tbd-export/Scripts/WorkbenchGame/BallisticsOracle/` and `mod/tbd-export/Scripts/Game/TBD/Export/BallisticsOracle/`.
 
-See: [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md), [Oracle lanes](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes), [DOM oracle fixtures](/tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/README.md), [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
+See: [Enfusion script oracle](/tools/enfusion/enfusion_script_index/src/README.md), [Oracle lanes](/documentation/runbooks/mod_slice_workflow.md#oracle-lanes), [Ballistics oracle run](/documentation/runbooks/ballistics_oracle_run.md).
 
 ### ORBAT
 

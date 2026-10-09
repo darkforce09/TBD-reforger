@@ -128,9 +128,8 @@ When two sources disagree, the higher one wins and the lower one is corrected:
   table to rewrite there; ticketboard, which opens each ticket's spec and plan
   from `tickets/`; `cargo run -q -p developer_tools --bin enf -- citations`, which checks every
   `@idx` citation here against the [Enfusion](/documentation/glossary/a_to_f.md#enfusion) symbol index.
-- Rules: every folder carries a README.md whose Contents block lists its tracked children
-  (`cargo xtask verify readme-coverage`); a live document stays within 500 lines
-  (`cargo xtask verify markdown-placement`); every link, backticked path and cited command resolves
+- Rules: every folder carries a README.md whose Contents block lists its tracked children;
+  a live document stays within 500 lines; every link, backticked path and cited command resolves
   (`cargo xtask verify link-check`); every document opens with its status line; frozen records
   and archived documents are never reworded; file names are snake_case, apart from README.md,
   `t-<id>_plan.md` and the hyphenated evidence JSON.

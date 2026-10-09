@@ -46,7 +46,7 @@ any other reason fails the run, so each file stays pinned to its reason.
 
 - Producers: people; no tool writes these files.
 - Consumers: `cargo xtask schema validate`, which is also the first step of the `schema-validate`
-  CI task and of the `schema.yml` workflow; `mission_validation.rs` builds this folder's path
+  CI task, which the `schema` job of the `ci.yml` workflow runs; `mission_validation.rs` builds this folder's path
   itself and uses `dangling_kits` from
   `tools/commands/schema_tooling/src/schema_checks/kit_registry_references.rs` for the
   `registry` gate.

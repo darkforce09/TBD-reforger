@@ -27,8 +27,9 @@ contracts/fixtures/
 each sample against its schema in `contracts/definitions/`, requires each invalid mission to
 fail its named gate at its named pointer, and cross-checks kit aliases and registry references.
 `cargo xtask schema map-object-golden` adds the world export's semantic gates over `map/`, including
-the byte-level checks of its binary twins. Both run in the `schema-validate` CI task, and the
-`schema.yml` workflow runs the first on every change under `contracts/`. Beyond the gates, the
+the byte-level checks of its binary twins. The first runs in the `schema-validate` CI task, which
+the `schema` job of the `ci.yml` workflow runs on every push and pull request to `main`; the
+second runs in the on-demand `schema-map-goldens` CI task. Beyond the gates, the
 [API](/documentation/glossary/a_to_f.md#api)'s and the map engine's tests load single fixtures by path,
 and the xtask [mod](/documentation/glossary/g_to_m.md#mod) commands stage missions from
 `missions/valid/` into a game server. The equipment data viewer's pages are held by the

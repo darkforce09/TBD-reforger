@@ -28,5 +28,5 @@ weapons come from `primary` and `launcher` when either is set, otherwise from `s
 - Used by: the Mission Creator's ORBAT manager tree
   (`crates/frontend/workspaces/mission_creator_workspace/src/ui/modals/orbat_manager/tree_rows.rs`), which marks
   the leader with an icon and passes `is_leader` false.
-- Rules: the line's format is pinned part by part (`format_slot_line_primary_and_launcher`,
-  `format_slot_line_summary_dot_split`, `format_slot_line_is_leader` in `tests/cases_1.rs`).
+- Rules: the line names the primary and the launcher (`format_slot_line_primary_and_launcher` in
+  `tests/cases_1.rs`), splits the summary on its dots and marks the leader.

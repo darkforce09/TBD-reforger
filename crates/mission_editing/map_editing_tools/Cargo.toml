@@ -39,9 +39,5 @@ time_source = { workspace = true }
 # The map-to-engine frame conversion the object wash tests world cells through.
 world_line_of_sight = { workspace = true }
 
-[dev-dependencies]
-# The relief contour colours the viewshed wash palette is checked against.
-terrain_relief = { workspace = true }
-
 [lints]
 workspace = true

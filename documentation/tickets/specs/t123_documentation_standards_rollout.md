@@ -137,7 +137,7 @@ Per §10. Wire all four gates:
 |------|---------|
 | Go exported-doc | `golangci-lint` + `revive` exported rules in CI (website job or new job) |
 | TS contract docs | `eslint-plugin-jsdoc` + `@microsoft/tsdoc`; rules on `src/types/`, `src/api/`, `src/hooks/` — require TSDoc + `@contract`/`@model` on cross-boundary exports |
-| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](/.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs). **Superseded:** the `.mjs` went with the T-165.1 Node eradication — the live gate is `cargo xtask ci verify-citations` → `xtask schema citations`, scoped to code only (DOCUMENTATION_STANDARDS §10.1) |
+| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated `.github/workflows/contracts.yml` workflow (citation + codegen-drift + golangci + eslint jobs). **Superseded:** the `.mjs` went with the T-165.1 Node eradication — the live gate is `cargo xtask ci verify-citations` → `xtask schema citations`, scoped to code only (DOCUMENTATION_STANDARDS §10.1) |
 | Enfusion DTO conformance | Extend `validate.mjs` or sibling check: DTO scripts with `@contract` header have matching golden fixture |
 
 **Verify:** CI green locally where possible (`npm run validate`, `golangci-lint run`, FE lint); citation script exits 0 on main after .1–.3 tags land

@@ -28,4 +28,4 @@ crates/api/api_command_center/src/services/
 - Used by: the dashboard handler in `crates/api/api_command_center/src/handlers/`
   (`load_fleet_overview`); the dashboard suites in `crates/api/api_server/tests/` over HTTP.
 - Rules: the fleet is exactly the active servers, so an inactive server never reaches the list or
-  the totals (`crates/api/api_server/tests/fleet_dashboard.rs`).
+  the totals (`crates/api/api_server/tests/fleet_and_ballistics/fleet_dashboard.rs`).

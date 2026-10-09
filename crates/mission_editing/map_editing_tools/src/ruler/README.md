@@ -56,10 +56,9 @@ injected world-to-pixel projector and key each node by its world endpoints quant
     page (`crates/frontend/workspaces/mission_creator_workspace/src/mission_editor.rs`) and the toolbelt
     (`crates/frontend/workspaces/mission_creator_workspace/src/ui/docks/toolbelt/`), which read `EditorTool`.
 - Rules:
-  - nothing here names the document or its mutators (`the_ruler_never_writes_the_document` in
-    `tests/session_local.rs`);
+  - nothing here names the document or its mutators;
   - only button 0 under a point-capture tool opens the gesture
-    (`should_begin_ruler_button_and_tool_gating` in `tests/tool_mode.rs`);
+    (`should_begin_ruler_button_and_tool_gating` in `tests/chain.rs`);
   - a drawn node is keyed by world coordinates, not label text
     (`label_keys_are_world_coords_not_text` in `tests/projection.rs`).
 

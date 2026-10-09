@@ -153,7 +153,7 @@ READMEs describe them exactly, and the deeper documents are linked from them.
 | `frontend_route_table` (crate) | every route's path, component name, layout flags and access tier, and the sidebar's menu | [Route table](/crates/frontend/foundation/frontend_route_table/README.md) |
 | `frontend_map_view` (crate) | the shared map seam: canvas sizing, engine creation, the camera fit, the frame pump, resize tracking, pointer navigation in map metres and the 2 m ground heights | [Frontend map view](/crates/frontend/foundation/frontend_map_view/README.md) |
 | `frontend_offline` (crate) | the offline service worker registration, the offline pack download, its saved copies and the page-wide pack status | [Frontend offline core](/crates/frontend/foundation/frontend_offline/README.md) |
-| `frontend_test_support` (crate) | the repository-root finder, the captured API responses, the source scrubber and the source shards, for tests only | [Frontend test support](/crates/frontend/foundation/frontend_test_support/README.md) |
+| `frontend_test_support` (crate) | the repository-root finder and the captured API responses, for tests only | [Frontend test support](/crates/frontend/foundation/frontend_test_support/README.md) |
 | `mission_review_record` (crate) | a mission's review history, thread, provenance and submit control, shared by the mission hub, the approvals queue and the review workspace | [Mission review record](/crates/frontend/features/mission_review_record/README.md) |
 
 The wire types in `frontend_api_dtos` follow the API's models, and the API wins a disagreement; the
@@ -169,9 +169,7 @@ each feature doc's Design section lists how the page differs from its set.
 
 ### Adding a page
 
-A new route gets a row in `crates/frontend/shell/frontend_application/src/app_routes.rs` and in `ROUTES`
-(the route drift gate diffs `ROUTES` against
-`tools/browser_testing/browser_gate_suites/fixtures/dom_oracle/manifests/routes.csv`), an in-code
+A new route gets a row in `crates/frontend/shell/frontend_application/src/app_routes.rs` and in `ROUTES`, an in-code
 README in its page folder inside its page crate, a folder in that crate's documentation mirror
 under `documentation/crates/frontend/pages/<crate>/`, named like the code folder, with a README and
 its feature doc, and a row in the route table above.

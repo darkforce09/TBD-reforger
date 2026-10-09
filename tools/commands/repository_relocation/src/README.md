@@ -56,7 +56,7 @@ under the archive and the ticket documents takes link destination rewrites only,
 `README.md` there is a live index of its folder: the tree part of its Contents block's lines (the
 root folder and each entry's name, up to the two spaces before the role) takes every rewrite and is
 verified as a live file is, while its prose and roles stay as written. This crate's own test
-sources (`src/tests/`) spell paths of throwaway checkouts, so only their code takes the `rust_path`
+sources (the `RELOCATION_TEST_SOURCES` folder) spell paths of throwaway checkouts, so only their code takes the `rust_path`
 and `text` rewrites and is verified, never a string literal or a comment, and no `path` row reaches
 them. Other files of the frozen areas,
 the `.tsv` manifests of the manifests folder (their `from` columns name retired paths on purpose),

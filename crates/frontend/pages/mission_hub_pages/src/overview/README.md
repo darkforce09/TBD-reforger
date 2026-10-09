@@ -86,12 +86,10 @@ before anything is sent: an item needs a name, and a quantity is a number or bla
   `MaterialIcon`, the toasts) and `MissionReviewRecord` from the review record folder.
 - Used by: the `/missions/:id` route in `crates/frontend/shell/frontend_application/src/app_routes.rs`; the library in
   `crates/frontend/pages/mission_hub_pages/src/library/` renders `dossier_body` in its
-  slide-over and labels its cards with `mission_status_label`; `mission_overview_source` in
-  `crates/frontend/pages/mission_hub_pages/src/tests/source_pins.rs` reads its source files.
+  slide-over and labels its cards with `mission_status_label`.
 - Rules: the dossier body stays read-only, and the card badge and the dossier grid share one status
-  label (`the_card_badge_and_the_dossier_grid_share_one_label_mapper` in
-  `tests/mission_overview.rs`); faction keys come verbatim from the ORBAT
-  (`derives_editor_faction_keys_verbatim`); the draft guard flags exactly what the endpoint refuses
+  label; faction keys come verbatim from the ORBAT (`derives_editor_faction_keys_verbatim` in
+  `tests/mission_overview.rs`); the draft guard flags exactly what the endpoint refuses
   (`draft_problem_flags_exactly_what_the_endpoint_refuses`); a whitespace briefing reads as empty
   (`tactical_briefing_trims_whitespace_only_to_empty_affordance`).
 

@@ -55,13 +55,12 @@ player deployment is a `DeploymentDecision` with its `DeploymentDenial`, not an 
   `@contract` tags: `event.rs` cites `event-schedule.schema.json` (`Event`, `EventStatus`,
   `EventMission`) and `reservation-actions.schema.json` (`SquadReservation`),
   `leave_request.rs` cites `leave-request.schema.json`, `fire_mission.rs` cites
-  `fire-mission.schema.json` and `ballistics_catalog.rs` cites `ballistics-catalog.schema.json`;
-  `cargo xtask schema citations` resolves them.
+  `fire-mission.schema.json` and `ballistics_catalog.rs` cites `ballistics-catalog.schema.json`.
 - Used by: the domain's handlers and services; the dashboard in `api_command_center` (`Event`,
   `EventMission`, `OrbatSlot`); the [API](/documentation/glossary/a_to_f.md#api) tests
-  `crates/api/api_server/tests/models_serde.rs`, `crates/api/api_server/tests/event_access_contract.rs`,
-  `crates/api/api_server/tests/game_runtime_contract.rs` and
-  `crates/api/api_server/tests/reservation_attendance_transactions.rs`, which decode live answers into
+  `crates/api/api_server/tests/smoke/models_serde.rs`, `crates/api/api_server/tests/contract_parity/event_access.rs`,
+  `crates/api/api_server/tests/contract_parity/game_runtime.rs` and
+  `crates/api/api_server/tests/events_and_reservations/reservation_attendance_transactions.rs`, which decode live answers into
   the generated types. The web app's DTOs in `crates/frontend/foundation/frontend_api_dtos/src/`
   (`events.rs`, `event_access_administration.rs`, `event_viewer_access.rs`) mirror these shapes.
 - Rules: the generated types are written by `cargo xtask ci schema-codegen` and never edited by

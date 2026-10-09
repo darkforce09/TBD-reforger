@@ -47,11 +47,8 @@ it and stays limited.
 
 **Consequences:** The mount is a plain directory service with no database, session or credential,
 so exemption opens nothing a request limit protected; the resource there is bytes, which a
-request meter cannot price. The order is load-bearing and is held twice:
-`the_exempt_mount_is_registered_below_the_rate_limit_layer` in
-`crates/api/api_server/src/tests/router.rs` checks the router's source, and
-`crates/api/api_server/tests/map_assets_rate_limit_exemption.rs` checks that the routes above still
-refuse.
+request meter cannot price. The order is load-bearing: the mount must stay below the `rate_limit`
+layer in `crates/api/api_server/src/router.rs`.
 
 **Supersedes:** none.
 
@@ -71,7 +68,7 @@ CIDR block not written as its network address, stops the boot
 **Consequences:** A key any client could forge would limit nobody, while a shared key still
 limits everyone, so the fail-safe default is the shared key. An operator behind a proxy must list
 it; the staging compose file defaults the variable to `127.0.0.1/32`. The rule is tested in
-`crates/api/api_server/tests/forwarded_for_trust.rs`.
+`crates/api/api_server/tests/http_infrastructure/forwarded_for_trust.rs`.
 
 **Supersedes:** none.
 
@@ -88,12 +85,10 @@ table, handlers, services and models; `core::http_router` merges the tables unde
 without a prefix, so a public path is the literal in the domain's `routes.rs`; and a route's
 access tier is the extractor its handler takes, never its place in the router.
 
-**Consequences:** `crates/api/api_server/src/tests/architecture_rules.rs` holds the layout on every
-unit-test run: `core` imports no domain outside `application_state.rs` and `http_router.rs`, no
+**Consequences:** `core` imports no domain outside `application_state.rs` and `http_router.rs`, no
 domain's handlers import another domain's handlers, every domain exports a merged route table,
 and `background_workers` is imported only by the binary. A cross-domain need goes through the
-owning domain's services and models. `cargo xtask verify route-tags` requires the `/// @route`
-tag on every handler.
+owning domain's services and models. Every handler carries the `/// @route` tag.
 
 **Supersedes:** none.
 
@@ -185,12 +180,11 @@ from the whole.
 `crates/api/` (`api_<domain>`, the kernel crates such as `api_state` and `api_http_layer`, and
 `api_background_workers`). `crates/api/api_server/src/` holds only the thin application: `router.rs`, which
 merges the eight domain crates' route tables under `/api/v1`; `composition.rs`, which builds the
-application state with its concrete services; the `api` and `import-registry` binaries; and the
-layout and prose rules under `tests/`. There is no `core` folder.
+application state with its concrete services; and the `api` and `import-registry` binaries. There
+is no `core` folder.
 
-**Consequences:** The crate boundary makes an undeclared import a compile error, so
-`crates/api/api_server/src/tests/architecture_rules.rs` judges the crate graph from the Cargo manifests: the
-kernel crates depend on no domain, the domain crates depend on one another only along the one-way
+**Consequences:** The crate boundary makes an undeclared import a compile error, so the Cargo
+manifests hold the crate graph: the kernel crates depend on no domain, the domain crates depend on one another only along the one-way
 domain graph, only the application depends on `api_background_workers` and only its `api` binary
 names it, no crate imports another domain's handlers, and every domain crate's one route table is
 merged by the router. The source-import layer ratchet that held the folders to the planned graph
@@ -254,9 +248,8 @@ unset is refused. Outside development, `UPLOAD_DIR`, `MAP_ASSETS_DIR` and `GLYPH
 required and absolute.
 
 **Consequences:** The API resolves the same folders from any working directory inside the
-checkout, and no default is a path relative to the working directory. The rules are held by
-`crates/api/api_configuration/src/configuration/tests/development_directories.rs` and
-`production_rejects_a_missing_or_relative_asset_dir` in
+checkout, and no default is a path relative to the working directory. The production refusal is
+held by `production_refuses_each_unusable_setting_by_name` in
 `crates/api/api_configuration/src/configuration/tests/configuration.rs`; the
 [environment variable reference](/documentation/crates/api/api_server/environment_variables.md)
 lists them.

@@ -43,7 +43,7 @@ cargo xtask db test-it --test event_administration_transactions --test event_acc
 
 The unit tests cover the access evaluation and its properties, the quota selection, the
 reservation planner and its seat matching, the ORBAT and event payload checks, the ballistics
-catalog upload decoding and the handler source pins; the routes, the locks and the reservation
+catalog upload decoding; the routes, the locks and the reservation
 transactions are proved against Postgres by the API's integration suites.
 
 ## Configuration
@@ -81,9 +81,8 @@ against the guild of the API's `Config`.
   event models, the staging fixtures tool seeds events through the event authoring services, and
   the integration suites reach the services directly. Over HTTP: the operations, event manager
   and mortar calculator pages and the game runtime's roster and deployment queues.
-- Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `crates/api/api_server/src/tests/architecture_rules.rs` checks its route table, its handlers and its
-  imports against the domain graph.
+- Rules: the API crate rules of [crates/api](/crates/api/README.md); its route table, its handlers
+  and its imports follow the domain graph.
 
 ## Related documentation
 

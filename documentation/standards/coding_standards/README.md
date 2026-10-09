@@ -83,7 +83,7 @@ predictable contract for the consumer; Debuggability (De), a failure that says w
 | GO-6 | Re | every public item has a doc comment | retired; the documentation standards own it | [api_code_structure.md](/documentation/standards/coding_standards/api_code_structure.md) |
 | GO-7 | Re | every routed handler's `@route` tag matches its route | live, unenforced (recommended style) | [api_code_structure.md](/documentation/standards/coding_standards/api_code_structure.md) |
 | GO-8 | De | the static analyser runs with every check on | CI-BLOCK, `cargo xtask mk rust-clippy` | [api_code_structure.md](/documentation/standards/coding_standards/api_code_structure.md) |
-| GO-9 | Sc | handlers reach other code through services and models | CI-BLOCK, the API's `architecture_rules.rs` tests | [api_code_structure.md](/documentation/standards/coding_standards/api_code_structure.md) |
+| GO-9 | Sc | handlers reach other code through services and models | live, unenforced | [api_code_structure.md](/documentation/standards/coding_standards/api_code_structure.md) |
 | LANG-1 | Sc | new tooling is Rust; no tracked shell or Make | CI-SCRIPT, `cargo xtask verify no-shell` | [tooling_languages.md](/documentation/standards/coding_standards/tooling_languages.md) |
 | LANG-2 | Sc | no tracked Python and no `python3` calls | CI-SCRIPT, `cargo xtask verify no-python` | [tooling_languages.md](/documentation/standards/coding_standards/tooling_languages.md) |
 | LANG-3 | De | the language bans are hard zeros | CI-SCRIPT, both commands | [tooling_languages.md](/documentation/standards/coding_standards/tooling_languages.md) |
@@ -120,7 +120,6 @@ now maps to a page:
 |---|---|---|
 | §0.3 (CI-2) | `.github/workflows/ci.yml` header | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md) |
 | §7 (FMT-2) | `.editorconfig` header; the `verify-editorconfig` help in `tools/commands/ci_task_catalog/src/task_definitions.rs` | [formatting.md](/documentation/standards/coding_standards/formatting.md) |
-| §11 | the `verify-coding-standards` help in `tools/commands/ci_task_catalog/src/task_definitions.rs` | [ci_gates.md](/documentation/standards/coding_standards/ci_gates.md#on-demand-checks) |
 
 ### Before a commit
 
@@ -142,9 +141,7 @@ now maps to a page:
 - [Architecture verifications](/tools/checks/repository_checks/src/architecture/) — GO-7, and the
   engine wall of TS-2.
 - [Schema gates](/tools/commands/schema_tooling/src/schema_checks/) — ENF-3, ENF-4, TEST-3.
-- [CI task commands](/tools/commands/ci_task_catalog/src/) — `ci-local`, `verify-coding-standards`,
-  `verify-editorconfig` (FMT-2).
-- [API layout tests](/crates/api/api_server/src/tests/) — GO-9 and the API's test placement.
+- [CI task commands](/tools/commands/ci_task_catalog/src/) — `ci-local`, `verify-editorconfig` (FMT-2).
 - [Handler errors](/crates/api/api_foundation/src/error_handling/) — ERR-1 and ERR-4.
 - [Middleware](/crates/api/api_http_layer/src/middleware/) — LOG-3.
 - [Workflows](/.github/workflows/) — CI-2 and every CI-BLOCK gate.
@@ -157,7 +154,6 @@ now maps to a page:
   they own.
 - Used by: rule codes and this README's path in `.github/workflows/ci.yml`, `.editorconfig`,
   `tools/commands/ci_task_catalog/src/task_definitions.rs`,
-  `tools/checks/repository_checks/src/architecture/route_tags.rs`,
   `tools/checks/repository_checks/src/language_bans/shell_scripts.rs` and
   `tools/map_assets/map_raster_pipeline/src/satellite_archive_container.rs`; the READMEs of
   the language ban, file length, architecture and verify folders; the

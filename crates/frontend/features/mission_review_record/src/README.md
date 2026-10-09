@@ -68,8 +68,7 @@ for `wasm32` only.
 - Rules: one rendering of a review, a thread entry and a compile finding for every page; the
   count a refusal reports is never below the findings it lists
   (`a_count_never_undercuts_the_listed_findings` in `tests/submission_refusal.rs`); an unknown
-  refusal keeps the API's sentence (`other_refusals_keep_the_backend_sentence`); review text is
-  trimmed and bounded (`review_text_is_trimmed_and_bounded` in `tests/review_wording.rs`).
+  refusal keeps the API's sentence; review text is trimmed and bounded.
 
 ## Related documentation
 

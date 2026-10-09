@@ -98,7 +98,4 @@ instance without one.
   (`the_website_api_check_names_the_health_route_and_the_website_deploy`); the log verdict reads all
   four outcomes and never guesses (`v6_maps_all_four_outcomes_and_refuses_to_guess`); a missing
   tool never reads as success (`not_run_never_reads_as_success`); no production file of the
-  staging deploy holds a compose command (`cargo xtask verify staging-compose-paths` audits
-  `tools/commands/deployment/src/staging.rs` and every file under
-  `tools/commands/deployment/src/staging/` outside its `tests/` folders, and exits 1 with a
-  "did not run" cause when `fleet_deploy.rs`, the pipeline, is missing).
+  staging deploy holds a compose command.

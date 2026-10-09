@@ -92,7 +92,7 @@ id with one WARNING.
   `mod/tbd-framework/Scripts/Game/TBD/Gamemode/`, and the admin, briefing and lobby services
   under `mod/tbd-framework/Scripts/Game/TBD/Session/`.
 - Rules: every wire field keeps its JSON key's exact spelling, and each struct carries its
-  `//! @contract mission.schema.json#…` tag (`cargo xtask schema citations`); presence uses the
+  `//! @contract mission.schema.json#…` tag; presence uses the
   sentinel, empty-string and `Count()` tests above, never a null test; a new per-row key gets its
   own second-pass reader instead of a field on a primary struct; the Enforce keyword `default` is
   never a field name, so `TBD_MissionParams` reads that key by string; lines added stay ASCII, and

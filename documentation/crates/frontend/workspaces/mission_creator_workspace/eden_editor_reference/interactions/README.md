@@ -87,8 +87,7 @@ domain gets a new topic file, a Contents line and a table row.
 - Rules: an ID is never renumbered, reused or moved between domains, because the gap analysis,
   the roadmap and the tickets cite it verbatim; each ID is defined in exactly one file, and the
   count above stays equal to the gap analysis's interaction rows; every fact cites its wiki
-  anchor; a file stays within 500 lines (`cargo xtask verify markdown-placement`) and has a
-  Contents line (`cargo xtask verify readme-coverage`).
+  anchor; a file stays within 500 lines and has a Contents line.
 
 ## Related documentation
 

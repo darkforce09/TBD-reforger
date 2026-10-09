@@ -1,8 +1,7 @@
 # The database side of `cargo xtask db` and `cargo xtask deploy db`: the local Postgres container
 # lane (compose, seeds, integration runs, selftest, migration checksum repair), the verified backup,
 # the guarded restore, the restore drill, the shared container layer, and the database source
-# checks (`verify wiki-seeds`, `faction-library-seeds`, `no-select-star`). `thiserror` carries its
-# errors.
+# check (`verify no-select-star`). `thiserror` carries its errors.
 [package]
 name = "database_operations"
 version = "0.1.0"

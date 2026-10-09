@@ -60,7 +60,7 @@ No feature and no environment variable.
   (`crates/api/api_server`): every domain's handlers, services and models, its middleware and its integration
   suites.
 - Rules: nothing here names a domain or an API crate above it; the wire spellings are contract,
-  pinned by `crates/api/api_server/tests/models_serde.rs` and the golden tests.
+  pinned by `crates/api/api_server/tests/smoke/models_serde.rs` and the golden tests.
 
 ## Related documentation
 

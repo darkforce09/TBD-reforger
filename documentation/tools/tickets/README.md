@@ -52,12 +52,12 @@ crate boundaries to the [tooling architecture](/documentation/tools/tooling_arch
 
 - Depends on: the crates' code and the `.ai/tickets/` tree, which every claim is checked against;
   the feature doc template; the ticket registry for open work.
-- Used by: the `ticket_metrics` and `ticket_registry` READMEs and the estimates README, which link the factor document; the
+- Used by: the `ticket_metrics` and `ticket_registry` READMEs and the estimates README, which link the factor document; and the
   estimate check in `tools/tickets/ticket_metrics/src/estimates/verification.rs`, whose refusal
-  message names it; and `factor_constant_is_pinned_in_the_doc`, which reads it.
+  message names it.
 - Rules: `token_estimate_factor.md` keeps its path and quotes `TOKENS_PER_LOC = <value>`, the words
   "pending calibration" and the three excluded prefixes ".ai/", "docs/TICKET_" and "Cargo.lock"
-  verbatim (`cargo test -p ticket_metrics estimate_provenance`).
+  verbatim.
 
 ## Related documentation
 

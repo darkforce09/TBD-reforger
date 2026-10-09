@@ -62,9 +62,8 @@ Three variables, read when `spawn_all` runs: `LEADERBOARD_REFRESH_INTERVAL_SECS`
   sqlx, tokio, tracing, axum and thiserror.
 - Used by: the API application (`crates/api/api_server`): its `api-server` binary calls `spawn_all`, and its
   integration suites run single passes.
-- Rules: the API crate rules of [crates/api](/crates/api/README.md);
-  `crates/api/api_server/src/tests/architecture_rules.rs` checks that only the application depends on this
-  crate and that only its `api-server` binary names it.
+- Rules: the API crate rules of [crates/api](/crates/api/README.md); only the application depends
+  on this crate and only its `api-server` binary names it.
 
 ## Related documentation
 

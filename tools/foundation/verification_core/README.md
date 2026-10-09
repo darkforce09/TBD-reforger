@@ -72,8 +72,7 @@ and the deadline from `TBD_GATE_LOCK_MAX` (3600 s), in
   the check crates under `tools/checks/` and the command crates under `tools/commands/`;
   `xtask`: its command groups under
   `tools/xtask/src/commands/` (the lock holders are the platform wave driver and the MCP broker
-  start in `tools/commands/enfusion_mcp/src/call.rs`); and `api`, as a
-  dev-dependency, whose `crates/api/api_server/tests/engineering_laws.rs` uses its patterns and scans.
+  start in `tools/commands/enfusion_mcp/src/call.rs`).
 - Rules:
   - the crate depends on no workspace crate;
   - "did not run" never becomes a pass, which each module's tests in `src/tests/` hold.

@@ -69,8 +69,8 @@ script list when it loads the project.
    `EMCP_WB_GetEntityResponseWire.c`, the `ModifyEntity/` split and `getAllText`; every other
    difference is an upstream change.
 3. Port the upstream changes into the local files by hand, never by copying the package files
-   over them, then run `cargo xtask verify enfusion-comments` and
-   `cargo xtask verify file-length`, restart Workbench on the export addon, and run
+   over them, then run `cargo xtask verify file-length`, restart Workbench on the export addon,
+   and run
    `cargo xtask mcp smoke`.
 
 ## Configuration
