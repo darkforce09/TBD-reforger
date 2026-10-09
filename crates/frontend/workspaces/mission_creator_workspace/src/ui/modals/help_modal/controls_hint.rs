@@ -89,7 +89,7 @@ pub fn ControlsHint(
                                     })
                                     .collect_view()}
                                 <div class="border-t border-white/10 pt-2 text-label-sm text-outline">
-                                    "This list is pinned against the editor's real key handlers — a new binding cannot ship undocumented."
+                                    "Spot a shortcut that works but isn't listed here? Let the platform team know."
                                 </div>
                             </div>
                         </div>

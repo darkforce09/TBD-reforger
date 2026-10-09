@@ -96,8 +96,9 @@ version": it has no Escape handler, no backdrop close and no entry on the modal 
 
 The Help menu's "Keyboard Shortcuts (Controls Hint)" opens a floating card, "Controls — keyboard
 shortcuts", with seven groups: Selection, View, Transform & snapping, Arrange, History, Tools and
-Context menu. Its footer reads "This list is pinned against the editor's real key handlers — a
-new binding cannot ship undocumented."
+Context menu. Its footer reads "Spot a shortcut that works but isn't listed here? Let the platform
+team know." The list is maintained by hand in `shortcut_catalog.rs`; no test checks it against the
+key handlers.
 
 ### Known discrepancies
 
