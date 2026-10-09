@@ -82,33 +82,17 @@ impl PreflightCheck {
 /// The checks every procedure shares.
 pub(crate) fn harness_checks(settings: &StagingSettings, root: &Path) -> Vec<PreflightCheck> {
     let root = root.to_path_buf();
-    let mut checks = vec![
-        PreflightCheck::local("run discipline", || {
-            let set: Vec<String> = std::env::vars_os()
-                .map(|(name, _)| name.to_string_lossy().into_owned())
-                .filter(|name| {
-                    name == "TEST_DATABASE_URL"
-                        || name == "DEPLOY_ENV"
-                        || name.starts_with("PROPTEST_")
-                })
-                .collect();
-            match set.is_empty() {
-                true => Ok("TEST_DATABASE_URL, DEPLOY_ENV and PROPTEST_* are unset".to_string()),
-                false => Err(format!("{} must be unset", set.join(", "))),
-            }
-        }),
-        PreflightCheck::local("repository root", move || {
-            let here = std::env::current_dir().map_err(|error| error.to_string())?;
-            match same_folder(&here, &root) {
-                true => Ok(format!("running from {}", root.display())),
-                false => Err(format!(
-                    "run from {}, not {}",
-                    root.display(),
-                    here.display()
-                )),
-            }
-        }),
-    ];
+    let mut checks = vec![PreflightCheck::local("repository root", move || {
+        let here = std::env::current_dir().map_err(|error| error.to_string())?;
+        match same_folder(&here, &root) {
+            true => Ok(format!("running from {}", root.display())),
+            false => Err(format!(
+                "run from {}, not {}",
+                root.display(),
+                here.display()
+            )),
+        }
+    })];
     if let Ok(command) = database_reader::select(&settings.database_container, &SESSION_GUARD, &[])
     {
         checks.push(PreflightCheck::host(

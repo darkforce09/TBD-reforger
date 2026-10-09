@@ -70,7 +70,7 @@ No feature and no environment variable; the crate holds constants and pure path 
   `PLAYABLE_SELECTOR_OVERRIDE_ENV`); and the documents and documentation areas (`FACTORY_PACK_WAVE`,
   `HOME_SERVER_RUNBOOK`, `STAGING_SERVER_RUNBOOK`, `SLICE_WORKFLOW_RUNBOOK`,
   `PLATFORM_FACTORY_RUNBOOK`, `MOD_DESIGN`, `SPAWN_DETERMINISM_RUNBOOK`,
-  `API_READINESS_EVIDENCE_PREFIX`, `API_READINESS_REGISTER`, `ARCHIVE_DIR`, `TICKET_DOCUMENTS_DIR`,
+  `ARCHIVE_DIR`, `TICKET_DOCUMENTS_DIR`,
   `PENDING_MERGE_DIR`, `CURSOR_RULE_DIRS`, `PROJECT_INSTRUCTIONS`, `RETIRED_TOP_LEVEL_FOLDERS` with
   `is_retired_top_level_folder`, `HISTORICAL_PATH_SPELLINGS`, `PERMALINK_BASE`).
 - `build_output`: `BUILD_OUTPUT_FOLDER`, the purpose subfolder names (`DEV_API_SUBFOLDER`, the
@@ -83,7 +83,7 @@ No feature and no environment variable; the crate holds constants and pure path 
   `TOOLS_DIR`), the API server crate and the `.env` its binaries read (`API_SERVER_CRATE_DIR`,
   `API_SERVER_ENVIRONMENT_FILE`), and the API database crate with its SQL folders
   (`API_DATABASE_CRATE_DIR`, `API_DATABASE_MIGRATIONS_DIR`, `API_DATABASE_SEEDS_DIR`), which the
-  API readiness fingerprint, the `db` commands and the staging, mod and fixture tools read.
+  `db` commands and the staging, mod and fixture tools read.
 - `enfusion_mod_folders`: each Enfusion mod addon once, as its folder name
   (`FRAMEWORK_ADDON_FOLDER_NAME`, `EXPORT_ADDON_FOLDER_NAME`, `MCP_BRIDGE_ADDON_FOLDER_NAME`), which
   is also the name a dedicated server's `addons/` folder links it under, and as its folder under

@@ -2,8 +2,8 @@
 
 # Reservation transaction design
 
-This is the implementation design for the event requirements in requirements.json. It records
-chosen semantics and the integration work still required; it is not acceptance evidence.
+This is the implementation design for event reservations. It records chosen semantics and the
+integration work still required.
 
 ## Accounting and policies
 

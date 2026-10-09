@@ -1,4 +1,4 @@
-//! The harness's read-only commands: preflight, status (and capacity) and fingerprints.
+//! The harness's read-only commands: preflight and status (and capacity).
 //!
 //! **Role:** declares one module per read-only command.
 //!
@@ -9,7 +9,6 @@
 //!
 //! **Invariants:** nothing here sends a command that changes the host.
 
-pub(crate) mod fingerprints;
 pub(crate) mod host_capacity;
 pub(crate) mod preflight;
 pub(crate) mod status;

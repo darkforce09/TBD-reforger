@@ -73,9 +73,6 @@ account_pages = { path = "crates/frontend/pages/account_pages" }
 # The single-page app's administration pages: events, approvals, server control, personnel,
 # content, the audit trail and the ballistics catalogs (`crates/frontend/pages/administration_pages`).
 administration_pages = { path = "crates/frontend/pages/administration_pages" }
-# The API readiness judge: acceptance register, evidence receipts, fingerprints and the staging
-# recorder (`tools/commands/api_readiness_checks`).
-api_readiness_checks = { path = "tools/commands/api_readiness_checks" }
 # The API's serde- and sqlx-transparent typed identifiers (`crates/api/api_identifiers`).
 api_identifiers = { path = "crates/api/api_identifiers" }
 # The API's runtime configuration and process shutdown signal (`crates/api/api_configuration`).

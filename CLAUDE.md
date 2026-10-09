@@ -286,7 +286,6 @@ tools/                                   <-- Every developer tool in the reposit
 │   ├── database_operations/             <-- Local database lane (`db`), database container layer, verified backup, guarded restore, restore drill (`deploy db`), seed checks
 │   ├── deployment/                      <-- Website and staging fleet deploys (`deploy website`, `deploy staging`)
 │   ├── staging_procedures/              <-- Staging acceptance harness (`staging`): fleet, Discord and load procedures, their receipts, host actions
-│   ├── api_readiness_checks/            <-- API readiness judge (`verify api-readiness`): acceptance register, evidence receipts, fingerprints, property-test seed
 │   ├── schema_tooling/                  <-- Contract codegen, schema gates, ORBAT slot flattening, font table (`schema`, `gen`)
 │   ├── repository_relocation/           <-- Manifest-driven moves and the retired-spelling verification (`refactor relocate`)
 │   ├── enfusion_mcp/                    <-- Enfusion MCP client (`mcp`): daemon control, tool calls, offline selftest, Workbench NET API calls

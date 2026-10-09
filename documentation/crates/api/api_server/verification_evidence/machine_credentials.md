@@ -3,8 +3,7 @@
 # Machine credentials and runtime sessions
 
 This note records the implemented design of server-scoped machine authentication and the runtime
-sessions that fence game-runtime heartbeats. It describes the code; acceptance evidence is the
-command output recorded in progress_checkpoint.md.
+sessions that fence game-runtime heartbeats. It describes the code; the tests it names hold it.
 
 ## Credentials
 

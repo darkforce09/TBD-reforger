@@ -3,8 +3,8 @@
 # Event eligibility and allocation
 
 This note records the implemented semantics of event access, reservation allocation, waitlist
-promotion, eligibility re-evaluation and derived attendance. It describes the code; acceptance
-evidence is the command output recorded in progress_checkpoint.md.
+promotion, eligibility re-evaluation and derived attendance. It describes the code; the tests it names
+hold it.
 
 ## Access policies and groups
 

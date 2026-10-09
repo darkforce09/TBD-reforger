@@ -14,7 +14,7 @@ timers on the website host run the backup and the drill.
 
 ```text
 tools/commands/database_operations/
-├── Cargo.toml  the `database_operations` library package: `process_runner`, `repository_checks`, `repository_laws`, `api_readiness_checks`, layout tier 4
+├── Cargo.toml  the `database_operations` library package: `process_runner`, `repository_checks`, `repository_laws`, layout tier 4
 └── src/        the local database lane, backup, restore, drill, the container layer, the source checks and the errors
 ```
 
@@ -100,8 +100,8 @@ clap usage error exits 2.
   `rust_it`) plus random hex, runs the API's suite against it with
   `cargo test --locked --no-fail-fast -p api_server -p <every other crates/api package>` (a
   `--test` selection names `-p api_server` alone, which holds the integration binaries), and
-  drops the run's databases afterwards whatever the tests did. A selection narrows the run and prints that it is no
-  readiness receipt. Needs `db up`.
+  drops the run's databases afterwards whatever the tests did. A selection narrows the run and prints that it is a
+  narrowed development run. Needs `db up`.
 - Exit codes: the test run's code when non-zero, else the cleanup's; 1 a label off the scratch
   allow-list; 2 a malformed `--test` or filter.
 - Example: `cargo xtask db test-it --test factions`
@@ -163,8 +163,7 @@ clap usage error exits 2.
 ## Boundaries
 
 - Depends on: `process_runner`, `repository_layout`, `verification_core`, `content_digest`,
-  `repository_checks` (the wave gate's seed sources), `api_readiness_checks` (the property-test
-  seed), `clap`, `regex`, `thiserror`; `deploy/compose.dev.yml`, the seeds and migrations of
+  `repository_checks` (the wave gate's seed sources), `clap`, `regex`, `thiserror`; `deploy/compose.dev.yml`, the seeds and migrations of
   `crates/api/api_database/`; a container runtime, cargo and git.
 - Used by: the `db`, `verify`, `ci`, `mk` and `mod` groups of `xtask`; the `deployment` crate
   (`deploy db`); the `tbd-website-backup` and `tbd-website-backup-drill` units in

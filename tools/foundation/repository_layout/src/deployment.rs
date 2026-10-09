@@ -3,8 +3,7 @@
 //!
 //! **Role:** the repository-relative paths of the `deploy/` tree the commands read, each once.
 //! **Position:** read by `deploy_settings` (the settings file and its example) and by the `deploy`,
-//! `db`, `debug`, `setup` and `staging` command groups and the API readiness fingerprint of
-//! `xtask`.
+//! `db`, `debug`, `setup` and `staging` command groups of `xtask`.
 //! **Signals & state:** none; constants.
 //! **Invariants:** every location lies under [`DEPLOY_DIR`]; [`DEPLOY_ENV`] is never committed
 //! and sits beside its committed example.

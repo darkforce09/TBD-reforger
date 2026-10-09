@@ -31,14 +31,12 @@ use serde_json::{Value, json};
 
 use self::membership_queries::{DiscordTargets, MAIN_SNAPSHOT, snapshot};
 use crate::operator_coordination::action_list::PlannedAction;
+use crate::procedure_receipts::{EnvironmentEntry, FixtureManifest, Observations, StagingCheck};
 use crate::procedure_runner::procedure::{ProcedurePlan, ProcedureRun, StagingProcedure};
 use crate::remote_observers::discord_member_reader::{self, GuildScope, member_read};
 use crate::remote_observers::remote_command::{HostCommandRunner, RemoteCommand, shell_quote};
 use crate::staging_settings::StagingSettings;
 use crate::support_commands::preflight::PreflightCheck;
-use api_readiness_checks::operational_recording::{
-    EnvironmentEntry, FixtureManifest, Observations, StagingCheck,
-};
 
 /// The run stops itself here, inside the check's 7,200 s timeout.
 const HARD_STOP_SECONDS: u64 = 6_900;

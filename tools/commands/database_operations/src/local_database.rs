@@ -221,7 +221,7 @@ pub enum DbCmd {
     #[command(name = "registry-import")]
     RegistryImport,
     /// Run the API test suite against a fresh scratch database, then drop the run's databases.
-    /// A selection narrows the run for development only; readiness receipts use the full suite.
+    /// A selection narrows the run for development only.
     #[command(name = "test-it")]
     TestIt {
         /// Run only this integration test binary (repeatable).

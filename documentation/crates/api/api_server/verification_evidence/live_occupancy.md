@@ -2,8 +2,8 @@
 
 # Live slot occupancy and deployment authorization
 
-This note records the implemented design of live occupancy. It describes the code; acceptance
-evidence is the command output recorded in progress_checkpoint.md.
+This note records the implemented design of live occupancy. It describes the code; the tests it names
+hold it.
 
 ## Model
 

@@ -5,7 +5,7 @@
 //! clock ([`clock`]), and the recorded run ([`recording`]) that binds a run to its receipt.
 //!
 //! **Position:** between the procedure modules, which supply plans, and the recorder in
-//! `api_readiness_checks::operational_recording`, which judges the outcome.
+//! `procedure_receipts`, which judges the outcome.
 //!
 //! **Signals & state:** a run's state lives in the runner for the run's duration.
 //!

@@ -49,7 +49,6 @@ groups as modules of its own. It passes each crate the checkout root:
   reader of `deploy/deploy.env`, and `tool_test_support` the locks and the checkout root the tool
   tests share (a dev-dependency only).
 - The [command crates](/tools/commands/README.md) hold the work of xtask command groups:
-  `api_readiness_checks` the API readiness judge behind `cargo xtask verify api-readiness`;
   `workstation_setup` the `cargo xtask setup` commands; `enfusion_mcp` the Enfusion MCP client
   behind `cargo xtask mcp`;
   `agent_context_guards` the agent tool-call guard and the filtered command runner behind

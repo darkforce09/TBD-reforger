@@ -36,19 +36,14 @@ a read is contradicted before it reaches the host.
 
 `record` refuses a plan with no case, a duplicate, an undeclared or undecided case, a decided
 not-run case, or a request-row deadline without a request, before `RecordingSession::begin`.
-`RecordingInputs::process_environment` carries the variables of the process the recording runs
-in (`staging_dispatch.rs` fills it from `std::env::vars_os()`, a test passes a clean one); `begin` hands
-it to the run discipline, which refuses `TEST_DATABASE_URL`, `DEPLOY_ENV` or any `PROPTEST_*` by
-name before any run folder, log or receipt is written. The receipt's environment is the
-environment identities plus the procedure's `staged_preconditions` (`staged_precondition=<name>`),
-so a precondition set up by a tool rather than by elapsed time is named in the receipt itself.
+The receipt's environment is the environment identities plus the procedure's
+`staged_preconditions` (`staged_precondition=<name>`), so a precondition set up by a tool rather than by elapsed time is named in the receipt itself.
 After `begin` every outcome reaches `finish`: a run that stops with an error becomes a failing
 receipt naming it.
 
 ## Boundaries
 
 - Depends on: `tools/commands/staging_procedures/src/{observation_journal, remote_observers,
-  operator_coordination, environment_identity}`;
-  `api_readiness_checks::operational_recording`.
+  operator_coordination, environment_identity, procedure_receipts}`.
 - Used by: the three procedure modules and `tools/commands/staging_procedures/src/staging_dispatch.rs`.
 - Rules: the engine never reads stdin.

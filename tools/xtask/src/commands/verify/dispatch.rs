@@ -6,9 +6,6 @@ use repository_layout::prelude::find_repository_root;
 
 pub(crate) fn run(cmd: VerifyCmd) -> Result<u8> {
     let code = match cmd {
-        VerifyCmd::ApiReadiness { evidence, execute } => {
-            api_readiness_checks::verify(&find_repository_root()?, &evidence, execute)?
-        }
         VerifyCmd::FileLength => {
             repository_checks::language_bans::node_and_file_limits::verify_file_length()?
         }

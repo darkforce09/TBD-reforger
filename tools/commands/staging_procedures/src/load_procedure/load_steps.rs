@@ -31,6 +31,7 @@ use super::load_report_judges::{
     LoadThresholds, REPORT_MEASUREMENT, ReportJudge, concurrency, member_accounts, p95_json_reads,
     p95_json_writes, refresh_pacing, report_judge, sustained_rate, zero_unexpected_errors,
 };
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::procedure::ProcedurePlan;
 use crate::procedure_runner::step::{
     Deadline, DeclaredCase, EffectPredicate, Probe, Step, StepContext, StepId, StepKind,
@@ -38,7 +39,6 @@ use crate::procedure_runner::step::{
 use crate::remote_observers::database_reader::{CommittedQuery, select};
 use crate::remote_observers::metrics_reader::exposition;
 use crate::staging_settings::StagingSettings;
-use api_readiness_checks::operational_recording::CaseName;
 
 /// The step that reads the seeded population.
 pub(crate) const POPULATION_STEP: &str = "population";

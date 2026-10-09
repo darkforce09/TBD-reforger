@@ -1,9 +1,8 @@
 # Staging load data
 
 The committed inputs of the `staging_load` receipt: the member workload the load engine drives
-against the staging API, and the synthetic population and fixture events it drives it with. Both
-files are part of the source fingerprint a recording binds to, and `workload_sha256` in the receipt
-is their digest.
+against the staging API, and the synthetic population and fixture events it drives it with.
+`workload_sha256` in the receipt is their digest.
 
 ## Contents
 

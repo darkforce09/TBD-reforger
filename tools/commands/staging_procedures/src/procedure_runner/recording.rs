@@ -7,18 +7,15 @@
 //!
 //! **Position:** called by `staging_dispatch.rs`, which hands it the process environment, for
 //! `fleet --record`, `discord --record` and `load --record`; drives `runner.rs` through
-//! [`StagingProcedure::run`] and `api_readiness_checks::operational_recording`
-//! for the receipt.
+//! [`StagingProcedure::run`] and `procedure_receipts` for the receipt.
 //!
 //! **Signals & state:** owns the recording session, the journal and the inbox for one run.
 //!
-//! **Invariants:** a plan the recorder could not judge honestly is refused before `begin`, and a
-//! process environment the run discipline refuses is refused by `begin` before anything else, so
-//! either refusal leaves the earlier receipt and writes no run folder, log or receipt; once
+//! **Invariants:** a plan the recorder could not judge honestly is refused before `begin`, so the
+//! refusal leaves the earlier receipt and writes no run folder, log or receipt; once
 //! `begin` has run, every outcome ends in `finish`: a failure inside the run becomes a failing
 //! receipt naming it, never a missing one; the exit code is the recorder's (0 only on PASS).
 
-use std::ffi::OsString;
 use std::io::Write;
 use std::path::Path;
 
@@ -31,12 +28,12 @@ use super::runner::RunContext;
 use crate::environment_identity;
 use crate::observation_journal::browser_inbox::BrowserInbox;
 use crate::observation_journal::journal::ObservationJournal;
-use crate::remote_observers::remote_command::HostCommandRunner;
-use crate::run_identity::{EVIDENCE_DIRECTORY, RunIdentity};
-use crate::staging_settings::StagingSettings;
-use api_readiness_checks::operational_recording::{
+use crate::procedure_receipts::{
     CaseStatus, EnvironmentEntry, FixtureManifest, RecordedCase, RecordedOutcome, RecordingSession,
 };
+use crate::remote_observers::remote_command::HostCommandRunner;
+use crate::run_identity::{RECEIPTS_DIRECTORY, RunIdentity};
+use crate::staging_settings::StagingSettings;
 
 /// What a recorded run reads and writes besides the procedure.
 pub(crate) struct RecordingInputs<'a> {
@@ -47,8 +44,6 @@ pub(crate) struct RecordingInputs<'a> {
     pub clock: &'a dyn WaitingClock,
     /// The command line the receipt records.
     pub command: Vec<String>,
-    /// The variables of the process the recording runs in, which the run discipline reads.
-    pub process_environment: Vec<(OsString, OsString)>,
     /// Where the `AWAIT` and verdict lines go.
     pub output: &'a mut dyn Write,
 }
@@ -59,13 +54,8 @@ pub(crate) fn record(procedure: &dyn StagingProcedure, inputs: RecordingInputs<'
     let plan = procedure.plan(inputs.settings)?;
     plan.validate()
         .with_context(|| format!("the {} procedure cannot be recorded", check.id()))?;
-    let session = RecordingSession::begin(
-        inputs.root,
-        Path::new(EVIDENCE_DIRECTORY),
-        check,
-        inputs.command,
-        inputs.process_environment,
-    )?;
+    let session =
+        RecordingSession::begin(&inputs.root.join(RECEIPTS_DIRECTORY), check, inputs.command)?;
     let identity = RunIdentity::new(inputs.root, check, session.run_id());
     writeln!(
         inputs.output,
@@ -141,11 +131,11 @@ fn manifest(
     plan: &ProcedurePlan,
     identities: Value,
 ) -> Result<FixtureManifest> {
-    Ok(FixtureManifest::new(&json!({
+    FixtureManifest::new(&json!({
         "check": procedure.check().id(),
         "procedure": plan.definition(),
         "identities": identities,
-    }))?)
+    }))
 }
 
 /// A run that stopped with `error`: every runnable case failed naming it.

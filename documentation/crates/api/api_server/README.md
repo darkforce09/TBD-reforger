@@ -15,7 +15,7 @@ documentation/crates/api/api_server/
 ├── api_overview.md           the map of the API: boot, request path, callers, routes by domain, crate map, state, ids, open work
 ├── decisions.md              the cross-domain design decisions, dated, with their consequences
 ├── environment_variables.md  every variable the API reads: default, requirement, failure, reader
-└── verification_evidence/    the acceptance register, the program records and the design notes
+└── verification_evidence/    the per-domain design notes and the staging receipts' design
 ```
 
 ## How it works
@@ -31,7 +31,7 @@ each domain. The layers split the facts:
   [environment variable reference](/documentation/crates/api/api_server/environment_variables.md),
   the [decisions log](/documentation/crates/api/api_server/decisions.md) and the open work.
 - `verification_evidence/` holds the per-domain design depth (transactions, lock orders, refusal
-  codes) and the register `cargo xtask verify api-readiness` judges; its
+  codes) and the staging receipts' design; its
   [README](/documentation/crates/api/api_server/verification_evidence/README.md) indexes each file.
 
 No domain has a document of its own here: each domain README and the design notes in

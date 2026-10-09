@@ -739,23 +739,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "api_readiness_checks"
-version = "0.1.0"
-dependencies = [
- "content_digest",
- "deploy_settings",
- "libc",
- "process_runner",
- "regex",
- "repository_layout",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "time_source",
- "verification_core",
-]
-
-[[package]]
 name = "api_server"
 version = "0.1.0"
 dependencies = [
@@ -2245,7 +2228,6 @@ checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
 name = "database_operations"
 version = "0.1.0"
 dependencies = [
- "api_readiness_checks",
  "clap",
  "content_digest",
  "process_runner",
@@ -8656,7 +8638,6 @@ dependencies = [
 name = "staging_procedures"
 version = "0.1.0"
 dependencies = [
- "api_readiness_checks",
  "clap",
  "content_digest",
  "deploy_settings",
@@ -11060,7 +11041,6 @@ version = "0.1.0"
 dependencies = [
  "agent_context_guards",
  "anyhow",
- "api_readiness_checks",
  "ballistics_oracle_tooling",
  "blueprint_compiler",
  "ci_task_catalog",

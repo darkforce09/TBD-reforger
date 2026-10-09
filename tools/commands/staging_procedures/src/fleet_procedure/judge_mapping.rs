@@ -5,7 +5,7 @@
 //! and names the measurement keys the waves write for it.
 //!
 //! **Position:** called by `FleetProcedure::observations` for every recorded run, a partial or
-//! stopped one included; `operational.rs` judges the result.
+//! stopped one included; `procedure_receipts/acceptance_thresholds.rs` judges the result.
 //!
 //! **Signals & state:** none; pure functions over the run's cases and measurements.
 //!
@@ -21,11 +21,9 @@ use super::fleet_cases::{
     FLEET_SERVER_COUNT, IDENTITY_LINK, KICK, LOST_ACKNOWLEDGEMENT_CLAIM_RESPONSE,
     LOST_ACKNOWLEDGEMENT_RESULT_RESPONSE, per_server_case_name,
 };
+use crate::procedure_receipts::{CaseStatus, FixtureManifest, Observations, RecordedCase};
 use crate::procedure_runner::procedure::ProcedureRun;
 use crate::procedure_runner::step::Measurements;
-use api_readiness_checks::operational_recording::{
-    CaseStatus, FixtureManifest, Observations, RecordedCase,
-};
 
 /// The judge's scenarios every fleet server must pass, each named after its per-server case.
 pub(crate) const PER_SERVER_SCENARIOS: [&str; 6] = [

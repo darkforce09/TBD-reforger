@@ -47,8 +47,7 @@ No feature and no environment variable.
 ## Boundaries
 
 - Depends on: `sha2` (the hash functions) and `thiserror`.
-- Used by: `xtask` (`cargo xtask db repair-migration-checksum`, the API readiness fingerprints,
-  the ballistics and equipment export digests, the mission publication client, the staging load
+- Used by: `xtask` (`cargo xtask db repair-migration-checksum`, the ballistics and equipment export digests, the mission publication client, the staging load
   and observation receipts).
 - Rules: foundation tier, so the crate depends on no workspace crate
   (`cargo xtask verify crate-tiers`); a digest is never computed over partially read bytes.

@@ -50,9 +50,6 @@ pub enum Error {
     /// The fleet layout the deploy shares could not be read.
     #[error(transparent)]
     Deployment(#[from] deployment::Error),
-    /// The recorder refused or failed a recorded run, or a fingerprint could not be taken.
-    #[error(transparent)]
-    ApiReadiness(#[from] api_readiness_checks::Error),
     /// The load plan or report could not be built, encoded or decoded.
     #[error(transparent)]
     LoadPlan(#[from] staging_load_plan::Error),

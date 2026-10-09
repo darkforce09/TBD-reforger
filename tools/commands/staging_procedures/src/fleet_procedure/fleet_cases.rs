@@ -14,8 +14,8 @@
 
 use crate::error::Result;
 
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::step::DeclaredCase;
-use api_readiness_checks::operational_recording::CaseName;
 
 /// The number of fleet servers the procedure drives, one per staging instance.
 pub(crate) const FLEET_SERVER_COUNT: u16 = 5;
@@ -81,7 +81,7 @@ pub(crate) fn per_server_case_name(instance: u16, suffix: &str) -> String {
 
 /// `server<instance>_<suffix>` as a validated case name.
 pub(crate) fn per_server_case(instance: u16, suffix: &str) -> Result<CaseName> {
-    Ok(CaseName::new(&per_server_case_name(instance, suffix))?)
+    CaseName::new(&per_server_case_name(instance, suffix))
 }
 
 /// Every declared case: the forty per-server cases, then the two two-client cases recorded

@@ -25,12 +25,12 @@ use crate::fleet_procedure::fleet_reads::{
     self, CommandRow, FleetRow, json_rows, newest_since, since_ms,
 };
 use crate::fleet_procedure::judge_mapping::server_id_measurement;
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::step::{
     Deadline, EffectPredicate, Probe, ProbeVerdict, RequestPredicate, Satisfaction, Step,
     StepContext, StepId, StepKind,
 };
 use crate::remote_observers::unit_state_reader::{self, UnitState};
-use api_readiness_checks::operational_recording::CaseName;
 
 /// Accepts a command row as the one a wave waits for.
 pub(super) type RowFilter = fn(&CommandRow) -> bool;

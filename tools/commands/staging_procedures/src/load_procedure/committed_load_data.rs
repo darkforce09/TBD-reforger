@@ -6,7 +6,7 @@
 //! with each other and with the reserved Discord id range, and computes `workload_sha256`.
 //!
 //! **Position:** read by the load procedure's plan, run, manifest and observations, by
-//! `seed-load` and by the local rehearsal; the files are in the source fingerprint.
+//! `seed-load` and by the local rehearsal.
 //!
 //! **Signals & state:** none; pure values read once per command.
 //!

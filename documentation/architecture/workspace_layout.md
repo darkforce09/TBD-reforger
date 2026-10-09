@@ -48,11 +48,11 @@ folder are ignored.
 
 ## Workspace members
 
-One Cargo workspace (resolver 3) holds every Rust crate: 161 members, which are 117 crates under
-`crates/` (113 library crates and four applications: the API server, the single-page app, the
-offline service worker and the game server host agent), 42 tool crates under `tools/<category>/`
+One Cargo workspace (resolver 3) holds every Rust crate: 158 members, which are 115 crates under
+`crates/` (111 library crates and four applications: the API server, the single-page app, the
+offline service worker and the game server host agent), 41 tool crates under `tools/<category>/`
 (the ticketboard desktop viewer among them) and the two tool binaries `tools/xtask` and
-`tools/developer_tools`. The crate-tier law judges the 159 crates and leaves out only the two
+`tools/developer_tools`. The crate-tier law judges the 156 crates and leaves out only the two
 binaries; no member depends on one of the five applications. Members inherit edition 2024 and
 rust-version 1.95 from `[workspace.package]`. The applications come first in the table.
 
@@ -191,7 +191,6 @@ rust-version 1.95 from `[workspace.package]`. The applications come first in the
 | [`tools/commands/schema_tooling/`](/tools/commands/schema_tooling/README.md) | `schema_tooling` | the contract codegen, the contract schema gates, the ORBAT slot flattening and the font-table generator behind `cargo xtask schema` and `cargo xtask gen` |
 | [`tools/commands/ballistics_oracle_tooling/`](/tools/commands/ballistics_oracle_tooling/README.md) | `ballistics_oracle_tooling` | the ballistics catalog and calibration fixtures behind `cargo xtask ballistics trim-export` |
 | [`tools/commands/enfusion_mcp/`](/tools/commands/enfusion_mcp/README.md) | `enfusion_mcp` | the Enfusion MCP client behind `cargo xtask mcp`: daemon control, tool calls, the offline selftest, Workbench NET API calls, log verdicts |
-| [`tools/commands/api_readiness_checks/`](/tools/commands/api_readiness_checks/README.md) | `api_readiness_checks` | the API readiness judge behind `cargo xtask verify api-readiness`: acceptance register, evidence receipts, fingerprints, the staging recorder, the property-test seed |
 | [`tools/commands/workstation_setup/`](/tools/commands/workstation_setup/README.md) | `workstation_setup` | the `cargo xtask setup` commands and the staging host check of `cargo xtask mod bootstrap-staging` |
 | [`tools/commands/database_operations/`](/tools/commands/database_operations/README.md) | `database_operations` | the local database lane behind `cargo xtask db`, the database container layer and the verified backup, guarded restore and restore drill behind `cargo xtask deploy db`, the milestone announcement seed, and the seed and SQL-shape checks behind `cargo xtask verify` |
 | [`tools/commands/deployment/`](/tools/commands/deployment/README.md) | `deployment` | the website and staging fleet deploys behind `cargo xtask deploy website` and `cargo xtask deploy staging`, and the staging compose-path check behind `cargo xtask verify` |

@@ -14,7 +14,7 @@ tools/foundation/repository_layout/src/
 ├── contracts.rs            `CONTRACTS_DIR` and the definition, rule, catalog and fixture locations inside it, joined onto a given root
 ├── deployment.rs           `DEPLOY_DIR` and the settings file, its example, the compose file, the Caddy site and the systemd units inside it
 ├── documentation.rs        `DOCUMENTATION_ROOT`, `ROADMAP` and `GAP_ANALYSIS`
-├── documentation_locations.rs  the runbooks, the API readiness register and the areas, roots and exemptions of the documentation gates
+├── documentation_locations.rs  the runbooks and the areas, roots and exemptions of the documentation gates
 ├── enfusion_mod_folders.rs  the folder name and checkout folder of each Enfusion mod addon (framework, export, MCP bridge) under the mod folder
 ├── enfusion_mcp_node_package.rs  the pinned `enfusion-mcp` npm package folder and the server module installed in it
 ├── map_assets.rs           the served terrain and glyph trees and the per-island export scratch, joined onto a given root
@@ -35,8 +35,7 @@ tools/foundation/repository_layout/src/
   caller passes and never touches the filesystem; `build_output.rs` adds
   `build_output_subfolder` and `is_retired_root_level_build_folder`, pure as well. Each tree
   constant has no trailing slash, and each location inside a tree starts with the tree followed by
-  `/`; the API readiness evidence prefix alone ends in `/`, because the fingerprint matches it with
-  `starts_with`.
+  `/`.
 - `build_output.rs` names every purpose subfolder a tool builds into under `target/`, each its own
   `CARGO_TARGET_DIR` with its own cargo lock; no name collides with an entry cargo writes inside a
   target directory (profile folders, target triples, its bookkeeping files).

@@ -16,7 +16,7 @@ design of the procedure is in the
 - `deploy/deploy.env` sets `TBD_STAGING_OPERATOR_DISCORD_ID`,
   `TBD_STAGING_PARTNER_GUILD_ID`, `TBD_STAGING_PARTNER_ROLE_ID` and `TBD_STAGING_DB_CONTAINER`; a
   missing key refuses the plan before the recording begins.
-- The load and fleet receipts of the same 24-hour window are recorded
+- The load and fleet receipts of the run day are recorded
   ([run day](/documentation/runbooks/staging_verification/run_day.md)), and the API env file on
   the host sets `DISCORD_BOT_TOKEN`.
 - The pre-Discord backup is taken:
@@ -94,7 +94,7 @@ design of the procedure is in the
   every real observation.
 - Its environment lists `staged_precondition=membership_snapshot_aged_49h`, and its fixture
   manifest records the staged aging in `staged_preconditions`.
-- The receipt and its log land in `target/api-readiness/`; the journal and the inbox archive land
+- The receipt and its log land in `target/staging/receipts/`; the journal and the inbox archive land
   under `target/staging/staging_discord/<run>/`.
 
 ## Recovery
@@ -119,4 +119,4 @@ The rest of the cleanup is in
 - [Staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md) — the
   procedures, the receipt format and the witness rules.
 - [Run day](/documentation/runbooks/staging_verification/run_day.md) — where the Discord run sits
-  in the 24-hour window.
+  in the recording sequence.

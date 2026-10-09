@@ -31,11 +31,11 @@ use crate::fleet_procedure::fleet_cases::{IDENTITY_LINK, KICK, REJECTION_ENDED_S
 use crate::fleet_procedure::fleet_reads::{self, CommandRow, json_rows, since_ms};
 use crate::fleet_procedure::judge_mapping::player_listing_measurement;
 use crate::fleet_procedure::single_server_reads::{self, IdentityLinkRow};
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::step::{
     Probe, ProbeVerdict, RequestPredicate, Satisfaction, Step, StepContext, StepKind,
 };
 use crate::remote_observers::console_log_reader;
-use api_readiness_checks::operational_recording::CaseName;
 
 /// The code the API's refusal of a command against an ended runtime session carries.
 const RUNTIME_SESSION_ENDED: &str = "RUNTIME_SESSION_ENDED";

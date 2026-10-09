@@ -17,8 +17,6 @@ tier = 6
 targets = "any"
 
 [dependencies]
-# The recorder, the fingerprints and the receipts every recorded run hands its outcome to.
-api_readiness_checks = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 content_digest = { workspace = true }
 deploy_settings = { workspace = true }

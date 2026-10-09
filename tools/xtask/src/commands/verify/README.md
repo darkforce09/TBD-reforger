@@ -81,16 +81,6 @@ Run each as `cargo xtask verify <verb>` from the repository root.
   `verify_blas_manifest` in `tools/map_assets/map_asset_verification/src/blas_manifest.rs`.
 - Example: `cargo xtask verify blas-manifest`
 
-### api-readiness
-
-- Synopsis: `verify api-readiness [--evidence <DIR>] [--execute]`; `--evidence` defaults to
-  `target/api-readiness`.
-- Does: judges every requirement of the [API](/documentation/glossary/a_to_f.md#api) acceptance
-  register against the evidence receipts in `DIR`; `--execute` first runs the registered local
-  checks. Body:
-  `tools/commands/api_readiness_checks/src/`.
-- Example: `cargo xtask verify api-readiness`
-
 ### Link check
 
 - Synopsis: `verify link-check [--report] [--path <DIR>]... [--with-untracked]`

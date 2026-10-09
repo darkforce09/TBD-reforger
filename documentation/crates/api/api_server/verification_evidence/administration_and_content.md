@@ -8,8 +8,7 @@ Design for the [administration](/documentation/glossary/a_to_f.md#administration
 [community content](/documentation/glossary/a_to_f.md#community-content) requirements
 (`content_vehicle_mutations`, `content_wiki_features`, `content_content_storage`). The same work
 closes the tickets T-940.7 (personnel pagination), T-940.8 (vehicle mutations) and T-940.9 (wiki
-markup and revisions). It records the chosen semantics before implementation; acceptance evidence
-is the command output recorded in progress_checkpoint.md. The wire shapes are
+markup and revisions). It records the chosen semantics before implementation; the tests it names hold it. The wire shapes are
 `personnel-roster.schema.json`, `audit-log.schema.json`, `vehicle-database.schema.json`,
 `wiki-page.schema.json` and `content-upload.schema.json` in `contracts/definitions/`.
 

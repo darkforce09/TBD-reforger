@@ -42,7 +42,7 @@ pub struct PlanOnly {
 /// The switch of a recorded run.
 #[derive(Args, Debug)]
 pub struct RecordSwitch {
-    /// Run the procedure and write its receipt into target/api-readiness/
+    /// Run the procedure and write its receipt into target/staging/receipts/
     #[arg(long, required = true)]
     pub record: bool,
 }
@@ -62,8 +62,6 @@ pub enum StagingCmd {
         #[arg(long)]
         capacity: bool,
     },
-    /// Print the source and configuration fingerprints a recording started now binds to
-    Fingerprints,
     /// Print a procedure's numbered real actions for the operator's approval
     #[command(name = "action-list")]
     ActionList {
@@ -154,7 +152,7 @@ pub enum StagingCmd {
     },
     /// Record the staging_load receipt, or rehearse the load path locally
     Load {
-        /// Run the load procedure and write its receipt into target/api-readiness/
+        /// Run the load procedure and write its receipt into target/staging/receipts/
         #[arg(
             long,
             requires = "token_file",

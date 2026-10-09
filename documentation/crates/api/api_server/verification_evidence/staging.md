@@ -2,15 +2,12 @@
 
 # Staging acceptance: fleet, Discord and load receipts
 
-Design for the three operational requirements of the acceptance register: `staging_fleet`,
-`staging_discord` and `staging_load`, and for the Discord identity requirements that also cite
-`staging_discord` (`identity_discord_rest_reconciliation`, `identity_discord_resilience`,
-`identity_discord_revocation`). An operational check has no command in the register: an external
-runner observes the staging environment and writes a receipt, and `cargo xtask verify
-api-readiness` judges that receipt against the thresholds in
-`tools/commands/api_readiness_checks/src/operational.rs`. This note fixes how the runner
-observes, what it records and when a receipt may pass. Acceptance evidence is the receipt set in
-`target/api-readiness/` and the execution record in `progress_checkpoint.md`.
+Design for the three staging receipts `staging_fleet`, `staging_discord` and `staging_load`, and
+for the Discord identity behaviour `staging_discord` also observes (REST reconciliation,
+resilience, revocation). The harness observes the staging environment, judges the run against the
+thresholds in `tools/commands/staging_procedures/src/procedure_receipts/acceptance_thresholds.rs`
+and writes a receipt. This note fixes how the harness observes, what it records and when a receipt
+may pass. The receipts land in `target/staging/receipts/`.
 
 ## Operator decisions (2026-09-29)
 
@@ -48,18 +45,15 @@ secret leaves the host.
 
 ### The receipt
 
-`tools/commands/api_readiness_checks/src/operational_recording.rs` records every operational
-run. At the start it reads the register, snapshots the source and configuration fingerprints, the
-start time and the tool versions. At the end it:
+`tools/commands/staging_procedures/src/procedure_receipts/recording_session.rs` records every
+staging run. At the start it removes the check's earlier receipt and snapshots the start time and
+the run id. At the end it:
 
-1. recomputes both fingerprints; a drift fails the run and the receipt keeps the start digests, so
-   the judge rejects it too;
-2. considers a pass only when every declared case is `ok`, no case is `NOT RUN`, the observations
-   meet `operational.rs` and the run stayed inside the check's timeout;
-3. runs the judge itself on the finished receipt and log, and turns any rejection into a failure
-   with the judge's reason;
-4. publishes `<check>.log`, `<check>.fixture.json` and `<check>.json` into `target/api-readiness/`
-   atomically, and exits 0 only on a pass.
+1. considers a pass only when every declared case is `ok`, no case is `NOT RUN`, at least the
+   check's minimum of cases passed (50, 13 and 10), the environment identities are recorded, the
+   observations meet `acceptance_thresholds.rs` and the run stayed inside its two-hour limit;
+2. publishes `<check>.log`, `<check>.fixture.json` and `<check>.json` into
+   `target/staging/receipts/` atomically, and exits 0 only on a pass.
 
 A failing receipt exits 1, carries no success marker, keeps the real observations (for example a
 client count of 1 and only the scenarios actually observed) and names every missing dependency.
@@ -78,8 +72,7 @@ missing: <dependency>
 <check>: FAIL <ok>/<declared> (<reasons>)
 ```
 
-Case names are lower-case words joined by `_`. Only the `ok` form matches the register's case
-pattern, and the `PASS` line is written only on full acceptance.
+Case names are lower-case words joined by `_`. The `PASS` line is written only on full acceptance.
 
 ### The fixture manifest
 
@@ -88,18 +81,10 @@ declared cases), the server ids, the mission and artifact digests, the fleet sce
 guild ids, the Workshop version and the digests of the committed data files. `workload_sha256` for
 the load check is the SHA-256 of the two committed workload files, each length-framed.
 
-### Binding a run to the tree
+### Running a recording
 
-The receipt binds to the source fingerprint (tracked and untracked source files under `mod/`,
-`crates/`, `tools/`, `contracts/`, `.github/`, `.cargo/` and this folder) and to the configuration
-fingerprint (the local `.env` files, `deploy/deploy.env` and the verifying process's
-environment, PATH and CARGO_TARGET_DIR included). Hence:
-
-- every recording and every verification runs as `hcargo xtask …` from the repository root, which
-  fixes PATH and CARGO_TARGET_DIR;
-- the code, the register, this note and `deploy.env` are final and committed before the first
-  recording, and nothing changes them until `verify api-readiness --execute` has finished;
-- the three recordings and `--execute` fit inside 24 hours of the first recording's start.
+Every recording runs as `hcargo xtask staging …` from the repository root, with the code, this
+note and `deploy.env` committed before the first recording.
 
 ### The journal and the browser inbox
 
@@ -229,14 +214,14 @@ Declared cases (10): `population_seeded`, `refresh_paced`, `sustained_rate`, `co
 
 | Part | Code |
 |---|---|
-| Receipt recorder | `tools/commands/api_readiness_checks/src/operational_recording.rs` |
+| Receipt recorder | `tools/commands/staging_procedures/src/procedure_receipts/` |
 | Harness and procedures | `tools/commands/staging_procedures/src/` (`cargo xtask staging …`) |
 | Load engine and relay | `tools/staging/` (`staging_load_plan`, `staging_load_generator`, `acknowledgement_dropping_relay`) |
 | Host tool | `tools/staging/staging_fixtures/src/` (`staging-fixtures`, built on the host by the website deploy) |
 | Multi-instance deploy | `tools/commands/deployment/src/staging/`, units in `deploy/systemd/` |
 | Console command | the fleet command ledger (migration 0061), the host agent's at-most-once RCON path, the Server Control console box |
 
-The harness commands: `preflight`, `status`, `fingerprints` and `action-list` read only;
+The harness commands: `preflight`, `status` and `action-list` read only;
 `backup`, `update-game-server`, `provision-fleet`, `rotate-credential`, `seed-load` and `clean-load`
 change the staging host after approval; `fleet --record`, `discord --record` and `load --record`
 write receipts; `load --rehearse-local` exercises the load path against the local stack and records
@@ -279,21 +264,17 @@ password generated on the host. The line never reaches a host shell.
 | S-F4 | `fleet_command_ledger.md` listed a nonexistent `change_map` and said kick used RCON | FIX | corrected; the console row added |
 | S-F5 | Discord reconciliation wrote no logs or metrics | FIX | one structured log line and `tbd_discord_reconcile_outcomes_total{outcome}` |
 | S-F6 | The staging game server ran an out-of-date Experimental build | FIX | updated before the runs |
-| S-F7 | The recorder's run discipline read the environment of whatever process ran it, so under `verify api-readiness --execute`, which gives every check `PROPTEST_RNG_SEED`, the recorder and receipt tests were refused | FIX | `RecordingSession::begin` reads the variables its caller hands it: the harness passes its own process environment, a test passes a clean one; a real recording with `PROPTEST_*` set is still refused |
 | S-F8 | The fencing property dropped a refused step's transaction, and sqlx sends that rollback only when the pool takes the connection back; until then the row lock hid the command from the next claim's `SKIP LOCKED` read, so the property failed now and then | FIX (test); NOTE (production) | the property rolls back every refused step before the next one; in production the same window costs one empty claim poll, and the agent claims the command on its next poll |
 
-## Register
+## Checks
 
-The register lists each staging requirement's implementation paths and adds the checks that prove
-the tooling itself: `staging_harness` (`cargo test -p staging_procedures --locked`),
-`staging_verification_engines` (`cargo test -p staging_load_plan -p staging_load_generator -p
-acknowledgement_dropping_relay --locked`),
-`staging_fixture_tool` (the `staging_fixtures_*` cases of `cargo xtask db test-it`) and the
-recorder's tests inside `readiness_self_tests`. The console command is its own requirement,
-`fleet_console_command`. The operational minimums are the declared case counts (50, 13 and 10), so a
-receipt can only pass with every declared case observed.
+The tooling's own tests: `cargo test -p staging_procedures --locked`,
+`cargo test -p staging_load_plan -p staging_load_generator -p acknowledgement_dropping_relay
+--locked`, and the `staging_fixtures_*` cases of `cargo xtask db test-it`. The declared case counts
+are the receipts' minimums (50, 13 and 10), so a receipt can only pass with every declared case
+observed.
 
 ## Results
 
-Recorded here after the runs: each receipt's verdict, counts, timestamps and log paths, the
-missing dependencies, and the verdict of the first `verify api-readiness --execute`.
+Recorded here after the runs: each receipt's verdict, counts, timestamps and log paths, and the
+missing dependencies.

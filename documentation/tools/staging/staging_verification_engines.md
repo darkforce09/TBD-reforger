@@ -2,7 +2,7 @@
 
 # Staging verification engines
 
-The two engines behind operational receipts of the API acceptance register that the staging
+The two engines behind the staging receipts that the staging
 harness cannot run from its own process: the member load generator, which drives the staging API
 with a hundred synthetic members for the `staging_load` receipt, and the acknowledgement-dropping
 relay, which loses one fleet executor answer on the staging host for the lost-acknowledgement cases

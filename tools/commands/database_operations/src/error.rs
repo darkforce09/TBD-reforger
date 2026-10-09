@@ -50,9 +50,6 @@ pub enum Error {
     /// A program or a scanned file gave no answer: absent, unreadable, signalled or timed out.
     #[error(transparent)]
     NotRun(#[from] verification_core::NotRun),
-    /// The property-test settings of an integration run are invalid.
-    #[error(transparent)]
-    PropertyTestConfiguration(#[from] api_readiness_checks::Error),
 }
 
 impl Error {

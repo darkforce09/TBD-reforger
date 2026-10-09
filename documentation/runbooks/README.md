@@ -25,7 +25,7 @@ documentation/runbooks/
 ├── mod_slice_workflow.md       run a mod wave: slice agents in worktrees, `mod wave` landing
 ├── offline_mortar_page.md      prepare the offline pack of the mortar calculator, gate it, check it by hand
 ├── spawn_determinism.md        prove Workbench Play, spawn and equip repeat byte-identically
-├── staging_verification/       record the fleet, Discord and load receipts of the API acceptance register
+├── staging_verification/       record the fleet, Discord and load receipts against the staging host
 ├── sub_agent_orchestration.md  run any multi-file task with sub-agents: plan, brief, prompts, routing, gates
 ├── testing_and_ci.md           run the repository's gates locally before a push
 ├── ticket_run_pipeline.md      take one ticket from idea to shipped with `ticket run`

@@ -212,9 +212,5 @@ The crate declares no Cargo feature.
   tests, the migration checksum repair, sample data, backups and restores.
 - [Website deployment](/documentation/runbooks/website_deployment.md) — building and running
   the API on the home server.
-- [API completion and verification](/documentation/crates/api/api_server/verification_evidence/completion_plan.md)
-  — the acceptance contract and requirement register the API is verified against.
-- [Verification completeness](/documentation/crates/api/api_server/verification_evidence/verification_completeness.md)
-  — the route acceptance and contract parity suites.
-- [API verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md)
-  — the index of the register, the program records and the design notes.
+- [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md)
+  — the index of the per-domain design notes.

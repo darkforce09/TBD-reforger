@@ -23,7 +23,7 @@ use super::remote_actions::game_server_update;
 use super::remote_observers::remote_command::{HostCommandRunner, RemoteCommand};
 use super::remote_observers::{console_log_reader, database_reader, metrics_reader};
 use super::staging_settings::StagingSettings;
-use api_readiness_checks::operational_recording::{EnvironmentEntry, StagingCheck};
+use crate::procedure_receipts::{EnvironmentEntry, StagingCheck};
 
 /// Reads every identity of `check`'s environment; errors only when the journal cannot be
 /// written or an entry is malformed.
@@ -138,6 +138,6 @@ pub(crate) fn collect(
     }
     values
         .iter()
-        .map(|(key, value)| Ok(EnvironmentEntry::new(key, value)?))
+        .map(|(key, value)| EnvironmentEntry::new(key, value))
         .collect()
 }

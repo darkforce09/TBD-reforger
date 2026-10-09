@@ -4,8 +4,8 @@
 
 The decisions that shape the website [API](/documentation/glossary/a_to_f.md#api) as a whole, one
 entry each in the [decisions entry](/documentation/standards/templates/decisions_entry.md)
-format, oldest first. A decision that concerns one domain alone lives in that domain's evidence
-note under [verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md).
+format, oldest first. A decision that concerns one domain alone lives in that domain's design
+note under [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md).
 
 ### 2026-07-31 — Configuration fails closed on values that cannot work
 
@@ -161,9 +161,7 @@ not have run". Server Control sends it from `console_command_form.rs` and shows 
 command like any other. A lost reply is reported as unknown and never retried, so the operator
 decides whether to send the line again. The `fleet_console_command` API tests, the console and
 `execute_once` cases of the `rcon_transport` suite, the contract parity fixture of
-`fleet-command.schema.json` and the register requirement `fleet_console_command` in
-[requirements.json](/documentation/crates/api/api_server/verification_evidence/requirements.json) hold
-the decision in place.
+`fleet-command.schema.json` hold the decision in place.
 
 **Supersedes:** the sentence "The API has no RCON console route." of
 [2026-09-23 — Game hosts are reached only through work they claim](#2026-09-23--game-hosts-are-reached-only-through-work-they-claim);

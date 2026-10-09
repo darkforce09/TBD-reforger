@@ -7,10 +7,9 @@
 //!
 //! **Signals & state:** none held; one ssh transport per command.
 //!
-//! **Invariants:** `fingerprints` and `load --rehearse-local` need no `deploy.env`; a confirmed
-//! action under `--dry-run` prints its command and opens no connection; a recorded run hands the
-//! recorder this process's environment for its run discipline, and its exit code is the
-//! recorder's.
+//! **Invariants:** `load --rehearse-local` needs no `deploy.env`; a confirmed
+//! action under `--dry-run` prints its command and opens no connection; a recorded run's exit
+//! code is the recorder's.
 
 use std::io::{self, Write};
 use std::path::Path;
@@ -31,7 +30,7 @@ use crate::remote_observers::remote_command::{HostCommandRunner, RemoteCommand};
 use crate::run_identity::recorded_command;
 use crate::staging_command::{PlanOnly, ProcedureName, StagingCmd};
 use crate::staging_settings::StagingSettings;
-use crate::support_commands::{fingerprints, host_capacity, preflight, status};
+use crate::support_commands::{host_capacity, preflight, status};
 use repository_root::find_repository_root;
 
 /// Runs one `cargo xtask staging` subcommand and returns its exit code: 0 when every check is
@@ -46,7 +45,6 @@ pub fn run(cmd: StagingCmd) -> Result<u8> {
     let mut stdout = io::stdout();
     let output: &mut dyn Write = &mut stdout;
     match cmd {
-        StagingCmd::Fingerprints => fingerprints::run(&root, output),
         StagingCmd::Load {
             rehearse_local: true,
             ..
@@ -99,7 +97,6 @@ fn with_host(
                 host,
                 clock: &time_source::SystemClock,
                 command: recorded_command(std::env::args()),
-                process_environment: std::env::vars_os().collect(),
                 output,
             },
         )
@@ -178,7 +175,7 @@ fn with_host(
             host,
             output,
         ),
-        StagingCmd::Fingerprints | StagingCmd::ActionList { .. } => {
+        StagingCmd::ActionList { .. } => {
             crate::error::bail!("this subcommand does not reach the host")
         }
     }

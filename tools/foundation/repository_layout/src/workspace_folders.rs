@@ -4,8 +4,7 @@
 //! **Role:** the repository-relative folders of the Enfusion mod, the library crates and the
 //! developer tools; the API server crate and the `.env` its binaries read; and the migration and
 //! seed folders of the API's database crate, each once.
-//! **Position:** read by the API readiness fingerprint (the source input folders, the `.env` it
-//! digests), by the `db` command group (the API folder its recipes run in, the seeds it applies,
+//! **Position:** read by the `db` command group (the API folder its recipes run in, the seeds it applies,
 //! the migrations whose checksums it repairs), and by the staging, mod and fixture tools that read
 //! the API server's `.env`.
 //! **Signals & state:** none; constants.

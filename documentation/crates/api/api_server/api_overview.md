@@ -21,8 +21,8 @@ routes, models and rules exactly; this document is the map that leads to them.
   `deploy/systemd/tbd-website-api.service` runs on the deploy host.
 - Related: the [environment variable reference](/documentation/crates/api/api_server/environment_variables.md),
   the [API decisions log](/documentation/crates/api/api_server/decisions.md), the
-  [verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md) the
-  API is accepted against, and the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md)
+  [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md) of
+  each domain, and the [frontend documentation](/documentation/crates/frontend/shell/frontend_application/README.md)
   of the pages that call it.
 
 ## Behaviour
@@ -315,9 +315,8 @@ cargo xtask db test-it
 ```
 
 Then call the changed endpoint and compare its JSON with the domain's `models/` and the matching
-DTO in `crates/frontend/foundation/frontend_api_dtos/src/`. Acceptance of the API as a whole is
-`cargo xtask verify api-readiness`, which judges the receipts described in the
-[verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md).
+DTO in `crates/frontend/foundation/frontend_api_dtos/src/`. The per-domain design notes are
+indexed in the [API design notes](/documentation/crates/api/api_server/verification_evidence/README.md).
 
 ## Open work
 
@@ -335,8 +334,6 @@ DTO in `crates/frontend/foundation/frontend_api_dtos/src/`. Acceptance of the AP
   (`contracts/definitions/match-telemetry.schema.json`), `POST /api/v1/ingest/match-events` and
   `GET /api/v1/matches/{matchId}/events` exist; the after-action replay that plays them does
   not.
-- [T-1131 — Decide whether Markdown edits should invalidate API readiness evidence](/.ai/tickets/T-1131.toml)
-  (idea, no plan): whether documentation stays in the readiness fingerprint.
 
 ## Decisions
 

@@ -8,7 +8,7 @@
 //! transport.
 //! **Position:** tier 2 of `tools/foundation`, above `repository_layout` (the file's checkout
 //! location) and `process_runner` (the ssh transport). The `deploy`, `setup`, `debug`, `mod` and
-//! `staging` command groups of `xtask` and the API readiness checks read their settings through it.
+//! `staging` command groups of `xtask` read their settings through it.
 //! **Signals & state:** a [`DeployEnvironment`] is an immutable snapshot of the file and of the
 //! process environment, taken when it is loaded; nothing here writes either.
 //! **Invariants:** the file is parsed and never executed; a stale exported variable never

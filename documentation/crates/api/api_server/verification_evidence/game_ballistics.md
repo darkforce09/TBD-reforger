@@ -6,14 +6,12 @@ Design for the game-ballistics requirements (`game_ballistics_flight_model`,
 `game_ballistics_calibration`, `game_ballistics_elevation_wind_dispersion`,
 `game_ballistics_battery`, `game_ballistics_wasm_agreement`, `game_ballistics_offline_page`) and the
 API requirement `verification_game_ballistics`. It records the chosen semantics and the model the
-engine oracle identified; acceptance evidence is the command output recorded in
-progress_checkpoint.md. The wire shapes are three schemas under `contracts/definitions/`:
+engine oracle identified; the tests it names hold it. The wire shapes are three schemas under `contracts/definitions/`:
 `contracts/definitions/ballistics-catalog.schema.json`,
 `contracts/definitions/ballistics-calibration.schema.json` and
 `contracts/definitions/fire-mission.schema.json` (version 2). The code is the five
 crates under `crates/ballistics/` (`ballistics_model`, `ballistics_solver`, `fire_mission_planning`,
 `ballistics_calibration`, `ballistics_agreement_cases`); its feature doc is the [game ballistics engine](/documentation/crates/ballistics/game_ballistics_engine.md).
-The section B entry of remaining_milestones.md links here once the register lands.
 
 ## Operator decisions
 
@@ -34,7 +32,7 @@ These are binding; the design below implements them and nothing else.
 | 11 | Offline | A full PWA through a Rust/WASM service worker; the JavaScript loader holds no logic. The first `/tools/mortar` visit caches the app shell, catalogs, the Everon manifest, DEM, tbd-sat and map tiles z0–6 (about 248 MB) with progress, a quota check and `persist()`; Range requests are answered 206 from the cache; Material Symbols are cached. |
 | 12 | Catalogs | Every catalog, vanilla included, comes from the API, uploaded by an admin at `/admin/ballistics-catalogs`; there is no boot import. An upload carries its calibration fixtures; the API runs the model and refuses anything over tolerance. Catalogs are immutable and audited. Catalog reads and the calculator page are public; saving needs sign-in. |
 | 13 | In-game | Only the tbd-export oracle. Nothing in tbd-framework. |
-| 14 | Register | Several requirements, listed under [Register](#register). |
+| 14 | Checks | The crate tests, the native/WASM agreement bench and the offline gate, listed under [Checks](#checks). |
 | 15 | Oracle lattice | The forward-angle oracle samples every 1.5625 mils (one sixteenth of 25 mils), so every native row's elevation is a lattice point; the trim matches every row exactly, with no interpolation and no omission. |
 | 16 | Forward samples (R1) | A forward-angle sample is evidence for a native row only. Between rows the engine answers by linear interpolation of its own table, so such a sample is counted (`forward_samples_not_judged`) and never judged. |
 | 17 | Precision | The flight model holds its state in `f32`, like the engine, with no tolerance floor added for it. |
@@ -413,28 +411,16 @@ Migration `crates/api/api_database/migrations/0060_game_ballistics_catalogs_and_
   build never answers a gate that tests the live one. The runbook is
   [offline mortar page](/documentation/runbooks/offline_mortar_page.md).
 
-## Register
+## Checks
 
-Minimums are the counts the orchestrator measures after implementation, never lowered. Checks
-never pass `--quiet`, so every case line is counted.
-
-Every crate check runs `cargo test -p <crate> --locked` and counts its own test modules with
-`(?m)^test (?:<modules>)::[A-Za-z0-9_:]+ \.\.\. ok$`; each test module of the five crates
-belongs to exactly one check.
-
-| Requirement | Check | Modules or command | Minimum |
-|---|---|---|---|
-| `game_ballistics_flight_model` | `game_ballistics_flight_model` | `ballistics_model`: `flight_model`, `wind`, `angular_units`, `catalog` | 51 |
-| `game_ballistics_calibration` | `game_ballistics_calibration` | `ballistics_calibration`: `tests`, `report`, `tests_catalog_digest` | 34 |
-| `game_ballistics_elevation_wind_dispersion` | `game_ballistics_elevation_wind_dispersion` | `ballistics_solver`: `tests`, `wind_corrected_aim`, `dispersion`, `crest_clearance`, `tests_bounded_failure`, `tests_symmetry` | 64 |
-| | `game_ballistics_fuze_and_end_to_end` | `fire_mission_planning`: `fuze`, `tests_end_to_end` | 9 |
-| | `game_ballistics_oracle_elevation_and_wind` | `ballistics_calibration`: `tests_oracle_elevation_and_wind` | 8 |
-| `game_ballistics_battery` | `game_ballistics_battery` | `fire_mission_planning`: `battery`, `fire_mission`, `fire_mission_comparison` | 29 |
-| `game_ballistics_wasm_agreement` | `game_ballistics_shared_solution_cases` | `ballistics_agreement_cases`: `case_lattice` | 11 |
-| | `game_ballistics_solution_wording` | `fire_mission_planning`: `solution_wording` | 7 |
-| | `game_ballistics_wasm_agreement` | `cargo xtask mk ballistics-wasm-agreement` (trunk release build plus the developer_tools `gate ballistics-agreement`): `(?m)^case ballistics_wasm_agreement_[A-Za-z0-9_]+ \.\.\. ok$`, marker `ballistics-wasm-agreement: PASS 32/32` | 32 |
-| `game_ballistics_offline_page` | `game_ballistics_offline_page`, plus `frontend_quality` and `browser_acceptance` | `cargo xtask mk mortar-offline-gate` (the developer_tools `gate mortar-offline`): `(?m)^case mortar_offline_[a-z0-9_]+ \.\.\. ok$`, marker `mortar-offline: PASS` | 15 |
-| `verification_game_ballistics` (catalog API and saved fire missions) | `verification_game_ballistics`, plus `backend_regression`, route acceptance and contract parity | `cargo xtask db test-it`, `game_ballistics*` | 29 |
+The five crates' own tests hold the flight model, the calibration, the solver (elevation, wind,
+dispersion, crest clearance), the fuze, the battery and the solution wording.
+`cargo xtask mk ballistics-wasm-agreement` (a trunk release build plus the developer_tools
+`gate ballistics-agreement`) prints `case ballistics_wasm_agreement_<name> ... ok` per case and
+the marker `ballistics-wasm-agreement: PASS 32/32`; `cargo xtask mk mortar-offline-gate` (the
+developer_tools `gate mortar-offline`) prints `case mortar_offline_<name> ... ok` per case and the
+marker `mortar-offline: PASS`; `cargo xtask db test-it` runs the catalog API and saved fire-mission
+tests.
 
 Recorded assumptions: dispersion is not verified in-engine; the offline gate needs the local
 gitignored tile pyramid, tile index and tbd-sat and fails closed without them; the oracle fixtures

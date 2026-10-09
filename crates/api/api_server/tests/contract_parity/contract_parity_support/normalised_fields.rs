@@ -4,9 +4,7 @@
 //! secret and request-time instant a write golden cannot pin, with the kind that fixes its format
 //! check and its placeholder ([`super::golden_normalisation::NormalisedKind`]).
 //!
-//! **Position:** read by [`super::golden_normalisation`]; the "Normalisation table" of
-//! `documentation/crates/api/api_server/verification_evidence/verification_completeness.md` lists the
-//! same rows with each reason.
+//! **Position:** read by [`super::golden_normalisation`].
 //!
 //! **Signals & state:** none; one constant.
 //!

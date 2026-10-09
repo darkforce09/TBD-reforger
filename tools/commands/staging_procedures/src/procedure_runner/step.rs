@@ -20,8 +20,8 @@ use std::collections::BTreeMap;
 use crate::error::{Result, ensure};
 use serde_json::Value;
 
+use crate::procedure_receipts::CaseName;
 use crate::remote_observers::remote_command::RemoteCommand;
-use api_readiness_checks::operational_recording::CaseName;
 
 /// Values a probe measured, by name, visible to every later step (a session generation, a PID,
 /// a player count).

@@ -25,8 +25,8 @@ before it, the approval of its numbered waves, what to do at each `AWAIT` line o
   linked to an Arma identity yet (unlink it in the account settings first).
 - The host checkout holds the release build of `staging-fixtures` (W11 and W12 stage and promote
   credentials with it).
-- Every command runs as `hcargo xtask …` from the repository root, inside the run day's 24-hour
-  window ([run day](/documentation/runbooks/staging_verification/run_day.md)).
+- Every command runs as `hcargo xtask …` from the repository root, on the
+  [run day](/documentation/runbooks/staging_verification/run_day.md).
 
 ## Steps
 
@@ -113,7 +113,7 @@ before it, the approval of its numbered waves, what to do at each `AWAIT` line o
 
 ## Verify
 
-The receipt is `target/api-readiness/staging_fleet.json`, its log `staging_fleet.log` and its
+The receipt is `target/staging/receipts/staging_fleet.json`, its log `staging_fleet.log` and its
 manifest `staging_fleet.fixture.json` beside it; the raw observations are in the journal folder the
 first line printed (`journal.jsonl` and `artifacts/`). Each `observation:` line of the log cites
 the SHA-256 of an archived artifact in that folder.

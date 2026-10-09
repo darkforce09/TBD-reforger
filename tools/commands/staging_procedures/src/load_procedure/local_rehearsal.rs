@@ -13,7 +13,7 @@
 //! **Signals & state:** a private scratch folder under `target/staging/load/` holding the account
 //! file for the rehearsal's length.
 //!
-//! **Invariants:** nothing is written under `target/api-readiness/`; the cleanup runs after any
+//! **Invariants:** nothing is written under `target/staging/receipts/`; the cleanup runs after any
 //! seeding step ran; the account file is created by the host tool in a mode-700 folder and
 //! removed with it; the ramp is the workload's sign-in minimum, so every client joins the member
 //! load before the measured window opens; `concurrency` and `member_accounts` are judged against

@@ -94,14 +94,14 @@ applies it.
    cargo xtask db test-it
    ```
 
-   Expected: the property-test marker line, then `cargo test --locked --no-fail-fast` with one
+   Expected: `cargo test --locked --no-fail-fast` with one
    `-p` for `api_server` and each other `crates/api` package (only `-p api_server` under a
    `--test` selection, whose binaries are its alone) against a new database named
    `i<first five letters of the label>_<32 hex>_it`, the label being `TBD_IT_BASE_DB` (default `rust_it`). Each suite derives its own
    scratch database from it. Afterwards the command drops every database of the run, whatever the
    tests did, and exits with the test run's code. Two runs never share a database.
    `--test <binary>` (repeatable), `--lib` and a name filter narrow the run, which then prints
-   `test-selection: narrowed development run; not a readiness receipt`. The
+   `test-selection: narrowed development run`. The
    [API README](/crates/api/api_server/README.md#verification-suites) maps every verification
    suite to its binaries.
 
@@ -333,7 +333,6 @@ server, `journalctl --user -u tbd-website-backup.service -n 50` shows the last b
 | `REFUSED: the bytes the database applied are not in this checkout's git history` | the checkout lacks the history, as on the server | check the edit on a development checkout (step 1), then `--force` |
 | `REFUSED: the statements themselves differ, not just comments.` | an applied migration's statements changed | restore the file and add a new migration |
 | `test-it` exits 1 before running anything | `TBD_IT_BASE_DB` is off the allow-list | unset it, or use a `*_it` name |
-| `test-it` stops with `PROPTEST_CASES must be unset; each property test defines its own case count` | `PROPTEST_CASES` is exported | unset it; `PROPTEST_RNG_SEED` may stay |
 | `FATAL: cleanup query failed` after `test-it` | the container stopped during the run, so the run's databases may remain | start the container and run `test-it` again; its cleanup takes only its own run's names |
 | the backup unit fails at once with "Changing to the requested working directory" | the service was copied without the `sed` render | Schedule the home server's backups, steps 1 and 2 |
 | the backup unit fails with the container missing | the unit's `TBD_DB_CONTAINER` is `tbd_reforger_db` while the host runs `tbd_staging_db` | set the rendered unit's `TBD_DB_CONTAINER` to the running container, then `systemctl --user daemon-reload` |

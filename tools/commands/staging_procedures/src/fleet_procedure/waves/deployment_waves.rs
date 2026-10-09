@@ -34,8 +34,8 @@ use crate::fleet_procedure::fleet_reads::{
     self, DeploymentRow, json_rows, newest_since, scenario_of_config, since_ms,
 };
 use crate::fleet_procedure::judge_mapping::server_id_measurement;
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::step::{Probe, ProbeVerdict, RequestPredicate, Step};
-use api_readiness_checks::operational_recording::CaseName;
 
 /// The origin terrain of the fleet procedure.
 pub(crate) const EVERON_TERRAIN: &str = "everon";
@@ -104,7 +104,7 @@ pub(super) fn steps(targets: &WaveTargets) -> Result<Vec<Step>> {
             per_server_case(instance, "cross_terrain")
         })?,
         deployment_step(targets, &RETURN_TO_ORIGIN, |_| {
-            Ok(CaseName::new(RETURN_TO_ORIGIN_TERRAIN)?)
+            CaseName::new(RETURN_TO_ORIGIN_TERRAIN)
         })?,
     ])
 }

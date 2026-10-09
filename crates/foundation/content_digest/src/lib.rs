@@ -5,7 +5,7 @@
 //! stores for a migration) and an incremental SHA-256 ([`Sha256Hasher`]) that frames each field
 //! with its length so concatenated inputs cannot collide.
 //! **Position:** foundation tier over `sha2`. The repository tooling (migration checksum repair,
-//! readiness fingerprints, export manifests, staging receipts) calls it; nothing it calls is a
+//! export manifests, staging receipts) calls it; nothing it calls is a
 //! workspace crate.
 //! **Signals & state:** none; pure functions, plus a hasher value its caller owns.
 //! **Invariants:** every digest is lowercase hexadecimal, two characters per byte, with no

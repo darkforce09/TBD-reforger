@@ -198,8 +198,7 @@ means the default, and the boot log states the interval each worker got.
 | Variable | Read by | Meaning |
 |---|---|---|
 | `TEST_DATABASE_URL` | `crates/api/api_server/tests/common/database.rs` | the base URL each database suite derives its own scratch database from; `cargo xtask db test-it` sets it, and a suite without it fails rather than skips |
-| `PROPTEST_RNG_SEED` | `tools/commands/api_readiness_checks/src/property_test_configuration.rs` | the property-test seed, decimal digits; `cargo xtask verify api-readiness` fixes a default |
-| `PROPTEST_CASES` | the same | must stay unset: the property suites own their case counts |
+| `PROPTEST_RNG_SEED`, `PROPTEST_CASES` | the `proptest` crate in the API's property tests | an exported seed or case count reaches the tests through `cargo xtask db test-it`, which passes its environment on |
 
 ### Where each deployment sets them
 
@@ -225,11 +224,6 @@ not parse), stops the boot and names the variable. An optional integration left 
 the webhook, the guild, the observability token) turns its path off and reports that by name where it is used. A variable
 is added to `Config` together with the code that reads it, so no setting looks configured while
 doing nothing; the pool settings stay outside `Config` because the binary hands the pool a URL.
-
-`cargo xtask verify api-readiness` binds its evidence to the configuration: its fingerprint
-covers the three `.env` files, `deploy/deploy.env` and a fixed list of these
-variables, without printing any value
-(`tools/commands/api_readiness_checks/src/fingerprint.rs`).
 
 ## Open work
 

@@ -41,6 +41,7 @@ use crate::fleet_procedure::fleet_cases::{
 };
 use crate::fleet_procedure::fleet_reads::json_rows;
 use crate::fleet_procedure::single_server_reads::{self, CredentialRow};
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::step::{
     Probe, ProbeVerdict, RequestPredicate, Step, StepContext, StepKind,
 };
@@ -50,7 +51,6 @@ use crate::remote_actions::host_fixture_commands::{
 use crate::remote_observers::console_log_reader;
 use crate::remote_observers::remote_command::{RemoteCommand, shell_quote};
 use crate::staging_settings::StagingSettings;
-use api_readiness_checks::operational_recording::CaseName;
 use deployment::remote_rust_toolchain::PUT_RUST_TOOLCHAIN_ON_PATH;
 use deployment::staging::fleet_instances::InstanceFolder;
 use deployment::staging::payloads::instance_profile_commands;

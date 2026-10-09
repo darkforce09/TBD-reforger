@@ -160,7 +160,7 @@ fn is_selector_text(value: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b':')
 }
 
-/// Cargo arguments for the selection; libtest always retains successful property records.
+/// Cargo arguments for the selection; `--show-output` keeps the output of every passing test.
 ///
 /// Every package of `api_packages` is tested, except under a `--test` selection: the integration
 /// binaries belong to the `api_server` package alone, so that form names `api_server` only.
@@ -206,9 +206,6 @@ pub fn run_complete_suite() -> Result<u8> {
 }
 
 pub(crate) fn run(selection: TestSelection) -> Result<u8> {
-    let property_configuration =
-        api_readiness_checks::PropertyTestConfiguration::from_environment()?;
-    println!("{}", property_configuration.marker());
     let api_packages = api_test_packages(&repository_root::find_repository_root()?)?;
     let arguments = match cargo_test_arguments(&selection, &api_packages) {
         Ok(arguments) => arguments,
@@ -218,7 +215,7 @@ pub(crate) fn run(selection: TestSelection) -> Result<u8> {
         }
     };
     if !selection.is_complete_suite() {
-        println!("test-selection: narrowed development run; not a readiness receipt");
+        println!("test-selection: narrowed development run");
     }
     let label = match guarded_base() {
         Ok(label) => label,
@@ -253,11 +250,6 @@ pub(crate) fn run(selection: TestSelection) -> Result<u8> {
             // On the inherited terminal: the suite streams its output for its whole run.
             let outcome = Run::new("cargo")
                 .args(&arguments)
-                .env(
-                    "PROPTEST_RNG_SEED",
-                    property_configuration.rng_seed.to_string(),
-                )
-                .env_remove("PROPTEST_CASES")
                 .cwd(&web.abs)
                 .env("TEST_DATABASE_URL", &url)
                 .env("TBD_API_VERIFICATION", "true")

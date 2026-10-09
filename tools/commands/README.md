@@ -11,7 +11,6 @@ never on xtask.
 ```text
 tools/commands/
 ├── agent_context_guards/   `agent_context_guards`: the AI agent tool-call guard (Bash and Read rules, the session read set) and the filtered command runner that never hides a failure (`ai`)
-├── api_readiness_checks/   `api_readiness_checks`: the API readiness judge: the acceptance register, evidence receipts, fingerprints, the staging recorder and the property-test seed (`verify api-readiness`, `staging`, `db test-it`)
 ├── ballistics_oracle_tooling/  `ballistics_oracle_tooling`: the vanilla mortar ballistics catalog, its calibration bundle and refused bundles, trimmed from a gameplay export and the ballistics oracle (`ballistics trim-export`)
 ├── ci_task_catalog/        `ci_task_catalog`: the CI task table and its runner, the build lane recipes, the cargo target pin and its checks, the CI workflow checks and the map asset checks (`ci`, `help`, `mk`)
 ├── database_operations/    `database_operations`: the local database lane, the verified backup, the guarded restore, the restore drill, the container layer and the database source check (`db`, `deploy db`, `verify no-select-star`)

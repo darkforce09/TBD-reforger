@@ -24,12 +24,12 @@ use serde_json::{Value, json};
 use super::runner::{ProcedureRunner, RunContext};
 use super::step::{DeadlineAnchor, DeclaredCase, Measurements, Step, StepKind, identifier};
 use crate::operator_coordination::action_list::PlannedAction;
+use crate::procedure_receipts::{
+    EnvironmentEntry, FixtureManifest, ObservationRecord, Observations, RecordedCase, StagingCheck,
+};
 use crate::remote_observers::remote_command::HostCommandRunner;
 use crate::staging_settings::StagingSettings;
 use crate::support_commands::preflight::PreflightCheck;
-use api_readiness_checks::operational_recording::{
-    EnvironmentEntry, FixtureManifest, ObservationRecord, Observations, RecordedCase, StagingCheck,
-};
 
 /// A procedure's declared cases and steps, and the limits of its run.
 pub(crate) struct ProcedurePlan {
@@ -172,7 +172,7 @@ pub(crate) struct ProcedureRun {
 
 /// A staging procedure: the cases it declares, how it runs, and what its receipt observes.
 pub(crate) trait StagingProcedure {
-    /// The register check this procedure records.
+    /// The staging check this procedure records.
     fn check(&self) -> StagingCheck;
 
     /// The numbered real actions the operator approves before a run.

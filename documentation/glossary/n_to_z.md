@@ -11,14 +11,14 @@ links one.
 
 The evidence an operational check (`staging_fleet`, `staging_discord`, `staging_load`) leaves when
 the [staging harness](#staging-harness) records a run: `<check>.log`, `<check>.fixture.json` and
-`<check>.json` under `target/api-readiness/`, holding the environment, the fingerprints taken at the
-start, every observation with the SHA-256 of its raw artifact, and one case line per declared case.
-It passes only when every declared case is ok and the judge accepts it; a partial run still writes
-a failing receipt that names its missing dependencies.
+`<check>.json` under `target/staging/receipts/`, holding the environment, every observation with the
+SHA-256 of its raw artifact, the measurements, and one case line per declared case. It passes only
+when every declared case is ok and the measurements meet the check's acceptance thresholds; a
+partial run still writes a failing receipt that names its missing dependencies.
 
-In code: `tools/commands/api_readiness_checks/src/operational_recording.rs` and `operational_log.rs`; the operational checks in `documentation/crates/api/api_server/verification_evidence/requirements.json`.
+In code: `tools/commands/staging_procedures/src/procedure_receipts/`.
 
-See: [Verification evidence](/documentation/crates/api/api_server/verification_evidence/README.md), [API readiness judge](/tools/commands/api_readiness_checks/src/README.md).
+See: [Staging receipts design](/documentation/crates/api/api_server/verification_evidence/staging.md), [Staging procedure receipts](/tools/commands/staging_procedures/src/procedure_receipts/README.md).
 
 ### operations
 
@@ -241,8 +241,7 @@ See: [audit logs](/documentation/glossary/a_to_f.md#audit-logs), [server infrast
 ### staging harness
 
 `cargo xtask staging`, the tool that runs the three operational checks against the staging host and
-records their [operational receipts](#operational-receipt). It checks and fingerprints the
-environment, performs the confirmed remote actions (backup, game server update, fleet provisioning,
+records their [operational receipts](#operational-receipt). It checks the environment, performs the confirmed remote actions (backup, game server update, fleet provisioning,
 credential rotation, load seeding), and for each procedure step prints `AWAIT <step>: <instruction>`
 and polls its read-only observers (host shell, database, unit journal, console log, metrics, Discord
 member reads, saved Chrome page reads) until the effect shows or the deadline passes, without ever

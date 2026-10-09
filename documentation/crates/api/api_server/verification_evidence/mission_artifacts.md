@@ -5,8 +5,7 @@
 Design for the mission requirements (`missions_immutable_artifacts`, `missions_approval_binding`,
 `missions_artifact_consumers`, `missions_mission_transitions`, `missions_deployment_confirmation`,
 `missions_authored_preservation`, `missions_review_comments`, `missions_review_workspace`). It
-records the chosen semantics before implementation; acceptance evidence is the command output
-recorded in progress_checkpoint.md.
+records the chosen semantics before implementation; the tests it names hold it.
 
 ## Artifacts
 

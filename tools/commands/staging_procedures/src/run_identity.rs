@@ -5,20 +5,20 @@
 //! recorder's run id, and the recorded command from the process arguments.
 //!
 //! **Position:** used by `procedure_runner/recording.rs` after
-//! `RecordingSession::begin` hands out the run id; the receipt goes to [`EVIDENCE_DIRECTORY`].
+//! `RecordingSession::begin` hands out the run id; the receipt goes to [`RECEIPTS_DIRECTORY`].
 //!
 //! **Signals & state:** none; pure values.
 //!
 //! **Invariants:** the journal folder and the receipt log share one run id; the recorded command
-//! is `cargo xtask <arguments>`, the command the run discipline requires from the repository root.
+//! is `cargo xtask <arguments>`, run from the repository root.
 
 use std::path::{Path, PathBuf};
 
 use crate::observation_journal::browser_inbox::INBOX_FOLDER;
-use api_readiness_checks::operational_recording::StagingCheck;
+use crate::procedure_receipts::StagingCheck;
 
-/// Where receipts go, relative to the repository root: the folder `verify api-readiness` judges.
-pub(crate) const EVIDENCE_DIRECTORY: &str = "target/api-readiness";
+/// Where receipts go, relative to the repository root.
+pub(crate) const RECEIPTS_DIRECTORY: &str = "target/staging/receipts";
 /// Where run journals go, relative to the repository root.
 pub(crate) const STAGING_RUNS_DIRECTORY: &str = "target/staging";
 

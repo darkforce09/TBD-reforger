@@ -17,8 +17,6 @@ tier = 4
 targets = "any"
 
 [dependencies]
-# The property-test seed an integration run passes to the API suite.
-api_readiness_checks = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 content_digest = { workspace = true }
 process_runner = { workspace = true }

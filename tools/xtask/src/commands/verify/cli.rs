@@ -15,16 +15,6 @@ pub(crate) struct DocumentationGateArgs {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum VerifyCmd {
-    /// Verify every API requirement against current Rust tests and staging evidence
-    #[command(name = "api-readiness")]
-    ApiReadiness {
-        /// Evidence directory containing receipts and their complete check output
-        #[arg(long, default_value = "target/api-readiness")]
-        evidence: std::path::PathBuf,
-        /// Execute registered local checks before evaluating all required evidence
-        #[arg(long)]
-        execute: bool,
-    },
     /// File-length advice: warns about every production file over 500 lines; never fails on one
     #[command(name = "file-length")]
     FileLength,

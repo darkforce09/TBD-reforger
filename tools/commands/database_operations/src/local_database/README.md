@@ -38,15 +38,14 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
   `db registry-import` runs `cargo run --bin import-item-registry` in the API crate folder, where
   the importer finds the developer's `.env`, and names both envelopes by their absolute path from
   the repository root, never by a path that climbs out of that folder.
-- `test_it::run` prints the property-test marker, validates the label in `TBD_IT_BASE_DB`
+- `test_it::run` validates the label in `TBD_IT_BASE_DB`
   (default `rust_it`) against the scratch allow-list (`rust_it`, `tbd_gate*`, `*_cold`, `*_it`,
   `*_probe`, never `tbd_reforger`), and claims a fresh database named
   `i<first five label characters>_<32 random hex>_it` with `CREATE DATABASE`, so a collision
   fails without touching another run's database. It runs
   `cargo test --locked --no-fail-fast -p api_server -p <API crate>... -p <API crate user>... [--lib] [--test <binary>]... -- --show-output [<filter>]`
   in `crates/api/api_server` (a `--test` selection names `-p api_server` alone, the package that holds the
-  integration binaries) with `TEST_DATABASE_URL` on port 5434, `TBD_API_VERIFICATION=true` and the
-  marker's `PROPTEST_RNG_SEED`. The cleanup then always runs, whatever the tests did: it selects
+  integration binaries) with `TEST_DATABASE_URL` on port 5434 and `TBD_API_VERIFICATION=true`. The cleanup then always runs, whatever the tests did: it selects
   the run's database and every `<name>_<suite>_it` the harness in
   `crates/api/api_server/tests/common/database.rs`
   derived from it, re-checks each row's ownership
@@ -88,7 +87,7 @@ whichever runtime `resolve_runtime` finds. The maintenance database `IT_MAINT_DB
 - Depends on: `super` (`WEB`, `SEEDS`, `seed_file`, `IT_BASE_DB`, `IT_MAINT_DB`); `repository_layout` (`DEVELOPMENT_COMPOSE_FILE`);
   `crate::container_database` (`ct_capture`, `db_user`, `db_container`,
   `resolve_runtime`, `is_safe_scratch_database_name`, `database_exists`);
-  `process_runner::host_execution` for the bridge; `api_readiness_checks::PropertyTestConfiguration`;
+  `process_runner::host_execution` for the bridge;
   `content_digest::sha384_hex`; `verification_core` for runs and verdicts; git,
   cargo and a container runtime.
 - Used by: `run` in `tools/commands/database_operations/src/local_database.rs`, which runs the

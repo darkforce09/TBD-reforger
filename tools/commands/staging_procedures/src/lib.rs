@@ -1,16 +1,16 @@
-//! `cargo xtask staging`: the harness that records the three operational receipts of the API
-//! acceptance register against the staging host, and the commands around those runs.
+//! `cargo xtask staging`: the harness that records the fleet, Discord and load receipts against
+//! the staging host, and the commands around those runs.
 //!
 //! **Role:** [`run`] executes one [`StagingCmd`]: the read-only commands (preflight, status,
-//! fingerprints, action lists), the confirmed host actions and the three recorded procedures,
+//! action lists), the confirmed host actions and the three recorded procedures,
 //! over the settings, the run identity, the procedure engine, the journal and browser inbox, the
 //! observers, the environment identity and the operator coordination this crate holds.
 //! **Position:** tier 6 of `tools/commands`; the xtask binary's `staging` group parses the command
 //! line into a [`StagingCmd`] and calls [`run`]. Reads `deploy.env` through `deploy_settings`,
 //! the fleet layout through `deployment::staging::fleet_instances`, reaches the host through
 //! `process_runner::secure_shell_transport`, runs the load generator as the `staging-load`
-//! subprocess over `staging_load_plan`, and hands every recorded run to
-//! `api_readiness_checks::operational_recording`.
+//! subprocess over `staging_load_plan`, and hands every recorded run to its own
+//! `procedure_receipts` recorder.
 //! **Signals & state:** none held across commands; a recorded run owns its folder under
 //! `target/staging/<check>/<run>/`.
 //! **Invariants:** the read-only commands send only reads; a host action runs only when its
@@ -25,6 +25,7 @@ mod load_procedure;
 mod observation_journal;
 mod operator_coordination;
 pub mod prelude;
+mod procedure_receipts;
 mod procedure_runner;
 mod remote_actions;
 mod remote_observers;

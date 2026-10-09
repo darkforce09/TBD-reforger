@@ -45,6 +45,7 @@ use self::load_report_judges::REPORT_MEASUREMENT;
 use self::load_run::{HARDWARE_MEASUREMENT, LoadRunInputs, NETWORK_MEASUREMENT, run_load};
 use self::workstation_load::{LiveWorkstation, WorkstationLoad};
 use crate::operator_coordination::action_list::PlannedAction;
+use crate::procedure_receipts::{FixtureManifest, Observations, StagingCheck};
 use crate::procedure_runner::procedure::{ProcedurePlan, ProcedureRun, StagingProcedure};
 use crate::procedure_runner::runner::RunContext;
 use crate::remote_observers::database_reader::select;
@@ -52,7 +53,6 @@ use crate::remote_observers::remote_command::HostCommandRunner;
 use crate::staging_command::PlanOnly;
 use crate::staging_settings::StagingSettings;
 use crate::support_commands::preflight::PreflightCheck;
-use api_readiness_checks::operational_recording::{FixtureManifest, Observations, StagingCheck};
 use repository_root::find_repository_root;
 
 /// The load procedure: the token file, the settings and root of a recorded run, and the

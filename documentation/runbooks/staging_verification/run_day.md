@@ -1,22 +1,16 @@
 **Status:** live
 
-# Record the staging receipts in one window
+# Record the staging receipts
 
-The run day records the three operational receipts and then asks the readiness verifier for its
-verdict: the load run first (before the Discord bot token exists), then the fleet run, then the
-Discord run, then `verify api-readiness` without and with `--execute`. Everything happens inside 24
-hours of the first recording and from one shell, because each receipt binds to the source and
-configuration fingerprints of that moment.
+The run day records the three staging receipts: the load run first (before the Discord bot token
+exists), then the fleet run, then the Discord run, each from the repository root.
 
 ## Prerequisites
 
 - The [setup checklist](/documentation/runbooks/staging_verification/setup_checklist.md) is done
   and `cargo xtask staging preflight` names no unmet precondition for the load and fleet runs.
-- `cargo xtask staging fingerprints` prints the digests recorded at the end of the setup.
 - The operator is available for the fleet run (joining server 1, typing the link code, being kicked)
   and for the Discord bot token.
-- The dev database and API of the workstation are up for `--execute`
-  ([local development](/documentation/runbooks/local_development.md)).
 
 ## Steps
 
@@ -67,38 +61,17 @@ configuration fingerprints of that moment.
    Expected: the numbered steps the operator approves; `cargo xtask staging discord --record` runs
    them. With no subject account it ends `staging_discord: FAIL` naming the missing account.
 
-6. Judge the three receipts.
-
-   ```bash
-   cargo xtask verify api-readiness
-   ```
-
-   Expected: `staging_load` held, the fleet and Discord receipts rejected with their reasons, every
-   implementation check not run.
-
-7. With the operator's go-ahead and a quiet tree, run the full verification.
-
-   ```bash
-   cargo xtask verify api-readiness --execute
-   ```
-
-   Expected: every implementation check executed and judged; the verdict lists each check held,
-   rejected with its reason, or not run.
-
 ## Verify
 
-The receipts and their logs are in `target/api-readiness/`, the raw journals in
-`target/staging/<check>/<run>/`. Record the verdict, counts, timestamps and paths in the
-[checkpoint](/documentation/crates/api/api_server/verification_evidence/progress_checkpoint.md) and the
-results section of the
+The receipts and their logs are in `target/staging/receipts/`, the raw journals in
+`target/staging/<check>/<run>/`. Record the verdict, counts, timestamps and paths in the results
+section of the
 [staging design note](/documentation/crates/api/api_server/verification_evidence/staging.md).
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `stale source fingerprint` on a receipt | a fingerprinted file changed after the recording | restore the tree and record again |
-| `stale configuration fingerprint` | a different shell, PATH or `deploy.env` | run every command through `hcargo xtask` from the repository root |
 | 429 answers during the load run | a source address is missing or shared | check the addresses in `staging preflight`; never add traffic from the same addresses |
 | a fleet wave reports `FAILED (deadline)` | the command was not issued, or the server did not reach the state | read the wave's journal entry; the receipt keeps the failure |
 

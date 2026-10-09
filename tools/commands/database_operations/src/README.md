@@ -36,6 +36,6 @@ tools/commands/database_operations/src/
 ## Boundaries
 
 - Depends on: `process_runner`, `repository_layout`, `verification_core`, `content_digest`,
-  `api_readiness_checks`, `clap`, `regex` and `thiserror`.
+  `clap`, `regex` and `thiserror`.
 - Used by: the crate root's re-exports and public modules, read by the `db`, `verify`, `ci`, `mk`
   and `mod` groups of `xtask` and by the `deployment` crate.

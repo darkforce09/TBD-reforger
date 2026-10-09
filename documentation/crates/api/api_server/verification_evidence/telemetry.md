@@ -6,7 +6,7 @@ Design for the telemetry requirements (`telemetry_match_identity`, `telemetry_te
 `telemetry_telemetry_corrections`, `telemetry_telemetry_atomicity`, `telemetry_detailed_events`,
 `telemetry_telemetry_queue`) and the dashboard requirements (`dashboard_fleet_dashboard`,
 `dashboard_statistics_recomputation`). It records the chosen semantics before implementation;
-acceptance evidence is the command output recorded in progress_checkpoint.md. The wire shapes are
+the tests it names hold it. The wire shapes are
 `contracts/definitions/match-telemetry.schema.json` and the `RuntimeHeartbeat` definition of
 `game-runtime-session.schema.json`.
 

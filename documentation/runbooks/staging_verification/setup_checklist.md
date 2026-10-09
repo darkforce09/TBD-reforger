@@ -100,14 +100,13 @@ changes the staging host is approved by the operator first, one numbered list pe
    Expected: `VERDICT: PASS`.
 
 9. Write the partner guild id, its role id and the operator's Discord id into `deploy.env`, then
-   check the tree and the fingerprints.
+   check the preconditions.
 
    ```bash
-   cargo xtask staging fingerprints
+   cargo xtask staging preflight
    ```
 
-   Expected: the source and configuration digests printed; they must not change until the
-   readiness verdict of the run day.
+   Expected: every harness check `met`.
 
 ## Verify
 

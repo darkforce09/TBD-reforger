@@ -8,8 +8,7 @@
 //! [`database_checks`] holds the query source gate; [`milestone_announcement`] seeds the
 //! milestone announcement.
 //! **Position:** tier 4 of `tools/commands`, over `process_runner`, `repository_layout`,
-//! `verification_core`, `content_digest` and
-//! `api_readiness_checks` (the property-test seed). The xtask binary's `db`, `verify`, `ci`, `mk`
+//! `verification_core` and `content_digest`. The xtask binary's `db`, `verify`, `ci`, `mk`
 //! and `mod` groups and the `deployment` crate's `deploy db` call it.
 //! **Signals & state:** none; each call reads the process environment and the checkout and runs
 //! its children afresh.

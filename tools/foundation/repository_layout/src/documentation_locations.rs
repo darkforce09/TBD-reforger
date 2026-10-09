@@ -1,10 +1,9 @@
 //! The documents and documentation areas the commands read, walk or name in what they print.
 //!
-//! **Role:** the runbooks a refusal cites, the factory's pack marker, the API readiness register
-//! and the tree its fingerprint covers, and the roots, frozen areas and exemptions of the
+//! **Role:** the runbooks a refusal cites, the factory's pack marker, and the roots, frozen areas and exemptions of the
 //! documentation gates, each spelled once.
 //! **Position:** read by the `xtask` command groups and verifications (deploy, setup, platform,
-//! mod, the API readiness, licensing and documentation checks, the relocation tool). Relocating
+//! mod, licensing and documentation checks, the relocation tool). Relocating
 //! the documentation tree rewrites this module, not the help texts and refusals that name a
 //! document. The tree root and the two documents `ticket sync` rewrites are in
 //! [`crate::documentation`].
@@ -34,21 +33,6 @@ pub const MOD_DESIGN: &str = "documentation/mod/tbd-framework/mod_design.md";
 
 /// How to run the spawn-determinism gate, which needs a live Workbench.
 pub const SPAWN_DETERMINISM_RUNBOOK: &str = "documentation/runbooks/spawn_determinism.md";
-
-/// The API readiness tree: the acceptance register and the design notes beside it.
-/// `cargo xtask verify api-readiness` fingerprints every source file under it, so an edit
-/// here invalidates recorded evidence. The fingerprint matches this prefix with
-/// `starts_with`; the trailing slash keeps a sibling whose name merely begins the same way
-/// out of the inputs.
-pub const API_READINESS_EVIDENCE_PREFIX: &str =
-    "documentation/crates/api/api_server/verification_evidence/";
-
-/// The API acceptance register: every requirement, the implementation paths it rests on and
-/// the checks that prove it. `cargo xtask verify api-readiness` reads and validates it before
-/// it judges any evidence. It sits under [`API_READINESS_EVIDENCE_PREFIX`], so the source
-/// fingerprint covers it.
-pub const API_READINESS_REGISTER: &str =
-    "documentation/crates/api/api_server/verification_evidence/requirements.json";
 
 /// Archived documents, one folder per topic. Frozen: never reworded, and exempt from the size
 /// limit.

@@ -101,6 +101,6 @@ codes against the new one-pending-code constraint. Verify Discord bot access, au
 reconciliation and administrator recovery before production rollout; old independent website roles
 must never be imported as verified membership. Reverting only the binary is not a supported rollback.
 
-Server-scoped machine credentials, game-wire versioning, complete finalized-attendance semantics,
-and live mod/fleet acceptance remain required by the completion register. The current linking
-transaction tests do not establish those separate requirements or operational readiness.
+Server-scoped machine credentials, game-wire versioning, complete finalized-attendance semantics
+and live mod/fleet behaviour are separate subjects; the linking transaction tests do not establish
+them or operational readiness.

@@ -60,7 +60,7 @@ the committed workload and population are in `tools/xtask/staging/`.
    Expected: an `AWAIT` line and effect lines for `population`, `keying_probe`,
    `game_operations_baseline`, `member_load` (about 31 minutes, a census read every minute) and
    `game_operations_delta`, then `staging_load: PASS 10/10` or `staging_load: FAIL <ok>/10` with
-   each failing case's reason. The receipt is in `target/api-readiness/staging_load.{json,log,fixture.json}`.
+   each failing case's reason. The receipt is in `target/staging/receipts/staging_load.{json,log,fixture.json}`.
 
 5. Clean up.
 

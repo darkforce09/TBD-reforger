@@ -5,8 +5,7 @@
 //! whole file framed the same way ([`Sha256Hasher::update_file_length_framed`]), and spells the
 //! result as lowercase hex ([`Sha256Hasher::finalize_hex`]).
 //! **Position:** called by the repository tooling that fingerprints many inputs into one digest
-//! (the API readiness source and configuration fingerprints, export policy digests, staging
-//! workload digests).
+//! (export policy digests, staging workload digests).
 //! **Signals & state:** the running SHA-256 state, owned by the caller's hasher value.
 //! **Invariants:** a framed field hashes as its length (`u64`, little-endian) followed by its
 //! bytes, so two different field sequences never feed the same byte stream; a framed file hashes

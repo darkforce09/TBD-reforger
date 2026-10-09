@@ -42,8 +42,6 @@ repository_relocation = { workspace = true }
 database_operations = { workspace = true }
 # The `deploy` group, the staging fleet layout and the staging compose-path check.
 deployment = { workspace = true }
-# The `verify api-readiness` judge, the staging recorder and the property-test seed.
-api_readiness_checks = { workspace = true }
 # The `setup` commands.
 workstation_setup = { workspace = true }
 # The `debug` and `repro` groups.

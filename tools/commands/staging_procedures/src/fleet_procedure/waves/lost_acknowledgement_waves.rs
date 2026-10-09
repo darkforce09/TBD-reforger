@@ -31,12 +31,12 @@ use crate::fleet_procedure::fleet_cases::{
 };
 use crate::fleet_procedure::fleet_reads::{json_rows, since_ms};
 use crate::fleet_procedure::single_server_reads::{self, LeaseRow};
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::step::{
     Probe, ProbeVerdict, RequestPredicate, Step, StepContext, StepKind,
 };
 use crate::remote_actions::relay_control::{self, DropTarget};
 use crate::remote_observers::unit_journal_reader::JournalLine;
-use api_readiness_checks::operational_recording::CaseName;
 
 /// The ledger's claim lease: a claim the executor never acknowledged lapses this long after it
 /// was taken, and the reconciler returns the command to the queue.

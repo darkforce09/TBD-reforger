@@ -41,7 +41,7 @@ modes; `ballistics` and `gen` dispatch straight to `ballistics_oracle_tooling` a
 `schema_tooling` in `tools/commands/`, and `schema` calls `schema_tooling` for the codegen, the
 contract gates and the flattening; the `setup` command line dispatches straight to the `workstation_setup` crate in
 `tools/commands/`, the `ai` command line to the `agent_context_guards` crate there, the `debug` and `repro` command lines to the `remote_debugging` crate there,
-the `mod` command line to the `mod_operations` crate there, and `verify api-readiness` calls `api_readiness_checks` there; `verify` calls
+and the `mod` command line to the `mod_operations` crate there; `verify` calls
 the check crates under `tools/checks/` and the checks the command crates carry. Each group's own
 README gives its commands, flags and exit codes.
 

@@ -1,13 +1,11 @@
-//! The line grammar of a staging recording's log.
+//! The line grammar of a recorded staging run's log.
 //!
-//! **Role:** Defines the values a staging recording writes as log lines (case names and
-//! outcomes, environment identities, journaled observations), validates each where it is built,
-//! and renders the complete log a staging receipt digests.
+//! **Role:** Defines the values a recording writes as log lines (case names and outcomes,
+//! environment identities, journaled observations), validates each where it is built, and
+//! renders the complete log a receipt digests.
 //!
-//! **Position:** [`crate::operational_recording`] re-exports the value types to the
-//! `cargo xtask staging` procedures and renders the log once for a candidate verdict, and again
-//! when that verdict becomes a failure; `evidence.rs` later reads the written log through the
-//! register's success marker and case pattern.
+//! **Position:** the procedures build the value types; `recording_session.rs` renders the log
+//! once for a candidate verdict, and again when that verdict becomes a failure.
 //!
 //! **Signals & state:** none; value types and pure functions.
 //!
@@ -46,24 +44,24 @@ const SECRET_KEY_FRAGMENTS: [&str; 6] = [
 
 /// The suffix of a `case <check>_<name>` line: one or more of `[a-z0-9_]`.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CaseName(String);
+pub(crate) struct CaseName(String);
 
 impl CaseName {
     /// Accepts `name` only when it matches `[a-z0-9_]+`.
-    pub fn new(name: &str) -> Result<Self> {
+    pub(crate) fn new(name: &str) -> Result<Self> {
         ensure!(identifier(name), "case name {name:?} must match [a-z0-9_]+");
         Ok(Self(name.to_owned()))
     }
 
     /// The validated name.
-    pub fn as_str(&self) -> &str {
+    pub(crate) fn as_str(&self) -> &str {
         &self.0
     }
 }
 
 /// How one declared case ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CaseStatus {
+pub(crate) enum CaseStatus {
     /// Every effect the case awaits was observed within its deadline.
     Ok,
     /// The case ran and an effect was missing or wrong; the reason says what was observed.
@@ -77,23 +75,23 @@ pub enum CaseStatus {
 
 /// One declared case and how it ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RecordedCase {
+pub(crate) struct RecordedCase {
     /// The case name after the check prefix.
-    pub name: CaseName,
+    pub(crate) name: CaseName,
     /// How the case ended.
-    pub status: CaseStatus,
+    pub(crate) status: CaseStatus,
 }
 
 /// One `environment: <key>=<value>` identity of the staging environment; never a secret.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EnvironmentEntry {
+pub(crate) struct EnvironmentEntry {
     key: String,
     value: String,
 }
 
 impl EnvironmentEntry {
     /// Accepts a `[a-z0-9_]+` key that names no secret, with a non-blank value.
-    pub fn new(key: &str, value: &str) -> Result<Self> {
+    pub(crate) fn new(key: &str, value: &str) -> Result<Self> {
         ensure!(
             identifier(key),
             "environment key {key:?} must match [a-z0-9_]+"
@@ -115,7 +113,7 @@ impl EnvironmentEntry {
     }
 
     /// The receipt form, `<key>=<value>`.
-    pub(super) fn receipt_entry(&self) -> String {
+    pub(crate) fn receipt_entry(&self) -> String {
         format!("{}={}", self.key, self.value)
     }
 }
@@ -123,7 +121,7 @@ impl EnvironmentEntry {
 /// One journaled observation: its step, the observer that made it, a summary, and the SHA-256
 /// of the raw artifact the journal archived.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ObservationRecord {
+pub(crate) struct ObservationRecord {
     step: String,
     observer: String,
     summary: String,
@@ -133,7 +131,12 @@ pub struct ObservationRecord {
 impl ObservationRecord {
     /// Accepts a `[A-Za-z0-9_.-]+` step, a non-blank observer and summary, and a lowercase
     /// hexadecimal SHA-256 digest.
-    pub fn new(step: &str, observer: &str, summary: &str, artifact_sha256: &str) -> Result<Self> {
+    pub(crate) fn new(
+        step: &str,
+        observer: &str,
+        summary: &str,
+        artifact_sha256: &str,
+    ) -> Result<Self> {
         ensure!(
             !step.is_empty()
                 && step
@@ -162,13 +165,13 @@ impl ObservationRecord {
 }
 
 /// The verdict a log ends with.
-pub(super) enum LogVerdict<'a> {
+pub(crate) enum LogVerdict<'a> {
     Pass,
     Fail(&'a [String]),
 }
 
 /// A recording's log records, before the verdict decides its last line.
-pub(super) struct RunLog<'a> {
+pub(crate) struct RunLog<'a> {
     pub(crate) check: &'a str,
     pub(crate) run_id: &'a str,
     pub(crate) started_unix_seconds: u64,
@@ -182,7 +185,7 @@ pub(super) struct RunLog<'a> {
 
 impl RunLog<'_> {
     /// Renders every record, the verdict line last, each line ending in a newline.
-    pub(super) fn render(&self, verdict: &LogVerdict<'_>) -> String {
+    pub(crate) fn render(&self, verdict: &LogVerdict<'_>) -> String {
         let marker = passing_marker(self.check);
         let mut log = String::new();
         for line in self.records() {
@@ -195,7 +198,7 @@ impl RunLog<'_> {
     }
 
     /// `<check>: PASS <ok>/<declared>`, or the escaped `<check>: FAIL <ok>/<declared> (<reasons>)`.
-    pub(super) fn verdict_line(&self, verdict: &LogVerdict<'_>) -> String {
+    pub(crate) fn verdict_line(&self, verdict: &LogVerdict<'_>) -> String {
         let declared = self.cases.len();
         let ok = self
             .cases
@@ -257,7 +260,7 @@ impl RunLog<'_> {
 }
 
 /// The success marker a passing verdict line of `check` carries: `<check>: PASS`.
-pub(super) fn passing_marker(check: &str) -> String {
+pub(crate) fn passing_marker(check: &str) -> String {
     format!("{check}: PASS")
 }
 

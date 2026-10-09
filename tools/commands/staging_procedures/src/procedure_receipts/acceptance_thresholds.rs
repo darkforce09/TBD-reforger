@@ -1,15 +1,14 @@
-//! Quantitative staging acceptance is checked independently of runner success messages.
+//! The measurements a recorded staging run must meet, checked apart from its case outcomes.
 //!
-//! **Role:** Defines the measurements an operational receipt carries for the staging fleet,
-//! Discord and load checks, and the thresholds each must meet.
+//! **Role:** Defines the measurements a receipt carries for the staging fleet, Discord and load
+//! checks, and the thresholds each must meet.
 //!
-//! **Position:** `evidence.rs` calls [`validate`] on every `operational` receipt it judges;
-//! `operational_recording.rs` calls it before it writes a staging receipt and re-exports
-//! [`Observations`] to the `cargo xtask staging` procedures that measure them.
+//! **Position:** the procedures build [`Observations`] from what they measured;
+//! `recording_session.rs` calls [`validate`] before it writes a passing receipt.
 //!
-//! **Signals & state:** none; pure functions over deserialized values.
+//! **Signals & state:** none; pure functions over values.
 //!
-//! **Invariants:** a check id accepts only its own measurement kind. The fleet needs five
+//! **Invariants:** a check accepts only its own measurement kind. The fleet needs five
 //! distinct non-empty server ids, two clients, every fleet scenario and a SHA-256 fixture digest;
 //! Discord needs every Discord scenario and a fixture digest; load needs 30 minutes, 1000 member
 //! accounts, 100 concurrent clients, 20 completed requests a second, no unexpected error, reads
@@ -18,13 +17,15 @@
 //! workload digest.
 
 use crate::error::{Result, ensure};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+
+use super::staging_check::StagingCheck;
 use std::collections::BTreeSet;
 
 /// The measured values of one staging run, tagged by `kind`.
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
-pub enum Observations {
+#[derive(Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub(crate) enum Observations {
     /// The `staging_fleet` run: the servers and clients it drove and the scenarios it covered.
     Fleet {
         /// The distinct non-empty ids of the game servers; five are required.
@@ -72,10 +73,11 @@ pub enum Observations {
     },
 }
 
-pub(super) fn validate(id: &str, observations: &Observations) -> Result<()> {
-    match (id, observations) {
+/// Accepts `observations` only when they are `check`'s own kind and meet its thresholds.
+pub(crate) fn validate(check: StagingCheck, observations: &Observations) -> Result<()> {
+    match (check, observations) {
         (
-            "staging_fleet",
+            StagingCheck::Fleet,
             Observations::Fleet {
                 server_ids,
                 client_count,
@@ -105,7 +107,7 @@ pub(super) fn validate(id: &str, observations: &Observations) -> Result<()> {
             )?;
         }
         (
-            "staging_discord",
+            StagingCheck::Discord,
             Observations::Discord {
                 scenarios,
                 fixture_sha256,
@@ -128,7 +130,7 @@ pub(super) fn validate(id: &str, observations: &Observations) -> Result<()> {
             )?;
         }
         (
-            "staging_load",
+            StagingCheck::Load,
             Observations::Load {
                 duration_seconds,
                 member_accounts,
@@ -179,7 +181,7 @@ pub(super) fn validate(id: &str, observations: &Observations) -> Result<()> {
             );
             digest(workload_sha256)?;
         }
-        _ => crate::error::bail!("wrong or unsupported operational observation kind for {id}"),
+        _ => crate::error::bail!("wrong observation kind for {}", check.id()),
     }
     Ok(())
 }

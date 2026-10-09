@@ -9,8 +9,9 @@
 //!
 //! **Signals & state:** none; pure judges.
 //!
-//! **Invariants:** the acceptance thresholds are the ones `operational.rs` applies to the
-//! receipt's observations (1,800 measured seconds, 20 completed requests a second, 100
+//! **Invariants:** the acceptance thresholds are the ones
+//! `procedure_receipts/acceptance_thresholds.rs` applies to the receipt's observations (1,800
+//! measured seconds, 20 completed requests a second, 100
 //! concurrent clients, 1,000 member accounts, no unexpected error, p95 reads within 500 ms and
 //! writes within 1,000 ms); a report that does not decode contradicts every case it decides.
 
@@ -34,7 +35,7 @@ pub(crate) struct LoadThresholds {
 }
 
 impl LoadThresholds {
-    /// The register's acceptance of the `staging_load` receipt.
+    /// The acceptance thresholds of the `staging_load` receipt.
     pub(crate) const ACCEPTANCE: Self = Self {
         measured_seconds: 1_800.0,
         completed_requests_per_second: 20.0,

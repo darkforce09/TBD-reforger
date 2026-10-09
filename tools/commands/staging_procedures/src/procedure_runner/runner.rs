@@ -33,8 +33,8 @@ use super::step::{
 use crate::observation_journal::browser_inbox::BrowserInbox;
 use crate::observation_journal::journal::{JournalEntry, ObservationJournal};
 use crate::operator_coordination::awaited_effect::{await_line, effect_line, inbox_hint};
+use crate::procedure_receipts::{CaseStatus, ObservationRecord, RecordedCase};
 use crate::remote_observers::remote_command::HostCommandRunner;
-use api_readiness_checks::operational_recording::{CaseStatus, ObservationRecord, RecordedCase};
 
 /// How long the orchestrator's request may take to appear after a step's `AWAIT` line.
 pub(crate) const REQUEST_APPEARANCE_SECONDS: u64 = 900;

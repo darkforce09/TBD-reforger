@@ -23,12 +23,12 @@ use serde_json::Value;
 use super::FleetServer;
 use super::wave_table::SingleServerStep;
 use crate::fleet_procedure::fleet_reads::REQUEST_CLOCK_TOLERANCE_MS;
+use crate::procedure_receipts::CaseName;
 use crate::procedure_runner::step::{
     EffectPredicate, Probe, ProbeVerdict, RequestPredicate, Step, StepContext, StepId, StepKind,
 };
 use crate::remote_actions::relay_control;
 use crate::remote_observers::unit_journal_reader::{self, JournalLine};
-use api_readiness_checks::operational_recording::CaseName;
 
 /// How long after the unit's first start a second execution of the same command would have
 /// started it again: a second claim follows the first within the claim lease (30 s), a

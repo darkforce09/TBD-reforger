@@ -5,7 +5,7 @@
 Design for the fleet requirements (`fleet_fleet_commands`, `fleet_process_control`,
 `fleet_rcon_transport`, `fleet_kick_identity`, `fleet_command_receipts`,
 `fleet_command_recovery`, `fleet_console_command`). It records the chosen semantics before
-implementation; acceptance evidence is the command output recorded in progress_checkpoint.md.
+implementation; the tests it names hold it.
 
 ## Why a ledger
 

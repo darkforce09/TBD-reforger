@@ -39,6 +39,7 @@ use super::workstation_load::WorkstationLoad;
 use crate::environment_identity::load_generator_identity;
 use crate::observation_journal::journal::JournalEntry;
 use crate::operator_coordination::awaited_effect::{await_line, effect_line};
+use crate::procedure_receipts::{CaseStatus, ObservationRecord, RecordedCase};
 use crate::procedure_runner::probe_reading::{ProbeWindow, observe};
 use crate::procedure_runner::procedure::{ProcedurePlan, ProcedureRun};
 use crate::procedure_runner::runner::RunContext;
@@ -47,7 +48,6 @@ use crate::procedure_runner::step::{
 };
 use crate::remote_observers::database_reader::select;
 use crate::staging_settings::StagingSettings;
-use api_readiness_checks::operational_recording::{CaseStatus, ObservationRecord, RecordedCase};
 
 /// Seconds between two heartbeat census reads while the member load runs.
 pub(crate) const CENSUS_INTERVAL_SECONDS: u64 = 60;

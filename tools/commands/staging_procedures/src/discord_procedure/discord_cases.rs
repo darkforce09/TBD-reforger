@@ -17,8 +17,8 @@
 
 use crate::error::Result;
 
+use crate::procedure_receipts::{CaseName, CaseStatus, RecordedCase};
 use crate::procedure_runner::step::DeclaredCase;
-use api_readiness_checks::operational_recording::{CaseName, CaseStatus, RecordedCase};
 
 /// A partner-only registration enrols the partner snapshot and then registers.
 pub(super) const PARTNER_MEMBERSHIP: &str = "partner_membership";
@@ -83,7 +83,7 @@ pub(super) fn declared_cases() -> Result<Vec<DeclaredCase>> {
 
 /// `name` as a case name.
 pub(super) fn case(name: &str) -> Result<CaseName> {
-    Ok(CaseName::new(name)?)
+    CaseName::new(name)
 }
 
 /// The scenario names the observations carry: every case that ended `ok`, in receipt order.
